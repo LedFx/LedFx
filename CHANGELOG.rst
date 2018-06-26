@@ -2,9 +2,10 @@
 Changelog
 =========
 
-Version 0.1
+Version 0.1.0a0
 ===========
 
-- Feature A added
-- FIX: nasty bug #1729 fixed
-- add your changes here!
+- Initial alpha release with very basic end-to-end support
+    - Added a framework for highly customizable effects and outputs
+    - Added some basic effects and audio reaction ones
+    - Added very basic web interface to allow configuration

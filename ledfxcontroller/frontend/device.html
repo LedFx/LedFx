@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% set title = device.name %}
+{% block javascript %}
+
+    <script src="{{ url('static', filename='external/chart.js/Chart.min.js') }}"></script>
+    <script src="{{ url('static', filename='js/graph.js') }}"></script>
+    <script src="{{ url('static', filename='js/device.js') }}"></script>
+    <script language="javascript" type="text/javascript">
+        $(function() {
+            // Create the RGB visualizatuon graph and update the max pixels value
+            // based on the max brightness of the device
+            var rgbGraph = new RGBVisualizationGraph("rgb_canvas");
+            rgbGraph.setPixelMax({{device.max_brightness}});
+
+            // Create a websocket connection to the device to get the pixel data
+            var deviceWebsocket = new DeviceWebsocketConnection("{{device.id}}")
+            deviceWebsocket.onConnected = function() {
+                $('#rgb_status').text('active');
+                $('#toggle_rgb_icon').removeClass('fa-play');
+                $('#toggle_rgb_icon').addClass('fa-pause');
+            };
+            deviceWebsocket.onDisconnected = function() {
+                $('#rgb_status').text('inactive');
+                $('#toggle_rgb_icon').removeClass('fa-pause');
+                $('#toggle_rgb_icon').addClass('fa-play');
+            };
+            deviceWebsocket.onPixelUpdate = function(data) {
+                rgbGraph.update(data)
+            };
+            deviceWebsocket.connect()
+
+            // Hook up the websocket connection toggle button
+            $('#toggle_rgb').on('click', function() {
+                deviceWebsocket.toggleConnection();
+                return false;
+            });
+
+            // Hook the form submission to prevent naviagtion and to instaed
+            // just perform an ajax call
+            $('#effect_form').on('submit', function(event){
+                event.preventDefault();
+                $.ajax({
+                    url:"/device/{{device.id}}/effect",
+                    type:'post',
+                    data:$('#effect_form').serialize(),
+                    success:function() {
+                    }
+                });
+            });
+        });
+    </script>
+{% endblock %}
+
+{% block breadcrumbs %}
+<li class="breadcrumb-item">Devices</li>
+{% endblock %}
+
+{% block content %}
+{% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
+
+<!-- Effect Control -->
+<div class="card mb-3">
+    <div class="card-header">
+        <i class="fa fa-area-chart"></i> Effect Control</div>
+    <div class="card-body">
+
+        <form id="effect_form" action="{{ url('set_effect', device_id=device.id) }}" method="post">
+            <p>
+                <label><strong>Effect:</strong></label>
+                <select name="effect" value="" class="form-control form-control-sm" width="100%">
+                    <option value="">Disabled</option>
+                    {% for effect_id, effect in effects.items() %}
+                        <option value="{{ effect_id }}">{{ effect.NAME }}</option>
+                    {% endfor %}
+                </select>
+            </p>
+            <p>
+                <label><strong>Effect Config:</strong></label>
+                <input name="effect_config" type="text" value="{}" class="form-control form-control-sm"/>
+            </p>
+            <input type="submit" value="Set Effect" class="btn btn-primary" />
+        </form>
+        
+    </div>
+</div>
+
+<!-- RGB Visualization Graph -->
+<div class="card mb-3">
+    <div class="card-header">
+        <span class="float-left">
+            <i class="fa fa-area-chart"></i> RGB Values
+        </span>
+        <span class="float-right">
+            <a id="toggle_rgb"><i id="toggle_rgb_icon" class="fa fa-play"></i></a>
+        </span>
+    </div>
+    <div id="canvas_div" class="card-body">
+        <canvas id="rgb_canvas" stype="width: 100% !important; height: 256"></canvas>
+    </div>
+    <div class="card-footer small text-muted">Real-time visualization <span id="rgb_status">inactive</span></div>
+</div>
+    
+
+{% endblock %}

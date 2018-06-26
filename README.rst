@@ -1,19 +1,20 @@
-===============
 LedFxController
 ===============
 
+LedFx is a network based LED effect controller with support for a wide range of effects. Effect range from simple static gradients to audio reactive effects that dance to the music!
 
-Add a short description here!
+To get started:
 
+.. code:: bash
 
-Description
-===========
+    python setup.py install
+    ledfx --open-ui
 
-A longer description of your project goes here...
+Web-Interface
+=============
 
+LedFx is intended to be ran on a small PC such as a Raspberry Pi, thus all configuration is done through a web-interface. The current UI is very simple and enable control of an individaul device's effect, as well as providers a way to visualize the effect.
 
-Note
-====
+|screenshot-webinterface|
 
-This project has been set up using PyScaffold 3.0.3. For details and usage
-information on PyScaffold see http://pyscaffold.org/.
+.. |screenshot-webinterface| image:: https://raw.githubusercontent.com/ahodges9/LedFx/master/web_interface.png
