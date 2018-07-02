@@ -1,9 +1,9 @@
 LedFxController
 ===============
 
-LedFx is a network based LED effect controller with support for a wide range of effects. Effect range from simple static gradients to audio reactive effects that dance to the music!
+LedFx is a network based LED effect controller with support for a wide range of effects. Effect range from simple static gradients all the way to audio reactive effects that dance to music!
 
-To get started:
+To get started with LedFx run the following from the project root:
 
 .. code:: bash
 
@@ -13,9 +13,10 @@ To get started:
 Device Support
 ==============
 
-LedFx currently only supports E1.31 capable devices, including the `ESPixelStick <https://github.com/forkineye/ESPixelStick/>`__ firmware for ESP8266 devices. Upon first launch LedFx will create a defualt configuration file in the '.ledfx' folder inside the active user profile. On Windows, this will be 'C:\Users\<USER>\AppData\Roaming\.ledfx'. To add a device modify config.yaml as follows:
+LedFx currently only supports E1.31 capable devices, including the `ESPixelStick firmware <https://github.com/forkineye/ESPixelStick/>`__ for any ESP8266 based controller. Upon first launch LedFx will create a default configuration file in the '.ledfx' folder inside the active user profile. The exact path will be printed to the command window. To add a device modify config.yaml as follows:
 
 .. code-block:: yaml
+
     devices:
     - type: e131
         name: Sample Device
@@ -28,6 +29,7 @@ LedFx currently only supports E1.31 capable devices, including the `ESPixelStick
 Optionally, the config can be simplified down to:
 
 .. code-block:: yaml
+
     devices:
     - type: e131
         name: Sample Device
