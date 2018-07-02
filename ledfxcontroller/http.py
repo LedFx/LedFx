@@ -28,13 +28,6 @@ class LedFxControllerHTTP(object):
             'devices': self.ledfx.devices.get_devices()
         }
 
-    @aiohttp_jinja2.template('index.html')
-    async def reload(self, request):
-        self.ledfx.effects.reload_effects(force_reload = True)
-        return { 
-            'devices': self.ledfx.devices.get_devices()
-        }
-
     @aiohttp_jinja2.template('device.html')
     async def device(self, request):
         device_id = request.match_info['device_id']
@@ -96,7 +89,6 @@ class LedFxControllerHTTP(object):
 
     def setup_routes(self):
         self.app.router.add_get('/', self.index, name='index')
-        self.app.router.add_get('/reload', self.reload, name='realod')
         self.app.router.add_get('/device/{device_id}', self.device, name='device')
         self.app.router.add_post('/device/{device_id}/effect', self.set_effect, name='set_effect')
         self.app.add_routes([web.get('/device/{device_id}/ws', self.websocket_handler)])

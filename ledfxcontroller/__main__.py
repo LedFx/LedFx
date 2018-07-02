@@ -6,21 +6,12 @@ purposes use:
 
     [console_scripts]
     python setup.py develop
+    ledfx
 
-This will setup the environment for development purposes allow for quick
-running of the script using:
-
-    [console_scripts]
-    python -m ledfxcontroller
-
-For non-development purposes simply run:
+For non-development purposes run:
 
     [console_scripts]
     python setup.py install
-
-Then run the scrupt using:
-
-    [console_scripts]
     ledfx
 
 """
@@ -30,8 +21,8 @@ import sys
 import logging
 
 from ledfxcontroller.consts import (
-    DEFAULT_CONFIG_PATH, REQUIRED_PYTHON_VERSION,
-    REQUIRED_PYTHON_STRING, PROJECT_VERSION)
+    REQUIRED_PYTHON_VERSION, REQUIRED_PYTHON_STRING,
+    PROJECT_VERSION)
 from ledfxcontroller.core import LedFxController
 import ledfxcontroller.config as config_helpers
 

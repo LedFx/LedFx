@@ -16,9 +16,10 @@ class Device(object, metaclass=MetaRegistry):
     CONFIG_SCHEMA = vol.Schema({
         vol.Required('name'): str,
         vol.Required('type'): str,
-        vol.Required('max_brightness', default=1.0): vol.All(vol.Coerce(float), vol.Range(min=0, max=1)),
-        vol.Required('refresh_rate', default=60): int,
-        vol.Required('force_refresh', default=False): bool
+        vol.Optional('max_brightness', default=1.0): vol.All(vol.Coerce(float), vol.Range(min=0, max=1)),
+        vol.Optional('refresh_rate', default=60): int,
+        vol.Optional('force_refresh', default=False): bool,
+        vol.Optional('preview_only', default=False): bool
     })
 
     _active = False
@@ -69,8 +70,7 @@ class Device(object, metaclass=MetaRegistry):
 
             # Assemble the frame if necessary, if nothing changed just sleep
             assembled_frame = self.assemble_frame()
-            if assembled_frame is not None:
-                self._latest_frame = assembled_frame
+            if assembled_frame is not None and not self._config['preview_only']:
                 self.flush(assembled_frame)
 
             # Calculate the time to sleep accounting for potential heavy
@@ -86,12 +86,13 @@ class Device(object, metaclass=MetaRegistry):
         the active channels pixels, but will eventaully handle things like
         merging multiple segments segments and alpha blending channels
         """
+        frame = None
         if self._active_effect._dirty:
-            frame = self._active_effect.pixels * self._config['max_brightness']
+            frame = np.clip(self._active_effect.pixels * self._config['max_brightness'], 0, 255)
             self._active_effect._dirty = self._config['force_refresh']
-            return np.clip(frame, 0, 255)
+            self._latest_frame = frame
 
-        return None
+        return frame
 
     def activate(self):
         self._active = True

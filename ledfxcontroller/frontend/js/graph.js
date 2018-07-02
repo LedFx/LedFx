@@ -13,7 +13,7 @@ class RGBVisualizationGraph {
                 datasets: [
                 {
                     label: "Red",
-                    lineTension: 0.01,
+                    lineTension: 0.1,
                     backgroundColor: "rgba(255,0,0,0.1)",
                     borderColor: "rgba(255,0,0,1)",
                     pointRadius: 0,
@@ -21,7 +21,7 @@ class RGBVisualizationGraph {
                 },
                 {
                     label: "Green",
-                    lineTension: 0.01,
+                    lineTension: 0.1,
                     backgroundColor: "rgba(0,255,0,0.1)",
                     borderColor: "rgba(0,255,0,1)",
                     pointRadius: 0,
@@ -29,7 +29,7 @@ class RGBVisualizationGraph {
                 },
                 {
                     label: "Blue",
-                    lineTension: 0.01,
+                    lineTension: 0.1,
                     backgroundColor: "rgba(0,0,255,0.1)",
                     borderColor: "rgba(0,0,255,1)",
                     pointRadius: 0,
@@ -86,11 +86,4 @@ class RGBVisualizationGraph {
     setPixelMax(pixelMax) {
         this.graph.config.options.scales.yAxes[0].ticks.max = pixelMax
     }
-}
-function update_rgb_graph(graph, data) {
-    graph.data.labels = data.rgb_x
-    graph.data.datasets[0].data = data.r
-    graph.data.datasets[1].data = data.g
-    graph.data.datasets[2].data = data.b
-    graph.update(0)
 }

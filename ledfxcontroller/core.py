@@ -46,8 +46,8 @@ class LedFxController(object):
             kwargs['exc_info'] = (type(exception), exception,
                                 exception.__traceback__)
 
-        _LOGGER.error("Exception in core event loop: %s",
-                      context['message'], **kwargs)
+        _LOGGER.error('Exception in core event loop: {}'.format(
+            context['message']), **kwargs)
 
     async def flush_loop(self):
         await asyncio.sleep(0, loop=self.loop)
@@ -94,7 +94,7 @@ class LedFxController(object):
         async_fire_and_forget(self.async_stop(exit_code), self.loop)
 
     async def async_stop(self, exit_code=0):
-        print('Shutting down LedFxController.')
+        print('Stopping LedFxController.')
         await self.http.stop()
         self.devices.clear_all_effects()
 

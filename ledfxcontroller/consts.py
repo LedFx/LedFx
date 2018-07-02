@@ -14,9 +14,6 @@ REQUIRED_PYTHON_STRING = '>={}.{}.{}'.format(
 PROJECT_ROOT = pathlib.Path(__file__).parent
 PROJECT_VERSION = __version__
 
-
-DEFAULT_CONFIG_PATH = str(PROJECT_ROOT / 'config' / 'config.yaml')
-
 COLOR_TABLE = {
     "Red":(255,0,0),
     "Orange":(255,40,0),

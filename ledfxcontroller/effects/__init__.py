@@ -76,7 +76,19 @@ class Effect(object, metaclass=MetaRegistry):
         # TODO: Sync locks to ensure everything is thread safe
         validated_config = type(self).get_schema()(config)
         self._config = validated_config
-        self.config_updated(self._config)
+
+        def inherited(cls, method):
+            if hasattr(cls, method) and hasattr(super(cls, cls), method):
+                return cls.foo == super(cls).foo
+            return False
+
+        # Iterate all the base classes and check to see if there is a custom
+        # implementation of config updates. If to notify the base class.
+        valid_classes = list(type(self).__bases__)
+        valid_classes.append(type(self))
+        for base in valid_classes:
+            if base.config_updated != super(base, base).config_updated:
+                base.config_updated(self, self._config)
 
         _LOGGER.info("Effect {} config updated to {}.".format(
             self.NAME, validated_config))

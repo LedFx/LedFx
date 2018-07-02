@@ -1,5 +1,5 @@
 from ledfxcontroller.effects.temporal import TemporalEffect
-from ledfxcontroller.consts import COLOR_TABLE
+from ledfxcontroller.color import COLORS, GRADIENTS
 from ledfxcontroller.effects import Effect
 from scipy.misc import comb
 import voluptuous as vol
@@ -15,37 +15,26 @@ class GradientEffect(Effect):
     colors based upon some configured color pallet.
     """
 
-    # TODO: Strong schema validation for the gradients
     CONFIG_SCHEMA = vol.Schema({
-        vol.Required('gradient', default = 'Spectral'): str,
+        vol.Required('gradient', default = 'Spectral'): vol.Any(str, list),
         vol.Required('gradient_flip', default = False): bool,
         vol.Required('gradient_roll', default = 0): int,
     })
 
-    GRADIENT_TABLE = {
-        "Spectral"  : ["Red", "Orange", "Yellow", "Green", "Light Blue", "Blue", "Purple", "Pink"],
-        "Dancefloor": ["Red", "Pink", "Purple", "Blue"],
-        "Sunset"    : ["Red", "Orange", "Yellow"],
-        "Ocean"     : ["Green", "Light Blue", "Blue"],
-        "Jungle"    : ["Green", "Red", "Orange"],
-        "Sunny"     : ["Yellow", "Light Blue", "Orange", "Blue"],
-        "Fruity"    : ["Orange", "Blue"],
-        "Peach"     : ["Orange", "Pink"],
-        "Rust"      : ["Orange", "Red"]
-    }
-
-    _gradient_name = None
     _gradient_curve = None
 
     def _bernstein_poly(self, i, n, t):
-        """
-        The Bernstein polynomial of n, i as a function of t
-        """
+        """The Bernstein polynomial of n, i as a function of t"""
         return comb(n, i) * ( t**(n-i) ) * (1 - t)**i
 
-    def _generate_bezier_curve(self, gradient_name, gradient_length):
+    def _generate_bezier_curve(self, gradient_colors, gradient_length):
 
-        rgb_list = np.array([COLOR_TABLE[color] for color in self.GRADIENT_TABLE[gradient_name]]).T
+        # Check to see if we have a custom gradient, or a predefined one and
+        # load the colors accordingly
+        if isinstance(gradient_colors, str):
+            gradient_colors = GRADIENTS[gradient_colors.lower()]
+
+        rgb_list = np.array([COLORS[color.lower()] for color in gradient_colors]).T
         n_colors = len(rgb_list[0])
 
         t = np.linspace(0.0, 1.0, gradient_length)
@@ -54,14 +43,12 @@ class GradientEffect(Effect):
                             np.dot(rgb_list[1], polynomial_array),
                             np.dot(rgb_list[2], polynomial_array)])
 
+        _LOGGER.info(('Generating new gradient curve for {}'.format(gradient_colors)))
         self._gradient_curve = gradient
-        self._gradient_name = gradient_name
 
     def _gradient_valid(self):
         if self._gradient_curve is None:
             return False # Uninitialized gradient
-        if self._gradient_name != self._config['gradient']:
-            return False # Incorrect gradient
         if len(self._gradient_curve[0]) != self.pixel_count:
             return False # Incorrect size
         return True
@@ -78,6 +65,10 @@ class GradientEffect(Effect):
             self._gradient_curve,
             self._config['gradient_roll'],
             axis=1)
+
+    def config_updated(self, config):
+        """Invalidate the gradient"""
+        self._gradient_curve = None
 
     def apply_gradient(self, y):
         self._validate_gradient()

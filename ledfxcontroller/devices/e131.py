@@ -37,7 +37,7 @@ class E131Device(Device):
 
     @property
     def pixel_count(self):
-        return int(self._config['channel_count'] / 3)
+        return int(self._config['pixel_count'])
 
     def activate(self):
         if self._sacn:

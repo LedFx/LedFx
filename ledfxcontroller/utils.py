@@ -8,13 +8,10 @@ import inspect
 _LOGGER = logging.getLogger(__name__)
 
 def async_fire_and_forget(coro, loop):
-
-    ident = loop.__dict__.get("_thread_ident")
-    if ident is not None and ident == threading.get_ident():
-        raise RuntimeError('Cannot be called from within the event loop')
+    """Run some code in the core event loop without a result"""
 
     if not coroutines.iscoroutine(coro):
-        raise TypeError('A coroutine object is required: %s' % coro)
+        raise TypeError(('A coroutine object is required: {}').format(coro))
 
     def callback():
         """Handle the firing of a coroutine."""
@@ -41,9 +38,7 @@ def async_callback(loop, callback, *args):
     return future
 
 class MetaRegistry(type):
-    """
-    Meta-class to manage registry and schema merging
-    """
+    """Meta-class to manage registry and schema merging"""
 
     def __init__(cls, name, bases, cls_dict):
         type.__init__(cls, name, bases, cls_dict)
