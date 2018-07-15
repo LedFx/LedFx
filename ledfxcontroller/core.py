@@ -9,8 +9,8 @@ import voluptuous as vol
 from concurrent.futures import ThreadPoolExecutor
 from ledfxcontroller.utils import async_fire_and_forget
 from ledfxcontroller.http import LedFxControllerHTTP
-from ledfxcontroller.devices import DeviceManager
-from ledfxcontroller.effects import EffectManager
+from ledfxcontroller.devices import Devices
+from ledfxcontroller.effects import Effects
 from ledfxcontroller.config import load_config
 
 _LOGGER = logging.getLogger(__name__)
@@ -24,10 +24,7 @@ class LedFxController(object):
             self.loop = asyncio.ProactorEventLoop()
         else:
             self.loop = asyncio.get_event_loop()
-
         executor_opts = {'max_workers': self.config.get('max_workers')}
-        if sys.version_info[:2] >= (3, 6):
-            executor_opts['thread_name_prefix'] = 'SyncWorker'
 
         self.executor = ThreadPoolExecutor(**executor_opts)
         self.loop.set_default_executor(self.executor)
@@ -79,10 +76,9 @@ class LedFxController(object):
         _LOGGER.info("Starting LedFxController")
         await self.http.start()
 
-        self.devices = DeviceManager()
-        for device in self.config['devices']:
-            self.devices.add_device(device)
-        self.effects = EffectManager()
+        self.devices = Devices(self)
+        self.devices.create_from_config(self.config['devices'])
+        self.effects = Effects(self)
 
         if open_ui:
             import webbrowser

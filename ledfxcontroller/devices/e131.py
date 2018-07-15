@@ -10,7 +10,6 @@ _LOGGER = logging.getLogger(__name__)
 class E131Device(Device):
     """E1.31 device support"""
 
-    TYPE_ID = 'e131'
     CONFIG_SCHEMA = vol.Schema({
         vol.Required('host'): str,
         vol.Required('universe', default=1): int,

@@ -200,6 +200,7 @@ def get_melbank_input_source():
         _melbank_source = MelbankInputSource({})
     return _melbank_source
 
+@Effect.no_registration
 class AudioReactiveEffect(Effect):
     """
     Base for audio reactive effects. This really just subscribes

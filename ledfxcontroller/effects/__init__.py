@@ -1,13 +1,14 @@
-import os
-import sys
+
+from ledfxcontroller.utils import BaseRegistry, RegistryLoader
+from scipy.ndimage.filters import gaussian_filter1d
+import voluptuous as vol
+import numpy as np
+import importlib
 import colorsys
 import pkgutil
 import logging
-import importlib
-import numpy as np
-import voluptuous as vol
-from scipy.ndimage.filters import gaussian_filter1d
-from ledfxcontroller.utils import MetaRegistry
+import sys
+import os
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -32,7 +33,8 @@ def flip_pixels(pixels):
 def blur_pixels(pixels, sigma):
     return gaussian_filter1d(pixels, axis=0, sigma=sigma)
 
-class Effect(object, metaclass=MetaRegistry):
+@BaseRegistry.no_registration
+class Effect(BaseRegistry):
     """
     Manages an effect
     """
@@ -50,7 +52,7 @@ class Effect(object, metaclass=MetaRegistry):
     })
 
     def __init__(self, config):
-        pass
+        self.update_config(config)
 
     def __del__(self):
         if self._active:
@@ -59,8 +61,6 @@ class Effect(object, metaclass=MetaRegistry):
     def activate(self, pixel_count):
         """Attaches an output channel to the effect"""
         self._pixels = np.zeros((pixel_count, 3))
-
-        self.channel_updated(None)
         self._active = True
 
         _LOGGER.info("Effect {} activated.".format(self.NAME))
@@ -74,7 +74,7 @@ class Effect(object, metaclass=MetaRegistry):
 
     def update_config(self, config):
         # TODO: Sync locks to ensure everything is thread safe
-        validated_config = type(self).get_schema()(config)
+        validated_config = type(self).schema()(config)
         self._config = validated_config
 
         def inherited(cls, method):
@@ -92,15 +92,6 @@ class Effect(object, metaclass=MetaRegistry):
 
         _LOGGER.info("Effect {} config updated to {}.".format(
             self.NAME, validated_config))
-
-    def channel_updated(self, channel):
-        """
-        Optional event for when an effect's channel is updated. This
-        shold be used by the subclass only if they need to build up
-        complex properties off the device's channel, otherwise the channel
-        should just be referenced in the effect's loop directly
-        """
-        pass
 
     def config_updated(self, config):
         """
@@ -156,41 +147,10 @@ class Effect(object, metaclass=MetaRegistry):
     def name(self):
         return self.NAME
 
+class Effects(RegistryLoader):
+    """Thin wrapper around the effect registry that manages effects"""
 
-class EffectManager(object):
-    def __init__(self):
-        self.reload_effects()
+    PACKAGE_NAME = 'ledfxcontroller.effects'
 
-    def reload_effects(self, force_reload = False):
-
-        # First load all the effect modules
-        package_directory = os.path.dirname(__file__)
-        for (_, module_name, _) in pkgutil.iter_modules([package_directory]):
-            module = importlib.import_module('.' + module_name, __package__)
-            if force_reload:
-                print("Reload module", module)
-                importlib.reload(module)
-
-        self._supported_effects = {}
-        for effect in Effect.get_registry():
-            self._supported_effects[effect.NAME.lower()] = effect
-
-    def create_effect(self, name, config = {}):
-        effect_class = self._supported_effects.get(name.lower())
-        if effect_class:
-
-            validated_config = effect_class.get_schema()(config)
-            _LOGGER.info("Creating effect {} with config {}".format(
-                name, validated_config))
-
-            # TODO: Should we even bother passing in the config to init?
-            # or should effects just only bother handling "configUpdated"?
-            effect = effect_class(validated_config)
-            effect.update_config(validated_config)
-
-            return effect
-        raise AttributeError('Couldn\'t find effect {}'.format(name))
-
-    @property
-    def supported_effects(self):
-        return self._supported_effects
+    def __init__(self, ledfx):
+        super().__init__(Effect, self.PACKAGE_NAME, ledfx)

@@ -25,7 +25,7 @@ class LedFxControllerHTTP(object):
     @aiohttp_jinja2.template('index.html')
     async def index(self, request):
         return { 
-            'devices': self.ledfx.devices.get_devices()
+            'devices': self.ledfx.devices.values()
         }
 
     @aiohttp_jinja2.template('device.html')
@@ -37,8 +37,8 @@ class LedFxControllerHTTP(object):
             return web.json_response({'error_message': 'Invalid device id'})
 
         return {
-            'devices': self.ledfx.devices.get_devices(),
-            'effects': self.ledfx.effects.supported_effects,
+            'devices': self.ledfx.devices.values(),
+            'effects': self.ledfx.effects.classes(),
             'device': device
         }
 
@@ -72,17 +72,16 @@ class LedFxControllerHTTP(object):
 
         data = await request.post()
         try:
-            effect_id = data['effect']
-            effect_config = data['effect_config']
+            name = data['effect']
+            config = json.loads(data['effect_config'])
         except (KeyError, TypeError, ValueError) as e:
             raise web.HTTPBadRequest(
                 text='You have not specified effect value') from e
         
-        if effect_id == "":
+        if name == "" or name is None:
             device.clear_effect()
         else:
-            effect_config = json.loads(effect_config)
-            effect = self.ledfx.effects.create_effect(effect_id, effect_config)
+            effect = self.ledfx.effects.create(name = name, config = config)
             device.set_effect(effect)
 
         return web.HTTPOk()

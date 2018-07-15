@@ -8,6 +8,7 @@ import logging
 
 _LOGGER = logging.getLogger(__name__)
 
+@Effect.no_registration
 class GradientEffect(Effect):
     """
     Simple effect base class that supplies gradient functionality. This

@@ -1,4 +1,5 @@
-from ledfxcontroller.utils import MetaRegistry
+from ledfxcontroller.utils import BaseRegistry, RegistryLoader
+from abc import abstractmethod
 from threading import Thread
 import voluptuous as vol
 import numpy as np
@@ -11,7 +12,7 @@ import re
 
 _LOGGER = logging.getLogger(__name__)
 
-class Device(object, metaclass=MetaRegistry):
+class Device(BaseRegistry):
 
     CONFIG_SCHEMA = vol.Schema({
         vol.Required('name'): str,
@@ -105,15 +106,21 @@ class Device(object, metaclass=MetaRegistry):
             self._device_thread.join()
             self._device_thread = None
 
+    @abstractmethod
     def flush(self, data):
         """
-        Flushes the provided data to the device. This should be overwritten
-        by the device implementation
+        Flushes the provided data to the device. This abstract medthod must be 
+        overwritten by the device implementation.
         """
 
     @property
     def name(self):
         return self._config['name']
+
+    @property
+    def id(self):
+        return re.sub('[^a-z0-9 \.]', '',
+            self._config['name'].lower()).replace(' ', '_')
 
     @property
     def max_brightness(self):
@@ -128,53 +135,28 @@ class Device(object, metaclass=MetaRegistry):
         return self._latest_frame
 
 
+class Devices(RegistryLoader):
+    """Thin wrapper around the device registry that manages devices"""
 
-class DeviceManager(object):
-    def __init__(self):
-        self._platforms = {}
-        self._load_device_platforms()
+    PACKAGE_NAME = 'ledfxcontroller.devices'
 
-        self._devices = {}
+    def __init__(self, ledfx):
+        super().__init__(Device, self.PACKAGE_NAME, ledfx)
 
-    @property
-    def platforms(self):
-        return self._platforms
-
-    def _load_device_platforms(self):
-        _LOGGER.info("Loading device platforms.")
-
-        package_directory = os.path.dirname(__file__)
-        for (_, moduleName, _) in pkgutil.iter_modules([package_directory]):
-            importlib.import_module('.' + moduleName, __package__)
-
-        self._platforms = {}
-        for device_platform in Device.get_registry():
-            if hasattr(device_platform, 'TYPE_ID'):
-                self._platforms[device_platform.TYPE_ID] = device_platform
-
-    def add_device(self, config):
-        device_type = config.get('type')
-        if device_type is None:
-            _LOGGER.error("Invalid device type")
-            return None
-
-        validated_config = self._platforms[device_type].get_schema()(config)
-        device = self._platforms[device_type](validated_config)
-        device.id = re.sub('[^a-z0-9 \.]', '', config['name'].lower()).replace(' ', '_')
-
-        self._devices[device.id] = device
-        return device
-
-    def get_device(self, device_id):
-        return self._devices.get(device_id)
-
-    def get_devices(self):
-        return self._devices
+    def create_from_config(self, config):
+        for device_config in config:
+            self.create(
+                config = device_config,
+                name = device_config.get('type'))
 
     def clear_all_effects(self):
-        for device_id, device in self._devices.items():
+        for device in self.values():
             device.clear_effect()
 
-
+    def get_device(self, device_id):
+        for device in self.values():
+            if device_id == device.id:
+                return device
+        return None
 
 

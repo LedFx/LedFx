@@ -7,6 +7,7 @@ import voluptuous as vol
 _LOGGER = logging.getLogger(__name__)
 DEFAULT_RATE = 1.0 / 60.0
 
+@Effect.no_registration
 class TemporalEffect(Effect):
     _thread_active = False
     _thread = None

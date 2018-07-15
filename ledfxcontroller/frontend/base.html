@@ -35,9 +35,9 @@
           </a>
           <ul class="sidenav-second-level collapse" id="collapseComponents">
             {% if devices %}
-              {% for device_id, device in devices.items() %}
+              {% for device in devices %}
               <li>
-                <a href="{{ url('device', device_id=device_id) }}">{{ device.name }}</a>
+                <a href="{{ url('device', device_id=device.id) }}">{{ device.name }}</a>
               </li>
               {% endfor %}
             {% endif %}
