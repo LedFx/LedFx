@@ -11,13 +11,14 @@ from ledfxcontroller.utils import async_fire_and_forget
 from ledfxcontroller.http import LedFxControllerHTTP
 from ledfxcontroller.devices import Devices
 from ledfxcontroller.effects import Effects
-from ledfxcontroller.config import load_config
+from ledfxcontroller.config import load_config, save_config
 
 _LOGGER = logging.getLogger(__name__)
 
 class LedFxController(object):
 
     def __init__(self, config_dir):
+        self.config_dir = config_dir
         self.config = load_config(config_dir)
 
         if sys.platform == 'win32':
@@ -93,6 +94,9 @@ class LedFxController(object):
         print('Stopping LedFxController.')
         await self.http.stop()
         self.devices.clear_all_effects()
+
+        # Save the configuration before shutting down
+        save_config(config = self.config, config_dir = self.config_dir)
 
         await self.flush_loop()
         self.executor.shutdown()

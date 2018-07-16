@@ -114,6 +114,16 @@ class BaseRegistry(ABC):
 
         return self._registry
 
+    @property
+    def id(self):
+        """Returns the id for the object"""
+        return getattr(self, '_id', None)
+
+    @property
+    def config(self):
+        """Returns the config for the object"""
+        return getattr(self, '_config', None)
+
 class RegistryLoader(object):
     """Manages loading of compoents for a given registry"""
 
@@ -186,6 +196,9 @@ class RegistryLoader(object):
             obj =  _cls(config, *args)
         else:
             obj =  _cls(*args)
+
+        # Attach some common properties
+        setattr(obj, '_id', id)
 
         # Store the object into the internal list and return it
         self._objects[id] = obj

@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% set title = "Developer Tools" %}
+
+{% block javascript %}
+    <script language="javascript" type="text/javascript">
+        $(function() {
+            // Hook the form submission to prevent naviagtion and to instaed
+            // just perform an ajax call
+            $('#dev_tools_form').on('submit', function(event){
+                event.preventDefault();
+                $.ajax({
+                    url: $('#dev_tools_api').val(),
+                    type:$('#dev_tools_type').val(),
+                    data: $('#dev_tools_json').val(),
+                    dataType:"json",
+                    contentType: "application/json",
+                    success:function(data) {
+                        $('#dev_tools_response').text(JSON.stringify(data))
+                    },
+                    error: function(data) {
+                        $('#dev_tools_response').text(JSON.stringify(data.responseJSON))
+                    }
+                });
+            });
+        });
+    </script>
+{% endblock %}
+
+{% block content %}
+
+<div class="card mb-3">
+    <div class="card-header">
+        <i class="fa fa-area-chart"></i> Developer Tools</div>
+    <div class="card-body">
+
+        <form id="dev_tools_form" action="" method="post">
+            <p>
+                <label><strong>Type:</strong></label>
+                <select id="dev_tools_type" name="type" value="" class="form-control form-control-sm" width="100%">
+                    <option value="GET">GET</option>
+                    <option value="POST">POST</option>
+                    <option value="PUT">PUT</option>
+                    <option value="DELETE">DELETE</option>
+                </select>
+            </p>
+            <p>
+                <label><strong>API:</strong></label>
+                <input id="dev_tools_api" name="api" type="text" value="/api/devices" class="form-control form-control-sm"/>
+            </p>
+            <p>
+                <label><strong>JSON:</strong></label>
+                <input id="dev_tools_json" name="json" type="text" value="{}" class="form-control form-control-sm"/>
+            </p>
+            <input type="submit" value="Submit" class="btn btn-primary" />
+        </form>
+        
+    </div>
+</div>
+
+<div class="card mb-3">
+    <div class="card-header">Result</div>
+    <div id="canvas_div" class="card-body">
+        <p id="dev_tools_response"></p>
+    </div>
+</div>
+
+{% endblock %}

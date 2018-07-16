@@ -1,7 +1,10 @@
 import voluptuous as vol
+import logging
 import yaml
 import sys
 import os
+
+_LOGGER = logging.getLogger(__name__)
 
 CONFIG_DIRECTORY = '.ledfx'
 CONFIG_FILE_NAME = 'config.yaml'
@@ -23,7 +26,7 @@ CORE_CONFIG_SCHEMA = vol.Schema({
     vol.Required('host'): str,
     vol.Required('port'): int,
     vol.Optional('max_workers'): int,
-    vol.Optional('devices', default = []): list
+    vol.Optional('devices', default = []): dict
 })
 
 def get_default_config_directory() -> str:
@@ -88,3 +91,11 @@ def load_config(config_dir: str) -> dict:
     print(('Loading configuration file from {}').format(config_dir))
     with open(config_file, 'rt') as file:
         return CORE_CONFIG_SCHEMA(yaml.load(file))
+
+def save_config(config: dict, config_dir: str) -> None:
+    """Saves the configuration to the provided directory"""
+
+    config_file = ensure_config_file(config_dir)
+    _LOGGER.info(('Saving configuration file to {}').format(config_dir))
+    with open(config_file, 'w') as file:
+        yaml.dump(config, file, default_flow_style=False)

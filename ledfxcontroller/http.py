@@ -4,6 +4,7 @@ import aiohttp_jinja2
 from aiohttp import web
 import aiohttp
 from ledfxcontroller.consts import PROJECT_ROOT
+from ledfxcontroller.api import RestApi
 import numpy as np
 import json
 
@@ -14,9 +15,10 @@ class LedFxControllerHTTP(object):
         """Initialize the HTTP server"""
 
         self.app = web.Application(loop=ledfx.loop)
+        self.api = RestApi(ledfx)
         aiohttp_jinja2.setup(
             self.app, loader=jinja2.PackageLoader('ledfxcontroller', 'frontend'))
-        self.setup_routes()
+        self.register_routes()
 
         self.ledfx = ledfx
         self.host = host
@@ -27,6 +29,10 @@ class LedFxControllerHTTP(object):
         return { 
             'devices': self.ledfx.devices.values()
         }
+
+    @aiohttp_jinja2.template('dev_tools.html')
+    async def dev_tools(self, request):
+        return { }
 
     @aiohttp_jinja2.template('device.html')
     async def device(self, request):
@@ -86,15 +92,20 @@ class LedFxControllerHTTP(object):
 
         return web.HTTPOk()
 
-    def setup_routes(self):
+    def register_routes(self):
         self.app.router.add_get('/', self.index, name='index')
         self.app.router.add_get('/device/{device_id}', self.device, name='device')
         self.app.router.add_post('/device/{device_id}/effect', self.set_effect, name='set_effect')
         self.app.add_routes([web.get('/device/{device_id}/ws', self.websocket_handler)])
 
+        
+        self.app.router.add_get('/dev_tools', self.dev_tools, name='dev_tools')
+
         self.app.router.add_static('/static/',
                         path=PROJECT_ROOT / 'frontend',
                         name='static')
+
+        self.api.register_routes(self.app)
 
     async def start(self):
         self.handler = self.app.make_handler(loop=self.ledfx.loop)

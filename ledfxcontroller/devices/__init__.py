@@ -12,6 +12,7 @@ import re
 
 _LOGGER = logging.getLogger(__name__)
 
+@BaseRegistry.no_registration
 class Device(BaseRegistry):
 
     CONFIG_SCHEMA = vol.Schema({
@@ -118,11 +119,6 @@ class Device(BaseRegistry):
         return self._config['name']
 
     @property
-    def id(self):
-        return re.sub('[^a-z0-9 \.]', '',
-            self._config['name'].lower()).replace(' ', '_')
-
-    @property
     def max_brightness(self):
         return self._config['max_brightness'] * 256
     
@@ -144,9 +140,11 @@ class Devices(RegistryLoader):
         super().__init__(Device, self.PACKAGE_NAME, ledfx)
 
     def create_from_config(self, config):
-        for device_config in config:
+        print(config)
+        for device_id, device_config in config.items():
             self.create(
                 config = device_config,
+                id = device_id,
                 name = device_config.get('type'))
 
     def clear_all_effects(self):
