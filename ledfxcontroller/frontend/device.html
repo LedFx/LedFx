@@ -40,13 +40,26 @@
             // just perform an ajax call
             $('#effect_form').on('submit', function(event){
                 event.preventDefault();
-                $.ajax({
-                    url:"/device/{{device.id}}/effect",
-                    type:'post',
-                    data:$('#effect_form').serialize(),
-                    success:function() {
-                    }
-                });
+                if ($('#effect_type').val() == ""){
+                    $.ajax({
+                        url:"{{ url('api_device_effects', device_id = device.id) }}",
+                        type:'delete',
+                        success:function() {}
+                    });
+                }
+                else
+                {
+                    json = { "type": $('#effect_type').val(), "config": JSON.parse($('#effect_config').val()) }
+                    $.ajax({
+                        url:"{{ url('api_device_effects', device_id = device.id) }}",
+                        type:'put',
+                        dataType:"json",
+                        contentType: "application/json",
+                        data:JSON.stringify(json),
+                        success:function() {
+                        }
+                    });
+                }
             });
         });
     </script>
@@ -65,10 +78,10 @@
         <i class="fa fa-area-chart"></i> Effect Control</div>
     <div class="card-body">
 
-        <form id="effect_form" action="{{ url('set_effect', device_id=device.id) }}" method="post">
+        <form id="effect_form" action="" method="post">
             <p>
                 <label><strong>Effect:</strong></label>
-                <select name="effect" value="" class="form-control form-control-sm" width="100%">
+                <select id="effect_type" name="effect" value="" class="form-control form-control-sm" width="100%">
                     <option value="">Disabled</option>
                     {% for effect_id, effect in effects.items() %}
                         <option value="{{ effect_id }}">{{ effect.NAME }}</option>
@@ -77,7 +90,7 @@
             </p>
             <p>
                 <label><strong>Effect Config:</strong></label>
-                <input name="effect_config" type="text" value="{}" class="form-control form-control-sm"/>
+                <input id="effect_config" name="effect_config" type="text" value="{}" class="form-control form-control-sm"/>
             </p>
             <input type="submit" value="Set Effect" class="btn btn-primary" />
         </form>

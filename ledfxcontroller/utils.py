@@ -120,6 +120,11 @@ class BaseRegistry(ABC):
         return getattr(self, '_id', None)
 
     @property
+    def type(self):
+        """Returns the id for the object"""
+        return getattr(self, '_type', None)
+
+    @property
     def config(self):
         """Returns the config for the object"""
         return getattr(self, '_config', None)
@@ -160,9 +165,16 @@ class RegistryLoader(object):
     def __iter__(self):
         return iter(self._objects)
 
+    def types(self):
+        """Returns all the type strings in the registry"""
+        return list(self._cls.registry().keys())
+
     def classes(self):
         """Returns all the classes in the regsitry"""
         return self._cls.registry()
+
+    def get_class(self, type):
+        return self._cls.registry()[type]
 
     def values(self):
         """Returns all the created objects"""
@@ -199,6 +211,7 @@ class RegistryLoader(object):
 
         # Attach some common properties
         setattr(obj, '_id', id)
+        setattr(obj, '_type', name)
 
         # Store the object into the internal list and return it
         self._objects[id] = obj
@@ -209,3 +222,6 @@ class RegistryLoader(object):
         if id not in self._objects:
             raise AttributeError(("Object with id '{}' does not exist.").format(id))
         del self._objects[id]
+
+    def get(self, id):
+        return self._objects.get(id)

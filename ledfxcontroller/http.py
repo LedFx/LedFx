@@ -32,7 +32,9 @@ class LedFxControllerHTTP(object):
 
     @aiohttp_jinja2.template('dev_tools.html')
     async def dev_tools(self, request):
-        return { }
+        return { 
+            'devices': self.ledfx.devices.values()
+        }
 
     @aiohttp_jinja2.template('device.html')
     async def device(self, request):
@@ -72,33 +74,10 @@ class LedFxControllerHTTP(object):
 
         return ws
 
-    async def set_effect(self, request):
-        device_id = request.match_info['device_id']
-        device = self.ledfx.devices.get_device(device_id)
-
-        data = await request.post()
-        try:
-            name = data['effect']
-            config = json.loads(data['effect_config'])
-        except (KeyError, TypeError, ValueError) as e:
-            raise web.HTTPBadRequest(
-                text='You have not specified effect value') from e
-        
-        if name == "" or name is None:
-            device.clear_effect()
-        else:
-            effect = self.ledfx.effects.create(name = name, config = config)
-            device.set_effect(effect)
-
-        return web.HTTPOk()
-
     def register_routes(self):
         self.app.router.add_get('/', self.index, name='index')
         self.app.router.add_get('/device/{device_id}', self.device, name='device')
-        self.app.router.add_post('/device/{device_id}/effect', self.set_effect, name='set_effect')
         self.app.add_routes([web.get('/device/{device_id}/ws', self.websocket_handler)])
-
-        
         self.app.router.add_get('/dev_tools', self.dev_tools, name='dev_tools')
 
         self.app.router.add_static('/static/',

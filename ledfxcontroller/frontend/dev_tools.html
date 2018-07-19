@@ -16,10 +16,10 @@
                     dataType:"json",
                     contentType: "application/json",
                     success:function(data) {
-                        $('#dev_tools_response').text(JSON.stringify(data))
+                        $('#dev_tools_response').text(JSON.stringify(data, undefined, 4))
                     },
                     error: function(data) {
-                        $('#dev_tools_response').text(JSON.stringify(data.responseJSON))
+                        $('#dev_tools_response').text(JSON.stringify(data.responseJSON, undefined, 4))
                     }
                 });
             });
@@ -30,8 +30,7 @@
 {% block content %}
 
 <div class="card mb-3">
-    <div class="card-header">
-        <i class="fa fa-area-chart"></i> Developer Tools</div>
+    <div class="card-header">API Commands</div>
     <div class="card-body">
 
         <form id="dev_tools_form" action="" method="post">
@@ -50,7 +49,7 @@
             </p>
             <p>
                 <label><strong>JSON:</strong></label>
-                <input id="dev_tools_json" name="json" type="text" value="{}" class="form-control form-control-sm"/>
+                <textarea id="dev_tools_json" name="json" value="{}" class="form-control form-control-sm"></textarea>
             </p>
             <input type="submit" value="Submit" class="btn btn-primary" />
         </form>
@@ -61,7 +60,8 @@
 <div class="card mb-3">
     <div class="card-header">Result</div>
     <div id="canvas_div" class="card-body">
-        <p id="dev_tools_response"></p>
+        <textarea id="dev_tools_response" class="form-control form-control-sm" cols=50 rows=10></textarea>
+        
     </div>
 </div>
 

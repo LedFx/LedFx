@@ -11,9 +11,6 @@ class DevicesEndpoint(RestEndpoint):
 
     ENDPOINT_PATH = "/api/devices"
 
-    def __init__(self, ledfx):
-        super().__init__(ledfx)
-
     async def get(self) -> web.Response:
         response = { 'status' : 'success' , 'devices' : {}}
         for device in self.ledfx.devices.values():
@@ -29,35 +26,26 @@ class DevicesEndpoint(RestEndpoint):
             response = { 'status' : 'failed', 'reason': 'Required attribute "config" was not provided' }
             return web.Response(text=json.dumps(response), status=500)
 
-        # Create the device
-        _LOGGER.info("Adding device with config", device_config)
-        device = self.ledfx.devices.create(
-            config = device_config,
-            name = device_config.get('type'))
-
-        # Update and save the configuration
-        self.ledfx.config['devices'][device.id] = device_config
-        save_config(
-            config = self.ledfx.config, 
-            config_dir = self.ledfx.config_dir)
-
-        response = { 'status' : 'success' }
-        return web.Response(text=json.dumps(response), status=200)
-
-    async def delete(self, request) -> web.Response:
-        data = await request.json()
         device_id = data.get('id')
-
         if device_id is None:
             response = { 'status' : 'failed', 'reason': 'Required attribute "id" was not provided' }
             return web.Response(text=json.dumps(response), status=500)
 
-        # Remove the device
-        _LOGGER.info(("Removing device with id {}").format(device_id))
-        self.ledfx.devices.destroy(device_id)
+        # Remove the device it if already exist
+        try:
+            self.ledfx.devices.destroy(device_id)
+        except AttributeError:
+            pass
+
+        # Create the device
+        _LOGGER.info("Adding device with config", device_config)
+        device = self.ledfx.devices.create(
+            config = device_config,
+            id = device_id,
+            name = device_config.get('type'))
 
         # Update and save the configuration
-        del self.ledfx.config['devices'][device_id]
+        self.ledfx.config['devices'][device.id] = device_config
         save_config(
             config = self.ledfx.config, 
             config_dir = self.ledfx.config_dir)

@@ -61,6 +61,10 @@ class Device(BaseRegistry):
 
             self.deactivate()
 
+    @property
+    def active_effect(self):
+        return self._active_effect
+
     def thread_function(self):
         # TODO: Evaluate switching over to asyncio with UV loop optimization
         # instead of spinning a seperate thread.
