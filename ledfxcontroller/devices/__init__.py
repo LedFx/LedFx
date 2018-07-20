@@ -144,7 +144,6 @@ class Devices(RegistryLoader):
         super().__init__(Device, self.PACKAGE_NAME, ledfx)
 
     def create_from_config(self, config):
-        print(config)
         for device_id, device_config in config.items():
             self.create(
                 config = device_config,

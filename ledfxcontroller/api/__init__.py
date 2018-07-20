@@ -58,6 +58,5 @@ class RestApi(RegistryLoader):
 
         # Create the endpoints and register their routes
         for endpoint_type in self.types():
-            print(endpoint_type)
             endpoint = self.create(endpoint_type, None, None, self.ledfx)
             app.router.add_route('*', endpoint.ENDPOINT_PATH, endpoint.handler, name = "api_{}".format(endpoint_type))

@@ -50,34 +50,9 @@ class LedFxControllerHTTP(object):
             'device': device
         }
 
-    async def websocket_handler(self, request):
-        device_id = request.match_info['device_id']
-        device = self.ledfx.devices.get_device(device_id)
-
-        ws = web.WebSocketResponse()
-        await ws.prepare(request)
-
-        async for msg in ws:
-            if msg.type == aiohttp.WSMsgType.TEXT:
-                if msg.data == 'get_pixels':
-                    rgb_x = np.arange(0, device.pixel_count).tolist()
-                    if device.latest_frame is not None:
-                        pixels = np.copy(device.latest_frame).T
-                        await ws.send_json({"action": "update_pixels", "rgb_x": rgb_x, "r": pixels[0].tolist(), "g": pixels[1].tolist(), "b": pixels[2].tolist()})
-                    else:
-                        pixels = np.zeros((device.pixel_count, 3))
-                        await ws.send_json({"action": "update_pixels", "rgb_x": rgb_x, "r": pixels[0].tolist(), "g": pixels[1].tolist(), "b": pixels[2].tolist()})
-                if msg.data == 'close':
-                    await ws.close()
-            elif msg.type == aiohttp.WSMsgType.ERROR:
-                _LOGGER.error(('Client websocket exception: {}').format(ws.exception()))
-
-        return ws
-
     def register_routes(self):
         self.app.router.add_get('/', self.index, name='index')
         self.app.router.add_get('/device/{device_id}', self.device, name='device')
-        self.app.add_routes([web.get('/device/{device_id}/ws', self.websocket_handler)])
         self.app.router.add_get('/dev_tools', self.dev_tools, name='dev_tools')
 
         self.app.router.add_static('/static/',

@@ -13,7 +13,7 @@ class DeviceWebsocketConnection {
 
         var self = this;
         var wsUri = (window.location.protocol=='https:'&&'wss://'||'ws://')+
-            window.location.host+'/device/'+this.deviceId+'/ws';
+            window.location.host+'/api/websocket';
         this.conn = new WebSocket(wsUri);
 
         this.conn.onopen = function() {
@@ -57,7 +57,11 @@ class DeviceWebsocketConnection {
 
     getPixelData() {
         if (this.conn != null) {
-            this.conn.send('get_pixels');
+            this.conn.send(JSON.stringify({
+                'id': 0, 
+                'type': 'get_pixels',
+                'device_id': this.deviceId
+            }));
 
             var self = this;
             setTimeout(function() {
