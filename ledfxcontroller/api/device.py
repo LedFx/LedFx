@@ -12,7 +12,6 @@ class DeviceEndpoint(RestEndpoint):
     ENDPOINT_PATH = "/api/devices/{device_id}"
 
     async def get(self, device_id) -> web.Response:
-        print(device_id)
         device = self.ledfx.devices.get(device_id)
         if device is None:
             response = { 'not found': 404 }

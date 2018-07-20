@@ -128,6 +128,7 @@ class WebsocketConnection:
             _LOGGER.exception("Unexpected Exception: %s", err)
 
         finally:
+
             # Gracefully stop the sender ensuring all messages get flushed
             self.send(None)
             await self.sender_task
