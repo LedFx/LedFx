@@ -18,23 +18,25 @@ LedFx currently only supports E1.31 capable devices, including the `ESPixelStick
 .. code-block:: yaml
 
     devices:
-    - type: e131
-      name: Sample Device
-      host: 192.168.1.100
-      universe: 1
-      channel_offset: 0
-      channel_count: 300
-      max_brightness: 1.0
+      sample_device_1:
+        type: e131
+        name: Sample Device
+        host: 192.168.1.100
+        universe: 1
+        channel_offset: 0
+        channel_count: 300
+        max_brightness: 1.0
 
 Optionally, the config can be simplified down to:
 
 .. code-block:: yaml
 
     devices:
-    - type: e131
-      name: Sample Device
-      host: 192.168.1.100
-      pixel_count: 100
+      sample_device_1:
+        type: e131
+        name: Sample Device
+        host: 192.168.1.100
+        pixel_count: 100
 
 Web-Interface
 =============
