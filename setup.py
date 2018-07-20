@@ -13,7 +13,7 @@ PROJECT_URL = 'http://...'
 
 REQUIRES = [
     'numpy==1.13.3',
-    'scipy>=0.15.1'
+    'scipy>=0.15.1',
     'voluptuous==0.11.1',
     'pyaudio==0.2.11',
     'sacn==1.3',
@@ -38,8 +38,7 @@ setup(
     include_package_data=True,
     entry_points={
         'console_scripts': [
-            'ledfx = ledfxcontroller.__main__:main',
-            'ledfx2 = ledfxcontroller.__main__:main'
+            'ledfx = ledfxcontroller.__main__:main'
         ]
     }
 )
