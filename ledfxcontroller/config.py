@@ -16,7 +16,8 @@ port: 8888
 
 # Device setup
 # devices:
-#   - type: e131
+#   test_device_1:
+#     type: e131
 #     name: Test Device
 #     host: 192.168.1.100
 #     pixel_count: 100
@@ -61,9 +62,9 @@ def ensure_config_file(config_dir: str) -> str:
     ensure_config_directory(config_dir)
     config_path = get_config_file(config_dir)
     if config_path is None:
+        config_path = create_default_config(config_dir)
         print(('Failed to find configuration file. Creating default configuration '
             'file in {}').format(config_path))
-        config_path = create_default_config(config_dir)
 
     return config_path
 
