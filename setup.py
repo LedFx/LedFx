@@ -20,7 +20,7 @@ REQUIRES = [
     'aiohttp==3.3.2',
     'aiohttp_jinja2==1.0.0',
     'pyyaml>=3.11,<4',
-    'pypiwin32>=223'
+    'pypiwin32>=223;platform_system=="Windows"'
 ]
 
 setup(
