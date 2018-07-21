@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 from datetime import datetime as dt
-from setuptools import setup
+from setuptools import setup, find_packages
 import ledfxcontroller.consts as const
 
 PROJECT_PACKAGE_NAME = 'ledfxcontroller'
@@ -9,7 +9,7 @@ PROJECT_VERSION = const.PROJECT_VERSION
 PROJECT_LICENSE = 'The MIT License'
 PROJECT_AUTHOR = 'Austin Hodges'
 PROJECT_AUTHOR_EMAIL = 'austin.b.hodges@gmail.com'
-PROJECT_URL = 'http://...'
+PROJECT_URL = 'http://github.com/ahodges9/ledfx'
 
 REQUIRES = [
     'numpy==1.13.3',
@@ -32,9 +32,6 @@ setup(
     url=PROJECT_URL,
     install_requires=REQUIRES,
     python_requires=const.REQUIRED_PYTHON_STRING,
-    package_data={
-        '': ['frontend/*.*']
-    },
     include_package_data=True,
     entry_points={
         'console_scripts': [
