@@ -27,7 +27,7 @@ CORE_CONFIG_SCHEMA = vol.Schema({
     vol.Required('host'): str,
     vol.Required('port'): int,
     vol.Optional('max_workers'): int,
-    vol.Optional('devices', default = []): dict
+    vol.Optional('devices', default = {}): dict
 })
 
 def get_default_config_directory() -> str:
