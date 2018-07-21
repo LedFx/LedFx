@@ -1,5 +1,6 @@
 # Requirements. These can can be installed with:
 #   pip install -r requirements.txt
+
 numpy==1.13.3
 voluptuous==0.11.1
 pyaudio==0.2.11
@@ -7,4 +8,3 @@ sacn==1.3
 aiohttp==3.3.2
 aiohttp_jinja2==1.0.0
 pyyaml>=3.11,<4
-pypiwin32>=223

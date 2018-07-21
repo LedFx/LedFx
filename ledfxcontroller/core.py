@@ -54,15 +54,6 @@ class LedFxController(object):
         async_fire_and_forget(
             self.async_start(open_ui = open_ui), self.loop)
 
-        # Windows does not seem to handle Ctrl+C well so as a workaround
-        # register a handler and manually stop the app
-        if sys.platform == 'win32':
-            import win32api
-            def handle_win32_interrupt(sig, func=None):
-                self.stop()
-                return True
-            win32api.SetConsoleCtrlHandler(handle_win32_interrupt, 1)
-
         try:
             self.loop.run_forever()
         except KeyboardInterrupt:
