@@ -124,9 +124,9 @@ class MelbankInputSource(AudioInputSource):
                                             freq_max=self._config['max_frequency'],
                                             num_fft_bands=samples,
                                             sample_rate=self._config['mic_rate'])
-        self.fft_plot_filter = ExpFilter(np.tile(1e-1, self._config['samples']), alpha_decay=0.5, alpha_rise=0.99)
+        self.fft_plot_filter = ExpFilter(np.tile(1e-1, self._config['samples']), alpha_decay=0.99, alpha_rise=0.99)
         self.mel_gain =        ExpFilter(np.tile(1e-1, self._config['samples']), alpha_decay=0.01, alpha_rise=0.99)
-        self.mel_smoothing =   ExpFilter(np.tile(1e-1, self._config['samples']), alpha_decay=0.5, alpha_rise=0.99)
+        self.mel_smoothing =   ExpFilter(np.tile(1e-1, self._config['samples']), alpha_decay=0.99, alpha_rise=0.99)
 
     @lru_cache(maxsize=32)
     def melbank(self):
@@ -155,10 +155,10 @@ class MelbankInputSource(AudioInputSource):
 
         # Scale data to values more suitable for visualization
         mel = np.sum(mel, axis=0)
-        mel = mel**2.0
+        mel = mel**1.6
 
         # Gain normalization
-        self.mel_gain.update(np.max(gaussian_filter1d(mel, sigma=1.0)))
+        self.mel_gain.update(np.max(gaussian_filter1d(mel, sigma=0.1)))
         mel /= self.mel_gain.value
         self.mel = self.mel_smoothing.update(mel)
 
