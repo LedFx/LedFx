@@ -31,7 +31,6 @@ class RestEndpoint(BaseRegistry):
         self.ledfx = ledfx
 
     async def handler(self, request: web.Request):
-
         method = getattr(self, request.method.lower(), None)
         if not method:
             raise web.HTTPMethodNotAllowed('')

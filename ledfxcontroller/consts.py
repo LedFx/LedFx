@@ -11,7 +11,7 @@ REQUIRED_PYTHON_STRING = '>={}.{}.{}'.format(
     REQUIRED_PYTHON_VERSION[1],
     REQUIRED_PYTHON_VERSION[2])
 
-PROJECT_ROOT = pathlib.Path(__file__).parent
+PROJECT_ROOT = pathlib.Path(__file__).parent.parent
 PROJECT_VERSION = __version__
 
 COLOR_TABLE = {

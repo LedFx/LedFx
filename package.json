@@ -1,0 +1,49 @@
+{
+  "name": "LedFx",
+  "version": "0.1.0",
+  "description": "LedFx",
+  "main": "index.js",
+  "scripts": {
+    "build": "webpack -p --progress --config webpack.config.js",
+    "dev-build": "webpack --progress -d --config webpack.config.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "watch": "webpack --progress -d --config webpack.config.js --watch"
+  },
+  "author": "Austin Hodges",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ahodges9/ledfx.git"
+  },
+  "devDependencies": {
+    "autoprefixer": "^7.1.6",
+    "axios": "^0.18.0",
+    "babel-core": "^6.26.0",
+    "babel-loader": "^7.1.2",
+    "babel-preset-env": "^1.6.1",
+    "babel-preset-react": "^6.24.1",
+    "css-loader": "^0.28.7",
+    "extract-text-webpack-plugin": "^3.0.2",
+    "file-loader": "^1.1.11",
+    "normalize.css": "^7.0.0",
+    "postcss-loader": "^2.0.8",
+    "react": "^16.0.0",
+    "react-dom": "^16.0.0",
+    "style-loader": "^0.19.0",
+    "webpack": "^3.8.1"
+  },
+  "babel": {
+    "presets": [
+      "env",
+      "react"
+    ]
+  },
+  "dependencies": {
+    "@material-ui/core": "^1.4.0",
+    "@material-ui/icons": "^1.1.0",
+    "history": "^4.7.2",
+    "react-event-listener": "^0.6.1",
+    "react-router-dom": "^4.3.1",
+    "react-transition-group": "^2.4.0"
+  }
+}

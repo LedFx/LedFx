@@ -7,4 +7,4 @@ devices:
     name: Sample Device
     host: 192.168.1.100
     pixel_count: 100
-    max_brightness: 0.25
+    max_brightness: 0.25a

@@ -1,11 +1,16 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
 
-{% set title = "Dashboard" %}
+<html>
 
-{% block content %}
-{% if devices %}
-    <p>You have {{ devices |length }} device(s) configured!</p>
-{% else %}
-    <p>No devices in configuration file</p>
-{% endif %}
-{% endblock %}
+  <head>
+    <link rel="stylesheet" type="text/css" href="{{ url('static', filename='./style.css') }}"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500"/>
+  </head>
+
+  <body>
+    <div id="main"></div>
+
+    <script type="text/javascript" src="{{ url('static', filename='./bundle.js') }}"></script>
+  </body>
+
+</html>
