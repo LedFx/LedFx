@@ -10,6 +10,7 @@ import json
 
 _LOGGER = logging.getLogger(__name__)
 
+
 class LedFxControllerHTTP(object):
     def __init__(self, ledfx, host, port):
         """Initialize the HTTP server"""
@@ -17,7 +18,8 @@ class LedFxControllerHTTP(object):
         self.app = web.Application(loop=ledfx.loop)
         self.api = RestApi(ledfx)
         aiohttp_jinja2.setup(
-            self.app, loader=jinja2.PackageLoader('ledfxcontroller', 'frontend'))
+            self.app,
+            loader=jinja2.PackageLoader('ledfxcontroller', 'frontend'))
         self.register_routes()
 
         self.ledfx = ledfx
@@ -26,13 +28,12 @@ class LedFxControllerHTTP(object):
 
     @aiohttp_jinja2.template('index.html')
     async def index(self, request):
-        return { }
+        return {}
 
     def register_routes(self):
         self.api.register_routes(self.app)
-        self.app.router.add_static('/static',
-                        path=PROJECT_ROOT / 'frontend_dist',
-                        name='static')
+        self.app.router.add_static(
+            '/static', path=PROJECT_ROOT / 'frontend_dist', name='static')
 
         self.app.router.add_route('get', '/', self.index)
         self.app.router.add_route('get', '/{extra:.+}', self.index)
@@ -46,7 +47,7 @@ class LedFxControllerHTTP(object):
         except OSError as error:
             _LOGGER.error("Failed to create HTTP server at port %d: %s",
                           self.port, error)
-        
+
         self.base_url = ('http://{}:{}').format(self.host, self.port)
         print(('Started webinterface at {}').format(self.base_url))
 

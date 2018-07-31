@@ -10,6 +10,7 @@ import pkgutil
 
 _LOGGER = logging.getLogger(__name__)
 
+
 def async_fire_and_forget(coro, loop):
     """Run some code in the core event loop without a result"""
 
@@ -23,10 +24,12 @@ def async_fire_and_forget(coro, loop):
     loop.call_soon_threadsafe(callback)
     return
 
+
 def async_callback(loop, callback, *args):
     """Run a callback in the event loop with access to the result"""
 
     future = concurrent.futures.Future()
+
     def run_callback():
         try:
             future.set_result(callback(*args))
@@ -40,6 +43,7 @@ def async_callback(loop, callback, *args):
     loop.call_soon_threadsafe(run_callback)
     return future
 
+
 def hasattr_explicit(cls, attr):
     """Returns if the given object has explicitly declared an attribute"""
     try:
@@ -47,12 +51,14 @@ def hasattr_explicit(cls, attr):
     except AttributeError:
         return False
 
+
 def getattr_explicit(cls, attr, *default):
     """Gets an explicit attribute from an object"""
 
     if len(default) > 1:
-        raise TypeError("getattr_explicit expected at most 3 arguments, got {}".format(
-            len(default) + 2))
+        raise TypeError(
+            "getattr_explicit expected at most 3 arguments, got {}".format(
+                len(default) + 2))
 
     if hasattr_explicit(cls, attr):
         return getattr(cls, attr, default)
@@ -61,6 +67,7 @@ def getattr_explicit(cls, attr, *default):
 
     raise AttributeError("type object '{}' has no attribute '{}'.".format(
         cls.__name__, attr))
+
 
 class BaseRegistry(ABC):
     """
@@ -97,7 +104,8 @@ class BaseRegistry(ABC):
         """Returns the extended schema of the class"""
 
         if extended is False:
-            return getattr_explicit(type(self), self._schema_attr, vol.Schema({}))
+            return getattr_explicit(
+                type(self), self._schema_attr, vol.Schema({}))
 
         schema = vol.Schema({}, extra=extra)
         classes = inspect.getmro(self)[::-1]
@@ -129,6 +137,7 @@ class BaseRegistry(ABC):
         """Returns the config for the object"""
         return getattr(self, '_config', None)
 
+
 class RegistryLoader(object):
     """Manages loading of compoents for a given registry"""
 
@@ -155,11 +164,11 @@ class RegistryLoader(object):
     def discover_modules(self, package):
         """Discovers all modules in the package"""
         module = importlib.import_module(package)
-        
+
         found = []
         for _, name, _ in pkgutil.iter_modules(module.__path__, package + '.'):
             found.append(name)
-        
+
         return found
 
     def __iter__(self):
@@ -180,7 +189,7 @@ class RegistryLoader(object):
         """Returns all the created objects"""
         return self._objects.values()
 
-    def reload(self, force = False):
+    def reload(self, force=False):
         """Reloads the registry"""
 
         # TODO: Deteremine exactly how to reload. This seems to work sometimes
@@ -188,26 +197,28 @@ class RegistryLoader(object):
         # system cash to ensure everything gets reloaded
         self.import_registry(self._package)
 
-    def create(self, name, config = {}, id = None, *args):
+    def create(self, name, config={}, id=None, *args):
         """Loads and creates a object from the registry by name"""
 
         if name not in self._cls.registry():
-            raise AttributeError(("Couldn't find '{}' in the {} registry").format(
-                name, self._cls.__name__.lower()))
+            raise AttributeError(
+                ("Couldn't find '{}' in the {} registry").format(
+                    name, self._cls.__name__.lower()))
         if id is None:
             id = self._object_id
             self._object_id = self._object_id + 1
         if id in self._objects:
-            raise AttributeError(("Object with id '{}' already created").format(id))
+            raise AttributeError(
+                ("Object with id '{}' already created").format(id))
 
-        # Create the new object based on the registry entires and 
+        # Create the new object based on the registry entires and
         # validate the schema.
         _cls = self._cls.registry().get(name)
         if config is not None:
             config = _cls.schema()(config)
-            obj =  _cls(config, *args)
+            obj = _cls(config, *args)
         else:
-            obj =  _cls(*args)
+            obj = _cls(*args)
 
         # Attach some common properties
         setattr(obj, '_id', id)
@@ -220,7 +231,8 @@ class RegistryLoader(object):
     def destroy(self, id):
 
         if id not in self._objects:
-            raise AttributeError(("Object with id '{}' does not exist.").format(id))
+            raise AttributeError(
+                ("Object with id '{}' does not exist.").format(id))
         del self._objects[id]
 
     def get(self, id):

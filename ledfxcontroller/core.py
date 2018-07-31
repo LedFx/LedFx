@@ -15,8 +15,8 @@ from ledfxcontroller.config import load_config, save_config
 
 _LOGGER = logging.getLogger(__name__)
 
-class LedFxController(object):
 
+class LedFxController(object):
     def __init__(self, config_dir):
         self.config_dir = config_dir
         self.config = load_config(config_dir)
@@ -31,49 +31,49 @@ class LedFxController(object):
         self.loop.set_default_executor(self.executor)
         self.loop.set_exception_handler(self.loop_exception_handler)
 
-        self.http = LedFxControllerHTTP(ledfx = self,
-            host = self.config['host'], 
-            port = self.config['port'])
+        self.http = LedFxControllerHTTP(
+            ledfx=self, host=self.config['host'], port=self.config['port'])
         self.exit_code = None
-
 
     def loop_exception_handler(self, loop, context):
         kwargs = {}
         exception = context.get('exception')
         if exception:
             kwargs['exc_info'] = (type(exception), exception,
-                                exception.__traceback__)
+                                  exception.__traceback__)
 
-        _LOGGER.error('Exception in core event loop: {}'.format(
-            context['message']), **kwargs)
+        _LOGGER.error(
+            'Exception in core event loop: {}'.format(context['message']),
+            **kwargs)
 
     async def flush_loop(self):
         await asyncio.sleep(0, loop=self.loop)
 
-    def start(self, open_ui = False):
-        async_fire_and_forget(
-            self.async_start(open_ui = open_ui), self.loop)
+    def start(self, open_ui=False):
+        async_fire_and_forget(self.async_start(open_ui=open_ui), self.loop)
 
         # Windows does not seem to handle Ctrl+C well so as a workaround
         # register a handler and manually stop the app
         if sys.platform == 'win32':
             import win32api
+
             def handle_win32_interrupt(sig, func=None):
                 self.stop()
                 return True
+
             win32api.SetConsoleCtrlHandler(handle_win32_interrupt, 1)
 
         try:
             self.loop.run_forever()
         except KeyboardInterrupt:
-            self.loop.call_soon_threadsafe(
-                self.loop.create_task, self.async_stop())
+            self.loop.call_soon_threadsafe(self.loop.create_task,
+                                           self.async_stop())
             self.loop.run_forever()
         finally:
             self.loop.close()
         return self.exit_code
 
-    async def async_start(self, open_ui = False):
+    async def async_start(self, open_ui=False):
         _LOGGER.info("Starting LedFxController")
         await self.http.start()
 
@@ -96,7 +96,7 @@ class LedFxController(object):
         self.devices.clear_all_effects()
 
         # Save the configuration before shutting down
-        save_config(config = self.config, config_dir = self.config_dir)
+        save_config(config=self.config, config_dir=self.config_dir)
 
         await self.flush_loop()
         self.executor.shutdown()
