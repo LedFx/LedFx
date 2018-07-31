@@ -24,7 +24,8 @@ const viewRoutes = [
   },
   {
     path: "/devices/:device_id",
-    component: DeviceView
+    component: DeviceView,
+    navbarName: "Devices",
   },
   { redirect: true, path: "/", to: "/dashboard", navbarName: "Redirect" }
 ];

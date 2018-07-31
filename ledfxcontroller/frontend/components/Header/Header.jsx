@@ -1,6 +1,7 @@
 import React from "react";
 import classNames from "classnames";
 import PropTypes from "prop-types";
+import { connect } from "react-redux";
 
 import withStyles from "@material-ui/core/styles/withStyles";
 import AppBar from "@material-ui/core/AppBar";
@@ -24,6 +25,15 @@ class Header extends React.Component {
       }
       return null;
     });
+    if (!name) {
+      const path = this.props.location.pathname
+      if (path.startsWith("/devices/")) {
+        const deviceId = path.replace("/devices/", "");
+        const deviceName = this.props.devicesById[deviceId] != undefined ?
+          this.props.devicesById[deviceId].config.name : ""
+        name = "Devices / " + deviceName
+      }
+    }
     return name;
   }
 
@@ -54,4 +64,12 @@ Header.propTypes = {
   classes: PropTypes.object.isRequired
 };
 
-export default withStyles(headerStyle)(Header);
+function mapStateToProps(state) {
+  const { devicesById } = state
+
+  return {
+    devicesById
+  }
+}
+
+export default  connect(mapStateToProps)(withStyles(headerStyle)(Header));

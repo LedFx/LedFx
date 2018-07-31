@@ -1,5 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import { connect } from 'react-redux'
 import { withStyles } from '@material-ui/core/styles';
 import ListSubheader from '@material-ui/core/ListSubheader';
 import Table from '@material-ui/core/Table';
@@ -47,7 +48,7 @@ const styles = theme => ({
 class DevicesTable extends React.Component {
 
   render() {
-    const { classes, devices } = this.props;
+    const { classes, devicesById } = this.props;
 
     return (
       <div className={classes.tableResponsive}>
@@ -61,9 +62,10 @@ class DevicesTable extends React.Component {
         </TableHead>
 
         <TableBody>
-          {devices.map(device => {
+          {
+            Object.keys(devicesById).map(device_id => {
             return (
-              <DevicesTableItem device={device}/>
+              <DevicesTableItem key={device_id} device={devicesById[device_id]}/>
             );
           })}
         </TableBody>
@@ -75,6 +77,15 @@ class DevicesTable extends React.Component {
 
 DevicesTable.propTypes = {
   classes: PropTypes.object.isRequired,
+  devicesById: PropTypes.object.isRequired,
 };
 
-export default withStyles(styles)(DevicesTable);
+function mapStateToProps(state) {
+  const { devicesById } = state
+
+  return {
+    devicesById
+  }
+}
+
+export default  connect(mapStateToProps)(withStyles(styles)(DevicesTable));

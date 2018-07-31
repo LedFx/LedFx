@@ -13,6 +13,7 @@ import {
       flexGrow: 1,
       backgroundColor: theme.palette.background.default,
       padding: theme.spacing.unit * 3,
+      minWidth: 200
     },
     toolbar: theme.mixins.toolbar,
   });

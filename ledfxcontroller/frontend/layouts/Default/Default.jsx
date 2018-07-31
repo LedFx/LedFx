@@ -1,4 +1,6 @@
 import React from "react";
+import { connect } from 'react-redux'
+import { fetchDeviceList, fetchEffectListIfNeeded } from 'frontend/actions'
 import PropTypes from "prop-types";
 import { Switch, Route, Redirect } from "react-router-dom";
 
@@ -20,21 +22,8 @@ import cyan from '@material-ui/core/colors/cyan';
 import green from '@material-ui/core/colors/green';
 
 import CssBaseline from '@material-ui/core/CssBaseline';
-import "frontend/style.css"
 
 
-const switchViewRoutes = (
-  <Switch>
-    {
-      viewRoutes.map((prop, key) => {
-        if (prop.redirect) {
-          return <Redirect from={prop.path} to={prop.to} key={key} />;
-        }
-        return <Route exact path={prop.path} component={prop.component} key={key} />;
-      })
-    }
-  </Switch>
-);
 
 
 const defaultTheme = createMuiTheme({
@@ -57,16 +46,23 @@ class DefaultLayout extends React.Component {
     if (e.history.location.pathname !== e.location.pathname) {
       this.refs.root.scrollTop = 0;
       if (this.state.mobileOpen) {
-        this.setState({ mobileOpen: false });
+        var newState = Object.assign({}, this.state, { mobileOpen: false })
+        this.setState(newState);
       }
     }
+  }
+
+  componentDidMount() {
+    this.props.dispatch(fetchDeviceList())
+    this.props.dispatch(fetchEffectListIfNeeded())
   }
 
   render() {
     const { classes, rest } = this.props;
 
     var handleDrawerToggle = () => {
-      this.setState({ mobileOpen: !this.state.mobileOpen });
+      var newState = Object.assign({}, this.state, { mobileOpen: !this.state.mobileOpen })
+      this.setState(newState);
     };
 
     return (
@@ -88,7 +84,16 @@ class DefaultLayout extends React.Component {
           <div className={classes.content}>
 
             <div className={classes.toolbar} />
-            {switchViewRoutes}
+            <Switch>
+            {
+              viewRoutes.map((prop, key) => {
+                if (prop.redirect) {
+                  return <Redirect from={prop.path} to={prop.to} key={key} />;
+                }
+                return <Route exact path={prop.path} component={prop.component} key={key} />;
+              })
+            }
+            </Switch>
           </div>
         </MuiThemeProvider>
 
@@ -98,7 +103,17 @@ class DefaultLayout extends React.Component {
 }
 
 DefaultLayout.propTypes = {
-  classes: PropTypes.object.isRequired
+  classes: PropTypes.object.isRequired,
+  devicesById: PropTypes.object.isRequired,
 };
 
-export default withStyles(dashboardStyle)(DefaultLayout);
+function mapStateToProps(state) {
+  const { devicesById, effects } = state
+
+  return {
+    devicesById,
+    effects
+  }
+}
+
+export default  connect(mapStateToProps)(withStyles(dashboardStyle)(DefaultLayout));

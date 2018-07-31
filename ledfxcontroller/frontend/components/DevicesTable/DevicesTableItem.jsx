@@ -58,7 +58,7 @@ class DevicesTableItem extends React.Component {
                 to={'/devices/' + device.id}
                 className={classes.deviceLink}
                 key={device.id}>
-                  {device.name}
+                  {device.config.name}
                 </NavLink>
             </TableCell>
             <TableCell className={classes.tableCell}>
