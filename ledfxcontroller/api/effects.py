@@ -1,6 +1,6 @@
 from ledfxcontroller.api import RestEndpoint
 from aiohttp import web
-from ledfxcontroller.api.utils import (convertToJson )
+from ledfxcontroller.api.utils import convertToJsonSchema
 import logging
 import json
 
@@ -18,7 +18,7 @@ class EffectsEndpoint(RestEndpoint):
         }
         for effect_type, effect in self.ledfx.effects.classes().items():
             response['effects'][effect_type] = {
-                'schema': convertToJson(effect.schema()),
+                'schema': convertToJsonSchema(effect.schema()),
                 'id': effect_type,
                 'name': effect.NAME
             }

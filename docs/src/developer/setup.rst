@@ -5,11 +5,11 @@ Development Setup
 Building LedFx Backend
 ================================
 
-In order to start developing with LedFx's core back-end you should first enabled development mode to prevent having to constantly reinstall:
+In order to start developing with LedFx's core backend you should first enabled development mode to prevent having to constantly reinstall:
 
 .. code:: bash
 
-    setup.py develop
+    python setup.py develop
 
 This will let you run LedFx directly from your Git repository via:
 

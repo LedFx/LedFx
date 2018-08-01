@@ -22,7 +22,7 @@ function receiveEffectList(json) {
 function fetchEffectList() {
   return dispatch => {
     dispatch(requestEffectList());
-    return fetch(`${apiUrl}/effects`)
+    return fetch(`${apiUrl}/schema/effects`)
       .then(response => response.json())
       .then(json => dispatch(receiveEffectList(json)));
   };

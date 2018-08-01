@@ -11,7 +11,7 @@ To install LedFx first clone (or download) the repository and then simply run th
 
 .. code:: bash
 
-    setup.py install
+    python setup.py install
     ledfx --open-ui
 
 Links

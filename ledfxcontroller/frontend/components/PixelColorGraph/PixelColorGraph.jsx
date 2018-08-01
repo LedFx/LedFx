@@ -3,7 +3,7 @@ import PropTypes from "prop-types";
 import Card from "@material-ui/core/Card";
 import CardContent from "@material-ui/core/CardContent";
 import withStyles from "@material-ui/core/styles/withStyles";
-import Line from 'react-chartjs-2';
+import { Line } from 'react-chartjs-2';
 import Sockette from 'sockette';
 
 const styles = theme => ({
@@ -18,8 +18,8 @@ class PixelColorGraph extends React.Component {
   constructor(props) {
     super(props)
 
+    this.pixelIntervalId = 0
     this.state = {
-      pixelIntervalId: undefined,
       chartData:  {
         labels: [],
         datasets: [
@@ -106,18 +106,16 @@ class PixelColorGraph extends React.Component {
   }
 
   enablePixelVisualization = () => {
-    var intervalId = setInterval(function() {
+    this.pixelIntervalId = setInterval(function() {
       this.state.ws.json({id: 0, type: 'get_pixels', device_id: this.props.deviceId});
     }.bind(this), 100)
-
-    this.setState(...this.state, {pixelIntervalId: intervalId})
   }
 
   disablePixelVisualization = () => {
-    if (this.state.pixelIntervalId != undefined)
+    if (this.pixelIntervalId != undefined)
     {
-      clearInterval(this.state.pixelIntervalId)
-      this.setState(...this.state, {pixelIntervalId: undefined})
+      clearInterval(this.pixelIntervalId)
+      this.pixelIntervalId = undefined
     }
   }
 
@@ -137,7 +135,7 @@ class PixelColorGraph extends React.Component {
 
   disconnectWebsocket = () => {
     if (this.state.ws != undefined) {
-      ws.close();
+      this.state.ws.close();
       this.setState(...this.state, {ws: undefined});
     }
   }
@@ -147,7 +145,8 @@ class PixelColorGraph extends React.Component {
   }
 
   componentWillUnmount() {
-    this.disconnectWebsocket()
+    this.disconnectWebsocket();
+    this.disablePixelVisualization();
   }
 
   render() {

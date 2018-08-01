@@ -17,7 +17,7 @@ def createRegistrySchema(registry):
 
     class_schema_list = []
     for class_type, class_obj in registry.classes().items():
-        obj_schema = convertToJson(class_obj.schema())
+        obj_schema = convertToJsonSchema(class_obj.schema())
         obj_schema['properties']['registry_type'] = {"enum": [class_type]}
         class_schema_list.append(obj_schema)
 
@@ -78,6 +78,7 @@ def convertToJsonSchema(schema):
 
         if required_vals:
             val['required'] = required_vals
+
         return val
 
     if isinstance(schema, vol.All):

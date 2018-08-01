@@ -29,8 +29,6 @@ class DevicesView extends React.Component {
   }
 
   componentDidMount() {
-    console.log('componentDidMount');
-
     getDevices().then(devices => {
       this.setState({ devices: devices });
     }).catch(error => console.log(error));
