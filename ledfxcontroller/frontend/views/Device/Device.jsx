@@ -7,6 +7,10 @@ import CardContent from "@material-ui/core/CardContent";
 
 import { callApi, getDevice } from "frontend/utils/api";
 import EffectControl from "frontend/components/EffectControl/EffectControl.jsx";
+
+
+import SchemaFormCollection from 'frontend/components/SchemaForm/SchemaFormCollection.jsx'
+
 import PixelColorGraph from "frontend/components/PixelColorGraph/PixelColorGraph.jsx";
 
 const baseStyle = theme => ({

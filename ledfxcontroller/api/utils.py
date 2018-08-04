@@ -3,6 +3,7 @@ import collections
 import json
 import re
 import voluptuous as vol
+from ledfxcontroller.utils import generate_title
 
 TYPES_MAP = {
     int: 'integer',
@@ -38,10 +39,6 @@ def createRegistrySchema(registry):
         }
     }
 
-def generateTitle(title):
-    """Converts an id to a more human readable title"""
-    return re.sub('[^a-zA-Z0-9]', ' ', title).title()
-
 def convertToJsonSchema(schema):
     """
     Converts a voluptuous schema to a JSON schema compatible
@@ -64,7 +61,7 @@ def convertToJsonSchema(schema):
                 pkey = key
 
             pval = convertToJsonSchema(value)
-            pval['title'] = generateTitle(pkey)
+            pval['title'] = generate_title(pkey)
             if description is not None:
                 pval['description'] = description
 

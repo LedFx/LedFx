@@ -1,10 +1,10 @@
 import { combineReducers } from 'redux'
-import { effects } from './effects'
 import { devicesById } from './devices'
+import { schemas } from './schemas'
 
 const rootReducer = combineReducers({
     devicesById,
-    effects
+    schemas,
 })
 
 export default rootReducer

@@ -2,20 +2,14 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux'
 import { withStyles } from '@material-ui/core/styles';
-import ListSubheader from '@material-ui/core/ListSubheader';
 import Table from '@material-ui/core/Table';
 import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
 import TableCell from '@material-ui/core/TableCell';
 import TableBody from '@material-ui/core/TableBody';
-import Typography from '@material-ui/core/Typography';
-import DraftsIcon from '@material-ui/icons/Drafts';
-import SendIcon from '@material-ui/icons/Send';
-import ExpandLess from '@material-ui/icons/ExpandLess';
-import ExpandMore from '@material-ui/icons/ExpandMore';
-import StarBorder from '@material-ui/icons/StarBorder';
 
 import DevicesTableItem from 'frontend/components/DevicesTable/DevicesTableItem.jsx'
+import { deleteDevice } from 'frontend/actions'
 
 const styles = theme => ({
   root: {
@@ -47,6 +41,10 @@ const styles = theme => ({
 
 class DevicesTable extends React.Component {
 
+  handleDeleteDevice = deviceId => {
+    this.props.dispatch(deleteDevice(deviceId))
+  }
+
   render() {
     const { classes, devicesById } = this.props;
 
@@ -65,7 +63,7 @@ class DevicesTable extends React.Component {
           {
             Object.keys(devicesById).map(device_id => {
             return (
-              <DevicesTableItem key={device_id} device={devicesById[device_id]}/>
+              <DevicesTableItem key={device_id} device={devicesById[device_id]} onDelete={this.handleDeleteDevice}/>
             );
           })}
         </TableBody>

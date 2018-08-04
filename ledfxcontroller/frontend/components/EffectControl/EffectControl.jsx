@@ -13,7 +13,8 @@ import FormControl from '@material-ui/core/FormControl';
 import Button from '@material-ui/core/Button';
 import withStyles from "@material-ui/core/styles/withStyles";
 
-import SchemaForm from 'frontend/components/SchemaForm/SchemaForm.jsx'
+import SchemaFormCollection from 'frontend/components/SchemaForm/SchemaFormCollection.jsx'
+
 import setDeviceEffect from 'frontend/actions'
 
 import fetch from 'cross-fetch'
@@ -27,9 +28,7 @@ const styles = theme => ({
   },
   button: {
     margin: theme.spacing.unit,
-    marginBottom: theme.spacing.unit * 2,
     float: 'right',
-    display: 'inline-block'
   }
 });
 
@@ -52,53 +51,37 @@ class EffectControl extends React.Component {
         method: 'DELETE'})
   };
 
-  handleSetEffect = value => {
-
-    const data = {
-      type: this.state.effectType,
-      config: value,
-    }
-    console.log(value)
-    fetch(`http://127.0.0.1:8888/api/devices/${this.props.deviceId}/effects`, {
-        method: 'PUT',
-        headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data)
-        })
+  handleSetEffect = (type, config) => {
+    console.log("handleSetEffect", type, config)
+    fetch(`${window.location.protocol}//${window.location.host}/api/devices/${this.props.deviceId}/effects`, {
+      method: 'PUT',
+      headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        type: type,
+        config: config,
+      })
+    })
   };
 
   render() {
-    const { classes, effects } = this.props;
+    const { classes, schemas } = this.props;
 
-    if (effects) {
-      var properties = this.state.effectType !== "" ? 
-        effects[this.state.effectType].schema['properties'] : {};
+    if (schemas.effects) {
 
       return (
         <Card>
           <CardContent>
-          <FormControl className={classes.formControl}>
-            <InputLabel htmlFor="effect-simple">Effect Type</InputLabel>
-            <Select
-              value={this.state.effectType}
-              onChange={this.handleChangeSelectedEffect}
-              inputProps={{
-                name: "effectType",
-                id: "effect-simple"
-              }}>
-              <MenuItem value="">
-                <em>None</em>
-              </MenuItem>
-              {Object.keys(effects).map((effect_type, effect) => {
-                return <MenuItem key={effect_type} value={effect_type}>{effect_type}</MenuItem>;
-              })}
-            </Select>
-            </FormControl>
-              <SchemaForm onSubmit={this.handleSetEffect} submitText="Set Effect" properties={properties}/>
-              <Button className={classes.button} onClick={this.handleClearEffect}>Clear Effect</Button>
-              <br/>
+            <SchemaFormCollection schemaCollection={schemas.effects} onSubmit={this.handleSetEffect}>
+              <Button className={classes.button} type="submit" variant="contained" color="primary">
+                Set Effect
+              </Button>
+              <Button className={classes.button} onClick={this.handleClearEffect} color="primary">
+                Clear Effect
+              </Button>
+            </SchemaFormCollection>
           </CardContent>
         </Card>
       );
@@ -114,17 +97,17 @@ class EffectControl extends React.Component {
 
 EffectControl.propTypes = {
   classes: PropTypes.object.isRequired,
-  effects: PropTypes.object.isRequired,
+  schemas: PropTypes.object.isRequired,
   devicesById: PropTypes.object.isRequired,
   deviceId: PropTypes.string.isRequired
 };
 
 function mapStateToProps(state) {
-  const { devicesById, effects } = state
+  const { devicesById, schemas } = state
 
   return {
     devicesById,
-    effects
+    schemas
   }
 }
 

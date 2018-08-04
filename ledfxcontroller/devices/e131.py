@@ -12,10 +12,10 @@ class E131Device(Device):
 
     CONFIG_SCHEMA = vol.Schema({
         vol.Required('host'): str,
-        vol.Required('universe', default=1): int,
-        vol.Required('universe_size', default=512): int,
-        vol.Required('channel_offset', default=1): int,
-        vol.Required(vol.Any('pixel_count', 'channel_count')): vol.Coerce(int)
+        vol.Required('pixel_count'): vol.Coerce(int),
+        vol.Optional('universe', default=1): int,
+        vol.Optional('universe_size', default=512): int,
+        vol.Optional('channel_offset', default=1): int
     })
 
     def __init__(self, config):

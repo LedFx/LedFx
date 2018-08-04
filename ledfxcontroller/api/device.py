@@ -43,7 +43,10 @@ class DeviceEndpoint(RestEndpoint):
             name = device_config.get('type'))
 
         # Update and save the configuration
-        self.ledfx.config['devices'][device_id] = device_config
+        for device in self.ledfx.config['devices']:
+            if (device['id'] == device_id):
+                device['config'] = device_config
+                break
         save_config(
             config = self.ledfx.config, 
             config_dir = self.ledfx.config_dir)
@@ -60,7 +63,7 @@ class DeviceEndpoint(RestEndpoint):
         self.ledfx.devices.destroy(device_id)
 
         # Update and save the configuration
-        del self.ledfx.config['devices'][device_id]
+        self.ledfx.config['devices'] = [device for device in self.ledfx.config['devices'] if device['id'] != device_id]
         save_config(
             config = self.ledfx.config, 
             config_dir = self.ledfx.config_dir)

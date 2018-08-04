@@ -41,16 +41,12 @@ import { Link } from 'react-router-dom'
 
 class DevicesTableItem extends React.Component {
 
-    handleDeleteDevice() {
-        this.setState({ open: true });
-      }
-
-      handleNavigateDevice() {
-        this.setState({ open: true });
-      }
+  handleDeleteDevice = () => {
+    this.props.onDelete(this.props.device.id)
+  }
 
   render() {
-    const { classes, device } = this.props;
+    const { classes, device, onDelete } = this.props;
     return (
         <TableRow key={device.id}>
             <TableCell component="th" scope="row">
@@ -62,7 +58,7 @@ class DevicesTableItem extends React.Component {
                 </NavLink>
             </TableCell>
             <TableCell className={classes.tableCell}>
-                {device.config.type}
+                {device.type}
             </TableCell>
             <TableCell className={classes.tableCell} numeric>
             <Button variant="contained" size="small" className={classes.deleteButton} onClick={this.handleDeleteDevice} >
@@ -76,7 +72,8 @@ class DevicesTableItem extends React.Component {
 
 DevicesTableItem.propTypes = {
   classes: PropTypes.object.isRequired,
-  device: PropTypes.object.isRequired
+  device: PropTypes.object.isRequired,
+  onDelete: PropTypes.func.isRequired
 };
 
 export default withStyles(styles)(DevicesTableItem);

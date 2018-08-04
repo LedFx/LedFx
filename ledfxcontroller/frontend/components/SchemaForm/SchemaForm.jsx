@@ -1,133 +1,207 @@
 import React from "react";
 import PropTypes from "prop-types";
-import Button from "@material-ui/core/Button";
-import TextField from "@material-ui/core/TextField";
-import InputLabel from "@material-ui/core/InputLabel";
-import FormControlLabel from "@material-ui/core/FormControlLabel";
-import Checkbox from "@material-ui/core/Checkbox";
-import FormControl from "@material-ui/core/FormControl";
 import withStyles from "@material-ui/core/styles/withStyles";
 
+import Button from "@material-ui/core/Button";
+import Collapse from "@material-ui/core/Collapse";
+
+import CustomTextField from "frontend/components/SchemaForm/CustomTextField.jsx";
+import CustomCheckbox from "frontend/components/SchemaForm/CustomCheckbox.jsx";
+
+import { validateData } from "frontend/components/SchemaForm/Utils.jsx";
+
 const styles = theme => ({
-  formControl: {
+  flexWrap: {
+    display: "flex",
+    flexWrap: "wrap",
+    width: "100%"
+  },
+  submitControls: {
     margin: theme.spacing.unit,
-    marginLeft: theme.spacing.unit * 2,
-    minWidth: 300
-  },
-  textField: {
-    marginLeft: theme.spacing.unit,
-    marginRight: theme.spacing.unit
-  },
-  checkbox: {
-    marginLeft: theme.spacing.unit,
-    marginRight: theme.spacing.unit
+    display: "block",
+    width: "100%"
   },
   button: {
-    margin: theme.spacing.unit,
-    float: 'right',
-    display: 'inline-block'
+    float: "right"
+  },
+  additionalWrapper: {
+    display: "inline-grid"
+  },
+  additionalButton: {
+    display: "block",
+    width: "100%",
+    float: "right"
   }
 });
 
 class SchemaForm extends React.Component {
+  componentMapper = {
+    number: CustomTextField,
+    integer: CustomTextField,
+    text: CustomTextField,
+    string: CustomTextField,
+    password: CustomTextField,
+    boolean: CustomCheckbox,
+    checkbox: CustomCheckbox
+  };
+
   constructor(props) {
     super(props);
-    this.state = {};
+
+    this.state = {
+      showAdditional: false,
+      formData: {}
+    };
   }
 
-  handleChange = name => event => {
-    const { properties } = this.props;
+  validate = () => {};
 
-    var val = event.target.value;
-    if (properties[name].type === "boolean") {
-      val = event.target.checked;
-    } else if (properties[name].type === "integer") {
-      val = parseInt(event.target.value);
-    } else if (properties[name].type === "number") {
-      val = parseFloat(event.target.value);
+  handleSubmit = event => {
+    event.preventDefault();
+
+    let result = validateData(this.state.formData, this.props.schema);
+    if (result.valid && this.props.onSubmit) {
+      this.props.onSubmit(this.state.formData);
+    }
+  };
+
+  handleChange = (prop, value) => {
+    const newState = this.state;
+    if (newState.formData[prop] && value === undefined) {
+      delete newState.formData[prop];
+    } else {
+      newState.formData[prop] = value;
     }
 
-    this.setState({ [name]: val });
+    this.setState(newState);
+    if (this.props.onChange) {
+      this.props.onChange(newState.formData);
+    }
   };
 
-  handleSubmitForm = () => {
-    this.props.onSubmit(this.state);
+  showAdditional = () => {
+    this.setState(...this.state, {
+      showAdditional: !this.state.showAdditional
+    });
   };
+
+  componentDidUpdate(prevProps) {
+    if (this.props.schema !== prevProps.schema) {
+      this.setState({});
+    }
+  }
 
   render() {
-    const { classes, properties } = this.props;
-
-    var checkboxControls = Object.keys(properties)
-      .filter(key => properties[key].type === "boolean")
-      .map((key, prop) => {
-        return (
-          <FormControl key={key} className={classes.formControl}>
-            <FormControlLabel
-              control={
-                <Checkbox
-                  onChange={this.handleChange(key)}
-                  color="primary"
-                  className={classes.checkbox}
-                />
-              }
-              label={properties[key].title}
-            />
-          </FormControl>
-        )
+    const {
+      classes,
+      primaryFilter,
+      primaryOnly,
+      children,
+      className,
+      schema,
+      ...otherProps
+    } = this.props;
+    let properties = schema.properties;
+    if (schema.required) {
+      schema.required.forEach(prop => {
+        schema.properties[prop].required = true;
       });
+    }
 
-    var inputControls = Object.keys(properties)
-      .filter(key => properties[key].type !== "boolean")
-      .map((key, prop) => {
-        const isNumeric =
-          properties[key].type === "integer" ||
-          properties[key].type === "number";
-        var defaultString = undefined
-        if (properties[key].default != undefined) {
-          var description = properties[key].description != undefined ? 
-            properties[key].description + " " : ""
-          defaultString = description + "(Default: " + properties[key].default + ")";
+    let primaryKeys = Object.keys(properties);
+    let additionalKeys = [];
+    if (primaryFilter) {
+      primaryKeys = Object.keys(properties).filter(key =>
+        primaryFilter(properties[key])
+      );
+      additionalKeys = Object.keys(properties).filter(
+        key => !primaryFilter(properties[key])
+      );
+    }
+
+    let primaryControls = primaryKeys.map(key => {
+      let prop = properties[key];
+      let Input = this.componentMapper[prop.type];
+      if (!Input) {
+        console.log("Invalid property: ", prop);
+        return;
+      }
+
+      return (
+        <Input
+          {...otherProps}
+          key={key}
+          id={key}
+          schema={prop}
+          onChange={this.handleChange}
+        />
+      );
+    });
+
+    let additionUi = undefined;
+    if (!primaryOnly && additionalKeys.length > 0) {
+      let additionalControls = additionalKeys.map(key => {
+        let prop = properties[key];
+        let Input = this.componentMapper[prop.type];
+        if (!Input) {
+          console.log("Invalid property: ", prop);
+          return;
         }
+
         return (
-          <FormControl key={key} className={classes.formControl}>
-            <TextField
-              onChange={this.handleChange(key)}
-              label={properties[key].title}
-              className={classes.textField}
-              type={isNumeric ? "number" : "text"}
-              helperText={defaultString}
-              margin="dense"
-            />
-          </FormControl>
-        )
+          <Input
+            {...otherProps}
+            key={key}
+            id={key}
+            schema={prop}
+            onChange={this.handleChange}
+          />
+        );
       });
+
+      additionUi = (
+        <div className={classes.additionalWrapper}>
+          <Button
+            size="small"
+            className={classes.additionalButton}
+            onClick={this.showAdditional}
+          >
+            Additional Configuration
+          </Button>
+          <Collapse in={this.state.showAdditional}>
+            <div className={classes.flexWrap}>{additionalControls}</div>
+          </Collapse>
+        </div>
+      );
+    }
 
     return (
-      <div>
-        {inputControls}
-        <br/>
-        {checkboxControls}
-        <br/>
-        <Button
-          variant="contained"
-          color="primary"
-          className={classes.button}
-          onClick={this.handleSubmitForm}
-        >{this.props.submitText}</Button>
-      </div>
+      <form
+        onSubmit={this.handleSubmit}
+        className={`${classes.flexWrap} ${className}`}
+      >
+        {primaryControls}
+
+        {additionUi}
+
+        <div className={classes.submitControls}>
+          {children ? (
+            children
+          ) : (
+            <Button type="submit" className={classes.button}>
+              Submit
+            </Button>
+          )}
+        </div>
+      </form>
     );
   }
 }
 
-SchemaForm.defaultProps = {
-  submitText: 'Submit'
-};
-
 SchemaForm.propTypes = {
-  onSubmit: PropTypes.func.isRequired,
-  submitText: PropTypes.string,
+  onChange: PropTypes.func,
   classes: PropTypes.object.isRequired,
-  properties: PropTypes.object.isRequired
+  schema: PropTypes.object.isRequired
 };
 
 export default withStyles(styles)(SchemaForm);

@@ -1,30 +1,24 @@
 import React from "react";
-import { connect } from 'react-redux'
-import { fetchDeviceList, fetchEffectListIfNeeded } from 'frontend/actions'
+import { connect } from "react-redux";
+import {
+  fetchDeviceList,
+  fetchSchemasIfNeeded
+} from "frontend/actions";
 import PropTypes from "prop-types";
 import { Switch, Route, Redirect } from "react-router-dom";
 
 import Header from "frontend/components/Header/Header.jsx";
 import Sidebar from "frontend/components/Sidebar/Sidebar.jsx";
-
 import withStyles from "@material-ui/core/styles/withStyles";
-
-
 import viewRoutes from "frontend/routes/views.jsx";
-
-
 import dashboardStyle from "./style.jsx";
 import logo from "frontend/assets/img/logo.png";
 
+import { MuiThemeProvider, createMuiTheme } from "@material-ui/core/styles";
+import cyan from "@material-ui/core/colors/cyan";
+import green from "@material-ui/core/colors/green";
 
-import { MuiThemeProvider, createMuiTheme } from '@material-ui/core/styles';
-import cyan from '@material-ui/core/colors/cyan';
-import green from '@material-ui/core/colors/green';
-
-import CssBaseline from '@material-ui/core/CssBaseline';
-
-
-
+import CssBaseline from "@material-ui/core/CssBaseline";
 
 const defaultTheme = createMuiTheme({
   palette: {
@@ -46,22 +40,24 @@ class DefaultLayout extends React.Component {
     if (e.history.location.pathname !== e.location.pathname) {
       this.refs.root.scrollTop = 0;
       if (this.state.mobileOpen) {
-        var newState = Object.assign({}, this.state, { mobileOpen: false })
+        var newState = Object.assign({}, this.state, { mobileOpen: false });
         this.setState(newState);
       }
     }
   }
 
   componentDidMount() {
-    this.props.dispatch(fetchDeviceList())
-    this.props.dispatch(fetchEffectListIfNeeded())
+    this.props.dispatch(fetchDeviceList());
+    this.props.dispatch(fetchSchemasIfNeeded());
   }
 
   render() {
     const { classes, rest } = this.props;
 
     var handleDrawerToggle = () => {
-      var newState = Object.assign({}, this.state, { mobileOpen: !this.state.mobileOpen })
+      var newState = Object.assign({}, this.state, {
+        mobileOpen: !this.state.mobileOpen
+      });
       this.setState(newState);
     };
 
@@ -69,8 +65,6 @@ class DefaultLayout extends React.Component {
       <div className={classes.root} ref="root">
         <CssBaseline />
         <MuiThemeProvider theme={this.state.theme}>
-
-
           <Header
             handleDrawerToggle={handleDrawerToggle}
             location={this.props.location}
@@ -82,21 +76,24 @@ class DefaultLayout extends React.Component {
           />
 
           <div className={classes.content}>
-
             <div className={classes.toolbar} />
             <Switch>
-            {
-              viewRoutes.map((prop, key) => {
+              {viewRoutes.map((prop, key) => {
                 if (prop.redirect) {
                   return <Redirect from={prop.path} to={prop.to} key={key} />;
                 }
-                return <Route exact path={prop.path} component={prop.component} key={key} />;
-              })
-            }
+                return (
+                  <Route
+                    exact
+                    path={prop.path}
+                    component={prop.component}
+                    key={key}
+                  />
+                );
+              })}
             </Switch>
           </div>
         </MuiThemeProvider>
-
       </div>
     );
   }
@@ -104,16 +101,18 @@ class DefaultLayout extends React.Component {
 
 DefaultLayout.propTypes = {
   classes: PropTypes.object.isRequired,
-  devicesById: PropTypes.object.isRequired,
+  devicesById: PropTypes.object.isRequired
 };
 
 function mapStateToProps(state) {
-  const { devicesById, effects } = state
+  const { devicesById, schemas } = state;
 
   return {
     devicesById,
-    effects
-  }
+    schemas
+  };
 }
 
-export default  connect(mapStateToProps)(withStyles(dashboardStyle)(DefaultLayout));
+export default connect(mapStateToProps)(
+  withStyles(dashboardStyle)(DefaultLayout)
+);
