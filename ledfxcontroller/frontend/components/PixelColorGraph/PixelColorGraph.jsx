@@ -108,7 +108,7 @@ class PixelColorGraph extends React.Component {
   enablePixelVisualization = () => {
     this.pixelIntervalId = setInterval(function() {
       this.state.ws.json({id: 0, type: 'get_pixels', device_id: this.props.deviceId});
-    }.bind(this), 100)
+    }.bind(this), (1000 / 30))
   }
 
   disablePixelVisualization = () => {
