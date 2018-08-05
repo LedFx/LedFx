@@ -37,9 +37,6 @@ PROJECT_GITHUB_URL = 'https://github.com/{}'.format(PROJECT_GITHUB_PATH)
 sys.path.insert(0, os.path.abspath('extensions'))
 sys.path.insert(0, os.path.abspath('../../ledfxcontroller'))
 
-# -- Edit on Github configuration ---------------------------------------------------
-github_url = PROJECT_GITHUB_URL
-
 # -- General configuration ---------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
