@@ -144,8 +144,9 @@ import numpy as np
 @websocket_handler('get_pixels')
 def get_pixels_handler(conn, message):
     device = conn.ledfx.devices.get(message.get('device_id'))
-    if device is None:
+    if not device:
         conn.send_error(message['id'], 'Device not found.')
+        return
 
     rgb_x = np.arange(0, device.pixel_count).tolist()
     if device.latest_frame is not None:

@@ -16,12 +16,11 @@ _LOGGER = logging.getLogger(__name__)
 class Device(BaseRegistry):
 
     CONFIG_SCHEMA = vol.Schema({
-        vol.Required('name'): str,
-        vol.Required('type'): str,
-        vol.Optional('max_brightness', default=1.0): vol.All(vol.Coerce(float), vol.Range(min=0, max=1)),
-        vol.Optional('refresh_rate', default=60): int,
-        vol.Optional('force_refresh', default=False): bool,
-        vol.Optional('preview_only', default=False): bool
+        vol.Required('name', description='Friendly name for the device'): str,
+        vol.Optional('max_brightness', description='Max brightness for the device', default=1.0): vol.All(vol.Coerce(float), vol.Range(min=0, max=1)),
+        vol.Optional('refresh_rate', description='Rate that pixels are sent to the device', default=60): int,
+        vol.Optional('force_refresh', description='Force the device to always refresh', default=False): bool,
+        vol.Optional('preview_only', description='Preview the pixels without updating the device', default=False): bool
     })
 
     _active = False
@@ -144,11 +143,12 @@ class Devices(RegistryLoader):
         super().__init__(Device, self.PACKAGE_NAME, ledfx)
 
     def create_from_config(self, config):
-        for device_id, device_config in config.items():
+        for device in config:
+            _LOGGER.info("Loading device from config: {}".format(device))
             self.create(
-                config = device_config,
-                id = device_id,
-                name = device_config.get('type'))
+                config = device['config'],
+                id = device['id'],
+                type = device['type'])
 
     def clear_all_effects(self):
         for device in self.values():

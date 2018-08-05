@@ -1,5 +1,6 @@
 from ledfxcontroller.config import save_config
 from ledfxcontroller.api import RestEndpoint
+from ledfxcontroller.utils import generate_id
 from aiohttp import web
 import logging
 import json
@@ -14,11 +15,11 @@ class DevicesEndpoint(RestEndpoint):
     async def get(self) -> web.Response:
         response = { 'status' : 'success' , 'devices' : {}}
         for device in self.ledfx.devices.values():
-            response['devices'][device.id] = {"name": device.name}
+            response['devices'][device.id] = { 'config': device.config, 'id': device.id, 'type': device.type }
 
         return web.Response(text=json.dumps(response), status=200)
 
-    async def put(self, request) -> web.Response:
+    async def post(self, request) -> web.Response:
         data = await request.json()
 
         device_config = data.get('config')
@@ -26,29 +27,26 @@ class DevicesEndpoint(RestEndpoint):
             response = { 'status' : 'failed', 'reason': 'Required attribute "config" was not provided' }
             return web.Response(text=json.dumps(response), status=500)
 
-        device_id = data.get('id')
-        if device_id is None:
-            response = { 'status' : 'failed', 'reason': 'Required attribute "id" was not provided' }
+        device_type = data.get('type')
+        if device_type is None:
+            response = { 'status' : 'failed', 'reason': 'Required attribute "type" was not provided' }
             return web.Response(text=json.dumps(response), status=500)
 
-        # Remove the device it if already exist
-        try:
-            self.ledfx.devices.destroy(device_id)
-        except AttributeError:
-            pass
+        device_id = generate_id(device_config.get('name'))
+        # Remove the device it if already exist?
 
         # Create the device
-        _LOGGER.info("Adding device with config", device_config)
+        _LOGGER.info("Adding device of type {} with config {}".format(device_type, device_config))
         device = self.ledfx.devices.create(
-            config = device_config,
             id = device_id,
-            name = device_config.get('type'))
+            config = device_config,
+            type = device_type)
 
         # Update and save the configuration
-        self.ledfx.config['devices'][device.id] = device_config
+        self.ledfx.config['devices'].append({'id': device.id, 'type': device.type, 'config': device.config })
         save_config(
             config = self.ledfx.config, 
             config_dir = self.ledfx.config_dir)
 
-        response = { 'status' : 'success' }
+        response = { 'status' : 'success', 'device': { 'type': device.type, 'config': device.config, 'id': device.id }}
         return web.Response(text=json.dumps(response), status=200)

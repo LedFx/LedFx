@@ -11,7 +11,7 @@ class WavelengthAudioEffect(AudioReactiveEffect, GradientEffect):
     # There is no additional configuration here, but override the blur
     # default to be 3.0 so blurring is enabled.
     CONFIG_SCHEMA = vol.Schema({
-        vol.Optional('blur', default = 3.0): float
+        vol.Optional('blur', description='Amount to blur the effect', default = 3.0): vol.Coerce(float)
     })
 
     def audio_data_updated(self, data):

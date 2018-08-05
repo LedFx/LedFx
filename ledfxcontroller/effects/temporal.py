@@ -13,7 +13,7 @@ class TemporalEffect(Effect):
     _thread = None
 
     CONFIG_SCHEMA = vol.Schema({
-        vol.Required('speed', default = 1.0): float
+        vol.Optional('speed', default = 1.0, description="Speed of the effect"):  vol.Coerce(float)
     })
 
     def thread_function(self):
