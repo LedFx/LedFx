@@ -20,7 +20,7 @@ class E131Device(Device):
     })
 
     def __init__(self, config):
-        self._config = config
+        super().__init__(config)
 
         # Allow for configuring in terms of "pixels" or "channels"
         if 'pixel_count' in self._config:

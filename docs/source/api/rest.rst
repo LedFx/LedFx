@@ -24,13 +24,9 @@ GET /api/log
 ================================
 Returns the error logs for the currently active LedFx session
 
-GET /api/schema/devices
+GET /api/schema
 ================================
-Returns all the valid schemas for a LedFx device as JSON
-
-GET /api/schema/effects
-================================
-Returns all the valid schemas for a LedFx effect as JSON
+Returns all the valid schemas for a LedFx objects (i.e. effects and devices) as JSON
 
 GET /api/devices
 ================================

@@ -19,16 +19,12 @@ Links
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :glob:
+
+   developer/*
    
 .. toctree::
    :maxdepth: 1
    :glob:
 
    api/*
-
-.. toctree::
-   :maxdepth: 2
-   :glob:
-
-   developer/*
