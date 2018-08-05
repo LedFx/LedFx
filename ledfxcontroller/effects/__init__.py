@@ -113,7 +113,7 @@ class Effect(BaseRegistry):
         if not self._active:
             raise Exception('Attempting to access pixels before effect is active')
 
-        return self._pixels
+        return np.copy(self._pixels)
 
     @pixels.setter
     def pixels(self, pixels):
@@ -122,7 +122,7 @@ class Effect(BaseRegistry):
             raise Exception('Attempting to set pixels before effect is active')
 
         if isinstance(pixels, tuple):
-            self._pixels = pixels
+            self._pixels = np.copy(pixels)
         elif isinstance(pixels, np.ndarray):
 
             # Apply some of the base output filters if necessary
@@ -132,7 +132,7 @@ class Effect(BaseRegistry):
                 pixels = flip_pixels(pixels)
             if self._config['mirror']:
                 pixels = mirror_pixels(pixels)
-            self._pixels = pixels
+            self._pixels = np.copy(pixels)
         else:
             raise TypeError()
 
