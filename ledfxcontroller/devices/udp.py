@@ -28,7 +28,7 @@ class UDPDevice(Device):
 
     def flush(self, data):
         udpData = bytearray()
-        data = data.astype(np.dtype('B'))
+        byteData = data.astype(np.dtype('B'))
     
         # Append the prefix if provided
         prefix = self._config.get('data_prefix')
@@ -37,11 +37,11 @@ class UDPDevice(Device):
 
         # Append all of the pixel data
         if self._config['include_indexes']:
-            for i in range(len(data)):
+            for i in range(len(byteData)):
                 udpData.extend(bytes([i]))
-                udpData.extend(bytes(data[i].flatten()))
+                udpData.extend(byteData[i].flatten().tobytes())
         else:
-            udpData.extend(bytes(data.flatten()))
+            udpData.extend(byteData.flatten().tobytes())
 
         # Append the postfix if provided
         postfix = self._config.get('data_postfix')
