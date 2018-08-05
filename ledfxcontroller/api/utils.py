@@ -87,17 +87,17 @@ def convertToJsonSchema(schema):
     elif isinstance(schema, vol.Length):
         val = {}
         if schema.min is not None:
-            val['lengthMin'] = schema.min
+            val['minLength'] = schema.min
         if schema.max is not None:
-            val['lengthMax'] = schema.max
+            val['maxLength'] = schema.max
         return val
 
     elif isinstance(schema, (vol.Clamp, vol.Range)):
         val = {}
         if schema.min is not None:
-            val['valueMin'] = schema.min
+            val['minimum'] = schema.min
         if schema.max is not None:
-            val['valueMax'] = schema.max
+            val['maximum'] = schema.max
         return val
 
     elif isinstance(schema, vol.Datetime):

@@ -5,6 +5,7 @@ import Checkbox from "@material-ui/core/Checkbox";
 import FormControl from "@material-ui/core/FormControl";
 import FormControlLabel from "@material-ui/core/FormControlLabel";
 import FormHelperText from "@material-ui/core/FormHelperText";
+import Tooltip from "@material-ui/core/Tooltip";
 import { ComposeInput } from "frontend/components/SchemaForm/Input.jsx";
 
 const styles = theme => ({
@@ -47,21 +48,15 @@ class CustomCheckbox extends React.Component {
         <FormControlLabel
           control={
             <Checkbox
-              checked={this.state.lastSuccessfulValue}
-              onChange={onChangeValidate}
-              disabled={schema.readonly}
-              className={classes.checkbox}
-            />
+                checked={this.state.lastSuccessfulValue}
+                onChange={onChangeValidate}
+                disabled={schema.readonly}
+                className={classes.checkbox}
+                />
           }
           label={label ? label : schema.title}
+          title={schema.description}
         />
-        {(this.props.schema.description || !this.props.valid) && (
-          <FormHelperText error={!this.props.valid}>
-            {this.props.valid
-              ? this.props.schema.description
-              : this.props.error}
-          </FormHelperText>
-        )}
       </FormControl>
     );
   }

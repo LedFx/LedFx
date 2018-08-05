@@ -7,15 +7,16 @@ import time
 
 _LOGGER = logging.getLogger(__name__)
 
+
 class E131Device(Device):
     """E1.31 device support"""
 
     CONFIG_SCHEMA = vol.Schema({
-        vol.Required('host'): str,
-        vol.Required('pixel_count'): vol.Coerce(int),
-        vol.Optional('universe', default=1): int,
-        vol.Optional('universe_size', default=512): int,
-        vol.Optional('channel_offset', default=1): int
+        vol.Required('ip_address', description='Hostname or IP address of the device'): str,
+        vol.Required('pixel_count', description='Number of individual pixels'): vol.All(vol.Coerce(int), vol.Range(min=1)),
+        vol.Optional('universe', description='DMX universe for the device', default=1): vol.All(vol.Coerce(int), vol.Range(min=1)),
+        vol.Optional('universe_size', description='Size of each DMX universe', default=512): vol.All(vol.Coerce(int), vol.Range(min=1)),
+        vol.Optional('channel_offset', description='Channel offset within the DMX universe', default=1): vol.All(vol.Coerce(int), vol.Range(min=1))
     })
 
     def __init__(self, config):
@@ -47,10 +48,10 @@ class E131Device(Device):
         for universe in range(self._config['universe'], self._config['universe_end'] + 1):
             _LOGGER.info("sACN activating universe {}".format(universe))
             self._sacn.activate_output(universe) 
-            if (self._config['host'] == None):
+            if (self._config['ip_address'] == None):
                 self._sacn[universe].multicast = True
             else:
-                self._sacn[universe].destination = self._config['host']
+                self._sacn[universe].destination = self._config['ip_address']
                 self._sacn[universe].multicast = False
         #self._sacn.fps = 60
         self._sacn.start()

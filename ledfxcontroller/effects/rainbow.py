@@ -6,7 +6,7 @@ class RainbowEffect(TemporalEffect):
 
     NAME = "Rainbow"
     CONFIG_SCHEMA = vol.Schema({
-        vol.Optional('frequency', default = 1.0):  vol.Coerce(float)
+        vol.Optional('frequency', description='Frequency of the effect curve', default = 1.0):  vol.Coerce(float)
     })
 
     _hue = 0.1

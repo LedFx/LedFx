@@ -17,9 +17,8 @@ class GradientEffect(Effect):
     """
 
     CONFIG_SCHEMA = vol.Schema({
-        vol.Optional('gradient_name', default = 'Spectral'): str,
-        vol.Optional('gradient_flip', default = False): bool,
-        vol.Optional('gradient_roll', default = 0): vol.Coerce(int),
+        vol.Optional('gradient_name', description='Preset gradient name', default = 'Spectral'): str,
+        vol.Optional('gradient_roll', description='Amount to shift the gradient', default = 0): vol.Coerce(int),
     })
 
     _gradient_curve = None
@@ -75,8 +74,7 @@ class GradientEffect(Effect):
         self._validate_gradient()
 
         # Apply and roll the gradient if necessary
-        flip_index = -1 if self._config['gradient_flip'] else 1
-        output = (self._gradient_curve[:][::flip_index]*y).T
+        output = (self._gradient_curve[:][::1]*y).T
         self._roll_gradient()
 
         return output
