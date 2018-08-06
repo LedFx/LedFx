@@ -1,7 +1,8 @@
 # Requirements. These can can be installed with:
 #   pip install -r requirements.txt
 
-numpy==1.13.3
+numpy>=1.13.3
+scipy>=0.15.1
 voluptuous==0.11.1
 pyaudio==0.2.11
 sacn==1.3

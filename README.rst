@@ -1,4 +1,4 @@
-LedFxController
+ledfx
 ===============
 
 WARNING: This project is in early development, so expect to encounter minor issues along the way.
