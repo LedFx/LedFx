@@ -1,9 +1,10 @@
 const path = require("path");
 const webpack = require("webpack");
 const ExtractTextPlugin = require("extract-text-webpack-plugin");
+const CopyWebpackPlugin = require("copy-webpack-plugin");
 
 const config = {
-  entry: __dirname + "/ledfxcontroller/frontend/index.jsx",
+  entry: __dirname + "/ledfx/frontend/index.jsx",
   module: {
     rules: [
       {
@@ -49,15 +50,20 @@ const config = {
     ]
   },
   output: {
-    path: __dirname + "/frontend_dist",
+    path: __dirname + "/ledfx_frontend",
     publicPath: "/static/",
     filename: "bundle.js"
   },
   resolve: {
     extensions: [".js", ".jsx", ".css"],
-    modules: [path.resolve("./ledfxcontroller"), path.resolve("./node_modules")]
+    modules: [path.resolve("./ledfx"), path.resolve("./node_modules")]
   },
-  plugins: [new ExtractTextPlugin("style.css")]
+  plugins: [
+    new CopyWebpackPlugin([
+      {from: 'ledfx/frontend/dist', to: __dirname + "/ledfx_frontend"}
+    ]),
+    new ExtractTextPlugin("style.css")
+  ]
 };
 
 module.exports = config;

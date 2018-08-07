@@ -13,7 +13,7 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 import sys
 import os
-from ledfxcontroller.consts import __version__
+from ledfx.consts import __version__
 
 
 # -- Project information -----------------------------------------------------
@@ -35,7 +35,7 @@ PROJECT_GITHUB_PATH = '{}/{}'.format(
 PROJECT_GITHUB_URL = 'https://github.com/{}'.format(PROJECT_GITHUB_PATH)
 
 sys.path.insert(0, os.path.abspath('extensions'))
-sys.path.insert(0, os.path.abspath('../../ledfxcontroller'))
+sys.path.insert(0, os.path.abspath('../../ledfx'))
 
 # -- General configuration ---------------------------------------------------
 

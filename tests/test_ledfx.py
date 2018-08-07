@@ -4,12 +4,12 @@
 import time
 import pytest
 import numpy as np
-from ledfxcontroller.devices import DeviceManager
-from ledfxcontroller.effects.rainbow import RainbowEffect
-from ledfxcontroller.effects.spectrum import SpectrumAudioEffect
-from ledfxcontroller.effects.wavelength import WavelengthAudioEffect
-from ledfxcontroller.effects.gradient import TemporalGradientEffect
-from ledfxcontroller.effects import Effect, EffectManager
+from ledfx.devices import DeviceManager
+from ledfx.effects.rainbow import RainbowEffect
+from ledfx.effects.spectrum import SpectrumAudioEffect
+from ledfx.effects.wavelength import WavelengthAudioEffect
+from ledfx.effects.gradient import TemporalGradientEffect
+from ledfx.effects import Effect, EffectManager
 
 # TODO: Cleanup test as they are not 100% functional yet
 
