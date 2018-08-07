@@ -16,7 +16,7 @@ class E131Device(Device):
         vol.Required('pixel_count', description='Number of individual pixels'): vol.All(vol.Coerce(int), vol.Range(min=1)),
         vol.Optional('universe', description='DMX universe for the device', default=1): vol.All(vol.Coerce(int), vol.Range(min=1)),
         vol.Optional('universe_size', description='Size of each DMX universe', default=512): vol.All(vol.Coerce(int), vol.Range(min=1)),
-        vol.Optional('channel_offset', description='Channel offset within the DMX universe', default=1): vol.All(vol.Coerce(int), vol.Range(min=1))
+        vol.Optional('channel_offset', description='Channel offset within the DMX universe', default=0): vol.All(vol.Coerce(int), vol.Range(min=0))
     })
 
     def __init__(self, config):
