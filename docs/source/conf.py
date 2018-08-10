@@ -13,7 +13,7 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 import sys
 import os
-from ledfx.consts import __version__
+from ledfx.consts import PROJECT_VERSION
 
 
 # -- Project information -----------------------------------------------------

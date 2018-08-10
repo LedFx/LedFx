@@ -13,20 +13,12 @@ DEFAULT_CONFIG = """
 # Webserver setup
 host: 127.0.0.1
 port: 8888
-
-# Device setup
-# devices:
-#   test_device_1:
-#     type: e131
-#     name: Test Device
-#     host: 192.168.1.100
-#     pixel_count: 100
 """
 
 CORE_CONFIG_SCHEMA = vol.Schema({
     vol.Required('host'): str,
     vol.Required('port'): int,
-    vol.Optional('max_workers'): int,
+    vol.Optional('max_workers', default = 10): int,
     vol.Optional('devices', default = []): list
 })
 

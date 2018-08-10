@@ -16,11 +16,11 @@ class E131Device(Device):
         vol.Required('pixel_count', description='Number of individual pixels'): vol.All(vol.Coerce(int), vol.Range(min=1)),
         vol.Optional('universe', description='DMX universe for the device', default=1): vol.All(vol.Coerce(int), vol.Range(min=1)),
         vol.Optional('universe_size', description='Size of each DMX universe', default=512): vol.All(vol.Coerce(int), vol.Range(min=1)),
-        vol.Optional('channel_offset', description='Channel offset within the DMX universe', default=1): vol.All(vol.Coerce(int), vol.Range(min=1))
+        vol.Optional('channel_offset', description='Channel offset within the DMX universe', default=0): vol.All(vol.Coerce(int), vol.Range(min=0))
     })
 
-    def __init__(self, config):
-        super().__init__(config)
+    def __init__(self, ledfx, config):
+        super().__init__(ledfx, config)
 
         # Allow for configuring in terms of "pixels" or "channels"
         if 'pixel_count' in self._config:
@@ -83,7 +83,8 @@ class E131Device(Device):
         if not self._sacn:
             raise Exception('sACN sender not started.')
         if data.size != self._config['channel_count']:
-            raise Exception('Invalid buffer size.')
+            raise Exception('Invalid buffer size. ({} != {})'.format(
+                data.size, self._config['channel_count']))
 
         data = data.flatten()
         current_index = 0
@@ -104,4 +105,5 @@ class E131Device(Device):
 
             dmx_data = np.array(self._sacn[universe].dmx_data)
             dmx_data[dmx_start:dmx_end] = data[input_start:input_end]
+            
             self._sacn[universe].dmx_data = dmx_data

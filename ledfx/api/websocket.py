@@ -44,7 +44,6 @@ class WebsocketConnection:
 
     def close(self):
         """Closes the websocket connection"""
-
         if self.receiver_task:
             self.receiver_task.cancel()
         if self.sender_task:
@@ -99,6 +98,12 @@ class WebsocketConnection:
         self.receiver_task = asyncio.Task.current_task(loop=self.ledfx.loop)
         self.sender_task = self.ledfx.loop.create_task(self._sender())
 
+        def shutdown_handler():
+            self.close()
+
+        remove_shutdown_handler = self.ledfx.register_shutdown_notification(
+            shutdown_handler)
+
         try:
             message = await socket.receive_json()
             while message:
@@ -113,6 +118,7 @@ class WebsocketConnection:
                 message = await socket.receive_json()
 
         except (vol.Invalid, ValueError) as e:
+            _LOGGER.info('Invalid message format.')
             self.send_error(message['id'], 'Invalid message format.')
 
         except TypeError as e:
@@ -128,6 +134,7 @@ class WebsocketConnection:
             _LOGGER.exception("Unexpected Exception: %s", err)
 
         finally:
+            remove_shutdown_handler()
 
             # Gracefully stop the sender ensuring all messages get flushed
             self.send(None)

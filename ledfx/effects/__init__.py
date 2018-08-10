@@ -1,4 +1,3 @@
-
 from ledfx.utils import BaseRegistry, RegistryLoader
 from scipy.ndimage.filters import gaussian_filter1d
 import voluptuous as vol
@@ -25,7 +24,11 @@ def fill_rainbow(pixels, initial_hue, delta_hue):
     return pixels
 
 def mirror_pixels(pixels):
-    return np.concatenate((pixels[::-2,:], pixels[::2,:]), axis=0)
+    # TODO: Figure out some better logic here. Needs to reduce the signal 
+    # and reflect across the middle. The prior logic was broken for
+    # non-uniform effects.
+    mirror_shape = (np.shape(pixels)[0], 2, np.shape(pixels)[1])
+    return np.append(pixels, pixels[::-1], axis=0).reshape(mirror_shape).mean(axis = 1)
 
 def flip_pixels(pixels):
     return np.flipud(pixels)

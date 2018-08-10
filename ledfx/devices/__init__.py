@@ -28,7 +28,8 @@ class Device(BaseRegistry):
     _active_effect = None
     _latest_frame = None
 
-    def __init__(self, config):
+    def __init__(self, ledfx, config):
+        self._ledfx = ledfx
         self._config = config
 
     def __del__(self):
@@ -68,22 +69,30 @@ class Device(BaseRegistry):
         # TODO: Evaluate switching over to asyncio with UV loop optimization
         # instead of spinning a seperate thread.
 
-        sleep_interval = 1 / self._config['refresh_rate']
-
-        while self._active:
-            start_time = time.time()
+        if self._active:
+            self._ledfx.loop.call_later(1 / self._config['refresh_rate'],
+                self.thread_function)
 
             # Assemble the frame if necessary, if nothing changed just sleep
             assembled_frame = self.assemble_frame()
             if assembled_frame is not None and not self._config['preview_only']:
                 self.flush(assembled_frame)
+                
 
-            # Calculate the time to sleep accounting for potential heavy
-            # frame assembly operations
-            time_to_sleep = sleep_interval - (time.time() - start_time)
-            if time_to_sleep > 0:
-                time.sleep(time_to_sleep)
-        _LOGGER.info("Output device thread terminated.")
+        # while self._active:
+        #     start_time = time.time()
+
+        #     # Assemble the frame if necessary, if nothing changed just sleep
+        #     assembled_frame = self.assemble_frame()
+        #     if assembled_frame is not None and not self._config['preview_only']:
+        #         self.flush(assembled_frame)
+
+        #     # Calculate the time to sleep accounting for potential heavy
+        #     # frame assembly operations
+        #     time_to_sleep = sleep_interval - (time.time() - start_time)
+        #     if time_to_sleep > 0:
+        #         time.sleep(time_to_sleep)
+        # _LOGGER.info("Output device thread terminated.")
 
     def assemble_frame(self):
         """
@@ -101,8 +110,10 @@ class Device(BaseRegistry):
 
     def activate(self):
         self._active = True
-        self._device_thread = Thread(target = self.thread_function)
-        self._device_thread.start()
+        #self._device_thread = Thread(target = self.thread_function)
+        #self._device_thread.start()
+        self._device_thread = None
+        self.thread_function()
 
     def deactivate(self):
         self._active = False
@@ -145,10 +156,11 @@ class Devices(RegistryLoader):
     def create_from_config(self, config):
         for device in config:
             _LOGGER.info("Loading device from config: {}".format(device))
-            self.create(
-                config = device['config'],
+            self.ledfx.devices.create(
                 id = device['id'],
-                type = device['type'])
+                type = device['type'],
+                config = device['config'],
+                ledfx = self.ledfx)
 
     def clear_all_effects(self):
         for device in self.values():

@@ -3,7 +3,6 @@ import jinja2
 import aiohttp_jinja2
 from aiohttp import web
 import aiohttp
-from ledfx.consts import PROJECT_ROOT
 from ledfx.api import RestApi
 import numpy as np
 import json
@@ -12,7 +11,7 @@ import ledfx_frontend
 _LOGGER = logging.getLogger(__name__)
 
 
-class LedFxHTTP(object):
+class HttpServer(object):
     def __init__(self, ledfx, host, port):
         """Initialize the HTTP server"""
 
@@ -26,6 +25,8 @@ class LedFxHTTP(object):
         self.ledfx = ledfx
         self.host = host
         self.port = port
+        
+        ledfx.http = self
 
     @aiohttp_jinja2.template('index.html')
     async def index(self, request):

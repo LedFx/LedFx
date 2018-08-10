@@ -54,6 +54,11 @@ class SchemaFormCollection extends React.Component {
   render() {
     const { classes, onChange, onSubmit, schemaCollection, ...otherProps } = this.props;
 
+    let currentSchema = {properties: {}}
+    if (this.state.collectionKey !== "") {
+      currentSchema = schemaCollection[this.state.collectionKey].schema
+    }
+
     let customSelect = (
       <FormControl className={classes.control}>
         <InputLabel>Type</InputLabel>
@@ -78,15 +83,13 @@ class SchemaFormCollection extends React.Component {
     return (
       <div className={classes.form}>
         {customSelect}
-        { this.state.collectionKey !== "" &&
-            <SchemaForm
-            key={this.state.collectionKey}
-            schema={schemaCollection[this.state.collectionKey].schema}
-            onChange={this.handleFormChange}
-            onSubmit={this.handleFormSubmit}
-            className={classes.schemaForm}
-            {...otherProps}/>
-        }
+        <SchemaForm
+        key={this.state.collectionKey}
+        schema={currentSchema}
+        onChange={this.handleFormChange}
+        onSubmit={this.handleFormSubmit}
+        className={classes.schemaForm}
+        {...otherProps}/>
       </div>
     );
   }

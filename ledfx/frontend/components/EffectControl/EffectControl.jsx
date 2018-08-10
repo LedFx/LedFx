@@ -28,7 +28,10 @@ class EffectControl extends React.Component {
   };
 
   handleSetEffect = (type, config) => {
-    console.log("handleSetEffect", type, config);
+    if (!type) {
+      return this.handleClearEffect()
+    }
+
     fetch(
       `${window.location.protocol}//${window.location.host}/api/devices/${
         this.props.deviceId

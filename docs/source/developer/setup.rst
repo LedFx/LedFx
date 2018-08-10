@@ -2,7 +2,9 @@
 Development Setup
 ================================
 
-Building LedFx Backend
+The development workflow is still being worked on, but this covers the current state of the world.
+
+Backend Development
 ================================
 
 In order to start developing with LedFx's core backend you should first enabled development mode to prevent having to constantly reinstall:
@@ -17,7 +19,7 @@ This will let you run LedFx directly from your Git repository via:
 
     ledfx --open-ui
 
-Building LedFx Frontend
+Frontend Development
 ================================
 
 Building LedFx frontend is different from how the core backend is built. The frontend is based on React.js and thus uses NPM as the core package management. To get started, first install npm and all the requirements:
@@ -33,4 +35,17 @@ The easiest way to test and validate your changes is to run a watcher that will 
 
     npm run watch
 
-At that point any change you make to the frontend will be recompiled and after a browser refresh LedFx will pick up the new files.
+At that point any change you make to the frontend will be recompiled and after a browser refresh LedFx will pick up the new files. After development and testing you will need to run a full build to generate the appropriate distrobution files prior to submitting any changes:
+
+.. code:: bash
+
+    npm run build
+
+Document Development
+================================
+
+To build the LedFx documentation simply enter the "docs" folder and run the following:
+
+.. code:: bash
+
+    make html

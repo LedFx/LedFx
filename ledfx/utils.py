@@ -151,11 +151,11 @@ class RegistryLoader(object):
 
     def __init__(self, cls, package, ledfx):
         self._package = package
-        self._ledfx = ledfx
         self._cls = cls
         self._objects = {}
         self._object_id = 1
 
+        self.ledfx = ledfx
         self.import_registry(package)
 
     def import_registry(self, package):
@@ -205,7 +205,7 @@ class RegistryLoader(object):
         # system cash to ensure everything gets reloaded
         self.import_registry(self._package)
 
-    def create(self, type, config={}, id=None, *args):
+    def create(self, type, id = None, *args, **kwargs):
         """Loads and creates a object from the registry by type"""
 
         if type not in self._cls.registry():
@@ -213,8 +213,7 @@ class RegistryLoader(object):
                 ("Couldn't find '{}' in the {} registry").format(
                     type, self._cls.__name__.lower()))
 
-        if id is None:
-            id = type
+        id = id or type
 
         # Find the first valid id based on what is already in the registry
         dupe_id = id
@@ -226,11 +225,12 @@ class RegistryLoader(object):
         # Create the new object based on the registry entires and
         # validate the schema.
         _cls = self._cls.registry().get(type)
-        if config is not None:
-            config = _cls.schema()(config)
-            obj = _cls(config, *args)
+        _config = kwargs.pop('config', None)
+        if _config != None:
+            _config = _cls.schema()(_config)
+            obj = _cls(config = _config, *args, **kwargs)
         else:
-            obj = _cls(*args)
+            obj = _cls(*args, **kwargs)
 
         # Attach some common properties
         setattr(obj, '_id', id)

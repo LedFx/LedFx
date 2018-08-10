@@ -44,7 +44,8 @@ class EffectsEndpoint(RestEndpoint):
 
         # Create the effect and add it to the device
         effect = self.ledfx.effects.create(
-            type = effect_type, config = effect_config)
+            type = effect_type,
+            config = effect_config)
         device.set_effect(effect)
 
         response = { 'status' : 'success' }

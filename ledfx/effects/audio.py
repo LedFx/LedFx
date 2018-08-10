@@ -9,6 +9,7 @@ from ledfx.effects.math import ExpFilter
 import ledfx.effects.math as math
 from functools import lru_cache
 import numpy as np
+import collections
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -91,8 +92,8 @@ class MelbankInputSource(AudioInputSource):
         vol.Optional('mic_rate', default = 44100): int,
         vol.Optional('window_size', default = 4): int,
         vol.Optional('samples', default = 24): int,
-        vol.Optional('min_frequency', default = 20): int,
-        vol.Optional('max_frequency', default = 18000): int,
+        vol.Optional('min_frequency', default = 0): int,
+        vol.Optional('max_frequency', default = 22050): int,
     })
 
     def __init__(self, config):
@@ -124,9 +125,9 @@ class MelbankInputSource(AudioInputSource):
                                             freq_max=self._config['max_frequency'],
                                             num_fft_bands=samples,
                                             sample_rate=self._config['mic_rate'])
-        self.fft_plot_filter = ExpFilter(np.tile(1e-1, self._config['samples']), alpha_decay=0.99, alpha_rise=0.99)
+        self.fft_plot_filter = ExpFilter(np.tile(1e-1, self._config['samples']), alpha_decay=0.5, alpha_rise=0.99)
         self.mel_gain =        ExpFilter(np.tile(1e-1, self._config['samples']), alpha_decay=0.01, alpha_rise=0.99)
-        self.mel_smoothing =   ExpFilter(np.tile(1e-1, self._config['samples']), alpha_decay=0.99, alpha_rise=0.99)
+        self.mel_smoothing =   ExpFilter(np.tile(1e-1, self._config['samples']), alpha_decay=0.5, alpha_rise=0.99)
 
     @lru_cache(maxsize=32)
     def melbank(self):
@@ -141,7 +142,7 @@ class MelbankInputSource(AudioInputSource):
         self._y_roll[-1, :] = np.copy(self.audio_sample())
         y_data = np.concatenate(self._y_roll, axis=0).astype(np.float32)
 
-        # Transform audio input into the frequency domain
+        # Perform hamming function to reduce frequency bleeding
         y_data *= self._fft_window
 
         # Pad with zeros until the next power of two
@@ -155,10 +156,10 @@ class MelbankInputSource(AudioInputSource):
 
         # Scale data to values more suitable for visualization
         mel = np.sum(mel, axis=0)
-        mel = mel**1.6
+        mel = mel**2.0
 
         # Gain normalization
-        self.mel_gain.update(np.max(gaussian_filter1d(mel, sigma=0.1)))
+        self.mel_gain.update(np.max(gaussian_filter1d(mel, sigma=1.0)))
         mel /= self.mel_gain.value
         self.mel = self.mel_smoothing.update(mel)
 

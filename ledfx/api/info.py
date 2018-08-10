@@ -12,7 +12,7 @@ class InfoEndpoint(RestEndpoint):
 
     async def get(self) -> web.Response:
         response = {
-            'url': 'http://placeholder',
+            'url': self.ledfx.base_url,
             'name': 'LedFx (Placeholder)',
             'version': PROJECT_VERSION
         }

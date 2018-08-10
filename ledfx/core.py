@@ -8,7 +8,7 @@ from pathlib import Path
 import voluptuous as vol
 from concurrent.futures import ThreadPoolExecutor
 from ledfx.utils import async_fire_and_forget
-from ledfx.http import LedFxHTTP
+from ledfx.http import HttpServer
 from ledfx.devices import Devices
 from ledfx.effects import Effects
 from ledfx.config import load_config, save_config
@@ -21,6 +21,8 @@ class LedFxCore(object):
         self.config_dir = config_dir
         self.config = load_config(config_dir)
 
+        self._shutdownListeners = []
+
         if sys.platform == 'win32':
             self.loop = asyncio.ProactorEventLoop()
         else:
@@ -31,7 +33,7 @@ class LedFxCore(object):
         self.loop.set_default_executor(self.executor)
         self.loop.set_exception_handler(self.loop_exception_handler)
 
-        self.http = LedFxHTTP(
+        self.http = HttpServer(
             ledfx=self, host=self.config['host'], port=self.config['port'])
         self.exit_code = None
 
@@ -92,8 +94,14 @@ class LedFxCore(object):
 
     async def async_stop(self, exit_code=0):
         print('Stopping ledfx.')
-        await self.http.stop()
+
         self.devices.clear_all_effects()
+        
+        for callback in self._shutdownListeners:
+            self.loop.call_soon_threadsafe(callback)
+        await asyncio.sleep(0, loop=self.loop)
+
+        await self.http.stop()
 
         # Save the configuration before shutting down
         save_config(config=self.config, config_dir=self.config_dir)
@@ -102,3 +110,14 @@ class LedFxCore(object):
         self.executor.shutdown()
         self.exit_code = exit_code
         self.loop.stop()
+
+    def register_shutdown_notification(self, callback):
+        self._shutdownListeners.append(callback)
+
+        def remove_listener() -> None:
+            try:
+                self._shutdownListeners.remove(callback)
+            except (ValueError):
+                _LOGGER.warning("Failed to remove shutdown callback %s", callback)
+
+        return remove_listener

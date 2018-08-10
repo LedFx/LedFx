@@ -39,8 +39,9 @@ class DevicesEndpoint(RestEndpoint):
         _LOGGER.info("Adding device of type {} with config {}".format(device_type, device_config))
         device = self.ledfx.devices.create(
             id = device_id,
+            type = device_type,
             config = device_config,
-            type = device_type)
+            ledfx = self.ledfx)
 
         # Update and save the configuration
         self.ledfx.config['devices'].append({'id': device.id, 'type': device.type, 'config': device.config })
