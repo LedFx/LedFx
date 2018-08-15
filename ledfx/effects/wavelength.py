@@ -14,6 +14,13 @@ class WavelengthAudioEffect(AudioReactiveEffect, GradientEffect):
         vol.Optional('blur', description='Amount to blur the effect', default = 3.0): vol.Coerce(float)
     })
 
+    def config_updated(self, config):
+
+        # Create the filters used for the effect
+        self._r_filter = self.create_filter(
+            alpha_decay = 0.2,
+            alpha_rise = 0.99)
+
     def audio_data_updated(self, data):
 
         # Grab the filtered and interpolated melbank data
@@ -22,11 +29,7 @@ class WavelengthAudioEffect(AudioReactiveEffect, GradientEffect):
 
         # Grab the filtered difference between the filtered melbank and the
         # raw melbank.
-        r = data.get_filter(
-            filter_key = "filtered_difference",
-            filter_size = self.pixel_count,
-            alpha_decay = 0.2,
-            alpha_rise = 0.99).update(y - filtered_y)
+        r = self._r_filter.update(y - filtered_y)
 
         # Apply the melbank data to the gradient curve and update the pixels
         self.pixels = self.apply_gradient(r)

@@ -95,13 +95,19 @@ class LedFxCore(object):
     async def async_stop(self, exit_code=0):
         print('Stopping ledfx.')
 
-        self.devices.clear_all_effects()
-        
+        # Issue all the shutdown callbacks and flush the loop
         for callback in self._shutdownListeners:
             self.loop.call_soon_threadsafe(callback)
         await asyncio.sleep(0, loop=self.loop)
 
         await self.http.stop()
+
+        # Cancel all the remaining task and wait
+        tasks = [task for task in asyncio.Task.all_tasks() if task is not
+             asyncio.tasks.Task.current_task()] 
+        list(map(lambda task: task.cancel(), tasks))
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+
 
         # Save the configuration before shutting down
         save_config(config=self.config, config_dir=self.config_dir)

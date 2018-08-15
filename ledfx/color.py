@@ -18,7 +18,7 @@ COLORS = {
     'navy': RGB(0, 0, 128),
     'orange': RGB(255, 128, 0),
     'orangered': RGB(255, 69, 0),
-    'pink': RGB(255, 192, 203),
+    'pink': RGB(255, 0, 178),
     'plum': RGB(221, 160, 221),
     'purple': RGB(128, 0, 128),
     'red': RGB(255, 0, 0),
@@ -34,7 +34,7 @@ COLORS = {
     'violet': RGB(238, 130, 238),
     'violetred': RGB(208, 32, 144),
     'white': RGB(255, 255, 255),
-    'yellow': RGB(255, 255, 0)
+    'yellow': RGB(255, 255, 0),
 }
 
 GRADIENTS = {

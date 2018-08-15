@@ -153,6 +153,9 @@ class Devices(RegistryLoader):
     def __init__(self, ledfx):
         super().__init__(Device, self.PACKAGE_NAME, ledfx)
 
+        self.ledfx.register_shutdown_notification(
+            self.clear_all_effects)
+
     def create_from_config(self, config):
         for device in config:
             _LOGGER.info("Loading device from config: {}".format(device))

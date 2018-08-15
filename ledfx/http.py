@@ -10,7 +10,6 @@ import ledfx_frontend
 
 _LOGGER = logging.getLogger(__name__)
 
-
 class HttpServer(object):
     def __init__(self, ledfx, host, port):
         """Initialize the HTTP server"""
@@ -25,8 +24,6 @@ class HttpServer(object):
         self.ledfx = ledfx
         self.host = host
         self.port = port
-        
-        ledfx.http = self
 
     @aiohttp_jinja2.template('index.html')
     async def index(self, request):
