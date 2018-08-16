@@ -30,18 +30,17 @@ export function extractValue(e, prop) {
 }
 
 export function validateValue(v, prop) {
-  let schema = { type: "object", properties: { temp: prop } };
-  if (prop.required) {
-    schema["required"] = ["temp"];
-  }
+  console.log(v, prop)
+  let schema = { type: "object", properties: { } };
+  schema.properties[prop.title] = prop
+  schema.required = prop.required ? [prop.title] : []
 
   let value = {};
   if (v !== undefined) {
-    value.temp = v
+    value[prop.title] = v
   }
 
   let result = tv4.validateResult(value, schema);
-
   return result;
 }
 

@@ -140,7 +140,6 @@ class MelbankInputSource(AudioInputSource):
         """Invalidates the cache for all melbank related data"""
         super()._invalidate_caches()
         self.melbank.cache_clear()
-        self.sample_melbank.cache_clear()
         self.interpolated_melbank.cache_clear()
 
     def _initialize_melbank(self):
@@ -206,7 +205,6 @@ class MelbankInputSource(AudioInputSource):
 
         return filter_banks
 
-    @lru_cache(maxsize=32)
     def sample_melbank(self, hz):
         """Samples the melbank curve at a given frequency"""
         return np.interp(hz, self.melbank_frequencies(), self.melbank())

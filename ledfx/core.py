@@ -71,8 +71,14 @@ class LedFxCore(object):
             self.loop.call_soon_threadsafe(self.loop.create_task,
                                            self.async_stop())
             self.loop.run_forever()
+        except:
+            # Catch all other exceptions and terminate the application. The loop
+            # exeception handler will take care of logging the actual error and
+            # LedFx will cleanly shutdown.
+            self.loop.run_until_complete(self.async_stop(exit_code = -1))
+            pass
         finally:
-            self.loop.close()
+            self.loop.stop()
         return self.exit_code
 
     async def async_start(self, open_ui=False):
@@ -93,6 +99,9 @@ class LedFxCore(object):
         async_fire_and_forget(self.async_stop(exit_code), self.loop)
 
     async def async_stop(self, exit_code=0):
+        if not self.loop:
+            return
+
         print('Stopping ledfx.')
 
         # Issue all the shutdown callbacks and flush the loop
@@ -107,7 +116,6 @@ class LedFxCore(object):
              asyncio.tasks.Task.current_task()] 
         list(map(lambda task: task.cancel(), tasks))
         results = await asyncio.gather(*tasks, return_exceptions=True)
-
 
         # Save the configuration before shutting down
         save_config(config=self.config, config_dir=self.config_dir)

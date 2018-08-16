@@ -15,19 +15,6 @@ const styles = theme => ({
 });
 
 class CustomTextField extends React.Component {
-  constructor(props) {
-    super(props);
-
-    this.state = {
-      lastSuccessfulValue: this.props.value ? this.props.value.toString() : ""
-    };
-  }
-
-  componentWillReceiveProps(nextProps) {
-    this.setState({
-      lastSuccessfulValue: nextProps.value ? nextProps.value.toString() : ""
-    });
-  }
 
   render() {
     const { classes, onChangeValidate, schema, label, valid, error, ...otherProps } = this.props;
@@ -35,13 +22,13 @@ class CustomTextField extends React.Component {
     return (
       <FormControl className={classes.control}>
         <TextField
+          key={schema.key}
           type={schema.type == "integer" ? "number" : schema.type}
           required={schema.required}
           label={label ? label : schema.title}
           helperText={valid ? schema.description : error}
           error={!valid}
           onChange={onChangeValidate}
-          value={this.state.lastSuccessfulValue}
           disabled={schema.readonly}
           className={classes.textField}
           inputProps = {{
