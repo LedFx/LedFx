@@ -10,7 +10,7 @@ class EffectsEndpoint(RestEndpoint):
     ENDPOINT_PATH = "/api/devices/{device_id}/effects"
 
     async def get(self, device_id) -> web.Response:
-        device = self.ledfx.devices.get(device_id)
+        device = self._ledfx.devices.get(device_id)
         if device is None:
             response = { 'not found': 404 }
             return web.Response(text=json.dumps(response), status=404)
@@ -27,7 +27,7 @@ class EffectsEndpoint(RestEndpoint):
         return web.Response(text=json.dumps(response), status=200)
 
     async def put(self, device_id, request) -> web.Response:
-        device = self.ledfx.devices.get(device_id)
+        device = self._ledfx.devices.get(device_id)
         if device is None:
             response = { 'not found': 404 }
             return web.Response(text=json.dumps(response), status=404)
@@ -43,7 +43,8 @@ class EffectsEndpoint(RestEndpoint):
             effect_config = {}
 
         # Create the effect and add it to the device
-        effect = self.ledfx.effects.create(
+        effect = self._ledfx.effects.create(
+            ledfx = self._ledfx,
             type = effect_type,
             config = effect_config)
         device.set_effect(effect)
@@ -52,7 +53,7 @@ class EffectsEndpoint(RestEndpoint):
         return web.Response(text=json.dumps(response), status=200)
 
     async def delete(self, device_id) -> web.Response:
-        device = self.ledfx.devices.get(device_id)
+        device = self._ledfx.devices.get(device_id)
         if device is None:
             response = { 'not found': 404 }
             return web.Response(text=json.dumps(response), status=404)

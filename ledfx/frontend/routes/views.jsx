@@ -1,11 +1,13 @@
 // Icons
 import Dashboard from "@material-ui/icons/Dashboard";
 import List from "@material-ui/icons/List";
+import Tune from "@material-ui/icons/Tune";
 
 // Components and Views
 import DashboardView from "frontend/views/Dashboard/Dashboard.jsx";
 import DevicesView from "frontend/views/Devices/Devices.jsx";
 import DeviceView from "frontend/views/Device/Device.jsx";
+import DeveloperView from "frontend/views/Developer/Developer.jsx";
 
 const viewRoutes = [
   {
@@ -21,6 +23,13 @@ const viewRoutes = [
     navbarName: "Devices",
     icon: List,
     component: DevicesView
+  },
+  {
+    path: "/developer",
+    sidebarName: "Developer",
+    navbarName: "Developer",
+    icon: Tune,
+    component: DeveloperView
   },
   {
     path: "/devices/:device_id",

@@ -8,7 +8,7 @@ import json
 class RestEndpoint(BaseRegistry):
 
     def __init__(self, ledfx):
-        self.ledfx = ledfx
+        self._ledfx = ledfx
 
     async def handler(self, request: web.Request):
         method = getattr(self, request.method.lower(), None)
@@ -30,13 +30,13 @@ class RestApi(RegistryLoader):
     PACKAGE_NAME = 'ledfx.api'
 
     def __init__(self, ledfx):
-        super().__init__(RestEndpoint, self.PACKAGE_NAME, ledfx)
-        self.ledfx = ledfx
+        super().__init__(ledfx, RestEndpoint, self.PACKAGE_NAME)
+        self._ledfx = ledfx
 
     def register_routes(self, app):
 
         # Create the endpoints and register their routes
         for endpoint_type in self.types():
-            endpoint = self.create(type = endpoint_type, ledfx = self.ledfx)
+            endpoint = self.create(type = endpoint_type, ledfx = self._ledfx)
             app.router.add_route('*', endpoint.ENDPOINT_PATH, endpoint.handler, 
                 name = "api_{}".format(endpoint_type))

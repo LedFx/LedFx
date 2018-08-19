@@ -22,7 +22,6 @@ class CustomTextField extends React.Component {
     return (
       <FormControl className={classes.control}>
         <TextField
-          key={schema.key}
           type={schema.type == "integer" ? "number" : schema.type}
           required={schema.required}
           label={label ? label : schema.title}
@@ -32,7 +31,7 @@ class CustomTextField extends React.Component {
           disabled={schema.readonly}
           className={classes.textField}
           inputProps = {{
-            step: schema.type == "number" ? 0.1 : undefined
+            step: schema.type == "number" ? 0.01 : undefined
           }}
         />
       </FormControl>

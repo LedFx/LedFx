@@ -131,17 +131,17 @@ class BaseRegistry(ABC):
         return self._registry
 
     @property
-    def id(self):
+    def id(self) -> str:
         """Returns the id for the object"""
         return getattr(self, '_id', None)
 
     @property
-    def type(self):
+    def type(self) -> str:
         """Returns the id for the object"""
         return getattr(self, '_type', None)
 
     @property
-    def config(self):
+    def config(self) -> dict:
         """Returns the config for the object"""
         return getattr(self, '_config', None)
 
@@ -149,13 +149,13 @@ class BaseRegistry(ABC):
 class RegistryLoader(object):
     """Manages loading of compoents for a given registry"""
 
-    def __init__(self, cls, package, ledfx):
+    def __init__(self, ledfx, cls, package):
         self._package = package
         self._cls = cls
         self._objects = {}
         self._object_id = 1
 
-        self.ledfx = ledfx
+        self._ledfx = ledfx
         self.import_registry(package)
 
     def import_registry(self, package):

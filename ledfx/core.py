@@ -12,29 +12,30 @@ from ledfx.http import HttpServer
 from ledfx.devices import Devices
 from ledfx.effects import Effects
 from ledfx.config import load_config, save_config
+from ledfx.events import Events, LedFxShutdownEvent
 
 _LOGGER = logging.getLogger(__name__)
 
 
 class LedFxCore(object):
     def __init__(self, config_dir):
-        self.config_dir = config_dir
-        self.config = load_config(config_dir)
-
-        self._shutdownListeners = []
+        self._config_dir = config_dir
+        self._config = load_config(config_dir)
 
         if sys.platform == 'win32':
             self.loop = asyncio.ProactorEventLoop()
         else:
             self.loop = asyncio.get_event_loop()
-        executor_opts = {'max_workers': self.config.get('max_workers')}
+        executor_opts = {'max_workers': self._config.get('max_workers')}
 
         self.executor = ThreadPoolExecutor(**executor_opts)
         self.loop.set_default_executor(self.executor)
         self.loop.set_exception_handler(self.loop_exception_handler)
 
+
+        self.events = Events(self)
         self.http = HttpServer(
-            ledfx=self, host=self.config['host'], port=self.config['port'])
+            ledfx=self, host=self._config['host'], port=self._config['port'])
         self.exit_code = None
 
     def loop_exception_handler(self, loop, context):
@@ -86,8 +87,10 @@ class LedFxCore(object):
         await self.http.start()
 
         self.devices = Devices(self)
-        self.devices.create_from_config(self.config['devices'])
         self.effects = Effects(self)
+
+        # TODO: Deferr
+        self.devices.create_from_config(self._config['devices'])
 
         if open_ui:
             import webbrowser
@@ -102,11 +105,10 @@ class LedFxCore(object):
         if not self.loop:
             return
 
-        print('Stopping ledfx.')
+        print('Stopping LedFx.')
 
-        # Issue all the shutdown callbacks and flush the loop
-        for callback in self._shutdownListeners:
-            self.loop.call_soon_threadsafe(callback)
+        # Fire a shutdown event and flush the loop
+        self.events.fire_event(LedFxShutdownEvent())
         await asyncio.sleep(0, loop=self.loop)
 
         await self.http.stop()
@@ -118,20 +120,9 @@ class LedFxCore(object):
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
         # Save the configuration before shutting down
-        save_config(config=self.config, config_dir=self.config_dir)
+        save_config(config=self._config, config_dir=self._config_dir)
 
         await self.flush_loop()
         self.executor.shutdown()
         self.exit_code = exit_code
         self.loop.stop()
-
-    def register_shutdown_notification(self, callback):
-        self._shutdownListeners.append(callback)
-
-        def remove_listener() -> None:
-            try:
-                self._shutdownListeners.remove(callback)
-            except (ValueError):
-                _LOGGER.warning("Failed to remove shutdown callback %s", callback)
-
-        return remove_listener

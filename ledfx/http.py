@@ -21,7 +21,7 @@ class HttpServer(object):
             loader=jinja2.PackageLoader('ledfx_frontend', '.'))
         self.register_routes()
 
-        self.ledfx = ledfx
+        self._ledfx = ledfx
         self.host = host
         self.port = port
 
@@ -38,10 +38,10 @@ class HttpServer(object):
         self.app.router.add_route('get', '/{extra:.+}', self.index)
 
     async def start(self):
-        self.handler = self.app.make_handler(loop=self.ledfx.loop)
+        self.handler = self.app.make_handler(loop=self._ledfx.loop)
 
         try:
-            self.server = await self.ledfx.loop.create_server(
+            self.server = await self._ledfx.loop.create_server(
                 self.handler, self.host, self.port)
         except OSError as error:
             _LOGGER.error("Failed to create HTTP server at port %d: %s",

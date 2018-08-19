@@ -25,30 +25,14 @@ class PixelColorGraph extends React.Component {
         labels: [],
         datasets: [
         {
-            label: "Red",
+            label: "Melbank",
             lineTension: 0.1,
-            backgroundColor: "rgba(255,0,0,0.1)",
-            borderColor: "rgba(255,0,0,1)",
-            pointRadius: 0,
-            data: [],
-        },
-        {
-            label: "Green",
-            lineTension: 0.1,
-            backgroundColor: "rgba(0,255,0,0.1)",
-            borderColor: "rgba(0,255,0,1)",
-            pointRadius: 0,
-            data: [],
-        },
-        {
-            label: "Blue",
-            lineTension: 0.1,
-            backgroundColor: "rgba(0,0,255,0.1)",
-            borderColor: "rgba(0,0,255,1)",
+            backgroundColor: "rgba(0,0,0,0.1)",
+            borderColor: "rgba(0,0,0,1)",
             pointRadius: 0,
             data: [],
         }],
-    },
+      },
       chartOptions: {
         responsive: true,
         maintainAspectRatio: false,
@@ -67,16 +51,17 @@ class PixelColorGraph extends React.Component {
                 display: false
             },
             ticks: {
-                max: 88,
-                min: 0,
-                maxTicksLimit: 7
+                maxTicksLimit: 7,
+                callback: function(value, index, values) {
+                  return value + ' Hz';
+                }
             }
         }],
         yAxes: [{
             ticks: {
                 min: 0,
-                max: 256,
-                stepSize: 64
+                max: 2.0,
+                stepSize: 0.5
             },
             gridLines: {
                 color: "rgba(0, 0, 0, .125)",
@@ -86,17 +71,15 @@ class PixelColorGraph extends React.Component {
         legend: {
             display: false
         }
-    }
+      }
     }
   }
 
   handleMessage = e => {
     var chartData = this.state.chartData;
     var messageData = JSON.parse(e.data);
-    chartData.labels = Array.apply(null, {length: messageData.pixels[0].length}).map(Function.call, Number);
-    chartData.datasets[0].data = messageData.pixels[0]
-    chartData.datasets[1].data = messageData.pixels[1]
-    chartData.datasets[2].data = messageData.pixels[2]
+    chartData.labels = messageData.frequencies
+    chartData.datasets[0].data = messageData.melbank
     this.setState(...this.state, {chartData: chartData})
   }
 
@@ -111,8 +94,7 @@ class PixelColorGraph extends React.Component {
     this.state.ws.json({
       id: this.websocketPacketId,
       type: 'subscribe_event',
-      event_type: 'device_update',
-      event_filter: { 'device_id': this.props.deviceId }
+      event_type: 'melbank_update'
     })
     this.deviceUpdateSubscription = this.websocketPacketId;
     this.websocketPacketId++;
@@ -158,7 +140,7 @@ class PixelColorGraph extends React.Component {
   }
 
   render() {
-    const { classes, deviceId } = this.props;
+    const { classes } = this.props;
     
     return (
       <Card>
@@ -171,8 +153,7 @@ class PixelColorGraph extends React.Component {
 }
 
 PixelColorGraph.propTypes = {
-  classes: PropTypes.object.isRequired,
-  deviceId: PropTypes.string.isRequired
+  classes: PropTypes.object.isRequired
 };
 
 export default withStyles(styles)(PixelColorGraph);

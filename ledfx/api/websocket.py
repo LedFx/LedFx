@@ -5,6 +5,7 @@ from aiohttp import web
 import voluptuous as vol
 from concurrent import futures
 from ledfx.api import RestEndpoint
+from ledfx.events import Event
 
 _LOGGER = logging.getLogger(__name__)
 MAX_PENDING_MESSAGES = 256
@@ -30,30 +31,34 @@ class WebsocketEndpoint(RestEndpoint):
     ENDPOINT_PATH = "/api/websocket"
 
     async def get(self, request) -> web.Response:
-        return await WebsocketConnection(self.ledfx).handle(request)
+        return await WebsocketConnection(self._ledfx).handle(request)
 
 class WebsocketConnection:
 
     def __init__(self, ledfx):
-        self.ledfx = ledfx
-        self.socket = None
-
-        self.receiver_task = None
-        self.sender_task = None
-        self.sender_queue = asyncio.Queue(maxsize=MAX_PENDING_MESSAGES, loop=ledfx.loop)
+        self._ledfx = ledfx
+        self._socket = None
+        self._listeners = {}
+        self._receiver_task = None
+        self._sender_task = None
+        self._sender_queue = asyncio.Queue(maxsize=MAX_PENDING_MESSAGES, loop=ledfx.loop)
 
     def close(self):
         """Closes the websocket connection"""
-        if self.receiver_task:
-            self.receiver_task.cancel()
-        if self.sender_task:
-            self.sender_task.cancel()
+        if self._receiver_task:
+            self._receiver_task.cancel()
+        if self._sender_task:
+            self._sender_task.cancel()
+
+    def clear_subscriptions(self):
+        for func in self._listeners.values():
+                func()
 
     def send(self, message):
         """Sends a message to the websocket connection"""
 
         try:
-            self.sender_queue.put_nowait(message)
+            self._sender_queue.put_nowait(message)
         except asyncio.QueueFull:
             _LOGGER.error('Client sender queue size exceeded {}'.format(
                 MAX_PENDING_MESSAGES))
@@ -70,18 +75,27 @@ class WebsocketConnection:
             }
         })
 
+    def send_event(self, id, event):
+        """Sends an event notification to the websocket connection"""
+
+        return self.send({
+            'id': id,
+            'type': 'event',
+            **event.to_dict()
+        })
+
     async def _sender(self):
         """Async write loop to pull from the queue and send"""
 
         _LOGGER.info("Starting sender")
-        while not self.socket.closed:
-            message = await self.sender_queue.get()
+        while not self._socket.closed:
+            message = await self._sender_queue.get()
             if message is None:
                 break
 
             try:
-                _LOGGER.info("Sending websocket message")
-                await self.socket.send_json(message, dumps=json.dumps)
+                _LOGGER.debug("Sending websocket message")
+                await self._socket.send_json(message, dumps=json.dumps)
             except TypeError as err:
                 _LOGGER.error('Unable to serialize to JSON: %s\n%s',
                                 err, message)
@@ -91,18 +105,19 @@ class WebsocketConnection:
     async def handle(self, request):
         """Handle the websocket connection"""
 
-        socket = self.socket = web.WebSocketResponse()
+        socket = self._socket = web.WebSocketResponse()
         await socket.prepare(request)
         _LOGGER.info("Websocket connected.")
 
-        self.receiver_task = asyncio.Task.current_task(loop=self.ledfx.loop)
-        self.sender_task = self.ledfx.loop.create_task(self._sender())
+        self._receiver_task = asyncio.Task.current_task(loop=self._ledfx.loop)
+        self._sender_task = self._ledfx.loop.create_task(self._sender())
 
-        def shutdown_handler():
+
+        def shutdown_handler(e):
             self.close()
 
-        remove_shutdown_handler = self.ledfx.register_shutdown_notification(
-            shutdown_handler)
+        remove_listeners = self._ledfx.events.add_listener(
+            shutdown_handler, Event.LEDFX_SHUTDOWN)
 
         try:
             message = await socket.receive_json()
@@ -134,11 +149,12 @@ class WebsocketConnection:
             _LOGGER.exception("Unexpected Exception: %s", err)
 
         finally:
-            remove_shutdown_handler()
+            remove_listeners()
+            self.clear_subscriptions()
 
             # Gracefully stop the sender ensuring all messages get flushed
             self.send(None)
-            await self.sender_task
+            await self._sender_task
 
             # Close the connection
             await socket.close()
@@ -146,19 +162,23 @@ class WebsocketConnection:
 
         return socket
 
-import numpy as np
+    @websocket_handler('subscribe_event')
+    def subscribe_event_handler(self, message):
 
-@websocket_handler('get_pixels')
-def get_pixels_handler(conn, message):
-    device = conn.ledfx.devices.get(message.get('device_id'))
-    if not device:
-        conn.send_error(message['id'], 'Device not found.')
-        return
+        def notify_websocket(event):
+            self.send_event(message['id'], event)
 
-    rgb_x = np.arange(0, device.pixel_count).tolist()
-    if device.latest_frame is not None:
-        pixels = np.copy(device.latest_frame).T
-        conn.send({"action": "update_pixels", "rgb_x": rgb_x, "r": pixels[0].tolist(), "g": pixels[1].tolist(), "b": pixels[2].tolist()})
-    else:
-        pixels = np.zeros((device.pixel_count, 3))
-        conn.send({"action": "update_pixels", "rgb_x": rgb_x, "r": pixels[0].tolist(), "g": pixels[1].tolist(), "b": pixels[2].tolist()})
+        _LOGGER.info('Websocket subscribing to event {} with filter {}'.format(
+            message.get('event_type'), message.get('event_filter')))
+        self._listeners[message['id']] = self._ledfx.events.add_listener(
+            notify_websocket, message.get('event_type'), message.get('event_filter', {}))
+
+    @websocket_handler('unsubscribe_event')
+    def unsubscribe_event_handler(self, message):
+
+        subscription_id = message['subscription_id']
+
+        _LOGGER.info('Websocket unsubscribing from event {}'.format(
+            message.get('event_type')))
+        if subscription_id in self._listeners:
+            self._listeners.pop(subscription_id)()

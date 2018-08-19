@@ -6,12 +6,26 @@ import voluptuous as vol
 from scipy.ndimage.filters import gaussian_filter1d
 import ledfx.effects.mel as mel
 from ledfx.effects.math import ExpFilter
+from ledfx.events import MelbankUpdateEvent
 import ledfx.effects.math as math
 from functools import lru_cache
 import numpy as np
 import collections
 
 _LOGGER = logging.getLogger(__name__)
+
+from collections import namedtuple
+FrequencyRange = namedtuple('FrequencyRange','min,max')
+
+FREQUENCY_RANGES = {
+    'sub_bass': FrequencyRange(20, 60),
+    'bass': FrequencyRange(60, 250),
+    'low_midrange': FrequencyRange(250, 500),
+    'midrange': FrequencyRange(500, 2000),
+    'upper_midrange': FrequencyRange(2000, 4000),
+    'presence': FrequencyRange(4000, 6000),
+    'brilliance': FrequencyRange(6000, 20000),
+}
 
 class AudioInputSource(object):
 
@@ -24,11 +38,11 @@ class AudioInputSource(object):
         vol.Optional('sample_rate', default = 60): int,
         vol.Optional('mic_rate', default = 44100): int,
         vol.Optional('window_size', default = 4): int
-    })
+    }, extra=vol.ALLOW_EXTRA)
 
     def __init__(self, ledfx, config):
-        self.config = self.AUDIO_CONFIG_SCHEMA(config)
-        self.ledfx = ledfx
+        self._config = self.AUDIO_CONFIG_SCHEMA(config)
+        self._ledfx = ledfx
 
         self._volume_filter = ExpFilter(np.zeros(1), alpha_decay=0.01, alpha_rise=0.1)
 
@@ -37,14 +51,14 @@ class AudioInputSource(object):
         if self._audio is None:
             self._audio = pyaudio.PyAudio()
 
-        frames_per_buffer = int(self.config['mic_rate'] / self.config['sample_rate'])
-        self._rolling_window = np.random.rand(self.config['window_size'], frames_per_buffer) / 1e16
+        frames_per_buffer = int(self._config['mic_rate'] / self._config['sample_rate'])
+        self._rolling_window = np.random.rand(self._config['window_size'], frames_per_buffer) / 1e16
         self._hamming_window = np.hamming(frames_per_buffer)
 
         self._stream = self._audio.open(
             format=pyaudio.paInt16,
             channels=1,
-            rate=self.config['mic_rate'],
+            rate=self._config['mic_rate'],
             input=True,
             frames_per_buffer = frames_per_buffer,
             stream_callback = self._audio_sample_callback)
@@ -54,7 +68,10 @@ class AudioInputSource(object):
 
     def deactivate(self):
         self._stream.stop_stream()
+        
+        _LOGGER.info("Audio source closed. 1")
         self._stream.close()
+        _LOGGER.info("Audio source closed.2")
         self._stream = None
         self._rolling_window = None
         _LOGGER.info("Audio source closed.")
@@ -108,7 +125,8 @@ class AudioInputSource(object):
         # frequencies giving a more balanaced melbank. Need to evaluate how
         # this fully impacts the effects.
         if pre_emphasis:
-            sample = np.append(np.atleast_2d(sample[0]), sample[1:] - 0.97 * sample[:-1], axis = 0)
+            sample = np.append(np.atleast_2d(sample[0]),
+                sample[1:] - pre_emphasis * sample[:-1], axis = 0)
 
         return sample
 
@@ -126,12 +144,12 @@ class MelbankInputSource(AudioInputSource):
         vol.Optional('window_size', default = 4): int,
         vol.Optional('samples', default = 22): int,
         vol.Optional('nfft', default = 512): int,
-        vol.Optional('min_frequency', default = 0): int,
-        vol.Optional('max_frequency', default = 22050): int,
-    })
+        vol.Optional('min_frequency', default = 20): int,
+        vol.Optional('max_frequency', default = 20000): int,
+    }, extra=vol.ALLOW_EXTRA)
 
     def __init__(self, ledfx, config):
-        self._config = self.CONFIG_SCHEMA(config)
+        config = self.CONFIG_SCHEMA(config)
         super().__init__(ledfx, config)
 
         self._initialize_melbank()
@@ -150,6 +168,11 @@ class MelbankInputSource(AudioInputSource):
         self.mel_smoothing = ExpFilter(np.tile(1e-1, self._config['samples']), alpha_decay=0.5, alpha_rise=0.99)
         self.common_filter = ExpFilter(alpha_decay = 0.99, alpha_rise = 0.01)
 
+        self.melbank_frequencies = np.linspace(
+            self._config['min_frequency'],
+            self._config['max_frequency'],
+            self._config['samples']).astype(np.int32)
+
     def compute_melmat(self):
         return mel.compute_melmat(
             num_mel_bands=self._config['samples'],
@@ -158,13 +181,6 @@ class MelbankInputSource(AudioInputSource):
             num_fft_bands=int(self._config['nfft'] // 2) + 1,
             sample_rate=self._config['mic_rate'])
 
-    def melbank_frequencies(self):
-        """Returns the corresponding frequencies for the melbank"""
-
-        return np.linspace(
-            self._config['min_frequency'],
-            self._config['max_frequency'],
-            self._config['samples'])
 
     @lru_cache(maxsize=32)
     def melbank(self):
@@ -198,16 +214,21 @@ class MelbankInputSource(AudioInputSource):
         filter_banks /= self.mel_gain.value
         filter_banks = self.mel_smoothing.update(filter_banks)
 
-        # TODO: Look into some better gain normalization as there seems to be some
-        # issues with variable volume.
-        #self.mel_gain.update(np.mean(gaussian_filter1d(filter_banks, sigma=1.0)))
-        #filter_banks -= (np.mean(filter_banks, axis=0) + 1e-8)
+        # # TODO: Look into some better gain normalization as there seems to be some
+        # # issues with variable volume.
+        # self.mel_gain.update(np.mean(gaussian_filter1d(filter_banks, sigma=1.0)))
+        # #filter_banks -= (np.mean(filter_banks, axis=0) + 1e-8)
+        # filter_banks /= self.mel_gain.value
+        # filter_banks = self.mel_smoothing.update(filter_banks)
+
+        self._ledfx.events.fire_event(MelbankUpdateEvent(
+            filter_banks, self.melbank_frequencies))
 
         return filter_banks
 
     def sample_melbank(self, hz):
         """Samples the melbank curve at a given frequency"""
-        return np.interp(hz, self.melbank_frequencies(), self.melbank())
+        return np.interp(hz, self.melbank_frequencies, self.melbank())
 
     @lru_cache(maxsize=32)
     def interpolated_melbank(self, size, filtered = True):
@@ -221,10 +242,10 @@ class MelbankInputSource(AudioInputSource):
 
 # TODO: Rationalize
 _melbank_source = None
-def get_melbank_input_source():
+def get_melbank_input_source(ledfx):
     global _melbank_source
     if _melbank_source is None:
-        _melbank_source = MelbankInputSource(None, {})
+        _melbank_source = MelbankInputSource(ledfx, {})
     return _melbank_source
 
 @Effect.no_registration
@@ -237,11 +258,11 @@ class AudioReactiveEffect(Effect):
 
     def activate(self, channel):
         super().activate(channel)
-        get_melbank_input_source().subscribe(
+        get_melbank_input_source(self._ledfx).subscribe(
             self._audio_data_updated)
 
     def deactivate(self):
-        get_melbank_input_source().unsubscribe(
+        get_melbank_input_source(self._ledfx).unsubscribe(
             self._audio_data_updated)
         super().deactivate()
 
@@ -253,7 +274,7 @@ class AudioReactiveEffect(Effect):
         return ExpFilter(alpha_decay=alpha_decay, alpha_rise=alpha_rise)
 
     def _audio_data_updated(self):
-        self.audio_data_updated(get_melbank_input_source())
+        self.audio_data_updated(get_melbank_input_source(self._ledfx))
 
     def audio_data_updated(self, data):
         """

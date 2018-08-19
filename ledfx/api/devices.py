@@ -14,7 +14,7 @@ class DevicesEndpoint(RestEndpoint):
 
     async def get(self) -> web.Response:
         response = { 'status' : 'success' , 'devices' : {}}
-        for device in self.ledfx.devices.values():
+        for device in self._ledfx.devices.values():
             response['devices'][device.id] = { 'config': device.config, 'id': device.id, 'type': device.type }
 
         return web.Response(text=json.dumps(response), status=200)
@@ -37,17 +37,17 @@ class DevicesEndpoint(RestEndpoint):
 
         # Create the device
         _LOGGER.info("Adding device of type {} with config {}".format(device_type, device_config))
-        device = self.ledfx.devices.create(
+        device = self._ledfx.devices.create(
             id = device_id,
             type = device_type,
             config = device_config,
-            ledfx = self.ledfx)
+            ledfx = self._ledfx)
 
         # Update and save the configuration
-        self.ledfx.config['devices'].append({'id': device.id, 'type': device.type, 'config': device.config })
+        self._ledfx.config['devices'].append({'id': device.id, 'type': device.type, 'config': device.config })
         save_config(
-            config = self.ledfx.config, 
-            config_dir = self.ledfx.config_dir)
+            config = self._ledfx.config, 
+            config_dir = self._ledfx.config_dir)
 
         response = { 'status' : 'success', 'device': { 'type': device.type, 'config': device.config, 'id': device.id }}
         return web.Response(text=json.dumps(response), status=200)

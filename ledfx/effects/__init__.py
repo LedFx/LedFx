@@ -28,7 +28,7 @@ def mirror_pixels(pixels):
     # and reflect across the middle. The prior logic was broken for
     # non-uniform effects.
     mirror_shape = (np.shape(pixels)[0], 2, np.shape(pixels)[1])
-    return np.append(pixels, pixels[::-1], axis=0).reshape(mirror_shape).mean(axis = 1)
+    return np.append(pixels[::-1], pixels, axis=0).reshape(mirror_shape).mean(axis = 1)
 
 def flip_pixels(pixels):
     return np.flipud(pixels)
@@ -54,7 +54,8 @@ class Effect(BaseRegistry):
         vol.Optional('mirror', description='Mirror the effect', default = False): bool,
     })
 
-    def __init__(self, config):
+    def __init__(self, ledfx, config):
+        self._ledfx = ledfx
         self.update_config(config)
 
     def __del__(self):
@@ -156,4 +157,4 @@ class Effects(RegistryLoader):
     PACKAGE_NAME = 'ledfx.effects'
 
     def __init__(self, ledfx):
-        super().__init__(Effect, self.PACKAGE_NAME, ledfx)
+        super().__init__(ledfx = ledfx, cls = Effect, package = self.PACKAGE_NAME)

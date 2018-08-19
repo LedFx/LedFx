@@ -1,6 +1,7 @@
 from ledfx.utils import BaseRegistry, RegistryLoader
 from abc import abstractmethod
 from threading import Thread
+from ledfx.events import DeviceUpdateEvent, Event
 import voluptuous as vol
 import numpy as np
 import importlib
@@ -26,7 +27,6 @@ class Device(BaseRegistry):
     _active = False
     _output_thread = None
     _active_effect = None
-    _latest_frame = None
 
     def __init__(self, ledfx, config):
         self._ledfx = ledfx
@@ -56,8 +56,10 @@ class Device(BaseRegistry):
         
         if self._active:
             # Clear all the pixel data before deactiving the device
-            self._latest_frame = np.zeros((self.pixel_count, 3))
-            self.flush(self._latest_frame)
+            assembled_frame = np.zeros((self.pixel_count, 3))
+            self.flush(assembled_frame)
+            self._ledfx.events.fire_event(DeviceUpdateEvent(
+                self.id, assembled_frame))
 
             self.deactivate()
 
@@ -75,9 +77,11 @@ class Device(BaseRegistry):
 
             # Assemble the frame if necessary, if nothing changed just sleep
             assembled_frame = self.assemble_frame()
-            if assembled_frame is not None and not self._config['preview_only']:
-                self.flush(assembled_frame)
-                
+            if assembled_frame is not None:
+                if not self._config['preview_only']:
+                    self.flush(assembled_frame)
+                self._ledfx.events.fire_event(DeviceUpdateEvent(
+                    self.id, assembled_frame))
 
         # while self._active:
         #     start_time = time.time()
@@ -104,7 +108,6 @@ class Device(BaseRegistry):
         if self._active_effect._dirty:
             frame = np.clip(self._active_effect.pixels * self._config['max_brightness'], 0, 255)
             self._active_effect._dirty = self._config['force_refresh']
-            self._latest_frame = frame
 
         return frame
 
@@ -140,10 +143,6 @@ class Device(BaseRegistry):
     def refresh_rate(self):
         return self._config['refresh_rate']
 
-    @property
-    def latest_frame(self):
-        return self._latest_frame
-
 
 class Devices(RegistryLoader):
     """Thin wrapper around the device registry that manages devices"""
@@ -151,19 +150,22 @@ class Devices(RegistryLoader):
     PACKAGE_NAME = 'ledfx.devices'
 
     def __init__(self, ledfx):
-        super().__init__(Device, self.PACKAGE_NAME, ledfx)
+        super().__init__(ledfx, Device, self.PACKAGE_NAME)
 
-        self.ledfx.register_shutdown_notification(
-            self.clear_all_effects)
+        def cleanup_effects(e):
+            self.clear_all_effects()
+
+        self._ledfx.events.add_listener(
+            cleanup_effects, Event.LEDFX_SHUTDOWN)
 
     def create_from_config(self, config):
         for device in config:
             _LOGGER.info("Loading device from config: {}".format(device))
-            self.ledfx.devices.create(
+            self._ledfx.devices.create(
                 id = device['id'],
                 type = device['type'],
                 config = device['config'],
-                ledfx = self.ledfx)
+                ledfx = self._ledfx)
 
     def clear_all_effects(self):
         for device in self.values():

@@ -9,14 +9,6 @@ import { callApi, getDevice } from "frontend/utils/api";
 import EffectControl from "frontend/components/EffectControl/EffectControl.jsx";
 import PixelColorGraph from "frontend/components/PixelColorGraph/PixelColorGraph.jsx";
 
-const baseStyle = theme => ({
-  cardResponsive: {
-    width: "100%",
-    marginTop: theme.spacing.unit * 3,
-    overflowX: "auto"
-  }
-});
-
 class DeviceView extends React.Component {
   constructor() {
     super();
