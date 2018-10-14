@@ -45,9 +45,9 @@ class EventListener:
         self.filter = event_filter
 
     def filter_event(self, event):
-        event_dict = event.to_dict()
+        event_dict = event.to_dict() 
         for filter_key in self.filter:
-            if event_dict.get(filter_key) == self.filter[filter_key]:
+            if event_dict.get(filter_key) != self.filter[filter_key]:
                 return True
         
         return False
@@ -59,7 +59,7 @@ class Events:
         self._listeners = {}
 
     def fire_event(self, event : Event) -> None:
-        
+
         listeners = self._listeners.get(event.event_type, [])
         if not listeners:
             return
