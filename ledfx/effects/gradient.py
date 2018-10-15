@@ -32,7 +32,15 @@ class GradientEffect(Effect):
         # Check to see if we have a custom gradient, or a predefined one and
         # load the colors accordingly
         if isinstance(gradient_colors, str):
-            gradient_colors = GRADIENTS[gradient_colors.lower()]
+            gradient_name = gradient_colors.lower()
+            gradient_colors = []
+            if GRADIENTS.get(gradient_name):
+                gradient_colors = GRADIENTS.get(gradient_name)
+            elif COLORS.get(gradient_name):
+                gradient_colors = [gradient_name]
+
+        if not gradient_colors:
+            gradient_colors = GRADIENTS.get('spectral')
 
         rgb_list = np.array([COLORS[color.lower()] for color in gradient_colors]).T
         n_colors = len(rgb_list[0])

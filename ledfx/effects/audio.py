@@ -226,6 +226,13 @@ class MelbankInputSource(AudioInputSource):
 
         return filter_banks
 
+    @lru_cache(maxsize=32)
+    def melbank_filtered(self):
+        # TODO: Should probably account for the filtered melbank not being
+        # queried every frame which would result in a poor filter. Need a 
+        # good balance between wasting compute resources and quality filters.
+        return self.common_filter.update(self.melbank())
+
     def sample_melbank(self, hz):
         """Samples the melbank curve at a given frequency"""
         return np.interp(hz, self.melbank_frequencies, self.melbank())
@@ -234,8 +241,7 @@ class MelbankInputSource(AudioInputSource):
     def interpolated_melbank(self, size, filtered = True):
         """Returns a melbank curve interpolated up to a given size"""
         if filtered is True:
-            interpolated_y = self.interpolated_melbank(size, filtered=False)
-            return self.common_filter.update(interpolated_y)
+            return math.interpolate(self.melbank_filtered(), size)
                 
         return math.interpolate(self.melbank(), size)
 
