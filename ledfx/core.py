@@ -19,14 +19,14 @@ _LOGGER = logging.getLogger(__name__)
 
 class LedFxCore(object):
     def __init__(self, config_dir):
-        self._config_dir = config_dir
-        self._config = load_config(config_dir)
+        self.config_dir = config_dir
+        self.config = load_config(config_dir)
 
         if sys.platform == 'win32':
             self.loop = asyncio.ProactorEventLoop()
         else:
             self.loop = asyncio.get_event_loop()
-        executor_opts = {'max_workers': self._config.get('max_workers')}
+        executor_opts = {'max_workers': self.config.get('max_workers')}
 
         self.executor = ThreadPoolExecutor(**executor_opts)
         self.loop.set_default_executor(self.executor)
@@ -35,7 +35,7 @@ class LedFxCore(object):
 
         self.events = Events(self)
         self.http = HttpServer(
-            ledfx=self, host=self._config['host'], port=self._config['port'])
+            ledfx=self, host=self.config['host'], port=self.config['port'])
         self.exit_code = None
 
     def loop_exception_handler(self, loop, context):
@@ -90,7 +90,7 @@ class LedFxCore(object):
         self.effects = Effects(self)
 
         # TODO: Deferr
-        self.devices.create_from_config(self._config['devices'])
+        self.devices.create_from_config(self.config['devices'])
 
         if open_ui:
             import webbrowser
@@ -120,7 +120,7 @@ class LedFxCore(object):
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
         # Save the configuration before shutting down
-        save_config(config=self._config, config_dir=self._config_dir)
+        save_config(config=self.config, config_dir=self.config_dir)
 
         await self.flush_loop()
         self.executor.shutdown()
