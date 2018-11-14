@@ -43,13 +43,13 @@ class DeviceEndpoint(RestEndpoint):
             name = device_config.get('type'))
 
         # Update and save the configuration
-        for device in self._ledfx._config['devices']:
+        for device in self._ledfx.config['devices']:
             if (device['id'] == device_id):
                 device['config'] = device_config
                 break
         save_config(
-            config = self._ledfx._config, 
-            config_dir = self._ledfx._config_dir)
+            config = self._ledfx.config, 
+            config_dir = self._ledfx.config_dir)
 
         response = { 'status' : 'success' }
         return web.Response(text=json.dumps(response), status=500)
@@ -63,10 +63,10 @@ class DeviceEndpoint(RestEndpoint):
         self._ledfx.devices.destroy(device_id)
 
         # Update and save the configuration
-        self._ledfx._config['devices'] = [device for device in self._ledfx._config['devices'] if device['id'] != device_id]
+        self._ledfx.config['devices'] = [device for device in self._ledfx.config['devices'] if device['id'] != device_id]
         save_config(
-            config = self._ledfx._config, 
-            config_dir = self._ledfx._config_dir)
+            config = self._ledfx.config, 
+            config_dir = self._ledfx.config_dir)
 
         response = { 'status' : 'success' }
         return web.Response(text=json.dumps(response), status=200)

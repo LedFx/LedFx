@@ -11,7 +11,7 @@ class ConfigEndpoint(RestEndpoint):
 
     async def get(self) -> web.Response:
         response = {
-            'config': self._ledfx._config
+            'config': self._ledfx.config
         }
 
         return web.Response(text=json.dumps(response), status=200)
