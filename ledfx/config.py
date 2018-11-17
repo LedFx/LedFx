@@ -20,7 +20,7 @@ CORE_CONFIG_SCHEMA = vol.Schema({
     vol.Required('port'): int,
     vol.Optional('max_workers', default = 10): int,
     vol.Optional('devices', default = []): list
-})
+}, extra=vol.ALLOW_EXTRA)
 
 def get_default_config_directory() -> str:
     """Get the default configuration directory"""

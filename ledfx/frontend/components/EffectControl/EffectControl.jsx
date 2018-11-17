@@ -22,9 +22,13 @@ const styles = theme => ({
 class EffectControl extends React.Component {
 
   handleClearEffect = () => {
-    fetch(`http://127.0.0.1:8888/api/devices/${this.props.deviceId}/effects`, {
+    fetch(
+      `${window.location.protocol}//${window.location.host}/api/devices/${
+        this.props.deviceId}/effects`,
+      {
       method: "DELETE"
-    });
+      }
+    );
   };
 
   handleSetEffect = (type, config) => {
@@ -34,8 +38,7 @@ class EffectControl extends React.Component {
 
     fetch(
       `${window.location.protocol}//${window.location.host}/api/devices/${
-        this.props.deviceId
-      }/effects`,
+        this.props.deviceId}/effects`,
       {
         method: "PUT",
         headers: {
