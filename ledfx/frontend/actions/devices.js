@@ -7,6 +7,7 @@ export const RECEIVE_DEVICE_LIST = "RECEIVE_DEVICE_LIST";
 export const RECEIVE_DEVICE_ENTRY = "RECEIVE_DEVICE_ENTRY";
 export const REQUEST_DEVICE_UPDATE = "REQUEST_DEVICE_UPDATE";
 export const RECEIVE_DEVICE_UPDATE = "RECEIVE_DEVICE_UPDATE";
+export const RECEIVE_DEVICE_EFECT_UPDATE = "RECEIVE_DEVICE_EFECT_UPDATE";
 export const INVALIDATE_DEVICE = "INVALIDATE_DEVICE";
 export const SET_DEVICE_EFFECT = "SET_DEVICE_EFFECT";
 
@@ -110,12 +111,30 @@ function receiveDeviceUpdate(deviceId, json) {
   };
 }
 
+function receiveDeviceEffectUpdate(deviceId, json) {
+  console.log(json);
+  return {
+    type: RECEIVE_DEVICE_EFECT_UPDATE,
+    deviceId,
+    effects: json.effects,
+    receivedAt: Date.now()
+  }; 
+}
+
 function fetchDevice(deviceId) {
   return dispatch => {
     dispatch(requestPosts(deviceId));
     return fetch(`${apiUrl}/devices/${deviceId}`)
       .then(response => response.json())
       .then(json => dispatch(receiveDeviceUpdate(deviceId, json)));
+  };
+}
+
+export function fetchDeviceEffects(deviceId) {
+  return dispatch => {
+    return fetch(`${apiUrl}/devices/${deviceId}/effects`)
+      .then(response => response.json())
+      .then(json => dispatch(receiveDeviceEffectUpdate(deviceId, json)));
   };
 }
 

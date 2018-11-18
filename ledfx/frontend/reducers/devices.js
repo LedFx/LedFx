@@ -4,6 +4,7 @@ import {
     INVALIDATE_DEVICE,
     REQUEST_DEVICE_UPDATE,
     RECEIVE_DEVICE_UPDATE,
+    RECEIVE_DEVICE_EFECT_UPDATE,
     RECEIVE_DEVICE_ENTRY
 } from 'frontend/actions'
 
@@ -11,7 +12,8 @@ function device(
     state = {
         isFetching: false,
         didInvalidate: false,
-        config: {}
+        config: {},
+        effects: {},
     },
     action
 ) {
@@ -30,6 +32,11 @@ function device(
                 isFetching: false,
                 didInvalidate: false,
                 config: action.config,
+                lastUpdated: action.receivedAt
+            })
+        case RECEIVE_DEVICE_EFECT_UPDATE:
+            return Object.assign({}, state, {
+                effects: action.effects,
                 lastUpdated: action.receivedAt
             })
         default:
@@ -63,6 +70,7 @@ export function devicesById(state = {}, action) {
         case INVALIDATE_DEVICE:
         case REQUEST_DEVICE_UPDATE:
         case RECEIVE_DEVICE_UPDATE:
+        case RECEIVE_DEVICE_EFECT_UPDATE:
             return Object.assign({}, state, {
                 [action.deviceId]: device(state[action.deviceId], action)
             })

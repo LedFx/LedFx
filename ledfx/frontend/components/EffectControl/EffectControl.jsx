@@ -4,6 +4,10 @@ import { connect } from "react-redux";
 import fetch from "cross-fetch";
 import withStyles from "@material-ui/core/styles/withStyles";
 
+import {
+  fetchDeviceEffects
+} from "frontend/actions";
+
 import Grid from "@material-ui/core/Grid";
 import Card from "@material-ui/core/Card";
 import CardContent from "@material-ui/core/CardContent";
@@ -20,6 +24,10 @@ const styles = theme => ({
 });
 
 class EffectControl extends React.Component {
+
+  componentDidMount() {
+    this.props.dispatch(fetchDeviceEffects(this.props.deviceId));
+  }
 
   handleClearEffect = () => {
     fetch(
@@ -96,10 +104,10 @@ EffectControl.propTypes = {
 };
 
 function mapStateToProps(state) {
-  const { schemas } = state;
+  const { schemas, devicesById } = state;
 
   return {
-    schemas
+    schemas, devicesById
   };
 }
 

@@ -22,7 +22,7 @@ class EffectsEndpoint(RestEndpoint):
             effect_response['config'] = device.active_effect.config
             effect_response['name'] = device.active_effect.name
             effect_response['type'] = device.active_effect.type
-            response = { 'effects' : { device.active_effect.id : effect_response }}
+            response = { 'effects' : effect_response }
 
         return web.Response(text=json.dumps(response), status=200)
 

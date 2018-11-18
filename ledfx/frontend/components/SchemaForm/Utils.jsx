@@ -30,7 +30,6 @@ export function extractValue(e, prop) {
 }
 
 export function validateValue(v, prop) {
-  console.log(v, prop)
   let schema = { type: "object", properties: { } };
   schema.properties[prop.title] = prop
   schema.required = prop.required ? [prop.title] : []

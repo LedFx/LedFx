@@ -5,9 +5,11 @@ import {
   const appStyle = theme => ({
     root: {
       overflow: 'hidden',
-      position: 'relative',
       display: 'flex',
-      width: '100%'
+      width: '100%',
+      position: 'absolute',
+      bottom: '0',
+      top: '0'
     },
     content: {
       flexGrow: 1,

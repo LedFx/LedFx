@@ -146,7 +146,7 @@ class MelbankInputSource(AudioInputSource):
         vol.Optional('nfft', default = 512): int,
         vol.Optional('min_frequency', default = 20): int,
         vol.Optional('max_frequency', default = 20000): int,
-        vol.Optional('volume_cutoff', default = 0.02): float,
+        vol.Optional('min_volume', default = 0.02): float,
     }, extra=vol.ALLOW_EXTRA)
 
     def __init__(self, ledfx, config):
@@ -188,8 +188,7 @@ class MelbankInputSource(AudioInputSource):
         """Returns the raw melbank curve"""
 
         # Validate there is a substantial enough volume for processing
-        print(self._config['volume_cutoff'])
-        if self.volume() < self._config['volume_cutoff']:
+        if self.volume() < self._config['min_volume']:
             filter_banks = np.zeros(self._config['samples'])
             filter_banks = self.mel_smoothing.update(filter_banks)
             return filter_banks
