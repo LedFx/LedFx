@@ -21,11 +21,11 @@ class DeviceView extends React.Component {
   componentDidMount() {
     const { device_id } = this.props.match.params;
 
-    // getDevice(device_id)
-    //   .then(device => {
-    //     this.setState({ device: device });
-    //   })
-    //   .catch(error => console.log(error));
+    getDevice(device_id)
+      .then(device => {
+        this.setState({ device: device });
+      })
+      .catch(error => console.log(error));
   }
 
   componentWillReceiveProps(nextProps) {
