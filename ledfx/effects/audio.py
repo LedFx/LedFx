@@ -34,6 +34,9 @@ FREQUENCY_RANGES_SIMPLE = {
     'high': FrequencyRange(4000, 24000),
 }
 
+MIN_MIDI = 21
+MAX_MIDI = 108
+
 class AudioInputSource(object):
 
     _audio = None
@@ -270,10 +273,8 @@ class MelbankInputSource(AudioInputSource):
         """Returns the raw melbank curve"""
 
         raw_sample = self.audio_sample()
-
         
         self.db_spl_filter.update(aubio.db_spl(raw_sample))
-
         if self.db_spl_filter.value > self._config['min_volume']:
 
             fftgrain = self.pv(raw_sample)
@@ -294,7 +295,6 @@ class MelbankInputSource(AudioInputSource):
         else:
             filter_banks = np.zeros(self._config['samples'])
 
-        print(self.db_spl_filter.value)
         self._ledfx.events.fire_event(GraphUpdateEvent(
             'melbank', filter_banks, np.array(self.melbank_frequencies)))
         return filter_banks

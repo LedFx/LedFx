@@ -11,6 +11,11 @@ import os
 
 _LOGGER = logging.getLogger(__name__)
 
+def mix_colors(color_1, color_2, ratio):
+    return (color_1[0] * (1-ratio) + color_2[0] * ratio,
+            color_1[1] * (1-ratio) + color_2[1] * ratio,
+            color_1[2] * (1-ratio) + color_2[2] * ratio)
+
 def fill_solid(pixels, color):
     pixels[:,] = color
 

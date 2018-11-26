@@ -4,6 +4,7 @@ RGB = namedtuple('RGB','red, green, blue')
 
 COLORS = {
     'aqua': RGB(0, 255, 255),
+    'black': RGB(0, 0, 0),
     'blue': RGB(0, 0, 255),
     'gold': RGB(255, 215, 0),
     'green': RGB(0, 128, 0),
