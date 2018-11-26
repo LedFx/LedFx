@@ -18,6 +18,7 @@ class PixelColorGraph extends React.Component {
   constructor(props) {
     super(props)
 
+    this.websocketActive = false;
     this.websocketPacketId = 1
     this.deviceUpdateSubscription = null
     this.state = this.getChartOptionsForDevice(props.device)
@@ -116,13 +117,14 @@ class PixelColorGraph extends React.Component {
 
   handleOpen = e => {
     this.enablePixelVisualization(this.props.device);
+    this.websocketActive = true
   }
 
   handleClose = e => {
+    this.websocketActive = false
   }
 
   enablePixelVisualization = (device) => {
-
     this.state.ws.json({
       id: this.websocketPacketId,
       type: 'subscribe_event',
@@ -173,7 +175,7 @@ class PixelColorGraph extends React.Component {
   }
 
   componentWillReceiveProps(nextProps) {
-    if (this.state.ws != undefined) {
+    if (this.websocketActive) {
       this.disablePixelVisualization()
       this.enablePixelVisualization(nextProps.device)
       this.setState(...this.state, 
