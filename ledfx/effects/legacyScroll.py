@@ -1,10 +1,10 @@
-from ledfx.effects.audio import AudioReactiveEffect, FREQUENCY_RANGES_SIMPLE
+from ledfx.effects.legacyAudio import LegacyAudioReactiveEffect
 from ledfx.effects.gradient import GradientEffect
 import voluptuous as vol
 import numpy as np
 
 
-class ScrollAudioEffect(AudioReactiveEffect):
+class LegacyScrollAudioEffect(LegacyAudioReactiveEffect):
 
     NAME = "Scroll"
 
@@ -30,30 +30,18 @@ class ScrollAudioEffect(AudioReactiveEffect):
             self.output = self.pixels
 
         # Grab the melbank and scale it up for the effect and clip
-        y = data.melbank() / 10
+        y = data.melbank() ** 2
         y = np.clip(y, 0, 1)
 
         # Divide the melbank into lows, mids and highs
-        lows_max = mids_max = high_max = 0
-        for i in range(0, len(y) - 1):
-            if data.melbank_frequencies[i] < FREQUENCY_RANGES_SIMPLE['low'].max:
-                lows_max = max(lows_max, y[i])
-            elif data.melbank_frequencies[i] < FREQUENCY_RANGES_SIMPLE['mid'].max:
-                mids_max = max(mids_max, y[i])
-            elif data.melbank_frequencies[i] < FREQUENCY_RANGES_SIMPLE['high'].max:
-                high_max = max(high_max, y[i])
-
-        if lows_max < 0.2:
-            lows_max = 0
-        if mids_max < 0.2:
-            mids_max = 0
-        if high_max < 0.2:
-            lows_max = 0
+        lows = y[:len(y) // 6]
+        mids = y[len(y) // 6: 2 * len(y) // 5]
+        high = y[2 * len(y) // 5:]
 
         # Compute the value for each range based on the max
-        lows_val = (np.array((255,0,0)) * lows_max)
-        mids_val = (np.array((0,255,0)) * mids_max)
-        high_val = (np.array((0,0,255)) * high_max)
+        lows_val = (np.array((255,0,0)) * np.max(lows))
+        mids_val = (np.array((0,255,0)) * np.max(mids))
+        high_val = (np.array((0,0,255)) * np.max(high))
 
         # Roll the effect and apply the decay
         speed = self.config['speed']

@@ -11,21 +11,21 @@ PROJECT_AUTHOR = 'Austin Hodges'
 PROJECT_AUTHOR_EMAIL = 'austin.b.hodges@gmail.com'
 PROJECT_URL = 'http://github.com/ahodges9/ledfx'
 
-# Need to install numpy first or scipy will fail
+# Need to install numpy first
 SETUP_REQUIRES = [
     'numpy>=1.13.3'
 ]
 
 INSTALL_REQUIRES = [
     'numpy>=1.13.3',
-    'scipy>=0.15.1',
     'voluptuous==0.11.1',
     'pyaudio>=0.2.11',
     'sacn==1.3',
     'aiohttp==3.3.2',
     'aiohttp_jinja2==1.0.0',
     'pyyaml>=3.11,<4',
-    'pypiwin32>=223;platform_system=="Windows"'
+    'aubio>=0.4.8'
+    'pypiwin32>=223;platform_system=="Windows"',
 ]
 
 setup(

@@ -1,11 +1,12 @@
-from ledfx.effects.audio import AudioReactiveEffect
+from ledfx.effects.legacyAudio import LegacyAudioReactiveEffect
 import ledfx.effects.math as math
 import voluptuous as vol
 import numpy as np
 
-class SpectrumAudioEffect(AudioReactiveEffect):
 
-    NAME = "Spectrum"
+class LegacySpectrumAudioEffect(LegacyAudioReactiveEffect):
+
+    NAME = "Spectrum (Legacy)"
     _prev_y = None
 
     def config_updated(self, config):
