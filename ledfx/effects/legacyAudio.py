@@ -165,7 +165,6 @@ class LegacyMelbankInputSource(LegacyAudioInputSource):
         """Initialize all the melbank related variables"""
 
         (self.mel_y, _, _) = self.compute_melmat()
-        print(self.mel_y)
         self.mel_gain = ExpFilter(np.tile(1e-1, self._config['samples']), alpha_decay=0.01, alpha_rise=0.99)
         self.mel_smoothing = ExpFilter(np.tile(1e-1, self._config['samples']), alpha_decay=0.5, alpha_rise=0.99)
         self.common_filter = ExpFilter(alpha_decay = 0.99, alpha_rise = 0.01)
