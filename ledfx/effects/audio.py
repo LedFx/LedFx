@@ -149,7 +149,7 @@ class MelbankInputSource(AudioInputSource):
         vol.Optional('nfft', default = 512): int,
         vol.Optional('min_frequency', default = 20): int,
         vol.Optional('max_frequency', default = 18000): int,
-        vol.Optional('min_volume', default = -30.0): float,
+        vol.Optional('min_volume', default = -70.0): float,
         vol.Optional('min_volume_count', default = 20): int,
         vol.Optional('coeffs_type', default = "mel"): str,
         vol.Optional('power', default = 0): int
@@ -248,6 +248,8 @@ class MelbankInputSource(AudioInputSource):
     def _initialize_melbank(self):
         """Initialize all the melbank related variables"""
 
+        
+        self.db_spl_filter = ExpFilter(-90, alpha_decay=0.01, alpha_rise=0.99)
         self.mel_gain = ExpFilter(np.tile(1e-1, self._config['samples']), alpha_decay=0.01, alpha_rise=0.99)
         self.mel_smoothing = ExpFilter(np.tile(1e-1, self._config['samples']), alpha_decay=0.2, alpha_rise=0.99)
         self.common_filter = ExpFilter(alpha_decay = 0.99, alpha_rise = 0.01)
@@ -269,17 +271,10 @@ class MelbankInputSource(AudioInputSource):
 
         raw_sample = self.audio_sample()
 
-        # Run a basic silence detection requiring the volume to drop for consecutive frames.
-        # Need to improve this logic as it seems to be dependant on the line volume
-        if not aubio.silence_detection(raw_sample, self._config['min_volume']):
-            self.silence_count = max(0, self.silence_count - 1)
-        else:
-            self.silence_count = min(self._config['min_volume_count'], self.silence_count + 1)
+        
+        self.db_spl_filter.update(aubio.db_spl(raw_sample))
 
-        # TODO: Fix
-        self.silence_count = 0
-
-        if self.silence_count == 0:
+        if self.db_spl_filter.value > self._config['min_volume']:
 
             fftgrain = self.pv(raw_sample)
             filter_banks = self.filterbank(fftgrain)
@@ -292,15 +287,14 @@ class MelbankInputSource(AudioInputSource):
             #     'melbankUnfiltered', filter_banks, np.array(self.melbank_frequencies)))
 
 
-            self.mel_gain.update(np.mean(filter_banks))
+            self.mel_gain.update(np.max(filter_banks))
             #filter_banks -= (np.mean(filter_banks, axis=0) + 1e-8)
             filter_banks /= self.mel_gain.value
             filter_banks = self.mel_smoothing.update(filter_banks)
         else:
-            
             filter_banks = np.zeros(self._config['samples'])
 
-
+        print(self.db_spl_filter.value)
         self._ledfx.events.fire_event(GraphUpdateEvent(
             'melbank', filter_banks, np.array(self.melbank_frequencies)))
         return filter_banks
