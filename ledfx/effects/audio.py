@@ -6,7 +6,7 @@ import voluptuous as vol
 from scipy.ndimage.filters import gaussian_filter1d
 import ledfx.effects.mel as mel
 from ledfx.effects.math import ExpFilter
-from ledfx.events import MelbankUpdateEvent
+from ledfx.events import GraphUpdateEvent
 import ledfx.effects.math as math
 from functools import lru_cache
 import numpy as np
@@ -222,8 +222,8 @@ class MelbankInputSource(AudioInputSource):
         # filter_banks /= self.mel_gain.value
         # filter_banks = self.mel_smoothing.update(filter_banks)
 
-        self._ledfx.events.fire_event(MelbankUpdateEvent(
-            filter_banks, self.melbank_frequencies))
+        self._ledfx.events.fire_event(GraphUpdateEvent(
+            'melbank', filter_banks, self.melbank_frequencies))
 
         return filter_banks
 
