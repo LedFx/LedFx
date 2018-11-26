@@ -7,7 +7,7 @@ import {
       width: drawerWidth,
       [theme.breakpoints.up('md')]: {
         width: drawerWidth,
-        position: 'relative',
+        position: 'fixed',
         height: "100%"
       }
     },
@@ -115,6 +115,15 @@ import {
       fontSize: "14px",
       fontWeight: 300,
       color: "#FFFFFF"
+    },
+    devicesItemText: {
+      margin: "0",
+      marginLeft: "10px",
+      lineHeight: "30px",
+      fontSize: "14px",
+      fontWeight: 300,
+      color: "#FFFFFF",
+      textDecoration: "none"
     },
     activeView: {
       backgroundColor: [theme.palette.primary.main],

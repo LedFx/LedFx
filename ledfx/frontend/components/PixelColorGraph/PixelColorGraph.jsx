@@ -20,9 +20,15 @@ class PixelColorGraph extends React.Component {
 
     this.websocketPacketId = 1
     this.deviceUpdateSubscription = null
-    this.state = {
+    this.state = this.getChartOptionsForDevice(props.device)
+  }
+
+  getChartOptionsForDevice(device)
+  {
+    return {
       chartData:  {
-        labels: [],
+        labels: Array.apply(null, {length: device.config.pixel_count}).map(
+          Function.call, Number),
         datasets: [
         {
             label: "Red",
@@ -30,7 +36,7 @@ class PixelColorGraph extends React.Component {
             backgroundColor: "rgba(255,0,0,0.1)",
             borderColor: "rgba(255,0,0,1)",
             pointRadius: 0,
-            data: [],
+            data: new Array(device.config.pixel_count).fill(0),
         },
         {
             label: "Green",
@@ -38,7 +44,7 @@ class PixelColorGraph extends React.Component {
             backgroundColor: "rgba(0,255,0,0.1)",
             borderColor: "rgba(0,255,0,1)",
             pointRadius: 0,
-            data: [],
+            data: new Array(device.config.pixel_count).fill(0),
         },
         {
             label: "Blue",
@@ -46,9 +52,9 @@ class PixelColorGraph extends React.Component {
             backgroundColor: "rgba(0,0,255,0.1)",
             borderColor: "rgba(0,0,255,1)",
             pointRadius: 0,
-            data: [],
+            data: new Array(device.config.pixel_count).fill(0),
         }],
-    },
+      },
       chartOptions: {
         responsive: true,
         maintainAspectRatio: false,
@@ -67,7 +73,7 @@ class PixelColorGraph extends React.Component {
                 display: false
             },
             ticks: {
-                max: 88,
+                max: device.config.pixel_count,
                 min: 0,
                 maxTicksLimit: 7
             }
@@ -86,14 +92,22 @@ class PixelColorGraph extends React.Component {
         legend: {
             display: false
         }
-    }
+      }
     }
   }
+  
 
   handleMessage = e => {
-    var chartData = this.state.chartData;
     var messageData = JSON.parse(e.data);
-    chartData.labels = Array.apply(null, {length: messageData.pixels[0].length}).map(Function.call, Number);
+
+    // Ensure this message is for the current device. This can happen
+    // during transistions between devices where the component stays
+    // loaded
+    if (messageData.device_id != this.props.device.id) {
+      return;
+    }
+
+    var chartData = this.state.chartData
     chartData.datasets[0].data = messageData.pixels[0]
     chartData.datasets[1].data = messageData.pixels[1]
     chartData.datasets[2].data = messageData.pixels[2]
@@ -101,18 +115,19 @@ class PixelColorGraph extends React.Component {
   }
 
   handleOpen = e => {
-    this.enablePixelVisualization();
+    this.enablePixelVisualization(this.props.device);
   }
 
   handleClose = e => {
   }
 
-  enablePixelVisualization = () => {
+  enablePixelVisualization = (device) => {
+
     this.state.ws.json({
       id: this.websocketPacketId,
       type: 'subscribe_event',
       event_type: 'device_update',
-      event_filter: { 'device_id': this.props.deviceId }
+      event_filter: { 'device_id': device.id }
     })
     this.deviceUpdateSubscription = this.websocketPacketId;
     this.websocketPacketId++;
@@ -157,8 +172,17 @@ class PixelColorGraph extends React.Component {
     this.disconnectWebsocket();
   }
 
+  componentWillReceiveProps(nextProps) {
+    if (this.state.ws != undefined) {
+      this.disablePixelVisualization()
+      this.enablePixelVisualization(nextProps.device)
+      this.setState(...this.state, 
+        this.getChartOptionsForDevice(nextProps.device))
+    }
+  }
+
   render() {
-    const { classes, deviceId } = this.props;
+    const { classes, device } = this.props;
     
     return (
       <Card>
@@ -172,7 +196,7 @@ class PixelColorGraph extends React.Component {
 
 PixelColorGraph.propTypes = {
   classes: PropTypes.object.isRequired,
-  deviceId: PropTypes.string.isRequired
+  device: PropTypes.object.isRequired
 };
 
 export default withStyles(styles)(PixelColorGraph);

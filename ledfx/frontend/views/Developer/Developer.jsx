@@ -9,14 +9,27 @@ import MelbankGraph from "frontend/components/MelbankGraph/MelbankGraph.jsx";
 
 class DeveloperView extends React.Component {
 
+  componentDidMount() {
+    const { device_id } = this.props.match.params;
+  }
+
   render() {
     const { classes } = this.props;
+    const { graphString } = this.props.match.params;
+
+    let graphList = graphString.split("+")
+    let graphDom = Object.keys(graphList).map(graphIndex => {
+      return (
+        <Grid item xs={12}>
+          <p>{graphList[graphIndex].replace(/^\w/, c => c.toUpperCase())} Graph</p>
+          <MelbankGraph key={graphIndex} graphId={graphList[graphIndex]}/>
+        </Grid>
+      );
+    });
+
     return (
       <Grid container spacing={24}>
-        <Grid item xs={12}>
-          <p>Melbank Graph</p>
-          <MelbankGraph/>
-        </Grid>
+        {graphDom}
       </Grid>
     );
   }

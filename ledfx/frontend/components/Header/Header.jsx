@@ -33,6 +33,9 @@ class Header extends React.Component {
           this.props.devicesById[deviceId].config.name : ""
         name = "Devices / " + deviceName
       }
+      else if (path.startsWith("/developer/")) {
+        name = "Developer / Custom"
+      }
     }
     return name;
   }

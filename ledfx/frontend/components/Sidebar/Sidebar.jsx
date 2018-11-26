@@ -1,6 +1,7 @@
 import React from "react";
 import classNames from "classnames";
 import PropTypes from "prop-types";
+import { connect } from 'react-redux'
 import { NavLink } from "react-router-dom";
 
 import withStyles from "@material-ui/core/styles/withStyles";
@@ -18,11 +19,35 @@ import logoAsset from "frontend/assets/img/logo.png";
 class Sidebar extends React.Component {
 
   isViewActive(viewName) {
-    return this.props.location.pathname.indexOf(viewName) > -1 ? true : false;
+    return this.props.location.pathname == viewName;//.indexOf(viewName) > -1 ? true : false;
   }
 
   render() {
-    const { classes, color } = this.props;
+    const { classes, color, devicesById } = this.props;
+
+    var deviceLinks = Object.keys(devicesById).map(deviceId => {
+      var listItemClass = classes.itemLink
+      if (this.isViewActive("/devices/" + deviceId))
+      {
+        listItemClass = listItemClass + " " + classes.activeView
+      }
+
+      return (
+        <NavLink
+          to={'/devices/' + devicesById[deviceId].id}
+          className={classes.item}
+          key={devicesById[deviceId].id}
+          activeClassName="active"
+          key={deviceId}>
+          <ListItem button className={listItemClass}>
+            <ListItemText
+              primary={devicesById[deviceId].config.name}
+              className={classes.devicesItemText}
+              disableTypography={true}/>
+          </ListItem>
+        </NavLink>
+      );
+    });
 
     var links = (
       <List className={classes.list}>
@@ -33,10 +58,28 @@ class Sidebar extends React.Component {
             }
 
             var listItemClass = classes.itemLink
-            if (this.isViewActive(prop.path)) {
+            if (this.isViewActive(prop.path) && prop.sidebarName != "Devices") {
               listItemClass = listItemClass + " " + classes.activeView
             }
 
+            if (prop.sidebarName === "Devices")
+            {
+              return (
+                <ListItem button className={listItemClass}>
+                <ListItemIcon className={classes.itemIcon}>
+                  <prop.icon />
+                </ListItemIcon>
+                <ListItemText
+                  primary={prop.sidebarName}
+                  className={classes.itemText}
+                  disableTypography={true}/>
+                  <List className={classes.list}>
+                    {deviceLinks}
+                  </List>  
+                </ListItem>
+              );
+            }
+            
             return (
               <NavLink
                 to={prop.path}
@@ -109,7 +152,16 @@ class Sidebar extends React.Component {
 }
 
 Sidebar.propTypes = {
-  classes: PropTypes.object.isRequired
+  classes: PropTypes.object.isRequired,
+  devicesById: PropTypes.object.isRequired,
 };
 
-export default withStyles(sidebarStyle)(Sidebar);
+function mapStateToProps(state) {
+  const { devicesById } = state
+
+  return {
+    devicesById
+  }
+}
+
+export default  connect(mapStateToProps)(withStyles(sidebarStyle)(Sidebar));

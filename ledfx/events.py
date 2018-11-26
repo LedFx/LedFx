@@ -9,7 +9,7 @@ class Event:
 
     LEDFX_SHUTDOWN = 'shutdown'
     DEVICE_UPDATE = 'device_update'
-    MELBANK_UPDATE = 'melbank_update'
+    GRAPH_UPDATE = 'graph_update'
 
     def __init__(self, type : str):
         self.event_type = type
@@ -25,11 +25,12 @@ class DeviceUpdateEvent(Event):
         self.device_id = device_id
         self.pixels = pixels.T.tolist()
 
-class MelbankUpdateEvent(Event):
+class GraphUpdateEvent(Event):
     """Event emmitted when a device's pixels are updated"""
 
-    def __init__(self, melbank : np.ndarray, frequencies : np.ndarray):
-        super().__init__(Event.MELBANK_UPDATE)
+    def __init__(self, graph_id : str, melbank : np.ndarray, frequencies : np.ndarray):
+        super().__init__(Event.GRAPH_UPDATE)
+        self.graph_id = graph_id
         self.melbank = melbank.tolist()
         self.frequencies = frequencies.tolist()
 
