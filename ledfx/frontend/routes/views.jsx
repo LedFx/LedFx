@@ -1,6 +1,7 @@
 // Icons
 import Dashboard from "@material-ui/icons/Dashboard";
 import List from "@material-ui/icons/List";
+import Settings from "@material-ui/icons/Settings";
 import Tune from "@material-ui/icons/Tune";
 
 // Components and Views
@@ -18,24 +19,31 @@ const viewRoutes = [
     component: DashboardView
   },
   {
-    path: "/devices",
-    sidebarName: "Devices",
+    path: "/devices/:device_id",
     navbarName: "Devices",
+    sidebarName: "Devices",
     icon: List,
+    component: DeviceView,
+  },
+  {
+    path: "/devices",
+    sidebarName: "Device Management",
+    navbarName: "Device Management",
+    icon: Settings,
     component: DevicesView
   },
   {
-    path: "/developer",
+    path: "/developer/:graphString",
+    navbarName: "Developer",
+    component: DeveloperView
+  },
+  {
+    path: "/developer/melbank",
     sidebarName: "Developer",
     navbarName: "Developer",
     icon: Tune,
     component: DeveloperView
-  },
-  {
-    path: "/devices/:device_id",
-    component: DeviceView,
-    navbarName: "Devices",
-  },
+  }, 
   { redirect: true, path: "/", to: "/dashboard", navbarName: "Redirect" }
 ];
 

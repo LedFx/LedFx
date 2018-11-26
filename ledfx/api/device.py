@@ -60,6 +60,7 @@ class DeviceEndpoint(RestEndpoint):
             response = { 'not found': 404 }
             return web.Response(text=json.dumps(response), status=404)
 
+        device.clear_effect()
         self._ledfx.devices.destroy(device_id)
 
         # Update and save the configuration

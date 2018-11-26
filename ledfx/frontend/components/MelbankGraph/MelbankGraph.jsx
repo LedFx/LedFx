@@ -20,6 +20,7 @@ class PixelColorGraph extends React.Component {
 
     this.websocketPacketId = 1
     this.deviceUpdateSubscription = null
+
     this.state = {
       chartData:  {
         labels: [],
@@ -94,7 +95,8 @@ class PixelColorGraph extends React.Component {
     this.state.ws.json({
       id: this.websocketPacketId,
       type: 'subscribe_event',
-      event_type: 'melbank_update'
+      event_type: 'graph_update',
+      event_filter: { 'graph_id': this.props.graphId }
     })
     this.deviceUpdateSubscription = this.websocketPacketId;
     this.websocketPacketId++;
@@ -153,7 +155,8 @@ class PixelColorGraph extends React.Component {
 }
 
 PixelColorGraph.propTypes = {
-  classes: PropTypes.object.isRequired
+  classes: PropTypes.object.isRequired,
+  graphId: PropTypes.string.isRequired
 };
 
 export default withStyles(styles)(PixelColorGraph);
