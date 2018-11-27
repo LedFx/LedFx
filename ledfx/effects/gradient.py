@@ -46,6 +46,8 @@ class GradientEffect(Effect):
 
     def _generate_bezier_curve(self, gradient_colors, gradient_length):
 
+        gradient_method = "bezier"
+
         # Check to see if we have a custom gradient, or a predefined one and
         # load the colors accordingly
         if isinstance(gradient_colors, str):
@@ -59,8 +61,6 @@ class GradientEffect(Effect):
 
         if not gradient_colors:
             gradient_colors = GRADIENTS.get('spectral')
-        if not gradient_method:
-            gradient_method = "bezier"
 
         self.rgb_list = np.array([COLORS[color.lower()] for color in gradient_colors]).T
         n_colors = len(self.rgb_list[0])
