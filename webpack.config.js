@@ -1,5 +1,6 @@
 const path = require("path");
 const webpack = require("webpack");
+const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
 const ExtractTextPlugin = require("extract-text-webpack-plugin");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
 
@@ -59,9 +60,19 @@ const config = {
     modules: [path.resolve("./ledfx"), path.resolve("./node_modules")]
   },
   plugins: [
+    new webpack.DefinePlugin({
+      'process.env': {
+        NODE_ENV: '"production"'
+      }
+    }),
     new CopyWebpackPlugin([
       {from: 'ledfx/frontend/dist', to: __dirname + "/ledfx_frontend"}
     ]),
+    new UglifyJsPlugin({
+      uglifyOptions: {        
+        ecma: 8      
+      }
+    }),
     new ExtractTextPlugin("style.css")
   ]
 };
