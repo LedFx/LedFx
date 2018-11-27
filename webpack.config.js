@@ -1,7 +1,6 @@
 const path = require("path");
 const webpack = require("webpack");
-const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
-const ExtractTextPlugin = require("extract-text-webpack-plugin");
+const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
 
 const config = {
@@ -15,29 +14,24 @@ const config = {
           {
             loader: "babel-loader",
             options: {
-              presets: ["stage-1", "react"]
+              presets: ["es2015", "react"],
+              plugins: [
+                "transform-class-properties",
+                "transform-react-jsx",
+                "transform-object-rest-spread"
+              ]
             }
           }
         ]
       },
       {
         test: /\.css$/,
-        use: ExtractTextPlugin.extract({
-          fallback: "style-loader",
-          use: [
-            {
-              loader: "css-loader",
-              options: { importLoaders: 1 }
-            },
-            {
-              loader: "postcss-loader",
-              options: {
-                ident: "postcss",
-                plugins: () => [require("autoprefixer")()]
-              }
-            }
-          ]
-        })
+        use: [
+          {
+            loader: MiniCssExtractPlugin.loader
+          },
+          "css-loader"
+        ]
       },
       {
         test: /\.(png|jpg|gif)$/,
@@ -68,12 +62,9 @@ const config = {
     new CopyWebpackPlugin([
       {from: 'ledfx/frontend/dist', to: __dirname + "/ledfx_frontend"}
     ]),
-    new UglifyJsPlugin({
-      uglifyOptions: {        
-        ecma: 8      
-      }
-    }),
-    new ExtractTextPlugin("style.css")
+    new MiniCssExtractPlugin({
+      filename: "style.css",
+    })
   ]
 };
 
