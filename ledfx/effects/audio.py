@@ -47,7 +47,8 @@ class AudioInputSource(object):
     AUDIO_CONFIG_SCHEMA = vol.Schema({
         vol.Optional('sample_rate', default = 60): int,
         vol.Optional('mic_rate', default = 44100): int,
-        vol.Optional('window_size', default = 4): int
+        vol.Optional('window_size', default = 4): int,
+        vol.Optional('device_index', default = 0): int
     }, extra=vol.ALLOW_EXTRA)
 
     def __init__(self, ledfx, config):
@@ -63,15 +64,17 @@ class AudioInputSource(object):
 
         info = self._audio.get_host_api_info_by_index(0)
         numdevices = info.get('deviceCount')
+        _LOGGER.info("Audio Input Devices:")
         for i in range(0, numdevices):
             if (self._audio.get_device_info_by_host_api_device_index(0, i).get('maxInputChannels')) > 0:
-                print("Audi Device id ", i, " - ", self._audio.get_device_info_by_host_api_device_index(0, i).get('name'))
+                _LOGGER.info("  [{}] {}".format(i, self._audio.get_device_info_by_host_api_device_index(0, i).get('name')))
 
         frames_per_buffer = int(self._config['mic_rate'] / self._config['sample_rate'])
         self._raw_audio_sample = np.zeros(frames_per_buffer, dtype = np.float32)
         self._hamming_window = (np.hamming(frames_per_buffer)).astype(np.float32)
 
         self._stream = self._audio.open(
+            input_device_index=self._config['device_index'],
             format=pyaudio.paFloat32,
             channels=1,
             rate=self._config['mic_rate'],
@@ -85,9 +88,7 @@ class AudioInputSource(object):
     def deactivate(self):
         self._stream.stop_stream()
         
-        _LOGGER.info("Audio source closed. 1")
         self._stream.close()
-        _LOGGER.info("Audio source closed.2")
         self._stream = None
         self._rolling_window = None
         _LOGGER.info("Audio source closed.")
