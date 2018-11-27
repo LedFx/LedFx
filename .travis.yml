@@ -11,38 +11,34 @@ matrix:
       python: "3.6"
       env: TOXENV=py36
       script: travis_wait 30 tox --develop
+      install:
+        - pip install -U tox coveralls
+      before_install:
+        - sudo apt-get update
+        # install portaudio as requirement for pyaudio
+        - sudo apt-get install portaudio19-dev
     -
       language: python
       python: "3.7"
       env: TOXENV=py37
       dist: xenial
       script: travis_wait 30 tox --develop
-    -
-      language: python
-      python: "3.8-dev"
-      env: TOXENV=py38
-      dist: xenial
-      script: travis_wait 30 tox --develop
-      if: branch = dev AND type = push
+      install:
+        - pip install -U tox coveralls
+      before_install:
+        - sudo apt-get update
+        # install portaudio as requirement for pyaudio
+        - sudo apt-get install portaudio19-dev
     -
       language: node_js
       script:
         - npm run build
         - npm run test
-  allow_failures:
-    - python: "3.8-dev"
-      env: TOXENV=py38
-      dist: xenial
-
+      install:
+        - yarn install
+        
 cache:
   directories:
     - $HOME/.cache/pip
     - bower_components
   yarn: true
-install:
-  - pip install -U tox coveralls
-  - yarn install
-before_install:
-  - sudo apt-get update
-  # install portaudio as requirement for pyaudio
-  - sudo apt-get install portaudio19-dev
