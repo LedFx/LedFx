@@ -19,6 +19,7 @@ class Device(BaseRegistry):
     CONFIG_SCHEMA = vol.Schema({
         vol.Required('name', description='Friendly name for the device'): str,
         vol.Optional('max_brightness', description='Max brightness for the device', default=1.0): vol.All(vol.Coerce(float), vol.Range(min=0, max=1)),
+        vol.Optional('center_offset', description='Number of pixels from the preceived center of the device', default=0): int,
         vol.Optional('refresh_rate', description='Rate that pixels are sent to the device', default=60): int,
         vol.Optional('force_refresh', description='Force the device to always refresh', default=False): bool,
         vol.Optional('preview_only', description='Preview the pixels without updating the device', default=False): bool
@@ -110,6 +111,9 @@ class Device(BaseRegistry):
         frame = None
         if self._active_effect._dirty:
             frame = np.clip(self._active_effect.pixels * self._config['max_brightness'], 0, 255)
+            if self._config['center_offset']:
+                frame = np.roll(frame, self._config['center_offset'], axis = 0)
+
             self._active_effect._dirty = self._config['force_refresh']
 
         return frame
