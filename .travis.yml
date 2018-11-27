@@ -35,10 +35,9 @@ matrix:
         - npm run build
         - npm run test
       install:
-        - yarn install
+        - npm install
         
 cache:
   directories:
     - $HOME/.cache/pip
-    - bower_components
-  yarn: true
+    - node_modules
