@@ -30,6 +30,7 @@
     "cross-fetch": "^2.2.2",
     "css-loader": "^0.28.7",
     "extract-text-webpack-plugin": "^3.0.2",
+    "uglifyjs-webpack-plugin": "1.2.7",
     "file-loader": "^1.1.11",
     "history": "^4.7.2",
     "material-ui": "^0.20.1",
