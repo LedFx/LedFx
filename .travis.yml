@@ -31,6 +31,7 @@ matrix:
         - sudo apt-get install portaudio19-dev
     -
       language: node_js
+      node_js: "stable"
       script:
         - npm run build
         - npm run test
@@ -40,4 +41,4 @@ matrix:
 cache:
   directories:
     - $HOME/.cache/pip
-    - node_modules
+    - "node_modules"
