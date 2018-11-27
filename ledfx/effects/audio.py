@@ -61,6 +61,12 @@ class AudioInputSource(object):
         if self._audio is None:
             self._audio = pyaudio.PyAudio()
 
+        info = self._audio.get_host_api_info_by_index(0)
+        numdevices = info.get('deviceCount')
+        for i in range(0, numdevices):
+            if (self._audio.get_device_info_by_host_api_device_index(0, i).get('maxInputChannels')) > 0:
+                print("Audi Device id ", i, " - ", self._audio.get_device_info_by_host_api_device_index(0, i).get('name'))
+
         frames_per_buffer = int(self._config['mic_rate'] / self._config['sample_rate'])
         self._raw_audio_sample = np.zeros(frames_per_buffer, dtype = np.float32)
         self._hamming_window = (np.hamming(frames_per_buffer)).astype(np.float32)
