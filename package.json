@@ -71,17 +71,5 @@
     "eslint-plugin-react": "7.11.1",
     "prettier": "1.14.3"
   },
-  "babel": {
-    "presets": ["es2015"],
-    "plugins": [
-      "transform-class-properties",
-      "transform-react-jsx",
-      "transform-object-rest-spread",
-      ["module-resolver", {
-        "root": ["./ledfx"],
-      }],
-      ["import-rename", {"^(.*)\\.jsx$": "$1"}]
-    ]
-  },
   "dependencies": {}
 }
