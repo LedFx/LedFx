@@ -39,6 +39,16 @@ Install and launch LedFx:
     pip install ledfx
     ledfx --open-ui
 
+Linux
+--------------
+WARNING: Linux is mostly untested
+
+.. code:: bash
+
+    sudo apt-get install portaudio19-dev
+    pip install ledfx
+    ledfx --open-ui
+
 Links
 ==============
 
