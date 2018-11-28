@@ -34,10 +34,9 @@ matrix:
       node_js: "stable"
       script:
         - npm run build
-        - npm run test
       install:
         - npm install
-        
+
 cache:
   directories:
     - $HOME/.cache/pip
