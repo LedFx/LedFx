@@ -6,9 +6,9 @@ addons:
 matrix:
   fast_finish: true
   include:
-    - python: "3.6"
-      env: TOXENV=py36
-      #after_success: coveralls
+    # - python: "3.6"
+    #   env: TOXENV=py36
+    #   #after_success: coveralls
     - python: "3.7"
       env: TOXENV=py37
       dist: xenial
@@ -21,13 +21,18 @@ matrix:
       env: TOXENV=py38
       dist: xenial
 
+language: python
+cache:
+  directories:
+    - $HOME/.cache/pip
+    - "node_modules"
 before_install:
   - sudo apt-get update
   - sudo apt-get install portaudio19-dev # Install portaudio (requirement for pyaudio)
-
 install:
   - npm install
-  - pip install tox-travis travis-sphinx
+  - pip install tox-travis
+  - pip install travis-sphinx
 
 script:
   # Build the frontend first
@@ -39,8 +44,3 @@ script:
 
 after_success:
   - travis-sphinx deploy
-
-cache:
-  directories:
-    - $HOME/.cache/pip
-    - "node_modules"
