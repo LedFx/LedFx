@@ -4,6 +4,7 @@ RGB = namedtuple('RGB','red, green, blue')
 
 COLORS = {
     'aqua': RGB(0, 255, 255),
+    'black': RGB(0, 0, 0),
     'blue': RGB(0, 0, 255),
     'gold': RGB(255, 215, 0),
     'green': RGB(0, 128, 0),
@@ -38,13 +39,35 @@ COLORS = {
 }
 
 GRADIENTS = {
-    "spectral"  : ["red", "orange", "yellow", "green", "lightblue", "blue", "purple", "pink"],
-    "dancefloor": ["red", "pink", "purple", "blue"],
-    "sunset"    : ["red", "orange", "yellow"],
-    "ocean"     : ["green", "lightblue", "blue"],
-    "jungle"    : ["green", "red", "orange"],
-    "sunny"     : ["yellow", "lightblue", "orange", "blue"],
-    "fruity"    : ["orange", "blue"],
-    "peach"     : ["orange", "pink"],
-    "rust"      : ["orange", "red"]
+    "spectral"  : { 
+        "colors": ["red", "orange", "yellow", "green", "lightblue", "blue", "purple", "pink"]
+    },
+    "dancefloor": {
+        "colors": ["red", "pink", "purple", "blue"]
+    },
+    "sunset"    : {
+        "colors": ["red", "orange", "yellow"]
+    },
+    "ocean"     : {
+        "colors": ["green", "lightblue", "blue"]
+    },
+    "jungle"    : {
+        "colors": ["green", "red", "orange"]
+    },
+    "sunny"     : {
+        "colors": ["yellow", "lightblue", "orange", "blue"]
+    },
+    "fruity"    : {
+        "colors": ["orange", "blue"]
+    },
+    "peach"     : {
+        "colors": ["orange", "pink"]
+    },
+    "rust"      : {
+        "colors": ["orange", "red"]
+    },
+    "christmas" : { 
+        "colors": ["red", "red", "red", "red", "red", "green", "green", "green", "green", "green"],
+        "method": "repeat"
+    }
 }

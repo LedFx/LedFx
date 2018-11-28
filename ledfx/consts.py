@@ -1,6 +1,6 @@
 import pathlib
 
-__version__ = "0.1.4-alpha"
+__version__ = "0.1.6-alpha"
 __author__ = "Austin Hodges"
 __copyright__ = "Austin Hodges"
 __license__ = "mit"

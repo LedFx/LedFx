@@ -1,5 +1,5 @@
 from ledfx.utils import BaseRegistry, RegistryLoader
-from scipy.ndimage.filters import gaussian_filter1d
+from functools import lru_cache
 import voluptuous as vol
 import numpy as np
 import importlib
@@ -10,6 +10,11 @@ import sys
 import os
 
 _LOGGER = logging.getLogger(__name__)
+
+def mix_colors(color_1, color_2, ratio):
+    return (color_1[0] * (1-ratio) + color_2[0] * ratio,
+            color_1[1] * (1-ratio) + color_2[1] * ratio,
+            color_1[2] * (1-ratio) + color_2[2] * ratio)
 
 def fill_solid(pixels, color):
     pixels[:,] = color
@@ -34,7 +39,41 @@ def flip_pixels(pixels):
     return np.flipud(pixels)
 
 def blur_pixels(pixels, sigma):
-    return gaussian_filter1d(pixels, axis=0, sigma=sigma)
+    rgb_array = pixels.T
+    rgb_array[0] = smooth(rgb_array[0], sigma)
+    rgb_array[1] = smooth(rgb_array[1], sigma)
+    rgb_array[2] = smooth(rgb_array[2], sigma)
+    return rgb_array.T
+
+@lru_cache(maxsize=32)
+def _gaussian_kernel1d(sigma, order, radius):
+    if order < 0:
+        raise ValueError('order must be non-negative')
+    p = np.polynomial.Polynomial([0, 0, -0.5 / (sigma * sigma)])
+    x = np.arange(-radius, radius + 1)
+    phi_x = np.exp(p(x), dtype=np.double)
+    phi_x /= phi_x.sum()
+    if order > 0:
+        q = np.polynomial.Polynomial([1])
+        p_deriv = p.deriv()
+        for _ in range(order):
+            # f(x) = q(x) * phi(x) = q(x) * exp(p(x))
+            # f'(x) = (q'(x) + q(x) * p'(x)) * phi(x)
+            q = q.deriv() + q * p_deriv
+        phi_x *= q(x)
+    return phi_x
+
+def smooth(x, sigma):
+    lw = int(4.0 * float(sigma) + 0.5)
+    w = _gaussian_kernel1d(sigma, 0, lw)
+    window_len = len(w)
+
+    s = np.r_[x[window_len-1:0:-1],x,x[-1:-window_len:-1]]
+    y = np.convolve(w/w.sum(),s,mode='valid')
+
+    if window_len < len(x):
+        return y[(window_len//2):-(window_len//2)]
+    return y[0:len(x)]
 
 @BaseRegistry.no_registration
 class Effect(BaseRegistry):
@@ -56,6 +95,7 @@ class Effect(BaseRegistry):
 
     def __init__(self, ledfx, config):
         self._ledfx = ledfx
+        self._dirty_callback = None
         self.update_config(config)
 
     def __del__(self):
@@ -141,6 +181,13 @@ class Effect(BaseRegistry):
             raise TypeError()
 
         self._dirty = True
+
+        
+        if self._dirty_callback:
+            self._dirty_callback()
+
+    def setDirtyCallback(self, callback):
+        self._dirty_callback = callback
 
     @property
     def pixel_count(self):

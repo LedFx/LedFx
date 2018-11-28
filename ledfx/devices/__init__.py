@@ -19,6 +19,7 @@ class Device(BaseRegistry):
     CONFIG_SCHEMA = vol.Schema({
         vol.Required('name', description='Friendly name for the device'): str,
         vol.Optional('max_brightness', description='Max brightness for the device', default=1.0): vol.All(vol.Coerce(float), vol.Range(min=0, max=1)),
+        vol.Optional('center_offset', description='Number of pixels from the preceived center of the device', default=0): int,
         vol.Optional('refresh_rate', description='Rate that pixels are sent to the device', default=60): int,
         vol.Optional('force_refresh', description='Force the device to always refresh', default=False): bool,
         vol.Optional('preview_only', description='Preview the pixels without updating the device', default=False): bool
@@ -46,6 +47,7 @@ class Device(BaseRegistry):
 
         self._active_effect = effect
         self._active_effect.activate(self.pixel_count)
+        #self._active_effect.setDirtyCallback(self.process_active_effect)
         if not self._active:
             self.activate()
 
@@ -67,29 +69,31 @@ class Device(BaseRegistry):
     def active_effect(self):
         return self._active_effect
 
+    def process_active_effect(self):
+        # Assemble the frame if necessary, if nothing changed just sleep
+        assembled_frame = self.assemble_frame()
+        if assembled_frame is not None:
+            if not self._config['preview_only']:
+                self.flush(assembled_frame)
+
+            def trigger_device_update_event(): 
+                self._ledfx.events.fire_event(DeviceUpdateEvent(
+                    self.id, assembled_frame))
+            self._ledfx.loop.call_soon_threadsafe(trigger_device_update_event)
+
     def thread_function(self):
         # TODO: Evaluate switching over to asyncio with UV loop optimization
         # instead of spinning a seperate thread.
+        sleep_interval = 1 / self._config['refresh_rate']
 
         if self._active:
-            self._ledfx.loop.call_later(1 / self._config['refresh_rate'],
-                self.thread_function)
-
-            # Assemble the frame if necessary, if nothing changed just sleep
-            assembled_frame = self.assemble_frame()
-            if assembled_frame is not None:
-                if not self._config['preview_only']:
-                    self.flush(assembled_frame)
-                self._ledfx.events.fire_event(DeviceUpdateEvent(
-                    self.id, assembled_frame))
+            self._ledfx.loop.call_later(sleep_interval, self.thread_function)
+            self.process_active_effect()
 
         # while self._active:
         #     start_time = time.time()
-
-        #     # Assemble the frame if necessary, if nothing changed just sleep
-        #     assembled_frame = self.assemble_frame()
-        #     if assembled_frame is not None and not self._config['preview_only']:
-        #         self.flush(assembled_frame)
+    
+        #     self.process_active_effect()
 
         #     # Calculate the time to sleep accounting for potential heavy
         #     # frame assembly operations
@@ -107,6 +111,9 @@ class Device(BaseRegistry):
         frame = None
         if self._active_effect._dirty:
             frame = np.clip(self._active_effect.pixels * self._config['max_brightness'], 0, 255)
+            if self._config['center_offset']:
+                frame = np.roll(frame, self._config['center_offset'], axis = 0)
+
             self._active_effect._dirty = self._config['force_refresh']
 
         return frame
