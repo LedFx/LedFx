@@ -35,7 +35,7 @@ PROJECT_GITHUB_PATH = '{}/{}'.format(
 PROJECT_GITHUB_URL = 'https://github.com/{}'.format(PROJECT_GITHUB_PATH)
 
 sys.path.insert(0, os.path.abspath('extensions'))
-sys.path.insert(0, os.path.abspath('../ledfx'))
+sys.path.insert(0, os.path.abspath('..'))
 
 # -- General configuration ---------------------------------------------------
 

@@ -32,7 +32,7 @@ before_install:
 install:
   - npm install
   - pip install tox-travis
-  - pip install travis-sphinx
+  - pip install -r requirements_docs.txt
 
 script:
   # Build the frontend first
