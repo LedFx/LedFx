@@ -31,7 +31,7 @@ Next install all the dependencies:
 
     conda config --add channels conda-forge
     conda install aubio portaudio pywin32
-    python setup.py install
+    pip install ledfx
     
 You should now be able to launch LedFx:
 
