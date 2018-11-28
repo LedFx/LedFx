@@ -10,13 +10,16 @@ matrix:
       language: python
       python: "3.6"
       env: TOXENV=py36
-      script: travis_wait 30 tox --develop
+      script:
+        - travis_wait 30 tox --develop
+        - travis-sphinx build --nowarn --source=docs
       install:
         - pip install -U tox coveralls
       before_install:
         - sudo apt-get update
         # install portaudio as requirement for pyaudio
         - sudo apt-get install portaudio19-dev
+        - pip install tox-travis travis-sphinx
     -
       language: python
       python: "3.7"
@@ -36,6 +39,13 @@ matrix:
         - npm run build
       install:
         - npm install
+
+after_success:
+  - travis-sphinx deploy
+
+deploy:
+  provider: script
+  script: script/travis_deploy
 
 cache:
   directories:
