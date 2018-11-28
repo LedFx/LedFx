@@ -13,6 +13,7 @@ To get started with LedFx run the following from the project root:
     python setup.py install
     ledfx --open-ui
 
+For more information see the `documentation <https://ahodges9.github.io/LedFx/>`__.
 
 Device Support
 ==============
