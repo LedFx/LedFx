@@ -84,6 +84,7 @@ def convertToJsonSchema(schema):
             val.update(convertToJsonSchema(validator))
         return val
 
+
     elif isinstance(schema, vol.Length):
         val = {}
         if schema.min is not None:
@@ -107,7 +108,11 @@ def convertToJsonSchema(schema):
         }
 
     elif isinstance(schema, vol.In):
-        return {'type': 'select', 'options': list(schema.container)}
+        return {'type': 'string', 'enum': list(schema.container)}
+        # val = {'type': 'string', 'enum': dict()}
+        # for item in schema.container:
+        #     val['enum'][item] = item
+        # return val
 
     elif isinstance(schema, vol.Coerce):
         schema = schema.type

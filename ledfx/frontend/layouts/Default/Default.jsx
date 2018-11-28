@@ -24,7 +24,16 @@ const defaultTheme = createMuiTheme({
   palette: {
     primary: cyan,
     secondary: green
-  }
+  },
+  overrides: {
+      MuiFormControl: {
+        root: {
+          margin: 8,
+          minWidth: 225,
+          flex: "1 0 30%"
+        },
+      },
+    },
 });
 
 class DefaultLayout extends React.Component {

@@ -16,7 +16,7 @@ class GradientEffect(Effect):
     """
 
     CONFIG_SCHEMA = vol.Schema({
-        vol.Optional('gradient_name', description='Preset gradient name', default = 'Spectral'): str,
+        vol.Optional('gradient_name', description='Preset gradient name', default = 'Spectral'): vol.In(list(GRADIENTS.keys())),
         vol.Optional('gradient_roll', description='Amount to shift the gradient', default = 0): vol.Coerce(int),
     })
 
@@ -51,7 +51,7 @@ class GradientEffect(Effect):
         # Check to see if we have a custom gradient, or a predefined one and
         # load the colors accordingly
         if isinstance(gradient_colors, str):
-            gradient_name = gradient_colors.lower()
+            gradient_name = gradient_colors
             gradient_colors = []
             if GRADIENTS.get(gradient_name):
                 gradient_colors = GRADIENTS.get(gradient_name).get("colors")

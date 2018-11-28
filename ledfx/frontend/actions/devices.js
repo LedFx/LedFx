@@ -18,6 +18,7 @@ function requestDeviceList() {
 }
 
 function receiveDeviceList(json) {
+  console.log(json.devices)
   return {
     type: RECEIVE_DEVICE_LIST,
     devices: json.devices,
@@ -126,7 +127,7 @@ function fetchDevice(deviceId) {
     dispatch(requestPosts(deviceId));
     return fetch(`${apiUrl}/devices/${deviceId}`)
       .then(response => response.json())
-      .then(json => dispatch(receiveDeviceUpdate(deviceId, json)));
+      .then(json => dispatch(receiveDeviceUpdate(deviceId, json)))
   };
 }
 
