@@ -13,6 +13,31 @@ To install LedFx first clone (or download) the repository and then simply run th
 
     python setup.py install
     ledfx --open-ui
+    
+Windows
+--------------
+To get started on Windows it is highly recommended that you use `Anaconda <https://www.anaconda.com/download/>`__ to make installation of Cython components easier.
+
+Start by creating a new environment for LedFx:
+
+.. code:: bash
+
+    conda create -n ledfx python=3.7
+    conda activate ledfx
+
+Next install all the dependencies:
+
+.. code:: bash
+
+    conda config --add channels conda-forge
+    conda install aubio portaudio pywin32
+    python setup.py install
+    
+You should now be able to launch LedFx:
+
+.. code:: bash
+
+    ledfx --open-ui
 
 Links
 ==============
