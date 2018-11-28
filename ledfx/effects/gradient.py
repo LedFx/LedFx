@@ -55,7 +55,7 @@ class GradientEffect(Effect):
             gradient_colors = []
             if GRADIENTS.get(gradient_name):
                 gradient_colors = GRADIENTS.get(gradient_name).get("colors")
-                gradient_method = GRADIENTS.get(gradient_name).get("method")
+                gradient_method = GRADIENTS.get(gradient_name).get("method", "bezier")
             elif COLORS.get(gradient_name):
                 gradient_colors = [gradient_name]
 
