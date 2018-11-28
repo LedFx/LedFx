@@ -294,7 +294,6 @@ class MelbankInputSource(AudioInputSource):
             # self._ledfx.events.fire_event(GraphUpdateEvent(
             #     'melbankUnfiltered', filter_banks, np.array(self.melbank_frequencies)))
 
-
             self.mel_gain.update(np.max(filter_banks))
             #filter_banks -= (np.mean(filter_banks, axis=0) + 1e-8)
             filter_banks /= self.mel_gain.value

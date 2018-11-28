@@ -34,7 +34,7 @@
     "chart.js": "^2.7.2",
     "copy-webpack-plugin": "^4.5.2",
     "cross-fetch": "^2.2.2",
-    "css-loader": "^0.28.11",
+    "css-loader": "^1.0.1",
     "file-loader": "^1.1.11",
     "history": "^4.7.2",
     "mini-css-extract-plugin": "^0.4.5",
