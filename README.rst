@@ -1,5 +1,6 @@
-LedFx  |Build Status| |License| |Discord|
+LedFx
 =================================================================================
+|Build Status| |License| |Discord|
 
 WARNING: This project is in early development, so expect to encounter minor issues along the way.
 
