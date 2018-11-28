@@ -6,38 +6,41 @@ addons:
 matrix:
   fast_finish: true
   include:
-    -
-      language: python
-      python: "3.6"
-      env: TOXENV=py36
-      script: travis_wait 30 tox --develop
-      install:
-        - pip install -U tox coveralls
-      before_install:
-        - sudo apt-get update
-        # install portaudio as requirement for pyaudio
-        - sudo apt-get install portaudio19-dev
-    -
-      language: python
-      python: "3.7"
+    # - python: "3.6"
+    #   env: TOXENV=py36
+    #   #after_success: coveralls
+    - python: "3.7"
       env: TOXENV=py37
       dist: xenial
-      script: travis_wait 30 tox --develop
-      install:
-        - pip install -U tox coveralls
-      before_install:
-        - sudo apt-get update
-        # install portaudio as requirement for pyaudio
-        - sudo apt-get install portaudio19-dev
-    -
-      language: node_js
-      node_js: "stable"
-      script:
-        - npm run build
-      install:
-        - npm install
+    - python: "3.8-dev"
+      env: TOXENV=py38
+      dist: xenial
+      if: branch = dev AND type = push
+  allow_failures:
+    - python: "3.8-dev"
+      env: TOXENV=py38
+      dist: xenial
 
+language: python
 cache:
   directories:
     - $HOME/.cache/pip
     - "node_modules"
+before_install:
+  - sudo apt-get update
+  - sudo apt-get install portaudio19-dev # Install portaudio (requirement for pyaudio)
+install:
+  - npm install
+  - pip install tox-travis
+  - pip install -r requirements_docs.txt
+
+script:
+  # Build the frontend first
+  - npm run build
+  # Then, build the backend
+  - travis_wait 30 tox --develop
+  # Finally, build the docs
+  - travis-sphinx build --nowarn --source=docs
+
+after_success:
+  - travis-sphinx deploy

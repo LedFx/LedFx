@@ -13,8 +13,6 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 import sys
 import os
-from ledfx.consts import PROJECT_VERSION
-
 
 # -- Project information -----------------------------------------------------
 
@@ -26,7 +24,6 @@ PROJECT_SHORT_DESCRIPTION = 'LedFx is an open-source effect controller'
 PROJECT_LONG_DESCRIPTION = ('LedFx is an open-source effect controller '
                             'designed to synchronize reactive effects across '
                             'various networked devices.')
-PROJECT_SOURCE_PATH = 'docs/src/'
 PROJECT_GITHUB_USERNAME = 'ahodges9'
 PROJECT_GITHUB_REPOSITORY = 'LedFx'
 PROJECT_GITHUB_BRANCH = "master"
@@ -34,8 +31,7 @@ PROJECT_GITHUB_PATH = '{}/{}'.format(
     PROJECT_GITHUB_USERNAME, PROJECT_GITHUB_REPOSITORY)
 PROJECT_GITHUB_URL = 'https://github.com/{}'.format(PROJECT_GITHUB_PATH)
 
-sys.path.insert(0, os.path.abspath('extensions'))
-sys.path.insert(0, os.path.abspath('../../ledfx'))
+sys.path.insert(0, os.path.abspath('..'))
 
 # -- General configuration ---------------------------------------------------
 
