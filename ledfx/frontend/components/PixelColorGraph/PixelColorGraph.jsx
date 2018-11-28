@@ -160,8 +160,9 @@ class PixelColorGraph extends React.Component {
   }
 
   disconnectWebsocket = () => {
-    if (this.state.ws != undefined) {
-      this.state.ws.close();
+    if (this.state.ws != undefined &&
+      this.websocketActive) {
+      this.state.ws.close(1000);
       this.setState(...this.state, {ws: undefined});
     }
   }
