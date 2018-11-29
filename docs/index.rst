@@ -49,6 +49,15 @@ WARNING: Linux is mostly untested
     pip install ledfx
     ledfx --open-ui
 
+Device Support
+==============
+LedFx currently only supports networked attached lights that speak either the E1.31 sACN protocol, or a generic UDP protocol. There are a ton of options ranging from cheap ESP8266 based devices, to professional DMX/sACN controllers. NodeMCU's are great for beginners and you can run a small WS2812B or 5V WS2811 without any soldering!
+
+Here is a list of tested ESP8266 Firmware's that work with LedFx:
+    * `ESPixelStick <https://github.com/forkineye/ESPixelStick>`_ works as a great E1.31 device
+    * `WLED <https://github.com/Aircoookie/WLED>`_ works as either a UDP device or E1.31 device
+
+
 Links
 ==============
 
