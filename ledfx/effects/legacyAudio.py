@@ -36,7 +36,8 @@ class LegacyAudioInputSource(object):
     AUDIO_CONFIG_SCHEMA = vol.Schema({
         vol.Optional('sample_rate', default = 60): int,
         vol.Optional('mic_rate', default = 44100): int,
-        vol.Optional('window_size', default = 4): int
+        vol.Optional('window_size', default = 4): int,
+        vol.Optional('device_index', default = 0): int
     }, extra=vol.ALLOW_EXTRA)
 
     def __init__(self, ledfx, config):
@@ -55,6 +56,7 @@ class LegacyAudioInputSource(object):
         self._hamming_window = np.hamming(frames_per_buffer)
 
         self._stream = self._audio.open(
+            input_device_index=self._config['device_index'],
             format=pyaudio.paInt16,
             channels=1,
             rate=self._config['mic_rate'],

@@ -62,10 +62,9 @@ class AudioInputSource(object):
         if self._audio is None:
             self._audio = pyaudio.PyAudio()
 
-        info = self._audio.get_host_api_info_by_index(0)
-        numdevices = info.get('deviceCount')
         _LOGGER.info("Audio Input Devices:")
-        for i in range(0, numdevices):
+        info = self._audio.get_host_api_info_by_index(0)
+        for i in range(0, info.get('deviceCount')):
             if (self._audio.get_device_info_by_host_api_device_index(0, i).get('maxInputChannels')) > 0:
                 _LOGGER.info("  [{}] {}".format(i, self._audio.get_device_info_by_host_api_device_index(0, i).get('name')))
 

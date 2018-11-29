@@ -20,19 +20,25 @@ const styles = theme => ({
   button: {
     margin: theme.spacing.unit,
     float: "right"
-  }
+  },
+  submitControls: {
+    margin: theme.spacing.unit,
+    display: "block",
+    width: "100%"
+  },
 });
 
 class EffectControl extends React.Component {
 
   componentDidMount() {
-    this.props.dispatch(fetchDeviceEffects(this.props.deviceId));
+    console.log(this.props.device)
+    this.props.dispatch(fetchDeviceEffects(this.props.device.id));
   }
 
   handleClearEffect = () => {
     fetch(
       `${window.location.protocol}//${window.location.host}/api/devices/${
-        this.props.deviceId}/effects`,
+        this.props.device.id}/effects`,
       {
       method: "DELETE"
       }
@@ -46,7 +52,7 @@ class EffectControl extends React.Component {
 
     fetch(
       `${window.location.protocol}//${window.location.host}/api/devices/${
-        this.props.deviceId}/effects`,
+        this.props.device.id}/effects`,
       {
         method: "PUT",
         headers: {
@@ -72,6 +78,7 @@ class EffectControl extends React.Component {
             schemaCollection={schemas.effects}
             onSubmit={this.handleSetEffect}
           >
+          <div className={classes.submitControls}>
             <Button
               className={classes.button}
               type="submit"
@@ -87,6 +94,7 @@ class EffectControl extends React.Component {
             >
               Clear Effect
             </Button>
+          </div>
           </SchemaFormCollection>
         </CardContent>
       </Card>
@@ -100,14 +108,14 @@ class EffectControl extends React.Component {
 EffectControl.propTypes = {
   classes: PropTypes.object.isRequired,
   schemas: PropTypes.object.isRequired,
-  deviceId: PropTypes.string.isRequired
+  device: PropTypes.object.isRequired
 };
 
 function mapStateToProps(state) {
-  const { schemas, devicesById } = state;
+  const { schemas } = state;
 
   return {
-    schemas, devicesById
+    schemas
   };
 }
 

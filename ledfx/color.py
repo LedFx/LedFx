@@ -39,34 +39,34 @@ COLORS = {
 }
 
 GRADIENTS = {
-    "spectral"  : { 
+    "Spectral"  : { 
         "colors": ["red", "orange", "yellow", "green", "lightblue", "blue", "purple", "pink"]
     },
-    "dancefloor": {
+    "Dancefloor": {
         "colors": ["red", "pink", "purple", "blue"]
     },
-    "sunset"    : {
+    "Sunset"    : {
         "colors": ["red", "orange", "yellow"]
     },
-    "ocean"     : {
+    "Ocean"     : {
         "colors": ["green", "lightblue", "blue"]
     },
-    "jungle"    : {
+    "Jungle"    : {
         "colors": ["green", "red", "orange"]
     },
-    "sunny"     : {
+    "Sunny"     : {
         "colors": ["yellow", "lightblue", "orange", "blue"]
     },
-    "fruity"    : {
+    "Fruity"    : {
         "colors": ["orange", "blue"]
     },
-    "peach"     : {
+    "Peach"     : {
         "colors": ["orange", "pink"]
     },
-    "rust"      : {
+    "Rust"      : {
         "colors": ["orange", "red"]
     },
-    "christmas" : { 
+    "Christmas" : { 
         "colors": ["red", "red", "red", "red", "red", "green", "green", "green", "green", "green"],
         "method": "repeat"
     }

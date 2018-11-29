@@ -7,7 +7,7 @@ class BeatAudioEffect(AudioReactiveEffect, GradientEffect):
 
     NAME = "Beat"
     CONFIG_SCHEMA = vol.Schema({
-        vol.Optional('frequency_range', description='Frequency range for the beat detection', default = 'bass'): str,
+        vol.Optional('frequency_range', description='Frequency range for the beat detection', default = 'bass'): vol.In(list(FREQUENCY_RANGES.keys())),
     })
 
     def config_updated(self, config):

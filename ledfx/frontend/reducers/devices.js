@@ -19,26 +19,32 @@ function device(
 ) {
     switch (action.type) {
         case INVALIDATE_DEVICE:
-            return Object.assign({}, state, {
-                didInvalidate: true
-            })
+            return {...state, didInvalidate: true }
         case REQUEST_DEVICE_UPDATE:
-            return Object.assign({}, state, {
+            return {
+                ...state, 
                 isFetching: true,
                 didInvalidate: false
-            })
+            }
         case RECEIVE_DEVICE_UPDATE:
-            return Object.assign({}, state, {
+            return {
+                ...state, 
                 isFetching: false,
                 didInvalidate: false,
                 config: action.config,
                 lastUpdated: action.receivedAt
-            })
+            }
         case RECEIVE_DEVICE_EFECT_UPDATE:
-            return Object.assign({}, state, {
-                effects: action.effects,
+            console.log(action)
+            return {
+                ...state, 
+                effects: action.effects, 
                 lastUpdated: action.receivedAt
-            })
+            }
+            // return Object.assign({}, state, {
+            //     effects: action.effects,
+            //     lastUpdated: action.receivedAt
+            // })
         default:
             return state
     }
