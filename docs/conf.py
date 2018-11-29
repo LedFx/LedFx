@@ -93,7 +93,7 @@ html_context = {
   'display_github': True,
   'github_user': PROJECT_GITHUB_USERNAME,
   'github_repo': PROJECT_GITHUB_REPOSITORY,
-  'github_version': '{}/docs/source/'.format(PROJECT_GITHUB_BRANCH)
+  'github_version': '{}/docs/'.format(PROJECT_GITHUB_BRANCH)
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
