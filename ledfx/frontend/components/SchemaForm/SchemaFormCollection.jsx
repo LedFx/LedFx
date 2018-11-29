@@ -9,6 +9,7 @@ import MenuItem from "@material-ui/core/MenuItem";
 import FormControl from "@material-ui/core/FormControl";
 
 import Button from "@material-ui/core/Button";
+import Collapse from "@material-ui/core/Collapse";
 import { defaultTheme } from "frontend/layouts/Default/Default.jsx"
 //import SchemaForm from "frontend/components/SchemaForm/SchemaForm.jsx";
 
@@ -18,6 +19,10 @@ var { SchemaForm } = require('react-schema-form');
 
 const styles = theme => ({
   form: {
+    display: "flex",
+    flexWrap: "wrap"
+  },
+  flexWrap: {
     display: "flex",
     flexWrap: "wrap"
   },
@@ -32,6 +37,14 @@ const styles = theme => ({
     flexWrap: "wrap",
     width: "100%"
   },
+  additionalWrapper: {
+    display: "inline-grid"
+  },
+  additionalButton: {
+    display: "block",
+    width: "100%",
+    float: "right"
+  }
 });
 
 class SchemaFormCollection extends React.Component {
@@ -40,9 +53,8 @@ class SchemaFormCollection extends React.Component {
 
     this.state = {
       collectionKey: "",
-      model: {
-        test: "WHAT IS UP!"
-      },
+      showAdditional: false,
+      model: {},
       form: [
         "*",
         {
@@ -60,6 +72,12 @@ class SchemaFormCollection extends React.Component {
       ]]
     };
   }
+
+  showAdditional = () => {
+    this.setState(...this.state, {
+      showAdditional: !this.state.showAdditional
+    });
+  };
 
 
   handleChangeSelectedCollection = event => {
@@ -82,14 +100,12 @@ class SchemaFormCollection extends React.Component {
   }
 
   render() {
-    const { children, classes, onChange, onSubmit, schemaCollection, ...otherProps } = this.props;
+    const { children, classes, onChange, onSubmit, schemaCollection, useAdditionalProperties, ...otherProps } = this.props;
 
     var currentSchema = {"type": "object", "title": "Effect Configuration", properties: {}}
     if (this.state.collectionKey !== "") {
       currentSchema = {...currentSchema, ...schemaCollection[this.state.collectionKey].schema}
     }
-
-    console.log("SCHEMA", currentSchema)
 
     let customSelect = (
       <FormControl className={classes.control}>
@@ -112,6 +128,38 @@ class SchemaFormCollection extends React.Component {
       </FormControl>
     );
 
+    var additionUi = null
+    var form = ["*"]
+    const requiredKeys = currentSchema['required'];
+    const optionalKeys = Object.keys(currentSchema['properties']).filter(
+      key => requiredKeys && requiredKeys.indexOf(key) === -1);
+    if (useAdditionalProperties && optionalKeys.length)
+    {
+      form = requiredKeys;
+      additionUi = (
+        <div className={classes.additionalWrapper}>
+          <Button
+            size="small"
+            className={classes.additionalButton}
+            onClick={this.showAdditional}
+          >
+            Additional Configuration
+          </Button>
+          <Collapse in={this.state.showAdditional}>
+            <div className={classes.flexWrap} >
+              <SchemaForm
+                className={classes.schemaForm} 
+                schema={currentSchema}
+                form={optionalKeys}
+                model={this.state.model}
+                onModelChange={this.onModelChange}
+                {...otherProps} />
+            </div>
+          </Collapse>
+        </div>
+      );
+    }
+
     return (
       <form onSubmit={this.handleSubmit} className={classes.form}>
         {customSelect}
@@ -119,10 +167,12 @@ class SchemaFormCollection extends React.Component {
         <SchemaForm
           className={classes.schemaForm} 
           schema={currentSchema}
-          form={this.state.form}
+          form={form}
           model={this.state.model}
           onModelChange={this.onModelChange}
           {...otherProps} />
+      
+        {additionUi}
       
         {children ? (children) : (
           <Button type="submit" className={classes.button}>

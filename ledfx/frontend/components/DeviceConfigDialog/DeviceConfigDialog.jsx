@@ -53,7 +53,7 @@ class DeviceConfigDialog extends React.Component {
           <SchemaFormCollection
             schemaCollection={schemas.devices}
             onSubmit={this.handleSubmit}
-            primaryFilter={prop => prop.required === true}
+            useAdditionalProperties={true}
           >
             <Button
               className={classes.button}
