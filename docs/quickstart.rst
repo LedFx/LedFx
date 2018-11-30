@@ -59,16 +59,16 @@ Device Configuration
 ====================
 Once you have LedFx running it's time to add devices! Once you have a device setup with appropriate firmware for integration to LedFx nagivate the the 'Device Management' page and click the '+' in the bottom right. Add the device using the following configuration based on your firmware:
 
-    `ESPixelStick <https://github.com/forkineye/ESPixelStick>`_
+    * `ESPixelStick <https://github.com/forkineye/ESPixelStick>`_
     
         - Add the device as a E1.31 device. The default E1.31 settings should work fine.
         
-    `Scott's Audio Reactive Firmware <https://github.com/scottlawsonbc/audio-reactive-led-strip>`_
+    * `Scott's Audio Reactive Firmware <https://github.com/scottlawsonbc/audio-reactive-led-strip>`_
     
         - Add the device as a UDP
         - Click 'Additional Properties' and check 'Include Indexes'
         
-    `WLED <https://github.com/Aircoookie/WLED>`_
+    * `WLED <https://github.com/Aircoookie/WLED>`_
     
         - Enabled E1.31 support from the WLED web-interface
         - Add the device as an E1.31 device
