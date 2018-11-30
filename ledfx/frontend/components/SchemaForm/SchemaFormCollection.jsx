@@ -89,7 +89,6 @@ class SchemaFormCollection extends React.Component {
 
   onModelChange = (key, val) => {
     selectOrSet(key, this.state.model, val);
-    console.log(this.state.model)
   }
 
   handleSubmit = event => {

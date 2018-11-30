@@ -140,7 +140,7 @@ class Effect(BaseRegistry):
     def config_updated(self, config):
         """
         Optional event for when an effect's config is updated. This
-        shold be used by the subclass only if they need to build up
+        should be used by the subclass only if they need to build up
         complex properties off the configuration, otherwise the config
         should just be referenced in the effect's loop directly
         """
@@ -163,7 +163,8 @@ class Effect(BaseRegistry):
     def pixels(self, pixels):
         """Sets the pixels for the channel"""
         if not self._active:
-            raise Exception('Attempting to set pixels before effect is active')
+            _LOGGER.warning('Attempting to set pixels before effect is active. Dropping.')
+            return
 
         if isinstance(pixels, tuple):
             self._pixels = np.copy(pixels)
