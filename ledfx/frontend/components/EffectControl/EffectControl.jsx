@@ -1,10 +1,10 @@
 import React from "react";
 import PropTypes from "prop-types";
 import { connect } from "react-redux";
-import fetch from "cross-fetch";
 import withStyles from "@material-ui/core/styles/withStyles";
 
 import {
+  setDeviceEffect,
   fetchDeviceEffects
 } from "frontend/actions";
 
@@ -28,6 +28,7 @@ const styles = theme => ({
   },
 });
 
+
 class EffectControl extends React.Component {
 
   componentDidMount() {
@@ -35,35 +36,11 @@ class EffectControl extends React.Component {
   }
 
   handleClearEffect = () => {
-    fetch(
-      `${window.location.protocol}//${window.location.host}/api/devices/${
-        this.props.device.id}/effects`,
-      {
-      method: "DELETE"
-      }
-    );
+    this.props.dispatch(setDeviceEffect(this.props.device.id, null, null))
   };
 
   handleSetEffect = (type, config) => {
-    if (!type) {
-      return this.handleClearEffect()
-    }
-
-    fetch(
-      `${window.location.protocol}//${window.location.host}/api/devices/${
-        this.props.device.id}/effects`,
-      {
-        method: "PUT",
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          type: type,
-          config: config
-        })
-      }
-    );
+    this.props.dispatch(setDeviceEffect(this.props.device.id, type, config))
   };
 
   render() {

@@ -98,7 +98,7 @@ class AudioInputSource(object):
             self.activate()
 
     def unsubscribe(self, callback):
-        """Unregisters a callback with the input srouce"""
+        """Unregisters a callback with the input source"""
         self._callbacks.remove(callback)
 
         if len(self._callbacks) == 0:
@@ -128,7 +128,7 @@ class AudioInputSource(object):
         sample = self._raw_audio_sample
 
         # TODO: Added a pre-emphasis which seems to help amplify the higher
-        # frequencies giving a more balanaced melbank. Need to evaluate how
+        # frequencies giving a more balanced melbank. Need to evaluate how
         # this fully impacts the effects.
         if pre_emphasis:
             sample = np.append(sample[0], sample[1:] - pre_emphasis * sample[:-1])
@@ -338,15 +338,17 @@ class AudioReactiveEffect(Effect):
     """
     Base for audio reactive effects. This really just subscribes
     to the melbank input source and forwards input along to the 
-    subclasses. This can be expaneded to do the common r/g/b filters.
+    subclasses. This can be expanded to do the common r/g/b filters.
     """
 
     def activate(self, channel):
+        _LOGGER.info('Activating AudioReactiveEffect.')
         super().activate(channel)
         get_melbank_input_source(self._ledfx).subscribe(
             self._audio_data_updated)
 
     def deactivate(self):
+        _LOGGER.info('Deactivating AudioReactiveEffect.')
         get_melbank_input_source(self._ledfx).unsubscribe(
             self._audio_data_updated)
         super().deactivate()
@@ -359,11 +361,12 @@ class AudioReactiveEffect(Effect):
         return ExpFilter(alpha_decay=alpha_decay, alpha_rise=alpha_rise)
 
     def _audio_data_updated(self):
-        self.audio_data_updated(get_melbank_input_source(self._ledfx))
+        if self.is_active:
+            self.audio_data_updated(get_melbank_input_source(self._ledfx))
 
     def audio_data_updated(self, data):
         """
-        Callback for when the audio data is updatead. Should
+        Callback for when the audio data is updated. Should
         be implemented by subclasses
         """
         pass

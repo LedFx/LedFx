@@ -16,13 +16,13 @@ class EffectsEndpoint(RestEndpoint):
             return web.Response(text=json.dumps(response), status=404)
 
         # Get the active effect
-        response = { 'effects' : {}}
+        response = { 'effect' : {}}
         if device.active_effect:
             effect_response = {}
             effect_response['config'] = device.active_effect.config
             effect_response['name'] = device.active_effect.name
             effect_response['type'] = device.active_effect.type
-            response = { 'effects' : effect_response }
+            response = { 'effect' : effect_response }
 
         return web.Response(text=json.dumps(response), status=200)
 
@@ -49,7 +49,12 @@ class EffectsEndpoint(RestEndpoint):
             config = effect_config)
         device.set_effect(effect)
 
-        response = { 'status' : 'success' }
+        effect_response = {}
+        effect_response['config'] = effect.config
+        effect_response['name'] = effect.name
+        effect_response['type'] = effect.type
+
+        response = { 'status' : 'success', 'effect' : effect_response}
         return web.Response(text=json.dumps(response), status=200)
 
     async def delete(self, device_id) -> web.Response:
@@ -61,5 +66,5 @@ class EffectsEndpoint(RestEndpoint):
         # Clear the effect
         device.clear_effect()
 
-        response = { 'status' : 'success' }
+        response = { 'status' : 'success', 'effect' : {} }
         return web.Response(text=json.dumps(response), status=200)

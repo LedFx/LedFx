@@ -7,7 +7,7 @@ export const RECEIVE_DEVICE_LIST = "RECEIVE_DEVICE_LIST";
 export const RECEIVE_DEVICE_ENTRY = "RECEIVE_DEVICE_ENTRY";
 export const REQUEST_DEVICE_UPDATE = "REQUEST_DEVICE_UPDATE";
 export const RECEIVE_DEVICE_UPDATE = "RECEIVE_DEVICE_UPDATE";
-export const RECEIVE_DEVICE_EFECT_UPDATE = "RECEIVE_DEVICE_EFECT_UPDATE";
+export const RECEIVE_DEVICE_EFFECT_UPDATE = "RECEIVE_DEVICE_EFFECT_UPDATE";
 export const INVALIDATE_DEVICE = "INVALIDATE_DEVICE";
 export const SET_DEVICE_EFFECT = "SET_DEVICE_EFFECT";
 
@@ -73,18 +73,30 @@ export function fetchDeviceList() {
 
 export function setDeviceEffect(deviceId, effectType, effectConfig) {
   return dispatch => {
-    const data = {
-      type: effectType,
-      config: effectConfig
-    };
-    fetch(`${apiUrl}/devices/${deviceId}/effects`, {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(data)
-    });
+    if (effectType)
+    {
+      fetch(`${apiUrl}/devices/${deviceId}/effects`, {
+        method: "PUT",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          type: effectType,
+          config: effectConfig
+        })
+      })
+      .then(response => response.json())
+      .then(json => dispatch(receiveDeviceEffectUpdate(deviceId, json)));
+    }
+    else
+    {
+      fetch(`${apiUrl}/devices/${deviceId}/effects`, {
+        method: "DELETE"
+      })
+      .then(response => response.json())
+      .then(json => dispatch(receiveDeviceEffectUpdate(deviceId, json)));
+    }
   };
 }
 
@@ -113,9 +125,9 @@ function receiveDeviceUpdate(deviceId, json) {
 
 function receiveDeviceEffectUpdate(deviceId, json) {
   return {
-    type: RECEIVE_DEVICE_EFECT_UPDATE,
+    type: RECEIVE_DEVICE_EFFECT_UPDATE,
     deviceId,
-    effects: json.effects,
+    effect: json.effect,
     receivedAt: Date.now()
   }; 
 }
