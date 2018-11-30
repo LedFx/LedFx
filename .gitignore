@@ -12,6 +12,11 @@ __pycache__/*
 .*.swp
 */.ipynb_checkpoints/*
 
+# NPM
+node_modules/
+npm-debug.log
+package-lock.json
+
 # Project files
 .ropeproject
 .project

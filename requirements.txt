@@ -1,10 +1,16 @@
 # Requirements. These can can be installed with:
 #   pip install -r requirements.txt
 
-numpy==1.13.3
+# You will need a C compiler and proper setup for Cython
+# https://wiki.python.org/moin/WindowsCompilers
+# or use conda to install
+# conda install -c conda-forge aubio
+
+numpy>=1.13.3
 voluptuous==0.11.1
 pyaudio==0.2.11
 sacn==1.3
 aiohttp==3.3.2
 aiohttp_jinja2==1.0.0
 pyyaml>=3.11,<4
+aubio>=0.4.8

@@ -2,10 +2,16 @@
 Changelog
 =========
 
-Version 0.1.0a0
+Version 0.2
 ===========
 
-- Initial alpha release with very basic end-to-end support
+- More effects and support for UDP devices
+- Frontend converted to react and more features added
+
+Version 0.1
+===========
+
+- Initial release with basic feature set!
     - Added a framework for highly customizable effects and outputs
+    - Added support for E1.31 devices
     - Added some basic effects and audio reaction ones
-    - Added very basic web interface to allow configuration

@@ -1,0 +1,6 @@
+sphinx==1.7.6
+sphinxcontrib-websupport==1.1.0
+sphinx-autodoc-typehints==1.3.0
+sphinx-autodoc-annotation==1.0.post1
+sphinx_rtd_theme==0.4.1
+travis-sphinx==2.2.1
