@@ -35,7 +35,6 @@ function device(
                 lastUpdated: action.receivedAt
             }
         case RECEIVE_DEVICE_EFECT_UPDATE:
-            console.log(action)
             return {
                 ...state, 
                 effects: action.effects, 

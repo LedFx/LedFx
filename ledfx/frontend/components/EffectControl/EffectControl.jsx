@@ -31,7 +31,6 @@ const styles = theme => ({
 class EffectControl extends React.Component {
 
   componentDidMount() {
-    console.log(this.props.device)
     this.props.dispatch(fetchDeviceEffects(this.props.device.id));
   }
 

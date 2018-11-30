@@ -18,7 +18,6 @@ function requestDeviceList() {
 }
 
 function receiveDeviceList(json) {
-  console.log(json.devices)
   return {
     type: RECEIVE_DEVICE_LIST,
     devices: json.devices,
@@ -113,7 +112,6 @@ function receiveDeviceUpdate(deviceId, json) {
 }
 
 function receiveDeviceEffectUpdate(deviceId, json) {
-  console.log(json);
   return {
     type: RECEIVE_DEVICE_EFECT_UPDATE,
     deviceId,

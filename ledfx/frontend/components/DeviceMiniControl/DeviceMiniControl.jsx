@@ -16,7 +16,7 @@ class DeviceMiniControl extends React.Component {
 
   render() {
     const { classes, device } = this.props;
-    console.log(device)
+
     return (
     <Card>
         <CardContent>

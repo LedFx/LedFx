@@ -16,13 +16,14 @@ class DashboardView extends React.Component {
       <div>
         <Card>
             <CardContent>
-              {
+              {/* {
                 Object.keys(devicesById).map(id => {
                   return (
                     <DeviceMiniControl key={id} device={devicesById[id]}/>
                   );
                 })
-              }
+              } */}
+              <p>Quick Control Coming Soon.</p>
             </CardContent>
         </Card>
       </div>
