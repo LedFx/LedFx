@@ -3,7 +3,6 @@ import logging
 import pyaudio
 from ledfx.effects import Effect
 import voluptuous as vol
-import ledfx.effects.mel as mel
 from ledfx.effects.math import ExpFilter
 from ledfx.events import GraphUpdateEvent
 import ledfx.effects.math as math
