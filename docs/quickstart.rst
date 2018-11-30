@@ -6,16 +6,16 @@ LedFx is a network controller that aim to enable synchronization of multiple lig
 
 Here is everything you need to get started with LedFx:
 
-    * A Computer (or Raspberry Pi) with Python 3.6 or 3.7 (`Anaconda <https://www.anaconda.com/download/>`__ is recommended on Windows)
-    * A E1.31 capable device with addressiable LEDs connected
+    #. A Computer (or Raspberry Pi) with Python 3.6 or 3.7 (`Anaconda <https://www.anaconda.com/download/>`__ is recommended on Windows)
+    #. A E1.31 capable device with addressiable LEDs connected
     
-        * Commercial grade DMX controllers
-        * ESP8266 modules can be purchased for as little as $2 USD from Aliexpress
+        - Commercial grade DMX controllers
+        - ESP8266 modules can be purchased for as little as $2 USD from Aliexpress
 
 Here is a list of tested ESP8266 firmware that work with LedFx:
 
-    * `ESPixelStick <https://github.com/forkineye/ESPixelStick>`_ works as a great E1.31 device
-    * `WLED <https://github.com/Aircoookie/WLED>`_ works as either a UDP device or E1.31 device
+    - `ESPixelStick <https://github.com/forkineye/ESPixelStick>`_ works as a great E1.31 device
+    - `WLED <https://github.com/Aircoookie/WLED>`_ works as either a UDP device or E1.31 device
 
 Windows Installation
 ====================
