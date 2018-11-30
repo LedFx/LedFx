@@ -30,7 +30,7 @@ class ScrollAudioEffect(AudioReactiveEffect):
             self.output = self.pixels
 
         # Grab the melbank and scale it up for the effect and clip
-        y = data.melbank() / 10
+        y = data.melbank()
         y = np.clip(y, 0, 1)
 
         # Divide the melbank into lows, mids and highs

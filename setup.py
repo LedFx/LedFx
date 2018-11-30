@@ -24,8 +24,8 @@ INSTALL_REQUIRES = [
     'aiohttp==3.3.2',
     'aiohttp_jinja2==1.0.0',
     'pyyaml>=3.11,<4',
-    'aubio>=0.4.8'
-    'pypiwin32>=223;platform_system=="Windows"',
+    'aubio>=0.4.8',
+    'pypiwin32>=223;platform_system=="Windows"'
 ]
 
 setup(

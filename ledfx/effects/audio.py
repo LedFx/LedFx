@@ -196,11 +196,17 @@ class MelbankInputSource(AudioInputSource):
             self.filterbank.set_triangle_bands(self.melbank_frequencies, self._config['mic_rate'])
             self.melbank_frequencies = self.melbank_frequencies[1:-1]
 
-        # Slaney coefficients will produce a melbank filter spanning 100Hz to 7500Hz
+        # Slaney coefficients will produce a melbank filter spanning 100Hz to 2000Hz
         if self._config['coeffs_type'] == 'slaney':
             self.filterbank = aubio.filterbank(self._config['samples'], win_s)
             self.filterbank.set_mel_coeffs_slaney(self._config['mic_rate'])
-            self.melbank_frequencies = np.linspace(100, 7500, self._config['samples'])
+
+            # Frequencies wil be linearly spaced in the mel scale
+            melbank_mel = np.linspace(
+                aubio.hztomel(100),
+                aubio.hztomel(2000),
+                self._config['samples'])
+            self.melbank_frequencies = np.array([aubio.meltohz(mel) for mel in melbank_mel])
 
         # Standard mel coefficients 
         if self._config['coeffs_type'] == 'mel':
@@ -209,10 +215,13 @@ class MelbankInputSource(AudioInputSource):
                 self._config['mic_rate'],
                 self._config['min_frequency'],
                 self._config['max_frequency'])
-            self.melbank_frequencies = np.linspace(
-                self._config['min_frequency'],
-                self._config['max_frequency'],
+            
+            # Frequencies wil be linearly spaced in the mel scale
+            melbank_mel = np.linspace(
+                aubio.hztomel(self._config['min_frequency']),
+                aubio.hztomel(self._config['max_frequency']),
                 self._config['samples'])
+            self.melbank_frequencies = np.array([aubio.meltohz(mel) for mel in melbank_mel])
 
         # HTK mel coefficients
         if self._config['coeffs_type'] == 'htk':
@@ -221,10 +230,13 @@ class MelbankInputSource(AudioInputSource):
                 self._config['mic_rate'],
                 self._config['min_frequency'],
                 self._config['max_frequency'])
-            self.melbank_frequencies = np.linspace(
-                self._config['min_frequency'],
-                self._config['max_frequency'],
+
+            # Frequencies wil be linearly spaced in the mel scale
+            melbank_mel = np.linspace(
+                aubio.hztomel(self._config['min_frequency']),
+                aubio.hztomel(self._config['max_frequency']),
                 self._config['samples'])
+            self.melbank_frequencies = np.array([aubio.meltohz(mel) for mel in melbank_mel])
 
         self.melbank_frequencies = self.melbank_frequencies.astype(int)
 
