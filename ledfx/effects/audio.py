@@ -3,6 +3,7 @@ import logging
 import pyaudio
 from ledfx.effects import Effect
 import voluptuous as vol
+import ledfx.effects.mel as mel
 from ledfx.effects.math import ExpFilter
 from ledfx.events import GraphUpdateEvent
 import ledfx.effects.math as math
@@ -44,7 +45,7 @@ class AudioInputSource(object):
     _audioWindowSize = 4
 
     AUDIO_CONFIG_SCHEMA = vol.Schema({
-        vol.Optional('sample_rate', default = 60): int,
+        vol.Optional('sample_rate', default = 240): int,
         vol.Optional('mic_rate', default = 44100): int,
         vol.Optional('window_size', default = 4): int,
         vol.Optional('device_index', default = 0): int
@@ -69,6 +70,7 @@ class AudioInputSource(object):
 
         frames_per_buffer = int(self._config['mic_rate'] / self._config['sample_rate'])
         self._raw_audio_sample = np.zeros(frames_per_buffer, dtype = np.float32)
+        self._hamming_window = (np.hamming(frames_per_buffer)).astype(np.float32)
 
         self._stream = self._audio.open(
             input_device_index=self._config['device_index'],
@@ -98,7 +100,7 @@ class AudioInputSource(object):
             self.activate()
 
     def unsubscribe(self, callback):
-        """Unregisters a callback with the input source"""
+        """Unregisters a callback with the input srouce"""
         self._callbacks.remove(callback)
 
         if len(self._callbacks) == 0:
@@ -122,13 +124,18 @@ class AudioInputSource(object):
         """Invalidates the necessary cache"""
         self.volume.cache_clear()
 
-    def audio_sample(self, pre_emphasis = 0.97):
+    def audio_sample(self, apply_hamming = True, pre_emphasis = 0.97):
         """Returns the raw audio sample"""
 
         sample = self._raw_audio_sample
 
+        # TODO: This was updated to perform the hamming window frame by frame.
+        # need to evaluate how this impacts the melbank.
+        if apply_hamming:
+            sample = sample * self._hamming_window
+
         # TODO: Added a pre-emphasis which seems to help amplify the higher
-        # frequencies giving a more balanced melbank. Need to evaluate how
+        # frequencies giving a more balanaced melbank. Need to evaluate how
         # this fully impacts the effects.
         if pre_emphasis:
             sample = np.append(sample[0], sample[1:] - pre_emphasis * sample[:-1])
@@ -144,11 +151,11 @@ class AudioInputSource(object):
 class MelbankInputSource(AudioInputSource):
 
     CONFIG_SCHEMA = vol.Schema({
-        vol.Optional('sample_rate', default = 60): int,
+        vol.Optional('sample_rate', default = 240): int,
         vol.Optional('mic_rate', default = 44100): int,
         vol.Optional('window_size', default = 4): int,
         vol.Optional('samples', default = 24): int,
-        vol.Optional('fft_size', default = 1024): int,
+        vol.Optional('nfft', default = 2048): int,
         vol.Optional('min_frequency', default = 20): int,
         vol.Optional('max_frequency', default = 18000): int,
         vol.Optional('min_volume', default = -70.0): float,
@@ -161,12 +168,18 @@ class MelbankInputSource(AudioInputSource):
         config = self.CONFIG_SCHEMA(config)
         super().__init__(ledfx, config)
 
-        # Setup the phase vocoder
-        self.pv = aubio.pvoc(
-            self._config['fft_size'], 
-            self._config['mic_rate'] // self._config['sample_rate'])
 
-        # Few difference coefficient types for experimentation
+        # sampling rate and size of the fft
+        win_s = 1024
+        hop_s = int(self._config['mic_rate']/self._config['sample_rate']) # hop size
+        self.pv = aubio.pvoc(win_s, hop_s)
+
+        self.scale = 6.0
+
+        #
+        # Few difference coefficient types that are currently being experimented with
+        #
+
         if self._config['coeffs_type'] == 'triangle':
             #self.melbank_frequencies = np.array([60, 80, 200, 400, 800, 1600, 3200, 6400, 12800, 24000]).astype(np.float32)
             self.melbank_frequencies = np.array([20, 60, 80, 200, 400, 800, 1200, 1600, 3200, 6400, 10000, 15000, 24000]).astype(np.float32)
@@ -179,35 +192,25 @@ class MelbankInputSource(AudioInputSource):
             #     self._config['max_frequency'],
             #     self._config['samples']).astype(np.float32)
             self._config['samples'] = len(self.melbank_frequencies) - 2
-            self.filterbank = aubio.filterbank(
-                self._config['samples'],
-                self._config['fft_size'])
-            self.filterbank.set_triangle_bands(
-                self.melbank_frequencies,
-                self._config['mic_rate'])
+            self.filterbank = aubio.filterbank(self._config['samples'], win_s)
+            self.filterbank.set_triangle_bands(self.melbank_frequencies, self._config['mic_rate'])
             self.melbank_frequencies = self.melbank_frequencies[1:-1]
 
         # Slaney coefficients will produce a melbank filter spanning 100Hz to 2000Hz
         if self._config['coeffs_type'] == 'slaney':
-            self.filterbank = aubio.filterbank(
-                self._config['samples'],
-                self._config['fft_size'])
-            self.filterbank.set_mel_coeffs_slaney(
-                self._config['mic_rate'])
+            self.filterbank = aubio.filterbank(self._config['samples'], win_s)
+            self.filterbank.set_mel_coeffs_slaney(self._config['mic_rate'])
 
             # Frequencies wil be linearly spaced in the mel scale
             melbank_mel = np.linspace(
                 aubio.hztomel(100),
                 aubio.hztomel(2000),
                 self._config['samples'])
-            self.melbank_frequencies = np.array(
-                [aubio.meltohz(mel) for mel in melbank_mel])
+            self.melbank_frequencies = np.array([aubio.meltohz(mel) for mel in melbank_mel])
 
         # Standard mel coefficients 
         if self._config['coeffs_type'] == 'mel':
-            self.filterbank = aubio.filterbank(
-                self._config['samples'],
-                self._config['fft_size'])
+            self.filterbank = aubio.filterbank(self._config['samples'], win_s)
             self.filterbank.set_mel_coeffs(
                 self._config['mic_rate'],
                 self._config['min_frequency'],
@@ -218,14 +221,11 @@ class MelbankInputSource(AudioInputSource):
                 aubio.hztomel(self._config['min_frequency']),
                 aubio.hztomel(self._config['max_frequency']),
                 self._config['samples'])
-            self.melbank_frequencies = np.array(
-                [aubio.meltohz(mel) for mel in melbank_mel])
+            self.melbank_frequencies = np.array([aubio.meltohz(mel) for mel in melbank_mel])
 
         # HTK mel coefficients
         if self._config['coeffs_type'] == 'htk':
-            self.f = aubio.filterbank(
-                self._config['samples'],
-                self._config['fft_size'])
+            self.f = aubio.filterbank(self._config['samples'], win_s)
             self.filterbank.set_mel_coeffs_htk(
                 self._config['mic_rate'],
                 self._config['min_frequency'],
@@ -236,14 +236,14 @@ class MelbankInputSource(AudioInputSource):
                 aubio.hztomel(self._config['min_frequency']),
                 aubio.hztomel(self._config['max_frequency']),
                 self._config['samples'])
-            self.melbank_frequencies = np.array(
-                [aubio.meltohz(mel) for mel in melbank_mel])
+            self.melbank_frequencies = np.array([aubio.meltohz(mel) for mel in melbank_mel])
 
         self.melbank_frequencies = self.melbank_frequencies.astype(int)
 
         # Power scaling
         if self._config['power']:
             self.filterbank.set_power(self._config['power'])
+
 
         # # Apply a pre-filter on the coeffs based on a log scale of the
         # # frequency. This helps to raise the highes to the same level
@@ -258,6 +258,7 @@ class MelbankInputSource(AudioInputSource):
 
         self.silence_count = self._config['min_volume_count']
         self._initialize_melbank()
+        self._initialize_octaves()
 
     def _invalidate_caches(self):
         """Invalidates the cache for all melbank related data"""
@@ -275,6 +276,63 @@ class MelbankInputSource(AudioInputSource):
         self.mel_smoothing = ExpFilter(np.tile(1e-1, self._config['samples']), alpha_decay=0.2, alpha_rise=0.99)
         self.common_filter = ExpFilter(alpha_decay = 0.99, alpha_rise = 0.01)
 
+    def _initialize_octaves(self, 
+                            n_notes=12*4,
+                            n_average=20,
+                            freq_low=110,
+                            freq_high=14080):
+        """Initialise all the octave note detection variables
+        int n_notes:    Number of notes (divisions) per octave (recommend multiple of 12)
+        int n_average:  Number of frames to compute average from. More frames = less noise and stronger peaks, but slower response
+        int freq_low:   Lower limit to use from fft
+        int freq_high:  Upper limit to use from fft
+        """
+
+        self.n_notes = n_notes
+        #freq_range = np.array([FREQUENCY_RANGES["bass"].min, FREQUENCY_RANGES["presence"].max])
+        freq_range = np.array([freq_low, freq_high])
+        # Linear scale of frequencies from 0 to MIC_RATE, with fftgrain.norm.size number of values
+        self.lin_scale = np.linspace(0, self._config['mic_rate'], self._config["nfft"]+1)
+        # limits converted to octaves above and below 440Hz (A). Non-integer octaves rounded down.
+        octave_range = np.log2(440/freq_range).astype(int)
+        # All octave frequencies ranging from lower to upper limit eg: [110, 220, 440, 880, 1760,  3520,  7040, 14080]
+        log_scale = np.array([440/2**i for i in range(*octave_range,-1)]).astype(int)
+        # Indexes of fft to use for each octave
+        self.octave_indexes = np.searchsorted(self.lin_scale, log_scale)
+        # 3d array where octaves are stored. Used to get an average over n_average samples
+        self.rolling_octaves_stack = np.zeros((n_average, octave_range[0]-octave_range[1]-1, self.n_notes))
+        # 1d array where the averaged octave data is stored. This is the output.
+        self.averaged_octave = np.zeros(self.n_notes)
+
+    def compute_melmat(self):
+        return mel.compute_melmat(
+            num_mel_bands=self._config['samples'],
+            freq_min=self._config['min_frequency'],
+            freq_max=self._config['max_frequency'],
+            num_fft_bands=int(self._config['nfft'] // 2) + 1,
+            sample_rate=self._config['mic_rate'])
+
+    def octaves(self, fftgrain):
+        """Updates self.averaged_octave data"""
+
+        octaves = np.split(fftgrain.norm, self.octave_indexes)[1:-1]
+        # Scale all octave arrays to be the length of the number of notes
+        interpolated_octaves = []
+        for octave in octaves:
+            interpolated_octaves.append(np.interp(np.arange(0,len(octave), len(octave)/self.n_notes), np.arange(0, len(octave)), octave))
+        interpolated_octaves = np.asarray(interpolated_octaves)
+        # Roll the octaves stack alone by one to make room
+        self.rolling_octaves_stack = np.roll(self.rolling_octaves_stack, 1, axis=0)
+        # Add the freshly made octave data to the top of the stack
+        self.rolling_octaves_stack[0] = interpolated_octaves
+        # Calculate amplitude across octave
+        self.averaged_octave = np.mean(np.mean(self.rolling_octaves_stack, axis=0), axis=0)*10
+        #print("interped", interpolated_octaves.sum(axis=0))
+        #print("averaged", self.averaged_octave)
+
+    #def is_beat_note(self):
+    #    return self.is_beat
+
     @lru_cache(maxsize=32)
     def melbank(self):
         """Returns the raw melbank curve"""
@@ -285,16 +343,21 @@ class MelbankInputSource(AudioInputSource):
         if self.db_spl_filter.value > self._config['min_volume']:
 
             fftgrain = self.pv(raw_sample)
+            self.octaves(fftgrain)
             filter_banks = self.filterbank(fftgrain)
             self._ledfx.events.fire_event(GraphUpdateEvent(
                 'raw', filter_banks, np.array(self.melbank_frequencies)))
+            self._ledfx.events.fire_event(GraphUpdateEvent(
+                'fft', fftgrain.norm, self.lin_scale))
+            self._ledfx.events.fire_event(GraphUpdateEvent(
+                'notes', self.averaged_octave, np.arange(self.n_notes)))
 
             # fftgrain = self.pv(self.audio_sample().astype(np.float32))
             # filter_banks = self.filterbank(fftgrain) / self.scale
             # self._ledfx.events.fire_event(GraphUpdateEvent(
             #     'melbankUnfiltered', filter_banks, np.array(self.melbank_frequencies)))
 
-            self.mel_gain.update(np.mean(filter_banks))
+            self.mel_gain.update(np.max(filter_banks))
             #filter_banks -= (np.mean(filter_banks, axis=0) + 1e-8)
             filter_banks /= self.mel_gain.value
             filter_banks = self.mel_smoothing.update(filter_banks)
@@ -338,17 +401,15 @@ class AudioReactiveEffect(Effect):
     """
     Base for audio reactive effects. This really just subscribes
     to the melbank input source and forwards input along to the 
-    subclasses. This can be expanded to do the common r/g/b filters.
+    subclasses. This can be expaneded to do the common r/g/b filters.
     """
 
     def activate(self, channel):
-        _LOGGER.info('Activating AudioReactiveEffect.')
         super().activate(channel)
         get_melbank_input_source(self._ledfx).subscribe(
             self._audio_data_updated)
 
     def deactivate(self):
-        _LOGGER.info('Deactivating AudioReactiveEffect.')
         get_melbank_input_source(self._ledfx).unsubscribe(
             self._audio_data_updated)
         super().deactivate()
@@ -361,12 +422,11 @@ class AudioReactiveEffect(Effect):
         return ExpFilter(alpha_decay=alpha_decay, alpha_rise=alpha_rise)
 
     def _audio_data_updated(self):
-        if self.is_active:
-            self.audio_data_updated(get_melbank_input_source(self._ledfx))
+        self.audio_data_updated(get_melbank_input_source(self._ledfx))
 
     def audio_data_updated(self, data):
         """
-        Callback for when the audio data is updated. Should
+        Callback for when the audio data is updatead. Should
         be implemented by subclasses
         """
         pass
