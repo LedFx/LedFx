@@ -4,21 +4,9 @@ LedFx
 
 WARNING: This project is in early development, so expect to encounter minor issues along the way.
 
-LedFx is a network based LED effect controller with support for a wide range of effects. Effect range from simple static gradients all the way to audio reactive effects that dance to music!
+LedFx is a network based LED effect controller with support for advanced real-time audio effects. LedFx works great with cheap ESP8266 nodes allowing for cost effectvice syncronized effects across your entire house!
 
-To get started with LedFx run the following from the project root:
-
-.. code:: bash
-
-    python setup.py install
-    ledfx --open-ui
-
-For more information see the `documentation <https://ahodges9.github.io/LedFx/>`__.
-
-Device Support
-==============
-
-LedFx currently only supports E1.31 capable devices, including the `ESPixelStick firmware <https://github.com/forkineye/ESPixelStick/>`__ for any ESP8266 based controller.
+For installation instructions see the `documentation <https://ahodges9.github.io/LedFx/>`__.
 
 .. |Build Status| image:: https://travis-ci.org/ahodges9/LedFx.svg?branch=master
    :target: https://travis-ci.org/ahodges9/LedFx
