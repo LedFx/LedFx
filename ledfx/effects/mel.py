@@ -151,4 +151,4 @@ def compute_melmat(num_mel_bands=12, freq_min=64, freq_max=8000,
         melmat[imelband, right_slope] = (
             (upper - freqs[right_slope]) / (upper - center)
         )
-    return (melmat, center_frequencies_mel, freqs)
+    return (melmat, center_frequencies_hz, freqs)

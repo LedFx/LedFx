@@ -18,6 +18,7 @@ port: 8888
 CORE_CONFIG_SCHEMA = vol.Schema({
     vol.Required('host'): str,
     vol.Required('port'): int,
+    vol.Optional('dev_mode', default = False): bool,
     vol.Optional('max_workers', default = 10): int,
     vol.Optional('devices', default = []): list
 }, extra=vol.ALLOW_EXTRA)

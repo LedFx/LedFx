@@ -38,6 +38,9 @@ class LedFxCore(object):
             ledfx=self, host=self.config['host'], port=self.config['port'])
         self.exit_code = None
 
+    def developer_mode_enabled(self):
+        return self.config['dev_mode'] == True
+
     def loop_exception_handler(self, loop, context):
         kwargs = {}
         exception = context.get('exception')
