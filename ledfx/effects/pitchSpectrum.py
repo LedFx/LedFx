@@ -21,11 +21,11 @@ class PitchSpectrumAudioEffect(AudioReactiveEffect, GradientEffect):
 
     def config_updated(self, config):
         win_s = 1024
-        hop_s = 44100 // 60
+        hop_s = 48000 // 60
         tolerance = 0.8
 
         # TODO: Move into the base audio effect class
-        self.pitch_o = aubio.pitch("schmitt", win_s, hop_s, 41000)
+        self.pitch_o = aubio.pitch("schmitt", win_s, hop_s, 48000)
         self.pitch_o.set_unit("midi")
         self.pitch_o.set_tolerance(tolerance)
 

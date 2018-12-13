@@ -47,27 +47,27 @@ class PixelColorGraph extends React.Component {
         },
         responsiveAnimationDuration: 0,
         scales: {
-        xAxes: [{
-            gridLines: {
-                display: false
-            },
-            ticks: {
-                maxTicksLimit: 7,
-                callback: function(value, index, values) {
-                  return value + ' Hz';
-                }
-            }
-        }],
-        yAxes: [{
-            ticks: {
-                min: 0,
-                max: 2.0,
-                stepSize: 0.5
-            },
-            gridLines: {
-                color: "rgba(0, 0, 0, .125)",
-            }
-        }],
+          xAxes: [{
+              gridLines: {
+                  display: false
+              },
+              ticks: {
+                  maxTicksLimit: 7,
+                  callback: function(value, index, values) {
+                    return value + ' Hz';
+                  }
+              }
+          }],
+          yAxes: [{
+              ticks: {
+                  min: 0,
+                  max: 2.0,
+                  stepSize: 0.5
+              },
+              gridLines: {
+                  color: "rgba(0, 0, 0, .125)",
+              }
+          }],
         },
         legend: {
             display: false
@@ -81,7 +81,15 @@ class PixelColorGraph extends React.Component {
     var messageData = JSON.parse(e.data);
     chartData.labels = messageData.frequencies
     chartData.datasets[0].data = messageData.melbank
-    this.setState(...this.state, {chartData: chartData})
+
+    // Adjust the axes based on the max
+    var melbankMax = Math.max.apply(Math, messageData.melbank);
+    var chartOptions = this.state.chartOptions;
+    chartOptions.scales.yAxes[0].ticks.min = 0
+    chartOptions.scales.yAxes[0].ticks.max = Math.max(chartOptions.scales.yAxes[0].ticks.max, melbankMax)
+    chartOptions.scales.yAxes[0].ticks.stepSize = chartOptions.scales.yAxes[0].ticks.max / 4
+
+    this.setState(...this.state, {chartData: chartData, chartOptions: chartOptions})
   }
 
   handleOpen = e => {
