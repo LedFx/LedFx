@@ -34,6 +34,11 @@ function receiveDevice(json) {
   };
 }
 
+export function getSystemConfig() {
+  return fetch(`${apiUrl}/config`)
+      .then(response => response.json());
+}
+
 export function addDevice(type, config) {
   return dispatch => {
     const data = {

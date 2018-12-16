@@ -12,6 +12,7 @@ import numpy as np
 import collections
 import aubio
 from aubio import fvec, cvec, filterbank, float_type
+from math import log
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -117,7 +118,8 @@ class AudioInputSource(object):
 
     def unsubscribe(self, callback):
         """Unregisters a callback with the input source"""
-        self._callbacks.remove(callback)
+        if callback in self._callbacks:
+            self._callbacks.remove(callback)
 
         if len(self._callbacks) == 0:
             self.deactivate()
@@ -168,7 +170,7 @@ class AudioInputSource(object):
             self._frequency_domain = self._frequency_domain_null
 
         # Light up some notifications for developer mode
-        if self._ledfx.developer_mode_enabled():
+        if self._ledfx.dev_enabled():
             self._ledfx.events.fire_event(GraphUpdateEvent(
                 'fft', self._frequency_domain.norm, self._frequency_domain_x))
 
@@ -194,7 +196,7 @@ class MelbankInputSource(AudioInputSource):
         vol.Optional('max_frequency', default = 18000): int,
         vol.Optional('min_volume', default = -70.0): float,
         vol.Optional('min_volume_count', default = 20): int,
-        vol.Optional('coeffs_type', default = "mel"): str
+        vol.Optional('coeffs_type', default = "scott"): str
     }, extra=vol.ALLOW_EXTRA)
 
     def __init__(self, ledfx, config):
@@ -221,6 +223,21 @@ class MelbankInputSource(AudioInputSource):
                 self._config['samples'] + 2)
             self.melbank_frequencies = np.array(
                 [aubio.meltohz(mel) for mel in melbank_mel]).astype(np.float32)
+
+            self.filterbank = aubio.filterbank(
+                self._config['samples'],
+                self._config['fft_size'])
+            self.filterbank.set_triangle_bands(
+                self.melbank_frequencies,
+                self._config['mic_rate'])
+            self.melbank_frequencies = self.melbank_frequencies[1:-1]
+
+        if self._config['coeffs_type'] == 'bark':
+            melbank_bark = np.linspace(
+                6.0 * np.arcsinh(self._config['min_frequency'] / 600.0),
+                6.0 * np.arcsinh(self._config['max_frequency'] / 600.0),
+                self._config['samples'] + 2)
+            self.melbank_frequencies = (600.0 * np.sinh(melbank_bark / 6.0)).astype(np.float32)
 
             self.filterbank = aubio.filterbank(
                 self._config['samples'],
@@ -287,7 +304,8 @@ class MelbankInputSource(AudioInputSource):
             self.melbank_frequencies = np.array(
                 [aubio.meltohz(mel) for mel in melbank_mel])
 
-        if self._config['coeffs_type'] == 'legacy':
+        # Coefficients based on Scott's audio reactive led project
+        if self._config['coeffs_type'] == 'scott':
             (melmat, center_frequencies_hz, freqs) = mel.compute_melmat(
                 num_mel_bands=self._config['samples'],
                 freq_min=self._config['min_frequency'],
@@ -300,12 +318,36 @@ class MelbankInputSource(AudioInputSource):
             self.filterbank.set_coeffs(melmat.astype(np.float32))
             self.melbank_frequencies = center_frequencies_hz
 
+        # "Mel"-spacing based on Scott's audio reactive led project. This
+        # should in theory be the same as the above, but there seems to be
+        # slight differences. Leaving both for science!
+        if self._config['coeffs_type'] == 'scott_mel':
+            def hertz_to_scott(freq):
+                return 3340.0 * log(1 + (freq / 250.0), 9)
+            def scott_to_hertz(scott):
+                return 250.0 * (9**(scott / 3340.0)) - 250.0
+
+            melbank_scott = np.linspace(
+                hertz_to_scott(self._config['min_frequency']),
+                hertz_to_scott(self._config['max_frequency']),
+                self._config['samples'] + 2)
+            self.melbank_frequencies = np.array(
+                [scott_to_hertz(scott) for scott in melbank_scott]).astype(np.float32)
+
+            self.filterbank = aubio.filterbank(
+                self._config['samples'],
+                self._config['fft_size'])
+            self.filterbank.set_triangle_bands(
+                self.melbank_frequencies,
+                self._config['mic_rate'])
+            self.melbank_frequencies = self.melbank_frequencies[1:-1]
+
         self.melbank_frequencies = self.melbank_frequencies.astype(int)
 
         # Normalize the filterbank triangles to a consistent height, the
         # default coeffs (for types other than legacy) will be normalized
         # by the triangles area which results in an uneven melbank
-        if self._config['coeffs_type'] != 'legacy':
+        if self._config['coeffs_type'] != 'scott' and self._config['coeffs_type'] == 'scott_mel':
             coeffs = self.filterbank.get_coeffs()
             coeffs /= np.max(coeffs, axis=-1)[:, None]
             self.filterbank.set_coeffs(coeffs)
@@ -334,14 +376,13 @@ class MelbankInputSource(AudioInputSource):
             raw_filter_banks = raw_filter_banks ** 2.0
 
             self.mel_gain.update(np.max(smooth(raw_filter_banks, sigma=1.0)))
-            #filter_banks -= (np.mean(filter_banks, axis=0) + 1e-8)
             filter_banks = raw_filter_banks / self.mel_gain.value
             filter_banks = self.mel_smoothing.update(filter_banks)
         else:
             raw_filter_banks = np.zeros(self._config['samples'])
             filter_banks = raw_filter_banks
 
-        if self._ledfx.developer_mode_enabled():
+        if self._ledfx.dev_enabled():
             self._ledfx.events.fire_event(GraphUpdateEvent(
                 'raw', raw_filter_banks, np.array(self.melbank_frequencies)))
             self._ledfx.events.fire_event(GraphUpdateEvent(
@@ -376,15 +417,6 @@ class MelbankInputSource(AudioInputSource):
 
         return math.interpolate(self.melbank(), size)
 
-
-# TODO: Rationalize
-_melbank_source = None
-def get_melbank_input_source(ledfx):
-    global _melbank_source
-    if _melbank_source is None:
-        _melbank_source = MelbankInputSource(ledfx, ledfx.config.get('audio', {}))
-    return _melbank_source
-
 @Effect.no_registration
 class AudioReactiveEffect(Effect):
     """
@@ -396,12 +428,17 @@ class AudioReactiveEffect(Effect):
     def activate(self, channel):
         _LOGGER.info('Activating AudioReactiveEffect.')
         super().activate(channel)
-        get_melbank_input_source(self._ledfx).subscribe(
+
+        if not self._ledfx.audio or id(MelbankInputSource) != id(self._ledfx.audio.__class__):
+            self._ledfx.audio = MelbankInputSource(self._ledfx, self._ledfx.config.get('audio', {}))
+
+        self.audio = self._ledfx.audio
+        self._ledfx.audio.subscribe(
             self._audio_data_updated)
 
     def deactivate(self):
         _LOGGER.info('Deactivating AudioReactiveEffect.')
-        get_melbank_input_source(self._ledfx).unsubscribe(
+        self.audio.unsubscribe(
             self._audio_data_updated)
         super().deactivate()
 
@@ -414,7 +451,7 @@ class AudioReactiveEffect(Effect):
 
     def _audio_data_updated(self):
         if self.is_active:
-            self.audio_data_updated(get_melbank_input_source(self._ledfx))
+            self.audio_data_updated(self.audio)
 
     def audio_data_updated(self, data):
         """
