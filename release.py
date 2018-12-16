@@ -64,11 +64,13 @@ def main():
         write_version(major, minor)
 
         subprocess.run([
-           'git', 'commit', '-am', 'Version bump for release {}.{}'.format(major, minor)])
+           'git', 'commit', '-am', 'Version Bump for Release {}.{}'.format(major, minor)])
+        subprocess.run(['git', 'push', 'origin', 'master'])
 
     shutil.rmtree("dist", ignore_errors=True)
     subprocess.run(['python', 'setup.py', 'sdist', 'bdist_wheel'])
     subprocess.run(['python', '-m', 'twine', 'upload', 'dist/*', '--skip-existing'])
+
 
 if __name__ == '__main__':
     main()
