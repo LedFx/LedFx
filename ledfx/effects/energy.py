@@ -1,14 +1,10 @@
-from ledfx.effects.audio import AudioReactiveEffect, FREQUENCY_RANGES_SIMPLE
-from ledfx.effects.gradient import GradientEffect
-from ledfx.effects import smooth
+from ledfx.effects.audio import AudioReactiveEffect
 import voluptuous as vol
 import numpy as np
-
 
 class EnergyAudioEffect(AudioReactiveEffect):
 
     NAME = "Energy"
-
     CONFIG_SCHEMA = vol.Schema({
         vol.Optional('blur', description='Amount to blur the effect', default = 4.0): vol.Coerce(float),
         vol.Optional('mirror', description='Mirror the effect', default = True): bool,

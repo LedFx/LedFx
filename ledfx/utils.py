@@ -1,4 +1,5 @@
 from asyncio import coroutines, ensure_future
+from subprocess import PIPE, Popen
 import concurrent.futures
 import voluptuous as vol
 from abc import ABC
@@ -8,8 +9,37 @@ import inspect
 import importlib
 import pkgutil
 import re
+import imp
+import sys
+import os
 
 _LOGGER = logging.getLogger(__name__)
+
+from subprocess import PIPE, Popen
+
+def install_package(package):
+    _LOGGER.info('Installing package %s', package)
+    env = os.environ.copy()
+    args = [sys.executable, '-m', 'pip', 'install', '--quiet', package]
+    process = Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE, env=env)
+    _, stderr = process.communicate()
+    if process.returncode != 0:
+        _LOGGER.error("Failed to install package %s: %s",
+                      package, stderr.decode('utf-8').lstrip().strip())
+        return False
+    return True
+
+def import_or_install(package):
+    try:
+        return importlib.import_module(package)
+        print("imported package")
+    except ImportError:
+        install_package(package)
+        try:
+            return importlib.import_module(package)
+        except ImportError:
+            return False
+    return False
 
 def async_fire_and_forget(coro, loop):
     """Run some code in the core event loop without a result"""
@@ -157,6 +187,31 @@ class RegistryLoader(object):
 
         self._ledfx = ledfx
         self.import_registry(package)
+     
+        # If running in developer mode autoreload the registry when any file
+        # within the package changes.
+        if ledfx.dev_enabled() and import_or_install("watchdog"):
+
+            watchdog_events = import_or_install("watchdog.events")
+            watchdog_observers = import_or_install("watchdog.observers")
+
+            class RegistryReloadHandler(watchdog_events.FileSystemEventHandler):
+                def __init__(self, registry):
+                    self.registry = registry
+
+                def on_modified(self, event):
+                    (_, extension) = os.path.splitext(event.src_path)
+                    if extension == ".py":
+                        self.registry.reload()
+
+            self.auto_reload_handler = RegistryReloadHandler(self)
+
+            self.observer = watchdog_observers.Observer()
+            self.observer.schedule(
+                self.auto_reload_handler,
+                os.path.dirname(sys.modules[package].__file__),
+                recursive=True)
+            self.observer.start()
 
     def import_registry(self, package):
         """
@@ -197,13 +252,28 @@ class RegistryLoader(object):
         """Returns all the created objects"""
         return self._objects.values()
 
+    def reload_module(self, name):
+        if name in sys.modules.keys():
+            path = sys.modules[name].__file__
+            if path.endswith('.pyc') or path.endswith('.pyo'):
+                path = path[:-1]
+            
+            try:
+                module = imp.load_source(name, path)
+                sys.modules[name] = module
+            except SyntaxError as e:
+                _LOGGER.error("Failed to reload {}: {}".format(name, e))
+        else:
+            pass
+
     def reload(self, force=False):
         """Reloads the registry"""
 
-        # TODO: Deteremine exactly how to reload. This seems to work sometimes
-        # depending on the current state. Probably need to invalidate the
-        # system cash to ensure everything gets reloaded
-        self.import_registry(self._package)
+        found = self.discover_modules(self._package)
+        _LOGGER.info("Reloading {} from {}".format(found, self._package))
+        for name in found:
+            self.reload_module(name)
+
 
     def create(self, type, id = None, *args, **kwargs):
         """Loads and creates a object from the registry by type"""

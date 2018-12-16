@@ -32,13 +32,12 @@ class LedFxCore(object):
         self.loop.set_default_executor(self.executor)
         self.loop.set_exception_handler(self.loop_exception_handler)
 
-
         self.events = Events(self)
         self.http = HttpServer(
             ledfx=self, host=self.config['host'], port=self.config['port'])
         self.exit_code = None
 
-    def developer_mode_enabled(self):
+    def dev_enabled(self):
         return self.config['dev_mode'] == True
 
     def loop_exception_handler(self, loop, context):

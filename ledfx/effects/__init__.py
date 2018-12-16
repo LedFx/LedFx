@@ -206,3 +206,4 @@ class Effects(RegistryLoader):
 
     def __init__(self, ledfx):
         super().__init__(ledfx = ledfx, cls = Effect, package = self.PACKAGE_NAME)
+        self._ledfx.audio = None

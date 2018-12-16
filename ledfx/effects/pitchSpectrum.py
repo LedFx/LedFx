@@ -1,12 +1,10 @@
-from ledfx.effects.audio import AudioReactiveEffect, FREQUENCY_RANGES_SIMPLE, MIN_MIDI, MAX_MIDI
+from ledfx.effects.audio import AudioReactiveEffect, MIN_MIDI, MAX_MIDI
 from ledfx.effects.gradient import GradientEffect
 from ledfx.effects import mix_colors
 from ledfx.color import COLORS
-from ledfx.events import GraphUpdateEvent
 import voluptuous as vol
 import numpy as np
 import aubio
-import math
 
 class PitchSpectrumAudioEffect(AudioReactiveEffect, GradientEffect):
 
