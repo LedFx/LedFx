@@ -1,3 +1,4 @@
+from ledfx.config import save_config
 from ledfx.api import RestEndpoint
 from aiohttp import web
 import logging
@@ -48,6 +49,18 @@ class EffectsEndpoint(RestEndpoint):
             type = effect_type,
             config = effect_config)
         device.set_effect(effect)
+
+        # Update and save the configuration
+        for device in self._ledfx.config['devices']:
+            if (device['id'] == device_id):
+                #if not ('effect' in device):
+                device['effect'] = {}
+                device['effect']['type'] = effect_type
+                device['effect']['config'] = effect_config
+                break
+        save_config(
+            config = self._ledfx.config, 
+            config_dir = self._ledfx.config_dir)
 
         effect_response = {}
         effect_response['config'] = effect.config
