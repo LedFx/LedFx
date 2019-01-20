@@ -79,5 +79,13 @@ class EffectsEndpoint(RestEndpoint):
         # Clear the effect
         device.clear_effect()
 
+        for device in self._ledfx.config['devices']:
+            if (device['id'] == device_id):
+                del device['effect']
+                break
+        save_config(
+            config = self._ledfx.config, 
+            config_dir = self._ledfx.config_dir)
+
         response = { 'status' : 'success', 'effect' : {} }
         return web.Response(text=json.dumps(response), status=200)
