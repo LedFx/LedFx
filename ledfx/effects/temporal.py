@@ -22,7 +22,7 @@ class TemporalEffect(Effect):
             startTime = time.time()
 
             # Treat the return value of the effect loop as a speed modifier
-            # such that effects that are nartually faster or slower can have
+            # such that effects that are naturally faster or slower can have
             # a consistent feel.
             sleepInterval = self.effect_loop()
             if sleepInterval is None:
