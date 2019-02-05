@@ -16,7 +16,25 @@ import sidebarStyle from "./style.jsx";
 import viewRoutes from "frontend/routes/views.jsx";
 import logoAsset from "frontend/assets/img/logo.png";
 
+import { getSystemConfig } from "frontend/actions";
+
 class Sidebar extends React.Component {
+
+  constructor(props) {
+    super(props);
+    
+    this.state = {
+      devMode: false
+    }
+    getSystemConfig().then(json => {
+      var devMode = false;
+      if (json.config.dev_mode)
+      {
+        devMode = true;
+      }
+      this.setState({devMode: devMode});
+    });
+  }
 
   isViewActive(viewName) {
     return this.props.location.pathname == viewName;//.indexOf(viewName) > -1 ? true : false;
@@ -54,6 +72,10 @@ class Sidebar extends React.Component {
         {
           viewRoutes.map((prop, key) => {
             if (prop.redirect || !prop.sidebarName) {
+              return null;
+            }
+
+            if (prop.sidebarName === "Developer" && !this.state.devMode) {
               return null;
             }
 
