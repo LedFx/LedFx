@@ -1,22 +1,31 @@
 from ledfx.effects.audio import AudioReactiveEffect
+from ledfx.color import COLORS
+from random import randint
 import voluptuous as vol
 import numpy as np
 
-class EnergyAudioEffect(AudioReactiveEffect):
+class Rain(AudioReactiveEffect):
 
-    NAME = "Energy"
+    NAME = "Rain"
     CONFIG_SCHEMA = vol.Schema({
-        vol.Optional('blur', description='Amount to blur the effect', default = 4.0): vol.Coerce(float),
-        vol.Optional('mirror', description='Mirror the effect', default = True): bool,
-        vol.Optional('scale', description='Scale factor for the energy', default = 1.0): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=5.0)),
+        vol.Optional('intensity', description='Intensity of rain', default = 0.5): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
+        vol.Optional('lows_colour', description='Colour for low sounds, ie beats', default = 'red'): vol.In(list(COLORS.keys())),
+        vol.Optional('mids_colour', description='Colour for mid sounds, ie vocals', default = 'green'): vol.In(list(COLORS.keys())),
+        vol.Optional('high_colour', description='Colour for high sounds, ie hi hat', default = 'blue'): vol.In(list(COLORS.keys())),
     })
 
     def config_updated(self, config):
+        self.drop_effectlet = np.load("droplet.npy")
         self._p_filter = self.create_filter(
             alpha_decay = 0.1,
             alpha_rise = 0.50)
 
     def audio_data_updated(self, data):
+
+        # Calculate the low, mids, and high indexes scaling based on the pixel count
+        # lows_idx = int(np.mean(data.melbank_lows()))
+        # mids_idx = int(np.mean(data.melbank_mids()))
+        # highs_idx = int(np.mean(data.melbank_highs()))
 
         # Calculate the low, mids, and high indexes scaling based on the pixel count
         lows_idx = int(np.mean(self.pixel_count * data.melbank_lows()) ** self._config['scale'])
@@ -30,5 +39,5 @@ class EnergyAudioEffect(AudioReactiveEffect):
         p[:mids_idx, 1] = 255.0
         p[:highs_idx, 2] = 255.0
 
-        # Filter and update the pixel values
+        # Apply the melbank data to the gradient curve and update the pixels
         self.pixels = self._p_filter.update(p)
