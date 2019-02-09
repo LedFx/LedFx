@@ -13,7 +13,7 @@ class RainAudioEffect(AudioReactiveEffect):
         # TODO drops should be controlled by some sort of effectlet class, which will provide a list of available drop names rather than just this static range
         vol.Optional('raindrop_animation', description='Animation style for each drop', default = 1): vol.In([0,1,2]),
         vol.Optional('lows_colour', description='Colour for low sounds, ie beats', default = 'white'): vol.In(list(COLORS.keys())),
-        vol.Optional('mids_colour', description='Colour for mid sounds, ie vocals', default = 'orange'): vol.In(list(COLORS.keys())),
+        vol.Optional('mids_colour', description='Colour for mid sounds, ie vocals', default = 'red'): vol.In(list(COLORS.keys())),
         vol.Optional('high_colour', description='Colour for high sounds, ie hi hat', default = 'blue'): vol.In(list(COLORS.keys())),
         vol.Optional('lows_sensitivity', description='Sensitivity to low sounds', default = 0.2): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
         vol.Optional('mids_sensitivity', description='Sensitivity to mid sounds', default = 0.1): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
