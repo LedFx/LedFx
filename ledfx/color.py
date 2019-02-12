@@ -6,8 +6,9 @@ COLORS = {
     'aqua': RGB(0, 255, 255),
     'black': RGB(0, 0, 0),
     'blue': RGB(0, 0, 255),
+    'brown': RGB(139, 69, 19),
     'gold': RGB(255, 215, 0),
-    'green': RGB(0, 128, 0),
+    'green': RGB(0, 255, 0),
     'hotpink': RGB(255, 105, 180),
     'lightblue': RGB(173, 216, 230),
     'lightgreen': RGB(152, 251, 152),
@@ -17,6 +18,8 @@ COLORS = {
     'maroon': RGB(128, 0, 0),
     'mint': RGB(189, 252, 201),
     'navy': RGB(0, 0, 128),
+    'olive': RGB(85, 107, 47),
+    'forestgreen': RGB(34, 139, 34),
     'orange': RGB(255, 128, 0),
     'orangered': RGB(255, 69, 0),
     'pink': RGB(255, 0, 178),
@@ -40,31 +43,34 @@ COLORS = {
 
 GRADIENTS = {
     "Spectral"  : { 
-        "colors": ["red", "orange", "yellow", "green", "lightblue", "blue", "purple", "pink"]
+        "colors": ["red", "orange", "yellow", "green", "turquoiseblue", "blue", "purple", "pink"]
     },
     "Dancefloor": {
-        "colors": ["red", "pink", "purple", "blue"]
+        "colors": ["red", "pink", "blue"]
     },
     "Sunset"    : {
-        "colors": ["red", "orange", "yellow"]
+        "colors": ["navy", "orange", "red"]
     },
     "Ocean"     : {
-        "colors": ["green", "lightblue", "blue"]
+        "colors": ["springgreen", "lightblue", "blue"]
     },
     "Jungle"    : {
-        "colors": ["green", "red", "orange"]
+        "colors": ["green", "forestgreen", "orange"]
     },
     "Sunny"     : {
         "colors": ["yellow", "lightblue", "orange", "blue"]
     },
-    "Fruity"    : {
-        "colors": ["orange", "blue"]
+    "Mountain"  : {
+        "colors": ["purple", "orangered", "blue"]
     },
-    "Peach"     : {
-        "colors": ["orange", "pink"]
+    "Fruity"    : {
+        "colors": ["orange", "purple", "blue"]
+    },
+    "Borealis"  : {
+        "colors": ["orangered", "purple", "turquoiseblue", "green"]
     },
     "Rust"      : {
-        "colors": ["orange", "red"]
+        "colors": ["orangered", "red"]
     },
     "Christmas" : { 
         "colors": ["red", "red", "red", "red", "red", "green", "green", "green", "green", "green"],
