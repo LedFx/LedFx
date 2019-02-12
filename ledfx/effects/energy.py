@@ -8,7 +8,7 @@ class EnergyAudioEffect(AudioReactiveEffect):
     CONFIG_SCHEMA = vol.Schema({
         vol.Optional('blur', description='Amount to blur the effect', default = 4.0): vol.Coerce(float),
         vol.Optional('mirror', description='Mirror the effect', default = True): bool,
-        vol.Optional('scale', description='Scale factor for the energy', default = 1.0):  vol.All(vol.Coerce(float), vol.Range(min=0.0, max=5.0)),
+        vol.Optional('scale', description='Scale factor for the energy', default = 1.0): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=5.0)),
     })
 
     def config_updated(self, config):
