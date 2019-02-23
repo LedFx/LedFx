@@ -45,7 +45,7 @@ class GradientEffect(Effect):
         """The Bernstein polynomial of n, i as a function of t"""
         return self._comb(n, i) * ( t**(n-i) ) * (1 - t)**i
 
-    def _ease(self, chunk_len, start_val, end_val, slope=2):
+    def _ease(self, chunk_len, start_val, end_val, slope=1.5):
         x = np.linspace(0, 1, chunk_len)
         diff = end_val - start_val
         pow_x = np.power(x, slope)
@@ -53,7 +53,9 @@ class GradientEffect(Effect):
 
     def _color_ease(self, chunk_len, start_color, end_color):
         """Makes a coloured block easing from start to end colour"""
-        return np.array([self._ease(chunk_len, start_color[i], end_color[i]) for i in range(3)])
+        return np.array([self._ease(chunk_len,
+                                    start_color[i],
+                                    end_color[i]) for i in range(3)])
 
     def _generate_gradient_curve(self, gradient_colors, gradient_method, gradient_length):
 

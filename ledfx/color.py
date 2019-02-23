@@ -48,6 +48,9 @@ GRADIENTS = {
     "Dancefloor": {
         "colors": ["red", "pink", "blue"]
     },
+    "Plasma": {
+        "colors": ["blue", "purple", "red", "orangered", "yellow"]
+    },
     "Sunset"    : {
         "colors": ["navy", "orange", "red"]
     },
@@ -57,14 +60,14 @@ GRADIENTS = {
     "Jungle"    : {
         "colors": ["green", "forestgreen", "orange"]
     },
-    "Sunny"     : {
-        "colors": ["yellow", "lightblue", "orange", "blue"]
+    "Viridis"     : {
+        "colors": ["purple", "blue", "teal", "green", "yellow"]
     },
     "Mountain"  : {
         "colors": ["purple", "orangered", "blue"]
     },
-    "Fruity"    : {
-        "colors": ["orange", "purple", "blue"]
+    "Peach"    : {
+        "colors": ["blue", "purple", "orange", "yellow"]
     },
     "Borealis"  : {
         "colors": ["orangered", "purple", "turquoiseblue", "green"]
