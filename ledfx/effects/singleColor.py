@@ -11,7 +11,7 @@ class SingleColorEffect(TemporalEffect):
     })
 
     def config_updated(self, config):
-        self.color = np.array(COLORS[self._config['color']])
+        self.color = np.array(COLORS[self._config['color']], dtype=float)
 
     def effect_loop(self):
         self.pixels = np.tile(self.color, (self.pixel_count, 1))

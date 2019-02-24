@@ -9,6 +9,7 @@ COLORS = {
     'brown': RGB(139, 69, 19),
     'gold': RGB(255, 215, 0),
     'green': RGB(0, 255, 0),
+    'greenblue': RGB(0, 255, 50),
     'hotpink': RGB(255, 105, 180),
     'lightblue': RGB(173, 216, 230),
     'lightgreen': RGB(152, 251, 152),
@@ -23,6 +24,7 @@ COLORS = {
     'orange': RGB(255, 128, 0),
     'orangered': RGB(255, 69, 0),
     'pink': RGB(255, 0, 178),
+    'peach': RGB(255, 100,100),
     'plum': RGB(221, 160, 221),
     'purple': RGB(128, 0, 128),
     'red': RGB(255, 0, 0),
@@ -51,23 +53,26 @@ GRADIENTS = {
     "Plasma": {
         "colors": ["blue", "purple", "red", "orangered", "yellow"]
     },
-    "Sunset"    : {
-        "colors": ["navy", "orange", "red"]
-    },
     "Ocean"     : {
-        "colors": ["springgreen", "lightblue", "blue"]
-    },
-    "Jungle"    : {
-        "colors": ["green", "forestgreen", "orange"]
+        "colors": ["aqua", "blue"]
     },
     "Viridis"     : {
         "colors": ["purple", "blue", "teal", "green", "yellow"]
     },
-    "Mountain"  : {
-        "colors": ["purple", "orangered", "blue"]
+    "Jungle"    : {
+        "colors": ["green", "forestgreen", "orange"]
     },
-    "Peach"    : {
-        "colors": ["blue", "purple", "orange", "yellow"]
+    "Spring"     : {
+        "colors": ["pink", "orangered", "yellow"]
+    },
+    "Winter"    : {
+        "colors": ["turquoiseblue", "greenblue"]
+    },
+    "Frost"    : {
+        "colors": ["blue", "aqua", "purple", "pink"]
+    },
+    "Sunset"    : {
+        "colors": ["navy", "orange", "red"]
     },
     "Borealis"  : {
         "colors": ["orangered", "purple", "turquoiseblue", "green"]
