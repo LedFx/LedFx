@@ -1,9 +1,10 @@
 from ledfx.color import COLORS
 from ledfx.effects.temporal import TemporalEffect
+from ledfx.effects.modulate import ModulateEffect
 import voluptuous as vol
 import numpy as np
 
-class SingleColorEffect(TemporalEffect):
+class SingleColorEffect(TemporalEffect, ModulateEffect):
 
     NAME = "Single Color"
     CONFIG_SCHEMA = vol.Schema({
@@ -14,4 +15,5 @@ class SingleColorEffect(TemporalEffect):
         self.color = np.array(COLORS[self._config['color']], dtype=float)
 
     def effect_loop(self):
-        self.pixels = np.tile(self.color, (self.pixel_count, 1))
+        pixel_array = np.tile(self.color, (self.pixel_count, 1))
+        self.pixels = self.modulate(pixel_array)

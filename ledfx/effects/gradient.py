@@ -1,4 +1,5 @@
 from ledfx.effects.temporal import TemporalEffect
+from ledfx.effects.modulate import ModulateEffect
 from ledfx.color import COLORS, GRADIENTS
 from ledfx.effects import Effect
 import voluptuous as vol
@@ -146,7 +147,7 @@ class GradientEffect(Effect):
         return output
 
 
-class TemporalGradientEffect(TemporalEffect, GradientEffect):
+class TemporalGradientEffect(TemporalEffect, GradientEffect, ModulateEffect):
     """
     A simple effect that just applies a gradient to the channel. This
     is essentually just the temporal exposure of gradients.
@@ -157,4 +158,6 @@ class TemporalGradientEffect(TemporalEffect, GradientEffect):
     def effect_loop(self):
         # TODO: Could add some cool effects like twinkle or sin modulation
         # of the gradient.
-        self.pixels = self.apply_gradient(1)
+        # kinda done
+        pixels = self.apply_gradient(1)
+        self.pixels = self.modulate(pixels)
