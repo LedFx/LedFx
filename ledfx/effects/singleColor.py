@@ -1,6 +1,7 @@
 from ledfx.color import COLORS
 from ledfx.effects.modulate import ModulateEffect
 from ledfx.effects.temporal import TemporalEffect
+from ledfx.effects.modulate import ModulateEffect
 import voluptuous as vol
 import numpy as np
 
