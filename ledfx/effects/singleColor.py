@@ -17,3 +17,4 @@ class SingleColorEffect(TemporalEffect, ModulateEffect):
     def effect_loop(self):
         color_array = np.tile(self.color, (self.pixel_count, 1))
         self.pixels = self.modulate(color_array)
+
