@@ -47,10 +47,10 @@ class DeviceView extends React.Component {
       return (
         <Grid container spacing={24}>
           <Grid item xs={12}>
-            <EffectControl device={device} />
+           <PixelColorGraph device={device}/>
           </Grid>
           <Grid item xs={12}>
-            <PixelColorGraph device={device}/>
+            <EffectControl device={device} />
           </Grid>
         </Grid>
       );

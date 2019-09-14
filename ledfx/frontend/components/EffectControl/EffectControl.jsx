@@ -70,6 +70,13 @@ class EffectControl extends React.Component {
             >
               Clear Effect
             </Button>
+            <Button
+              className={classes.button}
+              onClick={this.handleClearEffect}
+              color="primary"
+            >
+              Current effect
+            </Button>
           </div>
           </SchemaFormCollection>
         </CardContent>
