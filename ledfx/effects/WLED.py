@@ -7,18 +7,26 @@ class WLEDColorEffect(TemporalEffect):
 
     NAME = "WLED"  
     CONFIG_SCHEMA = vol.Schema({
-        vol.Optional('Palette', description='WLED FastLED Palette', default = "red"): vol.In(list(PALETTE.keys())),
+        vol.Optional('Palette', description='WLED FastLED Palette', default = "Solid"): vol.In(list(PALETTE.keys())),
     })
 
     def config_updated(self, config):
-        self.color = np.array(COLORS[self._config['color']], dtype=float)
+        self.color = np.array(PALETTE[self._config['Palette']], dtype=float)
 
 #    def effect_loop(self):
 #        color_array = np.tile(self.color, (self.pixel_count, 1))
 #        self.pixels = self.modulate(color_array)
 
+from collections import namedtuple
+
+Power = {
+    'On': RGB(0, 255, 255),#http://192.168.1.102/win&T=0
+    'Off': RGB(0, 0, 0),#http://192.168.1.102/win&T=1
+    'Toggle': RGB(0, 0, 255),#http://192.168.1.102/win&T=2
+}
+
 WLEDEFFECTS = {
-    'Solid': RGB(0, 255, 255),#http://192.168.1.102/win&FX=0
+    'Solid': #http://192.168.1.102/win&FX=0
     'Blink': RGB(0, 0, 0),#1
     'Breathe': RGB(0, 0, 255),#2
     'Wipe': RGB(139, 69, 19),
@@ -98,7 +106,7 @@ WLEDEFFECTS = {
     'Twinklefox': RGB(255, 255, 0),
 }
 
-PALETTE = {
+WLEDPALETTE = {
     'Default': RGB(0, 255, 255),#http://192.168.1.102/win&FP=0
     'Random Cycle': RGB(0, 0, 0),#1
     'Primary color': RGB(0, 0, 255),#2
@@ -146,4 +154,36 @@ PALETTE = {
     'Orange & Teal': RGB(128, 0, 128),
     'Tiamat': RGB(255, 0, 0),
     'April Night': RGB(65, 105, 225),
+}
+
+WLEDSEPEED = {
+    'Slow': RGB(0, 255, 255),#http://192.168.1.102/win&FP=0
+    'Med-Slow': RGB(0, 0, 0),#1
+    'Med': RGB(0, 0, 255),#
+    'Med-Fast': RGB(0, 0, 0),#1
+    'Fast': RGB(0, 0, 255),#
+    'Fastest': RGB(0, 0, 255),#
+}
+
+WLEDINTENSITY = {
+    'Slow': RGB(0, 255, 255),#http://192.168.1.102/win&FP=0
+    'Med-Slow': RGB(0, 0, 0),#1
+    'Med': RGB(0, 0, 255),#
+    'Med-Fast': RGB(0, 0, 0),#1
+    'Fast': RGB(0, 0, 255),#
+    'Fastest': RGB(0, 0, 255),#
+}
+
+WLEDBRIGHTNESS = {
+    'Low - 10 Percent': RGB(0, 255, 255),#http://192.168.1.102/win&A=25
+    'A Little- 25 Percent': RGB(0, 0, 0),#http://192.168.1.102/win&A=64
+    'Med - 50 Percent': RGB(0, 0, 255),#http://192.168.1.102/win&A=128
+    'Bright - 80 Percent': RGB(0, 0, 255),#http://192.168.1.102/win&A=204
+    'Brightest - 100 Percent': RGB(0, 0, 255),#http://192.168.1.102/win&A=255
+}
+
+WLEDPRIMARYCOLOR = {
+    'Red': #http://192.168.1.102/win&HU=255
+    'Blue': #http://192.168.1.102/win&HU=255
+    'Green': #http://192.168.1.102/win&HU=255
 }
