@@ -1,54 +1,37 @@
-from ledfx.color import COLORS
-from ledfx.effects.temporal import TemporalEffect
-import voluptuous as vol
-import numpy as np
-
-class WLEDColorEffect(TemporalEffect):
-
-    NAME = "WLED"  
-    CONFIG_SCHEMA = vol.Schema({
-        vol.Optional('Palette', description='WLED FastLED Palette', default = "Solid"): vol.In(list(PALETTE.keys())),
-    })
-
-    def config_updated(self, config):
-        self.color = np.array(PALETTE[self._config['Palette']], dtype=float)
-
-#    def effect_loop(self):
-#        color_array = np.tile(self.color, (self.pixel_count, 1))
-#        self.pixels = self.modulate(color_array)
-
+import urllib.request as url
 from collections import namedtuple
 
+WLED = namedtuple('WLED')
+
 Power = {
-    'On': RGB(0, 255, 255),#http://192.168.1.102/win&T=0
-    'Off': RGB(0, 0, 0),#http://192.168.1.102/win&T=1
-    'Toggle': RGB(0, 0, 255),#http://192.168.1.102/win&T=2
+    'On': WLED(webbrowser.open(http://192.168.1.102/win&T=0))
+    'Off': urllib.request.urlopen(http://192.168.1.102/win&T=1)
 }
 
 WLEDEFFECTS = {
-    'Solid': http://192.168.1.102/win&FX=0
-    'Blink': http://192.168.1.102/win&FX=1
-    'Breathe': RGB(0, 0, 255),#2
-    'Wipe': RGB(139, 69, 19),
-    'Wipe Random': RGB(255, 215, 0),
-    'green': RGB(0, 255, 0),
-    'Random Colors': RGB(0, 255, 50),
-    'Sweep': RGB(255, 105, 180),
-    'Dynamic': RGB(173, 216, 230),
-    'Colorloop': RGB(152, 251, 152),
-    'Rainbow': RGB(255, 182, 193),
-    'Scan': RGB(255, 255, 224),
-    'Dual Scan': RGB(255, 0, 255),
-    'Fade': RGB(128, 0, 0),
-    'Chase': RGB(189, 252, 201),
-    'Chase Rainbow': RGB(0, 0, 128),
-    'Running': RGB(85, 107, 47),
-    'Saw': RGB(34, 139, 34),
-    'Twinkle': RGB(255, 128, 0),
-    'Dissolve': RGB(255, 69, 0),
-    'Dissolve Rnd': RGB(255, 0, 178),
-    'Sparkle': RGB(255, 100,100),
-    'Strobe': RGB(221, 160, 221),
+    'Solid': urllib.request.urlopen(http://192.168.1.102/win&FX=0)
+    'Blink': urllib.request.urlopen(http://192.168.1.102/win&FX=0)
+    'Breathe': urllib.request.urlopen(http://192.168.1.102/win&FX=0)
+    'Wipe': urllib.request.urlopen(http://192.168.1.102/win&FX=0)
+    'Wipe Random': urllib.request.urlopen(http://192.168.1.102/win&FX=0)
+    'green': urllib.request.urlopen(http://192.168.1.102/win&FX=0)
+    'Random Colors': urllib.request.urlopen(http://192.168.1.102/win&FX=0)
+    'Sweep': urllib.request.urlopen(http://192.168.1.102/win&FX=0)
+    'Dynamic': urllib.request.urlopen(http://192.168.1.102/win&FX=0)
+    'Colorloop': urllib.request.urlopen(http://192.168.1.102/win&FX=0)
+    'Rainbow': urllib.request.urlopen(http://192.168.1.102/win&FX=0)
+    'Scan': urllib.request.urlopen(http://192.168.1.102/win&FX=0)
+    'Dual Scan': urllib.request.urlopen(http://192.168.1.102/win&FX=0)
+    'Fade': urllib.request.urlopen(http://192.168.1.102/win&FX=0)
+    'Chase': urllib.request.urlopen(http://192.168.1.102/win&FX=0)
+    'Chase Rainbow': urllib.request.urlopen(http://192.168.1.102/win&FX=0)
+    'Running': urllib.request.urlopen(http://192.168.1.102/win&FX=0)
+    'Saw': urllib.request.urlopen(http://192.168.1.102/win&FX=0)
+    'Twinkle': urllib.request.urlopen(http://192.168.1.102/win&FX=0)
+    'Dissolve': urllib.request.urlopen(http://192.168.1.102/win&FX=0)
+    'Dissolve Rnd': urllib.request.urlopen(http://192.168.1.102/win&FX=0)
+    'Sparkle': urllib.request.urlopen(http://192.168.1.102/win&FX=0)
+    'Strobe': urllib.request.urlopen(http://192.168.1.102/win&FX=0)
     'Sparkle+': RGB(128, 0, 128),
     'Strobe Rainbow': RGB(255, 0, 0),
     'Mega Strobe': RGB(65, 105, 225),
