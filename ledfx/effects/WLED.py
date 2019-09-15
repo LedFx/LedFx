@@ -26,27 +26,27 @@ Power = {
 }
 
 WLEDEFFECTS = {
-    'Solid': #http://192.168.1.102/win&FX=0
-    'Blink': RGB(0, 0, 0),#1
+    'Solid': http://192.168.1.102/win&FX=0
+    'Blink': http://192.168.1.102/win&FX=1
     'Breathe': RGB(0, 0, 255),#2
     'Wipe': RGB(139, 69, 19),
-    'WipeRandom': RGB(255, 215, 0),
+    'Wipe Random': RGB(255, 215, 0),
     'green': RGB(0, 255, 0),
-    'RandomColors': RGB(0, 255, 50),
+    'Random Colors': RGB(0, 255, 50),
     'Sweep': RGB(255, 105, 180),
     'Dynamic': RGB(173, 216, 230),
     'Colorloop': RGB(152, 251, 152),
     'Rainbow': RGB(255, 182, 193),
     'Scan': RGB(255, 255, 224),
-    'DualScan': RGB(255, 0, 255),
+    'Dual Scan': RGB(255, 0, 255),
     'Fade': RGB(128, 0, 0),
     'Chase': RGB(189, 252, 201),
-    'ChaseRainbow': RGB(0, 0, 128),
+    'Chase Rainbow': RGB(0, 0, 128),
     'Running': RGB(85, 107, 47),
     'Saw': RGB(34, 139, 34),
     'Twinkle': RGB(255, 128, 0),
     'Dissolve': RGB(255, 69, 0),
-    'DissolveRnd': RGB(255, 0, 178),
+    'Dissolve Rnd': RGB(255, 0, 178),
     'Sparkle': RGB(255, 100,100),
     'Strobe': RGB(221, 160, 221),
     'Sparkle+': RGB(128, 0, 128),
