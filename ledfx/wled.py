@@ -1,12 +1,13 @@
-import urllib.request as url
+import requests
+from ledfx.config import save_config
 from collections import namedtuple
+import urllib.request as url
 
 WLED = namedtuple('WLED')
 
-Power = {
-    'On': WLED(webbrowser.open(http://192.168.1.102/win&T=0))
-    'Off': urllib.request.urlopen(http://192.168.1.102/win&T=1)
-}
+def powerState(value):
+    requests.get('http://192.168.1.102/win', params={'FX': 1 if value else 0})
+powerState(False)
 
 WLEDEFFECTS = {
     'Solid': urllib.request.urlopen(http://192.168.1.102/win&FX=0)
