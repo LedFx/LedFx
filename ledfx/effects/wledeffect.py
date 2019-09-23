@@ -1,4 +1,4 @@
-from ledfx.wled import Power
+from ledfx.wled import powerState
 from ledfx.effects.modulate import ModulateEffect
 from ledfx.effects.temporal import TemporalEffect
 import voluptuous as vol
@@ -7,13 +7,13 @@ import urllib.request as url
 
 class WLEDEffect(TemporalEffect, ModulateEffect):
 
-    NAME = "POWER"
+    NAME = "powerState"
     CONFIG_SCHEMA = vol.Schema({
-        vol.Optional('wled', description='Color of strip', default = "aqua"): vol.In(list(POWER.keys())),
+        vol.Optional('wled', description='Color of strip', default = "aqua"): vol.In(list(powerState.keys())),
     })
 
     def config_updated(self, config):
-        self.wled = np.array(POWER[self._config['wled']], dtype=float)
+        self.wled = np.array(powerState[self._config['wled']], dtype=float)
 
     def effect_loop(self):
         wled_array = np.tile(self.wled, (self.pixel_count, 1))

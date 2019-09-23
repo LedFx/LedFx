@@ -1,0 +1,1 @@
+%windir%\System32\cmd.exe "/K" C:\Users\Matt\Anaconda3\Scripts\activate.bat C:\Users\Matt\Anaconda3\envs\ledfx-not-matt" && ledfx --open-ui
