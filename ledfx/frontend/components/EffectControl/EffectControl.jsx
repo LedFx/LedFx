@@ -75,7 +75,7 @@ class EffectControl extends React.Component {
               onClick={this.handleClearEffect}
               color="primary"
             >
-              Current effect
+              Current effect is Scroll
             </Button>
           </div>
           </SchemaFormCollection>
