@@ -7,6 +7,7 @@ import Tune from "@material-ui/icons/Tune";
 // Components and Views
 import DashboardView from "frontend/views/Dashboard/Dashboard.jsx";
 import DevicesView from "frontend/views/Devices/Devices.jsx";
+import PresetsView from "frontend/views/Presets/Presets.jsx";
 import DeviceView from "frontend/views/Device/Device.jsx";
 import DeveloperView from "frontend/views/Developer/Developer.jsx";
 
@@ -24,6 +25,13 @@ const viewRoutes = [
     sidebarName: "Devices",
     icon: List,
     component: DeviceView,
+  },
+  {
+    path: "/Presets",
+    sidebarName: "Presets",
+    navbarName: "Presets",
+    icon: ViewComfy,
+    component: PresetsView,
   },
   {
     path: "/devices",

@@ -1,78 +1,82 @@
 import React from "react";
 import PropTypes from "prop-types";
-import { connect } from "react-redux";
 import withStyles from "@material-ui/core/styles/withStyles";
 
-import Card from '@material-ui/core/Card';
-import CardContent from '@material-ui/core/CardContent';
 import Typography from '@material-ui/core/Typography';
+import Slider from '@material-ui/core/Slider';
+import Input from '@material-ui/core/Input';
+import { connect } from "react-redux";
 
-import Table from '@material-ui/core/Table';
-import TableBody from '@material-ui/core/TableBody';
+import Grid from "@material-ui/core/Grid";
+import Card from "@material-ui/core/Card";
+import CardContent from "@material-ui/core/CardContent";
+import Button from "@material-ui/core/Button";
+import AddIcon from "@material-ui/icons/Add";
 
-import DeviceMiniControl from 'frontend/components/DeviceMiniControl/DeviceMiniControl.jsx'
+import DevicesTable from "frontend/components/DevicesTable/DevicesTable.jsx";
+import DeviceConfigDialog from "frontend/components/DeviceConfigDialog/DeviceConfigDialog.jsx";
 
 const styles = theme => ({
-  table: {
-    marginBottom: "0",
+  cardResponsive: {
     width: "100%",
-    maxWidth: "100%",
-    backgroundColor: "transparent",
-    borderSpacing: "0",
-    borderCollapse: "collapse"
+    overflowX: "auto"
+  },
+  button: {
+    position: "absolute",
+    bottom: theme.spacing.unit * 2,
+    right: theme.spacing.unit * 2
+  },
+  dialogButton: {
+    float: "right"
   }
 });
 
-class DashboardView extends React.Component {
+class PresetsView extends React.Component {
+  constructor(props) {
+    super(props);
+
+    this.state = {
+      addDialogOpened: false
+    };
+  }
+
+  openAddDeviceDialog = () => {
+    this.setState(...this.state, { addDialogOpened: true });
+  };
+
+  closeAddDeviceDialog = () => {
+    this.setState(...this.state, { addDialogOpened: false });
+  };
 
   render() {
-    const { classes, devicesById } = this.props;
-
-    if (Object.keys(devicesById) == 0)
-    {
-      return (
-        <div>
-          <Card>
-              <CardContent>
-                <p>Looks like you have no devices! Go to 'Device Management' to add them</p>
-              </CardContent>
-          </Card>
-        </div>
-      );
-    }
-
+    const { classes, schemas } = this.props;
     return (
       <div>
-        <Card>
-            <CardContent>
-              <Table className={classes.table}>
-                <TableBody>
-                  {
-                    Object.keys(devicesById).map(id => {
-                      return (
-                        <DeviceMiniControl key={id} device={devicesById[id]}/>
-                      );
-                    })
-                  }
-                </TableBody>
-              </Table>
-            </CardContent>
-        </Card>
+        <Grid container spacing={16}>
+          <Grid item xs={12} sm={12} md={12}>
+            <Card>
+              <CardContent>
+                <DevicesTable />
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
+        <Button
+          variant="fab"
+          color="primary"
+          aria-label="Add"
+          className={classes.button}
+          onClick={this.openAddDeviceDialog}
+        >
+          <AddIcon />
+        </Button>
+        <DeviceConfigDialog
+          open={this.state.addDialogOpened}
+          onClose={this.closeAddDeviceDialog}
+        />
       </div>
     );
   }
 }
 
-DashboardView.propTypes = {
-  devicesById: PropTypes.object.isRequired,
-};
-
-function mapStateToProps(state) {
-  const { devicesById } = state
-
-  return {
-    devicesById
-  }
-}
-
-export default  connect(mapStateToProps)(withStyles(styles)(DashboardView));
+export default withStyles(styles)(PresetsView);

@@ -1,4 +1,4 @@
-from ledfx.effects.audio import AudioReactiveEffect, FREQUENCY_RANGES, AUDIO_CHANNEL
+from ledfx.effects.audio import AUDIO_CHANNEL, AudioReactiveEffect, FREQUENCY_RANGES
 from ledfx.effects.gradient import GradientEffect
 import voluptuous as vol
 import numpy as np
