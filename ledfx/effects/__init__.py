@@ -1,4 +1,5 @@
 from ledfx.utils import BaseRegistry, RegistryLoader
+#from ledfx.effects.audio import FREQUENCY_RANGES
 from functools import lru_cache
 import voluptuous as vol
 import numpy as np
@@ -92,6 +93,7 @@ class Effect(BaseRegistry):
 
     # Basic effect properties that can be applied to all effects
     CONFIG_SCHEMA = vol.Schema({
+#        vol.Optional('AudioChannel', description='Audio of mic', default = 'Mono'): vol.In(list(AUDIO_CHANNEL.keys())),
         vol.Optional('blur', description='Amount to blur the effect', default = 0.0): vol.Coerce(float),
         vol.Optional('flip', description='Flip the effect', default = False): bool,
         vol.Optional('mirror', description='Mirror the effect', default = False): bool,

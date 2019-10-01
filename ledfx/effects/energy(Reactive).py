@@ -1,4 +1,4 @@
-from ledfx.effects.audio import AudioReactiveEffect
+from ledfx.effects.audio import AudioReactiveEffect, AUDIO_CHANNEL
 import voluptuous as vol
 import numpy as np
 
@@ -6,6 +6,7 @@ class EnergyAudioEffect(AudioReactiveEffect):
 
     NAME = "Energy"
     CONFIG_SCHEMA = vol.Schema({
+        vol.Optional('Audio_Channel', description='Audio Channel to use as import source', default = "Mono"): vol.In(list(AUDIO_CHANNEL.keys())),
         vol.Optional('blur', description='Amount to blur the effect', default = 4.0): vol.Coerce(float),
         vol.Optional('mirror', description='Mirror the effect', default = True): bool,
         vol.Optional('scale', description='Scale factor for the energy', default = 1.0): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=5.0)),

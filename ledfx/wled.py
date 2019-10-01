@@ -3,33 +3,36 @@ from ledfx.config import save_config
 from collections import namedtuple
 #import urllib.request as url
 
-def powerState(value):
-    requests.get('http://192.168.1.102/win&', params={'T': 1 if value else 0})
-powerState(False)
+#Get ip_address of current device and use as variable for so this works, requests.get('ip_address'/win&', params={'T': 1 if value else 0})
+# C:\Users\Matt\AppData\Roaming\.ledfx\config.yaml
 
-def WLEDEffects(value):
-    requests.get('http://192.168.1.102/win&', params={'FX': 1 if value else 0})
-WLEDEffects(False)
+#def powerState(value):
+#    requests.get('http://192.168.1.102/win&', params={'T': 1 if value else 0})
+#powerState(False)
 
-def WLEDPalette(value):
-    requests.get('http://192.168.1.102/win&', params={'FP': 1 if value else 0})
-WLEDPalette(False)
+#def WLEDEffects(value):
+#    requests.get('http://192.168.1.102/win&', params={'FX': 1 if value else 0})
+#WLEDEffects(False)
 
-def WLEDSpeed(value):
-    requests.get('http://192.168.1.102/win&', params={'SX': 1 if value else 0})
-WLEDSpeed(False)
+#def WLEDPalette(value):
+#    requests.get('http://192.168.1.102/win&', params={'FP': 1 if value else 0})
+#WLEDPalette(False)
 
-def WLEDIntensity(value):
-    requests.get('http://192.168.1.102/win&', params={'IX': 1 if value else 0})
-WLEDIntensity(False)
+#def WLEDSpeed(value):
+#    requests.get('http://192.168.1.102/win&', params={'SX': 1 if value else 0})
+#WLEDSpeed(False)
 
-def WLEDBrightness(value):
-    requests.get('http://192.168.1.102/win&', params={'A': 1 if value else 0})
-WLEDBrightness(False)
+#def WLEDIntensity(value):
+#    requests.get('http://192.168.1.102/win&', params={'IX': 1 if value else 0})
+#WLEDIntensity(False)
 
-def WLEDHueColor(value):
-    requests.get('http://192.168.1.102/win&', params={'HU': 1 if value else 0})
-WLEDHueColor(False)
+#def WLEDBrightness(value):
+#    requests.get('http://192.168.1.102/win&', params={'A': 1 if value else 0})
+#WLEDBrightness(False)
+
+#def WLEDHueColor(value):
+#    requests.get('http://192.168.1.102/win&', params={'HU': 1 if value else 0})
+#WLEDHueColor(False)
 
 powerState = {
     'On': ('T=0'),

@@ -1,6 +1,10 @@
 import React from "react";
 import PropTypes from "prop-types";
 import withStyles from "@material-ui/core/styles/withStyles";
+
+import Typography from '@material-ui/core/Typography';
+import Slider from '@material-ui/core/Slider';
+import Input from '@material-ui/core/Input';
 import { connect } from "react-redux";
 
 import Grid from "@material-ui/core/Grid";
