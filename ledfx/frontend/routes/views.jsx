@@ -27,10 +27,10 @@ const viewRoutes = [
     component: DeviceView,
   },
   {
-    path: "/Presets",
+    path: "/presets",
     sidebarName: "Presets",
     navbarName: "Presets",
-    icon: ViewComfy,
+    icon: List,
     component: PresetsView,
   },
   {
