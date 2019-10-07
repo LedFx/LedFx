@@ -3,6 +3,7 @@ import Dashboard from "@material-ui/icons/Dashboard";
 import List from "@material-ui/icons/List";
 import Settings from "@material-ui/icons/Settings";
 import Tune from "@material-ui/icons/Tune";
+import SaveAltIcon from '@material-ui/icons/SaveAlt';
 
 // Components and Views
 import DashboardView from "frontend/views/Dashboard/Dashboard.jsx";
@@ -30,7 +31,7 @@ const viewRoutes = [
     path: "/presets",
     sidebarName: "Presets",
     navbarName: "Presets",
-    icon: List,
+    icon: SaveAltIcon,
     component: PresetsView,
   },
   {
