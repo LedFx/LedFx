@@ -54,10 +54,10 @@ class DevicesTable extends React.Component {
         <TableHead>
           <TableRow>
             <TableCell>Name</TableCell>
-            <TableCell className={classes.tableCell}>IP_Address</TableCell>
-            <TableCell className={classes.tableCell}>pixel_count</TableCell>
+            <TableCell className={classes.tableCell}>IP Address</TableCell>
+            <TableCell className={classes.tableCell}>Pixel Count</TableCell>
             <TableCell className={classes.tableCell}>Type</TableCell>
-            <TableCell className={classes.tableCell} numeric>Manage1</TableCell>
+            <TableCell className={classes.tableCell} numeric>Manage</TableCell>
           </TableRow>
         </TableHead>
 

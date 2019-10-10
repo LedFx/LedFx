@@ -1,9 +1,11 @@
 import requests
 from ledfx.config import save_config
 from collections import namedtuple
-#import urllib.request as url
+import urllib.request as url
 
-#Get ip_address of current device and use as variable for so this works, requests.get('ip_address'/win&', params={'T': 1 if value else 0})
+
+#Get ip_address of current device and use as variable for so this works
+#requests.get('ip_address'/win&', params={'T': 1 if value else 0})
 # C:\Users\Matt\AppData\Roaming\.ledfx\config.yaml
 
 #def powerState(value):
@@ -34,8 +36,9 @@ from collections import namedtuple
 #    requests.get('http://192.168.1.102/win&', params={'HU': 1 if value else 0})
 #WLEDHueColor(False)
 
+
 powerState = {
-    'On': ('T=0'),
+    'On': 'T=0',
     'Off': ('T=1'),
 }
 
