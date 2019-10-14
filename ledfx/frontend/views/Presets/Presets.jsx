@@ -13,7 +13,7 @@ import CardContent from "@material-ui/core/CardContent";
 import Button from "@material-ui/core/Button";
 import AddIcon from "@material-ui/icons/Add";
 
-import DevicesTable from "frontend/components/DevicesTable/DevicesTable.jsx";
+import PresetsTable from "frontend/components/PresetsTable/PresetsTable.jsx";
 import DeviceConfigDialog from "frontend/components/DeviceConfigDialog/DeviceConfigDialog.jsx";
 
 const styles = theme => ({
@@ -31,7 +31,7 @@ const styles = theme => ({
   }
 });
 
-class PresetsView extends React.Component {
+class DevicesView extends React.Component {
   constructor(props) {
     super(props);
 
@@ -56,7 +56,7 @@ class PresetsView extends React.Component {
           <Grid item xs={12} sm={12} md={12}>
             <Card>
               <CardContent>
-                <DevicesTable />
+                <PresetsTable/>
               </CardContent>
             </Card>
           </Grid>
@@ -79,4 +79,4 @@ class PresetsView extends React.Component {
   }
 }
 
-export default withStyles(styles)(PresetsView);
+export default withStyles(styles)(DevicesView);

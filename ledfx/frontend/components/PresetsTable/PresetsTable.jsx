@@ -8,7 +8,7 @@ import TableRow from '@material-ui/core/TableRow';
 import TableCell from '@material-ui/core/TableCell';
 import TableBody from '@material-ui/core/TableBody';
 
-import PresetTableItem from 'frontend/components/\PresetsTable/presetsTableItem.jsx'
+import DevicesTableItem from 'frontend/components/DevicesTable/DevicesTableItem.jsx'
 import { deleteDevice } from 'frontend/actions'
 
 const styles = theme => ({
@@ -53,30 +53,30 @@ class PresetsTable extends React.Component {
       <Table className={classes.table}>
         <TableHead>
           <TableRow>
-            <TableCell>Preset Name</TableCell>
+            <TableCell>Name</TableCell>
             <TableCell className={classes.tableCell}>Keyboard Key</TableCell>
             <TableCell className={classes.tableCell}>Keyboard Switch Type</TableCell>
             <TableCell className={classes.tableCell}>Trigger Spotify Song</TableCell>
-            <TableCell className={classes.tableCell} numeric>Trigger Spotify Time(m:s:ms)</TableCell>
+            <TableCell className={classes.tableCell} numeric>Trigger Spotify Time(m:ss:ms)</TableCell>
             <TableCell className={classes.tableCell} numeric>Manage</TableCell>
           </TableRow>
-        </TableHead>      
+        </TableHead>
+
         <TableBody>
           {
             Object.keys(devicesById).map(device_id => {
             return (
-              <PresetTableItem key={device_id} device={devicesById[device_id]} device={devicesById[device_id]} onDelete={this.handleDeleteDevice}/>
+              <DevicesTableItem key={device_id} device={devicesById[device_id]} onDelete={this.handleDeleteDevice}/>
             );
           })}
         </TableBody>
       </Table>
-      
       </div>
     );
   }
 }
 
-DevicesTable.propTypes = {
+PresetsTable.propTypes = {
   classes: PropTypes.object.isRequired,
   devicesById: PropTypes.object.isRequired,
 };
@@ -89,4 +89,4 @@ function mapStateToProps(state) {
   }
 }
 
-export default  connect(mapStateToProps)(withStyles(styles)(DevicesTable));
+export default  connect(mapStateToProps)(withStyles(styles)(PresetsTable));
