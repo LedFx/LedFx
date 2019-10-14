@@ -39,30 +39,33 @@ const styles = theme => ({
 
 import { Link } from 'react-router-dom'
 
-class DevicesTableItem extends React.Component {
+class PresetTableItem extends React.Component {
 
-  handleDeleteDevice = () => {
-    this.props.onDelete(this.props.device.id)
+  handleDeleteConfig = () => {
+    this.props.onDelete(this.props.config.id)
   }
 
   render() {
     const { classes, device, onDelete } = this.props;
     return (
-        <TableRow key={device.id}>
+        <TableRow key={config.id}>
             <TableCell component="th" scope="row">
                 <NavLink
-                to={'/devices/' + device.id}
+                to={'/devices/' + config.id}
                 className={classes.deviceLink}
-                key={device.id}>
+                key={config.id}>
                   {device.config.name}
                 </NavLink>
             </TableCell>
             <TableCell className={classes.tableCell}>
-                {device.config.ip_address}
+                {device.ip_address}
             </TableCell>
             <TableCell className={classes.tableCell}>
-                {device.config.pixel_count}
-            </TableCell>            
+                {device.pixel_count}
+            </TableCell>
+            <TableCell className={classes.tableCell}>
+                {device.universe_size}
+            </TableCell>             
             <TableCell className={classes.tableCell}>
                 {device.type}
             </TableCell>
@@ -76,10 +79,10 @@ class DevicesTableItem extends React.Component {
   }
 }
 
-DevicesTableItem.propTypes = {
+PresetTableItem.propTypes = {
   classes: PropTypes.object.isRequired,
   device: PropTypes.object.isRequired,
   onDelete: PropTypes.func.isRequired
 };
 
-export default withStyles(styles)(DevicesTableItem);
+export default withStyles(styles)(PresetTableItem);
