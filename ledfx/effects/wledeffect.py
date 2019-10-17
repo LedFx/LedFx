@@ -12,8 +12,8 @@ class WLEDEffect(AudioReactiveEffect):
 
     NAME = "Power State"
     CONFIG_SCHEMA = vol.Schema({
-        vol.Optional('Power LED', description='Power of LED', default = True): bool,
-        vol.Optional('WLED Effects', description='WLED Effects', default = "Solid"): vol.In(list(WLEDEffects.keys())),
+        vol.Optional('Power_LED', description='Power of LED', default = True): bool,
+        vol.Optional('WLED_Effects', description='WLED Effects', default = "Solid"): vol.In(list(WLEDEffects.keys())),
         vol.Optional('Palette', description='Color Palette', default = "Solid"): vol.In(list(WLEDPalette.keys())),
         vol.Optional('Speed', description='Effect Speed', default = "Med"): vol.In(list(WLEDSpeed.keys())),
         vol.Optional('Effect Intensity', description='Effect Intensity', default = "Med"): vol.In(list(WLEDIntensity.keys())),
@@ -22,4 +22,10 @@ class WLEDEffect(AudioReactiveEffect):
     })
 
     def config_updated(self, config):
-        self.wled = np.array(WLEDEffects[self._config['Power LED']], dtype=float)
+        self.wled = np.array(WLEDEffects[self._config['WLED_Effects']], dtype=float)
+
+
+
+#   def effect_loop(self):
+#        color_array = np.tile(self.color, (self.pixel_count, 1))
+#        self.pixels = self.modulate(color_array)
