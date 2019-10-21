@@ -2,7 +2,7 @@ import requests
 from ledfx.config import save_config
 from collections import namedtuple
 
-#Get 'ip_address' C:\Users\Matt\AppData\Roaming\.ledfx\config.yaml 
+#Need to get 'ip_address' C:\Users\Matt\AppData\Roaming\.ledfx\config.yaml 
 # of current device and use as a str so line 143 correctly works
 
 #Below is based on: https://github.com/Aircoookie/WLED/wiki/HTTP-request-API
@@ -12,9 +12,14 @@ from collections import namedtuple
 
 #Also Need to figure out upon clicking 'Set Effect', that does not enable E1.31
 
-def powerState(value):
-    requests.get('http://192.168.1.102/win&', params={'T': 1 if value else 0})
-powerState(False)
+#def powerState(value):
+#    requests.get('http://192.168.1.102/win&', params={'T': 1 if value else 0})
+#powerState(False)
+
+powerState = {
+           'On': 'T=0',
+           'Off': 'T=1',
+         }
 
 WLEDEffects = {
     'Solid': 'FX=0',
@@ -190,6 +195,6 @@ ip_address = '192.168.1.102'
 WLEDEffects = 'FX=0&'
 wledand = '&'
 
-url = http + ip_address + WLEDAPI + WLEDEffects + WLEDPalette + WLEDSpeed + WLEDIntensity + WLEDBrightness + WLEDHueColor
-wled = requests.get(url)
-print(wled.text)
+#url = http + ip_address + WLEDAPI + WLEDEffects + WLEDPalette + WLEDSpeed + WLEDIntensity + WLEDBrightness + WLEDHueColor
+#wled = requests.get(url)
+#print(wled.text)
