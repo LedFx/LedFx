@@ -36,7 +36,7 @@ WLEDEffects = {
     'Dual Scan': 'FX=11',
     'Fade': 'FX=12',
     'Chase': 'FX=13',
-    'Chase Rainbow': 'FX=14',
+    'Chase_Rainbow': 'FX=14',
     'Running': 'FX=15',
     'Saw': 'FX=16',
     'Twinkle': 'FX=17',
@@ -185,16 +185,3 @@ WLEDHueColor = {
     'Blue': 'HU=255',
     'Green': 'HU=255',
 }
-
-#For testing
-http = 'http://'
-WLEDAPI = '/win&'
-
-#variables
-ip_address = '192.168.1.102'
-WLEDEffects = 'FX=0&'
-wledand = '&'
-
-#url = http + ip_address + WLEDAPI + WLEDEffects + WLEDPalette + WLEDSpeed + WLEDIntensity + WLEDBrightness + WLEDHueColor
-#wled = requests.get(url)
-#print(wled.text)

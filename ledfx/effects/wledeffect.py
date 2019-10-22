@@ -29,3 +29,16 @@ class WLEDEffect(AudioReactiveEffect):
 #   def effect_loop(self):
 #        color_array = np.tile(self.color, (self.pixel_count, 1))
 #        self.pixels = self.modulate(color_array)
+
+#For testing
+#http = 'http://'
+#WLEDAPI = '/win&'
+
+#variables
+#ip_address = '192.168.1.102'
+#WLEDEffects = 'FX=0&'
+#wledand = '&'
+
+#url = http + ip_address + WLEDAPI + WLEDEffects + WLEDPalette + WLEDSpeed + WLEDIntensity + WLEDBrightness + WLEDHueColor
+#wled = requests.get(url)
+#print(wled.text)
