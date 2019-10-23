@@ -39,7 +39,7 @@ const styles = theme => ({
   }
 });
 
-class DevicesTable extends React.Component {
+class PresetsTable extends React.Component {
 
   handleDeleteDevice = deviceId => {
     this.props.dispatch(deleteDevice(deviceId))
@@ -54,9 +54,10 @@ class DevicesTable extends React.Component {
         <TableHead>
           <TableRow>
             <TableCell>Name</TableCell>
-            <TableCell className={classes.tableCell}>IP Address</TableCell>
-            <TableCell className={classes.tableCell}>Pixel Count</TableCell>
-            <TableCell className={classes.tableCell}>Type</TableCell>
+            <TableCell className={classes.tableCell}>Keyboard Key</TableCell>
+            <TableCell className={classes.tableCell}>Keyboard Switch Type</TableCell>
+            <TableCell className={classes.tableCell}>Trigger Spotify Song</TableCell>
+            <TableCell className={classes.tableCell} numeric>Trigger Spotify Time(m:ss:ms)</TableCell>
             <TableCell className={classes.tableCell} numeric>Manage</TableCell>
           </TableRow>
         </TableHead>
@@ -75,7 +76,7 @@ class DevicesTable extends React.Component {
   }
 }
 
-DevicesTable.propTypes = {
+PresetsTable.propTypes = {
   classes: PropTypes.object.isRequired,
   devicesById: PropTypes.object.isRequired,
 };
@@ -88,4 +89,4 @@ function mapStateToProps(state) {
   }
 }
 
-export default  connect(mapStateToProps)(withStyles(styles)(DevicesTable));
+export default  connect(mapStateToProps)(withStyles(styles)(PresetsTable));
