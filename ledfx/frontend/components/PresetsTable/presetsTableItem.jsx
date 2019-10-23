@@ -62,7 +62,10 @@ class DevicesTableItem extends React.Component {
             </TableCell>
             <TableCell className={classes.tableCell}>
                 {device.config.pixel_count}
-            </TableCell>            
+            </TableCell>
+            <TableCell className={classes.tableCell}>
+                {device.config.pixel_count}
+            </TableCell> 
             <TableCell className={classes.tableCell}>
                 {device.type}
             </TableCell>

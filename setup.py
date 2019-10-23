@@ -23,7 +23,8 @@ INSTALL_REQUIRES = [
     'sacn==1.3',
     'aiohttp==3.3.2',
     'aiohttp_jinja2==1.0.0',
-    'pyyaml>=3.11,<4',
+    'requests>=2.22.0',
+	'pyyaml>=3.11,<4',
     'aubio>=0.4.8',
     'pypiwin32>=223;platform_system=="Windows"'
 ]
