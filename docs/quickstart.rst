@@ -2,7 +2,7 @@
 Installation and Setup
 ================================
 
-LedFx is a network controller that aim to enable synchronization of multiple lights across a network. LedFx doesn't currently support local control of LED strinngs so you will need a seperate devices (e.g. ESP8266) to directly control the LEDs. To be able to add your LED strips to LedFx your device will need to be capable of receiving data either via the E1.31 sACN protocol, or a generic (simple) UDP protocol. See below for a list of tested ESP8266 firmware that can be used with LedFx.
+LedFx is a network controller that aims to enable synchronization of multiple lights across a network. LedFx doesn't currently support local control of LED strings so you will need a seperate device (e.g. ESP8266) to directly control the LEDs. To be able to add your LED strips to LedFx your device will need to be capable of receiving data either via the E1.31 sACN protocol, or a generic (simple) UDP protocol. See below for a list of tested ESP8266 firmware that can be used with LedFx.
 
 Here is everything you need to get started with LedFx:
 
