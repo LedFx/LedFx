@@ -11,7 +11,7 @@ import EffectControl from "frontend/components/EffectControl/EffectControl.jsx";
 import EffectPresetsControl from "frontend/components/EffectControl/EffectPresetsControl.jsx";
 import PixelColorGraph from "frontend/components/PixelColorGraph/PixelColorGraph.jsx";
 
-class DeviceView extends React.Component {
+class EffectPresetsView extends React.Component {
   constructor() {
     super();
     this.state = {
@@ -81,7 +81,7 @@ class DeviceView extends React.Component {
   }
 }
 
-DeviceView.propTypes = {
+EffectPresetsView.propTypes = {
   devicesById: PropTypes.object.isRequired,
 };
 
@@ -93,4 +93,4 @@ function mapStateToProps(state) {
   }
 }
 
-export default  connect(mapStateToProps)(DeviceView);
+export default  connect(mapStateToProps)(EffectPresetsView);
