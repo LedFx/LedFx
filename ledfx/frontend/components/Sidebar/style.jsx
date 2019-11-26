@@ -128,7 +128,7 @@ import {
     activeView: {
       backgroundColor: [theme.palette.primary.main],
       boxShadow: [theme.shadows[12]],
-      "&:hover": {
+      "&:hover,&:focus,&:visited,&": {
         backgroundColor: [theme.palette.primary.main],
         boxShadow: [theme.shadows[12]]
       },

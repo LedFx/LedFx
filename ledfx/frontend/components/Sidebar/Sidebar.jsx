@@ -49,7 +49,6 @@ class Sidebar extends React.Component {
       {
         listItemClass = listItemClass + " " + classes.activeView
       }
-
       return (
         <NavLink
           to={'/devices/' + devicesById[deviceId].id}
@@ -67,6 +66,28 @@ class Sidebar extends React.Component {
       );
     });
 
+    var effectLinks = Object.keys(devicesById).map(deviceId => {
+      var listItemClass = classes.itemLink
+      if (this.isViewActive("/effectPresets/" + deviceId))
+      {
+        listItemClass = listItemClass + " " + classes.activeView
+      }
+      return (
+        <NavLink
+          to={'/effectPresets/' + devicesById[deviceId].id}
+          className={classes.item}
+          key={devicesById[deviceId].id}
+          activeClassName="active"
+          key={deviceId}>
+          <ListItem button className={listItemClass}>
+            <ListItemText
+              primary={devicesById[deviceId].config.name}
+              className={classes.devicesItemText}
+              disableTypography={true}/>
+          </ListItem>
+        </NavLink>
+      );
+    });
     var links = (
       <List className={classes.list}>
         {
@@ -83,6 +104,9 @@ class Sidebar extends React.Component {
             if (this.isViewActive(prop.path) && prop.sidebarName != "Devices") {
               listItemClass = listItemClass + " " + classes.activeView
             }
+            if (this.isViewActive(prop.path) && prop.sidebarName != "EffectPresets") {
+              listItemClass = listItemClass + " " + classes.activeView
+            }
 
             if (prop.sidebarName === "Devices")
             {
@@ -97,6 +121,24 @@ class Sidebar extends React.Component {
                   disableTypography={true}/>
                   <List className={classes.list}>
                     {deviceLinks}
+                  </List>  
+                </ListItem>
+              );
+            }
+
+            if (prop.sidebarName === "EffectPresets")
+            {
+              return (
+                <ListItem button className={listItemClass}>
+                <ListItemIcon className={classes.itemIcon}>
+                  <prop.icon />
+                </ListItemIcon>
+                <ListItemText
+                  primary={prop.sidebarName}
+                  className={classes.itemText}
+                  disableTypography={true}/>
+                  <List className={classes.list}>
+                    {effectLinks}
                   </List>  
                 </ListItem>
               );
