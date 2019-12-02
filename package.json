@@ -17,7 +17,7 @@
   },
   "devDependencies": {
     "@babel/runtime": "^7.6.2",
-    "@material-ui/core": "^3.9.3",
+    "@material-ui/core": "^3.9.4",
     "@material-ui/icons": "^3.0.2",
     "axios": "^0.18.1",
     "babel-core": "^6.26.3",
@@ -56,6 +56,7 @@
   },
   "dependencies": {
     "core-js": "^3.4.1",
-    "glob": "^7.1.6"
+    "glob": "^7.1.6",
+    "spotify-web-api-node": "^4.0.0"
   }
 }
