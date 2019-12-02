@@ -17,4 +17,3 @@ class EffectEndpoint(RestEndpoint):
 
         response = { 'schema' : str(effect.schema()) }
         return web.Response(text=json.dumps(response), status=200)
-
