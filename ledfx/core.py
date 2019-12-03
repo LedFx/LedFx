@@ -34,7 +34,9 @@ class LedFxCore(object):
 
         self.events = Events(self)
         self.http = HttpServer(
-            ledfx=self, host=self.config['host'], port=self.config['port'])
+            ledfx=self,
+            host=self.config.get('host', None),
+            port=self.config.get('port', None))
         self.exit_code = None
 
     def dev_enabled(self):
