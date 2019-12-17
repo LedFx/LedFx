@@ -1,5 +1,4 @@
 from ledfx.api import RestEndpoint
-from ledfx.http import HttpServer
 from ledfx.consts import PROJECT_VERSION
 from aiohttp import web
 import logging
@@ -13,7 +12,7 @@ class InfoEndpoint(RestEndpoint):
 
     async def get(self) -> web.Response:
         response = {
-            'url': self._ledfx.http.base_url,
+            'url': self._ledfx.base_url,
             'name': 'LedFx Controller',
             'version': PROJECT_VERSION,
             'debug_mode': True
