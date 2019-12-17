@@ -21,13 +21,13 @@ const viewRoutes = [
     icon: Dashboard,
     component: DashboardView
   },
-  {
-    path: "/effectPresets/:device_id",
-    navbarName: "EffectPresets",
-    sidebarName: "EffectPresets",
-    icon: List,
-    component: EffectPresetsView,
-  },
+  //{
+    //path: "/effectPresets/:device_id",
+    //navbarName: "EffectPresets",
+    //sidebarName: "EffectPresets",
+    //icon: List,
+    //component: EffectPresetsView,
+  //},
   {
     path: "/devices/:device_id",
     navbarName: "Devices",
