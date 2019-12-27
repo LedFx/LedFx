@@ -38,9 +38,9 @@ FREQUENCY_RANGES_SIMPLE = {
 AudioChannel = namedtuple('AudioChannel','min,max')
 AUDIO_CHANNEL = {
     'Mono': FrequencyRange(20, 60),
-    'Stereo': FrequencyRange(60, 250),
-    'Left': FrequencyRange(250, 500),
-    'Right': FrequencyRange(500, 2000),
+    'Stereo (In Development)': FrequencyRange(60, 250),
+    'Left (In Development)': FrequencyRange(250, 500),
+    'Right (In Development)': FrequencyRange(500, 2000),
 }
 
 MIN_MIDI = 21
