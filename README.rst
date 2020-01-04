@@ -17,21 +17,30 @@ Build Instructions
 For Mattallmighty/LedFx on Windows OS:
 
 Programs to download and install:
-https://www.anaconda.com/distribution/#download-section - Python 3.7 version
-https://git-scm.com/downloads
-Optional, but good to have: https://www.npmjs.com/get-npm - There will be an option through the install to install recommended programs through Chocolatey (Tick that box)
+
+- https://www.anaconda.com/distribution/#download-section - Python 3.7 version
+
+- https://git-scm.com/downloads
+
+- Optional, but good to have: https://www.npmjs.com/get-npm - There will be an option through the install to install recommended programs through Chocolatey (Tick that box)
 
 Once installed, search for the program anaconda navigator.
-Left side panel you will see 'Environments', followed at the bottom of your screen 'Create'
-Name: LedFx-Mattallmighty
-Python: 3.6
-click create.
-Once created, click on the icon that looks like a play button, and select 'Open Terminal'.
-You should see something like: (LedFx-Mattallmighty) C:\Users\Your User>
-This is where we are going to install LedFx on your PC. 
-Copy the below:
-git clone https://github.com/Mattallmighty/LedFx.git
 
+Left side panel you will see 'Environments', followed at the bottom of your screen 'Create'
+
+- Name: LedFx-Mattallmighty
+
+- Python: 3.6
+
+click create.
+
+Once created, click on the icon that looks like a play button, and select 'Open Terminal'.
+
+You should see something like: ``(LedFx-Mattallmighty) C:\Users\Your User>`` This is where we are going to install LedFx on your PC. 
+
+Copy the below:
+
+``git clone https://github.com/Mattallmighty/LedFx.git``
 
 Copy the below, but change 'Your User' to what is displayed in the command prompt. 
 
@@ -53,4 +62,5 @@ Open directory ``C:\Users\mattremote\Documents\GitHub\LedFx\ledfx\devices``
 Delete the file: ``fadecandy.py``
 
 Back to command prompt enter: ``ledfx --open``
+
 Done! Any issues, message the Discord LedFx community for help.
