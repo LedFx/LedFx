@@ -15,7 +15,7 @@ class DevicesEndpoint(RestEndpoint):
     async def get(self) -> web.Response:
         response = { 'status' : 'success' , 'devices' : {}}
         for device in self._ledfx.devices.values():
-            response['devices'][device.id] = { 'config': device.config, 'id': device.id, 'type': device.type, 'effect' : {} }
+            response['devices'][device.id] = { 'config': device.config, 'id': device.id, 'type': device.type,  'effect' : {} }
             if device.active_effect:
                 effect_response = {}
                 effect_response['config'] = device.active_effect.config

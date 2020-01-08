@@ -7,6 +7,8 @@ import Select from "@material-ui/core/Select";
 import InputLabel from "@material-ui/core/InputLabel";
 import MenuItem from "@material-ui/core/MenuItem";
 import FormControl from "@material-ui/core/FormControl";
+//import Slider from '@material-ui/core/Slider';
+import Input from '@material-ui/core/Input';
 
 import Button from "@material-ui/core/Button";
 import Collapse from "@material-ui/core/Collapse";
@@ -53,6 +55,7 @@ class SchemaFormCollection extends React.Component {
 
     this.state = {
       collectionKey: "",
+      interRender : false,
       showAdditional: false,
       model: {},
       form: [
@@ -73,6 +76,10 @@ class SchemaFormCollection extends React.Component {
     };
   }
 
+  componentDidMount() {
+    
+  }
+  
   showAdditional = () => {
     this.setState(...this.state, {
       showAdditional: !this.state.showAdditional
@@ -81,6 +88,7 @@ class SchemaFormCollection extends React.Component {
 
 
   handleChangeSelectedCollection = event => {
+    this.state.interRender = true;
     this.setState({ collectionKey: event.target.value });
     if (this.props.onChange) {
         this.props.onChange(event.target.value, {})
@@ -99,11 +107,25 @@ class SchemaFormCollection extends React.Component {
   }
 
   render() {
-    const { children, classes, onChange, onSubmit, schemaCollection, useAdditionalProperties, ...otherProps } = this.props;
+    const { children, classes, onChange, onSubmit, schemaCollection, currentEffect, useAdditionalProperties, ...otherProps } = this.props;
+    
+    if(currentEffect !== undefined  && currentEffect !== null && currentEffect.effect !== null && this.state.interRender == false)
+    {
+      if(currentEffect.effect.type === undefined)
+        this.state.collectionKey = "";
+      else
+        this.state.collectionKey = currentEffect.effect.type;
+      
+      if(currentEffect.effect.config === undefined)
+        this.state.model = {};
+      else
+        this.state.model = currentEffect.effect.config;
+    }
 
+    this.state.interRender = false;
     var currentSchema = {"type": "object", "title": "Effect Configuration", properties: {}}
-    if (this.state.collectionKey !== "") {
-      currentSchema = {...currentSchema, ...schemaCollection[this.state.collectionKey].schema}
+    if (this.state.collectionKey !== "" ) {
+      currentSchema = {...currentSchema, ...schemaCollection[this.state.collectionKey].schema};
     }
 
     let customSelect = (
@@ -113,19 +135,43 @@ class SchemaFormCollection extends React.Component {
           value={this.state.collectionKey}
           onChange={this.handleChangeSelectedCollection}
         >
-          <MenuItem value="">
+          <MenuItem value="" select='selected'>
             <em>None</em>
           </MenuItem>
+          
           {Object.keys(schemaCollection).map(collectionKey => {
-            return (
-              <MenuItem key={collectionKey} value={collectionKey}>
-                {collectionKey}
-              </MenuItem>
-            );
+              return (
+                <MenuItem key={collectionKey} value={collectionKey}>
+                  {collectionKey}
+                </MenuItem>
+              );
           })}
         </Select>
       </FormControl>
     );
+
+// For https://material-ui.com/components/slider/ With input field
+
+//    let customSlider = (
+//      <FormControl className={classes.control}>
+//        <InputLabel>Slider</InputLabel>
+//        <Select
+//          value={this.state.collectionKey}
+//          onChange={this.handleChangeSelectedCollection}
+//        >
+//          <Slider value="">
+//            <em>None</em>
+//          </Slider>
+//          {Object.keys(schemaCollection).map(collectionKey => {
+//            return (
+//              <Slider key={collectionKey} value={collectionKey}>
+//                {collectionKey}
+//              </Slider>
+//            );
+//          })}
+//        </Select>
+//      </FormControl>
+//    );
 
     var additionUi = null
     var form = ["*"]

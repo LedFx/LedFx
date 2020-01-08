@@ -58,6 +58,12 @@ class DevicesTableItem extends React.Component {
                 </NavLink>
             </TableCell>
             <TableCell className={classes.tableCell}>
+                {device.config.ip_address}
+            </TableCell>
+            <TableCell className={classes.tableCell}>
+                {device.config.pixel_count}
+            </TableCell>            
+            <TableCell className={classes.tableCell}>
                 {device.type}
             </TableCell>
             <TableCell className={classes.tableCell} numeric>

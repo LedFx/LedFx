@@ -78,6 +78,7 @@ class DefaultLayout extends React.Component {
             handleDrawerToggle={handleDrawerToggle}
             location={this.props.location}
           />
+          <h1>sss</h1>
           <Sidebar
             handleDrawerToggle={handleDrawerToggle}
             open={this.state.mobileOpen}

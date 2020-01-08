@@ -9,18 +9,20 @@ import Typography from '@material-ui/core/Typography';
 
 import Table from '@material-ui/core/Table';
 import TableBody from '@material-ui/core/TableBody';
-
+import Grid from "@material-ui/core/Grid";
+import PixelColorGraph from "frontend/components/PixelColorGraph/PixelColorGraph.jsx";
 import DeviceMiniControl from 'frontend/components/DeviceMiniControl/DeviceMiniControl.jsx'
 
 const styles = theme => ({
+  root: {
+    flexGrow: 1
+  },
   table: {
-    marginBottom: "0",
     width: "100%",
     maxWidth: "100%",
     backgroundColor: "transparent",
     borderSpacing: "0",
-    borderCollapse: "collapse"
-  }
+  },
 });
 
 class DashboardView extends React.Component {
@@ -47,13 +49,18 @@ class DashboardView extends React.Component {
             <CardContent>
               <Table className={classes.table}>
                 <TableBody>
+                <Grid container direction="row" spacing={3}>
                   {
-                    Object.keys(devicesById).map(id => {
+                    Object.keys(devicesById).map(id => {                      
                       return (
-                        <DeviceMiniControl key={id} device={devicesById[id]}/>
+                        <Grid item xs={6}>
+                          <PixelColorGraph device={devicesById[id]}/>
+                          <DeviceMiniControl key={id} device={devicesById[id]}/>
+                        </Grid>
                       );
                     })
                   }
+                  </Grid>
                 </TableBody>
               </Table>
             </CardContent>

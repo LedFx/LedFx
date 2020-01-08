@@ -3,11 +3,14 @@ import Dashboard from "@material-ui/icons/Dashboard";
 import List from "@material-ui/icons/List";
 import Settings from "@material-ui/icons/Settings";
 import Tune from "@material-ui/icons/Tune";
+import SaveAltIcon from '@material-ui/icons/SaveAlt';
 
 // Components and Views
 import DashboardView from "frontend/views/Dashboard/Dashboard.jsx";
 import DevicesView from "frontend/views/Devices/Devices.jsx";
+import PresetsView from "frontend/views/Presets/Presets.jsx";
 import DeviceView from "frontend/views/Device/Device.jsx";
+import EffectPresetsView from "frontend/views/EffectPresets/EffectPresets.jsx";
 import DeveloperView from "frontend/views/Developer/Developer.jsx";
 
 const viewRoutes = [
@@ -18,12 +21,26 @@ const viewRoutes = [
     icon: Dashboard,
     component: DashboardView
   },
+  //{
+    //path: "/effectPresets/:device_id",
+    //navbarName: "EffectPresets",
+    //sidebarName: "EffectPresets",
+    //icon: List,
+    //component: EffectPresetsView,
+  //},
   {
     path: "/devices/:device_id",
     navbarName: "Devices",
     sidebarName: "Devices",
     icon: List,
     component: DeviceView,
+  },
+  {
+    path: "/presets",
+    sidebarName: "Presets Management",
+    navbarName: "Presets Management",
+    icon: SaveAltIcon,
+    component: PresetsView,
   },
   {
     path: "/devices",
@@ -48,3 +65,4 @@ const viewRoutes = [
 ];
 
 export default viewRoutes;
+

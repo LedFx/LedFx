@@ -1,4 +1,5 @@
 from ledfx.utils import BaseRegistry, RegistryLoader
+#from ledfx.effects.audio import FREQUENCY_RANGES
 from functools import lru_cache
 import voluptuous as vol
 import numpy as np
@@ -12,7 +13,15 @@ import os
 _LOGGER = logging.getLogger(__name__)
 
 def mix_colors(color_1, color_2, ratio):
-    return (color_1[0] * (1-ratio) + color_2[0] * ratio,
+    if color_2 == []:
+       return (color_1[0] * (1-ratio) + 0,
+            color_1[1] * (1-ratio) + 0,
+            color_1[2] * (1-ratio) + 0)	
+    else:
+        # print (color_1[0] * (1-ratio) + color_2[0] * ratio,
+        #     color_1[1] * (1-ratio) + color_2[1] * ratio,
+        #     color_1[2] * (1-ratio) + color_2[2] * ratio)
+        return (color_1[0] * (1-ratio) + color_2[0] * ratio,
             color_1[1] * (1-ratio) + color_2[1] * ratio,
             color_1[2] * (1-ratio) + color_2[2] * ratio)
 

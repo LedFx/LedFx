@@ -54,6 +54,8 @@ class DevicesTable extends React.Component {
         <TableHead>
           <TableRow>
             <TableCell>Name</TableCell>
+            <TableCell className={classes.tableCell}>IP Address</TableCell>
+            <TableCell className={classes.tableCell}>Pixel Count</TableCell>
             <TableCell className={classes.tableCell}>Type</TableCell>
             <TableCell className={classes.tableCell} numeric>Manage</TableCell>
           </TableRow>
