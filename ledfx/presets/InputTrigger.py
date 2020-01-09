@@ -7,8 +7,8 @@ from ledfx.devices.lib.opc import Client
 
 _LOGGER = logging.getLogger(__name__)
 
-class Fadecandy(Device):
-    """Generic UDP device support"""
+class InputTrigger(Device):
+    """Input Trigger"""
 
     CONFIG_SCHEMA = vol.Schema({
         vol.Required('ip_address', description='Hostname or IP address of the device'): str,

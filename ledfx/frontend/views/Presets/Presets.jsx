@@ -14,7 +14,7 @@ import Button from "@material-ui/core/Button";
 import AddIcon from "@material-ui/icons/Add";
 
 import PresetsTable from "frontend/components/PresetsTable/PresetsTable.jsx";
-import DeviceConfigDialog from "frontend/components/DeviceConfigDialog/DeviceConfigDialog.jsx";
+import PresetsConfigDialog from "frontend/components/PresetsConfigDialog/PresetsConfigDialog.jsx";
 
 const styles = theme => ({
   cardResponsive: {
@@ -31,7 +31,7 @@ const styles = theme => ({
   }
 });
 
-class DevicesView extends React.Component {
+class PresetsView extends React.Component {
   constructor(props) {
     super(props);
 
@@ -70,7 +70,7 @@ class DevicesView extends React.Component {
         >
           <AddIcon />
         </Button>
-        <DeviceConfigDialog
+        <PresetsConfigDialog
           open={this.state.addDialogOpened}
           onClose={this.closeAddDeviceDialog}
         />
@@ -79,4 +79,4 @@ class DevicesView extends React.Component {
   }
 }
 
-export default withStyles(styles)(DevicesView);
+export default withStyles(styles)(PresetsView);
