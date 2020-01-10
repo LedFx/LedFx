@@ -54,8 +54,9 @@ class PresetsTable extends React.Component {
         <TableHead>
           <TableRow>
             <TableCell>Name</TableCell>
+            <TableCell className={classes.tableCell}>Preset Type</TableCell>
             <TableCell className={classes.tableCell}>Keyboard Key</TableCell>
-            <TableCell className={classes.tableCell}>Keyboard Switch Type</TableCell>
+            <TableCell className={classes.tableCell}>Switch Type</TableCell>
             <TableCell className={classes.tableCell}>Trigger Spotify Song</TableCell>
             <TableCell className={classes.tableCell} numeric>Trigger Spotify Time(m:ss:ms)</TableCell>
             <TableCell className={classes.tableCell} numeric>Manage</TableCell>
