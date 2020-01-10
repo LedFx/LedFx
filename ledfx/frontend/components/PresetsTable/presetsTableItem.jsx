@@ -41,21 +41,16 @@ import { Link } from 'react-router-dom'
 
 class DevicesTableItem extends React.Component {
 
-  handleDeleteDevice = () => {
+  handleDeletePreset = () => {
     this.props.onDelete(this.props.device.id)
   }
 
   render() {
     const { classes, device, onDelete } = this.props;
     return (
-        <TableRow key={device.id}>
-            <TableCell component="th" scope="row">
-                <NavLink
-                to={'/devices/' + device.id}
-                className={classes.deviceLink}
-                key={device.id}>
-                  {device.config.name}
-                </NavLink>
+        <TableRow key={preset.id}>
+            <TableCell className={classes.tableCell}>
+                {device.config.ip_address}
             </TableCell>
             <TableCell className={classes.tableCell}>
                 {device.config.ip_address}
@@ -70,7 +65,7 @@ class DevicesTableItem extends React.Component {
                 {device.type}
             </TableCell>
             <TableCell className={classes.tableCell} numeric>
-            <Button variant="contained" size="small" className={classes.deleteButton} onClick={this.handleDeleteDevice} >
+            <Button variant="contained" size="small" className={classes.deleteButton} onClick={this.handleDeletePreset} >
                 <DeleteIcon style={{ fontSize: 16 }} />
             </Button>
             </TableCell>

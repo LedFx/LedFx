@@ -92,6 +92,7 @@ class PresetsEndpoint(RestEndpoint):
         preset_id = generate_id(preset_name)
 
         preset_config = {}
+        preset_config['name'] = preset_name
         for device in self._ledfx.devices.values():
             effect = {}
             if device.active_effect:
