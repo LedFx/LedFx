@@ -41,6 +41,10 @@ class PresetsView extends React.Component {
     };
   }
 
+  componentDidMount = () => {
+    this.props.getPresets()
+  }
+ 
   openAddDeviceDialog = () => {
     this.setState(...this.state, { addDialogOpened: true });
   };
@@ -52,25 +56,24 @@ class PresetsView extends React.Component {
   render() {
     const { classes } = this.props;
     return (
-      <div>
-        <Table className={classes.table}>
-          <TableBody>
-            <Grid container direction="col" spacing={3}>
-              {
-                Object.keys(getPresets).map(id => { 
-                  return (
-                    <Grid item xs>
-                      <PresetCard key={id} preset={getPresets[id]} />
-                    </Grid>
-                  );
-                })
-              }
-            </Grid>
-          </TableBody>
-        </Table>
-      </div>
+      <React.Fragment>
+        {renderPresets(this.props.presets)}
+      </React.Fragment>
     );
   }
 }
 
-export default withStyles(styles)(PresetsView);
+const renderPresets = (presets) => Object.keys(presets).map((key) => (<PresetsCard key={key}preset={transformPreset(key, presets[key])} />))
+
+// Includes ID in preset
+const transformPreset = (key, preset) => ({ id: key, ...preset})
+
+const mapStateToProps = state => ({ 
+  presets: state.presets 
+})
+
+const mapDispatchToProps = (dispatch) => ({
+  getPresets: () => dispatch(getPresets())
+})
+
+export default connect(mapStateToProps, mapDispatchToProps)(withStyles(styles)(PresetsView));

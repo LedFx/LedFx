@@ -2,10 +2,16 @@ import fetch from "cross-fetch";
 
 const apiUrl = window.location.protocol + "//" + window.location.host + "/api";
 
+export const ADD_PRESET = "ADD_PRESET"
+export const REMOVE_PRESET = "REMOVE_PRESET"
+export const SET_PRESET = "SET_PRESET"
+export const GET_PRESETS = "GET_PRESETS"
+export const ACTIVATE_PRESET = "ACTIVATE_PRESET"
+
 export function addPreset(name) {
   return dispatch => {
     const data = {
-      name: name,
+      name: name
     };
     fetch(`${apiUrl}/presets`, {
       method: "POST",
@@ -23,7 +29,7 @@ export function addPreset(name) {
 export function deletePreset(id) {
   return dispatch => {
     const data = {
-      id: id,
+      id: id
     };
     fetch(`${apiUrl}/presets`, {
       method: "DELETE",
@@ -38,10 +44,11 @@ export function deletePreset(id) {
   };
 }
 
-export function setPreset(id) {
+export function activatePreset(id) {
   return dispatch => {
     const data = {
       id: id,
+      action: 'activate'
     };
     fetch(`${apiUrl}/presets`, {
       method: "PUT",
@@ -52,7 +59,10 @@ export function setPreset(id) {
       body: JSON.stringify(data)
     })
       .then(response => response.json())
-      .then(json => dispatch(receiveDevice(json)));
+      .then(json => dispatch({
+        type: ACTIVATE_PRESET,
+        response: json
+      }));
   };
 }
 
@@ -67,6 +77,10 @@ export function getPresets() {
       },
     })
       .then(response => response.json())
-      .then(json => dispatch(receiveDevice(json)));
-  };
+      .then(json => dispatch({
+          type: GET_PRESETS,
+          presets: json.presets,
+          receivedAt: Date.now()
+      }))
+  }
 }

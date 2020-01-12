@@ -2,15 +2,14 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux'
 import { withStyles } from '@material-ui/core/styles';
-import Table from '@material-ui/core/Table';
-import TableHead from '@material-ui/core/TableHead';
-import TableRow from '@material-ui/core/TableRow';
-import TableCell from '@material-ui/core/TableCell';
-import TableBody from '@material-ui/core/TableBody';
+import Card from '@material-ui/core/Card';
+import CardContent from '@material-ui/core/CardContent';
+import Button from '@material-ui/core/Button';
 
-import PresetConfigTable from "frontend/components/PresetCard/PresetConfigTable.jsx";
-import { deletePreset } from 'frontend/actions';
-import { setPreset } from 'frontend/actions';
+import PresetConfigTable from "frontend/components/PresetCard/PresetConfigTable";
+import PresetsConfigDialog from "frontend/components/PresetConfigDialog/PresetConfigDialog";
+
+import { activatePreset, deletePreset } from 'frontend/actions';
 
 const styles = theme => ({ 
   card: {
@@ -29,35 +28,29 @@ class PresetCard extends React.Component {
     this.props.dispatch(deletePreset(presetId))
   }
 
-  handleSetPreset = presetId => {
-    this.props.dispatch(setPreset(presetId))
+  handleActivatePreset = presetId => {
+    this.props.dispatch(activatePreset(presetId))
   }
 
   render() {
     const { classes, preset } = this.props;
 
     return (
-      <div>
       <Card className={classes.card}>
         <CardContent>
-          <h1>{preset['name']}</h1>
-          <PresetConfigTable key={preset_id} config={preset['devices']}/>
+          <h3>{preset.name}</h3>
+          { preset.devices && <PresetConfigTable devices ={ preset.devices }/> }
           <Button
-            variant="fab"
             color="primary"
-            aria-label="Add"
-            className={classes.button}
-            onClick={this.openAddDeviceDialog}
+            size="small"
+            aria-label="Activate"
+            variant = "contained"
+            onClick={() => this.handleActivatePreset(preset.id)}
           >
-          <AddIcon />
-          </Button>
-          <PresetsConfigDialog
-            open={this.state.addDialogOpened}
-            onClose={this.closeAddDeviceDialog}
-          />
+            Activate
+          </Button> 
         </CardContent>
       </Card>
-      </div>
     );
   }
 }
@@ -75,4 +68,4 @@ function mapStateToProps(state) {
   }
 }
 
-export default  connect(mapStateToProps)(withStyles(styles)(PresetConfigTable));
+export default  connect(mapStateToProps)(withStyles(styles)(PresetCard));
