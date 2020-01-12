@@ -92,7 +92,12 @@ class PresetsEndpoint(RestEndpoint):
             if name is None:
                 response = { 'status' : 'failed', 'reason': 'Required attribute "name" was not provided' }
                 return web.Response(text=json.dumps(response), status=500)
+
+            # Update and save config
             self._ledfx.config['presets'][preset_id]['name'] = name
+            save_config(
+                config = self._ledfx.config, 
+                config_dir = self._ledfx.config_dir)
 
         response = { 'status' : 'success' }
         return web.Response(text=json.dumps(response), status=200)
