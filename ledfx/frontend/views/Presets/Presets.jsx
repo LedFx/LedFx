@@ -13,7 +13,7 @@ import CardContent from "@material-ui/core/CardContent";
 import Button from "@material-ui/core/Button";
 import AddIcon from "@material-ui/icons/Add";
 
-import PresetsTable from "frontend/components/PresetsTable/PresetsTable.jsx";
+import PresetsCard from "frontend/components/PresetsCard/PresetsCard.jsx";
 import PresetsConfigDialog from "frontend/components/PresetsConfigDialog/PresetsConfigDialog.jsx";
 
 const styles = theme => ({
@@ -56,7 +56,7 @@ class PresetsView extends React.Component {
           <Grid item xs={12} sm={12} md={12}>
             <Card>
               <CardContent>
-                <PresetsTable/>
+                <PresetsCard/>
               </CardContent>
             </Card>
           </Grid>

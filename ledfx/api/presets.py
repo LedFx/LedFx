@@ -93,13 +93,14 @@ class PresetsEndpoint(RestEndpoint):
 
         preset_config = {}
         preset_config['name'] = preset_name
+        preset_config['devices'] = {}
         for device in self._ledfx.devices.values():
             effect = {}
             if device.active_effect:
+                effect['type'] = device.active_effect.type
                 effect['config'] = device.active_effect.config
                 #effect['name'] = device.active_effect.name
-                effect['type'] = device.active_effect.type
-            preset_config[device.id] = effect
+            preset_config['devices'][device.id] = effect
 
         # Update the preset if it already exists, else create it
         self._ledfx.config['presets'][preset_id] = preset_config 

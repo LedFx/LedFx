@@ -8,8 +8,9 @@ import TableRow from '@material-ui/core/TableRow';
 import TableCell from '@material-ui/core/TableCell';
 import TableBody from '@material-ui/core/TableBody';
 
-import PresetsTableItem from 'frontend/components/DevicesTable/PresetsTableItem.jsx'
+import PresetConfigTable from 'frontend/components/PresetsCard/PresetConfigTable.jsx'
 import { deletePreset } from 'frontend/actions'
+import { setPreset } from 'frontend/actions'
 
 const styles = theme => ({
   root: {
@@ -58,9 +59,8 @@ class PresetsTable extends React.Component {
         <TableHead>
           <TableRow>
             <TableCell>Name</TableCell>
-            <TableCell className={classes.tableCell}>Preset Type</TableCell>
             <TableCell className={classes.tableCell}>Keyboard Key</TableCell>
-            <TableCell className={classes.tableCell}>Switch Type</TableCell>
+            <TableCell className={classes.tableCell}>Keyboard Switch Type</TableCell>
             <TableCell className={classes.tableCell}>Trigger Spotify Song</TableCell>
             <TableCell className={classes.tableCell} numeric>Trigger Spotify Time(m:ss:ms)</TableCell>
             <TableCell className={classes.tableCell} numeric>Manage</TableCell>
@@ -71,15 +71,11 @@ class PresetsTable extends React.Component {
           {
             Object.keys(devicesById).map(device_id => {
             return (
-              <PevicesTableItem key={device_id} device={devicesById[device_id]} onDelete={this.handleDeletePreset}/>
+              <PresetsTableItem key={device_id} device={devicesById[device_id]} onDelete={this.handleDeletePreset}/>
+              <PresetsTableItem key={device_id} device={devicesById[device_id]} onDelete={this.handleDeletePreset}/>
             );
           })}
-          {
-            Object.keys(devicesById).map(device_id => {
-            return (
-              <PevicesTableItem key={device_id} device={devicesById[device_id]} onDelete={this.handleDeletePreset}/>
-            );
-          })}
+
         </TableBody>
       </Table>
       </div>

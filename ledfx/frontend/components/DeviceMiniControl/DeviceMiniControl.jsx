@@ -5,6 +5,7 @@ import { connect } from "react-redux";
 
 import Card from "@material-ui/core/Card";
 import CardContent from "@material-ui/core/CardContent";
+import Button from "@material-ui/core/Button";
 import Switch from '@material-ui/core/Switch';
 import TableRow from '@material-ui/core/TableRow';
 import TableCell from '@material-ui/core/TableCell';
@@ -16,6 +17,11 @@ const styles = theme => ({
   button: {
     margin: theme.spacing.unit,
     float: "right"
+  },
+  submitControls: {
+    margin: theme.spacing.unit,
+    display: "block",
+    width: "100%"
   },
   tableCell: {
     lineHeight: "1.2",
@@ -53,12 +59,16 @@ class DeviceMiniControl extends React.Component {
     return (
       <TableRow key={device.id}>
       <TableCell component="th" scope="row">
-          <NavLink
-          to={'/devices/' + device.id}
-          className={classes.deviceLink}
-          key={device.id}>
-            {device.config.name}
-          </NavLink>
+        <p>{device.config.name}</p>
+      </TableCell>
+      <TableCell className={classes.tableCell} numeric>
+        <Button 
+        component={NavLink}
+        to={'/devices/' + device.id}
+        className={classes.deviceLink}
+        key={device.id}>
+          Change Effect
+        </Button>
       </TableCell>
       <TableCell className={classes.tableCell} numeric>
         <Switch
