@@ -1,83 +1,58 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { withStyles } from '@material-ui/core/styles';
-import { NavLink } from "react-router-dom";
 
+import Table from '@material-ui/core/Table';
+import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
 import TableCell from '@material-ui/core/TableCell';
-import Button from '@material-ui/core/Button';
-import DeleteIcon from '@material-ui/icons/Delete';
-
-import red from '@material-ui/core/colors/red';
+import TableBody from '@material-ui/core/TableBody';
 
 const styles = theme => ({
-  tableCell: {
-    lineHeight: "1.42857143",
-    padding: "12px 8px",
-    verticalAlign: "middle"
-  },
-  button: {
-    margin: 0,
-    padding: 0,
-    minWidth: 32
-  },
-  deleteButton: {
-    minWidth: 32,
-    color: theme.palette.getContrastText(red[500]),
-    backgroundColor: red[500],
-    '&:hover': {
-      backgroundColor: red[700],
-    },
-  },
-  deviceLink: {
-    textDecoration: "none",
-    "&,&:hover": {
-      color: "#000000"
+    table: {
+      marginBottom: theme.spacing.unit * 4
     }
-  }
 });
-
-import { Link } from 'react-router-dom'
 
 class DevicesTableItem extends React.Component {
 
-  handleDeletePreset = () => {
-    this.props.onDelete(this.props.device.id)
-  }
-
   render() {
-    const { classes, device, onDelete } = this.props;
+    const { classes, devices } = this.props;
+
     return (
-        <TableRow key={preset.id}>
-            <TableCell className={classes.tableCell}>
-                {device.config.ip_address}
-            </TableCell>
-            <TableCell className={classes.tableCell}>
-                {device.config.ip_address}
-            </TableCell>
-            <TableCell className={classes.tableCell}>
-                {device.config.pixel_count}
-            </TableCell>
-            <TableCell className={classes.tableCell}>
-                {device.config.pixel_count}
-            </TableCell> 
-            <TableCell className={classes.tableCell}>
-                {device.type}
-            </TableCell>
-            <TableCell className={classes.tableCell} numeric>
-            <Button variant="contained" size="small" className={classes.deleteButton} onClick={this.handleDeletePreset} >
-                <DeleteIcon style={{ fontSize: 16 }} />
-            </Button>
-            </TableCell>
-        </TableRow>
+        <Table className = { classes.table }>
+          <TableHead>
+            <TableRow>
+              <TableCell>Device</TableCell>
+              <TableCell>Effect</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {renderRows(devices)}
+          </TableBody>
+        </Table>
     );
   }
 }
 
+const renderRows = (devices) => {
+  return Object.keys(devices).map((id) => {
+    const device = devices[id]
+    return (
+      <TableRow key={id}>
+          <TableCell>
+              {id}
+          </TableCell>
+          <TableCell>
+              {device.type}
+          </TableCell>
+      </TableRow>
+  )
+  })
+}
+
 DevicesTableItem.propTypes = {
-  classes: PropTypes.object.isRequired,
-  device: PropTypes.object.isRequired,
-  onDelete: PropTypes.func.isRequired
+  devices: PropTypes.object.isRequired
 };
 
 export default withStyles(styles)(DevicesTableItem);
