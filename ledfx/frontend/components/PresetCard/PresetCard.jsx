@@ -49,7 +49,7 @@ class PresetCard extends React.Component {
             className={classes.button}
             onClick={this.openAddDeviceDialog}
           >
-            <AddIcon />
+          <AddIcon />
           </Button>
           <PresetsConfigDialog
             open={this.state.addDialogOpened}

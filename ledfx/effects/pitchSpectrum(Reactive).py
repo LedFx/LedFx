@@ -12,7 +12,7 @@ class PitchSpectrumAudioEffect(AudioReactiveEffect, GradientEffect):
 
     CONFIG_SCHEMA = vol.Schema({
         vol.Optional('Audio_Channel', description='Audio Channel to use as import source', default = "Mono"): vol.In(list(AUDIO_CHANNEL.keys())),
-        vol.Optional('blur', description='Amount to blur the effect', default = 1.0): vol.Coerce(float),
+        vol.Optional('blur', description='Amount to blur the effect', default = 1.0): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=10)),
         vol.Optional('mirror', description='Mirror the effect', default = True): bool,
         vol.Optional('fade_rate', description='Rate at which notes fade', default = 0.15):  vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
         vol.Optional('responsiveness', description='Responsiveness of the note changes', default = 0.15):  vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
