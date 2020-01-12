@@ -57,9 +57,12 @@ class DeviceMiniControl extends React.Component {
     const { classes, device } = this.props;
 
     return (
-      <TableRow key={device.id}>
+      <TableRow key={device.id} className={classes.content}>
       <TableCell component="th" scope="row">
         <h1>{device.config.name}</h1>
+      </TableCell>
+      <TableCell className={classes.tableCell} numeric>
+        <h3>{device.effect.name}</h3>
       </TableCell>
       <TableCell className={classes.tableCell} numeric>
         <Button 

@@ -68,6 +68,9 @@ class DeviceView extends React.Component {
     {
       return (
         <Grid container spacing={24}>
+          <Grid item xs>
+            <h1>{device.config.name}</h1>
+          </Grid>
           <Grid item xs={12}>
            <PixelColorGraph device={device}/>
           </Grid>

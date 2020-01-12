@@ -73,13 +73,6 @@ class EffectPresetsControl extends React.Component {
             >
               Clear Effect
             </Button>
-            <Button
-              className={classes.button}
-              onClick={this.handleClearEffect}
-              color="primary"
-            >
-              Current effect is x
-            </Button>
           </div>
           </SchemaFormCollection>
         </CardContent>
