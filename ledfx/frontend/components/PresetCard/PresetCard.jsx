@@ -8,19 +8,12 @@ import TableRow from '@material-ui/core/TableRow';
 import TableCell from '@material-ui/core/TableCell';
 import TableBody from '@material-ui/core/TableBody';
 
-import { deletePreset } from 'frontend/actions'
-import { setPreset } from 'frontend/actions'
+import PresetConfigTable from "frontend/components/PresetCard/PresetConfigTable.jsx";
+import { deletePreset } from 'frontend/actions';
+import { setPreset } from 'frontend/actions';
 
-const styles = theme => ({
-  root: {
-    width: '100%',
-    maxWidth: 360,
-    backgroundColor: theme.palette.background.paper,
-  },
-  nested: {
-    paddingLeft: theme.spacing.unit * 4,
-  }, 
-  table: {
+const styles = theme => ({ 
+  card: {
     marginBottom: "0",
     width: "100%",
     maxWidth: "100%",
@@ -28,18 +21,9 @@ const styles = theme => ({
     borderSpacing: "0",
     borderCollapse: "collapse"
   },
-  tableResponsive: {
-    width: "100%",
-    overflowX: "auto"
-  },
-  tableCell: {
-    lineHeight: "1.42857143",
-    padding: "12px 8px",
-    verticalAlign: "middle"
-  }
 });
 
-class PresetsTable extends React.Component {
+class PresetCard extends React.Component {
 
   handleDeletePreset = presetId => {
     this.props.dispatch(deletePreset(presetId))
@@ -50,48 +34,45 @@ class PresetsTable extends React.Component {
   }
 
   render() {
-    const { classes, devicesById } = this.props;
+    const { classes, preset } = this.props;
 
     return (
-      <div className={classes.tableResponsive}>
-      <Table className={classes.table}>
-        <TableHead>
-          <TableRow>
-            <TableCell>Name</TableCell>
-            <TableCell className={classes.tableCell}>Keyboard Key</TableCell>
-            <TableCell className={classes.tableCell}>Keyboard Switch Type</TableCell>
-            <TableCell className={classes.tableCell}>Trigger Spotify Song</TableCell>
-            <TableCell className={classes.tableCell} numeric>Trigger Spotify Time(m:ss:ms)</TableCell>
-            <TableCell className={classes.tableCell} numeric>Manage</TableCell>
-          </TableRow>
-        </TableHead>
-
-        <TableBody>
-          {
-            Object.keys(devicesById).map(device_id => {
-            return (
-              <PresetsTableItem key={device_id} device={devicesById[device_id]} onDelete={this.handleDeletePreset}/>
-            );
-          })}
-
-        </TableBody>
-      </Table>
+      <div>
+      <Card className={classes.card}>
+        <CardContent>
+          <h1>{preset['name']}</h1>
+          <PresetConfigTable key={preset_id} config={preset['devices']}/>
+          <Button
+            variant="fab"
+            color="primary"
+            aria-label="Add"
+            className={classes.button}
+            onClick={this.openAddDeviceDialog}
+          >
+            <AddIcon />
+          </Button>
+          <PresetsConfigDialog
+            open={this.state.addDialogOpened}
+            onClose={this.closeAddDeviceDialog}
+          />
+        </CardContent>
+      </Card>
       </div>
     );
   }
 }
 
-PresetsTable.propTypes = {
+PresetConfigTable.propTypes = {
   classes: PropTypes.object.isRequired,
-  devicesById: PropTypes.object.isRequired,
+  preset: PropTypes.object.isRequired,
 };
 
 function mapStateToProps(state) {
-  const { devicesById } = state
+  const { getPresets } = state
 
   return {
-    devicesById
+    getPresets
   }
 }
 
-export default  connect(mapStateToProps)(withStyles(styles)(PresetsTable));
+export default  connect(mapStateToProps)(withStyles(styles)(PresetConfigTable));

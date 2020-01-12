@@ -15,6 +15,7 @@ import AddIcon from "@material-ui/icons/Add";
 
 import PresetsCard from "frontend/components/PresetCard/PresetCard.jsx";
 import PresetsConfigDialog from "frontend/components/PresetConfigDialog/PresetConfigDialog.jsx";
+import { getPresets } from 'frontend/actions';
 
 const styles = theme => ({
   cardResponsive: {
@@ -49,31 +50,24 @@ class PresetsView extends React.Component {
   };
 
   render() {
-    const { classes, schemas } = this.props;
+    const { classes } = this.props;
     return (
       <div>
-        <Grid container spacing={16}>
-          <Grid item xs={12} sm={12} md={12}>
-            <Card>
-              <CardContent>
-                <PresetsCard/>
-              </CardContent>
-            </Card>
-          </Grid>
-        </Grid>
-        <Button
-          variant="fab"
-          color="primary"
-          aria-label="Add"
-          className={classes.button}
-          onClick={this.openAddDeviceDialog}
-        >
-          <AddIcon />
-        </Button>
-        <PresetsConfigDialog
-          open={this.state.addDialogOpened}
-          onClose={this.closeAddDeviceDialog}
-        />
+        <Table className={classes.table}>
+          <TableBody>
+            <Grid container direction="col" spacing={3}>
+              {
+                Object.keys(getPresets).map(id => { 
+                  return (
+                    <Grid item xs>
+                      <PresetCard key={id} preset={getPresets[id]} />
+                    </Grid>
+                  );
+                })
+              }
+            </Grid>
+          </TableBody>
+        </Table>
       </div>
     );
   }
