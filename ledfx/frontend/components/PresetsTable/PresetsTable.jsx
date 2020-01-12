@@ -8,8 +8,8 @@ import TableRow from '@material-ui/core/TableRow';
 import TableCell from '@material-ui/core/TableCell';
 import TableBody from '@material-ui/core/TableBody';
 
-import DevicesTableItem from 'frontend/components/DevicesTable/DevicesTableItem.jsx'
-import { deleteDevice } from 'frontend/actions'
+import PresetsTableItem from 'frontend/components/DevicesTable/PresetsTableItem.jsx'
+import { deletePreset } from 'frontend/actions'
 
 const styles = theme => ({
   root: {
@@ -41,8 +41,12 @@ const styles = theme => ({
 
 class PresetsTable extends React.Component {
 
-  handleDeleteDevice = deviceId => {
-    this.props.dispatch(deleteDevice(deviceId))
+  handleDeletePreset = presetId => {
+    this.props.dispatch(deletePreset(presetId))
+  }
+
+  handleSetPreset = presetId => {
+    this.props.dispatch(setPreset(presetId))
   }
 
   render() {
@@ -67,7 +71,13 @@ class PresetsTable extends React.Component {
           {
             Object.keys(devicesById).map(device_id => {
             return (
-              <DevicesTableItem key={device_id} device={devicesById[device_id]} onDelete={this.handleDeleteDevice}/>
+              <PevicesTableItem key={device_id} device={devicesById[device_id]} onDelete={this.handleDeletePreset}/>
+            );
+          })}
+          {
+            Object.keys(devicesById).map(device_id => {
+            return (
+              <PevicesTableItem key={device_id} device={devicesById[device_id]} onDelete={this.handleDeletePreset}/>
             );
           })}
         </TableBody>

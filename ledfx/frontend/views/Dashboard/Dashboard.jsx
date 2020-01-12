@@ -14,6 +14,9 @@ import PixelColorGraph from "frontend/components/PixelColorGraph/PixelColorGraph
 import DeviceMiniControl from 'frontend/components/DeviceMiniControl/DeviceMiniControl.jsx'
 
 const styles = theme => ({
+  root: {
+    flexGrow: 1
+  },
   table: {
     width: "100%",
     maxWidth: "100%",
@@ -45,21 +48,19 @@ class DashboardView extends React.Component {
         <Card>
             <CardContent>
               <Table className={classes.table}>
-                <TableBody width="50%">
+                <TableBody>
+                <Grid container direction="row" spacing={3}>
                   {
                     Object.keys(devicesById).map(id => {                      
                       return (
-                        <div>
-                          <Grid container spacing={24}>
-                            <Grid item xs={12}>
-                              <PixelColorGraph device={devicesById[id]}/>
-                            </Grid>
-                          </Grid>
-                          <DeviceMiniControl key={id} device={devicesById[id]}/>                        
-                        </div>
+                        <Grid item xs={6}>
+                          <PixelColorGraph device={devicesById[id]}/>
+                          <DeviceMiniControl key={id} device={devicesById[id]}/>
+                        </Grid>
                       );
                     })
                   }
+                  </Grid>
                 </TableBody>
               </Table>
             </CardContent>
