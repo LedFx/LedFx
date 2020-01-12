@@ -13,8 +13,8 @@ import CardContent from "@material-ui/core/CardContent";
 import Button from "@material-ui/core/Button";
 import AddIcon from "@material-ui/icons/Add";
 
-import PresetsCard from "frontend/components/PresetsCard/PresetsCard.jsx";
-import PresetsConfigDialog from "frontend/components/PresetsConfigDialog/PresetsConfigDialog.jsx";
+import PresetsCard from "frontend/components/PresetCard/PresetCard.jsx";
+import PresetsConfigDialog from "frontend/components/PresetConfigDialog/PresetConfigDialog.jsx";
 
 const styles = theme => ({
   cardResponsive: {

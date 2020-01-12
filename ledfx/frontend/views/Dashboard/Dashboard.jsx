@@ -47,19 +47,21 @@ class DashboardView extends React.Component {
       <div>
         <Table className={classes.table}>
           <TableBody>
-          <Grid container direction="row" spacing={3}>
-            {
-              Object.keys(devicesById).map(id => {                      
-                return (
-                  <Card>
-                    <CardContent>
-                      <DeviceMiniControl key={id} device={devicesById[id]}/>
-                      <PixelColorGraph device={devicesById[id]}/>
-                    </CardContent>
-                  </Card>
-                );
-              })
-            }
+            <Grid container direction="row" spacing={3}>
+              {
+                Object.keys(devicesById).map(id => {                      
+                  return (
+                    <Grid item xs>
+                      <Card>
+                        <CardContent>
+                          <DeviceMiniControl key={id} device={devicesById[id]}/>
+                          <PixelColorGraph device={devicesById[id]}/>
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                  );
+                })
+              }
             </Grid>
           </TableBody>
         </Table>

@@ -8,7 +8,6 @@ import TableRow from '@material-ui/core/TableRow';
 import TableCell from '@material-ui/core/TableCell';
 import TableBody from '@material-ui/core/TableBody';
 
-import PresetConfigTable from 'frontend/components/PresetsCard/PresetConfigTable.jsx'
 import { deletePreset } from 'frontend/actions'
 import { setPreset } from 'frontend/actions'
 
@@ -71,7 +70,6 @@ class PresetsTable extends React.Component {
           {
             Object.keys(devicesById).map(device_id => {
             return (
-              <PresetsTableItem key={device_id} device={devicesById[device_id]} onDelete={this.handleDeletePreset}/>
               <PresetsTableItem key={device_id} device={devicesById[device_id]} onDelete={this.handleDeletePreset}/>
             );
           })}

@@ -59,7 +59,7 @@ class DeviceMiniControl extends React.Component {
     return (
       <TableRow key={device.id}>
       <TableCell component="th" scope="row">
-        <p>{device.config.name}</p>
+        <h1>{device.config.name}</h1>
       </TableCell>
       <TableCell className={classes.tableCell} numeric>
         <Button 
