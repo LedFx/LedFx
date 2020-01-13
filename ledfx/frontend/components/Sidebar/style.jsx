@@ -47,7 +47,7 @@ import {
     },
     img: {
       width: "35px",
-      top: "22px",
+      top: "17px",
       position: "absolute",
       verticalAlign: "middle",
       border: "0"

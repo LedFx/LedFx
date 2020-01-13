@@ -21,7 +21,7 @@ class ModulateEffect(Effect):
     CONFIG_SCHEMA = vol.Schema({
         vol.Optional('Audio_Channel', description='Audio Channel to use as import source', default = "Mono"): vol.In(list(AUDIO_CHANNEL.keys())),
         vol.Optional('modulate', description='Modulate brightness', default = False): bool,
-        vol.Optional('modulation_effect', default = "sine", description="Modulation effect"): vol.In(list(["sine", "breath"])),
+        vol.Optional('modulation_effect', default = "sine", description="Modulation effect"): vol.In(list(["sine", "breath", "flutter"])),
         vol.Optional('modulation_speed', default = 1.0, description="Modulation speed"): vol.All(vol.Coerce(float), vol.Range(min=0.01, max=1))
     })
 
@@ -51,6 +51,14 @@ class ModulateEffect(Effect):
             return pixels * overlay
 
         elif self._config["modulation_effect"] == "breath":
+            self._counter += self._config["modulation_speed"]
+            if self._counter == 9*_rate:
+                self._counter = 0
+
+            pixels[int(self._breath_cycle[int(self._counter)] * self.pixel_count):, :] = 0
+            return pixels
+
+        elif self._config["modulation_effect"] == "flutter":
             self._counter += self._config["modulation_speed"]
             if self._counter == 9*_rate:
                 self._counter = 0
