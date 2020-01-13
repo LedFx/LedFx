@@ -15,6 +15,7 @@ import AddIcon from "@material-ui/icons/Add";
 
 import PresetsCard from "frontend/components/PresetCard/PresetCard.jsx";
 import PresetsConfigDialog from "frontend/components/PresetConfigDialog/PresetConfigDialog.jsx";
+import AddPresetCard from "frontend/components/AddPresetCard/AddPresetCard";
 import { getPresets } from 'frontend/actions';
 
 const styles = theme => ({
@@ -35,35 +36,26 @@ const styles = theme => ({
 class PresetsView extends React.Component {
   constructor(props) {
     super(props);
-
-    this.state = {
-      addDialogOpened: false
-    };
   }
 
   componentDidMount = () => {
     this.props.getPresets()
   }
- 
-  openAddDeviceDialog = () => {
-    this.setState(...this.state, { addDialogOpened: true });
-  };
-
-  closeAddDeviceDialog = () => {
-    this.setState(...this.state, { addDialogOpened: false });
-  };
 
   render() {
     const { classes } = this.props;
     return (
-      <React.Fragment>
-        {renderPresets(this.props.presets)}
-      </React.Fragment>
+      <div>
+        <AddPresetCard />
+        <React.Fragment>
+          {renderPresets(this.props.presets)}
+        </React.Fragment>
+      </div>
     );
   }
 }
 
-const renderPresets = (presets) => Object.keys(presets).map((key) => (<PresetsCard key={key}preset={transformPreset(key, presets[key])} />))
+const renderPresets = (presets) => Object.keys(presets).map((key) => (<PresetsCard key={key} preset={transformPreset(key, presets[key])} />))
 
 // Includes ID in preset
 const transformPreset = (key, preset) => ({ id: key, ...preset})

@@ -4,21 +4,27 @@ import { connect } from 'react-redux'
 import { withStyles } from '@material-ui/core/styles';
 import Card from '@material-ui/core/Card';
 import CardContent from '@material-ui/core/CardContent';
+import CardActions from '@material-ui/core/CardActions';
 import Button from '@material-ui/core/Button';
+import red from '@material-ui/core/colors/red';
 
 import PresetConfigTable from "frontend/components/PresetCard/PresetConfigTable";
-import PresetsConfigDialog from "frontend/components/PresetConfigDialog/PresetConfigDialog";
 
 import { activatePreset, deletePreset } from 'frontend/actions';
 
 const styles = theme => ({ 
   card: {
-    marginBottom: "0",
     width: "100%",
     maxWidth: "100%",
     backgroundColor: "transparent",
-    borderSpacing: "0",
-    borderCollapse: "collapse"
+    borderCollapse: "collapse",
+  },
+  deleteButton: {
+    color: theme.palette.getContrastText(red[500]),
+    backgroundColor: red[500],
+    '&:hover': {
+      backgroundColor: red[700],
+    },
   },
 });
 
@@ -32,14 +38,20 @@ class PresetCard extends React.Component {
     this.props.dispatch(activatePreset(presetId))
   }
 
+  handleRenamePreset = presetId => {
+    this.props.dispatch(RenamePreset(presetId, name))
+  }
+
   render() {
     const { classes, preset } = this.props;
 
     return (
       <Card className={classes.card}>
         <CardContent>
-          <h3>{preset.name}</h3>
+          <h2>{preset.name}</h2>
           { preset.devices && <PresetConfigTable devices ={ preset.devices }/> }
+        </CardContent>
+        <CardActions>
           <Button
             color="primary"
             size="small"
@@ -48,8 +60,17 @@ class PresetCard extends React.Component {
             onClick={() => this.handleActivatePreset(preset.id)}
           >
             Activate
+          </Button>
+          <Button
+            className={classes.deleteButton}
+            size="small"
+            aria-label="Delete"
+            variant = "contained"
+            onClick={() => this.handleDeletePreset(preset.id)}
+          >
+            Delete
           </Button> 
-        </CardContent>
+        </CardActions>
       </Card>
     );
   }

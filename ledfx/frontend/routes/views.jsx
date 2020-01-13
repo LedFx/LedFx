@@ -10,7 +10,6 @@ import DashboardView from "frontend/views/Dashboard/Dashboard.jsx";
 import DevicesView from "frontend/views/Devices/Devices.jsx";
 import PresetsView from "frontend/views/Presets/Presets.jsx";
 import DeviceView from "frontend/views/Device/Device.jsx";
-import EffectPresetsView from "frontend/views/EffectPresets/EffectPresets.jsx";
 import DeveloperView from "frontend/views/Developer/Developer.jsx";
 
 const viewRoutes = [
@@ -20,13 +19,6 @@ const viewRoutes = [
     navbarName: "Dashboard",
     icon: Dashboard,
     component: DashboardView
-  },
-  {
-    path: "/effectPresets/:device_id",
-    navbarName: "EffectPresets",
-    sidebarName: "EffectPresets",
-    icon: List,
-    component: EffectPresetsView,
   },
   {
     path: "/devices/:device_id",
