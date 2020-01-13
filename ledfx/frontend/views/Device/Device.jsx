@@ -8,7 +8,6 @@ import CardContent from "@material-ui/core/CardContent";
 import { callApi, getDevice, getDeviceEffects} from "frontend/utils/api";
 import { connect } from "react-redux";
 import EffectControl from "frontend/components/EffectControl/EffectControl.jsx";
-import EffectPresetsControl from "frontend/components/EffectControl/EffectPresetsControl.jsx";
 import PixelColorGraph from "frontend/components/PixelColorGraph/PixelColorGraph.jsx";
 
 class DeviceView extends React.Component {
@@ -68,11 +67,14 @@ class DeviceView extends React.Component {
     {
       return (
         <Grid container spacing={24}>
+          <Grid item xs>
+            <h1>{device.config.name}</h1>
+          </Grid>
           <Grid item xs={12}>
            <PixelColorGraph device={device}/>
           </Grid>
           <Grid item xs={12}>
-            <EffectPresetsControl device={device} effect={effect}/>
+            <EffectControl device={device} effect={effect}/>
           </Grid>
         </Grid>
       );

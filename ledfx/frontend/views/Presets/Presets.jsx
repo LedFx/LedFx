@@ -13,8 +13,9 @@ import CardContent from "@material-ui/core/CardContent";
 import Button from "@material-ui/core/Button";
 import AddIcon from "@material-ui/icons/Add";
 
-import PresetsTable from "frontend/components/PresetsTable/PresetsTable.jsx";
-import PresetsConfigDialog from "frontend/components/PresetsConfigDialog/PresetsConfigDialog.jsx";
+import PresetsCard from "frontend/components/PresetCard/PresetCard.jsx";
+import PresetsConfigDialog from "frontend/components/PresetConfigDialog/PresetConfigDialog.jsx";
+import { getPresets } from 'frontend/actions';
 
 const styles = theme => ({
   cardResponsive: {
@@ -40,6 +41,10 @@ class PresetsView extends React.Component {
     };
   }
 
+  componentDidMount = () => {
+    this.props.getPresets()
+  }
+ 
   openAddDeviceDialog = () => {
     this.setState(...this.state, { addDialogOpened: true });
   };
@@ -49,34 +54,26 @@ class PresetsView extends React.Component {
   };
 
   render() {
-    const { classes, schemas } = this.props;
+    const { classes } = this.props;
     return (
-      <div>
-        <Grid container spacing={16}>
-          <Grid item xs={12} sm={12} md={12}>
-            <Card>
-              <CardContent>
-                <PresetsTable/>
-              </CardContent>
-            </Card>
-          </Grid>
-        </Grid>
-        <Button
-          variant="fab"
-          color="primary"
-          aria-label="Add"
-          className={classes.button}
-          onClick={this.openAddDeviceDialog}
-        >
-          <AddIcon />
-        </Button>
-        <PresetsConfigDialog
-          open={this.state.addDialogOpened}
-          onClose={this.closeAddDeviceDialog}
-        />
-      </div>
+      <React.Fragment>
+        {renderPresets(this.props.presets)}
+      </React.Fragment>
     );
   }
 }
 
-export default withStyles(styles)(PresetsView);
+const renderPresets = (presets) => Object.keys(presets).map((key) => (<PresetsCard key={key}preset={transformPreset(key, presets[key])} />))
+
+// Includes ID in preset
+const transformPreset = (key, preset) => ({ id: key, ...preset})
+
+const mapStateToProps = state => ({ 
+  presets: state.presets 
+})
+
+const mapDispatchToProps = (dispatch) => ({
+  getPresets: () => dispatch(getPresets())
+})
+
+export default connect(mapStateToProps, mapDispatchToProps)(withStyles(styles)(PresetsView));

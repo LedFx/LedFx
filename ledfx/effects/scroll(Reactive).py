@@ -10,7 +10,7 @@ class ScrollAudioEffect(AudioReactiveEffect):
 
     CONFIG_SCHEMA = vol.Schema({
         vol.Optional('Audio_Channel', description='Audio Channel to use as import source', default = "Mono"): vol.In(list(AUDIO_CHANNEL.keys())),
-        vol.Optional('blur', description='Amount to blur the effect', default = 3.0): vol.Coerce(float),
+        vol.Optional('blur', description='Amount to blur the effect', default = 3.0): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=10)),
         vol.Optional('mirror', description='Mirror the effect', default = True): bool,
         vol.Optional('speed', description='Speed of the effect', default = 4):  vol.All(vol.Coerce(int), vol.Range(min=1)),
         vol.Optional('decay', description='Decay rate of the scroll', default = 0.97):  vol.All(vol.Coerce(float), vol.Range(min=0.2, max=1.0)),
