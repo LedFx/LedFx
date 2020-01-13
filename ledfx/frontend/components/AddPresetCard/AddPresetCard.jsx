@@ -21,7 +21,6 @@ const styles = theme => ({
     borderCollapse: "collapse",
     alignItems: 'center',
     justifyContent: 'space-between',
-
   },
 });
 
