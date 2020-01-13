@@ -13,7 +13,7 @@ export function addPreset(name) {
     const data = {
       name: name
     };
-    fetch(`${apiUrl}/presets`, {
+    return fetch(`${apiUrl}/presets`, {
       method: "POST",
       headers: {
         Accept: "application/json",
@@ -25,7 +25,8 @@ export function addPreset(name) {
       .then(json => dispatch({
         type: ADD_PRESET,
         response: json
-      }));
+      }))
+      .then(() => dispatch(getPresets()))
   };
 }
 
@@ -34,7 +35,7 @@ export function deletePreset(id) {
     const data = {
       id: id
     };
-    fetch(`${apiUrl}/presets`, {
+    return fetch(`${apiUrl}/presets`, {
       method: "DELETE",
       headers: {
         Accept: "application/json",
@@ -46,7 +47,8 @@ export function deletePreset(id) {
       .then(json => dispatch({
         type: DELETE_PRESET,
         response: json
-      }));
+      }))
+      .then(() => dispatch(getPresets()))
   };
 }
 

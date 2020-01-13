@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux'
-import { withStyles } from '@material-ui/core/styles';
+import { makeStyles } from '@material-ui/core/styles';
 
 import Card from '@material-ui/core/Card';
 import CardContent from '@material-ui/core/CardContent';
@@ -11,7 +11,7 @@ import Button from '@material-ui/core/Button';
 
 import { addPreset } from 'frontend/actions';
 
-const styles = theme => ({ 
+const useStyles = makeStyles({ 
   card: {
     display: "flex",
     direction: 'row',
@@ -21,45 +21,61 @@ const styles = theme => ({
     borderCollapse: "collapse",
     alignItems: 'center',
     justifyContent: 'space-between',
-
   },
+  form: {
+    display: "flex",
+    direction: 'row',
+  },
+  formItem: {
+    alignSelf: 'center'
+  }
 });
 
-class AddPresetCard extends React.Component {
+const AddPresetCard = ({ presets, addPreset }) =>  {
 
-  handleAddPreset = presetName => {
-    this.props.dispatch(addPreset(presetName))
-  }
+  const [ name, setName ] = useState('')
+  const classes = useStyles()
 
-  render() {
-    const { classes } = this.props;
-
-    return (
+  return (
       <Card className={classes.card}>
         <CardContent>
           <h3>Add Preset</h3>
           <p>Save current effects of all devices as a preset</p>
         </CardContent>
         <CardActions>
-          <form noValidate autoComplete="off">
-            <TextField
-              id="presetNameInput"
-              label="Preset Name" 
-            />
-            <Button
-              color="primary"
-              size="small"
-              aria-label="Save"
-              variant = "contained"
-              onClick={() => this.handleAddPreset(preset.name)}
-            >
-              Save
-            </Button> 
-          </form>
+          <div className = {classes.form}>
+              <TextField
+                className = {classes.formItem}
+                error = {validateInput(name, presets)} 
+                id="presetNameInput"
+                label="Preset Name"
+                onChange={(e) => setName(e.target.value)}
+              />
+              <Button
+                className = {classes.formItem}
+                color="primary"
+                size="small"
+                aria-label="Save"
+                disabled = {validateInput(name, presets)} 
+                variant = "contained"
+                onClick = {() => addPreset(name)}
+              >
+                Save
+              </Button> 
+            </div>
         </CardActions>
       </Card>
     );
-  }
 }
 
-export default (withStyles(styles)(AddPresetCard));
+const validateInput = (input, presets) => (Object.keys(presets).includes(input) || input === "")
+
+const mapStateToProps = state => ({ 
+  presets: state.presets
+})
+
+const mapDispatchToProps = (dispatch) => ({
+  addPreset: (presetName) => dispatch(addPreset(presetName))
+})
+
+export default connect(mapStateToProps, mapDispatchToProps)(AddPresetCard);
