@@ -55,7 +55,6 @@
   "dependencies": {
     "@material-ui/core": "^4.8.3",
     "@material-ui/icons": "^4.5.1",
-    "@material-ui/styles": "^4.8.2",
     "core-js": "^3.4.1",
     "glob": "^7.1.6",
     "spotify-web-api-node": "^4.0.0"
