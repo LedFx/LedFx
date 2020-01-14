@@ -30,20 +30,8 @@ const styles = theme => ({
 
 class PresetCard extends React.Component {
 
-  handleDeletePreset = presetId => {
-    this.props.dispatch(deletePreset(presetId))
-  }
-
-  handleActivatePreset = presetId => {
-    this.props.dispatch(activatePreset(presetId))
-  }
-
-  handleRenamePreset = presetId => {
-    this.props.dispatch(RenamePreset(presetId, name))
-  }
-
   render() {
-    const { classes, preset } = this.props;
+    const { classes, preset, activatePreset, deletePreset } = this.props;
 
     return (
       <Card className={classes.card}>
@@ -57,7 +45,7 @@ class PresetCard extends React.Component {
             size="small"
             aria-label="Activate"
             variant = "contained"
-            onClick={() => this.handleActivatePreset(preset.id)}
+            onClick={() => activatePreset(preset.id)}
           >
             Activate
           </Button>
@@ -66,7 +54,7 @@ class PresetCard extends React.Component {
             size="small"
             aria-label="Delete"
             variant = "contained"
-            onClick={() => this.handleDeletePreset(preset.id)}
+            onClick={() => deletePreset(preset.id)}
           >
             Delete
           </Button> 
@@ -81,12 +69,9 @@ PresetConfigTable.propTypes = {
   preset: PropTypes.object.isRequired,
 };
 
-function mapStateToProps(state) {
-  const { getPresets } = state
+const mapDispatchToProps = (dispatch) => ({
+  deletePreset: (presetId) => dispatch(deletePreset(presetId)),
+  activatePreset: (presetId) => dispatch(activatePreset(presetId))
+})
 
-  return {
-    getPresets
-  }
-}
-
-export default  connect(mapStateToProps)(withStyles(styles)(PresetCard));
+export default  connect(null , mapDispatchToProps)(withStyles(styles)(PresetCard));
