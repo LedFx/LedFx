@@ -45,6 +45,7 @@ class PitchSpectrumAudioEffect(AudioReactiveEffect, GradientEffect):
         # Grab the note color based on where it falls in the midi range
         if self.avg_midi >= MIN_MIDI:
             midi_scaled = (self.avg_midi - MIN_MIDI) / (MAX_MIDI - MIN_MIDI)
+
             note_color = self.get_gradient_color(midi_scaled)
 
         # Mix in the new color based on the filterbank information and fade out
