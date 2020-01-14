@@ -18,6 +18,7 @@ class GradientEffect(Effect):
     CONFIG_SCHEMA = vol.Schema({
         vol.Optional('gradient_name', description='Preset gradient name', default = 'Spectral'): vol.In(list(GRADIENTS.keys())),
         vol.Optional('gradient_roll', description='Amount to shift the gradient', default = 0): vol.Coerce(int),
+        vol.Optional('gradient_method', description='Function used to generate gradient', default = 'cubic_ease'): vol.In(["cubic_ease", "bezier"]),
     })
 
     _gradient_curve = None
@@ -44,9 +45,17 @@ class GradientEffect(Effect):
         """The Bernstein polynomial of n, i as a function of t"""
         return self._comb(n, i) * ( t**(n-i) ) * (1 - t)**i
 
-    def _generate_bezier_curve(self, gradient_colors, gradient_length):
+    def _ease(self, chunk_len, start_val, end_val, slope=2):
+        x = np.linspace(0, 1, chunk_len)
+        diff = end_val - start_val
+        pow_x = np.power(x, slope)
+        return diff*pow_x / (pow_x + np.power(1-x, slope)) + start_val
 
-        gradient_method = "bezier"
+    def _color_ease(self, chunk_len, start_color, end_color):
+        """Makes a coloured block easing from start to end colour"""
+        return np.array([self._ease(chunk_len, start_color[i], end_color[i]) for i in range(3)])
+
+    def _generate_gradient_curve(self, gradient_colors, gradient_method, gradient_length):
 
         # Check to see if we have a custom gradient, or a predefined one and
         # load the colors accordingly
@@ -55,7 +64,7 @@ class GradientEffect(Effect):
             gradient_colors = []
             if GRADIENTS.get(gradient_name):
                 gradient_colors = GRADIENTS.get(gradient_name).get("colors")
-                gradient_method = GRADIENTS.get(gradient_name).get("method", "bezier")
+                gradient_method = GRADIENTS.get(gradient_name).get("method", gradient_method)
             elif COLORS.get(gradient_name):
                 gradient_colors = [gradient_name]
 
@@ -68,12 +77,21 @@ class GradientEffect(Effect):
         if gradient_method == "bezier":
             t = np.linspace(0.0, 1.0, gradient_length)
             polynomial_array = np.array([self._bernstein_poly(i, n_colors-1, t) for i in range(0, n_colors)])
+            polynomial_array = np.fliplr(polynomial_array)
             gradient = np.array([np.dot(self.rgb_list[0], polynomial_array),
-                                np.dot(self.rgb_list[1], polynomial_array),
-                                np.dot(self.rgb_list[2], polynomial_array)])
-
+                                 np.dot(self.rgb_list[1], polynomial_array),
+                                 np.dot(self.rgb_list[2], polynomial_array)])
             _LOGGER.info(('Generating new gradient curve for {}'.format(gradient_colors)))
             self._gradient_curve = gradient
+
+        elif gradient_method == "cubic_ease":
+            t = np.zeros(gradient_length)
+            ease_chunks = np.array_split(t, n_colors-1)
+            color_pairs = np.array([(self.rgb_list.T[i], self.rgb_list.T[i+1]) for i in range(n_colors-1)])
+            gradient = np.hstack(self._color_ease(len(ease_chunks[i]), *color_pairs[i]) for i in range(n_colors-1))
+            _LOGGER.info(('Generating new gradient curve for {}'.format(gradient_colors)))
+            self._gradient_curve = gradient
+
         else:
             gradient = np.zeros((gradient_length, 3))
             for i in range(gradient_length):
@@ -90,7 +108,7 @@ class GradientEffect(Effect):
 
     def _validate_gradient(self):
         if not self._gradient_valid(): 
-            self._generate_bezier_curve(self._config['gradient_name'], self.pixel_count)
+            self._generate_gradient_curve(self._config['gradient_name'], self._config['gradient_method'], self.pixel_count)
 
     def _roll_gradient(self):
         if self._config['gradient_roll'] == 0:
