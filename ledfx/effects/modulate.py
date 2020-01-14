@@ -1,5 +1,4 @@
 from ledfx.effects import Effect
-from ledfx.effects.audio import AUDIO_CHANNEL
 import time
 import logging
 import voluptuous as vol
@@ -19,7 +18,6 @@ class ModulateEffect(Effect):
     # _thread = None
     
     CONFIG_SCHEMA = vol.Schema({
-        vol.Optional('Audio_Channel', description='Audio Channel to use as import source', default = "Mono"): vol.In(list(AUDIO_CHANNEL.keys())),
         vol.Optional('modulate', description='Modulate brightness', default = False): bool,
         vol.Optional('modulation_effect', default = "sine", description="Modulation effect"): vol.In(list(["sine", "breath", "flutter"])),
         vol.Optional('modulation_speed', default = 1.0, description="Modulation speed"): vol.All(vol.Coerce(float), vol.Range(min=0.01, max=1))

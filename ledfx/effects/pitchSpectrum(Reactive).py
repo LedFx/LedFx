@@ -1,4 +1,4 @@
-from ledfx.effects.audio import AudioReactiveEffect, MIN_MIDI, MAX_MIDI, AUDIO_CHANNEL
+from ledfx.effects.audio import AudioReactiveEffect, MIN_MIDI, MAX_MIDI
 from ledfx.effects.gradient import GradientEffect
 from ledfx.effects import mix_colors
 from ledfx.color import COLORS
@@ -11,7 +11,6 @@ class PitchSpectrumAudioEffect(AudioReactiveEffect, GradientEffect):
     NAME = "PitchSpectrum"
 
     CONFIG_SCHEMA = vol.Schema({
-        vol.Optional('Audio_Channel', description='Audio Channel to use as import source', default = "Mono"): vol.In(list(AUDIO_CHANNEL.keys())),
         vol.Optional('blur', description='Amount to blur the effect', default = 1.0): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=10)),
         vol.Optional('mirror', description='Mirror the effect', default = True): bool,
         vol.Optional('fade_rate', description='Rate at which notes fade', default = 0.15):  vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),

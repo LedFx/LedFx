@@ -1,4 +1,4 @@
-from ledfx.effects.audio import AUDIO_CHANNEL, AudioReactiveEffect, FREQUENCY_RANGES
+from ledfx.effects.audio import AudioReactiveEffect, FREQUENCY_RANGES
 from ledfx.effects.gradient import GradientEffect
 import voluptuous as vol
 import numpy as np
@@ -7,7 +7,6 @@ class BeatAudioEffect(AudioReactiveEffect, GradientEffect):
 
     NAME = "Beat"
     CONFIG_SCHEMA = vol.Schema({
-        vol.Optional('Audio_Channel', description='Audio Channel to use as import source', default = "Mono"): vol.In(list(AUDIO_CHANNEL.keys())),
         vol.Optional('frequency_range', description='Frequency range for the beat detection', default = 'bass'): vol.In(list(FREQUENCY_RANGES.keys())),
     })
 

@@ -1,4 +1,4 @@
-from ledfx.effects.audio import AudioReactiveEffect, AUDIO_CHANNEL
+from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.color import COLORS
 import voluptuous as vol
 import numpy as np
@@ -11,7 +11,6 @@ class RainAudioEffect(AudioReactiveEffect):
     CONFIG_SCHEMA = vol.Schema({
         vol.Optional('mirror', description='Mirror the effect', default = True): bool,
         # TODO drops should be controlled by some sort of effectlet class, which will provide a list of available drop names rather than just this static range
-        vol.Optional('Audio_Channel', description='Audio Channel to use as import source', default = "Mono"): vol.In(list(AUDIO_CHANNEL.keys())),
         vol.Optional('raindrop_animation', description='Animation style for each drop', default = 1): vol.In([0,1,2]),
         vol.Optional('lows_colour', description='Colour for low sounds, ie beats', default = 'white'): vol.In(list(COLORS.keys())),
         vol.Optional('mids_colour', description='Colour for mid sounds, ie vocals', default = 'red'): vol.In(list(COLORS.keys())),

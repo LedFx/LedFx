@@ -1,4 +1,3 @@
-from ledfx.effects.audio import AUDIO_CHANNEL
 from ledfx.effects.temporal import TemporalEffect
 from ledfx.effects import fill_rainbow
 import voluptuous as vol
