@@ -8,22 +8,22 @@ class EnergyAudioEffect(AudioReactiveEffect):
     CONFIG_SCHEMA = vol.Schema({
         vol.Optional('blur', description='Amount to blur the effect', default = 4.0): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=10)),
         vol.Optional('mirror', description='Mirror the effect', default = True): bool,
-        vol.Optional('scale_low', description='Sensitivity for high frequencies', default = 1.0): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=5.0)),
-        vol.Optional('scale_mid', description='Sensitivity for mid frequencies', default = 1.0): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=5.0)),
-        vol.Optional('scale_high', description='Sensitivity for high frequencies', default = 1.0): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=5.0))
+        vol.Optional('sensitivity', description='Responsiveness to changes in sound', default = 0.7): vol.All(vol.Coerce(float), vol.Range(min=0.2, max=0.99)),
     })
 
     def config_updated(self, config):
+        # scale decay value between 0.1 and 0.2
+        decay_sensitivity = (self._config["sensitivity"]-0.2)*0.25
         self._p_filter = self.create_filter(
-            alpha_decay = 0.1,
-            alpha_rise = 0.50)
+            alpha_decay = decay_sensitivity,
+            alpha_rise = self._config["sensitivity"])
 
     def audio_data_updated(self, data):
 
         # Calculate the low, mids, and high indexes scaling based on the pixel count
-        lows_idx = int(np.mean(self.pixel_count * data.melbank_lows()) ** self._config['scale_low'])
-        mids_idx = int(np.mean(self.pixel_count * data.melbank_mids()) ** self._config['scale_mid'])
-        highs_idx = int(np.mean(self.pixel_count * data.melbank_highs()) ** self._config['scale_high'])
+        lows_idx = int(np.mean(self.pixel_count * data.melbank_lows()))
+        mids_idx = int(np.mean(self.pixel_count * data.melbank_mids()))
+        highs_idx = int(np.mean(self.pixel_count * data.melbank_highs()))
 
         # Build the new energy profile based on the mids, highs and lows setting
         # the colors as red, green, and blue channel respectively
