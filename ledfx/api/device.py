@@ -37,10 +37,12 @@ class DeviceEndpoint(RestEndpoint):
         _LOGGER.info(("Updating device {} with config {}").format(
             device_id, device_config))
         self._ledfx.devices.destroy(device_id)
+
         device = self._ledfx.devices.create(
-            config = device_config,
             id = device_id,
-            name = device_config.get('type'))
+            type = device_config.get('type'),
+            config = device_config,
+            ledfx = self._ledfx)
 
         # Update and save the configuration
         for device in self._ledfx.config['devices']:

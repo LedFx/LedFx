@@ -44,4 +44,10 @@ function getDevice(device_id) {
     })
 }
 
-export { callApi, getDevices, deleteDevice, addDevice, getDevice }
+function getDeviceEffects(device_id) {
+    return callApi('get', 'devices/' + device_id + '/effects').then(response => {
+        return response.data;
+    })
+}
+
+export { callApi, getDevices, deleteDevice, addDevice, getDevice, getDeviceEffects }

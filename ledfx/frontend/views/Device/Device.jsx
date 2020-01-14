@@ -5,7 +5,7 @@ import Grid from "@material-ui/core/Grid";
 import Card from "@material-ui/core/Card";
 import CardContent from "@material-ui/core/CardContent";
 
-import { callApi, getDevice } from "frontend/utils/api";
+import { callApi, getDevice, getDeviceEffects} from "frontend/utils/api";
 import { connect } from "react-redux";
 import EffectControl from "frontend/components/EffectControl/EffectControl.jsx";
 import PixelColorGraph from "frontend/components/PixelColorGraph/PixelColorGraph.jsx";
@@ -14,16 +14,25 @@ class DeviceView extends React.Component {
   constructor() {
     super();
     this.state = {
-      device: null
+      device : null,
+      effect : null
     };
   }
 
   componentDidMount() {
     const { device_id } = this.props.match.params;
 
+    this.state.device = null;
     getDevice(device_id)
       .then(device => {
         this.setState({ device: device });
+      })
+      .catch(error => console.log(error));
+
+    this.state.effect = null;
+    getDeviceEffects(device_id)
+      .then(effect => {
+        this.setState({ effect: effect });
       })
       .catch(error => console.log(error));
   }
@@ -32,25 +41,40 @@ class DeviceView extends React.Component {
     var device = null;
     if (this.props.devicesById)
     {
+      this.state.device = null;
       device = this.props.devicesById[nextProps.match.params.device_id]
+      this.setState(...this.state, {device: device});
     }
-    this.setState(...this.state, {device: device});
+
+    if(device !== undefined && device !== null)
+    {
+      this.state.effect = null;
+      getDeviceEffects(device.id)
+      .then(effect => {
+        this.setState({ effect: effect });
+      })
+      .catch(error => console.log(error));
+    }
+  
   }
 
   render() {
     const { classes } = this.props;
     const { device_id } = this.props.match.params;
-    const { device } = this.state;
+    const { device, effect } = this.state;
 
     if (device)
     {
       return (
         <Grid container spacing={24}>
-          <Grid item xs={12}>
-            <EffectControl device={device} />
+          <Grid item xs>
+            <h1>{device.config.name}</h1>
           </Grid>
           <Grid item xs={12}>
-            <PixelColorGraph device={device}/>
+           <PixelColorGraph device={device}/>
+          </Grid>
+          <Grid item xs={12}>
+            <EffectControl device={device} effect={effect}/>
           </Grid>
         </Grid>
       );

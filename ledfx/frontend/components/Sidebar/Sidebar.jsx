@@ -14,7 +14,8 @@ import ListItemText from "@material-ui/core/ListItemText";
 
 import sidebarStyle from "./style.jsx";
 import viewRoutes from "frontend/routes/views.jsx";
-import logoAsset from "frontend/assets/img/logo.png";
+//import logoAsset from "frontend/assets/img/logo.png";
+import logoAsset from "frontend/assets/img/icon/small_white_alpha.png";
 
 import { getSystemConfig } from "frontend/actions";
 
@@ -49,7 +50,6 @@ class Sidebar extends React.Component {
       {
         listItemClass = listItemClass + " " + classes.activeView
       }
-
       return (
         <NavLink
           to={'/devices/' + devicesById[deviceId].id}
@@ -83,6 +83,9 @@ class Sidebar extends React.Component {
             if (this.isViewActive(prop.path) && prop.sidebarName != "Devices") {
               listItemClass = listItemClass + " " + classes.activeView
             }
+            if (this.isViewActive(prop.path) && prop.sidebarName != "EffectPresets") {
+              listItemClass = listItemClass + " " + classes.activeView
+            }
 
             if (prop.sidebarName === "Devices")
             {
@@ -97,6 +100,24 @@ class Sidebar extends React.Component {
                   disableTypography={true}/>
                   <List className={classes.list}>
                     {deviceLinks}
+                  </List>  
+                </ListItem>
+              );
+            }
+
+            if (prop.sidebarName === "EffectPresets")
+            {
+              return (
+                <ListItem button className={listItemClass}>
+                <ListItemIcon className={classes.itemIcon}>
+                  <prop.icon />
+                </ListItemIcon>
+                <ListItemText
+                  primary={prop.sidebarName}
+                  className={classes.itemText}
+                  disableTypography={true}/>
+                  <List className={classes.list}>
+                    {effectLinks}
                   </List>  
                 </ListItem>
               );

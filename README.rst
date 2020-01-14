@@ -1,15 +1,13 @@
 LedFx
-=================================================================================
-|Build Status| |License| |Discord|
-
-WARNING: This project is in early development, so expect to encounter minor issues along the way. If you have issues either join the discord or open an issue.
+================================================================================= 
+|License| |Discord|
 
 LedFx is a network based LED effect controller with support for advanced real-time audio effects! LedFx can control multiple devices and works great with cheap ESP8266 nodes allowing for cost effectvice syncronized effects across your entire house!
 
-For installation instructions see the `documentation <https://ahodges9.github.io/LedFx/>`__.
+For installation instructions see the `documentation <https://ahodges9.github.io/LedFx/>`__.	
 
-Demos
----------
+Demos	
+---------	
 
 We are actively adding and perfecting the effects, but here is a quick demo of LedFx running three different effects synced across three different ESP8266 devices:
 

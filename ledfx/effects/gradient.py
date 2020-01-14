@@ -1,4 +1,5 @@
 from ledfx.effects.temporal import TemporalEffect
+from ledfx.effects.modulate import ModulateEffect
 from ledfx.color import COLORS, GRADIENTS
 from ledfx.effects import Effect
 import voluptuous as vol
@@ -45,7 +46,7 @@ class GradientEffect(Effect):
         """The Bernstein polynomial of n, i as a function of t"""
         return self._comb(n, i) * ( t**(n-i) ) * (1 - t)**i
 
-    def _ease(self, chunk_len, start_val, end_val, slope=2):
+    def _ease(self, chunk_len, start_val, end_val, slope=1.5):
         x = np.linspace(0, 1, chunk_len)
         diff = end_val - start_val
         pow_x = np.power(x, slope)
@@ -53,7 +54,9 @@ class GradientEffect(Effect):
 
     def _color_ease(self, chunk_len, start_color, end_color):
         """Makes a coloured block easing from start to end colour"""
-        return np.array([self._ease(chunk_len, start_color[i], end_color[i]) for i in range(3)])
+        return np.array([self._ease(chunk_len,
+                                    start_color[i],
+                                    end_color[i]) for i in range(3)])
 
     def _generate_gradient_curve(self, gradient_colors, gradient_method, gradient_length):
 
@@ -127,7 +130,7 @@ class GradientEffect(Effect):
         return (np.dot(self.rgb_list[0], polynomial_array),
                np.dot(self.rgb_list[1], polynomial_array),
                np.dot(self.rgb_list[2], polynomial_array))
-
+               
     def config_updated(self, config):
         """Invalidate the gradient"""
         self._gradient_curve = None
@@ -142,7 +145,7 @@ class GradientEffect(Effect):
         return output
 
 
-class TemporalGradientEffect(TemporalEffect, GradientEffect):
+class TemporalGradientEffect(TemporalEffect, GradientEffect, ModulateEffect):
     """
     A simple effect that just applies a gradient to the channel. This
     is essentually just the temporal exposure of gradients.
@@ -153,4 +156,6 @@ class TemporalGradientEffect(TemporalEffect, GradientEffect):
     def effect_loop(self):
         # TODO: Could add some cool effects like twinkle or sin modulation
         # of the gradient.
-        self.pixels = self.apply_gradient(1)
+        # kinda done
+        pixels = self.apply_gradient(1)
+        self.pixels = self.modulate(pixels)

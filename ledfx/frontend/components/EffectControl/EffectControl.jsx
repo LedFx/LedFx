@@ -12,7 +12,6 @@ import Grid from "@material-ui/core/Grid";
 import Card from "@material-ui/core/Card";
 import CardContent from "@material-ui/core/CardContent";
 import Button from "@material-ui/core/Button";
-
 import SchemaFormCollection from "frontend/components/SchemaForm/SchemaFormCollection.jsx";
 
 
@@ -44,14 +43,18 @@ class EffectControl extends React.Component {
   };
 
   render() {
-    const { classes, schemas } = this.props;
-
+    const { classes, schemas, effect } = this.props;
+    
     if (schemas.effects) {
+    var effectvalue = "";
+    if(effect !== undefined  && effect !== null && effect.effect !== null)
+      effectvalue = effect.effect.type;
     return (
       <Card>
         <CardContent>
           <SchemaFormCollection
             schemaCollection={schemas.effects}
+            currentEffect={effect}
             onSubmit={this.handleSetEffect}
           >
           <div className={classes.submitControls}>
@@ -84,7 +87,8 @@ class EffectControl extends React.Component {
 EffectControl.propTypes = {
   classes: PropTypes.object.isRequired,
   schemas: PropTypes.object.isRequired,
-  device: PropTypes.object.isRequired
+  device: PropTypes.object.isRequired,
+  effect: PropTypes.object.isRequired
 };
 
 function mapStateToProps(state) {

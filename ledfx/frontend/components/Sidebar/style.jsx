@@ -47,7 +47,7 @@ import {
     },
     img: {
       width: "35px",
-      top: "22px",
+      top: "17px",
       position: "absolute",
       verticalAlign: "middle",
       border: "0"
@@ -102,6 +102,7 @@ import {
     },
     itemIcon: {
       width: "24px",
+      minWidth: "24px",
       height: "30px",
       float: "left",
       marginRight: "15px",
@@ -128,7 +129,7 @@ import {
     activeView: {
       backgroundColor: [theme.palette.primary.main],
       boxShadow: [theme.shadows[12]],
-      "&:hover": {
+      "&:hover,&:focus,&:visited,&": {
         backgroundColor: [theme.palette.primary.main],
         boxShadow: [theme.shadows[12]]
       },

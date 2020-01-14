@@ -173,6 +173,13 @@ class Devices(RegistryLoader):
                 type = device['type'],
                 config = device['config'],
                 ledfx = self._ledfx)
+            if 'effect' in device:
+                effect = self._ledfx.effects.create(
+                    ledfx = self._ledfx,
+                    type = device['effect']['type'],
+                    config = device['effect']['config'])
+                self._ledfx.devices.get_device(device['id']).set_effect(effect)
+                
 
     def clear_all_effects(self):
         for device in self.values():

@@ -9,18 +9,21 @@ import Typography from '@material-ui/core/Typography';
 
 import Table from '@material-ui/core/Table';
 import TableBody from '@material-ui/core/TableBody';
-
-import DeviceMiniControl from 'frontend/components/DeviceMiniControl/DeviceMiniControl.jsx'
+import Grid from "@material-ui/core/Grid";
+import PixelColorGraph from "frontend/components/PixelColorGraph/PixelColorGraph.jsx";
+import DeviceMiniControl from 'frontend/components/DeviceMiniControl/DeviceMiniControl.jsx';
+import AddPresetCard from "frontend/components/AddPresetCard/AddPresetCard";
 
 const styles = theme => ({
+  root: {
+    flexGrow: 1
+  },
   table: {
-    marginBottom: "0",
     width: "100%",
     maxWidth: "100%",
     backgroundColor: "transparent",
     borderSpacing: "0",
-    borderCollapse: "collapse"
-  }
+  },
 });
 
 class DashboardView extends React.Component {
@@ -43,21 +46,27 @@ class DashboardView extends React.Component {
 
     return (
       <div>
-        <Card>
-            <CardContent>
-              <Table className={classes.table}>
-                <TableBody>
-                  {
-                    Object.keys(devicesById).map(id => {
-                      return (
-                        <DeviceMiniControl key={id} device={devicesById[id]}/>
-                      );
-                    })
-                  }
-                </TableBody>
-              </Table>
-            </CardContent>
-        </Card>
+        <Table className={classes.table}>
+          <TableBody>
+            <Grid container direction="row" spacing={8}>
+              {
+                Object.keys(devicesById).map(id => {                      
+                  return (
+                    <Grid item xs>
+                      <Card>
+                        <CardContent>
+                          <DeviceMiniControl key={id} device={devicesById[id]}/>
+                          <PixelColorGraph device={devicesById[id]}/>
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                  );
+                })
+              }
+            </Grid>
+            <AddPresetCard />
+          </TableBody>
+        </Table>
       </div>
     );
   }

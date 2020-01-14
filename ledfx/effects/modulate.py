@@ -1,0 +1,71 @@
+from ledfx.effects import Effect
+from ledfx.effects.audio import AUDIO_CHANNEL
+import time
+import logging
+import voluptuous as vol
+import numpy as np
+
+_LOGGER = logging.getLogger(__name__)
+_rate = 60
+
+@Effect.no_registration
+class ModulateEffect(Effect):
+    """
+    Extension of TemporalEffect that applies brightness modulation
+    over the strip. This is intended to allow more static effects like
+    Gradient or singleColor to have some visual movement.
+    """
+    # _thread_active = False
+    # _thread = None
+    
+    CONFIG_SCHEMA = vol.Schema({
+        vol.Optional('Audio_Channel', description='Audio Channel to use as import source', default = "Mono"): vol.In(list(AUDIO_CHANNEL.keys())),
+        vol.Optional('modulate', description='Modulate brightness', default = False): bool,
+        vol.Optional('modulation_effect', default = "sine", description="Modulation effect"): vol.In(list(["sine", "breath", "flutter"])),
+        vol.Optional('modulation_speed', default = 1.0, description="Modulation speed"): vol.All(vol.Coerce(float), vol.Range(min=0.01, max=1))
+    })
+
+    def config_updated(self, config):
+        self._counter = 0
+
+        # temporal array for breathing cycle
+        self._breath_cycle = np.linspace(0,9,9*_rate)
+        self._breath_cycle[:3*_rate] = 0.4 * np.sin(self._breath_cycle[:3*_rate]-(np.pi/2)) + 0.6
+        self._breath_cycle[3*_rate:] = np.exp(3-self._breath_cycle[3*_rate:]) + 0.2
+
+    def modulate(self, pixels):
+        """
+        Call this function from the effect
+        """
+        if not self._config["modulate"]:
+            return pixels
+
+        if self._config["modulation_effect"] == "sine":
+            self._counter += 0.1 * self._config["modulation_speed"] / np.pi
+            if self._counter >= 2*np.pi:
+                self._counter = 0
+            overlay = np.linspace(self._counter + np.pi,
+                                  self._counter,
+                                  self.pixel_count)
+            overlay = np.tile(0.3*np.sin(overlay)+0.4, (3,1)).T
+            return pixels * overlay
+
+        elif self._config["modulation_effect"] == "breath":
+            self._counter += self._config["modulation_speed"]
+            if self._counter == 9*_rate:
+                self._counter = 0
+
+            pixels[int(self._breath_cycle[int(self._counter)] * self.pixel_count):, :] = 0
+            return pixels
+
+        elif self._config["modulation_effect"] == "flutter":
+            self._counter += self._config["modulation_speed"]
+            if self._counter == 9*_rate:
+                self._counter = 0
+
+            pixels[int(self._breath_cycle[int(self._counter)] * self.pixel_count):, :] = 0
+            return pixels
+
+        else:
+            # LOG that unknown mode selected somehow?
+            return pixels

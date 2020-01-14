@@ -1,4 +1,5 @@
 from ledfx.utils import BaseRegistry, RegistryLoader
+#from ledfx.effects.audio import FREQUENCY_RANGES
 from functools import lru_cache
 import voluptuous as vol
 import numpy as np
@@ -12,7 +13,12 @@ import os
 _LOGGER = logging.getLogger(__name__)
 
 def mix_colors(color_1, color_2, ratio):
-    return (color_1[0] * (1-ratio) + color_2[0] * ratio,
+    if color_2 == []:
+       return (color_1[0] * (1-ratio) + 0,
+            color_1[1] * (1-ratio) + 0,
+            color_1[2] * (1-ratio) + 0)	
+    else:
+        return (color_1[0] * (1-ratio) + color_2[0] * ratio,
             color_1[1] * (1-ratio) + color_2[1] * ratio,
             color_1[2] * (1-ratio) + color_2[2] * ratio)
 
@@ -44,6 +50,10 @@ def blur_pixels(pixels, sigma):
     rgb_array[1] = smooth(rgb_array[1], sigma)
     rgb_array[2] = smooth(rgb_array[2], sigma)
     return rgb_array.T
+
+def brightness_pixels(pixels, brightness):
+    pixels *= brightness
+    return pixels
 
 @lru_cache(maxsize=32)
 def _gaussian_kernel1d(sigma, order, radius):
@@ -88,9 +98,10 @@ class Effect(BaseRegistry):
 
     # Basic effect properties that can be applied to all effects
     CONFIG_SCHEMA = vol.Schema({
-        vol.Optional('blur', description='Amount to blur the effect', default = 0.0): vol.Coerce(float),
+        vol.Optional('blur', description='Amount to blur the effect', default = 0.0): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=10)),
         vol.Optional('flip', description='Flip the effect', default = False): bool,
         vol.Optional('mirror', description='Mirror the effect', default = False): bool,
+        vol.Optional('brightness', description='Brightness of strip', default = 1.0): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
     })
 
     def __init__(self, ledfx, config):
@@ -177,6 +188,8 @@ class Effect(BaseRegistry):
                 pixels = flip_pixels(pixels)
             if self._config['mirror']:
                 pixels = mirror_pixels(pixels)
+            if self._config['brightness']:
+                pixels = brightness_pixels(pixels, self._config['brightness'])
             self._pixels = np.copy(pixels)
         else:
             raise TypeError()

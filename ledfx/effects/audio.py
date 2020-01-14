@@ -35,6 +35,14 @@ FREQUENCY_RANGES_SIMPLE = {
     'high': FrequencyRange(4000, 24000),
 }
 
+AudioChannel = namedtuple('AudioChannel','min,max')
+AUDIO_CHANNEL = {
+    'Mono': FrequencyRange(20, 60),
+    'Stereo (In Development)': FrequencyRange(60, 250),
+    'Left (In Development)': FrequencyRange(250, 500),
+    'Right (In Development)': FrequencyRange(500, 2000),
+}
+
 MIN_MIDI = 21
 MAX_MIDI = 108
 
@@ -44,6 +52,7 @@ class AudioInputSource(object):
     _stream = None
     _callbacks = []
     _audioWindowSize = 4
+    _processed_audio_sample = None
 
     AUDIO_CONFIG_SCHEMA = vol.Schema({
         vol.Optional('sample_rate', default = 60): int,
@@ -158,6 +167,10 @@ class AudioInputSource(object):
 
         # Calculate the frequency domain from the filtered data and
         # force all zeros when below the volume threshold
+        #print ("1:", self._volume_filter.value)
+        #print ("2:", self._config['min_volume'])
+        #print ("3:", self._raw_audio_sample)
+        #if self._volume_filter.value > self._config['min_volume']:
         if self._volume_filter.value > self._config['min_volume']:
             self._processed_audio_sample = self._raw_audio_sample
 
@@ -177,6 +190,7 @@ class AudioInputSource(object):
 
     def audio_sample(self, raw = False):
         """Returns the raw audio sample"""
+
         if raw:
             return self._raw_audio_sample
         return self._processed_audio_sample
