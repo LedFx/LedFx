@@ -190,14 +190,10 @@ class AudioInputSource(object):
 
     def audio_sample(self, raw = False):
         """Returns the raw audio sample"""
+
         if raw:
             return self._raw_audio_sample
-        # print(self._processed_audio_sample)
         return self._processed_audio_sample
-        # if self._processed_audio_sample:
-        #     return self._processed_audio_sample
-        # else:
-        #     return self._raw_audio_sample
 
     def frequency_domain(self):
         return self._frequency_domain

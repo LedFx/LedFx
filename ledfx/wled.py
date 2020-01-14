@@ -2,19 +2,7 @@ import requests
 from ledfx.config import save_config
 from collections import namedtuple
 
-#Need to get 'ip_address' C:\Users\Matt\AppData\Roaming\.ledfx\config.yaml 
-# of current device and use as a str so line 143 correctly works
-
-#Below is based on: https://github.com/Aircoookie/WLED/wiki/HTTP-request-API
-
-#Need to find out how to get tickbox 'Power LED' data 
-# from directory ledfx.wled.py for the below url requests
-
-#Also Need to figure out upon clicking 'Set Effect', that does not enable E1.31
-
-#def powerState(value):
-#    requests.get('http://192.168.1.102/win&', params={'T': 1 if value else 0})
-#powerState(False)
+# Based on: https://github.com/Aircoookie/WLED/wiki/HTTP-request-API
 
 powerState = {
            'On': 'T=0',

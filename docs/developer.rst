@@ -4,10 +4,19 @@ Development Setup
 
 The development workflow is still being worked on, but this covers the current state of the world.
 
+
 Backend Development
 ================================
 
-In order to start developing with LedFx's core backend you should first enabled development mode to prevent having to constantly reinstall:
+To start running the development brach you need to first clone the repository:
+
+.. code:: bash
+
+    git clone https://github.com/LedFx/LedFx.git
+    cd LedFx
+    git checkout origin dev
+
+Then enabled development mode to prevent having to reinstall and instead just load from the git repository:
 
 .. code:: bash
 
