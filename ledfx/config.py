@@ -9,15 +9,9 @@ _LOGGER = logging.getLogger(__name__)
 CONFIG_DIRECTORY = '.ledfx'
 CONFIG_FILE_NAME = 'config.yaml'
 
-DEFAULT_CONFIG = """
-# Webserver setup
-host: 127.0.0.1
-port: 8888
-"""
-
 CORE_CONFIG_SCHEMA = vol.Schema({
-    vol.Required('host'): str,
-    vol.Required('port'): int,
+    vol.Optional('host'): str,
+    vol.Optional('port'): int,
     vol.Optional('dev_mode', default = False): bool,
     vol.Optional('max_workers', default = 10): int,
     vol.Optional('devices', default = []): list
