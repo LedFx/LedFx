@@ -7,7 +7,6 @@ class RainbowEffect(TemporalEffect):
 
     NAME = "Rainbow"
     CONFIG_SCHEMA = vol.Schema({
-        vol.Optional('Audio_Channel', description='Audio Channel to use as import source', default = "Mono"): vol.In(list(AUDIO_CHANNEL.keys())),
         vol.Optional('frequency', description='Frequency of the effect curve', default = 1.0):  vol.Coerce(float)
     })
 
