@@ -71,18 +71,18 @@ class PresetsEndpoint(RestEndpoint):
         if action == "activate":
             for device in self._ledfx.devices.values():
                 # Check device is in preset, make no changes if it isn't
-                if not device.id in preset.keys():
+                if not device.id in preset['devices'].keys():
                     _LOGGER.info(('Device with id {} has no data in preset {}').format(device.id, preset_id))
                     continue
 
                 # Set effect of device to that saved in the preset,
                 # clear active effect of device if no effect in preset
-                if preset[device.id]:
+                if preset['devices'][device.id]:
                     # Create the effect and add it to the device
                     effect = self._ledfx.effects.create(
                         ledfx = self._ledfx,
-                        type = preset[device.id]['type'],
-                        config = preset[device.id]['config'])
+                        type = preset['devices'][device.id]['type'],
+                        config = preset['devices'][device.id]['config'])
                     device.set_effect(effect)
                 else:
                     device.clear_effect()
