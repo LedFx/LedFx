@@ -28,5 +28,5 @@ class FadeEffect(TemporalEffect, GradientEffect):
             self.location += 1
         else:
             self.location -= 1
-        color = self.get_gradient_color(int(self.location/500*(self.pixel_count-1)))
+        color = self.get_gradient_color(self.location/500.0)
         self.pixels = np.tile(color, (self.pixel_count, 1))

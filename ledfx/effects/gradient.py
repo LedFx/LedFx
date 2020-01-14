@@ -124,14 +124,13 @@ class GradientEffect(Effect):
 
     def get_gradient_color(self, point):
         self._validate_gradient()
-        return self._gradient_curve[:, int(point)]
 
-        #n_colors = len(self.rgb_list[0])
-        #polynomial_array = np.array([self._bernstein_poly(i, n_colors-1, point) for i in range(0, n_colors)])
-        #return (np.dot(self.rgb_list[0], polynomial_array),
-        #        np.dot(self.rgb_list[1], polynomial_array),
-        #        np.dot(self.rgb_list[2], polynomial_array))
-
+        n_colors = len(self.rgb_list[0])
+        polynomial_array = np.array([self._bernstein_poly(i, n_colors-1, point) for i in range(0, n_colors)])
+        return (np.dot(self.rgb_list[0], polynomial_array),
+               np.dot(self.rgb_list[1], polynomial_array),
+               np.dot(self.rgb_list[2], polynomial_array))
+               
     def config_updated(self, config):
         """Invalidate the gradient"""
         self._gradient_curve = None

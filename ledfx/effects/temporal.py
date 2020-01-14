@@ -14,7 +14,7 @@ class TemporalEffect(Effect):
     _thread = None
 
     CONFIG_SCHEMA = vol.Schema({
-        vol.Optional('speed', default = 1.0, description="Speed of the effect"): vol.All(vol.Coerce(float), vol.Range(min=0.01, max=1)) # no change in speed higher than 1, not sure why
+        vol.Optional('speed', default = 1.0, description="Speed of the effect"): vol.Coerce(float)
     })
 
     def thread_function(self):

@@ -162,6 +162,7 @@ class AudioInputSource(object):
 
         # Calculate the current volume for silence detection
         self._volume = aubio.db_spl(self._raw_audio_sample)
+        if np.isinf(self._volume): self._volume = 0.0
         self._volume_filter.update(self._volume)
 
         # Calculate the frequency domain from the filtered data and
@@ -371,6 +372,7 @@ class MelbankInputSource(AudioInputSource):
             self.filterbank.set_coeffs(coeffs)
 
         # Find the indexes for each of the frequency ranges
+        self.lows_index = self.mids_index = self.highs_index = 1
         for i in range(0, len(self.melbank_frequencies) - 1):
             if self.melbank_frequencies[i] < FREQUENCY_RANGES_SIMPLE['low'].max:
                 self.lows_index = i
