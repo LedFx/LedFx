@@ -5,7 +5,7 @@ from threading import Thread
 import voluptuous as vol
 
 _LOGGER = logging.getLogger(__name__)
-DEFAULT_RATE = 1.0 / 60.0
+DEFAULT_RATE = 1.0 / 300.0
 
 @Effect.no_registration
 class TemporalEffect(Effect):
@@ -13,7 +13,7 @@ class TemporalEffect(Effect):
     _thread = None
 
     CONFIG_SCHEMA = vol.Schema({
-        vol.Optional('speed', default = 1.0, description="Speed of the effect"):  vol.Coerce(float)
+        vol.Optional('speed', default = 1.0, description="Speed of the effect"): vol.All(vol.Coerce(float), vol.Range(min=0.01, max=1)) # no change in speed higher than 1, not sure why
     })
 
     def thread_function(self):
@@ -22,7 +22,7 @@ class TemporalEffect(Effect):
             startTime = time.time()
 
             # Treat the return value of the effect loop as a speed modifier
-            # such that effects that are nartually faster or slower can have
+            # such that effects that are naturally faster or slower can have
             # a consistent feel.
             sleepInterval = self.effect_loop()
             if sleepInterval is None:
