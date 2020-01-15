@@ -8,13 +8,12 @@ The development workflow is still being worked on, but this covers the current s
 Backend Development
 ================================
 
-To start running the development brach you need to first clone the repository:
+To start running the development brach you need to first clone the dev repository:
 
 .. code:: bash
 
-    git clone https://github.com/ahodges9/LedFx.git
+    git clone https://github.com/ahodges9/LedFx.git -b dev
     cd LedFx
-    git checkout origin dev
 
 Then enabled development mode to prevent having to reinstall and instead just load from the git repository:
 
