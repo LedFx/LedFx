@@ -21,8 +21,8 @@ FrequencyRange = namedtuple('FrequencyRange','min,max')
 
 FREQUENCY_RANGES = {
     'sub_bass': FrequencyRange(20, 60),
-    'bass': FrequencyRange(60, 250),
-    'low_midrange': FrequencyRange(250, 500),
+    'bass': FrequencyRange(60, 150),
+    'low_midrange': FrequencyRange(150, 500),
     'midrange': FrequencyRange(500, 2000),
     'upper_midrange': FrequencyRange(2000, 4000),
     'presence': FrequencyRange(4000, 6000),
@@ -30,8 +30,8 @@ FREQUENCY_RANGES = {
 }
 
 FREQUENCY_RANGES_SIMPLE = {
-    'low': FrequencyRange(20, 250),
-    'mid': FrequencyRange(250, 4000),
+    'low': FrequencyRange(20, 150),
+    'mid': FrequencyRange(150, 4000),
     'high': FrequencyRange(4000, 24000),
 }
 
