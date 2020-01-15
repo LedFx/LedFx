@@ -66,7 +66,7 @@ GRADIENTS = {
         "colors": ["pink", "orange-deep", "yellow"]
     },
     "Winter"    : {
-        "colors": ["blue-turquoise", "blue-green"]
+        "colors": ["green-turquoise", "blue-green"]
     },
     "Frost"    : {
         "colors": ["blue", "blue-aqua", "purple", "pink"]
@@ -75,7 +75,7 @@ GRADIENTS = {
         "colors": ["blue-navy", "orange", "red"]
     },
     "Borealis"  : {
-        "colors": ["orange-deep", "purple", "blue-turquoise", "green"]
+        "colors": ["orange-deep", "purple", "green-turquoise", "green"]
     },
     "Rust"      : {
         "colors": ["orange-deep", "red"]
