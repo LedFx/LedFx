@@ -79,7 +79,7 @@ def load_config(config_dir: str) -> dict:
     config_file = ensure_config_file(config_dir)
     print(('Loading configuration file from {}').format(config_dir))
     with open(config_file, 'rt') as file:
-        return CORE_CONFIG_SCHEMA(yaml.load(file))
+        return CORE_CONFIG_SCHEMA(yaml.safe_load(file))
 
 def save_config(config: dict, config_dir: str) -> None:
     """Saves the configuration to the provided directory"""
