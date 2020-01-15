@@ -11,7 +11,7 @@ CONFIG_FILE_NAME = 'config.yaml'
 
 CORE_CONFIG_SCHEMA = vol.Schema({
     vol.Optional('host'): str,
-    vol.Optional('port'): int,
+    vol.Optional('port', default = 8888): int,
     vol.Optional('dev_mode', default = False): bool,
     vol.Optional('max_workers', default = 10): int,
     vol.Optional('devices', default = []): list,
@@ -36,8 +36,8 @@ def create_default_config(config_dir: str) -> str:
 
     config_path = os.path.join(config_dir, CONFIG_FILE_NAME)
     try:
-        with open(config_path, 'wt') as config_file:
-            config_file.write(DEFAULT_CONFIG)
+        with open(config_path, 'wt') as file:
+            yaml.dump(CORE_CONFIG_SCHEMA({}), file, default_flow_style=False)
         return config_path
 
     except IOError:
@@ -51,8 +51,6 @@ def ensure_config_file(config_dir: str) -> str:
     config_path = get_config_file(config_dir)
     if config_path is None:
         config_path = create_default_config(config_dir)
-        print(('Failed to find configuration file. Creating default configuration '
-            'file in {}').format(config_path))
 
     return config_path
 
@@ -79,7 +77,10 @@ def load_config(config_dir: str) -> dict:
     config_file = ensure_config_file(config_dir)
     print(('Loading configuration file from {}').format(config_dir))
     with open(config_file, 'rt') as file:
-        return CORE_CONFIG_SCHEMA(yaml.safe_load(file))
+        config_yaml = yaml.safe_load(file)
+        if config_yaml is None:
+            config_yaml = {}
+        return CORE_CONFIG_SCHEMA(config_yaml)
 
 def save_config(config: dict, config_dir: str) -> None:
     """Saves the configuration to the provided directory"""
