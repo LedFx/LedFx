@@ -13,7 +13,7 @@ import Card from "@material-ui/core/Card";
 import CardContent from "@material-ui/core/CardContent";
 import Button from "@material-ui/core/Button";
 import SchemaFormCollection from "frontend/components/SchemaForm/SchemaFormCollection.jsx";
-
+import Typography from "@material-ui/core/Typography";
 
 const styles = theme => ({
   button: {
@@ -50,33 +50,34 @@ class EffectControl extends React.Component {
     if(effect !== undefined  && effect !== null && effect.effect !== null)
       effectvalue = effect.effect.type;
     return (
-      <Card>
-        <CardContent>
-          <SchemaFormCollection
-            schemaCollection={schemas.effects}
-            currentEffect={effect}
-            onSubmit={this.handleSetEffect}
+      <div>
+        <Typography variant="h5" color="inherit">
+          Effect Control
+        </Typography>
+        <SchemaFormCollection
+          schemaCollection={schemas.effects}
+          currentEffect={effect}
+          onSubmit={this.handleSetEffect}
+        >
+        <div className={classes.submitControls}>
+          <Button
+            className={classes.button}
+            type="submit"
+            variant="contained"
+            color="primary"
           >
-          <div className={classes.submitControls}>
-            <Button
-              className={classes.button}
-              type="submit"
-              variant="contained"
-              color="primary"
-            >
-              Set Effect
-            </Button>
-            <Button
-              className={classes.button}
-              onClick={this.handleClearEffect}
-              color="primary"
-            >
-              Clear Effect
-            </Button>
-          </div>
-          </SchemaFormCollection>
-        </CardContent>
-      </Card>
+            Set Effect
+          </Button>
+          <Button
+            className={classes.button}
+            onClick={this.handleClearEffect}
+            color="primary"
+          >
+            Clear Effect
+          </Button>
+        </div>
+        </SchemaFormCollection>
+      </div>
     );
   }
 

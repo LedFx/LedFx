@@ -12,22 +12,13 @@ import Button from '@material-ui/core/Button';
 import { addPreset } from 'frontend/actions';
 
 const useStyles = makeStyles({ 
-  card: {
-    display: "flex",
-    direction: 'row',
-    width: "100%",
-    maxWidth: "100%",
-    backgroundColor: "transparent",
-    borderCollapse: "collapse",
-    alignItems: 'center',
-    justifyContent: 'space-between',
+  button: {
+    display: "block",
+    width: "100",
+    float: "right"
   },
-  form: {
-    display: "flex",
-    direction: 'row',
-  },
-  formItem: {
-    alignSelf: 'center'
+  action: {
+    padding: "0"
   }
 });
 
@@ -37,33 +28,31 @@ const AddPresetCard = ({ presets, addPreset }) =>  {
   const classes = useStyles()
 
   return (
-      <Card className={classes.card}>
+      <Card>
         <CardContent>
           <h3>Add Preset</h3>
-          <p>Save current effects of all devices as a preset</p>
+          Save current effects of all devices as a preset
+          <CardActions className = {classes.action}>
+            <TextField
+              error = {validateInput(name, presets)} 
+              id="presetNameInput"
+              label="Preset Name"
+              onChange={(e) => setName(e.target.value)}
+            />
+            <Button
+              className = {classes.button}
+              color="primary"
+              size="small"
+              aria-label="Save"
+              disabled = {validateInput(name, presets)} 
+              variant = "contained"
+              onClick = {() => addPreset(name)}
+            >
+              Save
+            </Button>
+          </CardActions>
         </CardContent>
-        <CardActions>
-          <div className = {classes.form}>
-              <TextField
-                className = {classes.formItem}
-                error = {validateInput(name, presets)} 
-                id="presetNameInput"
-                label="Preset Name"
-                onChange={(e) => setName(e.target.value)}
-              />
-              <Button
-                className = {classes.formItem}
-                color="primary"
-                size="small"
-                aria-label="Save"
-                disabled = {validateInput(name, presets)} 
-                variant = "contained"
-                onClick = {() => addPreset(name)}
-              >
-                Save
-              </Button> 
-            </div>
-        </CardActions>
+        
       </Card>
     );
 }

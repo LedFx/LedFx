@@ -13,19 +13,25 @@ import PresetConfigTable from "frontend/components/PresetCard/PresetConfigTable"
 import { activatePreset, deletePreset } from 'frontend/actions';
 
 const styles = theme => ({ 
-  card: {
-    width: "100%",
-    maxWidth: "100%",
-    backgroundColor: "transparent",
-    borderCollapse: "collapse",
-  },
   deleteButton: {
     color: theme.palette.getContrastText(red[500]),
     backgroundColor: red[500],
     '&:hover': {
       backgroundColor: red[700],
     },
+    margin: theme.spacing.unit,
+    float: "right"
   },
+  button: {
+    margin: theme.spacing.unit,
+    float: "right"
+  },
+  submitControls: {
+    margin: theme.spacing.unit,
+    display: "block",
+    width: "100%"
+  },
+
 });
 
 class PresetCard extends React.Component {
@@ -34,37 +40,39 @@ class PresetCard extends React.Component {
     const { classes, preset, activatePreset, deletePreset } = this.props;
 
     return (
-      <Card className={classes.card}>
+      <Card>
         <CardContent>
-          <h2>{preset.name}</h2>
+          <h3>{preset.name}</h3>
           { preset.devices && <PresetConfigTable devices ={ preset.devices }/> }
         </CardContent>
-        <CardActions>
-          <Button
-            color="primary"
-            size="small"
-            aria-label="Activate"
-            variant = "contained"
-            onClick={() => activatePreset(preset.id)}
-          >
-            Activate
-          </Button>
-          <Button
-            className={classes.deleteButton}
-            size="small"
-            aria-label="Delete"
-            variant = "contained"
-            onClick={() => deletePreset(preset.id)}
-          >
-            Delete
-          </Button> 
-        </CardActions>
+        <CardActions className={classes.submitControls}>
+            <Button
+              className={classes.button}
+              color="primary"
+              size="small"
+              aria-label="Activate"
+              variant = "contained"
+              onClick={() => activatePreset(preset.id)}
+            >
+              Activate
+            </Button>
+            <Button
+              className={classes.deleteButton}
+              color="red"
+              size="small"
+              aria-label="Delete"
+              variant = "contained"
+              onClick={() => deletePreset(preset.id)}
+            >
+              Delete
+            </Button> 
+          </CardActions>
       </Card>
     );
   }
 }
 
-PresetConfigTable.propTypes = {
+PresetCard.propTypes = {
   classes: PropTypes.object.isRequired,
   preset: PropTypes.object.isRequired,
 };

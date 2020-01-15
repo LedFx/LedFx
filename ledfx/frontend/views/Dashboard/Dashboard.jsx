@@ -18,6 +18,10 @@ const styles = theme => ({
   root: {
     flexGrow: 1
   },
+  card: {
+    width: "100%",
+    overflowX: "auto"
+  },
   table: {
     width: "100%",
     maxWidth: "100%",
@@ -46,27 +50,35 @@ class DashboardView extends React.Component {
 
     return (
       <div>
-        <Table className={classes.table}>
-          <TableBody>
-            <Grid container direction="row" spacing={8}>
-              {
-                Object.keys(devicesById).map(id => {                      
-                  return (
-                    <Grid item xs>
-                      <Card>
-                        <CardContent>
+
+        <Grid container direction="row" spacing={4}>
+          {
+            Object.keys(devicesById).map(id => {                      
+              return (
+                <Grid item lg={6}>
+                  <Card className={classes.card}>
+                    <CardContent>
+                      <Grid container direction="row" spacing={1}>
+                        <Grid item xs={12}>
                           <DeviceMiniControl key={id} device={devicesById[id]}/>
+                        </Grid>
+                        <Grid item xs={12}>
                           <PixelColorGraph device={devicesById[id]}/>
-                        </CardContent>
-                      </Card>
-                    </Grid>
-                  );
-                })
-              }
-            </Grid>
+                        </Grid>
+                      </Grid>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              );
+            })
+          }
+        </Grid>
+
+        <Grid container direction="row" spacing={4}>
+          <Grid item xs={12}>
             <AddPresetCard />
-          </TableBody>
-        </Table>
+          </Grid>
+        </Grid>
       </div>
     );
   }

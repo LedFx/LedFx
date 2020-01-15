@@ -10,11 +10,10 @@ import TableBody from '@material-ui/core/TableBody';
 
 const styles = theme => ({
     table: {
-      marginBottom: theme.spacing.unit * 4
     }
 });
 
-class DevicesTableItem extends React.Component {
+class PresetConfigTable extends React.Component {
 
   render() {
     const { classes, devices } = this.props;
@@ -36,23 +35,23 @@ class DevicesTableItem extends React.Component {
 }
 
 const renderRows = (devices) => {
-  return Object.keys(devices).map((id) => {
-    const device = devices[id]
+  const devicesWithEffects = Object.keys(devices).filter(id => !!devices[id].type);
+  return devicesWithEffects.map(id => {
     return (
       <TableRow key={id}>
           <TableCell>
-              {id}
+            {id}
           </TableCell>
           <TableCell>
-              {device.type}
+            {devices[id].type}
           </TableCell>
       </TableRow>
-  )
-  })
+    )})
 }
 
-DevicesTableItem.propTypes = {
+PresetConfigTable.propTypes = {
+  classes: PropTypes.object.isRequired,
   devices: PropTypes.object.isRequired
 };
 
-export default withStyles(styles)(DevicesTableItem);
+export default withStyles(styles)(PresetConfigTable);

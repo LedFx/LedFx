@@ -9,6 +9,8 @@ import Button from "@material-ui/core/Button";
 import Switch from '@material-ui/core/Switch';
 import TableRow from '@material-ui/core/TableRow';
 import TableCell from '@material-ui/core/TableCell';
+import Grid from "@material-ui/core/Grid";
+import Typography from "@material-ui/core/Typography";
 import { NavLink } from "react-router-dom";
 
 import { setDeviceEffect } from "frontend/actions";
@@ -33,6 +35,13 @@ const styles = theme => ({
     "&,&:hover": {
       color: "#000000"
     }
+  },
+  header: {
+    margin: 0
+  },
+  subHeader: {
+    margin: 0,
+    color: "#333333"
   }
 });
 
@@ -57,29 +66,34 @@ class DeviceMiniControl extends React.Component {
     const { classes, device } = this.props;
 
     return (
-      <TableRow key={device.id} className={classes.content}>
-      <TableCell component="th" scope="row">
-        <h1>{device.config.name}</h1>
-      </TableCell>
-      <TableCell className={classes.tableCell} numeric>
-        <h3>{device.effect.name}</h3>
-      </TableCell>
-      <TableCell className={classes.tableCell} numeric>
-        <Button 
-        component={NavLink}
-        to={'/devices/' + device.id}
-        className={classes.deviceLink}
-        key={device.id}>
-          Change Effect
-        </Button>
-      </TableCell>
-      <TableCell className={classes.tableCell} numeric>
-        <Switch
-          checked={this.isDeviceOn()}
-          onChange={this.toggleOn}
-          color="primary"/>
-      </TableCell>
-      </TableRow>
+      <Grid container direction="col" spacing={1}>
+        <Grid item xs>
+          <Typography variant="h5" color="inherit" className={classes.header}>
+            {device.config.name}
+          </Typography>
+          <Typography variant="caption text" color="inherit" className={classes.subHeader}>
+            Effect: {device.effect.name}
+          </Typography>
+        </Grid>
+        {/* <Grid item xs>
+
+        </Grid> */}
+        <Grid item>
+          <Button 
+          component={NavLink}
+          to={'/devices/' + device.id}
+          className={classes.deviceLink}
+          key={device.id}>
+            Change Effect
+          </Button>
+        </Grid>
+        <Grid>
+          <Switch
+            checked={this.isDeviceOn()}
+            onChange={this.toggleOn}
+            color="primary"/>
+        </Grid>
+      </Grid>
     );
   }
 

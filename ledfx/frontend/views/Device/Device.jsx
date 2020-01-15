@@ -66,20 +66,35 @@ class DeviceView extends React.Component {
     if (device)
     {
       return (
-        <Grid container spacing={24}>
-          <Grid item xs>
-            <h1>{device.config.name}</h1>
-          </Grid>
+        <Grid container direction="row" spacing={4}>
+          {renderPixelGraph(device, effect)}
           <Grid item xs={12}>
-           <PixelColorGraph device={device}/>
-          </Grid>
-          <Grid item xs={12}>
-            <EffectControl device={device} effect={effect}/>
+            <Card>
+              <CardContent>
+                <EffectControl device={device} effect={effect}/>
+              </CardContent>
+            </Card>
           </Grid>
         </Grid>
       );
     }
     return (<p>Loading</p>)
+  }
+}
+
+
+const renderPixelGraph = (device, effect) => {
+  if (device.effect && device.effect.name) {
+    console.log(effect)
+    return (
+      <Grid item xs={12}>
+        <Card>
+            <CardContent>
+              <PixelColorGraph device={device}/>
+            </CardContent>
+        </Card>
+      </Grid>
+    )
   }
 }
 

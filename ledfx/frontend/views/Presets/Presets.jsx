@@ -46,10 +46,16 @@ class PresetsView extends React.Component {
     const { classes } = this.props;
     return (
       <div>
-        <AddPresetCard />
-        <React.Fragment>
-          {renderPresets(this.props.presets)}
-        </React.Fragment>
+        <Grid container direction="row" spacing={4}>
+          <Grid item xs={12}>
+            <AddPresetCard />
+          </Grid>
+          <Grid item xs={12}>
+            <React.Fragment>
+              {renderPresets(this.props.presets)}
+            </React.Fragment>
+          </Grid>
+        </Grid>
       </div>
     );
   }
