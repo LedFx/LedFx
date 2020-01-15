@@ -28,7 +28,7 @@ const styles = theme => ({
 });
 
 
-class EffectPresetsControl extends React.Component {
+class EffectControl extends React.Component {
 
   componentDidMount() {
     this.props.dispatch(fetchDeviceEffects(this.props.device.id));
@@ -84,7 +84,7 @@ class EffectPresetsControl extends React.Component {
   }
 }
 
-EffectPresetsControl.propTypes = {
+EffectControl.propTypes = {
   classes: PropTypes.object.isRequired,
   schemas: PropTypes.object.isRequired,
   device: PropTypes.object.isRequired,
@@ -99,4 +99,4 @@ function mapStateToProps(state) {
   };
 }
 
-export default connect(mapStateToProps)(withStyles(styles)(EffectPresetsControl));
+export default connect(mapStateToProps)(withStyles(styles)(EffectControl));

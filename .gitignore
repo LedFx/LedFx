@@ -12,6 +12,9 @@ __pycache__/*
 .*.swp
 */.ipynb_checkpoints/*
 
+# Python env
+env
+
 # NPM
 node_modules/
 npm-debug.log

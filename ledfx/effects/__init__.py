@@ -101,7 +101,7 @@ class Effect(BaseRegistry):
 
     # Basic effect properties that can be applied to all effects
     CONFIG_SCHEMA = vol.Schema({
-        vol.Optional('blur', description='Amount to blur the effect', default = 0.0): vol.Coerce(float),
+        vol.Optional('blur', description='Amount to blur the effect', default = 0.0): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=10)),
         vol.Optional('flip', description='Flip the effect', default = False): bool,
         vol.Optional('mirror', description='Mirror the effect', default = False): bool,
         vol.Optional('brightness', description='Brightness of strip', default = 1.0): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),

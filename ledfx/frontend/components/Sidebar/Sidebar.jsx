@@ -14,7 +14,8 @@ import ListItemText from "@material-ui/core/ListItemText";
 
 import sidebarStyle from "./style.jsx";
 import viewRoutes from "frontend/routes/views.jsx";
-import logoAsset from "frontend/assets/img/logo.png";
+//import logoAsset from "frontend/assets/img/logo.png";
+import logoAsset from "frontend/assets/img/icon/small_white_alpha.png";
 
 import { getSystemConfig } from "frontend/actions";
 
@@ -66,28 +67,6 @@ class Sidebar extends React.Component {
       );
     });
 
-    var effectLinks = Object.keys(devicesById).map(deviceId => {
-      var listItemClass = classes.itemLink
-      if (this.isViewActive("/effectPresets/" + deviceId))
-      {
-        listItemClass = listItemClass + " " + classes.activeView
-      }
-      return (
-        <NavLink
-          to={'/effectPresets/' + devicesById[deviceId].id}
-          className={classes.item}
-          key={devicesById[deviceId].id}
-          activeClassName="active"
-          key={deviceId}>
-          <ListItem button className={listItemClass}>
-            <ListItemText
-              primary={devicesById[deviceId].config.name}
-              className={classes.devicesItemText}
-              disableTypography={true}/>
-          </ListItem>
-        </NavLink>
-      );
-    });
     var links = (
       <List className={classes.list}>
         {
