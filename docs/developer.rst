@@ -12,7 +12,7 @@ To start running the development brach you need to first clone the repository:
 
 .. code:: bash
 
-    git clone https://github.com/LedFx/LedFx.git
+    git clone https://github.com/ahodges9/LedFx.git
     cd LedFx
     git checkout origin dev
 
