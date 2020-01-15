@@ -38,7 +38,7 @@ class AudioDevicesEndpoint(RestEndpoint):
         data = await request.json()
         index = data.get('index')
 
-        info = self._ledfx._audio.get_host_api_info_by_index(0)
+        info = self._audio.get_host_api_info_by_index(0)
         if index is None:
             response = { 'status' : 'failed', 'reason': 'Required attribute "index" was not provided' }
             return web.Response(text=json.dumps(response), status=500)
