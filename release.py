@@ -57,6 +57,7 @@ def main():
         minor = MINOR_VERSION
         if arguments.type == 'major':
             major += 1
+            minor = 0
         elif arguments.type == 'minor':
             minor += 1
 
