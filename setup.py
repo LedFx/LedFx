@@ -46,5 +46,9 @@ setup(
             'ledfx = ledfx.__main__:main'
         ]
     },
-    package_data={'ledfx_frontend':['*']},
+    package_data={
+        'ledfx_frontend':['*'],
+        '': ['*.npy']
+    },
+    
 )
