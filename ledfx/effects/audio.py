@@ -21,8 +21,8 @@ FrequencyRange = namedtuple('FrequencyRange','min,max')
 
 FREQUENCY_RANGES = {
     'sub_bass': FrequencyRange(20, 60),
-    'bass': FrequencyRange(60, 150),
-    'low_midrange': FrequencyRange(150, 500),
+    'bass': FrequencyRange(60, 250),
+    'low_midrange': FrequencyRange(250, 500),
     'midrange': FrequencyRange(500, 2000),
     'upper_midrange': FrequencyRange(2000, 4000),
     'presence': FrequencyRange(4000, 6000),
@@ -30,8 +30,8 @@ FREQUENCY_RANGES = {
 }
 
 FREQUENCY_RANGES_SIMPLE = {
-    'low': FrequencyRange(20, 150),
-    'mid': FrequencyRange(150, 4000),
+    'low': FrequencyRange(20, 250),
+    'mid': FrequencyRange(250, 4000),
     'high': FrequencyRange(4000, 24000),
 }
 
@@ -40,11 +40,14 @@ MAX_MIDI = 108
 
 class AudioInputSource(object):
 
+    _is_activated = False
     _audio = None
     _stream = None
     _callbacks = []
     _audioWindowSize = 4
     _processed_audio_sample = None
+    _volume = -90
+    _volume_filter = ExpFilter(-90, alpha_decay=0.01, alpha_rise=0.99)
 
     AUDIO_CONFIG_SCHEMA = vol.Schema({
         vol.Optional('sample_rate', default = 60): int,
@@ -56,11 +59,16 @@ class AudioInputSource(object):
     }, extra=vol.ALLOW_EXTRA)
 
     def __init__(self, ledfx, config):
-        self._config = self.AUDIO_CONFIG_SCHEMA(config)
         self._ledfx = ledfx
+        self.update_config(config)
 
-        self._volume = -90
-        self._volume_filter = ExpFilter(-90, alpha_decay=0.01, alpha_rise=0.99)
+    def update_config(self, config):
+        """Deactivate the audio, update the config, the reactivate"""
+        
+        self.deactivate(); 
+        self._config = self.AUDIO_CONFIG_SCHEMA(config)
+        if len(self._callbacks) != 0:
+            self.activate()
 
     def activate(self):
 
@@ -103,10 +111,10 @@ class AudioInputSource(object):
         _LOGGER.info("Audio source opened.")
 
     def deactivate(self):
-        self._stream.stop_stream()
-        
-        self._stream.close()
-        self._stream = None
+        if self._stream:
+            self._stream.stop_stream()
+            self._stream.close()
+            self._stream = None
         self._rolling_window = None
         _LOGGER.info("Audio source closed.")
 
@@ -210,6 +218,12 @@ class MelbankInputSource(AudioInputSource):
         config = self.CONFIG_SCHEMA(config)
         super().__init__(ledfx, config)
 
+        self._initialize_melbank()
+
+    def update_config(self, config):
+        validated_config = self.CONFIG_SCHEMA(config)
+        super().update_config(validated_config)
+        
         self._initialize_melbank()
 
     def _invalidate_caches(self):
@@ -441,13 +455,11 @@ class AudioReactiveEffect(Effect):
             self._ledfx.audio = MelbankInputSource(self._ledfx, self._ledfx.config.get('audio', {}))
 
         self.audio = self._ledfx.audio
-        self._ledfx.audio.subscribe(
-            self._audio_data_updated)
+        self._ledfx.audio.subscribe(self._audio_data_updated)
 
     def deactivate(self):
         _LOGGER.info('Deactivating AudioReactiveEffect.')
-        self.audio.unsubscribe(
-            self._audio_data_updated)
+        self.audio.unsubscribe(self._audio_data_updated)
         super().deactivate()
 
     def create_filter(self, alpha_decay, alpha_rise):

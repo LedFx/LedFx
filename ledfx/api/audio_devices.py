@@ -56,5 +56,8 @@ class AudioDevicesEndpoint(RestEndpoint):
             config = self._ledfx.config, 
             config_dir = self._ledfx.config_dir)
 
+        if self._ledfx.audio:
+            self._ledfx.audio.update_config(new_config)
+
         response = { 'status': 'success' }
         return web.Response(text=json.dumps(response), status=200)
