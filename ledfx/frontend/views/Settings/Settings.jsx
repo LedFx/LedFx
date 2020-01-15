@@ -50,7 +50,7 @@ const AudioCard = ({ audioDevices, setAudioDevice }) => {
   return (<Card>
             <CardContent>
               <h3>Audio</h3>
-              <p>Current device: {audioDevices.devices[activeDeviceIndex]} {JSON.stringify(audioDevices)}</p>
+              <p>Current device: {audioDevices.devices[activeDeviceIndex]}</p>
               <FormControl>
                 <Select
                   id="audio-input-select"

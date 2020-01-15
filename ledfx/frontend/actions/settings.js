@@ -6,7 +6,7 @@ export const SET_AUDIO_INPUT = "GET_AUDIO_INPUT"
 export function setAudioDevice(index) {
   return dispatch => {
     const data = {
-      index: index
+      index: parseInt(index)
     };
     fetch(`${apiUrl}/audio/devices`, {
       method: "PUT",
