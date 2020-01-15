@@ -1,0 +1,1 @@
+export const includeKeyInObject = (key, object) => ({ id: key, ...object})

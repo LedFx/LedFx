@@ -17,6 +17,7 @@ import PresetsCard from "frontend/components/PresetCard/PresetCard.jsx";
 import PresetsConfigDialog from "frontend/components/PresetConfigDialog/PresetConfigDialog.jsx";
 import AddPresetCard from "frontend/components/AddPresetCard/AddPresetCard";
 import { getPresets } from 'frontend/actions';
+import { includeKeyInObject } from 'frontend/utils/helpers';
 
 const styles = theme => ({
   cardResponsive: {
@@ -61,10 +62,8 @@ class PresetsView extends React.Component {
   }
 }
 
-const renderPresets = (presets) => Object.keys(presets).map((key) => (<PresetsCard key={key} preset={transformPreset(key, presets[key])} />))
+const renderPresets = (presets) => Object.keys(presets).map((key) => (<PresetsCard key={key} preset={includeKeyInObject(key, presets[key])} />))
 
-// Includes ID in preset
-const transformPreset = (key, preset) => ({ id: key, ...preset})
 
 const mapStateToProps = state => ({ 
   presets: state.presets 
