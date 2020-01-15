@@ -11,7 +11,7 @@ class AudioDevicesEndpoint(RestEndpoint):
     ENDPOINT_PATH = "/api/audio/devices"
 
     async def get(self) -> web.Response:
-        """Get list of audio devices and active audio device"""
+        """Get list of audio devices and active audio device WIP"""
         info = self._ledfx.audio.get_host_api_info_by_index(0)
 
         audio_devices = {}

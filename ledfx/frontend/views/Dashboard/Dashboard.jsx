@@ -11,7 +11,8 @@ import Table from '@material-ui/core/Table';
 import TableBody from '@material-ui/core/TableBody';
 import Grid from "@material-ui/core/Grid";
 import PixelColorGraph from "frontend/components/PixelColorGraph/PixelColorGraph.jsx";
-import DeviceMiniControl from 'frontend/components/DeviceMiniControl/DeviceMiniControl.jsx'
+import DeviceMiniControl from 'frontend/components/DeviceMiniControl/DeviceMiniControl.jsx';
+import AddPresetCard from "frontend/components/AddPresetCard/AddPresetCard";
 
 const styles = theme => ({
   root: {
@@ -47,7 +48,7 @@ class DashboardView extends React.Component {
       <div>
         <Table className={classes.table}>
           <TableBody>
-            <Grid container direction="row" spacing={3}>
+            <Grid container direction="row" spacing={8}>
               {
                 Object.keys(devicesById).map(id => {                      
                   return (
@@ -63,6 +64,7 @@ class DashboardView extends React.Component {
                 })
               }
             </Grid>
+            <AddPresetCard />
           </TableBody>
         </Table>
       </div>
