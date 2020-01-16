@@ -167,10 +167,6 @@ class AudioInputSource(object):
 
         # Calculate the frequency domain from the filtered data and
         # force all zeros when below the volume threshold
-        #print ("1:", self._volume_filter.value)
-        #print ("2:", self._config['min_volume'])
-        #print ("3:", self._raw_audio_sample)
-        #if self._volume_filter.value > self._config['min_volume']:
         if self._volume_filter.value > self._config['min_volume']:
             self._processed_audio_sample = self._raw_audio_sample
 
@@ -363,6 +359,48 @@ class MelbankInputSource(AudioInputSource):
                 self._config['mic_rate'])
             self.melbank_frequencies = self.melbank_frequencies[1:-1]
 
+        if self._config['coeffs_type'] == 'fixed':
+            ranges = FREQUENCY_RANGES.values()
+            upper_edges_hz = np.zeros(len(ranges))
+            lower_edges_hz = np.zeros(len(ranges))
+            for idx, value in enumerate(ranges):
+                lower_edges_hz[idx] = value.min
+                upper_edges_hz[idx] = value.max
+
+            (melmat, center_frequencies_hz, freqs) = mel.compute_melmat_from_range(
+                lower_edges_hz=lower_edges_hz,
+                upper_edges_hz=upper_edges_hz,
+                num_fft_bands=int(self._config['fft_size'] // 2) + 1,
+                sample_rate=self._config['mic_rate'])
+
+            self._config['samples'] = len(center_frequencies_hz)
+            self.filterbank = aubio.filterbank(
+                self._config['samples'],
+                self._config['fft_size'])
+            self.filterbank.set_coeffs(melmat.astype(np.float32))
+            self.melbank_frequencies = center_frequencies_hz
+
+        if self._config['coeffs_type'] == 'fixed_simple':
+            ranges = FREQUENCY_RANGES_SIMPLE.values()
+            upper_edges_hz = np.zeros(len(ranges))
+            lower_edges_hz = np.zeros(len(ranges))
+            for idx, value in enumerate(ranges):
+                lower_edges_hz[idx] = value.min
+                upper_edges_hz[idx] = value.max
+
+            (melmat, center_frequencies_hz, freqs) = mel.compute_melmat_from_range(
+                lower_edges_hz=lower_edges_hz,
+                upper_edges_hz=upper_edges_hz,
+                num_fft_bands=int(self._config['fft_size'] // 2) + 1,
+                sample_rate=self._config['mic_rate'])
+
+            self._config['samples'] = len(center_frequencies_hz)
+            self.filterbank = aubio.filterbank(
+                self._config['samples'],
+                self._config['fft_size'])
+            self.filterbank.set_coeffs(melmat.astype(np.float32))
+            self.melbank_frequencies = center_frequencies_hz
+
         self.melbank_frequencies = self.melbank_frequencies.astype(int)
 
         # Normalize the filterbank triangles to a consistent height, the
@@ -375,13 +413,13 @@ class MelbankInputSource(AudioInputSource):
 
         # Find the indexes for each of the frequency ranges
         self.lows_index = self.mids_index = self.highs_index = 1
-        for i in range(0, len(self.melbank_frequencies) - 1):
+        for i in range(0, len(self.melbank_frequencies)):
             if self.melbank_frequencies[i] < FREQUENCY_RANGES_SIMPLE['low'].max:
-                self.lows_index = i
+                self.lows_index = i + 1
             elif self.melbank_frequencies[i] < FREQUENCY_RANGES_SIMPLE['mid'].max:
-                self.mids_index = i
+                self.mids_index = i + 1
             elif self.melbank_frequencies[i] < FREQUENCY_RANGES_SIMPLE['high'].max:
-                self.highs_index = i
+                self.highs_index = i + 1
 
         # Build up some of the common filters
         self.mel_gain = ExpFilter(np.tile(1e-1, self._config['samples']), alpha_decay=0.01, alpha_rise=0.99)
@@ -415,10 +453,10 @@ class MelbankInputSource(AudioInputSource):
         return self.melbank()[:self.lows_index]
 
     def melbank_mids(self):
-        return self.melbank()[self.lows_index+1:self.mids_index]
+        return self.melbank()[self.lows_index:self.mids_index]
 
     def melbank_highs(self):
-        return self.melbank()[self.highs_index:]
+        return self.melbank()[self.mids_index:]
 
     @lru_cache(maxsize=32)
     def melbank_filtered(self):
