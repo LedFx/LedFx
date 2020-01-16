@@ -18,21 +18,12 @@ class PitchSpectrumAudioEffect(AudioReactiveEffect, GradientEffect):
     })
 
     def config_updated(self, config):
-        win_s = 1024
-        hop_s = 48000 // 60
-        tolerance = 0.8
-
-        # TODO: Move into the base audio effect class
-        self.pitch_o = aubio.pitch("schmitt", win_s, hop_s, 48000)
-        self.pitch_o.set_unit("midi")
-        self.pitch_o.set_tolerance(tolerance)
-
         self.avg_midi = None
 
 
     def audio_data_updated(self, data):
         y = data.interpolated_melbank(self.pixel_count, filtered = False)
-        midi_value = self.pitch_o(data.audio_sample())[0]
+        midi_value = data.midi_value()
         note_color = COLORS['black']
         if not self.avg_midi:
             self.avg_midi = midi_value

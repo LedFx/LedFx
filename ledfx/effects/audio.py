@@ -206,6 +206,7 @@ class MelbankInputSource(AudioInputSource):
         vol.Optional('min_frequency', default = 20): int,
         vol.Optional('max_frequency', default = 18000): int,
         vol.Optional('min_volume', default = -70.0): float,
+        vol.Optional('pitch_tolerance', default = 0.8): float,
         vol.Optional('min_volume_count', default = 20): int,
         vol.Optional('coeffs_type', default = "scott"): str
     }, extra=vol.ALLOW_EXTRA)
@@ -215,12 +216,14 @@ class MelbankInputSource(AudioInputSource):
         super().__init__(ledfx, config)
 
         self._initialize_melbank()
+        self._initialize_pitch()
 
     def update_config(self, config):
         validated_config = self.CONFIG_SCHEMA(config)
         super().update_config(validated_config)
         
         self._initialize_melbank()
+        self._initialize_pitch()
 
     def _invalidate_caches(self):
         """Invalidates the cache for all melbank related data"""
@@ -228,6 +231,16 @@ class MelbankInputSource(AudioInputSource):
         self.melbank.cache_clear()
         self.melbank_filtered.cache_clear()
         self.interpolated_melbank.cache_clear()
+        self.midi_value.cache_clear()
+
+    def _initialize_pitch(self):
+        
+        self.pitch_o = aubio.pitch("schmitt",
+            self._config['fft_size'],
+            self._config['mic_rate'] // self._config['sample_rate'],
+            self._config['mic_rate'])
+        self.pitch_o.set_unit("midi")
+        self.pitch_o.set_tolerance(self._config['pitch_tolerance'])
 
     def _initialize_melbank(self):
         """Initialize all the melbank related variables"""
@@ -476,6 +489,11 @@ class MelbankInputSource(AudioInputSource):
             return math.interpolate(self.melbank_filtered(), size)
 
         return math.interpolate(self.melbank(), size)
+
+    @lru_cache(maxsize=32)
+    def midi_value(self):
+        return self.pitch_o(self.audio_sample())[0]
+
 
 @Effect.no_registration
 class AudioReactiveEffect(Effect):
