@@ -47,8 +47,6 @@ class PresetsView extends React.Component {
     const { classes } = this.props;
     return (
       <div>
-
-
         <Grid container direction="row" spacing={4}>
           <Grid item xs={12}>
             <AddPresetCard />
