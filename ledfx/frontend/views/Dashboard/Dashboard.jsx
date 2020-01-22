@@ -13,6 +13,8 @@ import Grid from "@material-ui/core/Grid";
 import PixelColorGraph from "frontend/components/PixelColorGraph/PixelColorGraph.jsx";
 import DeviceMiniControl from 'frontend/components/DeviceMiniControl/DeviceMiniControl.jsx';
 import AddPresetCard from "frontend/components/AddPresetCard/AddPresetCard";
+import MiniPresetsCard from "frontend/components/MiniPresetsCard/MiniPresetsCard";
+
 
 const styles = theme => ({
   root: {
@@ -77,6 +79,7 @@ class DashboardView extends React.Component {
         <Grid container direction="row" spacing={4}>
           <Grid item xs={12}>
             <AddPresetCard />
+{/*            <MiniPresetsCard />*/}
           </Grid>
         </Grid>
       </div>
