@@ -47,22 +47,26 @@ class PresetsView extends React.Component {
     const { classes } = this.props;
     return (
       <div>
+
+
         <Grid container direction="row" spacing={4}>
           <Grid item xs={12}>
             <AddPresetCard />
           </Grid>
-          <Grid item xs={12}>
-            <React.Fragment>
-              {renderPresets(this.props.presets)}
-            </React.Fragment>
-          </Grid>
+          <React.Fragment>
+            {renderPresets(this.props.presets)}
+          </React.Fragment>
         </Grid>
       </div>
     );
   }
 }
 
-const renderPresets = (presets) => Object.keys(presets).map((key) => (<PresetsCard key={key} preset={includeKeyInObject(key, presets[key])} />))
+const renderPresets = (presets) => Object.keys(presets).map((key) => (
+  <Grid item xs={6}>
+    <PresetsCard key={key} preset={includeKeyInObject(key, presets[key])} />
+  </Grid>
+  ))
 
 
 const mapStateToProps = state => ({ 
