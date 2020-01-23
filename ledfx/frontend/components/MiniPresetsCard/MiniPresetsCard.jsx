@@ -7,7 +7,7 @@ import CardContent from '@material-ui/core/CardContent';
 import CardActions from '@material-ui/core/CardActions';
 import Button from '@material-ui/core/Button';
 
-import { activatePreset } from 'frontend/actions';
+import { activatePreset, getPresets } from 'frontend/actions';
 
 const styles = theme => ({ 
   button: {
@@ -65,7 +65,7 @@ const mapStateToProps = state => ({
 })
 
 const mapDispatchToProps = (dispatch) => ({
-  activatePreset: (presetId) => dispatch(activatePreset(presetId));
+  activatePreset: (presetId) => dispatch(activatePreset(presetId)),
   getPresets: () => dispatch(getPresets())
 })
 
