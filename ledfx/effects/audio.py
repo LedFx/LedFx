@@ -224,6 +224,7 @@ class MelbankInputSource(AudioInputSource):
         
         self._initialize_melbank()
         self._initialize_pitch()
+        self._initialize_bpm()
 
     def _invalidate_caches(self):
         """Invalidates the cache for all melbank related data"""
@@ -451,6 +452,8 @@ class MelbankInputSource(AudioInputSource):
             self.mel_gain.update(np.max(smooth(raw_filter_banks, sigma=1.0)))
             filter_banks = raw_filter_banks / self.mel_gain.value
             filter_banks = self.mel_smoothing.update(filter_banks)
+
+            self.bpm_update(raw_filter_banks[:self.lows_index])
         else:
             raw_filter_banks = np.zeros(self._config['samples'])
             filter_banks = raw_filter_banks
@@ -470,6 +473,107 @@ class MelbankInputSource(AudioInputSource):
 
     def melbank_highs(self):
         return self.melbank()[self.mids_index:]
+
+    def _initialize_bpm(self):
+        self.min_bpm = 70
+        self.max_bpm = 160
+        window_len = 20 # 20 secs of audio
+        self.sample_rate = 60 # audio samples per second
+        self._bpm_update_count = 0 # counter for when to recalculate bpm
+
+        min_seconds_per_bar = 4/(self.min_bpm/60)
+        max_seconds_per_bar = 4/(self.max_bpm/60)
+
+        self.bpm_max_idx = int(self.sample_rate*min_seconds_per_bar) # slow bpm -> longer bar length, more samples
+        self.bpm_min_idx = int(self.sample_rate*max_seconds_per_bar) # fast bpm -> shorter bar length, fewer samples
+        self._rolling_window = np.zeros(self.sample_rate*window_len) # assume melbank called at 60fps, construct 7 sec window
+        print(self.bpm_max_idx, self.bpm_min_idx)
+
+    def bpm_update(self, lows_frame):
+        """
+        Ideally called every frame of audio (when melbank called).
+        updates rolling window of lows audio data
+        """
+        # Apply some scaling to distinguish high values
+        lows_value = np.sum(lows_frame)
+        #high_value = np.sum(high_frame)
+        lows_value = lows_value ** 2
+        #high_value = high_value ** 3
+
+        # roll and update window with new audio frames
+        self._rolling_window = np.roll(self._rolling_window, 1)
+        self._rolling_window[0] = lows_value #+ high_value
+
+        self._bpm_update_count += 1
+        if self._bpm_update_count == 30:
+            self.bpm_recalculate()
+            self._bpm_update_count = 0
+
+    def bpm_recalculate(self):
+        """
+        Searches for bar periodicity.
+        Takes lows as they tend to be very rhythmic.
+        Ignores mids and highs.
+        should be called every half second or so
+        """
+
+        # autocorrelate the rolling window to extract periodicity data
+        correl = np.correlate(self._rolling_window,
+                              self._rolling_window, mode='full')
+
+        # select only the important part of the autocorrelation (between mid and max bpm ranges and ignore negative roll correlation)
+        correl_midpoint = len(correl)//2
+        correl_trimmed = correl[correl_midpoint+self.bpm_min_idx : correl_midpoint+self.bpm_max_idx]
+        correl_trimmed -= np.mean(correl_trimmed) # round mean down to zero
+        correl_trimmed[correl_trimmed<0] = 0
+        correl_peaks = (np.diff(np.sign(np.diff(correl_trimmed))) < 0).nonzero()[0] + 1 # detect peaks in correlation
+
+        if len(correl_peaks) > 0:
+            strong_correls = correl_trimmed[correl_peaks] > (0.4*np.max(correl_trimmed[correl_peaks])) # remove peaks less than 40% value of strongest
+            refined_correl_peaks = correl_peaks[strong_correls]
+            # best_peak = np.argmax(correl_trimmed[refined_correl_peaks])
+            # best_peak_idx = refined_correl_peaks[best_peak]
+
+            # Choose best bpm candidates by quantizing to 4 beats per bar
+            quantize_fits = []
+            for possible_periodicity in refined_correl_peaks:
+                possible_periodicity += self.bpm_min_idx # periodicity correction
+                # construct a window with beats at the rate of the candidate bpm
+                quantizing_window = np.zeros(possible_periodicity)
+                beat_offsets = [0, 0.25, 0.5, 0.75] # four beats in bar. relative beat locations in bar.
+                for offset in beat_offsets:
+                    quantizing_window[int(possible_periodicity*offset)] = 1
+                # determine fit of quantizing grid to rolling lows window
+                correlations = np.correlate(self._rolling_window[:2*possible_periodicity], quantizing_window, mode='valid')
+                quantize_fits.append(np.max(correlations))
+
+            # assign overall scores to each candidate periodicity based on raw correlation value and quantization value
+            periodicity_scores = correl_trimmed[refined_correl_peaks] * quantize_fits
+            best_periodicity = np.argmax(periodicity_scores)
+            best_periodicity = refined_correl_peaks[best_periodicity]
+
+            # refined_correl_peaks += self.bpm_min_idx 
+            # refined_correl_peaks = refined_correl_peaks / self.sample_rate 
+            # possible_bpms = 60/(refined_correl_peaks/4) # map to possible bpms
+            # print(possible_bpms, periodicity_scores)
+
+            bar_hz = (best_periodicity+self.bpm_min_idx)/self.sample_rate
+            beat_hz = bar_hz/4
+            bpm = 60/beat_hz
+
+            if self._ledfx.dev_enabled():
+                print("BPM: ", bpm)
+                graph_len = 50
+                bar_interped = math.interpolate(self._rolling_window[:best_periodicity+self.bpm_min_idx], graph_len)
+                bar_interped_labels = math.interpolate(np.arange(0, bar_hz), graph_len)
+                self._ledfx.events.fire_event(GraphUpdateEvent(
+                    'lows', bar_interped, bar_interped_labels))
+                self._ledfx.events.fire_event(GraphUpdateEvent(
+                    'bpm', correl_trimmed[::-1], math.interpolate(np.arange(self.min_bpm, self.max_bpm), len(correl_trimmed))))
+        else:
+            if self._ledfx.dev_enabled():
+                print("no bpm detected")
+
 
     @lru_cache(maxsize=32)
     def melbank_filtered(self):

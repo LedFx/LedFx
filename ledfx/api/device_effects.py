@@ -124,8 +124,9 @@ class EffectsEndpoint(RestEndpoint):
 
         for device in self._ledfx.config['devices']:
             if (device['id'] == device_id):
-                del device['effect']
-                break
+                if 'effect' in device:
+                    del device['effect']
+                    break
         save_config(
             config = self._ledfx.config, 
             config_dir = self._ledfx.config_dir)
