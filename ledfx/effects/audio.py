@@ -531,21 +531,20 @@ class MelbankInputSource(AudioInputSource):
         if len(correl_peaks) > 0:
             strong_correls = correl_trimmed[correl_peaks] > (0.4*np.max(correl_trimmed[correl_peaks])) # remove peaks less than 40% value of strongest
             refined_correl_peaks = correl_peaks[strong_correls]
-            # best_peak = np.argmax(correl_trimmed[refined_correl_peaks])
-            # best_peak_idx = refined_correl_peaks[best_peak]
 
             # Choose best bpm candidates by quantizing to 4 beats per bar
             quantize_fits = []
-            for possible_periodicity in refined_correl_peaks:
-                possible_periodicity += self.bpm_min_idx # periodicity correction
+            for periodicity in refined_correl_peaks:
+                periodicity += self.bpm_min_idx # periodicity correction
                 # construct a window with beats at the rate of the candidate bpm
-                quantizing_window = np.zeros(possible_periodicity)
+                quantizing_window = np.zeros(periodicity)
                 beat_offsets = [0, 0.25, 0.5, 0.75] # four beats in bar. relative beat locations in bar.
                 for offset in beat_offsets:
-                    quantizing_window[int(possible_periodicity*offset)] = 1
+                    quantizing_window[int(periodicity*offset)] = 1
                 # determine fit of quantizing grid to rolling lows window
-                correlations = np.correlate(self._rolling_window[:2*possible_periodicity], quantizing_window, mode='valid')
-                quantize_fits.append(np.max(correlations))
+                n_bars = len(self._rolling_window) // periodicity
+                correlations = np.correlate(self._rolling_window[:n_bars*periodicity], quantizing_window, mode='valid')
+                quantize_fits.append(np.max(correlations)/n_bars)
 
             # assign overall scores to each candidate periodicity based on raw correlation value and quantization value
             periodicity_scores = correl_trimmed[refined_correl_peaks] * quantize_fits
