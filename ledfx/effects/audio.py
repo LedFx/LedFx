@@ -217,6 +217,7 @@ class MelbankInputSource(AudioInputSource):
 
         self._initialize_melbank()
         self._initialize_pitch()
+        self._initialize_bpm()
 
     def update_config(self, config):
         validated_config = self.CONFIG_SCHEMA(config)
@@ -454,6 +455,7 @@ class MelbankInputSource(AudioInputSource):
             filter_banks = self.mel_smoothing.update(filter_banks)
 
             self.bpm_update(raw_filter_banks[:self.lows_index])
+            self.update_oscillator()
         else:
             raw_filter_banks = np.zeros(self._config['samples'])
             filter_banks = raw_filter_banks
@@ -475,6 +477,13 @@ class MelbankInputSource(AudioInputSource):
         return self.melbank()[self.mids_index:]
 
     def _initialize_bpm(self):
+        self.bpm = 120
+        self.beat_hz = 0.5
+        self.next_beat_offset = 0
+        self.offset_calculated_at = time.time()
+        self.beat_oscillator = 0
+        self.beat_now = False
+
         self.min_bpm = 70
         self.max_bpm = 160
         window_len = 20 # 20 secs of audio
@@ -487,7 +496,8 @@ class MelbankInputSource(AudioInputSource):
         self.bpm_max_idx = int(self.sample_rate*min_seconds_per_bar) # slow bpm -> longer bar length, more samples
         self.bpm_min_idx = int(self.sample_rate*max_seconds_per_bar) # fast bpm -> shorter bar length, fewer samples
         self._rolling_window = np.zeros(self.sample_rate*window_len) # assume melbank called at 60fps, construct 7 sec window
-        print(self.bpm_max_idx, self.bpm_min_idx)
+
+        self.oscillator_filter = ExpFilter(alpha_decay = 0.999, alpha_rise = 0.8)
 
     def bpm_update(self, lows_frame):
         """
@@ -532,7 +542,7 @@ class MelbankInputSource(AudioInputSource):
             strong_correls = correl_trimmed[correl_peaks] > (0.4*np.max(correl_trimmed[correl_peaks])) # remove peaks less than 40% value of strongest
             refined_correl_peaks = correl_peaks[strong_correls]
 
-            # Choose best bpm candidates by quantizing to 4 beats per bar
+            # score bpm candidates by quantizing to 4 beats per bar
             quantize_fits = []
             quantize_offsets = []
             for periodicity in refined_correl_peaks:
@@ -551,25 +561,22 @@ class MelbankInputSource(AudioInputSource):
                 quantize_fits.append(fit)
                 quantize_offsets.append(offset)
 
-            # assign overall scores to each candidate periodicity based on raw correlation value and quantization value
-            periodicity_scores = correl_trimmed[refined_correl_peaks] * quantize_fits
+            # assign overall scores to each candidate periodicity based on raw correlation value and quantization score
+            periodicity_scores = correl_trimmed[refined_correl_peaks] * np.power(quantize_fits, 2)
             best_periodicity = np.argmax(periodicity_scores)
             offset = quantize_offsets[best_periodicity]
             best_periodicity = refined_correl_peaks[best_periodicity]
 
-            # refined_correl_peaks += self.bpm_min_idx 
-            # refined_correl_peaks = refined_correl_peaks / self.sample_rate 
-            # possible_bpms = 60/(refined_correl_peaks/4) # map to possible bpms
-            # print(possible_bpms, periodicity_scores)
-
             bar_hz = (best_periodicity+self.bpm_min_idx)/self.sample_rate
-            beat_hz = bar_hz/4
-            bpm = 60/beat_hz
-            next_beat_offset = offset/self.sample_rate
+            self.beat_hz = bar_hz/4
+            self.bpm = 60/self.beat_hz
+            self.next_beat_offset = offset/self.sample_rate
+            self.offset_calculated_at = time.time()
 
             if self._ledfx.dev_enabled():
-                print("BPM: ", bpm)
-                print("TIME UNTIL NEXT BEAT: ", next_beat_offset)
+                # print("BPM:                  ", self.bpm)
+                # print("BEAT HZ:              ", self.beat_hz)
+                # print("TIME UNTIL NEXT BEAT: ", self.next_beat_offset)
                 graph_len = 50
                 bar_interped = math.interpolate(self._rolling_window[:best_periodicity+self.bpm_min_idx], graph_len)
                 bar_interped_labels = math.interpolate(np.arange(0, bar_hz), graph_len)
@@ -582,6 +589,26 @@ class MelbankInputSource(AudioInputSource):
                 # print("no bpm detected")
                 pass
 
+    def update_oscillator(self):
+        """
+        returns a float (0<=x<1) corresponding to the current position of beat tracker.
+        this is synced and quantized to the bpm of whatever is playing.
+        
+        0                0.5                 <1
+        {----------time for one beat---------}
+               ^    -->      -->      -->
+            value of
+           oscillator
+        """
+        time_since_offset_calculated = time.time()-self.offset_calculated_at
+        adjusted_offset = self.next_beat_offset - time_since_offset_calculated
+        adjusted_offset = adjusted_offset % self.beat_hz
+        oscillator = (self.beat_hz-adjusted_offset)/self.beat_hz
+        # print(int(self.bpm), "#"*int(20*oscillator), end="                      \r")
+        self.beat_now = False
+        if oscillator < (self.beat_oscillator - 0.9):
+            self.beat_now = True
+        self.beat_oscillator = self.oscillator_filter.update(oscillator)
 
     @lru_cache(maxsize=32)
     def melbank_filtered(self):
