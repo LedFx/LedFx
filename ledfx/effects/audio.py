@@ -534,6 +534,7 @@ class MelbankInputSource(AudioInputSource):
 
             # Choose best bpm candidates by quantizing to 4 beats per bar
             quantize_fits = []
+            quantize_offsets = []
             for periodicity in refined_correl_peaks:
                 periodicity += self.bpm_min_idx # periodicity correction
                 # construct a window with beats at the rate of the candidate bpm
@@ -543,12 +544,17 @@ class MelbankInputSource(AudioInputSource):
                     quantizing_window[int(periodicity*offset)] = 1
                 # determine fit of quantizing grid to rolling lows window
                 n_bars = len(self._rolling_window) // periodicity
-                correlations = np.correlate(self._rolling_window[:n_bars*periodicity], quantizing_window, mode='valid')
-                quantize_fits.append(np.max(correlations)/n_bars)
+                correlations = np.correlate(self._rolling_window[:n_bars*periodicity], quantizing_window, mode='full')
+                fit = np.max(correlations)/n_bars
+                offset = np.argmax(correlations) # offset of quantize window, allows determination of time until next beat
+                offset = periodicity/4 - offset%(periodicity/4) # gives time to next beat
+                quantize_fits.append(fit)
+                quantize_offsets.append(offset)
 
             # assign overall scores to each candidate periodicity based on raw correlation value and quantization value
             periodicity_scores = correl_trimmed[refined_correl_peaks] * quantize_fits
             best_periodicity = np.argmax(periodicity_scores)
+            offset = quantize_offsets[best_periodicity]
             best_periodicity = refined_correl_peaks[best_periodicity]
 
             # refined_correl_peaks += self.bpm_min_idx 
@@ -559,9 +565,11 @@ class MelbankInputSource(AudioInputSource):
             bar_hz = (best_periodicity+self.bpm_min_idx)/self.sample_rate
             beat_hz = bar_hz/4
             bpm = 60/beat_hz
+            next_beat_offset = offset/self.sample_rate
 
             if self._ledfx.dev_enabled():
                 print("BPM: ", bpm)
+                print("TIME UNTIL NEXT BEAT: ", next_beat_offset)
                 graph_len = 50
                 bar_interped = math.interpolate(self._rolling_window[:best_periodicity+self.bpm_min_idx], graph_len)
                 bar_interped_labels = math.interpolate(np.arange(0, bar_hz), graph_len)
@@ -571,7 +579,8 @@ class MelbankInputSource(AudioInputSource):
                     'bpm', correl_trimmed[::-1], math.interpolate(np.arange(self.min_bpm, self.max_bpm), len(correl_trimmed))))
         else:
             if self._ledfx.dev_enabled():
-                print("no bpm detected")
+                # print("no bpm detected")
+                pass
 
 
     @lru_cache(maxsize=32)
