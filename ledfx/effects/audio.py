@@ -217,7 +217,9 @@ class MelbankInputSource(AudioInputSource):
 
         self._initialize_melbank()
         self._initialize_pitch()
-        self._initialize_bpm()
+        self._initialize_tempo()
+        self._initialize_oscillator()
+        #self._initialize_bpm()
 
     def update_config(self, config):
         validated_config = self.CONFIG_SCHEMA(config)
@@ -225,7 +227,9 @@ class MelbankInputSource(AudioInputSource):
         
         self._initialize_melbank()
         self._initialize_pitch()
-        self._initialize_bpm()
+        self._initialize_tempo()
+        self._initialize_oscillator()
+        #self._initialize_bpm()
 
     def _invalidate_caches(self):
         """Invalidates the cache for all melbank related data"""
@@ -236,13 +240,22 @@ class MelbankInputSource(AudioInputSource):
         self.midi_value.cache_clear()
 
     def _initialize_pitch(self):
-        
         self.pitch_o = aubio.pitch("schmitt",
             self._config['fft_size'],
             self._config['mic_rate'] // self._config['sample_rate'],
             self._config['mic_rate'])
         self.pitch_o.set_unit("midi")
         self.pitch_o.set_tolerance(self._config['pitch_tolerance'])
+
+    def _initialize_tempo(self):
+        self.tempo_o = aubio.tempo("default",
+            self._config['fft_size'],
+            self._config['mic_rate'] // self._config['sample_rate'],
+            self._config['mic_rate'])
+
+    def _initialize_oscillator(self):
+        self.beat_timestamp = time.time()
+        self.beat_period = 2
 
     def _initialize_melbank(self):
         """Initialize all the melbank related variables"""
@@ -454,8 +467,6 @@ class MelbankInputSource(AudioInputSource):
             filter_banks = raw_filter_banks / self.mel_gain.value
             filter_banks = self.mel_smoothing.update(filter_banks)
 
-            self.bpm_update(raw_filter_banks[:self.lows_index])
-            self.update_oscillator()
         else:
             raw_filter_banks = np.zeros(self._config['samples'])
             filter_banks = raw_filter_banks
@@ -475,140 +486,6 @@ class MelbankInputSource(AudioInputSource):
 
     def melbank_highs(self):
         return self.melbank()[self.mids_index:]
-
-    def _initialize_bpm(self):
-        self.bpm = 120
-        self.beat_hz = 0.5
-        self.next_beat_offset = 0
-        self.offset_calculated_at = time.time()
-        self.beat_oscillator = 0
-        self.beat_now = False
-
-        self.min_bpm = 70
-        self.max_bpm = 160
-        window_len = 20 # 20 secs of audio
-        self.sample_rate = 60 # audio samples per second
-        self._bpm_update_count = 0 # counter for when to recalculate bpm
-
-        min_seconds_per_bar = 4/(self.min_bpm/60)
-        max_seconds_per_bar = 4/(self.max_bpm/60)
-
-        self.bpm_max_idx = int(self.sample_rate*min_seconds_per_bar) # slow bpm -> longer bar length, more samples
-        self.bpm_min_idx = int(self.sample_rate*max_seconds_per_bar) # fast bpm -> shorter bar length, fewer samples
-        self._rolling_window = np.zeros(self.sample_rate*window_len) # assume melbank called at 60fps, construct 7 sec window
-
-        self.oscillator_filter = ExpFilter(alpha_decay = 0.999, alpha_rise = 0.8)
-
-    def bpm_update(self, lows_frame):
-        """
-        Ideally called every frame of audio (when melbank called).
-        updates rolling window of lows audio data
-        """
-        # Apply some scaling to distinguish high values
-        lows_value = np.sum(lows_frame)
-        #high_value = np.sum(high_frame)
-        lows_value = lows_value ** 2
-        #high_value = high_value ** 3
-
-        # roll and update window with new audio frames
-        self._rolling_window = np.roll(self._rolling_window, 1)
-        self._rolling_window[0] = lows_value #+ high_value
-
-        self._bpm_update_count += 1
-        if self._bpm_update_count == 30:
-            self.bpm_recalculate()
-            self._bpm_update_count = 0
-
-    def bpm_recalculate(self):
-        """
-        Searches for bar periodicity.
-        Takes lows as they tend to be very rhythmic.
-        Ignores mids and highs.
-        should be called every half second or so
-        """
-
-        # autocorrelate the rolling window to extract periodicity data
-        correl = np.correlate(self._rolling_window,
-                              self._rolling_window, mode='full')
-
-        # select only the important part of the autocorrelation (between mid and max bpm ranges and ignore negative roll correlation)
-        correl_midpoint = len(correl)//2
-        correl_trimmed = correl[correl_midpoint+self.bpm_min_idx : correl_midpoint+self.bpm_max_idx]
-        correl_trimmed -= np.mean(correl_trimmed) # round mean down to zero
-        correl_trimmed[correl_trimmed<0] = 0
-        correl_peaks = (np.diff(np.sign(np.diff(correl_trimmed))) < 0).nonzero()[0] + 1 # detect peaks in correlation
-
-        if len(correl_peaks) > 0:
-            strong_correls = correl_trimmed[correl_peaks] > (0.4*np.max(correl_trimmed[correl_peaks])) # remove peaks less than 40% value of strongest
-            refined_correl_peaks = correl_peaks[strong_correls]
-
-            # score bpm candidates by quantizing to 4 beats per bar
-            quantize_fits = []
-            quantize_offsets = []
-            for periodicity in refined_correl_peaks:
-                periodicity += self.bpm_min_idx # periodicity correction
-                # construct a window with beats at the rate of the candidate bpm
-                quantizing_window = np.zeros(periodicity)
-                beat_offsets = [0, 0.25, 0.5, 0.75] # four beats in bar. relative beat locations in bar.
-                for offset in beat_offsets:
-                    quantizing_window[int(periodicity*offset)] = 1
-                # determine fit of quantizing grid to rolling lows window
-                n_bars = len(self._rolling_window) // periodicity
-                correlations = np.correlate(self._rolling_window[:n_bars*periodicity], quantizing_window, mode='full')
-                fit = np.max(correlations)/n_bars
-                offset = np.argmax(correlations) # offset of quantize window, allows determination of time until next beat
-                offset = periodicity/4 - offset%(periodicity/4) # gives time to next beat
-                quantize_fits.append(fit)
-                quantize_offsets.append(offset)
-
-            # assign overall scores to each candidate periodicity based on raw correlation value and quantization score
-            periodicity_scores = correl_trimmed[refined_correl_peaks] * np.power(quantize_fits, 2)
-            best_periodicity = np.argmax(periodicity_scores)
-            offset = quantize_offsets[best_periodicity]
-            best_periodicity = refined_correl_peaks[best_periodicity]
-
-            bar_hz = (best_periodicity+self.bpm_min_idx)/self.sample_rate
-            self.beat_hz = bar_hz/4
-            self.bpm = 60/self.beat_hz
-            self.next_beat_offset = offset/self.sample_rate
-            self.offset_calculated_at = time.time()
-
-            if self._ledfx.dev_enabled():
-                # print("BPM:                  ", self.bpm)
-                # print("BEAT HZ:              ", self.beat_hz)
-                # print("TIME UNTIL NEXT BEAT: ", self.next_beat_offset)
-                graph_len = 50
-                bar_interped = math.interpolate(self._rolling_window[:best_periodicity+self.bpm_min_idx], graph_len)
-                bar_interped_labels = math.interpolate(np.arange(0, bar_hz), graph_len)
-                self._ledfx.events.fire_event(GraphUpdateEvent(
-                    'lows', bar_interped, bar_interped_labels))
-                self._ledfx.events.fire_event(GraphUpdateEvent(
-                    'bpm', correl_trimmed[::-1], math.interpolate(np.arange(self.min_bpm, self.max_bpm), len(correl_trimmed))))
-        else:
-            if self._ledfx.dev_enabled():
-                # print("no bpm detected")
-                pass
-
-    def update_oscillator(self):
-        """
-        returns a float (0<=x<1) corresponding to the current position of beat tracker.
-        this is synced and quantized to the bpm of whatever is playing.
-        
-        0                0.5                 <1
-        {----------time for one beat---------}
-               ^    -->      -->      -->
-            value of
-           oscillator
-        """
-        time_since_offset_calculated = time.time()-self.offset_calculated_at
-        adjusted_offset = self.next_beat_offset - time_since_offset_calculated
-        adjusted_offset = adjusted_offset % self.beat_hz
-        oscillator = (self.beat_hz-adjusted_offset)/self.beat_hz
-        # print(int(self.bpm), "#"*int(20*oscillator), end="                      \r")
-        self.beat_now = False
-        if oscillator < (self.beat_oscillator - 0.9):
-            self.beat_now = True
-        self.beat_oscillator = self.oscillator_filter.update(oscillator)
 
     @lru_cache(maxsize=32)
     def melbank_filtered(self):
@@ -633,6 +510,29 @@ class MelbankInputSource(AudioInputSource):
     def midi_value(self):
         return self.pitch_o(self.audio_sample())[0]
 
+    def oscillator(self):
+        """
+        returns a float (0<=x<1) corresponding to the current position of beat tracker.
+        this is synced and quantized to the bpm of whatever is playing.
+        
+        0                0.5                 <1
+        {----------time for one beat---------}
+               ^    -->      -->      -->
+            value of
+           oscillator
+        """
+        # update tempo and oscillator
+        is_beat = bool(self.tempo_o(self.audio_sample(raw=True))[0])
+        if is_beat:
+            self.beat_period = self.tempo_o.get_period_s()
+            self.beat_timestamp = time.time()
+            oscillator = 0
+        else:
+            time_since_beat = time.time()-self.beat_timestamp
+            oscillator = 1-(self.beat_period-time_since_beat)/self.beat_period
+            oscillator = min(1, oscillator) # ensure it's between 0 and 1. useful when audio cuts
+            oscillator = max(0, oscillator)
+        return oscillator, is_beat
 
 @Effect.no_registration
 class AudioReactiveEffect(Effect):

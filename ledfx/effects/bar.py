@@ -19,18 +19,19 @@ class BarAudioEffect(AudioReactiveEffect, GradientEffect):
 
     def audio_data_updated(self, data):
         # Run linear beat oscillator through easing method
+        beat_oscillator, beat_now = data.oscillator()
         if self._config["ease_method"] == "ease_in_out":
-            x = 0.5*np.sin(np.pi*(data.beat_oscillator-0.5))+0.5
+            x = 0.5*np.sin(np.pi*(beat_oscillator-0.5))+0.5
         elif self._config["ease_method"] == "ease_in":
-            x = data.beat_oscillator**2
+            x = beat_oscillator**2
         elif self._config["ease_method"] == "ease_out":
-            x = -(data.beat_oscillator-1)**2+1
+            x = -(beat_oscillator-1)**2+1
         elif self._config["ease_method"] == "linear":
-            x = data.beat_oscillator
+            x = beat_oscillator
 
         # Compute position of bar start and stop
         if self._config["mode"] == "wipe":
-            if data.beat_now:
+            if beat_now:
                 self.phase = 1-self.phase # flip flop 0->1, 1->0
                 if self.phase == 0:
                     self.color_idx += 0.125 # 8 colours, 4 beats to a bar
@@ -44,7 +45,7 @@ class BarAudioEffect(AudioReactiveEffect, GradientEffect):
 
         elif self._config["mode"] == "bounce":
             bar_len = 0.3
-            if data.beat_now:
+            if beat_now:
                 self.phase = 1-self.phase # flip flop 0->1, 1->0
                 self.color_idx += 0.125 # 8 colours, 4 beats to a bar
                 self.color_idx = self.color_idx % 1 # loop back to zero
@@ -57,7 +58,7 @@ class BarAudioEffect(AudioReactiveEffect, GradientEffect):
                 bar_start = 1-(x+bar_len)
 
         elif self._config["mode"] == "in-out":
-            if data.beat_now:
+            if beat_now:
                 self.phase = 1-self.phase # flip flop 0->1, 1->0
                 if self.phase == 0:
                     self.color_idx += 0.125 # 8 colours, 4 beats to a bar
