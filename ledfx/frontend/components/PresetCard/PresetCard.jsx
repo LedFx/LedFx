@@ -7,6 +7,7 @@ import CardContent from '@material-ui/core/CardContent';
 import CardActions from '@material-ui/core/CardActions';
 import Button from '@material-ui/core/Button';
 import red from '@material-ui/core/colors/red';
+import Typography from "@material-ui/core/Typography";
 
 import PresetConfigTable from "frontend/components/PresetCard/PresetConfigTable";
 
@@ -42,7 +43,9 @@ class PresetCard extends React.Component {
     return (
       <Card>
         <CardContent>
-          <h3>{preset.name}</h3>
+          <Typography variant="h5" color="inherit" className={classes.header}>
+            { preset.name }
+          </Typography>
           { preset.devices && <PresetConfigTable devices ={ preset.devices }/> }
         </CardContent>
         <CardActions className={classes.submitControls}>
