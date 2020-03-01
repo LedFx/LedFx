@@ -6,20 +6,30 @@ import Card from '@material-ui/core/Card';
 import CardContent from '@material-ui/core/CardContent';
 import CardHeader from '@material-ui/core/CardHeader';
 import Button from '@material-ui/core/Button';
+import Grid from "@material-ui/core/Grid";
 
 import { activatePreset, getPresets } from 'frontend/actions';
 import { mapIncludeKey } from 'frontend/utils/helpers';
 
 const useStyles = makeStyles(theme => ({ 
-  button: {
+  presetButton: {
     margin: theme.spacing.unit,
-    float: "right"
+    float: "right",
+    textDecoration: "none",
+    "&,&:hover": {
+      color: "#000000"
+    }
   },
   submitControls: {
     margin: theme.spacing.unit,
     display: "flex",
     width: "100%"
   },
+  buttonGrid: {
+    direction: "row",
+    justify: "flex-start",
+    alignItems: "baseline"
+  }
 }))
 
 const MiniPresetsCard = ({ presets, activatePreset, getPresets }) => {
@@ -38,23 +48,25 @@ const MiniPresetsCard = ({ presets, activatePreset, getPresets }) => {
         </CardHeader>
         <CardContent className={classes.submitControls}>
         {/*Buttons to activate each preset*/}
-        {
+        <Grid container className={classes.buttonGrid}>
+          {
             mapIncludeKey(presets).map(preset => {
               return (
-                <Button
-                  key={preset.id}
-                  className={classes.button}
-                  color="primary"
-                  size="small"
-                  aria-label="Activate"
-                  variant = "contained"
-                  onClick={() => activatePreset(preset.id)}
-                >
-                  {preset.name}
-                </Button>
+                <Grid item>
+                  <Button
+                    key={preset.id}
+                    className={classes.presetButton}
+                    size="large"
+                    aria-label="Activate"
+                    onClick={() => activatePreset(preset.id)}
+                  >
+                    {preset.name}
+                  </Button>
+                </Grid>
               );
             })
-        }
+          }
+        </Grid>
         </CardContent>
       </Card>
     );
