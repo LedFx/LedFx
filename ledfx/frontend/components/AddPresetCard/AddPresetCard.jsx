@@ -8,6 +8,7 @@ import CardContent from '@material-ui/core/CardContent';
 import CardActions from '@material-ui/core/CardActions';
 import TextField from '@material-ui/core/TextField';
 import Button from '@material-ui/core/Button';
+import Typography from "@material-ui/core/Typography";
 
 import { addPreset } from 'frontend/actions';
 
@@ -30,8 +31,12 @@ const AddPresetCard = ({ presets, addPreset }) =>  {
   return (
       <Card>
         <CardContent>
-          <h3>Add Preset</h3>
-          Save current effects of all devices as a preset
+          <Typography variant="h5" color="inherit" className={classes.header}>
+            Add Preset
+          </Typography>
+          <Typography variant="caption text" color="inherit" className={classes.subHeader}>
+            Save current effects of all devices as a preset
+          </Typography>
           <CardActions className = {classes.action}>
             <TextField
               error = {validateInput(name, presets)} 
