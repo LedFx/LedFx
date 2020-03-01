@@ -13,22 +13,21 @@ import { mapIncludeKey } from 'frontend/utils/helpers';
 
 const useStyles = makeStyles(theme => ({ 
   presetButton: {
-    margin: theme.spacing.unit,
-    float: "right",
+    size: "large",
+    margin: theme.spacing(1),
     textDecoration: "none",
     "&,&:hover": {
       color: "#000000"
     }
   },
   submitControls: {
-    margin: theme.spacing.unit,
     display: "flex",
     width: "100%"
   },
   buttonGrid: {
     direction: "row",
     justify: "flex-start",
-    alignItems: "baseline"
+    alignItems: "baseline",
   }
 }))
 
@@ -47,26 +46,24 @@ const MiniPresetsCard = ({ presets, activatePreset, getPresets }) => {
            {/*link header to presets management page*/}
         </CardHeader>
         <CardContent className={classes.submitControls}>
-        {/*Buttons to activate each preset*/}
-        <Grid container className={classes.buttonGrid}>
-          {
-            mapIncludeKey(presets).map(preset => {
-              return (
-                <Grid item>
-                  <Button
-                    key={preset.id}
-                    className={classes.presetButton}
-                    size="large"
-                    aria-label="Activate"
-                    onClick={() => activatePreset(preset.id)}
-                  >
-                    {preset.name}
-                  </Button>
-                </Grid>
-              );
-            })
-          }
-        </Grid>
+          {/*Buttons to activate each preset*/}
+          <Grid container className={classes.buttonGrid}>
+            {
+              mapIncludeKey(presets).map(preset => {
+                return (
+                  <Grid item>
+                    <Button
+                      key={preset.id}
+                      className={classes.presetButton}
+                      onClick={() => activatePreset(preset.id)}
+                    >
+                      {preset.name}
+                    </Button>
+                  </Grid>
+                );
+              })
+            }
+          </Grid>
         </CardContent>
       </Card>
     );
