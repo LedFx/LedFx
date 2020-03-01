@@ -17,6 +17,7 @@ class BarAudioEffect(AudioReactiveEffect, GradientEffect):
     def config_updated(self, config):
         self.phase = 0
         self.color_idx = 0
+        self.bar_len = 0.3
 
     def audio_data_updated(self, data):
         # Run linear beat oscillator through easing method
@@ -47,13 +48,13 @@ class BarAudioEffect(AudioReactiveEffect, GradientEffect):
                 bar_start = x
 
         elif self._config["mode"] == "bounce":
-            x = x*(1-bar_len)
+            x = x*(1-self.bar_len)
             if self.phase == 0:
-                bar_end = x+bar_len
+                bar_end = x+self.bar_len
                 bar_start = x
             elif self.phase == 1:
                 bar_end = 1-x
-                bar_start = 1-(x+bar_len)
+                bar_start = 1-(x+self.bar_len)
 
         elif self._config["mode"] == "in-out":
             if self.phase == 0:

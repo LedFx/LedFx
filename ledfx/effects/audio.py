@@ -54,7 +54,7 @@ class AudioInputSource(object):
         vol.Optional('mic_rate', default = 48000): int,
         vol.Optional('fft_size', default = 1024): int,
         vol.Optional('device_index', default = 0): int,
-        vol.Optional('pre_emphasis', default = 0.0): float,
+        vol.Optional('pre_emphasis', default = 0.3): float,
         vol.Optional('min_volume', default = -70.0): float
     }, extra=vol.ALLOW_EXTRA)
 
@@ -218,8 +218,8 @@ class MelbankInputSource(AudioInputSource):
         self._initialize_melbank()
         self._initialize_pitch()
         self._initialize_tempo()
+        self._initialize_onset()
         self._initialize_oscillator()
-        #self._initialize_bpm()
 
     def update_config(self, config):
         validated_config = self.CONFIG_SCHEMA(config)
@@ -228,8 +228,8 @@ class MelbankInputSource(AudioInputSource):
         self._initialize_melbank()
         self._initialize_pitch()
         self._initialize_tempo()
+        self._initialize_onset()
         self._initialize_oscillator()
-        #self._initialize_bpm()
 
     def _invalidate_caches(self):
         """Invalidates the cache for all melbank related data"""
@@ -252,6 +252,21 @@ class MelbankInputSource(AudioInputSource):
             self._config['fft_size'],
             self._config['mic_rate'] // self._config['sample_rate'],
             self._config['mic_rate'])
+
+    def _initialize_onset(self):
+        self.onset_high = aubio.onset("hfc",
+            self._config['fft_size'],
+            self._config['mic_rate'] // self._config['sample_rate'],
+            self._config['mic_rate'])
+        self.onset_mids = aubio.onset("phase",
+            self._config['fft_size'],
+            self._config['mic_rate'] // self._config['sample_rate'],
+            self._config['mic_rate'])
+        self.onset_lows = aubio.onset("specdiff",
+            self._config['fft_size'],
+            self._config['mic_rate'] // self._config['sample_rate'],
+            self._config['mic_rate'])
+
 
     def _initialize_oscillator(self):
         self.beat_timestamp = time.time()
@@ -467,6 +482,10 @@ class MelbankInputSource(AudioInputSource):
             filter_banks = raw_filter_banks / self.mel_gain.value
             filter_banks = self.mel_smoothing.update(filter_banks)
 
+            #print(self.onset_mids(self.audio_sample())[0])
+            #specdesc_high = self.specdesc_o_high(self._frequency_domain)[0]
+            #print(specdesc_high)
+
         else:
             raw_filter_banks = np.zeros(self._config['samples'])
             filter_banks = raw_filter_banks
@@ -509,6 +528,9 @@ class MelbankInputSource(AudioInputSource):
     @lru_cache(maxsize=32)
     def midi_value(self):
         return self.pitch_o(self.audio_sample())[0]
+
+    def onset(self):
+        return self.onset_o(self.audio_sample())[0]
 
     def oscillator(self):
         """
