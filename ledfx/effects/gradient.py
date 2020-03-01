@@ -132,7 +132,7 @@ class GradientEffect(Effect):
         #        np.dot(self.rgb_list[1], polynomial_array),
         #        np.dot(self.rgb_list[2], polynomial_array))
 
-        return self._gradient_curve[:, int(self.pixel_count*point)] 
+        return self._gradient_curve[:, int((self.pixel_count-1)*point)] 
                
     def config_updated(self, config):
         """Invalidate the gradient"""
