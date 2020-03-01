@@ -5,10 +5,7 @@ import withStyles from "@material-ui/core/styles/withStyles";
 
 import Card from '@material-ui/core/Card';
 import CardContent from '@material-ui/core/CardContent';
-import Typography from '@material-ui/core/Typography';
 
-import Table from '@material-ui/core/Table';
-import TableBody from '@material-ui/core/TableBody';
 import Grid from "@material-ui/core/Grid";
 import PixelColorGraph from "frontend/components/PixelColorGraph/PixelColorGraph.jsx";
 import DeviceMiniControl from 'frontend/components/DeviceMiniControl/DeviceMiniControl.jsx';
@@ -79,7 +76,11 @@ class DashboardView extends React.Component {
         <Grid container direction="row" spacing={4}>
           <Grid item xs={12}>
             <AddPresetCard />
-{/*            <MiniPresetsCard />*/}
+          </Grid>
+        </Grid>
+        <Grid container direction="row" spacing={4}>
+          <Grid item xs={12}>
+            <MiniPresetsCard />
           </Grid>
         </Grid>
       </div>
