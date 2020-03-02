@@ -12,18 +12,15 @@ class Strobe(AudioReactiveEffect):
     })
 
     def config_updated(self, config):
+        MAPPINGS = {"1/2 (.-. )": 2,
+                    "1/4 (.o. )": 4,
+                    "1/8 (◉◡◉ )": 8,
+                    "1/16 (◉﹏◉ )": 16,
+                    "1/32 (⊙▃⊙ )": 32}
         self.color = np.array(COLORS[self._config['color']], dtype=float)
-        self.mappings = {"1/2 (.-. )": 2,
-                         "1/4 (.o. )": 4,
-                         "1/8 (◉◡◉ )": 8,
-                         "1/16 (◉﹏◉ )": 16,
-                         "1/32 (⊙▃⊙ )": 32}
-
+        self.f = MAPPINGS[self._config["frequency"]]
 
     def audio_data_updated(self, data):
         beat_oscillator, beat_now = data.oscillator()
-        f = self.mappings[self._config["frequency"]]
-        brightness = (-beat_oscillator % (2 / f)) * (f / 2)
-        color_array = np.tile(self.color*brightness, (self.pixel_count, 1))
-        self.pixels = color_array
-
+        brightness = (-beat_oscillator % (2 / self.f)) * (self.f / 2)
+        self.pixels = np.tile(self.color*brightness, (self.pixel_count, 1))

@@ -6,6 +6,7 @@ import { MuiThemeProvider } from "@material-ui/core/styles";
 import Select from "@material-ui/core/Select";
 import InputLabel from "@material-ui/core/InputLabel";
 import MenuItem from "@material-ui/core/MenuItem";
+import ListSubheader from '@material-ui/core/ListSubheader';
 import FormControl from "@material-ui/core/FormControl";
 import Input from '@material-ui/core/Input';
 
@@ -138,6 +139,7 @@ class SchemaFormCollection extends React.Component {
             <em>None</em>
           </MenuItem>
           
+          {/* <ListSubheader>Test Subheader</ListSubheader> */}
           {Object.keys(schemaCollection).map(collectionKey => {
               return (
                 <MenuItem key={collectionKey} value={collectionKey}>
