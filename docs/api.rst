@@ -72,6 +72,34 @@ DELETE /api/effects/<effectId>
 ================================
 Deletes the effect with the matching effect id.
 
+GET /api/devices/<device_id>/presets
+================================
+Get active effect for a device
+
+PUT /api/devices/<device_id>/presets
+================================
+Set active effect of device to a preset
+
+POST /api/devices/<device_id>/presets
+================================
+Save configuration of device's active effect as a preset
+
+DELETE /api/devices/<device_id>/presets
+================================
+Clear effect of a device
+
+GET /api/effects/<effect_id>/presets
+================================
+Get all presets for an effect
+
+PUT /api/effects/<effect_id>/presets
+================================
+Rename a preset
+
+DELETE /api/effects/<effect_id>/presets
+================================
+Delete a preset
+
 ================================
 WebSocket API
 ================================
