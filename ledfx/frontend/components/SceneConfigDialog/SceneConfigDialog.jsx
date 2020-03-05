@@ -21,7 +21,7 @@ const styles = theme => ({
   }
 });
 
-class PresetsConfigDialog extends React.Component {
+class ScenesConfigDialog extends React.Component {
   constructor(props) {
     super(props);
   }
@@ -44,11 +44,11 @@ class PresetsConfigDialog extends React.Component {
         aria-labelledby="form-dialog-title"
         {...otherProps}
       >
-        <DialogTitle id="form-dialog-title">Add Preset</DialogTitle>
+        <DialogTitle id="form-dialog-title">Add Scene</DialogTitle>
         <DialogContent className={classes.cardResponsive}>
           <DialogContentText>
-            To add a preset to LedFx, please first configure the effects you wish to save,
-            select the type of preset you wish, and then provide the necessary configuration.
+            To add a scene to LedFx, please first configure the effects you wish to save,
+            select the type of scene you wish, and then provide the necessary configuration.
           </DialogContentText>
           <SchemaFormCollection
             schemaCollection={schemas.devices}
@@ -84,4 +84,4 @@ function mapStateToProps(state) {
   };
 }
 
-export default connect(mapStateToProps)(withStyles(styles)(PresetsConfigDialog));
+export default connect(mapStateToProps)(withStyles(styles)(ScenesConfigDialog));

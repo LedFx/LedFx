@@ -13,10 +13,10 @@ import CardContent from "@material-ui/core/CardContent";
 import Button from "@material-ui/core/Button";
 import AddIcon from "@material-ui/icons/Add";
 
-import PresetsCard from "frontend/components/PresetCard/PresetCard.jsx";
-import PresetsConfigDialog from "frontend/components/PresetConfigDialog/PresetConfigDialog.jsx";
-import AddPresetCard from "frontend/components/AddPresetCard/AddPresetCard";
-import { getPresets } from 'frontend/actions';
+import ScenesCard from "frontend/components/SceneCard/SceneCard.jsx";
+import ScenesConfigDialog from "frontend/components/SceneConfigDialog/SceneConfigDialog.jsx";
+import AddSceneCard from "frontend/components/AddSceneCard/AddSceneCard";
+import { getScenes } from 'frontend/actions';
 import { includeKeyInObject } from 'frontend/utils/helpers';
 
 const styles = theme => ({
@@ -34,13 +34,13 @@ const styles = theme => ({
   }
 });
 
-class PresetsView extends React.Component {
+class ScenesView extends React.Component {
   constructor(props) {
     super(props);
   }
 
   componentDidMount = () => {
-    this.props.getPresets()
+    this.props.getScenes()
   }
 
   render() {
@@ -49,10 +49,10 @@ class PresetsView extends React.Component {
       <div>
         <Grid container direction="row" spacing={4}>
           <Grid item xs={12}>
-            <AddPresetCard />
+            <AddSceneCard />
           </Grid>
           <React.Fragment>
-            {renderPresets(this.props.presets)}
+            {renderScenes(this.props.scenes)}
           </React.Fragment>
         </Grid>
       </div>
@@ -60,19 +60,19 @@ class PresetsView extends React.Component {
   }
 }
 
-const renderPresets = (presets) => Object.keys(presets).map((key) => (
+const renderScenes = (scenes) => Object.keys(scenes).map((key) => (
   <Grid item xs={6}>
-    <PresetsCard key={key} preset={includeKeyInObject(key, presets[key])} />
+    <ScenesCard key={key} scene={includeKeyInObject(key, scenes[key])} />
   </Grid>
   ))
 
 
 const mapStateToProps = state => ({ 
-  presets: state.presets 
+  scenes: state.scenes 
 })
 
 const mapDispatchToProps = (dispatch) => ({
-  getPresets: () => dispatch(getPresets())
+  getScenes: () => dispatch(getScenes())
 })
 
-export default connect(mapStateToProps, mapDispatchToProps)(withStyles(styles)(PresetsView));
+export default connect(mapStateToProps, mapDispatchToProps)(withStyles(styles)(ScenesView));

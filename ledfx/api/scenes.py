@@ -7,34 +7,34 @@ import json
 
 _LOGGER = logging.getLogger(__name__)
 
-class PresetsEndpoint(RestEndpoint):
-    """REST end-point for querying and managing presets"""
+class ScenesEndpoint(RestEndpoint):
+    """REST end-point for querying and managing scenes"""
 
-    ENDPOINT_PATH = "/api/presets"
+    ENDPOINT_PATH = "/api/scenes"
 
     async def get(self) -> web.Response:
-        """Get all presets"""
+        """Get all scenes"""
         response = {
             'status' : 'success' ,
-            'presets' : self._ledfx.config['presets'] 
+            'scenes' : self._ledfx.config['scenes'] 
         }
         return web.Response(text=json.dumps(response), status=200)
 
     async def delete(self, request) -> web.Response:
-        """Delete a preset"""
+        """Delete a scene"""
         data = await request.json()
 
-        preset_id = data.get('id')
-        if preset_id is None:
-            response = { 'status' : 'failed', 'reason': 'Required attribute "preset_id" was not provided' }
+        scene_id = data.get('id')
+        if scene_id is None:
+            response = { 'status' : 'failed', 'reason': 'Required attribute "scene_id" was not provided' }
             return web.Response(text=json.dumps(response), status=500)
 
-        if not preset_id in self._ledfx.config['presets'].keys():
-            response = { 'status' : 'failed', 'reason': 'Preset {} does not exist'.format(preset_id) }
+        if not scene_id in self._ledfx.config['scenes'].keys():
+            response = { 'status' : 'failed', 'reason': 'Scene {} does not exist'.format(scene_id) }
             return web.Response(text=json.dumps(response), status=500)
         
-        # Delete the preset from configuration
-        del self._ledfx.config['presets'][preset_id]
+        # Delete the scene from configuration
+        del self._ledfx.config['scenes'][scene_id]
 
         # Save the config
         save_config(
@@ -45,7 +45,7 @@ class PresetsEndpoint(RestEndpoint):
         return web.Response(text=json.dumps(response), status=200)
 
     async def put(self, request) -> web.Response:
-        """Activate a preset"""
+        """Activate a scene"""
         data = await request.json()
 
         action = data.get('action')
@@ -57,32 +57,32 @@ class PresetsEndpoint(RestEndpoint):
             response = { 'status' : 'failed', 'reason': 'Invalid action "{}"'.format(action) }
             return web.Response(text=json.dumps(response), status=500)
 
-        preset_id = data.get('id')
-        if preset_id is None:
-            response = { 'status' : 'failed', 'reason': 'Required attribute "preset_id" was not provided' }
+        scene_id = data.get('id')
+        if scene_id is None:
+            response = { 'status' : 'failed', 'reason': 'Required attribute "scene_id" was not provided' }
             return web.Response(text=json.dumps(response), status=500)
 
-        if not preset_id in self._ledfx.config['presets'].keys():
-            response = { 'status' : 'failed', 'reason': 'Preset "{}" does not exist'.format(preset_id) }
+        if not scene_id in self._ledfx.config['scenes'].keys():
+            response = { 'status' : 'failed', 'reason': 'Scene "{}" does not exist'.format(scene_id) }
             return web.Response(text=json.dumps(response), status=500)
 
-        preset = self._ledfx.config['presets'][preset_id]
+        scene = self._ledfx.config['scenes'][scene_id]
 
         if action == "activate":
             for device in self._ledfx.devices.values():
-                # Check device is in preset, make no changes if it isn't
-                if not device.id in preset['devices'].keys():
-                    _LOGGER.info(('Device with id {} has no data in preset {}').format(device.id, preset_id))
+                # Check device is in scene, make no changes if it isn't
+                if not device.id in scene['devices'].keys():
+                    _LOGGER.info(('Device with id {} has no data in scene {}').format(device.id, scene_id))
                     continue
 
-                # Set effect of device to that saved in the preset,
-                # clear active effect of device if no effect in preset
-                if preset['devices'][device.id]:
+                # Set effect of device to that saved in the scene,
+                # clear active effect of device if no effect in scene
+                if scene['devices'][device.id]:
                     # Create the effect and add it to the device
                     effect = self._ledfx.effects.create(
                         ledfx = self._ledfx,
-                        type = preset['devices'][device.id]['type'],
-                        config = preset['devices'][device.id]['config'])
+                        type = scene['devices'][device.id]['type'],
+                        config = scene['devices'][device.id]['config'])
                     device.set_effect(effect)
                 else:
                     device.clear_effect()
@@ -94,7 +94,7 @@ class PresetsEndpoint(RestEndpoint):
                 return web.Response(text=json.dumps(response), status=500)
 
             # Update and save config
-            self._ledfx.config['presets'][preset_id]['name'] = name
+            self._ledfx.config['scenes'][scene_id]['name'] = name
             save_config(
                 config = self._ledfx.config, 
                 config_dir = self._ledfx.config_dir)
@@ -103,33 +103,33 @@ class PresetsEndpoint(RestEndpoint):
         return web.Response(text=json.dumps(response), status=200)
 
     async def post(self, request) -> web.Response:
-        """Save current effects of devices as a preset"""
+        """Save current effects of devices as a scene"""
         data = await request.json()
 
-        preset_name = data.get('name')
-        if preset_name is None:
-            response = { 'status' : 'failed', 'reason': 'Required attribute "preset_name" was not provided' }
+        scene_name = data.get('name')
+        if scene_name is None:
+            response = { 'status' : 'failed', 'reason': 'Required attribute "scene_name" was not provided' }
             return web.Response(text=json.dumps(response), status=500)
 
-        preset_id = generate_id(preset_name)
+        scene_id = generate_id(scene_name)
 
-        preset_config = {}
-        preset_config['name'] = preset_name
-        preset_config['devices'] = {}
+        scene_config = {}
+        scene_config['name'] = scene_name
+        scene_config['devices'] = {}
         for device in self._ledfx.devices.values():
             effect = {}
             if device.active_effect:
                 effect['type'] = device.active_effect.type
                 effect['config'] = device.active_effect.config
                 #effect['name'] = device.active_effect.name
-            preset_config['devices'][device.id] = effect
+            scene_config['devices'][device.id] = effect
 
-        # Update the preset if it already exists, else create it
-        self._ledfx.config['presets'][preset_id] = preset_config 
+        # Update the scene if it already exists, else create it
+        self._ledfx.config['scenes'][scene_id] = scene_config 
 
         save_config(
             config = self._ledfx.config, 
             config_dir = self._ledfx.config_dir)
 
-        response = { 'status' : 'success', 'preset': {'id': preset_id, 'config': preset_config }}
+        response = { 'status' : 'success', 'scene': {'id': scene_id, 'config': scene_config }}
         return web.Response(text=json.dumps(response), status=200)

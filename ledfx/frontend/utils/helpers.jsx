@@ -1,6 +1,6 @@
 export const includeKeyInObject = (key, object) => ({ id: key, ...object})
 
-export const mapIncludeKey = (presets) => {
-    const keys = Object.keys(presets)
-    return keys.map((k) => (includeKeyInObject(k, presets[k])))
+export const mapIncludeKey = (scenes) => {
+    const keys = Object.keys(scenes)
+    return keys.map((k) => (includeKeyInObject(k, scenes[k])))
 }

@@ -10,7 +10,7 @@ import TextField from '@material-ui/core/TextField';
 import Button from '@material-ui/core/Button';
 import Typography from "@material-ui/core/Typography";
 
-import { addPreset } from 'frontend/actions';
+import { addScene } from 'frontend/actions';
 
 const useStyles = makeStyles({ 
   button: {
@@ -23,7 +23,7 @@ const useStyles = makeStyles({
   }
 });
 
-const AddPresetCard = ({ presets, addPreset }) =>  {
+const AddSceneCard = ({ scenes, addScene }) =>  {
 
   const [ name, setName ] = useState('')
   const classes = useStyles()
@@ -32,16 +32,16 @@ const AddPresetCard = ({ presets, addPreset }) =>  {
       <Card>
         <CardContent>
           <Typography variant="h5" color="inherit" className={classes.header}>
-            Add Preset
+            Add Scene
           </Typography>
           <Typography variant="caption text" color="inherit" className={classes.subHeader}>
-            Save current effects of all devices as a preset
+            Save current effects of all devices as a scene
           </Typography>
           <CardActions className = {classes.action}>
             <TextField
-              error = {validateInput(name, presets)} 
-              id="presetNameInput"
-              label="Preset Name"
+              error = {validateInput(name, scenes)} 
+              id="sceneNameInput"
+              label="Scene Name"
               onChange={(e) => setName(e.target.value)}
             />
             <Button
@@ -49,9 +49,9 @@ const AddPresetCard = ({ presets, addPreset }) =>  {
               color="primary"
               size="small"
               aria-label="Save"
-              disabled = {validateInput(name, presets)} 
+              disabled = {validateInput(name, scenes)} 
               variant = "contained"
-              onClick = {() => addPreset(name)}
+              onClick = {() => addScene(name)}
             >
               Save
             </Button>
@@ -62,14 +62,14 @@ const AddPresetCard = ({ presets, addPreset }) =>  {
     );
 }
 
-const validateInput = (input, presets) => (Object.keys(presets).includes(input) || input === "")
+const validateInput = (input, scenes) => (Object.keys(scenes).includes(input) || input === "")
 
 const mapStateToProps = state => ({ 
-  presets: state.presets
+  scenes: state.scenes
 })
 
 const mapDispatchToProps = (dispatch) => ({
-  addPreset: (presetName) => dispatch(addPreset(presetName))
+  addScene: (sceneName) => dispatch(addScene(sceneName))
 })
 
-export default connect(mapStateToProps, mapDispatchToProps)(AddPresetCard);
+export default connect(mapStateToProps, mapDispatchToProps)(AddSceneCard);

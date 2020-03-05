@@ -8,12 +8,12 @@ export const GET_PRESETS = "GET_PRESETS"
 export const ACTIVATE_PRESET = "ACTIVATE_PRESET"
 export const RENAME_PRESET = "RENAME_PRESET"
 
-export function addPreset(name) {
+export function addScene(name) {
   return dispatch => {
     const data = {
       name: name
     };
-    return fetch(`${apiUrl}/presets`, {
+    return fetch(`${apiUrl}/scenes`, {
       method: "POST",
       headers: {
         Accept: "application/json",
@@ -26,16 +26,16 @@ export function addPreset(name) {
         type: ADD_PRESET,
         response: json
       }))
-      .then(() => dispatch(getPresets()))
+      .then(() => dispatch(getScenes()))
   };
 }
 
-export function deletePreset(id) {
+export function deleteScene(id) {
   return dispatch => {
     const data = {
       id: id
     };
-    return fetch(`${apiUrl}/presets`, {
+    return fetch(`${apiUrl}/scenes`, {
       method: "DELETE",
       headers: {
         Accept: "application/json",
@@ -48,17 +48,17 @@ export function deletePreset(id) {
         type: DELETE_PRESET,
         response: json
       }))
-      .then(() => dispatch(getPresets()))
+      .then(() => dispatch(getScenes()))
   };
 }
 
-export function activatePreset(id) {
+export function activateScene(id) {
   return dispatch => {
     const data = {
       id: id,
       action: 'activate'
     };
-    fetch(`${apiUrl}/presets`, {
+    fetch(`${apiUrl}/scenes`, {
       method: "PUT",
       headers: {
         Accept: "application/json",
@@ -74,14 +74,14 @@ export function activatePreset(id) {
   };
 }
 
-export function renamePreset(id, name) {
+export function renameScene(id, name) {
   return dispatch => {
     const data = {
       id: id,
       action: 'rename',
       name: name
     };
-    fetch(`${apiUrl}/presets`, {
+    fetch(`${apiUrl}/scenes`, {
       method: "PUT",
       headers: {
         Accept: "application/json",
@@ -98,9 +98,9 @@ export function renamePreset(id, name) {
 }
 
 
-export function getPresets() {
+export function getScenes() {
   return dispatch => {
-    fetch(`${apiUrl}/presets`, {
+    fetch(`${apiUrl}/scenes`, {
       method: "GET",
       headers: {
         Accept: "application/json",
@@ -110,7 +110,7 @@ export function getPresets() {
       .then(response => response.json())
       .then(json => dispatch({
           type: GET_PRESETS,
-          presets: json.presets,
+          scenes: json.scenes,
           receivedAt: Date.now()
       }))
   }

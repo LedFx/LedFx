@@ -9,8 +9,8 @@ import CardContent from '@material-ui/core/CardContent';
 import Grid from "@material-ui/core/Grid";
 import PixelColorGraph from "frontend/components/PixelColorGraph/PixelColorGraph.jsx";
 import DeviceMiniControl from 'frontend/components/DeviceMiniControl/DeviceMiniControl.jsx';
-import AddPresetCard from "frontend/components/AddPresetCard/AddPresetCard";
-import MiniPresetsCard from "frontend/components/MiniPresetsCard/MiniPresetsCard";
+import AddSceneCard from "frontend/components/AddSceneCard/AddSceneCard";
+import MiniScenesCard from "frontend/components/MiniScenesCard/MiniScenesCard";
 
 
 const styles = theme => ({
@@ -75,12 +75,12 @@ class DashboardView extends React.Component {
 
         <Grid container direction="row" spacing={4}>
           <Grid item xs={12}>
-            <AddPresetCard />
+            <AddSceneCard />
           </Grid>
         </Grid>
         <Grid container direction="row" spacing={4}>
           <Grid item xs={12}>
-            <MiniPresetsCard />
+            <MiniScenesCard />
           </Grid>
         </Grid>
       </div>
