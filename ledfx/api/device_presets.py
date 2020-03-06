@@ -26,7 +26,7 @@ class DevicePresetsEndpoint(RestEndpoint):
         if category is None:
             response = {
                 'status' : 'success' ,
-                'default_presets' : self._ledfx.config['default_presets'][effect_id]
+                'default_presets' : self._ledfx.config['default_presets'][effect_id],
                 'custom_presets' : self._ledfx.config['custom_presets'][effect_id]
             }
 
@@ -107,7 +107,7 @@ class DevicePresetsEndpoint(RestEndpoint):
         return web.Response(text=json.dumps(response), status=200)
 
     async def post(self, device_id, request) -> web.Response:
-        """save configuration of active device effect as a preset"""
+        """save configuration of active device effect as a custom preset"""
         device = self._ledfx.devices.get(device_id)
         if device is None:
             response = { 'not found': 404 }

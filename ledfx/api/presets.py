@@ -16,7 +16,7 @@ class PresetsEndpoint(RestEndpoint):
         """Get all presets for an effect"""
         response = {
             'status' : 'success' ,
-            'default_presets' : self._ledfx.config['default_presets'][effect_id]
+            'default_presets' : self._ledfx.config['default_presets'][effect_id],
             'custom_presets' : self._ledfx.config['custom_presets'][effect_id]
         }
         return web.Response(text=json.dumps(response), status=200)
