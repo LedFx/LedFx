@@ -10,21 +10,35 @@ class DevicePresetsEndpoint(RestEndpoint):
 
     ENDPOINT_PATH = "/api/devices/{device_id}/presets"
 
-    async def get(self, device_id) -> web.Response:
-        """get active effect for a device"""
+    async def get(self, device_id, request) -> web.Response:
+        """get presets for active effect of a device"""
         device = self._ledfx.devices.get(device_id)
         if device is None:
             response = { 'not found': 404 }
             return web.Response(text=json.dumps(response), status=404)
 
-        # Get the active effect
-        response = { 'effect' : {}}
-        if device.active_effect:
-            effect_response = {}
-            effect_response['config'] = device.active_effect.config
-            effect_response['name'] = device.active_effect.name
-            effect_response['type'] = device.active_effect.type
-            response = { 'effect' : effect_response }
+        if not device.active_effect:
+            response = { 'status' : 'failed', 'reason': 'Device {} has no active effect'.format(device) }
+            return web.Response(text=json.dumps(response), status=500)
+
+        effect_id = device.active_effect.type
+        category = data.get('category')
+        if category is None:
+            response = {
+                'status' : 'success' ,
+                'default_presets' : self._ledfx.config['default_presets'][effect_id]
+                'custom_presets' : self._ledfx.config['custom_presets'][effect_id]
+            }
+
+        elif category in ["default_presets", "custom_presets"]:
+            response = {
+                'status' : 'success' ,
+                category : self._ledfx.config[category][effect_id]
+            }
+
+        else:
+            response = { 'status' : 'failed', 'reason': 'Category {} is not "default_presets" or "custom_presets"'.format(category) }
+            return web.Response(text=json.dumps(response), status=500)
 
         return web.Response(text=json.dumps(response), status=200)
 
@@ -36,27 +50,36 @@ class DevicePresetsEndpoint(RestEndpoint):
             return web.Response(text=json.dumps(response), status=404)
 
         data = await request.json()
+        category = data.get('category')
         effect_id = data.get('effect_id')
         preset_id = data.get('preset_id')
+
+        if category is None:
+            response = { 'status' : 'failed', 'reason': 'Required attribute "category" was not provided' }
+            return web.Response(text=json.dumps(response), status=500)
+
+        if not category in ["default_presets", "custom_presets"]:
+            response = { 'status' : 'failed', 'reason': 'Category {} is not "default_presets" or "custom_presets"'.format(category) }
+            return web.Response(text=json.dumps(response), status=500)
 
         if effect_id is None:
             response = { 'status' : 'failed', 'reason': 'Required attribute "effect_id" was not provided' }
             return web.Response(text=json.dumps(response), status=500)
 
-        if not effect_id in self._ledfx.config['presets'].keys():
-            response = { 'status' : 'failed', 'reason': 'Effect {} has no presets'.format(preset_id) }
+        if not effect_id in self._ledfx.config[category].keys():
+            response = { 'status' : 'failed', 'reason': 'Effect {} does not exist in category {}'.format(effect_id, category) }
             return web.Response(text=json.dumps(response), status=500)
 
         if preset_id is None:
             response = { 'status' : 'failed', 'reason': 'Required attribute "preset_id" was not provided' }
             return web.Response(text=json.dumps(response), status=500)
 
-        if not preset_id in self._ledfx.config['presets'][effect_id].keys():
-            response = { 'status' : 'failed', 'reason': 'Preset {} does not exist for effect {}'.format(preset_id, effect_id) }
+        if not preset_id in self._ledfx.config[category][effect_id].keys():
+            response = { 'status' : 'failed', 'reason': 'Preset {} does not exist for effect {} in category {}'.format(preset_id, effect_id, category) }
             return web.Response(text=json.dumps(response), status=500)
 
         # Create the effect and add it to the device
-        effect_config = self._ledfx.config['presets'][effect_id][preset_id]['config']
+        effect_config = self._ledfx.config[category][effect_id][preset_id]['config']
         effect = self._ledfx.effects.create(
             ledfx = self._ledfx,
             type = effect_id,
@@ -103,13 +126,13 @@ class DevicePresetsEndpoint(RestEndpoint):
         preset_id = generate_id(preset_name)
 
         # If no presets for the effect, create a dict to store them
-        if not effect_id in self._ledfx.config['presets'].keys():
-            self._ledfx.config['presets'][effect_id] = {}
+        if not effect_id in self._ledfx.config['custom_presets'].keys():
+            self._ledfx.config['custom_presets'][effect_id] = {}
 
         # Update the preset if it already exists, else create it
-        self._ledfx.config['presets'][effect_id][preset_id] = {}
-        self._ledfx.config['presets'][effect_id][preset_id]['name'] = preset_name
-        self._ledfx.config['presets'][effect_id][preset_id]['config'] = device.active_effect.config
+        self._ledfx.config['custom_presets'][effect_id][preset_id] = {}
+        self._ledfx.config['custom_presets'][effect_id][preset_id]['name'] = preset_name
+        self._ledfx.config['custom_presets'][effect_id][preset_id]['config'] = device.active_effect.config
 
         save_config(
             config = self._ledfx.config, 

@@ -74,7 +74,7 @@ Deletes the effect with the matching effect id.
 
 GET /api/devices/<device_id>/presets
 ================================
-Get active effect for a device
+get presets for active effect of a device
 
 PUT /api/devices/<device_id>/presets
 ================================
@@ -82,7 +82,7 @@ Set active effect of device to a preset
 
 POST /api/devices/<device_id>/presets
 ================================
-Save configuration of device's active effect as a preset
+Save configuration of device's active effect as a custom preset
 
 DELETE /api/devices/<device_id>/presets
 ================================
