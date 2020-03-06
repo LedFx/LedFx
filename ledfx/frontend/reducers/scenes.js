@@ -1,10 +1,10 @@
 import {
-    GET_PRESETS
+    GET_SCENES
 } from 'frontend/actions'
 
 export function scenes(state = {}, action) {
     switch (action.type) {
-        case GET_PRESETS:
+        case GET_SCENES:
             return action.scenes;
         default:
             return state;

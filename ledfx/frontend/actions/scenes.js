@@ -2,11 +2,11 @@ import fetch from "cross-fetch";
 
 const apiUrl = window.location.protocol + "//" + window.location.host + "/api";
 
-export const ADD_PRESET = "ADD_PRESET"
-export const DELETE_PRESET = "DELETE_PRESET"
-export const GET_PRESETS = "GET_PRESETS"
-export const ACTIVATE_PRESET = "ACTIVATE_PRESET"
-export const RENAME_PRESET = "RENAME_PRESET"
+export const ADD_SCENE = "ADD_SCENE"
+export const DELETE_SCENE = "DELETE_SCENE"
+export const GET_SCENES = "GET_SCENES"
+export const ACTIVATE_SCENE = "ACTIVATE_SCENE"
+export const RENAME_SCENE = "RENAME_SCENE"
 
 export function addScene(name) {
   return dispatch => {
@@ -23,7 +23,7 @@ export function addScene(name) {
     })
       .then(response => response.json())
       .then(json => dispatch({
-        type: ADD_PRESET,
+        type: ADD_SCENE,
         response: json
       }))
       .then(() => dispatch(getScenes()))
@@ -45,7 +45,7 @@ export function deleteScene(id) {
     })
       .then(response => response.json())
       .then(json => dispatch({
-        type: DELETE_PRESET,
+        type: DELETE_SCENE,
         response: json
       }))
       .then(() => dispatch(getScenes()))
@@ -68,7 +68,7 @@ export function activateScene(id) {
     })
       .then(response => response.json())
       .then(json => dispatch({
-        type: ACTIVATE_PRESET,
+        type: ACTIVATE_SCENE,
         response: json
       }));
   };
@@ -91,7 +91,7 @@ export function renameScene(id, name) {
     })
       .then(response => response.json())
       .then(json => dispatch({
-        type: RENAME_PRESET,
+        type: RENAME_SCENE,
         response: json
       }));
   };
@@ -109,7 +109,7 @@ export function getScenes() {
     })
       .then(response => response.json())
       .then(json => dispatch({
-          type: GET_PRESETS,
+          type: GET_SCENES,
           scenes: json.scenes,
           receivedAt: Date.now()
       }))
