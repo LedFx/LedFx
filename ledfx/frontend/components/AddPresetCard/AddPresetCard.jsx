@@ -35,7 +35,7 @@ const AddPresetCard = ({ presets, addPreset }) =>  {
             Add Preset
           </Typography>
           <Typography variant="caption text" color="inherit" className={classes.subHeader}>
-            Save current effects of all devices as a preset
+            Save this effect configuration as a preset
           </Typography>
           <CardActions className = {classes.action}>
             <TextField

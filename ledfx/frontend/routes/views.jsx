@@ -9,7 +9,7 @@ import BuildIcon from '@material-ui/icons/Build';
 // Components and Views
 import DashboardView from "frontend/views/Dashboard/Dashboard.jsx";
 import DevicesView from "frontend/views/Devices/Devices.jsx";
-import PresetsView from "frontend/views/Presets/Presets.jsx";
+import ScenesView from "frontend/views/Scenes/Scenes.jsx";
 import DeviceView from "frontend/views/Device/Device.jsx";
 import SettingsView from "frontend/views/Settings/Settings.jsx";
 import DeveloperView from "frontend/views/Developer/Developer.jsx";
@@ -30,11 +30,11 @@ const viewRoutes = [
     component: DeviceView,
   },
   {
-    path: "/presets",
-    sidebarName: "Presets Management",
-    navbarName: "Presets Management",
+    path: "/scenes",
+    sidebarName: "Scenes Management",
+    navbarName: "Scenes Management",
     icon: SaveAltIcon,
-    component: PresetsView,
+    component: ScenesView,
   },
   {
     path: "/devices",

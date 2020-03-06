@@ -83,7 +83,7 @@ class Sidebar extends React.Component {
             if (this.isViewActive(prop.path) && prop.sidebarName != "Devices") {
               listItemClass = listItemClass + " " + classes.activeView
             }
-            if (this.isViewActive(prop.path) && prop.sidebarName != "EffectPresets") {
+            if (this.isViewActive(prop.path) && prop.sidebarName != "EffectScenes") {
               listItemClass = listItemClass + " " + classes.activeView
             }
 
@@ -105,7 +105,7 @@ class Sidebar extends React.Component {
               );
             }
 
-            if (prop.sidebarName === "EffectPresets")
+            if (prop.sidebarName === "EffectScenes")
             {
               return (
                 <ListItem button className={listItemClass}>

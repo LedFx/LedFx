@@ -2,40 +2,17 @@ import fetch from "cross-fetch";
 
 const apiUrl = window.location.protocol + "//" + window.location.host + "/api";
 
-export const ADD_PRESET = "ADD_PRESET"
 export const DELETE_PRESET = "DELETE_PRESET"
-export const GET_PRESETS = "GET_PRESETS"
-export const ACTIVATE_PRESET = "ACTIVATE_PRESET"
+export const GET_ALL_PRESETS = "GET_ALL_PRESETS"
 export const RENAME_PRESET = "RENAME_PRESET"
 
-export function addPreset(name) {
+export function deletePreset(effectId, category, presetId) {
   return dispatch => {
     const data = {
-      name: name
+      category: category,
+      preset_id: presetId,
     };
-    return fetch(`${apiUrl}/presets`, {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(data)
-    })
-      .then(response => response.json())
-      .then(json => dispatch({
-        type: ADD_PRESET,
-        response: json
-      }))
-      .then(() => dispatch(getPresets()))
-  };
-}
-
-export function deletePreset(id) {
-  return dispatch => {
-    const data = {
-      id: id
-    };
-    return fetch(`${apiUrl}/presets`, {
+    fetch(`${apiUrl}/effects/${effectId}/presets`, {
       method: "DELETE",
       headers: {
         Accept: "application/json",
@@ -47,41 +24,18 @@ export function deletePreset(id) {
       .then(json => dispatch({
         type: DELETE_PRESET,
         response: json
-      }))
-      .then(() => dispatch(getPresets()))
-  };
-}
-
-export function activatePreset(id) {
-  return dispatch => {
-    const data = {
-      id: id,
-      action: 'activate'
-    };
-    fetch(`${apiUrl}/presets`, {
-      method: "PUT",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(data)
-    })
-      .then(response => response.json())
-      .then(json => dispatch({
-        type: ACTIVATE_PRESET,
-        response: json
       }));
   };
 }
 
-export function renamePreset(id, name) {
+export function renamePreset(effectId, category, presetId, name) {
   return dispatch => {
     const data = {
-      id: id,
-      action: 'rename',
+      category: category,
+      preset_id: presetId,
       name: name
     };
-    fetch(`${apiUrl}/presets`, {
+    fetch(`${apiUrl}/effects/${effectId}/presets`, {
       method: "PUT",
       headers: {
         Accept: "application/json",
@@ -98,9 +52,9 @@ export function renamePreset(id, name) {
 }
 
 
-export function getPresets() {
+export function getAllPresets(effectId) {
   return dispatch => {
-    fetch(`${apiUrl}/presets`, {
+    fetch(`${apiUrl}/effects/${effectId}/presets`, {
       method: "GET",
       headers: {
         Accept: "application/json",
@@ -113,5 +67,5 @@ export function getPresets() {
           presets: json.presets,
           receivedAt: Date.now()
       }))
-  }
+  };
 }

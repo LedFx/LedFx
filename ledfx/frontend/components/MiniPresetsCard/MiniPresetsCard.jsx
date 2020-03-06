@@ -31,7 +31,7 @@ const useStyles = makeStyles(theme => ({
   }
 }))
 
-const MiniPresetsCard = ({ presets, activatePreset, getPresets }) => {
+const MiniPresetsCard = ({ device, effect, activatePreset, getPresets }) => {
 
   const classes = useStyles()
   useEffect(getPresets, [])
@@ -71,12 +71,13 @@ const MiniPresetsCard = ({ presets, activatePreset, getPresets }) => {
 
 
 const mapStateToProps = state => ({ 
-  presets: state.presets 
+  device: state.device,
+  effect: state.effect 
 })
 
 const mapDispatchToProps = (dispatch) => ({
-  activatePreset: (presetId) => dispatch(activatePreset(presetId)),
-  getPresets: () => dispatch(getPresets())
+  activatePreset: (device, effect, presetId) => dispatch(activatePreset(device, effect, presetId)),
+  getPresets: (effect) => dispatch(getPresets(effect))
 })
 
 export default connect(mapStateToProps, mapDispatchToProps)(MiniPresetsCard);
