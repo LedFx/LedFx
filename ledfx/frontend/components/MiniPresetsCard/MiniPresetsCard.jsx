@@ -8,11 +8,11 @@ import CardHeader from '@material-ui/core/CardHeader';
 import Button from '@material-ui/core/Button';
 import Grid from "@material-ui/core/Grid";
 
-import { activateScene, getScenes } from 'frontend/actions';
+import { activatePreset, getPresets } from 'frontend/actions';
 import { mapIncludeKey } from 'frontend/utils/helpers';
 
 const useStyles = makeStyles(theme => ({ 
-  sceneButton: {
+  presetButton: {
     size: "large",
     margin: theme.spacing(1),
     textDecoration: "none",
@@ -31,33 +31,33 @@ const useStyles = makeStyles(theme => ({
   }
 }))
 
-const MiniScenesCard = ({ scenes, activateScene, getScenes }) => {
+const MiniPresetsCard = ({ presets, activatePreset, getPresets }) => {
 
   const classes = useStyles()
-  useEffect(getScenes, [])
+  useEffect(getPresets, [])
     
-  if (!scenes) {
+  if (!presets) {
     return
   }
 
   return (
       <Card>
-        <CardHeader title="Scenes">
-           {/*link header to scenes management page*/}
+        <CardHeader title="Presets">
+           {/*link header to presets management page*/}
         </CardHeader>
         <CardContent className={classes.submitControls}>
-          {/*Buttons to activate each scene*/}
+          {/*Buttons to activate each preset*/}
           <Grid container className={classes.buttonGrid}>
             {
-              mapIncludeKey(scenes).map(scene => {
+              mapIncludeKey(presets).map(preset => {
                 return (
                   <Grid item>
                     <Button
-                      key={scene.id}
-                      className={classes.sceneButton}
-                      onClick={() => activateScene(scene.id)}
+                      key={preset.id}
+                      className={classes.presetButton}
+                      onClick={() => activatePreset(preset.id)}
                     >
-                      {scene.name}
+                      {preset.name}
                     </Button>
                   </Grid>
                 );
@@ -71,12 +71,12 @@ const MiniScenesCard = ({ scenes, activateScene, getScenes }) => {
 
 
 const mapStateToProps = state => ({ 
-  scenes: state.scenes 
+  presets: state.presets 
 })
 
 const mapDispatchToProps = (dispatch) => ({
-  activateScene: (sceneId) => dispatch(activateScene(sceneId)),
-  getScenes: () => dispatch(getScenes())
+  activatePreset: (presetId) => dispatch(activatePreset(presetId)),
+  getPresets: () => dispatch(getPresets())
 })
 
-export default connect(mapStateToProps, mapDispatchToProps)(MiniScenesCard);
+export default connect(mapStateToProps, mapDispatchToProps)(MiniPresetsCard);

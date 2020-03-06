@@ -9,9 +9,9 @@ import Button from '@material-ui/core/Button';
 import red from '@material-ui/core/colors/red';
 import Typography from "@material-ui/core/Typography";
 
-import SceneConfigTable from "frontend/components/SceneCard/SceneConfigTable";
+import PresetConfigTable from "frontend/components/PresetCard/PresetConfigTable";
 
-import { activateScene, deleteScene } from 'frontend/actions';
+import { activatePreset, deletePreset } from 'frontend/actions';
 
 const styles = theme => ({ 
   deleteButton: {
@@ -35,18 +35,18 @@ const styles = theme => ({
 
 });
 
-class SceneCard extends React.Component {
+class PresetCard extends React.Component {
 
   render() {
-    const { classes, scene, activateScene, deleteScene } = this.props;
+    const { classes, preset, activatePreset, deletePreset } = this.props;
 
     return (
       <Card>
         <CardContent>
           <Typography variant="h5" color="inherit" className={classes.header}>
-            { scene.name }
+            { preset.name }
           </Typography>
-          { scene.devices && <SceneConfigTable devices ={ scene.devices }/> }
+          { preset.devices && <PresetConfigTable devices ={ preset.devices }/> }
         </CardContent>
         <CardActions className={classes.submitControls}>
             <Button
@@ -55,7 +55,7 @@ class SceneCard extends React.Component {
               size="small"
               aria-label="Activate"
               variant = "contained"
-              onClick={() => activateScene(scene.id)}
+              onClick={() => activatePreset(preset.id)}
             >
               Activate
             </Button>
@@ -65,7 +65,7 @@ class SceneCard extends React.Component {
               size="small"
               aria-label="Delete"
               variant = "contained"
-              onClick={() => deleteScene(scene.id)}
+              onClick={() => deletePreset(preset.id)}
             >
               Delete
             </Button> 
@@ -75,14 +75,14 @@ class SceneCard extends React.Component {
   }
 }
 
-SceneCard.propTypes = {
+PresetCard.propTypes = {
   classes: PropTypes.object.isRequired,
-  scene: PropTypes.object.isRequired,
+  preset: PropTypes.object.isRequired,
 };
 
 const mapDispatchToProps = (dispatch) => ({
-  deleteScene: (sceneId) => dispatch(deleteScene(sceneId)),
-  activateScene: (sceneId) => dispatch(activateScene(sceneId))
+  deletePreset: (presetId) => dispatch(deletePreset(presetId)),
+  activatePreset: (presetId) => dispatch(activatePreset(presetId))
 })
 
-export default  connect(null , mapDispatchToProps)(withStyles(styles)(SceneCard));
+export default  connect(null , mapDispatchToProps)(withStyles(styles)(PresetCard));

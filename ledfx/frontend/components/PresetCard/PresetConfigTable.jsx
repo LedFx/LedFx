@@ -13,7 +13,7 @@ const styles = theme => ({
     }
 });
 
-class SceneConfigTable extends React.Component {
+class PresetConfigTable extends React.Component {
 
   render() {
     const { classes, devices } = this.props;
@@ -49,9 +49,9 @@ const renderRows = (devices) => {
     )})
 }
 
-SceneConfigTable.propTypes = {
+PresetConfigTable.propTypes = {
   classes: PropTypes.object.isRequired,
   devices: PropTypes.object.isRequired
 };
 
-export default withStyles(styles)(SceneConfigTable);
+export default withStyles(styles)(PresetConfigTable);
