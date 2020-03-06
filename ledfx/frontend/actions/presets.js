@@ -3,7 +3,7 @@ import fetch from "cross-fetch";
 const apiUrl = window.location.protocol + "//" + window.location.host + "/api";
 
 export const DELETE_PRESET = "DELETE_PRESET"
-export const GET_PRESETS = "GET_PRESETS"
+export const GET_ALL_PRESETS = "GET_ALL_PRESETS"
 export const RENAME_PRESET = "RENAME_PRESET"
 
 export function deletePreset(effectId, category, presetId) {
@@ -52,7 +52,7 @@ export function renamePreset(effectId, category, presetId, name) {
 }
 
 
-export function getPresets(effectId) {
+export function getAllPresets(effectId) {
   return dispatch => {
     fetch(`${apiUrl}/effects/${effectId}/presets`, {
       method: "GET",
