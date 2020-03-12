@@ -9,6 +9,7 @@ import Button from '@material-ui/core/Button';
 import Grid from "@material-ui/core/Grid";
 
 import { activatePreset, getPresets } from 'frontend/actions';
+import AddPresetCard from 'frontend/components/AddPresetCard/AddPresetCard';
 import { mapIncludeKey } from 'frontend/utils/helpers';
 
 const useStyles = makeStyles(theme => ({ 
@@ -31,13 +32,13 @@ const useStyles = makeStyles(theme => ({
   }
 }))
 
-const MiniPresetsCard = ({ device, effect, activatePreset, getPresets }) => {
+const MiniPresetsCard = ({ device, presets, activatePreset, getPresets }) => {
 
   const classes = useStyles()
   useEffect(getPresets, [])
     
   if (!presets) {
-    return
+    return <AddPresetCard></AddPresetCard>
   }
 
   return (
@@ -69,10 +70,9 @@ const MiniPresetsCard = ({ device, effect, activatePreset, getPresets }) => {
     );
 }
 
-
 const mapStateToProps = state => ({ 
   device: state.device,
-  effect: state.effect 
+  presets: state.presets 
 })
 
 const mapDispatchToProps = (dispatch) => ({
