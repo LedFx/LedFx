@@ -15,6 +15,12 @@ class PresetsEndpoint(RestEndpoint):
     async def get(self, effect_id) -> web.Response:
         """Get all presets for an effect"""
 
+        try:
+            self._ledfx.effects.get_class(effect_id)
+        except:
+            response = { 'status' : 'failed', 'reason': 'effect {} does not exist'.format(effect_id) }
+            return web.Response(text=json.dumps(response), status=500)
+
         if effect_id in self._ledfx.config['default_presets'].keys():
             default = self._ledfx.config['default_presets'][effect_id]
         else:
@@ -57,6 +63,12 @@ class PresetsEndpoint(RestEndpoint):
             response = { 'status' : 'failed', 'reason': 'Effect {} does not exist in category {}'.format(effect_id, category) }
             return web.Response(text=json.dumps(response), status=500)
 
+        try:
+            self._ledfx.effects.get_class(effect_id)
+        except:
+            response = { 'status' : 'failed', 'reason': 'effect {} does not exist'.format(effect_id) }
+            return web.Response(text=json.dumps(response), status=500)
+
         if preset_id is None:
             response = { 'status' : 'failed', 'reason': 'Required attribute "preset_id" was not provided' }
             return web.Response(text=json.dumps(response), status=500)
@@ -94,6 +106,12 @@ class PresetsEndpoint(RestEndpoint):
 
         if effect_id is None:
             response = { 'status' : 'failed', 'reason': 'Required attribute "effect_id" was not provided' }
+            return web.Response(text=json.dumps(response), status=500)
+
+        try:
+            self._ledfx.effects.get_class(effect_id)
+        except:
+            response = { 'status' : 'failed', 'reason': 'effect {} does not exist'.format(effect_id) }
             return web.Response(text=json.dumps(response), status=500)
 
         if not effect_id in self._ledfx.config[category].keys():
