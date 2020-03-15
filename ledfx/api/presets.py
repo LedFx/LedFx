@@ -14,10 +14,22 @@ class PresetsEndpoint(RestEndpoint):
 
     async def get(self, effect_id) -> web.Response:
         """Get all presets for an effect"""
+
+        if effect_id in self._ledfx.config['default_presets'].keys():
+            default = self._ledfx.config['default_presets'][effect_id]
+        else:
+            default = {}
+
+        if effect_id in self._ledfx.config['custom_presets'].keys():
+            custom = self._ledfx.config['custom_presets'][effect_id]
+        else:
+            custom = {}
+
         response = {
-            'status' : 'success' ,
-            'default_presets' : self._ledfx.config['default_presets'][effect_id],
-            'custom_presets' : self._ledfx.config['custom_presets'][effect_id]
+            'status' : 'success',
+            'effect' : effect_id,
+            'default_presets' : default,
+            'custom_presets' : custom
         }
         return web.Response(text=json.dumps(response), status=200)
 

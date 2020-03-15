@@ -10,7 +10,7 @@ import TextField from '@material-ui/core/TextField';
 import Button from '@material-ui/core/Button';
 import Typography from "@material-ui/core/Typography";
 
-import { addPreset } from 'frontend/actions';
+import actions from 'frontend/actions';
 
 const useStyles = makeStyles({ 
   button: {
@@ -27,6 +27,8 @@ const AddPresetCard = ({ presets, addPreset }) =>  {
 
   const [ name, setName ] = useState('')
   const classes = useStyles()
+
+  console.log(actions)
 
   return (
       <Card>
@@ -57,12 +59,11 @@ const AddPresetCard = ({ presets, addPreset }) =>  {
             </Button>
           </CardActions>
         </CardContent>
-        
       </Card>
     );
 }
 
-const validateInput = (input, presets) => (Object.keys(presets).includes(input) || input === "")
+const validateInput = (input, presets) => (presets && Object.keys(presets).includes(input) || input === "")
 
 const mapStateToProps = state => ({ 
   presets: state.presets
