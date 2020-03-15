@@ -31,4 +31,4 @@ class SchemaEndpoint(RestEndpoint):
                 'name': effect.NAME
             }
 
-        return web.Response(text=json.dumps(response), status=200)
+        return web.json_response(text=json.dumps(response), status=200)

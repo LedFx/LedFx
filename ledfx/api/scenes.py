@@ -18,7 +18,7 @@ class ScenesEndpoint(RestEndpoint):
             'status' : 'success' ,
             'scenes' : self._ledfx.config['scenes'] 
         }
-        return web.Response(text=json.dumps(response), status=200)
+        return web.json_response(text=json.dumps(response), status=200)
 
     async def delete(self, request) -> web.Response:
         """Delete a scene"""
@@ -27,11 +27,11 @@ class ScenesEndpoint(RestEndpoint):
         scene_id = data.get('id')
         if scene_id is None:
             response = { 'status' : 'failed', 'reason': 'Required attribute "scene_id" was not provided' }
-            return web.Response(text=json.dumps(response), status=500)
+            return web.json_response(text=json.dumps(response), status=500)
 
         if not scene_id in self._ledfx.config['scenes'].keys():
             response = { 'status' : 'failed', 'reason': 'Scene {} does not exist'.format(scene_id) }
-            return web.Response(text=json.dumps(response), status=500)
+            return web.json_response(text=json.dumps(response), status=500)
         
         # Delete the scene from configuration
         del self._ledfx.config['scenes'][scene_id]
@@ -42,7 +42,7 @@ class ScenesEndpoint(RestEndpoint):
             config_dir = self._ledfx.config_dir)
 
         response = { 'status' : 'success' }
-        return web.Response(text=json.dumps(response), status=200)
+        return web.json_response(text=json.dumps(response), status=200)
 
     async def put(self, request) -> web.Response:
         """Activate a scene"""
@@ -51,20 +51,20 @@ class ScenesEndpoint(RestEndpoint):
         action = data.get('action')
         if action is None:
             response = { 'status' : 'failed', 'reason': 'Required attribute "action" was not provided' }
-            return web.Response(text=json.dumps(response), status=500)
+            return web.json_response(text=json.dumps(response), status=500)
 
         if action not in ['activate', 'rename']:
             response = { 'status' : 'failed', 'reason': 'Invalid action "{}"'.format(action) }
-            return web.Response(text=json.dumps(response), status=500)
+            return web.json_response(text=json.dumps(response), status=500)
 
         scene_id = data.get('id')
         if scene_id is None:
             response = { 'status' : 'failed', 'reason': 'Required attribute "scene_id" was not provided' }
-            return web.Response(text=json.dumps(response), status=500)
+            return web.json_response(text=json.dumps(response), status=500)
 
         if not scene_id in self._ledfx.config['scenes'].keys():
             response = { 'status' : 'failed', 'reason': 'Scene "{}" does not exist'.format(scene_id) }
-            return web.Response(text=json.dumps(response), status=500)
+            return web.json_response(text=json.dumps(response), status=500)
 
         scene = self._ledfx.config['scenes'][scene_id]
 
@@ -91,7 +91,7 @@ class ScenesEndpoint(RestEndpoint):
             name = data.get('name')
             if name is None:
                 response = { 'status' : 'failed', 'reason': 'Required attribute "name" was not provided' }
-                return web.Response(text=json.dumps(response), status=500)
+                return web.json_response(text=json.dumps(response), status=500)
 
             # Update and save config
             self._ledfx.config['scenes'][scene_id]['name'] = name
@@ -100,7 +100,7 @@ class ScenesEndpoint(RestEndpoint):
                 config_dir = self._ledfx.config_dir)
 
         response = { 'status' : 'success' }
-        return web.Response(text=json.dumps(response), status=200)
+        return web.json_response(text=json.dumps(response), status=200)
 
     async def post(self, request) -> web.Response:
         """Save current effects of devices as a scene"""
@@ -109,7 +109,7 @@ class ScenesEndpoint(RestEndpoint):
         scene_name = data.get('name')
         if scene_name is None:
             response = { 'status' : 'failed', 'reason': 'Required attribute "scene_name" was not provided' }
-            return web.Response(text=json.dumps(response), status=500)
+            return web.json_response(text=json.dumps(response), status=500)
 
         scene_id = generate_id(scene_name)
 
@@ -132,4 +132,4 @@ class ScenesEndpoint(RestEndpoint):
             config_dir = self._ledfx.config_dir)
 
         response = { 'status' : 'success', 'scene': {'id': scene_id, 'config': scene_config }}
-        return web.Response(text=json.dumps(response), status=200)
+        return web.json_response(text=json.dumps(response), status=200)

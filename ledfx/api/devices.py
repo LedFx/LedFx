@@ -23,7 +23,7 @@ class DevicesEndpoint(RestEndpoint):
                 effect_response['type'] = device.active_effect.type
                 response['devices'][device.id]['effect'] = effect_response
 
-        return web.Response(text=json.dumps(response), status=200)
+        return web.json_response(text=json.dumps(response), status=200)
 
     async def post(self, request) -> web.Response:
         data = await request.json()
@@ -31,12 +31,12 @@ class DevicesEndpoint(RestEndpoint):
         device_config = data.get('config')
         if device_config is None:
             response = { 'status' : 'failed', 'reason': 'Required attribute "config" was not provided' }
-            return web.Response(text=json.dumps(response), status=500)
+            return web.json_response(text=json.dumps(response), status=500)
 
         device_type = data.get('type')
         if device_type is None:
             response = { 'status' : 'failed', 'reason': 'Required attribute "type" was not provided' }
-            return web.Response(text=json.dumps(response), status=500)
+            return web.json_response(text=json.dumps(response), status=500)
 
         device_id = generate_id(device_config.get('name'))
         # Remove the device it if already exist?
@@ -56,4 +56,4 @@ class DevicesEndpoint(RestEndpoint):
             config_dir = self._ledfx.config_dir)
 
         response = { 'status' : 'success', 'device': { 'type': device.type, 'config': device.config, 'id': device.id }}
-        return web.Response(text=json.dumps(response), status=200)
+        return web.json_response(text=json.dumps(response), status=200)

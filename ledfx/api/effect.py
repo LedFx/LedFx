@@ -13,8 +13,8 @@ class EffectEndpoint(RestEndpoint):
         effect = self._ledfx.effects.get_class(effect_id)
         if effect is None:
             response = { 'not found': 404 }
-            return web.Response(text=json.dumps(response), status=404)
+            return web.json_response(text=json.dumps(response), status=404)
 
         response = { 'schema' : str(effect.schema()) }
-        return web.Response(text=json.dumps(response), status=200)
+        return web.json_response(text=json.dumps(response), status=200)
 
