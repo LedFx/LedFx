@@ -52,7 +52,7 @@ class DeviceView extends React.Component {
       this.state.effect = null;
       getDeviceEffects(device.id)
       .then(effect => {
-        this.setState({ effect: effect });
+        this.setState({ effect });
       })
       .catch(error => console.log(error));
     }
@@ -112,6 +112,8 @@ const renderMiniPresetsCard = (device, effect) => {
         </Card>
       </Grid>
     )
+  } else {
+    return <p>NO LO SO</p>
   }
 }
 

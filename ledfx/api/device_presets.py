@@ -1,6 +1,7 @@
 from ledfx.config import save_config
 from ledfx.api import RestEndpoint
 from aiohttp import web
+from ledfx.utils import generate_id
 import logging
 import json
 
@@ -10,7 +11,7 @@ class DevicePresetsEndpoint(RestEndpoint):
 
     ENDPOINT_PATH = "/api/devices/{device_id}/presets"
 
-    async def get(self, device_id, request) -> web.Response:
+    async def get(self, device_id) -> web.Response:
         """get presets for active effect of a device"""
         device = self._ledfx.devices.get(device_id)
         if device is None:
@@ -22,23 +23,24 @@ class DevicePresetsEndpoint(RestEndpoint):
             return web.Response(text=json.dumps(response), status=500)
 
         effect_id = device.active_effect.type
-        category = data.get('category')
-        if category is None:
-            response = {
-                'status' : 'success' ,
-                'default_presets' : self._ledfx.config['default_presets'][effect_id],
-                'custom_presets' : self._ledfx.config['custom_presets'][effect_id]
-            }
 
-        elif category in ["default_presets", "custom_presets"]:
-            response = {
-                'status' : 'success' ,
-                category : self._ledfx.config[category][effect_id]
-            }
-
+        if effect_id in self._ledfx.config['default_presets'].keys():
+            default = self._ledfx.config['default_presets'][effect_id]
         else:
-            response = { 'status' : 'failed', 'reason': 'Category {} is not "default_presets" or "custom_presets"'.format(category) }
-            return web.Response(text=json.dumps(response), status=500)
+            default = {}
+
+        if effect_id in self._ledfx.config['custom_presets'].keys():
+            custom = self._ledfx.config['custom_presets'][effect_id]
+        else:
+            custom = {}
+
+        response = {
+            'status' : 'success',
+            'device' : device_id,
+            'effect' : effect_id,
+            'default_presets' : default,
+            'custom_presets' : custom
+        }
 
         return web.Response(text=json.dumps(response), status=200)
 
@@ -91,7 +93,7 @@ class DevicePresetsEndpoint(RestEndpoint):
             if (device['id'] == device_id):
                 #if not ('effect' in device):
                 device['effect'] = {}
-                device['effect']['type'] = effect_type
+                device['effect']['type'] = effect_id
                 device['effect']['config'] = effect_config
                 break
         save_config(
@@ -124,6 +126,7 @@ class DevicePresetsEndpoint(RestEndpoint):
             return web.Response(text=json.dumps(response), status=500)
 
         preset_id = generate_id(preset_name)
+        effect_id = device.active_effect.type
 
         # If no presets for the effect, create a dict to store them
         if not effect_id in self._ledfx.config['custom_presets'].keys():
