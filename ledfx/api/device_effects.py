@@ -14,7 +14,7 @@ class EffectsEndpoint(RestEndpoint):
         device = self._ledfx.devices.get(device_id)
         if device is None:
             response = { 'not found': 404 }
-            return web.json_response(text=json.dumps(response), status=404)
+            return web.json_response(data=response, status=404)
 
         # Get the active effect
         response = { 'effect' : {}}
@@ -25,19 +25,19 @@ class EffectsEndpoint(RestEndpoint):
             effect_response['type'] = device.active_effect.type
             response = { 'effect' : effect_response }
 
-        return web.json_response(text=json.dumps(response), status=200)
+        return web.json_response(data=response, status=200)
 
     async def put(self, device_id, request) -> web.Response:
         device = self._ledfx.devices.get(device_id)
         if device is None:
             response = { 'not found': 404 }
-            return web.json_response(text=json.dumps(response), status=404)
+            return web.json_response(data=response, status=404)
 
         data = await request.json()
         effect_type = data.get('type')
         if effect_type is None:
             response = { 'status' : 'failed', 'reason': 'Required attribute "type" was not provided' }
-            return web.json_response(text=json.dumps(response), status=500)
+            return web.json_response(data=response, status=500)
 
         effect_config = data.get('config')
         if effect_config is None:
@@ -68,19 +68,19 @@ class EffectsEndpoint(RestEndpoint):
         effect_response['type'] = effect.type
 
         response = { 'status' : 'success', 'effect' : effect_response}
-        return web.json_response(text=json.dumps(response), status=200)
+        return web.json_response(data=response, status=200)
 
     async def post(self, device_id, request) -> web.Response:
         device = self._ledfx.devices.get(device_id)
         if device is None:
             response = { 'not found': 404 }
-            return web.json_response(text=json.dumps(response), status=404)
+            return web.json_response(data=response, status=404)
 
         data = await request.json()
         effect_type = data.get('type')
         if effect_type is None:
             response = { 'status' : 'failed', 'reason': 'Required attribute "type" was not provided' }
-            return web.json_response(text=json.dumps(response), status=500)
+            return web.json_response(data=response, status=500)
 
         effect_config = data.get('config')
         if effect_config is None:
@@ -111,13 +111,13 @@ class EffectsEndpoint(RestEndpoint):
         effect_response['type'] = effect.type
 
         response = { 'status' : 'success', 'effect' : effect_response}
-        return web.json_response(text=json.dumps(response), status=200)
+        return web.json_response(data=response, status=200)
 
     async def delete(self, device_id) -> web.Response:
         device = self._ledfx.devices.get(device_id)
         if device is None:
             response = { 'not found': 404 }
-            return web.json_response(text=json.dumps(response), status=404)
+            return web.json_response(data=response, status=404)
 
         # Clear the effect
         device.clear_effect()
@@ -132,4 +132,4 @@ class EffectsEndpoint(RestEndpoint):
             config_dir = self._ledfx.config_dir)
 
         response = { 'status' : 'success', 'effect' : {} }
-        return web.json_response(text=json.dumps(response), status=200)
+        return web.json_response(data=response, status=200)

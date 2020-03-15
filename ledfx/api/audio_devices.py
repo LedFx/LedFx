@@ -41,11 +41,11 @@ class AudioDevicesEndpoint(RestEndpoint):
         info = self._audio.get_host_api_info_by_index(0)
         if index is None:
             response = { 'status' : 'failed', 'reason': 'Required attribute "index" was not provided' }
-            return web.json_response(text=json.dumps(response), status=500)
+            return web.json_response(data=response, status=500)
 
         if index not in range(0, info.get('deviceCount')):
             response = { 'status' : 'failed', 'reason': 'Invalid device index [{}]'.format(index) }
-            return web.json_response(text=json.dumps(response), status=500)
+            return web.json_response(data=response, status=500)
 
         # Update and save config
         new_config = self._ledfx.config.get('audio', {})
@@ -60,4 +60,4 @@ class AudioDevicesEndpoint(RestEndpoint):
             self._ledfx.audio.update_config(new_config)
 
         response = { 'status': 'success' }
-        return web.json_response(text=json.dumps(response), status=200)
+        return web.json_response(data=response, status=200)
