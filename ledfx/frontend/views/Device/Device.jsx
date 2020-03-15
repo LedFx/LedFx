@@ -5,7 +5,7 @@ import Grid from "@material-ui/core/Grid";
 import Card from "@material-ui/core/Card";
 import CardContent from "@material-ui/core/CardContent";
 
-import { callApi, getDevice, getDeviceEffects} from "frontend/utils/api";
+import { getDevice, getDeviceEffects} from "frontend/utils/api";
 import { connect } from "react-redux";
 import EffectControl from "frontend/components/EffectControl/EffectControl.jsx";
 import PixelColorGraph from "frontend/components/PixelColorGraph/PixelColorGraph.jsx";
@@ -69,7 +69,7 @@ class DeviceView extends React.Component {
       return (
         <Grid container direction="row" spacing={4}>
           {renderPixelGraph(device, effect)}
-          {renderMiniPresetsCard(device, effect)}
+          {renderMiniPresetsCard(device)}
           <Grid item xs={12}>
             <Card>
               <CardContent>
@@ -84,10 +84,8 @@ class DeviceView extends React.Component {
   }
 }
 
-
 const renderPixelGraph = (device, effect) => {
   if (device.effect && device.effect.name) {
-    console.log(effect)
     return (
       <Grid item xs={12}>
         <Card>
@@ -100,20 +98,15 @@ const renderPixelGraph = (device, effect) => {
   }
 }
 
-const renderMiniPresetsCard = (device, effect) => {
+const renderMiniPresetsCard = (device) => {
   if (device.effect && device.effect.name) {
-    console.log(effect)
     return (
       <Grid item xs={12}>
-        <Card>
-          <CardContent>
-            <MiniPresetsCard device={device} effect={effect}/>
-          </CardContent>
-        </Card>
+        <MiniPresetsCard device={device}/>
       </Grid>
     )
   } else {
-    return <p>NO LO SO</p>
+    return null
   }
 }
 
