@@ -10,7 +10,7 @@ import TextField from '@material-ui/core/TextField';
 import Button from '@material-ui/core/Button';
 import Typography from "@material-ui/core/Typography";
 
-import actions from 'frontend/actions';
+import { addPreset } from 'frontend/actions';
 
 const useStyles = makeStyles({ 
   button: {
@@ -23,12 +23,12 @@ const useStyles = makeStyles({
   }
 });
 
-const AddPresetCard = ({ presets, addPreset }) =>  {
+const AddPresetCard = ({ presets, addPreset, deviceId }) =>  {
 
   const [ name, setName ] = useState('')
   const classes = useStyles()
 
-  console.log(actions)
+  if (!presets) return null
 
   return (
       <Card>
@@ -53,7 +53,7 @@ const AddPresetCard = ({ presets, addPreset }) =>  {
               aria-label="Save"
               disabled = {validateInput(name, presets)} 
               variant = "contained"
-              onClick = {() => addPreset(name)}
+              onClick = {() => addPreset(name, deviceId)}
             >
               Save
             </Button>
@@ -63,14 +63,18 @@ const AddPresetCard = ({ presets, addPreset }) =>  {
     );
 }
 
-const validateInput = (input, presets) => (presets && Object.keys(presets).includes(input) || input === "")
+const validateInput = (input, presets) => {
+  if(!presets || !presets.customPresets || !presets.defaultPresets) return false
+  const used = Object.keys(presets.customPresets).concat(Object.keys(presets.defaultPresets))
+  return used.includes(input) || input === ""
+}
 
 const mapStateToProps = state => ({ 
   presets: state.presets
 })
 
 const mapDispatchToProps = (dispatch) => ({
-  addPreset: (presetName) => dispatch(addPreset(presetName))
+  addPreset: (presetName, deviceId) => dispatch(addPreset(presetName, deviceId))
 })
 
 export default connect(mapStateToProps, mapDispatchToProps)(AddPresetCard);

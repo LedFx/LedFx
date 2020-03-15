@@ -2,8 +2,12 @@ import fetch from "cross-fetch";
 
 const apiUrl = window.location.protocol + "//" + window.location.host + "/api";
 
+// CONSTANT device categories
+export const DEFAULT_CAT = "default_presets"
+export const CUSTOM_CAT = "custom_presets"
+
 export const ACTIVATE_PRESET = "ACTIVATE_PRESET"
-export const GET_PRESETS = "GET_PRESETS"
+export const GET_DEVICE_PRESETS = "GET_DEVICE_PRESETS"
 export const SAVE_PRESET = "SAVE_PRESET"
 
 export function activatePreset(deviceId, category, effectId, presetId) {
@@ -50,21 +54,25 @@ export function savePreset(deviceId, name) {
   };
 }
 
-
-export function getPresets(deviceId) {
+/**
+ * Return the device's active effect's presets
+ * Used in device view to switch presets
+ */
+export function getDevicePresets(deviceId) {
   return dispatch => {
     fetch(`${apiUrl}/devices/${deviceId}/presets`, {
       method: "GET",
       headers: {
         Accept: "application/json",
         "Content-Type": "application/json"
-      },
-    })
-      .then(response => response.json())
-      .then(json => dispatch({
-          type: GET_PRESETS,
-          presets: json.presets,
-          receivedAt: Date.now()
-      }))
-  };
+      }
+    }).then(response => response.json())
+    .then(json => dispatch({
+      type: GET_DEVICE_PRESETS,
+      presets: {
+        customPresets: json.custom_presets,
+        defaultPresets: json.default_presets
+      }
+    }))
+  }
 }

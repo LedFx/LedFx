@@ -7,12 +7,12 @@ export const ADD_PRESET = "ADD_PRESET"
 export const GET_ALL_PRESETS = "GET_ALL_PRESETS"
 export const RENAME_PRESET = "RENAME_PRESET"
 
-export function addPreset(name) {
+export function addPreset(name, deviceId) {
   return dispatch => {
     const data = {
       name: name
-    }; // TODO THIS MUST BE FIXED TO REFLECT PRESET API 
-    return fetch(`${apiUrl}/scenes`, {
+    };
+    return fetch(`${apiUrl}/devices/${deviceId}/presets`, {
       method: "POST",
       headers: {
         Accept: "application/json",
@@ -22,10 +22,10 @@ export function addPreset(name) {
     })
       .then(response => response.json())
       .then(json => dispatch({
-        type: ADD_SCENE,
+        type: ADD_PRESET,
         response: json
       }))
-      .then(() => dispatch(getScenes()))
+      .then(() => dispatch(getDevicePresets(deviceId)))
   };
 }
 
@@ -74,7 +74,6 @@ export function renamePreset(effectId, category, presetId, name) {
   };
 }
 
-
 export function getAllPresets(effectId) {
   return dispatch => {
     fetch(`${apiUrl}/effects/${effectId}/presets`, {
@@ -82,11 +81,11 @@ export function getAllPresets(effectId) {
       headers: {
         Accept: "application/json",
         "Content-Type": "application/json"
-      },
+      }
     })
       .then(response => response.json())
       .then(json => dispatch({
-          type: GET_PRESETS,
+          type: GET_ALL_PRESETS,
           presets: json.presets,
           receivedAt: Date.now()
       }))

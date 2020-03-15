@@ -8,7 +8,7 @@ import CardHeader from '@material-ui/core/CardHeader';
 import Button from '@material-ui/core/Button';
 import Grid from "@material-ui/core/Grid";
 
-import { activatePreset, getPresets } from 'frontend/actions';
+import { activatePreset, getDevicePresets, DEFAULT_CAT, CUSTOM_CAT } from 'frontend/actions';
 import AddPresetCard from 'frontend/components/AddPresetCard/AddPresetCard';
 import { mapIncludeKey } from 'frontend/utils/helpers';
 
@@ -32,13 +32,13 @@ const useStyles = makeStyles(theme => ({
   }
 }))
 
-const MiniPresetsCard = ({ device, presets, activatePreset, getPresets }) => {
+const MiniPresetsCard = ({ device, presets, activatePreset, getDevicePresets }) => {
 
   const classes = useStyles()
-  useEffect(getPresets, [])
-    
-  if (!presets) {
-    return <AddPresetCard></AddPresetCard>
+  useEffect(() => getDevicePresets(device.id), [])
+
+  const handleActivatePreset = (CAT) => {
+    return (pId) => activatePreset(device.id, CAT, device.effect.type, pId)
   }
 
   return (
@@ -49,35 +49,45 @@ const MiniPresetsCard = ({ device, presets, activatePreset, getPresets }) => {
         <CardContent className={classes.submitControls}>
           {/*Buttons to activate each preset*/}
           <Grid container className={classes.buttonGrid}>
-            {
-              mapIncludeKey(presets).map(preset => {
-                return (
-                  <Grid item>
-                    <Button
-                      key={preset.id}
-                      className={classes.presetButton}
-                      onClick={() => activatePreset(preset.id)}
-                    >
-                      {preset.name}
-                    </Button>
-                  </Grid>
-                );
-              })
-            }
+            <Grid item xs={6}>
+              {renderPresetsButton(presets.defaultPresets, classes.presetButton, handleActivatePreset(DEFAULT_CAT))}
+            </Grid>
+            <Grid item xs={6}>
+              {renderPresetsButton(presets.customPresets, classes.presetButton, handleActivatePreset(CUSTOM_CAT))}
+            </Grid>
+            <Grid item xs={12}>
+              <AddPresetCard deviceId={device.id} presets={presets}></AddPresetCard>
+            </Grid>
           </Grid>
         </CardContent>
       </Card>
     );
 }
 
+const renderPresetsButton = (presets, classes, onActivate) => {
+  if (!presets || !Object.keys(presets).length) return 'No presets defined in this category'
+  return mapIncludeKey(presets).map(preset => {
+      console.log(preset)
+      return (
+        <Grid item key={preset.id}>
+          <Button
+            className={classes}
+            onClick={() => onActivate(preset.id)}
+          >
+            {preset.name}
+          </Button>
+        </Grid>
+      );
+  })
+}
+
 const mapStateToProps = state => ({ 
-  device: state.device,
-  presets: state.presets 
+  presets: state.presets
 })
 
 const mapDispatchToProps = (dispatch) => ({
   activatePreset: (device, effect, presetId) => dispatch(activatePreset(device, effect, presetId)),
-  getPresets: (effect) => dispatch(getPresets(effect))
+  getDevicePresets: (deviceId) => dispatch(getDevicePresets(deviceId))
 })
 
 export default connect(mapStateToProps, mapDispatchToProps)(MiniPresetsCard);
