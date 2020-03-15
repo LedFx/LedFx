@@ -4,6 +4,7 @@ import { connect } from "react-redux";
 import { makeStyles } from '@material-ui/core/styles';
 import Grid from "@material-ui/core/Grid";
 import Card from "@material-ui/core/Card";
+import CardHeader from "@material-ui/core/CardHeader";
 import CardContent from "@material-ui/core/CardContent";
 import InputLabel from '@material-ui/core/InputLabel';
 import MenuItem from '@material-ui/core/MenuItem';
@@ -48,8 +49,8 @@ const AudioCard = ({ audioDevices, setAudioDevice }) => {
   }
 
   return (<Card>
+            <CardHeader title="Audio Device" subheader="Audio input for reactive effects. Sound card is better than microphone!" />
             <CardContent>
-              <h3>Audio</h3>
               <p>Current device: {audioDevices.devices[activeDeviceIndex]}</p>
               <FormControl>
                 <Select

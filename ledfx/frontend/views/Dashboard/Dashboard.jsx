@@ -73,14 +73,12 @@ class DashboardView extends React.Component {
           }
         </Grid>
 
-        <Grid container direction="row" spacing={4}>
-          <Grid item xs={12}>
-            <AddSceneCard />
-          </Grid>
-        </Grid>
-        <Grid container direction="row" spacing={4}>
-          <Grid item xs={12}>
+        <Grid container direction="row" spacing={4} alignItems="stretch">
+          <Grid item xs={6}>
             <MiniScenesCard />
+          </Grid>
+          <Grid item xs={6}>
+            <AddSceneCard />
           </Grid>
         </Grid>
       </div>

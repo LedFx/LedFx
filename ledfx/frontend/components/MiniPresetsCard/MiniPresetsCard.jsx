@@ -7,9 +7,10 @@ import CardContent from '@material-ui/core/CardContent';
 import CardHeader from '@material-ui/core/CardHeader';
 import Button from '@material-ui/core/Button';
 import Grid from "@material-ui/core/Grid";
+import Typography from '@material-ui/core/Typography';
+import AddPresetCard from 'frontend/components/AddPresetCard/AddPresetCard';
 
 import { activatePreset, getDevicePresets, DEFAULT_CAT, CUSTOM_CAT } from 'frontend/actions';
-import AddPresetCard from 'frontend/components/AddPresetCard/AddPresetCard';
 import { mapIncludeKey } from 'frontend/utils/helpers';
 
 const useStyles = makeStyles(theme => ({ 
@@ -43,16 +44,24 @@ const MiniPresetsCard = ({ device, presets, activatePreset, getDevicePresets }) 
 
   return (
       <Card>
-        <CardHeader title="Presets">
-           {/*link header to presets management page*/}
-        </CardHeader>
+        <CardHeader title="Presets" subheader="Explore different effect configurations" />
         <CardContent className={classes.submitControls}>
           {/*Buttons to activate each preset*/}
           <Grid container className={classes.buttonGrid}>
-            <Grid item xs={6}>
+            <Grid item xs={12}>
+              <Typography variant="subtitle2">
+                Default
+              </Typography>
+            </Grid>
+            <Grid item xs={12}>
               {renderPresetsButton(presets.defaultPresets, classes.presetButton, handleActivatePreset(DEFAULT_CAT))}
             </Grid>
-            <Grid item xs={6}>
+            <Grid item xs={12}>
+              <Typography variant="subtitle2">
+                Custom
+              </Typography>
+            </Grid>
+            <Grid item xs={12}>
               {renderPresetsButton(presets.customPresets, classes.presetButton, handleActivatePreset(CUSTOM_CAT))}
             </Grid>
             <Grid item xs={12}>
@@ -61,11 +70,13 @@ const MiniPresetsCard = ({ device, presets, activatePreset, getDevicePresets }) 
           </Grid>
         </CardContent>
       </Card>
+
+
     );
 }
 
 const renderPresetsButton = (presets, classes, onActivate) => {
-  if (!presets || !Object.keys(presets).length) return 'No presets defined in this category'
+  if (!presets || !Object.keys(presets).length) return <Button className={classes} disabled>No Presets Found</Button>
   return mapIncludeKey(presets).map(preset => {
       console.log(preset)
       return (

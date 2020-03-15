@@ -3,6 +3,7 @@ import PropTypes from "prop-types";
 
 import Grid from "@material-ui/core/Grid";
 import Card from "@material-ui/core/Card";
+import CardHeader from "@material-ui/core/CardHeader";
 import CardContent from "@material-ui/core/CardContent";
 
 import { getDevice, getDeviceEffects} from "frontend/utils/api";
@@ -69,14 +70,15 @@ class DeviceView extends React.Component {
       return (
         <Grid container direction="row" spacing={4}>
           {renderPixelGraph(device, effect)}
-          {renderMiniPresetsCard(device)}
-          <Grid item xs={12}>
+          <Grid item xs={6}>
             <Card>
+              <CardHeader title="Effect Control" subheader="Select an effect. Adjust settings manually, or choose a preset." />
               <CardContent>
                 <EffectControl device={device} effect={effect}/>
               </CardContent>
             </Card>
           </Grid>
+          {renderMiniPresetsCard(device)}
         </Grid>
       );
     }
@@ -101,7 +103,7 @@ const renderPixelGraph = (device, effect) => {
 const renderMiniPresetsCard = (device) => {
   if (device.effect && device.effect.name) {
     return (
-      <Grid item xs={12}>
+      <Grid item xs={6}>
         <MiniPresetsCard device={device}/>
       </Grid>
     )
@@ -109,6 +111,7 @@ const renderMiniPresetsCard = (device) => {
     return null
   }
 }
+
 
 DeviceView.propTypes = {
   devicesById: PropTypes.object.isRequired,

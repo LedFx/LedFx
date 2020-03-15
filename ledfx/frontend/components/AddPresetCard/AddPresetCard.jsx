@@ -4,6 +4,7 @@ import { connect } from 'react-redux'
 import { makeStyles } from '@material-ui/core/styles';
 
 import Card from '@material-ui/core/Card';
+import CardHeader from '@material-ui/core/CardHeader';
 import CardContent from '@material-ui/core/CardContent';
 import CardActions from '@material-ui/core/CardActions';
 import TextField from '@material-ui/core/TextField';
@@ -33,12 +34,7 @@ const AddPresetCard = ({ presets, addPreset, deviceId }) =>  {
   return (
       <Card>
         <CardContent>
-          <Typography variant="h5" color="inherit" className={classes.header}>
-            Add Preset
-          </Typography>
-          <Typography variant="caption text" color="inherit" className={classes.subHeader}>
-            Save this effect configuration as a preset
-          </Typography>
+          <CardHeader title="Add Preset" subheader="Save this effect configuration as a preset" />
           <CardActions className = {classes.action}>
             <TextField
               error = {validateInput(name, presets)} 
