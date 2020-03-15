@@ -14,7 +14,7 @@ class EffectsEndpoint(RestEndpoint):
         device = self._ledfx.devices.get(device_id)
         if device is None:
             response = { 'not found': 404 }
-            return web.Response(text=json.dumps(response), status=404)
+            return web.json_response(text=json.dumps(response), status=404)
 
         # Get the active effect
         response = { 'effect' : {}}
@@ -25,7 +25,7 @@ class EffectsEndpoint(RestEndpoint):
             effect_response['type'] = device.active_effect.type
             response = { 'effect' : effect_response }
 
-        return web.Response(text=json.dumps(response), status=200)
+        return web.json_response(text=json.dumps(response), status=200)
 
     async def put(self, device_id, request) -> web.Response:
         device = self._ledfx.devices.get(device_id)
