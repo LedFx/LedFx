@@ -11,7 +11,7 @@ import { getDevice, getDeviceEffects} from "frontend/utils/api";
 import { connect } from "react-redux";
 import EffectControl from "frontend/components/EffectControl/EffectControl.jsx";
 import PixelColorGraph from "frontend/components/PixelColorGraph/PixelColorGraph.jsx";
-import MiniPresetsCard from "frontend/components/MiniPresetsCard/MiniPresetsCard.jsx";
+import PresetsCard from "frontend/components/PresetsCard/PresetsCard.jsx";
 
 class DeviceView extends React.Component {
   constructor() {
@@ -79,7 +79,7 @@ class DeviceView extends React.Component {
               </CardContent>
             </Card>
           </Grid>
-          {renderMiniPresetsCard(device)}
+          {renderPresetsCard(device)}
         </Grid>
       );
     }
@@ -101,11 +101,11 @@ const renderPixelGraph = (device, effect) => {
   }
 }
 
-const renderMiniPresetsCard = (device) => {
+const renderPresetsCard = (device) => {
   if (device.effect && device.effect.name) {
     return (
       <Grid item xs={6}>
-        <MiniPresetsCard device={device}/>
+        <PresetsCard device={device}/>
       </Grid>
     )
   } else {

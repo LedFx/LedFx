@@ -40,7 +40,7 @@ const useStyles = makeStyles(theme => ({
   }
 }))
 
-const MiniPresetsCard = ({ device, presets, activatePreset, getDevicePresets, addPreset }) => {
+const PresetsCard = ({ device, presets, activatePreset, getDevicePresets, addPreset }) => {
 
   const classes = useStyles()
   const [ name, setName ] = useState('')
@@ -76,7 +76,7 @@ const MiniPresetsCard = ({ device, presets, activatePreset, getDevicePresets, ad
         </CardContent>
         <CardActions className={classes.actions}>
           <TextField
-            error = {validateInput(name, presets)} 
+            error = {validateTextInput(name, presets)} 
             id="presetNameInput"
             label="Preset Name"
             onChange={(e) => setName(e.target.value)}
@@ -86,7 +86,7 @@ const MiniPresetsCard = ({ device, presets, activatePreset, getDevicePresets, ad
             color="primary"
             size="small"
             aria-label="Save"
-            disabled = {validateInput(name, presets)} 
+            disabled = {enableButton(name, presets)} 
             variant = "contained"
             onClick = {() => addPreset(name, device.id)}
           >
@@ -116,7 +116,13 @@ const renderPresetsButton = (presets, classes, onActivate) => {
   })
 }
 
-const validateInput = (input, presets) => {
+const validateTextInput = (input, presets) => {
+  if(!presets || !presets.customPresets || !presets.defaultPresets) return false
+  const used = Object.keys(presets.customPresets).concat(Object.keys(presets.defaultPresets))
+  return used.includes(input)
+}
+
+const enableButton = (input, presets) => {
   if(!presets || !presets.customPresets || !presets.defaultPresets) return false
   const used = Object.keys(presets.customPresets).concat(Object.keys(presets.defaultPresets))
   return used.includes(input) || input === ""
@@ -132,4 +138,4 @@ const mapDispatchToProps = (dispatch) => ({
   getDevicePresets: (deviceId) => dispatch(getDevicePresets(deviceId))
 })
 
-export default connect(mapStateToProps, mapDispatchToProps)(MiniPresetsCard);
+export default connect(mapStateToProps, mapDispatchToProps)(PresetsCard);

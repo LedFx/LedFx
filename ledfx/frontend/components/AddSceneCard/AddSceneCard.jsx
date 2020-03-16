@@ -42,7 +42,7 @@ const AddSceneCard = ({ scenes, addScene }) =>  {
             color="primary"
             size="small"
             aria-label="Save"
-            disabled = {validateInput(name, scenes)} 
+            disabled = {enableButton(name, scenes)} 
             variant = "contained"
             onClick = {() => addScene(name)}
           >
@@ -53,7 +53,8 @@ const AddSceneCard = ({ scenes, addScene }) =>  {
     );
 }
 
-const validateInput = (input, scenes) => (Object.keys(scenes).includes(input) || input === "")
+const validateInput = (input, scenes) => (Object.keys(scenes).includes(input))
+const enableButton = (input, scenes) => (Object.keys(scenes).includes(input) || input === "")
 
 const mapStateToProps = state => ({ 
   scenes: state.scenes
