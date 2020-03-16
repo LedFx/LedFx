@@ -42,6 +42,23 @@ To get started on Windows it is highly recommended that you use `Anaconda <https
 .. code:: bash
 
     ledfx --open-ui
+    
+Linux Installation
+==================
+To install on Linux first ensure you have at least Python 3.6 installed (alternatively use `Anaconda <https://www.anaconda.com/download/>`_).
+
+**1.** Install LedFx and all the dependencies using apt-get and pip:
+
+.. code:: bash
+
+    sudo apt-get install portaudio19-dev
+    pip install ledfx
+
+**2.** Launch LedFx with the ``open-ui`` option to launch the browser:
+
+.. code:: bash
+
+    ledfx --open-ui
 
 macOS Installation
 ==================
@@ -76,23 +93,6 @@ To install on macOS first ensure you have at least Python 3.6 installed (alterna
     pip install ledfx
 
 **3.** Launch LedFx with the ``open-ui`` option to launch the browser:
-
-.. code:: bash
-
-    ledfx --open-ui
-
-Linux Installation
-==================
-To install on Linux first ensure you have at least Python 3.6 installed (alternatively use `Anaconda <https://www.anaconda.com/download/>`_).
-
-**1.** Install LedFx and all the dependencies using apt-get and pip:
-
-.. code:: bash
-
-    sudo apt-get install portaudio19-dev
-    pip install ledfx
-
-**2.** Launch LedFx with the ``open-ui`` option to launch the browser:
 
 .. code:: bash
 
