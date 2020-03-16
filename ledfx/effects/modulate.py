@@ -19,8 +19,8 @@ class ModulateEffect(Effect):
     
     CONFIG_SCHEMA = vol.Schema({
         vol.Optional('modulate', description='Brightness modulation', default = False): bool,
-        vol.Optional('modulation_effect', default = "sine", description="Modulation effect"): vol.In(list(["sine", "breath"])),
-        vol.Optional('modulation_speed', default = 0.5, description="Modulation speed"): vol.All(vol.Coerce(float), vol.Range(min=0.01, max=1))
+        vol.Optional('modulation_effect', default = "sine", description="Choose an animation"): vol.In(list(["sine", "breath"])),
+        vol.Optional('modulation_speed', default = 0.5, description="Animation speed"): vol.All(vol.Coerce(float), vol.Range(min=0.01, max=1))
     })
 
     def config_updated(self, config):
