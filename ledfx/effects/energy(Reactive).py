@@ -13,7 +13,7 @@ class EnergyAudioEffect(AudioReactiveEffect):
         vol.Optional('color_mids', description='Color of midrange sounds', default = "green"): vol.In(list(COLORS.keys())),
         vol.Optional('color_high', description='Color of high sounds', default = "blue"): vol.In(list(COLORS.keys())),
         vol.Optional('sensitivity', description='Responsiveness to changes in sound', default = 0.7): vol.All(vol.Coerce(float), vol.Range(min=0.2, max=0.99)),
-        vol.Optional('mixing_mode', description='Mode of combining colours', default = "overlap"): vol.In(["additive", "overlap"]),
+        vol.Optional('mixing_mode', description='Mode of combining each frequencies\' colours', default = "overlap"): vol.In(["additive", "overlap"]),
     })
 
     def config_updated(self, config):
