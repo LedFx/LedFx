@@ -15,7 +15,7 @@ import ListItemText from "@material-ui/core/ListItemText";
 import sidebarStyle from "./style.jsx";
 import viewRoutes from "frontend/routes/views.jsx";
 //import logoAsset from "frontend/assets/img/logo.png";
-import logoAsset from "frontend/assets/img/icon/small_white_alpha.png";
+import logoAsset from "frontend/assets/img/icon/large_white_alpha.png";
 
 import { getSystemConfig } from "frontend/actions";
 

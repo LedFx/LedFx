@@ -8,8 +8,8 @@ class MultiBarAudioEffect(AudioReactiveEffect, GradientEffect):
 
     NAME = "Multicolor Bar"
     CONFIG_SCHEMA = vol.Schema({
-        vol.Optional('gradient_name', description='Color scheme of bar', default = 'Spectral'): vol.In(list(GRADIENTS.keys())),
-        vol.Optional('mode', description='Movement of bar', default = 'wipe'): vol.In(list(["cascade", "wipe"])),
+        vol.Optional('gradient_name', description='Color scheme to cycle through', default = 'Spectral'): vol.In(list(GRADIENTS.keys())),
+        vol.Optional('mode', description='Choose from different animations', default = 'wipe'): vol.In(list(["cascade", "wipe"])),
         vol.Optional('ease_method', description='Acceleration profile of bar', default='linear'): vol.In(list(["ease_in_out", "ease_in", "ease_out", "linear"])),
         vol.Optional('color_step', description='Amount of color change per beat', default = 0.125): vol.All(vol.Coerce(float), vol.Range(min=0.0625, max=0.5))
     })

@@ -153,7 +153,7 @@ class PixelColorGraph extends React.Component {
     const { classes } = this.props;
     
     return (
-      <Card>
+      <Card variant="outlined">
         <CardContent className={classes.content}>
           <Line data={this.state.chartData} options={this.state.chartOptions}/>
         </CardContent>

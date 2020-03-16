@@ -19,4 +19,4 @@ class InfoEndpoint(RestEndpoint):
             'debug_mode': True
         }
 
-        return web.Response(text=json.dumps(response), status=200)
+        return web.json_response(data=response, status=200)

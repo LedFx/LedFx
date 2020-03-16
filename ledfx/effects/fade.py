@@ -14,7 +14,7 @@ class FadeEffect(TemporalEffect, GradientEffect):
     NAME = "Fade"
 
     CONFIG_SCHEMA = vol.Schema({
-        vol.Optional('speed', default = 0.5, description="Speed of the effect"): vol.Coerce(float),
+        vol.Optional('speed', default = 0.5, description="Rate of change of color"): vol.Coerce(float),
     })
 
     def config_updated(self, config):
