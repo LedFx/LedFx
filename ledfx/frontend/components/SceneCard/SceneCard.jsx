@@ -20,15 +20,15 @@ const styles = theme => ({
     '&:hover': {
       backgroundColor: red[700],
     },
-    margin: theme.spacing.unit,
+    margin: theme.spacing(1),
     float: "right"
   },
   button: {
-    margin: theme.spacing.unit,
+    margin: theme.spacing(1),
     float: "right"
   },
   submitControls: {
-    margin: theme.spacing.unit,
+    margin: theme.spacing(1),
     display: "block",
     width: "100%"
   },
@@ -41,7 +41,7 @@ class SceneCard extends React.Component {
     const { classes, scene, activateScene, deleteScene } = this.props;
 
     return (
-      <Card>
+      <Card variant="outlined">
         <CardContent>
           <Typography variant="h5" color="inherit" className={classes.header}>
             { scene.name }

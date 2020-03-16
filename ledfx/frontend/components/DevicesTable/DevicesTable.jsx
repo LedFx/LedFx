@@ -18,7 +18,7 @@ const styles = theme => ({
     backgroundColor: theme.palette.background.paper,
   },
   nested: {
-    paddingLeft: theme.spacing.unit * 4,
+    paddingLeft: theme.spacing(1) * 4,
   }, 
   table: {
     marginBottom: "0",

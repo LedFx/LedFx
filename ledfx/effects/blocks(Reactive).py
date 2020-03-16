@@ -9,7 +9,7 @@ class BlocksAudioEffect(AudioReactiveEffect, GradientEffect):
     NAME = "Blocks"
 
     CONFIG_SCHEMA = vol.Schema({
-        vol.Optional('block_count', description='Number of blocks', default = 4): vol.All(vol.Coerce(int), vol.Range(min=1, max=10))
+        vol.Optional('block_count', description='Number of color blocks', default = 4): vol.All(vol.Coerce(int), vol.Range(min=1, max=10))
     })
 
     def config_updated(self, config):

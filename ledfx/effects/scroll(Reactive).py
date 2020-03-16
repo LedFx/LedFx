@@ -11,7 +11,7 @@ class ScrollAudioEffect(AudioReactiveEffect):
     CONFIG_SCHEMA = vol.Schema({
         vol.Optional('blur', description='Amount to blur the effect', default = 3.0): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=10)),
         vol.Optional('mirror', description='Mirror the effect', default = True): bool,
-        vol.Optional('speed', description='Speed of the effect', default = 5):  vol.All(vol.Coerce(int), vol.Range(min=1)),
+        vol.Optional('speed', description='Speed of the effect', default = 5):  vol.All(vol.Coerce(int), vol.Range(min=1, max=10)),
         vol.Optional('decay', description='Decay rate of the scroll', default = 0.97):  vol.All(vol.Coerce(float), vol.Range(min=0.2, max=1.0)),
         vol.Optional('threshold', description='Cutoff for quiet sounds. Higher -> only loud sounds are detected', default = 0.0):  vol.All(vol.Coerce(float), vol.Range(min=0, max=1)),
         vol.Optional('color_lows', description='Color of low, bassy sounds', default = "red"): vol.In(list(COLORS.keys())),

@@ -46,7 +46,7 @@ class Header extends React.Component {
     return (
       <AppBar className={classes.appBar}>
         <Toolbar>
-          <Typography variant="title" color="inherit" className={classes.flex}>
+          <Typography variant="body1" color="inherit" className={classes.flex}>
             {this.getPageName()}
           </Typography>
           <Hidden mdUp>

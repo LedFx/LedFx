@@ -5,7 +5,7 @@ from ledfx.effects.modulate import ModulateEffect
 import voluptuous as vol
 import numpy as np
 
-class SingleColorEffect(TemporalEffect, ModulateEffect):
+class SingleColorEffect(ModulateEffect):
 
     NAME = "Single Color"
     CONFIG_SCHEMA = vol.Schema({

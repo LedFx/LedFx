@@ -17,11 +17,10 @@ import Typography from "@material-ui/core/Typography";
 
 const styles = theme => ({
   button: {
-    margin: theme.spacing.unit,
+    margin: theme.spacing(1),
     float: "right"
   },
   submitControls: {
-    margin: theme.spacing.unit,
     display: "block",
     width: "100%"
   },
@@ -51,9 +50,6 @@ class EffectControl extends React.Component {
       effectvalue = effect.effect.type;
     return (
       <div>
-        <Typography variant="h5" color="inherit">
-          Effect Control
-        </Typography>
         <SchemaFormCollection
           schemaCollection={schemas.effects}
           currentEffect={effect}
