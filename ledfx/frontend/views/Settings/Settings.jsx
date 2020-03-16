@@ -48,7 +48,7 @@ const AudioCard = ({ audioDevices, setAudioDevice }) => {
     setAudioDevice(index)
   }
 
-  return (<Card>
+  return (<Card variant="outlined">
             <CardHeader title="Audio Device" subheader="Audio input for reactive effects. Sound card is better than microphone!" />
             <CardContent>
               <p>Current device: {audioDevices.devices[activeDeviceIndex]}</p>

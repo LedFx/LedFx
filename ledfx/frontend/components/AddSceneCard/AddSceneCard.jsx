@@ -19,9 +19,7 @@ const useStyles = makeStyles({
     width: "100",
     float: "right"
   },
-  action: {
-    padding: "0"
-  }
+
 });
 
 const AddSceneCard = ({ scenes, addScene }) =>  {
@@ -30,30 +28,27 @@ const AddSceneCard = ({ scenes, addScene }) =>  {
   const classes = useStyles()
 
   return (
-      <Card>
+      <Card variant="outlined">
         <CardHeader title="Add Scene" subheader="Save current effects of all devices as a scene" />
-        <CardContent>
-          <CardActions className = {classes.action}>
-            <TextField
-              error = {validateInput(name, scenes)} 
-              id="sceneNameInput"
-              label="Scene Name"
-              onChange={(e) => setName(e.target.value)}
-            />
-            <Button
-              className = {classes.button}
-              color="primary"
-              size="small"
-              aria-label="Save"
-              disabled = {validateInput(name, scenes)} 
-              variant = "contained"
-              onClick = {() => addScene(name)}
-            >
-              Save
-            </Button>
-          </CardActions>
-        </CardContent>
-        
+        <CardActions>
+          <TextField
+            error = {validateInput(name, scenes)} 
+            id="sceneNameInput"
+            label="Scene Name"
+            onChange={(e) => setName(e.target.value)}
+          />
+          <Button
+            className = {classes.button}
+            color="primary"
+            size="small"
+            aria-label="Save"
+            disabled = {validateInput(name, scenes)} 
+            variant = "contained"
+            onClick = {() => addScene(name)}
+          >
+            Save
+          </Button>
+        </CardActions>        
       </Card>
     );
 }

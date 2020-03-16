@@ -5,6 +5,7 @@ import Grid from "@material-ui/core/Grid";
 import Card from "@material-ui/core/Card";
 import CardHeader from "@material-ui/core/CardHeader";
 import CardContent from "@material-ui/core/CardContent";
+import CardActions from "@material-ui/core/CardActions";
 
 import { getDevice, getDeviceEffects} from "frontend/utils/api";
 import { connect } from "react-redux";
@@ -71,7 +72,7 @@ class DeviceView extends React.Component {
         <Grid container direction="row" spacing={4}>
           {renderPixelGraph(device, effect)}
           <Grid item xs={6}>
-            <Card>
+            <Card variant="outlined">
               <CardHeader title="Effect Control" subheader="Select an effect. Adjust settings manually, or choose a preset." />
               <CardContent>
                 <EffectControl device={device} effect={effect}/>
@@ -90,7 +91,7 @@ const renderPixelGraph = (device, effect) => {
   if (device.effect && device.effect.name) {
     return (
       <Grid item xs={12}>
-        <Card>
+        <Card variant="outlined">
           <CardContent>
             <PixelColorGraph device={device}/>
           </CardContent>

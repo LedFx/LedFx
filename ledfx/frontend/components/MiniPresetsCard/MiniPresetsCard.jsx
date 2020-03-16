@@ -1,16 +1,17 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux'
 import { makeStyles } from '@material-ui/core/styles';
 import Card from '@material-ui/core/Card';
 import CardContent from '@material-ui/core/CardContent';
+import CardActions from '@material-ui/core/CardActions';
 import CardHeader from '@material-ui/core/CardHeader';
 import Button from '@material-ui/core/Button';
 import Grid from "@material-ui/core/Grid";
 import Typography from '@material-ui/core/Typography';
-import AddPresetCard from 'frontend/components/AddPresetCard/AddPresetCard';
+import TextField from '@material-ui/core/TextField';
 
-import { activatePreset, getDevicePresets, DEFAULT_CAT, CUSTOM_CAT } from 'frontend/actions';
+import { activatePreset, getDevicePresets, addPreset, DEFAULT_CAT, CUSTOM_CAT } from 'frontend/actions';
 import { mapIncludeKey } from 'frontend/utils/helpers';
 
 const useStyles = makeStyles(theme => ({ 
@@ -22,9 +23,15 @@ const useStyles = makeStyles(theme => ({
       color: "#000000"
     }
   },
-  submitControls: {
+  content: {
     display: "flex",
+    flexDirection: "column",
     width: "100%"
+  },
+  actions: {
+    display: "flex",
+    flexDirection: "row",
+    padding: theme.spacing(1),
   },
   buttonGrid: {
     direction: "row",
@@ -33,9 +40,10 @@ const useStyles = makeStyles(theme => ({
   }
 }))
 
-const MiniPresetsCard = ({ device, presets, activatePreset, getDevicePresets }) => {
+const MiniPresetsCard = ({ device, presets, activatePreset, getDevicePresets, addPreset }) => {
 
   const classes = useStyles()
+  const [ name, setName ] = useState('')
   useEffect(() => getDevicePresets(device.id), [])
 
   const handleActivatePreset = (CAT) => {
@@ -43,32 +51,48 @@ const MiniPresetsCard = ({ device, presets, activatePreset, getDevicePresets }) 
   }
 
   return (
-      <Card>
+      <Card variant="outlined">
         <CardHeader title="Presets" subheader="Explore different effect configurations" />
-        <CardContent className={classes.submitControls}>
+        <CardContent className={classes.content}>
           {/*Buttons to activate each preset*/}
+          <Typography variant="subtitle2">
+            Default
+          </Typography>
           <Grid container className={classes.buttonGrid}>
-            <Grid item xs={12}>
-              <Typography variant="subtitle2">
-                Default
-              </Typography>
-            </Grid>
-            <Grid item xs={12}>
-              {renderPresetsButton(presets.defaultPresets, classes.presetButton, handleActivatePreset(DEFAULT_CAT))}
-            </Grid>
-            <Grid item xs={12}>
-              <Typography variant="subtitle2">
-                Custom
-              </Typography>
-            </Grid>
-            <Grid item xs={12}>
-              {renderPresetsButton(presets.customPresets, classes.presetButton, handleActivatePreset(CUSTOM_CAT))}
-            </Grid>
-            <Grid item xs={12}>
-              <AddPresetCard deviceId={device.id} presets={presets}></AddPresetCard>
-            </Grid>
+            {renderPresetsButton(presets.defaultPresets, classes.presetButton, handleActivatePreset(DEFAULT_CAT))}
           </Grid>
+          <Typography variant="subtitle2">
+            Custom
+          </Typography>
+          <Grid container className={classes.buttonGrid}>
+            {renderPresetsButton(presets.customPresets, classes.presetButton, handleActivatePreset(CUSTOM_CAT))}
+          </Grid>
+          <Typography variant="subtitle2">
+            Add Preset
+          </Typography>
+          <Typography variant="subtitle1" color="textSecondary">
+            Save this effect configuration as a preset
+          </Typography>
         </CardContent>
+        <CardActions className={classes.actions}>
+          <TextField
+            error = {validateInput(name, presets)} 
+            id="presetNameInput"
+            label="Preset Name"
+            onChange={(e) => setName(e.target.value)}
+          />
+          <Button
+            className = {classes.presetButton}
+            color="primary"
+            size="small"
+            aria-label="Save"
+            disabled = {validateInput(name, presets)} 
+            variant = "contained"
+            onClick = {() => addPreset(name, device.id)}
+          >
+            Save
+          </Button>
+        </CardActions>
       </Card>
 
 
@@ -92,11 +116,18 @@ const renderPresetsButton = (presets, classes, onActivate) => {
   })
 }
 
+const validateInput = (input, presets) => {
+  if(!presets || !presets.customPresets || !presets.defaultPresets) return false
+  const used = Object.keys(presets.customPresets).concat(Object.keys(presets.defaultPresets))
+  return used.includes(input) || input === ""
+}
+
 const mapStateToProps = state => ({ 
   presets: state.presets
 })
 
 const mapDispatchToProps = (dispatch) => ({
+  addPreset: (presetName, deviceId) => dispatch(addPreset(presetName, deviceId)),
   activatePreset: (device, effect, presetId) => dispatch(activatePreset(device, effect, presetId)),
   getDevicePresets: (deviceId) => dispatch(getDevicePresets(deviceId))
 })

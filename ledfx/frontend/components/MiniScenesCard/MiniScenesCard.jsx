@@ -42,7 +42,7 @@ const MiniScenesCard = ({ scenes, activateScene, getScenes }) => {
   }
 
   return (
-      <Card>
+      <Card variant="outlined">
         <CardHeader title="Scenes" subheader="Easily deploy effects across multiple devices" />
            {/*link header to scenes management page*/}
         <CardContent className={classes.submitControls}>
