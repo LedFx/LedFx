@@ -1,6 +1,8 @@
 from ledfx.config import save_config
 from ledfx.api import RestEndpoint
 from aiohttp import web
+import voluptuous as vol
+import random
 import logging
 import json
 
@@ -42,6 +44,34 @@ class EffectsEndpoint(RestEndpoint):
         effect_config = data.get('config')
         if effect_config is None:
             effect_config = {}
+        elif effect_config == "randomize":
+            # Parse and break down schema for effect, in order to generate acceptable random values
+            effect_config = {}
+            effect = self._ledfx.effects.get_class(effect_type)
+            schema = effect.schema().schema
+            for setting in schema.keys():
+                # Booleans
+                if schema[setting] is bool:
+                    val = random.choice([True, False])
+                # Lists
+                elif type(schema[setting]) is vol.validators.In:
+                    val = random.choice(schema[setting].container)
+                # All (assuming coerce(float/int), range(min,max))
+                # NOTE: vol.coerce(float/int) does not give enough info for a random value to be generated!
+                # *** All effects should give a range! ***
+                # This is also important for when sliders will be added, slider needs a start and stop
+                elif type(schema[setting]) is vol.validators.All:
+                    for validator in schema[setting].validators:
+                        if type(validator) is vol.validators.Coerce:
+                            coerce_type = validator.type
+                        elif type(validator) is vol.validators.Range:
+                            lower = validator.min
+                            upper = validator.max
+                    if coerce_type is float:
+                        val = random.uniform(lower, upper)
+                    elif coerce_type is int:
+                        val = random.randint(lower, upper)
+                effect_config[setting.schema] = val
 
         # Create the effect and add it to the device
         effect = self._ledfx.effects.create(
