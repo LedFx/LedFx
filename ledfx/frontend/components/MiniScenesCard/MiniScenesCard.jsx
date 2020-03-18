@@ -22,7 +22,8 @@ const useStyles = makeStyles(theme => ({
   },
   submitControls: {
     display: "flex",
-    width: "100%"
+    width: "100%",
+    height: "100%"
   },
   buttonGrid: {
     direction: "row",
@@ -41,10 +42,9 @@ const MiniScenesCard = ({ scenes, activateScene, getScenes }) => {
   }
 
   return (
-      <Card>
-        <CardHeader title="Scenes">
+      <Card variant="outlined">
+        <CardHeader title="Scenes" subheader="Easily deploy effects across multiple devices" />
            {/*link header to scenes management page*/}
-        </CardHeader>
         <CardContent className={classes.submitControls}>
           {/*Buttons to activate each scene*/}
           <Grid container className={classes.buttonGrid}>

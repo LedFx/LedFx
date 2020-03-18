@@ -4,6 +4,7 @@ import { connect } from 'react-redux'
 import { makeStyles } from '@material-ui/core/styles';
 
 import Card from '@material-ui/core/Card';
+import CardHeader from '@material-ui/core/CardHeader';
 import CardContent from '@material-ui/core/CardContent';
 import CardActions from '@material-ui/core/CardActions';
 import TextField from '@material-ui/core/TextField';
@@ -18,9 +19,7 @@ const useStyles = makeStyles({
     width: "100",
     float: "right"
   },
-  action: {
-    padding: "0"
-  }
+
 });
 
 const AddSceneCard = ({ scenes, addScene }) =>  {
@@ -29,40 +28,33 @@ const AddSceneCard = ({ scenes, addScene }) =>  {
   const classes = useStyles()
 
   return (
-      <Card>
-        <CardContent>
-          <Typography variant="h5" color="inherit" className={classes.header}>
-            Add Scene
-          </Typography>
-          <Typography variant="caption text" color="inherit" className={classes.subHeader}>
-            Save current effects of all devices as a scene
-          </Typography>
-          <CardActions className = {classes.action}>
-            <TextField
-              error = {validateInput(name, scenes)} 
-              id="sceneNameInput"
-              label="Scene Name"
-              onChange={(e) => setName(e.target.value)}
-            />
-            <Button
-              className = {classes.button}
-              color="primary"
-              size="small"
-              aria-label="Save"
-              disabled = {validateInput(name, scenes)} 
-              variant = "contained"
-              onClick = {() => addScene(name)}
-            >
-              Save
-            </Button>
-          </CardActions>
-        </CardContent>
-        
+      <Card variant="outlined">
+        <CardHeader title="Add Scene" subheader="Save current effects of all devices as a scene" />
+        <CardActions>
+          <TextField
+            error = {validateInput(name, scenes)} 
+            id="sceneNameInput"
+            label="Scene Name"
+            onChange={(e) => setName(e.target.value)}
+          />
+          <Button
+            className = {classes.button}
+            color="primary"
+            size="small"
+            aria-label="Save"
+            disabled = {enableButton(name, scenes)} 
+            variant = "contained"
+            onClick = {() => addScene(name)}
+          >
+            Save
+          </Button>
+        </CardActions>        
       </Card>
     );
 }
 
-const validateInput = (input, scenes) => (Object.keys(scenes).includes(input) || input === "")
+const validateInput = (input, scenes) => (Object.keys(scenes).includes(input))
+const enableButton = (input, scenes) => (Object.keys(scenes).includes(input) || input === "")
 
 const mapStateToProps = state => ({ 
   scenes: state.scenes

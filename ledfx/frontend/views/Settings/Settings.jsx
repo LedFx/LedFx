@@ -4,25 +4,18 @@ import { connect } from "react-redux";
 import { makeStyles } from '@material-ui/core/styles';
 import Grid from "@material-ui/core/Grid";
 import Card from "@material-ui/core/Card";
+import CardHeader from "@material-ui/core/CardHeader";
 import CardContent from "@material-ui/core/CardContent";
 import InputLabel from '@material-ui/core/InputLabel';
 import MenuItem from '@material-ui/core/MenuItem';
 import FormHelperText from '@material-ui/core/FormHelperText';
 import FormControl from '@material-ui/core/FormControl';
 import Select from '@material-ui/core/Select';
+import Typography from '@material-ui/core/Typography';
 
 import { getAudioDevices, setAudioDevice } from 'frontend/actions';
 
-const useStyles = makeStyles(theme => ({
-  root: {
-    '& > *': {
-      margin: theme.spacing(1),
-    },
-  },
-}))
-
 const SettingsView = ({ getAudioDevices, setAudioDevice, settings }) => {
-  const classes = useStyles();
   
   useEffect(() => {
     getAudioDevices()
@@ -31,7 +24,7 @@ const SettingsView = ({ getAudioDevices, setAudioDevice, settings }) => {
   const { audioDevices } = settings
   
   return (
-    <div className={classes.root}>
+    <div>
       {audioDevices && (<AudioCard audioDevices={audioDevices} setAudioDevice={setAudioDevice} />)}
     </div>
     );
@@ -47,10 +40,10 @@ const AudioCard = ({ audioDevices, setAudioDevice }) => {
     setAudioDevice(index)
   }
 
-  return (<Card>
+  return (<Card variant="outlined">
+            <CardHeader title="Audio Device" subheader="Audio input for reactive effects. Sound card is better than microphone!" />
             <CardContent>
-              <h3>Audio</h3>
-              <p>Current device: {audioDevices.devices[activeDeviceIndex]}</p>
+              <Typography variant="subtitle2">Current device: {audioDevices.devices[activeDeviceIndex]}</Typography>
               <FormControl>
                 <Select
                   id="audio-input-select"

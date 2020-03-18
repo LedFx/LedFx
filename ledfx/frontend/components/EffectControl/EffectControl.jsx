@@ -51,9 +51,6 @@ class EffectControl extends React.Component {
       effectvalue = effect.effect.type;
     return (
       <div>
-        <Typography variant="h5" color="inherit">
-          Effect Control
-        </Typography>
         <SchemaFormCollection
           schemaCollection={schemas.effects}
           currentEffect={effect}

@@ -31,7 +31,7 @@ class AudioDevicesEndpoint(RestEndpoint):
             if (device_info.get('maxInputChannels')) > 0:
                 audio_devices['devices'][i] = device_info.get('name')
 
-        return web.json_response(text=json.dumps(audio_devices), status=200)
+        return web.json_response(data=audio_devices, status=200)
 
     async def put(self, request) -> web.Response:
         """Set audio device to use as input. Requires restart for changes to take effect"""

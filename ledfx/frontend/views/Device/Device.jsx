@@ -3,13 +3,15 @@ import PropTypes from "prop-types";
 
 import Grid from "@material-ui/core/Grid";
 import Card from "@material-ui/core/Card";
+import CardHeader from "@material-ui/core/CardHeader";
 import CardContent from "@material-ui/core/CardContent";
+import CardActions from "@material-ui/core/CardActions";
 
 import { getDevice, getDeviceEffects} from "frontend/utils/api";
 import { connect } from "react-redux";
 import EffectControl from "frontend/components/EffectControl/EffectControl.jsx";
 import PixelColorGraph from "frontend/components/PixelColorGraph/PixelColorGraph.jsx";
-import MiniPresetsCard from "frontend/components/MiniPresetsCard/MiniPresetsCard.jsx";
+import PresetsCard from "frontend/components/PresetsCard/PresetsCard.jsx";
 
 class DeviceView extends React.Component {
   constructor() {
@@ -69,14 +71,15 @@ class DeviceView extends React.Component {
       return (
         <Grid container direction="row" spacing={4}>
           {renderPixelGraph(device, effect)}
-          {renderMiniPresetsCard(device)}
-          <Grid item xs={12}>
-            <Card>
+          <Grid item xs={6}>
+            <Card variant="outlined">
+              <CardHeader title="Effect Control" subheader="Select an effect. Adjust settings manually, or choose a preset." />
               <CardContent>
                 <EffectControl device={device} effect={effect}/>
               </CardContent>
             </Card>
           </Grid>
+          {renderPresetsCard(device)}
         </Grid>
       );
     }
@@ -88,7 +91,7 @@ const renderPixelGraph = (device, effect) => {
   if (device.effect && device.effect.name) {
     return (
       <Grid item xs={12}>
-        <Card>
+        <Card variant="outlined">
           <CardContent>
             <PixelColorGraph device={device}/>
           </CardContent>
@@ -98,17 +101,18 @@ const renderPixelGraph = (device, effect) => {
   }
 }
 
-const renderMiniPresetsCard = (device) => {
+const renderPresetsCard = (device) => {
   if (device.effect && device.effect.name) {
     return (
-      <Grid item xs={12}>
-        <MiniPresetsCard device={device}/>
+      <Grid item xs={6}>
+        <PresetsCard device={device}/>
       </Grid>
     )
   } else {
     return null
   }
 }
+
 
 DeviceView.propTypes = {
   devicesById: PropTypes.object.isRequired,

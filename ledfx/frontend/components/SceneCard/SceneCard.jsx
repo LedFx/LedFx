@@ -41,7 +41,7 @@ class SceneCard extends React.Component {
     const { classes, scene, activateScene, deleteScene } = this.props;
 
     return (
-      <Card>
+      <Card variant="outlined">
         <CardContent>
           <Typography variant="h5" color="inherit" className={classes.header}>
             { scene.name }

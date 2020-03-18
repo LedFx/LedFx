@@ -38,7 +38,7 @@ class DashboardView extends React.Component {
     {
       return (
         <div>
-          <Card>
+          <Card variant="outlined">
               <CardContent>
                 <p>Looks like you have no devices! Go to 'Device Management' to add them</p>
               </CardContent>
@@ -55,7 +55,7 @@ class DashboardView extends React.Component {
             Object.keys(devicesById).map(id => {                      
               return (
                 <Grid item lg={6}>
-                  <Card className={classes.card}>
+                  <Card className={classes.card} variant="outlined">
                     <CardContent>
                       <Grid container direction="row" spacing={1}>
                         <Grid item xs={12}>
@@ -73,14 +73,12 @@ class DashboardView extends React.Component {
           }
         </Grid>
 
-        <Grid container direction="row" spacing={4}>
-          <Grid item xs={12}>
-            <AddSceneCard />
-          </Grid>
-        </Grid>
-        <Grid container direction="row" spacing={4}>
-          <Grid item xs={12}>
+        <Grid container direction="row" spacing={4} alignItems="stretch">
+          <Grid item xs={6}>
             <MiniScenesCard />
+          </Grid>
+          <Grid item xs={6}>
+            <AddSceneCard />
           </Grid>
         </Grid>
       </div>
