@@ -21,7 +21,6 @@ const styles = theme => ({
     float: "right"
   },
   submitControls: {
-    margin: theme.spacing(1),
     display: "block",
     width: "100%"
   },
