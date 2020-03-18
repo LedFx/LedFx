@@ -29,12 +29,12 @@ const styles = theme => ({
     flexWrap: "wrap"
   },
   control: {
-    margin: theme.spacing.unit,
+    margin: theme.spacing(1),
     width: '100%'
   },
   schemaForm: {
-    marginLeft: 2 * theme.spacing.unit,
-    marginRight: 2 * theme.spacing.unit,
+    marginLeft: theme.spacing(2),
+    marginRight: theme.spacing(2),
     display: "flex",
     flexWrap: "wrap",
     width: "100%"

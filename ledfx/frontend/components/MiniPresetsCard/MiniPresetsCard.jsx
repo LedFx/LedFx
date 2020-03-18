@@ -37,10 +37,22 @@ const MiniPresetsCard = ({ device, presets, activatePreset, getDevicePresets }) 
   const classes = useStyles()
   useEffect(() => getDevicePresets(device.id), [])
 
-  const handleActivatePreset = (CAT) => {
-    return (pId) => activatePreset(device.id, CAT, device.effect.type, pId)
+  const renderPresetsButton = (presets, CATEGORY) => {
+    if (!presets || !Object.keys(presets).length) return 'No presets defined in this category'
+    return mapIncludeKey(presets).map(preset => {
+        return (
+          <Grid item key={preset.id}>
+            <Button
+              className={classes.presetButton}
+              onClick={() => activatePreset(device.id, CATEGORY, device.effect.type, preset.id)}
+            >
+              {preset.name}
+            </Button>
+          </Grid>
+        )
+    })
   }
-
+  
   return (
       <Card>
         <CardHeader title="Presets">
@@ -50,10 +62,10 @@ const MiniPresetsCard = ({ device, presets, activatePreset, getDevicePresets }) 
           {/*Buttons to activate each preset*/}
           <Grid container className={classes.buttonGrid}>
             <Grid item xs={6}>
-              {renderPresetsButton(presets.defaultPresets, classes.presetButton, handleActivatePreset(DEFAULT_CAT))}
+              {renderPresetsButton(presets.defaultPresets, DEFAULT_CAT)}
             </Grid>
             <Grid item xs={6}>
-              {renderPresetsButton(presets.customPresets, classes.presetButton, handleActivatePreset(CUSTOM_CAT))}
+              {renderPresetsButton(presets.customPresets, CUSTOM_CAT)}
             </Grid>
             <Grid item xs={12}>
               <AddPresetCard deviceId={device.id} presets={presets}></AddPresetCard>
@@ -64,29 +76,12 @@ const MiniPresetsCard = ({ device, presets, activatePreset, getDevicePresets }) 
     );
 }
 
-const renderPresetsButton = (presets, classes, onActivate) => {
-  if (!presets || !Object.keys(presets).length) return 'No presets defined in this category'
-  return mapIncludeKey(presets).map(preset => {
-      console.log(preset)
-      return (
-        <Grid item key={preset.id}>
-          <Button
-            className={classes}
-            onClick={() => onActivate(preset.id)}
-          >
-            {preset.name}
-          </Button>
-        </Grid>
-      );
-  })
-}
-
 const mapStateToProps = state => ({ 
   presets: state.presets
 })
 
 const mapDispatchToProps = (dispatch) => ({
-  activatePreset: (device, effect, presetId) => dispatch(activatePreset(device, effect, presetId)),
+  activatePreset: (device, cat, effect, presetId) => dispatch(activatePreset(device, cat, effect, presetId)),
   getDevicePresets: (deviceId) => dispatch(getDevicePresets(deviceId))
 })
 

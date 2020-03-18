@@ -17,11 +17,11 @@ import Typography from "@material-ui/core/Typography";
 
 const styles = theme => ({
   button: {
-    margin: theme.spacing.unit,
+    margin: theme.spacing(1),
     float: "right"
   },
   submitControls: {
-    margin: theme.spacing.unit,
+    margin: theme.spacing(1),
     display: "block",
     width: "100%"
   },
