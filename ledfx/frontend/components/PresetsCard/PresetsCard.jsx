@@ -46,8 +46,20 @@ const PresetsCard = ({ device, presets, activatePreset, getDevicePresets, addPre
   const [ name, setName ] = useState('')
   useEffect(() => getDevicePresets(device.id), [])
 
-  const handleActivatePreset = (CAT) => {
-    return (pId) => activatePreset(device.id, CAT, device.effect.type, pId)
+  const renderPresetsButton = (presets, CATEGORY) => {
+    if (!presets || !Object.keys(presets).length) return (<Button className={classes.presetButton} disabled>No Presets Found</Button>)
+    return mapIncludeKey(presets).map(preset => {
+        return (
+          <Grid item key={preset.id}>
+            <Button
+              className={classes.presetButton}
+              onClick={() => activatePreset(device.id, CATEGORY, device.effect.type, preset.id)}
+            >
+              {preset.name}
+            </Button>
+          </Grid>
+        )
+    })
   }
 
   return (
@@ -59,13 +71,13 @@ const PresetsCard = ({ device, presets, activatePreset, getDevicePresets, addPre
             Default
           </Typography>
           <Grid container className={classes.buttonGrid}>
-            {renderPresetsButton(presets.defaultPresets, classes.presetButton, handleActivatePreset(DEFAULT_CAT))}
+            {renderPresetsButton(presets.defaultPresets, DEFAULT_CAT)}
           </Grid>
           <Typography variant="subtitle2">
             Custom
           </Typography>
           <Grid container className={classes.buttonGrid}>
-            {renderPresetsButton(presets.customPresets, classes.presetButton, handleActivatePreset(CUSTOM_CAT))}
+            {renderPresetsButton(presets.customPresets, CUSTOM_CAT)}
           </Grid>
           <Typography variant="subtitle2">
             Add Preset
@@ -99,23 +111,6 @@ const PresetsCard = ({ device, presets, activatePreset, getDevicePresets, addPre
     );
 }
 
-const renderPresetsButton = (presets, classes, onActivate) => {
-  if (!presets || !Object.keys(presets).length) return <Button className={classes} disabled>No Presets Found</Button>
-  return mapIncludeKey(presets).map(preset => {
-      console.log(preset)
-      return (
-        <Grid item key={preset.id}>
-          <Button
-            className={classes}
-            onClick={() => onActivate(preset.id)}
-          >
-            {preset.name}
-          </Button>
-        </Grid>
-      );
-  })
-}
-
 const validateTextInput = (input, presets) => {
   if(!presets || !presets.customPresets || !presets.defaultPresets) return false
   const used = Object.keys(presets.customPresets).concat(Object.keys(presets.defaultPresets))
@@ -134,7 +129,7 @@ const mapStateToProps = state => ({
 
 const mapDispatchToProps = (dispatch) => ({
   addPreset: (presetName, deviceId) => dispatch(addPreset(presetName, deviceId)),
-  activatePreset: (device, effect, presetId) => dispatch(activatePreset(device, effect, presetId)),
+  activatePreset: (device, cat, effect, presetId) => dispatch(activatePreset(device, cat, effect, presetId)),
   getDevicePresets: (deviceId) => dispatch(getDevicePresets(deviceId))
 })
 
