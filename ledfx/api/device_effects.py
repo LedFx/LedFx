@@ -30,23 +30,26 @@ class EffectsEndpoint(RestEndpoint):
         return web.json_response(data=response, status=200)
 
     async def put(self, device_id, request) -> web.Response:
+        """Update the config of the active effect of a device"""
         device = self._ledfx.devices.get(device_id)
         if device is None:
             response = { 'not found': 404 }
             return web.json_response(data=response, status=404)
 
-        data = await request.json()
-        effect_type = data.get('type')
-        if effect_type is None:
-            response = { 'status' : 'failed', 'reason': 'Required attribute "type" was not provided' }
+        if not device.active_effect:
+            response = { 'status' : 'failed', 'reason': 'Device {} has no active effect to update config'.format(device_id) }
             return web.json_response(data=response, status=500)
 
+        data = await request.json()
         effect_config = data.get('config')
         if effect_config is None:
-            effect_config = {}
-        elif effect_config == "randomize":
+            response = { 'status' : 'failed', 'reason': 'Required attribute "config" was not provided' }
+            return web.json_response(data=response, status=500)
+
+        if effect_config == "RANDOMIZE":
             # Parse and break down schema for effect, in order to generate acceptable random values
             effect_config = {}
+            effect_type = device.active_effect.type
             effect = self._ledfx.effects.get_class(effect_type)
             schema = effect.schema().schema
             for setting in schema.keys():
