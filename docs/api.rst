@@ -2,7 +2,7 @@
 REST API
 ================================
 
-The REST APIs are undergoing active development and many of the below APIs are either not yet implemented or not fully functional. This mainly serves as a reference of what the final APIs will *eventually* look like.
+The REST APIs are undergoing active development and many of the below APIs are either not yet implemented or not fully functional. This page mainly serves as a reference of what the final APIs will *eventually* look like.
 
 GET /api/info
 ================================
