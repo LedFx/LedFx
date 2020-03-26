@@ -18,7 +18,7 @@ class GradientEffect(Effect):
 
     CONFIG_SCHEMA = vol.Schema({
         vol.Optional('gradient_name', description='Color gradient to display', default = 'Spectral'): vol.In(list(GRADIENTS.keys())),
-        vol.Optional('gradient_roll', description='Amount to shift the gradient', default = 0): vol.Coerce(int),
+        vol.Optional('gradient_roll', description='Amount to shift the gradient', default = 0): vol.All(vol.Coerce(int), vol.Range(min=0, max=10)),
         #vol.Optional('gradient_method', description='Function used to generate gradient', default = 'cubic_ease'): vol.In(["cubic_ease", "bezier"]),
     })
 

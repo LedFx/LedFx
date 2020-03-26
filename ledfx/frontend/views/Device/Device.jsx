@@ -70,7 +70,13 @@ class DeviceView extends React.Component {
     {
       return (
         <Grid container direction="row" spacing={4}>
-          {renderPixelGraph(device, effect)}
+          <Grid item xs={12}>
+            <Card variant="outlined">
+              <CardContent>
+                <PixelColorGraph device={device}/>
+              </CardContent>
+            </Card>
+          </Grid>
           <Grid item xs={6}>
             <Card variant="outlined">
               <CardHeader title="Effect Control" subheader="Select an effect. Adjust settings manually, or choose a preset." />
@@ -79,40 +85,15 @@ class DeviceView extends React.Component {
               </CardContent>
             </Card>
           </Grid>
-          {renderPresetsCard(device)}
+          <Grid item xs={6}>
+            <PresetsCard device={device}/>
+          </Grid>
         </Grid>
       );
     }
     return (<p>Loading</p>)
   }
 }
-
-const renderPixelGraph = (device, effect) => {
-  if (device.effect && device.effect.name) {
-    return (
-      <Grid item xs={12}>
-        <Card variant="outlined">
-          <CardContent>
-            <PixelColorGraph device={device}/>
-          </CardContent>
-        </Card>
-      </Grid>
-    )
-  }
-}
-
-const renderPresetsCard = (device) => {
-  if (device.effect && device.effect.name) {
-    return (
-      <Grid item xs={6}>
-        <PresetsCard device={device}/>
-      </Grid>
-    )
-  } else {
-    return null
-  }
-}
-
 
 DeviceView.propTypes = {
   devicesById: PropTypes.object.isRequired,
