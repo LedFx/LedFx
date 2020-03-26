@@ -11,7 +11,7 @@ from ledfx.utils import async_fire_and_forget
 from ledfx.http import HttpServer
 from ledfx.devices import Devices
 from ledfx.effects import Effects
-from ledfx.config import load_config, save_config
+from ledfx.config import load_config, save_config, load_default_presets
 from ledfx.events import Events, LedFxShutdownEvent
 
 _LOGGER = logging.getLogger(__name__)
@@ -21,6 +21,7 @@ class LedFxCore(object):
     def __init__(self, config_dir):
         self.config_dir = config_dir
         self.config = load_config(config_dir)
+        self.config["default_presets"] = load_default_presets()
 
         if sys.platform == 'win32':
             self.loop = asyncio.ProactorEventLoop()

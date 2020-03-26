@@ -2,6 +2,8 @@ import fetch from "cross-fetch";
 
 const apiUrl = window.location.protocol + "//" + window.location.host + "/api";
 
+import { getDevicePresets } from './device_presets'
+
 export const DELETE_PRESET = "DELETE_PRESET"
 export const ADD_PRESET = "ADD_PRESET"
 export const GET_ALL_PRESETS = "GET_ALL_PRESETS"

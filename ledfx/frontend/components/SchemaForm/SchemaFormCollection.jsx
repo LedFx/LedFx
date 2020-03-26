@@ -33,8 +33,8 @@ const styles = theme => ({
     width: '100%'
   },
   schemaForm: {
-    marginLeft: 2 * theme.spacing(1),
-    marginRight: 2 * theme.spacing(1),
+    marginLeft: theme.spacing(2),
+    marginRight: theme.spacing(2),
     display: "flex",
     flexWrap: "wrap",
     width: "100%"

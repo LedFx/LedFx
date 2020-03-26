@@ -11,7 +11,7 @@ import {
     content: {
       flexGrow: 1,
       backgroundColor: theme.palette.background.default,
-      padding: theme.spacing(1) * 3,
+      padding: theme.spacing(3),
       minWidth: 200,
       [theme.breakpoints.up('md')]: {
         marginLeft: drawerWidth

@@ -8,6 +8,7 @@ _LOGGER = logging.getLogger(__name__)
 
 CONFIG_DIRECTORY = '.ledfx'
 CONFIG_FILE_NAME = 'config.yaml'
+DEFAULT_PRESETS_FILE_NAME = 'default_presets.yaml'
 
 CORE_CONFIG_SCHEMA = vol.Schema({
     vol.Optional('host'): str,
@@ -84,10 +85,23 @@ def load_config(config_dir: str) -> dict:
             config_yaml = {}
         return CORE_CONFIG_SCHEMA(config_yaml)
 
+def load_default_presets() -> dict:
+    ledfx_dir = os.path.dirname(os.path.realpath(__file__))
+    default_presets_path = os.path.join(ledfx_dir, DEFAULT_PRESETS_FILE_NAME)
+    print('Loading default presets from {}'.format(ledfx_dir))
+    if not os.path.isfile(default_presets_path):
+        print('Failed to load {}'.format(DEFAULT_PRESETS_FILE_NAME))
+    with open(default_presets_path, 'rt') as file:
+        return yaml.safe_load(file)
+
 def save_config(config: dict, config_dir: str) -> None:
     """Saves the configuration to the provided directory"""
 
     config_file = ensure_config_file(config_dir)
     _LOGGER.info(('Saving configuration file to {}').format(config_dir))
+    # prevent defaults being saved to config.yaml by creating a copy (python no pass by value)
+    config_view = dict(config)
+    if "default_presets" in config_view.keys():
+        del config_view["default_presets"]
     with open(config_file, 'w') as file:
-        yaml.dump(config, file, default_flow_style=False)
+        yaml.dump(config_view, file, default_flow_style=False)

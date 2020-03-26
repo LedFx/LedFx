@@ -5,7 +5,8 @@ import withStyles from "@material-ui/core/styles/withStyles";
 
 import {
   setDeviceEffect,
-  fetchDeviceEffects
+  fetchDeviceEffects,
+  RANDOMIZE_EFFECT
 } from "frontend/actions";
 
 import Grid from "@material-ui/core/Grid";
@@ -41,6 +42,10 @@ class EffectControl extends React.Component {
     this.props.dispatch(setDeviceEffect(this.props.device.id, type, config))
   };
 
+  handleRandomizeEffect = () => {
+    this.props.dispatch(setDeviceEffect(this.props.device.id, null, RANDOMIZE_EFFECT))
+  };
+
   render() {
     const { classes, schemas, effect } = this.props;
     
@@ -70,6 +75,13 @@ class EffectControl extends React.Component {
             color="primary"
           >
             Clear Effect
+          </Button>
+          <Button
+            className={classes.button}
+            onClick={this.handleRandomizeEffect}
+            color="primary"
+          >
+            Randomize
           </Button>
         </div>
         </SchemaFormCollection>
