@@ -12,8 +12,7 @@ import Sidebar from "frontend/components/Sidebar/Sidebar.jsx";
 import withStyles from "@material-ui/core/styles/withStyles";
 import viewRoutes from "frontend/routes/views.jsx";
 import dashboardStyle from "./style.jsx";
-// import logo from "frontend/assets/img/logo.png";
-import logo from "frontend/assets/img/icon/small_white_alpha.png";
+import logo from "frontend/assets/img/icon/large_white_alpha.png";
 
 import { MuiThemeProvider, createMuiTheme } from "@material-ui/core/styles";
 import cyan from "@material-ui/core/colors/cyan";
@@ -79,7 +78,6 @@ class DefaultLayout extends React.Component {
             handleDrawerToggle={handleDrawerToggle}
             location={this.props.location}
           />
-          <h1>sss</h1>
           <Sidebar
             handleDrawerToggle={handleDrawerToggle}
             open={this.state.mobileOpen}

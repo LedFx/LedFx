@@ -15,4 +15,4 @@ class EffectsEndpoint(RestEndpoint):
             if device.active_effect:
                 response[device.active_effect.type] = device.active_effect.config
 
-        return web.Response(text=json.dumps(response), status=200)
+        return web.json_response(data=response, status=200)

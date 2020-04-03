@@ -81,11 +81,13 @@ class PixelColorGraph extends React.Component {
         }],
         yAxes: [{
             ticks: {
+                display: false,
                 min: 0,
                 max: 256,
                 stepSize: 64
             },
             gridLines: {
+                display: false,
                 color: "rgba(0, 0, 0, .125)",
             }
         }],
@@ -188,11 +190,7 @@ class PixelColorGraph extends React.Component {
     const { classes, device } = this.props;
     
     return (
-      <Card>
-        <CardContent className={classes.content}>
-          <Line data={this.state.chartData} options={this.state.chartOptions}/>
-        </CardContent>
-      </Card>
+      <Line data={this.state.chartData} options={this.state.chartOptions}/>
     );
   }
 }

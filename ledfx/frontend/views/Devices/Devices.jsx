@@ -9,9 +9,9 @@ import { connect } from "react-redux";
 
 import Grid from "@material-ui/core/Grid";
 import Card from "@material-ui/core/Card";
+import CardHeader from "@material-ui/core/CardHeader";
 import CardContent from "@material-ui/core/CardContent";
 import Button from "@material-ui/core/Button";
-import AddIcon from "@material-ui/icons/Add";
 
 import DevicesTable from "frontend/components/DevicesTable/DevicesTable.jsx";
 import DeviceConfigDialog from "frontend/components/DeviceConfigDialog/DeviceConfigDialog.jsx";
@@ -23,8 +23,8 @@ const styles = theme => ({
   },
   button: {
     position: "absolute",
-    bottom: theme.spacing.unit * 2,
-    right: theme.spacing.unit * 2
+    bottom: theme.spacing(2),
+    right: theme.spacing(2)
   },
   dialogButton: {
     float: "right"
@@ -54,7 +54,8 @@ class DevicesView extends React.Component {
       <div>
         <Grid container spacing={16}>
           <Grid item xs={12} sm={12} md={12}>
-            <Card>
+            <Card variant="outlined">
+              <CardHeader title="Devices" subheader="View and manage all your devices connected to LedFx" />
               <CardContent>
                 <DevicesTable />
               </CardContent>
@@ -62,13 +63,13 @@ class DevicesView extends React.Component {
           </Grid>
         </Grid>
         <Button
-          variant="fab"
+          variant="contained"
           color="primary"
           aria-label="Add"
           className={classes.button}
           onClick={this.openAddDeviceDialog}
         >
-          <AddIcon />
+          Add Device
         </Button>
         <DeviceConfigDialog
           open={this.state.addDialogOpened}

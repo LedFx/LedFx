@@ -6,8 +6,8 @@ import { MuiThemeProvider } from "@material-ui/core/styles";
 import Select from "@material-ui/core/Select";
 import InputLabel from "@material-ui/core/InputLabel";
 import MenuItem from "@material-ui/core/MenuItem";
+import ListSubheader from '@material-ui/core/ListSubheader';
 import FormControl from "@material-ui/core/FormControl";
-//import Slider from '@material-ui/core/Slider';
 import Input from '@material-ui/core/Input';
 
 import Button from "@material-ui/core/Button";
@@ -29,12 +29,12 @@ const styles = theme => ({
     flexWrap: "wrap"
   },
   control: {
-    margin: theme.spacing.unit,
+    margin: theme.spacing(1),
     width: '100%'
   },
   schemaForm: {
-    marginLeft: 2 * theme.spacing.unit,
-    marginRight: 2 * theme.spacing.unit,
+    marginLeft: theme.spacing(2),
+    marginRight: theme.spacing(2),
     display: "flex",
     flexWrap: "wrap",
     width: "100%"
@@ -139,6 +139,7 @@ class SchemaFormCollection extends React.Component {
             <em>None</em>
           </MenuItem>
           
+          {/* <ListSubheader>Test Subheader</ListSubheader> */}
           {Object.keys(schemaCollection).map(collectionKey => {
               return (
                 <MenuItem key={collectionKey} value={collectionKey}>
@@ -149,29 +150,6 @@ class SchemaFormCollection extends React.Component {
         </Select>
       </FormControl>
     );
-
-// For https://material-ui.com/components/slider/ With input field
-
-//    let customSlider = (
-//      <FormControl className={classes.control}>
-//        <InputLabel>Slider</InputLabel>
-//        <Select
-//          value={this.state.collectionKey}
-//          onChange={this.handleChangeSelectedCollection}
-//        >
-//          <Slider value="">
-//            <em>None</em>
-//          </Slider>
-//          {Object.keys(schemaCollection).map(collectionKey => {
-//            return (
-//              <Slider key={collectionKey} value={collectionKey}>
-//                {collectionKey}
-//              </Slider>
-//            );
-//          })}
-//        </Select>
-//      </FormControl>
-//    );
 
     var additionUi = null
     var form = ["*"]

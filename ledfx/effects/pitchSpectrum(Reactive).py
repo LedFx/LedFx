@@ -1,4 +1,4 @@
-from ledfx.effects.audio import AudioReactiveEffect, MIN_MIDI, MAX_MIDI, AUDIO_CHANNEL
+from ledfx.effects.audio import AudioReactiveEffect, MIN_MIDI, MAX_MIDI
 from ledfx.effects.gradient import GradientEffect
 from ledfx.effects import mix_colors
 from ledfx.color import COLORS
@@ -11,29 +11,19 @@ class PitchSpectrumAudioEffect(AudioReactiveEffect, GradientEffect):
     NAME = "PitchSpectrum"
 
     CONFIG_SCHEMA = vol.Schema({
-        vol.Optional('Audio_Channel', description='Audio Channel to use as import source', default = "Mono"): vol.In(list(AUDIO_CHANNEL.keys())),
         vol.Optional('blur', description='Amount to blur the effect', default = 1.0): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=10)),
         vol.Optional('mirror', description='Mirror the effect', default = True): bool,
         vol.Optional('fade_rate', description='Rate at which notes fade', default = 0.15):  vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
-        vol.Optional('responsiveness', description='Responsiveness of the note changes', default = 0.15):  vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
+        vol.Optional('responsiveness', description='Responsiveness to note changes', default = 0.15):  vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
     })
 
     def config_updated(self, config):
-        win_s = 1024
-        hop_s = 48000 // 60
-        tolerance = 0.8
-
-        # TODO: Move into the base audio effect class
-        self.pitch_o = aubio.pitch("schmitt", win_s, hop_s, 48000)
-        self.pitch_o.set_unit("midi")
-        self.pitch_o.set_tolerance(tolerance)
-
         self.avg_midi = None
 
 
     def audio_data_updated(self, data):
         y = data.interpolated_melbank(self.pixel_count, filtered = False)
-        midi_value = self.pitch_o(data.audio_sample())[0]
+        midi_value = data.midi_value()
         note_color = COLORS['black']
         if not self.avg_midi:
             self.avg_midi = midi_value
@@ -45,6 +35,7 @@ class PitchSpectrumAudioEffect(AudioReactiveEffect, GradientEffect):
         # Grab the note color based on where it falls in the midi range
         if self.avg_midi >= MIN_MIDI:
             midi_scaled = (self.avg_midi - MIN_MIDI) / (MAX_MIDI - MIN_MIDI)
+
             note_color = self.get_gradient_color(midi_scaled)
 
         # Mix in the new color based on the filterbank information and fade out

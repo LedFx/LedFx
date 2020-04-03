@@ -3,12 +3,15 @@ import PropTypes from "prop-types";
 
 import Grid from "@material-ui/core/Grid";
 import Card from "@material-ui/core/Card";
+import CardHeader from "@material-ui/core/CardHeader";
 import CardContent from "@material-ui/core/CardContent";
+import CardActions from "@material-ui/core/CardActions";
 
-import { callApi, getDevice, getDeviceEffects} from "frontend/utils/api";
+import { getDevice, getDeviceEffects} from "frontend/utils/api";
 import { connect } from "react-redux";
 import EffectControl from "frontend/components/EffectControl/EffectControl.jsx";
 import PixelColorGraph from "frontend/components/PixelColorGraph/PixelColorGraph.jsx";
+import PresetsCard from "frontend/components/PresetsCard/PresetsCard.jsx";
 
 class DeviceView extends React.Component {
   constructor() {
@@ -51,7 +54,7 @@ class DeviceView extends React.Component {
       this.state.effect = null;
       getDeviceEffects(device.id)
       .then(effect => {
-        this.setState({ effect: effect });
+        this.setState({ effect });
       })
       .catch(error => console.log(error));
     }
@@ -66,15 +69,24 @@ class DeviceView extends React.Component {
     if (device)
     {
       return (
-        <Grid container spacing={24}>
-          <Grid item xs>
-            <h1>{device.config.name}</h1>
-          </Grid>
+        <Grid container direction="row" spacing={4}>
           <Grid item xs={12}>
-           <PixelColorGraph device={device}/>
+            <Card variant="outlined">
+              <CardContent>
+                <PixelColorGraph device={device}/>
+              </CardContent>
+            </Card>
           </Grid>
-          <Grid item xs={12}>
-            <EffectControl device={device} effect={effect}/>
+          <Grid item xs={6}>
+            <Card variant="outlined">
+              <CardHeader title="Effect Control" subheader="Select an effect. Adjust settings manually, or choose a preset." />
+              <CardContent>
+                <EffectControl device={device} effect={effect}/>
+              </CardContent>
+            </Card>
+          </Grid>
+          <Grid item xs={6}>
+            <PresetsCard device={device}/>
           </Grid>
         </Grid>
       );

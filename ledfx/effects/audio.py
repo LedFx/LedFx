@@ -35,40 +35,40 @@ FREQUENCY_RANGES_SIMPLE = {
     'high': FrequencyRange(4000, 24000),
 }
 
-AudioChannel = namedtuple('AudioChannel','min,max')
-AUDIO_CHANNEL = {
-    'Mono': FrequencyRange(20, 60),
-    'Stereo (In Development)': FrequencyRange(60, 250),
-    'Left (In Development)': FrequencyRange(250, 500),
-    'Right (In Development)': FrequencyRange(500, 2000),
-}
-
 MIN_MIDI = 21
 MAX_MIDI = 108
 
 class AudioInputSource(object):
 
+    _is_activated = False
     _audio = None
     _stream = None
     _callbacks = []
     _audioWindowSize = 4
     _processed_audio_sample = None
+    _volume = -90
+    _volume_filter = ExpFilter(-90, alpha_decay=0.01, alpha_rise=0.99)
 
     AUDIO_CONFIG_SCHEMA = vol.Schema({
         vol.Optional('sample_rate', default = 60): int,
         vol.Optional('mic_rate', default = 48000): int,
         vol.Optional('fft_size', default = 1024): int,
         vol.Optional('device_index', default = 0): int,
-        vol.Optional('pre_emphasis', default = 0.0): float,
+        vol.Optional('pre_emphasis', default = 0.3): float,
         vol.Optional('min_volume', default = -70.0): float
     }, extra=vol.ALLOW_EXTRA)
 
     def __init__(self, ledfx, config):
-        self._config = self.AUDIO_CONFIG_SCHEMA(config)
         self._ledfx = ledfx
+        self.update_config(config)
 
-        self._volume = -90
-        self._volume_filter = ExpFilter(-90, alpha_decay=0.01, alpha_rise=0.99)
+    def update_config(self, config):
+        """Deactivate the audio, update the config, the reactivate"""
+        
+        self.deactivate(); 
+        self._config = self.AUDIO_CONFIG_SCHEMA(config)
+        if len(self._callbacks) != 0:
+            self.activate()
 
     def activate(self):
 
@@ -111,10 +111,10 @@ class AudioInputSource(object):
         _LOGGER.info("Audio source opened.")
 
     def deactivate(self):
-        self._stream.stop_stream()
-        
-        self._stream.close()
-        self._stream = None
+        if self._stream:
+            self._stream.stop_stream()
+            self._stream.close()
+            self._stream = None
         self._rolling_window = None
         _LOGGER.info("Audio source closed.")
 
@@ -162,14 +162,11 @@ class AudioInputSource(object):
 
         # Calculate the current volume for silence detection
         self._volume = aubio.db_spl(self._raw_audio_sample)
+        if np.isinf(self._volume): self._volume = 0.0
         self._volume_filter.update(self._volume)
 
         # Calculate the frequency domain from the filtered data and
         # force all zeros when below the volume threshold
-        #print ("1:", self._volume_filter.value)
-        #print ("2:", self._config['min_volume'])
-        #print ("3:", self._raw_audio_sample)
-        #if self._volume_filter.value > self._config['min_volume']:
         if self._volume_filter.value > self._config['min_volume']:
             self._processed_audio_sample = self._raw_audio_sample
 
@@ -189,14 +186,10 @@ class AudioInputSource(object):
 
     def audio_sample(self, raw = False):
         """Returns the raw audio sample"""
+
         if raw:
             return self._raw_audio_sample
-        # print(self._processed_audio_sample)
         return self._processed_audio_sample
-        # if self._processed_audio_sample:
-        #     return self._processed_audio_sample
-        # else:
-        #     return self._raw_audio_sample
 
     def frequency_domain(self):
         return self._frequency_domain
@@ -213,6 +206,7 @@ class MelbankInputSource(AudioInputSource):
         vol.Optional('min_frequency', default = 20): int,
         vol.Optional('max_frequency', default = 18000): int,
         vol.Optional('min_volume', default = -70.0): float,
+        vol.Optional('pitch_tolerance', default = 0.8): float,
         vol.Optional('min_volume_count', default = 20): int,
         vol.Optional('coeffs_type', default = "scott"): str
     }, extra=vol.ALLOW_EXTRA)
@@ -222,6 +216,20 @@ class MelbankInputSource(AudioInputSource):
         super().__init__(ledfx, config)
 
         self._initialize_melbank()
+        self._initialize_pitch()
+        self._initialize_tempo()
+        self._initialize_onset()
+        self._initialize_oscillator()
+
+    def update_config(self, config):
+        validated_config = self.CONFIG_SCHEMA(config)
+        super().update_config(validated_config)
+        
+        self._initialize_melbank()
+        self._initialize_pitch()
+        self._initialize_tempo()
+        self._initialize_onset()
+        self._initialize_oscillator()
 
     def _invalidate_caches(self):
         """Invalidates the cache for all melbank related data"""
@@ -229,6 +237,40 @@ class MelbankInputSource(AudioInputSource):
         self.melbank.cache_clear()
         self.melbank_filtered.cache_clear()
         self.interpolated_melbank.cache_clear()
+        self.midi_value.cache_clear()
+
+    def _initialize_pitch(self):
+        self.pitch_o = aubio.pitch("schmitt",
+            self._config['fft_size'],
+            self._config['mic_rate'] // self._config['sample_rate'],
+            self._config['mic_rate'])
+        self.pitch_o.set_unit("midi")
+        self.pitch_o.set_tolerance(self._config['pitch_tolerance'])
+
+    def _initialize_tempo(self):
+        self.tempo_o = aubio.tempo("default",
+            self._config['fft_size'],
+            self._config['mic_rate'] // self._config['sample_rate'],
+            self._config['mic_rate'])
+
+    def _initialize_onset(self):
+        self.onset_high = aubio.onset("hfc",
+            self._config['fft_size'],
+            self._config['mic_rate'] // self._config['sample_rate'],
+            self._config['mic_rate'])
+        self.onset_mids = aubio.onset("phase",
+            self._config['fft_size'],
+            self._config['mic_rate'] // self._config['sample_rate'],
+            self._config['mic_rate'])
+        self.onset_lows = aubio.onset("specdiff",
+            self._config['fft_size'],
+            self._config['mic_rate'] // self._config['sample_rate'],
+            self._config['mic_rate'])
+
+
+    def _initialize_oscillator(self):
+        self.beat_timestamp = time.time()
+        self.beat_period = 2
 
     def _initialize_melbank(self):
         """Initialize all the melbank related variables"""
@@ -360,6 +402,48 @@ class MelbankInputSource(AudioInputSource):
                 self._config['mic_rate'])
             self.melbank_frequencies = self.melbank_frequencies[1:-1]
 
+        if self._config['coeffs_type'] == 'fixed':
+            ranges = FREQUENCY_RANGES.values()
+            upper_edges_hz = np.zeros(len(ranges))
+            lower_edges_hz = np.zeros(len(ranges))
+            for idx, value in enumerate(ranges):
+                lower_edges_hz[idx] = value.min
+                upper_edges_hz[idx] = value.max
+
+            (melmat, center_frequencies_hz, freqs) = mel.compute_melmat_from_range(
+                lower_edges_hz=lower_edges_hz,
+                upper_edges_hz=upper_edges_hz,
+                num_fft_bands=int(self._config['fft_size'] // 2) + 1,
+                sample_rate=self._config['mic_rate'])
+
+            self._config['samples'] = len(center_frequencies_hz)
+            self.filterbank = aubio.filterbank(
+                self._config['samples'],
+                self._config['fft_size'])
+            self.filterbank.set_coeffs(melmat.astype(np.float32))
+            self.melbank_frequencies = center_frequencies_hz
+
+        if self._config['coeffs_type'] == 'fixed_simple':
+            ranges = FREQUENCY_RANGES_SIMPLE.values()
+            upper_edges_hz = np.zeros(len(ranges))
+            lower_edges_hz = np.zeros(len(ranges))
+            for idx, value in enumerate(ranges):
+                lower_edges_hz[idx] = value.min
+                upper_edges_hz[idx] = value.max
+
+            (melmat, center_frequencies_hz, freqs) = mel.compute_melmat_from_range(
+                lower_edges_hz=lower_edges_hz,
+                upper_edges_hz=upper_edges_hz,
+                num_fft_bands=int(self._config['fft_size'] // 2) + 1,
+                sample_rate=self._config['mic_rate'])
+
+            self._config['samples'] = len(center_frequencies_hz)
+            self.filterbank = aubio.filterbank(
+                self._config['samples'],
+                self._config['fft_size'])
+            self.filterbank.set_coeffs(melmat.astype(np.float32))
+            self.melbank_frequencies = center_frequencies_hz
+
         self.melbank_frequencies = self.melbank_frequencies.astype(int)
 
         # Normalize the filterbank triangles to a consistent height, the
@@ -371,13 +455,14 @@ class MelbankInputSource(AudioInputSource):
             self.filterbank.set_coeffs(coeffs)
 
         # Find the indexes for each of the frequency ranges
-        for i in range(0, len(self.melbank_frequencies) - 1):
+        self.lows_index = self.mids_index = self.highs_index = 1
+        for i in range(0, len(self.melbank_frequencies)):
             if self.melbank_frequencies[i] < FREQUENCY_RANGES_SIMPLE['low'].max:
-                self.lows_index = i
+                self.lows_index = i + 1
             elif self.melbank_frequencies[i] < FREQUENCY_RANGES_SIMPLE['mid'].max:
-                self.mids_index = i
+                self.mids_index = i + 1
             elif self.melbank_frequencies[i] < FREQUENCY_RANGES_SIMPLE['high'].max:
-                self.highs_index = i
+                self.highs_index = i + 1
 
         # Build up some of the common filters
         self.mel_gain = ExpFilter(np.tile(1e-1, self._config['samples']), alpha_decay=0.01, alpha_rise=0.99)
@@ -396,6 +481,11 @@ class MelbankInputSource(AudioInputSource):
             self.mel_gain.update(np.max(smooth(raw_filter_banks, sigma=1.0)))
             filter_banks = raw_filter_banks / self.mel_gain.value
             filter_banks = self.mel_smoothing.update(filter_banks)
+
+            #print(self.onset_mids(self.audio_sample())[0])
+            #specdesc_high = self.specdesc_o_high(self._frequency_domain)[0]
+            #print(specdesc_high)
+
         else:
             raw_filter_banks = np.zeros(self._config['samples'])
             filter_banks = raw_filter_banks
@@ -411,10 +501,10 @@ class MelbankInputSource(AudioInputSource):
         return self.melbank()[:self.lows_index]
 
     def melbank_mids(self):
-        return self.melbank()[self.lows_index+1:self.mids_index]
+        return self.melbank()[self.lows_index:self.mids_index]
 
     def melbank_highs(self):
-        return self.melbank()[self.highs_index:]
+        return self.melbank()[self.mids_index:]
 
     @lru_cache(maxsize=32)
     def melbank_filtered(self):
@@ -435,6 +525,37 @@ class MelbankInputSource(AudioInputSource):
 
         return math.interpolate(self.melbank(), size)
 
+    @lru_cache(maxsize=32)
+    def midi_value(self):
+        return self.pitch_o(self.audio_sample())[0]
+
+    def onset(self):
+        return self.onset_o(self.audio_sample())[0]
+
+    def oscillator(self):
+        """
+        returns a float (0<=x<1) corresponding to the current position of beat tracker.
+        this is synced and quantized to the bpm of whatever is playing.
+        
+        0                0.5                 <1
+        {----------time for one beat---------}
+               ^    -->      -->      -->
+            value of
+           oscillator
+        """
+        # update tempo and oscillator
+        is_beat = bool(self.tempo_o(self.audio_sample(raw=True))[0])
+        if is_beat:
+            self.beat_period = self.tempo_o.get_period_s()
+            self.beat_timestamp = time.time()
+            oscillator = 0
+        else:
+            time_since_beat = time.time()-self.beat_timestamp
+            oscillator = 1-(self.beat_period-time_since_beat)/self.beat_period
+            oscillator = min(1, oscillator) # ensure it's between 0 and 1. useful when audio cuts
+            oscillator = max(0, oscillator)
+        return oscillator, is_beat
+
 @Effect.no_registration
 class AudioReactiveEffect(Effect):
     """
@@ -451,13 +572,11 @@ class AudioReactiveEffect(Effect):
             self._ledfx.audio = MelbankInputSource(self._ledfx, self._ledfx.config.get('audio', {}))
 
         self.audio = self._ledfx.audio
-        self._ledfx.audio.subscribe(
-            self._audio_data_updated)
+        self._ledfx.audio.subscribe(self._audio_data_updated)
 
     def deactivate(self):
         _LOGGER.info('Deactivating AudioReactiveEffect.')
-        self.audio.unsubscribe(
-            self._audio_data_updated)
+        self.audio.unsubscribe(self._audio_data_updated)
         super().deactivate()
 
     def create_filter(self, alpha_decay, alpha_rise):

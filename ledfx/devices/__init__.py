@@ -174,11 +174,14 @@ class Devices(RegistryLoader):
                 config = device['config'],
                 ledfx = self._ledfx)
             if 'effect' in device:
-                effect = self._ledfx.effects.create(
-                    ledfx = self._ledfx,
-                    type = device['effect']['type'],
-                    config = device['effect']['config'])
-                self._ledfx.devices.get_device(device['id']).set_effect(effect)
+                try:
+                    effect = self._ledfx.effects.create(
+                        ledfx = self._ledfx,
+                        type = device['effect']['type'],
+                        config = device['effect']['config'])
+                    self._ledfx.devices.get_device(device['id']).set_effect(effect)
+                except vol.MultipleInvalid:
+                    _LOGGER.warning('Effect schema changed. Not restoring effect')
                 
 
     def clear_all_effects(self):

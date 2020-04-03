@@ -1,13 +1,11 @@
-from ledfx.effects.audio import AudioReactiveEffect, AUDIO_CHANNEL
+from ledfx.effects.audio import AudioReactiveEffect
 import voluptuous as vol
 import numpy as np
 
 class SpectrumAudioEffect(AudioReactiveEffect):
 
     NAME = "Spectrum"
-    CONFIG_SCHEMA = vol.Schema({
-        vol.Optional('Audio_Channel', description='Audio Channel to use as import source', default = "Mono"): vol.In(list(AUDIO_CHANNEL.keys())),
-        })
+    CONFIG_SCHEMA = vol.Schema({})
 
     _prev_y = None
 
