@@ -1,0 +1,66 @@
+{
+  "name": "frontend",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "@material-ui/core": "^4.8.3",
+    "@material-ui/icons": "^4.5.1",
+    "axios": "^0.19.2",
+    "chart.js": "^2.9.3",
+    "core-js": "^3.4.1",
+    "cross-fetch": "^3.0.4",
+    "glob": "^7.1.6",
+    "history": "^4.10.1",
+    "react": "^16.13.1",
+    "react-chartjs-2": "^2.9.0",
+    "react-dom": "^16.13.1",
+    "react-event-listener": "^0.6.6",
+    "react-redux": "^5.1.2",
+    "react-router-dom": "^4.3.1",
+    "react-schema-form": "^0.6.15",
+    "recompose": "^0.30.0",
+    "redux": "^4.0.5",
+    "redux-thunk": "^2.3.0",
+    "sockette": "^2.0.6",
+    "spotify-web-api-node": "^4.0.0",
+    "tv4": "^1.3.0"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+  },
+  "eslintConfig": {
+    "extends": "react-app"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^4.2.4",
+    "@testing-library/react": "^9.3.2",
+    "@testing-library/user-event": "^7.1.2",
+    "react-scripts": "3.4.1",
+    "@typescript-eslint/eslint-plugin": "^2.18.0",
+    "@typescript-eslint/parser": "^2.18.0",
+    "eslint": "^6.8.0",
+    "eslint-config-prettier": "^6.10.0",
+    "eslint-import-resolver-alias": "^1.1.2",
+    "eslint-plugin-import": "^2.20.1",
+    "eslint-plugin-jsx-a11y": "^6.2.3",
+    "eslint-plugin-prettier": "^3.1.2",
+    "eslint-plugin-react": "^7.18.2",
+    "prettier": "^1.19.1",
+    "typescript": "^3.7.5"
+  }
+}
