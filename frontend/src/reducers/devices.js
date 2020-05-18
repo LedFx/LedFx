@@ -6,7 +6,7 @@ import {
     RECEIVE_DEVICE_UPDATE,
     RECEIVE_DEVICE_EFFECT_UPDATE,
     RECEIVE_DEVICE_ENTRY
-} from '../actions'
+} from 'actions'
 
 function device(
     state = {

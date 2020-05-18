@@ -1,4 +1,4 @@
-import { drawerWidth } from "../../assets/jss/style";
+import { drawerWidth } from "assets/jss/style";
 
 const appStyle = (theme) => ({
   root: {
@@ -9,7 +9,7 @@ const appStyle = (theme) => ({
   content: {
     flexGrow: 1,
     backgroundColor: theme.palette.background.default,
-    padding: theme.spacing.unit * 3,
+    padding: theme.spacing(3),
     minWidth: 200,
     [theme.breakpoints.up("md")]: {
       marginLeft: drawerWidth,

@@ -1,6 +1,6 @@
 import {
     drawerWidth
-  } from "../../assets/jss/style";
+  } from "assets/jss/style";
   
   
 const headerStyle = theme => ({

@@ -1,7 +1,6 @@
-import { combineReducers } from 'redux'
 import {
     RECEIVE_SCHEMAS,
-} from '../actions'
+} from 'actions'
 
 export function schemas(state = {}, action) {
     switch (action.type) {

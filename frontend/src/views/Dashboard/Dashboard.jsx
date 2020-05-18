@@ -5,14 +5,11 @@ import withStyles from "@material-ui/core/styles/withStyles";
 
 import Card from '@material-ui/core/Card';
 import CardContent from '@material-ui/core/CardContent';
-import Typography from '@material-ui/core/Typography';
-
-import Table from '@material-ui/core/Table';
-import TableBody from '@material-ui/core/TableBody';
 import Grid from "@material-ui/core/Grid";
-import PixelColorGraph from "../../components/PixelColorGraph/PixelColorGraph";
-import DeviceMiniControl from '../../components/DeviceMiniControl/DeviceMiniControl';
-import AddPresetCard from "../../components/AddPresetCard/AddPresetCard";
+
+import PixelColorGraph from "components/PixelColorGraph/PixelColorGraph";
+import DeviceMiniControl from 'components/DeviceMiniControl/DeviceMiniControl';
+import AddPresetCard from "components/AddPresetCard/AddPresetCard";
 
 const styles = theme => ({
   root: {
@@ -35,7 +32,7 @@ class DashboardView extends React.Component {
   render() {
     const { classes, devicesById } = this.props;
 
-    if (Object.keys(devicesById) == 0)
+    if (Object.keys(devicesById) === 0)
     {
       return (
         <div>

@@ -1,5 +1,4 @@
 import React from "react";
-import classNames from "classnames";
 import PropTypes from "prop-types";
 import { connect } from "react-redux";
 
@@ -8,7 +7,6 @@ import AppBar from "@material-ui/core/AppBar";
 import Toolbar from "@material-ui/core/Toolbar";
 import IconButton from "@material-ui/core/IconButton";
 import Hidden from "@material-ui/core/Hidden";
-import Button from "@material-ui/core/Button";
 import Typography from "@material-ui/core/Typography";
 import Menu from "@material-ui/icons/Menu";
 
@@ -29,7 +27,7 @@ class Header extends React.Component {
       const path = this.props.location.pathname
       if (path.startsWith("/devices/")) {
         const deviceId = path.replace("/devices/", "");
-        const deviceName = this.props.devicesById[deviceId] != undefined ?
+        const deviceName = this.props.devicesById[deviceId] !== undefined ?
           this.props.devicesById[deviceId].config.name : ""
         name = "Devices / " + deviceName
       }
@@ -41,7 +39,7 @@ class Header extends React.Component {
   }
 
   render() {
-    const { classes, color } = this.props;
+    const { classes } = this.props;
 
     return (
       <AppBar className={classes.appBar}>

@@ -1,45 +1,32 @@
-const apiUrl = window.location.protocol + "//" + window.location.host + "/api";
+import { api } from 'utils/api';
 
-export const GET_AUDIO_INPUTS = "GET_AUDIO_INPUTS"
-export const SET_AUDIO_INPUT = "GET_AUDIO_INPUT"
+export const GET_AUDIO_INPUTS = 'GET_AUDIO_INPUTS';
+export const SET_AUDIO_INPUT = 'GET_AUDIO_INPUT';
 
 export function setAudioDevice(index) {
-  return dispatch => {
-    const data = {
-      index: parseInt(index)
+    return dispatch => {
+        const data = {
+            index: parseInt(index),
+        };
+        api.put('/audio/devices', data)
+            .then(response =>
+                dispatch({
+                    type: SET_AUDIO_INPUT,
+                    response: response.data,
+                })
+            )
+            .then(() => dispatch(getAudioDevices()));
     };
-    fetch(`${apiUrl}/audio/devices`, {
-      method: "PUT",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(data)
-    })
-      .then(response => response.json())
-      .then(json => dispatch({
-        type: SET_AUDIO_INPUT,
-        response: json
-      }))
-      .then(() => dispatch(getAudioDevices()));
-  };
 }
 
-
 export function getAudioDevices() {
-  return dispatch => {
-    fetch(`${apiUrl}/audio/devices`, {
-      method: "GET",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json"
-      },
-    })
-      .then(response => response.json())
-      .then(json => dispatch({
-          type: GET_AUDIO_INPUTS,
-          audioDevices: json,
-          receivedAt: Date.now()
-      }))
-  }
+    return dispatch => {
+        api.get('/audio/devices').then(response =>
+            dispatch({
+                type: GET_AUDIO_INPUTS,
+                audioDevices: response.data,
+                receivedAt: Date.now(),
+            })
+        );
+    };
 }

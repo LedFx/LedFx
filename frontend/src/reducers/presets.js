@@ -1,6 +1,6 @@
 import {
     GET_PRESETS
-} from '../actions'
+} from 'actions'
 
 export function presets(state = {}, action) {
     switch (action.type) {

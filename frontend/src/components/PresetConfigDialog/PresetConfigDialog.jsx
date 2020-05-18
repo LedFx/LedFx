@@ -1,5 +1,4 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import withStyles from '@material-ui/core/styles/withStyles';
 import { connect } from 'react-redux';
 
@@ -7,7 +6,6 @@ import Button from '@material-ui/core/Button';
 import Dialog from '@material-ui/core/Dialog';
 import DialogContent from '@material-ui/core/DialogContent';
 import DialogTitle from '@material-ui/core/DialogTitle';
-import DialogActions from '@material-ui/core/DialogActions';
 import DialogContentText from '@material-ui/core/DialogContentText';
 
 import SchemaFormCollection from 'components/SchemaForm/SchemaFormCollection.jsx';
@@ -20,10 +18,6 @@ const styles = theme => ({
 });
 
 class PresetsConfigDialog extends React.Component {
-    constructor(props) {
-        super(props);
-    }
-
     handleClose = () => {
         this.props.onClose();
     };

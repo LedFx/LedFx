@@ -1,11 +1,5 @@
 import React from "react";
-import PropTypes from "prop-types";
 import withStyles from "@material-ui/core/styles/withStyles";
-
-import Typography from '@material-ui/core/Typography';
-//import Slider from '@material-ui/core/Slider';
-import Input from '@material-ui/core/Input';
-import { connect } from "react-redux";
 
 import Grid from "@material-ui/core/Grid";
 import Card from "@material-ui/core/Card";
@@ -13,8 +7,8 @@ import CardContent from "@material-ui/core/CardContent";
 import Button from "@material-ui/core/Button";
 import AddIcon from "@material-ui/icons/Add";
 
-import DevicesTable from "../../components/DevicesTable/DevicesTable.jsx";
-import DeviceConfigDialog from "../../components/DeviceConfigDialog/DeviceConfigDialog.jsx";
+import DevicesTable from "components/DevicesTable/DevicesTable.jsx";
+import DeviceConfigDialog from "components/DeviceConfigDialog/DeviceConfigDialog.jsx";
 
 const styles = theme => ({
   cardResponsive: {
@@ -41,18 +35,18 @@ class DevicesView extends React.Component {
   }
 
   openAddDeviceDialog = () => {
-    this.setState(...this.state, { addDialogOpened: true });
+    this.setState({ addDialogOpened: true });
   };
 
   closeAddDeviceDialog = () => {
-    this.setState(...this.state, { addDialogOpened: false });
+    this.setState({ addDialogOpened: false });
   };
 
   render() {
-    const { classes, schemas } = this.props;
+    const { classes } = this.props;
     return (
       <div>
-        <Grid container spacing={16}>
+        <Grid container spacing={2}>
           <Grid item xs={12} sm={12} md={12}>
             <Card>
               <CardContent>

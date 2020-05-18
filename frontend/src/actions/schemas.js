@@ -1,45 +1,41 @@
-import fetch from "cross-fetch";
+import { api } from 'utils/api';
 
-const apiUrl = window.location.protocol + "//" + window.location.host + "/api";
-
-export const REQUEST_SCHEMAS = "REQUEST_SCHEMAS";
-export const RECEIVE_SCHEMAS = "RECEIVE_SCHEMAS";
+export const REQUEST_SCHEMAS = 'REQUEST_SCHEMAS';
+export const RECEIVE_SCHEMAS = 'RECEIVE_SCHEMAS';
 
 function requestSchemas() {
-  return {
-    type: REQUEST_SCHEMAS
-  };
+    return {
+        type: REQUEST_SCHEMAS,
+    };
 }
 
 function receiveSchemas(json) {
-  return {
-    type: RECEIVE_SCHEMAS,
-    schemas: json,
-    receivedAt: Date.now()
-  };
+    return {
+        type: RECEIVE_SCHEMAS,
+        schemas: json,
+        receivedAt: Date.now(),
+    };
 }
 
 function fetchSchemas() {
-  return dispatch => {
-    dispatch(requestSchemas());
-    return fetch(`${apiUrl}/schema`)
-      .then(response => response.json())
-      .then(json => dispatch(receiveSchemas(json)));
-  };
+    return dispatch => {
+        dispatch(requestSchemas());
+        return api.get(`/schema`).then(response => dispatch(receiveSchemas(response.data)));
+    };
 }
 
 function shouldFetchSchemas(state) {
-  if (Object.keys(state.schemas).length === 0) {
-    return true;
-  } else {
-    return false;
-  }
+    if (Object.keys(state.schemas).length === 0) {
+        return true;
+    } else {
+        return false;
+    }
 }
 
 export function fetchSchemasIfNeeded() {
-  return (dispatch, getState) => {
-    if (shouldFetchSchemas(getState())) {
-      return dispatch(fetchSchemas());
-    }
-  };
+    return (dispatch, getState) => {
+        if (shouldFetchSchemas(getState())) {
+            return dispatch(fetchSchemas());
+        }
+    };
 }

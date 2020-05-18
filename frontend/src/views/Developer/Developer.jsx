@@ -1,38 +1,29 @@
-import React from "react";
-import PropTypes from "prop-types";
+import React from 'react';
 
-import Grid from "@material-ui/core/Grid";
-import Card from "@material-ui/core/Card";
-import CardContent from "@material-ui/core/CardContent";
+import Grid from '@material-ui/core/Grid';
 
-import MelbankGraph from "../../components/MelbankGraph/MelbankGraph.jsx";
+import MelbankGraph from 'components/MelbankGraph/MelbankGraph.jsx';
 
 class DeveloperView extends React.Component {
+    render() {
+        const { graphString } = this.props.match.params;
 
-  componentDidMount() {
-    const { device_id } = this.props.match.params;
-  }
+        let graphList = graphString.split('+');
+        let graphDom = Object.keys(graphList).map(graphIndex => {
+            return (
+                <Grid item xs={12}>
+                    <p>{graphList[graphIndex].replace(/^\w/, c => c.toUpperCase())} Graph</p>
+                    <MelbankGraph key={graphIndex} graphId={graphList[graphIndex]} />
+                </Grid>
+            );
+        });
 
-  render() {
-    const { classes } = this.props;
-    const { graphString } = this.props.match.params;
-
-    let graphList = graphString.split("+")
-    let graphDom = Object.keys(graphList).map(graphIndex => {
-      return (
-        <Grid item xs={12}>
-          <p>{graphList[graphIndex].replace(/^\w/, c => c.toUpperCase())} Graph</p>
-          <MelbankGraph key={graphIndex} graphId={graphList[graphIndex]}/>
-        </Grid>
-      );
-    });
-
-    return (
-      <Grid container spacing={24}>
-        {graphDom}
-      </Grid>
-    );
-  }
+        return (
+            <Grid container spacing={3}>
+                {graphDom}
+            </Grid>
+        );
+    }
 }
 
 export default DeveloperView;
