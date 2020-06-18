@@ -12,13 +12,13 @@ class RainAudioEffect(AudioReactiveEffect):
     CONFIG_SCHEMA = vol.Schema({
         vol.Optional('mirror', description='Mirror the effect', default = True): bool,
         # TODO drops should be controlled by some sort of effectlet class, which will provide a list of available drop names rather than just this static range
-        vol.Optional('raindrop_animation', description='Animation style for each drop', default = EFFECTLET_LIST[0]): vol.In(list(EFFECTLET_LIST)),
         vol.Optional('lows_colour', description='Colour for low sounds, ie beats', default = 'white'): vol.In(list(COLORS.keys())),
         vol.Optional('mids_colour', description='Colour for mid sounds, ie vocals', default = 'red'): vol.In(list(COLORS.keys())),
         vol.Optional('high_colour', description='Colour for high sounds, ie hi hat', default = 'blue'): vol.In(list(COLORS.keys())),
-        vol.Optional('lows_sensitivity', description='Sensitivity to low sounds', default = 0.2): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
-        vol.Optional('mids_sensitivity', description='Sensitivity to mid sounds', default = 0.1): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
-        vol.Optional('high_sensitivity', description='Sensitivity to high sounds', default = 0.03): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
+        vol.Optional('lows_sensitivity', description='Sensitivity to low sounds', default = 0.05): vol.All(vol.Coerce(float), vol.Range(min=0.03, max=0.3)),
+        vol.Optional('mids_sensitivity', description='Sensitivity to mid sounds', default = 0.05): vol.All(vol.Coerce(float), vol.Range(min=0.03, max=0.3)),
+        vol.Optional('high_sensitivity', description='Sensitivity to high sounds', default = 0.05): vol.All(vol.Coerce(float), vol.Range(min=0.03, max=0.3)),
+        vol.Optional('raindrop_animation', description='Droplet animation style', default = EFFECTLET_LIST[0]): vol.In(list(EFFECTLET_LIST)),
     })  
 
     def config_updated(self, config):

@@ -14,4 +14,4 @@ class ConfigEndpoint(RestEndpoint):
             'config': self._ledfx.config
         }
 
-        return web.Response(text=json.dumps(response), status=200)
+        return web.json_response(data=response, status=200)

@@ -1,6 +1,6 @@
 {
-  "short_name": "Led FX",
-  "name": "Led FX",
+  "short_name": "React App",
+  "name": "Create React App Sample",
   "icons": [
     {
       "src": "favicon.ico",

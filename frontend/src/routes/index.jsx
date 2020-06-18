@@ -1,4 +1,4 @@
-import DefaultLayout from "../layouts/Default/Default";
+import DefaultLayout from "../layouts/Default";
 
 const indexRoutes = [{ path: "/", component: DefaultLayout }];
 

@@ -30,7 +30,7 @@ class PresetConfigTable extends React.Component {
             {renderRows(devices)}
           </TableBody>
         </Table>
-    );
+    ); 
   }
 }
 

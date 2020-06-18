@@ -14,19 +14,24 @@ class FadeEffect(TemporalEffect, GradientEffect):
     NAME = "Fade"
 
     CONFIG_SCHEMA = vol.Schema({
-        vol.Optional('gradient_method', description='Function used to generate gradient', default = 'bezier'): vol.In(["cubic_ease", "bezier"]),
+        vol.Optional('speed', default = 0.5, description="Rate of change of color"): vol.All(vol.Coerce(float), vol.Range(min=0.1, max=10)),
     })
 
     def config_updated(self, config):
-        self.location = 1
+        self.idx = 0
         self.forward = True
 
     def effect_loop(self):
-        if self.location in (0, 500):
+        self.idx += 0.0015
+        if self.idx > 1:
+            self.idx = 1
             self.forward = not self.forward
+        self.idx = self.idx % 1
+
         if self.forward:
-            self.location += 1
+            i = self.idx
         else:
-            self.location -= 1
-        color = self.get_gradient_color(self.location/500.0)
+            i = 1-self.idx        
+
+        color = self.get_gradient_color(i)
         self.pixels = np.tile(color, (self.pixel_count, 1))

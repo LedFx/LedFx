@@ -19,7 +19,7 @@ class SchemaEndpoint(RestEndpoint):
                     'id': device_type
                 }
 
-            return web.Response(text=json.dumps(response), status=200)
+            return web.json_response(data=response, status=200)
         elif schema_type == 'effects':
             # Generate all the effect schema
             for effect_type, effect in self._ledfx.effects.classes().items():
@@ -29,6 +29,6 @@ class SchemaEndpoint(RestEndpoint):
                     'name': effect.NAME
                 }
 
-            return web.Response(text=json.dumps(response), status=200)
+            return web.json_response(data=response, status=200)
         else:
-            return web.Response(text=json.dumps(response), status=200)
+            return web.json_response(data=response, status=200)
