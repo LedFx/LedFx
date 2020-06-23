@@ -30,11 +30,11 @@ const viewRoutes = [
     component: DeviceView,
   },
   {
-    path: "/scenes",
-    sidebarName: "Scenes Management",
-    navbarName: "Scenes Management",
+    path: "/presets",
+    sidebarName: "Presets Management",
+    navbarName: "Presets Management",
     icon: SaveAltIcon,
-    component: ScenesView,
+    component: PresetsView,
   },
   {
     path: "/devices",

@@ -15,6 +15,7 @@ class PixelColorGraph extends React.Component {
     constructor(props) {
         super(props);
 
+        this.ws = undefined;
         this.websocketActive = false;
         this.websocketPacketId = 1;
         this.deviceUpdateSubscription = null;
@@ -22,12 +23,10 @@ class PixelColorGraph extends React.Component {
     }
 
     getChartOptionsForDevice(device) {
+        const { pixel_count } = device.config;
         return {
             chartData: {
-                labels: Array.apply(null, { length: device.config.pixel_count }).map(
-                    Function.call,
-                    Number
-                ),
+                labels: Array.apply(null, { length: pixel_count }).map(Function.call, Number),
                 datasets: [
                     {
                         label: 'Red',
@@ -35,7 +34,7 @@ class PixelColorGraph extends React.Component {
                         backgroundColor: 'rgba(255,0,0,0.5)',
                         borderColor: 'rgba(255,0,0,1)',
                         pointRadius: 0,
-                        data: new Array(device.config.pixel_count).fill(0),
+                        data: new Array(pixel_count).fill(0),
                     },
                     {
                         label: 'Green',
@@ -43,7 +42,7 @@ class PixelColorGraph extends React.Component {
                         backgroundColor: 'rgba(0,255,0,0.5)',
                         borderColor: 'rgba(0,255,0,1)',
                         pointRadius: 0,
-                        data: new Array(device.config.pixel_count).fill(0),
+                        data: new Array(pixel_count).fill(0),
                     },
                     {
                         label: 'Blue',
@@ -51,7 +50,7 @@ class PixelColorGraph extends React.Component {
                         backgroundColor: 'rgba(0,0,255,0.5)',
                         borderColor: 'rgba(0,0,255,1)',
                         pointRadius: 0,
-                        data: new Array(device.config.pixel_count).fill(0),
+                        data: new Array(pixel_count).fill(0),
                     },
                 ],
             },
@@ -71,7 +70,7 @@ class PixelColorGraph extends React.Component {
                                 display: false,
                             },
                             ticks: {
-                                max: device.config.pixel_count,
+                                max: pixel_count,
                                 min: 0,
                                 maxTicksLimit: 7,
                             },
@@ -110,11 +109,16 @@ class PixelColorGraph extends React.Component {
             return;
         }
 
-        var chartData = this.state.chartData;
-        chartData.datasets[0].data = messageData.pixels[0];
-        chartData.datasets[1].data = messageData.pixels[1];
-        chartData.datasets[2].data = messageData.pixels[2];
-        this.setState({ chartData });
+        this.setState(({ chartData, chartData: { datasets } }) => ({
+            chartData: {
+                ...chartData,
+                datasets: [
+                    { ...datasets[0], data: messageData.pixels[0] },
+                    { ...datasets[1], data: messageData.pixels[1] },
+                    { ...datasets[2], data: messageData.pixels[2] },
+                ],
+            },
+        }));
     };
 
     handleOpen = e => {
@@ -127,18 +131,20 @@ class PixelColorGraph extends React.Component {
     };
 
     enablePixelVisualization = device => {
-        this.state.ws.json({
-            id: this.websocketPacketId,
-            type: 'subscribe_event',
-            event_type: 'device_update',
-            event_filter: { device_id: device.id },
-        });
-        this.deviceUpdateSubscription = this.websocketPacketId;
-        this.websocketPacketId++;
+        if (this.ws) {
+            this.ws.json({
+                id: this.websocketPacketId,
+                type: 'subscribe_event',
+                event_type: 'device_update',
+                event_filter: { device_id: device.id },
+            });
+            this.deviceUpdateSubscription = this.websocketPacketId;
+            this.websocketPacketId++;
+        }
     };
 
     disablePixelVisualization = () => {
-        this.state.ws.json({
+        this.ws.json({
             id: this.websocketPacketId,
             type: 'unsubscribe_event',
             subscription_id: this.deviceUpdateSubscription,
@@ -148,7 +154,7 @@ class PixelColorGraph extends React.Component {
     };
 
     connectWebsocket = () => {
-        const ws = createWebSocket({
+        this.ws = createWebSocket({
             timeout: 5e3,
             maxAttempts: 10,
             onopen: this.handleOpen,
@@ -156,14 +162,12 @@ class PixelColorGraph extends React.Component {
             onclose: this.handleClose,
             onerror: e => console.log('WebSocket Error:', e),
         });
-
-        this.setState({ ws });
     };
 
     disconnectWebsocket = () => {
-        if (this.state.ws !== undefined && this.websocketActive) {
-            this.state.ws.close(1000);
-            this.setState({ ws: undefined });
+        if (this.ws !== undefined && this.websocketActive) {
+            this.ws.close(1000);
+            this.ws = undefined;
         }
     };
 
@@ -175,11 +179,14 @@ class PixelColorGraph extends React.Component {
         this.disconnectWebsocket();
     }
 
-    componentWillReceiveProps(nextProps) {
-        if (this.websocketActive) {
+    componentDidUpdate(nextProps) {
+        const {
+            device: { id },
+        } = this.props;
+        if (id !== nextProps.device.id && this.websocketActive) {
             this.disablePixelVisualization();
             this.enablePixelVisualization(nextProps.device);
-            this.setState({ ...this.getChartOptionsForDevice(nextProps.device) });
+            this.setState(this.getChartOptionsForDevice(nextProps.device));
         }
     }
 

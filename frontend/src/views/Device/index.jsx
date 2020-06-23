@@ -38,16 +38,18 @@ class DeviceView extends React.Component {
     handleSetEffect = data => {
         const { setDeviceEffect } = this.props;
         console.log('what this data in Devices page', data);
-        setDeviceEffect(data);
+        setDeviceEffect(data.deviceId, data);
     };
 
     render() {
         const { schemas, selectedDevice } = this.props;
         const { device, effect, isDeviceLoading, isEffectLoading } = selectedDevice;
 
-        if (schemas.isLoading || isDeviceLoading || isEffectLoading) {
+        console.log('whats going to the effect controller', selectedDevice);
+        if (schemas.isLoading || isDeviceLoading || isEffectLoading || !device || !effect) {
             return <p>Loading</p>;
         }
+
         return (
             <Grid container direction="row" spacing={4}>
                 {renderPixelGraph(device, effect)}

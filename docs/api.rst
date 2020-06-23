@@ -18,7 +18,7 @@ Returns basic information about the LedFx instance as JSON
     {
         url: "http://127.0.0.1:8888",
         name: "LedFx",
-        version: "0.0.1"
+        version: "0.0.3"
     }
 
 /api/config

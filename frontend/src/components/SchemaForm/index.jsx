@@ -29,7 +29,7 @@ const styles = theme => ({
     actionButtons: {
         '& > *': {
             marginLeft: theme.spacing(2),
-        }
+        },
     },
     expandIcon: {
         transform: 'rotate(180deg)',
@@ -51,6 +51,13 @@ class SchemaFormCollection extends React.Component {
         const { selectedType, initial } = this.props;
         if (selectedType) {
             this.handleTypeChange(selectedType, initial);
+        }
+    }
+
+    componentDidUpdate(nextProps) {
+        const { selectedType } = this.props;
+        if (selectedType !== nextProps.selectedType) {
+            this.handleTypeChange(selectedType);
         }
     }
 
@@ -101,7 +108,6 @@ class SchemaFormCollection extends React.Component {
         const showAdditionalUi = !!(useAdditionalProperties && optionalKeys.length);
 
         return (
-            
             <form onSubmit={this.handleSubmit} className={classes.form}>
                 <DropDown
                     label="Type"
@@ -145,12 +151,13 @@ class SchemaFormCollection extends React.Component {
                             {`Show ${!additionalPropertiesOpen ? 'More' : 'Less'}`}
                         </Button>
                     )}
-                    <Box flex={1} display="flex" justifyContent="flex-end" className={classes.actionButtons}>
-                        <Button
-                            className={classes.button}
-                            onClick={onCancel}
-                            color="primary"
-                        >
+                    <Box
+                        flex={1}
+                        display="flex"
+                        justifyContent="flex-end"
+                        className={classes.actionButtons}
+                    >
+                        <Button className={classes.button} onClick={onCancel} color="primary">
                             {cancelText || 'Cancel'}
                         </Button>
                         <Button

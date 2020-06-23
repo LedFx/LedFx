@@ -58,6 +58,7 @@ export function fetchDeviceList() {
                     data.effect.active = !!data.effect.name;
                 });
 
+                console.log('getting devices first', devices);
                 dispatch(devicesReceived(devices));
             }
         } catch (error) {
@@ -87,7 +88,7 @@ export function updateDeviceConfig(type, config) {
     return async dispatch => {
         console.log('whats the config here', config);
         try {
-            const response = await deviceProxies.updateDevice(config.name, { config });
+            const response = await deviceProxies.updateDevice(config.name, { config: { ...config, type } });
             console.log('whats the reposnse for update device', response);
             if (response.statusText === 'OK') {
                 dispatch(fetchDeviceList());
@@ -100,6 +101,8 @@ export function updateDeviceConfig(type, config) {
 
 export function setDeviceEffect(id, data) {
     return async (dispatch, getState) => {
+
+        console.log('is the thunk hitting it', id, data);
         const device = getState().devices.dictionary[id];
         try {
             console.log(' wahat the devices here', device, data);

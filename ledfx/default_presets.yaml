@@ -802,7 +802,7 @@ strobe(Reactive):
       brightness: 1.0
       color: white
       flip: true
-      frequency: "1/16 (\u25C9\uFE4F\u25C9 )"
+      frequency: "1/16 (◉﹏◉ )"
       mirror: false
     name: Faster Strobe
   painful:
@@ -811,7 +811,7 @@ strobe(Reactive):
       brightness: 1.0
       color: white
       flip: true
-      frequency: "1/32 (\u2299\u2583\u2299 )"
+      frequency: "1/32 (⊙▃⊙ )"
       mirror: false
     name: Painful
 wavelength(Reactive):

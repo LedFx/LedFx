@@ -33,6 +33,10 @@ export function getDeviceEffect(deviceId) {
 }
 
 export function setDeviceEffect(deviceId, data) {
+    return api.post(`devices/${deviceId}/effects`, data);
+}
+
+export function updateDeviceEffect(deviceId, data) {
     return api.put(`devices/${deviceId}/effects`, data);
 }
 

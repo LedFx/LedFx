@@ -8,7 +8,7 @@ import { createBrowserHistory } from 'history';
 import reducers from '../modules';
 // import SagaManager from './sagas';
 
-const __DEV__ = process.env.NODE_ENV === 'development';
+// const __DEV__ = process.env.NODE_ENV === 'development';
 
 export const history = createBrowserHistory();
 

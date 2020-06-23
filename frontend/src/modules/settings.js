@@ -34,7 +34,7 @@ export default handleActions(
                 ...state.audioInputs,
                 isLoading: false,
                 options: error ? [] : options,
-                value: error ? null : value,
+                value: error ? '' : value,
                 error,
             },
         }),

@@ -13,9 +13,6 @@ const styles = theme => ({
     },
 });
 
-const wsBaseUrl = 'ws://localhost:8888';
-const websocketUrl = `${wsBaseUrl}/api/websocket`;
-
 class PixelColorGraph extends React.Component {
     constructor(props) {
         super(props);
@@ -143,7 +140,7 @@ class PixelColorGraph extends React.Component {
     };
 
     disconnectWebsocket = () => {
-        if (this.state.ws != undefined) {
+        if (this.state.ws !== undefined) {
             this.state.ws.close(1000);
             this.setState({ ws: undefined });
         }

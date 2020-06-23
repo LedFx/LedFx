@@ -9,7 +9,7 @@ import CssBaseline from '@material-ui/core/CssBaseline';
 import withStyles from '@material-ui/core/styles/withStyles';
 
 import { fetchDeviceList } from 'modules/devices';
-import { fetchSchemas } from 'modules/schemas'
+import { fetchSchemas } from 'modules/schemas';
 import Header from '../../components/Header';
 import Sidebar from '../../components/Sidebar';
 import viewRoutes from '../../routes/views';
@@ -36,25 +36,24 @@ class DefaultLayout extends React.Component {
         super(props);
         this.state = {
             mobileOpen: false,
-            theme: defaultTheme,
         };
 
         this.root = createRef();
     }
 
-    componentDidUpdate(e) {
-        if (e.history.location.pathname !== e.location.pathname) {
-            this.root.scrollTop = 0;
-            console.log('dont forget to fix this here');
+    componentDidMount() {
+        this.props.fetchDeviceList();
+        this.props.fetchSchemas();
+    }
+
+    componentDidUpdate(nextProps) {
+        if (nextProps.history.location.pathname !== nextProps.location.pathname) {
+            this.root.scrollTo({top: 0, behavior: 'smooth'});
+
             if (this.state.mobileOpen) {
                 this.setState({ mobileOpen: false });
             }
         }
-    }
-
-    componentDidMount() {
-        this.props.fetchDeviceList();
-        this.props.fetchSchemas();
     }
 
     setRootRef = el => {
@@ -71,12 +70,12 @@ class DefaultLayout extends React.Component {
         return (
             <div className={classes.root} ref={this.setRootRef}>
                 <CssBaseline />
-                <MuiThemeProvider theme={this.state.theme}>
+                <MuiThemeProvider theme={defaultTheme}>
                     <Header
                         handleDrawerToggle={this.handleDrawerToggle}
                         location={this.props.location}
                         devicesDictionary={deviceDictionary}
-                        />
+                    />
                     <Sidebar
                         handleDrawerToggle={this.handleDrawerToggle}
                         open={this.state.mobileOpen}
