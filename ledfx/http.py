@@ -1,6 +1,5 @@
 import logging
 import jinja2
-import socket
 import aiohttp_jinja2
 from aiohttp import web
 import aiohttp
@@ -21,11 +20,6 @@ class HttpServer(object):
             self.app,
             loader=jinja2.PackageLoader('ledfx_frontend', '.'))
         self.register_routes()
-
-        if host is None:
-            host = socket.gethostbyname(socket.gethostname())
-        if port is None:
-            port = 8888
 
         self._ledfx = ledfx
         self.host = host
