@@ -43,3 +43,11 @@ export function updateDeviceEffect(deviceId, data) {
 export function deleteDeviceEffect(deviceId) {
     return api.delete(`devices/${deviceId}/effects`);
 }
+
+export function getDevicePresets(deviceId) {
+    return api.get(`devices/${deviceId}/presets`);
+}
+
+export function updatePreset(deviceId, data) {
+    return api.put(`devices/${deviceId}/presets`, data);
+}

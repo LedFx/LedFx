@@ -8,8 +8,8 @@ import Grid from '@material-ui/core/Grid';
 
 import PixelColorGraph from 'components/PixelColorGraph';
 import DeviceMiniControl from 'components/DeviceMiniControl';
-import AddPresetCard from 'components/AddPresetCard';
-import { addPreset, getPresets } from 'modules/presets';
+import AddSceneCard from 'components/AddSceneCard';
+import { addScene, getScenes } from 'modules/scenes';
 import { setDeviceEffect, clearDeviceEffect, fetchDeviceList } from 'modules/devices';
 
 const styles = theme => ({
@@ -30,7 +30,7 @@ const styles = theme => ({
 
 class DashboardView extends React.Component {
     componentDidMount() {
-        this.props.getPresets();
+        this.props.getScenes();
         this.props.fetchDeviceList();
     }
 
@@ -46,7 +46,7 @@ class DashboardView extends React.Component {
     };
 
     render() {
-        const { classes, devices, presets, addPreset } = this.props;
+        const { classes, devices, scenes, addScene } = this.props;
 
         if (!devices.list.length) {
             return (
@@ -85,7 +85,7 @@ class DashboardView extends React.Component {
                 </Grid>
                 <Grid container direction="row" spacing={4}>
                     <Grid item xs={12}>
-                        <AddPresetCard presets={presets} addPreset={addPreset} />
+                        <AddSceneCard scenes={scenes} addScene={addScene} />
                     </Grid>
                 </Grid>
             </div>
@@ -95,13 +95,13 @@ class DashboardView extends React.Component {
 
 DashboardView.propTypes = {
     devices: PropTypes.object.isRequired,
-    presets: PropTypes.object.isRequired,
+    scenes: PropTypes.object.isRequired,
 };
 
 export default connect(
     state => ({
         devices: state.devices,
-        presets: state.presets,
+        scenes: state.scenes,
     }),
-    { addPreset, getPresets, setDeviceEffect, clearDeviceEffect, fetchDeviceList }
+    { addScene, getScenes, setDeviceEffect, clearDeviceEffect, fetchDeviceList }
 )(withStyles(styles)(DashboardView));

@@ -22,7 +22,7 @@ const INITIAL_STATE = {
     error: '',
 };
 
-const AddPresetCard = ({ presets = {}, addPreset }) => {
+const AddSceneCard = ({ scenes = {}, addScene }) => {
     const classes = useStyles();
     const [state, dispatch] = useReducer(
         (state, payload) => ({
@@ -34,25 +34,25 @@ const AddPresetCard = ({ presets = {}, addPreset }) => {
     const { name, error } = state;
 
     const handleSave = () => {
-        addPreset(name);
+        addScene(name);
     };
 
     const handleNameChanged = ({ target: { value } }) => {
-        const error = validateInput(value, presets.list) ? '' : 'Preset name already in use!';
+        const error = validateInput(value, scenes.list) ? '' : 'Scene name already in use!';
         dispatch({ name: value, error });
     };
 
     return (
         <Card>
             <CardContent>
-                <Typography variant="h5">Add Preset</Typography>
-                <Typography>Save current effects of all devices as a preset</Typography>
+                <Typography variant="h5">Add Scene</Typography>
+                <Typography>Save current effects of all devices as a Scene</Typography>
                 <Grid container>
                     <Grid item xs={11}>
                         <TextField
                             error={!!error}
-                            id="presetNameInput"
-                            label="Preset Name"
+                            id="SceneNameInput"
+                            label="Scene Name"
                             onChange={handleNameChanged}
                             fullWidth
                             helperText={error}
@@ -76,16 +76,16 @@ const AddPresetCard = ({ presets = {}, addPreset }) => {
     );
 };
 
-const validateInput = (input, presets) =>
-    !presets.some(p => p.name.toLowerCase() === input.toLowerCase());
+const validateInput = (input, scenes) =>
+    !scenes.some(p => p.name.toLowerCase() === input.toLowerCase());
 
-AddPresetCard.propTypes = {
-    addPreset: PropTypes.func.isRequired,
-    presets: PropTypes.shape({
+AddSceneCard.propTypes = {
+    addScene: PropTypes.func.isRequired,
+    scenes: PropTypes.shape({
         isLoading: PropTypes.bool.isRequired,
         list: PropTypes.array.isRequired,
         dictionary: PropTypes.object.isRequired,
     }).isRequired,
 };
 
-export default AddPresetCard;
+export default AddSceneCard;

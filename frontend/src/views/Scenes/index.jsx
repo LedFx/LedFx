@@ -5,9 +5,9 @@ import withStyles from '@material-ui/core/styles/withStyles';
 import Grid from '@material-ui/core/Grid';
 import CircularProgress from '@material-ui/core/CircularProgress';
 
-import PresetsCard from 'components/PresetCard';
-import AddPresetCard from 'components/AddPresetCard';
-import { getPresets, addPreset, activatePreset, deletePreset } from 'modules/presets';
+import ScenesCard from 'components/SceneCard';
+import AddSceneCard from 'components/AddSceneCard';
+import { getScenes, addScene, activateScene, deleteScene } from 'modules/scenes';
 
 const styles = theme => ({
     cardResponsive: {
@@ -27,21 +27,21 @@ const styles = theme => ({
     },
 });
 
-class PresetsView extends React.Component {
+class ScenesView extends React.Component {
     componentDidMount() {
-        this.props.getPresets();
+        this.props.getScenes();
     }
 
     render() {
-        const { presets, classes, deletePreset, activatePreset } = this.props;
-        console.log('whats the presets main props', presets);
+        const { scenes, classes, deleteScene, activateScene } = this.props;
+        console.log('whats the Scenes main props', scenes);
 
         return (
             <Grid container direction="row" spacing={4}>
                 <Grid item xs={12}>
-                    <AddPresetCard presets={presets} addPreset={addPreset} />
+                    <AddSceneCard scenes={scenes} addScene={addScene} />
                 </Grid>
-                {presets.isLoading ? (
+                {scenes.isLoading ? (
                     <Grid
                         container
                         justify="center"
@@ -51,13 +51,13 @@ class PresetsView extends React.Component {
                         <CircularProgress size={80} />
                     </Grid>
                 ) : (
-                    presets.list.map(preset => (
-                        <Grid item xs={12} md={6}>
-                            <PresetsCard
-                                key={preset.id}
-                                preset={preset}
-                                deletePreset={deletePreset}
-                                activatePreset={activatePreset}
+                    scenes.list.map(scene => (
+                        <Grid key={scene.name} item xs={12} md={6}>
+                            <ScenesCard
+                                key={scene.id}
+                                scene={scene}
+                                deleteScene={deleteScene}
+                                activateScene={activateScene}
                             />
                         </Grid>
                     ))
@@ -69,7 +69,7 @@ class PresetsView extends React.Component {
 
 export default connect(
     state => ({
-        presets: state.presets,
+        scenes: state.scenes,
     }),
-    { getPresets, addPreset, activatePreset, deletePreset }
-)(withStyles(styles)(PresetsView));
+    { getScenes, addScene, activateScene, deleteScene }
+)(withStyles(styles)(ScenesView));

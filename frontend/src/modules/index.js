@@ -1,13 +1,15 @@
 import devices from './devices';
+import presets from './presets';
 import selectedDevice from './selectedDevice';
 import schemas from './schemas';
-import presets from './presets';
+import scenes from './scenes';
 import settings from './settings';
 
 export default {
     devices,
-    schemas,
     presets,
+    schemas,
+    scenes,
     settings,
     selectedDevice,
 };

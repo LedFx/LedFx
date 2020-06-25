@@ -7,7 +7,7 @@ import CardActions from '@material-ui/core/CardActions';
 import Button from '@material-ui/core/Button';
 import red from '@material-ui/core/colors/red';
 
-import PresetConfigTable from 'components/PresetCard/PresetConfigTable';
+import SceneConfigTable from 'components/SceneCard/SceneConfigTable';
 
 const useStyles = makeStyles(theme => ({
     deleteButton: {
@@ -29,22 +29,22 @@ const useStyles = makeStyles(theme => ({
     },
 }));
 
-export default function PresetCard({ preset, activatePreset, deletePreset }) {
+export default function SceneCard({ scene, activateScene, deleteScene }) {
     const classes = useStyles();
 
     const handleActivate = () => {
-        activatePreset(preset.id);
+        activateScene(scene.id);
     };
 
     const handleDelete = () => {
-        deletePreset(preset.id);
+        deleteScene(scene.id);
     };
 
     return (
         <Card>
             <CardContent>
-                <h3>{preset.name}</h3>
-                {preset.devices && <PresetConfigTable devices={preset.devices} />}
+                <h3>{scene.name}</h3>
+                {scene.devices && <SceneConfigTable devices={scene.devices} />}
             </CardContent>
             <CardActions className={classes.submitControls}>
                 <Button
@@ -72,8 +72,8 @@ export default function PresetCard({ preset, activatePreset, deletePreset }) {
     );
 }
 
-PresetCard.propTypes = {
-    preset: PropTypes.object.isRequired,
-    deletePreset: PropTypes.func.isRequired,
-    activatePreset: PropTypes.func.isRequired,
+SceneCard.propTypes = {
+    scene: PropTypes.object.isRequired,
+    deleteScene: PropTypes.func.isRequired,
+    activateScene: PropTypes.func.isRequired,
 };

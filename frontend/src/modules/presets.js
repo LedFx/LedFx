@@ -1,16 +1,21 @@
 import { createAction, handleActions } from 'redux-actions';
-import * as presetsProxies from 'proxies/presets';
+import * as deviceProxies from 'proxies/device';
+import { convertDictionaryToList } from 'utils/helpers';
 
 // Actions
-const ACTION_ROOT = 'presetManagement';
+const ACTION_ROOT = 'sceneManagement';
 export const presetsFetching = createAction(`${ACTION_ROOT}/PRESETS_FETCHING`);
 export const presetsFetched = createAction(`${ACTION_ROOT}/PRESETS_FETCHED`);
+export const presetAdding = createAction(`${ACTION_ROOT}/PRESET_ADDING`);
+export const presetAdded = createAction(`${ACTION_ROOT}/PRESET_ADDED`);
 
 // Reducer
 const INITIAL_STATE = {
     isLoading: false,
-    dictionary: {},
-    list: [],
+    isProcessing: false,
+    defaultPresets: [],
+    customPresets: [],
+    effectType: '',
 };
 
 export default handleActions(
@@ -19,103 +24,87 @@ export default handleActions(
             ...state,
             isLoading: true,
         }),
-        [presetsFetched]: (state, { payload: { presets = {}, list = [], error = '' } }) => {
-            console.log('what the payload on recived', presets);
+        [presetsFetched]: (
+            state,
+            { payload: { defaultPresets = [], customPresets = [], effectType, error = '' } }
+        ) => {
             return {
                 ...state,
-                dictionary: !error ? presets : {},
-                list: !error ? list : [],
+                defaultPresets: !error ? defaultPresets : {},
+                customPresets: !error ? customPresets : [],
+                effectType,
                 isLoading: false,
+            };
+        },
+        [presetAdding]: state => ({
+            ...state,
+            isProcessing: true,
+        }),
+
+        [presetAdded]: (state, { payload: { id, config, error = '' } }) => {
+            const customPresets = [
+                ...state.customPresets,
+                {
+                    id,
+                    key: id,
+                    config,
+                },
+            ];
+            return {
+                ...state,
+                customPresets: !error ? customPresets : state.customPresets,
+                isProcessing: false,
             };
         },
     },
     INITIAL_STATE
 );
 
-export function getPresets() {
+export function getDevicePresets(deviceId) {
     return async dispatch => {
         dispatch(presetsFetching());
         try {
-            const response = await presetsProxies.getPresets();
+            const response = await deviceProxies.getDevicePresets(deviceId);
             console.log('waht ths presets response', response);
 
             if (response.statusText === 'OK') {
-                const { presets } = response.data;
-                const list = convertPresetsDictionaryToList(presets);
-
-                dispatch(presetsFetched({ presets, list }));
+                const { default_presets, custom_presets, effect } = response.data;
+                const defaultPresets = convertDictionaryToList(default_presets);
+                const customPresets = convertDictionaryToList(custom_presets);
+                dispatch(presetsFetched({ defaultPresets, customPresets, effectType: effect }));
             }
         } catch (error) {
-            console.log('Error fetching presests', error.message);
+            console.log('Error fetching scenes', error.message);
             dispatch(presetsFetched({ error: error.message }));
         }
     };
 }
 
-export const ADD_PRESET = 'ADD_PRESET';
-export const DELETE_PRESET = 'DELETE_PRESET';
-export const GET_PRESETS = 'GET_PRESETS';
-export const ACTIVATE_PRESET = 'ACTIVATE_PRESET';
-export const RENAME_PRESET = 'RENAME_PRESET';
-
-export function addPreset(name) {
-    return dispatch => {
-        return presetsProxies
-            .addPresets(name)
-            .then(response =>
-                dispatch({
-                    type: ADD_PRESET,
-                    response: response.data,
-                })
-            )
-            .then(() => dispatch(getPresets()));
+export function addPreset(deviceId, name) {
+    return async dispatch => {
+        dispatch(presetAdding());
+        try {
+            const { data, statusText } = await deviceProxies.updatePreset(deviceId, name);
+            console.log('response for add Scene', data);
+            if (statusText === 'OK') {
+                dispatch(presetAdded(data.preset));
+            }
+        } catch (e) {
+            console.log(' error updating preset', e);
+        }
     };
 }
 
-export function deletePreset(id) {
-    return dispatch => {
-        return presetsProxies
-            .deletePresets(id)
-            .then(response =>
-                dispatch({
-                    type: DELETE_PRESET,
-                    response: response.data,
-                })
-            )
-            .then(() => dispatch(getPresets()));
-    };
-}
-
-export function activatePreset(id) {
-    return dispatch => {
-        presetsProxies.activatePresets(id).then(response =>
-            dispatch({
-                type: ACTIVATE_PRESET,
-                response: response.data,
-            })
-        );
-    };
-}
-
-export function renamePreset(id, name) {
-    return dispatch => {
-        presetsProxies.renamePreset({ id, name }).then(response =>
-            dispatch({
-                type: RENAME_PRESET,
-                response: response.data,
-            })
-        );
-    };
-}
-
-const convertPresetsDictionaryToList = (presets = {}) =>
-    Object.keys(presets).map(key => {
-        const currentPreset = presets[key];
-        console.log('whats the preset', currentPreset);
-        return {
-            ...currentPreset,
-            key,
-            id: key,
-            name: currentPreset.name,
+export function activatePreset(deviceId, category, effectId, presetId) {
+    return async dispatch => {
+        const data = {
+            category: category,
+            effect_id: effectId,
+            preset_id: presetId,
         };
-    });
+
+        console.log('data going to activate scene', data);
+        const response = await deviceProxies.updatePreset(deviceId, data);
+        console.log('what the response from activate preset', response);
+    };
+}

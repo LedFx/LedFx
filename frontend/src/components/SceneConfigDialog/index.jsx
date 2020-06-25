@@ -16,7 +16,7 @@ const styles = theme => ({
     },
 });
 
-class PresetsConfigDialog extends React.Component {
+class SceneConfigDialog extends React.Component {
     handleClose = () => {
         this.props.onClose();
     };
@@ -55,12 +55,6 @@ class PresetsConfigDialog extends React.Component {
     }
 }
 
-function mapStateToProps(state) {
-    const { schemas } = state;
-
-    return {
-        schemas,
-    };
-}
-
-export default connect(mapStateToProps)(withStyles(styles)(PresetsConfigDialog));
+export default connect(state => ({
+    schemas: state.schemas,
+}))(withStyles(styles)(SceneConfigDialog));

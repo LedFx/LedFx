@@ -7,8 +7,10 @@ import Card from '@material-ui/core/Card';
 import CardContent from '@material-ui/core/CardContent';
 
 import { loadDeviceInfo, setDeviceEffect, clearDeviceEffect } from 'modules/selectedDevice';
+import { activatePreset, getDevicePresets, addPreset } from 'modules/presets';
 import EffectControl from 'components/EffectControl';
 import PixelColorGraph from 'components/PixelColorGraph';
+import PresetsCard from 'components/PresetsCard';
 
 class DeviceView extends React.Component {
     componentDidMount() {
@@ -42,7 +44,14 @@ class DeviceView extends React.Component {
     };
 
     render() {
-        const { schemas, selectedDevice } = this.props;
+        const {
+            presets,
+            schemas,
+            selectedDevice,
+            activatePreset,
+            getDevicePresets,
+            addPreset,
+        } = this.props;
         const { device, effect, isDeviceLoading, isEffectLoading } = selectedDevice;
 
         console.log('whats going to the effect controller', selectedDevice);
@@ -53,7 +62,7 @@ class DeviceView extends React.Component {
         return (
             <Grid container direction="row" spacing={4}>
                 {renderPixelGraph(device, effect)}
-                <Grid item xs={12}>
+                <Grid item xs={6}>
                     <Card>
                         <CardContent>
                             <EffectControl
@@ -65,6 +74,15 @@ class DeviceView extends React.Component {
                             />
                         </CardContent>
                     </Card>
+                </Grid>
+                <Grid item xs={6}>
+                    <PresetsCard
+                        device={device}
+                        presets={presets}
+                        activatePreset={activatePreset}
+                        getDevicePresets={getDevicePresets}
+                        addPreset={addPreset}
+                    />
                 </Grid>
             </Grid>
         );
@@ -95,6 +113,14 @@ export default connect(
     state => ({
         schemas: state.schemas,
         selectedDevice: state.selectedDevice,
+        presets: state.presets,
     }),
-    { loadDeviceInfo, clearDeviceEffect, setDeviceEffect }
+    {
+        loadDeviceInfo,
+        clearDeviceEffect,
+        setDeviceEffect,
+        activatePreset,
+        getDevicePresets,
+        addPreset,
+    }
 )(DeviceView);
