@@ -10,11 +10,6 @@ import EditIcon from '@material-ui/icons/Edit';
 import red from '@material-ui/core/colors/red';
 
 const styles = theme => ({
-    tableCell: {
-        // lineHeight: '1.42857143',
-        // padding: '12px 8px',
-        // verticalAlign: 'middle',
-    },
     button: {
         margin: 0,
         padding: 0,
@@ -30,14 +25,8 @@ const styles = theme => ({
     },
     editButton: {
         minWidth: 32,
-        // color: theme.palette.getContrastText(red[500]),
-        // backgroundColor: red[500],
-        // '&:hover': {
-        //     backgroundColor: red[700],
-        // },
     },
     actions: {
-        // border: 'solid 1px black',
         display: 'flex',
         '& > *': {
             marginLeft: theme.spacing(1),
@@ -45,8 +34,9 @@ const styles = theme => ({
     },
     deviceLink: {
         textDecoration: 'none',
-        '&,&:hover': {
-            color: '#000000',
+        color: 'black',
+        '&:hover': {
+            color: theme.palette.primary.main,
         },
     },
 });
@@ -97,9 +87,9 @@ function DevicesTableItem({ device, onDelete, classes, onEdit }) {
 }
 
 DevicesTableItem.propTypes = {
-  classes: PropTypes.object.isRequired,
-  device: PropTypes.object.isRequired,
-  onDelete: PropTypes.func.isRequired
+    classes: PropTypes.object.isRequired,
+    device: PropTypes.object.isRequired,
+    onDelete: PropTypes.func.isRequired,
 };
 
 export default withStyles(styles)(DevicesTableItem);
