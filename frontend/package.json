@@ -34,9 +34,10 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "react-scripts build",
+    "build": "react-scripts build && yarn copyFilesUp",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "copyFilesUp": "cp -r ./build/ ../ledfx_frontend"
   },
   "eslintConfig": {
     "extends": "react-app"

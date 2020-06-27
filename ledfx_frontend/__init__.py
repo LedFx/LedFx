@@ -1,4 +1,4 @@
-"""LedFx Frontend"""
+"""ledfx_frontend"""
 import os
 
 def where():
