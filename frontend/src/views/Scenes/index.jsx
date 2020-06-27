@@ -34,7 +34,6 @@ class ScenesView extends React.Component {
 
     render() {
         const { scenes, classes, deleteScene, activateScene } = this.props;
-        console.log('whats the Scenes main props', scenes);
 
         return (
             <Grid container direction="row" spacing={4}>

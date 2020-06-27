@@ -60,7 +60,6 @@ export function getScenes() {
         dispatch(scenesFetching());
         try {
             const response = await scenesProxies.getScenes();
-            console.log('waht ths scenes response', response);
 
             if (response.statusText === 'OK') {
                 const { scenes } = response.data;
@@ -79,7 +78,6 @@ export function addScene(name) {
         dispatch(sceneAdding());
         try {
             const { data, statusText } = await scenesProxies.addScenes(name);
-            console.log('response for add Scene', data);
             if (statusText === 'OK') {
                 dispatch(sceneAdded(data.scene));
             }
@@ -92,7 +90,6 @@ export function addScene(name) {
 export function deleteScene(id) {
     return async dispatch => {
         const response = await scenesProxies.deleteScenes(id);
-        console.log('what the delete response', response);
         dispatch(getScenes());
     };
 }
@@ -100,14 +97,12 @@ export function deleteScene(id) {
 export function activateScene(id) {
     return async dispatch => {
         const response = await scenesProxies.activateScenes(id);
-        console.log('activate good', response);
     };
 }
 
 export function renameScene(id, name) {
     return async dispatch => {
         const response = await scenesProxies.renameScene({ id, name });
-        console.log('renamed scene response', response);
         dispatch(getScenes());
     };
 }

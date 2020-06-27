@@ -45,9 +45,8 @@ export function clearDeviceEffect(deviceId) {
     return async dispatch => {
         const {
             statusText,
-            data: { effect }
+            data: { effect },
         } = await deviceProxies.deleteDeviceEffect(deviceId);
-        console.log('clear device effect response', effect);
         if (statusText !== 'OK') {
             throw new Error(`Error Clearing Device:${deviceId} Effect`);
         }
@@ -58,7 +57,6 @@ export function clearDeviceEffect(deviceId) {
 export function setDeviceEffect(deviceId, { type, config }) {
     return async (dispatch, getState) => {
         const currentEffect = getState().selectedDevice.effect;
-        console.log('whats the curent device', currentEffect);
         const proxy = currentEffect.type
             ? deviceProxies.updateDeviceEffect
             : deviceProxies.setDeviceEffect;
@@ -71,7 +69,6 @@ export function setDeviceEffect(deviceId, { type, config }) {
                 config,
             });
 
-            console.log('setDevice effect response', effect);
             if (statusText !== 'OK') {
                 throw new Error(`Error Clearing Device:${deviceId} Effect`);
             }
@@ -83,13 +80,9 @@ export function setDeviceEffect(deviceId, { type, config }) {
 }
 
 export function loadDeviceInfo(deviceId) {
-    console.log('whats the device id', deviceId);
     return async (dispatch, getState) => {
         try {
             let device = getState().devices.dictionary;
-
-            console.log('waht the device here', device);
-
             dispatch(deviceRequested());
             device = await deviceProxies.getDevice(deviceId);
             dispatch(deviceReceived(device));

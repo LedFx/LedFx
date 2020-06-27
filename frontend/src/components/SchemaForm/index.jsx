@@ -55,9 +55,10 @@ class SchemaFormCollection extends React.Component {
     }
 
     componentDidUpdate(nextProps) {
-        const { selectedType } = this.props;
-        if (selectedType !== nextProps.selectedType) {
-            this.handleTypeChange(selectedType);
+        const { selectedType, initial } = this.props;
+        if (initial !== nextProps.initial || selectedType !== nextProps.selectedType) {
+            console.log('are the initial values chnGING', nextProps.initial);
+            this.handleTypeChange(nextProps.selectedType, nextProps.initial);
         }
     }
 

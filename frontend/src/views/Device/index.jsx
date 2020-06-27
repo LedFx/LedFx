@@ -14,7 +14,6 @@ import PresetsCard from 'components/PresetsCard';
 
 class DeviceView extends React.Component {
     componentDidMount() {
-        console.log('component did mount device', this.props.match.params);
         const { deviceId } = this.props.match.params;
         this.handleLoadDevice(deviceId);
     }
@@ -39,7 +38,6 @@ class DeviceView extends React.Component {
 
     handleSetEffect = data => {
         const { setDeviceEffect } = this.props;
-        console.log('what this data in Devices page', data);
         setDeviceEffect(data.deviceId, data);
     };
 
@@ -54,7 +52,6 @@ class DeviceView extends React.Component {
         } = this.props;
         const { device, effect, isDeviceLoading, isEffectLoading } = selectedDevice;
 
-        console.log('whats going to the effect controller', selectedDevice);
         if (schemas.isLoading || isDeviceLoading || isEffectLoading || !device || !effect) {
             return <p>Loading</p>;
         }
@@ -91,7 +88,6 @@ class DeviceView extends React.Component {
 
 const renderPixelGraph = (device, effect) => {
     if (device && effect?.name) {
-        console.log(effect);
         return (
             <Grid item xs={12}>
                 <Card>

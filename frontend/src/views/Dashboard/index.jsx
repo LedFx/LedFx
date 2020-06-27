@@ -37,7 +37,6 @@ class DashboardView extends React.Component {
     handleUpdateDeviceEffect = (deviceId, data) => {
         const { setDeviceEffect, clearDeviceEffect } = this.props;
 
-        console.log('what the dashoboard checkker', data, deviceId);
         if (data.active) {
             setDeviceEffect(deviceId, data);
         } else {

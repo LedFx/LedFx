@@ -1,6 +1,7 @@
 import { createAction, handleActions } from 'redux-actions';
 import * as deviceProxies from 'proxies/device';
 import { convertDictionaryToList } from 'utils/helpers';
+import { effectReceived } from 'modules/selectedDevice';
 
 // Actions
 const ACTION_ROOT = 'sceneManagement';
@@ -65,7 +66,6 @@ export function getDevicePresets(deviceId) {
         dispatch(presetsFetching());
         try {
             const response = await deviceProxies.getDevicePresets(deviceId);
-            console.log('waht ths presets response', response);
 
             if (response.statusText === 'OK') {
                 const { default_presets, custom_presets, effect } = response.data;
@@ -85,7 +85,6 @@ export function addPreset(deviceId, name) {
         dispatch(presetAdding());
         try {
             const { data, statusText } = await deviceProxies.updatePreset(deviceId, name);
-            console.log('response for add Scene', data);
             if (statusText === 'OK') {
                 dispatch(presetAdded(data.preset));
             }
@@ -97,14 +96,15 @@ export function addPreset(deviceId, name) {
 
 export function activatePreset(deviceId, category, effectId, presetId) {
     return async dispatch => {
-        const data = {
+        const request = {
             category: category,
             effect_id: effectId,
             preset_id: presetId,
         };
 
-        console.log('data going to activate scene', data);
-        const response = await deviceProxies.updatePreset(deviceId, data);
-        console.log('what the response from activate preset', response);
+        const { data, statusText } = await deviceProxies.updatePreset(deviceId, request);
+        if (statusText === 'OK') {
+            dispatch(dispatch(effectReceived(data.effect)));
+        }
     };
 }

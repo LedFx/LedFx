@@ -5,8 +5,7 @@ import Typography from '@material-ui/core/Typography';
 
 import SchemaFormCollection from 'components/SchemaForm';
 
-const styles = theme => ({
-});
+const styles = theme => ({});
 
 class EffectControl extends React.Component {
     handleClearEffect = () => {
@@ -31,6 +30,7 @@ class EffectControl extends React.Component {
                     <SchemaFormCollection
                         schemaCollection={schemas.effects}
                         selectedType={effect?.type}
+                        initial={effect?.config}
                         onSubmit={this.handleSetEffect}
                         onCancel={this.handleClearEffect}
                         cancelText="Clear Effect"

@@ -9,8 +9,6 @@ import Grid from '@material-ui/core/Grid';
 import Typography from '@material-ui/core/Typography';
 import TextField from '@material-ui/core/TextField';
 
-import { mapIncludeKey } from 'utils/helpers';
-
 // CONSTANT device categories
 export const DEFAULT_CAT = 'default_presets';
 export const CUSTOM_CAT = 'custom_presets';
@@ -42,7 +40,6 @@ const useStyles = makeStyles(theme => ({
 }));
 
 const PresetsCard = ({ device, presets, activatePreset, getDevicePresets, addPreset }) => {
-    console.log('whats device and stuff', device, presets);
     const classes = useStyles();
     const [name, setName] = useState('');
     useEffect(() => {
@@ -54,7 +51,6 @@ const PresetsCard = ({ device, presets, activatePreset, getDevicePresets, addPre
     };
 
     const renderPresetsButton = (list, CATEGORY) => {
-        console.log('what the render presets thing', presets);
         if (!list?.length)
             return (
                 <Button className={classes.presetButton} disabled>
@@ -62,7 +58,6 @@ const PresetsCard = ({ device, presets, activatePreset, getDevicePresets, addPre
                 </Button>
             );
         return list.map(preset => {
-            console.log('whats this single device here', device, preset);
             return (
                 <Grid item key={preset.id}>
                     <Button
