@@ -38,6 +38,7 @@ class DeviceView extends React.Component {
 
     handleSetEffect = data => {
         const { setDeviceEffect } = this.props;
+        console.log('handle submite devcice data', data);
         setDeviceEffect(data.deviceId, data);
     };
 
@@ -73,13 +74,15 @@ class DeviceView extends React.Component {
                     </Card>
                 </Grid>
                 <Grid item xs={6}>
-                    <PresetsCard
-                        device={device}
-                        presets={presets}
-                        activatePreset={activatePreset}
-                        getDevicePresets={getDevicePresets}
-                        addPreset={addPreset}
-                    />
+                    {effect.type && (
+                        <PresetsCard
+                            device={device}
+                            presets={presets}
+                            activatePreset={activatePreset}
+                            getDevicePresets={getDevicePresets}
+                            addPreset={addPreset}
+                        />
+                    )}
                 </Grid>
             </Grid>
         );

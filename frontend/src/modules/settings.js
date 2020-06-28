@@ -69,7 +69,7 @@ export function getAudioInputs() {
 
             const { devices: audioInputs, active_device_index } = response.data;
             const options = convertAudioInputsToList(audioInputs);
-            const value = audioInputs[active_device_index]
+            const value = audioInputs[active_device_index];
             dispatch(audioInputsFetched({ options, value }));
         } catch (error) {
             console.log('Error fetching audio devices', error.message);
@@ -80,8 +80,6 @@ export function getAudioInputs() {
 
 export function setAudioInput({ value, index }) {
     return async dispatch => {
-        console.log('is this an int', value, index);
-
         try {
             dispatch(audioInputSaving());
             const response = await settingProxies.updateSelectedAudioInput({

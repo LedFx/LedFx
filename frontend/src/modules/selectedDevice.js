@@ -72,6 +72,7 @@ export function setDeviceEffect(deviceId, { type, config }) {
             if (statusText !== 'OK') {
                 throw new Error(`Error Clearing Device:${deviceId} Effect`);
             }
+            console.log('effect response', effect);
             dispatch(effectReceived(effect));
         } catch (error) {
             console.log('what the error for set effect', error.message);

@@ -20,6 +20,7 @@ class HttpServer(object):
         aiohttp_jinja2.setup(
             self.app,
             loader=jinja2.PackageLoader('ledfx_frontend', '.'))
+        self.app['static_root_url'] = '/static'
         self.register_routes()
 
         if host is None:
@@ -37,7 +38,7 @@ class HttpServer(object):
 
     def register_routes(self):
         self.api.register_routes(self.app)
-        self.app.router.add_static('/', path=ledfx_frontend.where(), name='static')
+        self.app.router.add_static('/static', path=ledfx_frontend.where(), name='static')
 
         self.app.router.add_route('get', '/', self.index)
         self.app.router.add_route('get', '/{extra:.+}', self.index)
@@ -46,11 +47,9 @@ class HttpServer(object):
         self.handler = self.app.make_handler(loop=self._ledfx.loop)
 
         try:
-            self.server = await self._ledfx.loop.create_server(
-                self.handler, self.host, self.port)
+            self.server = await self._ledfx.loop.create_server(self.handler, self.host, self.port)
         except OSError as error:
-            _LOGGER.error("Failed to create HTTP server at port %d: %s",
-                          self.port, error)
+            _LOGGER.error("Failed to create HTTP server at port %d: %s", self.port, error)
 
         self.base_url = ('http://{}:{}').format(self.host, self.port)
         print(('Started webinterface at {}').format(self.base_url))

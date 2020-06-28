@@ -1,7 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { NavLink } from 'react-router-dom';
-
 import withStyles from '@material-ui/core/styles/withStyles';
 import Drawer from '@material-ui/core/Drawer';
 import Hidden from '@material-ui/core/Hidden';
@@ -10,11 +9,10 @@ import ListItem from '@material-ui/core/ListItem';
 import ListItemIcon from '@material-ui/core/ListItemIcon';
 import ListItemText from '@material-ui/core/ListItemText';
 
-import sidebarStyle from './style.jsx';
+import { getSystemConfig } from 'proxies/config';
 import viewRoutes from 'routes/views.jsx';
 import logoAsset from 'assets/img/icon/small_white_alpha.png';
-
-import { getSystemConfig } from 'proxies/config';
+import sidebarStyle from './style.jsx';
 
 class Sidebar extends React.Component {
     constructor(props) {
@@ -32,7 +30,7 @@ class Sidebar extends React.Component {
     }
 
     isViewActive(viewName) {
-        return this.props.location.pathname === viewName; //.indexOf(viewName) > -1 ? true : false;
+        return this.props.location.pathname === viewName;
     }
 
     render() {
@@ -43,7 +41,7 @@ class Sidebar extends React.Component {
             const currentDevice = devicesDictionary[deviceId];
             if (this.isViewActive(`/devices/${deviceId}`)) {
                 listItemClass = `listItemClass ${classes.activeView}`;
-            } 
+            }
             return (
                 <NavLink
                     to={`/devices/${currentDevice.id}`}
