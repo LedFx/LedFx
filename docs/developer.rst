@@ -63,8 +63,8 @@ Building the LedFx frontend is different from how the core backend is built. The
 
 .. code:: bash
 
-    pip install npm
-    npm install
+    pip install yarn
+    yarn install
 
 The easiest way to test and validate your changes is to run a watcher that will automatically rebuild as you save and then just leave LedFx running in a separate command window. (Note: LedFx will need to be running in development mode for everything to work).
 
@@ -72,8 +72,8 @@ The easiest way to test and validate your changes is to run a watcher that will 
 
 .. code:: bash
 
-    ledfx --open-ui
-    npm run watch
+    ledfx
+    yarn start
 
 At that point any change you make to the frontend will be recompiled and after a browser refresh LedFx will pick up the new files. After development and testing you will need to run a full build to generate the appropriate distribution files prior to submitting any changes.
 
@@ -81,7 +81,7 @@ At that point any change you make to the frontend will be recompiled and after a
 
 .. code:: bash
 
-    npm run build
+    yarn build
 
 macOS
 =====
@@ -91,21 +91,22 @@ macOS
 .. code:: bash
 
     brew install nodejs
-    cd ~/ledfx
-    npm install
+    brew install yarn
+    cd ~/frontend
+    yarn install
 
 **2.** Start LedFx in developer mode and start the NPM watcher. (Open the config.yaml file in the .ledfx folder and set ``dev_mode: true``):
 
 .. code:: bash
 
-    ledfx --open-ui
-    npm run watch
+    ledfx
+    yarn start
 
 **3.** Build the frontend:
 
 .. code:: bash
 
-    npm run build
+    yarn build
 
 Document Development
 ================================
