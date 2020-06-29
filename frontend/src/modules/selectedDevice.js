@@ -14,7 +14,7 @@ const INITIAL_STATE = {
     isDeviceLoading: false,
     device: null,
     isEffectLoading: false,
-    effect: null,
+    effect: {},
 };
 
 export default handleActions(

@@ -14,40 +14,39 @@ export const DEFAULT_CAT = 'default_presets';
 export const CUSTOM_CAT = 'custom_presets';
 
 const useStyles = makeStyles(theme => ({
-    presetButton: {
-        size: 'large',
-        margin: theme.spacing(1),
-        textDecoration: 'none',
-        '&,&:hover': {
-            color: '#000000',
-        },
-    },
     content: {
         display: 'flex',
         flexDirection: 'column',
         width: '100%',
+        padding: theme.spacing(2),
+        paddingBottom: 0,
+    },
+    presetButton: {
+        margin: theme.spacing(1),
+        textDecoration: 'none',
+    },
+    buttonGrid: {
+        direction: 'row',
     },
     actions: {
         display: 'flex',
         flexDirection: 'row',
-        padding: theme.spacing(1),
-    },
-    buttonGrid: {
-        direction: 'row',
-        justify: 'flex-start',
-        alignItems: 'baseline',
+        paddingBottom: theme.spacing(3),
     },
 }));
 
 const PresetsCard = ({ device, presets, activatePreset, getDevicePresets, addPreset }) => {
     const classes = useStyles();
     const [name, setName] = useState('');
+    const isNameValid = validateTextInput(name, presets);
+
     useEffect(() => {
         getDevicePresets(device.id);
     }, [device.id, getDevicePresets]);
 
     const handleActivatePreset = (deviceId, category, type, presetId) => () => {
         activatePreset(deviceId, category, type, presetId);
+        setName('');
     };
 
     const renderPresetsButton = (list, CATEGORY) => {
@@ -76,6 +75,10 @@ const PresetsCard = ({ device, presets, activatePreset, getDevicePresets, addPre
         });
     };
 
+    const handleAddPreset = () => {
+        addPreset(device.id, name);
+    };
+
     return (
         <Card variant="outlined">
             <CardHeader title="Presets" subheader="Explore different effect configurations" />
@@ -89,13 +92,13 @@ const PresetsCard = ({ device, presets, activatePreset, getDevicePresets, addPre
                     {renderPresetsButton(presets?.customPresets, CUSTOM_CAT)}
                 </Grid>
                 <Typography variant="subtitle2">Add Preset</Typography>
-                <Typography variant="subtitle1" color="textSecondary">
+                <Typography variant="caption" color="textSecondary">
                     Save this effect configuration as a preset
                 </Typography>
             </CardContent>
             <CardActions className={classes.actions}>
                 <TextField
-                    error={validateTextInput(name, presets)}
+                    error={!isNameValid}
                     id="presetNameInput"
                     label="Preset Name"
                     onChange={e => setName(e.target.value)}
@@ -103,11 +106,10 @@ const PresetsCard = ({ device, presets, activatePreset, getDevicePresets, addPre
                 <Button
                     className={classes.presetButton}
                     color="primary"
-                    size="small"
                     aria-label="Save"
-                    disabled={enableButton(name, presets)}
+                    disabled={name.length > 0 || !isNameValid}
                     variant="contained"
-                    onClick={() => addPreset(name, device.id)}
+                    onClick={handleAddPreset}
                 >
                     Save
                 </Button>
@@ -117,15 +119,8 @@ const PresetsCard = ({ device, presets, activatePreset, getDevicePresets, addPre
 };
 
 const validateTextInput = (input, presets) => {
-    if (!presets || !presets.customPresets || !presets.defaultPresets) return false;
-    const used = Object.keys(presets.customPresets).concat(Object.keys(presets.defaultPresets));
-    return used.includes(input);
-};
-
-const enableButton = (input, presets) => {
-    if (!presets || !presets.customPresets || !presets.defaultPresets) return false;
-    const used = Object.keys(presets.customPresets).concat(Object.keys(presets.defaultPresets));
-    return used.includes(input) || input === '';
+    const used = presets.customPresets.concat(presets.defaultPresets);
+    return !used.some(p => p.name === input);
 };
 
 export default PresetsCard;

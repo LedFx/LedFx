@@ -51,18 +51,15 @@ class EffectControl extends React.Component {
         }
     }
 
-    componentDidUpdate(nextProps) {
-        const { effect, initial } = this.props;
-        if (
-            effect?.type !== nextProps.effect?.type ||
-            effect?.config !== nextProps.effect?.config
-        ) {
-            console.log('are the initial values chnGING', nextProps.effect);
-            this.handleTypeChange(nextProps.effect.type, nextProps.effect.config);
+    componentDidUpdate(prevProps) {
+        const { effect } = this.props;
+        if (effect.type !== prevProps.effect.type || effect?.config !== prevProps.effect?.config) {
+            console.log('are the initial values chnGING', effect);
+            this.handleTypeChange(effect.type, effect.config);
         }
     }
 
-    handleTypeChange = (value, initial = {}) => {
+    handleTypeChange = (value = '', initial = {}) => {
         console.log('whats the value and inital in handle change', value, initial);
         this.setState({ selectedType: value, model: initial });
     };
@@ -137,7 +134,9 @@ class EffectControl extends React.Component {
                         />
 
                         <DialogActions className={classes.bottomContainer}>
-                            <Button onClick={this.handleRandomize}>Randomize</Button>
+                            {selectedType && (
+                                <Button onClick={this.handleRandomize}>Randomize</Button>
+                            )}
                             <Box
                                 flex={1}
                                 display="flex"

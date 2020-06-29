@@ -31,7 +31,7 @@ export default handleActions(
         ) => {
             return {
                 ...state,
-                defaultPresets: !error ? defaultPresets : {},
+                defaultPresets: !error ? defaultPresets : [],
                 customPresets: !error ? customPresets : [],
                 effectType,
                 isLoading: false,
@@ -42,12 +42,12 @@ export default handleActions(
             isProcessing: true,
         }),
 
-        [presetAdded]: (state, { payload: { id, config, error = '' } }) => {
+        [presetAdded]: (state, { payload: { id, name, config, error = '' } }) => {
             const customPresets = [
                 ...state.customPresets,
                 {
                     id,
-                    key: id,
+                    name,
                     config,
                 },
             ];
@@ -84,7 +84,7 @@ export function addPreset(deviceId, name) {
     return async dispatch => {
         dispatch(presetAdding());
         try {
-            const { data, statusText } = await deviceProxies.updatePreset(deviceId, name);
+            const { data, statusText } = await deviceProxies.addPreset(deviceId, { name });
             if (statusText === 'OK') {
                 dispatch(presetAdded(data.preset));
             }

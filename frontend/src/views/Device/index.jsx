@@ -38,7 +38,6 @@ class DeviceView extends React.Component {
 
     handleSetEffect = data => {
         const { setDeviceEffect } = this.props;
-        console.log('handle submite devcice data', data);
         setDeviceEffect(data.deviceId, data);
     };
 

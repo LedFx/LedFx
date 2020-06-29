@@ -51,3 +51,7 @@ export function getDevicePresets(deviceId) {
 export function updatePreset(deviceId, data) {
     return api.put(`devices/${deviceId}/presets`, data);
 }
+
+export function addPreset(deviceId, data) {
+    return api.post(`devices/${deviceId}/presets`, data);
+}
