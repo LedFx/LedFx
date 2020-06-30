@@ -47,7 +47,7 @@ class AudioInputSource(object):
     _audioWindowSize = 4
     _processed_audio_sample = None
     _volume = -90
-    _volume_filter = ExpFilter(-90, alpha_decay=0.01, alpha_rise=0.99)
+    _volume_filter = ExpFilter(-90, alpha_decay=0.99, alpha_rise=0.99)
 
     AUDIO_CONFIG_SCHEMA = vol.Schema({
         vol.Optional('sample_rate', default = 60): int,
@@ -79,7 +79,16 @@ class AudioInputSource(object):
         self.pre_emphasis = None
         if self._config['pre_emphasis']:
             self.pre_emphasis = aubio.digital_filter(3)
-            self.pre_emphasis.set_biquad(1., -self._config['pre_emphasis'], 0, 0, 0)
+            # old, do not use
+            #self.pre_emphasis.set_biquad(1., -self._config['pre_emphasis'], 0, 0, 0)
+
+            # USE THESE FOR SCOTT_MEL OR OTHERS
+            #self.pre_emphasis.set_biquad(1.3662, -1.9256, 0.5621, -1.9256, 0.9283)
+
+            # USE THESE FOR MATT_MEl
+            self.pre_emphasis.set_biquad(0.87492, -1.74984, 0.87492, -1.74799, 0.75169)
+
+
 
         # Setup the phase vocoder to perform a windowed FFT
         self._phase_vocoder = aubio.pvoc(
@@ -202,13 +211,14 @@ class AudioInputSource(object):
 class MelbankInputSource(AudioInputSource):
 
     CONFIG_SCHEMA = vol.Schema({
-        vol.Optional('samples', default = 24): int,
+        vol.Optional('samples', default = 48): int,
         vol.Optional('min_frequency', default = 20): int,
         vol.Optional('max_frequency', default = 18000): int,
         vol.Optional('min_volume', default = -70.0): float,
         vol.Optional('pitch_tolerance', default = 0.8): float,
         vol.Optional('min_volume_count', default = 20): int,
-        vol.Optional('coeffs_type', default = "scott"): str
+        vol.Optional('power', default = 1.0): float,
+        vol.Optional('coeffs_type', default = "matt_mel"): str
     }, extra=vol.ALLOW_EXTRA)
 
     def __init__(self, ledfx, config):
@@ -402,6 +412,28 @@ class MelbankInputSource(AudioInputSource):
                 self._config['mic_rate'])
             self.melbank_frequencies = self.melbank_frequencies[1:-1]
 
+        # Modified scott_mel, spreads out the low range and compresses the highs
+        if self._config['coeffs_type'] == 'matt_mel':
+            def hertz_to_matt(freq):
+                return 3700.0 * log(1 + (freq / 200.0), 13)
+            def matt_to_hertz(matt):
+                return 200.0 * (10**(matt / 3700.0)) - 200.0
+
+            melbank_matt = np.linspace(
+                hertz_to_matt(self._config['min_frequency']),
+                hertz_to_matt(self._config['max_frequency']),
+                self._config['samples'] + 2)
+            self.melbank_frequencies = np.array(
+                [matt_to_hertz(matt) for matt in melbank_matt]).astype(np.float32)
+
+            self.filterbank = aubio.filterbank(
+                self._config['samples'],
+                self._config['fft_size'])
+            self.filterbank.set_triangle_bands(
+                self.melbank_frequencies,
+                self._config['mic_rate'])
+            self.melbank_frequencies = self.melbank_frequencies[1:-1]
+
         if self._config['coeffs_type'] == 'fixed':
             ranges = FREQUENCY_RANGES.values()
             upper_edges_hz = np.zeros(len(ranges))
@@ -482,10 +514,6 @@ class MelbankInputSource(AudioInputSource):
             filter_banks = raw_filter_banks / self.mel_gain.value
             filter_banks = self.mel_smoothing.update(filter_banks)
 
-            #print(self.onset_mids(self.audio_sample())[0])
-            #specdesc_high = self.specdesc_o_high(self._frequency_domain)[0]
-            #print(specdesc_high)
-
         else:
             raw_filter_banks = np.zeros(self._config['samples'])
             filter_banks = raw_filter_banks
@@ -529,8 +557,11 @@ class MelbankInputSource(AudioInputSource):
     def midi_value(self):
         return self.pitch_o(self.audio_sample())[0]
 
+    @lru_cache(maxsize=32)
     def onset(self):
-        return self.onset_o(self.audio_sample())[0]
+        return {"lows": bool(self.onset_lows(self.audio_sample(raw=True))[0]),
+                "mids": bool(self.onset_mids(self.audio_sample(raw=True))[0]),
+                "high": bool(self.onset_high(self.audio_sample(raw=True))[0])}
 
     def oscillator(self):
         """
