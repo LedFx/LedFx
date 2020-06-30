@@ -91,7 +91,7 @@ def load_default_presets() -> dict:
     print('Loading default presets from {}'.format(ledfx_dir))
     if not os.path.isfile(default_presets_path):
         print('Failed to load {}'.format(DEFAULT_PRESETS_FILE_NAME))
-    with open(default_presets_path, 'rt', encoding='utf8') as file:
+    with open(default_presets_path, 'rt') as file:
         return yaml.safe_load(file)
 
 def save_config(config: dict, config_dir: str) -> None:
