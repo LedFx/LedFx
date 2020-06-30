@@ -32,13 +32,18 @@ class ScenesView extends React.Component {
         this.props.getScenes();
     }
 
+    handleAddScene = name => {
+        const { addScene } = this.props;
+        addScene(name);
+    };
+
     render() {
         const { scenes, classes, deleteScene, activateScene } = this.props;
 
         return (
             <Grid container direction="row" spacing={4}>
                 <Grid item xs={12}>
-                    <AddSceneCard scenes={scenes} addScene={addScene} />
+                    <AddSceneCard scenes={scenes} addScene={this.handleAddScene} />
                 </Grid>
                 {scenes.isLoading ? (
                     <Grid

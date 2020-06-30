@@ -38,11 +38,7 @@ export default handleActions(
         [sceneAdded]: (state, { payload: { id, config, error = '' } }) => {
             const scenes = {
                 ...state.dictionary,
-                [id]: {
-                    id,
-                    key: id,
-                    config,
-                },
+                [id]: config,
             };
             return {
                 ...state,
