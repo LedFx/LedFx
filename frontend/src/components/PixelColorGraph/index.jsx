@@ -3,11 +3,13 @@ import PropTypes from 'prop-types';
 import withStyles from '@material-ui/core/styles/withStyles';
 import { Line } from 'react-chartjs-2';
 import { createWebSocket } from 'utils/api/websocket';
+import Box from '@material-ui/core/Box';
 
 const styles = theme => ({
     content: {
         minWidth: 120,
         maxWidth: '100%',
+        height: 200,
     },
 });
 
@@ -191,7 +193,12 @@ class PixelColorGraph extends React.Component {
     }
 
     render() {
-        return <Line data={this.state.chartData} options={this.state.chartOptions} />;
+        const { classes } = this.props;
+        return (
+            <Box className={classes.content}>
+                <Line data={this.state.chartData} options={this.state.chartOptions} />
+            </Box>
+        );
     }
 }
 

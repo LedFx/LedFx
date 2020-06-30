@@ -65,17 +65,11 @@ class DashboardView extends React.Component {
                             <Grid key={device.id} item lg={6}>
                                 <Card className={classes.card}>
                                     <CardContent>
-                                        <Grid container direction="row" spacing={1}>
-                                            <Grid item xs={12}>
-                                                <DeviceMiniControl
-                                                    device={device}
-                                                    setDeviceEffect={this.handleUpdateDeviceEffect}
-                                                />
-                                            </Grid>
-                                            <Grid item xs={12}>
-                                                <PixelColorGraph device={device} />
-                                            </Grid>
-                                        </Grid>
+                                        <DeviceMiniControl
+                                            device={device}
+                                            setDeviceEffect={this.handleUpdateDeviceEffect}
+                                        />
+                                        <PixelColorGraph device={device} />
                                     </CardContent>
                                 </Card>
                             </Grid>

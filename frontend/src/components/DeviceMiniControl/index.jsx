@@ -62,8 +62,8 @@ class DeviceMiniControl extends React.Component {
         } = this.props;
 
         return (
-            <Grid container direction="row" spacing={1}>
-                <Grid item xs={8}>
+            <Grid container direction="row" spacing={1} justify="space-between">
+                <Grid item xs="auto">
                     <Typography variant="h5" color="inherit" className={classes.header}>
                         {config.name}
                     </Typography>
@@ -74,7 +74,6 @@ class DeviceMiniControl extends React.Component {
 
                 <Grid
                     item
-                    xs={4}
                     className={classes.actionsContainer}
                 >
                     <Button

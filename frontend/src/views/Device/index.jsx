@@ -59,7 +59,7 @@ class DeviceView extends React.Component {
         return (
             <Grid container direction="row" spacing={4}>
                 {renderPixelGraph(device, effect)}
-                <Grid item xs={6}>
+                <Grid item xs={12} lg={6}>
                     <Card>
                         <CardContent>
                             <EffectControl
@@ -72,7 +72,7 @@ class DeviceView extends React.Component {
                         </CardContent>
                     </Card>
                 </Grid>
-                <Grid item xs={6}>
+                <Grid item xs={12} lg={6}>
                     {effect.type && (
                         <PresetsCard
                             device={device}
