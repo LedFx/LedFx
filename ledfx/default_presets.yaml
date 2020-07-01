@@ -368,7 +368,7 @@ rain(Reactive):
       lows_colour: white
       lows_sensitivity: 0.1
       mids_colour: cyan
-      mids_sensitivity: 0.1
+      mids_sensitivity: 0.05
       mirror: true
       raindrop_animation: droplet_1.npy
     name: Cold Drops
@@ -382,7 +382,7 @@ rain(Reactive):
       lows_colour: red
       lows_sensitivity: 0.1
       mids_colour: orange
-      mids_sensitivity: 0.1
+      mids_sensitivity: 0.05
       mirror: false
       raindrop_animation: droplet_2.npy
     name: Meteor Shower
@@ -423,9 +423,9 @@ rain(Reactive):
       gradient_name: Dancefloor
       gradient_roll: 8
       high_colour: blue
-      high_sensitivity: 0.05
+      high_sensitivity: 0.1
       lows_colour: white
-      lows_sensitivity: 0.05
+      lows_sensitivity: 0.1
       mids_colour: red
       mids_sensitivity: 0.05
       mirror: false
@@ -451,22 +451,6 @@ rainbow:
       mirror: false
       speed: 3.5219725685240606
     name: Crawl
-  default:
-    config:
-      blur: 4.864718590808794
-      brightness: 1.0
-      flip: false
-      frequency: 1.0
-      high_colour: pink
-      high_sensitivity: 0.1
-      lows_colour: orange
-      lows_sensitivity: 0.1
-      mids_colour: green
-      mids_sensitivity: 0.05
-      mirror: true
-      raindrop_animation: droplet_1.npy
-      speed: 1.0
-    name: Default
   faded:
     config:
       blur: 6.446696350342175

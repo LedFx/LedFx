@@ -86,8 +86,10 @@ class AudioInputSource(object):
             #self.pre_emphasis.set_biquad(1.3662, -1.9256, 0.5621, -1.9256, 0.9283)
 
             # USE THESE FOR MATT_MEl
-            self.pre_emphasis.set_biquad(0.87492, -1.74984, 0.87492, -1.74799, 0.75169)
-
+            # weaker bass, good for vocals, highs
+            #self.pre_emphasis.set_biquad(0.87492, -1.74984, 0.87492, -1.74799, 0.75169)
+            # bass heavier overall more balanced
+            self.pre_emphasis.set_biquad(0.85870, -1.71740, 0.85870, -1.71605, 0.71874)
 
 
         # Setup the phase vocoder to perform a windowed FFT
