@@ -45,7 +45,6 @@ class EffectControl extends React.Component {
 
     componentDidMount() {
         const { effect } = this.props;
-        console.log('is there an effect on mount', effect);
         if (effect.type) {
             this.handleTypeChange(effect?.type, effect.config);
         }
@@ -54,19 +53,16 @@ class EffectControl extends React.Component {
     componentDidUpdate(prevProps) {
         const { effect } = this.props;
         if (effect.type !== prevProps.effect.type || effect?.config !== prevProps.effect?.config) {
-            console.log('are the initial values chnGING', effect);
             this.handleTypeChange(effect.type, effect.config);
         }
     }
 
     handleTypeChange = (value = '', initial = {}) => {
-        console.log('whats the value and inital in handle change', value, initial);
         this.setState({ selectedType: value, model: initial });
     };
 
     onModelChange = (key, val) => {
         const model = utils.selectOrSet(key, this.state.model, val);
-        console.log('whats this thingy here yo', model);
         this.setState({ model });
     };
 
@@ -96,7 +92,7 @@ class EffectControl extends React.Component {
     };
 
     render() {
-        const { classes, schemas, effect } = this.props;
+        const { classes, schemas } = this.props;
         const { model, selectedType } = this.state;
 
         const currentSchema = {

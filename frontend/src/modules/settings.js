@@ -7,6 +7,8 @@ export const audioInputsFetching = createAction(`${ACTION_ROOT}/AUDIO_DEVICES_FE
 export const audioInputsFetched = createAction(`${ACTION_ROOT}/AUDIO_DEVICES_FETCHED`);
 export const audioInputSaved = createAction(`${ACTION_ROOT}/AUDIO_DEVICES_SAVED`);
 export const audioInputSaving = createAction(`${ACTION_ROOT}/AUDIO_DEVICES_SAVING`);
+export const configFetching = createAction(`${ACTION_ROOT}/CONFIG_FETCHING`);
+export const configFetched = createAction(`${ACTION_ROOT}/CONFIG_FETCHED`);
 
 // Reducer
 const INITIAL_STATE = {
@@ -17,6 +19,12 @@ const INITIAL_STATE = {
         value: '',
         error: '',
     },
+    isLoading: false,
+    devMode: false,
+    port: '',
+    host: '',
+    devices: [],
+    error: '',
 };
 
 export default handleActions(
@@ -28,14 +36,17 @@ export default handleActions(
                 isLoading: true,
             },
         }),
-        [audioInputsFetched]: (state, { payload: { options = [], value = '', error = '' } }) => ({
+        [audioInputsFetched]: (
+            state,
+            { payload, payload: { options = [], value = '' }, error }
+        ) => ({
             ...state,
             audioInputs: {
                 ...state.audioInputs,
                 isLoading: false,
                 options: error ? [] : options,
                 value: error ? '' : value,
-                error,
+                error: error ? payload : '',
             },
         }),
         [audioInputSaving]: state => ({
@@ -45,14 +56,24 @@ export default handleActions(
                 isSaving: true,
             },
         }),
-        [audioInputSaved]: (state, { payload: { value = '', error = '' } }) => ({
+        [audioInputSaved]: (state, { payload, error }) => ({
             ...state,
             audioInputs: {
                 ...state.audioInputs,
-                value: error ? '' : value,
+                value: error ? '' : payload,
                 isSaving: false,
-                error,
+                error: error ? payload : '',
             },
+        }),
+        [configFetching]: state => ({
+            ...state,
+            isLoading: true,
+        }),
+        [configFetched]: (state, { payload, error }) => ({
+            ...state,
+            ...payload,
+            isLoading: false,
+            error: error ? payload : '',
         }),
     },
     INITIAL_STATE
@@ -72,8 +93,7 @@ export function getAudioInputs() {
             const value = audioInputs[active_device_index];
             dispatch(audioInputsFetched({ options, value }));
         } catch (error) {
-            console.log('Error fetching audio devices', error.message);
-            dispatch(audioInputsFetched({ error: error.message }));
+            dispatch(audioInputsFetched(error));
         }
     };
 }
@@ -89,9 +109,25 @@ export function setAudioInput({ value, index }) {
                 throw new Error('Audio Input failed to update');
             }
 
-            dispatch(audioInputSaved({ value }));
+            dispatch(audioInputSaved(value));
         } catch (error) {
-            dispatch(audioInputSaved({ error: error.message }));
+            dispatch(audioInputSaved(error));
+        }
+    };
+}
+
+export function getConfig() {
+    return async dispatch => {
+        dispatch(configFetching());
+        try {
+            const response = await settingProxies.getSystemConfig();
+            if (response.statusText !== 'OK') {
+                throw new Error('Error fetching system config');
+            }
+            const { dev_mode: devMode, port, host, devices } = response.data.config;
+            dispatch(configFetched({ devMode, host, port, devices }));
+        } catch (error) {
+            dispatch(configFetched(error));
         }
     };
 }

@@ -29,7 +29,7 @@ function DevicesTable({ onDeleteDevice, classes, items, onEditDevice }) {
                         <TableCell>IP Address</TableCell>
                         <TableCell>Pixel Count</TableCell>
                         <TableCell>Type</TableCell>
-                        <TableCell align="right">Manage</TableCell>
+                        <TableCell align="right" />
                     </TableRow>
                 </TableHead>
 

@@ -27,14 +27,15 @@ export default handleActions(
         }),
         [presetsFetched]: (
             state,
-            { payload: { defaultPresets = [], customPresets = [], effectType, error = '' } }
+            { payload, payload: { defaultPresets = [], customPresets = [], effectType }, error }
         ) => {
             return {
                 ...state,
-                defaultPresets: !error ? defaultPresets : [],
-                customPresets: !error ? customPresets : [],
+                defaultPresets: error ? [] : defaultPresets,
+                customPresets: error ? [] : customPresets,
                 effectType,
                 isLoading: false,
+                error: error ? payload.message : '',
             };
         },
         [presetAdding]: state => ({
@@ -42,7 +43,7 @@ export default handleActions(
             isProcessing: true,
         }),
 
-        [presetAdded]: (state, { payload: { id, name, config, error = '' } }) => {
+        [presetAdded]: (state, { payload, payload: { id, name, config }, error }) => {
             const customPresets = [
                 ...state.customPresets,
                 {
@@ -53,8 +54,9 @@ export default handleActions(
             ];
             return {
                 ...state,
-                customPresets: !error ? customPresets : state.customPresets,
+                customPresets: error ? state.customPresets : customPresets,
                 isProcessing: false,
+                error: error ? payload.message : '',
             };
         },
     },
@@ -74,8 +76,7 @@ export function getDevicePresets(deviceId) {
                 dispatch(presetsFetched({ defaultPresets, customPresets, effectType: effect }));
             }
         } catch (error) {
-            console.log('Error fetching scenes', error.message);
-            dispatch(presetsFetched({ error: error.message }));
+            dispatch(presetsFetched(error));
         }
     };
 }
@@ -88,23 +89,27 @@ export function addPreset(deviceId, name) {
             if (statusText === 'OK') {
                 dispatch(presetAdded(data.preset));
             }
-        } catch (e) {
-            console.log(' error updating preset', e);
+        } catch (error) {
+            dispatch(presetAdded(error));
         }
     };
 }
 
 export function activatePreset(deviceId, category, effectId, presetId) {
     return async dispatch => {
-        const request = {
-            category: category,
-            effect_id: effectId,
-            preset_id: presetId,
-        };
+        try {
+            const request = {
+                category: category,
+                effect_id: effectId,
+                preset_id: presetId,
+            };
 
-        const { data, statusText } = await deviceProxies.updatePreset(deviceId, request);
-        if (statusText === 'OK') {
-            dispatch(dispatch(effectReceived(data.effect)));
+            const { data, statusText } = await deviceProxies.updatePreset(deviceId, request);
+            if (statusText === 'OK') {
+                dispatch(effectReceived(data.effect));
+            }
+        } catch (error) {
+            dispatch(effectReceived(error));
         }
     };
 }

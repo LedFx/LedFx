@@ -23,19 +23,21 @@ export default handleActions(
             ...state,
             isDeviceLoading: true,
         }),
-        [deviceReceived]: (state, { payload }) => ({
+        [deviceReceived]: (state, { payload, error }) => ({
             ...state,
             isDeviceLoading: false,
-            device: payload,
+            device: error ? null : payload,
+            error: error ? payload.message : '',
         }),
         [effectRequested]: state => ({
             ...state,
             isEffectLoading: true,
         }),
-        [effectReceived]: (state, { payload }) => ({
+        [effectReceived]: (state, { payload, error }) => ({
             ...state,
             isEffectLoading: false,
-            effect: payload,
+            effect: error ? {} : payload,
+            error: error ? payload.message : '',
         }),
     },
     INITIAL_STATE
@@ -43,14 +45,18 @@ export default handleActions(
 
 export function clearDeviceEffect(deviceId) {
     return async dispatch => {
-        const {
-            statusText,
-            data: { effect },
-        } = await deviceProxies.deleteDeviceEffect(deviceId);
-        if (statusText !== 'OK') {
-            throw new Error(`Error Clearing Device:${deviceId} Effect`);
+        try {
+            const {
+                statusText,
+                data: { effect },
+            } = await deviceProxies.deleteDeviceEffect(deviceId);
+            if (statusText !== 'OK') {
+                throw new Error(`Error Clearing Device:${deviceId} Effect`);
+            }
+            dispatch(effectReceived(effect));
+        } catch (error) {
+            dispatch(effectReceived(error));
         }
-        dispatch(effectReceived(effect));
     };
 }
 
@@ -72,10 +78,9 @@ export function setDeviceEffect(deviceId, { type, config }) {
             if (statusText !== 'OK') {
                 throw new Error(`Error Clearing Device:${deviceId} Effect`);
             }
-            console.log('effect response', effect);
             dispatch(effectReceived(effect));
         } catch (error) {
-            console.log('what the error for set effect', error.message);
+            dispatch(effectReceived(error));
         }
     };
 }
@@ -94,7 +99,7 @@ export function loadDeviceInfo(deviceId) {
             } = await deviceProxies.getDeviceEffect(deviceId);
             dispatch(effectReceived(effect));
         } catch (error) {
-            console.log(error);
+            dispatch(effectReceived(error));
         }
     };
 }

@@ -22,12 +22,13 @@ export default handleActions(
             ...state,
             isLoading: true,
         }),
-        [scenesFetched]: (state, { payload: { scenes = {}, list = [], error = '' } }) => {
+        [scenesFetched]: (state, { payload, payload: { scenes = {}, list = [] }, error }) => {
             return {
                 ...state,
-                dictionary: !error ? scenes : {},
-                list: !error ? list : [],
+                dictionary: error ? {} : scenes,
+                list: error ? [] : list,
                 isLoading: false,
+                error: error ? payload.message : '',
             };
         },
         [sceneAdding]: state => ({
@@ -35,16 +36,17 @@ export default handleActions(
             isProcessing: true,
         }),
 
-        [sceneAdded]: (state, { payload: { id, config, error = '' } }) => {
+        [sceneAdded]: (state, { payload, payload: { id, config, error = '' } }) => {
             const scenes = {
                 ...state.dictionary,
                 [id]: config,
             };
             return {
                 ...state,
-                dictionary: !error ? scenes : {},
-                list: !error ? convertScenesDictionaryToList(scenes) : [],
+                dictionary: error ? {} : scenes,
+                list: !error ? [] : convertScenesDictionaryToList(scenes),
                 isProcessing: false,
+                error: error ? payload.message : '',
             };
         },
     },
@@ -63,8 +65,7 @@ export function getScenes() {
                 dispatch(scenesFetched({ scenes, list }));
             }
         } catch (error) {
-            console.log('Error fetching scenes', error.message);
-            dispatch(scenesFetched({ error: error.message }));
+            dispatch(scenesFetched(error));
         }
     };
 }
@@ -77,28 +78,28 @@ export function addScene(name) {
             if (statusText === 'OK') {
                 dispatch(sceneAdded(data.scene));
             }
-        } catch (e) {
-            console.log(' error updating sceen', e);
+        } catch (error) {
+            dispatch(sceneAdded(error));
         }
     };
 }
 
 export function deleteScene(id) {
     return async dispatch => {
-        const response = await scenesProxies.deleteScenes(id);
+        await scenesProxies.deleteScenes(id);
         dispatch(getScenes());
     };
 }
 
 export function activateScene(id) {
     return async dispatch => {
-        const response = await scenesProxies.activateScenes(id);
+        await scenesProxies.activateScenes(id);
     };
 }
 
 export function renameScene(id, name) {
     return async dispatch => {
-        const response = await scenesProxies.renameScene({ id, name });
+        await scenesProxies.renameScene({ id, name });
         dispatch(getScenes());
     };
 }

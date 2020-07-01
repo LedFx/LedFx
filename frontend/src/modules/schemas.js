@@ -19,12 +19,12 @@ export default handleActions(
             ...state,
             isLoading: true,
         }),
-        [schemasFetched]: (state, { payload: { deviceTypes, effects } }) => ({
+        [schemasFetched]: (state, { payload, payload: { deviceTypes, effects }, error }) => ({
             ...state,
             isLoading: false,
-            effects,
-            deviceTypes,
-            receivedAt: Date.now(),
+            effects: error ? {} : effects,
+            deviceTypes: error ? {} : deviceTypes,
+            error: error ? payload.message : '',
         }),
     },
     INITIAL_STATE
@@ -40,7 +40,7 @@ export function fetchSchemas() {
                 dispatch(schemasFetched({ deviceTypes, effects }));
             }
         } catch (error) {
-            console.log('Error fetching schemas', error.message);
+            dispatch(schemasFetched(error));
         }
     };
 }

@@ -181,14 +181,12 @@ class PixelColorGraph extends React.Component {
         this.disconnectWebsocket();
     }
 
-    componentDidUpdate(nextProps) {
-        const {
-            device: { id },
-        } = this.props;
-        if (id !== nextProps.device.id && this.websocketActive) {
+    componentDidUpdate(prevProps) {
+        const { device } = this.props;
+        if (prevProps.device.id !== device.id && this.websocketActive) {
             this.disablePixelVisualization();
-            this.enablePixelVisualization(nextProps.device);
-            this.setState(this.getChartOptionsForDevice(nextProps.device));
+            this.enablePixelVisualization(device);
+            this.setState(this.getChartOptionsForDevice(device));
         }
     }
 

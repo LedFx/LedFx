@@ -4,12 +4,13 @@ import PropTypes from 'prop-types';
 import { Switch, Route, Redirect } from 'react-router-dom';
 import withStyles from '@material-ui/core/styles/withStyles';
 
-import { fetchDeviceList } from 'modules/devices';
 import { fetchSchemas } from 'modules/schemas';
+import { getConfig } from 'modules/settings';
 import { drawerWidth } from 'utils/style';
-import Header from 'components/Header';
-import Sidebar from 'components/Sidebar';
 import viewRoutes from 'routes/views';
+
+import Header from './Header';
+import Sidebar from './Sidebar';
 
 const style = theme => ({
     root: {
@@ -42,12 +43,13 @@ class DefaultLayout extends React.Component {
     }
 
     componentDidMount() {
-        this.props.fetchDeviceList();
-        this.props.fetchSchemas();
+        const { getConfig, fetchSchemas } = this.props;
+        getConfig();
+        fetchSchemas();
     }
 
-    componentDidUpdate(nextProps) {
-        if (nextProps.history.location.pathname !== nextProps.location.pathname) {
+    componentDidUpdate(prevProps) {
+        if (prevProps.history.location.pathname !== prevProps.location.pathname) {
             this.root.scrollTo({ top: 0, behavior: 'smooth' });
 
             if (this.state.mobileOpen) {
@@ -65,20 +67,22 @@ class DefaultLayout extends React.Component {
     };
 
     render() {
-        const { classes, deviceDictionary } = this.props;
+        const { classes, deviceDictionary, location, settings } = this.props;
+        const { mobileOpen } = this.state;
 
         return (
             <div className={classes.root} ref={this.setRootRef}>
                 <Header
                     handleDrawerToggle={this.handleDrawerToggle}
-                    location={this.props.location}
+                    location={location}
                     devicesDictionary={deviceDictionary}
                 />
                 <Sidebar
                     handleDrawerToggle={this.handleDrawerToggle}
-                    open={this.state.mobileOpen}
-                    location={this.props.location}
-                    devicesDictionary={deviceDictionary}
+                    open={mobileOpen}
+                    location={location}
+                    devices={settings.devices}
+                    devMode={settings.devMode}
                 />
 
                 <div className={classes.content}>
@@ -108,15 +112,18 @@ class DefaultLayout extends React.Component {
 DefaultLayout.propTypes = {
     classes: PropTypes.object.isRequired,
     deviceDictionary: PropTypes.object.isRequired,
+    settings: PropTypes.object.isRequired,
+    schemas: PropTypes.object.isRequired,
 };
 
 export default connect(
     state => ({
         deviceDictionary: state.devices.dictionary,
         schemas: state.schemas,
+        settings: state.settings,
     }),
     {
-        fetchDeviceList,
         fetchSchemas,
+        getConfig,
     }
 )(withStyles(style)(DefaultLayout));

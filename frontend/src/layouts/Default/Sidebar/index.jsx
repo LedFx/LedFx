@@ -9,56 +9,17 @@ import ListItem from '@material-ui/core/ListItem';
 import ListItemIcon from '@material-ui/core/ListItemIcon';
 import ListItemText from '@material-ui/core/ListItemText';
 
-import { getSystemConfig } from 'proxies/config';
 import viewRoutes from 'routes/views.jsx';
 import logoAsset from 'assets/img/icon/small_white_alpha.png';
 import sidebarStyle from './style.jsx';
 
 class Sidebar extends React.Component {
-    constructor(props) {
-        super(props);
-
-        this.state = {
-            devMode: false,
-        };
-    }
-
-    componentDidMount() {
-        getSystemConfig().then(config => {
-            this.setState({ devMode: config.dev_mode });
-        });
-    }
-
     isViewActive(viewName) {
         return this.props.location.pathname === viewName;
     }
 
     render() {
-        const { classes, devicesDictionary, effectLinks } = this.props;
-
-        const deviceLinks = Object.keys(devicesDictionary).map(deviceId => {
-            let listItemClass = classes.itemLink;
-            const currentDevice = devicesDictionary[deviceId];
-            if (this.isViewActive(`/devices/${deviceId}`)) {
-                listItemClass = `listItemClass ${classes.activeView}`;
-            }
-            return (
-                <NavLink
-                    to={`/devices/${currentDevice.id}`}
-                    className={classes.item}
-                    key={currentDevice.id}
-                    activeClassName="active"
-                >
-                    <ListItem button className={listItemClass}>
-                        <ListItemText
-                            primary={currentDevice.config.name}
-                            className={classes.devicesItemText}
-                            disableTypography={true}
-                        />
-                    </ListItem>
-                </NavLink>
-            );
-        });
+        const { classes, devices, effectLinks, devMode, handleDrawerToggle, open } = this.props;
 
         var links = (
             <List className={classes.list}>
@@ -67,7 +28,7 @@ class Sidebar extends React.Component {
                         return null;
                     }
 
-                    if (prop.sidebarName === 'Developer' && !this.state.devMode) {
+                    if (prop.sidebarName === 'Developer' && !devMode) {
                         return null;
                     }
 
@@ -90,7 +51,30 @@ class Sidebar extends React.Component {
                                     className={classes.itemText}
                                     disableTypography={true}
                                 />
-                                <List className={classes.list}>{deviceLinks}</List>
+                                <List className={classes.list}>
+                                    {devices.map(device => {
+                                        let listItemClass = classes.itemLink;
+                                        if (this.isViewActive(`/devices/${device.id}`)) {
+                                            listItemClass = `listItemClass ${classes.activeView}`;
+                                        }
+                                        return (
+                                            <NavLink
+                                                to={`/devices/${device.id}`}
+                                                className={classes.item}
+                                                key={device.id}
+                                                activeClassName="active"
+                                            >
+                                                <ListItem button className={listItemClass}>
+                                                    <ListItemText
+                                                        primary={device.config.name}
+                                                        className={classes.devicesItemText}
+                                                        disableTypography={true}
+                                                    />
+                                                </ListItem>
+                                            </NavLink>
+                                        );
+                                    })}
+                                </List>
                             </ListItem>
                         );
                     }
@@ -134,7 +118,7 @@ class Sidebar extends React.Component {
             </List>
         );
 
-        var logo = (
+        const logo = (
             <div className={classes.logo}>
                 <a href="/#" className={classes.logoLink}>
                     <div className={classes.logoImage}>
@@ -151,11 +135,11 @@ class Sidebar extends React.Component {
                     <Drawer
                         variant="temporary"
                         anchor="right"
-                        open={this.props.open}
+                        open={open}
                         classes={{
                             paper: classes.drawerPaper,
                         }}
-                        onClose={this.props.handleDrawerToggle}
+                        onClose={handleDrawerToggle}
                         ModalProps={{
                             keepMounted: true,
                         }}
@@ -185,7 +169,7 @@ class Sidebar extends React.Component {
 
 Sidebar.propTypes = {
     classes: PropTypes.object.isRequired,
-    devicesDictionary: PropTypes.object.isRequired,
+    devices: PropTypes.array.isRequired,
 };
 
 export default withStyles(sidebarStyle)(Sidebar);

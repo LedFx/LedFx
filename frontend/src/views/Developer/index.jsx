@@ -11,7 +11,7 @@ class DeveloperView extends React.Component {
         let graphList = graphString.split('+');
         let graphDom = Object.keys(graphList).map(graphIndex => {
             return (
-                <Grid item xs={12}>
+                <Grid item key={graphIndex} xs={12}>
                     <p>{graphList[graphIndex].replace(/^\w/, c => c.toUpperCase())} Graph</p>
                     <MelbankGraph key={graphIndex} graphId={graphList[graphIndex]} />
                 </Grid>
