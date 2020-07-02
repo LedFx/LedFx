@@ -3,6 +3,7 @@ import { connect } from 'react-redux';
 import withStyles from '@material-ui/core/styles/withStyles';
 import Grid from '@material-ui/core/Grid';
 import Card from '@material-ui/core/Card';
+import CardHeader from '@material-ui/core/CardHeader';
 import CardContent from '@material-ui/core/CardContent';
 import Button from '@material-ui/core/Button';
 import AddIcon from '@material-ui/icons/Add';
@@ -57,6 +58,7 @@ class DevicesView extends React.Component {
                 <Grid container spacing={2}>
                     <Grid item xs={12} md={12}>
                         <Card>
+                            <CardHeader title="Devices" subheader="Manage devices connected to LedFx" />
                             <CardContent>
                                 <DevicesTable
                                     items={deviceList}

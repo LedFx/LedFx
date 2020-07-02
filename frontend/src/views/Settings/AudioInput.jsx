@@ -1,12 +1,12 @@
 import React from 'react';
 import { makeStyles } from '@material-ui/core/styles';
 import Card from '@material-ui/core/Card';
+import CardHeader from '@material-ui/core/CardHeader';
 import CardContent from '@material-ui/core/CardContent';
 import MenuItem from '@material-ui/core/MenuItem';
 import FormControl from '@material-ui/core/FormControl';
 import Select from '@material-ui/core/Select';
 import FormHelperText from '@material-ui/core/FormHelperText';
-import Typography from '@material-ui/core/Typography';
 import InputLabel from '@material-ui/core/InputLabel';
 
 const useStyles = makeStyles({
@@ -25,10 +25,8 @@ const AudioCard = ({ options, value, onChange, error, isSaving, isLoading }) => 
 
     return (
         <Card>
+            <CardHeader title="Audio Input" subheader="Select an audio source for LedFx" />
             <CardContent>
-                <Typography variant="h6" color="textSecondary" gutterBottom>
-                    Audio Input
-                </Typography>
                 <FormControl error={!!error} className={classes.form} disabled={isLoading || isSaving}>
                     <InputLabel id="audio-input-select-label">Current Device</InputLabel>
                     <Select

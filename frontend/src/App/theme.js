@@ -16,4 +16,9 @@ export default createMuiTheme({
             },
         },
     },
+    props: {
+        MuiCard: {
+            variant: "outlined"
+        }
+    }
 });

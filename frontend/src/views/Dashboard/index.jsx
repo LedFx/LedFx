@@ -10,7 +10,7 @@ import PixelColorGraph from 'components/PixelColorGraph';
 import DeviceMiniControl from 'components/DeviceMiniControl';
 import AddSceneCard from 'components/AddSceneCard';
 import MiniScenesCard from 'components/MiniScenesCard';
-import { addScene, getScenes } from 'modules/scenes';
+import { addScene, getScenes, activateScene } from 'modules/scenes';
 import { setDeviceEffect, clearDeviceEffect, fetchDeviceList } from 'modules/devices';
 
 const styles = theme => ({
@@ -46,7 +46,7 @@ class DashboardView extends React.Component {
     };
 
     render() {
-        const { classes, devices, scenes, addScene } = this.props;
+        const { classes, devices, scenes, addScene, activateScene } = this.props;
 
         if (!devices.list.length) {
             return (
@@ -79,10 +79,10 @@ class DashboardView extends React.Component {
                 </Grid>
                 <Grid container direction="row" spacing={4}>
                     <Grid item lg={6}>
-                        <MiniScenesCard scenes={scenes}/>
+                        <MiniScenesCard scenes={scenes} activateScene={activateScene}/>
                     </Grid>
                     <Grid item lg={6}>
-                        <AddSceneCard scenes={scenes} addScene={addScene} />
+                        <AddSceneCard scenes={scenes} addScene={addScene}/>
                     </Grid>
                 </Grid>
             </div>
@@ -100,5 +100,5 @@ export default connect(
         devices: state.devices,
         scenes: state.scenes,
     }),
-    { addScene, getScenes, setDeviceEffect, clearDeviceEffect, fetchDeviceList }
+    { addScene, activateScene, getScenes, setDeviceEffect, clearDeviceEffect, fetchDeviceList }
 )(withStyles(styles)(DashboardView));

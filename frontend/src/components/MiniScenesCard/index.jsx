@@ -1,6 +1,5 @@
 import React from 'react';
-import PropTypes from 'prop-types';
-import { makeStyles } from '@material-ui/core/styles';
+import withStyles from '@material-ui/core/styles/withStyles';
 import Card from '@material-ui/core/Card';
 import CardHeader from '@material-ui/core/CardHeader';
 import CardContent from '@material-ui/core/CardContent';
@@ -8,9 +7,7 @@ import Button from '@material-ui/core/Button';
 import Grid from '@material-ui/core/Grid';
 import CircularProgress from '@material-ui/core/CircularProgress';
 
-import { getScenes, activateScene } from 'modules/scenes';
-
-const useStyles = makeStyles(theme => ({ 
+const styles = theme => ({
   sceneButton: {
     size: "large",
     margin: theme.spacing(1),
@@ -21,31 +18,22 @@ const useStyles = makeStyles(theme => ({
   },
   submitControls: {
     display: "flex",
+    flexWrap: "wrap",
     width: "100%",
     height: "100%"
-  },
-  buttonGrid: {
-    direction: "row",
-    justify: "flex-start",
-    alignItems: "baseline",
   }
-}))
+})
 
 
 class MiniScenesCard extends React.Component {
-
-    componentDidMount() {
-        const classes = useStyles();
-        this.props.getScenes();
-    }
 
     render() {
         const { scenes, classes, activateScene } = this.props;
 
         return (
-            <Card variant="outlined">
+            <Card>
                 <CardHeader title="Scenes" subheader="Easily deploy effects across multiple devices" />
-                   /*link header to scenes management page*/
+                   {/*link header to scenes management page*/}
                 <CardContent className={classes.submitControls}>
                     {scenes.isLoading ? (
                             <Grid
@@ -57,18 +45,13 @@ class MiniScenesCard extends React.Component {
                                 <CircularProgress size={80} />
                             </Grid>
                     ) : (
-                        /*Buttons to activate each scene*/
-                        <Grid container className={classes.buttonGrid}>
-                            scenes.list.map(scene => (
-                                <Grid key={scene.name} item>
-                                    <Button key={scene.id}
-                                            className={classes.sceneButton}
-                                            onClick={() => activateScene(scene.id)}>
-                                        {scene.name}
-                                    </Button>
-                                </Grid>
-                            ));
-                        </Grid>
+                        scenes.list.map(scene => (
+                            <Button key={scene.id}
+                                    className={classes.sceneButton}
+                                    onClick={() => activateScene(scene.id)}>
+                                {scene.name}
+                            </Button>
+                        ))
                     )}
                 </CardContent>
             </Card>
@@ -76,9 +59,4 @@ class MiniScenesCard extends React.Component {
     }
 }
 
-export default connect(
-    state => ({
-        scenes: state.scenes,
-    }),
-    { getScenes, activateScene }
-)(withStyles(styles)(MiniScenesCard));
+export default (withStyles(styles)(MiniScenesCard));

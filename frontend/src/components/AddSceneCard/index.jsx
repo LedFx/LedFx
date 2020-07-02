@@ -3,11 +3,11 @@ import PropTypes from 'prop-types';
 
 import { makeStyles } from '@material-ui/core/styles';
 import Card from '@material-ui/core/Card';
+import CardHeader from '@material-ui/core/CardHeader';
 import CardContent from '@material-ui/core/CardContent';
 import Grid from '@material-ui/core/Grid';
 import TextField from '@material-ui/core/TextField';
 import Button from '@material-ui/core/Button';
-import Typography from '@material-ui/core/Typography';
 
 const useStyles = makeStyles({
     button: {
@@ -44,9 +44,8 @@ const AddSceneCard = ({ scenes = {}, addScene }) => {
 
     return (
         <Card>
+            <CardHeader title="Add Scene" subheader="Save current effects of all devices as a Scene" />
             <CardContent>
-                <Typography variant="h5">Add Scene</Typography>
-                <Typography>Save current effects of all devices as a Scene</Typography>
                 <Grid container>
                     <Grid item xs={11}>
                         <TextField

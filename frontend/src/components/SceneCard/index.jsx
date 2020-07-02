@@ -2,6 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { makeStyles } from '@material-ui/core/styles';
 import Card from '@material-ui/core/Card';
+import CardHeader from '@material-ui/core/CardHeader';
 import CardContent from '@material-ui/core/CardContent';
 import CardActions from '@material-ui/core/CardActions';
 import Button from '@material-ui/core/Button';
@@ -42,8 +43,8 @@ export default function SceneCard({ scene, activateScene, deleteScene }) {
 
     return (
         <Card>
+            <CardHeader title={scene.name} />
             <CardContent>
-                <h3>{scene.name}</h3>
                 {scene.devices && <SceneConfigTable devices={scene.devices} />}
             </CardContent>
             <CardActions className={classes.submitControls}>

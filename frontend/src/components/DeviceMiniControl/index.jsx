@@ -5,7 +5,7 @@ import Button from '@material-ui/core/Button';
 import Switch from '@material-ui/core/Switch';
 import Grid from '@material-ui/core/Grid';
 import Typography from '@material-ui/core/Typography';
-import  CircularProgress from '@material-ui/core/CircularProgress';
+import CircularProgress from '@material-ui/core/CircularProgress';
 import { NavLink } from 'react-router-dom';
 
 const styles = theme => ({
@@ -24,17 +24,12 @@ const styles = theme => ({
         verticalAlign: 'middle',
     },
     deviceLink: {
-        textDecoration: 'none',
-        '&,&:hover': {
-            color: '#000000',
+        size: "large",
+        margin: theme.spacing(1),
+        textDecoration: "none",
+        "&,&:hover": {
+          color: "#000000"
         },
-    },
-    header: {
-        margin: 0,
-    },
-    subHeader: {
-        margin: 0,
-        color: '#333333',
     },
     actionsContainer: {
         display: 'flex',
@@ -64,10 +59,10 @@ class DeviceMiniControl extends React.Component {
         return (
             <Grid container direction="row" spacing={1} justify="space-between">
                 <Grid item xs="auto">
-                    <Typography variant="h5" color="inherit" className={classes.header}>
+                    <Typography variant="h5">
                         {config.name}
                     </Typography>
-                    <Typography variant="caption" color="inherit" className={classes.subHeader}>
+                    <Typography variant="body1" color="textSecondary">
                         Effect: {effect.name}
                     </Typography>
                 </Grid>

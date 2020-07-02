@@ -111,8 +111,11 @@ class EffectControl extends React.Component {
         if (schemas.effects) {
             return (
                 <>
-                    <Typography variant="h5" color="inherit">
+                    <Typography variant="h5">
                         Effect Control
+                    </Typography>
+                    <Typography variant="body1" color="textSecondary">
+                        Set and configure effects
                     </Typography>
                     <form onSubmit={this.handleSubmit} className={classes.form}>
                         <DropDown
