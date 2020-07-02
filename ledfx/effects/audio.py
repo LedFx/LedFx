@@ -86,8 +86,10 @@ class AudioInputSource(object):
             #self.pre_emphasis.set_biquad(1.3662, -1.9256, 0.5621, -1.9256, 0.9283)
 
             # USE THESE FOR MATT_MEl
-            self.pre_emphasis.set_biquad(0.87492, -1.74984, 0.87492, -1.74799, 0.75169)
-
+            # weaker bass, good for vocals, highs
+            #self.pre_emphasis.set_biquad(0.87492, -1.74984, 0.87492, -1.74799, 0.75169)
+            # bass heavier overall more balanced
+            self.pre_emphasis.set_biquad(0.85870, -1.71740, 0.85870, -1.71605, 0.71874)
 
 
         # Setup the phase vocoder to perform a windowed FFT
@@ -264,15 +266,15 @@ class MelbankInputSource(AudioInputSource):
             self._config['mic_rate'])
 
     def _initialize_onset(self):
-        self.onset_high = aubio.onset("hfc",
+        self.onset_high = aubio.onset("specflux",
             self._config['fft_size'],
             self._config['mic_rate'] // self._config['sample_rate'],
             self._config['mic_rate'])
-        self.onset_mids = aubio.onset("phase",
+        self.onset_soft = aubio.onset("phase",
             self._config['fft_size'],
             self._config['mic_rate'] // self._config['sample_rate'],
             self._config['mic_rate'])
-        self.onset_lows = aubio.onset("specdiff",
+        self.onset_mids = aubio.onset("specdiff",
             self._config['fft_size'],
             self._config['mic_rate'] // self._config['sample_rate'],
             self._config['mic_rate'])
@@ -557,10 +559,10 @@ class MelbankInputSource(AudioInputSource):
     def midi_value(self):
         return self.pitch_o(self.audio_sample())[0]
 
-    @lru_cache(maxsize=32)
+    #@lru_cache(maxsize=32)
     def onset(self):
-        return {"lows": bool(self.onset_lows(self.audio_sample(raw=True))[0]),
-                "mids": bool(self.onset_mids(self.audio_sample(raw=True))[0]),
+        return {"mids": bool(self.onset_mids(self.audio_sample(raw=True))[0]),
+                "soft": bool(self.onset_soft(self.audio_sample(raw=True))[0]),
                 "high": bool(self.onset_high(self.audio_sample(raw=True))[0])}
 
     def oscillator(self):
