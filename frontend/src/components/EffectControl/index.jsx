@@ -58,7 +58,11 @@ class EffectControl extends React.Component {
     }
 
     handleTypeChange = (value = '', initial = {}) => {
+        const { onTypeChange } = this.props;
         this.setState({ selectedType: value, model: initial });
+        if (onTypeChange) {
+            onTypeChange(value);
+        }
     };
 
     onModelChange = (key, val) => {

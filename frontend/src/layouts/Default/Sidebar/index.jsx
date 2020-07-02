@@ -55,7 +55,7 @@ class Sidebar extends React.Component {
                                     {devices.map(device => {
                                         let listItemClass = classes.itemLink;
                                         if (this.isViewActive(`/devices/${device.id}`)) {
-                                            listItemClass = `listItemClass ${classes.activeView}`;
+                                            listItemClass = `${listItemClass} ${classes.activeView}`;
                                         }
                                         return (
                                             <NavLink

@@ -35,14 +35,15 @@ const useStyles = makeStyles(theme => ({
     },
 }));
 
-const PresetsCard = ({ device, presets, activatePreset, getDevicePresets, addPreset }) => {
+const PresetsCard = ({ device, presets, effect, activatePreset, getEffectPresets, addPreset }) => {
     const classes = useStyles();
     const [name, setName] = useState('');
     const isNameValid = validateTextInput(name, presets);
 
+    console.log('what this here', effect);
     useEffect(() => {
-        getDevicePresets(device.id);
-    }, [device.id, getDevicePresets]);
+        getEffectPresets(effect.type);
+    }, [effect.type, getEffectPresets]);
 
     const handleActivatePreset = (deviceId, category, type, presetId) => () => {
         activatePreset(deviceId, category, type, presetId);

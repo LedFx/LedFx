@@ -7,7 +7,7 @@ import Card from '@material-ui/core/Card';
 import CardContent from '@material-ui/core/CardContent';
 
 import { loadDeviceInfo, setDeviceEffect, clearDeviceEffect } from 'modules/selectedDevice';
-import { activatePreset, getDevicePresets, addPreset } from 'modules/presets';
+import { activatePreset, getEffectPresets, addPreset } from 'modules/presets';
 import EffectControl from 'components/EffectControl';
 import PixelColorGraph from 'components/PixelColorGraph';
 import PresetsCard from 'components/PresetsCard';
@@ -41,13 +41,18 @@ class DeviceView extends React.Component {
         setDeviceEffect(data.deviceId, data);
     };
 
+    handleTypeChange = effectType => {
+        const { getEffectPresets } = this.props;
+        getEffectPresets(effectType);
+    };
+
     render() {
         const {
             presets,
             schemas,
             selectedDevice,
             activatePreset,
-            getDevicePresets,
+            getEffectPresets,
             addPreset,
         } = this.props;
         const { device, effect, isDeviceLoading, isEffectLoading } = selectedDevice;
@@ -68,6 +73,7 @@ class DeviceView extends React.Component {
                                 schemas={schemas}
                                 onClear={this.handleClearEffect}
                                 onSubmit={this.handleSetEffect}
+                                onTypeChange={this.handleTypeChange}
                             />
                         </CardContent>
                     </Card>
@@ -77,8 +83,9 @@ class DeviceView extends React.Component {
                         <PresetsCard
                             device={device}
                             presets={presets}
+                            effect={effect}
                             activatePreset={activatePreset}
-                            getDevicePresets={getDevicePresets}
+                            getEffectPresets={getEffectPresets}
                             addPreset={addPreset}
                         />
                     )}
@@ -118,7 +125,7 @@ export default connect(
         clearDeviceEffect,
         setDeviceEffect,
         activatePreset,
-        getDevicePresets,
+        getEffectPresets,
         addPreset,
     }
 )(DeviceView);

@@ -6,6 +6,7 @@ import Grid from '@material-ui/core/Grid';
 import { getAudioInputs, setAudioInput } from 'modules/settings';
 
 import AudioInputCard from './AudioInput';
+import ConfigCard from './ConfigCard';
 
 const styles = theme => ({});
 
@@ -22,6 +23,9 @@ class SettingsView extends Component {
             <Grid container direction="row" spacing={4}>
                 <Grid item md={4}>
                     <AudioInputCard {...audioInputs} onChange={setAudioInput} />
+                </Grid>
+                <Grid item md={4}>
+                    <ConfigCard settings={settings} />
                 </Grid>
             </Grid>
         );

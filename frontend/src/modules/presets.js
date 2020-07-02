@@ -1,5 +1,6 @@
 import { createAction, handleActions } from 'redux-actions';
 import * as deviceProxies from 'proxies/device';
+import * as effectsProxies from 'proxies/effects';
 import { convertDictionaryToList } from 'utils/helpers';
 import { effectReceived } from 'modules/selectedDevice';
 
@@ -63,11 +64,11 @@ export default handleActions(
     INITIAL_STATE
 );
 
-export function getDevicePresets(deviceId) {
+export function getEffectPresets(effectType) {
     return async dispatch => {
         dispatch(presetsFetching());
         try {
-            const response = await deviceProxies.getDevicePresets(deviceId);
+            const response = await effectsProxies.getEffectPresets(effectType);
 
             if (response.statusText === 'OK') {
                 const { default_presets, custom_presets, effect } = response.data;
