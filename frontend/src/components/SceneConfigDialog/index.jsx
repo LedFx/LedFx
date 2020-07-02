@@ -38,7 +38,7 @@ class SceneConfigDialog extends React.Component {
                 <DialogTitle id="form-dialog-title">Add Preset</DialogTitle>
                 <DialogContent className={classes.cardResponsive}>
                     <DialogContentText>
-                        To add a preset to LedFx, please first configure the effects you wish to
+                        To add a scene to LedFx, please first configure the effects you wish to
                         save, select the type of preset you wish, and then provide the necessary
                         configuration.
                     </DialogContentText>

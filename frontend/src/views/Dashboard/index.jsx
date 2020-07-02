@@ -9,6 +9,7 @@ import Grid from '@material-ui/core/Grid';
 import PixelColorGraph from 'components/PixelColorGraph';
 import DeviceMiniControl from 'components/DeviceMiniControl';
 import AddSceneCard from 'components/AddSceneCard';
+import MiniScenesCard from 'components/MiniScenesCard';
 import { addScene, getScenes } from 'modules/scenes';
 import { setDeviceEffect, clearDeviceEffect, fetchDeviceList } from 'modules/devices';
 
@@ -77,7 +78,10 @@ class DashboardView extends React.Component {
                     })}
                 </Grid>
                 <Grid container direction="row" spacing={4}>
-                    <Grid item xs={12}>
+                    <Grid item lg={6}>
+                        <MiniScenesCard scenes={scenes}/>
+                    </Grid>
+                    <Grid item lg={6}>
                         <AddSceneCard scenes={scenes} addScene={addScene} />
                     </Grid>
                 </Grid>
