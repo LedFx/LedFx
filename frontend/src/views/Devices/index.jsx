@@ -71,27 +71,29 @@ class DevicesView extends React.Component {
                                         </Typography>
                                     </Grid>
                                     {!schemas.isLoading && (
-                                        <Grid item
-                                            display='flex'
-                                            justifyContent='flex-end' >
-                                            <Button
-                                                variant="contained"
-                                                color="primary"
-                                                aria-label="Add"
-                                                className={classes.button}
-                                                onClick={this.openAddDeviceDialog}
-                                            >
-                                                Add Device
-                                            </Button>
-                                            <DeviceConfigDialog
-                                                open={addDialogOpened}
-                                                onClose={this.closeAddDeviceDialog}
-                                                deviceTypes={schemas.deviceTypes}
-                                                onAddDevice={addDevice}
-                                                initial={selectedDevice}
-                                                onUpdateDevice={updateDeviceConfig}
-                                            />
-                                        </Grid>
+                                        <>
+                                            <Grid item
+                                                display='flex'
+                                                justifyContent='flex-end' >
+                                                <Button
+                                                    variant="contained"
+                                                    color="primary"
+                                                    aria-label="Add"
+                                                    className={classes.button}
+                                                    onClick={this.openAddDeviceDialog}
+                                                >
+                                                    Add Device
+                                                </Button>
+                                                <DeviceConfigDialog
+                                                    open={addDialogOpened}
+                                                    onClose={this.closeAddDeviceDialog}
+                                                    deviceTypes={schemas.deviceTypes}
+                                                    onAddDevice={addDevice}
+                                                    initial={selectedDevice}
+                                                    onUpdateDevice={updateDeviceConfig}
+                                                />
+                                            </Grid>
+                                        </>
                                     )}
                                 </Grid>
 
