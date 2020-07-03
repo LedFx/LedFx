@@ -54,7 +54,7 @@ const PresetsCard = ({ device, presets, effect, activatePreset, getEffectPresets
         if (!list?.length)
             return (
                 <Button className={classes.presetButton} disabled>
-                    No Presets Found
+                    No Saved Presets
                 </Button>
             );
         return list.map(preset => {
@@ -92,8 +92,8 @@ const PresetsCard = ({ device, presets, effect, activatePreset, getEffectPresets
                 <Grid container className={classes.buttonGrid}>
                     {renderPresetsButton(presets?.customPresets, CUSTOM_CAT)}
                 </Grid>
-                <Typography variant="subtitle2">Add Preset</Typography>
-                <Typography variant="caption" color="textSecondary">
+                <Typography variant="header">Add Preset</Typography>
+                <Typography variant="body1" color="textSecondary">
                     Save this effect configuration as a preset
                 </Typography>
             </CardContent>
