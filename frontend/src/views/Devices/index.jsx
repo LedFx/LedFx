@@ -9,7 +9,7 @@ import AddIcon from '@material-ui/icons/Add';
 
 import DevicesTable from 'components/DevicesTable';
 import DeviceConfigDialog from 'components/DeviceConfigDialog';
-import { addDevice, deleteDevice, updateDeviceConfig } from 'modules/devices';
+import { addDevice, deleteDevice, updateDeviceConfig, fetchDeviceList } from 'modules/devices';
 
 const styles = theme => ({
     cardResponsive: {
@@ -35,6 +35,10 @@ class DevicesView extends React.Component {
             selectedDevice: {},
         };
     }
+    componentDidMount() {
+        const { fetchDeviceList } = this.props;
+        fetchDeviceList();
+    }
 
     openAddDeviceDialog = () => {
         this.setState({ selectedDevice: {}, addDialogOpened: true });
@@ -49,7 +53,14 @@ class DevicesView extends React.Component {
     };
 
     render() {
-        const { classes, deviceList, schemas, addDevice, deleteDevice, updateDeviceConfig } = this.props;
+        const {
+            classes,
+            deviceList,
+            schemas,
+            addDevice,
+            deleteDevice,
+            updateDeviceConfig,
+        } = this.props;
         const { addDialogOpened, selectedDevice } = this.state;
 
         return (
@@ -101,6 +112,7 @@ export default connect(
     {
         addDevice,
         deleteDevice,
-        updateDeviceConfig
+        updateDeviceConfig,
+        fetchDeviceList,
     }
 )(withStyles(styles)(DevicesView));
