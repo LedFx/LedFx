@@ -1,9 +1,9 @@
 import React from 'react';
 import { makeStyles } from '@material-ui/core/styles';
 import Card from '@material-ui/core/Card';
+import CardHeader from '@material-ui/core/CardHeader';
 import CardContent from '@material-ui/core/CardContent';
 import FormHelperText from '@material-ui/core/FormHelperText';
-import Typography from '@material-ui/core/Typography';
 import InputLabel from '@material-ui/core/InputLabel';
 import TextField from '@material-ui/core/TextField';
 
@@ -18,10 +18,8 @@ const ConfigCard = ({ settings, error }) => {
     const classes = useStyles();
     return (
         <Card>
+            <CardHeader title="Configs" subheader="Manage network and developer settings" />
             <CardContent className={classes.content}>
-                <Typography variant="h6" color="textSecondary" gutterBottom>
-                    Configs
-                </Typography>
                 <InputLabel id="host-label">Host</InputLabel>
                 <TextField disabled labelId="host-label" id="host" value={settings.host} />
                 <InputLabel id="port-label">Port</InputLabel>

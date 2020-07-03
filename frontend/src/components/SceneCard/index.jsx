@@ -2,26 +2,25 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { makeStyles } from '@material-ui/core/styles';
 import Card from '@material-ui/core/Card';
+import CardHeader from '@material-ui/core/CardHeader';
 import CardContent from '@material-ui/core/CardContent';
 import CardActions from '@material-ui/core/CardActions';
 import Button from '@material-ui/core/Button';
-import red from '@material-ui/core/colors/red';
+import DeleteIcon from '@material-ui/icons/Delete';
+import CheckCircleIcon from '@material-ui/icons/CheckCircle';
 
 import SceneConfigTable from 'components/SceneCard/SceneConfigTable';
 
 const useStyles = makeStyles(theme => ({
     deleteButton: {
-        color: theme.palette.getContrastText(red[500]),
-        backgroundColor: red[500],
-        '&:hover': {
-            backgroundColor: red[700],
-        },
         margin: theme.spacing(1),
-        float: 'right',
+        size: "medium",
     },
     button: {
+        color: "primary",
         margin: theme.spacing(1),
-        float: 'right',
+        size: "medium",
+        variant: "contained",
     },
     submitControls: {
         flex: 1,
@@ -42,30 +41,30 @@ export default function SceneCard({ scene, activateScene, deleteScene }) {
 
     return (
         <Card>
+            <CardHeader title={scene.name} />
             <CardContent>
-                <h3>{scene.name}</h3>
                 {scene.devices && <SceneConfigTable devices={scene.devices} />}
             </CardContent>
             <CardActions className={classes.submitControls}>
                 <Button
-                    className={classes.button}
-                    color="primary"
-                    size="medium"
-                    aria-label="Activate"
-                    variant="contained"
-                    onClick={handleActivate}
-                >
-                    Activate
-                </Button>
-                <Button
                     className={classes.deleteButton}
-                    color="secondary"
-                    size="medium"
                     aria-label="Delete"
+                    color="secondary"
                     variant="contained"
                     onClick={handleDelete}
+                    endIcon={<DeleteIcon />}
                 >
                     Delete
+                </Button>
+                <Button
+                    className={classes.button}
+                    aria-label="Activate"
+                    color="primary"
+                    variant="contained"
+                    onClick={handleActivate}
+                    endIcon={<CheckCircleIcon />}
+                >
+                    Activate
                 </Button>
             </CardActions>
         </Card>

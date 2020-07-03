@@ -13,8 +13,8 @@ import { drawerWidth } from 'utils/style';
 
 const styles = theme => ({
     appBar: {
-        backgroundColor: theme.palette.background.default,
-        boxShadow: '1px 1px 5px rgba(0,0,0,0.3)',
+        backgroundColor: 'transparent',
+        boxShadow: 'none',
         position: 'absolute',
         marginLeft: drawerWidth,
         [theme.breakpoints.up('md')]: {

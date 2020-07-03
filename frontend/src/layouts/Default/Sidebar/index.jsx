@@ -10,7 +10,7 @@ import ListItemIcon from '@material-ui/core/ListItemIcon';
 import ListItemText from '@material-ui/core/ListItemText';
 
 import viewRoutes from 'routes/views.jsx';
-import logoAsset from 'assets/img/icon/small_white_alpha.png';
+import logoAsset from 'assets/img/icon/large_white_alpha.png';
 import sidebarStyle from './style.jsx';
 
 class Sidebar extends React.Component {

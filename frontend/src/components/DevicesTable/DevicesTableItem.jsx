@@ -7,7 +7,6 @@ import TableCell from '@material-ui/core/TableCell';
 import Button from '@material-ui/core/Button';
 import DeleteIcon from '@material-ui/icons/Delete';
 import EditIcon from '@material-ui/icons/Edit';
-import red from '@material-ui/core/colors/red';
 
 const styles = theme => ({
     button: {
@@ -17,11 +16,6 @@ const styles = theme => ({
     },
     deleteButton: {
         minWidth: 32,
-        color: theme.palette.getContrastText(red[500]),
-        backgroundColor: red[500],
-        '&:hover': {
-            backgroundColor: red[700],
-        },
     },
     editButton: {
         minWidth: 32,
@@ -66,6 +60,7 @@ function DevicesTableItem({ device, onDelete, classes, onEdit }) {
             <TableCell>{device.type}</TableCell>
             <TableCell className={classes.actions} align="right">
                 <Button
+                    color="secondary"
                     variant="contained"
                     size="small"
                     className={classes.deleteButton}

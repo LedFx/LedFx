@@ -1,11 +1,12 @@
 import { createMuiTheme } from '@material-ui/core/styles';
-import cyan from '@material-ui/core/colors/cyan';
-import green from '@material-ui/core/colors/green';
+import teal from '@material-ui/core/colors/teal';
 
 export default createMuiTheme({
     palette: {
-        primary: cyan,
-        secondary: green,
+        primary: teal,
+        secondary: {
+          main: '#ef6c00',
+        },
     },
     overrides: {
         MuiFormControl: {
@@ -16,4 +17,9 @@ export default createMuiTheme({
             },
         },
     },
+    props: {
+        MuiCard: {
+            variant: "outlined"
+        }
+    }
 });
