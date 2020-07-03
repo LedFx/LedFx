@@ -7,6 +7,10 @@ import Button from '@material-ui/core/Button';
 import DialogActions from '@material-ui/core/DialogActions';
 import Box from '@material-ui/core/Box';
 
+import CancelIcon from '@material-ui/icons/Cancel';
+import CheckCircleIcon from '@material-ui/icons/CheckCircle';
+import CasinoIcon from '@material-ui/icons/Casino';
+
 import DropDown from 'components/forms/DropDown';
 
 const styles = theme => ({
@@ -138,7 +142,13 @@ class EffectControl extends React.Component {
 
                         <DialogActions className={classes.bottomContainer}>
                             {selectedType && (
-                                <Button onClick={this.handleRandomize}>Randomize</Button>
+                                <Button 
+                                    onClick={this.handleRandomize}
+                                    endIcon={<CasinoIcon />}
+                                    color="primary"
+                                >
+                                    Randomize
+                                </Button>
                             )}
                             <Box
                                 flex={1}
@@ -150,6 +160,7 @@ class EffectControl extends React.Component {
                                     className={classes.button}
                                     onClick={this.handleClearEffect}
                                     color="primary"
+                                    endIcon={<CancelIcon />}
                                 >
                                     Clear Effect
                                 </Button>
@@ -159,6 +170,7 @@ class EffectControl extends React.Component {
                                     variant="contained"
                                     color="primary"
                                     disabled={!selectedType}
+                                    endIcon={<CheckCircleIcon />}
                                 >
                                     Set Effect
                                 </Button>

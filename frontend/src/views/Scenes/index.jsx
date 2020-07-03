@@ -56,7 +56,7 @@ class ScenesView extends React.Component {
                     </Grid>
                 ) : (
                     scenes.list.map(scene => (
-                        <Grid key={scene.name} item xs={12} md={6}>
+                        <Grid key={scene.name} item xs={12} md={4}>
                             <ScenesCard
                                 key={scene.id}
                                 scene={scene}

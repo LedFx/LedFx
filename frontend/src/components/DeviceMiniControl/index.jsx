@@ -63,7 +63,7 @@ class DeviceMiniControl extends React.Component {
                         {config.name}
                     </Typography>
                     <Typography variant="body1" color="textSecondary">
-                        Effect: {effect.name}
+                        Effect: {effect.name ? effect.name : "None"}
                     </Typography>
                 </Grid>
 

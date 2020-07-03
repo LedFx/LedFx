@@ -8,6 +8,7 @@ import Button from '@material-ui/core/Button';
 import Grid from '@material-ui/core/Grid';
 import Typography from '@material-ui/core/Typography';
 import TextField from '@material-ui/core/TextField';
+import SaveIcon from '@material-ui/icons/Save';
 
 // CONSTANT device categories
 export const DEFAULT_CAT = 'default_presets';
@@ -92,7 +93,7 @@ const PresetsCard = ({ device, presets, effect, activatePreset, getEffectPresets
                 <Grid container className={classes.buttonGrid}>
                     {renderPresetsButton(presets?.customPresets, CUSTOM_CAT)}
                 </Grid>
-                <Typography variant="header">Add Preset</Typography>
+                <Typography variant="h6">Add Preset</Typography>
                 <Typography variant="body1" color="textSecondary">
                     Save this effect configuration as a preset
                 </Typography>
@@ -107,12 +108,13 @@ const PresetsCard = ({ device, presets, effect, activatePreset, getEffectPresets
                 <Button
                     className={classes.presetButton}
                     color="primary"
-                    aria-label="Save"
+                    aria-label="Save Preset"
                     disabled={name.length > 0 || !isNameValid}
                     variant="contained"
                     onClick={handleAddPreset}
+                    endIcon={<SaveIcon />}
                 >
-                    Save
+                    Save Preset
                 </Button>
             </CardActions>
         </Card>

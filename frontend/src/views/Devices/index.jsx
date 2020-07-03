@@ -6,6 +6,7 @@ import Card from '@material-ui/core/Card';
 import Typography from '@material-ui/core/Typography';
 import CardContent from '@material-ui/core/CardContent';
 import Button from '@material-ui/core/Button';
+import AddCircleIcon from '@material-ui/icons/AddCircle';
 
 import DevicesTable from 'components/DevicesTable';
 import DeviceConfigDialog from 'components/DeviceConfigDialog';
@@ -19,10 +20,6 @@ const styles = theme => ({
     button: {
         size: "large",
         margin: theme.spacing(1),
-        textDecoration: "none",
-        "&,&:hover": {
-          color: "#000000"
-        },
     },
     dialogButton: {
         float: 'right',
@@ -81,6 +78,7 @@ class DevicesView extends React.Component {
                                                     aria-label="Add"
                                                     className={classes.button}
                                                     onClick={this.openAddDeviceDialog}
+                                                    endIcon={<AddCircleIcon />}
                                                 >
                                                     Add Device
                                                 </Button>
