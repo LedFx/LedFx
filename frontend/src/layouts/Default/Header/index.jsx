@@ -20,6 +20,7 @@ const styles = theme => ({
         [theme.breakpoints.up('md')]: {
             width: `calc(100% - ${drawerWidth}px)`,
         },
+        color: 'black'
     },
     flex: {
         flex: 1,
