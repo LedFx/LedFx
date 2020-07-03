@@ -109,7 +109,7 @@ const PresetsCard = ({ device, presets, effect, activatePreset, getEffectPresets
                     className={classes.presetButton}
                     color="primary"
                     aria-label="Save Preset"
-                    disabled={name.length > 0 || !isNameValid}
+                    disabled={name.length === 0 || !isNameValid}
                     variant="contained"
                     onClick={handleAddPreset}
                     endIcon={<SaveIcon />}
