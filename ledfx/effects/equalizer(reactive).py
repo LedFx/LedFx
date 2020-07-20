@@ -18,8 +18,8 @@ class EQAudioEffect(AudioReactiveEffect, GradientEffect):
     def config_updated(self, config):
         # Create the filters used for the effect
         self._r_filter = self.create_filter(
-            alpha_decay = 0.2,
-            alpha_rise = 0.99)
+            alpha_decay = 0.5,
+            alpha_rise = 0.1)
 
     def audio_data_updated(self, data):
         # Grab the filtered and interpolated melbank data
