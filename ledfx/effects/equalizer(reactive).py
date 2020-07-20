@@ -33,7 +33,7 @@ class EQAudioEffect(AudioReactiveEffect, GradientEffect):
         r_split = np.array_split(r_clipped, self._config["gradient_repeat"])
         for i in range(self._config["gradient_repeat"]):
             band_width = len(r_split[i])
-            volume = int(r_split[i].max()*band_width) # length (volume) of band
+            volume = int(r_split[i].sum()*band_width) # length (volume) of band
             r_split[i][:] = 0
             if volume:
                 r_split[i][:volume] = 1
