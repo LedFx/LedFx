@@ -18,8 +18,8 @@ class EQAudioEffect(AudioReactiveEffect, GradientEffect):
     def config_updated(self, config):
         # Create the filters used for the effect
         self._r_filter = self.create_filter(
-            alpha_decay = 0.2,
-            alpha_rise = 0.99)
+            alpha_decay = 0.5,
+            alpha_rise = 0.1)
 
     def audio_data_updated(self, data):
         # Grab the filtered and interpolated melbank data
@@ -33,7 +33,7 @@ class EQAudioEffect(AudioReactiveEffect, GradientEffect):
         r_split = np.array_split(r_clipped, self._config["gradient_repeat"])
         for i in range(self._config["gradient_repeat"]):
             band_width = len(r_split[i])
-            volume = int(r_split[i].max()*band_width) # length (volume) of band
+            volume = int(r_split[i].sum()*band_width) # length (volume) of band
             r_split[i][:] = 0
             if volume:
                 r_split[i][:volume] = 1
