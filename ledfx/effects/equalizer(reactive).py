@@ -19,8 +19,7 @@ class EQAudioEffect(AudioReactiveEffect, GradientEffect):
         # Create the filters used for the effect
         self._r_filter = self.create_filter(
             alpha_decay = 0.2,
-            alpha_rise = 0.999)
-        self.bkg_color = np.array(COLORS["black"], dtype=float)
+            alpha_rise = 0.99)
 
     def audio_data_updated(self, data):
         # Grab the filtered and interpolated melbank data
