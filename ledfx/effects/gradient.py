@@ -19,6 +19,7 @@ class GradientEffect(Effect):
     CONFIG_SCHEMA = vol.Schema({
         vol.Optional('gradient_name', description='Color gradient to display', default = 'Spectral'): vol.In(list(GRADIENTS.keys())),
         vol.Optional('gradient_roll', description='Amount to shift the gradient', default = 0): vol.All(vol.Coerce(int), vol.Range(min=0, max=10)),
+        vol.Optional('gradient_repeat', description='Repeat the gradient into segments', default = 1): vol.All(vol.Coerce(int), vol.Range(min=1, max=16))
         #vol.Optional('gradient_method', description='Function used to generate gradient', default = 'cubic_ease'): vol.In(["cubic_ease", "bezier"]),
     })
 
@@ -58,7 +59,7 @@ class GradientEffect(Effect):
                                     start_color[i],
                                     end_color[i]) for i in range(3)])
 
-    def _generate_gradient_curve(self, gradient_colors, gradient_length):
+    def _generate_gradient_curve(self, gradient_colors, gradient_length, repeat):
 
         # Check to see if we have a custom gradient, or a predefined one and
         # load the colors accordingly
@@ -89,12 +90,16 @@ class GradientEffect(Effect):
 
         # elif gradient_method == "cubic_ease":
 
-        t = np.zeros(gradient_length)
-        ease_chunks = np.array_split(t, n_colors-1)
-        color_pairs = np.array([(self.rgb_list.T[i], self.rgb_list.T[i+1]) for i in range(n_colors-1)])
-        gradient = np.hstack(self._color_ease(len(ease_chunks[i]), *color_pairs[i]) for i in range(n_colors-1))
+        gradient = np.zeros((3,gradient_length))
+        gradient_split = np.array_split(gradient, repeat, axis=1)
+        for i in range(len(gradient_split)):
+            segment_length = len(gradient_split[i][0])
+            t = np.zeros(segment_length)
+            ease_chunks = np.array_split(t, n_colors-1)
+            color_pairs = np.array([(self.rgb_list.T[i], self.rgb_list.T[i+1]) for i in range(n_colors-1)])
+            gradient_split[i] = np.hstack(self._color_ease(len(ease_chunks[i]), *color_pairs[i]) for i in range(n_colors-1))
         _LOGGER.info(('Generating new gradient curve for {}'.format(gradient_colors)))
-        self._gradient_curve = gradient
+        self._gradient_curve = np.hstack(gradient_split)
 
         # else:
         #     gradient = np.zeros((gradient_length, 3))
@@ -112,7 +117,7 @@ class GradientEffect(Effect):
 
     def _validate_gradient(self):
         if not self._gradient_valid(): 
-            self._generate_gradient_curve(self._config['gradient_name'], self.pixel_count)
+            self._generate_gradient_curve(self._config['gradient_name'], self.pixel_count, self._config["gradient_repeat"])
 
     def _roll_gradient(self):
         if self._config['gradient_roll'] == 0:
