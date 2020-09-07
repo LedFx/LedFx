@@ -19,7 +19,6 @@ class HttpServer(object):
         aiohttp_jinja2.setup(
             self.app,
             loader=jinja2.PackageLoader('ledfx_frontend', '.'))
-        self.app['static_root_url'] = '/static'
         self.register_routes()
 
         self._ledfx = ledfx
@@ -32,7 +31,7 @@ class HttpServer(object):
 
     def register_routes(self):
         self.api.register_routes(self.app)
-        self.app.router.add_static('/static', path=ledfx_frontend.where(), name='static')
+        self.app.router.add_static('/static', path=ledfx_frontend.where() + '/static', name='static')
 
         self.app.router.add_route('get', '/', self.index)
         self.app.router.add_route('get', '/{extra:.+}', self.index)
