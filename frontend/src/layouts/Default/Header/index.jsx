@@ -20,7 +20,6 @@ const styles = theme => ({
         [theme.breakpoints.up('md')]: {
             width: `calc(100% - ${drawerWidth}px)`,
         },
-        color: 'black'
     },
     flex: {
         flex: 1,
@@ -56,7 +55,7 @@ class Header extends React.Component {
         return (
             <AppBar className={classes.appBar}>
                 <Toolbar>
-                    <Typography variant="h2" color="inherit" className={classes.flex}>
+                    <Typography variant="h2" color="textPrimary" className={classes.flex}>
                         {this.getPageName()}
                     </Typography>
                     <Hidden mdUp>
