@@ -35,6 +35,7 @@ To get started on Windows it is highly recommended that you use `Anaconda <https
 
     conda config --add channels conda-forge
     conda install aubio portaudio pywin32
+    conda install -c anaconda pyaudio
     pip install ledfx
 
 **3.** Launch LedFx with the ``--open-ui`` option to launch the browser:

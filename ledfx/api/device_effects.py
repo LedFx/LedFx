@@ -42,6 +42,7 @@ class EffectsEndpoint(RestEndpoint):
 
         data = await request.json()
         effect_config = data.get('config')
+        effect_type = data.get('type')
         if effect_config is None:
             response = { 'status' : 'failed', 'reason': 'Required attribute "config" was not provided' }
             return web.json_response(data=response, status=500)

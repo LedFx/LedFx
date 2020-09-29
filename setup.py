@@ -40,14 +40,15 @@ setup(
     setup_requires=SETUP_REQUIRES,
     python_requires=const.REQUIRED_PYTHON_STRING,
     include_package_data=True,
-    zip_safe=False,
+    # packages=find_packages(),
+    zip_safe=True,
     entry_points={
         'console_scripts': [
             'ledfx = ledfx.__main__:main'
         ]
     },
     package_data={
-        'ledfx_frontend':['*'],
+        'ledfx_frontend': ['*'],
         '': ['*.npy']
     },
     

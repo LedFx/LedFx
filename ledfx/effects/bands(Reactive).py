@@ -11,7 +11,7 @@ class BandsAudioEffect(AudioReactiveEffect, GradientEffect):
 
     CONFIG_SCHEMA = vol.Schema({
         vol.Optional('band_count', description='Number of bands', default = 6): vol.All(vol.Coerce(int), vol.Range(min=1, max=16)),
-        vol.Optional('align', description='Alignment of bands', default = 'edge'): vol.In(list(["left", "right", "invert", "center"])),
+        vol.Optional('align', description='Alignment of bands', default = 'left'): vol.In(list(["left", "right", "invert", "center"])),
         vol.Optional('gradient_name', description='Color gradient to display', default = 'Spectral'): vol.In(list(GRADIENTS.keys())),
         vol.Optional('mirror', description='Mirror the effect', default = False): bool
     })
