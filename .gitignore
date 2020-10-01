@@ -11,6 +11,7 @@ __pycache__/*
 .cache/*
 .*.swp
 */.ipynb_checkpoints/*
+*.DS_Store
 
 # Python env
 env
@@ -27,6 +28,7 @@ package-lock.json
 .settings
 .idea
 .vscode
+*.code-workspace
 
 # Package files
 *.egg
