@@ -54,7 +54,7 @@ class DeviceEndpoint(RestEndpoint):
             config_dir = self._ledfx.config_dir)
 
         response = { 'status' : 'success' }
-        return web.json_response(data=response, status=500)
+        return web.json_response(data=response, status=200)
 
     async def delete(self, device_id) -> web.Response:
         device = self._ledfx.devices.get(device_id)
