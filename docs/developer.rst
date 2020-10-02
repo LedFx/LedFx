@@ -1,12 +1,17 @@
-================================
-Development Setup
-================================
+=======================
+   Development Setup
+=======================
 
 The development workflow is still being worked on, but this page covers the current state of the world.
 
+------------------------------
 
-Backend Development
-================================
+-------------------------
+   Backend Development
+-------------------------
+
+Linux
+-----
 
 **1.** Clone the dev branch from the LedFx Github repository:
 
@@ -27,8 +32,8 @@ Backend Development
 
     ledfx --open-ui
 
-macOS
-=====
+macOS10
+-------
 
 **1.** Clone the dev branch from the LedFx Github repository:
 
@@ -54,8 +59,14 @@ macOS
     pip install -e .
     ledfx --open-ui
 
-Frontend Development
-================================
+------------------------------
+
+--------------------------
+   Frontend Development
+--------------------------
+
+Linux
+-----
 
 Building the LedFx frontend is different from how the core backend is built. The frontend is based on React.js and thus uses NPM as the core package management. To get started, first install npm and all the requirements:
 
@@ -84,7 +95,7 @@ At that point any change you make to the frontend will be recompiled and after a
     yarn build
 
 macOS
-=====
+-----
 
 **1.** Install nodejs and NPM requirements using homebrew:
 
@@ -108,8 +119,14 @@ macOS
 
     yarn build
 
-Document Development
-================================
+------------------------------
+
+--------------------------
+   Document Development
+--------------------------
+
+Linux
+-----
 
 The documentation is written in reStructuredText. Once you are finished making changes you must build the documentation. To build the LedFx documentation simply enter the "docs" folder and run the following:
 
@@ -118,7 +135,7 @@ The documentation is written in reStructuredText. Once you are finished making c
     make html
 
 macOS
-=====
+-----
 
 .. code:: bash
 

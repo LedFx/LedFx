@@ -1,6 +1,6 @@
-================================
-Installation and Setup
-================================
+============================
+   Installation and Setup
+============================
 
 LedFx is a network controller that aims to enable synchronization of multiple lights across a network. LedFx doesn't currently support local control of LED strings, so you need a separate device (e.g., ESP8266) to control the LEDs directly. To be able to add your LED strips to LedFx your device needs to be capable of receiving data either via the E1.31 sACN protocol or a generic (simple) UDP protocol. See below for a list of tested ESP8266 firmware that can be used with LedFx.
 
@@ -19,7 +19,8 @@ Here is a list of tested ESP8266 firmware that works with LedFx:
     - `WLED <https://github.com/Aircoookie/WLED>`_ has lots of firmware effects and supports E1.31 and UDP
 
 Windows Installation
-====================
+--------------------
+
 To get started on Windows it is highly recommended that you use `Anaconda <https://www.anaconda.com/download/>`_ to make installation of Cython components easier.
 
 **1.** Create a `conda virtual environment <http://conda.pydata.org/docs/using/envs.html>`_ (this step is optional but highly recommended):
@@ -43,9 +44,10 @@ To get started on Windows it is highly recommended that you use `Anaconda <https
 .. code:: bash
 
     ledfx --open-ui
-    
+
 Linux Installation
-==================
+------------------
+
 To install on Linux first ensure you have at least Python 3.6 installed (alternatively use `Anaconda <https://www.anaconda.com/download/>`_).
 
 **1.** Install LedFx and all the dependencies using apt-get and pip:
@@ -62,7 +64,8 @@ To install on Linux first ensure you have at least Python 3.6 installed (alterna
     ledfx --open-ui
 
 macOS Installation
-==================
+------------------
+
 To install on macOS first ensure you have at least Python 3.6 installed (alternatively use `Anaconda <https://www.anaconda.com/download/>`_).
 
 **1.** Install LedFx and all the dependencies using homebrew and pip:
@@ -100,7 +103,8 @@ To install on macOS first ensure you have at least Python 3.6 installed (alterna
     ledfx --open-ui
 
 Device Configuration
-====================
+--------------------
+
 Once you have LedFx running, it's time to add some devices! After you have set up a device with appropriate firmware for integration with LedFx, navigate to the 'Device Management' page and click the "Add Device" button at the lower right of the web page. Add the device using the following configuration based on your firmware:
 
     * `ESPixelStick <https://github.com/forkineye/ESPixelStick>`_

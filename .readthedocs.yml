@@ -22,5 +22,4 @@ formats:
 python:
   version: 3.7
   install:
-    - requirements: requirements_docs.txt
-    - method: pip
+    - requirements: docs/requirements_docs.txt
