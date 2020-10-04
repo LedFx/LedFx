@@ -8,7 +8,7 @@
    :maxdepth: 2
    :caption: Installation & Development
 
-   installation
+   installing
    developer
 
 .. toctree::
@@ -16,7 +16,7 @@
    :caption: Configuration
    :hidden:
 
-   Configuration
+   configuring
 .. Hidden until configuration pages are complete.
 
 .. toctree::
