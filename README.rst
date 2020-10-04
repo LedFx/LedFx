@@ -49,5 +49,5 @@ For more information see the `configuration docs`_.
 .. |Discord| image:: https://img.shields.io/badge/chat-on%20discord-7289da.svg
    :target: https://discord.gg/wJ755dY
    :alt: Discord
-.. _documentation: https://ledfx.readthedocs.io/en/docs/installation.html
-.. _configuration docs: https://ledfx.readthedocs.io/en/docs/configuration.html
+.. _documentation: https://ledfx.readthedocs.io/en/docs/installing.html
+.. _configuration docs: https://ledfx.readthedocs.io/en/docs/configuring.html
