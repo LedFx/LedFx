@@ -136,7 +136,7 @@ html_sidebars = {
     ]
 }
 
-html_style = '_static/custom.css'
+#html_style = '_static/custom.css'
 
 # -- Options for HTMLHelp output ---------------------------------------------
 
