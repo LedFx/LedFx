@@ -32,8 +32,8 @@ Linux
 
     ledfx --open-ui
 
-macOS10
--------
+macOS
+-----
 
 **1.** Clone the dev branch from the LedFx Github repository:
 
@@ -121,26 +121,4 @@ macOS
 
 ------------------------------
 
---------------------------
-   Document Development
---------------------------
-
-Linux
------
-
-The documentation is written in reStructuredText. Once you are finished making changes you must build the documentation. To build the LedFx documentation simply enter the "docs" folder and run the following:
-
-.. code:: bash
-
-    make html
-
-macOS
------
-
-.. code:: bash
-
-    conda activate ledfx
-    cd ~/ledfx
-    pip install -r requirements_docs.txt
-    cd ./docs
-    make html
+.. include:: README.rst

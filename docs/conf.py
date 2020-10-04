@@ -38,7 +38,7 @@ import sphinx_rtd_theme
 
 project = '{}'.format(PROJECT_NAME)
 author = '{}'.format(PROJECT_AUTHOR)
-copyright = '{}'.format(PROJECT_COPYRIGHT)
+copyright = ('{}'.format(PROJECT_COPYRIGHT)+' & contributors')
 
 
 # -- General configuration ---------------------------------------------------
@@ -53,6 +53,7 @@ copyright = '{}'.format(PROJECT_COPYRIGHT)
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.githubpages',
+    'sphinxcontrib.httpdomain',
     'sphinx_rtd_theme'
 ]
 

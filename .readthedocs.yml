@@ -13,10 +13,8 @@ sphinx:
 #mkdocs:
 #  configuration: mkdocs.yml
 
-# Build documents in htmlzip and pdf
-formats:
-  - htmlzip
-  - pdf
+# Don't build any documents (htmlzip, pdf, epub)
+formats: []
 
 # Set the version of Python and requirements required to build your docs
 python:

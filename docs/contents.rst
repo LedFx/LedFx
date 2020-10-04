@@ -1,11 +1,16 @@
-Table of Contents
------------------
+
 
 .. toctree::
    :maxdepth: 2
+   :caption: Installation & Development
 
-   quickstart
+   installation
    developer
+
+.. toctree::
+   :maxdepth: 2
+   :caption: LedFx API
+
    api
 
 License

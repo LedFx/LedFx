@@ -6,7 +6,7 @@ LedFx is a network controller that aims to enable synchronization of multiple li
 
 Here is everything you need to get started with LedFx:
 
-    #. A Computer (or Raspberry Pi) with Python 3.6 or 3.7 (`Anaconda <https://www.anaconda.com/download/>`_ is recommended on Windows)
+    #. A Computer (or Raspberry Pi) with Python >= 3.6 (`Anaconda <https://www.anaconda.com/download/>`_ is recommended on Windows)
     #. An E1.31 capable device with addressiable LEDs connected
 
         - Commercial grade DMX controllers
@@ -41,14 +41,14 @@ To get started on Windows it is highly recommended that you use `Anaconda <https
 
 **3.** Launch LedFx with the ``--open-ui`` option to launch the browser:
 
-.. code:: bash
+.. code:: zsh
 
     $ ledfx --open-ui
 
 Linux Installation
 ------------------
 
-To install on Linux first ensure you have at least Python 3.6 installed (alternatively use `Anaconda <https://www.anaconda.com/download/>`_).
+To install on Linux first ensure you have at least Python 3.6 installed (alternatively use Anaconda_).
 
 **1.** Install LedFx and all the dependencies using apt-get and pip:
 
@@ -116,8 +116,13 @@ Once you have LedFx running, it's time to add some devices! After you have set u
         - Add the device as a UDP
         - Click 'Additional Properties' and check 'Include Indexes'
 
-    * `WLED <https://github.com/Aircoookie/WLED>`_
+    * WLED_
 
         - Enabled E1.31 support from the WLED web-interface
         - Add the device as an E1.31 device
         - If you have more than 170 LEDs click 'Additional Properties' and set the 'Universe Size' to 510
+
+.. Links Down Here
+
+.. _Anaconda: https://www.anaconda.com/download/
+.. _WLED: https://github.com/Aircoookie/WLED
