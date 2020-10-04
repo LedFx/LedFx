@@ -1,7 +1,7 @@
 ===========
    LedFx
 ===========
-|Build Status| |License| |Discord|
+|Build Status| |License| |Build Statu Docs| |Discord|
 
 LedFx is a network based LED effect controller with support for advanced
 real-time audio effects! LedFx can control multiple devices and works great
@@ -11,7 +11,7 @@ across your entire house!
 Installation
 ------------
 
-Basic Linux Installation:
+Basic Linux Installation (Debian/Ubuntu):
 
 .. code:: console
 
@@ -29,7 +29,7 @@ to add your LED strips to LedFx your device needs to be
 capable of receiving data either via the E1.31 sACN
 protocol or a generic (simple) UDP protocol.
 
-For more information see the configuration_ docs.
+For more information see the `configuration docs`_.
 
 .. Demos
 .. ---------
@@ -41,10 +41,13 @@ For more information see the configuration_ docs.
 .. |Build Status| image:: https://travis-ci.org/ahodges9/LedFx.svg?branch=master
    :target: https://travis-ci.org/ahodges9/LedFx
    :alt: Build Status
+.. |Build Statu Docs| image:: https://readthedocs.org/projects/ledfx/badge/?version=latest
+   :target: https://ledfx.readthedocs.io/en/latest/?badge=latest
+   :alt: Documentation Status
 .. |License| image:: https://img.shields.io/badge/license-MIT-blue.svg
    :alt: License
 .. |Discord| image:: https://img.shields.io/badge/chat-on%20discord-7289da.svg
    :target: https://discord.gg/wJ755dY
    :alt: Discord
 .. _documentation: https://ledfx.readthedocs.io/en/docs/installation.html
-.. _configuration: https://ledfx.readthedocs.io/en/docs/configuration.html
+.. _configuration docs: https://ledfx.readthedocs.io/en/docs/configuration.html
