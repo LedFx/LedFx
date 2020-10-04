@@ -27,7 +27,7 @@ PROJECT_LONG_DESCRIPTION = ('LedFx is an open-source effect controller '
                             'various networked devices.')
 PROJECT_GITHUB_USERNAME = 'ahodges9'
 PROJECT_GITHUB_REPOSITORY = 'LedFx'
-PROJECT_GITHUB_BRANCH = "master"
+PROJECT_GITHUB_BRANCH = "dev"
 PROJECT_GITHUB_PATH = '{}/{}'.format(
     PROJECT_GITHUB_USERNAME, PROJECT_GITHUB_REPOSITORY)
 PROJECT_GITHUB_URL = 'https://github.com/{}'.format(PROJECT_GITHUB_PATH)
@@ -105,7 +105,9 @@ html_context = {
   'display_github': True,
   'github_user': PROJECT_GITHUB_USERNAME,
   'github_repo': PROJECT_GITHUB_REPOSITORY,
-  'github_version': '{}/docs/'.format(PROJECT_GITHUB_BRANCH)
+  'github_version': '{}/docs/'.format(PROJECT_GITHUB_BRANCH),
+  'conf_py_path': 'docs',
+  'source_suffix': '.rst',
 }
 
 html_logo = "_static/small_white_alpha.png"
@@ -134,6 +136,7 @@ html_sidebars = {
     ]
 }
 
+html_style = 'custom.css'
 
 # -- Options for HTMLHelp output ---------------------------------------------
 
