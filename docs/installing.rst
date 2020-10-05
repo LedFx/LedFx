@@ -54,14 +54,14 @@ To install on Linux first ensure you have at least Python 3.6 installed (alterna
 
 .. code:: bash
 
-    sudo apt-get install portaudio19-dev
-    pip install ledfx
+    $ sudo apt-get install portaudio19-dev
+    $ pip install ledfx
 
 **2.** Launch LedFx with the ``open-ui`` option to launch the browser:
 
 .. code:: bash
 
-    ledfx --open-ui
+    $ ledfx --open-ui
 
 macOS Installation
 ------------------
@@ -72,35 +72,35 @@ To install on macOS first ensure you have at least Python 3.6 installed (alterna
 
 .. code:: bash
 
-    brew install portaudio
-    pip install ledfx
+    $ brew install portaudio
+    $ pip install ledfx
 
 **2.** Launch LedFx with the ``open-ui`` option to launch the browser:
 
 .. code:: bash
 
-    ledfx --open-ui
+    $ ledfx --open-ui
 
 **1.** Alternatively, create a `conda virtual environment <http://conda.pydata.org/docs/using/envs.html>`_:
 
 .. code:: bash
 
-    conda create -n ledfx python=3.7
-    conda activate ledfx
+    $ conda create -n ledfx python=3.7
+    $ conda activate ledfx
 
 **2.** Install LedFx and all the dependencies using pip and the conda package manager.
 
 .. code:: bash
 
-    conda config --add channels conda-forge
-    conda install aubio portaudio
-    pip install ledfx
+    $ conda config --add channels conda-forge
+    $ conda install aubio portaudio
+    $ pip install ledfx
 
 **3.** Launch LedFx with the ``open-ui`` option to launch the browser:
 
 .. code:: bash
 
-    ledfx --open-ui
+    $ ledfx --open-ui
 
 Device Configuration
 --------------------
