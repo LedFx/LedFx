@@ -2,7 +2,7 @@
 #
 
 # You can set these variables from the command line.
-SPHINXOPTS    = -b dirhtml
+SPHINXOPTS    = -a -b dirhtml
 SPHINXBUILD   = sphinx-build
 SPHINXPROJ    = LedFx
 SOURCEDIR     = .

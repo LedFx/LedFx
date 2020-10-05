@@ -13,7 +13,9 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 import sys
 import os
-import re
+import sphinx_rtd_theme
+
+sys.path.insert(0, os.path.abspath('..'))
 
 # -- Project information -----------------------------------------------------
 
@@ -31,10 +33,6 @@ PROJECT_GITHUB_BRANCH = "dev"
 PROJECT_GITHUB_PATH = '{}/{}'.format(
     PROJECT_GITHUB_USERNAME, PROJECT_GITHUB_REPOSITORY)
 PROJECT_GITHUB_URL = 'https://github.com/{}'.format(PROJECT_GITHUB_PATH)
-
-sys.path.insert(0, os.path.abspath('..'))
-
-import sphinx_rtd_theme
 
 project = '{}'.format(PROJECT_NAME)
 author = '{}'.format(PROJECT_AUTHOR)
@@ -92,6 +90,11 @@ gettext_compact = False
 # a list of builtin themes.
 #
 html_theme = 'sphinx_rtd_theme'
+html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+
+def setup(app):
+    """Sphinx setup function."""
+    app.add_css_file('css/custom.css')
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -136,7 +139,10 @@ html_sidebars = {
     ]
 }
 
+html_show_sourcelink = False
+
 #html_style = '_static/custom.css'
+#html_css_files = 'css/custom.css'
 
 # -- Options for HTMLHelp output ---------------------------------------------
 

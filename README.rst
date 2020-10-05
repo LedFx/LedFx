@@ -19,7 +19,7 @@ Basic Linux Installation (Debian/Ubuntu):
    $ pip install ledfx
    $ ledfx --open-ui
 
-For full installation instructions see the documentation_.
+For full installation instructions see :doc:`installing`.
 
 Configuration
 -------------
@@ -29,7 +29,7 @@ to add your LED strips to LedFx your device needs to be
 capable of receiving data either via the E1.31 sACN
 protocol or a generic (simple) UDP protocol.
 
-For more information see the `configuration docs`_.
+For more information see the :doc:`Configuration Docs <configuring>`.
 
 .. Demos
 .. ---------
