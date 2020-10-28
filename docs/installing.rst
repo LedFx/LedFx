@@ -31,14 +31,14 @@ Please see :ref:`this page <win-alt-install>` for alternative installation instr
 
 **1.** Create a `conda virtual environment <http://conda.pydata.org/docs/using/envs.html>`_ (this step is optional but highly recommended):
 
-.. code:: console
+.. code:: doscon
 
     > conda create -n ledfx
     > conda activate ledfx
 
 **2.** Install LedFx and all the dependencies using pip and the conda package manager:
 
-.. code:: console
+.. code:: doscon
 
     > conda config --add channels conda-forge
     > conda install aubio portaudio pywin32
@@ -47,7 +47,7 @@ Please see :ref:`this page <win-alt-install>` for alternative installation instr
 
 **3.** Launch LedFx with the ``--open-ui`` option to launch the browser:
 
-.. code:: console
+.. code:: doscon
 
     > ledfx --open-ui
 

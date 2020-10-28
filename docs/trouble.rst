@@ -19,7 +19,7 @@ Windows
 Alternative Install Instructions:
 +++++++++++++++++++++++++++++++++
 
-.. code:: console
+.. code:: doscon
 
     > conda create -n ledfx-git python=3.6
     > conda activate ledfx-git
@@ -39,7 +39,7 @@ Alternative Install Instructions:
 Dev Branch Install:
 +++++++++++++++++++
 
-.. code:: console
+.. code:: doscon
 
     > conda create -n ledfxdevelopement-git
       y
