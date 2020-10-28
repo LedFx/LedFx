@@ -2,7 +2,11 @@
    Installation and Setup
 ============================
 
-LedFx is a network controller that aims to enable synchronization of multiple lights across a network. LedFx doesn't currently support local control of LED strings, so you need a separate device (e.g., ESP8266) to control the LEDs directly. To be able to add your LED strips to LedFx your device needs to be capable of receiving data either via the E1.31 sACN protocol or a generic (simple) UDP protocol. See below for a list of tested ESP8266 firmware that can be used with LedFx.
+LedFx is a network controller that aims to enable synchronization of multiple lights across a network.
+LedFx doesn't currently support local control of LED strings, so you need a separate device
+(e.g., ESP8266/ESP32) to control the LEDs directly. To be able to add your LED strips to LedFx your device
+needs to be capable of receiving data either via the E1.31 sACN protocol or a generic (simple)
+UDP protocol. See below for a list of tested ESP8266 firmware that can be used with LedFx.
 
 Here is everything you need to get started with LedFx:
 
@@ -102,25 +106,35 @@ To install on macOS first ensure you have at least Python 3.6 installed (alterna
 
     $ ledfx --open-ui
 
-Device Configuration
---------------------
+Device Firmware
+---------------
 
-Once you have LedFx running, it's time to add some devices! After you have set up a device with appropriate firmware for integration with LedFx, navigate to the 'Device Management' page and click the "Add Device" button at the lower right of the web page. Add the device using the following configuration based on your firmware:
+Please visit one of the following links to obtain firmware for your ESP8266/ESP32 device that works with LedFx.
 
     * ESPixelStick_
 
-        - Add the device as a E1.31 device. The default E1.31 settings should work fine.
+        - Compatible Devices:
+
+          - ESP8266
+
+        - :ref:`Configuration Settings <conf-firmware>`
 
     * `Scott's Audio Reactive Firmware`_
 
-        - Add the device as a UDP
-        - Click 'Additional Properties' and check 'Include Indexes'
+        - Compatible Devices:
+
+          - ESP8266
+
+        - :ref:`Configuration Settings <conf-firmware>`
 
     * WLED_
 
-        - Enabled E1.31 support from the WLED web-interface
-        - Add the device as an E1.31 device
-        - If you have more than 170 LEDs click 'Additional Properties' and set the 'Universe Size' to 510
+        - Compatible Devices:
+
+          - ESP8266
+          - ESP32
+
+        - :ref:`Configuration Settings <conf-firmware>`
 
 .. Links Down Here
 

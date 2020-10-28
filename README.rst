@@ -5,7 +5,7 @@
 
 LedFx is a network based LED effect controller with support for advanced
 real-time audio effects! LedFx can control multiple devices and works great
-with cheap ESP8266 nodes allowing for cost effectvice syncronized effects
+with cheap ESP8266/ESP32 nodes allowing for cost effectvice syncronized effects
 across your entire house!
 
 Installation
