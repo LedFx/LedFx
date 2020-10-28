@@ -27,27 +27,29 @@ Windows Installation
 
 To get started on Windows it is highly recommended that you use Anaconda_ to make installation of Cython components easier.
 
+Please see :ref:`this page <win-alt-install>` for alternative installation instructions for Windows.
+
 **1.** Create a `conda virtual environment <http://conda.pydata.org/docs/using/envs.html>`_ (this step is optional but highly recommended):
 
 .. code:: console
 
-    $ conda create -n ledfx
-    $ conda activate ledfx
+    > conda create -n ledfx
+    > conda activate ledfx
 
 **2.** Install LedFx and all the dependencies using pip and the conda package manager:
 
-.. code:: bash
+.. code:: console
 
-    $ conda config --add channels conda-forge
-    $ conda install aubio portaudio pywin32
-    $ conda install -c anaconda pyaudio
-    $ pip install ledfx
+    > conda config --add channels conda-forge
+    > conda install aubio portaudio pywin32
+    > conda install -c anaconda pyaudio
+    > pip install ledfx
 
 **3.** Launch LedFx with the ``--open-ui`` option to launch the browser:
 
-.. code:: bash
+.. code:: console
 
-    $ ledfx --open-ui
+    > ledfx --open-ui
 
 Linux Installation
 ------------------
@@ -63,7 +65,7 @@ To install on Linux first ensure you have at least Python 3.6 installed (alterna
 
 **2.** Launch LedFx with the ``open-ui`` option to launch the browser:
 
-.. code:: bash
+.. code:: console
 
     $ ledfx --open-ui
 
@@ -74,27 +76,27 @@ To install on macOS first ensure you have at least Python 3.6 installed (alterna
 
 **1.** Install LedFx and all the dependencies using homebrew and pip:
 
-.. code:: bash
+.. code:: console
 
     $ brew install portaudio
     $ pip install ledfx
 
 **2.** Launch LedFx with the ``open-ui`` option to launch the browser:
 
-.. code:: bash
+.. code:: console
 
     $ ledfx --open-ui
 
 **1.** Alternatively, create a `conda virtual environment <http://conda.pydata.org/docs/using/envs.html>`_:
 
-.. code:: bash
+.. code:: console
 
     $ conda create -n ledfx python=3.7
     $ conda activate ledfx
 
 **2.** Install LedFx and all the dependencies using pip and the conda package manager.
 
-.. code:: bash
+.. code:: console
 
     $ conda config --add channels conda-forge
     $ conda install aubio portaudio
@@ -102,7 +104,7 @@ To install on macOS first ensure you have at least Python 3.6 installed (alterna
 
 **3.** Launch LedFx with the ``open-ui`` option to launch the browser:
 
-.. code:: bash
+.. code:: console
 
     $ ledfx --open-ui
 
