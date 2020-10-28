@@ -14,16 +14,20 @@
 .. toctree::
    :maxdepth: 2
    :caption: Configuration
-   :hidden:
 
    configuring
-.. Hidden until configuration pages are complete.
 
 .. toctree::
    :maxdepth: 2
    :caption: LedFx API
 
    api
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Help
+
+   trouble
 
 License
 -------
