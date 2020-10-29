@@ -15,9 +15,9 @@ class RainAudioEffect(AudioReactiveEffect):
         vol.Optional('lows_colour', description='Colour for low sounds, ie beats', default = 'white'): vol.In(list(COLORS.keys())),
         vol.Optional('mids_colour', description='Colour for mid sounds, ie vocals', default = 'red'): vol.In(list(COLORS.keys())),
         vol.Optional('high_colour', description='Colour for high sounds, ie hi hat', default = 'blue'): vol.In(list(COLORS.keys())),
-        vol.Optional('lows_sensitivity', description='Sensitivity to low sounds', default = 0.05): vol.All(vol.Coerce(float), vol.Range(min=0.03, max=0.3)),
+        vol.Optional('lows_sensitivity', description='Sensitivity to low sounds', default = 0.1): vol.All(vol.Coerce(float), vol.Range(min=0.03, max=0.3)),
         vol.Optional('mids_sensitivity', description='Sensitivity to mid sounds', default = 0.05): vol.All(vol.Coerce(float), vol.Range(min=0.03, max=0.3)),
-        vol.Optional('high_sensitivity', description='Sensitivity to high sounds', default = 0.05): vol.All(vol.Coerce(float), vol.Range(min=0.03, max=0.3)),
+        vol.Optional('high_sensitivity', description='Sensitivity to high sounds', default = 0.1): vol.All(vol.Coerce(float), vol.Range(min=0.03, max=0.3)),
         vol.Optional('raindrop_animation', description='Droplet animation style', default = EFFECTLET_LIST[0]): vol.In(list(EFFECTLET_LIST)),
     })  
 
