@@ -1,12 +1,17 @@
-from ledfx.utils import BaseRegistry, RegistryLoader
+from ledfx.utils import BaseRegistry, RegistryLoader, generate_id
+from ledfx.config import save_config
+from ledfx.events import DeviceUpdateEvent, Event
 from abc import abstractmethod
 from threading import Thread
-from ledfx.events import DeviceUpdateEvent, Event
 import voluptuous as vol
 import numpy as np
 import importlib
+import requests
+import zeroconf
 import pkgutil
 import logging
+import asyncio
+import socket
 import time
 import os
 import re
@@ -194,4 +199,78 @@ class Devices(RegistryLoader):
                 return device
         return None
 
+    def find_wled_devices(self):
+        #Scan the LAN network that match WLED using zeroconf - Multicast DNS Service Discovery Library
+        _LOGGER.info("Scanning for WLED devices...")
+        zeroconf_obj = zeroconf.Zeroconf()
+        listener = MyListener(self._ledfx)
+        browser = zeroconf.ServiceBrowser(zeroconf_obj, "_wled._tcp.local.", listener)
+        try:
+            # TODO make this non blocking
+            # await asyncio.sleep(1.5)
+            time.sleep(1.5)
+        finally:
+            _LOGGER.info("Scan Finished")
+            zeroconf_obj.close()
 
+
+class MyListener:
+    def __init__(self, _ledfx):
+        self._ledfx = _ledfx
+
+    def remove_service(self, zeroconf_obj, type, name):
+        print(f"Service {name} removed")
+
+    def add_service(self, zeroconf_obj, type, name):
+        # DMX universe_size
+        c = 510
+        d = 512
+        info = zeroconf_obj.get_service_info(type, name)
+
+        if info:
+            address = socket.inet_ntoa(info.addresses[0])
+            url = f"http://{address}/json/info"
+            # For each WLED device found, based on the WLED IPv4 address, do a GET requests
+            response = requests.get(url)
+            b = response.json()
+            # For each WLED json response, format from WLED payload to LedFx payload.
+            # Note, set universe_size to 510 if LED 170 or less, If you have more than 170 LED, set universe_size to 510
+            wledled = b["leds"]
+            wledname = b["name"]
+            wledcount = wledled["count"]
+            
+            if wledcount > 170:
+                unisize = c
+            else:
+                unisize = d
+
+            device_id = generate_id(wledname)
+            device_type = "e131"
+            device_config = {
+                "max_brightness": 1,
+                "refresh_rate": 60,
+                "universe": 1,
+                "universe_size": unisize,
+                "name": wledname,
+                "pixel_count": wledcount,
+                "ip_address": address
+            }
+
+            # Check this device doesn't share IP with any other device
+            for device in self._ledfx.devices.values():
+                if device.config["ip_address"] == address:
+                    return
+
+            # Create the device
+            _LOGGER.info("Adding device of type {} with config {}".format(device_type, device_config))
+            device = self._ledfx.devices.create(
+                id = device_id,
+                type = device_type,
+                config = device_config,
+                ledfx = self._ledfx)
+
+            # Update and save the configuration
+            self._ledfx.config['devices'].append({'id': device.id, 'type': device.type, 'config': device.config })
+            save_config(
+                config = self._ledfx.config, 
+                config_dir = self._ledfx.config_dir)
