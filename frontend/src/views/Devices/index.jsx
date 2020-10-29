@@ -7,10 +7,11 @@ import Typography from '@material-ui/core/Typography';
 import CardContent from '@material-ui/core/CardContent';
 import Button from '@material-ui/core/Button';
 import AddCircleIcon from '@material-ui/icons/AddCircle';
+import WifiTetheringIcon from '@material-ui/icons/WifiTethering';
 
 import DevicesTable from 'components/DevicesTable';
 import DeviceConfigDialog from 'components/DeviceConfigDialog';
-import { addDevice, deleteDevice, updateDeviceConfig, fetchDeviceList } from 'modules/devices';
+import { addDevice, deleteDevice, updateDeviceConfig, fetchDeviceList, findWLEDDevices } from 'modules/devices';
 
 const styles = theme => ({
     cardResponsive: {
@@ -52,6 +53,11 @@ class DevicesView extends React.Component {
         this.setState({ selectedDevice: device, addDialogOpened: true });
     };
 
+    handleFindDevices = () => {
+        const { findWLEDDevices } = this.props;
+        findWLEDDevices();
+    };
+
     render() {
         const {
             classes,
@@ -83,6 +89,16 @@ class DevicesView extends React.Component {
                                             <Grid item
                                                 display='flex'
                                                 justifyContent='flex-end' >
+                                                <Button
+                                                    variant="contained"
+                                                    color="primary"
+                                                    aria-label="Scan"
+                                                    className={classes.button}
+                                                    onClick={this.handleFindDevices}
+                                                    endIcon={<WifiTetheringIcon />}
+                                                >
+                                                    Find WLED Devices
+                                                </Button>
                                                 <Button
                                                     variant="contained"
                                                     color="primary"
@@ -130,5 +146,6 @@ export default connect(
         deleteDevice,
         updateDeviceConfig,
         fetchDeviceList,
+        findWLEDDevices,
     }
 )(withStyles(styles)(DevicesView));

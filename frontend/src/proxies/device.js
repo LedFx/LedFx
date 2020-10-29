@@ -1,5 +1,9 @@
 import { api } from 'utils/api';
 
+export function scanForDevices() {
+    return api.post('/find_devices');
+}
+
 export function getDevices() {
     return api.get('/devices');
 }

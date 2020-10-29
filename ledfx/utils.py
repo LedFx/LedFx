@@ -190,7 +190,8 @@ class RegistryLoader(object):
      
         # If running in developer mode autoreload the registry when any file
         # within the package changes.
-        if ledfx.dev_enabled() and import_or_install("watchdog"):
+        # Check ledfx is not running as a single exe built using pyinstaller (sys frozen flag).
+        if ledfx.dev_enabled() and import_or_install("watchdog") and not getattr(sys, 'frozen', False):
 
             watchdog_events = import_or_install("watchdog.events")
             watchdog_observers = import_or_install("watchdog.observers")

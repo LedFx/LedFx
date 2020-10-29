@@ -84,6 +84,19 @@ export function addDevice(type, config) {
     };
 }
 
+export function findWLEDDevices() {
+    return async dispatch => {
+        try {
+            const response = await deviceProxies.scanForDevices();
+            if (response.statusText === 'OK') {
+                dispatch(fetchDeviceList());
+            }
+        } catch (error) {
+            console.log('WLED device scan failed', error.message);
+        }
+    };
+}
+
 export function updateDeviceConfig(type, config) {
     return async dispatch => {
         try {

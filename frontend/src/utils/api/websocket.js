@@ -1,6 +1,8 @@
 import Sockette from 'sockette';
 
 const wsBaseUrl = 'ws://localhost:8888'
+//const wsBaseUrl = window.location.hostname
+
 export const websocketUrl = `${wsBaseUrl}/api/websocket`;
 
 
