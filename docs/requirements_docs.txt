@@ -1,5 +1,6 @@
 sphinx>=3.0
 sphinxcontrib-websupport==1.2.4
+sphinxcontrib-httpdomain
 sphinx-autodoc-typehints==1.11.1
 sphinx-autodoc-annotation==1.0.post1
 sphinx-autobuild
