@@ -14,17 +14,18 @@ No need to spend hours on end to program one song to program your LEDs, as LedFx
 
 LedFx real-time LED strip music visualization effect controller using is a network based devices (ESP8266/ESP32/Raspberry Pi 4) with support for advanced real-time audio effects! LedFx can control multiple devices and works great with cheap ESP8266/ESP32 nodes allowing for cost effective syncronised effects across your entire house!
 
-Demos	(click gif for video)
+Demos
 ---------	
 
 We are actively adding and perfecting the effects, but here is a quick demo of LedFx running three different effects synced across three different ESP8266 devices:
 
 .. image:: https://raw.githubusercontent.com/ahodges9/LedFx/gh-pages/demos/ledfx_demo.gif
-[![visualiser demo](/gh-pages/demos/ledfx_demo.gif)](https://www.youtube.com/watch?v=HNtM7jH5GXgD)
 
 📑 Quick start guide and documentation📖
 ---------
 LedFx website: https://ledfx.app/download/
+
+For installation instructions, see the `documentation`_.
 
 **Quick start guide**
 
@@ -46,30 +47,24 @@ From the WLED web-interface, LedFx will require led setup configured, user inter
 
 Step 2: After you have WLED installed on your ESP device, and configured the  download: `LedFx.exe`_ and install LedFx. 
 
-Step 3: Follow guide, `How to: Enable Stereo Mix in Windows 10`_
+Step 3: Follow guide, `How to: Enable Stereo Mix in Windows 10`_. Or, alternatively use `Voicemeeter`_. `Voicemeeter tutorial`_ Play music in the background.
 
-Step 4: Start the LedFx program, and go into Device Management -> ``FInd WLED devices`` button.
+Step 4: Start the LedFx program, and on the left hand side, click on Device Management -> ``FInd WLED devices`` button. 
 
-Step 5: 
+Step 5: Click on the device, select a effect that has "scroll(Reactive)", and press Set effect button. Your lights should now be reacting realtime to your music.
 
-For installation instructions, see the [documentation](https://ledfx.readthedocs.io/en/docs/).
-
-![How it works](https://github.com/Mattallmighty/audio-reactive-led-strip/blob/master/images/block-diagram.png?raw=true)
 
 🧑‍💻 Join the LedFx Community 
 ---------	
 
 Join the Discord server to discuss everything about LedFx!
-
-<a href="https://discord.gg/KuqP7NE"><img src="https://discordapp.com/api/guilds/473448917040758787/widget.png?style=banner2" width="25%"></a>
+|Discord|
 
 Contributing
 ---------
-Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
+Pull requests are welcome. Once tested, contact LedFx developer community on Discord to discuss the next step.
 
-Please make sure to update tests as appropriate.
-
-Credits: _`Contributors-&-About`_
+Credits: `Contributors-&-About`_
 
 License
 ---------
@@ -80,8 +75,11 @@ License
 .. _`LedFx.exe`: https://ledfx.app/download/
 .. _`LedFx Guide`: https://ledfx.readthedocs.io/en/docs/index.html
 .. _`WLED`: https://github.com/Aircoookie/WLED/wiki
+.. _`documentation`: https://ledfx.readthedocs.io/en/docs/
 .. _`Contributors-&-About`: https://ledfx.app/about/
 .. _`How to: Enable Stereo Mix in Windows 10`: https://thegeekpage.com/stereo-mix/
+.. _`Voicemeeter`: https://vb-audio.com/Voicemeeter/index.htm
+.. _`Voicemeeter tutorial`: https://youtu.be/ZXKDzYXS60o?start=27&end=163
 
 .. |Build Status| image:: https://travis-ci.org/ahodges9/LedFx.svg?branch=master
    :target: https://travis-ci.org/ahodges9/LedFx
