@@ -7,12 +7,12 @@
 
 LedFx website: https://ledfx.app/
 
-***What is LedFx?***
+***What is LedFx?*** 
 
-LedFx is a network based LED effect controller with support for advanced real-time audio effects! LedFx can control multiple devices and works great with cheap ESP8266/ESP32 nodes allowing for cost effective syncronised effects across your entire house!
-real-time LED strip music visualization using Python and the ESP8266 or Raspberry Pi.
+What LedFx offers is the ability to take audio input, and instantanously processes the audio into realtime lightshow to multiple LED strips/matrix.
+No need to spend hours on end to program one song to program your LEDs, as LedFx will do this all for you!
 
-What LedFx offers is the ability to  No need to spend hours on end to program a song to your LEDs, as LedFx will convert your audio to ny LedFx is a network controller that aims to enable synchronisation of multiple lights across a network. LedFx doesn’t currently support local control of LED strings, so you need a separate device (e.g., ESP8266/ESP32) to control the LEDs directly. To be able to add your LED strips to LedFx your device needs to be capable of receiving data either via the E1.31 sACN protocol or a generic (simple) UDP protocol. See below for a list of tested ESP8266 firmware that can be used with LedFx.
+LedFx real-time LED strip music visualization effect controller using is a network based devices (ESP8266/ESP32/Raspberry Pi 4) with support for advanced real-time audio effects! LedFx can control multiple devices and works great with cheap ESP8266/ESP32 nodes allowing for cost effective syncronised effects across your entire house!
 
 Demos	(click gif for video)
 ---------	
@@ -30,22 +30,27 @@ LedFx website: https://ledfx.app/download/
 
 ***What do I need to make one?***
 
-* Hardware: You will need Windows PC, addressable LED strip, power supply, ESP8266/ESP32 or Raspberry Pi 3/4 
+* Hardware Requirements: You will need Windows PC, addressable LED strip, power supply, soldering iron/solder, and one of the following devices: ESP8266 or ESP32 (Note: Raspberry Pi 3/4 is avialible, see `LedFx Guide`_ )
 
-*Hardware: https://github.com/Aircoookie/WLED/wiki/Compatible-hardware*
+Example LedFx setup is:
 
-* Software: `LedFx.exe`_, 
+.. code:: 
 
-*For Example, @mattallmighty LedFx setup is:*
-```
-Hardware: ESP8266 NODEMCU v3, sda
-Software: WLED, 
-```
+   Hardware: 5V 10 amps LED Power Supply, ESP8266 NODEMCU v3, DC5V WS2812B 5 meters 60LED/m IP67
+   Software: `LedFx.exe`_(For Windows PC), `WLED`_(For ESP8266) 
 
-Option 1: ESP8266/ESP32 module/s
-ESP8266/ESP32 modules can be purchased for as little as $2 USD from Aliexpress.
-Ahttps://github.com/Aircoookie/WLED/wiki/Compatible-hardware
 
+Step 1: please follow WLED guide: https://github.com/Aircoookie/WLED/wiki
+Ensure all WLED devices are powered on, and connected to your Wi-Fi 5Ghz.
+From the WLED web-interface, LedFx will require led setup configured, user interface name (device name), and Sync setup enabled E1.31 support.
+
+Step 2: After you have WLED installed on your ESP device, and configured the  download: `LedFx.exe`_ and install LedFx. 
+
+Step 3: Follow guide, `How to: Enable Stereo Mix in Windows 10`_
+
+Step 4: Start the LedFx program, and go into Device Management -> ``FInd WLED devices`` button.
+
+Step 5: 
 
 For installation instructions, see the [documentation](https://ledfx.readthedocs.io/en/docs/).
 
@@ -73,8 +78,10 @@ License
 
 .. _`MIT`: https://choosealicense.com/licenses/mit/
 .. _`LedFx.exe`: https://ledfx.app/download/
+.. _`LedFx Guide`: https://ledfx.readthedocs.io/en/docs/index.html
+.. _`WLED`: https://github.com/Aircoookie/WLED/wiki
 .. _`Contributors-&-About`: https://ledfx.app/about/
-.. _`Contributors-&-About`: https://ledfx.app/about/
+.. _`How to: Enable Stereo Mix in Windows 10`: https://thegeekpage.com/stereo-mix/
 
 .. |Build Status| image:: https://travis-ci.org/ahodges9/LedFx.svg?branch=master
    :target: https://travis-ci.org/ahodges9/LedFx
