@@ -100,7 +100,7 @@ class LedFxCore(object):
         # implemented using a blocking time.sleep 
         if not self.devices.values():
             _LOGGER.info("No devices saved in config.")
-            self.devices.find_wled_devices()
+            async_fire_and_forget(self.devices.find_wled_devices(), self.loop)
 
         if open_ui:
             import webbrowser

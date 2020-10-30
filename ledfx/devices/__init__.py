@@ -199,16 +199,14 @@ class Devices(RegistryLoader):
                 return device
         return None
 
-    def find_wled_devices(self):
+    async def find_wled_devices(self):
         #Scan the LAN network that match WLED using zeroconf - Multicast DNS Service Discovery Library
         _LOGGER.info("Scanning for WLED devices...")
         zeroconf_obj = zeroconf.Zeroconf()
         listener = MyListener(self._ledfx)
         browser = zeroconf.ServiceBrowser(zeroconf_obj, "_wled._tcp.local.", listener)
         try:
-            # TODO make this non blocking
-            # await asyncio.sleep(1.5)
-            time.sleep(1.5)
+            await asyncio.sleep(10)
         finally:
             _LOGGER.info("Scan Finished")
             zeroconf_obj.close()
