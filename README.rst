@@ -7,7 +7,8 @@
 
 LedFx website: https://ledfx.app/
 
-**What is LedFx?**
+What is LedFx?
+---------
 
 What LedFx offers is the ability to take audio input, and instantanously processes the audio into realtime lightshow to multiple LED strips/matrix.
 No need to spend hours on end to program one song to program your LEDs, as LedFx will do this all for you!
