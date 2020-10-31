@@ -7,12 +7,14 @@ const ACTION_ROOT = 'devices';
 export const devicesRequested = createAction(`${ACTION_ROOT}/DEVICES_REQUESTED`);
 export const devicesReceived = createAction(`${ACTION_ROOT}/DEVICES_RECEIVED`);
 export const deviceUpdated = createAction(`${ACTION_ROOT}/DEVICE_UPDATED`);
+export const scanProgressUpdated = createAction(`${ACTION_ROOT}/DEVICE_SCAN_PROGRESS_UPDATED`);
 
 // Reducer
 const INITIAL_STATE = {
     isLoading: false,
     list: [],
     dictionary: {},
+    scanProgress: 0,
 };
 
 export default handleActions(
@@ -20,6 +22,10 @@ export default handleActions(
         [devicesRequested]: state => ({
             ...state,
             isLoading: true,
+        }),
+        [scanProgressUpdated]: (state, { payload }) => ({
+            ...state,
+            scanProgress: payload,
         }),
         [devicesReceived]: (state, { payload, error }) => ({
             ...state,
@@ -84,15 +90,28 @@ export function addDevice(type, config) {
     };
 }
 
-export function findWLEDDevices() {
+const sleep = ms => {
+    return new Promise(resolve => setTimeout(resolve, ms));
+};
+
+export function findWLEDDevices({ resolve, reject }) {
     return async dispatch => {
         try {
             const response = await deviceProxies.scanForDevices();
             if (response.statusText === 'OK') {
-                dispatch(fetchDeviceList());
+                for (let sec = 1; sec <= 10; sec++) {
+                    await sleep(1000).then(() => {
+                        dispatch(fetchDeviceList());
+                        dispatch(scanProgressUpdated(sec));
+                    });
+                }
+
+                resolve();
+                dispatch(scanProgressUpdated(0));
             }
         } catch (error) {
             console.log('WLED device scan failed', error.message);
+            reject(error.message);
         }
     };
 }

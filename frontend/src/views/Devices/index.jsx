@@ -14,7 +14,13 @@ import CircularProgress from '@material-ui/core/CircularProgress';
 
 import DevicesTable from 'components/DevicesTable';
 import DeviceConfigDialog from 'components/DeviceConfigDialog';
-import { addDevice, deleteDevice, updateDeviceConfig, fetchDeviceList, findWLEDDevices } from 'modules/devices';
+import {
+    addDevice,
+    deleteDevice,
+    updateDeviceConfig,
+    fetchDeviceList,
+    findWLEDDevices,
+} from 'modules/devices';
 
 const styles = theme => ({
     cardResponsive: {
@@ -22,7 +28,7 @@ const styles = theme => ({
         overflowX: 'auto',
     },
     button: {
-        size: "large",
+        size: 'large',
         margin: theme.spacing(1),
     },
     dialogButton: {
@@ -36,6 +42,7 @@ class DevicesView extends React.Component {
         this.state = {
             addDialogOpened: false,
             selectedDevice: {},
+            searchDevicesLoading: false,
         };
     }
     componentDidMount() {
@@ -56,18 +63,14 @@ class DevicesView extends React.Component {
     };
 
     handleFindDevices = () => {
-        if (this.state.disabled) {
-            return;
-        }
-        this.setState({disabled: true});
-        // Send     
         const { findWLEDDevices } = this.props;
-        findWLEDDevices();
-        setTimeout(() => {
-            this.setState({disabled: false});
-        }, 10000);
+        this.setState({ searchDevicesLoading: true });
+        new Promise((resolve, reject) => {
+            findWLEDDevices({ resolve, reject });
+        }).then(() => {
+            this.setState({ searchDevicesLoading: false });
+        });
     };
-
 
     render() {
         const {
@@ -77,6 +80,7 @@ class DevicesView extends React.Component {
             addDevice,
             deleteDevice,
             updateDeviceConfig,
+            scanProgress,
         } = this.props;
         const { addDialogOpened, selectedDevice } = this.state;
         const helpText = `Ensure WLED Devices are on and connected to your WiFi.\n
@@ -91,9 +95,7 @@ class DevicesView extends React.Component {
                             <CardContent>
                                 <Grid container direction="row" spacing={1} justify="space-between">
                                     <Grid item xs="auto">
-                                        <Typography variant="h5">
-                                            Devices
-                                        </Typography>
+                                        <Typography variant="h5">Devices</Typography>
                                         <Typography variant="body1" color="textSecondary">
                                             Manage devices connected to LedFx
                                         </Typography>
@@ -101,17 +103,25 @@ class DevicesView extends React.Component {
                                     {!schemas.isLoading && (
                                         <>
                                             <Grid item>
-                                                <Box display="flex"
-                                                     flexDirection="row"
-                                                     alignItems="center"
-                                                     justifyContent='center' >
-                                                    <CircularProgress variant="static" value={0} size={35} />
+                                                <Box
+                                                    display="flex"
+                                                    flexDirection="row"
+                                                    alignItems="center"
+                                                    justifyContent="center"
+                                                >
+                                                    <CircularProgress
+                                                        variant="static"
+                                                        value={scanProgress * 10}
+                                                        size={35}
+                                                    />
                                                     <Tooltip title={helpText} interactive arrow>
                                                         <Button
                                                             variant="contained"
                                                             color="primary"
                                                             aria-label="Scan"
-                                                            disabled={this.state.disabled}
+                                                            disabled={
+                                                                this.state.searchDevicesLoading
+                                                            }
                                                             className={classes.button}
                                                             onClick={this.handleFindDevices}
                                                             endIcon={<WifiTetheringIcon />}
@@ -161,6 +171,7 @@ export default connect(
     state => ({
         deviceList: state.devices.list,
         schemas: state.schemas,
+        scanProgress: state.devices.scanProgress,
     }),
     {
         addDevice,
