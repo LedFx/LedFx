@@ -51,4 +51,5 @@ docs/api/*
 docs/_build/*
 cover/*
 MANIFEST
-deploy.bat
+build.bat
+ledfx.nsi
