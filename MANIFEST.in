@@ -1,2 +1,14 @@
 include README.rst
+include AUTHORS.rst
+include CHANGELOG.rst
 include LICENSE.txt
+include requirements.txt
+recursive-include ledfx *.npy
+recursive-include ledfx_frontend *
+include ledfx/default_presets.yaml
+include ledfx/frontend/components/SceneCard/*
+# Add documentation to sdist
+# Docs:
+recursive-include docs *
+prune docs/_build
+prune */__pycache__

@@ -1,9 +1,13 @@
-sudo: false
+
+os: linux
+dist: xenial
+language: python
 addons:
   apt:
     packages:
       - libudev-dev
-matrix:
+
+jobs:
   fast_finish: true
   include:
     - python: "3.6"
@@ -12,16 +16,20 @@ matrix:
     - python: "3.7"
       env: TOXENV=py37
       dist: xenial
-    - python: "3.8-dev"
+    - python: "3.8"
       env: TOXENV=py38
+      dist: xenial
+    - python: "3.9-dev"
+      env: TOXENV=py39
       dist: xenial
       if: branch = dev AND type = push
   allow_failures:
-    - python: "3.8-dev"
-      env: TOXENV=py38
+    - python: "3.9-dev"
+      env: TOXENV=py39
       dist: xenial
 
-language: python
+
+
 cache:
   directories:
     - $HOME/.cache/pip
@@ -30,13 +38,13 @@ before_install:
   - sudo apt-get update
   - sudo apt-get install portaudio19-dev # Install portaudio (requirement for pyaudio)
 install:
-  - npm install
+  - yarn install
   - pip install tox-travis
-  - pip install -r requirements_docs.txt
+  - pip install -r docs/requirements_docs.txt
 
 script:
   # Build the frontend first
-  - npm run build
+  - yarn run build
   # Then, build the backend
   - travis_wait 30 tox --develop
   # Finally, build the docs

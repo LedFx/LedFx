@@ -4,12 +4,14 @@ from datetime import datetime as dt
 from setuptools import setup, find_packages
 import ledfx.consts as const
 
-PROJECT_PACKAGE_NAME = 'ledfx'
+PROJECT_PACKAGE_NAME = 'ledfx-dev'
 PROJECT_VERSION = const.PROJECT_VERSION
 PROJECT_LICENSE = 'The MIT License'
 PROJECT_AUTHOR = 'Austin Hodges'
-PROJECT_AUTHOR_EMAIL = 'austin.b.hodges@gmail.com'
-PROJECT_URL = 'http://github.com/ahodges9/ledfx'
+PROJECT_AUTHOR_EMAIL = 'ledfx.app@gmail.com'
+PROJECT_MAINTAINER = 'LedFx Devs'
+PROJECT_MAINTAINER_EMAIL = 'ledfx.app@gmail.com'
+PROJECT_URL = 'https://github.com/ahodges9/LedFx/tree/dev'
 
 # Need to install numpy first
 SETUP_REQUIRES = [
@@ -26,6 +28,7 @@ INSTALL_REQUIRES = [
     'requests>=2.22.0',
 	'pyyaml>=5.1',
     'aubio>=0.4.8',
+    'zeroconf>=0.1.7',
     'pypiwin32>=223;platform_system=="Windows"'
 ]
 
@@ -35,7 +38,14 @@ setup(
     license = PROJECT_LICENSE,
     author=PROJECT_AUTHOR,
     author_email=PROJECT_AUTHOR_EMAIL,
+    maintainer=PROJECT_MAINTAINER,
+    maintainer_email=PROJECT_MAINTAINER_EMAIL,
     url=PROJECT_URL,
+    project_urls={
+        'Documentation': 'https://ledfx.readthedocs.io/en/docs/index.html',
+        'Source': 'https://github.com/ahodges9/LedFx',
+        'Discord': 'https://discord.gg/PqXMuthSNx'
+    },
     install_requires=INSTALL_REQUIRES,
     setup_requires=SETUP_REQUIRES,
     python_requires=const.REQUIRED_PYTHON_STRING,
@@ -49,7 +59,8 @@ setup(
     },
     package_data={
         'ledfx_frontend': ['*'],
-        '': ['*.npy']
+        '': ['*.npy'],
+        '': ['*.yaml']
     },
-    
+
 )
