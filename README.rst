@@ -71,7 +71,7 @@ The below image describes a basic setup - LedFx running on PC, communicating wit
 
 #. **Start LedFx.** 
       - Your WLED devices should appear in LedFx, automagically configured and ready to go! 🎆🔥
-      - If not, on the left hand side, click on Device Management -> ``Find WLED devices`` button, or "Add Device" to add them manually.
+      - If not, on the left hand side, click on Device Management -> ``Find WLED devices`` button, or ``Add Device`` to add them manually.
 
 #. **Start using effects!** 
       - Click on the device, select an effect eg "scroll(Reactive)", and press "Set effect" button.
