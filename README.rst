@@ -54,10 +54,11 @@ The below image describes a basic setup - LedFx running on PC, communicating wit
      - Soldering iron/solder
 
 #. **Build your networked LED Strip.** 
+      - For most, this is the difficult step. Dont worry! There's guides here and online, and plenty of people able to help on WLED and LedFx Discord.
       - Follow the WLED guide to connect the LED strip and ESP together: https://github.com/Aircoookie/WLED/wiki. 
       - Flash WLED to the ESP device: https://github.com/Aircoookie/WLED/wiki/Install-WLED-binary
       - Ensure all WLED devices are powered on, and connected to your Wi-Fi 5Ghz.
-      - Test you can access the WLED web interface from your PC.
+      - Test you can access the WLED web interface from your PC. If so, then you're good to go!
 
 #. **Install LedFx.** 
       - After you have WLED installed on your ESP device, download: `LedFx.exe`_ and install LedFx. 
@@ -72,9 +73,10 @@ The below image describes a basic setup - LedFx running on PC, communicating wit
 #. **Start LedFx.** 
       - Your WLED devices should appear in LedFx, automagically configured and ready to go! 🎆🔥
       - If not, on the left hand side, click on Device Management -> ``Find WLED devices`` button, or ``Add Device`` to add them manually.
+      - If they're still not showing up, make sure they're powered on and properly connected to your Wifi. 
 
 #. **Start using effects!** 
-      - Click on the device, select an effect eg "scroll(Reactive)", and press "Set effect" button.
+      - Click on the device, select an effect eg ``scroll(Reactive)``, and press ``Set effect`` button.
       - Your lights should now be reacting realtime to your music! Enjoy the show 🌈
 
 
