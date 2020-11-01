@@ -14,3 +14,4 @@ aiohttp==3.3.2
 aiohttp_jinja2==1.0.0
 pyyaml>=5.1
 aubio>=0.4.8
+zeroconf>=0.1.7

@@ -33,7 +33,7 @@ class PixelColorGraph extends React.Component {
                     {
                         label: 'Red',
                         lineTension: 0.1,
-                        backgroundColor: 'rgba(255,0,0,0.5)',
+                        backgroundColor: 'rgba(255,0,0,0.3)',
                         borderColor: 'rgba(255,0,0,1)',
                         pointRadius: 0,
                         data: new Array(pixel_count).fill(0),
@@ -41,7 +41,7 @@ class PixelColorGraph extends React.Component {
                     {
                         label: 'Green',
                         lineTension: 0.1,
-                        backgroundColor: 'rgba(0,255,0,0.5)',
+                        backgroundColor: 'rgba(0,255,0,0.3)',
                         borderColor: 'rgba(0,255,0,1)',
                         pointRadius: 0,
                         data: new Array(pixel_count).fill(0),
@@ -49,7 +49,7 @@ class PixelColorGraph extends React.Component {
                     {
                         label: 'Blue',
                         lineTension: 0.1,
-                        backgroundColor: 'rgba(0,0,255,0.5)',
+                        backgroundColor: 'rgba(0,0,255,0.3)',
                         borderColor: 'rgba(0,0,255,1)',
                         pointRadius: 0,
                         data: new Array(pixel_count).fill(0),

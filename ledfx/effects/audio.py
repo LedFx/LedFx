@@ -246,6 +246,8 @@ class MelbankInputSource(AudioInputSource):
     def _invalidate_caches(self):
         """Invalidates the cache for all melbank related data"""
         super()._invalidate_caches()
+        self.onset.cache_clear()
+        self.oscillator.cache_clear()
         self.melbank.cache_clear()
         self.melbank_filtered.cache_clear()
         self.interpolated_melbank.cache_clear()
@@ -559,12 +561,13 @@ class MelbankInputSource(AudioInputSource):
     def midi_value(self):
         return self.pitch_o(self.audio_sample())[0]
 
-    #@lru_cache(maxsize=32)
+    @lru_cache(maxsize=32)
     def onset(self):
         return {"mids": bool(self.onset_mids(self.audio_sample(raw=True))[0]),
                 "soft": bool(self.onset_soft(self.audio_sample(raw=True))[0]),
                 "high": bool(self.onset_high(self.audio_sample(raw=True))[0])}
 
+    @lru_cache(maxsize=32)
     def oscillator(self):
         """
         returns a float (0<=x<1) corresponding to the current position of beat tracker.
@@ -587,7 +590,7 @@ class MelbankInputSource(AudioInputSource):
             oscillator = 1-(self.beat_period-time_since_beat)/self.beat_period
             oscillator = min(1, oscillator) # ensure it's between 0 and 1. useful when audio cuts
             oscillator = max(0, oscillator)
-        return oscillator, is_beat
+        return oscillator, is_beat    
 
 @Effect.no_registration
 class AudioReactiveEffect(Effect):
