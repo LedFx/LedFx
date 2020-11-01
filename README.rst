@@ -1,6 +1,6 @@
-===========
+=====================================================
    Welcome to LedFx ✨ *-Making music come alive!*
-===========
+=====================================================
 |Build Status| |License| |Build Status Docs| |Discord|
 
 .. image:: https://i.imgur.com/SFWfhFr.png
@@ -8,7 +8,7 @@
 LedFx website: https://ledfx.app/
 
 What is LedFx?
----------
+----------------
 
 What LedFx offers is the ability to take audio input, and instantanously processes the audio into realtime lightshow to multiple LED strips/matrix.
 No need to spend hours on end to program one song to program your LEDs, as LedFx will do this all for you!
@@ -16,27 +16,27 @@ No need to spend hours on end to program one song to program your LEDs, as LedFx
 LedFx real-time LED strip music visualization effect controller using is a network based devices (ESP8266/ESP32/Raspberry Pi 4) with support for advanced real-time audio effects! LedFx can control multiple devices and works great with cheap ESP8266/ESP32 nodes allowing for cost effective syncronised effects across your entire house!
 
 Demos
----------	
+-------
 
 We are actively adding and perfecting the effects, but here is a quick demo of LedFx running three different effects synced across three different ESP8266 devices:
 
 .. image:: https://raw.githubusercontent.com/ahodges9/LedFx/gh-pages/demos/ledfx_demo.gif
 
 📑 Quick start guide and documentation📖
----------
-Windows users can use the installer from the LedFx website: https://ledfx.app/download/ 
+------------------------------------------
+Windows users can use the installer from the LedFx website: https://ledfx.app/download/
 
-Mac and Linux are also supported, though currently do not have installers. 
-For detailed installation instructions, see the `documentation`_.
+Mac and Linux are also supported, though currently do not have installers.
+For detailed installation instructions, see the `installation documentation`_.
 
-😍 Show me how to make one! 
----------
+😍 Show me how to make one!
+-----------------------------
 
 The below image describes a basic setup - LedFx running on PC, communicating with a WLED Device controlling an LED strip.
 
 .. image:: https://i.imgur.com/vzyHNwG.png
 
-.. list-table:: 
+.. list-table::
    :widths: 75 75
    :header-rows: 1
 
@@ -53,41 +53,41 @@ The below image describes a basic setup - LedFx running on PC, communicating wit
    * - Something to connect the wires together!
      - Soldering iron/solder
 
-#. **Build your networked LED Strip.** 
+#. **Build your networked LED Strip.**
       - For most, this is the difficult step. Dont worry! There's guides here and online, and plenty of people able to help on WLED and LedFx Discord.
-      - Follow the WLED guide to connect the LED strip and ESP together: https://github.com/Aircoookie/WLED/wiki. 
+      - Follow the WLED guide to connect the LED strip and ESP together: https://github.com/Aircoookie/WLED/wiki.
       - Flash WLED to the ESP device: https://github.com/Aircoookie/WLED/wiki/Install-WLED-binary
       - Ensure all WLED devices are powered on, and connected to your Wi-Fi 5Ghz.
       - Test you can access the WLED web interface from your PC. If so, then you're good to go!
 
-#. **Install LedFx.** 
-      - After you have WLED installed on your ESP device, download: `LedFx.exe`_ and install LedFx. 
-      - For Mac and Linux, see the `documentation`_.
+#. **Install LedFx.**
+      - After you have WLED installed on your ESP device, download: `LedFx.exe`_ and install LedFx.
+      - For Mac and Linux, see the `installation documentation`_.
 
 #. **Direct computer audio output to LedFx.**
-      - Follow guide, `How to: Enable Stereo Mix in Windows 10`_. 
-      - Alternatively use `Voicemeeter`_. `Voicemeeter tutorial`_. 
+      - Follow guide, `How to: Enable Stereo Mix in Windows 10`_.
+      - Alternatively use `Voicemeeter`_. `Voicemeeter tutorial`_.
       - Mac users can use `Loopback`_
       - Play some music in the background.
 
-#. **Start LedFx.** 
+#. **Start LedFx.**
       - Your WLED devices should appear in LedFx, automagically configured and ready to go! 🎆🔥
       - If not, on the left hand side, click on Device Management -> ``Find WLED devices`` button, or ``Add Device`` to add them manually.
-      - If they're still not showing up, make sure they're powered on and properly connected to your Wifi. 
+      - If they're still not showing up, make sure they're powered on and properly connected to your Wifi.
 
-#. **Start using effects!** 
+#. **Start using effects!**
       - Click on the device, select an effect eg ``scroll(Reactive)``, and press ``Set effect`` button.
       - Your lights should now be reacting realtime to your music! Enjoy the show 🌈
 
 
-🧑‍💻 Join the LedFx Community 
----------	
+🧑‍💻 Join the LedFx Community
+------------------------------
 
 Join the Discord server to discuss everything about LedFx!
 |Discord|
 
 Contributing
----------
+--------------
 Pull requests are welcome. Once tested, contact LedFx developer community on Discord to discuss the next step.
 
 Credits: `Contributors-&-About`_
@@ -101,7 +101,7 @@ License
 .. _`LedFx.exe`: https://ledfx.app/download/
 .. _`LedFx Guide`: https://ledfx.readthedocs.io/en/docs/index.html
 .. _`WLED`: https://github.com/Aircoookie/WLED/wiki
-.. _`documentation`: https://ledfx.readthedocs.io/en/docs/
+.. _`installation documentation`: https://ledfx.readthedocs.io/en/docs/installing.html
 .. _`Contributors-&-About`: https://ledfx.app/about/
 .. _`How to: Enable Stereo Mix in Windows 10`: https://thegeekpage.com/stereo-mix/
 .. _`Voicemeeter`: https://vb-audio.com/Voicemeeter/index.htm

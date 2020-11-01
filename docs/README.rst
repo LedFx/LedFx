@@ -7,7 +7,7 @@ making changes, you must build the documentation. To build the LedFx
 documentation follow the steps outlined below:
 
 Linux
------
+-------
 
 .. code:: bash
 
@@ -16,7 +16,7 @@ Linux
     $ make html
 
 macOS
------
+-------
 
 .. code:: bash
 

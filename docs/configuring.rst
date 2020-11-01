@@ -5,7 +5,7 @@
 .. _conf-firmware:
 
 Firmware Specific
------------------
+-------------------
 
 Once you have LedFx installed, it's time to add some devices! Make sure you have a device with appropriate
 firmware for integration with LedFx. Open the LedFx UI and navigate to the 'Device Management' page.
