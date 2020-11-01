@@ -53,3 +53,4 @@ cover/*
 MANIFEST
 build.bat
 ledfx.nsi
+__main__.spec

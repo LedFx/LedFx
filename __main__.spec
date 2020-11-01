@@ -4,10 +4,10 @@ block_cipher = None
 
 
 a = Analysis(['C:\\Users\\mb\\Python\\LedFx/ledfx/__main__.py'],
-             pathex=['C:\\ProgramData\\Anaconda3\\pkgs\\*', 'C:\\Users\\mb\\.conda\\envs\\ledfx\\*', 'C:\\Users\\mb\\Python\\LedFx'],
+             pathex=['C:\\ProgramData\\Anaconda3\\pkgs*', 'C:\\Users\\mb\\Python\\LedFx'],
              binaries=[],
              datas=[('C:\\Users\\mb\\Python\\LedFx/ledfx_frontend', 'ledfx_frontend/'), ('C:\\Users\\mb\\Python\\LedFx/ledfx', 'ledfx/')],
-             hiddenimports=['sacn', 'pyaudio', 'portaudio', 'aubio', 'numpy', 'math', 'voluptuous'],
+             hiddenimports=['sacn', 'pyaudio', 'portaudio', 'aubio', 'numpy', 'math', 'voluptuous', 'numpy'],
              hookspath=[],
              runtime_hooks=[],
              excludes=[],
