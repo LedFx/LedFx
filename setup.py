@@ -15,20 +15,20 @@ PROJECT_URL = 'https://github.com/ahodges9/LedFx/tree/dev'
 
 # Need to install numpy first
 SETUP_REQUIRES = [
-    'numpy>=1.13.3'
+    'numpy>=1.19.0'
 ]
 
 INSTALL_REQUIRES = [
-    'numpy>=1.13.3',
-    'voluptuous==0.11.1',
+    'numpy>=1.19.0',
+    'voluptuous==0.12.0',
     'pyaudio>=0.2.11',
-    'sacn==1.3',
-    'aiohttp==3.3.2',
-    'aiohttp_jinja2==1.0.0',
-    'requests>=2.22.0',
-	'pyyaml>=5.1',
-    'aubio>=0.4.8',
-    'zeroconf>=0.1.7',
+    'sacn==1.4',
+    'aiohttp==3.7.2',
+    'aiohttp_jinja2==1.3.0',
+    'requests>=2.24.0',
+	'pyyaml>=5.3.1',
+    'aubio>=0.4.9',
+    'zeroconf>=0.28.6',
     'pypiwin32>=223;platform_system=="Windows"'
 ]
 
