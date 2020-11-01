@@ -27,7 +27,7 @@ We are actively adding and perfecting the effects, but here is a quick demo of L
 Windows users can use the installer from the LedFx website: https://ledfx.app/download/
 
 Mac and Linux are also supported, though currently do not have installers.
-For detailed installation instructions, see the `documentation`_.
+For detailed installation instructions, see the `installation documentation`_.
 
 😍 Show me how to make one!
 -----------------------------
@@ -62,7 +62,7 @@ The below image describes a basic setup - LedFx running on PC, communicating wit
 
 #. **Install LedFx.**
       - After you have WLED installed on your ESP device, download: `LedFx.exe`_ and install LedFx.
-      - For Mac and Linux, see the `documentation`_.
+      - For Mac and Linux, see the `installation documentation`_.
 
 #. **Direct computer audio output to LedFx.**
       - Follow guide, `How to: Enable Stereo Mix in Windows 10`_.
@@ -101,7 +101,7 @@ License
 .. _`LedFx.exe`: https://ledfx.app/download/
 .. _`LedFx Guide`: https://ledfx.readthedocs.io/en/docs/index.html
 .. _`WLED`: https://github.com/Aircoookie/WLED/wiki
-.. _`documentation`: https://ledfx.readthedocs.io/en/docs/
+.. _`installation documentation`: https://ledfx.readthedocs.io/en/docs/installing.html
 .. _`Contributors-&-About`: https://ledfx.app/about/
 .. _`How to: Enable Stereo Mix in Windows 10`: https://thegeekpage.com/stereo-mix/
 .. _`Voicemeeter`: https://vb-audio.com/Voicemeeter/index.htm
