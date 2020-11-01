@@ -1,7 +1,13 @@
+# EXAMPLES CAN BE FOUND HERE
+# https://github.com/numpy/numpy/blob/master/.travis.yml
+
 
 os: linux
 dist: xenial
 language: python
+
+# Travis allows these packages, additions can be requested
+#   https://github.com/travis-ci/apt-package-safelist
 addons:
   apt:
     packages:
