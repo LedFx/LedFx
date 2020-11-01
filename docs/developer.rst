@@ -11,7 +11,7 @@ The development workflow is still being worked on, but this page covers the curr
 -------------------------
 
 Linux
------
+-------
 
 **1.** Clone the dev branch from the LedFx Github repository:
 
@@ -33,7 +33,7 @@ Linux
     $ ledfx --open-ui
 
 macOS
------
+-------
 
 **1.** Clone the dev branch from the LedFx Github repository:
 
@@ -66,7 +66,7 @@ macOS
 --------------------------
 
 Linux
------
+-------
 
 Building the LedFx frontend is different from how the core backend is built. The frontend is based on React.js and thus uses NPM as the core package management. To get started, first install npm and all the requirements:
 
@@ -95,7 +95,7 @@ At that point any change you make to the frontend will be recompiled and after a
     $ yarn build
 
 macOS
------
+-------
 
 **1.** Install nodejs and NPM requirements using homebrew:
 
