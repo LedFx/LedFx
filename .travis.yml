@@ -2,9 +2,10 @@
 # https://github.com/numpy/numpy/blob/master/.travis.yml
 
 _docs_job: &docs_job
-  addons: false
-    # apt:
-    #   update: false
+  addons:
+    apt:
+      update: false
+      packages: 
   cache: false
   before_install:
   install: pip install -r docs/requirements_docs.txt
