@@ -3,6 +3,8 @@
 
 _docs_job: &docs_job
   addons:
+    apt: false
+  cache: false
   before_install:
   install: pip install -r docs/requirements_docs.txt
   script:
@@ -54,6 +56,8 @@ cache:
   pip: true
 
 before_install:
+  - sudo apt-get update
+  - sudo apt-get install portaudio19-dev
   - nvm install 10  # Use nvm to install Node.js v10.x
   - nvm use 10  # Use nvm to switch to Node.js v10.x
 
