@@ -60,7 +60,7 @@ script:
   - yarn build
   - cd ..
   # Then, build the backend
-  - travis_wait 60 tox --develop
+  - travis_wait 60 tox -v --develop
   # Finally, build the docs
   - travis-sphinx build --nowarn --source=docs
 
