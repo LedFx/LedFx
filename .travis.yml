@@ -1,6 +1,11 @@
 # EXAMPLES CAN BE FOUND HERE
 # https://github.com/numpy/numpy/blob/master/.travis.yml
 
+_docs_script: &docs_script
+  script:
+    - pip install -r docs/requirements_docs.txt
+    - travis-sphinx build --nowarn --source=docs
+
 os: linux
 dist: xenial
 language: python
@@ -29,15 +34,19 @@ jobs:
       env: TOXENV=py39
       dist: xenial
       if: branch = dev AND type = push
+    - python: "3.7"
+      name: "Docs"
+      dist: xenial
+      <<: *docs_script
   allow_failures:
     - python: "3.9-dev"
       env: TOXENV=py39
       dist: xenial
 
 cache:
-  # directories:
-  #   - $HOME/.cache/pip
-  #   - "node_modules"
+  directories:
+    - $HOME/.cache/pip
+    - "node_modules"
   npm: true
   yarn: true
   pip: true
@@ -50,7 +59,7 @@ install:
   - npm install
   - npm install -g yarn
   - pip install tox-travis
-  - pip install -r docs/requirements_docs.txt
+  # - pip install -r docs/requirements_docs.txt
 
 script:
   # Build the frontend first
@@ -61,7 +70,7 @@ script:
   # Then, build the backend
   - travis_wait 30 tox -v --develop
   # Finally, build the docs
-  - travis-sphinx build --nowarn --source=docs
+  # - travis-sphinx build --nowarn --source=docs
 
 # after_success:
 #   - travis-sphinx deploy
