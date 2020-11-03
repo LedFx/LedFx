@@ -19,7 +19,6 @@ jobs:
   include:
     - python: "3.6"
       env: TOXENV=py36
-    #   #after_success: coveralls
     - python: "3.7"
       env: TOXENV=py37
       dist: xenial
@@ -60,9 +59,9 @@ script:
   - yarn build
   - cd ..
   # Then, build the backend
-  - travis_wait 60 tox -v --develop
+  - travis_wait 30 tox -v --develop
   # Finally, build the docs
   - travis-sphinx build --nowarn --source=docs
 
-after_success:
-  - travis-sphinx deploy
+# after_success:
+#   - travis-sphinx deploy
