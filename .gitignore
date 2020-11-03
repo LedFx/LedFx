@@ -38,7 +38,7 @@ package-lock.json
 
 # Unittest and coverage
 htmlcov/*
-#.coverage
+.coverage
 .tox
 junit.xml
 coverage.xml

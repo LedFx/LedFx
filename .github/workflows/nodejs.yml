@@ -26,17 +26,3 @@ jobs:
         yarn build
       env:
         CI: true
-    - name: Coveralls
-      uses: coverallsapp/github-action@master
-      with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-
-  finish:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-    - name: Coveralls Finished
-      uses: coverallsapp/github-action@master
-      with:
-        github-token: ${{ secrets.github_token }}
-        parallel-finished: true
