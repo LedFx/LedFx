@@ -32,30 +32,27 @@ jobs:
       name: "Docs"
       dist: xenial
       <<: *docs_job
-    # - python: "3.6"
-    #   env: TOXENV=py36
+    - python: "3.6"
+      env: TOXENV=py36
     - python: "3.7"
       env: TOXENV=py37
       dist: xenial
-  #   - python: "3.8"
-  #     env: TOXENV=py38
-  #     dist: xenial
-  #   - python: "3.9-dev"
-  #     env: TOXENV=py39
-  #     dist: xenial
-  #     if: branch = dev AND type = push
-  # allow_failures:
-  #   - python: "3.9-dev"
-  #     env: TOXENV=py39
-  #     dist: xenial
+    - python: "3.8"
+      env: TOXENV=py38
+      dist: xenial
+    - python: "3.9-dev"
+      env: TOXENV=py39
+      dist: xenial
+      if: branch = dev AND type = push
+  allow_failures:
+    - python: "3.9-dev"
+      env: TOXENV=py39
+      dist: xenial
 
 cache:
   directories:
     - $HOME/.cache/pip
     - "node_modules"
-  npm: true
-  yarn: true
-  pip: true
 
 before_install:
   - nvm install 10  # Use nvm to install Node.js v10.x
@@ -65,6 +62,7 @@ install:
   - npm install
   - npm install -g yarn
   - pip install tox-travis
+  - pip install tox-venv
 
 script:
   # Build the frontend first
@@ -73,7 +71,7 @@ script:
   - yarn build
   - cd ..
   # Then, build the backend
-  - travis_wait 30 tox -v --develop
+  - travis_wait 10 tox -vv --develop
 
 # after_success:
 #   - travis-sphinx deploy
