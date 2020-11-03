@@ -58,6 +58,7 @@ setup(
         ]
     },
     package_data={
+        'ledfx': ['*'],
         'ledfx_frontend': ['*'],
         '': ['*.npy'],
         '': ['*.yaml']
