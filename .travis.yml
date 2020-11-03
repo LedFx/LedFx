@@ -43,8 +43,9 @@ cache:
     - $HOME/.cache/pip
     - "node_modules"
 before_install:
-  - curl -sL https://deb.nodesource.com/setup_10.x | sudo -E bash - # Node.js v10.x install script
-  - sudo apt-get install -y nodejs # Install Node.js v10.x
+  - nvm use 10  # Use nvm to change Node.js version
+  # - curl -sL https://deb.nodesource.com/setup_10.x | sudo -E bash - # Node.js v10.x install script
+  # - sudo apt-get install -y nodejs # Install Node.js v10.x
 install:
   - npm install
   - npm install -g yarn
