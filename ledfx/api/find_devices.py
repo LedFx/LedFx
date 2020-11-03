@@ -1,6 +1,6 @@
 from ledfx.config import save_config
 from ledfx.api import RestEndpoint
-from ledfx.utils import generate_id
+from ledfx.utils import generate_id, async_fire_and_forget
 from aiohttp import web
 import logging
 import json
@@ -14,8 +14,7 @@ class FindDevicesEndpoint(RestEndpoint):
 
     async def post(self) -> web.Response:
         """ Find and add all WLED devices on the LAN """
-        print("HOWDY")
-        self._ledfx.devices.find_wled_devices()
+        async_fire_and_forget(self._ledfx.devices.find_wled_devices(), self._ledfx.loop)
 
         response = { 'status' : 'success' }
         return web.json_response(data=response, status=200)

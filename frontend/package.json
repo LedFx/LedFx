@@ -34,10 +34,12 @@
     },
     "scripts": {
         "start": "react-scripts start",
+        "build_win": "react-scripts build && yarn copyFilesUp_win",
         "build": "react-scripts build && yarn copyFilesUp",
         "test": "react-scripts test",
         "eject": "react-scripts eject",
-        "copyFilesUp": "rimraf ../ledfx_frontend && cp -r ./build/ ../ledfx_frontend"
+        "copyFilesUp": "rimraf ../ledfx_frontend && cp -r ./build/ ../ledfx_frontend",
+        "copyFilesUp_win": "rmdir /s /q ..\\ledfx_frontend 2>nul & ren build ledfx_frontend && move ledfx_frontend .."
     },
     "eslintConfig": {
         "extends": "react-app"

@@ -52,7 +52,7 @@ def blur_pixels(pixels, sigma):
     return rgb_array.T
 
 def brightness_pixels(pixels, brightness):
-    pixels *= brightness
+    pixels = np.multiply(pixels, brightness, out=pixels, casting="unsafe")
     return pixels
 
 @lru_cache(maxsize=32)
