@@ -32,8 +32,8 @@ jobs:
       name: "Docs"
       dist: xenial
       <<: *docs_job
-    - python: "3.6"
-      env: TOXENV=py36
+    # - python: "3.6"
+    #   env: TOXENV=py36
     - python: "3.7"
       env: TOXENV=py37
       dist: xenial
@@ -58,8 +58,6 @@ cache:
   pip: true
 
 before_install:
-  - sudo apt-get update
-  - sudo apt-get install portaudio19-dev
   - nvm install 10  # Use nvm to install Node.js v10.x
   - nvm use 10  # Use nvm to switch to Node.js v10.x
 
