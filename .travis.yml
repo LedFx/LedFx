@@ -70,7 +70,8 @@ script:
   - yarn build
   - cd ..
   # Then, build the backend
-  - travis_wait 10 tox -v -r --develop
+  - pip install -e .
+  # - travis_wait 10 tox -v --develop
 
 # after_success:
 #   - travis-sphinx deploy
