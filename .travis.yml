@@ -37,17 +37,17 @@ jobs:
     # - python: "3.7"
     #   env: TOXENV=py37
     #   dist: xenial
-    # - python: "3.8"
-    #   env: TOXENV=py38
-    #   dist: xenial
-    - python: "3.9-dev"
-      env: TOXENV=py39
+    - python: "3.8"
+      env: TOXENV=py38
       dist: xenial
-      if: branch = dev AND type = push
-  allow_failures:
-    - python: "3.9-dev"
-      env: TOXENV=py39
-      dist: xenial
+  #   - python: "3.9-dev"
+  #     env: TOXENV=py39
+  #     dist: xenial
+  #     if: branch = dev AND type = push
+  # allow_failures:
+  #   - python: "3.9-dev"
+  #     env: TOXENV=py39
+  #     dist: xenial
 
 cache:
   directories:
