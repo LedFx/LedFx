@@ -5,7 +5,7 @@ _docs_job: &docs_job
   addons:
     apt:
       update: false
-      packages: 
+      packages:
   cache: false
   before_install:
   install: pip install -r docs/requirements_docs.txt
@@ -32,11 +32,11 @@ jobs:
       name: "Docs"
       dist: xenial
       <<: *docs_job
-  #   - python: "3.6"
-  #     env: TOXENV=py36
-  #   - python: "3.7"
-  #     env: TOXENV=py37
-  #     dist: xenial
+    - python: "3.6"
+      env: TOXENV=py36
+    - python: "3.7"
+      env: TOXENV=py37
+      dist: xenial
   #   - python: "3.8"
   #     env: TOXENV=py38
   #     dist: xenial
