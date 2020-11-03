@@ -10,8 +10,10 @@ language: python
 #   https://github.com/travis-ci/apt-package-safelist
 addons:
   apt:
+    update: true        # runs `apt-get update` before installs
     packages:
-      - libudev-dev
+      - portaudio19-dev # Install portaudio (requirement for pyaudio)
+      - libudev-dev     #
 
 jobs:
   fast_finish: true
@@ -41,8 +43,8 @@ cache:
     - $HOME/.cache/pip
     - "node_modules"
 before_install:
-  - sudo apt-get update
-  - sudo apt-get install portaudio19-dev # Install portaudio (requirement for pyaudio)
+  - curl -sL https://deb.nodesource.com/setup_10.x | sudo -E bash - # Node.js v10.x install script
+  - sudo apt-get install -y nodejs # Install Node.js v10.x
 install:
   - npm install
   - npm install -g yarn
