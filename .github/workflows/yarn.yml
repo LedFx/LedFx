@@ -9,18 +9,34 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [8.x, 10.x, 12.x]
+        node-version: [10.x]
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@latest
     - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v1
+      uses: actions/setup-node@latest
       with:
         node-version: ${{ matrix.node-version }}
-    - name: yarn install, build, and test
+    - name: npm install yarn
+      run: npm install -g yarn
+    - name: yarn install, build, [and test] - Can't find any tests
       run: |
-        yarn --frozen-lockfile
+        cd frontend
+        yarn
         yarn build
-        yarn test
       env:
         CI: true
+        - name: Coveralls
+        uses: coverallsapp/github-action@master
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+    finish:
+      needs: test
+      runs-on: ubuntu-latest
+      steps:
+      - name: Coveralls Finished
+        uses: coverallsapp/github-action@master
+        with:
+          github-token: ${{ secrets.github_token }}
+          parallel-finished: true
