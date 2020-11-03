@@ -1,7 +1,6 @@
 # EXAMPLES CAN BE FOUND HERE
 # https://github.com/numpy/numpy/blob/master/.travis.yml
 
-
 os: linux
 dist: xenial
 language: python
@@ -36,16 +35,20 @@ jobs:
       env: TOXENV=py39
       dist: xenial
 
-
-
 cache:
-  directories:
-    - $HOME/.cache/pip
-    - "node_modules"
+  # directories:
+  #   - $HOME/.cache/pip
+  #   - "node_modules"
+  npm: true
+  yarn: true
+  pip: true
+
 before_install:
-  - nvm use 10  # Use nvm to change Node.js version
+  - nvm install 10  # Use nvm to install Node.js v10.x
+  - nvm use 10  # Use nvm to switch to Node.js v10.x
   # - curl -sL https://deb.nodesource.com/setup_10.x | sudo -E bash - # Node.js v10.x install script
   # - sudo apt-get install -y nodejs # Install Node.js v10.x
+
 install:
   - npm install
   - npm install -g yarn
