@@ -18,10 +18,12 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class LedFxCore(object):
-    def __init__(self, config_dir):
+    def __init__(self, config_dir, host=None, port=None):
         self.config_dir = config_dir
         self.config = load_config(config_dir)
         self.config["default_presets"] = load_default_presets()
+        host = host if host else self.config['host']
+        port = port if port else self.config['port']
 
         if sys.platform == 'win32':
             self.loop = asyncio.ProactorEventLoop()
@@ -35,7 +37,7 @@ class LedFxCore(object):
 
         self.events = Events(self)
         self.http = HttpServer(
-            ledfx=self, host=self.config['host'], port=self.config['port'])
+            ledfx=self, host=host, port=port)
         self.exit_code = None
 
     def dev_enabled(self):
