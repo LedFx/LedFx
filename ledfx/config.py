@@ -19,7 +19,7 @@ CORE_CONFIG_SCHEMA = vol.Schema({
     vol.Optional('default_presets', default = {}): dict,
     vol.Optional('custom_presets', default = {}): dict,
     vol.Optional('scenes', default = {}): dict,
-    vol.Optional('fade', default = 1): float
+    vol.Optional('fade', default = 1.0): float
 }, extra=vol.ALLOW_EXTRA)
 
 def get_default_config_directory() -> str:
