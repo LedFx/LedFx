@@ -17,12 +17,15 @@ SETUP_REQUIRES = [
 ]
 
 INSTALL_REQUIRES = [
+    # Nasty bug in windows 10 at the moment - https://developercommunity.visualstudio.com/content/problem/1207405/fmod-after-an-update-to-windows-2004-is-causing-a.html
+    # numpy 1.19.3 has a workaround
     'numpy==1.19.3',
+    # no longer constrained to old versions of libraries as we're on python3.9 here
     'voluptuous>=0.11.1',
     'pyaudio>=0.2.11',
     'sacn>=1.3',
-    'aiohttp==3.3.2',
-    'aiohttp_jinja2==1.0.0',
+    'aiohttp>=3.3.2',
+    'aiohttp_jinja2>=1.0.0',
     'requests>=2.22.0',
 	'pyyaml>=5.1',
     'aubio>=0.4.8',
