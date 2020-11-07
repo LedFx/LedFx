@@ -126,8 +126,10 @@ class LedFxCore(object):
         await self.http.stop()
 
         # Cancel all the remaining task and wait
-        tasks = [task for task in asyncio.Task.all_tasks() if task is not
-             asyncio.tasks.Task.current_task()] 
+
+        
+        tasks = [task for task in asyncio.all_tasks() if task is not
+             asyncio.current_task()] 
         list(map(lambda task: task.cancel(), tasks))
         results = await asyncio.gather(*tasks, return_exceptions=True)
 

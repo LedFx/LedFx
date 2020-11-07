@@ -17,10 +17,10 @@ SETUP_REQUIRES = [
 ]
 
 INSTALL_REQUIRES = [
-    'numpy>=1.13.3',
-    'voluptuous==0.11.1',
+    'numpy==1.19.3',
+    'voluptuous>=0.11.1',
     'pyaudio>=0.2.11',
-    'sacn==1.3',
+    'sacn>=1.3',
     'aiohttp==3.3.2',
     'aiohttp_jinja2==1.0.0',
     'requests>=2.22.0',
