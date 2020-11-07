@@ -8,6 +8,7 @@ import numpy as np
 import json
 import ledfx_frontend
 import os
+import sys
 try:
     base_path = sys._MEIPASS
 except:
