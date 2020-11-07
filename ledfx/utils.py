@@ -113,7 +113,7 @@ class BaseRegistry(ABC):
     list of automatically registered base classes and assembles schema
     information
 
-    The prevent registration for classes that are intended to serve as 
+    The prevent registration for classes that are intended to serve as
     base classes (i.e. GradientEffect) add the following declarator:
         @Effect.no_registration
     """
@@ -187,7 +187,7 @@ class RegistryLoader(object):
 
         self._ledfx = ledfx
         self.import_registry(package)
-     
+
         # If running in developer mode autoreload the registry when any file
         # within the package changes.
         # Check ledfx is not running as a single exe built using pyinstaller (sys frozen flag).
@@ -258,7 +258,7 @@ class RegistryLoader(object):
             path = sys.modules[name].__file__
             if path.endswith('.pyc') or path.endswith('.pyo'):
                 path = path[:-1]
-            
+
             try:
                 module = imp.load_source(name, path)
                 sys.modules[name] = module

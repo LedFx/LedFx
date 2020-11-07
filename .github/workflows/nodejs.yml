@@ -17,11 +17,12 @@ jobs:
       uses: actions/setup-node@v1
       with:
         node-version: ${{ matrix.node-version }}
-    - run: npm install -g yarn
+    - name: npm install yarn
+      run: npm install -g yarn
     - name: yarn install, build, [and test] - Can't find any tests
       run: |
         cd frontend
-        yarn 
+        yarn
         yarn build
       env:
         CI: true
