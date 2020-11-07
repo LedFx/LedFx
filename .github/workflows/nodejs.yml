@@ -9,7 +9,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [10.x]
+        node-version: [8.x, 10.x, 12.x]
 
     steps:
     - uses: actions/checkout@v1
@@ -19,7 +19,7 @@ jobs:
         node-version: ${{ matrix.node-version }}
     - name: npm install yarn
       run: npm install -g yarn
-    - name: yarn install, build, [and test] - Can't find any tests
+    - name: yarn install and build
       run: |
         cd frontend
         yarn
