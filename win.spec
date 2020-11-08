@@ -1,8 +1,8 @@
 # -*- mode: python ; coding: utf-8 -*-
 
 block_cipher = None
-
-
+# Supress warnings coz pyupdater needs to be updated
+options = [ ('v', None, 'OPTION'), ('W ignore', None, 'OPTION') ]
 a = Analysis(['C:\\Users\\Shaun\\ledfx-env\\LedFx\\ledfx\\__main__.py'],
              pathex=['C:\\Users\\Shaun\\ledfx-env\\LedFx', 'C:\\Users\\Shaun\\ledfx-env\\LedFx'],
              binaries=[],
@@ -19,6 +19,7 @@ pyz = PYZ(a.pure, a.zipped_data,
              cipher=block_cipher)
 exe = EXE(pyz,
           a.scripts,
+          options,
           a.binaries,
           a.zipfiles,
           a.datas,
@@ -27,7 +28,7 @@ exe = EXE(pyz,
           debug=False,
           bootloader_ignore_signals=False,
           strip=False,
-          upx=True,
+          upx=False,
           upx_exclude=[],
           runtime_tmpdir=None,
           console=True , icon='C:\\Users\\shaun\\ledfx-env\\LedFx\\icons\\discord.ico')
@@ -36,6 +37,6 @@ coll = COLLECT(exe,
                a.zipfiles,
                a.datas,
                strip=False,
-               upx=True,
+               upx=False,
                upx_exclude=[],
                name='LedFx')

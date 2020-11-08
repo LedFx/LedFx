@@ -27,7 +27,7 @@ from ledfx.consts import (
 from ledfx.core import LedFxCore
 import ledfx.config as config_helpers
 # If we're frozen, grab the pyupdater stuff so we can do updates
-if getattr( sys, 'frozen', False ):
+if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
     class ClientConfigData(object):
         PUBLIC_KEY = 'Txce3TE9BUixsBtqzDba6V5vBYltt/0pw5oKL8ueCDg'
         APP_NAME = 'LedFx'
@@ -113,7 +113,7 @@ def parse_args():
 
 ## Are we frozen? Pyupdater needs to be called. If not, main it is.
 def checkfrozen():
-    if getattr( sys, 'frozen', False ):
+    if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
         pyupdaterprocess()
     else:
         main()
