@@ -55,3 +55,10 @@ build.bat
 ledfx.nsi
 __main__.spec
 LedFx Installer.exe
+
+
+# Keyfile and pyupdater files for signing pyupdater
+keypack.pyu
+.pyupdater/
+pyu-data/new/LedFx-win-0.0.4.zip
+pyu-data/new/LedFx-win-0.0.4/LedFx.exe
