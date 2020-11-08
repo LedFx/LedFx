@@ -31,3 +31,11 @@ exe = EXE(pyz,
           upx_exclude=[],
           runtime_tmpdir=None,
           console=True , icon='C:\\Users\\shaun\\ledfx-env\\LedFx\\icons\\discord.ico')
+coll = COLLECT(exe,
+               a.binaries,
+               a.zipfiles,
+               a.datas,
+               strip=False,
+               upx=True,
+               upx_exclude=[],
+               name='LedFx')
