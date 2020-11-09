@@ -1,46 +1,75 @@
-sudo: false
+# EXAMPLES CAN BE FOUND HERE
+# https://github.com/numpy/numpy/blob/master/.travis.yml
+
+_docs_job: &docs_job
+  addons:
+    apt:
+      update: false
+      packages:
+  cache: false
+  before_install:
+  install: pip install -r docs/requirements_docs.txt
+  script:
+    - travis-sphinx build --nowarn --source=docs
+
+os: linux
+dist: xenial
+language: python
+
+# Travis allows these packages, additions can be requested
+#   https://github.com/travis-ci/apt-package-safelist
 addons:
   apt:
+    update: true        # runs `apt-get update` before installs
     packages:
-      - libudev-dev
-matrix:
+      - portaudio19-dev # Install portaudio (requirement for pyaudio)
+      - libudev-dev     #
+
+jobs:
   fast_finish: true
   include:
-    - python: "3.6"
-      env: TOXENV=py36
-    #   #after_success: coveralls
+    - python: "3.7"
+      name: "Docs"
+      dist: xenial
+      <<: *docs_job
     - python: "3.7"
       env: TOXENV=py37
       dist: xenial
-    - python: "3.8-dev"
+    - python: "3.8"
       env: TOXENV=py38
+      dist: xenial
+    - python: "3.9-dev"
+      env: TOXENV=py39
       dist: xenial
       if: branch = dev AND type = push
   allow_failures:
-    - python: "3.8-dev"
-      env: TOXENV=py38
+    - python: "3.9-dev"
+      env: TOXENV=py39
       dist: xenial
 
-language: python
 cache:
   directories:
     - $HOME/.cache/pip
     - "node_modules"
+
 before_install:
-  - sudo apt-get update
-  - sudo apt-get install portaudio19-dev # Install portaudio (requirement for pyaudio)
+  - nvm install 10  # Use nvm to install Node.js v10.x
+  - nvm use 10  # Use nvm to switch to Node.js v10.x
+
 install:
-  - npm install
+  - npm install -g yarn
   - pip install tox-travis
-  - pip install -r requirements_docs.txt
+  - pip install tox-venv
 
 script:
   # Build the frontend first
-  - npm run build
+  - cd frontend
+  - yarn
+  - yarn build
+  - cd ..
   # Then, build the backend
-  - travis_wait 30 tox --develop
-  # Finally, build the docs
-  - travis-sphinx build --nowarn --source=docs
+  - pip install -e .
+  # - travis_wait 10 tox -v --develop
 
-after_success:
-  - travis-sphinx deploy
+# after_success:
+#   - travis-sphinx deploy

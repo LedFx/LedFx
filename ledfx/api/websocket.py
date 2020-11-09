@@ -109,7 +109,7 @@ class WebsocketConnection:
         await socket.prepare(request)
         _LOGGER.info("Websocket connected.")
 
-        self._receiver_task = asyncio.Task.current_task(loop=self._ledfx.loop)
+        self._receiver_task = asyncio.current_task(loop=self._ledfx.loop)
         self._sender_task = self._ledfx.loop.create_task(self._sender())
 
 

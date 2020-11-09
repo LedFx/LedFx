@@ -23,13 +23,13 @@ Here is a list of tested ESP8266 firmware that works with LedFx:
     - WLED_ has lots of firmware effects and supports E1.31 and UDP
 
 Windows Installation
---------------------
+----------------------
 
 To get started on Windows it is highly recommended that you use Anaconda_ to make installation of Cython components easier.
 
 Please see :ref:`this page <win-alt-install>` for alternative installation instructions for Windows.
 
-**1.** Create a `conda virtual environment <http://conda.pydata.org/docs/using/envs.html>`_ (this step is optional but highly recommended):
+**1.** Create a `conda virtual environment`_ (this step is optional but highly recommended):
 
 .. code:: doscon
 
@@ -52,7 +52,7 @@ Please see :ref:`this page <win-alt-install>` for alternative installation instr
     > ledfx --open-ui
 
 Linux Installation
-------------------
+--------------------
 
 To install on Linux first ensure you have at least Python 3.6 installed (alternatively use Anaconda_).
 
@@ -70,9 +70,9 @@ To install on Linux first ensure you have at least Python 3.6 installed (alterna
     $ ledfx --open-ui
 
 macOS Installation
-------------------
+--------------------
 
-To install on macOS first ensure you have at least Python 3.6 installed (alternatively use `Anaconda <https://www.anaconda.com/download/>`_).
+To install on macOS first ensure you have at least Python 3.6 installed (alternatively use Anaconda_).
 
 **1.** Install LedFx and all the dependencies using homebrew and pip:
 
@@ -87,7 +87,7 @@ To install on macOS first ensure you have at least Python 3.6 installed (alterna
 
     $ ledfx --open-ui
 
-**1.** Alternatively, create a `conda virtual environment <http://conda.pydata.org/docs/using/envs.html>`_:
+**1.** Alternatively, create a `conda virtual environment`_:
 
 .. code:: console
 
@@ -108,8 +108,76 @@ To install on macOS first ensure you have at least Python 3.6 installed (alterna
 
     $ ledfx --open-ui
 
+Raspberry Pi Installation
+---------------------------
+
+.. note::
+  This installation method is still in development. Use at your discretion.
+
+.. note::
+  To use LedFx on a pi you will need a USB audio card.
+
+Verify you have Python 3.6 or greater by running ``python3 --version``
+
+**1.** Install, Create, and Activate a Python virtual environment:
+
+.. code:: console
+
+    $ sudo apt install python3-venv python3-pip
+    $ python3 -m venv ~/ledfx-venv
+    $ source ~/ledfx-venv/bin/activate
+
+**2.** Install required LedFx dependencies via ``apt``:
+
+.. code:: console
+
+    $ sudo apt install portaudio19-dev libatlas-base-dev libavcodec58 libavformat58 -y
+
+**3.** Install LedFx using ``pip``:
+
+.. code:: console
+
+    $ pip3 install ledfx-dev
+
+**4.** Modify /usr/share/alsa/alsa.conf:
+
+We need to change the default audio card from the built-in hardware on the pi to the USB audio card in use.
+
+.. code:: console
+
+    $ sudo nano /usr/share/alsa/alsa.conf
+
+Look for the following lines and change them accordingly:
+
+FROM:
+
+.. code-block:: shell
+
+    defaults.ctl.card 0
+    defaults.pcm.card 0
+
+TO:
+
+.. code-block:: shell
+
+    defaults.ctl.card 1
+    defaults.pcm.card 1
+
+**5.** Finally, start LedFx:
+
+.. code:: console
+
+    $ cd ~/ledfx-venv/bin
+    $ ./ledfx -v
+
+Optionally, open the UI:
+
+.. code:: console
+
+    $ ./ledfx --open-ui
+
 Device Firmware
----------------
+-----------------
 
 Please visit one of the following links to obtain firmware for your ESP8266/ESP32 device that works with LedFx.
 
@@ -141,6 +209,7 @@ Please visit one of the following links to obtain firmware for your ESP8266/ESP3
 .. Links Down Here
 
 .. _Anaconda: https://www.anaconda.com/download/
+.. _`conda virtual environment`: http://conda.pydata.org/docs/using/envs.html
 .. _`Scott's Audio Reactive Firmware`: https://github.com/scottlawsonbc/audio-reactive-led-strip
 .. _ESPixelStick: https://github.com/forkineye/ESPixelStick
 .. _WLED: https://github.com/Aircoookie/WLED

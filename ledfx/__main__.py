@@ -76,6 +76,19 @@ def parse_args():
         help="set loglevel to DEBUG",
         action='store_const',
         const=logging.DEBUG)
+    parser.add_argument(
+        '-p',
+        '--port',
+        dest="port",
+        help="Web interface port",
+        default=None,
+        type=int)
+    parser.add_argument(
+        '--host',
+        dest="host",
+        help="The address to host LedFx web interface",
+        default=None,
+        type=str)
     return parser.parse_args()
 
 def main():
@@ -85,7 +98,9 @@ def main():
     config_helpers.ensure_config_directory(args.config)
     setup_logging(args.loglevel)
 
-    ledfx = LedFxCore(config_dir = args.config)
+    ledfx = LedFxCore(config_dir = args.config,
+                      host = args.host,
+                      port = args.port)
     ledfx.start(open_ui = args.open_ui)
 
 if __name__ == "__main__":
