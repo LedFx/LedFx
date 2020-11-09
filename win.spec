@@ -2,7 +2,7 @@
 
 block_cipher = None
 # Supress warnings coz pyupdater needs to be updated
-options = [ ('v', None, 'OPTION'), ('W ignore', None, 'OPTION') ]
+options = [ ('W ignore', None, 'OPTION') ]
 a = Analysis(['C:\\Users\\Shaun\\ledfx-env\\LedFx\\ledfx\\__main__.py'],
              pathex=['C:\\Users\\Shaun\\ledfx-env\\LedFx', 'C:\\Users\\Shaun\\ledfx-env\\LedFx'],
              binaries=[],

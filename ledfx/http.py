@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 import logging
 import jinja2
 import aiohttp_jinja2
