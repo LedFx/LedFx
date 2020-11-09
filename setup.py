@@ -8,7 +8,7 @@ PROJECT_PACKAGE_NAME = 'ledfx-dev'
 PROJECT_VERSION = const.PROJECT_VERSION
 PROJECT_LICENSE = 'The MIT License'
 PROJECT_AUTHOR = 'Austin Hodges'
-PROJECT_AUTHOR_EMAIL = 'austin.b.hodges@gmail.com'
+PROJECT_AUTHOR_EMAIL = 'ledfx.app@gmail.com'
 PROJECT_MAINTAINER = 'LedFx Devs'
 PROJECT_MAINTAINER_EMAIL = 'ledfx.app@gmail.com'
 PROJECT_URL = 'https://github.com/ahodges9/LedFx/tree/dev'
@@ -23,14 +23,14 @@ INSTALL_REQUIRES = [
     # numpy 1.19.3 has a workaround
     'numpy==1.19.3',
     # no longer constrained to old versions of libraries as we're on python3.9 here
-    'voluptuous>=0.11.1',
+    'voluptuous==0.12.0',
     'pyaudio>=0.2.11',
-    'sacn>=1.3',
-    'aiohttp>=3.3.2',
-    'aiohttp_jinja2>=1.0.0',
-    'requests>=2.22.0',
-	'pyyaml>=5.1',
-    'aubio>=0.4.8',
+    'sacn==1.4',
+    'aiohttp==3.7.2',
+    'aiohttp_jinja2==1.3.0',
+    'requests>=2.24.0',
+	'pyyaml>=5.3.1',
+    'aubio>=0.4.9',
     'zeroconf>=0.28.6',
     'pypiwin32>=223;platform_system=="Windows"'
 ]
