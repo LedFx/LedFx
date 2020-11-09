@@ -28,13 +28,6 @@ from ledfx.core import LedFxCore
 import ledfx.config as config_helpers
 # If we're frozen, grab the pyupdater stuff so we can do updates
 if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
-    class ClientConfig(object):
-        PUBLIC_KEY = 'Txce3TE9BUixsBtqzDba6V5vBYltt/0pw5oKL8ueCDg'
-        APP_NAME = 'LedFx'
-        COMPANY_NAME = 'LedFx Developers'
-        HTTP_TIMEOUT = 30
-        MAX_DOWNLOAD_RETRIES = 3
-        UPDATE_URLS = ['https://ledfx.app/downloads/']
     def print_status_info(info):
         # Here you could as the user here if they would
         # like to install the new update and restart
