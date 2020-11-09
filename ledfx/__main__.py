@@ -98,8 +98,8 @@ def main():
     config_helpers.ensure_config_directory(args.config)
     setup_logging(args.loglevel)
 
-    ledfx = LedFxCore(config_dir = args.config, 
-                      host = args.host, 
+    ledfx = LedFxCore(config_dir = args.config,
+                      host = args.host,
                       port = args.port)
     ledfx.start(open_ui = args.open_ui)
 
