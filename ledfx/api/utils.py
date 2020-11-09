@@ -48,7 +48,7 @@ def convertToJsonSchema(schema):
     if isinstance(schema, vol.Schema):
         schema = schema.schema
 
-    if isinstance(schema, collections.Mapping):
+    if isinstance(schema, collections.abc.Mapping):
         val = {'properties': {}}
         required_vals = []
 

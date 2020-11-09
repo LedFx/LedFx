@@ -28,7 +28,7 @@ from ledfx.core import LedFxCore
 import ledfx.config as config_helpers
 # If we're frozen, grab the pyupdater stuff so we can do updates
 if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
-    class ClientConfigData(object):
+    class ClientConfig(object):
         PUBLIC_KEY = 'Txce3TE9BUixsBtqzDba6V5vBYltt/0pw5oKL8ueCDg'
         APP_NAME = 'LedFx'
         COMPANY_NAME = 'LedFx Developers'
@@ -116,14 +116,15 @@ def checkfrozen():
     if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
         pyupdaterprocess()
     else:
-        main()
+        ledfxmain()
 
 def pyupdaterprocess():
     # in future we can use the defined consts, but for now for dev
     APP_NAME = 'LedFx'
     APP_VERSION = '0.0.4'
     # initialize & refresh in one update check client
-    client = Client(ClientConfigData(), refresh=True, callback=print_status_info)
+    client = Client(ClientConfig(), refresh=True, callback=print_status_info)
+    print("Checking for updates...")
     # First we check for updates.
     # If an update is found an update object will be returned
     # If no updates are available, None will be returned
@@ -138,11 +139,11 @@ def pyupdaterprocess():
        ledfx_update.extract_restart()
     else:
         # No Updates, into main we go
-        main()
+        print("You're all up to date, enjoy the light show!")
+        ledfxmain()
     #  End PyUpdater Block
 
-def main():
-    """Main entry point allowing external calls"""
+def ledfxmain():
     args = parse_args()
     config_helpers.ensure_config_directory(args.config)
     setup_logging(args.loglevel)
@@ -150,5 +151,9 @@ def main():
         host = args.host, 
         port = args.port)
     ledfx.start(open_ui = args.open_ui)
+
+def main():
+    """Main entry point allowing external calls"""
+    checkfrozen()
 if __name__ == "__main__":
     sys.exit(main())
