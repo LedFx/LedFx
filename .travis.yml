@@ -70,6 +70,7 @@ script:
   - cd ..
   # Then, build the backend
   - pip install --upgrade pip wheel setuptools
+  - pip install -r requirements.txt
   - python setup.py sdist
   - python setup.py bdist_wheel
   - pip install --no-index --find-links=dist ledfx-dev
