@@ -9,10 +9,6 @@ import json
 import ledfx_frontend
 import os
 import sys
-try:
-    base_path = sys._MEIPASS
-except:
-    base_path = os.path.abspath(".")
     
 _LOGGER = logging.getLogger(__name__)
 
@@ -22,7 +18,7 @@ class HttpServer(object):
 
         self.app = web.Application(loop=ledfx.loop)
         self.api = RestApi(ledfx)
-        templates_path = os.path.join(base_path, "ledfx_frontend", ".")
+        templates_path = os.path.abspath(os.path.dirname(ledfx_frontend.__file__))
         aiohttp_jinja2.setup(
             self.app,
             loader=jinja2.FileSystemLoader(templates_path))
