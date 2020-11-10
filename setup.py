@@ -8,14 +8,14 @@ PROJECT_PACKAGE_NAME = 'ledfx-dev'
 PROJECT_VERSION = const.PROJECT_VERSION
 PROJECT_LICENSE = 'The MIT License'
 PROJECT_AUTHOR = 'Austin Hodges'
-PROJECT_AUTHOR_EMAIL = 'ledfx.app@gmail.com'
+PROJECT_AUTHOR_EMAIL = 'austin.b.hodges@gmail.com'
 PROJECT_MAINTAINER = 'LedFx Devs'
 PROJECT_MAINTAINER_EMAIL = 'ledfx.app@gmail.com'
 PROJECT_URL = 'https://github.com/ahodges9/LedFx/tree/dev'
 
 # Need to install numpy first
 SETUP_REQUIRES = [
-    'numpy>=1.19.0'
+    'numpy==1.19.3'
 ]
 
 INSTALL_REQUIRES = [

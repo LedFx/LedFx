@@ -9,7 +9,12 @@ import json
 import ledfx_frontend
 import os
 import sys
-    
+
+try:
+    base_path = sys._MEIPASS
+except:
+    base_path = os.path.abspath(".")
+
 _LOGGER = logging.getLogger(__name__)
 
 class HttpServer(object):
