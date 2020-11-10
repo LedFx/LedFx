@@ -22,12 +22,16 @@ INSTALL_REQUIRES = [
     # Nasty bug in windows 10 at the moment - https://developercommunity.visualstudio.com/content/problem/1207405/fmod-after-an-update-to-windows-2004-is-causing-a.html
     # numpy 1.19.3 has a workaround
     'numpy==1.19.3',
-    # no longer constrained to old versions of libraries as we're on python3.9 here
     'voluptuous==0.12.0',
     'pyaudio>=0.2.11',
-    'sacn==1.4',
-    'aiohttp==3.7.2',
-    'aiohttp_jinja2==1.3.0',
+    'sacn==1.4.6',
+    # aiohttp 3.7 branch has a regression that spams errors - bug report https://github.com/aio-libs/aiohttp/issues/5212
+    'aiohttp==3.6.3',
+    # yarl needs to be this for aiohttp
+    'yarl==1.5.1',
+    # multidict needs to be this for aiohttp
+    'multidict==4.7.6',
+    'aiohttp_jinja2>=1.1.0',
     'requests>=2.24.0',
 	'pyyaml>=5.3.1',
     'aubio>=0.4.9',
