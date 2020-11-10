@@ -71,7 +71,7 @@ script:
   # Then, build the backend
   - pip install --upgrade pip wheel setuptools
   - python setup.py bdist_wheel
-  - pip install --pre ledfx-dev
+  - pip install --pre --find-links=dist ledfx-dev
   # - travis_wait 10 tox -v --develop
 
 # after_success:
