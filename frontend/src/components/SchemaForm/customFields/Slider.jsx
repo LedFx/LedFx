@@ -25,8 +25,7 @@ function valuetext(value) {
 
 const SliderComponent = props => {
     const {
-        form,
-        form: { schema, type },
+        form: { schema },
         value,
         onChangeValidate,
     } = props;
