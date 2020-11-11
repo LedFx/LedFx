@@ -14,10 +14,10 @@ name: "CodeQL"
 
 on:
   push:
-    branches: [ dev, docs ]
+    branches: dev
   pull_request:
     # The branches below must be a subset of the branches above
-    branches: [ dev, docs ]
+    branches: dev
   schedule:
     - cron: '0 8,20 * * *'
   workflow_dispatch:
@@ -45,7 +45,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
-        python-version: '3.x'
+        python-version: '3.9'
     - name: Cache pip 
       uses: actions/cache@v2
       env:
