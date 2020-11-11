@@ -39,33 +39,33 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v2
     
-    - name: Install system dependencies
-      run:  |
-       sudo apt-get install -y python3-dev portaudio19-dev libatlas3-base
-    - name: Set up Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.9'
-    - name: Cache pip 
-      uses: actions/cache@v2
-      env:
-        cache-name: cache-pip
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/requirements.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-build-${{ env.cache-name }}-
-    - name: Install python dependencies	
-      run: |	
-        python -m pip install --upgrade pip	wheel setuptools
-        pip install Cython
-        pip install numpy==1.19.3
-        if [ -f requirements.txt ]; 	
-        then pip install -r requirements.txt;	
-        fi	
-        # Set the `CODEQL-PYTHON` environment variable to the Python executable	
-        # that includes the dependencies	
-        echo "::set-env name=CODEQL_PYTHON::$(which python)"x'
+#     - name: Install system dependencies
+#       run:  |
+#        sudo apt-get install -y python3-dev portaudio19-dev libatlas3-base
+#     - name: Set up Python
+#       uses: actions/setup-python@v2
+#       with:
+#         python-version: '3.9'
+#     - name: Cache pip 
+#       uses: actions/cache@v2
+#       env:
+#         cache-name: cache-pip
+#       with:
+#         path: ~/.cache/pip
+#         key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/requirements.txt') }}
+#         restore-keys: |
+#           ${{ runner.os }}-build-${{ env.cache-name }}-
+#     - name: Install python dependencies	
+#       run: |	
+#         python -m pip install --upgrade pip	wheel setuptools
+#         pip install Cython
+#         pip install numpy==1.19.3
+#         if [ -f requirements.txt ]; 	
+#         then pip install -r requirements.txt;	
+#         fi	
+#         # Set the `CODEQL-PYTHON` environment variable to the Python executable	
+#         # that includes the dependencies	
+#         echo "::set-env name=CODEQL_PYTHON::$(which python)"x'
     - name: Lint with flake8
       run: |
         pip install flake8
