@@ -23,15 +23,12 @@ from pyupdater.client import Client
 
 from ledfx.consts import (
     REQUIRED_PYTHON_VERSION, REQUIRED_PYTHON_STRING,
-    PROJECT_VERSION, APP_NAME)
+    PROJECT_VERSION, PROJECT_NAME)
 from ledfx.core import LedFxCore
 import ledfx.config as config_helpers
 
-# If we're frozen, grab the pyupdater stuff so we can do updates
-if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
-
-
 _LOGGER = logging.getLogger(__name__)
+
 def validate_python() -> None:
     """Validate the python version for when manually running"""
 
@@ -94,6 +91,9 @@ def parse_args():
         default=None,
         type=str)
     return parser.parse_args()
+
+def check_frozen():
+    return getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS')
 
 def update_ledfx():
     # in future we can use the defined consts, but for now for dev
