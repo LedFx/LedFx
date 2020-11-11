@@ -41,7 +41,7 @@ jobs:
     
     - name: Install system dependencies
       run:  |
-       apt-get install -y python3-dev portaudio19-dev libatlas3-base
+       sudo apt-get install -y python3-dev portaudio19-dev libatlas3-base
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
