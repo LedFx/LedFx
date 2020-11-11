@@ -130,11 +130,11 @@ def update_ledfx():
 def main():
     """Main entry point allowing external calls"""
     args = parse_args()
-    config_helpers.ensure_config_directory(args.config)
     setup_logging(args.loglevel)
     # If LedFx is a frozen windows build, it can auto-update itself
     if check_frozen():
         update_ledfx()
+    config_helpers.ensure_config_directory(args.config)
     ledfx = LedFxCore(config_dir = args.config,
                       host = args.host,
                       port = args.port)
