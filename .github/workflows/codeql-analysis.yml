@@ -44,6 +44,29 @@ jobs:
       with:
         python-version: '3.x'
 
+    - name: Install dependencies	
+      run: |	
+        apt-get install -y python3-dev portaudio19-dev libatlas3-base
+        python -m pip install --upgrade pip	wheel setuptools
+        pip install Cython	
+        if [ -f requirements.txt ]; 	
+        then pip install -r requirements.txt;	
+        fi	
+        # Set the `CODEQL-PYTHON` environment variable to the Python executable	
+        # that includes the dependencies	
+        echo "::set-env name=CODEQL_PYTHON::$(which python)"x'
+      if: language == 'python'
+    
+    - name: Cache pip 
+      uses: actions/cache@v2
+      env:
+        cache-name: cache-pip
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-build-${{ env.cache-name }}-
+
     # Initializes the CodeQL tools for scanning.
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v1
@@ -51,7 +74,7 @@ jobs:
         languages: ${{ matrix.language }}
         # Override the default behavior so that the action doesn't attempt 
         # to auto-install Python dependencies
-        #setup-python-dependencies: false
+        setup-python-dependencies: false
         # If you wish to specify custom queries, you can do so here or in a config file.
         # By default, queries listed here will override any specified in a config file.
         # Prefix the list here with "+" to use these queries and those in the config file.
