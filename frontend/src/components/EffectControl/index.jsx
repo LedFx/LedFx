@@ -12,6 +12,7 @@ import CheckCircleIcon from '@material-ui/icons/CheckCircle';
 import CasinoIcon from '@material-ui/icons/Casino';
 
 import DropDown from 'components/forms/DropDown';
+import mapper from 'components/SchemaForm/mapper';
 
 const styles = theme => ({
     form: {
@@ -115,9 +116,7 @@ class EffectControl extends React.Component {
         if (schemas.effects) {
             return (
                 <>
-                    <Typography variant="h5">
-                        Effect Control
-                    </Typography>
+                    <Typography variant="h5">Effect Control</Typography>
                     <Typography variant="body1" color="textSecondary">
                         Set and configure effects
                     </Typography>
@@ -138,11 +137,12 @@ class EffectControl extends React.Component {
                             form={requiredKeys}
                             model={model}
                             onModelChange={this.onModelChange}
+                            mapper={mapper}
                         />
 
                         <DialogActions className={classes.bottomContainer}>
                             {selectedType && (
-                                <Button 
+                                <Button
                                     onClick={this.handleRandomize}
                                     endIcon={<CasinoIcon />}
                                     color="primary"

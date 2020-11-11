@@ -23,15 +23,12 @@ from pyupdater.client import Client
 
 from ledfx.consts import (
     REQUIRED_PYTHON_VERSION, REQUIRED_PYTHON_STRING,
-    PROJECT_VERSION, APP_NAME)
+    PROJECT_VERSION, PROJECT_NAME)
 from ledfx.core import LedFxCore
 import ledfx.config as config_helpers
 
-# If we're frozen, grab the pyupdater stuff so we can do updates
-if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
-
-
 _LOGGER = logging.getLogger(__name__)
+
 def validate_python() -> None:
     """Validate the python version for when manually running"""
 
@@ -40,9 +37,11 @@ def validate_python() -> None:
         sys.exit(1)
 
 def setup_logging(loglevel):
+    loglevel = loglevel if loglevel else logging.WARNING
     logformat = "[%(asctime)s] %(levelname)s:%(name)s:%(message)s"
-    logging.basicConfig(level=loglevel, stream=sys.stdout,
+    logging.basicConfig(stream=sys.stdout,
                         format=logformat, datefmt="%Y-%m-%d %H:%M:%S")
+    logging.getLogger().setLevel(loglevel)
 
     # Suppress some of the overly verbose logs
     logging.getLogger('sacn').setLevel(logging.WARNING)
@@ -95,6 +94,9 @@ def parse_args():
         type=str)
     return parser.parse_args()
 
+def check_frozen():
+    return getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS')
+
 def update_ledfx():
     # in future we can use the defined consts, but for now for dev
     # initialize & refresh in one update check client
@@ -130,11 +132,11 @@ def update_ledfx():
 def main():
     """Main entry point allowing external calls"""
     args = parse_args()
-    config_helpers.ensure_config_directory(args.config)
     setup_logging(args.loglevel)
     # If LedFx is a frozen windows build, it can auto-update itself
     if check_frozen():
         update_ledfx()
+    config_helpers.ensure_config_directory(args.config)
     ledfx = LedFxCore(config_dir = args.config,
                       host = args.host,
                       port = args.port)
