@@ -58,7 +58,8 @@ jobs:
     - name: Install python dependencies	
       run: |	
         python -m pip install --upgrade pip	wheel setuptools
-        pip install Cython	
+        pip install Cython
+        pip install numpy==1.19.3
         if [ -f requirements.txt ]; 	
         then pip install -r requirements.txt;	
         fi	
