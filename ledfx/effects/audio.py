@@ -146,7 +146,7 @@ class AudioInputSource(object):
 
     def _audio_sample_callback(self, in_data, frame_count, time_info, status):
         """Callback for when a new audio sample is acquired"""
-        self._raw_audio_sample = np.fromstring(in_data, dtype=np.float32)
+        self._raw_audio_sample = np.frombuffer(in_data, dtype=np.float32)
 
         self.pre_process_audio()
         self._invalidate_caches()

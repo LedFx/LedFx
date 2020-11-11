@@ -19,15 +19,19 @@ For non-development purposes run:
 import argparse
 import sys
 import logging
+from pyupdater.client import Client
 
 from ledfx.consts import (
     REQUIRED_PYTHON_VERSION, REQUIRED_PYTHON_STRING,
-    PROJECT_VERSION)
+    PROJECT_VERSION, APP_NAME)
 from ledfx.core import LedFxCore
 import ledfx.config as config_helpers
 
-_LOGGER = logging.getLogger(__name__)
+# If we're frozen, grab the pyupdater stuff so we can do updates
+if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
 
+
+_LOGGER = logging.getLogger(__name__)
 def validate_python() -> None:
     """Validate the python version for when manually running"""
 
@@ -91,17 +95,52 @@ def parse_args():
         type=str)
     return parser.parse_args()
 
+def update_ledfx():
+    # in future we can use the defined consts, but for now for dev
+    # initialize & refresh in one update check client
+    class ClientConfig(object):
+        PUBLIC_KEY = 'Txce3TE9BUixsBtqzDba6V5vBYltt/0pw5oKL8ueCDg'
+        APP_NAME = PROJECT_NAME
+        COMPANY_NAME = 'LedFx Developers'
+        HTTP_TIMEOUT = 30
+        MAX_DOWNLOAD_RETRIES = 3
+        UPDATE_URLS = ['https://ledfx.app/downloads/']
+
+    client = Client(ClientConfig(), refresh=True)
+    _LOGGER.info('Checking for updates...')
+    # First we check for updates.
+    # If an update is found an update object will be returned
+    # If no updates are available, None will be returned
+    ledfx_update = client.update_check(PROJECT_NAME, PROJECT_VERSION)
+    # Download the update
+    if ledfx_update is not None:
+        _LOGGER.info("Update found!")
+        _LOGGER.info("Downloading update, please wait...")
+        ledfx_update.download()
+        # Install and restart
+        if ledfx_update.is_downloaded():
+            _LOGGER.info("Update downloaded, extracting and restarting...")
+            ledfx_update.extract_restart()
+        else:
+            _LOGGER.info("Unable to download update.")
+    else:
+        # No Updates, into main we go
+        _LOGGER.info("You're all up to date, enjoy the light show!")
+
 def main():
     """Main entry point allowing external calls"""
-
     args = parse_args()
     config_helpers.ensure_config_directory(args.config)
     setup_logging(args.loglevel)
-
+    # If LedFx is a frozen windows build, it can auto-update itself
+    if check_frozen():
+        update_ledfx()
     ledfx = LedFxCore(config_dir = args.config,
                       host = args.host,
                       port = args.port)
+
     ledfx.start(open_ui = args.open_ui)
+
 
 if __name__ == "__main__":
     sys.exit(main())
