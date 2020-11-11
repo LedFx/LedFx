@@ -30,6 +30,8 @@ def main():
         description="Release a new version of LedFx")
     parser.add_argument('type', help="The type of release",
         choices=['major', 'minor'])
+    parser.add_argument('branch', help="Branch",
+        choices=['master', 'dev'])
     parser.add_argument('--no_bump', action='store_true',
         help='Create a version bump commit.')
     

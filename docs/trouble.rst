@@ -36,6 +36,35 @@ Alternative Install Instructions:
 
 .. _win-dev-install:
 
+No Conda Installation (good for devs) (requires Visual Studio Build Tools):
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+install python 3.7.9
+install visual studio build tools for win10 
+  https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2019
+  "visual c++ build tools"
+  default install options
+reboot
+open start menu -> x86 native build tools command prompt for VS 2019 
+
+..code:: doscon
+
+    > python -m venv C:/ledfx
+    > C:\ledfx\Scripts\activate.bat
+    > pip install pipwin
+    > pipwin install pyaudio
+
+download ledfx (dev) from github
+put this wherever you want
+cd to this directory
+
+..code:: doscon
+
+    > python setup.py develop
+    > ledfx
+
+
 Dev Branch Install:
 +++++++++++++++++++
 

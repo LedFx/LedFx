@@ -37,9 +37,11 @@ def validate_python() -> None:
         sys.exit(1)
 
 def setup_logging(loglevel):
+    loglevel = loglevel if loglevel else logging.WARNING
     logformat = "[%(asctime)s] %(levelname)s:%(name)s:%(message)s"
-    logging.basicConfig(level=loglevel, stream=sys.stdout,
+    logging.basicConfig(stream=sys.stdout,
                         format=logformat, datefmt="%Y-%m-%d %H:%M:%S")
+    logging.getLogger().setLevel(loglevel)
 
     # Suppress some of the overly verbose logs
     logging.getLogger('sacn').setLevel(logging.WARNING)
