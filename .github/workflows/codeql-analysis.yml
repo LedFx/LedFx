@@ -39,6 +39,9 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v2
     
+    - name: Install system dependencies
+      run:  |
+       apt-get install -y python3-dev portaudio19-dev libatlas3-base
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
@@ -62,9 +65,6 @@ jobs:
         # Set the `CODEQL-PYTHON` environment variable to the Python executable	
         # that includes the dependencies	
         echo "::set-env name=CODEQL_PYTHON::$(which python)"x'
-    - name: Install system dependencies
-      run:  |
-       apt-get install -y python3-dev portaudio19-dev libatlas3-base
     - name: Lint with flake8
       run: |
         pip install flake8
