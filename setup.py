@@ -22,9 +22,9 @@ INSTALL_REQUIRES = [
     # Nasty bug in windows 10 at the moment - https://developercommunity.visualstudio.com/content/problem/1207405/fmod-after-an-update-to-windows-2004-is-causing-a.html
     # numpy 1.19.3 has a workaround
     'numpy==1.19.3',
-    'voluptuous==0.12.0',
+    'voluptuous>=0.12.0',
     'pyaudio>=0.2.11',
-    'sacn==1.4.6',
+    'sacn>=1.4.6',
     # aiohttp 3.7 branch has a regression that spams errors - bug report https://github.com/aio-libs/aiohttp/issues/5212
     'aiohttp==3.6.3',
     # yarl needs to be this for aiohttp
@@ -51,7 +51,7 @@ setup(
     url=PROJECT_URL,
     project_urls={
         'Documentation': 'https://ledfx.readthedocs.io/en/docs/index.html',
-        'Website': 'https://ledfx.app'
+        'Website': 'https://ledfx.app',
         'Source': 'https://github.com/ahodges9/LedFx',
         'Discord': 'https://discord.gg/PqXMuthSNx'
     },
