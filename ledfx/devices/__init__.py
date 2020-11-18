@@ -267,9 +267,7 @@ class MyListener:
         _LOGGER.info(f"Service {name} removed")
 
     def add_service(self, zeroconf_obj, type, name):
-        # DMX universe_size
-        c = 510
-        d = 512
+  
         info = zeroconf_obj.get_service_info(type, name)
 
         if info:
@@ -284,10 +282,11 @@ class MyListener:
             wledname = b["name"]
             wledcount = wledled["count"]
             
+            # We need to use a universe size of 510 if there are more than 170 pixels to prevent spanning pixel data across sequential universes
             if wledcount > 170:
-                unisize = c
+                unisize = 510
             else:
-                unisize = d
+                unisize = 512
 
             device_id = generate_id(wledname)
             device_type = "e131"
