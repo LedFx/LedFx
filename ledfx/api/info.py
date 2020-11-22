@@ -1,5 +1,5 @@
 from ledfx.api import RestEndpoint
-from ledfx.http import HttpServer
+from ledfx.http_manager import HttpServer
 from ledfx.consts import PROJECT_VERSION
 from aiohttp import web
 import logging

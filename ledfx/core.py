@@ -8,7 +8,7 @@ from pathlib import Path
 import voluptuous as vol
 from concurrent.futures import ThreadPoolExecutor
 from ledfx.utils import async_fire_and_forget
-from ledfx.http import HttpServer
+from ledfx.http_manager import HttpServer
 from ledfx.devices import Devices
 from ledfx.effects import Effects
 from ledfx.config import load_config, save_config, load_default_presets
