@@ -70,7 +70,8 @@ class Device(BaseRegistry):
         self._ledfx.loop.call_later(self._ledfx.config['fade'], self.clear_frame)
 
     def clear_fadeout_effect(self):
-        self._fadeout_effect.deactivate()
+        if self._fadeout_effect is not None:
+            self._fadeout_effect.deactivate()
         self._fadeout_effect = None
 
     def clear_frame(self):
