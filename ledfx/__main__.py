@@ -28,7 +28,7 @@ from ledfx.core import LedFxCore
 import ledfx.config as config_helpers
 
 _LOGGER = logging.getLogger(__name__)
-division_by_zero = 1 / 0
+
 def validate_python() -> None:
     """Validate the python version for when manually running"""
 
