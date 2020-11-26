@@ -1,5 +1,6 @@
 import pathlib
-from packaging.version import Version
+# Couldn't get this to work. Will revisit.
+#from packaging.version import Version
 
 __author__ = "Austin Hodges"
 __copyright__ = "Austin Hodges"
@@ -21,12 +22,12 @@ PROJECT_VERSION = '{}.{}.{}'.format(MAJOR_VERSION, MINOR_VERSION, MICRO_VERSION)
 
 if DEV > 0:
   DEV_VERSION = '{}-dev{}'.format(PROJECT_VERSION, DEV)
-  DEV_VERSION = Version(DEV_VERSION).public
+  #DEV_VERSION = Version(DEV_VERSION).public
 
 if POST > 0:
   POST_VERSION = '{}-post{}'.format(PROJECT_VERSION, POST)
-  POST_VERSION = Version(POST_VERSION).public
+  #POST_VERSION = Version(POST_VERSION).public
 
-PROJECT_VERSION = Version(PROJECT_VERSION).public
+#PROJECT_VERSION = Version(PROJECT_VERSION).public
 
 __version__ = PROJECT_VERSION

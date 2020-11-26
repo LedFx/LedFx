@@ -35,22 +35,22 @@ def main():
     parser.add_argument('type', help="The type of release",
         choices=['major', 'minor', 'micro'])
     parser.add_argument('branch', help="Branch",
-        choices=['master', 'dev'])
+        choices=['dev'])
     parser.add_argument('--no-bump', action='store_true',
         help='Create a version bump commit.')
 
     arguments = parser.parse_args()
 
     branch = arguments.branch
-
     current_branch = execute_command("git rev-parse --abbrev-ref HEAD")
     if current_branch != "dev": # Temporary sanity check
-        print("Releases may only be pushed to the dev branch at this time.")
+        print("Releases may only be pushed from the dev branch at this time.")
         if current_branch != "master":
             print("Releases must be pushed from the master branch.")
             return
 
     current_commit = execute_command("git rev-parse HEAD")
+    # Push to dev branch only for now.
     branch_commit = execute_command("git rev-parse dev@{upstream}")
     if current_commit != branch_commit:
         print("Release must be pushed when up-to-date with origin.")
