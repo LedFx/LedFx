@@ -83,8 +83,14 @@ The below image describes a basic setup - LedFx running on PC, communicating wit
 🧑‍💻 Join the LedFx Community
 ------------------------------
 
-Join the Discord server to discuss everything about LedFx!
-|Discord|
+Join the Discord server to discuss everything about LedFx! |Discord|
+
+To join, click on the Discord button below:
+
+.. raw:: html
+
+    <a href="https://discord.com/invite/wJ755dY"><img src="https://discordapp.com/api/guilds/469985374052286474/widget.png?style=banner2" width="30%"></a>
+        
 
 Contributing
 --------------
