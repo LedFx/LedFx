@@ -19,6 +19,9 @@ For non-development purposes run:
 import argparse
 import sys
 import logging
+
+_LOGGER = logging.getLogger(__name__)
+
 from pyupdater.client import Client
 
 from ledfx.consts import (
@@ -26,9 +29,6 @@ from ledfx.consts import (
     PROJECT_VERSION, PROJECT_NAME)
 from ledfx.core import LedFxCore
 import ledfx.config as config_helpers
-
-_LOGGER = logging.getLogger(__name__)
-
 def validate_python() -> None:
     """Validate the python version for when manually running"""
 

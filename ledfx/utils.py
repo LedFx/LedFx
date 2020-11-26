@@ -9,7 +9,7 @@ import inspect
 import importlib
 import pkgutil
 import re
-import imp
+import importlib
 import sys
 import os
 

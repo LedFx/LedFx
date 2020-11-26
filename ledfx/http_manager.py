@@ -21,7 +21,7 @@ class HttpServer(object):
     def __init__(self, ledfx, host, port):
         """Initialize the HTTP server"""
 
-        self.app = web.Application(loop=ledfx.loop)
+        self.app = web.Application()
         self.api = RestApi(ledfx)
         templates_path = os.path.abspath(os.path.dirname(ledfx_frontend.__file__))
         aiohttp_jinja2.setup(
