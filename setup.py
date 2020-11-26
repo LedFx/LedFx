@@ -51,7 +51,7 @@ setup(
     url=PROJECT_URL,
     project_urls={
         'Documentation': 'https://ledfx.readthedocs.io/en/docs/index.html',
-        'Website': 'https://ledfx.app'
+        'Website': 'https://ledfx.app',
         'Source': 'https://github.com/ahodges9/LedFx',
         'Discord': 'https://discord.gg/PqXMuthSNx'
     },
@@ -71,5 +71,4 @@ setup(
         '': ['*.npy'],
         '': ['*.yaml']
     },
-
 )
