@@ -1,4 +1,5 @@
 import pathlib
+from packaging.version import Version, parse
 
 __author__ = "Austin Hodges"
 __copyright__ = "Austin Hodges"
@@ -12,8 +13,20 @@ REQUIRED_PYTHON_STRING = '>={}.{}.{}'.format(REQUIRED_PYTHON_VERSION[0],
                                              REQUIRED_PYTHON_VERSION[2])
 
 MAJOR_VERSION = 0
-MINOR_VERSION = 8
-MICRO_VERSION = 4
+MINOR_VERSION = 9
+MICRO_VERSION = 0
+POST          = 0
+DEV           = 0
 PROJECT_VERSION = '{}.{}.{}'.format(MAJOR_VERSION, MINOR_VERSION, MICRO_VERSION)
 
-__version__ = PROJECT_VERSION
+if DEV > 0:
+  DEV_VERSION = '{}-dev{}'.format(PROJECT_VERSION, DEV)
+  DEV_VERSION = Version(DEV_VERSION)
+
+if POST > 0:
+  POST_VERSION = '{}-post{}'.format(PROJECT_VERSION, POST)
+  POST_VERSION = Version(POST_VERSION)
+
+PROJECT_VERSION = Version(PROJECT_VERSION)
+
+__version__ = PROJECT_VERSION.public
