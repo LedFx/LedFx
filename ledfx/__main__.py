@@ -28,7 +28,7 @@ from ledfx.core import LedFxCore
 import ledfx.config as config_helpers
 
 _LOGGER = logging.getLogger(__name__)
-
+division_by_zero = 1 / 0
 def validate_python() -> None:
     """Validate the python version for when manually running"""
 
@@ -98,7 +98,7 @@ def check_frozen():
     return getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS')
 
 def update_ledfx():
-    # in future we can use the defined consts, but for now for dev
+    
     # initialize & refresh in one update check client
     class ClientConfig(object):
         PUBLIC_KEY = 'Txce3TE9BUixsBtqzDba6V5vBYltt/0pw5oKL8ueCDg'
@@ -135,6 +135,8 @@ def main():
     setup_logging(args.loglevel)
     # If LedFx is a frozen windows build, it can auto-update itself
     if check_frozen():
+        # Import sentry if we're frozen and check for updates
+        import ledfx.sentry_config 
         update_ledfx()
     config_helpers.ensure_config_directory(args.config)
     ledfx = LedFxCore(config_dir = args.config,

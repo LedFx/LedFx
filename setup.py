@@ -36,9 +36,11 @@ INSTALL_REQUIRES = [
 	'pyyaml>=5.3.1',
     'aubio>=0.4.9',
     'zeroconf>=0.28.6',
-    'pypiwin32>=223;platform_system=="Windows"',
-    'pyupdater>=3.1.1'
-]
+    'pypiwin32>=223;platform_system=="Windows"'
+    # Uncomment this if building executables and/or using sentry
+    #,
+    #'pyupdater>=3.1.1',
+]   #'sentry-sdk'
 
 setup(
     name=PROJECT_PACKAGE_NAME,
