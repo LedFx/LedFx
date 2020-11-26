@@ -27,6 +27,6 @@ if POST > 0:
   POST_VERSION = '{}-post{}'.format(PROJECT_VERSION, POST)
   POST_VERSION = Version(POST_VERSION)
 
-PROJECT_VERSION = Version(PROJECT_VERSION)
+PROJECT_VERSION = Version(PROJECT_VERSION).public
 
-__version__ = PROJECT_VERSION.public
+__version__ = PROJECT_VERSION
