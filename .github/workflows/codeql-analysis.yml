@@ -69,7 +69,7 @@ jobs:
     - name: Lint with flake8
       run: |
         pip install flake8
-        flake8 .
+        flake8 --ignore=E501,E203,W503,F601,F811,F841 .
 
     # Initializes the CodeQL tools for scanning.
     - name: Initialize CodeQL
