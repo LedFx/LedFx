@@ -4,7 +4,6 @@ from aiohttp import web
 import voluptuous as vol
 import random
 import logging
-import json
 
 _LOGGER = logging.getLogger(__name__)
 

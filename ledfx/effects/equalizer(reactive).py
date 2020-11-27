@@ -16,7 +16,7 @@ class EQAudioEffect(AudioReactiveEffect, GradientEffect):
                 list(
                     [
                         "left", "right", "invert", "center"])), vol.Optional(
-                            'gradient_name', description='Color gradient to display', default='Spectral'): vol.In(
+                            'gradient_name', description='Color gradient to display', default='Rainbow'): vol.In(
                                 list(
                                     GRADIENTS.keys())), vol.Optional(
                                         'gradient_repeat', description='Repeat the gradient into segments', default=6): vol.All(

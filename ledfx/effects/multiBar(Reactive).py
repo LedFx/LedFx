@@ -13,7 +13,7 @@ class MultiBarAudioEffect(AudioReactiveEffect, GradientEffect):
             vol.Optional(
                 'gradient_name',
                 description='Color scheme to cycle through',
-                default='Spectral'): vol.In(
+                default='Rainbow'): vol.In(
                 list(
                     GRADIENTS.keys())),
             vol.Optional(

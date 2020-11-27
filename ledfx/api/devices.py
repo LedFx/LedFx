@@ -3,7 +3,6 @@ from ledfx.api import RestEndpoint
 from ledfx.utils import generate_id
 from aiohttp import web
 import logging
-import json
 
 _LOGGER = logging.getLogger(__name__)
 

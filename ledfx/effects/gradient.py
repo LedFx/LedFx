@@ -18,7 +18,7 @@ class GradientEffect(Effect):
     """
 
     CONFIG_SCHEMA = vol.Schema({
-        vol.Optional('gradient_name', description='Color gradient to display', default='Spectral'): vol.In(list(GRADIENTS.keys())),
+        vol.Optional('gradient_name', description='Color gradient to display', default='Rainbow'): vol.In(list(GRADIENTS.keys())),
         vol.Optional('gradient_roll', description='Amount to shift the gradient', default=0): vol.All(vol.Coerce(int), vol.Range(min=0, max=10)),
         vol.Optional('gradient_repeat', description='Repeat the gradient into segments', default=1): vol.All(vol.Coerce(int), vol.Range(min=1, max=16))
         # vol.Optional('gradient_method', description='Function used to
@@ -80,7 +80,7 @@ class GradientEffect(Effect):
                 gradient_colors = [gradient_name]
 
         if not gradient_colors:
-            gradient_colors = GRADIENTS.get('spectral')
+            gradient_colors = GRADIENTS.get('Rainbow')
 
         self.rgb_list = np.array([COLORS[color.lower()]
                                   for color in gradient_colors]).T

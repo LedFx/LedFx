@@ -19,7 +19,7 @@ class BandsAudioEffect(AudioReactiveEffect, GradientEffect):
                             list(
                                 [
                                     "left", "right", "invert", "center"])), vol.Optional(
-                                        'gradient_name', description='Color gradient to display', default='Spectral'): vol.In(
+                                        'gradient_name', description='Color gradient to display', default='Rainbow'): vol.In(
                                             list(
                                                 GRADIENTS.keys())), vol.Optional(
                                                     'mirror', description='Mirror the effect', default=False): bool})

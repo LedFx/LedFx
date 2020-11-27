@@ -1,4 +1,3 @@
-from ledfx.config import save_config
 from ledfx.api import RestEndpoint
 from ledfx.utils import generate_id, async_fire_and_forget
 from aiohttp import web

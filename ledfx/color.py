@@ -44,8 +44,9 @@ COLORS = {
 }
 
 GRADIENTS = {
-    "Spectral": {
-        "colors": ["red", "orange", "yellow", "green", "green-turquoise", "blue", "purple", "pink"]
+    "Rainbow": {
+        "colors": ["red", "orange", "yellow", "green",
+                   "green-turquoise", "blue", "purple", "pink"]
     },
     "Dancefloor": {
         "colors": ["red", "pink", "blue"]

@@ -3,7 +3,6 @@ from subprocess import PIPE, Popen
 import concurrent.futures
 import voluptuous as vol
 from abc import ABC
-import threading
 import logging
 import inspect
 import importlib

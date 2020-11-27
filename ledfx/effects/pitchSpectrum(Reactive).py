@@ -3,9 +3,6 @@ from ledfx.effects.gradient import GradientEffect
 from ledfx.effects import mix_colors
 from ledfx.color import COLORS
 import voluptuous as vol
-import numpy as np
-import aubio
-
 
 class PitchSpectrumAudioEffect(AudioReactiveEffect, GradientEffect):
 

@@ -80,6 +80,7 @@ class AudioInputSource(object):
         self.pre_emphasis = None
         if self._config['pre_emphasis']:
             self.pre_emphasis = aubio.digital_filter(3)
+            #
             # old, do not use
             #self.pre_emphasis.set_biquad(1., -self._config['pre_emphasis'], 0, 0, 0)
 

@@ -1,6 +1,5 @@
 from ledfx.config import save_config
 from ledfx.api import RestEndpoint
-from ledfx.utils import generate_id
 from aiohttp import web
 import logging
 import json

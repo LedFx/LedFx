@@ -9,9 +9,6 @@ import zeroconf
 import logging
 import asyncio
 import socket
-import time
-import os
-import re
 
 _LOGGER = logging.getLogger(__name__)
 

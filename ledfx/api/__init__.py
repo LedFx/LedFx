@@ -1,8 +1,7 @@
 from ledfx.utils import BaseRegistry, RegistryLoader
 from aiohttp import web
-import logging
 import inspect
-import json
+
 
 
 @BaseRegistry.no_registration

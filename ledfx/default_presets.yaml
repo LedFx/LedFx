@@ -47,18 +47,18 @@ bar(Reactive):
       mirror: true
       mode: bounce
     name: Smooth Bounce
-  spectral-lr:
+  Rainbow-lr:
     config:
       blur: 0.0
       brightness: 1.0
       color_step: 0.125
       ease_method: ease_out
       flip: false
-      gradient_name: Spectral
+      gradient_name: Rainbow
       gradient_roll: 0
       mirror: false
       mode: wipe
-    name: Spectral LR
+    name: Rainbow LR
 energy(Reactive):
   clear-sky:
     config:
@@ -140,7 +140,7 @@ fade:
       blur: 4.555260047376609
       brightness: 1.0
       flip: true
-      gradient_name: Spectral
+      gradient_name: Rainbow
       gradient_roll: 1
       mirror: false
       speed: 5.0
@@ -205,25 +205,25 @@ gradient:
       modulation_speed: 0.5
       speed: 1.0
     name: Rolling Sunset
-  spectral-roll:
+  Rainbow-roll:
     config:
       blur: 0.24438981530504167
       brightness: 0.7114940200156161
       flip: false
-      gradient_name: Spectral
+      gradient_name: Rainbow
       gradient_roll: 1
       mirror: true
       modulate: true
       modulation_effect: sine
       modulation_speed: 0.9690619871670397
       speed: 5.608624445883839
-    name: Spectral Roll
+    name: Rainbow Roll
   spectrum:
     config:
       blur: 0.24438981530504167
       brightness: 0.7114940200156161
       flip: false
-      gradient_name: Spectral
+      gradient_name: Rainbow
       gradient_roll: 0
       mirror: false
       modulate: false
@@ -345,18 +345,18 @@ multiBar(Reactive):
       mirror: true
       mode: cascade
     name: Red Blue Expanse
-  spectral-oscillation:
+  Rainbow-oscillation:
     config:
       blur: 0.0
       brightness: 1.0
       color_step: 0.125
       ease_method: ease_in_out
       flip: false
-      gradient_name: Spectral
+      gradient_name: Rainbow
       gradient_roll: 0
       mirror: false
       mode: wipe
-    name: Spectral Oscillation
+    name: Rainbow Oscillation
 rain(Reactive):
   cold-drops:
     config:
@@ -804,7 +804,7 @@ wavelength(Reactive):
       blur: 3.0
       brightness: 1.0
       flip: false
-      gradient_name: Spectral
+      gradient_name: Rainbow
       gradient_roll: 0
       mirror: false
     name: Classic
