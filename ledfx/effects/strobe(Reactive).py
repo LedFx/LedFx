@@ -28,6 +28,6 @@ class Strobe(AudioReactiveEffect):
         self.f = MAPPINGS[self._config["frequency"]]
 
     def audio_data_updated(self, data):
-        beat_oscillator, beat_now = data.oscillator()
+        beat_oscillator = data.oscillator()
         brightness = (-beat_oscillator % (2 / self.f)) * (self.f / 2)
         self.pixels = np.tile(self.color * brightness, (self.pixel_count, 1))

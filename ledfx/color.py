@@ -36,7 +36,6 @@ COLORS = {
     'olive': RGB(85, 107, 47),
     'peach': RGB(255, 100, 100),
     'plum': RGB(221, 160, 221),
-    'purple': RGB(128, 0, 128),
     'sepia': RGB(94, 38, 18),
     'skyblue': RGB(135, 206, 235),
     'steelblue': RGB(70, 130, 180),

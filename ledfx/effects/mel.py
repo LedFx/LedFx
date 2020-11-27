@@ -30,7 +30,7 @@ Functions
 ---------
 """
 
-from numpy import abs, append, arange, insert, linspace, log10, round, zeros, mean
+from numpy import abs, append, arange, linspace, zeros, mean
 from math import log
 
 

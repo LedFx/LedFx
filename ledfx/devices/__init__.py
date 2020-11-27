@@ -2,13 +2,10 @@ from ledfx.utils import BaseRegistry, RegistryLoader, generate_id
 from ledfx.config import save_config
 from ledfx.events import DeviceUpdateEvent, Event
 from abc import abstractmethod
-from threading import Thread
 import voluptuous as vol
 import numpy as np
-import importlib
 import requests
 import zeroconf
-import pkgutil
 import logging
 import asyncio
 import socket

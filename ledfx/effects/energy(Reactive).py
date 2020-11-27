@@ -43,7 +43,7 @@ class EnergyAudioEffect(AudioReactiveEffect):
         highs_idx = int(np.mean(self.pixel_count * data.melbank_highs()))
 
         if self._config["color_cycler"]:
-            beat_oscillator, beat_now = data.oscillator()
+            beat_now = data.oscillator()
             if beat_now:
                 # Cycle between 0,1,2 for lows, mids and highs
                 self.color_cycler = (self.color_cycler + 1) % 3

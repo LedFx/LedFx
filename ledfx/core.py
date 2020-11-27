@@ -1,11 +1,6 @@
 import asyncio
 import logging
 import sys
-import json
-import yaml
-import threading
-from pathlib import Path
-import voluptuous as vol
 from concurrent.futures import ThreadPoolExecutor
 from ledfx.utils import async_fire_and_forget
 from ledfx.http_manager import HttpServer
@@ -130,7 +125,6 @@ class LedFxCore(object):
         tasks = [task for task in asyncio.all_tasks() if task is not
                  asyncio.current_task()]
         list(map(lambda task: task.cancel(), tasks))
-        results = await asyncio.gather(*tasks, return_exceptions=True)
 
         # Save the configuration before shutting down
         save_config(config=self.config, config_dir=self.config_dir)

@@ -48,8 +48,8 @@ class ModulateEffect(Effect):
         self._breath_cycle = np.linspace(0, 9, 9 * _rate)
         self._breath_cycle[:3 * _rate] = 0.4 * \
             np.sin(self._breath_cycle[:3 * _rate] - (np.pi / 2)) + 0.6
-        self._breath_cycle[3 *
-                           _rate:] = np.exp(3 - self._breath_cycle[3 * _rate:]) + 0.2
+        self._breath_cycle[3 * \
+            _rate:] = np.exp(3 - self._breath_cycle[3 * _rate:]) + 0.2
 
     def modulate(self, pixels):
         """

@@ -3,12 +3,11 @@ from ledfx.utils import BaseRegistry, RegistryLoader
 from functools import lru_cache
 import voluptuous as vol
 import numpy as np
-import importlib
+
 import colorsys
-import pkgutil
+
 import logging
-import sys
-import os
+
 
 _LOGGER = logging.getLogger(__name__)
 

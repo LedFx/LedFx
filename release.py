@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 
 import argparse
-from os import device_encoding
-import sys
 import re
 import subprocess
 import shutil

@@ -10,9 +10,9 @@ from ledfx.events import GraphUpdateEvent
 import ledfx.effects.math as math
 from functools import lru_cache
 import numpy as np
-import collections
+
 import aubio
-from aubio import fvec, cvec, filterbank, float_type
+
 from math import log
 
 _LOGGER = logging.getLogger(__name__)

@@ -9,7 +9,6 @@ import inspect
 import importlib
 import pkgutil
 import re
-import importlib
 import sys
 import os
 
@@ -31,8 +30,9 @@ def install_package(package):
 
 def import_or_install(package):
     try:
-        return importlib.import_module(package)
         print("imported package")
+        return importlib.import_module(package)
+
     except ImportError:
         install_package(package)
         try:
@@ -267,7 +267,7 @@ class RegistryLoader(object):
                 path = path[:-1]
 
             try:
-                module = imp.load_source(name, path)
+                module = importlib.import_module(name, path)
                 sys.modules[name] = module
             except SyntaxError as e:
                 _LOGGER.error("Failed to reload {}: {}".format(name, e))
@@ -276,7 +276,6 @@ class RegistryLoader(object):
 
     def reload(self, force=False):
         """Reloads the registry"""
-
         found = self.discover_modules(self._package)
         _LOGGER.info("Reloading {} from {}".format(found, self._package))
         for name in found:
