@@ -8,9 +8,9 @@ _LOGGER = logging.getLogger(__name__)
 class Event:
     """Base for events"""
 
-    LEDFX_SHUTDOWN = 'shutdown'
-    DEVICE_UPDATE = 'device_update'
-    GRAPH_UPDATE = 'graph_update'
+    LEDFX_SHUTDOWN = "shutdown"
+    DEVICE_UPDATE = "device_update"
+    GRAPH_UPDATE = "graph_update"
 
     def __init__(self, type: str):
         self.event_type = type
@@ -32,10 +32,8 @@ class GraphUpdateEvent(Event):
     """Event emmitted when a device's pixels are updated"""
 
     def __init__(
-            self,
-            graph_id: str,
-            melbank: np.ndarray,
-            frequencies: np.ndarray):
+        self, graph_id: str, melbank: np.ndarray, frequencies: np.ndarray
+    ):
         super().__init__(Event.GRAPH_UPDATE)
         self.graph_id = graph_id
         self.melbank = melbank.tolist()
@@ -64,7 +62,6 @@ class EventListener:
 
 
 class Events:
-
     def __init__(self, ledfx):
         self._ledfx = ledfx
         self._listeners = {}
@@ -80,10 +77,8 @@ class Events:
                 self._ledfx.loop.call_soon(listener.callback, event)
 
     def add_listener(
-            self,
-            callback: Callable,
-            event_type: str,
-            event_filter: dict = {}) -> None:
+        self, callback: Callable, event_type: str, event_filter: dict = {}
+    ) -> None:
 
         listener = EventListener(callback, event_filter)
         if event_type in self._listeners:

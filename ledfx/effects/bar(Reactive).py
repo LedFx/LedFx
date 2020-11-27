@@ -11,38 +11,27 @@ class BarAudioEffect(AudioReactiveEffect, GradientEffect):
     CONFIG_SCHEMA = vol.Schema(
         {
             vol.Optional(
-                'gradient_name',
-                description='Color scheme to cycle through',
-                default='Rainbow'): vol.In(
-                list(
-                    GRADIENTS.keys())),
+                "gradient_name",
+                description="Color scheme to cycle through",
+                default="Rainbow",
+            ): vol.In(list(GRADIENTS.keys())),
             vol.Optional(
-                'mode',
-                description='Choose from different animations',
-                default='wipe'): vol.In(
-                list(
-                    [
-                        "bounce",
-                        "wipe",
-                        "in-out"])),
+                "mode",
+                description="Choose from different animations",
+                default="wipe",
+            ): vol.In(list(["bounce", "wipe", "in-out"])),
             vol.Optional(
-                'ease_method',
-                description='Acceleration profile of bar',
-                default='ease_out'): vol.In(
-                list(
-                    [
-                        "ease_in_out",
-                        "ease_in",
-                        "ease_out",
-                        "linear"])),
+                "ease_method",
+                description="Acceleration profile of bar",
+                default="ease_out",
+            ): vol.In(list(["ease_in_out", "ease_in", "ease_out", "linear"])),
             vol.Optional(
-                'color_step',
-                description='Amount of color change per beat',
-                default=0.125): vol.All(
-                vol.Coerce(float),
-                vol.Range(
-                    min=0.0625,
-                    max=0.5))})
+                "color_step",
+                description="Amount of color change per beat",
+                default=0.125,
+            ): vol.All(vol.Coerce(float), vol.Range(min=0.0625, max=0.5)),
+        }
+    )
 
     def config_updated(self, config):
         self.phase = 0
@@ -55,9 +44,9 @@ class BarAudioEffect(AudioReactiveEffect, GradientEffect):
         if self._config["ease_method"] == "ease_in_out":
             x = 0.5 * np.sin(np.pi * (beat_oscillator - 0.5)) + 0.5
         elif self._config["ease_method"] == "ease_in":
-            x = beat_oscillator**2
+            x = beat_oscillator ** 2
         elif self._config["ease_method"] == "ease_out":
-            x = -(beat_oscillator - 1)**2 + 1
+            x = -((beat_oscillator - 1) ** 2) + 1
         elif self._config["ease_method"] == "linear":
             x = beat_oscillator
 
@@ -98,7 +87,12 @@ class BarAudioEffect(AudioReactiveEffect, GradientEffect):
         # Construct the bar
         color = self.get_gradient_color(self.color_idx)
         p = np.zeros(np.shape(self.pixels))
-        p[int(self.pixel_count * bar_start):int(self.pixel_count * bar_end), :] = color
+        p[
+            int(self.pixel_count * bar_start) : int(
+                self.pixel_count * bar_end
+            ),
+            :,
+        ] = color
 
         # Update the pixel values
         self.pixels = p

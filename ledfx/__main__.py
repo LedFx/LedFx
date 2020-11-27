@@ -24,8 +24,11 @@ import warnings
 from pyupdater.client import Client
 
 from ledfx.consts import (
-    REQUIRED_PYTHON_VERSION, REQUIRED_PYTHON_STRING,
-    PROJECT_VERSION, PROJECT_NAME)
+    REQUIRED_PYTHON_VERSION,
+    REQUIRED_PYTHON_STRING,
+    PROJECT_VERSION,
+    PROJECT_NAME,
+)
 from ledfx.core import LedFxCore
 import ledfx.config as config_helpers
 
@@ -39,7 +42,7 @@ def validate_python() -> None:
     """Validate the python version for when manually running"""
 
     if sys.version_info[:3] < REQUIRED_PYTHON_VERSION:
-        print(('Python {} is required.').format(REQUIRED_PYTHON_STRING))
+        print(("Python {} is required.").format(REQUIRED_PYTHON_STRING))
         sys.exit(1)
 
 
@@ -48,82 +51,91 @@ def setup_logging(loglevel):
 
     loglevel = loglevel if loglevel else logging.WARNING
     logformat = "[%(asctime)s] %(levelname)s:%(name)s:%(message)s"
-    logging.basicConfig(stream=sys.stdout,
-                        format=logformat, datefmt="%Y-%m-%d %H:%M:%S")
+    logging.basicConfig(
+        stream=sys.stdout, format=logformat, datefmt="%Y-%m-%d %H:%M:%S"
+    )
     logging.getLogger().setLevel(loglevel)
     logging.addLevelName(PYUPDATERLOGLEVEL, "Updater")
 
     # Suppress some of the overly verbose logs
-    logging.getLogger('sacn').setLevel(logging.WARNING)
-    logging.getLogger('aiohttp.access').setLevel(logging.WARNING)
-    logging.getLogger('pyupdater').setLevel(logging.WARNING)
+    logging.getLogger("sacn").setLevel(logging.WARNING)
+    logging.getLogger("aiohttp.access").setLevel(logging.WARNING)
+    logging.getLogger("pyupdater").setLevel(logging.WARNING)
 
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="A Networked LED Effect Controller")
+        description="A Networked LED Effect Controller"
+    )
     parser.add_argument(
-        '--version',
-        action='version',
-        version='ledfx {ver}'.format(ver=PROJECT_VERSION))
+        "--version",
+        action="version",
+        version="ledfx {ver}".format(ver=PROJECT_VERSION),
+    )
     parser.add_argument(
-        '-c',
-        '--config',
+        "-c",
+        "--config",
         dest="config",
         help="Directory that contains the configuration files",
         default=config_helpers.get_default_config_directory(),
-        type=str)
+        type=str,
+    )
     parser.add_argument(
-        '--open-ui',
-        action='store_true',
-        help='Automatically open the webinterface')
+        "--open-ui",
+        action="store_true",
+        help="Automatically open the webinterface",
+    )
     parser.add_argument(
-        '-v',
-        '--verbose',
+        "-v",
+        "--verbose",
         dest="loglevel",
         help="set loglevel to INFO",
-        action='store_const',
-        const=logging.INFO)
+        action="store_const",
+        const=logging.INFO,
+    )
     parser.add_argument(
-        '-vv',
-        '--very-verbose',
+        "-vv",
+        "--very-verbose",
         dest="loglevel",
         help="set loglevel to DEBUG",
-        action='store_const',
-        const=logging.DEBUG)
+        action="store_const",
+        const=logging.DEBUG,
+    )
     parser.add_argument(
-        '-p',
-        '--port',
+        "-p",
+        "--port",
         dest="port",
         help="Web interface port",
         default=None,
-        type=int)
+        type=int,
+    )
     parser.add_argument(
-        '--host',
+        "--host",
         dest="host",
         help="The address to host LedFx web interface",
         default=None,
-        type=str)
+        type=str,
+    )
     return parser.parse_args()
 
 
 def check_frozen():
-    return getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS')
+    return getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS")
 
 
 def update_ledfx():
 
     # initialize & refresh in one update check client
     class ClientConfig(object):
-        PUBLIC_KEY = 'Txce3TE9BUixsBtqzDba6V5vBYltt/0pw5oKL8ueCDg'
+        PUBLIC_KEY = "Txce3TE9BUixsBtqzDba6V5vBYltt/0pw5oKL8ueCDg"
         APP_NAME = PROJECT_NAME
-        COMPANY_NAME = 'LedFx Developers'
+        COMPANY_NAME = "LedFx Developers"
         HTTP_TIMEOUT = 30
         MAX_DOWNLOAD_RETRIES = 3
-        UPDATE_URLS = ['https://ledfx.app/downloads/']
+        UPDATE_URLS = ["https://ledfx.app/downloads/"]
 
     client = Client(ClientConfig(), refresh=True)
-    _LOGGER.log(PYUPDATERLOGLEVEL, 'Checking for updates...')
+    _LOGGER.log(PYUPDATERLOGLEVEL, "Checking for updates...")
     # First we check for updates.
     # If an update is found an update object will be returned
     # If no updates are available, None will be returned
@@ -135,15 +147,18 @@ def update_ledfx():
         ledfx_update.download()
         # Install and restart
         if ledfx_update.is_downloaded():
-            _LOGGER.log(PYUPDATERLOGLEVEL,
-                        "Update downloaded, extracting and restarting...")
+            _LOGGER.log(
+                PYUPDATERLOGLEVEL,
+                "Update downloaded, extracting and restarting...",
+            )
             ledfx_update.extract_restart()
         else:
             _LOGGER.error("Unable to download update.")
     else:
         # No Updates, into main we go
-        _LOGGER.log(PYUPDATERLOGLEVEL,
-                    "You're all up to date, enjoy the light show!")
+        _LOGGER.log(
+            PYUPDATERLOGLEVEL, "You're all up to date, enjoy the light show!"
+        )
 
 
 def main():
@@ -154,11 +169,10 @@ def main():
     if check_frozen():
         # Import sentry if we're frozen and check for updates
         import ledfx.sentry_config
+
         update_ledfx()
     config_helpers.ensure_config_directory(args.config)
-    ledfx = LedFxCore(config_dir=args.config,
-                      host=args.host,
-                      port=args.port)
+    ledfx = LedFxCore(config_dir=args.config, host=args.host, port=args.port)
 
     ledfx.start(open_ui=args.open_ui)
 

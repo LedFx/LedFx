@@ -9,36 +9,38 @@ from ledfx.consts import MAJOR_VERSION, MICRO_VERSION, MINOR_VERSION
 
 
 def write_version(major, minor, micro):
-    with open('ledfx/consts.py') as fil:
+    with open("ledfx/consts.py") as fil:
         content = fil.read()
 
-    content = re.sub('MAJOR_VERSION = .*\n',
-                     'MAJOR_VERSION = {}\n'.format(major),
-                     content)
-    content = re.sub('MINOR_VERSION = .*\n',
-                     'MINOR_VERSION = {}\n'.format(minor),
-                     content)
-    content = re.sub('MICRO_VERSION = .*\n',
-                     'MICRO_VERSION = {}\n'.format(micro),
-                     content)
+    content = re.sub(
+        "MAJOR_VERSION = .*\n", "MAJOR_VERSION = {}\n".format(major), content
+    )
+    content = re.sub(
+        "MINOR_VERSION = .*\n", "MINOR_VERSION = {}\n".format(minor), content
+    )
+    content = re.sub(
+        "MICRO_VERSION = .*\n", "MICRO_VERSION = {}\n".format(micro), content
+    )
 
-    with open('ledfx/consts.py', 'wt') as fil:
+    with open("ledfx/consts.py", "wt") as fil:
         content = fil.write(content)
 
 
 def execute_command(command):
-    return subprocess.check_output(command.split(' ')).decode('UTF-8').rstrip()
+    return subprocess.check_output(command.split(" ")).decode("UTF-8").rstrip()
 
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Release a new version of LedFx")
-    parser.add_argument('type', help="The type of release",
-                        choices=['major', 'minor', 'micro'])
-    parser.add_argument('branch', help="Branch",
-                        choices=['dev'])
-    parser.add_argument('--no-bump', action='store_true',
-                        help='Create a version bump commit.')
+        description="Release a new version of LedFx"
+    )
+    parser.add_argument(
+        "type", help="The type of release", choices=["major", "minor", "micro"]
+    )
+    parser.add_argument("branch", help="Branch", choices=["dev"])
+    parser.add_argument(
+        "--no-bump", action="store_true", help="Create a version bump commit."
+    )
 
     arguments = parser.parse_args()
 
@@ -67,32 +69,37 @@ def main():
         major = MAJOR_VERSION
         minor = MINOR_VERSION
         micro = MICRO_VERSION
-        if arguments.type == 'major':
+        if arguments.type == "major":
             major += 1
             minor = 0
             micro = 0
-        elif arguments.type == 'minor':
+        elif arguments.type == "minor":
             minor += 1
             micro = 0
-        elif arguments.type == 'micro':
+        elif arguments.type == "micro":
             micro += 1
 
         # Write the new version to consts.py
         write_version(major, minor, micro)
 
-        subprocess.run(['git',
-                        'commit',
-                        '-am',
-                        'Version Bump for Release {}.{}.{}'.format(major,
-                                                                   minor,
-                                                                   micro)])
-        subprocess.run(['git', 'push', 'origin', branch])
+        subprocess.run(
+            [
+                "git",
+                "commit",
+                "-am",
+                "Version Bump for Release {}.{}.{}".format(
+                    major, minor, micro
+                ),
+            ]
+        )
+        subprocess.run(["git", "push", "origin", branch])
 
     shutil.rmtree("dist", ignore_errors=True)
-    subprocess.run(['python', 'setup.py', 'sdist', 'bdist_wheel'])
-    subprocess.run(['python', '-m', 'twine', 'upload',
-                    'dist/*', '--skip-existing'])
+    subprocess.run(["python", "setup.py", "sdist", "bdist_wheel"])
+    subprocess.run(
+        ["python", "-m", "twine", "upload", "dist/*", "--skip-existing"]
+    )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

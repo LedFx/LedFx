@@ -19,32 +19,35 @@ class Device(BaseRegistry):
     CONFIG_SCHEMA = vol.Schema(
         {
             vol.Required(
-                'name',
-                description='Friendly name for the device'): str,
+                "name", description="Friendly name for the device"
+            ): str,
             vol.Optional(
-                'max_brightness',
-                description='Max brightness for the device',
-                default=1.0): vol.All(
-                    vol.Coerce(float),
-                    vol.Range(
-                        min=0,
-                        max=1)),
+                "max_brightness",
+                description="Max brightness for the device",
+                default=1.0,
+            ): vol.All(vol.Coerce(float), vol.Range(min=0, max=1)),
             vol.Optional(
-                'center_offset',
-                description='Number of pixels from the preceived center of the device',
-                default=0): int,
+                "center_offset",
+                description="Number of pixels from the preceived center of the device",
+                default=0,
+            ): int,
             vol.Optional(
-                'refresh_rate',
-                description='Rate that pixels are sent to the device',
-                default=60): int,
+                "refresh_rate",
+                description="Rate that pixels are sent to the device",
+                default=60,
+            ): int,
             vol.Optional(
-                'force_refresh',
-                description='Force the device to always refresh',
-                default=False): bool,
+                "force_refresh",
+                description="Force the device to always refresh",
+                default=False,
+            ): bool,
             vol.Optional(
-                'preview_only',
-                description='Preview the pixels without updating the device',
-                default=False): bool})
+                "preview_only",
+                description="Preview the pixels without updating the device",
+                default=False,
+            ): bool,
+        }
+    )
 
     _active = False
     _output_thread = None
@@ -67,14 +70,16 @@ class Device(BaseRegistry):
         pass
 
     def set_effect(self, effect, start_pixel=None, end_pixel=None):
-        self.fade_duration = self._config['refresh_rate'] * \
-            self._ledfx.config['fade']
+        self.fade_duration = (
+            self._config["refresh_rate"] * self._ledfx.config["fade"]
+        )
         self.fade_timer = self.fade_duration
 
         if self._active_effect is not None:
             self._fadeout_effect = self._active_effect
             self._ledfx.loop.call_later(
-                self._ledfx.config['fade'], self.clear_fadeout_effect)
+                self._ledfx.config["fade"], self.clear_fadeout_effect
+            )
 
         self._active_effect = effect
         self._active_effect.activate(self.pixel_count)
@@ -83,12 +88,14 @@ class Device(BaseRegistry):
             self.activate()
 
     def clear_effect(self):
-        self.fade_duration = self._config['refresh_rate'] * \
-            self._ledfx.config['fade']
+        self.fade_duration = (
+            self._config["refresh_rate"] * self._ledfx.config["fade"]
+        )
         self.fade_timer = -self.fade_duration
 
         self._ledfx.loop.call_later(
-            self._ledfx.config['fade'], self.clear_frame)
+            self._ledfx.config["fade"], self.clear_frame
+        )
 
     def clear_fadeout_effect(self):
         if self._fadeout_effect is not None:
@@ -104,8 +111,9 @@ class Device(BaseRegistry):
             # Clear all the pixel data before deactivating the device
             self.assembled_frame = np.zeros((self.pixel_count, 3))
             self.flush(self.assembled_frame)
-            self._ledfx.events.fire_event(DeviceUpdateEvent(
-                self.id, self.assembled_frame))
+            self._ledfx.events.fire_event(
+                DeviceUpdateEvent(self.id, self.assembled_frame)
+            )
 
             self.deactivate()
 
@@ -117,18 +125,20 @@ class Device(BaseRegistry):
         # Assemble the frame if necessary, if nothing changed just sleep
         self.assembled_frame = self.assemble_frame()
         if self.assembled_frame is not None:
-            if not self._config['preview_only']:
+            if not self._config["preview_only"]:
                 self.flush(self.assembled_frame)
 
             def trigger_device_update_event():
-                self._ledfx.events.fire_event(DeviceUpdateEvent(
-                    self.id, self.assembled_frame))
+                self._ledfx.events.fire_event(
+                    DeviceUpdateEvent(self.id, self.assembled_frame)
+                )
+
             self._ledfx.loop.call_soon_threadsafe(trigger_device_update_event)
 
     def thread_function(self):
         # TODO: Evaluate switching over to asyncio with UV loop optimization
         # instead of spinning a seperate thread.
-        sleep_interval = 1 / self._config['refresh_rate']
+        sleep_interval = 1 / self._config["refresh_rate"]
 
         if self._active:
             self._ledfx.loop.call_later(sleep_interval, self.thread_function)
@@ -155,11 +165,14 @@ class Device(BaseRegistry):
         frame = None
         if self._active_effect._dirty:
             # Get and process active effect frame
-            frame = np.clip(self._active_effect.pixels *
-                            self._config['max_brightness'], 0, 255)
-            if self._config['center_offset']:
-                frame = np.roll(frame, self._config['center_offset'], axis=0)
-            self._active_effect._dirty = self._config['force_refresh']
+            frame = np.clip(
+                self._active_effect.pixels * self._config["max_brightness"],
+                0,
+                255,
+            )
+            if self._config["center_offset"]:
+                frame = np.roll(frame, self._config["center_offset"], axis=0)
+            self._active_effect._dirty = self._config["force_refresh"]
 
             # Handle fading effect in/out if just turned on or off
             if self.fade_timer == 0:
@@ -179,14 +192,16 @@ class Device(BaseRegistry):
             if self._fadeout_effect._dirty:
                 # Get and process fadeout effect frame
                 fadeout_frame = np.clip(
-                    self._fadeout_effect.pixels *
-                    self._config['max_brightness'],
+                    self._fadeout_effect.pixels
+                    * self._config["max_brightness"],
                     0,
-                    255)
-                if self._config['center_offset']:
+                    255,
+                )
+                if self._config["center_offset"]:
                     fadeout_frame = np.roll(
-                        fadeout_frame, self._config['center_offset'], axis=0)
-                self._fadeout_effect._dirty = self._config['force_refresh']
+                        fadeout_frame, self._config["center_offset"], axis=0
+                    )
+                self._fadeout_effect._dirty = self._config["force_refresh"]
 
                 # handle fading out the fadeout frame
                 if self.fade_timer:
@@ -200,7 +215,7 @@ class Device(BaseRegistry):
 
     def activate(self):
         self._active = True
-        #self._device_thread = Thread(target = self.thread_function)
+        # self._device_thread = Thread(target = self.thread_function)
         # self._device_thread.start()
         self._device_thread = None
         self.thread_function()
@@ -220,21 +235,21 @@ class Device(BaseRegistry):
 
     @property
     def name(self):
-        return self._config['name']
+        return self._config["name"]
 
     @property
     def max_brightness(self):
-        return self._config['max_brightness'] * 256
+        return self._config["max_brightness"] * 256
 
     @property
     def refresh_rate(self):
-        return self._config['refresh_rate']
+        return self._config["refresh_rate"]
 
 
 class Devices(RegistryLoader):
     """Thin wrapper around the device registry that manages devices"""
 
-    PACKAGE_NAME = 'ledfx.devices'
+    PACKAGE_NAME = "ledfx.devices"
 
     def __init__(self, ledfx):
         super().__init__(ledfx, Device, self.PACKAGE_NAME)
@@ -242,28 +257,31 @@ class Devices(RegistryLoader):
         def cleanup_effects(e):
             self.clear_all_effects()
 
-        self._ledfx.events.add_listener(
-            cleanup_effects, Event.LEDFX_SHUTDOWN)
+        self._ledfx.events.add_listener(cleanup_effects, Event.LEDFX_SHUTDOWN)
 
     def create_from_config(self, config):
         for device in config:
             _LOGGER.info("Loading device from config: {}".format(device))
             self._ledfx.devices.create(
-                id=device['id'],
-                type=device['type'],
-                config=device['config'],
-                ledfx=self._ledfx)
-            if 'effect' in device:
+                id=device["id"],
+                type=device["type"],
+                config=device["config"],
+                ledfx=self._ledfx,
+            )
+            if "effect" in device:
                 try:
                     effect = self._ledfx.effects.create(
                         ledfx=self._ledfx,
-                        type=device['effect']['type'],
-                        config=device['effect']['config'])
-                    self._ledfx.devices.get_device(
-                        device['id']).set_effect(effect)
+                        type=device["effect"]["type"],
+                        config=device["effect"]["config"],
+                    )
+                    self._ledfx.devices.get_device(device["id"]).set_effect(
+                        effect
+                    )
                 except vol.MultipleInvalid:
                     _LOGGER.warning(
-                        'Effect schema changed. Not restoring effect')
+                        "Effect schema changed. Not restoring effect"
+                    )
 
     def clear_all_effects(self):
         for device in self.values():
@@ -282,7 +300,8 @@ class Devices(RegistryLoader):
         zeroconf_obj = zeroconf.Zeroconf()
         listener = MyListener(self._ledfx)
         browser = zeroconf.ServiceBrowser(
-            zeroconf_obj, "_wled._tcp.local.", listener)
+            zeroconf_obj, "_wled._tcp.local.", listener
+        )
         try:
             await asyncio.sleep(10)
         finally:
@@ -331,7 +350,7 @@ class MyListener:
                 "universe_size": unisize,
                 "name": wledname,
                 "pixel_count": wledcount,
-                "ip_address": address
+                "ip_address": address,
             }
 
             # Check this device doesn't share IP with any other device
@@ -340,17 +359,22 @@ class MyListener:
                     return
 
             # Create the device
-            _LOGGER.info("Adding device of type {} with config {}".format(
-                device_type, device_config))
+            _LOGGER.info(
+                "Adding device of type {} with config {}".format(
+                    device_type, device_config
+                )
+            )
             device = self._ledfx.devices.create(
                 id=device_id,
                 type=device_type,
                 config=device_config,
-                ledfx=self._ledfx)
+                ledfx=self._ledfx,
+            )
 
             # Update and save the configuration
-            self._ledfx.config['devices'].append(
-                {'id': device.id, 'type': device.type, 'config': device.config})
+            self._ledfx.config["devices"].append(
+                {"id": device.id, "type": device.type, "config": device.config}
+            )
             save_config(
-                config=self._ledfx.config,
-                config_dir=self._ledfx.config_dir)
+                config=self._ledfx.config, config_dir=self._ledfx.config_dir
+            )

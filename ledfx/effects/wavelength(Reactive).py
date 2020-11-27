@@ -13,20 +13,15 @@ class WavelengthAudioEffect(AudioReactiveEffect, GradientEffect):
     CONFIG_SCHEMA = vol.Schema(
         {
             vol.Optional(
-                'blur',
-                description='Amount to blur the effect',
-                default=3.0): vol.All(
-                vol.Coerce(float),
-                vol.Range(
-                    min=0.0,
-                    max=10))})
+                "blur", description="Amount to blur the effect", default=3.0
+            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=10))
+        }
+    )
 
     def config_updated(self, config):
 
         # Create the filters used for the effect
-        self._r_filter = self.create_filter(
-            alpha_decay=0.2,
-            alpha_rise=0.99)
+        self._r_filter = self.create_filter(alpha_decay=0.2, alpha_rise=0.99)
 
     def audio_data_updated(self, data):
 

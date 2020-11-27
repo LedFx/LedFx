@@ -17,37 +17,40 @@ class LedFxCore(object):
         self.config_dir = config_dir
         self.config = load_config(config_dir)
         self.config["default_presets"] = load_default_presets()
-        host = host if host else self.config['host']
-        port = port if port else self.config['port']
+        host = host if host else self.config["host"]
+        port = port if port else self.config["port"]
 
-        if sys.platform == 'win32':
+        if sys.platform == "win32":
             self.loop = asyncio.ProactorEventLoop()
         else:
             self.loop = asyncio.get_event_loop()
-        executor_opts = {'max_workers': self.config.get('max_workers')}
+        executor_opts = {"max_workers": self.config.get("max_workers")}
 
         self.executor = ThreadPoolExecutor(**executor_opts)
         self.loop.set_default_executor(self.executor)
         self.loop.set_exception_handler(self.loop_exception_handler)
 
         self.events = Events(self)
-        self.http = HttpServer(
-            ledfx=self, host=host, port=port)
+        self.http = HttpServer(ledfx=self, host=host, port=port)
         self.exit_code = None
 
     def dev_enabled(self):
-        return self.config['dev_mode']
+        return self.config["dev_mode"]
 
     def loop_exception_handler(self, loop, context):
         kwargs = {}
-        exception = context.get('exception')
+        exception = context.get("exception")
         if exception:
-            kwargs['exc_info'] = (type(exception), exception,
-                                  exception.__traceback__)
+            kwargs["exc_info"] = (
+                type(exception),
+                exception,
+                exception.__traceback__,
+            )
 
         _LOGGER.error(
-            'Exception in core event loop: {}'.format(context['message']),
-            **kwargs)
+            "Exception in core event loop: {}".format(context["message"]),
+            **kwargs,
+        )
 
     async def flush_loop(self):
         await asyncio.sleep(0, loop=self.loop)
@@ -57,7 +60,7 @@ class LedFxCore(object):
 
         # Windows does not seem to handle Ctrl+C well so as a workaround
         # register a handler and manually stop the app
-        if sys.platform == 'win32':
+        if sys.platform == "win32":
             import win32api
 
             def handle_win32_interrupt(sig, func=None):
@@ -69,8 +72,9 @@ class LedFxCore(object):
         try:
             self.loop.run_forever()
         except KeyboardInterrupt:
-            self.loop.call_soon_threadsafe(self.loop.create_task,
-                                           self.async_stop())
+            self.loop.call_soon_threadsafe(
+                self.loop.create_task, self.async_stop()
+            )
             self.loop.run_forever()
         except BaseException:
             # Catch all other exceptions and terminate the application. The loop
@@ -90,7 +94,7 @@ class LedFxCore(object):
         self.effects = Effects(self)
 
         # TODO: Deferr
-        self.devices.create_from_config(self.config['devices'])
+        self.devices.create_from_config(self.config["devices"])
 
         # TODO: This step blocks for 1.5 secs while searching for devices.
         # It needs a callback in 3-5 seconds to kill the zeroconf browser, which is
@@ -101,6 +105,7 @@ class LedFxCore(object):
 
         if open_ui:
             import webbrowser
+
             webbrowser.open(self.http.base_url)
 
         await self.flush_loop()
@@ -112,7 +117,7 @@ class LedFxCore(object):
         if not self.loop:
             return
 
-        print('Stopping LedFx.')
+        print("Stopping LedFx.")
 
         # Fire a shutdown event and flush the loop
         self.events.fire_event(LedFxShutdownEvent())
@@ -122,8 +127,11 @@ class LedFxCore(object):
 
         # Cancel all the remaining task and wait
 
-        tasks = [task for task in asyncio.all_tasks() if task is not
-                 asyncio.current_task()]
+        tasks = [
+            task
+            for task in asyncio.all_tasks()
+            if task is not asyncio.current_task()
+        ]
         list(map(lambda task: task.cancel(), tasks))
 
         # Save the configuration before shutting down

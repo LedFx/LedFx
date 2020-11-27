@@ -12,23 +12,25 @@ class BandsAudioEffect(AudioReactiveEffect, GradientEffect):
     CONFIG_SCHEMA = vol.Schema(
         {
             vol.Optional(
-                'band_count', description='Number of bands', default=6): vol.All(
-                vol.Coerce(int), vol.Range(
-                    min=1, max=16)), vol.Optional(
-                        'align', description='Alignment of bands', default='left'): vol.In(
-                            list(
-                                [
-                                    "left", "right", "invert", "center"])), vol.Optional(
-                                        'gradient_name', description='Color gradient to display', default='Rainbow'): vol.In(
-                                            list(
-                                                GRADIENTS.keys())), vol.Optional(
-                                                    'mirror', description='Mirror the effect', default=False): bool})
+                "band_count", description="Number of bands", default=6
+            ): vol.All(vol.Coerce(int), vol.Range(min=1, max=16)),
+            vol.Optional(
+                "align", description="Alignment of bands", default="left"
+            ): vol.In(list(["left", "right", "invert", "center"])),
+            vol.Optional(
+                "gradient_name",
+                description="Color gradient to display",
+                default="Rainbow",
+            ): vol.In(list(GRADIENTS.keys())),
+            vol.Optional(
+                "mirror", description="Mirror the effect", default=False
+            ): bool,
+        }
+    )
 
     def config_updated(self, config):
         # Create the filters used for the effect
-        self._r_filter = self.create_filter(
-            alpha_decay=0.05,
-            alpha_rise=0.999)
+        self._r_filter = self.create_filter(alpha_decay=0.05, alpha_rise=0.999)
         self.bkg_color = np.array(COLORS["black"], dtype=float)
 
     def audio_data_updated(self, data):
@@ -42,7 +44,8 @@ class BandsAudioEffect(AudioReactiveEffect, GradientEffect):
         out = np.tile(r, (3, 1)).T
         out_clipped = np.clip(out, 0, 1)
         out_split = np.array_split(
-            out_clipped, self._config["band_count"], axis=0)
+            out_clipped, self._config["band_count"], axis=0
+        )
         for i in range(self._config["band_count"]):
             band_width = len(out_split[i])
             color = self.get_gradient_color(i / self._config["band_count"])
@@ -52,7 +55,8 @@ class BandsAudioEffect(AudioReactiveEffect, GradientEffect):
                 out_split[i][:vol] = color
             if self._config["align"] == "center":
                 out_split[i] = np.roll(
-                    out_split[i], (band_width - vol) // 2, axis=0)
+                    out_split[i], (band_width - vol) // 2, axis=0
+                )
             elif self._config["align"] == "invert":
                 out_split[i] = np.roll(out_split[i], -vol // 2, axis=0)
             elif self._config["align"] == "right":

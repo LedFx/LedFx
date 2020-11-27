@@ -10,10 +10,13 @@ from ledfx.events import Event
 _LOGGER = logging.getLogger(__name__)
 MAX_PENDING_MESSAGES = 256
 
-BASE_MESSAGE_SCHEMA = vol.Schema({
-    vol.Required('id'): vol.Coerce(int),
-    vol.Required('type'): str,
-}, extra=vol.ALLOW_EXTRA)
+BASE_MESSAGE_SCHEMA = vol.Schema(
+    {
+        vol.Required("id"): vol.Coerce(int),
+        vol.Required("type"): str,
+    },
+    extra=vol.ALLOW_EXTRA,
+)
 
 # TODO: Have a more well defined registration and a more componetized solution.
 # Could do something like have Device actually provide the handler for Device
@@ -26,6 +29,7 @@ def websocket_handler(type):
     def function(func):
         websocket_handlers[type] = func
         return func
+
     return function
 
 
@@ -38,7 +42,6 @@ class WebsocketEndpoint(RestEndpoint):
 
 
 class WebsocketConnection:
-
     def __init__(self, ledfx):
         self._ledfx = ledfx
         self._socket = None
@@ -46,7 +49,8 @@ class WebsocketConnection:
         self._receiver_task = None
         self._sender_task = None
         self._sender_queue = asyncio.Queue(
-            maxsize=MAX_PENDING_MESSAGES, loop=ledfx.loop)
+            maxsize=MAX_PENDING_MESSAGES, loop=ledfx.loop
+        )
 
     def close(self):
         """Closes the websocket connection"""
@@ -65,29 +69,24 @@ class WebsocketConnection:
         try:
             self._sender_queue.put_nowait(message)
         except asyncio.QueueFull:
-            _LOGGER.error('Client sender queue size exceeded {}'.format(
-                MAX_PENDING_MESSAGES))
+            _LOGGER.error(
+                "Client sender queue size exceeded {}".format(
+                    MAX_PENDING_MESSAGES
+                )
+            )
             self.close()
 
     def send_error(self, id, message):
         """Sends an error string to the websocket connection"""
 
-        return self.send({
-            'id': id,
-            'success': False,
-            'error': {
-                'message': message
-            }
-        })
+        return self.send(
+            {"id": id, "success": False, "error": {"message": message}}
+        )
 
     def send_event(self, id, event):
         """Sends an event notification to the websocket connection"""
 
-        return self.send({
-            'id': id,
-            'type': 'event',
-            **event.to_dict()
-        })
+        return self.send({"id": id, "type": "event", **event.to_dict()})
 
     async def _sender(self):
         """Async write loop to pull from the queue and send"""
@@ -102,8 +101,9 @@ class WebsocketConnection:
                 _LOGGER.debug("Sending websocket message")
                 await self._socket.send_json(message, dumps=json.dumps)
             except TypeError as err:
-                _LOGGER.error('Unable to serialize to JSON: %s\n%s',
-                              err, message)
+                _LOGGER.error(
+                    "Unable to serialize to JSON: %s\n%s", err, message
+                )
 
         _LOGGER.info("Stopping sender")
 
@@ -121,32 +121,33 @@ class WebsocketConnection:
             self.close()
 
         remove_listeners = self._ledfx.events.add_listener(
-            shutdown_handler, Event.LEDFX_SHUTDOWN)
+            shutdown_handler, Event.LEDFX_SHUTDOWN
+        )
 
         try:
             message = await socket.receive_json()
             while message:
                 message = BASE_MESSAGE_SCHEMA(message)
 
-                if message['type'] in websocket_handlers:
-                    websocket_handlers[message['type']](self, message)
+                if message["type"] in websocket_handlers:
+                    websocket_handlers[message["type"]](self, message)
                 else:
                     _LOGGER.error(
-                        ('Received unknown command {}').format(
-                            message['type']))
-                    self.send_error(message['id'], 'Unknown command type.')
+                        ("Received unknown command {}").format(message["type"])
+                    )
+                    self.send_error(message["id"], "Unknown command type.")
 
                 message = await socket.receive_json()
 
         except (vol.Invalid, ValueError) as e:
-            _LOGGER.info('Invalid message format.')
-            self.send_error(message['id'], 'Invalid message format.')
+            _LOGGER.info("Invalid message format.")
+            self.send_error(message["id"], "Invalid message format.")
 
         except TypeError as e:
             if socket.closed:
-                _LOGGER.info('Connection closed by client.')
+                _LOGGER.info("Connection closed by client.")
             else:
-                _LOGGER.exception('Unexpected TypeError: {}'.format(e))
+                _LOGGER.exception("Unexpected TypeError: {}".format(e))
 
         except (asyncio.CancelledError, futures.CancelledError) as e:
             _LOGGER.info("Connection cancelled")
@@ -168,23 +169,31 @@ class WebsocketConnection:
 
         return socket
 
-    @websocket_handler('subscribe_event')
+    @websocket_handler("subscribe_event")
     def subscribe_event_handler(self, message):
-
         def notify_websocket(event):
-            self.send_event(message['id'], event)
+            self.send_event(message["id"], event)
 
-        _LOGGER.info('Websocket subscribing to event {} with filter {}'.format(
-            message.get('event_type'), message.get('event_filter')))
-        self._listeners[message['id']] = self._ledfx.events.add_listener(
-            notify_websocket, message.get('event_type'), message.get('event_filter', {}))
+        _LOGGER.info(
+            "Websocket subscribing to event {} with filter {}".format(
+                message.get("event_type"), message.get("event_filter")
+            )
+        )
+        self._listeners[message["id"]] = self._ledfx.events.add_listener(
+            notify_websocket,
+            message.get("event_type"),
+            message.get("event_filter", {}),
+        )
 
-    @websocket_handler('unsubscribe_event')
+    @websocket_handler("unsubscribe_event")
     def unsubscribe_event_handler(self, message):
 
-        subscription_id = message['subscription_id']
+        subscription_id = message["subscription_id"]
 
-        _LOGGER.info('Websocket unsubscribing from event {}'.format(
-            message.get('event_type')))
+        _LOGGER.info(
+            "Websocket unsubscribing from event {}".format(
+                message.get("event_type")
+            )
+        )
         if subscription_id in self._listeners:
             self._listeners.pop(subscription_id)()

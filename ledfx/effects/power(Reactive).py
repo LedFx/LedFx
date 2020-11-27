@@ -12,22 +12,25 @@ class PowerAudioEffect(AudioReactiveEffect, GradientEffect):
     CONFIG_SCHEMA = vol.Schema(
         {
             vol.Optional(
-                'mirror', description='Mirror the effect', default=True): bool, vol.Optional(
-                'blur', description='Amount to blur the effect', default=0.0): vol.All(
-                    vol.Coerce(float), vol.Range(
-                        min=0.0, max=10)), vol.Optional(
-                            'sparks', description='Flash on percussive hits', default=True): bool})
+                "mirror", description="Mirror the effect", default=True
+            ): bool,
+            vol.Optional(
+                "blur", description="Amount to blur the effect", default=0.0
+            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=10)),
+            vol.Optional(
+                "sparks", description="Flash on percussive hits", default=True
+            ): bool,
+        }
+    )
 
     def config_updated(self, config):
 
         # Create the filters used for the effect
-        self._r_filter = self.create_filter(
-            alpha_decay=0.2,
-            alpha_rise=0.99)
+        self._r_filter = self.create_filter(alpha_decay=0.2, alpha_rise=0.99)
 
         self._bass_filter = self.create_filter(
-            alpha_decay=0.1,
-            alpha_rise=0.99)
+            alpha_decay=0.1, alpha_rise=0.99
+        )
 
         # Would be nice to initialise here with np.shape(self.pixels)
         self.sparks_overlay = None
@@ -59,11 +62,13 @@ class PowerAudioEffect(AudioReactiveEffect, GradientEffect):
             # Apply new sparks
             if onsets["high"]:
                 sparks = np.random.choice(
-                    self.pixel_count, self.pixel_count // 50)
+                    self.pixel_count, self.pixel_count // 50
+                )
                 self.sparks_overlay[sparks] = self.sparks_color
             if onsets["mids"]:
                 sparks = np.random.choice(
-                    self.pixel_count, self.pixel_count // 10)
+                    self.pixel_count, self.pixel_count // 10
+                )
                 self.sparks_overlay[sparks] = self.sparks_color * 1
             # Apply sparks over pixels
             out += self.sparks_overlay

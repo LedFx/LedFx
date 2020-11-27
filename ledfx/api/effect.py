@@ -12,8 +12,8 @@ class EffectEndpoint(RestEndpoint):
     async def get(self, effect_id) -> web.Response:
         effect = self._ledfx.effects.get_class(effect_id)
         if effect is None:
-            response = {'not found': 404}
+            response = {"not found": 404}
             return web.json_response(data=response, status=404)
 
-        response = {'schema': str(effect.schema())}
+        response = {"schema": str(effect.schema())}
         return web.json_response(data=response, status=200)

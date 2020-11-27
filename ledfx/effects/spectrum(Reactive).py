@@ -13,12 +13,8 @@ class SpectrumAudioEffect(AudioReactiveEffect):
     def config_updated(self, config):
 
         # Create all the filters used for the effect
-        self._r_filter = self.create_filter(
-            alpha_decay=0.2,
-            alpha_rise=0.99)
-        self._b_filter = self.create_filter(
-            alpha_decay=0.1,
-            alpha_rise=0.5)
+        self._r_filter = self.create_filter(alpha_decay=0.2, alpha_rise=0.99)
+        self._b_filter = self.create_filter(alpha_decay=0.1, alpha_rise=0.5)
 
     def audio_data_updated(self, data):
 

@@ -12,23 +12,27 @@ class EQAudioEffect(AudioReactiveEffect, GradientEffect):
     CONFIG_SCHEMA = vol.Schema(
         {
             vol.Optional(
-                'align', description='Alignment of bands', default='left'): vol.In(
-                list(
-                    [
-                        "left", "right", "invert", "center"])), vol.Optional(
-                            'gradient_name', description='Color gradient to display', default='Rainbow'): vol.In(
-                                list(
-                                    GRADIENTS.keys())), vol.Optional(
-                                        'gradient_repeat', description='Repeat the gradient into segments', default=6): vol.All(
-                                            vol.Coerce(int), vol.Range(
-                                                min=1, max=16)), vol.Optional(
-                                                    'mirror', description='Mirror the effect', default=False): bool, })
+                "align", description="Alignment of bands", default="left"
+            ): vol.In(list(["left", "right", "invert", "center"])),
+            vol.Optional(
+                "gradient_name",
+                description="Color gradient to display",
+                default="Rainbow",
+            ): vol.In(list(GRADIENTS.keys())),
+            vol.Optional(
+                "gradient_repeat",
+                description="Repeat the gradient into segments",
+                default=6,
+            ): vol.All(vol.Coerce(int), vol.Range(min=1, max=16)),
+            vol.Optional(
+                "mirror", description="Mirror the effect", default=False
+            ): bool,
+        }
+    )
 
     def config_updated(self, config):
         # Create the filters used for the effect
-        self._r_filter = self.create_filter(
-            alpha_decay=0.5,
-            alpha_rise=0.1)
+        self._r_filter = self.create_filter(alpha_decay=0.5, alpha_rise=0.1)
 
     def audio_data_updated(self, data):
         # Grab the filtered and interpolated melbank data
@@ -49,7 +53,8 @@ class EQAudioEffect(AudioReactiveEffect, GradientEffect):
                 r_split[i][:volume] = 1
             if self._config["align"] == "center":
                 r_split[i] = np.roll(
-                    r_split[i], (band_width - volume) // 2, axis=0)
+                    r_split[i], (band_width - volume) // 2, axis=0
+                )
             elif self._config["align"] == "invert":
                 r_split[i] = np.roll(r_split[i], -volume // 2, axis=0)
             elif self._config["align"] == "right":
