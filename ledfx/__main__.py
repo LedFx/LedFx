@@ -20,8 +20,6 @@ import argparse
 import sys
 import logging
 
-_LOGGER = logging.getLogger(__name__)
-
 from pyupdater.client import Client
 
 from ledfx.consts import (
@@ -29,6 +27,10 @@ from ledfx.consts import (
     PROJECT_VERSION, PROJECT_NAME)
 from ledfx.core import LedFxCore
 import ledfx.config as config_helpers
+
+_LOGGER = logging.getLogger(__name__)
+PYUPDATERLOGLEVEL = 35
+
 def validate_python() -> None:
     """Validate the python version for when manually running"""
 
@@ -37,15 +39,22 @@ def validate_python() -> None:
         sys.exit(1)
 
 def setup_logging(loglevel):
+    # Create a custom logging level to display pyupdater progress
+    
+
     loglevel = loglevel if loglevel else logging.WARNING
     logformat = "[%(asctime)s] %(levelname)s:%(name)s:%(message)s"
     logging.basicConfig(stream=sys.stdout,
                         format=logformat, datefmt="%Y-%m-%d %H:%M:%S")
     logging.getLogger().setLevel(loglevel)
+    logging.addLevelName(PYUPDATERLOGLEVEL, "Updater")
+
+
 
     # Suppress some of the overly verbose logs
     logging.getLogger('sacn').setLevel(logging.WARNING)
     logging.getLogger('aiohttp.access').setLevel(logging.WARNING)
+    logging.getLogger('pyupdater').setLevel(logging.WARNING)
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -109,25 +118,25 @@ def update_ledfx():
         UPDATE_URLS = ['https://ledfx.app/downloads/']
 
     client = Client(ClientConfig(), refresh=True)
-    _LOGGER.info('Checking for updates...')
+    _LOGGER.log(PYUPDATERLOGLEVEL,'Checking for updates...')
     # First we check for updates.
     # If an update is found an update object will be returned
     # If no updates are available, None will be returned
     ledfx_update = client.update_check(PROJECT_NAME, PROJECT_VERSION)
     # Download the update
     if ledfx_update is not None:
-        _LOGGER.info("Update found!")
-        _LOGGER.info("Downloading update, please wait...")
+        _LOGGER.log(PYUPDATERLOGLEVEL,"Update found!")
+        _LOGGER.log(PYUPDATERLOGLEVEL,"Downloading update, please wait...")
         ledfx_update.download()
         # Install and restart
         if ledfx_update.is_downloaded():
-            _LOGGER.info("Update downloaded, extracting and restarting...")
+            _LOGGER.log(PYUPDATERLOGLEVEL,"Update downloaded, extracting and restarting...")
             ledfx_update.extract_restart()
         else:
-            _LOGGER.info("Unable to download update.")
+            _LOGGER.error("Unable to download update.")
     else:
         # No Updates, into main we go
-        _LOGGER.info("You're all up to date, enjoy the light show!")
+        _LOGGER.log(PYUPDATERLOGLEVEL,"You're all up to date, enjoy the light show!")
 
 def main():
     """Main entry point allowing external calls"""
