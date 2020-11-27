@@ -20,7 +20,7 @@ class EnergyAudioEffect(AudioReactiveEffect):
 
     def config_updated(self, config):
         # scale decay value between 0.1 and 0.2
-        decay_sensitivity = (self._config["sensitivity"]-0.2)*0.25
+        decay_sensitivity = (self._config["sensitivity"] - 0.2) * 0.25
         self._p_filter = self.create_filter(
             alpha_decay=decay_sensitivity,
             alpha_rise=self._config["sensitivity"])
@@ -36,7 +36,8 @@ class EnergyAudioEffect(AudioReactiveEffect):
 
     def audio_data_updated(self, data):
 
-        # Calculate the low, mids, and high indexes scaling based on the pixel count
+        # Calculate the low, mids, and high indexes scaling based on the pixel
+        # count
         lows_idx = int(np.mean(self.pixel_count * data.melbank_lows()))
         mids_idx = int(np.mean(self.pixel_count * data.melbank_mids()))
         highs_idx = int(np.mean(self.pixel_count * data.melbank_highs()))

@@ -11,13 +11,22 @@ _LOGGER = logging.getLogger(__name__)
 class E131Device(Device):
     """E1.31 device support"""
 
-    CONFIG_SCHEMA = vol.Schema({
-        vol.Required('ip_address', description='Hostname or IP address of the device'): str,
-        vol.Required('pixel_count', description='Number of individual pixels'): vol.All(vol.Coerce(int), vol.Range(min=1)),
-        vol.Optional('universe', description='DMX universe for the device', default=1): vol.All(vol.Coerce(int), vol.Range(min=1)),
-        vol.Optional('universe_size', description='Size of each DMX universe', default=512): vol.All(vol.Coerce(int), vol.Range(min=1)),
-        vol.Optional('channel_offset', description='Channel offset within the DMX universe', default=0): vol.All(vol.Coerce(int), vol.Range(min=0))
-    })
+    CONFIG_SCHEMA = vol.Schema(
+        {
+            vol.Required(
+                'ip_address', description='Hostname or IP address of the device'): str, vol.Required(
+                'pixel_count', description='Number of individual pixels'): vol.All(
+                    vol.Coerce(int), vol.Range(
+                        min=1)), vol.Optional(
+                            'universe', description='DMX universe for the device', default=1): vol.All(
+                                vol.Coerce(int), vol.Range(
+                                    min=1)), vol.Optional(
+                                        'universe_size', description='Size of each DMX universe', default=512): vol.All(
+                                            vol.Coerce(int), vol.Range(
+                                                min=1)), vol.Optional(
+                                                    'channel_offset', description='Channel offset within the DMX universe', default=0): vol.All(
+                                                        vol.Coerce(int), vol.Range(
+                                                            min=0))})
 
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
@@ -47,10 +56,12 @@ class E131Device(Device):
 
         # Configure sACN and start the dedicated thread to flush the buffer
         self._sacn = sacn.sACNsender()
-        for universe in range(self._config['universe'], self._config['universe_end'] + 1):
+        for universe in range(
+                self._config['universe'],
+                self._config['universe_end'] + 1):
             _LOGGER.info("sACN activating universe {}".format(universe))
             self._sacn.activate_output(universe)
-            if (self._config['ip_address'] == None):
+            if (self._config['ip_address'] is None):
                 self._sacn[universe].multicast = True
             else:
                 self._sacn[universe].destination = self._config['ip_address']
@@ -89,7 +100,9 @@ class E131Device(Device):
 
         data = data.flatten()
         current_index = 0
-        for universe in range(self._config['universe'], self._config['universe_end'] + 1):
+        for universe in range(
+                self._config['universe'],
+                self._config['universe_end'] + 1):
             # Calculate offset into the provide input buffer for the channel. There are some
             # cleaner ways this can be done... This is just the quick and dirty
             universe_start = (
@@ -98,7 +111,8 @@ class E131Device(Device):
                 universe - self._config['universe'] + 1) * self._config['universe_size']
 
             dmx_start = max(
-                universe_start, self._config['channel_offset']) % self._config['universe_size']
+                universe_start,
+                self._config['channel_offset']) % self._config['universe_size']
             dmx_end = min(universe_end, self._config['channel_offset'] +
                           self._config['channel_count']) % self._config['universe_size']
             if dmx_end == 0:

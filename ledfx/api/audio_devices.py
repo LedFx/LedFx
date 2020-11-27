@@ -42,8 +42,9 @@ class AudioDevicesEndpoint(RestEndpoint):
 
         info = self._audio.get_host_api_info_by_index(0)
         if index is None:
-            response = {'status': 'failed',
-                        'reason': 'Required attribute "index" was not provided'}
+            response = {
+                'status': 'failed',
+                'reason': 'Required attribute "index" was not provided'}
             return web.json_response(data=response, status=500)
 
         if index not in range(0, info.get('deviceCount')):

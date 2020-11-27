@@ -41,7 +41,7 @@ class LedFxCore(object):
         self.exit_code = None
 
     def dev_enabled(self):
-        return self.config['dev_mode'] == True
+        return self.config['dev_mode']
 
     def loop_exception_handler(self, loop, context):
         kwargs = {}
@@ -77,7 +77,7 @@ class LedFxCore(object):
             self.loop.call_soon_threadsafe(self.loop.create_task,
                                            self.async_stop())
             self.loop.run_forever()
-        except:
+        except BaseException:
             # Catch all other exceptions and terminate the application. The loop
             # exeception handler will take care of logging the actual error and
             # LedFx will cleanly shutdown.

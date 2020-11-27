@@ -64,7 +64,11 @@ def mel_to_hertz(mel):
     return 250.0 * (9**(mel / 3340.0)) - 250.0
 
 
-def melfrequencies_mel_filterbank(num_bands, freq_min, freq_max, num_fft_bands):
+def melfrequencies_mel_filterbank(
+        num_bands,
+        freq_min,
+        freq_max,
+        num_fft_bands):
     """Returns centerfrequencies and band edges for a mel filter bank
     Parameters
     ----------
@@ -154,13 +158,18 @@ def compute_melmat(num_mel_bands=12, freq_min=64, freq_max=8000,
     return (melmat, center_frequencies_hz, freqs)
 
 
-def compute_melmat_from_range(lower_edges_hz, upper_edges_hz, num_fft_bands=513, sample_rate=16000):
+def compute_melmat_from_range(
+        lower_edges_hz,
+        upper_edges_hz,
+        num_fft_bands=513,
+        sample_rate=16000):
 
     melmat = zeros((len(lower_edges_hz), num_fft_bands))
     freqs = linspace(0.0, sample_rate / 2.0, num_fft_bands)
     center_frequencies_hz = mean([lower_edges_hz, upper_edges_hz], axis=0)
 
-    for imelband, (lower, center, upper) in enumerate(zip(lower_edges_hz, center_frequencies_hz, upper_edges_hz)):
+    for imelband, (lower, center, upper) in enumerate(
+            zip(lower_edges_hz, center_frequencies_hz, upper_edges_hz)):
 
         left_slope = (freqs >= lower) == (freqs <= center)
         melmat[imelband, left_slope] = (

@@ -15,7 +15,8 @@ class FXMatrix(Device):
         vol.Required('port', description='Port for the UDP device'): vol.All(vol.Coerce(int), vol.Range(min=1, max=65535)),
         vol.Required('width', description='Number of pixels width'): vol.All(vol.Coerce(int), vol.Range(min=1)),
         vol.Required('height', description='Number of pixels height'): vol.All(vol.Coerce(int), vol.Range(min=1)),
-        # vol.Required('pixel_count', description='Number of individual pixels'): vol.All(vol.Coerce(int), vol.Range(min=1)),
+        # vol.Required('pixel_count', description='Number of individual
+        # pixels'): vol.All(vol.Coerce(int), vol.Range(min=1)),
     })
 
     def activate(self):

@@ -10,14 +10,35 @@ _LOGGER = logging.getLogger(__name__)
 class UDPDevice(Device):
     """Generic UDP device support"""
 
-    CONFIG_SCHEMA = vol.Schema({
-        vol.Required('ip_address', description='Hostname or IP address of the device'): str,
-        vol.Required('port', description='Port for the UDP device'): vol.All(vol.Coerce(int), vol.Range(min=1, max=65535)),
-        vol.Required('pixel_count', description='Number of individual pixels'): vol.All(vol.Coerce(int), vol.Range(min=1)),
-        vol.Optional('include_indexes', description='Include the index for every LED', default=False): bool,
-        vol.Optional('data_prefix', description='Data to be appended in hex format'): str,
-        vol.Optional('data_postfix', description='Data to be prepended in hex format'): str,
-    })
+    CONFIG_SCHEMA = vol.Schema(
+        {
+            vol.Required(
+                'ip_address',
+                description='Hostname or IP address of the device'): str,
+            vol.Required(
+                'port',
+                description='Port for the UDP device'): vol.All(
+                    vol.Coerce(int),
+                    vol.Range(
+                        min=1,
+                        max=65535)),
+            vol.Required(
+                'pixel_count',
+                description='Number of individual pixels'): vol.All(
+                vol.Coerce(int),
+                vol.Range(
+                    min=1)),
+            vol.Optional(
+                'include_indexes',
+                description='Include the index for every LED',
+                default=False): bool,
+            vol.Optional(
+                'data_prefix',
+                description='Data to be appended in hex format'): str,
+            vol.Optional(
+                'data_postfix',
+                description='Data to be prepended in hex format'): str,
+        })
 
     def activate(self):
         self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)

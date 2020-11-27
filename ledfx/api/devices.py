@@ -17,7 +17,7 @@ class DevicesEndpoint(RestEndpoint):
         response = {'status': 'success', 'devices': {}}
         for device in self._ledfx.devices.values():
             response['devices'][device.id] = {
-                'config': device.config, 'id': device.id, 'type': device.type,  'effect': {}}
+                'config': device.config, 'id': device.id, 'type': device.type, 'effect': {}}
             if device.active_effect:
                 effect_response = {}
                 effect_response['config'] = device.active_effect.config
@@ -32,8 +32,9 @@ class DevicesEndpoint(RestEndpoint):
 
         device_config = data.get('config')
         if device_config is None:
-            response = {'status': 'failed',
-                        'reason': 'Required attribute "config" was not provided'}
+            response = {
+                'status': 'failed',
+                'reason': 'Required attribute "config" was not provided'}
             return web.json_response(data=response, status=500)
 
         device_type = data.get('type')

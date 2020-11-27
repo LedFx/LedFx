@@ -7,9 +7,15 @@ import numpy as np
 class MagnitudeAudioEffect(AudioReactiveEffect, GradientEffect):
 
     NAME = "Magnitude"
-    CONFIG_SCHEMA = vol.Schema({
-        vol.Optional('frequency_range', description='Frequency range for the beat detection', default='bass'): vol.In(list(FREQUENCY_RANGES.keys())),
-    })
+    CONFIG_SCHEMA = vol.Schema(
+        {
+            vol.Optional(
+                'frequency_range',
+                description='Frequency range for the beat detection',
+                default='bass'): vol.In(
+                list(
+                    FREQUENCY_RANGES.keys())),
+        })
 
     def config_updated(self, config):
         self._frequency_range = np.linspace(

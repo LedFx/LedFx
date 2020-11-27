@@ -107,9 +107,12 @@ class AudioInputSource(object):
         _LOGGER.info("Audio Input Devices:")
         info = self._audio.get_host_api_info_by_index(0)
         for i in range(0, info.get('deviceCount')):
-            if (self._audio.get_device_info_by_host_api_device_index(0, i).get('maxInputChannels')) > 0:
-                _LOGGER.info("  [{}] {}".format(
-                    i, self._audio.get_device_info_by_host_api_device_index(0, i).get('name')))
+            if (self._audio.get_device_info_by_host_api_device_index(
+                    0, i).get('maxInputChannels')) > 0:
+                _LOGGER.info(
+                    "  [{}] {}".format(
+                        i, self._audio.get_device_info_by_host_api_device_index(
+                            0, i).get('name')))
 
         # Open the audio stream and start processing the input
         self._stream = self._audio.open(
@@ -118,7 +121,8 @@ class AudioInputSource(object):
             channels=1,
             rate=self._config['mic_rate'],
             input=True,
-            frames_per_buffer=self._config['mic_rate'] // self._config['sample_rate'],
+            frames_per_buffer=self._config['mic_rate'] //
+            self._config['sample_rate'],
             stream_callback=self._audio_sample_callback)
         self._stream.start_stream()
 
@@ -261,32 +265,42 @@ class MelbankInputSource(AudioInputSource):
         self.midi_value.cache_clear()
 
     def _initialize_pitch(self):
-        self.pitch_o = aubio.pitch("schmitt",
-                                   self._config['fft_size'],
-                                   self._config['mic_rate'] // self._config['sample_rate'],
-                                   self._config['mic_rate'])
+        self.pitch_o = aubio.pitch(
+            "schmitt",
+            self._config['fft_size'],
+            self._config['mic_rate'] //
+            self._config['sample_rate'],
+            self._config['mic_rate'])
         self.pitch_o.set_unit("midi")
         self.pitch_o.set_tolerance(self._config['pitch_tolerance'])
 
     def _initialize_tempo(self):
-        self.tempo_o = aubio.tempo("default",
-                                   self._config['fft_size'],
-                                   self._config['mic_rate'] // self._config['sample_rate'],
-                                   self._config['mic_rate'])
+        self.tempo_o = aubio.tempo(
+            "default",
+            self._config['fft_size'],
+            self._config['mic_rate'] //
+            self._config['sample_rate'],
+            self._config['mic_rate'])
 
     def _initialize_onset(self):
-        self.onset_high = aubio.onset("specflux",
-                                      self._config['fft_size'],
-                                      self._config['mic_rate'] // self._config['sample_rate'],
-                                      self._config['mic_rate'])
-        self.onset_soft = aubio.onset("phase",
-                                      self._config['fft_size'],
-                                      self._config['mic_rate'] // self._config['sample_rate'],
-                                      self._config['mic_rate'])
-        self.onset_mids = aubio.onset("specdiff",
-                                      self._config['fft_size'],
-                                      self._config['mic_rate'] // self._config['sample_rate'],
-                                      self._config['mic_rate'])
+        self.onset_high = aubio.onset(
+            "specflux",
+            self._config['fft_size'],
+            self._config['mic_rate'] //
+            self._config['sample_rate'],
+            self._config['mic_rate'])
+        self.onset_soft = aubio.onset(
+            "phase",
+            self._config['fft_size'],
+            self._config['mic_rate'] //
+            self._config['sample_rate'],
+            self._config['mic_rate'])
+        self.onset_mids = aubio.onset(
+            "specdiff",
+            self._config['fft_size'],
+            self._config['mic_rate'] //
+            self._config['sample_rate'],
+            self._config['mic_rate'])
 
     def _initialize_oscillator(self):
         self.beat_timestamp = time.time()
@@ -328,7 +342,8 @@ class MelbankInputSource(AudioInputSource):
                 self._config['mic_rate'])
             self.melbank_frequencies = self.melbank_frequencies[1:-1]
 
-        # Slaney coefficients will always produce 40 samples spanning 133Hz to 6000Hz
+        # Slaney coefficients will always produce 40 samples spanning 133Hz to
+        # 6000Hz
         if self._config['coeffs_type'] == 'slaney':
             self.filterbank = aubio.filterbank(40,
                                                self._config['fft_size'])
@@ -427,7 +442,8 @@ class MelbankInputSource(AudioInputSource):
                 self._config['mic_rate'])
             self.melbank_frequencies = self.melbank_frequencies[1:-1]
 
-        # Modified scott_mel, spreads out the low range and compresses the highs
+        # Modified scott_mel, spreads out the low range and compresses the
+        # highs
         if self._config['coeffs_type'] == 'matt_mel':
             def hertz_to_matt(freq):
                 return 3700.0 * log(1 + (freq / 200.0), 13)
@@ -514,9 +530,17 @@ class MelbankInputSource(AudioInputSource):
 
         # Build up some of the common filters
         self.mel_gain = ExpFilter(
-            np.tile(1e-1, self._config['samples']), alpha_decay=0.01, alpha_rise=0.99)
+            np.tile(
+                1e-1,
+                self._config['samples']),
+            alpha_decay=0.01,
+            alpha_rise=0.99)
         self.mel_smoothing = ExpFilter(
-            np.tile(1e-1, self._config['samples']), alpha_decay=0.2, alpha_rise=0.99)
+            np.tile(
+                1e-1,
+                self._config['samples']),
+            alpha_decay=0.2,
+            alpha_rise=0.99)
         self.common_filter = ExpFilter(alpha_decay=0.99, alpha_rise=0.01)
 
     @lru_cache(maxsize=32)
@@ -600,8 +624,9 @@ class MelbankInputSource(AudioInputSource):
             self.beat_timestamp = time.time()
             oscillator = 0
         else:
-            time_since_beat = time.time()-self.beat_timestamp
-            oscillator = 1-(self.beat_period-time_since_beat)/self.beat_period
+            time_since_beat = time.time() - self.beat_timestamp
+            oscillator = 1 - (self.beat_period -
+                              time_since_beat) / self.beat_period
             # ensure it's between 0 and 1. useful when audio cuts
             oscillator = min(1, oscillator)
             oscillator = max(0, oscillator)
@@ -612,7 +637,7 @@ class MelbankInputSource(AudioInputSource):
 class AudioReactiveEffect(Effect):
     """
     Base for audio reactive effects. This really just subscribes
-    to the melbank input source and forwards input along to the 
+    to the melbank input source and forwards input along to the
     subclasses. This can be expanded to do the common r/g/b filters.
     """
 
@@ -620,7 +645,8 @@ class AudioReactiveEffect(Effect):
         _LOGGER.info('Activating AudioReactiveEffect.')
         super().activate(channel)
 
-        if not self._ledfx.audio or id(MelbankInputSource) != id(self._ledfx.audio.__class__):
+        if not self._ledfx.audio or id(MelbankInputSource) != id(
+                self._ledfx.audio.__class__):
             self._ledfx.audio = MelbankInputSource(
                 self._ledfx, self._ledfx.config.get('audio', {}))
 

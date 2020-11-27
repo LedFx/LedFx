@@ -82,8 +82,12 @@ def main():
         # Write the new version to consts.py
         write_version(major, minor, micro)
 
-        subprocess.run([
-            'git', 'commit', '-am', 'Version Bump for Release {}.{}.{}'.format(major, minor, micro)])
+        subprocess.run(['git',
+                        'commit',
+                        '-am',
+                        'Version Bump for Release {}.{}.{}'.format(major,
+                                                                   minor,
+                                                                   micro)])
         subprocess.run(['git', 'push', 'origin', branch])
 
     shutil.rmtree("dist", ignore_errors=True)

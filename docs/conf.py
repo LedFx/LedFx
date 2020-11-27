@@ -36,7 +36,7 @@ PROJECT_GITHUB_URL = 'https://github.com/{}'.format(PROJECT_GITHUB_PATH)
 
 project = '{}'.format(PROJECT_NAME)
 author = '{}'.format(PROJECT_AUTHOR)
-copyright = ('{}'.format(PROJECT_COPYRIGHT)+' & contributors')
+copyright = ('{}'.format(PROJECT_COPYRIGHT) + ' & contributors')
 
 
 # -- General configuration ---------------------------------------------------
@@ -176,8 +176,11 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, '{}.tex'.format(PROJECT_PACKAGE_NAME), '{} Documentation'.format(PROJECT_NAME),
-     PROJECT_AUTHOR, 'manual'),
+    (master_doc,
+     '{}.tex'.format(PROJECT_PACKAGE_NAME),
+     '{} Documentation'.format(PROJECT_NAME),
+     PROJECT_AUTHOR,
+     'manual'),
 ]
 
 
@@ -186,9 +189,11 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, PROJECT_PACKAGE_NAME.lower(), '{} Documentation'.format(PROJECT_NAME),
-     [PROJECT_AUTHOR], 1)
-]
+    (master_doc,
+     PROJECT_PACKAGE_NAME.lower(),
+     '{} Documentation'.format(PROJECT_NAME),
+     [PROJECT_AUTHOR],
+     1)]
 
 
 # -- Options for Texinfo output ----------------------------------------------

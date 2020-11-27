@@ -9,12 +9,20 @@ class BandsAudioEffect(AudioReactiveEffect, GradientEffect):
 
     NAME = "Bands"
 
-    CONFIG_SCHEMA = vol.Schema({
-        vol.Optional('band_count', description='Number of bands', default=6): vol.All(vol.Coerce(int), vol.Range(min=1, max=16)),
-        vol.Optional('align', description='Alignment of bands', default='left'): vol.In(list(["left", "right", "invert", "center"])),
-        vol.Optional('gradient_name', description='Color gradient to display', default='Spectral'): vol.In(list(GRADIENTS.keys())),
-        vol.Optional('mirror', description='Mirror the effect', default=False): bool
-    })
+    CONFIG_SCHEMA = vol.Schema(
+        {
+            vol.Optional(
+                'band_count', description='Number of bands', default=6): vol.All(
+                vol.Coerce(int), vol.Range(
+                    min=1, max=16)), vol.Optional(
+                        'align', description='Alignment of bands', default='left'): vol.In(
+                            list(
+                                [
+                                    "left", "right", "invert", "center"])), vol.Optional(
+                                        'gradient_name', description='Color gradient to display', default='Spectral'): vol.In(
+                                            list(
+                                                GRADIENTS.keys())), vol.Optional(
+                                                    'mirror', description='Mirror the effect', default=False): bool})
 
     def config_updated(self, config):
         # Create the filters used for the effect
@@ -37,16 +45,16 @@ class BandsAudioEffect(AudioReactiveEffect, GradientEffect):
             out_clipped, self._config["band_count"], axis=0)
         for i in range(self._config["band_count"]):
             band_width = len(out_split[i])
-            color = self.get_gradient_color(i/self._config["band_count"])
-            vol = int(out_split[i].max()*band_width)  # length (vol) of band
+            color = self.get_gradient_color(i / self._config["band_count"])
+            vol = int(out_split[i].max() * band_width)  # length (vol) of band
             out_split[i][:] = self.bkg_color
             if vol:
                 out_split[i][:vol] = color
             if self._config["align"] == "center":
                 out_split[i] = np.roll(
-                    out_split[i], (band_width-vol)//2, axis=0)
+                    out_split[i], (band_width - vol) // 2, axis=0)
             elif self._config["align"] == "invert":
-                out_split[i] = np.roll(out_split[i], -vol//2, axis=0)
+                out_split[i] = np.roll(out_split[i], -vol // 2, axis=0)
             elif self._config["align"] == "right":
                 out_split[i] = np.flip(out_split[i], axis=0)
             elif self._config["align"] == "left":

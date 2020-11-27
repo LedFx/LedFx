@@ -9,9 +9,15 @@ import numpy as np
 class SingleColorEffect(TemporalEffect, ModulateEffect):
 
     NAME = "Single Color"
-    CONFIG_SCHEMA = vol.Schema({
-        vol.Optional('color', description='Color of strip', default="red"): vol.In(list(COLORS.keys())),
-    })
+    CONFIG_SCHEMA = vol.Schema(
+        {
+            vol.Optional(
+                'color',
+                description='Color of strip',
+                default="red"): vol.In(
+                list(
+                    COLORS.keys())),
+        })
 
     def config_updated(self, config):
         self.color = np.array(COLORS[self._config['color']], dtype=float)

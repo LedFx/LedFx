@@ -30,8 +30,9 @@ class DeviceEndpoint(RestEndpoint):
         data = await request.json()
         device_config = data.get('config')
         if device_config is None:
-            response = {'status': 'failed',
-                        'reason': 'Required attribute "config" was not provided'}
+            response = {
+                'status': 'failed',
+                'reason': 'Required attribute "config" was not provided'}
             return web.json_response(data=response, status=500)
 
         # TODO: Support dynamic device configuration updates. For now

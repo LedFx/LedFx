@@ -15,13 +15,13 @@ _LOGGER = logging.getLogger(__name__)
 
 def mix_colors(color_1, color_2, ratio):
     if np.array_equal(color_2, []):
-        return (color_1[0] * (1-ratio) + 0,
-                color_1[1] * (1-ratio) + 0,
-                color_1[2] * (1-ratio) + 0)
+        return (color_1[0] * (1 - ratio) + 0,
+                color_1[1] * (1 - ratio) + 0,
+                color_1[2] * (1 - ratio) + 0)
     else:
-        return (color_1[0] * (1-ratio) + color_2[0] * ratio,
-                color_1[1] * (1-ratio) + color_2[1] * ratio,
-                color_1[2] * (1-ratio) + color_2[2] * ratio)
+        return (color_1[0] * (1 - ratio) + color_2[0] * ratio,
+                color_1[1] * (1 - ratio) + color_2[1] * ratio,
+                color_1[2] * (1 - ratio) + color_2[2] * ratio)
 
 
 def fill_solid(pixels, color):
@@ -44,7 +44,8 @@ def mirror_pixels(pixels):
     # and reflect across the middle. The prior logic was broken for
     # non-uniform effects.
     mirror_shape = (np.shape(pixels)[0], 2, np.shape(pixels)[1])
-    return np.append(pixels[::-1], pixels, axis=0).reshape(mirror_shape).mean(axis=1)
+    return np.append(pixels[::-1], pixels,
+                     axis=0).reshape(mirror_shape).mean(axis=1)
 
 
 def flip_pixels(pixels):
@@ -88,11 +89,11 @@ def smooth(x, sigma):
     w = _gaussian_kernel1d(sigma, 0, lw)
     window_len = len(w)
 
-    s = np.r_[x[window_len-1:0:-1], x, x[-1:-window_len:-1]]
-    y = np.convolve(w/w.sum(), s, mode='valid')
+    s = np.r_[x[window_len - 1:0:-1], x, x[-1:-window_len:-1]]
+    y = np.convolve(w / w.sum(), s, mode='valid')
 
     if window_len < len(x):
-        return y[(window_len//2):-(window_len//2)]
+        return y[(window_len // 2):-(window_len // 2)]
     return y[0:len(x)]
 
 
@@ -108,12 +109,17 @@ class Effect(BaseRegistry):
     _active = False
 
     # Basic effect properties that can be applied to all effects
-    CONFIG_SCHEMA = vol.Schema({
-        vol.Optional('blur', description='Amount to blur the effect', default=0.0): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=10)),
-        vol.Optional('flip', description='Flip the effect', default=False): bool,
-        vol.Optional('mirror', description='Mirror the effect', default=False): bool,
-        vol.Optional('brightness', description='Brightness of strip', default=1.0): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
-    })
+    CONFIG_SCHEMA = vol.Schema(
+        {
+            vol.Optional(
+                'blur', description='Amount to blur the effect', default=0.0): vol.All(
+                vol.Coerce(float), vol.Range(
+                    min=0.0, max=10)), vol.Optional(
+                        'flip', description='Flip the effect', default=False): bool, vol.Optional(
+                            'mirror', description='Mirror the effect', default=False): bool, vol.Optional(
+                                'brightness', description='Brightness of strip', default=1.0): vol.All(
+                                    vol.Coerce(float), vol.Range(
+                                        min=0.0, max=1.0)), })
 
     def __init__(self, ledfx, config):
         self._ledfx = ledfx

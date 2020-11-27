@@ -25,13 +25,15 @@ class GraphicsQualityEndpoint(RestEndpoint):
         graphics_quality = data.get('graphics_quality')
 
         if graphics_quality is None:
-            response = {'status': 'failed',
-                        'reason': 'Required attribute "graphics_quality" was not provided'}
+            response = {
+                'status': 'failed',
+                'reason': 'Required attribute "graphics_quality" was not provided'}
             return web.json_response(data=response, status=500)
 
         if graphics_quality not in ["low", "medium", "high", "ultra"]:
-            response = {'status': 'failed', 'reason': 'Invalid graphics_quality [{}]'.format(
-                graphics_quality)}
+            response = {
+                'status': 'failed',
+                'reason': 'Invalid graphics_quality [{}]'.format(graphics_quality)}
             return web.json_response(data=response, status=500)
 
         # Update and save config

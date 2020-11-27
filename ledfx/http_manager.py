@@ -12,7 +12,7 @@ import sys
 
 try:
     base_path = sys._MEIPASS
-except:
+except BaseException:
     base_path = os.path.abspath(".")
 
 _LOGGER = logging.getLogger(__name__)
@@ -54,7 +54,9 @@ class HttpServer(object):
             self.server = await self._ledfx.loop.create_server(self.handler, self.host, self.port)
         except OSError as error:
             _LOGGER.error(
-                "Failed to create HTTP server at port %d: %s", self.port, error)
+                "Failed to create HTTP server at port %d: %s",
+                self.port,
+                error)
 
         self.base_url = ('http://{}:{}').format(self.host, self.port)
         print(('Started webinterface at {}').format(self.base_url))

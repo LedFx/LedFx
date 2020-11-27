@@ -21,7 +21,9 @@ class GradientEffect(Effect):
         vol.Optional('gradient_name', description='Color gradient to display', default='Spectral'): vol.In(list(GRADIENTS.keys())),
         vol.Optional('gradient_roll', description='Amount to shift the gradient', default=0): vol.All(vol.Coerce(int), vol.Range(min=0, max=10)),
         vol.Optional('gradient_repeat', description='Repeat the gradient into segments', default=1): vol.All(vol.Coerce(int), vol.Range(min=1, max=16))
-        # vol.Optional('gradient_method', description='Function used to generate gradient', default = 'cubic_ease'): vol.In(["cubic_ease", "bezier"]),
+        # vol.Optional('gradient_method', description='Function used to
+        # generate gradient', default = 'cubic_ease'): vol.In(["cubic_ease",
+        # "bezier"]),
     })
 
     _gradient_curve = None
@@ -46,13 +48,13 @@ class GradientEffect(Effect):
 
     def _bernstein_poly(self, i, n, t):
         """The Bernstein polynomial of n, i as a function of t"""
-        return self._comb(n, i) * (t**(n-i)) * (1 - t)**i
+        return self._comb(n, i) * (t**(n - i)) * (1 - t)**i
 
     def _ease(self, chunk_len, start_val, end_val, slope=1.5):
         x = np.linspace(0, 1, chunk_len)
         diff = end_val - start_val
         pow_x = np.power(x, slope)
-        return diff*pow_x / (pow_x + np.power(1-x, slope)) + start_val
+        return diff * pow_x / (pow_x + np.power(1 - x, slope)) + start_val
 
     def _color_ease(self, chunk_len, start_color, end_color):
         """Makes a coloured block easing from start to end colour"""
@@ -60,7 +62,11 @@ class GradientEffect(Effect):
                                     start_color[i],
                                     end_color[i]) for i in range(3)])
 
-    def _generate_gradient_curve(self, gradient_colors, gradient_length, repeat):
+    def _generate_gradient_curve(
+            self,
+            gradient_colors,
+            gradient_length,
+            repeat):
 
         # Check to see if we have a custom gradient, or a predefined one and
         # load the colors accordingly
@@ -97,11 +103,11 @@ class GradientEffect(Effect):
         for i in range(len(gradient_split)):
             segment_length = len(gradient_split[i][0])
             t = np.zeros(segment_length)
-            ease_chunks = np.array_split(t, n_colors-1)
+            ease_chunks = np.array_split(t, n_colors - 1)
             color_pairs = np.array(
-                [(self.rgb_list.T[i], self.rgb_list.T[i+1]) for i in range(n_colors-1)])
+                [(self.rgb_list.T[i], self.rgb_list.T[i + 1]) for i in range(n_colors - 1)])
             gradient_split[i] = np.hstack(list(self._color_ease(
-                len(ease_chunks[i]), *color_pairs[i]) for i in range(n_colors-1)))
+                len(ease_chunks[i]), *color_pairs[i]) for i in range(n_colors - 1)))
         _LOGGER.info(
             ('Generating new gradient curve for {}'.format(gradient_colors)))
         self._gradient_curve = np.hstack(gradient_split)
@@ -123,7 +129,9 @@ class GradientEffect(Effect):
     def _validate_gradient(self):
         if not self._gradient_valid():
             self._generate_gradient_curve(
-                self._config['gradient_name'], self.pixel_count, self._config["gradient_repeat"])
+                self._config['gradient_name'],
+                self.pixel_count,
+                self._config["gradient_repeat"])
 
     def _roll_gradient(self):
         if self._config['gradient_roll'] == 0:
@@ -143,7 +151,8 @@ class GradientEffect(Effect):
         #        np.dot(self.rgb_list[1], polynomial_array),
         #        np.dot(self.rgb_list[2], polynomial_array))
 
-        return np.hstack(self._gradient_curve[:, int((self.pixel_count-1)*point)])
+        return np.hstack(
+            self._gradient_curve[:, int((self.pixel_count - 1) * point)])
 
     def config_updated(self, config):
         """Invalidate the gradient"""
@@ -153,7 +162,7 @@ class GradientEffect(Effect):
         self._validate_gradient()
 
         # Apply and roll the gradient if necessary
-        output = (self._gradient_curve[:][::1]*y).T
+        output = (self._gradient_curve[:][::1] * y).T
         self._roll_gradient()
 
         return output

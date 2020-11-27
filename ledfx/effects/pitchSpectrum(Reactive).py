@@ -11,12 +11,19 @@ class PitchSpectrumAudioEffect(AudioReactiveEffect, GradientEffect):
 
     NAME = "PitchSpectrum"
 
-    CONFIG_SCHEMA = vol.Schema({
-        vol.Optional('blur', description='Amount to blur the effect', default=1.0): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=10)),
-        vol.Optional('mirror', description='Mirror the effect', default=True): bool,
-        vol.Optional('fade_rate', description='Rate at which notes fade', default=0.15):  vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
-        vol.Optional('responsiveness', description='Responsiveness to note changes', default=0.15):  vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
-    })
+    CONFIG_SCHEMA = vol.Schema(
+        {
+            vol.Optional(
+                'blur', description='Amount to blur the effect', default=1.0): vol.All(
+                vol.Coerce(float), vol.Range(
+                    min=0.0, max=10)), vol.Optional(
+                        'mirror', description='Mirror the effect', default=True): bool, vol.Optional(
+                            'fade_rate', description='Rate at which notes fade', default=0.15): vol.All(
+                                vol.Coerce(float), vol.Range(
+                                    min=0.0, max=1.0)), vol.Optional(
+                                        'responsiveness', description='Responsiveness to note changes', default=0.15): vol.All(
+                                            vol.Coerce(float), vol.Range(
+                                                min=0.0, max=1.0)), })
 
     def config_updated(self, config):
         self.avg_midi = None

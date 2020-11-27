@@ -38,20 +38,23 @@ class EffectsEndpoint(RestEndpoint):
             return web.json_response(data=response, status=404)
 
         if not device.active_effect:
-            response = {'status': 'failed',
-                        'reason': 'Device {} has no active effect to update config'.format(device_id)}
+            response = {
+                'status': 'failed',
+                'reason': 'Device {} has no active effect to update config'.format(device_id)}
             return web.json_response(data=response, status=500)
 
         data = await request.json()
         effect_config = data.get('config')
         effect_type = data.get('type')
         if effect_config is None:
-            response = {'status': 'failed',
-                        'reason': 'Required attribute "config" was not provided'}
+            response = {
+                'status': 'failed',
+                'reason': 'Required attribute "config" was not provided'}
             return web.json_response(data=response, status=500)
 
         if effect_config == "RANDOMIZE":
-            # Parse and break down schema for effect, in order to generate acceptable random values
+            # Parse and break down schema for effect, in order to generate
+            # acceptable random values
             effect_config = {}
             effect_type = device.active_effect.type
             effect = self._ledfx.effects.get_class(effect_type)
@@ -61,17 +64,18 @@ class EffectsEndpoint(RestEndpoint):
                 if schema[setting] is bool:
                     val = random.choice([True, False])
                 # Lists
-                elif type(schema[setting]) is vol.validators.In:
+                elif isinstance(schema[setting], vol.validators.In):
                     val = random.choice(schema[setting].container)
                 # All (assuming coerce(float/int), range(min,max))
                 # NOTE: vol.coerce(float/int) does not give enough info for a random value to be generated!
                 # *** All effects should give a range! ***
-                # This is also important for when sliders will be added, slider needs a start and stop
-                elif type(schema[setting]) is vol.validators.All:
+                # This is also important for when sliders will be added, slider
+                # needs a start and stop
+                elif isinstance(schema[setting], vol.validators.All):
                     for validator in schema[setting].validators:
-                        if type(validator) is vol.validators.Coerce:
+                        if isinstance(validator, vol.validators.Coerce):
                             coerce_type = validator.type
-                        elif type(validator) is vol.validators.Range:
+                        elif isinstance(validator, vol.validators.Range):
                             lower = validator.min
                             upper = validator.max
                     if coerce_type is float:

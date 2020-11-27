@@ -109,7 +109,8 @@ def save_config(config: dict, config_dir: str) -> None:
 
     config_file = ensure_config_file(config_dir)
     _LOGGER.info(('Saving configuration file to {}').format(config_dir))
-    # prevent defaults being saved to config.yaml by creating a copy (python no pass by value)
+    # prevent defaults being saved to config.yaml by creating a copy (python
+    # no pass by value)
     config_view = dict(config)
     if "default_presets" in config_view.keys():
         del config_view["default_presets"]

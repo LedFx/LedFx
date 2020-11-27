@@ -132,7 +132,8 @@ class WebsocketConnection:
                     websocket_handlers[message['type']](self, message)
                 else:
                     _LOGGER.error(
-                        ('Received unknown command {}').format(message['type']))
+                        ('Received unknown command {}').format(
+                            message['type']))
                     self.send_error(message['id'], 'Unknown command type.')
 
                 message = await socket.receive_json()

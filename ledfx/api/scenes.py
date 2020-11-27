@@ -27,11 +27,12 @@ class ScenesEndpoint(RestEndpoint):
 
         scene_id = data.get('id')
         if scene_id is None:
-            response = {'status': 'failed',
-                        'reason': 'Required attribute "scene_id" was not provided'}
+            response = {
+                'status': 'failed',
+                'reason': 'Required attribute "scene_id" was not provided'}
             return web.json_response(data=response, status=500)
 
-        if not scene_id in self._ledfx.config['scenes'].keys():
+        if scene_id not in self._ledfx.config['scenes'].keys():
             response = {'status': 'failed',
                         'reason': 'Scene {} does not exist'.format(scene_id)}
             return web.json_response(data=response, status=500)
@@ -53,8 +54,9 @@ class ScenesEndpoint(RestEndpoint):
 
         action = data.get('action')
         if action is None:
-            response = {'status': 'failed',
-                        'reason': 'Required attribute "action" was not provided'}
+            response = {
+                'status': 'failed',
+                'reason': 'Required attribute "action" was not provided'}
             return web.json_response(data=response, status=500)
 
         if action not in ['activate', 'rename']:
@@ -64,11 +66,12 @@ class ScenesEndpoint(RestEndpoint):
 
         scene_id = data.get('id')
         if scene_id is None:
-            response = {'status': 'failed',
-                        'reason': 'Required attribute "scene_id" was not provided'}
+            response = {
+                'status': 'failed',
+                'reason': 'Required attribute "scene_id" was not provided'}
             return web.json_response(data=response, status=500)
 
-        if not scene_id in self._ledfx.config['scenes'].keys():
+        if scene_id not in self._ledfx.config['scenes'].keys():
             response = {'status': 'failed',
                         'reason': 'Scene "{}" does not exist'.format(scene_id)}
             return web.json_response(data=response, status=500)
@@ -78,9 +81,10 @@ class ScenesEndpoint(RestEndpoint):
         if action == "activate":
             for device in self._ledfx.devices.values():
                 # Check device is in scene, make no changes if it isn't
-                if not device.id in scene['devices'].keys():
-                    _LOGGER.info(('Device with id {} has no data in scene {}').format(
-                        device.id, scene_id))
+                if device.id not in scene['devices'].keys():
+                    _LOGGER.info(
+                        ('Device with id {} has no data in scene {}').format(
+                            device.id, scene_id))
                     continue
 
                 # Set effect of device to that saved in the scene,
@@ -98,8 +102,9 @@ class ScenesEndpoint(RestEndpoint):
         elif action == "rename":
             name = data.get('name')
             if name is None:
-                response = {'status': 'failed',
-                            'reason': 'Required attribute "name" was not provided'}
+                response = {
+                    'status': 'failed',
+                    'reason': 'Required attribute "name" was not provided'}
                 return web.json_response(data=response, status=500)
 
             # Update and save config
@@ -117,8 +122,9 @@ class ScenesEndpoint(RestEndpoint):
 
         scene_name = data.get('name')
         if scene_name is None:
-            response = {'status': 'failed',
-                        'reason': 'Required attribute "scene_name" was not provided'}
+            response = {
+                'status': 'failed',
+                'reason': 'Required attribute "scene_name" was not provided'}
             return web.json_response(data=response, status=500)
 
         scene_id = generate_id(scene_name)

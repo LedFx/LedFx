@@ -22,14 +22,35 @@ _LOGGER = logging.getLogger(__name__)
 @BaseRegistry.no_registration
 class Device(BaseRegistry):
 
-    CONFIG_SCHEMA = vol.Schema({
-        vol.Required('name', description='Friendly name for the device'): str,
-        vol.Optional('max_brightness', description='Max brightness for the device', default=1.0): vol.All(vol.Coerce(float), vol.Range(min=0, max=1)),
-        vol.Optional('center_offset', description='Number of pixels from the preceived center of the device', default=0): int,
-        vol.Optional('refresh_rate', description='Rate that pixels are sent to the device', default=60): int,
-        vol.Optional('force_refresh', description='Force the device to always refresh', default=False): bool,
-        vol.Optional('preview_only', description='Preview the pixels without updating the device', default=False): bool
-    })
+    CONFIG_SCHEMA = vol.Schema(
+        {
+            vol.Required(
+                'name',
+                description='Friendly name for the device'): str,
+            vol.Optional(
+                'max_brightness',
+                description='Max brightness for the device',
+                default=1.0): vol.All(
+                    vol.Coerce(float),
+                    vol.Range(
+                        min=0,
+                        max=1)),
+            vol.Optional(
+                'center_offset',
+                description='Number of pixels from the preceived center of the device',
+                default=0): int,
+            vol.Optional(
+                'refresh_rate',
+                description='Rate that pixels are sent to the device',
+                default=60): int,
+            vol.Optional(
+                'force_refresh',
+                description='Force the device to always refresh',
+                default=False): bool,
+            vol.Optional(
+                'preview_only',
+                description='Preview the pixels without updating the device',
+                default=False): bool})
 
     _active = False
     _output_thread = None
@@ -39,7 +60,8 @@ class Device(BaseRegistry):
     def __init__(self, ledfx, config):
         self._ledfx = ledfx
         self._config = config
-        # the multiplier to fade in/out of an effect. -ve values mean fading in, +ve mean fading out
+        # the multiplier to fade in/out of an effect. -ve values mean fading
+        # in, +ve mean fading out
         self.fade_timer = 0
 
     def __del__(self):
@@ -55,7 +77,7 @@ class Device(BaseRegistry):
             self._ledfx.config['fade']
         self.fade_timer = self.fade_duration
 
-        if self._active_effect != None:
+        if self._active_effect is not None:
             self._fadeout_effect = self._active_effect
             self._ledfx.loop.call_later(
                 self._ledfx.config['fade'], self.clear_fadeout_effect)
@@ -80,7 +102,7 @@ class Device(BaseRegistry):
         self._fadeout_effect = None
 
     def clear_frame(self):
-        if self._active_effect != None:
+        if self._active_effect is not None:
             self._active_effect.deactivate()
             self._active_effect = None
 
@@ -163,7 +185,10 @@ class Device(BaseRegistry):
             if self._fadeout_effect._dirty:
                 # Get and process fadeout effect frame
                 fadeout_frame = np.clip(
-                    self._fadeout_effect.pixels * self._config['max_brightness'], 0, 255)
+                    self._fadeout_effect.pixels *
+                    self._config['max_brightness'],
+                    0,
+                    255)
                 if self._config['center_offset']:
                     fadeout_frame = np.roll(
                         fadeout_frame, self._config['center_offset'], axis=0)
@@ -195,7 +220,7 @@ class Device(BaseRegistry):
     @abstractmethod
     def flush(self, data):
         """
-        Flushes the provided data to the device. This abstract medthod must be 
+        Flushes the provided data to the device. This abstract medthod must be
         overwritten by the device implementation.
         """
 
@@ -257,7 +282,8 @@ class Devices(RegistryLoader):
         return None
 
     async def find_wled_devices(self):
-        # Scan the LAN network that match WLED using zeroconf - Multicast DNS Service Discovery Library
+        # Scan the LAN network that match WLED using zeroconf - Multicast DNS
+        # Service Discovery Library
         _LOGGER.info("Scanning for WLED devices...")
         zeroconf_obj = zeroconf.Zeroconf()
         listener = MyListener(self._ledfx)
@@ -284,16 +310,19 @@ class MyListener:
         if info:
             address = socket.inet_ntoa(info.addresses[0])
             url = f"http://{address}/json/info"
-            # For each WLED device found, based on the WLED IPv4 address, do a GET requests
+            # For each WLED device found, based on the WLED IPv4 address, do a
+            # GET requests
             response = requests.get(url)
             b = response.json()
             # For each WLED json response, format from WLED payload to LedFx payload.
-            # Note, set universe_size to 510 if LED 170 or less, If you have more than 170 LED, set universe_size to 510
+            # Note, set universe_size to 510 if LED 170 or less, If you have
+            # more than 170 LED, set universe_size to 510
             wledled = b["leds"]
             wledname = b["name"]
             wledcount = wledled["count"]
 
-            # We need to use a universe size of 510 if there are more than 170 pixels to prevent spanning pixel data across sequential universes
+            # We need to use a universe size of 510 if there are more than 170
+            # pixels to prevent spanning pixel data across sequential universes
             if wledcount > 170:
                 unisize = 510
             else:

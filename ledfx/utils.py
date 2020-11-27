@@ -194,13 +194,16 @@ class RegistryLoader(object):
 
         # If running in developer mode autoreload the registry when any file
         # within the package changes.
-        # Check ledfx is not running as a single exe built using pyinstaller (sys frozen flag).
-        if ledfx.dev_enabled() and import_or_install("watchdog") and not getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+        # Check ledfx is not running as a single exe built using pyinstaller
+        # (sys frozen flag).
+        if ledfx.dev_enabled() and import_or_install("watchdog") and not getattr(
+                sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
 
             watchdog_events = import_or_install("watchdog.events")
             watchdog_observers = import_or_install("watchdog.observers")
 
-            class RegistryReloadHandler(watchdog_events.FileSystemEventHandler):
+            class RegistryReloadHandler(
+                    watchdog_events.FileSystemEventHandler):
                 def __init__(self, registry):
                     self.registry = registry
 
@@ -300,7 +303,7 @@ class RegistryLoader(object):
         # validate the schema.
         _cls = self._cls.registry().get(type)
         _config = kwargs.pop('config', None)
-        if _config != None:
+        if _config is not None:
             _config = _cls.schema()(_config)
             obj = _cls(config=_config, *args, **kwargs)
         else:
