@@ -9,6 +9,7 @@ import shutil
 
 from ledfx.consts import MAJOR_VERSION, MICRO_VERSION, MINOR_VERSION
 
+
 def write_version(major, minor, micro):
     with open('ledfx/consts.py') as fil:
         content = fil.read()
@@ -26,24 +27,26 @@ def write_version(major, minor, micro):
     with open('ledfx/consts.py', 'wt') as fil:
         content = fil.write(content)
 
+
 def execute_command(command):
     return subprocess.check_output(command.split(' ')).decode('UTF-8').rstrip()
+
 
 def main():
     parser = argparse.ArgumentParser(
         description="Release a new version of LedFx")
     parser.add_argument('type', help="The type of release",
-        choices=['major', 'minor', 'micro'])
+                        choices=['major', 'minor', 'micro'])
     parser.add_argument('branch', help="Branch",
-        choices=['dev'])
+                        choices=['dev'])
     parser.add_argument('--no-bump', action='store_true',
-        help='Create a version bump commit.')
+                        help='Create a version bump commit.')
 
     arguments = parser.parse_args()
 
     branch = arguments.branch
     current_branch = execute_command("git rev-parse --abbrev-ref HEAD")
-    if current_branch != "dev": # Temporary sanity check
+    if current_branch != "dev":  # Temporary sanity check
         print("Releases may only be pushed from the dev branch at this time.")
         if current_branch != "master":
             print("Releases must be pushed from the master branch.")
@@ -73,19 +76,20 @@ def main():
         elif arguments.type == 'minor':
             minor += 1
             micro = 0
-        elif arguments.type =='micro':
+        elif arguments.type == 'micro':
             micro += 1
 
         # Write the new version to consts.py
         write_version(major, minor, micro)
 
         subprocess.run([
-           'git', 'commit', '-am', 'Version Bump for Release {}.{}.{}'.format(major, minor, micro)])
+            'git', 'commit', '-am', 'Version Bump for Release {}.{}.{}'.format(major, minor, micro)])
         subprocess.run(['git', 'push', 'origin', branch])
 
     shutil.rmtree("dist", ignore_errors=True)
     subprocess.run(['python', 'setup.py', 'sdist', 'bdist_wheel'])
-    subprocess.run(['python', '-m', 'twine', 'upload', 'dist/*', '--skip-existing'])
+    subprocess.run(['python', '-m', 'twine', 'upload',
+                    'dist/*', '--skip-existing'])
 
 
 if __name__ == '__main__':

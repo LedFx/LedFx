@@ -45,7 +45,7 @@ def hertz_to_mel(freq):
     mel : scalar or ndarray
         Mel-frequency value or ndarray in Mel
     """
-    #return 2595.0 * log10(1 + (freq / 700.0))
+    # return 2595.0 * log10(1 + (freq / 700.0))
     return 3340.0 * log(1 + (freq / 250.0), 9)
 
 
@@ -60,7 +60,7 @@ def mel_to_hertz(mel):
     freq : scalar or ndarray
         Frequency value or array in Hz.
     """
-    #return 700.0 * (10**(mel / 2595.0)) - 700.0
+    # return 700.0 * (10**(mel / 2595.0)) - 700.0
     return 250.0 * (9**(mel / 3340.0)) - 250.0
 
 
@@ -82,7 +82,7 @@ def melfrequencies_mel_filterbank(num_bands, freq_min, freq_max, num_fft_bands):
     lower_edges_mel : ndarray
     upper_edges_mel : ndarray
     """
-    
+
     mel_max = hertz_to_mel(freq_max)
     mel_min = hertz_to_mel(freq_min)
     delta_mel = abs(mel_max - mel_min) / (num_bands + 1.0)
@@ -153,11 +153,12 @@ def compute_melmat(num_mel_bands=12, freq_min=64, freq_max=8000,
         )
     return (melmat, center_frequencies_hz, freqs)
 
+
 def compute_melmat_from_range(lower_edges_hz, upper_edges_hz, num_fft_bands=513, sample_rate=16000):
 
     melmat = zeros((len(lower_edges_hz), num_fft_bands))
     freqs = linspace(0.0, sample_rate / 2.0, num_fft_bands)
-    center_frequencies_hz = mean([lower_edges_hz,upper_edges_hz], axis = 0)
+    center_frequencies_hz = mean([lower_edges_hz, upper_edges_hz], axis=0)
 
     for imelband, (lower, center, upper) in enumerate(zip(lower_edges_hz, center_frequencies_hz, upper_edges_hz)):
 

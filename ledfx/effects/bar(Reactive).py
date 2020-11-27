@@ -4,14 +4,15 @@ from ledfx.color import GRADIENTS
 import voluptuous as vol
 import numpy as np
 
+
 class BarAudioEffect(AudioReactiveEffect, GradientEffect):
 
     NAME = "Bar"
     CONFIG_SCHEMA = vol.Schema({
-        vol.Optional('gradient_name', description='Color scheme to cycle through', default = 'Spectral'): vol.In(list(GRADIENTS.keys())),
-        vol.Optional('mode', description='Choose from different animations', default = 'wipe'): vol.In(list(["bounce", "wipe", "in-out"])),
+        vol.Optional('gradient_name', description='Color scheme to cycle through', default='Spectral'): vol.In(list(GRADIENTS.keys())),
+        vol.Optional('mode', description='Choose from different animations', default='wipe'): vol.In(list(["bounce", "wipe", "in-out"])),
         vol.Optional('ease_method', description='Acceleration profile of bar', default='ease_out'): vol.In(list(["ease_in_out", "ease_in", "ease_out", "linear"])),
-        vol.Optional('color_step', description='Amount of color change per beat', default = 0.125): vol.All(vol.Coerce(float), vol.Range(min=0.0625, max=0.5))
+        vol.Optional('color_step', description='Amount of color change per beat', default=0.125): vol.All(vol.Coerce(float), vol.Range(min=0.0625, max=0.5))
     })
 
     def config_updated(self, config):
@@ -33,10 +34,11 @@ class BarAudioEffect(AudioReactiveEffect, GradientEffect):
 
         # Colour change and phase
         if beat_now:
-            self.phase = 1-self.phase # flip flop 0->1, 1->0
+            self.phase = 1-self.phase  # flip flop 0->1, 1->0
             if self.phase == 0:
-                self.color_idx += self._config["color_step"] # 8 colours, 4 beats to a bar
-                self.color_idx = self.color_idx % 1 # loop back to zero
+                # 8 colours, 4 beats to a bar
+                self.color_idx += self._config["color_step"]
+                self.color_idx = self.color_idx % 1  # loop back to zero
 
         # Compute position of bar start and stop
         if self._config["mode"] == "wipe":
@@ -63,11 +65,11 @@ class BarAudioEffect(AudioReactiveEffect, GradientEffect):
             elif self.phase == 1:
                 bar_end = 1-x
                 bar_start = 0
-        
+
         # Construct the bar
         color = self.get_gradient_color(self.color_idx)
         p = np.zeros(np.shape(self.pixels))
-        p[int(self.pixel_count*bar_start):int(self.pixel_count*bar_end), :] = color
+        p[int(self.pixel_count*bar_start)          :int(self.pixel_count*bar_end), :] = color
 
         # Update the pixel values
         self.pixels = p

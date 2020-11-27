@@ -5,6 +5,7 @@ import json
 
 _LOGGER = logging.getLogger(__name__)
 
+
 class ConfigEndpoint(RestEndpoint):
 
     ENDPOINT_PATH = "/api/config"

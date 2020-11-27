@@ -7,6 +7,7 @@ import numpy as np
 _LOGGER = logging.getLogger(__name__)
 _rate = 60
 
+
 @Effect.no_registration
 class ModulateEffect(Effect):
     """
@@ -16,20 +17,22 @@ class ModulateEffect(Effect):
     """
     # _thread_active = False
     # _thread = None
-    
+
     CONFIG_SCHEMA = vol.Schema({
-        vol.Optional('modulate', description='Brightness modulation', default = False): bool,
-        vol.Optional('modulation_effect', default = "sine", description="Choose an animation"): vol.In(list(["sine", "breath"])),
-        vol.Optional('modulation_speed', default = 0.5, description="Animation speed"): vol.All(vol.Coerce(float), vol.Range(min=0.01, max=1))
+        vol.Optional('modulate', description='Brightness modulation', default=False): bool,
+        vol.Optional('modulation_effect', default="sine", description="Choose an animation"): vol.In(list(["sine", "breath"])),
+        vol.Optional('modulation_speed', default=0.5, description="Animation speed"): vol.All(vol.Coerce(float), vol.Range(min=0.01, max=1))
     })
 
     def config_updated(self, config):
         self._counter = 0
 
         # temporal array for breathing cycle
-        self._breath_cycle = np.linspace(0,9,9*_rate)
-        self._breath_cycle[:3*_rate] = 0.4 * np.sin(self._breath_cycle[:3*_rate]-(np.pi/2)) + 0.6
-        self._breath_cycle[3*_rate:] = np.exp(3-self._breath_cycle[3*_rate:]) + 0.2
+        self._breath_cycle = np.linspace(0, 9, 9*_rate)
+        self._breath_cycle[:3*_rate] = 0.4 * \
+            np.sin(self._breath_cycle[:3*_rate]-(np.pi/2)) + 0.6
+        self._breath_cycle[3 *
+                           _rate:] = np.exp(3-self._breath_cycle[3*_rate:]) + 0.2
 
     def modulate(self, pixels):
         """
@@ -45,7 +48,7 @@ class ModulateEffect(Effect):
             overlay = np.linspace(self._counter + np.pi,
                                   self._counter,
                                   self.pixel_count)
-            overlay = np.tile(0.3*np.sin(overlay)+0.4, (3,1)).T
+            overlay = np.tile(0.3*np.sin(overlay)+0.4, (3, 1)).T
             return pixels * overlay
 
         elif self._config["modulation_effect"] == "breath":
@@ -53,7 +56,8 @@ class ModulateEffect(Effect):
             if self._counter == 9*_rate:
                 self._counter = 0
 
-            pixels[int(self._breath_cycle[int(self._counter)] * self.pixel_count):, :] = 0
+            pixels[int(self._breath_cycle[int(self._counter)]
+                       * self.pixel_count):, :] = 0
             return pixels
 
         else:

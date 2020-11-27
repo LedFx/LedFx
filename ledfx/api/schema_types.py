@@ -6,9 +6,11 @@ import json
 
 _LOGGER = logging.getLogger(__name__)
 
+
 class SchemaEndpoint(RestEndpoint):
 
     ENDPOINT_PATH = "/api/schema/{schema_type}"
+
     async def get(self, schema_type) -> web.Response:
         response = {}
         if schema_type == 'devices':

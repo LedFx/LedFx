@@ -5,6 +5,7 @@ import json
 
 _LOGGER = logging.getLogger(__name__)
 
+
 class EffectsEndpoint(RestEndpoint):
 
     ENDPOINT_PATH = "/api/effects"

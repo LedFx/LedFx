@@ -7,6 +7,7 @@ import json
 
 _LOGGER = logging.getLogger(__name__)
 
+
 class PresetsEndpoint(RestEndpoint):
     """REST end-point for querying and managing presets"""
 
@@ -18,7 +19,8 @@ class PresetsEndpoint(RestEndpoint):
         try:
             self._ledfx.effects.get_class(effect_id)
         except:
-            response = { 'status' : 'failed', 'reason': 'effect {} does not exist'.format(effect_id) }
+            response = {'status': 'failed',
+                        'reason': 'effect {} does not exist'.format(effect_id)}
             return web.json_response(data=response, status=500)
 
         if effect_id in self._ledfx.config['default_presets'].keys():
@@ -32,10 +34,10 @@ class PresetsEndpoint(RestEndpoint):
             custom = {}
 
         response = {
-            'status' : 'success',
-            'effect' : effect_id,
-            'default_presets' : default,
-            'custom_presets' : custom
+            'status': 'success',
+            'effect': effect_id,
+            'default_presets': default,
+            'custom_presets': custom
         }
         return web.json_response(data=response, status=200)
 
@@ -48,46 +50,54 @@ class PresetsEndpoint(RestEndpoint):
         name = data.get('name')
 
         if category is None:
-            response = { 'status' : 'failed', 'reason': 'Required attribute "category" was not provided' }
+            response = {'status': 'failed',
+                        'reason': 'Required attribute "category" was not provided'}
             return web.json_response(data=response, status=500)
 
         if not category in ["default_presets", "custom_presets"]:
-            response = { 'status' : 'failed', 'reason': 'Category {} is not "default_presets" or "custom_presets"'.format(category) }
+            response = {'status': 'failed',
+                        'reason': 'Category {} is not "default_presets" or "custom_presets"'.format(category)}
             return web.json_response(data=response, status=500)
 
         if effect_id is None:
-            response = { 'status' : 'failed', 'reason': 'Required attribute "effect_id" was not provided' }
+            response = {'status': 'failed',
+                        'reason': 'Required attribute "effect_id" was not provided'}
             return web.json_response(data=response, status=500)
 
         if not effect_id in self._ledfx.config[category].keys():
-            response = { 'status' : 'failed', 'reason': 'Effect {} does not exist in category {}'.format(effect_id, category) }
+            response = {'status': 'failed', 'reason': 'Effect {} does not exist in category {}'.format(
+                effect_id, category)}
             return web.json_response(data=response, status=500)
 
         try:
             self._ledfx.effects.get_class(effect_id)
         except:
-            response = { 'status' : 'failed', 'reason': 'effect {} does not exist'.format(effect_id) }
+            response = {'status': 'failed',
+                        'reason': 'effect {} does not exist'.format(effect_id)}
             return web.json_response(data=response, status=500)
 
         if preset_id is None:
-            response = { 'status' : 'failed', 'reason': 'Required attribute "preset_id" was not provided' }
+            response = {'status': 'failed',
+                        'reason': 'Required attribute "preset_id" was not provided'}
             return web.json_response(data=response, status=500)
 
         if not preset_id in self._ledfx.config[category][effect_id].keys():
-            response = { 'status' : 'failed', 'reason': 'Preset {} does not exist for effect {} in category {}'.format(preset_id, effect_id, category) }
+            response = {'status': 'failed', 'reason': 'Preset {} does not exist for effect {} in category {}'.format(
+                preset_id, effect_id, category)}
             return web.json_response(data=response, status=500)
 
         if name is None:
-            response = { 'status' : 'failed', 'reason': 'Required attribute "name" was not provided' }
+            response = {'status': 'failed',
+                        'reason': 'Required attribute "name" was not provided'}
             return web.json_response(data=response, status=500)
 
         # Update and save config
         self._ledfx.config[category][effect_id][preset_id]['name'] = name
         save_config(
-            config = self._ledfx.config, 
-            config_dir = self._ledfx.config_dir)
+            config=self._ledfx.config,
+            config_dir=self._ledfx.config_dir)
 
-        response = { 'status' : 'success' }
+        response = {'status': 'success'}
         return web.json_response(data=response, status=200)
 
     async def delete(self, effect_id, request) -> web.Response:
@@ -97,42 +107,49 @@ class PresetsEndpoint(RestEndpoint):
         category = data.get('category')
 
         if category is None:
-            response = { 'status' : 'failed', 'reason': 'Required attribute "category" was not provided' }
+            response = {'status': 'failed',
+                        'reason': 'Required attribute "category" was not provided'}
             return web.json_response(data=response, status=500)
 
         if not category in ["default_presets", "custom_presets"]:
-            response = { 'status' : 'failed', 'reason': 'Category {} is not "default_presets" or "custom_presets"'.format(category) }
+            response = {'status': 'failed',
+                        'reason': 'Category {} is not "default_presets" or "custom_presets"'.format(category)}
             return web.json_response(data=response, status=500)
 
         if effect_id is None:
-            response = { 'status' : 'failed', 'reason': 'Required attribute "effect_id" was not provided' }
+            response = {'status': 'failed',
+                        'reason': 'Required attribute "effect_id" was not provided'}
             return web.json_response(data=response, status=500)
 
         try:
             self._ledfx.effects.get_class(effect_id)
         except:
-            response = { 'status' : 'failed', 'reason': 'effect {} does not exist'.format(effect_id) }
+            response = {'status': 'failed',
+                        'reason': 'effect {} does not exist'.format(effect_id)}
             return web.json_response(data=response, status=500)
 
         if not effect_id in self._ledfx.config[category].keys():
-            response = { 'status' : 'failed', 'reason': 'Effect {} does not exist in category {}'.format(effect_id, category) }
+            response = {'status': 'failed', 'reason': 'Effect {} does not exist in category {}'.format(
+                effect_id, category)}
             return web.json_response(data=response, status=500)
 
         if preset_id is None:
-            response = { 'status' : 'failed', 'reason': 'Required attribute "preset_id" was not provided' }
+            response = {'status': 'failed',
+                        'reason': 'Required attribute "preset_id" was not provided'}
             return web.json_response(data=response, status=500)
 
         if not preset_id in self._ledfx.config[category][effect_id].keys():
-            response = { 'status' : 'failed', 'reason': 'Preset {} does not exist for effect {} in category {}'.format(preset_id, effect_id, category) }
+            response = {'status': 'failed', 'reason': 'Preset {} does not exist for effect {} in category {}'.format(
+                preset_id, effect_id, category)}
             return web.json_response(data=response, status=500)
-        
+
         # Delete the preset from configuration
         del self._ledfx.config[category][effect_id][preset_id]
 
         # Save the config
         save_config(
-            config = self._ledfx.config, 
-            config_dir = self._ledfx.config_dir)
+            config=self._ledfx.config,
+            config_dir=self._ledfx.config_dir)
 
-        response = { 'status' : 'success' }
+        response = {'status': 'success'}
         return web.json_response(data=response, status=200)

@@ -9,14 +9,14 @@ class ScrollAudioEffect(AudioReactiveEffect):
     NAME = "Scroll"
 
     CONFIG_SCHEMA = vol.Schema({
-        vol.Optional('blur', description='Amount to blur the effect', default = 3.0): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=10)),
-        vol.Optional('mirror', description='Mirror the effect', default = True): bool,
-        vol.Optional('speed', description='Speed of the effect', default = 5):  vol.All(vol.Coerce(int), vol.Range(min=1, max=10)),
-        vol.Optional('decay', description='Decay rate of the scroll', default = 0.97):  vol.All(vol.Coerce(float), vol.Range(min=0.8, max=1.0)),
-        vol.Optional('threshold', description='Cutoff for quiet sounds. Higher -> only loud sounds are detected', default = 0.0):  vol.All(vol.Coerce(float), vol.Range(min=0, max=1)),
-        vol.Optional('color_lows', description='Color of low, bassy sounds', default = "red"): vol.In(list(COLORS.keys())),
-        vol.Optional('color_mids', description='Color of midrange sounds', default = "green"): vol.In(list(COLORS.keys())),
-        vol.Optional('color_high', description='Color of high sounds', default = "blue"): vol.In(list(COLORS.keys())),
+        vol.Optional('blur', description='Amount to blur the effect', default=3.0): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=10)),
+        vol.Optional('mirror', description='Mirror the effect', default=True): bool,
+        vol.Optional('speed', description='Speed of the effect', default=5):  vol.All(vol.Coerce(int), vol.Range(min=1, max=10)),
+        vol.Optional('decay', description='Decay rate of the scroll', default=0.97):  vol.All(vol.Coerce(float), vol.Range(min=0.8, max=1.0)),
+        vol.Optional('threshold', description='Cutoff for quiet sounds. Higher -> only loud sounds are detected', default=0.0):  vol.All(vol.Coerce(float), vol.Range(min=0, max=1)),
+        vol.Optional('color_lows', description='Color of low, bassy sounds', default="red"): vol.In(list(COLORS.keys())),
+        vol.Optional('color_mids', description='Color of midrange sounds', default="green"): vol.In(list(COLORS.keys())),
+        vol.Optional('color_high', description='Color of high sounds', default="blue"): vol.In(list(COLORS.keys())),
     })
 
     def config_updated(self, config):
@@ -28,9 +28,12 @@ class ScrollAudioEffect(AudioReactiveEffect):
         # must be destroyed and recreated to be moved to another device.
         self.output = None
 
-        self.lows_colour = np.array(COLORS[self._config['color_lows']], dtype=float)
-        self.mids_colour = np.array(COLORS[self._config['color_mids']], dtype=float)
-        self.high_colour = np.array(COLORS[self._config['color_high']], dtype=float)
+        self.lows_colour = np.array(
+            COLORS[self._config['color_lows']], dtype=float)
+        self.mids_colour = np.array(
+            COLORS[self._config['color_mids']], dtype=float)
+        self.high_colour = np.array(
+            COLORS[self._config['color_high']], dtype=float)
 
         self.lows_cutoff = self._config['threshold']
         self.mids_cutoff = self._config['threshold'] / 4
@@ -60,7 +63,7 @@ class ScrollAudioEffect(AudioReactiveEffect):
 
         # Roll the effect and apply the decay
         speed = self.config['speed']
-        self.output[speed:,:] = self.output[:-speed,:]
+        self.output[speed:, :] = self.output[:-speed, :]
         self.output = (self.output * self.config['decay'])
 
         # Add in the new color from the signal maxes

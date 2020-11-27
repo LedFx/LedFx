@@ -33,19 +33,19 @@ INSTALL_REQUIRES = [
     'multidict==4.7.6',
     'aiohttp_jinja2>=1.1.0',
     'requests>=2.24.0',
-	'pyyaml>=5.3.1',
+    'pyyaml>=5.3.1',
     'aubio>=0.4.9',
     'zeroconf>=0.28.6',
     'pypiwin32>=223;platform_system=="Windows"'
     # Uncomment this if building executables and/or using sentry
-    #,
-    #'pyupdater>=3.1.1',
-]   #'sentry-sdk'
+    # ,
+    # 'pyupdater>=3.1.1',
+]  # 'sentry-sdk'
 
 setup(
     name=PROJECT_PACKAGE_NAME,
     version=PROJECT_VERSION,
-    license = PROJECT_LICENSE,
+    license=PROJECT_LICENSE,
     author=PROJECT_AUTHOR,
     author_email=PROJECT_AUTHOR_EMAIL,
     maintainer=PROJECT_MAINTAINER,

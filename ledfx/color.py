@@ -1,6 +1,6 @@
 from collections import namedtuple
 
-RGB = namedtuple('RGB','red, green, blue')
+RGB = namedtuple('RGB', 'red, green, blue')
 
 COLORS = {
     'red': RGB(255, 0, 0),
@@ -34,7 +34,7 @@ COLORS = {
     'maroon': RGB(128, 0, 0),
     'mint': RGB(189, 252, 201),
     'olive': RGB(85, 107, 47),
-    'peach': RGB(255, 100,100),
+    'peach': RGB(255, 100, 100),
     'plum': RGB(221, 160, 221),
     'purple': RGB(128, 0, 128),
     'sepia': RGB(94, 38, 18),
@@ -45,7 +45,7 @@ COLORS = {
 }
 
 GRADIENTS = {
-    "Spectral"  : { 
+    "Spectral": {
         "colors": ["red", "orange", "yellow", "green", "green-turquoise", "blue", "purple", "pink"]
     },
     "Dancefloor": {
@@ -54,34 +54,34 @@ GRADIENTS = {
     "Plasma": {
         "colors": ["blue", "purple", "red", "orange-deep", "yellow"]
     },
-    "Ocean"     : {
+    "Ocean": {
         "colors": ["blue-aqua", "blue"]
     },
-    "Viridis"     : {
+    "Viridis": {
         "colors": ["purple", "blue", "green-teal", "green", "yellow"]
     },
-    "Jungle"    : {
+    "Jungle": {
         "colors": ["green", "green-forest", "orange"]
     },
-    "Spring"     : {
+    "Spring": {
         "colors": ["pink", "orange-deep", "yellow"]
     },
-    "Winter"    : {
+    "Winter": {
         "colors": ["green-turquoise", "green-coral"]
     },
-    "Frost"    : {
+    "Frost": {
         "colors": ["blue", "blue-aqua", "purple", "pink"]
     },
-    "Sunset"    : {
+    "Sunset": {
         "colors": ["blue-navy", "orange", "red"]
     },
-    "Borealis"  : {
+    "Borealis": {
         "colors": ["orange-deep", "purple", "green-turquoise", "green"]
     },
-    "Rust"      : {
+    "Rust": {
         "colors": ["orange-deep", "red"]
     },
-    "Christmas" : { 
+    "Christmas": {
         "colors": ["red", "red", "red", "red", "red", "green", "green", "green", "green", "green"],
         "method": "repeat"
     }

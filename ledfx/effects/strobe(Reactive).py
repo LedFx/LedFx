@@ -3,12 +3,13 @@ from ledfx.color import COLORS
 import voluptuous as vol
 import numpy as np
 
+
 class Strobe(AudioReactiveEffect):
 
     NAME = "Strobe"
     CONFIG_SCHEMA = vol.Schema({
-        vol.Optional('color', description='Strobe colour', default = "white"): vol.In(list(COLORS.keys())),
-        vol.Optional('frequency', description='Strobe frequency', default = "1/16 (◉﹏◉ )"): vol.In(list(["1/2 (.-. )", "1/4 (.o. )", "1/8 (◉◡◉ )", "1/16 (◉﹏◉ )", "1/32 (⊙▃⊙ )"]))
+        vol.Optional('color', description='Strobe colour', default="white"): vol.In(list(COLORS.keys())),
+        vol.Optional('frequency', description='Strobe frequency', default="1/16 (◉﹏◉ )"): vol.In(list(["1/2 (.-. )", "1/4 (.o. )", "1/8 (◉◡◉ )", "1/16 (◉﹏◉ )", "1/32 (⊙▃⊙ )"]))
     })
 
     def config_updated(self, config):

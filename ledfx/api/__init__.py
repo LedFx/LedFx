@@ -4,6 +4,7 @@ import logging
 import inspect
 import json
 
+
 @BaseRegistry.no_registration
 class RestEndpoint(BaseRegistry):
 
@@ -25,6 +26,7 @@ class RestEndpoint(BaseRegistry):
 
         return await method(**{arg_name: available_args[arg_name] for arg_name in wanted_args})
 
+
 class RestApi(RegistryLoader):
 
     PACKAGE_NAME = 'ledfx.api'
@@ -37,6 +39,6 @@ class RestApi(RegistryLoader):
 
         # Create the endpoints and register their routes
         for endpoint_type in self.types():
-            endpoint = self.create(type = endpoint_type, ledfx = self._ledfx)
-            app.router.add_route('*', endpoint.ENDPOINT_PATH, endpoint.handler, 
-                name = "api_{}".format(endpoint_type))
+            endpoint = self.create(type=endpoint_type, ledfx=self._ledfx)
+            app.router.add_route('*', endpoint.ENDPOINT_PATH, endpoint.handler,
+                                 name="api_{}".format(endpoint_type))

@@ -3,11 +3,12 @@ from ledfx.effects.gradient import GradientEffect
 import voluptuous as vol
 import numpy as np
 
+
 class MagnitudeAudioEffect(AudioReactiveEffect, GradientEffect):
 
     NAME = "Magnitude"
     CONFIG_SCHEMA = vol.Schema({
-        vol.Optional('frequency_range', description='Frequency range for the beat detection', default = 'bass'): vol.In(list(FREQUENCY_RANGES.keys())),
+        vol.Optional('frequency_range', description='Frequency range for the beat detection', default='bass'): vol.In(list(FREQUENCY_RANGES.keys())),
     })
 
     def config_updated(self, config):

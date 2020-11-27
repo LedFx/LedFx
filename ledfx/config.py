@@ -11,16 +11,17 @@ CONFIG_FILE_NAME = 'config.yaml'
 DEFAULT_PRESETS_FILE_NAME = 'default_presets.yaml'
 
 CORE_CONFIG_SCHEMA = vol.Schema({
-    vol.Optional('host', default = '127.0.0.1'): str,
-    vol.Optional('port', default = 8888): int,
-    vol.Optional('dev_mode', default = False): bool,
-    vol.Optional('max_workers', default = 10): int,
-    vol.Optional('devices', default = []): list,
-    vol.Optional('default_presets', default = {}): dict,
-    vol.Optional('custom_presets', default = {}): dict,
-    vol.Optional('scenes', default = {}): dict,
-    vol.Optional('fade', default = 1.0): float
+    vol.Optional('host', default='127.0.0.1'): str,
+    vol.Optional('port', default=8888): int,
+    vol.Optional('dev_mode', default=False): bool,
+    vol.Optional('max_workers', default=10): int,
+    vol.Optional('devices', default=[]): list,
+    vol.Optional('default_presets', default={}): dict,
+    vol.Optional('custom_presets', default={}): dict,
+    vol.Optional('scenes', default={}): dict,
+    vol.Optional('fade', default=1.0): float
 }, extra=vol.ALLOW_EXTRA)
+
 
 def get_default_config_directory() -> str:
     """Get the default configuration directory"""
@@ -29,11 +30,13 @@ def get_default_config_directory() -> str:
         else os.path.expanduser('~')
     return os.path.join(base_dir, CONFIG_DIRECTORY)
 
+
 def get_config_file(config_dir: str) -> str:
     """Finds a supported configuration fill in the provided directory"""
 
     config_path = os.path.join(config_dir, CONFIG_FILE_NAME)
     return config_path if os.path.isfile(config_path) else None
+
 
 def create_default_config(config_dir: str) -> str:
     """Creates a default configuration in the provided directory"""
@@ -48,6 +51,7 @@ def create_default_config(config_dir: str) -> str:
         print(('Unable to create default configuration file {}').format(config_path))
         return None
 
+
 def ensure_config_file(config_dir: str) -> str:
     """Checks if a config file exsit, and otherwise creates one"""
 
@@ -57,6 +61,7 @@ def ensure_config_file(config_dir: str) -> str:
         config_path = create_default_config(config_dir)
 
     return config_path
+
 
 def ensure_config_directory(config_dir: str) -> None:
     """Validate that the config directory is valid."""
@@ -72,8 +77,10 @@ def ensure_config_directory(config_dir: str) -> None:
         try:
             os.mkdir(config_dir)
         except OSError:
-            print(('Error: Unable to create configuration directory {}').format(config_dir))
+            print(
+                ('Error: Unable to create configuration directory {}').format(config_dir))
             sys.exit(1)
+
 
 def load_config(config_dir: str) -> dict:
     """Validates and loads the configuration file in the provided directory"""
@@ -86,6 +93,7 @@ def load_config(config_dir: str) -> dict:
             config_yaml = {}
         return CORE_CONFIG_SCHEMA(config_yaml)
 
+
 def load_default_presets() -> dict:
     ledfx_dir = os.path.dirname(os.path.realpath(__file__))
     default_presets_path = os.path.join(ledfx_dir, DEFAULT_PRESETS_FILE_NAME)
@@ -94,6 +102,7 @@ def load_default_presets() -> dict:
         print('Failed to load {}'.format(DEFAULT_PRESETS_FILE_NAME))
     with open(default_presets_path, 'rt') as file:
         return yaml.safe_load(file)
+
 
 def save_config(config: dict, config_dir: str) -> None:
     """Saves the configuration to the provided directory"""

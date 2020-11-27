@@ -6,6 +6,7 @@ import socket
 
 _LOGGER = logging.getLogger(__name__)
 
+
 class FXMatrix(Device):
     """FXMatrix device support"""
 
@@ -17,10 +18,10 @@ class FXMatrix(Device):
         # vol.Required('pixel_count', description='Number of individual pixels'): vol.All(vol.Coerce(int), vol.Range(min=1)),
     })
 
-
     def activate(self):
         self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self._config["pixel_count"] = int(self._config["width"] * self._config["height"])
+        self._config["pixel_count"] = int(
+            self._config["width"] * self._config["height"])
         super().activate()
 
     def deactivate(self):
@@ -37,4 +38,5 @@ class FXMatrix(Device):
         # Append all of the pixel data
         udpData.extend(byteData.flatten().tobytes())
 
-        self._sock.sendto(bytes(udpData), (self._config['ip_address'], self._config['port']))
+        self._sock.sendto(
+            bytes(udpData), (self._config['ip_address'], self._config['port']))

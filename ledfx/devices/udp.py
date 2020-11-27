@@ -6,6 +6,7 @@ import socket
 
 _LOGGER = logging.getLogger(__name__)
 
+
 class UDPDevice(Device):
     """Generic UDP device support"""
 
@@ -33,7 +34,7 @@ class UDPDevice(Device):
     def flush(self, data):
         udpData = bytearray()
         byteData = data.astype(np.dtype('B'))
-    
+
         # Append the prefix if provided
         prefix = self._config.get('data_prefix')
         if prefix:
@@ -52,4 +53,5 @@ class UDPDevice(Device):
         if postfix:
             udpData.extend(bytes.fromhex(postfix))
 
-        self._sock.sendto(bytes(udpData), (self._config['ip_address'], self._config['port']))
+        self._sock.sendto(
+            bytes(udpData), (self._config['ip_address'], self._config['port']))

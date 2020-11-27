@@ -16,15 +16,18 @@ BASE_MESSAGE_SCHEMA = vol.Schema({
 }, extra=vol.ALLOW_EXTRA)
 
 # TODO: Have a more well defined registration and a more componetized solution.
-# Could do something like have Device actually provide the handler for Device 
+# Could do something like have Device actually provide the handler for Device
 # related functionality. This would allow easy access to internal workings and
-# events. 
+# events.
 websocket_handlers = {}
+
+
 def websocket_handler(type):
     def function(func):
         websocket_handlers[type] = func
         return func
     return function
+
 
 class WebsocketEndpoint(RestEndpoint):
 
@@ -32,6 +35,7 @@ class WebsocketEndpoint(RestEndpoint):
 
     async def get(self, request) -> web.Response:
         return await WebsocketConnection(self._ledfx).handle(request)
+
 
 class WebsocketConnection:
 
@@ -41,7 +45,8 @@ class WebsocketConnection:
         self._listeners = {}
         self._receiver_task = None
         self._sender_task = None
-        self._sender_queue = asyncio.Queue(maxsize=MAX_PENDING_MESSAGES, loop=ledfx.loop)
+        self._sender_queue = asyncio.Queue(
+            maxsize=MAX_PENDING_MESSAGES, loop=ledfx.loop)
 
     def close(self):
         """Closes the websocket connection"""
@@ -52,7 +57,7 @@ class WebsocketConnection:
 
     def clear_subscriptions(self):
         for func in self._listeners.values():
-                func()
+            func()
 
     def send(self, message):
         """Sends a message to the websocket connection"""
@@ -98,7 +103,7 @@ class WebsocketConnection:
                 await self._socket.send_json(message, dumps=json.dumps)
             except TypeError as err:
                 _LOGGER.error('Unable to serialize to JSON: %s\n%s',
-                                err, message)
+                              err, message)
 
         _LOGGER.info("Stopping sender")
 
@@ -111,7 +116,6 @@ class WebsocketConnection:
 
         self._receiver_task = asyncio.current_task(loop=self._ledfx.loop)
         self._sender_task = self._ledfx.loop.create_task(self._sender())
-
 
         def shutdown_handler(e):
             self.close()
@@ -127,7 +131,8 @@ class WebsocketConnection:
                 if message['type'] in websocket_handlers:
                     websocket_handlers[message['type']](self, message)
                 else:
-                    _LOGGER.error(('Received unknown command {}').format(message['type']))
+                    _LOGGER.error(
+                        ('Received unknown command {}').format(message['type']))
                     self.send_error(message['id'], 'Unknown command type.')
 
                 message = await socket.receive_json()

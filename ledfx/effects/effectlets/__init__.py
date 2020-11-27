@@ -1,4 +1,5 @@
-import os, fnmatch
+import os
+import fnmatch
 
 EFFECTLET_LIST = []
 

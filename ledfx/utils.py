@@ -15,7 +15,6 @@ import os
 
 _LOGGER = logging.getLogger(__name__)
 
-from subprocess import PIPE, Popen
 
 def install_package(package):
     _LOGGER.info('Installing package %s', package)
@@ -29,6 +28,7 @@ def install_package(package):
         return False
     return True
 
+
 def import_or_install(package):
     try:
         return importlib.import_module(package)
@@ -40,6 +40,7 @@ def import_or_install(package):
         except ImportError:
             return False
     return False
+
 
 def async_fire_and_forget(coro, loop):
     """Run some code in the core event loop without a result"""
@@ -73,14 +74,17 @@ def async_callback(loop, callback, *args):
     loop.call_soon_threadsafe(run_callback)
     return future
 
+
 def generate_id(name):
     """Converts a name to a id"""
     part1 = re.sub('[^a-zA-Z0-9]', ' ', name).lower()
     return re.sub(' +', ' ', part1).strip().replace(' ', '-')
 
+
 def generate_title(id):
     """Converts an id to a more human readable title"""
     return re.sub('[^a-zA-Z0-9]', ' ', id).title()
+
 
 def hasattr_explicit(cls, attr):
     """Returns if the given object has explicitly declared an attribute"""
@@ -275,8 +279,7 @@ class RegistryLoader(object):
         for name in found:
             self.reload_module(name)
 
-
-    def create(self, type, id = None, *args, **kwargs):
+    def create(self, type, id=None, *args, **kwargs):
         """Loads and creates a object from the registry by type"""
 
         if type not in self._cls.registry():
@@ -299,7 +302,7 @@ class RegistryLoader(object):
         _config = kwargs.pop('config', None)
         if _config != None:
             _config = _cls.schema()(_config)
-            obj = _cls(config = _config, *args, **kwargs)
+            obj = _cls(config=_config, *args, **kwargs)
         else:
             obj = _cls(*args, **kwargs)
 

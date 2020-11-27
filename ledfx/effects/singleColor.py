@@ -5,11 +5,12 @@ from ledfx.effects.modulate import ModulateEffect
 import voluptuous as vol
 import numpy as np
 
+
 class SingleColorEffect(TemporalEffect, ModulateEffect):
 
     NAME = "Single Color"
     CONFIG_SCHEMA = vol.Schema({
-        vol.Optional('color', description='Color of strip', default = "red"): vol.In(list(COLORS.keys())),
+        vol.Optional('color', description='Color of strip', default="red"): vol.In(list(COLORS.keys())),
     })
 
     def config_updated(self, config):
@@ -18,4 +19,3 @@ class SingleColorEffect(TemporalEffect, ModulateEffect):
     def effect_loop(self):
         color_array = np.tile(self.color, (self.pixel_count, 1))
         self.pixels = self.modulate(color_array)
-

@@ -81,7 +81,7 @@ class LedFxCore(object):
             # Catch all other exceptions and terminate the application. The loop
             # exeception handler will take care of logging the actual error and
             # LedFx will cleanly shutdown.
-            self.loop.run_until_complete(self.async_stop(exit_code = -1))
+            self.loop.run_until_complete(self.async_stop(exit_code=-1))
             pass
         finally:
             self.loop.stop()
@@ -97,9 +97,9 @@ class LedFxCore(object):
         # TODO: Deferr
         self.devices.create_from_config(self.config['devices'])
 
-        # TODO: This step blocks for 1.5 secs while searching for devices. 
+        # TODO: This step blocks for 1.5 secs while searching for devices.
         # It needs a callback in 3-5 seconds to kill the zeroconf browser, which is
-        # implemented using a blocking time.sleep 
+        # implemented using a blocking time.sleep
         if not self.devices.values():
             _LOGGER.info("No devices saved in config.")
             async_fire_and_forget(self.devices.find_wled_devices(), self.loop)
@@ -127,9 +127,8 @@ class LedFxCore(object):
 
         # Cancel all the remaining task and wait
 
-        
         tasks = [task for task in asyncio.all_tasks() if task is not
-             asyncio.current_task()] 
+                 asyncio.current_task()]
         list(map(lambda task: task.cancel(), tasks))
         results = await asyncio.gather(*tasks, return_exceptions=True)
 

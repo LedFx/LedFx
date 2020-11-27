@@ -28,8 +28,10 @@ class E131Device(Device):
         else:
             self._config['pixel_count'] = self._config['channel_count'] // 3
 
-        span = self._config['channel_offset'] + self._config['channel_count'] - 1
-        self._config['universe_end'] = self._config['universe'] + int(span / self._config['universe_size'])
+        span = self._config['channel_offset'] + \
+            self._config['channel_count'] - 1
+        self._config['universe_end'] = self._config['universe'] + \
+            int(span / self._config['universe_size'])
         if span % self._config['universe_size'] == 0:
             self._config['universe_end'] -= 1
 
@@ -47,7 +49,7 @@ class E131Device(Device):
         self._sacn = sacn.sACNsender()
         for universe in range(self._config['universe'], self._config['universe_end'] + 1):
             _LOGGER.info("sACN activating universe {}".format(universe))
-            self._sacn.activate_output(universe) 
+            self._sacn.activate_output(universe)
             if (self._config['ip_address'] == None):
                 self._sacn[universe].multicast = True
             else:
@@ -76,10 +78,9 @@ class E131Device(Device):
         self._sacn = None
         _LOGGER.info("sACN sender stopped.")
 
-    
     def flush(self, data):
         """Flush the data to all the E1.31 channels account for spanning universes"""
-        
+
         if not self._sacn:
             raise Exception('sACN sender not started.')
         if data.size != self._config['channel_count']:
@@ -91,11 +92,15 @@ class E131Device(Device):
         for universe in range(self._config['universe'], self._config['universe_end'] + 1):
             # Calculate offset into the provide input buffer for the channel. There are some
             # cleaner ways this can be done... This is just the quick and dirty
-            universe_start = (universe - self._config['universe']) * self._config['universe_size']
-            universe_end = (universe - self._config['universe'] + 1) * self._config['universe_size']
+            universe_start = (
+                universe - self._config['universe']) * self._config['universe_size']
+            universe_end = (
+                universe - self._config['universe'] + 1) * self._config['universe_size']
 
-            dmx_start = max(universe_start, self._config['channel_offset']) % self._config['universe_size']
-            dmx_end = min(universe_end, self._config['channel_offset'] + self._config['channel_count']) % self._config['universe_size']
+            dmx_start = max(
+                universe_start, self._config['channel_offset']) % self._config['universe_size']
+            dmx_end = min(universe_end, self._config['channel_offset'] +
+                          self._config['channel_count']) % self._config['universe_size']
             if dmx_end == 0:
                 dmx_end = self._config['universe_size']
 
@@ -105,10 +110,10 @@ class E131Device(Device):
 
             dmx_data = np.array(self._sacn[universe].dmx_data)
             dmx_data[dmx_start:dmx_end] = data[input_start:input_end]
-            
-            self._sacn[universe].dmx_data = dmx_data.clip(0,255)
 
-        # # Hack up a manual flush of the E1.31 data vs having a background thread    
+            self._sacn[universe].dmx_data = dmx_data.clip(0, 255)
+
+        # # Hack up a manual flush of the E1.31 data vs having a background thread
         # if self._sacn._output_thread._socket:
         #     for output in list(self._sacn._output_thread._outputs.values()):
         #         self._sacn._output_thread.send_out(output)

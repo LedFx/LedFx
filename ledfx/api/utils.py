@@ -13,6 +13,7 @@ TYPES_MAP = {
     list: 'array'
 }
 
+
 def createRegistrySchema(registry):
     """Create a JSON Schema for an entire registry."""
 
@@ -38,6 +39,7 @@ def createRegistrySchema(registry):
             }
         }
     }
+
 
 def convertToJsonSchema(schema):
     """
@@ -83,7 +85,6 @@ def convertToJsonSchema(schema):
         for validator in schema.validators:
             val.update(convertToJsonSchema(validator))
         return val
-
 
     elif isinstance(schema, vol.Length):
         val = {}

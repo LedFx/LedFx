@@ -7,6 +7,7 @@ import json
 
 _LOGGER = logging.getLogger(__name__)
 
+
 class InfoEndpoint(RestEndpoint):
 
     ENDPOINT_PATH = "/api/info"
