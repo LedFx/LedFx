@@ -19,6 +19,7 @@ For non-development purposes run:
 import argparse
 import sys
 import logging
+import warnings
 
 from pyupdater.client import Client
 
@@ -28,6 +29,8 @@ from ledfx.consts import (
 from ledfx.core import LedFxCore
 import ledfx.config as config_helpers
 
+# Logger Variables
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 _LOGGER = logging.getLogger(__name__)
 PYUPDATERLOGLEVEL = 35
 
