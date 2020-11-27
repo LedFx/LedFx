@@ -3,12 +3,15 @@
 block_cipher = None
 
 
-a = Analysis(['C:\\Users\\shaun\\ledfx3.7\\ledfx\\ledfx\\__main__.py'],
-             pathex=['C:\\Users\\shaun\\ledfx3.7\\ledfx', 'C:\\Users\\shaun\\ledfx3.7\\ledfx'],
+a = Analysis(['C:\\Users\\shaun\\ledfx\\ledfx\\ledfx\\__main__.py'],
+             pathex=['C:\\Users\\shaun\\ledfx\\ledfx', 'C:\\Users\\shaun\\ledfx\\ledfx\\ledfx'],
              binaries=[],
-             datas=[('C:/Users/shaun/ledfx3.7/ledfx/ledfx_frontend', 'ledfx_frontend/'), ('C:/Users/shaun/ledfx3.7/ledfx/ledfx', 'ledfx/'), ('C:/Users/shaun/ledfx3.7/ledfx/icons', 'icons/')],
-             hiddenimports=['sacn', 'pyaudio', 'aubio', 'numpy', 'math', 'voluptuous', 'numpy', 'aiohttp', 'aiohttp_jinja2'],
-             hookspath=['c:\\users\\shaun\\ledfx3.7\\lib\\site-packages\\pyupdater\\hooks'],
+             datas=[('C:/Users/shaun/ledfx/ledfx/ledfx_frontend', 'ledfx_frontend/'), ('C:/Users/shaun/ledfx/ledfx/ledfx/', 'ledfx/'), ('C:/Users/shaun/ledfx/ledfx/icons', 'icons/')],
+             hiddenimports=['sacn', 'pyaudio', 'aubio', 'numpy', 'math', 'voluptuous', 'numpy', 'aiohttp', 'aiohttp_jinja2',
+             'sentry_sdk', 'sentry_sdk.integrations.django','sentry_sdk.integrations.flask','sentry_sdk.integrations.bottle','sentry_sdk.integrations.falcon','sentry_sdk.integrations.sanic',
+             'sentry_sdk.integrations.celery','sentry_sdk.integrations.aiohttp','sentry_sdk.integrations.rq','sentry_sdk.integrations.tornado','sentry_sdk.integrations.sqlalchemy',
+             'sentry_sdk.integrations.boto3'],
+             hookspath=['c:\\users\\shaun\\ledfx\\lib\\site-packages\\pyupdater\\hooks'],
              runtime_hooks=[],
              excludes=[],
              win_no_prefer_redirects=False,

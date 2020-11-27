@@ -1,21 +1,29 @@
 import time
 import logging
 from ledfx.effects import Effect
-#from ledfx.effects.audio import AudioReactiveEffect
+
+# from ledfx.effects.audio import AudioReactiveEffect
 from threading import Thread
 import voluptuous as vol
 
 _LOGGER = logging.getLogger(__name__)
 DEFAULT_RATE = 1.0 / 300.0
 
+
 @Effect.no_registration
 class TemporalEffect(Effect):
     _thread_active = False
     _thread = None
 
-    CONFIG_SCHEMA = vol.Schema({
-        vol.Optional('speed', default = 1.0, description="Speed of the effect"): vol.All(vol.Coerce(float), vol.Range(min=0.1, max=10)),
-    })
+    CONFIG_SCHEMA = vol.Schema(
+        {
+            vol.Optional(
+                "speed",
+                default=1.0,
+                description="Speed of the effect",
+            ): vol.All(vol.Coerce(float), vol.Range(min=0.1, max=10)),
+        }
+    )
 
     def thread_function(self):
 
@@ -32,13 +40,15 @@ class TemporalEffect(Effect):
 
             # Calculate the time to sleep accounting for potential heavy
             # frame assembly operations
-            timeToSleep = (sleepInterval / self._config['speed']) - (time.time() - startTime)
+            timeToSleep = (sleepInterval / self._config["speed"]) - (
+                time.time() - startTime
+            )
             if timeToSleep > 0:
                 time.sleep(timeToSleep)
 
     def effect_loop(self):
         """
-        Triggered periodically based on the effect speed and 
+        Triggered periodically based on the effect speed and
         any additional effect modifiers
         """
         pass
@@ -47,7 +57,7 @@ class TemporalEffect(Effect):
         super().activate(pixel_count)
 
         self._thread_active = True
-        self._thread = Thread(target = self.thread_function)
+        self._thread = Thread(target=self.thread_function)
         self._thread.start()
 
     def deactivate(self):
@@ -55,5 +65,5 @@ class TemporalEffect(Effect):
             self._thread_active = False
             self._thread.join()
             self._thread = None
-        
+
         super().deactivate()

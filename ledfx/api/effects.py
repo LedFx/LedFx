@@ -1,9 +1,9 @@
 from ledfx.api import RestEndpoint
 from aiohttp import web
 import logging
-import json
 
 _LOGGER = logging.getLogger(__name__)
+
 
 class EffectsEndpoint(RestEndpoint):
 
@@ -13,6 +13,8 @@ class EffectsEndpoint(RestEndpoint):
         response = {}
         for device in self._ledfx.devices.values():
             if device.active_effect:
-                response[device.active_effect.type] = device.active_effect.config
+                response[
+                    device.active_effect.type
+                ] = device.active_effect.config
 
         return web.json_response(data=response, status=200)

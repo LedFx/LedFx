@@ -51,13 +51,12 @@ docs/api/*
 docs/_build/*
 cover/*
 MANIFEST
-build.bat
-ledfx.nsi
-__main__.spec
-LedFx Installer.exe
+
 
 
 # Keyfile and pyupdater files for signing pyupdater
 keypack.pyu
 .pyupdater/
-pyu-data/*
+pyu-data/
+# Sentry Data
+ledfx/sentry_config.py
