@@ -106,7 +106,9 @@ class AudioInputSource(object):
         self._frequency_domain_null = aubio.cvec(self._config["fft_size"])
         self._frequency_domain = self._frequency_domain_null
         self._frequency_domain_x = np.linspace(
-            0, self._config["mic_rate"], (self._config["fft_size"] // 2) + 1
+            0,
+            self._config["mic_rate"],
+            (self._config["fft_size"] // 2) + 1,
         )
 
         # Enumerate all of the input devices and find the one matching the
@@ -441,7 +443,7 @@ class MelbankInputSource(AudioInputSource):
 
         # Coefficients based on Scott's audio reactive led project
         if self._config["coeffs_type"] == "scott":
-            (melmat, center_frequencies_hz, freqs) = mel.compute_melmat(
+            (melmat, center_frequencies_hz, freqs,) = mel.compute_melmat(
                 num_mel_bands=self._config["samples"],
                 freq_min=self._config["min_frequency"],
                 freq_max=self._config["max_frequency"],
@@ -626,12 +628,16 @@ class MelbankInputSource(AudioInputSource):
         if self._ledfx.dev_enabled():
             self._ledfx.events.fire_event(
                 GraphUpdateEvent(
-                    "raw", raw_filter_banks, np.array(self.melbank_frequencies)
+                    "raw",
+                    raw_filter_banks,
+                    np.array(self.melbank_frequencies),
                 )
             )
             self._ledfx.events.fire_event(
                 GraphUpdateEvent(
-                    "melbank", filter_banks, np.array(self.melbank_frequencies)
+                    "melbank",
+                    filter_banks,
+                    np.array(self.melbank_frequencies),
                 )
             )
         return filter_banks

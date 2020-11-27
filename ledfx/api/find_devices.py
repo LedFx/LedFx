@@ -1,8 +1,7 @@
 from ledfx.api import RestEndpoint
-from ledfx.utils import generate_id, async_fire_and_forget
+from ledfx.utils import async_fire_and_forget
 from aiohttp import web
 import logging
-import json
 
 _LOGGER = logging.getLogger(__name__)
 

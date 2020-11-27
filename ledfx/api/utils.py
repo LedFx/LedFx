@@ -1,7 +1,5 @@
 """Module to convert voluptuous schemas to dictionaries."""
 import collections
-import json
-import re
 import voluptuous as vol
 from ledfx.utils import generate_title
 

@@ -123,16 +123,22 @@ class Effect(BaseRegistry):
     CONFIG_SCHEMA = vol.Schema(
         {
             vol.Optional(
-                "blur", description="Amount to blur the effect", default=0.0
+                "blur",
+                description="Amount to blur the effect",
+                default=0.0,
             ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=10)),
             vol.Optional(
                 "flip", description="Flip the effect", default=False
             ): bool,
             vol.Optional(
-                "mirror", description="Mirror the effect", default=False
+                "mirror",
+                description="Mirror the effect",
+                default=False,
             ): bool,
             vol.Optional(
-                "brightness", description="Brightness of strip", default=1.0
+                "brightness",
+                description="Brightness of strip",
+                default=1.0,
             ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
         }
     )

@@ -13,7 +13,9 @@ class RainAudioEffect(AudioReactiveEffect):
     CONFIG_SCHEMA = vol.Schema(
         {
             vol.Optional(
-                "mirror", description="Mirror the effect", default=True
+                "mirror",
+                description="Mirror the effect",
+                default=True,
             ): bool,
             # TODO drops should be controlled by some sort of effectlet class,
             # which will provide a list of available drop names rather than just

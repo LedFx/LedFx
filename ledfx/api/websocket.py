@@ -80,7 +80,11 @@ class WebsocketConnection:
         """Sends an error string to the websocket connection"""
 
         return self.send(
-            {"id": id, "success": False, "error": {"message": message}}
+            {
+                "id": id,
+                "success": False,
+                "error": {"message": message},
+            }
         )
 
     def send_event(self, id, event):
@@ -102,7 +106,9 @@ class WebsocketConnection:
                 await self._socket.send_json(message, dumps=json.dumps)
             except TypeError as err:
                 _LOGGER.error(
-                    "Unable to serialize to JSON: %s\n%s", err, message
+                    "Unable to serialize to JSON: %s\n%s",
+                    err,
+                    message,
                 )
 
         _LOGGER.info("Stopping sender")

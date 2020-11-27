@@ -10,10 +10,14 @@ class EnergyAudioEffect(AudioReactiveEffect):
     CONFIG_SCHEMA = vol.Schema(
         {
             vol.Optional(
-                "blur", description="Amount to blur the effect", default=4.0
+                "blur",
+                description="Amount to blur the effect",
+                default=4.0,
             ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=10)),
             vol.Optional(
-                "mirror", description="Mirror the effect", default=True
+                "mirror",
+                description="Mirror the effect",
+                default=True,
             ): bool,
             vol.Optional(
                 "color_cycler",

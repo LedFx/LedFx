@@ -11,7 +11,9 @@ class BlocksAudioEffect(AudioReactiveEffect, GradientEffect):
     CONFIG_SCHEMA = vol.Schema(
         {
             vol.Optional(
-                "block_count", description="Number of color blocks", default=4
+                "block_count",
+                description="Number of color blocks",
+                default=4,
             ): vol.All(vol.Coerce(int), vol.Range(min=1, max=10))
         }
     )

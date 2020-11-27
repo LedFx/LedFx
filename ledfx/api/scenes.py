@@ -3,7 +3,6 @@ from ledfx.api import RestEndpoint
 from ledfx.utils import generate_id
 from aiohttp import web
 import logging
-import json
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -45,7 +44,8 @@ class ScenesEndpoint(RestEndpoint):
 
         # Save the config
         save_config(
-            config=self._ledfx.config, config_dir=self._ledfx.config_dir
+            config=self._ledfx.config,
+            config_dir=self._ledfx.config_dir,
         )
 
         response = {"status": "success"}
@@ -123,7 +123,8 @@ class ScenesEndpoint(RestEndpoint):
             # Update and save config
             self._ledfx.config["scenes"][scene_id]["name"] = name
             save_config(
-                config=self._ledfx.config, config_dir=self._ledfx.config_dir
+                config=self._ledfx.config,
+                config_dir=self._ledfx.config_dir,
             )
 
         response = {"status": "success"}
@@ -158,7 +159,8 @@ class ScenesEndpoint(RestEndpoint):
         self._ledfx.config["scenes"][scene_id] = scene_config
 
         save_config(
-            config=self._ledfx.config, config_dir=self._ledfx.config_dir
+            config=self._ledfx.config,
+            config_dir=self._ledfx.config_dir,
         )
 
         response = {

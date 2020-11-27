@@ -163,7 +163,10 @@ def compute_melmat(
 
 
 def compute_melmat_from_range(
-    lower_edges_hz, upper_edges_hz, num_fft_bands=513, sample_rate=16000
+    lower_edges_hz,
+    upper_edges_hz,
+    num_fft_bands=513,
+    sample_rate=16000,
 ):
 
     melmat = zeros((len(lower_edges_hz), num_fft_bands))

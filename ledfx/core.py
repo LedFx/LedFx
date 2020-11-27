@@ -6,7 +6,11 @@ from ledfx.utils import async_fire_and_forget
 from ledfx.http_manager import HttpServer
 from ledfx.devices import Devices
 from ledfx.effects import Effects
-from ledfx.config import load_config, save_config, load_default_presets
+from ledfx.config import (
+    load_config,
+    save_config,
+    load_default_presets,
+)
 from ledfx.events import Events, LedFxShutdownEvent
 
 _LOGGER = logging.getLogger(__name__)

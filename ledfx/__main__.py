@@ -52,7 +52,9 @@ def setup_logging(loglevel):
     loglevel = loglevel if loglevel else logging.WARNING
     logformat = "[%(asctime)s] %(levelname)s:%(name)s:%(message)s"
     logging.basicConfig(
-        stream=sys.stdout, format=logformat, datefmt="%Y-%m-%d %H:%M:%S"
+        stream=sys.stdout,
+        format=logformat,
+        datefmt="%Y-%m-%d %H:%M:%S",
     )
     logging.getLogger().setLevel(loglevel)
     logging.addLevelName(PYUPDATERLOGLEVEL, "Updater")
@@ -157,7 +159,8 @@ def update_ledfx():
     else:
         # No Updates, into main we go
         _LOGGER.log(
-            PYUPDATERLOGLEVEL, "You're all up to date, enjoy the light show!"
+            PYUPDATERLOGLEVEL,
+            "You're all up to date, enjoy the light show!",
         )
 
 

@@ -32,7 +32,10 @@ class GraphUpdateEvent(Event):
     """Event emmitted when a device's pixels are updated"""
 
     def __init__(
-        self, graph_id: str, melbank: np.ndarray, frequencies: np.ndarray
+        self,
+        graph_id: str,
+        melbank: np.ndarray,
+        frequencies: np.ndarray,
     ):
         super().__init__(Event.GRAPH_UPDATE)
         self.graph_id = graph_id
@@ -77,7 +80,10 @@ class Events:
                 self._ledfx.loop.call_soon(listener.callback, event)
 
     def add_listener(
-        self, callback: Callable, event_type: str, event_filter: dict = {}
+        self,
+        callback: Callable,
+        event_type: str,
+        event_filter: dict = {},
     ) -> None:
 
         listener = EventListener(callback, event_filter)

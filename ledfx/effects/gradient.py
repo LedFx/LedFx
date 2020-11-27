@@ -164,7 +164,9 @@ class GradientEffect(Effect):
             return
 
         self._gradient_curve = np.roll(
-            self._gradient_curve, self._config["gradient_roll"], axis=1
+            self._gradient_curve,
+            self._config["gradient_roll"],
+            axis=1,
         )
 
     def get_gradient_color(self, point):

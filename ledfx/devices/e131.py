@@ -18,7 +18,8 @@ class E131Device(Device):
                 description="Hostname or IP address of the device",
             ): str,
             vol.Required(
-                "pixel_count", description="Number of individual pixels"
+                "pixel_count",
+                description="Number of individual pixels",
             ): vol.All(vol.Coerce(int), vol.Range(min=1)),
             vol.Optional(
                 "universe",

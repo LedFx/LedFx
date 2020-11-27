@@ -1,6 +1,6 @@
 from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.gradient import GradientEffect
-from ledfx.color import GRADIENTS, COLORS
+from ledfx.color import GRADIENTS
 import voluptuous as vol
 import numpy as np
 
@@ -12,7 +12,9 @@ class EQAudioEffect(AudioReactiveEffect, GradientEffect):
     CONFIG_SCHEMA = vol.Schema(
         {
             vol.Optional(
-                "align", description="Alignment of bands", default="left"
+                "align",
+                description="Alignment of bands",
+                default="left",
             ): vol.In(list(["left", "right", "invert", "center"])),
             vol.Optional(
                 "gradient_name",
@@ -25,7 +27,9 @@ class EQAudioEffect(AudioReactiveEffect, GradientEffect):
                 default=6,
             ): vol.All(vol.Coerce(int), vol.Range(min=1, max=16)),
             vol.Optional(
-                "mirror", description="Mirror the effect", default=False
+                "mirror",
+                description="Mirror the effect",
+                default=False,
             ): bool,
         }
     )

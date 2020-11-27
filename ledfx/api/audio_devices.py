@@ -2,7 +2,6 @@ from ledfx.api import RestEndpoint
 from ledfx.config import save_config
 from aiohttp import web
 import logging
-import json
 import pyaudio
 
 _LOGGER = logging.getLogger(__name__)
@@ -62,7 +61,8 @@ class AudioDevicesEndpoint(RestEndpoint):
         self._ledfx.config["audio"] = new_config
 
         save_config(
-            config=self._ledfx.config, config_dir=self._ledfx.config_dir
+            config=self._ledfx.config,
+            config_dir=self._ledfx.config_dir,
         )
 
         if self._ledfx.audio:

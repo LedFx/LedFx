@@ -57,7 +57,8 @@ class DeviceEndpoint(RestEndpoint):
                 device["config"] = device_config
                 break
         save_config(
-            config=self._ledfx.config, config_dir=self._ledfx.config_dir
+            config=self._ledfx.config,
+            config_dir=self._ledfx.config_dir,
         )
 
         response = {"status": "success"}
@@ -79,7 +80,8 @@ class DeviceEndpoint(RestEndpoint):
             if device["id"] != device_id
         ]
         save_config(
-            config=self._ledfx.config, config_dir=self._ledfx.config_dir
+            config=self._ledfx.config,
+            config_dir=self._ledfx.config_dir,
         )
 
         response = {"status": "success"}

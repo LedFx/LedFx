@@ -1,7 +1,6 @@
 from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.gradient import GradientEffect
 import voluptuous as vol
-import numpy as np
 
 
 class WavelengthAudioEffect(AudioReactiveEffect, GradientEffect):
@@ -13,7 +12,9 @@ class WavelengthAudioEffect(AudioReactiveEffect, GradientEffect):
     CONFIG_SCHEMA = vol.Schema(
         {
             vol.Optional(
-                "blur", description="Amount to blur the effect", default=3.0
+                "blur",
+                description="Amount to blur the effect",
+                default=3.0,
             ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=10))
         }
     )

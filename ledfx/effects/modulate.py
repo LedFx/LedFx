@@ -1,5 +1,4 @@
 from ledfx.effects import Effect
-import time
 import logging
 import voluptuous as vol
 import numpy as np
@@ -22,7 +21,9 @@ class ModulateEffect(Effect):
     CONFIG_SCHEMA = vol.Schema(
         {
             vol.Optional(
-                "modulate", description="Brightness modulation", default=False
+                "modulate",
+                description="Brightness modulation",
+                default=False,
             ): bool,
             vol.Optional(
                 "modulation_effect",
@@ -30,7 +31,9 @@ class ModulateEffect(Effect):
                 description="Choose an animation",
             ): vol.In(list(["sine", "breath"])),
             vol.Optional(
-                "modulation_speed", default=0.5, description="Animation speed"
+                "modulation_speed",
+                default=0.5,
+                description="Animation speed",
             ): vol.All(vol.Coerce(float), vol.Range(min=0.01, max=1)),
         }
     )

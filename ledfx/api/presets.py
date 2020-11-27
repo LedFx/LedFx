@@ -2,7 +2,6 @@ from ledfx.config import save_config
 from ledfx.api import RestEndpoint
 from aiohttp import web
 import logging
-import json
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -117,7 +116,8 @@ class PresetsEndpoint(RestEndpoint):
         # Update and save config
         self._ledfx.config[category][effect_id][preset_id]["name"] = name
         save_config(
-            config=self._ledfx.config, config_dir=self._ledfx.config_dir
+            config=self._ledfx.config,
+            config_dir=self._ledfx.config_dir,
         )
 
         response = {"status": "success"}
@@ -191,7 +191,8 @@ class PresetsEndpoint(RestEndpoint):
 
         # Save the config
         save_config(
-            config=self._ledfx.config, config_dir=self._ledfx.config_dir
+            config=self._ledfx.config,
+            config_dir=self._ledfx.config_dir,
         )
 
         response = {"status": "success"}

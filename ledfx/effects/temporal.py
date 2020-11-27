@@ -18,7 +18,9 @@ class TemporalEffect(Effect):
     CONFIG_SCHEMA = vol.Schema(
         {
             vol.Optional(
-                "speed", default=1.0, description="Speed of the effect"
+                "speed",
+                default=1.0,
+                description="Speed of the effect",
             ): vol.All(vol.Coerce(float), vol.Range(min=0.1, max=10)),
         }
     )

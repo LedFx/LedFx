@@ -17,7 +17,14 @@ _LOGGER = logging.getLogger(__name__)
 def install_package(package):
     _LOGGER.info("Installing package %s", package)
     env = os.environ.copy()
-    args = [sys.executable, "-m", "pip", "install", "--quiet", package]
+    args = [
+        sys.executable,
+        "-m",
+        "pip",
+        "install",
+        "--quiet",
+        package,
+    ]
     process = Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE, env=env)
     _, stderr = process.communicate()
     if process.returncode != 0:

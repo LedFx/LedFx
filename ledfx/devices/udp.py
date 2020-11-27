@@ -20,7 +20,8 @@ class UDPDevice(Device):
                 "port", description="Port for the UDP device"
             ): vol.All(vol.Coerce(int), vol.Range(min=1, max=65535)),
             vol.Required(
-                "pixel_count", description="Number of individual pixels"
+                "pixel_count",
+                description="Number of individual pixels",
             ): vol.All(vol.Coerce(int), vol.Range(min=1)),
             vol.Optional(
                 "include_indexes",
@@ -28,7 +29,8 @@ class UDPDevice(Device):
                 default=False,
             ): bool,
             vol.Optional(
-                "data_prefix", description="Data to be appended in hex format"
+                "data_prefix",
+                description="Data to be appended in hex format",
             ): str,
             vol.Optional(
                 "data_postfix",
@@ -72,5 +74,6 @@ class UDPDevice(Device):
             udpData.extend(bytes.fromhex(postfix))
 
         self._sock.sendto(
-            bytes(udpData), (self._config["ip_address"], self._config["port"])
+            bytes(udpData),
+            (self._config["ip_address"], self._config["port"]),
         )

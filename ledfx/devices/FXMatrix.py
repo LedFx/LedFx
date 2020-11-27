@@ -52,5 +52,6 @@ class FXMatrix(Device):
         udpData.extend(byteData.flatten().tobytes())
 
         self._sock.sendto(
-            bytes(udpData), (self._config["ip_address"], self._config["port"])
+            bytes(udpData),
+            (self._config["ip_address"], self._config["port"]),
         )

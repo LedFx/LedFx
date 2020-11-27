@@ -199,7 +199,9 @@ class Device(BaseRegistry):
                 )
                 if self._config["center_offset"]:
                     fadeout_frame = np.roll(
-                        fadeout_frame, self._config["center_offset"], axis=0
+                        fadeout_frame,
+                        self._config["center_offset"],
+                        axis=0,
                     )
                 self._fadeout_effect._dirty = self._config["force_refresh"]
 
@@ -373,8 +375,13 @@ class MyListener:
 
             # Update and save the configuration
             self._ledfx.config["devices"].append(
-                {"id": device.id, "type": device.type, "config": device.config}
+                {
+                    "id": device.id,
+                    "type": device.type,
+                    "config": device.config,
+                }
             )
             save_config(
-                config=self._ledfx.config, config_dir=self._ledfx.config_dir
+                config=self._ledfx.config,
+                config_dir=self._ledfx.config_dir,
             )

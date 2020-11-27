@@ -2,7 +2,6 @@ from ledfx.api import RestEndpoint
 from ledfx.config import save_config
 from aiohttp import web
 import logging
-import json
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -45,7 +44,8 @@ class GraphicsQualityEndpoint(RestEndpoint):
         self._ledfx.config["graphics_quality"] = graphics_quality
 
         save_config(
-            config=self._ledfx.config, config_dir=self._ledfx.config_dir
+            config=self._ledfx.config,
+            config_dir=self._ledfx.config_dir,
         )
 
         # reopen all websockets with new graphics settings

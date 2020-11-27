@@ -40,7 +40,9 @@ class HttpServer(object):
     def register_routes(self):
         self.api.register_routes(self.app)
         self.app.router.add_static(
-            "/static", path=ledfx_frontend.where() + "/static", name="static"
+            "/static",
+            path=ledfx_frontend.where() + "/static",
+            name="static",
         )
 
         self.app.router.add_route("get", "/", self.index)
@@ -55,7 +57,9 @@ class HttpServer(object):
             )
         except OSError as error:
             _LOGGER.error(
-                "Failed to create HTTP server at port %d: %s", self.port, error
+                "Failed to create HTTP server at port %d: %s",
+                self.port,
+                error,
             )
 
         self.base_url = ("http://{}:{}").format(self.host, self.port)
