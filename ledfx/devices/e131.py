@@ -152,7 +152,7 @@ class E131Device(Device):
 
             self._sacn[universe].dmx_data = dmx_data.clip(0, 255)
 
-        # # Hack up a manual flush of the E1.31 data vs having a background thread
-        # if self._sacn._output_thread._socket:
-        #     for output in list(self._sacn._output_thread._outputs.values()):
-        #         self._sacn._output_thread.send_out(output)
+        # Hack up a manual flush of the E1.31 data vs having a background thread
+        if self._sacn._output_thread._socket:
+            for output in list(self._sacn._output_thread._outputs.values()):
+                self._sacn._output_thread.send_out(output)

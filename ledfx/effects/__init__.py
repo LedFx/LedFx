@@ -204,6 +204,9 @@ class Effect(BaseRegistry):
         """Return if the effect is currently active"""
         return self._active
 
+    def get_pixels(self):
+        return self.pixels
+
     @property
     def pixels(self):
         """Returns the pixels for the channel"""
