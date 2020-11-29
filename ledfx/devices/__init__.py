@@ -165,8 +165,9 @@ class Device(BaseRegistry):
         frame = None
         if self._active_effect._dirty:
             # Get and process active effect frame
+            pixels = self._active_effect.get_pixels()
             frame = np.clip(
-                self._active_effect.pixels * self._config["max_brightness"],
+                pixels * self._config["max_brightness"],
                 0,
                 255,
             )
