@@ -16,6 +16,7 @@ class Strobe(AudioReactiveEffect, GradientEffect):
         vol.Optional('color_step', description='Amount of color change per bass strobe', default = 0.0625): vol.All(vol.Coerce(float), vol.Range(min=0.0625, max=0.5)),
         vol.Optional('bass_threshold', description='Cutoff for quiet sounds. Higher -> only loud sounds are detected', default = 0.4):  vol.All(vol.Coerce(float), vol.Range(min=0, max=1)),
         vol.Optional('bass_strobe_wait_time', description='Time to wait until next bass strobe', default = 0.0): vol.All(vol.Coerce(float), vol.Range(min=0, max=5)),
+        vol.Optional('strobe_length', description='Strobe length in pixels', default = 10): vol.All(vol.Coerce(int), vol.Range(min=0, max=1000)),
         vol.Optional('bass_strobe_decay_rate', description='Bass strobe decay rate. Higher -> decays faster.', default = 0.5): vol.All(vol.Coerce(float), vol.Range(min=0, max=1)),
         vol.Optional('strobe_width', description='Note strobe width, in pixels', default = 10): vol.All(vol.Coerce(int), vol.Range(min=0, max=1000)),
         vol.Optional('strobe_wait_time', description='Time to wait until next note strobe', default = 0.0): vol.All(vol.Coerce(float), vol.Range(min=0, max=2)),
@@ -62,8 +63,8 @@ class Strobe(AudioReactiveEffect, GradientEffect):
         
         self.strobe_overlay *= self.strobe_decay_rate
         self.bass_strobe_overlay *= self.bass_strobe_decay_rate
-
-        return pixels
+        self.pixels = pixels
+        return self.pixels
 
     def audio_data_updated(self, data):
         self._dirty = True
