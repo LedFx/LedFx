@@ -862,3 +862,40 @@ wavelength(Reactive):
       gradient_roll: 4
       mirror: false
     name: Sunset Sweep
+real_strobe(Reactive):
+  dancefloor:
+    config:
+      bass_strobe_decay_rate: 0.7
+      bass_strobe_wait_time: 0
+      bass_threshold: 0.4
+      blur: 0
+      brightness: 1
+      color_step: 0.0625
+      flip: false
+      gradient_name: Dancefloor
+      gradient_repeat: 1
+      gradient_roll: 0
+      mirror: false
+      strobe_color: white
+      strobe_decay_rate: 0.85
+      strobe_length: 50
+      strobe_wait_time: 0
+    name: Dance floor
+  strobe_only:
+    config:
+      bass_strobe_decay_rate: 0.7
+      bass_strobe_wait_time: 0
+      bass_threshold: 1
+      blur: 0
+      brightness: 1
+      color_step: 0.0625
+      flip: false
+      gradient_name: Dancefloor
+      gradient_repeat: 1
+      gradient_roll: 0
+      mirror: false
+      strobe_color: white
+      strobe_decay_rate: 1
+      strobe_length: 50
+      strobe_wait_time: 0
+    name: Strobe only
