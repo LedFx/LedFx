@@ -1,0 +1,1 @@
+C:\Users\shaun\ledfx\Scripts\activate.ps1
