@@ -80,7 +80,6 @@ class E131Device(Device):
                 self._sacn[universe].destination = self._config["ip_address"]
                 self._sacn[universe].multicast = False
         # self._sacn.fps = 60
-        
         self._sacn.start()
         self._sacn.manual_flush = True
 
