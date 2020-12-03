@@ -1,17 +1,16 @@
 """Module to convert voluptuous schemas to dictionaries."""
 import collections
-import json
-import re
 import voluptuous as vol
 from ledfx.utils import generate_title
 
 TYPES_MAP = {
-    int: 'integer',
-    str: 'string',
-    float: 'number',
-    bool: 'boolean',
-    list: 'array'
+    int: "integer",
+    str: "string",
+    float: "number",
+    bool: "boolean",
+    list: "array",
 }
+
 
 def createRegistrySchema(registry):
     """Create a JSON Schema for an entire registry."""
@@ -19,7 +18,7 @@ def createRegistrySchema(registry):
     class_schema_list = []
     for class_type, class_obj in registry.classes().items():
         obj_schema = convertToJsonSchema(class_obj.schema())
-        obj_schema['properties']['registry_type'] = {"enum": [class_type]}
+        obj_schema["properties"]["registry_type"] = {"enum": [class_type]}
         class_schema_list.append(obj_schema)
 
     return {
@@ -28,16 +27,13 @@ def createRegistrySchema(registry):
             "registry_type": {
                 "title": "Registry Type",
                 "type": "string",
-                "enum": list(registry.classes().keys())
+                "enum": list(registry.classes().keys()),
             }
         },
         "required": ["registry_type"],
-        "dependencies": {
-            "registry_type": {
-                "oneOf": class_schema_list
-            }
-        }
+        "dependencies": {"registry_type": {"oneOf": class_schema_list}},
     }
+
 
 def convertToJsonSchema(schema):
     """
@@ -49,7 +45,7 @@ def convertToJsonSchema(schema):
         schema = schema.schema
 
     if isinstance(schema, collections.abc.Mapping):
-        val = {'properties': {}}
+        val = {"properties": {}}
         required_vals = []
 
         for key, value in schema.items():
@@ -61,20 +57,20 @@ def convertToJsonSchema(schema):
                 pkey = key
 
             pval = convertToJsonSchema(value)
-            pval['title'] = generate_title(pkey)
+            pval["title"] = generate_title(pkey)
             if description is not None:
-                pval['description'] = description
+                pval["description"] = description
 
             if key.default is not vol.UNDEFINED:
-                pval['default'] = key.default()
+                pval["default"] = key.default()
 
             if isinstance(key, vol.Required):
                 required_vals.append(pkey)
 
-            val['properties'][pkey] = pval
+            val["properties"][pkey] = pval
 
         if required_vals:
-            val['required'] = required_vals
+            val["required"] = required_vals
 
         return val
 
@@ -84,31 +80,30 @@ def convertToJsonSchema(schema):
             val.update(convertToJsonSchema(validator))
         return val
 
-
     elif isinstance(schema, vol.Length):
         val = {}
         if schema.min is not None:
-            val['minLength'] = schema.min
+            val["minLength"] = schema.min
         if schema.max is not None:
-            val['maxLength'] = schema.max
+            val["maxLength"] = schema.max
         return val
 
     elif isinstance(schema, (vol.Clamp, vol.Range)):
         val = {}
         if schema.min is not None:
-            val['minimum'] = schema.min
+            val["minimum"] = schema.min
         if schema.max is not None:
-            val['maximum'] = schema.max
+            val["maximum"] = schema.max
         return val
 
     elif isinstance(schema, vol.Datetime):
         return {
-            'type': 'datetime',
-            'format': schema.format,
+            "type": "datetime",
+            "format": schema.format,
         }
 
     elif isinstance(schema, vol.In):
-        return {'type': 'string', 'enum': list(schema.container)}
+        return {"type": "string", "enum": list(schema.container)}
         # val = {'type': 'string', 'enum': dict()}
         # for item in schema.container:
         #     val['enum'][item] = item
@@ -118,6 +113,6 @@ def convertToJsonSchema(schema):
         schema = schema.type
 
     if schema in TYPES_MAP:
-        return {'type': TYPES_MAP[schema]}
+        return {"type": TYPES_MAP[schema]}
 
-    raise ValueError('Unable to convert schema: {}'.format(schema))
+    raise ValueError("Unable to convert schema: {}".format(schema))

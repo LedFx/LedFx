@@ -23,7 +23,8 @@ addons:
     update: true        # runs `apt-get update` before installs
     packages:
       - portaudio19-dev # Install portaudio (requirement for pyaudio)
-      - libudev-dev     #
+      - libudev-dev
+      - python3-dev
 
 jobs:
   fast_finish: true
@@ -38,12 +39,12 @@ jobs:
     - python: "3.8"
       env: TOXENV=py38
       dist: xenial
-    - python: "3.9-dev"
+    - python: "3.9"
       env: TOXENV=py39
       dist: xenial
       if: branch = dev AND type = push
   allow_failures:
-    - python: "3.9-dev"
+    - python: "3.9"
       env: TOXENV=py39
       dist: xenial
 
@@ -68,7 +69,9 @@ script:
   - yarn build
   - cd ..
   # Then, build the backend
-  - pip install -e .
+  - pip install --upgrade pip wheel setuptools
+  - python setup.py bdist_wheel
+  - pip install --pre --find-links=dist ledfx-dev
   # - travis_wait 10 tox -v --develop
 
 # after_success:

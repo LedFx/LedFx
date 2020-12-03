@@ -83,8 +83,14 @@ The below image describes a basic setup - LedFx running on PC, communicating wit
 🧑‍💻 Join the LedFx Community
 ------------------------------
 
-Join the Discord server to discuss everything about LedFx!
-|Discord|
+Join the Discord server to discuss everything about LedFx! |Discord|
+
+To join, click on the Discord button below:
+
+.. raw:: html
+
+    <a href="https://discord.com/invite/wJ755dY"><img src="https://discordapp.com/api/guilds/469985374052286474/widget.png?style=banner2" width="30%"></a>
+        
 
 Contributing
 --------------
@@ -108,8 +114,8 @@ License
 .. _`Voicemeeter tutorial`: https://youtu.be/ZXKDzYXS60o?start=27&end=163
 .. _`Loopback`: https://rogueamoeba.com/loopback/
 
-.. |Build Status| image:: https://travis-ci.org/ahodges9/LedFx.svg?branch=master
-   :target: https://github.com/THATDONFC/LedFx/tree/docs
+.. |Build Status| image:: https://travis-ci.org/ahodges9/LedFx.svg?branch=dev
+   :target: https://github.com/ahodges9/LedFx/tree/dev
    :alt: Build Status
 .. |Build Status Docs| image:: https://readthedocs.org/projects/ledfx/badge/?version=docs
    :target: https://ledfx.readthedocs.io/en/docs
