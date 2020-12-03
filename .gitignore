@@ -60,3 +60,5 @@ keypack.pyu
 pyu-data/
 # Sentry Data
 ledfx/sentry_config.py
+# Script for Activating LedFx venv
+activate.ps1
