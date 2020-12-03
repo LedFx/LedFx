@@ -32,7 +32,6 @@ class Strobe(AudioReactiveEffect, GradientEffect):
         self.bass_threshold = self._config['bass_threshold']
         self.color_shift_step = self._config["color_step"]
 
-
         self.strobe_color = np.array(COLORS[self._config['strobe_color']], dtype=float)
         self.last_color_shift_time = 0
         self.strobe_width = self._config['strobe_width']
@@ -55,15 +54,14 @@ class Strobe(AudioReactiveEffect, GradientEffect):
             strobe_width = min(self.strobe_width, self.pixel_count)
             length_diff = self.pixel_count - strobe_width
             position = 0 if length_diff == 0 else np.random.random_integers(self.pixel_count - strobe_width)
-            
             self.strobe_overlay[position : position + strobe_width] = self.strobe_color
-
         pixels += self.strobe_overlay
         
         self.strobe_overlay *= self.strobe_decay_rate
         self.bass_strobe_overlay *= self.bass_strobe_decay_rate
 
-        return pixels
+        self.pixels = pixels
+        return self.pixels
 
     def audio_data_updated(self, data):
         self._dirty = True
