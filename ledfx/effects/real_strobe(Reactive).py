@@ -11,15 +11,15 @@ class Strobe(AudioReactiveEffect, GradientEffect):
 
     NAME = "Real Strobe"
     CONFIG_SCHEMA = vol.Schema({
-        vol.Optional('gradient_name', description='Color scheme to cycle through', default = 'Dancefloor'): vol.In(list(GRADIENTS.keys())),
-        vol.Optional('color_step', description='Amount of color change per beat', default = 0.0625): vol.All(vol.Coerce(float), vol.Range(min=0.0625, max=0.5)),
-        vol.Optional('strobe_color', description='Strobe colour', default = "white"): vol.In(list(COLORS.keys())),
+        vol.Optional('gradient_name', description='Color scheme for bass strobe to cycle through', default = 'Dancefloor'): vol.In(list(GRADIENTS.keys())),
+        vol.Optional('strobe_color', description='Colour for note strobes', default = "white"): vol.In(list(COLORS.keys())),
+        vol.Optional('color_step', description='Amount of color change per bass strobe', default = 0.0625): vol.All(vol.Coerce(float), vol.Range(min=0.0625, max=0.5)),
         vol.Optional('bass_threshold', description='Cutoff for quiet sounds. Higher -> only loud sounds are detected', default = 0.4):  vol.All(vol.Coerce(float), vol.Range(min=0, max=1)),
-        vol.Optional('strobe_wait_time', description='Time to wait until next strobe', default = 0.0): vol.All(vol.Coerce(float), vol.Range(min=0, max=2)),
-        vol.Optional('strobe_decay_rate', description='Strobe decay rate. Higher - decays faster.', default = 0.5): vol.All(vol.Coerce(float), vol.Range(min=0, max=1)),
-        vol.Optional('bass_strobe_decay_rate', description='Bass strobe decay rate. Higher - decays faster.', default = 0.5): vol.All(vol.Coerce(float), vol.Range(min=0, max=1)),
         vol.Optional('bass_strobe_wait_time', description='Time to wait until next bass strobe', default = 0.0): vol.All(vol.Coerce(float), vol.Range(min=0, max=5)),
-        vol.Optional('strobe_length', description='Strobe length in pixels', default = 10): vol.All(vol.Coerce(int), vol.Range(min=0, max=1000)),
+        vol.Optional('bass_strobe_decay_rate', description='Bass strobe decay rate. Higher -> decays faster.', default = 0.5): vol.All(vol.Coerce(float), vol.Range(min=0, max=1)),
+        vol.Optional('strobe_width', description='Note strobe width, in pixels', default = 10): vol.All(vol.Coerce(int), vol.Range(min=0, max=1000)),
+        vol.Optional('strobe_wait_time', description='Time to wait until next note strobe', default = 0.0): vol.All(vol.Coerce(float), vol.Range(min=0, max=2)),
+        vol.Optional('strobe_decay_rate', description='Note strobe decay rate. Higher - decays faster.', default = 0.5): vol.All(vol.Coerce(float), vol.Range(min=0, max=1)),
     })
 
     def activate(self, pixel_count):
@@ -35,7 +35,7 @@ class Strobe(AudioReactiveEffect, GradientEffect):
 
         self.strobe_color = np.array(COLORS[self._config['strobe_color']], dtype=float)
         self.last_color_shift_time = 0
-        self.strobe_length = self._config['strobe_length']
+        self.strobe_width = self._config['strobe_width']
         self.color_shift_delay_in_seconds = 1
         self.color_idx = 0
         
@@ -52,11 +52,11 @@ class Strobe(AudioReactiveEffect, GradientEffect):
 
         if(not self.onsets_queue.empty()):
             self.onsets_queue.get()
-            strobe_length = min(self.strobe_length, self.pixel_count)
-            length_diff = self.pixel_count - strobe_length
-            position = 0 if length_diff == 0 else np.random.random_integers(self.pixel_count - strobe_length)
+            strobe_width = min(self.strobe_width, self.pixel_count)
+            length_diff = self.pixel_count - strobe_width
+            position = 0 if length_diff == 0 else np.random.random_integers(self.pixel_count - strobe_width)
             
-            self.strobe_overlay[position : position + strobe_length] = self.strobe_color
+            self.strobe_overlay[position : position + strobe_width] = self.strobe_color
 
         pixels += self.strobe_overlay
         
