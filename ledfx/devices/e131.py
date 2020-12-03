@@ -44,7 +44,7 @@ class E131Device(Device):
             raise Exception('sACN sender already started.')
 
         # Configure sACN and start the dedicated thread to flush the buffer
-        self._sacn = sacn.sACNsender()
+        self._sacn = sacn.sACNsender(fps=self._config["refresh_rate"])
         for universe in range(self._config['universe'], self._config['universe_end'] + 1):
             _LOGGER.info("sACN activating universe {}".format(universe))
             self._sacn.activate_output(universe) 
