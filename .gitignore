@@ -27,7 +27,7 @@ package-lock.json
 .pydevproject
 .settings
 .idea
-.vscode
+#.vscode
 *.code-workspace
 
 # Package files
