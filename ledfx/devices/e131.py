@@ -79,14 +79,11 @@ class E131Device(Device):
             else:
                 self._sacn[universe].destination = self._config["ip_address"]
                 self._sacn[universe].multicast = False
-
-        self._sacn.fps = self._config["refresh_rate"]
+        # self._sacn.fps = 60
         self._sacn.start()
-        # Manual flush might break some recievers - if we have any issues with e1.31, look here
         self._sacn.manual_flush = True
-        _LOGGER.info(
-            "sACN sender for {} started.".format(self._config["name"])
-        )
+
+        _LOGGER.info("sACN sender started.")
         super().activate()
 
     def deactivate(self):
@@ -158,7 +155,7 @@ class E131Device(Device):
 
         self._sacn.flush()
 
-        # Hack up a manual flush of the E1.31 data vs having a background thread
+        # # Hack up a manual flush of the E1.31 data vs having a background thread
         # if self._sacn._output_thread._socket:
         #     for output in list(self._sacn._output_thread._outputs.values()):
         #         self._sacn._output_thread.send_out(output)
