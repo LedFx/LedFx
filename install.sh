@@ -1,13 +1,12 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC1090
 sudo apt-get update 
-sudo apt-get install -y \
-        python3-pip \
+sudo apt-get install -y python3-pip \
         alsa-utils \
         libasound2 \
         libasound2-plugins \
         portaudio19-dev \
-        pulseaudio \
+        pulseaudio
 cd ~
 mkdir ledfx-workdir
 cd ledfx-workdir
