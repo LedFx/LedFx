@@ -6,6 +6,6 @@ mkdir ledfx-workdir
 cd ledfx-workdir
 git clone -b dev https://github.com/ahodges9/LedFx/
 cd LedFx
-pip install -e .
+pip3 install -r requirements.txt
 python3 setup.py build
 python3 setup.py install
