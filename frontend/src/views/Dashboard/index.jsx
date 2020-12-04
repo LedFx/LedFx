@@ -52,7 +52,7 @@ class DashboardView extends React.Component {
             return (
                 <Card>
                     <CardContent>
-                        <p>Looks like you have no devices! Go to 'Device Management' to add them</p>
+                        <p>YZLooks like you have no devices! Go to 'Device Management' to add them</p>
                     </CardContent>
                 </Card>
             );
