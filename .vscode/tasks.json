@@ -1,0 +1,17 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Run LedFx in devmode on port 8888",
+            "type": "shell",
+            "command": "ledfx",
+            "problemMatcher": []
+        },
+        {
+            "label": "Run Ledfx Frontend in devmode on port 3000",
+            "type": "shell",
+            "command": "cd frontend; npm start",
+            "problemMatcher": []
+        }
+    ]
+}
