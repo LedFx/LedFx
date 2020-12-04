@@ -80,11 +80,13 @@ class E131Device(Device):
                 self._sacn[universe].destination = self._config["ip_address"]
                 self._sacn[universe].multicast = False
 
-        # Manual flush might break some recievers - if we have any issues with e1.31, look here
-        self._sacn.manual_flush = True
         self._sacn.fps = self._config["refresh_rate"]
         self._sacn.start()
-        _LOGGER.info("sACN sender for {} started.".format(self._config["name"]))
+        # Manual flush might break some recievers - if we have any issues with e1.31, look here
+        self._sacn.manual_flush = True
+        _LOGGER.info(
+            "sACN sender for {} started.".format(self._config["name"])
+        )
         super().activate()
 
     def deactivate(self):
