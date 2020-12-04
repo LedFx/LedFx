@@ -7,5 +7,5 @@ cd ledfx-workdir
 git clone -b dev https://github.com/ahodges9/LedFx/
 cd LedFx
 pip install -e .
-python setup.py build
-python setup.py install
+python3 setup.py build
+python3 setup.py install
