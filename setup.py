@@ -13,33 +13,32 @@ PROJECT_MAINTAINER_EMAIL = "ledfx.app@gmail.com"
 PROJECT_URL = "https://github.com/ahodges9/LedFx/tree/dev"
 
 # Need to install numpy first
-SETUP_REQUIRES = ["numpy==1.19.3"]
+SETUP_REQUIRES = ["numpy>=1.19.3"]
 
 INSTALL_REQUIRES = [
     # Nasty bug in windows 10 at the moment
     # https://developercommunity.visualstudio.com/content/problem/1207405/fmod-after-an-update-to-windows-2004-is-causing-a.html
     # numpy 1.19.3 has a workaround
-    "numpy==1.19.3",
+    'numpy==1.19.3;sys_platform == "Windows"',
+    'numpy>=1.19.3;sys_platform != "Windows"',
     "voluptuous>=0.12.0",
     "pyaudio>=0.2.11",
     "sacn>=1.4.6",
-    # aiohttp 3.7 branch has a regression that spams errors
-    # bug report https://github.com/aio-libs/aiohttp/issues/5212
-    "aiohttp==3.6.3",
-    # yarl needs to be this for aiohttp
-    "yarl==1.5.1",
-    # multidict needs to be this for aiohttp
-    "multidict==4.7.6",
+    "aiohttp<=3.7.3",
+
+    "yarl>=1.5.1",
+    "multidict>=4.7.6",
     "aiohttp_jinja2>=1.1.0",
     "requests>=2.24.0",
     "pyyaml>=5.3.1",
     "aubio>=0.4.9",
     "zeroconf>=0.28.6",
-    'pypiwin32>=223;platform_system=="Windows"'
+    'pypiwin32>=223; sys_platform == "Windows"',
+    "cython<=0.29.21"
     # Uncomment this if building executables and/or using sentry
     # ,
     # 'pyupdater>=3.1.1',
-]  # 'sentry-sdk'
+]   # 'sentry-sdk'
 
 setup(
     name=PROJECT_PACKAGE_NAME,
