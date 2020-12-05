@@ -6,7 +6,8 @@ sudo apt-get install -y python3-pip \
         libasound2 \
         libasound2-plugins \
         portaudio19-dev \
-        pulseaudio
+        pulseaudio \
+        git
 cd ~
 mkdir ledfx-workdir
 cd ledfx-workdir
