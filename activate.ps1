@@ -1,1 +1,1 @@
-C:\Users\shaun\ledfx\Scripts\activate.ps1
+..\Scripts\activate.ps1
