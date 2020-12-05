@@ -8,7 +8,7 @@
 
 # Current windows bug requires no later than 1.19.3
 numpy==1.19.3
-cython<=0.29.21
+cython>=0.29.21
 voluptuous>=0.11.1
 pyaudio>=0.2.11
 sacn>=1.4
