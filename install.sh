@@ -29,14 +29,16 @@ sudo apt-get install -y python3-pip \
 python3 -m pip install --upgrade pip wheel setuptools
 python3 -m pip uninstall -y ledfx
 python3 -m pip uninstall -y ledfx-dev
-
-sudo rm -rf ~/ledfx-workdir
-mkdir ~/ledfx-workdir
-cd ~/ledfx-workdir
+rm -rf ~/.venv/ledfx-venv
+python3 -m venv ~/.venv/ledfx-venv
+export PATH=$PATH:$HOME/.venv/ledfx-venv/bin
+cd ~/.venvs/ledfx-venv
 git clone -b dev https://github.com/shauneccles/LedFx/
-cd ~/ledfx-workdir/LedFx
-sudo python3 -m pip install -r ~/ledfx-workdir/LedFx/requirements.txt
-sudo python3 ~/ledfx-workdir/LedFx/setup.py build
-sudo python3 ~/ledfx-workdir/LedFx/setup.py install
-sudo rm -rf ~/ledfx-workdir/
+python3 -m pip install -r ~/.venvs/ledfx-venv/LedFx/requirements.txt
+python3 ~/.venvs/ledfx-venv/LedFx/etup.py build
+python3 ~/.venvs/ledfx-venv/LedFx/setup.py install
+echo "#!/usr/bin/env bash
+export PATH=$PATH:$HOME/.venvs/ledfx-venv/bin
+ledfx" > /usr/local/bin/ledfx
+chmod +x /usr/local/bin/ledfx
 echo " Please type ledfx to launch LedFx"
