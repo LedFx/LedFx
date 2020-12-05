@@ -22,7 +22,7 @@ sudo apt-get install -y python3-pip \
         portaudio19-dev \
         pulseaudio \
         git \
-        build-essential \
+        build-essential 
 
 python3 -m pip install --upgrade pip wheel setuptools
 python3 -m pip uninstall -y ledfx
