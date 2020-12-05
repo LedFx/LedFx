@@ -25,7 +25,6 @@ INSTALL_REQUIRES = [
     "pyaudio>=0.2.11",
     "sacn>=1.4.6",
     "aiohttp<=3.7.3",
-
     "yarl>=1.5.1",
     "multidict>=4.7.6",
     "aiohttp_jinja2>=1.1.0",
@@ -34,11 +33,10 @@ INSTALL_REQUIRES = [
     "aubio>=0.4.9",
     "zeroconf>=0.28.6",
     'pypiwin32>=223; sys_platform == "Windows"',
-    "cython<=0.29.21"
-    # Uncomment this if building executables and/or using sentry
-    # ,
-    # 'pyupdater>=3.1.1',
-]   # 'sentry-sdk'
+    "cython>=0.29.21",
+    "pyupdater>=3.1.0",
+    "sentry-sdk>=0.19.0",
+]
 
 setup(
     name=PROJECT_PACKAGE_NAME,
