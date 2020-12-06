@@ -16,15 +16,13 @@ echo " |_____| |_| |_| |___/  \__|  \__,_| |_| |_|  \___| |_|   ";
 echo "                                                          ";
 
 sudo apt-get update
-sudo apt-get install -y python3-pip \
-        alsa-utils \
-        libasound2 \
-        libasound2-plugins \
+sudo apt-get install -y gcc \
+        git \
+        libatlas3-base \
+        libavformat58 \
         portaudio19-dev \
         pulseaudio \
-        git \
-        build-essential \
-        libatlas-base-dev
+        python3-pip
 
 python3 -m pip install  --upgrade pip wheel setuptools
 python3 -m pip uninstall -y ledfx
