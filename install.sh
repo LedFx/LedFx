@@ -26,17 +26,17 @@ sudo apt-get install -y python3-pip \
         build-essential \
         libatlas-base-dev
 
-python3 -m pip install --upgrade pip wheel setuptools
+python3 -m pip install  --upgrade pip wheel setuptools
 python3 -m pip uninstall -y ledfx
 python3 -m pip uninstall -y ledfx-dev
 
 sudo rm -rf ~/ledfx-workdir
 mkdir ~/ledfx-workdir
 cd ~/ledfx-workdir
-git clone -b dev https://github.com/shauneccles/LedFx/
+git clone --depth 1 -b dev https://github.com/shauneccles/LedFx/
 cd ~/ledfx-workdir/LedFx
-sudo python3 -m pip install -r ~/ledfx-workdir/LedFx/requirements.txt
-sudo python3 ~/ledfx-workdir/LedFx/setup.py build
-sudo python3 ~/ledfx-workdir/LedFx/setup.py install
+python3 -m pip install --user -r ~/ledfx-workdir/LedFx/requirements.txt
+python3 ~/ledfx-workdir/LedFx/setup.py build
+python3 ~/ledfx-workdir/LedFx/setup.py install --user
 sudo rm -rf ~/ledfx-workdir/
 echo " Please type ledfx to launch LedFx"
