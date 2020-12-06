@@ -83,6 +83,7 @@ class Device(BaseRegistry):
 
         self._active_effect = effect
         self._active_effect.activate(self.pixel_count)
+        # What does this do? Other than break stuff.
         # self._active_effect.setDirtyCallback(self.process_active_effect)
         if not self._active:
             self.activate()
