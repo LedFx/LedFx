@@ -25,14 +25,15 @@ function DevicesTable({ onDeleteDevice, classes, items, onEditDevice }) {
             <Table className={classes.table}>
                 <TableHead>
                     <TableRow>
-                        <TableCell>Name</TableCell>
-                        <TableCell>IP Address</TableCell>
-                        <TableCell>Pixel Count</TableCell>
-                        <TableCell>Type</TableCell>
-                        <TableCell align="right" />
+                        <TableCell style={{ width: '5%' }} />
+                        <TableCell style={{ width: '25%' }}>Name</TableCell>
+                        <TableCell style={{ width: '20%' }}>IP Address</TableCell>
+                        <TableCell style={{ width: '15%' }}>Pixel Count</TableCell>
+                        <TableCell style={{ width: '15%' }}>Type</TableCell>
+                        <TableCell style={{ width: '10%' }} align="right" />
                     </TableRow>
                 </TableHead>
-
+                {/* 
                 <TableBody>
                     {items.map(device => {
                         return (
@@ -44,7 +45,7 @@ function DevicesTable({ onDeleteDevice, classes, items, onEditDevice }) {
                             />
                         );
                     })}
-                </TableBody>
+                </TableBody> */}
             </Table>
         </div>
     );
