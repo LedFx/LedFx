@@ -81,6 +81,7 @@ class E131Device(Device):
                 self._sacn[universe].multicast = False
         # self._sacn.fps = 60
         self._sacn.start()
+        self._sacn.manual_flush = True
 
         _LOGGER.info("sACN sender started.")
         super().activate()
@@ -151,6 +152,8 @@ class E131Device(Device):
             dmx_data[dmx_start:dmx_end] = data[input_start:input_end]
 
             self._sacn[universe].dmx_data = dmx_data.clip(0, 255)
+
+        self._sacn.flush()
 
         # # Hack up a manual flush of the E1.31 data vs having a background thread
         # if self._sacn._output_thread._socket:

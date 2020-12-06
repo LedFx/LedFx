@@ -83,6 +83,7 @@ class Device(BaseRegistry):
 
         self._active_effect = effect
         self._active_effect.activate(self.pixel_count)
+        # What does this do? Other than break stuff.
         # self._active_effect.setDirtyCallback(self.process_active_effect)
         if not self._active:
             self.activate()
@@ -165,8 +166,9 @@ class Device(BaseRegistry):
         frame = None
         if self._active_effect._dirty:
             # Get and process active effect frame
+            pixels = self._active_effect.get_pixels()
             frame = np.clip(
-                self._active_effect.pixels * self._config["max_brightness"],
+                pixels * self._config["max_brightness"],
                 0,
                 255,
             )

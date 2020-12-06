@@ -862,3 +862,84 @@ wavelength(Reactive):
       gradient_roll: 4
       mirror: false
     name: Sunset Sweep
+real_strobe(Reactive):
+  dancefloor:
+    config:
+      bass_strobe_decay_rate: 0.7
+      bass_threshold: 0.4
+      blur: 0.0
+      brightness: 1.0
+      color_step: 0.0625
+      flip: false
+      gradient_name: Dancefloor
+      gradient_repeat: 1
+      gradient_roll: 0
+      mirror: false
+      strobe_color: white
+      strobe_decay_rate: 0.85
+      strobe_width: 50
+    name: Dance floor
+  strobe_only:
+    config:
+      bass_strobe_decay_rate: 0.7
+      bass_threshold: 1
+      blur: 0.0
+      brightness: 1.0
+      color_step: 0.0625
+      flip: false
+      gradient_name: Dancefloor
+      gradient_repeat: 1
+      gradient_roll: 0
+      mirror: false
+      strobe_color: white
+      strobe_decay_rate: 0.85
+      strobe_width: 50
+    name: Strobe only
+  bass_only:
+    config:
+      bass_strobe_decay_rate: 0.7
+      bass_threshold: 0.4
+      blur: 0.0
+      brightness: 1.0
+      color_step: 0.0625
+      flip: false
+      gradient_name: Dancefloor
+      gradient_repeat: 1
+      gradient_roll: 0
+      mirror: false
+      strobe_color: black
+      strobe_decay_rate: 0.85
+      strobe_width: 0
+    name: Bass only
+  extreme:
+    config:
+      bass_strobe_decay_rate: 1
+      bass_threshold: 0.45
+      blur: 0.0
+      brightness: 1.0
+      color_step: 0.0625
+      flip: false
+      gradient_name: Dancefloor
+      gradient_repeat: 1
+      gradient_roll: 0
+      mirror: false
+      strobe_color: white
+      strobe_decay_rate: 1
+      strobe_width: 50
+    name: Extreme
+  glitter:
+    config:
+      bass_strobe_decay_rate: 0.01
+      bass_threshold: 0
+      blur: 0.0
+      brightness: 1.0
+      color_step: 0.015
+      flip: false
+      gradient_name: Dancefloor
+      gradient_repeat: 1
+      gradient_roll: 0
+      mirror: true
+      strobe_color: white
+      strobe_decay_rate: 0.5
+      strobe_width: 50
+    name: Glitter
