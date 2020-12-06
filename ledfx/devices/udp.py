@@ -60,9 +60,8 @@ class UDPDevice(Device):
         if prefix:
             try:
                 udpData.extend(bytes.fromhex(prefix))
-            except:
-                pass
-                # _LOGGER.warning(f"Cannot convert prefix {prefix} to hex value")
+            except ValueError:
+                _LOGGER.warning(f"Cannot convert prefix {prefix} to hex value")
 
         # Append all of the pixel data
         if self._config["include_indexes"]:
@@ -77,9 +76,10 @@ class UDPDevice(Device):
         if postfix:
             try:
                 udpData.extend(bytes.fromhex(postfix))
-            except:
-                pass
-                # _LOGGER.warning(f"Cannot convert postfix {postfix} to hex value")
+            except ValueError:
+                _LOGGER.warning(
+                    f"Cannot convert postfix {postfix} to hex value"
+                )
 
         self._sock.sendto(
             bytes(udpData),

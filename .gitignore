@@ -27,7 +27,7 @@ package-lock.json
 .pydevproject
 .settings
 .idea
-.vscode
+.vscode/settings.json
 *.code-workspace
 
 # Package files
@@ -60,3 +60,4 @@ keypack.pyu
 pyu-data/
 # Sentry Data
 ledfx/sentry_config.py
+formatting_test.bat
