@@ -109,8 +109,8 @@ class LedFxCore(object):
 
         if open_ui:
             import webbrowser
-
-            webbrowser.open(self.http.base_url)
+            # Hardcode to Localhost - will work regardless of actual address given we're binding to 0.0.0.0
+            webbrowser.open("http://127.0.0.1:8888")
 
         await self.flush_loop()
 
