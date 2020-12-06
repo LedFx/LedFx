@@ -36,7 +36,7 @@ INSTALL_REQUIRES = [
     "cython<=0.29.21",
     "pyupdater>=3.1.0",
     "sentry-sdk>=0.19.0",
-    "certifi>=2019.3.9"
+    "certifi>=2019.3.9",
 ]
 
 setup(
