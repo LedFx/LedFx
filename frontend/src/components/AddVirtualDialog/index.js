@@ -16,6 +16,7 @@ function ConfirmationDialogRaw(props) {
     const [value, setValue] = React.useState(valueProp);
     const radioGroupRef = React.useRef(null);
 
+
     React.useEffect(() => {
         if (!open) {
             setValue(valueProp);
@@ -40,6 +41,7 @@ function ConfirmationDialogRaw(props) {
         setValue(event.target.value);
     };
 
+    delete other.deviceList
     return (
         <Dialog
             disableBackdropClick
@@ -48,7 +50,7 @@ function ConfirmationDialogRaw(props) {
             onEntering={handleEntering}
             aria-labelledby="confirmation-dialog-title"
             open={open}
-
+            {...other}
         >
             <DialogTitle id="confirmation-dialog-title">Select a device</DialogTitle>
             <DialogContent dividers>
@@ -104,9 +106,10 @@ export default function ConfirmationDialog({ deviceList, vstrips, setvstrips }) 
 
     const handleClose = (newValue) => {
         setOpen(false);
-        console.log(newValue)
 
+        // console.log("B4:", vstrips)
         setvstrips([...vstrips, { name: newValue }])
+        // console.log("after:", vstrips)
     };
 
     return (

@@ -10,7 +10,7 @@ import Button from '@material-ui/core/Button';
 import AddCircleIcon from '@material-ui/icons/AddCircle';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import AddVirtualDialog from 'components/AddVirtualDialog'
-import DevicesTableyz from 'components/DevicesTable/indexyz';
+import DndList from 'components/DndList';
 import {
     addDevice,
     deleteDevice,
@@ -37,60 +37,60 @@ const VirtualsView = ({
     classes,
     deviceList,
     schemas,
-    deleteDevice,
     scanProgress,
     fetchDeviceList,
 }) => {
-    // constructor(props) {
-    //     super(props);
-    //     this.state = {
-    //         addDialogOpened: false,
-    //         selectedDevice: {},
-    //         searchDevicesLoading: false,
-    //     };
-    // }
+    const test = {}
+    // test[listItem.yz] = { led_start: 1, led_end: 3, pixels: 1 }
+    const [config, setconfig] = useState(test)
 
 
-    // const openAddDeviceDialog = () => {
-    //     this.setState({ selectedDevice: {}, addDialogOpened: true });
-    // };
 
-    // const closeAddDeviceDialog = () => {
-    //     this.setState({ selectedDevice: {}, addDialogOpened: false });
-    // };
+    const [totalPixel, settotalPixel] = useState(0)
 
-    // const handleEditDevice = device => {
-    //     this.setState({ selectedDevice: device, addDialogOpened: true });
-    // };
+
+    const [vstrips, setvstrips] = useState([])
+
+    const [deviceListYz, setdeviceListYz] = useState([])
 
 
 
 
+    useEffect(() => {
+        console.log(vstrips)
+        setdeviceListYz(vstrips.map((v, i) => {
+            console.log("YZ00002", deviceList, v, i)
+            const output = deviceList.filter(d => d.name === v.name)[0]
 
-    // const { addDialogOpened, selectedDevice } = this.state;
+            output["id"] = `${output.key}-${i}`
+            if (!output["yz"]) {
+                output["yz"] = `${output.key}-${i}`
+            }
+            output['led_start'] = 1337;
+            output['led_end'] = 1337;
+
+            // output["key"] = `${output.id}-${i}`
+            // console.log("YZ", output, v, i, vstrips)
+            return output
+        })
+        )
+        // console.log("YZ2", deviceListYz, vstrips)
+        if (config) {
+            let newPixels = 0
+            const tifOptions = Object.keys(config).map(key =>
+
+                newPixels = newPixels + config[key].pixels
+            )
+            settotalPixel(newPixels)
+        }
+    }, [deviceList, vstrips, config])
+
     useEffect(() => {
         fetchDeviceList()
-    }, [fetchDeviceList])
-
-    let totalPixel = 0
-    if (deviceList.length > 0) {
-        totalPixel = deviceList.map(d => d.config.pixel_count).reduce((a, b) => a + b)
-    }
-
-    // const vstrip = {
-    //     name: "V-Strip-1",
-    //     items: []
-    // }
-    const [vstrips, setvstrips] = useState([])
-    let deviceListYz = vstrips.map(v => deviceList.filter(d => d.name === v.name)[0])
-
-
-
-    useEffect(() => {
-        deviceListYz = vstrips.map(v => deviceList.filter(d => d.name === v.name)[0])
-
-    }, [deviceList])
-
+        // if (deviceList.length > 0) {
+        //     settotalPixel(deviceList.map(d => d.config.pixel_count).reduce((a, b) => a + b))
+        // }
+    }, [fetchDeviceList, config])
 
     return (
         <>
@@ -129,21 +129,16 @@ const VirtualsView = ({
                                 )}
                             </Grid>
 
-                            {/* {(deviceList.length > 0) && <DevicesTableyz
-                                items={deviceList}
-                                classes={classes}
-                                onDeleteDevice={deleteDevice}
-                            // onEditDevice={handleEditDevice}
-                            />} */}
-                            {(deviceListYz.length > 0) ? <DevicesTableyz
-                                items={deviceListYz}
-                                classes={classes}
-                                onDeleteDevice={deleteDevice}
-                            // onEditDevice={handleEditDevice}
-                            /> : (<></>)}
 
-                            {/* {(deviceListYz.length > 0) ?
-                                deviceListYz.map((d => JSON.stringify(d))) : (<></>)} */}
+                            {(deviceListYz.length > 0)
+                                ? <DndList
+                                    items={deviceListYz}
+                                    config={config}
+                                    setconfig={setconfig}
+                                />
+                                : (<></>)
+                            }
+
 
 
                         </CardContent>
