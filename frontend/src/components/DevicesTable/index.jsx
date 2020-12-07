@@ -33,7 +33,7 @@ function DevicesTable({ onDeleteDevice, classes, items, onEditDevice }) {
                         <TableCell style={{ width: '10%' }} align="right" />
                     </TableRow>
                 </TableHead>
-                {/* 
+
                 <TableBody>
                     {items.map(device => {
                         return (
@@ -45,7 +45,7 @@ function DevicesTable({ onDeleteDevice, classes, items, onEditDevice }) {
                             />
                         );
                     })}
-                </TableBody> */}
+                </TableBody>
             </Table>
         </div>
     );

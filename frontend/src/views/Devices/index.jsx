@@ -13,7 +13,6 @@ import WifiTetheringIcon from '@material-ui/icons/WifiTethering';
 import CircularProgress from '@material-ui/core/CircularProgress';
 
 import DevicesTable from 'components/DevicesTable';
-import DevicesTableyz from 'components/DevicesTable/indexyz';
 import DeviceConfigDialog from 'components/DeviceConfigDialog';
 import {
     addDevice,
@@ -111,7 +110,7 @@ class DevicesView extends React.Component {
                                                     justifyContent="center"
                                                 >
                                                     <CircularProgress
-                                                        variant="static"
+                                                        variant="determinate"
                                                         value={scanProgress * 10}
                                                         size={35}
                                                     />
@@ -159,13 +158,8 @@ class DevicesView extends React.Component {
                                     onDeleteDevice={deleteDevice}
                                     onEditDevice={this.handleEditDevice}
                                 />
-                                {(deviceList.length > 0) && <DevicesTableyz
-                                    items={deviceList}
-                                    classes={classes}
-                                    onDeleteDevice={deleteDevice}
-                                    onEditDevice={this.handleEditDevice}
-                                />}
-                                
+
+
                             </CardContent>
                         </Card>
                     </Grid>

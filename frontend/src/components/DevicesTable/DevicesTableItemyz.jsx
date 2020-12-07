@@ -1,5 +1,4 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import { NavLink } from 'react-router-dom';
 import { withStyles } from '@material-ui/core/styles';
 import TableRow from '@material-ui/core/TableRow';
@@ -8,6 +7,7 @@ import Button from '@material-ui/core/Button';
 import DeleteIcon from '@material-ui/icons/Delete';
 import EditIcon from '@material-ui/icons/Edit';
 import ReorderIcon from '@material-ui/icons/Reorder';
+import Slider from '@material-ui/core/Slider';
 
 const styles = theme => ({
     button: {
@@ -36,6 +36,8 @@ const styles = theme => ({
     },
 });
 
+
+
 function DevicesTableItem({ device, onDelete, classes, onEdit, index }) {
     const handleDeleteDevice = () => {
         onDelete(device.id);
@@ -44,7 +46,21 @@ function DevicesTableItem({ device, onDelete, classes, onEdit, index }) {
     const handleEditItem = () => {
         onEdit(device);
     };
+    const [value, setValue] = React.useState([1, device.config.pixel_count]);
 
+    const handleChange = (event, newValue) => {
+        setValue(newValue);
+    };
+    const marks = [
+        {
+            value: 1,
+            label: 1,
+        },
+        {
+            value: device.config.pixel_count,
+            label: device.config.pixel_count,
+        },
+    ];
     return (
         <TableRow key={device.id}>
             <TableCell style={{ width: '5%' }}>
@@ -59,7 +75,7 @@ function DevicesTableItem({ device, onDelete, classes, onEdit, index }) {
                         <span></span>
                     )}
             </TableCell>
-            <TableCell style={{ width: '30%' }} component="th" scope="row">
+            <TableCell style={{ width: '15%' }} component="th" scope="row">
                 <NavLink
                     to={'/devices/' + device.id}
                     className={classes.deviceLink}
@@ -68,9 +84,21 @@ function DevicesTableItem({ device, onDelete, classes, onEdit, index }) {
                     {device.config.name}
                 </NavLink>
             </TableCell>
-            <TableCell style={{ width: '25%' }}>{device.config.ip_address}</TableCell>
-            <TableCell style={{ width: '15%' }}>{device.config.pixel_count}</TableCell>
-            <TableCell style={{ width: '15%' }}>{device.type}</TableCell>
+            <TableCell style={{ width: '13%' }}>{device.config.ip_address}</TableCell>
+            <TableCell style={{ width: '10%' }}>{device.config.pixel_count}</TableCell>
+            <TableCell style={{ width: '20%' }}>
+                <Slider
+                    value={value}
+                    marks={marks}
+                    min={1}
+                    max={device.config.pixel_count}
+                    onChange={handleChange}
+                    valueLabelDisplay="auto"
+                    aria-labelledby="range-slider"
+                />
+            </TableCell>
+
+
             <TableCell style={{ width: '10%' }} className={classes.actions}>
                 <Button
                     color="secondary"
@@ -94,10 +122,6 @@ function DevicesTableItem({ device, onDelete, classes, onEdit, index }) {
     );
 }
 
-DevicesTableItem.propTypes = {
-    classes: PropTypes.object.isRequired,
-    device: PropTypes.object.isRequired,
-    onDelete: PropTypes.func.isRequired,
-};
+
 
 export default withStyles(styles)(DevicesTableItem);
