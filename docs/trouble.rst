@@ -41,12 +41,12 @@ No Conda Installation (good for devs) (requires Visual Studio Build Tools):
 
 
 install python 3.7.9
-install visual studio build tools for win10 
+install visual studio build tools for win10
   https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2019
   "visual c++ build tools"
   default install options
 reboot
-open start menu -> x86 native build tools command prompt for VS 2019 
+open start menu -> x86 native build tools command prompt for VS 2019
 
 ..code:: doscon
 
@@ -99,7 +99,7 @@ WLED
 
   - As long as the universe size is set to 510 LedFx should output to all pixels. Maybe something in the code is not working past 1 universe as 1 universe is 170 LEDs
 
-  - Make sure "disable wifi sleep" is ticked in WiFi Settings on the WLED web interface.
+  - Make sure "disable WiFi sleep" is ticked in WiFi Settings on the WLED web interface.
 
   - How many devices do you have?
 
@@ -128,11 +128,11 @@ LAN IP opens up the port, 8383 in your case, to other devices on your LAN from y
 Speaker Sound
 -------------
 
-My solution to this exact problem is Chromecast audios, I have two in a group and Chromecast to the group.
+My solution to this exact problem is ChromeCast audios, I have two in a group and ChromeCast to the group.
 One of them is connected to my DAC that is then connected to my amplifiers, and another is connected to a line
 in on my computer in a separate room that LedFx is running on.
 
-They're perfectly synchronised, but if you need to, you can do a delay on any of the Chromecasts within the group
+They're perfectly synchronized, but if you need to, you can do a delay on any of the ChromeCasts within the group
 to adjust sync.
 
 Windows:
@@ -143,7 +143,7 @@ https://thegeekpage.com/stereo-mix/
 Squeezebox Server - Logitech
 ++++++++++++++++++++++++++++
 
-Multiroom: https://www.picoreplayer.org/
+MultiRoom: https://www.picoreplayer.org/
 
 VBAN audio sync
 +++++++++++++++
