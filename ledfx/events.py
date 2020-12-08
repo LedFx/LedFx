@@ -20,7 +20,7 @@ class Event:
 
 
 class DeviceUpdateEvent(Event):
-    """Event emmitted when a device's pixels are updated"""
+    """Event emitted when a device's pixels are updated"""
 
     def __init__(self, device_id: str, pixels: np.ndarray):
         super().__init__(Event.DEVICE_UPDATE)
@@ -29,7 +29,7 @@ class DeviceUpdateEvent(Event):
 
 
 class GraphUpdateEvent(Event):
-    """Event emmitted when a device's pixels are updated"""
+    """Event emitted when a device's pixels are updated"""
 
     def __init__(
         self,
@@ -44,7 +44,7 @@ class GraphUpdateEvent(Event):
 
 
 class LedFxShutdownEvent(Event):
-    """Event emmitted when LedFx is shutting down"""
+    """Event emitted when LedFx is shutting down"""
 
     def __init__(self):
         super().__init__(Event.LEDFX_SHUTDOWN)
