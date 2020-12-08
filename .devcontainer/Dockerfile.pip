@@ -19,38 +19,26 @@ ENV PATH="/ledfx/venv/bin:$PATH"
 #
 # TRY WITH build-essential and portaudio19-dev ONLY
 # 
-
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        libatlas3-base \
-        libavformat58 \
+        gcc \
+        libc-dev \
+    && apt-get install -y \
+        alsa-utils \
+        libasound2 \
+        libasound2-plugins \
         portaudio19-dev \
         pulseaudio \
-        gcc \
-        git \
-        libc-dev \
-        nodejs \
-        npm \
-        python3-dev \
-        && apt-get clean -y \
-        && apt-get autoremove -y \
-        && rm -rf /var/lib/apt/lists/*
+    && pip install ledfx-dev \
+    && apt-get purge -y gcc libc-dev \
+    && apt-get clean -y \
+    && apt-get autoremove -y \
+    && rm -rf /var/lib/apt/lists/*
 
 # Add user `ledfx` and create home folder
-# RUN useradd --create-home ledfx
+RUN useradd --create-home ledfx
 # Set the working directory in the container
 WORKDIR /home/ledfx
-RUN git clone https://github.com/ahodges9/ledfx -b dev ledfxdev \
-      && cd ledfxdev/frontend \
-      && npm install -g yarn \
-      # && yarn \
-      # && yarn build \
-      && cd .. \
-      && pip install -r requirements.txt \
-      && python setup.py develop
-# RUN python setup.py build
-# RUN python setup.py install
-
-# USER ledfx
+USER ledfx
 
 # Expose port 8888 for web server and 5353 for mDNS discovery
 EXPOSE 8888/tcp
