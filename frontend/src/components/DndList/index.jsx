@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import {
     List,
@@ -21,9 +21,20 @@ const reorder = (list, startIndex, endIndex) => {
     return result;
 };
 
+const UsedPixels = ({ config, listItem, pixel_count }) => {
+    const [pixelsyz, setpixelsyz] = useState({})
+
+    useEffect(() => {
+        setpixelsyz(config)
+    }, [config])
+    return (
+        <ListItemText style={{ flexBasis: "20%", flexGrow: 'unset', width: "20%", textAlign: 'center' }} secondary={'Used Pixels'} primary={(pixelsyz[listItem.yz] && (pixelsyz[listItem.yz].led_end - pixelsyz[listItem.yz].led_start)) || pixel_count}
+        />
+    )
+}
 // listItem: config
 // index: ordering
-const DndListItem = ({ listItem, index, config, setconfig }) => {
+const DndListItem = ({ listItem, index, config, setconfig, totalPixel, settotalPixel }) => {
     const getItemStyle = (isDragging, draggableStyle) => ({
         // styles we need to apply on draggables
         ...draggableStyle,
@@ -34,8 +45,6 @@ const DndListItem = ({ listItem, index, config, setconfig }) => {
             background: "rgb(235,235,235)"
         })
     });
-
-
 
 
     return (
@@ -52,7 +61,6 @@ const DndListItem = ({ listItem, index, config, setconfig }) => {
                     )}
                 >
                     <ListItemIcon  {...provided.dragHandleProps}>
-                        {index}
                         <ReorderIcon />
                     </ListItemIcon>
                     <ListItemText
@@ -61,14 +69,14 @@ const DndListItem = ({ listItem, index, config, setconfig }) => {
                         style={{ flexBasis: "30%", flexGrow: 'unset', width: "30%" }}
                     />
                     <ListItemText style={{ flexBasis: "20%", flexGrow: 'unset', width: "20%" }}>
-                        <PixelSlider pixel_count={listItem.config.pixel_count} setconfig={setconfig} config={config} yz={listItem.yz} listItem={listItem} />
+                        <PixelSlider totalPixel={totalPixel} settotalPixel={settotalPixel} pixel_count={listItem.config.pixel_count} setconfig={setconfig} config={config} yz={listItem.yz} listItem={listItem} />
                     </ListItemText>
-                    <ListItemText style={{ flexBasis: "20%", flexGrow: 'unset', width: "20%", textAlign: 'center' }} secondary={'Used Pixels'} primary={JSON.stringify(config[listItem.yz] && config[listItem.yz].pixels)}>
-
-                    </ListItemText>
+                    <UsedPixels config={config} pixel_count={listItem.config.pixel_count} setconfig={setconfig} listItem={listItem} />
                     <ListItemSecondaryAction>
 
-                        <IconButton>
+                        <IconButton onClick={() => {
+                            console.log("DELETING", listItem)
+                        }}>
                             <DeleteIcon />
                         </IconButton>
                     </ListItemSecondaryAction>
@@ -78,7 +86,7 @@ const DndListItem = ({ listItem, index, config, setconfig }) => {
     )
 };
 
-const DndListContainer = React.memo(function DndListContainer({ listItems, provided, style, config, setconfig }) {
+const DndListContainer = React.memo(function DndListContainer({ listItems, provided, style, config, setconfig, totalPixel, settotalPixel }) {
 
     return (<List style={style}>
         {listItems.map((listItem, index) => (
@@ -88,6 +96,8 @@ const DndListContainer = React.memo(function DndListContainer({ listItems, provi
                 key={`${listItem.id}-${index}`}
                 config={config}
                 setconfig={setconfig}
+                totalPixel={totalPixel}
+                settotalPixel={settotalPixel}
                 style={{ marginBottom: '5em' }}
             // EMIN YEON
 
@@ -100,11 +110,13 @@ const DndListContainer = React.memo(function DndListContainer({ listItems, provi
 export default function DndList({
     items,
     config,
-    setconfig
+    setconfig,
+    totalPixel,
+    settotalPixel
 }) {
-    console.log("DAMN", items)
-    const [state, setState] = useState({ listItems: items });
 
+    const [state, setState] = useState({ listitems: items });
+    console.log("DAMN", items, " AND ", state)
     function onDragEnd(result) {
         if (!result.destination) {
             console.log("NO DESTINATION")
@@ -112,13 +124,13 @@ export default function DndList({
         }
 
         if (result.destination.index === result.source.index) {
-            console.log("START=STOP")
+            console.log("START=STOP",)
             return;
         }
 
-        const listItems = reorder(state.listItems, result.source.index, result.destination.index);
-        console.log("Reordered", listItems)
-        setState(listItems, ...items);
+        const listitems = reorder(state.listitems, result.source.index, result.destination.index);
+        console.log("Reordered", listitems)
+        setState({ listitems });
     }
 
 
@@ -127,13 +139,17 @@ export default function DndList({
         //background: isDraggingOver ? 'lightblue' : 'lightgrey',
     });
 
+    useEffect(() => {
+        setState({ listitems: items })
+
+    }, [items])
 
     return (
         <DragDropContext onDragEnd={onDragEnd}>
             <Droppable droppableId="list">
                 {(provided, snapshot) => console.log(state) || (
                     <RootRef rootRef={provided.innerRef}>
-                        <DndListContainer style={getListStyle(snapshot.isDraggingOver)} listItems={items} provided={provided} config={config} setconfig={setconfig} />
+                        <DndListContainer style={getListStyle(snapshot.isDraggingOver)} totalPixel={totalPixel} settotalPixel={settotalPixel} listItems={state.listitems} provided={provided} config={config} setconfig={setconfig} />
                     </RootRef>
                 )}
             </Droppable>

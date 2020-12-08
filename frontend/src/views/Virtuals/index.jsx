@@ -40,47 +40,29 @@ const VirtualsView = ({
     scanProgress,
     fetchDeviceList,
 }) => {
-    const test = {}
-    // test[listItem.yz] = { led_start: 1, led_end: 3, pixels: 1 }
-    const [config, setconfig] = useState(test)
 
-
-
+    const [config, setconfig] = useState({})
     const [totalPixel, settotalPixel] = useState(0)
-
-
     const [vstrips, setvstrips] = useState([])
-
     const [deviceListYz, setdeviceListYz] = useState([])
 
 
-
-
     useEffect(() => {
-        console.log(vstrips)
         setdeviceListYz(vstrips.map((v, i) => {
-            console.log("YZ00002", deviceList, v, i)
-            const output = deviceList.filter(d => d.name === v.name)[0]
-
-            output["id"] = `${output.key}-${i}`
-            if (!output["yz"]) {
-                output["yz"] = `${output.key}-${i}`
-            }
-            output['led_start'] = 1337;
-            output['led_end'] = 1337;
-
-            // output["key"] = `${output.id}-${i}`
-            // console.log("YZ", output, v, i, vstrips)
+            const output = { ...deviceList.find(d => d.name === v.name) }
+            output["id"] = '' + output.key + '-yz-' + i
+            output["yz"] = output["id"]
+            output["key"] = output["id"]
             return output
         })
         )
-        // console.log("YZ2", deviceListYz, vstrips)
+
         if (config) {
             let newPixels = 0
-            const tifOptions = Object.keys(config).map(key =>
-
-                newPixels = newPixels + config[key].pixels
+            const calcPixels = Object.keys(config).map(key =>
+                newPixels = newPixels + (config[key].led_end - config[key].led_start)
             )
+            console.log(typeof calcPixels)
             settotalPixel(newPixels)
         }
     }, [deviceList, vstrips, config])
@@ -90,7 +72,7 @@ const VirtualsView = ({
         // if (deviceList.length > 0) {
         //     settotalPixel(deviceList.map(d => d.config.pixel_count).reduce((a, b) => a + b))
         // }
-    }, [fetchDeviceList, config])
+    }, [fetchDeviceList])
 
     return (
         <>
@@ -135,6 +117,8 @@ const VirtualsView = ({
                                     items={deviceListYz}
                                     config={config}
                                     setconfig={setconfig}
+                                    settotalPixel={settotalPixel}
+                                    totalPixel={totalPixel}
                                 />
                                 : (<></>)
                             }

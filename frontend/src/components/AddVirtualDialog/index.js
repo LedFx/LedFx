@@ -82,6 +82,7 @@ ConfirmationDialogRaw.propTypes = {
     onClose: PropTypes.func.isRequired,
     open: PropTypes.bool.isRequired,
     value: PropTypes.string.isRequired,
+    config: PropTypes.any
 };
 
 const useStyles = makeStyles((theme) => ({
@@ -96,7 +97,7 @@ const useStyles = makeStyles((theme) => ({
     },
 }));
 
-export default function ConfirmationDialog({ deviceList, vstrips, setvstrips }) {
+export default function ConfirmationDialog({ deviceList, vstrips, setvstrips, config }) {
     const classes = useStyles();
     const [open, setOpen] = React.useState(false);
 
@@ -131,6 +132,7 @@ export default function ConfirmationDialog({ deviceList, vstrips, setvstrips }) 
                     classes={{
                         paper: classes.paper,
                     }}
+                    config={config}
                     id="ringtone-menu"
                     keepMounted
                     open={open}
