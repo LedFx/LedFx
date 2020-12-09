@@ -59,19 +59,16 @@ const VirtualsView = ({
 
         if (config) {
             let newPixels = 0
-            const calcPixels = Object.keys(config).map(key =>
+            const calcPixels = Object.keys(config).map(key => // eslint-disable-no-unused-vars
                 newPixels = newPixels + (config[key].led_end - config[key].led_start)
             )
-            console.log(typeof calcPixels)
             settotalPixel(newPixels)
+            console.log(calcPixels, config)
         }
     }, [deviceList, vstrips, config])
 
     useEffect(() => {
         fetchDeviceList()
-        // if (deviceList.length > 0) {
-        //     settotalPixel(deviceList.map(d => d.config.pixel_count).reduce((a, b) => a + b))
-        // }
     }, [fetchDeviceList])
 
     return (
@@ -84,11 +81,16 @@ const VirtualsView = ({
                                 <Grid item xs="auto">
                                     <Typography variant="h5">V-Strip-1</Typography>
                                 </Grid>
-                                <Grid item xs="auto">
-                                    <Typography variant="body1" color="textSecondary">
-                                        Total Pixels: {totalPixel}
-                                    </Typography>
-                                </Grid>
+                                {totalPixel > 0
+                                    ? (
+                                        <Grid item xs="auto">
+                                            <Typography variant="body1" color="textSecondary">
+                                                Total Pixels: {totalPixel}
+                                            </Typography>
+                                        </Grid>
+                                    )
+                                    : (<></>)}
+
                                 {!schemas.isLoading && (
                                     <>
                                         <Grid item>
@@ -115,10 +117,9 @@ const VirtualsView = ({
                             {(deviceListYz.length > 0)
                                 ? <DndList
                                     items={deviceListYz}
+                                    setdeviceListYz={setdeviceListYz}
                                     config={config}
                                     setconfig={setconfig}
-                                    settotalPixel={settotalPixel}
-                                    totalPixel={totalPixel}
                                 />
                                 : (<></>)
                             }

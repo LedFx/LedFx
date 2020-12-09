@@ -108,8 +108,10 @@ export default function ConfirmationDialog({ deviceList, vstrips, setvstrips, co
     const handleClose = (newValue) => {
         setOpen(false);
 
-        // console.log("B4:", vstrips)
-        setvstrips([...vstrips, { name: newValue }])
+        // console.log("B4:", deviceList.map((de)=>de).find((d)=>d.name === newValue).reduce((a, b) => a + b))
+        if (newValue) {
+            setvstrips([...vstrips, { name: newValue }])
+        }
         // console.log("after:", vstrips)
     };
 

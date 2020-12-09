@@ -1,11 +1,13 @@
 import { createMuiTheme } from '@material-ui/core/styles';
-import teal from '@material-ui/core/colors/teal';
+// import cyan from '@material-ui/core/colors/cyan';
 
 export default createMuiTheme({
     palette: {
-        primary: teal,
+        primary: {
+            main: '#800000'
+        },
         secondary: {
-          main: '#ef6c00',
+            main: '#f05545',
         },
     },
     overrides: {
