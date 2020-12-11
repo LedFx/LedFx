@@ -13,12 +13,12 @@ class DeviceEndpoint(RestEndpoint):
 
     async def get(self, integration_id) -> web.Response:
         """Get widget list"""
-        integration = self._ledfx.integrations.get(integration_id)
-        if integration is None:
+        qlc = self._ledfx.integrations.get(integration_id)
+        if qlc is None:
             response = {"not found": 404}
             return web.json_response(data=response, status=404)
 
-        response = integration.config
+        response = await qlc.get_widgets()
         return web.json_response(data=response, status=200)
 
     async def put(self, device_id, request) -> web.Response:

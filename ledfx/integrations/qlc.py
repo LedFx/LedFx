@@ -19,6 +19,7 @@ class QLC(Integration):
     """QLC+ Integration"""
 
     _status = None
+    _widget_types = ["Button", "Slider", "Audio Triggers"]
 
     CONFIG_SCHEMA = vol.Schema(
         {
@@ -74,18 +75,19 @@ class QLC(Integration):
             func, event_type, event_filter)
 
     async def get_widgets(self):
-        """ Returns a list of widgets as tuples, [(ID, Type, Name),...]"""
+        """ Returns a list of widgets as tuples: [(ID, Type, Name),...] """
         # First get list of widgets (ID, Name)
         widgets = []
         message = "QLC+API|getWidgetsList"
         response = await self._client.query(message)
         widgets_list = response.lstrip(f"{message}|").split("|")
         # Then get the type for each widget (in individual requests bc QLC api be like that)
-        for widget_id, widget_name in enum(widgets_list[1::2]):
+        for widget_id, widget_name in enumerate(widgets_list[1::2]):
             message = "QLC+API|getWidgetType"
             response = await self._client.query(f"{message}|{widget_id}")
             widget_type = response.lstrip(f"{message}|")
-            widgets.append((widget_id, widget_type, widget_name))
+            if widget_type in self._widget_types:
+                widgets.append((widget_id, widget_type, widget_name))
         return widgets
 
     async def handle_scene_set(self):
@@ -128,8 +130,9 @@ class QLCWebsocketClient(aiohttp.ClientSession):
         await self.read(callback)
 
     async def query(self, message):
-        await self.send(message, formatted)
-        return await self.receive().lstrip("QLC+API|")
+        await self.send(message)
+        result = await self.receive()
+        return result.lstrip("QLC+API|")
 
     async def send(self, message):
         """Send a message to the WebSocket."""
@@ -138,8 +141,8 @@ class QLCWebsocketClient(aiohttp.ClientSession):
             return
 
 
-        self.websocket.send_str(message)
-        _LOGGER.info(f"Sent message {message} to {self.domain}")
+        await self.websocket.send_str(message)
+        _LOGGER.debug(f"Sent message {message} to {self.domain}")
 
     async def receive(self):
         """Receive one message from the WebSocket."""
