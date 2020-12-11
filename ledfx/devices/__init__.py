@@ -71,14 +71,14 @@ class Device(BaseRegistry):
 
     def set_effect(self, effect, start_pixel=None, end_pixel=None):
         self.fade_duration = (
-            self._config["refresh_rate"] * self._ledfx.config["fade"]
+            self._config["refresh_rate"] * self._ledfx.config["crossfade"]
         )
         self.fade_timer = self.fade_duration
 
         if self._active_effect is not None:
             self._fadeout_effect = self._active_effect
             self._ledfx.loop.call_later(
-                self._ledfx.config["fade"], self.clear_fadeout_effect
+                self._ledfx.config["crossfade"], self.clear_fadeout_effect
             )
 
         self._active_effect = effect
@@ -90,12 +90,12 @@ class Device(BaseRegistry):
 
     def clear_effect(self):
         self.fade_duration = (
-            self._config["refresh_rate"] * self._ledfx.config["fade"]
+            self._config["refresh_rate"] * self._ledfx.config["crossfade"]
         )
         self.fade_timer = -self.fade_duration
 
         self._ledfx.loop.call_later(
-            self._ledfx.config["fade"], self.clear_frame
+            self._ledfx.config["crossfade"], self.clear_frame
         )
 
     def clear_fadeout_effect(self):

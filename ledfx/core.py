@@ -6,6 +6,7 @@ from ledfx.utils import async_fire_and_forget
 from ledfx.http_manager import HttpServer
 from ledfx.devices import Devices
 from ledfx.effects import Effects
+from ledfx.integrations import Integrations
 from ledfx.config import (
     load_config,
     save_config,
@@ -96,9 +97,12 @@ class LedFxCore(object):
 
         self.devices = Devices(self)
         self.effects = Effects(self)
+        self.integrations = Integrations(self)
 
         # TODO: Deferr
         self.devices.create_from_config(self.config["devices"])
+        self.integrations.create_from_config(self.config["integrations"])
+
 
         if not self.devices.values():
             _LOGGER.info("No devices saved in config.")

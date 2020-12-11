@@ -39,7 +39,9 @@ def install_package(package):
 
 def import_or_install(package):
     try:
-        print("imported package")
+        _LOGGER.info(
+            f"Imported package: {package}"
+        )
         return importlib.import_module(package)
 
     except ImportError:
