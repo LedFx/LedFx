@@ -57,7 +57,8 @@ class IntegrationsEndpoint(RestEndpoint):
 
     async def delete(self, integration_id) -> web.Response:
         """Delete an integration, erasing all its configuration
-        NOTE: THIS DOES NOT TURN OFF THE INTEGRATION, IT DELETES IT!"""
+        NOTE: THIS DOES NOT TURN OFF THE INTEGRATION, IT DELETES IT!
+        USE PUT TO TOGGLE!"""
         integration = self._ledfx.integrations.get(integration_id)
         if integration is None:
             response = {"not found": 404}
@@ -129,6 +130,7 @@ class IntegrationsEndpoint(RestEndpoint):
             type=integration_type,
             active=True,
             config=integration_config,
+            data=None,
             ledfx=self._ledfx,
         )
 
@@ -139,6 +141,7 @@ class IntegrationsEndpoint(RestEndpoint):
                     "id": integration.id,
                     "type": integration.type,
                     "active": integration.active,
+                    "data": integration.data,
                     "config": integration.config,
                 }
             )
