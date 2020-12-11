@@ -28,7 +28,7 @@ class Device(BaseRegistry):
             ): vol.All(vol.Coerce(float), vol.Range(min=0, max=1)),
             vol.Optional(
                 "center_offset",
-                description="Number of pixels from the preceived center of the device",
+                description="Number of pixels from the perceived center of the device",
                 default=0,
             ): int,
             vol.Optional(
@@ -138,7 +138,7 @@ class Device(BaseRegistry):
 
     def thread_function(self):
         # TODO: Evaluate switching over to asyncio with UV loop optimization
-        # instead of spinning a seperate thread.
+        # instead of spinning a separate thread.
         sleep_interval = 1 / self._config["refresh_rate"]
 
         if self._active:
@@ -160,7 +160,7 @@ class Device(BaseRegistry):
     def assemble_frame(self):
         """
         Assembles the frame to be flushed. Currently this will just return
-        the active channels pixels, but will eventaully handle things like
+        the active channels pixels, but will eventually handle things like
         merging multiple segments segments and alpha blending channels
         """
         frame = None
@@ -233,7 +233,7 @@ class Device(BaseRegistry):
     @abstractmethod
     def flush(self, data):
         """
-        Flushes the provided data to the device. This abstract medthod must be
+        Flushes the provided data to the device. This abstract method must be
         overwritten by the device implementation.
         """
 

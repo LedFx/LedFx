@@ -61,7 +61,7 @@ def create_default_config(config_dir: str) -> str:
 
 
 def ensure_config_file(config_dir: str) -> str:
-    """Checks if a config file exsit, and otherwise creates one"""
+    """Checks if a config file exists, and otherwise creates one"""
 
     ensure_config_directory(config_dir)
     config_path = get_config_file(config_dir)
@@ -74,7 +74,7 @@ def ensure_config_file(config_dir: str) -> str:
 def ensure_config_directory(config_dir: str) -> None:
     """Validate that the config directory is valid."""
 
-    # If an explict path is provided simply check if it exist and failfast
+    # If an explicit path is provided simply check if it exist and failfast
     # if it doesn't. Otherwise, if we have the default directory attempt to
     # create the file
     if not os.path.isdir(config_dir):

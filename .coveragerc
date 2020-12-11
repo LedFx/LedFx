@@ -5,7 +5,7 @@ source = */ledfx/*
 # omit = bad_file.py
 
 [report]
-# Regexes for lines to exclude from consideration
+# Regex's for lines to exclude from consideration
 exclude_lines =
     # Have to re-enable the standard pragma
     pragma: no cover
