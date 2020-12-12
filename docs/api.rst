@@ -200,6 +200,12 @@ Endpoint for managing integrations. Integrations are written to allow ledfx to c
 
 Get info of all integrations
 
+STATUS REFERENCE
+0: disconnected
+1: connected
+2: disconnecting
+3: connecting
+
 .. rubric:: PUT
 
 Toggle an integration on or off
