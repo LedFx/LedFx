@@ -23,6 +23,7 @@ class IntegrationsEndpoint(RestEndpoint):
                 "type": integration.type,
                 "active": integration.active,
                 "status": integration.status,
+                "data": integration.data,
                 "config": integration.config,
             }
         return web.Response(text=json.dumps(response), status=200)

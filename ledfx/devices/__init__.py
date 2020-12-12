@@ -1,6 +1,6 @@
 from ledfx.utils import BaseRegistry, RegistryLoader, generate_id
 from ledfx.config import save_config
-from ledfx.events import DeviceUpdateEvent, Event
+from ledfx.events import DeviceUpdateEvent, EffectSetEvent, EffectClearedEvent, Event
 from abc import abstractmethod
 import voluptuous as vol
 import numpy as np
@@ -85,10 +85,17 @@ class Device(BaseRegistry):
         self._active_effect.activate(self.pixel_count)
         # What does this do? Other than break stuff.
         # self._active_effect.setDirtyCallback(self.process_active_effect)
+        self._ledfx.events.fire_event(
+                EffectSetEvent(self.active_effect.name)
+            )
         if not self._active:
             self.activate()
 
     def clear_effect(self):
+        self._ledfx.events.fire_event(
+                EffectClearedEvent()
+            )
+
         self.fade_duration = (
             self._config["refresh_rate"] * self._ledfx.config["crossfade"]
         )

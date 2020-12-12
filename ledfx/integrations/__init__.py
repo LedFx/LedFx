@@ -14,13 +14,18 @@ _LOGGER = logging.getLogger(__name__)
 @BaseRegistry.no_registration
 class Integration(BaseRegistry):
 
-    _active = False
-    _status = None
+    # STATUS REFERENCE
+    # 0: disconnected
+    # 1: connected
+    # 2: disconnecting
+    # 3: connecting
 
-    def __init__(self, ledfx, config, active):
+    def __init__(self, ledfx, config, active, data):
         self._ledfx = ledfx
         self._config = config
         self._active = active
+        self._data = data
+        self._status = 0
 
     def __del__(self):
         if self._active:
@@ -29,42 +34,45 @@ class Integration(BaseRegistry):
     async def activate(self):
         _LOGGER.info(("Activating {} integration").format(self._config["name"]))
         self._active = True
+        self._status = 3
         await self.connect()
+        self._status = 1
 
     async def deactivate(self):
         _LOGGER.info(("Deactivating {} integration").format(self._config["name"]))
         self._active = False
+        self._status = 2
         await self.disconnect()
+        self._status = 0
 
     async def reconnect(self):
         _LOGGER.info(("Reconnecting {} integration").format(self._config["name"]))
+        self._status = 2
         await self.disconnect()
+        self._status = 3
         await self.connect()
+        self._status = 1
 
     async def connect(self):
-        pass
         """
         Establish a connection with the service.
         This abstract method must be overwritten by the integration implementation.
         """
+        pass
 
     async def disconnect(self):
-        pass
         """
         Disconnect from the service.
         This abstract method must be overwritten by the integration implementation.
         """
-
-    def save_data(self):
-        return None
-        """
-        Integrations should reimplement this to return their data that will be saved in config.yaml.
-        This abstract method must be overwritten by the integration implementation.
-        """
+        pass
 
     def on_shutdown(self):
-        data = self.save_data()
-        self._config["data"] = data
+        """
+        Integrations should reimplement this if there's anything they need to do on shutdown to close cleanly.
+        This abstract method must be overwritten by the integration implementation.
+        """
+        pass
 
     @property
     def name(self):
@@ -82,6 +90,14 @@ class Integration(BaseRegistry):
     def active(self):
         return self._active
 
+    @property
+    def data(self):
+        return self._data
+
+    @property
+    def status(self):
+        return self._status
+    
 
 class Integrations(RegistryLoader):
     """Thin wrapper around the integration registry that manages integrations"""

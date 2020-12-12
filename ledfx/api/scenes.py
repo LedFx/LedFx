@@ -1,6 +1,7 @@
 from ledfx.config import save_config
 from ledfx.api import RestEndpoint
 from ledfx.utils import generate_id
+from ledfx.events import SceneSetEvent
 from aiohttp import web
 import logging
 
@@ -110,6 +111,10 @@ class ScenesEndpoint(RestEndpoint):
                     device.set_effect(effect)
                 else:
                     device.clear_effect()
+
+            self._ledfx.events.fire_event(
+                SceneSetEvent(scene["name"])
+            )
 
         elif action == "rename":
             name = data.get("name")

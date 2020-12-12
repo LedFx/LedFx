@@ -12,7 +12,7 @@ from ledfx.config import (
     save_config,
     load_default_presets,
 )
-from ledfx.events import Events, LedFxShutdownEvent
+from ledfx.events import Events, LedFxShutdownEvent, Event
 
 _LOGGER = logging.getLogger(__name__)
 

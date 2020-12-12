@@ -192,6 +192,99 @@ Save effect configuration of devices as a scene
 
 Delete a scene
 
+/api/integrations
+================================
+Endpoint for managing integrations. Integrations are written to allow ledfx to communicate with other software, and vice versa.
+
+.. rubric:: GET
+
+Get info of all integrations
+
+.. rubric:: PUT
+
+Toggle an integration on or off
+
+example:
+
+{"id": "myqlc"}
+
+.. rubric:: POST
+
+Create a new integration, or update an existing one
+
+example: 
+
+{"type": "qlc",
+ "config": {
+     "description": "QLC Test"
+     "ip_address": "127.0.0.1"
+     "name": "myQLC+""
+     "port": 9999
+ }
+}
+
+.. rubric:: DELETE
+
+Delete an integration, erasing all its configuration and data.
+
+example:
+
+{"id": "myqlc"}
+
+NOTE: This does not turn off the integration, it deletes it entirely! (though it will first turn off..)
+
+/api/integrations/qlc/<integration_id>
+================================
+Endpoint for querying and managing a QLC integration.
+
+.. rubric:: GET
+
+Get info from the QLC+ integration. Specify "info", one of: ["event_types", "qlc_widgets", "qlc_listeners"]
+
+event_types: retrieves a list of all the types of events and associated filters a qlc listener can subscribe to
+qlc_widgets: retrieves a list of all the widgets that can be modified, formatted as [(ID, Type, Name),...]
+             for "type":
+                 "Buttons" can be set to either off (0) or on (255)
+                 "Audio Triggers" are either off (0) or on (255)
+                 "Sliders" can be anywhere between 0 and 255
+qlc_listeners: retrieves a list of all of the events that QLC is listening to, and their associated widget value payloads
+
+example:
+
+{"info": "qlc_listeners"}
+
+.. rubric:: PUT
+
+Toggle a QLC+ event listener on or off, so that it will or will not send its payload to set QLC+ widgets
+
+example:
+
+{"event_type": "scene_set",
+"event_filter": {"scene_name": "Gradient"}}
+
+.. rubric:: POST
+
+Add a new QLC event listener and QLC+ payload or update an existing one if it exists with same event_type and event_filter
+The "qlc_payload" is a dict of {"widget_id": value} that will be sent to QLC+
+
+example: 
+
+{"event_type": "scene_set", 
+ "event_filter": {"scene_name": "Gradient"}, 
+ "qlc_payload": {"0":255, "1":255, "2":169}}
+
+.. rubric:: DELETE
+
+Delete a QLC event listener, and associated payload data.
+
+example:
+
+{"event_type": "scene_set",
+"event_filter": {"scene_name": "Gradient"}}
+
+NOTE: This does not turn off the integration, it deletes it entirely! (though it will first turn off..)
+
+
 ===================
    WebSocket API
 ===================
