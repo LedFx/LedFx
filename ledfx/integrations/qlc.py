@@ -19,12 +19,14 @@ class QLC(Integration):
     """QLC+ Integration"""
 
     _widget_types = ["Button", "Slider", "Audio Triggers"]
+    NAME = "QLC+"
+    DESCRIPTION = "Web Api Integration for Q Light Controller Plus"
 
     CONFIG_SCHEMA = vol.Schema(
         {
             vol.Required(
                 "name", 
-                description="Name of this integration", 
+                description="Name of this integration instance and associated settings", 
                 default="QLC+"
             ): str,
             vol.Required(

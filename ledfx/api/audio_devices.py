@@ -36,7 +36,7 @@ class AudioDevicesEndpoint(RestEndpoint):
         return web.json_response(data=audio_devices, status=200)
 
     async def put(self, request) -> web.Response:
-        """Set audio device to use as input. Requires restart for changes to take effect"""
+        """Set audio device to use as input"""
         data = await request.json()
         index = data.get("index")
 

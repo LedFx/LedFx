@@ -35,6 +35,18 @@ class SchemaEndpoint(RestEndpoint):
                     "id": effect_type,
                     "name": effect.NAME,
                 }
+        elif schema_type == "integrations":
+            # Generate all the integrations schema
+            for (
+                integration_type,
+                integration,
+            ) in self._ledfx.integrations.classes().items():
+                response["integrations"][integration_type] = {
+                    "schema": convertToJsonSchema(integration.schema()),
+                    "id": integration_type,
+                    "name": integration.NAME,
+                    "description": integration.DESCRIPTION
+                }
 
             return web.json_response(data=response, status=200)
         else:

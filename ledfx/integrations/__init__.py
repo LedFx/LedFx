@@ -94,10 +94,6 @@ class Integration(BaseRegistry):
     def data(self):
         return self._data
 
-    @property
-    def status(self):
-        return self._status
-    
 
 class Integrations(RegistryLoader):
     """Thin wrapper around the integration registry that manages integrations"""
