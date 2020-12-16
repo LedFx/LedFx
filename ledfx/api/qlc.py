@@ -96,7 +96,7 @@ class QLCEndpoint(RestEndpoint):
         if type(event_filter) is not dict:
             response = {
                 "status": "failed",
-                "reason": f'Invalid filter {event_filter}, should be eg. {{"scene_name": "my scene"}}',
+                "reason": f'Invalid filter "{event_filter}", should be dictionary eg. {{ "scene_name" : "my scene" }} ',
             }
             return web.json_response(data=response, status=500)
 
@@ -145,7 +145,7 @@ class QLCEndpoint(RestEndpoint):
         if type(event_filter) is not dict:
             response = {
                 "status": "failed",
-                "reason": f'Invalid filter {event_filter}, should be eg. {{"scene_name": "my scene"}}',
+                "reason": f'Invalid filter "{event_filter}", should be dictionary eg. {{ "scene_name" : "my scene" }} ',
             }
             return web.json_response(data=response, status=500)
 
@@ -200,7 +200,7 @@ class QLCEndpoint(RestEndpoint):
         if type(event_filter) is not dict:
             response = {
                 "status": "failed",
-                "reason": f'Invalid filter {event_filter}, should be eg. {{"scene_name": "my scene"}}',
+                "reason": f'Invalid filter "{event_filter}", should be dictionary eg. {{ "scene_name" : "my scene" }} ',
             }
             return web.json_response(data=response, status=500)
 
