@@ -55,6 +55,7 @@ export default handleActions(
                 ...state, list: state.list.map(reduxItem => {
                     if (reduxItem.name === payload.virtual) {
                         reduxItem.items = [...reduxItem.items, payload.device]
+                        reduxItem.pixel_count = reduxItem.pixel_count + payload.device.config.pixel_count
                     }
                     return reduxItem
                 })
