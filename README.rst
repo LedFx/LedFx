@@ -10,10 +10,10 @@ LedFx website: https://ledfx.app/
 What is LedFx?
 ----------------
 
-What LedFx offers is the ability to take audio input, and instantanously processes the audio into realtime lightshow to multiple LED strips/matrix.
+What LedFx offers is the ability to take audio input, and instantaneously processes the audio into realtime light show to multiple LED strips/matrix.
 No need to spend hours on end to program one song to program your LEDs, as LedFx will do this all for you!
 
-LedFx real-time LED strip music visualization effect controller using is a network based devices (ESP8266/ESP32/Raspberry Pi 4) with support for advanced real-time audio effects! LedFx can control multiple devices and works great with cheap ESP8266/ESP32 nodes allowing for cost effective syncronised effects across your entire house!
+LedFx real-time LED strip music visualization effect controller using is a network based devices (ESP8266/ESP32/Raspberry Pi 4) with support for advanced real-time audio effects! LedFx can control multiple devices and works great with cheap ESP8266/ESP32 nodes allowing for cost effective synchronized effects across your entire house!
 
 Demos
 -------
@@ -54,7 +54,7 @@ The below image describes a basic setup - LedFx running on PC, communicating wit
      - Soldering iron/solder
 
 #. **Build your networked LED Strip.**
-      - For most, this is the difficult step. Dont worry! There's guides here and online, and plenty of people able to help on WLED and LedFx Discord.
+      - For most, this is the difficult step. Don't worry! There's guides here and online, and plenty of people able to help on WLED and LedFx Discord.
       - Follow the WLED guide to connect the LED strip and ESP together: https://github.com/Aircoookie/WLED/wiki.
       - Flash WLED to the ESP device: https://github.com/Aircoookie/WLED/wiki/Install-WLED-binary
       - Ensure all WLED devices are powered on, and connected to your Wi-Fi 5Ghz.
@@ -62,7 +62,7 @@ The below image describes a basic setup - LedFx running on PC, communicating wit
 
 #. **Install LedFx.**
       - After you have WLED installed on your ESP device, download: `LedFx.exe`_ and install LedFx.
-      - For Mac and Linux, see the `installation documentation`_.
+      - For Mac and Linux, see the `installation documentation`_ or `LedFx Guide`_.
 
 #. **Direct computer audio output to LedFx.**
       - Follow guide, `How to: Enable Stereo Mix in Windows 10`_.
@@ -73,7 +73,7 @@ The below image describes a basic setup - LedFx running on PC, communicating wit
 #. **Start LedFx.**
       - Your WLED devices should appear in LedFx, automagically configured and ready to go! 🎆🔥
       - If not, on the left hand side, click on Device Management -> ``Find WLED devices`` button, or ``Add Device`` to add them manually.
-      - If they're still not showing up, make sure they're powered on and properly connected to your Wifi.
+      - If they're still not showing up, make sure they're powered on and properly connected to your WiFi.
 
 #. **Start using effects!**
       - Click on the device, select an effect eg ``scroll(Reactive)``, and press ``Set effect`` button.
@@ -90,7 +90,7 @@ To join, click on the Discord button below:
 .. raw:: html
 
     <a href="https://discord.com/invite/wJ755dY"><img src="https://discordapp.com/api/guilds/469985374052286474/widget.png?style=banner2" width="30%"></a>
-        
+
 
 Contributing
 --------------
@@ -105,9 +105,9 @@ License
 
 .. _`MIT`: https://choosealicense.com/licenses/mit/
 .. _`LedFx.exe`: https://ledfx.app/download/
-.. _`LedFx Guide`: https://ledfx.readthedocs.io/en/docs/index.html
+.. _`LedFx Guide`: https://ledfx.readthedocs.io/en/dev/index.html
 .. _`WLED`: https://github.com/Aircoookie/WLED/wiki
-.. _`installation documentation`: https://ledfx.readthedocs.io/en/docs/installing.html
+.. _`installation documentation`: https://ledfx.readthedocs.io/en/dev/installing.html
 .. _`Contributors-&-About`: https://ledfx.app/about/
 .. _`How to: Enable Stereo Mix in Windows 10`: https://thegeekpage.com/stereo-mix/
 .. _`Voicemeeter`: https://vb-audio.com/Voicemeeter/index.htm
@@ -117,8 +117,8 @@ License
 .. |Build Status| image:: https://travis-ci.org/ahodges9/LedFx.svg?branch=dev
    :target: https://github.com/ahodges9/LedFx/tree/dev
    :alt: Build Status
-.. |Build Status Docs| image:: https://readthedocs.org/projects/ledfx/badge/?version=docs
-   :target: https://ledfx.readthedocs.io/en/docs
+.. |Build Status Docs| image:: https://readthedocs.org/projects/ledfx/badge/?version=dev
+   :target: https://ledfx.readthedocs.io/en/dev
    :alt: Documentation Status
 .. |License| image:: https://img.shields.io/badge/license-MIT-blue.svg
    :alt: License

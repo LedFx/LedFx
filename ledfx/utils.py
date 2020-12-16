@@ -148,7 +148,7 @@ class BaseRegistry(ABC):
 
     @classmethod
     def no_registration(self, cls):
-        """Clear registration entiry based on special declarator"""
+        """Clear registration entity based on special declarator"""
 
         name = cls.__module__.split(".")[-1]
         del cls._registry[name]
@@ -195,7 +195,7 @@ class BaseRegistry(ABC):
 
 
 class RegistryLoader(object):
-    """Manages loading of compoents for a given registry"""
+    """Manages loading of components for a given registry"""
 
     def __init__(self, ledfx, cls, package):
         self._package = package
@@ -270,7 +270,7 @@ class RegistryLoader(object):
         return list(self._cls.registry().keys())
 
     def classes(self):
-        """Returns all the classes in the regsitry"""
+        """Returns all the classes in the registry"""
         return self._cls.registry()
 
     def get_class(self, type):
