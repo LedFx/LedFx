@@ -28,8 +28,17 @@ class IntegrationsEndpoint(RestEndpoint):
             }
         return web.Response(text=json.dumps(response), status=200)
 
-    async def put(self, integration_id) -> web.Response:
+    async def put(self, request) -> web.Response:
         """Toggle an integration on or off"""
+        data = await request.json()
+        integration_id = data.get("id")
+        if integration_id is None:
+            response = {
+                "status": "failed",
+                "reason": 'Required attribute "id" was not provided',
+            }
+            return web.json_response(data=response, status=500)
+
         integration = self._ledfx.integrations.get(integration_id)
         if integration is None:
             response = {"not found": 404}
@@ -56,10 +65,19 @@ class IntegrationsEndpoint(RestEndpoint):
         response = {"status": "success"}
         return web.json_response(data=response, status=200)
 
-    async def delete(self, integration_id) -> web.Response:
+    async def delete(self, request) -> web.Response:
         """Delete an integration, erasing all its configuration
         NOTE: THIS DOES NOT TURN OFF THE INTEGRATION, IT DELETES IT!
         USE PUT TO TOGGLE!"""
+        data = await request.json()
+        integration_id = data.get("id")
+        if integration_id is None:
+            response = {
+                "status": "failed",
+                "reason": 'Required attribute "id" was not provided',
+            }
+            return web.json_response(data=response, status=500)
+
         integration = self._ledfx.integrations.get(integration_id)
         if integration is None:
             response = {"not found": 404}

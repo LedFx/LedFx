@@ -239,10 +239,20 @@ Create a new integration, or update an existing one
     {
     "type": "qlc",
     "config": {
-        "description": "QLC Test"
-        "ip_address": "127.0.0.1"
-        "name": "myQLC+""
+        "description": "QLC Test",
+        "ip_address": "127.0.0.1",
+        "name": "myQLC+"",
         "port": 9999
+        }
+    }
+
+.. code-block:: json
+
+    {
+    "type": "spotify",
+    "config": {
+        "description": "Spotify triggers for party",
+        "name": "Party Spotify"
         }
     }
 
@@ -322,6 +332,39 @@ Delete a QLC event listener, and associated payload data.
 
 NOTE: This does not turn off the integration, it deletes it entirely! (though it will first turn off..)
 
+/api/integrations/spotify/<integration_id>
+================================
+Endpoint for querying and managing a Spotify integration.
+
+.. rubric:: GET
+
+Get all the song triggers
+
+.. rubric:: PUT
+
+Update a song trigger
+[TODO]
+
+.. rubric:: POST
+
+Create a new song trigger
+
+.. code-block:: json
+    {
+    "scene_id": "my_scene",
+    "song_id": "347956287364597",
+    "song_name": "Really Cool Song",
+    "song_position": "43764",
+    }
+
+.. rubric:: DELETE
+
+Delete a song trigger
+
+.. code-block:: json
+    {
+    "trigger_id": "Really Cool Song - 43764",
+    }
 
 ===================
    WebSocket API
