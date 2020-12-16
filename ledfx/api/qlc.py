@@ -93,6 +93,13 @@ class QLCEndpoint(RestEndpoint):
             }
             return web.json_response(data=response, status=500)
 
+        if type(event_filter) is not dict:
+            response = {
+                "status": "failed",
+                "reason": f'Invalid filter {event_filter}, should be eg. {{"scene_name": "my scene"}}',
+            }
+            return web.json_response(data=response, status=500)
+
         # Delete the listener and event from data 
         integration.toggle_event(event_type, event_filter)
 

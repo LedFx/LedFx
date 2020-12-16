@@ -296,7 +296,7 @@ Toggle a QLC+ event listener on or off, so that it will or will not send its pay
     {
     "event_type": "scene_set",
     "event_filter": {
-        "scene_name": "Gradient"
+        "scene_name": "My Scene"
         }
     }
 
@@ -309,7 +309,7 @@ The "qlc_payload" is a dict of {"widget_id": value} that will be sent to QLC+
     {
     "event_type": "scene_set", 
     "event_filter": {
-        "scene_name": "Gradient"
+        "scene_name": "My Scene"
         }, 
     "qlc_payload": {
         "0":255, 
@@ -326,7 +326,7 @@ Delete a QLC event listener, and associated payload data.
     {
     "event_type": "scene_set",
     "event_filter": {
-        "scene_name": "Gradient"
+        "scene_name": "My Scene"
         }
     }
 
