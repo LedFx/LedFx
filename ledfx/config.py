@@ -21,6 +21,7 @@ CORE_CONFIG_SCHEMA = vol.Schema(
         vol.Optional("custom_presets", default={}): dict,
         vol.Optional("scenes", default={}): dict,
         vol.Optional("fade", default=1.0): float,
+        vol.Optional("virtuals", default=[]): list
     },
     extra=vol.ALLOW_EXTRA,
 )
