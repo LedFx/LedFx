@@ -6,16 +6,17 @@ import CssBaseline from '@material-ui/core/CssBaseline';
 
 import indexRoutes from 'routes';
 import createStore, { history } from './createStore';
-import defaultTheme from './theme';
+import defaultTheme, { bladeTheme } from './theme';
 import './style.css';
 
 const store = createStore();
 
 export default function App() {
+    const theme = (window.localStorage.getItem("blade") === '1') ? bladeTheme : defaultTheme
     return (
         <Provider store={store}>
             <CssBaseline />
-            <MuiThemeProvider theme={defaultTheme}>
+            <MuiThemeProvider theme={theme}>
                 <Router history={history}>
                     <Switch>
                         {indexRoutes.map(({ component: Component, path }, key) => {

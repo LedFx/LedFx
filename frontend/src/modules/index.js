@@ -4,6 +4,7 @@ import selectedDevice from './selectedDevice';
 import schemas from './schemas';
 import scenes from './scenes';
 import settings from './settings';
+import virtuals from './virtuals';
 
 export default {
     devices,
@@ -12,4 +13,5 @@ export default {
     scenes,
     settings,
     selectedDevice,
+    virtuals
 };

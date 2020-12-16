@@ -10,6 +10,8 @@ import RadioGroup from '@material-ui/core/RadioGroup';
 import Radio from '@material-ui/core/Radio';
 import FormControlLabel from '@material-ui/core/FormControlLabel';
 import AddCircleIcon from '@material-ui/icons/AddCircle';
+import { useSelector, useDispatch } from "react-redux";
+import { v1 as uuidv1 } from 'uuid';
 
 function ConfirmationDialogRaw(props) {
     const { onClose, value: valueProp, open, ...other } = props;
@@ -97,9 +99,15 @@ const useStyles = makeStyles((theme) => ({
     },
 }));
 
-export default function ConfirmationDialog({ deviceList, vstrips, setvstrips, config }) {
+export default function ConfirmationDialog({ virtual, deviceList, config }) {
     const classes = useStyles();
     const [open, setOpen] = React.useState(false);
+    const dispatch = useDispatch();
+    const virtuals = useSelector(state => state.virtuals.list)
+
+    const addSegment = (data) => {
+        dispatch({ type: 'virtuals/ADD_SEGMENT', payload: data })
+    }
 
     const handleClickListItem = () => {
         setOpen(true);
@@ -107,12 +115,18 @@ export default function ConfirmationDialog({ deviceList, vstrips, setvstrips, co
 
     const handleClose = (newValue) => {
         setOpen(false);
-
-        // console.log("B4:", deviceList.map((de)=>de).find((d)=>d.name === newValue).reduce((a, b) => a + b))
         if (newValue) {
-            setvstrips([...vstrips, { name: newValue }])
+            const id = uuidv1();
+            const output = { ...deviceList.find(d => d.name === newValue) }
+            output["device_key"] = output.key
+            output["id"] = '' + output.key + "_" + id
+            output["key"] = output["id"]
+            output["led_start"] = 1
+            output["led_end"] = output.config.pixel_count
+            output["order_number"] = virtuals.find(v => v.name === virtual).items.length
+            output["used_pixel"] = output.config.pixel_count
+            addSegment({ virtual: virtual, device: output })
         }
-        // console.log("after:", vstrips)
     };
 
     return (
