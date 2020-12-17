@@ -31,7 +31,6 @@
         "react-schema-form": "^0.8.7",
         "redux": "^4.0.5",
         "redux-actions": "^2.6.5",
-        "redux-localstorage-simple": "^2.3.1",
         "redux-thunk": "^2.3.0",
         "sockette": "^2.0.6",
         "spotify-web-api-node": "^4.0.0",

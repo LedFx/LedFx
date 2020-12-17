@@ -14,7 +14,7 @@ class VirtualsEndpoint(RestEndpoint):
         response = {
             "virtuals" : {
                 "list" : self._ledfx.config["virtuals"]
-                }
+            }
         }
 
         return web.json_response(data=response, status=200)
@@ -47,3 +47,4 @@ class VirtualsEndpoint(RestEndpoint):
         }
 
         return web.json_response(data=response, status=200)
+        

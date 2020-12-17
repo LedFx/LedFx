@@ -1,29 +1,34 @@
-import { createAction, handleActions } from 'redux-actions';
-
+import { createAction, handleActions } from 'redux-actions'
+import * as virtualsProxies from 'proxies/virtuals'
 // Actions
-const ACTION_ROOT = 'virtuals';
+const ACTION_ROOT = 'virtuals'
 
-export const addVirtual = createAction(`${ACTION_ROOT}/VIRTUAL_ADD`);
-export const renameVirtual = createAction(`${ACTION_ROOT}/VIRTUAL_RENAME`);
-export const deleteVirtual = createAction(`${ACTION_ROOT}/VIRTUAL_DELETE`);
-export const addSegment = createAction(`${ACTION_ROOT}/ADD_SEGMENT`);
-export const changeSegment = createAction(`${ACTION_ROOT}/CHANGE_SEGMENT`);
-export const deleteSegment = createAction(`${ACTION_ROOT}/DELETE_SEGMENT`);
-export const getVirtualsPixel = createAction(`${ACTION_ROOT}/VIRTUALS_GET_PIXELS`);
+export const addVirtual = createAction(`${ACTION_ROOT}/VIRTUAL_ADD`)
+export const renameVirtual = createAction(`${ACTION_ROOT}/VIRTUAL_RENAME`)
+export const deleteVirtual = createAction(`${ACTION_ROOT}/VIRTUAL_DELETE`)
+export const addSegment = createAction(`${ACTION_ROOT}/ADD_SEGMENT`)
+export const changeSegment = createAction(`${ACTION_ROOT}/CHANGE_SEGMENT`)
+export const deleteSegment = createAction(`${ACTION_ROOT}/DELETE_SEGMENT`)
+export const getVirtualsPixel = createAction(`${ACTION_ROOT}/VIRTUALS_GET_PIXELS`)
+export const postVirtuals = createAction(`${ACTION_ROOT}/VIRTUALS_SET`)
 
 // Reducer
 const INITIAL_STATE = {
     list: [
         {
-            name: 'Virtual Strip I',
+            name: 'Loading virtuals...',
             pixel_count: 0,
             items: []
         }
     ]
-};
+}
 
 export default handleActions(
     {
+        [postVirtuals]: (state, { payload }) => {
+            const newState = { list: payload.virtuals.list }
+            return newState
+        },
         [addVirtual]: (state, { payload }) => {
             return {
                 ...state,
@@ -34,7 +39,6 @@ export default handleActions(
                     items: []
                 }
                 ]
-
             }
         },
         [renameVirtual]: (state, { payload }) => {
@@ -75,7 +79,6 @@ export default handleActions(
 
                             return device
                         })
-
                     }
                     reduxItem.pixel_count = reduxItem.items.map(d => d.used_pixel).reduce((sum, part) => sum + part)
                     return reduxItem
@@ -97,4 +100,17 @@ export default handleActions(
         },
     },
     INITIAL_STATE
-);
+)
+
+export function getAsyncVirtuals() {
+    return async dispatch => {
+        try {
+            const response = await virtualsProxies.getVirtuals()
+            if (response.statusText === 'OK') {
+                dispatch(postVirtuals(response.data))
+            }
+        } catch (error) {
+            console.log(error)
+        }
+    }
+}

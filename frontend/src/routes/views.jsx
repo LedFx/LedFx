@@ -5,7 +5,7 @@ import Settings from "@material-ui/icons/Settings";
 import Tune from "@material-ui/icons/Tune";
 import SaveAltIcon from '@material-ui/icons/SaveAlt';
 import BuildIcon from '@material-ui/icons/Build';
-// import DeviceHubIcon from '@material-ui/icons/DeviceHub';
+import DeviceHubIcon from '@material-ui/icons/DeviceHub';
 
 // Components and Views
 import DashboardView from "../views/Dashboard";
@@ -48,8 +48,8 @@ const viewRoutes = [
   {
     path: "/virtuals",
     // sidebarName: "Virtual Strips",
-    // navbarName: "Virtual Strips",
-    // icon: DeviceHubIcon,
+    navbarName: "Virtual Strips",
+    icon: DeviceHubIcon,
     component: VirtualsView
   },
   {
