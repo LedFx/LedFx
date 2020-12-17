@@ -2,16 +2,46 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "Run LedFx in devmode on port 8888",
+            "label": "[GIT|DEV][Backend]:8888",
             "type": "shell",
             "command": "ledfx",
             "problemMatcher": []
         },
         {
-            "label": "Run Ledfx Frontend in devmode on port 3000",
+            "label": "[LOCAL][Frontend]:3000",
             "type": "shell",
-            "command": "cd frontend; npm start",
+            "command": "cd /workspaces/LedFx/frontend; yarn; yarn start",
             "problemMatcher": []
+        },
+        {
+            "label": "[GIT|DEV][Frontend]:3001",
+            "type": "shell",
+            "command": "cd /home/ledfx/ledfxdev/frontend && yarn && export PORT=3001 && yarn start",
+            "problemMatcher": []
+        },
+        {
+            "label": "[GIT|CUSTOM][Frontend]:3002",
+            "type": "shell",
+            "command": "cd /home/ledfx; if [ ! -d ledfxcustom ] ; then git clone ${input:customgit} -b ${input:custombranch} ledfxcustom else cd ledfxcustom && git pull && cd ..; fi && cd ledfxcustom/frontend && yarn && export PORT=3002 && yarn start",
+            "problemMatcher": []
+        }
+    ],
+    "inputs": [
+        {
+            "id": "customgit",
+            "description": "Enter the custom LedFx repository",
+            "default": "https://github.com/YeonV/LedFx",
+            "type": "promptString"
+        },
+        {
+            "id": "custombranch",
+            "description": "Enter the branch",
+            "default": "dev",
+            "type": "pickString",
+            "options": [
+                "dev",
+                "master"
+            ]
         }
     ]
 }

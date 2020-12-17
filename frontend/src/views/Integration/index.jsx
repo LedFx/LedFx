@@ -7,12 +7,10 @@ import Box from '@material-ui/core/Box';
 import Typography from '@material-ui/core/Typography';
 import CardContent from '@material-ui/core/CardContent';
 import Button from '@material-ui/core/Button';
-import Tooltip from '@material-ui/core/Tooltip';
 import AddCircleIcon from '@material-ui/icons/AddCircle';
-import WifiTetheringIcon from '@material-ui/icons/WifiTethering';
 import CircularProgress from '@material-ui/core/CircularProgress';
 
-import DevicesTable from 'components/DevicesTable';
+import DevicesTable from 'components/InegrationComponents';
 import DeviceConfigDialog from 'components/DeviceConfigDialog';
 import {
     addDevice,
@@ -36,7 +34,7 @@ const styles = theme => ({
     },
 });
 
-class DevicesView extends React.Component {
+class IntegrationView extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
@@ -83,9 +81,6 @@ class DevicesView extends React.Component {
             scanProgress,
         } = this.props;
         const { addDialogOpened, selectedDevice } = this.state;
-        const helpText = `Ensure WLED Devices are on and connected to your WiFi.\n
-                          If not detected, check WLED device mDNS setting. Go to:\n
-                          WLED device ip > Config > WiFi Setup > mDNS Address \n`;
 
         return (
             <>
@@ -95,9 +90,9 @@ class DevicesView extends React.Component {
                             <CardContent>
                                 <Grid container direction="row" spacing={1} justify="space-between">
                                     <Grid item xs="auto">
-                                        <Typography variant="h5">Devices</Typography>
+                                        <Typography variant="h5">Integrations</Typography>
                                         <Typography variant="body1" color="textSecondary">
-                                            Manage devices connected to LedFx
+                                            Manage integrations
                                         </Typography>
                                     </Grid>
                                     {!schemas.isLoading && (
@@ -114,21 +109,6 @@ class DevicesView extends React.Component {
                                                         value={scanProgress * 10}
                                                         size={35}
                                                     />
-                                                    <Tooltip title={helpText} interactive arrow>
-                                                        <Button
-                                                            variant="contained"
-                                                            color="primary"
-                                                            aria-label="Scan"
-                                                            disabled={
-                                                                this.state.searchDevicesLoading
-                                                            }
-                                                            className={classes.button}
-                                                            onClick={this.handleFindDevices}
-                                                            endIcon={<WifiTetheringIcon />}
-                                                        >
-                                                            Find WLED Devices
-                                                        </Button>
-                                                    </Tooltip>
                                                     <Button
                                                         variant="contained"
                                                         color="primary"
@@ -137,7 +117,7 @@ class DevicesView extends React.Component {
                                                         onClick={this.openAddDeviceDialog}
                                                         endIcon={<AddCircleIcon />}
                                                     >
-                                                        Add Device
+                                                        Add Integration
                                                     </Button>
                                                     <DeviceConfigDialog
                                                         open={addDialogOpened}
@@ -182,4 +162,4 @@ export default connect(
         fetchDeviceList,
         findWLEDDevices,
     }
-)(withStyles(styles)(DevicesView));
+)(withStyles(styles)(IntegrationView));

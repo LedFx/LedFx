@@ -26,9 +26,9 @@ function DevicesTable({ onDeleteDevice, classes, items, onEditDevice }) {
                 <TableHead>
                     <TableRow>
                         <TableCell >Name</TableCell>
-                        <TableCell >IP Address</TableCell>
-                        <TableCell >Pixel Count</TableCell>
-                        <TableCell >Type</TableCell>
+                        <TableCell >Setting 1</TableCell>
+                        <TableCell >Setting 2</TableCell>
+                        <TableCell >Setting 3</TableCell>
                         <TableCell />
                     </TableRow>
                 </TableHead>
