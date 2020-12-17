@@ -47,4 +47,3 @@ class VirtualsEndpoint(RestEndpoint):
         }
 
         return web.json_response(data=response, status=200)
-        
