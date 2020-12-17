@@ -7,25 +7,14 @@ import TableCell from '@material-ui/core/TableCell';
 import Button from '@material-ui/core/Button';
 import DeleteIcon from '@material-ui/icons/Delete';
 import EditIcon from '@material-ui/icons/Edit';
-import ReorderIcon from '@material-ui/icons/Reorder';
 
 const styles = theme => ({
-    button: {
-        margin: 0,
-        padding: 0,
-        minWidth: 32,
-    },
     deleteButton: {
         minWidth: 32,
     },
     editButton: {
         minWidth: 32,
-    },
-    actions: {
-        display: 'flex',
-        '& > *': {
-            marginLeft: theme.spacing(1),
-        },
+        marginLeft: theme.spacing(1),
     },
     deviceLink: {
         textDecoration: 'none',
@@ -47,19 +36,7 @@ function DevicesTableItem({ device, onDelete, classes, onEdit, index }) {
 
     return (
         <TableRow key={device.id}>
-            <TableCell style={{ width: '5%' }}>
-                {index > -1 ? (
-                    <span
-                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                    >
-                        {index + 1}
-                        <ReorderIcon style={{ fontSize: 16 }} />
-                    </span>
-                ) : (
-                        <span></span>
-                    )}
-            </TableCell>
-            <TableCell style={{ width: '30%' }} component="th" scope="row">
+            <TableCell component="th" scope="row">
                 <NavLink
                     to={'/devices/' + device.id}
                     className={classes.deviceLink}
@@ -68,10 +45,10 @@ function DevicesTableItem({ device, onDelete, classes, onEdit, index }) {
                     {device.config.name}
                 </NavLink>
             </TableCell>
-            <TableCell style={{ width: '25%' }}>{device.config.ip_address}</TableCell>
-            <TableCell style={{ width: '15%' }}>{device.config.pixel_count}</TableCell>
-            <TableCell style={{ width: '15%' }}>{device.type}</TableCell>
-            <TableCell style={{ width: '10%' }} className={classes.actions}>
+            <TableCell>{device.config.ip_address}</TableCell>
+            <TableCell>{device.config.pixel_count}</TableCell>
+            <TableCell>{device.type}</TableCell>
+            <TableCell align="right">
                 <Button
                     color="secondary"
                     variant="contained"
@@ -79,7 +56,7 @@ function DevicesTableItem({ device, onDelete, classes, onEdit, index }) {
                     className={classes.deleteButton}
                     onClick={handleDeleteDevice}
                 >
-                    <DeleteIcon style={{ fontSize: 16 }} />
+                    <DeleteIcon />
                 </Button>
                 <Button
                     variant="contained"
@@ -87,7 +64,7 @@ function DevicesTableItem({ device, onDelete, classes, onEdit, index }) {
                     className={classes.editButton}
                     onClick={handleEditItem}
                 >
-                    <EditIcon style={{ fontSize: 16 }} />
+                    <EditIcon />
                 </Button>
             </TableCell>
         </TableRow>
