@@ -84,6 +84,7 @@ def parse_args():
     )
     parser.add_argument(
         "--open-ui",
+        dest="open_ui",
         action="store_true",
         help="Automatically open the webinterface",
     )
