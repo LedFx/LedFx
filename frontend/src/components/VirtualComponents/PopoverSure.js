@@ -40,7 +40,7 @@ export default function SimplePopover({ onDeleteVitem, listItem, variant = "cont
                 }}
             >   <div style={{ display: "flex" }}>
                     <Typography className={classes.typography}>Are you sure?</Typography>
-                    <Button aria-describedby={id} variant="contained" color="inherit" onClick={() => { onDeleteVitem(listItem) }}>
+                    <Button aria-describedby={id} variant="contained" color="primary" onClick={() => { onDeleteVitem(listItem) }}>
                         <DeleteIcon />
                     </Button>
                     <Button aria-describedby={id} variant="contained" color="default" onClick={() => { setAnchorEl(null) }}>

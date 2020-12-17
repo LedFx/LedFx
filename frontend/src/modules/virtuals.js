@@ -11,6 +11,7 @@ export const changeSegment = createAction(`${ACTION_ROOT}/CHANGE_SEGMENT`)
 export const deleteSegment = createAction(`${ACTION_ROOT}/DELETE_SEGMENT`)
 export const getVirtualsPixel = createAction(`${ACTION_ROOT}/VIRTUALS_GET_PIXELS`)
 export const postVirtuals = createAction(`${ACTION_ROOT}/VIRTUALS_SET`)
+export const changeTheme = createAction(`${ACTION_ROOT}/CHANGE_THEME`)
 
 // Reducer
 const INITIAL_STATE = {
@@ -97,6 +98,12 @@ export default handleActions(
                 })
             }
             return newState
+        },
+        [changeTheme]: (state, { payload }) => {
+            console.log("START", payload)
+            return {
+                ...state, themeSelector: payload
+            }
         },
     },
     INITIAL_STATE

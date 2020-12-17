@@ -7,7 +7,7 @@ import {
   ListItemSecondaryAction
 } from "@material-ui/core";
 import { Draggable } from 'react-beautiful-dnd';
-import ReorderIcon from '@material-ui/icons/Reorder';
+import FormatLineSpacingIcon from '@material-ui/icons/FormatLineSpacing';
 import PixelSlider from './PixelSlider';
 import PopoverSure from './PopoverSure';
 import UsedPixels from './UsedPixels'
@@ -41,7 +41,7 @@ const DragDropItem = ({ listItem, virtual, index }) => {
           )}
         >
           <ListItemIcon  {...provided.dragHandleProps}>
-            <ReorderIcon />
+            <FormatLineSpacingIcon color="secondary" />
           </ListItemIcon>
           <ListItemText
             primary={listItem.name}

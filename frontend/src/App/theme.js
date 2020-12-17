@@ -24,6 +24,31 @@ export default createMuiTheme(
             }
         }
     });
+
+export const darkTheme = createMuiTheme(
+    {
+        palette: {
+            type: 'dark',
+            primary: teal,
+            secondary: {
+                main: '#f05545',
+            },
+        },
+        overrides: {
+            MuiFormControl: {
+                root: {
+                    margin: 8,
+                    minWidth: 225,
+                    flex: '1 0 30%',
+                },
+            },
+        },
+        props: {
+            MuiCard: {
+                variant: "outlined"
+            }
+        }
+    });
 export const bladeTheme = createMuiTheme(
     {
         palette: {
@@ -32,6 +57,33 @@ export const bladeTheme = createMuiTheme(
             },
             secondary: {
                 main: '#f05545',
+            },
+        },
+        overrides: {
+            MuiFormControl: {
+                root: {
+                    margin: 8,
+                    minWidth: 225,
+                    flex: '1 0 30%',
+                },
+            },
+        },
+        props: {
+            MuiCard: {
+                variant: "outlined"
+            }
+        }
+    });
+
+export const bladeDarkTheme = createMuiTheme(
+    {
+        palette: {
+            type: 'dark',
+            primary: {
+                main: '#600000'
+            },
+            secondary: {
+                main: '#999',
             },
         },
         overrides: {
