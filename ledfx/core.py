@@ -2,16 +2,13 @@ import asyncio
 import logging
 import sys
 from concurrent.futures import ThreadPoolExecutor
-from ledfx.utils import async_fire_and_forget
-from ledfx.http_manager import HttpServer
+
+from ledfx.config import load_config, load_default_presets, save_config
 from ledfx.devices import Devices
 from ledfx.effects import Effects
-from ledfx.config import (
-    load_config,
-    save_config,
-    load_default_presets,
-)
 from ledfx.events import Events, LedFxShutdownEvent
+from ledfx.http_manager import HttpServer
+from ledfx.utils import async_fire_and_forget
 
 _LOGGER = logging.getLogger(__name__)
 

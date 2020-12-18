@@ -2,8 +2,8 @@
 
 import argparse
 import re
-import subprocess
 import shutil
+import subprocess
 
 from ledfx.consts import MAJOR_VERSION, MICRO_VERSION, MINOR_VERSION
 

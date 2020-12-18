@@ -1,9 +1,11 @@
 import logging
-from ledfx.devices import Device
-import voluptuous as vol
+import time
+
 import numpy as np
 import sacn
-import time
+import voluptuous as vol
+
+from ledfx.devices import Device
 
 _LOGGER = logging.getLogger(__name__)
 

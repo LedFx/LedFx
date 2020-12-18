@@ -8,20 +8,24 @@
 
 # -- Path setup --------------------------------------------------------------
 
+import os
+
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 import sys
-import os
+
 import sphinx_rtd_theme
 
 sys.path.insert(0, os.path.abspath(".."))
 
+import ledfx.consts as const
+from ledfx.consts import PROJECT_NAME, PROJECT_VERSION
+
 # -- Project information -----------------------------------------------------
 
-PROJECT_NAME = "LedFx"
-PROJECT_PACKAGE_NAME = "LedFx"
-PROJECT_AUTHOR = "Austin Hodges"
+PROJECT_PACKAGE_NAME = PROJECT_NAME
+PROJECT_AUTHOR = const.__author__
 PROJECT_COPYRIGHT = " 2018, {}".format(PROJECT_AUTHOR)
 PROJECT_SHORT_DESCRIPTION = "LedFx is an open-source effect controller"
 PROJECT_LONG_DESCRIPTION = (
@@ -29,7 +33,7 @@ PROJECT_LONG_DESCRIPTION = (
     "designed to synchronize reactive effects across "
     "various networked devices."
 )
-PROJECT_GITHUB_USERNAME = "ahodges9"
+PROJECT_GITHUB_USERNAME = "LedFx"
 PROJECT_GITHUB_REPOSITORY = "LedFx"
 PROJECT_GITHUB_BRANCH = "dev"
 PROJECT_GITHUB_PATH = "{}/{}".format(
@@ -40,6 +44,8 @@ PROJECT_GITHUB_URL = "https://github.com/{}".format(PROJECT_GITHUB_PATH)
 project = "{}".format(PROJECT_NAME)
 author = "{}".format(PROJECT_AUTHOR)
 copyright = "{}".format(PROJECT_COPYRIGHT) + " & contributors"
+version = PROJECT_VERSION
+release = PROJECT_VERSION
 
 
 # -- General configuration ---------------------------------------------------
@@ -172,7 +178,7 @@ latex_elements = {
 
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title,
-#  author, documentclass [howto, manual, or own class]).
+#  author, LaTeX theme [manual, howto]).
 latex_documents = [
     (
         master_doc,

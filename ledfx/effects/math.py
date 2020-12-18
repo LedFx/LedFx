@@ -1,5 +1,6 @@
-import numpy as np
 from functools import lru_cache
+
+import numpy as np
 
 
 @lru_cache(maxsize=32)

@@ -1,6 +1,7 @@
 import logging
-import numpy as np
 from typing import Callable
+
+import numpy as np
 
 _LOGGER = logging.getLogger(__name__)
 

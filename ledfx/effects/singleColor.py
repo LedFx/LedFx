@@ -1,8 +1,9 @@
+import numpy as np
+import voluptuous as vol
+
 from ledfx.color import COLORS
 from ledfx.effects.modulate import ModulateEffect
 from ledfx.effects.temporal import TemporalEffect
-import voluptuous as vol
-import numpy as np
 
 
 class SingleColorEffect(TemporalEffect, ModulateEffect):

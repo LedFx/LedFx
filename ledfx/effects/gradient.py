@@ -1,10 +1,12 @@
-from ledfx.effects.temporal import TemporalEffect
-from ledfx.effects.modulate import ModulateEffect
+import logging
+
+import numpy as np
+import voluptuous as vol
+
 from ledfx.color import COLORS, GRADIENTS
 from ledfx.effects import Effect
-import voluptuous as vol
-import numpy as np
-import logging
+from ledfx.effects.modulate import ModulateEffect
+from ledfx.effects.temporal import TemporalEffect
 
 _LOGGER = logging.getLogger(__name__)
 

@@ -1,10 +1,12 @@
+import os.path
+from random import randint
+
+import numpy as np
+import voluptuous as vol
+
+from ledfx.color import COLORS
 from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.effectlets import EFFECTLET_LIST
-from ledfx.color import COLORS
-import voluptuous as vol
-import numpy as np
-from random import randint
-import os.path
 
 
 class RainAudioEffect(AudioReactiveEffect):

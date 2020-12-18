@@ -12,7 +12,7 @@ Linux
 .. code:: bash
 
     $ cd ~/ledfx/docs
-    $ pip install -r requirements_docs.txt
+    $ pip install -r requirements-docs.txt
     $ make html
 
 macOS
@@ -22,7 +22,7 @@ macOS
 
     $ conda activate ledfx
     $ cd ~/ledfx/docs
-    $ pip install -r requirements_docs.txt
+    $ pip install -r requirements-docs.txt
     $ make html
 
 

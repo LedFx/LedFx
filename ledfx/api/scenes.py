@@ -1,8 +1,10 @@
-from ledfx.config import save_config
-from ledfx.api import RestEndpoint
-from ledfx.utils import generate_id
-from aiohttp import web
 import logging
+
+from aiohttp import web
+
+from ledfx.api import RestEndpoint
+from ledfx.config import save_config
+from ledfx.utils import generate_id
 
 _LOGGER = logging.getLogger(__name__)
 

@@ -1,7 +1,9 @@
+import logging
+
+from aiohttp import web
+
 from ledfx.api import RestEndpoint
 from ledfx.config import save_config
-from aiohttp import web
-import logging
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -11,11 +13,7 @@ class VirtualsEndpoint(RestEndpoint):
     ENDPOINT_PATH = "/api/virtuals"
 
     async def get(self) -> web.Response:
-        response = {
-            "virtuals" : {
-                "list" : self._ledfx.config["virtuals"]
-            }
-        }
+        response = {"virtuals": {"list": self._ledfx.config["virtuals"]}}
 
         return web.json_response(data=response, status=200)
 
