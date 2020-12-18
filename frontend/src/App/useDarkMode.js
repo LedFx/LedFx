@@ -4,7 +4,7 @@
 // Found this online, provides logic to use light or dark theme depending on:
 // 1 - Has the user previously set a light or dark theme in this app?
 // 2 - If not, what is their OS theme? (window.matchMedia)
-// Tried to implement this into the actual theme provider but that proved a bit ambitious for my skills :D 
+// Tried to implement this into the actual theme provider but that proved a bit ambitious for my skills :D
 
 
 import { useEffect, useState } from 'react';

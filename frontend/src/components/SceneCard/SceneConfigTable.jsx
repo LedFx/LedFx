@@ -30,7 +30,7 @@ class SceneConfigTable extends React.Component {
             {renderRows(devices)}
           </TableBody>
         </Table>
-    ); 
+    );
   }
 }
 
