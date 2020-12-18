@@ -1,6 +1,8 @@
-from ledfx.utils import BaseRegistry, RegistryLoader
-from aiohttp import web
 import inspect
+
+from aiohttp import web
+
+from ledfx.utils import BaseRegistry, RegistryLoader
 
 
 @BaseRegistry.no_registration

@@ -1,7 +1,8 @@
-from ledfx.effects.audio import AudioReactiveEffect
-from ledfx.color import COLORS
-import voluptuous as vol
 import numpy as np
+import voluptuous as vol
+
+from ledfx.color import COLORS
+from ledfx.effects.audio import AudioReactiveEffect
 
 
 class Strobe(AudioReactiveEffect):

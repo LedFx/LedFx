@@ -12,3 +12,6 @@ b55fa2f9d507c52c5afc2b5260b38c800b6b8ed4
 
 # Black Formatting cd60a2b Dec 6 2020
 cd60a2b3f67bc7c4adfe630b80e95600380167db
+
+# Add pre-commit-config, isort, flake8, black 52ac9fb Dec 11 2020
+52ac9fb45dd0f68475e7d46711391c9d0a23517d

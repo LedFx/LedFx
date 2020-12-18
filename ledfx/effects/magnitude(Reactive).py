@@ -1,7 +1,8 @@
-from ledfx.effects.audio import AudioReactiveEffect, FREQUENCY_RANGES
-from ledfx.effects.gradient import GradientEffect
-import voluptuous as vol
 import numpy as np
+import voluptuous as vol
+
+from ledfx.effects.audio import FREQUENCY_RANGES, AudioReactiveEffect
+from ledfx.effects.gradient import GradientEffect
 
 
 class MagnitudeAudioEffect(AudioReactiveEffect, GradientEffect):

@@ -1,14 +1,13 @@
-from ledfx.utils import BaseRegistry, RegistryLoader
+import colorsys
+import logging
 
 # from ledfx.effects.audio import FREQUENCY_RANGES
 from functools import lru_cache
-import voluptuous as vol
+
 import numpy as np
+import voluptuous as vol
 
-import colorsys
-
-import logging
-
+from ledfx.utils import BaseRegistry, RegistryLoader
 
 _LOGGER = logging.getLogger(__name__)
 

@@ -1,10 +1,12 @@
-import time
 import logging
-from ledfx.effects import Effect
+import time
 
 # from ledfx.effects.audio import AudioReactiveEffect
 from threading import Thread
+
 import voluptuous as vol
+
+from ledfx.effects import Effect
 
 _LOGGER = logging.getLogger(__name__)
 DEFAULT_RATE = 1.0 / 300.0

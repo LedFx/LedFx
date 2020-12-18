@@ -30,8 +30,9 @@ Functions
 ---------
 """
 
-from numpy import abs, arange, linspace, zeros, mean
 from math import log
+
+from numpy import abs, arange, linspace, mean, zeros
 
 
 def hertz_to_mel(freq):
