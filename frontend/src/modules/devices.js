@@ -116,10 +116,10 @@ export function findWLEDDevices({ resolve, reject }) {
     };
 }
 
-export function updateDeviceConfig(type, config) {
+export function updateDeviceConfig(id, type, config) {
     return async dispatch => {
         try {
-            const response = await deviceProxies.updateDevice(config.name, {
+            const response = await deviceProxies.updateDevice(id, {
                 config: { ...config, type },
             });
             if (response.statusText === 'OK') {

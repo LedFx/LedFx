@@ -87,7 +87,7 @@ class DeviceConfigDialog extends React.Component {
         const { deviceType, model: config } = this.state;
 
         if (initial.id) {
-            onUpdateDevice(deviceType, config);
+            onUpdateDevice(initial.id, deviceType, config);
         } else {
             onAddDevice(deviceType, config);
         }
