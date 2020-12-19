@@ -114,11 +114,11 @@ License
 .. _`Voicemeeter tutorial`: https://youtu.be/ZXKDzYXS60o?start=27&end=163
 .. _`Loopback`: https://rogueamoeba.com/loopback/
 
-.. |Build Status| image:: https://travis-ci.org/ahodges9/LedFx.svg?branch=dev
-   :target: https://github.com/ahodges9/LedFx/tree/dev
+.. |Build Status| image:: https://travis-ci.com/LedFx/LedFx.svg?branch=dev
+   :target: https://travis-ci.com/LedFx/LedFx
    :alt: Build Status
 .. |Build Status Docs| image:: https://readthedocs.org/projects/ledfx/badge/?version=dev
-   :target: https://ledfx.readthedocs.io/en/dev
+   :target: https://ledfx.readthedocs.io/en/dev/?badge=dev
    :alt: Documentation Status
 .. |License| image:: https://img.shields.io/badge/license-MIT-blue.svg
    :alt: License
