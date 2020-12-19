@@ -37,6 +37,8 @@ cd ~/ledfx-workdir/LedFx
 python3 -m pip install --user -r ~/ledfx-workdir/LedFx/requirements.txt
 python3 ~/ledfx-workdir/LedFx/setup.py build
 python3 ~/ledfx-workdir/LedFx/setup.py install --user
+echo "Adding" $curruser "to Audio Group"
+sudo usermod -a -G audio $curruser
 sudo rm /etc/systemd/system/ledfx.service
 echo "[Unit]
 Description=LedFx Music Visualizer
