@@ -115,7 +115,7 @@ License
 .. _`Loopback`: https://rogueamoeba.com/loopback/
 
 .. |Build Status| image:: https://travis-ci.com/LedFx/LedFx.svg?branch=dev
-   :target: https://travis-ci.com/LedFx/LedFx/tree/dev
+   :target: https://travis-ci.com/LedFx/LedFx
    :alt: Build Status
 .. |Build Status Docs| image:: https://readthedocs.org/projects/ledfx/badge/?version=dev
    :target: https://ledfx.readthedocs.io/en/dev/?badge=dev
