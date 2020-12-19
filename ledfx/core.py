@@ -103,9 +103,12 @@ class LedFxCore(object):
 
         if open_ui:
             import webbrowser
-
             # Hardcode to Localhost - will work regardless of actual address given we're binding to 0.0.0.0
-            webbrowser.open("http://127.0.0.1:" + str(self.config["port"]))
+            url = f"http://127.0.0.1:{str(self.config['port'])}"
+            try:
+                webbrowser.open(url)
+            except FileNotFoundError:
+                _LOGGER.warning(f"Failed to open default web browser. To access LedFx's web ui, open {url} in your browser. To prevent this error in future, configure a default browser for your system.")
 
         await self.flush_loop()
 
