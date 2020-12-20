@@ -18,7 +18,7 @@ ENV PATH="/ledfx/venv/bin:$PATH"
 # Install dependencies and ledfx, remove uneeded packages
 #
 # TRY WITH build-essential and portaudio19-dev ONLY
-# 
+#
 RUN apt-get update && apt-get install -y --no-install-recommends \
         gcc \
         libc-dev \

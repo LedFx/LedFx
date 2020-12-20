@@ -10,19 +10,25 @@
         {
             "label": "[LOCAL][Frontend]:3000",
             "type": "shell",
-            "command": "cd /workspaces/LedFx/frontend; yarn; yarn start",
+            "command": "cd /workspaces/${workspaceFolderBasename}/frontend; yarn; yarn start",
             "problemMatcher": []
         },
         {
             "label": "[GIT|DEV][Frontend]:3001",
             "type": "shell",
-            "command": "cd /home/ledfx/ledfxdev/frontend && yarn && export PORT=3001 && yarn start",
+            "command": "cd /ledfx-git/frontend && yarn && export PORT=3001 && yarn start",
             "problemMatcher": []
         },
         {
             "label": "[GIT|CUSTOM][Frontend]:3002",
             "type": "shell",
-            "command": "cd /home/ledfx; if [ ! -d ledfxcustom ] ; then git clone ${input:customgit} -b ${input:custombranch} ledfxcustom else cd ledfxcustom && git pull && cd ..; fi && cd ledfxcustom/frontend && yarn && export PORT=3002 && yarn start",
+            "command": "cd /; if [ ! -d ledfxcustom ] ; then git clone ${input:customgit} -b ${input:custombranch} ledfxcustom else cd ledfxcustom && git pull && cd ..; fi && cd ledfxcustom/frontend && yarn && export PORT=3002 && yarn start",
+            "problemMatcher": []
+        },
+        {
+            "label": "[LOCAL][Docs]:8000",
+            "type": "shell",
+            "command": "cd /workspaces/${workspaceFolderBasename}/docs; make livehtml",
             "problemMatcher": []
         }
     ],
@@ -30,7 +36,7 @@
         {
             "id": "customgit",
             "description": "Enter the custom LedFx repository",
-            "default": "https://github.com/YeonV/LedFx",
+            "default": "https://github.com/LedFx/LedFx",
             "type": "promptString"
         },
         {
