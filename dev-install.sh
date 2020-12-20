@@ -42,6 +42,7 @@ echo "Adding" $curruser "to Audio Group"
 sudo usermod -a -G audio $curruser
 echo "Updating alsa.conf - backup created in /usr/share/alsa/alsa.conf.bak"
 sudo sed --in-place=.bak 's/defaults.ctl.card 0/defaults.ctl.card 1/' /usr/share/alsa/alsa.conf
+sudo sed -i 's/defaults.pcm.card 0/defaults.pcm.card 1/' /usr/share/alsa/alsa.conf
 echo "Creating Service"
 echo "[Unit]
 Description=LedFx Music Visualizer
