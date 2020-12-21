@@ -23,6 +23,10 @@ A clear and concise description of what you expected to happen.
 **Screenshots**
 If applicable, add screenshots to help explain your problem.
 
+**Traceback**
+If applicable, add the traceback log that LedFx outputs when it encounters an error.
+Usually starts with "Traceback (most recent call last):"
+
 **LedFx Host Information (please complete the following information):**
  - OS: [e.g. iOS]
  - Installation Method: [e.g. Anaconda, Python, Windows EXE, pip]
