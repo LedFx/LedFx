@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import sys
+import socket
 from concurrent.futures import ThreadPoolExecutor
 
 from ledfx.config import load_config, load_default_presets, save_config
@@ -103,8 +104,11 @@ class LedFxCore(object):
 
         if open_ui:
             import webbrowser
-            # Hardcode to Localhost - will work regardless of actual address given we're binding to 0.0.0.0
-            url = f"http://127.0.0.1:{str(self.config['port'])}"
+            # My prior fix sucked and caused more problems. This should be better.
+            if str(self.config['host']) == "0.0.0.0":
+                url = f"http://127.0.0.1:{str(self.config['port'])}"
+            else:
+                url = self.http.base_url
             try:
                 webbrowser.open(url)
             except FileNotFoundError:
