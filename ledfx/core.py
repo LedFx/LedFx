@@ -1,7 +1,6 @@
 import asyncio
 import logging
 import sys
-import socket
 from concurrent.futures import ThreadPoolExecutor
 
 from ledfx.config import load_config, load_default_presets, save_config
