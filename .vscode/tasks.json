@@ -35,7 +35,7 @@
     "inputs": [
         {
             "id": "customgit",
-            "description": "Enter the custom LedFx repository",,
+            "description": "Enter the custom LedFx repository",
             "default": "https://github.com/YeonV/LedFx",
             "type": "pickString",
             "options": [

@@ -1,5 +1,8 @@
 {
   "name": "Python 3",
+  "containerEnv": {
+    "PULSE_SERVER": "${localEnv:PULSE_SERVER}",
+  },
   "build": {
     "dockerfile": "Dockerfile",
     "context": "..",
@@ -17,7 +20,9 @@
     "--network",
     "host",
   ],
-
+  "mounts": [
+    "source=${localWorkspaceFolder}/.devcontainer/ledfx-config.yml,target=/root/.ledfx/config.yaml,type=bind,consistency=cached"
+  ],
   // Set *default* container specific settings.json values on container create.
   "settings": {
     "terminal.integrated.shell.linux": "/bin/bash",
@@ -48,24 +53,27 @@
       "editor.tabSize": 4,
     },
   },
-
   // Add the IDs of extensions you want installed when the container is created.
   "extensions": [
-  "ms-python.python",
-  "ms-python.vscode-pylance",
-  "mgmcdermott.vscode-language-babel",
-  "dbaeumer.vscode-eslint",
-  "eamodio.gitlens",
-  "esbenp.prettier-vscode",
-  "lextudio.restructuredtext",
-  "visualstudioexptteam.vscodeintellicode"
-],
-
+    "ms-python.python",
+    "ms-python.vscode-pylance",
+    "mgmcdermott.vscode-language-babel",
+    "dbaeumer.vscode-eslint",
+    "eamodio.gitlens",
+    "esbenp.prettier-vscode",
+    "lextudio.restructuredtext",
+    "visualstudioexptteam.vscodeintellicode"
+  ],
   // Use 'forwardPorts' to make a list of ports inside the container available locally.
-  "forwardPorts": [8888, 8000, 5353, 3002, 3001, 3000],
-
+  "forwardPorts": [
+    8888,
+    8000,
+    5353,
+    3002,
+    3001,
+    3000
+  ],
   // "postCreateCommand": "sudo chown ledfx docs/_build; sudo chown ledfx docs/node_modules; sudo chown ledfx frontend/node_modules",
-
   // Use 'postCreateCommand' to run commands after the container is created.
   // "postCreateCommand": "pip3 install --user -r requirements.txt; pip install -e .",
   // "postCreateCommand": "cd frontend; yarn: yarn install",
