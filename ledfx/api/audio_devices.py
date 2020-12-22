@@ -1,8 +1,10 @@
+import logging
+
+import pyaudio
+from aiohttp import web
+
 from ledfx.api import RestEndpoint
 from ledfx.config import save_config
-from aiohttp import web
-import logging
-import pyaudio
 
 _LOGGER = logging.getLogger(__name__)
 

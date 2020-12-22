@@ -1,9 +1,11 @@
+import asyncio
 import json
 import logging
-import asyncio
-from aiohttp import web
-import voluptuous as vol
 from concurrent import futures
+
+import voluptuous as vol
+from aiohttp import web
+
 from ledfx.api import RestEndpoint
 from ledfx.events import Event
 

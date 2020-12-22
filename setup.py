@@ -1,16 +1,17 @@
 #!/usr/bin/env python3
 
 from setuptools import setup
+
 import ledfx.consts as const
 
-PROJECT_PACKAGE_NAME = "ledfx-dev"
+PROJECT_PACKAGE_NAME = "ledfx"
 PROJECT_VERSION = const.PROJECT_VERSION
 PROJECT_LICENSE = "The MIT License"
 PROJECT_AUTHOR = "Austin Hodges"
 PROJECT_AUTHOR_EMAIL = "austin.b.hodges@gmail.com"
 PROJECT_MAINTAINER = "LedFx Devs"
 PROJECT_MAINTAINER_EMAIL = "ledfx.app@gmail.com"
-PROJECT_URL = "https://github.com/ahodges9/LedFx/tree/dev"
+PROJECT_URL = "https://github.com/LedFx/LedFx/tree/dev"
 
 # Need to install numpy first
 SETUP_REQUIRES = ["numpy>=1.19.3"]
@@ -51,7 +52,7 @@ setup(
     project_urls={
         "Documentation": "https://ledfx.readthedocs.io/en/docs/index.html",
         "Website": "https://ledfx.app",
-        "Source": "https://github.com/ahodges9/LedFx",
+        "Source": "https://github.com/LedFx/LedFx",
         "Discord": "https://discord.gg/PqXMuthSNx",
     },
     install_requires=INSTALL_REQUIRES,

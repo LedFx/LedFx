@@ -1,8 +1,9 @@
+import numpy as np
+import voluptuous as vol
+
+from ledfx.color import COLORS, GRADIENTS
 from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.gradient import GradientEffect
-from ledfx.color import GRADIENTS, COLORS
-import voluptuous as vol
-import numpy as np
 
 
 class BandsAudioEffect(AudioReactiveEffect, GradientEffect):

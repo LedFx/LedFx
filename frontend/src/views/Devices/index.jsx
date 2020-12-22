@@ -110,7 +110,7 @@ class DevicesView extends React.Component {
                                                     justifyContent="center"
                                                 >
                                                     <CircularProgress
-                                                        variant="static"
+                                                        variant="determinate"
                                                         value={scanProgress * 10}
                                                         size={35}
                                                     />
@@ -158,6 +158,8 @@ class DevicesView extends React.Component {
                                     onDeleteDevice={deleteDevice}
                                     onEditDevice={this.handleEditDevice}
                                 />
+
+
                             </CardContent>
                         </Card>
                     </Grid>

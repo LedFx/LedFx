@@ -12,8 +12,8 @@ export function deleteDevice(deviceId) {
     return api.delete(`/devices/${deviceId}`);
 }
 
-export function updateDevice(id, data) {
-    return api.put(`/devices/${id}`, data);
+export function updateDevice(deviceId, data) {
+    return api.put(`/devices/${deviceId}`, data);
 }
 
 export function createDevice(config) {

@@ -2,6 +2,15 @@
 Changelog
 =========
 
+Version 0.9.2
+=============
+
+- ** High Priority Bugfix.**
+
+Version 0.9.1
+=============
+- **Bugfixes.**
+
 Version 0.9.0
 =============
 

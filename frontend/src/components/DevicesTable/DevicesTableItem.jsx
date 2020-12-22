@@ -9,22 +9,12 @@ import DeleteIcon from '@material-ui/icons/Delete';
 import EditIcon from '@material-ui/icons/Edit';
 
 const styles = theme => ({
-    button: {
-        margin: 0,
-        padding: 0,
-        minWidth: 32,
-    },
     deleteButton: {
         minWidth: 32,
     },
     editButton: {
         minWidth: 32,
-    },
-    actions: {
-        display: 'flex',
-        '& > *': {
-            marginLeft: theme.spacing(1),
-        },
+        marginLeft: theme.spacing(1),
     },
     deviceLink: {
         textDecoration: 'none',
@@ -35,7 +25,7 @@ const styles = theme => ({
     },
 });
 
-function DevicesTableItem({ device, onDelete, classes, onEdit }) {
+function DevicesTableItem({ device, onDelete, classes, onEdit, index }) {
     const handleDeleteDevice = () => {
         onDelete(device.id);
     };
@@ -58,7 +48,7 @@ function DevicesTableItem({ device, onDelete, classes, onEdit }) {
             <TableCell>{device.config.ip_address}</TableCell>
             <TableCell>{device.config.pixel_count}</TableCell>
             <TableCell>{device.type}</TableCell>
-            <TableCell className={classes.actions} align="right">
+            <TableCell align="right">
                 <Button
                     color="secondary"
                     variant="contained"
@@ -66,7 +56,7 @@ function DevicesTableItem({ device, onDelete, classes, onEdit }) {
                     className={classes.deleteButton}
                     onClick={handleDeleteDevice}
                 >
-                    <DeleteIcon style={{ fontSize: 16 }} />
+                    <DeleteIcon />
                 </Button>
                 <Button
                     variant="contained"
@@ -74,7 +64,7 @@ function DevicesTableItem({ device, onDelete, classes, onEdit }) {
                     className={classes.editButton}
                     onClick={handleEditItem}
                 >
-                    <EditIcon style={{ fontSize: 16 }} />
+                    <EditIcon />
                 </Button>
             </TableCell>
         </TableRow>

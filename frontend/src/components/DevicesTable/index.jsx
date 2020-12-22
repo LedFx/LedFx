@@ -25,11 +25,11 @@ function DevicesTable({ onDeleteDevice, classes, items, onEditDevice }) {
             <Table className={classes.table}>
                 <TableHead>
                     <TableRow>
-                        <TableCell>Name</TableCell>
-                        <TableCell>IP Address</TableCell>
-                        <TableCell>Pixel Count</TableCell>
-                        <TableCell>Type</TableCell>
-                        <TableCell align="right" />
+                        <TableCell >Name</TableCell>
+                        <TableCell >IP Address</TableCell>
+                        <TableCell >Pixel Count</TableCell>
+                        <TableCell >Type</TableCell>
+                        <TableCell />
                     </TableRow>
                 </TableHead>
 

@@ -1,10 +1,11 @@
 [tool.black]
-line-length = 89
+line-length = 79
 target-version = ["py37", "py38"]
 
 [tool.isort]
 profile = "black"
-line_length = 89
+line_length = 79
+# The following are the default values applied when profile="black"
 # multi_line_output = 3
 # include_trailing_comma = True
 # force_grid_wrap = 0

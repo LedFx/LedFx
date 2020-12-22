@@ -1,19 +1,19 @@
-from collections import namedtuple
-import time
 import logging
-import pyaudio
-from ledfx.effects import Effect, smooth
-import voluptuous as vol
-import ledfx.effects.mel as mel
-from ledfx.effects.math import ExpFilter
-from ledfx.events import GraphUpdateEvent
-import ledfx.effects.math as math
+import time
+from collections import namedtuple
 from functools import lru_cache
-import numpy as np
+from math import log
 
 import aubio
+import numpy as np
+import pyaudio
+import voluptuous as vol
 
-from math import log
+import ledfx.effects.math as math
+import ledfx.effects.mel as mel
+from ledfx.effects import Effect, smooth
+from ledfx.effects.math import ExpFilter
+from ledfx.events import GraphUpdateEvent
 
 _LOGGER = logging.getLogger(__name__)
 

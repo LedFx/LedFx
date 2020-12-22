@@ -1,14 +1,22 @@
+
 from ledfx.utils import BaseRegistry, RegistryLoader, generate_id
 from ledfx.config import save_config
 from ledfx.events import DeviceUpdateEvent, EffectSetEvent, EffectClearedEvent, Event
+
+import asyncio
+import logging
+import socket
+
 from abc import abstractmethod
-import voluptuous as vol
+
 import numpy as np
 import requests
+import voluptuous as vol
 import zeroconf
-import logging
-import asyncio
-import socket
+
+from ledfx.config import save_config
+from ledfx.events import DeviceUpdateEvent, Event
+from ledfx.utils import BaseRegistry, RegistryLoader, generate_id
 
 _LOGGER = logging.getLogger(__name__)
 

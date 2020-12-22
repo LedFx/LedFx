@@ -1,11 +1,13 @@
 import logging
-import jinja2
-import aiohttp_jinja2
-from aiohttp import web
-from ledfx.api import RestApi
-import ledfx_frontend
 import os
 import sys
+
+import aiohttp_jinja2
+import jinja2
+from aiohttp import web
+
+import ledfx_frontend
+from ledfx.api import RestApi
 
 try:
     base_path = sys._MEIPASS

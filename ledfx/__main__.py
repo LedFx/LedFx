@@ -17,20 +17,20 @@ For non-development purposes run:
 """
 
 import argparse
-import sys
 import logging
+import sys
 import warnings
 
 from pyupdater.client import Client
 
+import ledfx.config as config_helpers
 from ledfx.consts import (
-    REQUIRED_PYTHON_VERSION,
-    REQUIRED_PYTHON_STRING,
-    PROJECT_VERSION,
     PROJECT_NAME,
+    PROJECT_VERSION,
+    REQUIRED_PYTHON_STRING,
+    REQUIRED_PYTHON_VERSION,
 )
 from ledfx.core import LedFxCore
-import ledfx.config as config_helpers
 
 # Logger Variables
 warnings.filterwarnings("ignore", category=DeprecationWarning)
@@ -84,6 +84,7 @@ def parse_args():
     )
     parser.add_argument(
         "--open-ui",
+        dest="open_ui",
         action="store_true",
         help="Automatically open the webinterface",
     )

@@ -2,10 +2,11 @@ import asyncio
 import logging
 import sys
 from concurrent.futures import ThreadPoolExecutor
-from ledfx.utils import async_fire_and_forget
-from ledfx.http_manager import HttpServer
+
+from ledfx.config import load_config, load_default_presets, save_config
 from ledfx.devices import Devices
 from ledfx.effects import Effects
+
 from ledfx.integrations import Integrations
 from ledfx.config import (
     load_config,
@@ -13,6 +14,10 @@ from ledfx.config import (
     load_default_presets,
 )
 from ledfx.events import Events, LedFxShutdownEvent, Event
+
+from ledfx.http_manager import HttpServer
+from ledfx.utils import async_fire_and_forget
+
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -112,9 +117,15 @@ class LedFxCore(object):
 
         if open_ui:
             import webbrowser
-
-            # Hardcode to Localhost - will work regardless of actual address given we're binding to 0.0.0.0
-            webbrowser.open("http://127.0.0.1:" + str(self.config["port"]))
+            # My prior fix sucked and caused more problems. This should be better.
+            if str(self.config['host']) == "0.0.0.0":
+                url = f"http://127.0.0.1:{str(self.config['port'])}"
+            else:
+                url = self.http.base_url
+            try:
+                webbrowser.open(url)
+            except FileNotFoundError:
+                _LOGGER.warning(f"Failed to open default web browser. To access LedFx's web ui, open {url} in your browser. To prevent this error in future, configure a default browser for your system.")
 
         await self.flush_loop()
 

@@ -5,12 +5,16 @@ import Settings from "@material-ui/icons/Settings";
 import Tune from "@material-ui/icons/Tune";
 import SaveAltIcon from '@material-ui/icons/SaveAlt';
 import BuildIcon from '@material-ui/icons/Build';
+import DeviceHubIcon from '@material-ui/icons/DeviceHub';
+import PowerIcon from '@material-ui/icons/Power';
 
 // Components and Views
 import DashboardView from "../views/Dashboard";
 import DevicesView from "../views/Devices";
 import ScenesView from "../views/Scenes";
 import DeviceView from "../views/Device";
+import VirtualsView from "../views/Virtuals";
+import IntegrationView from "../views/Integration";
 import SettingsView from "../views/Settings";
 import DeveloperView from "../views/Developer";
 
@@ -44,6 +48,20 @@ const viewRoutes = [
     component: DevicesView
   },
   {
+    path: "/integrations",
+    // sidebarName: "Integrations",
+    navbarName: "Integrations",
+    icon: PowerIcon,
+    component: IntegrationView
+  },
+  {
+    path: "/virtuals",
+    // sidebarName: "Virtual Strips",
+    navbarName: "Virtual Strips",
+    icon: DeviceHubIcon,
+    component: VirtualsView
+  },
+  {
     path: "/settings",
     sidebarName: "Settings",
     navbarName: "Settings",
@@ -61,7 +79,7 @@ const viewRoutes = [
     navbarName: "Developer",
     icon: Tune,
     component: DeveloperView
-  }, 
+  },
   { redirect: true, path: "/", to: "/dashboard", navbarName: "Redirect" }
 ];
 

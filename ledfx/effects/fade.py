@@ -1,7 +1,8 @@
-from ledfx.effects.temporal import TemporalEffect
-from ledfx.effects.gradient import GradientEffect
-import voluptuous as vol
 import numpy as np
+import voluptuous as vol
+
+from ledfx.effects.gradient import GradientEffect
+from ledfx.effects.temporal import TemporalEffect
 
 
 class FadeEffect(TemporalEffect, GradientEffect):
