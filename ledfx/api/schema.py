@@ -13,7 +13,7 @@ class SchemaEndpoint(RestEndpoint):
     ENDPOINT_PATH = "/api/schema"
 
     async def get(self) -> web.Response:
-        response = {"devices": {}, "effects": {}}
+        response = {"devices": {}, "effects": {}, 'integrations': {}}
 
         # Generate all the device schema
         for (
@@ -34,6 +34,18 @@ class SchemaEndpoint(RestEndpoint):
                 "schema": convertToJsonSchema(effect.schema()),
                 "id": effect_type,
                 "name": effect.NAME,
+            }
+
+        # Generate all the integrations schema
+        for (
+            integration_type,
+            integration,
+        ) in self._ledfx.integrations.classes().items():
+            response["integrations"][integration_type] = {
+                "schema": convertToJsonSchema(integration.schema()),
+                "id": integration_type,
+                "name": integration.NAME,
+                "description": integration.DESCRIPTION
             }
 
         return web.json_response(data=response, status=200)

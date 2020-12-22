@@ -5,13 +5,15 @@ import numpy as np
 
 _LOGGER = logging.getLogger(__name__)
 
-
 class Event:
     """Base for events"""
 
     LEDFX_SHUTDOWN = "shutdown"
     DEVICE_UPDATE = "device_update"
     GRAPH_UPDATE = "graph_update"
+    EFFECT_SET = "effect_set"
+    EFFECT_CLEARED = "effect_cleared"
+    SCENE_SET = "scene_set"
 
     def __init__(self, type: str):
         self.event_type = type
@@ -43,13 +45,31 @@ class GraphUpdateEvent(Event):
         self.melbank = melbank.tolist()
         self.frequencies = frequencies.tolist()
 
+class EffectSetEvent(Event):
+    """Event emitted when an effect is set"""
+
+    def __init__(self, effect_name):
+        super().__init__(Event.EFFECT_SET)
+        self.effect_name = effect_name
+
+class EffectClearedEvent(Event):
+    """Event emitted when an effect is cleared"""
+
+    def __init__(self):
+        super().__init__(Event.EFFECT_CLEARED)
+
+class SceneSetEvent(Event):
+    """Event emitted when a scene is set"""
+
+    def __init__(self, scene_name):
+        super().__init__(Event.SCENE_SET)
+        self.scene_name = scene_name
 
 class LedFxShutdownEvent(Event):
     """Event emitted when LedFx is shutting down"""
 
     def __init__(self):
         super().__init__(Event.LEDFX_SHUTDOWN)
-
 
 class EventListener:
     def __init__(self, callback: Callable, event_filter: dict = {}):
@@ -106,3 +126,9 @@ class Events:
                 self._listeners.pop(event_type)
         except (KeyError, ValueError):
             _LOGGER.warning("Failed to remove event listener %s", listener)
+
+# def get_event_types():
+#     """Get a list of the types of events available"""
+#     return [event for event in vars(Event) if (not event.startswith('__')) and (event.isupper())]
+
+# print(get_event_types())

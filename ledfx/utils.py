@@ -1,3 +1,6 @@
+
+import asyncio
+
 import concurrent.futures
 import importlib
 import inspect
@@ -16,7 +19,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 def install_package(package):
-    _LOGGER.info("Installing package %s", package)
+    _LOGGER.info(f"Installed package: {package}")
     env = os.environ.copy()
     args = [
         sys.executable,
@@ -40,7 +43,9 @@ def install_package(package):
 
 def import_or_install(package):
     try:
-        print("imported package")
+        _LOGGER.info(
+            f"Imported package: {package}"
+        )
         return importlib.import_module(package)
 
     except ImportError:
@@ -55,16 +60,33 @@ def import_or_install(package):
 def async_fire_and_forget(coro, loop):
     """Run some code in the core event loop without a result"""
 
-    if not coroutines.iscoroutine(coro):
+    if not asyncio.coroutines.iscoroutine(coro):
         raise TypeError(("A coroutine object is required: {}").format(coro))
 
     def callback():
         """Handle the firing of a coroutine."""
-        ensure_future(coro, loop=loop)
+        asyncio.ensure_future(coro, loop=loop)
 
     loop.call_soon_threadsafe(callback)
     return
 
+def async_fire_and_return(loop, coro, timeout=10):
+    """Run some code in the core event loop with a result"""
+
+    if not asyncio.coroutines.iscoroutine(coro):
+        raise TypeError(("A coroutine object is required: {}").format(coro))
+
+    future = asyncio.run_coroutine_threadsafe(coro, loop=loop)
+    
+    try:
+        result = future.result(timeout)
+    except asyncio.TimeoutError:
+        _LOGGER.warning(f'Coroutine {coro} timed out at {timeout}s, cancelling the task...')
+        future.cancel()
+    except Exception as exc:
+        _LOGGER.error(f'Coroutine {coro} raised an exception: {exc!r}')
+    else:
+        return result
 
 def async_callback(loop, callback, *args):
     """Run a callback in the event loop with access to the result"""
@@ -83,7 +105,6 @@ def async_callback(loop, callback, *args):
 
     loop.call_soon_threadsafe(run_callback)
     return future
-
 
 def generate_id(name):
     """Converts a name to a id"""
