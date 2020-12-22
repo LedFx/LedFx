@@ -4,7 +4,7 @@ from setuptools import setup
 
 import ledfx.consts as const
 
-PROJECT_PACKAGE_NAME = "ledfx-dev"
+PROJECT_PACKAGE_NAME = "ledfx"
 PROJECT_VERSION = const.PROJECT_VERSION
 PROJECT_LICENSE = "The MIT License"
 PROJECT_AUTHOR = "Austin Hodges"
