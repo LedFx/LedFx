@@ -22,7 +22,7 @@
         {
             "label": "[GIT|CUSTOM][Frontend]:3002",
             "type": "shell",
-            "command": "cd /; if [ ! -d ledfxcustom ] ; then git clone ${input:customgit} -b ${input:custombranch} ledfxcustom else cd ledfxcustom && git pull && cd ..; fi && cd ledfxcustom/frontend && yarn && export PORT=3002 && yarn start",
+            "command": "cd /; if [ ! -d ledfxcustom ] ; then git clone ${input:customgit} -b ${input:custombranch} ledfxcustom; else cd ledfxcustom && git pull && cd ..; fi && cd ledfxcustom/frontend && yarn && export PORT=3002 && yarn start",
             "problemMatcher": []
         },
         {
@@ -35,9 +35,13 @@
     "inputs": [
         {
             "id": "customgit",
-            "description": "Enter the custom LedFx repository",
-            "default": "https://github.com/LedFx/LedFx",
-            "type": "promptString"
+            "description": "Enter the custom LedFx repository",,
+            "default": "https://github.com/YeonV/LedFx",
+            "type": "pickString",
+            "options": [
+                "https://github.com/YeonV/LedFx",
+                "https://github.com/LedFx/LedFx"
+            ]
         },
         {
             "id": "custombranch",
