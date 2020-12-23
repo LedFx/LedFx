@@ -5,7 +5,7 @@ const ACTION_ROOT = 'integrations';
 
 export const addIntegration = createAction(`${ACTION_ROOT}/INTEGRATION_ADD`);
 export const setIntegration = createAction(`${ACTION_ROOT}/INTEGRATION_SET`);
-// export const deleteIntegration = createAction(`${ACTION_ROOT}/INTEGRATION_DELETE`);
+export const deleteIntegration = createAction(`${ACTION_ROOT}/INTEGRATION_DELETE`);
 
 const INITIAL_STATE = {
     list: [],
@@ -30,6 +30,9 @@ export default handleActions(
                 list: payload,
             };
         },
+        [deleteIntegration]: (state, { payload }) => {
+            return { ...state, list: state.list.filter(v => v.id !== payload.id) };
+        },
     },
     INITIAL_STATE
 );
@@ -47,16 +50,18 @@ export function getAsyncIntegrations() {
     };
 }
 
-export function deleteAsyncIntegration(data) {
+export async function deleteAsyncIntegration(data) {
     console.log('damn', data);
-    integrationsProxies.deleteIntegration({ data });
+    const response = await integrationsProxies.deleteIntegration({ data });
+    console.log('damn', response);
+    // integrationsProxies.deleteIntegration(data);
     return async dispatch => {
         try {
             console.log('damn', data);
             const response = await integrationsProxies.deleteIntegration(data);
             if (response.statusText === 'OK') {
                 console.log('OMG', response.data);
-                dispatch(setIntegration(response.data.integrations));
+                // dispatch(deleteIntegration(response.data.integrations));
             }
         } catch (error) {
             console.log(error);

@@ -90,6 +90,13 @@ class IntegrationsEndpoint(RestEndpoint):
                 break
         # del self._ledfx.config["integrations"][integration_id]
 
+        self._ledfx.integrations.destroy(integration_id)
+
+        self._ledfx.config["integrations"] = [
+            integration
+            for integration in self._ledfx.config["integrations"]
+            if integration["id"] != integration_id
+        ]
         # Delete the integration itself
         del integration
 
