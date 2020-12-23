@@ -30,15 +30,6 @@ integrations:
   config:
     description: Web Api Integration for Q Light Controller Plus
     ip_address: 127.0.0.1
-    name: QLC+asd
-    port: 9999
-  data: []
-  id: qlc-asd
-  type: qlc
-- active: true
-  config:
-    description: Web Api Integration for Q Light Controller Plus
-    ip_address: 127.0.0.1
     name: QLC+test
     port: 9999
   data: []
