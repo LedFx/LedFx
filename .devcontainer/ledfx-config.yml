@@ -30,10 +30,10 @@ integrations:
   config:
     description: Web Api Integration for Q Light Controller Plus
     ip_address: 127.0.0.1
-    name: QLC+test
+    name: QLC+
     port: 9999
   data: []
-  id: qlc-test
+  id: qlc
   type: qlc
 max_workers: 10
 port: 8888

@@ -38,6 +38,7 @@ function ConfirmationDialogRaw(props) {
     const handleOk = () => {
         onClose(value);
         integrationsProxies.createIntegration({ config: model, type: 'qlc' });
+        window.location = window.location.href;
     };
 
     // const handleChange = event => {

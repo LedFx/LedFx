@@ -9,6 +9,7 @@ import Button from '@material-ui/core/Button';
 import EditIcon from '@material-ui/icons/Edit';
 import SettingsIcon from '@material-ui/icons/Settings';
 import { deleteAsyncIntegration } from 'modules/integrations';
+import { toggleAsyncIntegration } from 'modules/integrations';
 import { Switch, Chip } from '@material-ui/core';
 
 const useStyles = makeStyles({
@@ -23,7 +24,11 @@ const useStyles = makeStyles({
 
 const IntegrationsCard = ({ int }) => {
     const classes = useStyles();
-    console.log('BOOM', int);
+
+    const handleToggle = props => {
+        console.log('YO', props);
+        toggleAsyncIntegration(props);
+    };
     return (
         <Card className={classes.integrationCard} variant="outlined">
             <CardContent style={{ paddingBottom: 0 }}>
@@ -71,7 +76,14 @@ const IntegrationsCard = ({ int }) => {
                 >
                     <EditIcon />
                 </Button>
-                <Switch color="primary" />
+                <Switch
+                    color="primary"
+                    onChange={() =>
+                        handleToggle({
+                            id: int.id,
+                        })
+                    }
+                />
             </CardActions>
         </Card>
     );

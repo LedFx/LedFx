@@ -54,11 +54,32 @@ export async function deleteAsyncIntegration(data) {
     console.log('damn', data);
     const response = await integrationsProxies.deleteIntegration({ data });
     console.log('damn', response);
+    window.location = window.location.href;
     // integrationsProxies.deleteIntegration(data);
     return async dispatch => {
         try {
             console.log('damn', data);
             const response = await integrationsProxies.deleteIntegration(data);
+            if (response.statusText === 'OK') {
+                console.log('OMG', response.data);
+                // dispatch(deleteIntegration(response.data.integrations));
+            }
+        } catch (error) {
+            console.log(error);
+        }
+    };
+}
+
+export async function toggleAsyncIntegration(data) {
+    console.log('damn', data);
+    const response = await integrationsProxies.toggleIntegration(data);
+    console.log('damn', response);
+    // window.location = window.location.href;
+    // integrationsProxies.deleteIntegration(data);
+    return async dispatch => {
+        try {
+            console.log('damn', data);
+            const response = await integrationsProxies.toggleIntegration(data);
             if (response.statusText === 'OK') {
                 console.log('OMG', response.data);
                 // dispatch(deleteIntegration(response.data.integrations));

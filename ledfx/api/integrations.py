@@ -53,9 +53,9 @@ class IntegrationsEndpoint(RestEndpoint):
             integration.deactivate()
 
         # Update and save the configuration
-        for integration in self._ledfx.config["integrations"]:
-            if integration["id"] == integration.id:
-                integration["active"] = not active
+        for _integration in self._ledfx.config["integrations"]:
+            if _integration["id"] == integration.id:
+                _integration["active"] = not active
                 break
         save_config(
             config=self._ledfx.config,

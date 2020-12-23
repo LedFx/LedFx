@@ -1,6 +1,5 @@
 import React from 'react';
 import { deleteAsyncIntegration } from 'modules/integrations';
-import DeleteIcon from '@material-ui/icons/Delete';
 import EditIcon from '@material-ui/icons/Edit';
 import SettingsIcon from '@material-ui/icons/Settings';
 import { Switch } from '@material-ui/core';
