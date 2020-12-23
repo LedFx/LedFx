@@ -14,6 +14,7 @@ import DevicesView from '../views/Devices';
 import ScenesView from '../views/Scenes';
 import DeviceView from '../views/Device';
 import VirtualsView from '../views/Virtuals';
+import IntegrationsView from '../views/Integrations';
 import IntegrationView from '../views/Integration';
 import SettingsView from '../views/Settings';
 import DeveloperView from '../views/Developer';
@@ -40,13 +41,13 @@ const integrations =
               sidebarName: 'Integrations',
               navbarName: 'Integrations',
               icon: PowerIcon,
-              component: IntegrationView,
+              component: IntegrationsView,
           }
         : {
               path: '/integrations',
               navbarName: 'Integrations',
               icon: PowerIcon,
-              component: IntegrationView,
+              component: IntegrationsView,
           };
 const viewRoutes = [
     {
@@ -78,6 +79,13 @@ const viewRoutes = [
         component: DevicesView,
     },
     integrations,
+    {
+        path: '/integrations/:integrationId',
+        navbarName: 'Integration',
+        sidebarName: 'Integration',
+        icon: PowerIcon,
+        component: IntegrationView,
+    },
     virtuals,
     {
         path: '/settings',

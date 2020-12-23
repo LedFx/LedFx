@@ -4,7 +4,7 @@
         {
             "label": "[GIT|DEV][Backend]:8888",
             "type": "shell",
-            "command": "ledfx",
+            "command": "PULSE_SERVER=$PULSE_SERVER ledfx",
             "problemMatcher": []
         },
         {
