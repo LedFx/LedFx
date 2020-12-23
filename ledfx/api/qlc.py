@@ -41,16 +41,16 @@ class QLCEndpoint(RestEndpoint):
             response = {
                 Event.EFFECT_SET: {
                     "event_name": "Effect Set",
-                    "event_filters": {"effect_name": effect_names}
+                    "event_filters": {"effect_name": effect_names},
                 },
                 Event.EFFECT_CLEARED: {
                     "event_name": "Effect Cleared",
-                    "event_filters": {}
+                    "event_filters": {},
                 },
                 Event.SCENE_SET: {
                     "event_name": "Scene Set",
-                    "event_filters": {"scene_name": scene_names}
-                }
+                    "event_filters": {"scene_name": scene_names},
+                },
             }
 
         elif info == "qlc_widgets":
@@ -100,7 +100,7 @@ class QLCEndpoint(RestEndpoint):
             }
             return web.json_response(data=response, status=500)
 
-        # Delete the listener and event from data 
+        # Delete the listener and event from data
         integration.toggle_event(event_type, event_filter)
 
         # Save the configuration (integration will handle modifying "data")
@@ -156,7 +156,7 @@ class QLCEndpoint(RestEndpoint):
             }
             return web.json_response(data=response, status=500)
 
-        # Create a link between ledfx event and sending the payload 
+        # Create a link between ledfx event and sending the payload
         integration.create_event(event_type, event_filter, True, qlc_payload)
 
         # Update and save the configuration
@@ -175,7 +175,7 @@ class QLCEndpoint(RestEndpoint):
     async def delete(self, integration_id, request) -> web.Response:
         """ Delete a QLC event listener """
         integration = self._ledfx.integrations.get(integration_id)
-        if (integration is None) or (integration.type is not "qlc"):
+        if (integration is None) or (integration.type != "qlc"):
             response = {"not found": 404}
             return web.json_response(data=response, status=404)
 
@@ -204,7 +204,7 @@ class QLCEndpoint(RestEndpoint):
             }
             return web.json_response(data=response, status=500)
 
-        # Delete the listener and event from data 
+        # Delete the listener and event from data
         integration.delete_event(event_type, event_filter)
 
         # Save the configuration (integration will handle modifying "data")

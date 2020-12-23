@@ -19,11 +19,15 @@ export default handleActions(
             ...state,
             isLoading: true,
         }),
-        [schemasFetched]: (state, { payload, payload: { deviceTypes, effects }, error }) => ({
+        [schemasFetched]: (
+            state,
+            { payload, payload: { deviceTypes, effects, integrationTypes }, error }
+        ) => ({
             ...state,
             isLoading: false,
             effects: error ? {} : effects,
             deviceTypes: error ? {} : deviceTypes,
+            integrationTypes: error ? {} : integrationTypes,
             error: error ? payload.message : '',
         }),
     },
@@ -36,8 +40,12 @@ export function fetchSchemas() {
         try {
             const response = await schemaProxies.getSchemas();
             if (response.statusText === 'OK') {
-                const { devices: deviceTypes, effects } = response.data;
-                dispatch(schemasFetched({ deviceTypes, effects }));
+                const {
+                    devices: deviceTypes,
+                    effects,
+                    integrations: integrationTypes,
+                } = response.data;
+                dispatch(schemasFetched({ deviceTypes, effects, integrationTypes }));
             }
         } catch (error) {
             dispatch(schemasFetched(error));

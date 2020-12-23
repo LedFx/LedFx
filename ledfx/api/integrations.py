@@ -84,13 +84,15 @@ class IntegrationsEndpoint(RestEndpoint):
             return web.Response(text=json.dumps(response), status=404)
 
         # Delete the integration from configuration
-        del self._ledfx.config["integrations"][integration.id]
+        del self._ledfx.config["integrations"][integration_id]
 
         # Delete the integration itself
         del integration
 
         # Save the config
-        save_config(config=self._ledfx.config, config_dir=self._ledfx.config_dir)
+        save_config(
+            config=self._ledfx.config, config_dir=self._ledfx.config_dir
+        )
 
         response = {"status": "success"}
         return web.json_response(data=response, status=200)

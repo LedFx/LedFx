@@ -24,7 +24,7 @@ COPY --from=venv-image /ledfx/venv /ledfx/venv
 ENV PATH="/ledfx/venv/bin:$PATH"
 
 RUN python -m pip install -U pip setuptools wheel \
-    && git clone --depth 1 https://github.com/LedFx/LedFx -b dev ledfx-git \
+    && git clone --depth 1 https://github.com/YeonV/LedFx -b dev ledfx-git \
     && cd ledfx-git/frontend \
     && npm install -g yarn
 WORKDIR /ledfx-git

@@ -1,165 +1,198 @@
-import React from 'react';
-import { connect } from 'react-redux';
-import withStyles from '@material-ui/core/styles/withStyles';
+import React, { useEffect, useState } from 'react';
 import Grid from '@material-ui/core/Grid';
-import Card from '@material-ui/core/Card';
-import Box from '@material-ui/core/Box';
-import Typography from '@material-ui/core/Typography';
-import CardContent from '@material-ui/core/CardContent';
+import { useDispatch, useSelector } from 'react-redux';
+import MuiAlert from '@material-ui/lab/Alert';
+import Snackbar from '@material-ui/core/Snackbar';
 import Button from '@material-ui/core/Button';
-import AddCircleIcon from '@material-ui/icons/AddCircle';
-import CircularProgress from '@material-ui/core/CircularProgress';
 
-import DevicesTable from 'components/InegrationComponents';
-import DeviceConfigDialog from 'components/DeviceConfigDialog';
-import {
-    addDevice,
-    deleteDevice,
-    updateDeviceConfig,
-    fetchDeviceList,
-    findWLEDDevices,
-} from 'modules/devices';
+import Card from '@material-ui/core/Card';
+import CardActions from '@material-ui/core/CardActions';
+import CardContent from '@material-ui/core/CardContent';
+import Typography from '@material-ui/core/Typography';
+import { makeStyles } from '@material-ui/core/styles';
 
-const styles = theme => ({
-    cardResponsive: {
-        width: '100%',
-        overflowX: 'auto',
+import Table from '@material-ui/core/Table';
+import TableHead from '@material-ui/core/TableHead';
+import TableRow from '@material-ui/core/TableRow';
+import TableCell from '@material-ui/core/TableCell';
+import TableBody from '@material-ui/core/TableBody';
+
+import DialogAddIntegration from 'components/IntegrationComponents/DialogAddIntegration';
+import { deleteAsyncIntegration, getAsyncIntegrations } from 'modules/integrations';
+import DeleteIcon from '@material-ui/icons/Delete';
+import EditIcon from '@material-ui/icons/Edit';
+import { Switch } from '@material-ui/core';
+
+import PopoverSure from 'components/VirtualComponents/PopoverSure';
+// import * as integrationsProxies from 'proxies/integrations';
+
+function Alert(props) {
+    return <MuiAlert elevation={6} variant="filled" {...props} />;
+}
+
+const useStyles = makeStyles({
+    integrationCard: {
+        width: 220,
+        height: 220,
+        justifyContent: 'space-between',
+        display: 'flex',
+        flexDirection: 'column',
     },
-    button: {
-        size: 'large',
-        margin: theme.spacing(1),
+    bullet: {
+        display: 'inline-block',
+        margin: '0 2px',
+        transform: 'scale(0.8)',
     },
-    dialogButton: {
-        float: 'right',
+    title: {
+        fontSize: 14,
+    },
+    pos: {
+        marginBottom: 12,
     },
 });
 
-class IntegrationView extends React.Component {
-    constructor(props) {
-        super(props);
-        this.state = {
-            addDialogOpened: false,
-            selectedDevice: {},
-            searchDevicesLoading: false,
-        };
-    }
-    componentDidMount() {
-        const { fetchDeviceList } = this.props;
-        fetchDeviceList();
-    }
+const IntegrationsView = () => {
+    const integrationTypes = useSelector(state => state.schemas.integrationTypes || {});
+    const installedIntegrations = useSelector(state => state.integrations.list || []);
+    const classes = useStyles();
 
-    openAddDeviceDialog = () => {
-        this.setState({ selectedDevice: {}, addDialogOpened: true });
+    const dispatch = useDispatch();
+    const [snackbarState, setSnackbarState] = useState({ open: false, message: '', type: 'error' });
+
+    const handleClose = () => {
+        setSnackbarState({ ...snackbarState, open: false });
     };
 
-    closeAddDeviceDialog = () => {
-        this.setState({ selectedDevice: {}, addDialogOpened: false });
-    };
+    useEffect(() => {
+        dispatch(getAsyncIntegrations());
+    }, [dispatch]);
 
-    handleEditDevice = device => {
-        this.setState({ selectedDevice: device, addDialogOpened: true });
-    };
-
-    handleFindDevices = () => {
-        const { findWLEDDevices } = this.props;
-        this.setState({ searchDevicesLoading: true });
-        new Promise((resolve, reject) => {
-            findWLEDDevices({ resolve, reject });
-        }).then(() => {
-            this.setState({ searchDevicesLoading: false });
-        });
-    };
-
-    render() {
-        const {
-            classes,
-            deviceList,
-            schemas,
-            addDevice,
-            deleteDevice,
-            updateDeviceConfig,
-            scanProgress,
-        } = this.props;
-        const { addDialogOpened, selectedDevice } = this.state;
-
-        return (
-            <>
-                <Grid container spacing={2}>
-                    <Grid item xs={12} md={12}>
-                        <Card>
-                            <CardContent>
-                                <Grid container direction="row" spacing={1} justify="space-between">
-                                    <Grid item xs="auto">
-                                        <Typography variant="h5">Integrations</Typography>
-                                        <Typography variant="body1" color="textSecondary">
-                                            Manage integrations
+    return (
+        <Grid container spacing={2}>
+            <Grid item xs={12} md={12}>
+                <Typography
+                    variant="h6"
+                    component="h2"
+                    color="textPrimary"
+                    style={{ marginBottom: '1em' }}
+                >
+                    Available Integrations
+                </Typography>
+                <Grid container justify="flex-start" spacing={5}>
+                    {integrationTypes &&
+                        integrationTypes !== {} &&
+                        Object.keys(integrationTypes).map((integration, i) => (
+                            <Grid key={i} item>
+                                <Card className={classes.integrationCard} variant="outlined">
+                                    <CardContent>
+                                        <Typography
+                                            className={classes.title}
+                                            color="textSecondary"
+                                            gutterBottom
+                                        >
+                                            Integration
                                         </Typography>
-                                    </Grid>
-                                    {!schemas.isLoading && (
-                                        <>
-                                            <Grid item>
-                                                <Box
-                                                    display="flex"
-                                                    flexDirection="row"
-                                                    alignItems="center"
-                                                    justifyContent="center"
-                                                >
-                                                    <CircularProgress
-                                                        variant="determinate"
-                                                        value={scanProgress * 10}
-                                                        size={35}
-                                                    />
-                                                    <Button
-                                                        variant="contained"
-                                                        color="primary"
-                                                        aria-label="Add"
-                                                        className={classes.button}
-                                                        onClick={this.openAddDeviceDialog}
-                                                        endIcon={<AddCircleIcon />}
-                                                    >
-                                                        Add Integration
-                                                    </Button>
-                                                    <DeviceConfigDialog
-                                                        open={addDialogOpened}
-                                                        onClose={this.closeAddDeviceDialog}
-                                                        deviceTypes={schemas.deviceTypes}
-                                                        onAddDevice={addDevice}
-                                                        initial={selectedDevice}
-                                                        onUpdateDevice={updateDeviceConfig}
-                                                    />
-                                                </Box>
-                                            </Grid>
-                                        </>
-                                    )}
-                                </Grid>
-
-                                <DevicesTable
-                                    items={deviceList}
-                                    onDeleteDevice={deleteDevice}
-                                    onEditDevice={this.handleEditDevice}
-                                />
-
-
-                            </CardContent>
-                        </Card>
-                    </Grid>
+                                        <Typography variant="h5" component="h2">
+                                            {integrationTypes[integration].name}
+                                        </Typography>
+                                        <Typography className={classes.pos} color="textSecondary">
+                                            v0.0.1
+                                        </Typography>
+                                        <Typography variant="body2" component="p">
+                                            {integrationTypes[integration].description}
+                                        </Typography>
+                                    </CardContent>
+                                    <CardActions>
+                                        <DialogAddIntegration
+                                            integration={integrationTypes[integration].id}
+                                        />
+                                    </CardActions>
+                                </Card>
+                            </Grid>
+                        ))}
                 </Grid>
-            </>
-        );
-    }
-}
+                <Typography
+                    variant="h6"
+                    component="h2"
+                    color="textPrimary"
+                    style={{ marginBottom: '1em', marginTop: '3em' }}
+                >
+                    Installed Integrations
+                </Typography>
+                <Table className={classes.table}>
+                    <TableHead>
+                        <TableRow>
+                            <TableCell>Name</TableCell>
+                            <TableCell>Type</TableCell>
+                            <TableCell>Settings</TableCell>
+                            <TableCell>Actions</TableCell>
+                        </TableRow>
+                    </TableHead>
 
-export default connect(
-    state => ({
-        deviceList: state.devices.list,
-        schemas: state.schemas,
-        scanProgress: state.devices.scanProgress,
-    }),
-    {
-        addDevice,
-        deleteDevice,
-        updateDeviceConfig,
-        fetchDeviceList,
-        findWLEDDevices,
-    }
-)(withStyles(styles)(IntegrationView));
+                    <TableBody>
+                        {installedIntegrations &&
+                            Object.keys(installedIntegrations).map((installedIntegration, i) => (
+                                <TableRow key={installedIntegrations[installedIntegration].id}>
+                                    <TableCell>
+                                        {installedIntegrations[installedIntegration].config.name}
+                                    </TableCell>
+                                    <TableCell>
+                                        {installedIntegrations[installedIntegration].type}
+                                    </TableCell>
+                                    <TableCell>
+                                        {JSON.stringify(
+                                            installedIntegrations[installedIntegration]
+                                        )}
+                                    </TableCell>
+                                    <TableCell>
+                                        <div style={{ display: 'flex' }}>
+                                            <Switch color="primary" />
+                                            <PopoverSure
+                                                onDeleteVitem={() =>
+                                                    deleteAsyncIntegration({
+                                                        id:
+                                                            installedIntegrations[
+                                                                installedIntegration
+                                                            ].id,
+                                                    })
+                                                }
+                                            />
+                                            <Button
+                                                variant="text"
+                                                color="secondary"
+                                                onClick={() => {
+                                                    console.log('deleting');
+                                                }}
+                                            >
+                                                <DeleteIcon />
+                                            </Button>
+                                            <Button
+                                                variant="text"
+                                                color="secondary"
+                                                onClick={() => {
+                                                    console.log('edit');
+                                                }}
+                                            >
+                                                <EditIcon />
+                                            </Button>
+                                        </div>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                    </TableBody>
+                </Table>
+            </Grid>
+            <Snackbar
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+                autoHideDuration={1000 + snackbarState.message.length * 60}
+                open={snackbarState.open}
+                onClose={handleClose}
+                key={'bottomcenter'}
+            >
+                <Alert severity={snackbarState.type}>{snackbarState.message}</Alert>
+            </Snackbar>
+        </Grid>
+    );
+};
+
+export default IntegrationsView;

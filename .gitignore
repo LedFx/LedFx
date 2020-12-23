@@ -61,3 +61,7 @@ pyu-data/
 # Sentry Data
 ledfx/sentry_config.py
 formatting_test.bat
+
+
+# Misc
+.devcontainer/ledfx-config.yml

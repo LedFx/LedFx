@@ -13,7 +13,11 @@ class SchemaEndpoint(RestEndpoint):
     ENDPOINT_PATH = "/api/schema"
 
     async def get(self) -> web.Response:
-        response = {"devices": {}, "effects": {}, 'integrations': {}}
+        response = {
+            "devices": {},
+            "effects": {},
+            "integrations": {},
+        }
 
         # Generate all the device schema
         for (
@@ -45,7 +49,7 @@ class SchemaEndpoint(RestEndpoint):
                 "schema": convertToJsonSchema(integration.schema()),
                 "id": integration_type,
                 "name": integration.NAME,
-                "description": integration.DESCRIPTION
+                "description": integration.DESCRIPTION,
             }
 
         return web.json_response(data=response, status=200)

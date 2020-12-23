@@ -13,6 +13,7 @@ export function createIntegration(data) {
 }
 
 export function deleteIntegration(data) {
+    console.log('YZ', data);
     return api.delete(`/integrations`, data);
 }
 
