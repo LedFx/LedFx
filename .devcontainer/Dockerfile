@@ -4,7 +4,7 @@
 ARG VARIANT="3"
 FROM mcr.microsoft.com/vscode/devcontainers/python:0-${VARIANT} AS venv-image
 
-RUN echo "hi"
+RUN echo "hi2"
 
 # [Option] Install Node.js
 ARG INSTALL_NODE="true"
