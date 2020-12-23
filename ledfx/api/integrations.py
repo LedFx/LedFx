@@ -84,10 +84,14 @@ class IntegrationsEndpoint(RestEndpoint):
             return web.Response(text=json.dumps(response), status=404)
 
         # Delete the integration from configuration
-        del self._ledfx.config["integrations"][integration_id]
+        for integration in self._ledfx.config["integrations"]:
+            if integration.id == integration_id:
+                del integration
+                break
+        # del self._ledfx.config["integrations"][integration_id]
 
         # Delete the integration itself
-        del integration
+        # del integration
 
         # Save the config
         save_config(

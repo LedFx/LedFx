@@ -1,10 +1,73 @@
 crossfade: 1.0
 custom_presets: {}
 dev_mode: false
-devices: []
+devices:
+  - config:
+      center_offset: 0
+      channel_count: 207
+      channel_offset: 0
+      force_refresh: false
+      ip_address: 192.168.1.179
+      max_brightness: 1.0
+      name: WLED 2
+      pixel_count: 69
+      preview_only: false
+      refresh_rate: 60
+      universe: 1
+      universe_end: 1
+      universe_size: 512
+    effect:
+      config:
+        gradient_name: Rainbow
+        modulation_effect: sine
+      type: gradient
+    id: wled-2
+    type: e131
+  - config:
+      center_offset: 0
+      channel_count: 207
+      channel_offset: 0
+      force_refresh: false
+      ip_address: 192.168.1.175
+      max_brightness: 1.0
+      name: WLED 1
+      pixel_count: 69
+      preview_only: false
+      refresh_rate: 60
+      universe: 1
+      universe_end: 1
+      universe_size: 512
+    effect:
+      config:
+        color_high: blue
+        color_lows: red
+        color_mids: green
+        mirror: true
+        mixing_mode: overlap
+      type: energy(Reactive)
+    id: wled-1
+    type: e131
 fade: 1.0
 host: 0.0.0.0
-integrations: []
+integrations:
+  - active: true
+    config:
+      description: Web Api Integration for Q Light Controller Plus
+      ip_address: 127.0.0.1
+      name: QLC+
+      port: 9999
+    data: []
+    id: qlc
+    type: qlc
+  - active: true
+    config:
+      description: Controling something
+      ip_address: 127.0.0.1
+      name: Blade's Test
+      port: 9999
+    data: []
+    id: blade-s-test
+    type: qlc
 max_workers: 10
 port: 8888
 scenes: {}
