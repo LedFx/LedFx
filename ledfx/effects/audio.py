@@ -20,7 +20,7 @@ _LOGGER = logging.getLogger(__name__)
 FrequencyRange = namedtuple("FrequencyRange", "min,max")
 
 FREQUENCY_RANGES = {
-    "Ultra Low (1-20Hz)":FrequencyRange(1,20),
+    "Ultra Low (1-20Hz)": FrequencyRange(1, 20),
     "Sub Bass (20-60Hz)": FrequencyRange(20, 60),
     "Bass (60-250Hz)": FrequencyRange(60, 250),
     "Low Midrange (250-500Hz)": FrequencyRange(250, 500),
