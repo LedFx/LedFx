@@ -20,19 +20,20 @@ _LOGGER = logging.getLogger(__name__)
 FrequencyRange = namedtuple("FrequencyRange", "min,max")
 
 FREQUENCY_RANGES = {
-    "sub_bass": FrequencyRange(20, 60),
-    "bass": FrequencyRange(60, 250),
-    "low_midrange": FrequencyRange(250, 500),
-    "midrange": FrequencyRange(500, 2000),
-    "upper_midrange": FrequencyRange(2000, 4000),
-    "presence": FrequencyRange(4000, 6000),
-    "brilliance": FrequencyRange(6000, 20000),
+    "Ultra Low (1-20Hz)":FrequencyRange(1,20),
+    "Sub Bass (20-60Hz)": FrequencyRange(20, 60),
+    "Bass (60-250Hz)": FrequencyRange(60, 250),
+    "Low Midrange (250-500Hz)": FrequencyRange(250, 500),
+    "Midrange (500Hz-2kHz)": FrequencyRange(500, 2000),
+    "Upper Midrange (2Khz-4kHz)": FrequencyRange(2000, 4000),
+    "High Midrange (4kHz-6kHz)": FrequencyRange(4000, 6000),
+    "High Frequency (6kHz-24kHz)": FrequencyRange(6000, 24000),
 }
 
 FREQUENCY_RANGES_SIMPLE = {
-    "low": FrequencyRange(20, 250),
-    "mid": FrequencyRange(250, 4000),
-    "high": FrequencyRange(4000, 24000),
+    "Low (1-250Hz)": FrequencyRange(1, 250),
+    "Mid (250Hz-4kHz)": FrequencyRange(250, 4000),
+    "High (4kHz-24kHz)": FrequencyRange(4000, 24000),
 }
 
 MIN_MIDI = 21
@@ -672,7 +673,11 @@ class MelbankInputSource(AudioInputSource):
 
     @lru_cache(maxsize=32)
     def midi_value(self):
-        return self.pitch_o(self.audio_sample())[0]
+        # If pyaudio is returning null, then this catches it hopefully. Rare error that's hard to reproduce.
+        try:
+            return self.pitch_o(self.audio_sample())[0]
+        except ValueError:
+            _LOGGER.warning("ValueError - No Audio Data. Retrying...")
 
     @lru_cache(maxsize=32)
     def onset(self):
