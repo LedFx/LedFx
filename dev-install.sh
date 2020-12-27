@@ -59,7 +59,7 @@ ExecStart=/usr/bin/python3 /home/"$curruser"/.local/bin/ledfx
 WantedBy=multi-user.target
 " >> ~/ledfx-workdir/ledfx.service
 sudo cp ~/ledfx-workdir/ledfx.service /etc/systemd/system/ledfx.service
-sudo systemctl enable ledfx 
+sudo systemctl enable ledfx
 sudo systemctl start ledfx
 sudo systemctl status ledfx
 echo "LedFx is now running. Please navigate to "$IP":8888 in your web browser"
