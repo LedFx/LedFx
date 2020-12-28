@@ -13,7 +13,7 @@ class MagnitudeAudioEffect(AudioReactiveEffect, GradientEffect):
             vol.Optional(
                 "frequency_range",
                 description="Frequency range for the beat detection",
-                default="bass",
+                default="Bass (60-250Hz)",
             ): vol.In(list(FREQUENCY_RANGES.keys())),
         }
     )
