@@ -40,14 +40,13 @@ sudo apt-get install -y gcc \
         python3-pip
 python3 -m pip install  --upgrade pip wheel setuptools
 echo "Removing prior ledfx installation data"
-python3 -m pip -q uninstall -y ledfx
-python3 -m pip -q uninstall -y ledfx-dev
-sudo systemctl stop ledfx
-sudo systemctl disable ledfx
-sudo rm /etc/systemd/system/ledfx.service
+python3 -m pip -q uninstall -y ledfx 2> /dev/null
+python3 -m pip -q uninstall -y ledfx-dev 2> /dev/null
+sudo systemctl stop ledfx 2> /dev/null
+sudo systemctl disable ledfx 2> /dev/null
+sudo rm /etc/systemd/system/ledfx.service 2> /dev/null
 curruser=$USER
 IP=$(/sbin/ip -o route get to 8.8.8.8 | sed -n 's/.*src \([0-9.]\+\).*/\1/p')
-rm -rf ~/ledfx-workdir
 echo "Downloading and installing latest version from github"
 python3 -m pip install git+https://github.com/LedFx/LedFx@dev
 echo "Adding" $curruser "to Audio Group"
@@ -59,7 +58,7 @@ if [ "$USB" = "0" ]; then
   sudo sed --in-place=.bak 's/defaults.ctl.card 0/defaults.ctl.card 1/' /usr/share/alsa/alsa.conf
   sudo sed -i 's/defaults.pcm.card 0/defaults.pcm.card 1/' /usr/share/alsa/alsa.conf
 fi
-whiptail --yesno "Create Audio loopback for sound playing from this device?" --yes-button "Yes" --no-button "No" "${r}" "${c}" 
+whiptail --yesno "Create an audio loopback device for sound playing from this device?\\n\\nIf you have sound playing from the Raspberry Pi audio jack, select Yes" --yes-button "Yes" --no-button "No" "${r}" "${c}"
 LOOPBACK=$?
 
 if [ "$LOOPBACK" = "0" ]; then
@@ -69,11 +68,11 @@ if [ "$LOOPBACK" = "0" ]; then
   echo "snd-aloop" | sudo tee -a /etc/modules
 
 fi
-whiptail --yesno "Create service so LedFx launches automatically on boot?" --yes-button "Yes" --no-button "No" "${r}" "${c}"
+whiptail --yesno "Install LedFx as a service so it launches automatically on boot?" --yes-button "Yes" --no-button "No" "${r}" "${c}"
 SERVICE=$?
 if [ "$SERVICE" = "0" ]; then
 
-echo "Creating Service"
+echo "Installing LedFx Service"
 echo "[Unit]
 Description=LedFx Music Visualizer
 After=network.target sound.target
@@ -94,7 +93,7 @@ sudo systemctl enable ledfx
 sudo systemctl start ledfx
 sudo systemctl status ledfx
 echo "LedFx is now running. Please navigate to "$IP":8888 in your web browser"
-echo "You may need to restart your pi for the sound device to be accessable"
+echo "You may need to restart your pi for the sound device to be fully functional"
 
 else
 
