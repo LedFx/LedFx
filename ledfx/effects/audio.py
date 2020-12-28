@@ -582,17 +582,17 @@ class MelbankInputSource(AudioInputSource):
         for i in range(0, len(self.melbank_frequencies)):
             if (
                 self.melbank_frequencies[i]
-                < FREQUENCY_RANGES_SIMPLE["low"].max
+                < FREQUENCY_RANGES_SIMPLE["Low (1-250Hz)"].max
             ):
                 self.lows_index = i + 1
             elif (
                 self.melbank_frequencies[i]
-                < FREQUENCY_RANGES_SIMPLE["mid"].max
+                < FREQUENCY_RANGES_SIMPLE["Mid (250Hz-4kHz)"].max
             ):
                 self.mids_index = i + 1
             elif (
                 self.melbank_frequencies[i]
-                < FREQUENCY_RANGES_SIMPLE["high"].max
+                < FREQUENCY_RANGES_SIMPLE["High (4kHz-24kHz)"].max
             ):
                 self.highs_index = i + 1
 
