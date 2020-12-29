@@ -55,6 +55,7 @@
   User="$curruser"
   Group=audio
   ExecStart=/usr/bin/python3 /home/"$curruser"/.local/bin/ledfx
+  Environment=XDG_RUNTIME_DIR=/run/user/"$UID"
   [Install]
   WantedBy=multi-user.target
   " >> ~/ledfx.service
