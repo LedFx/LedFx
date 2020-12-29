@@ -16,20 +16,8 @@ c=$(( columns / 2 ))
 # Unless the screen is tiny
 r=$(( r < 20 ? 20 : r ))
 c=$(( c < 70 ? 70 : c ))
-echo "  _                   _   ______                          ";
-echo " | |                 | | |  ____|                         ";
-echo " | |        ___    __| | | |__    __  __                  ";
-echo " | |       / _ \  / _\` | |  __|   \ \/ /                  ";
-echo " | |____  |  __/ | (_| | | |       >  <                   ";
-echo " |______|  \___|  \__,_| |_|      /_/\_\                  ";
-echo "  _____                 _             _   _               ";
-echo " |_   _|               | |           | | | |              ";
-echo "   | |    _ __    ___  | |_    __ _  | | | |   ___   _ __ ";
-echo "   | |   | '_ \  / __| | __|  / _\` | | | | |  / _ \ | '__|";
-echo "  _| |_  | | | | \__ \ | |_  | (_| | | | | | |  __/ | |   ";
-echo " |_____| |_| |_| |___/  \__|  \__,_| |_| |_|  \___| |_|   ";
-echo "                                                          ";
 whiptail --msgbox --backtitle "Welcome to LedFx Installer" --title "LedFx automated installer" "\\n\\nThis installer will transform your device into a LedFx powered LED driver for networked LEDs! \\n\\n\\n\\nPlease visit ledfx.app or the LedFx Discord if you have any issues" "${r}" "${c}"
+curl -sSL https://install.ledfx.app/ledfxrainbow.out | cat
 sudo apt-get update
 sudo apt-get install -y gcc \
         git \
@@ -51,23 +39,6 @@ echo "Downloading and installing latest version from github"
 python3 -m pip install git+https://github.com/LedFx/LedFx@dev
 echo "Adding" $curruser "to Audio Group"
 sudo usermod -a -G audio $curruser
-whiptail --yesno "Are you using a USB sound device for input?" --yes-button "Yes" --no-button "No" "${r}" "${c}"
-USB=$?
-if [ "$USB" = "0" ]; then
-  echo "Updating alsa.conf - backup created in /usr/share/alsa/alsa.conf.bak"
-  sudo sed --in-place=.bak 's/defaults.ctl.card 0/defaults.ctl.card 1/' /usr/share/alsa/alsa.conf
-  sudo sed -i 's/defaults.pcm.card 0/defaults.pcm.card 1/' /usr/share/alsa/alsa.conf
-fi
-whiptail --yesno "Create an audio loopback device for sound playing from this device?\\n\\nIf you have sound playing from the Raspberry Pi audio jack, select Yes" --yes-button "Yes" --no-button "No" "${r}" "${c}"
-LOOPBACK=$?
-
-if [ "$LOOPBACK" = "0" ]; then
-
-  sudo modprobe snd-aloop
-  echo "Adding alsa loopback to /etc/modules for next boot"
-  echo "snd-aloop" | sudo tee -a /etc/modules
-
-fi
 whiptail --yesno "Install LedFx as a service so it launches automatically on boot?" --yes-button "Yes" --no-button "No" "${r}" "${c}"
 SERVICE=$?
 if [ "$SERVICE" = "0" ]; then
@@ -93,9 +64,10 @@ sudo systemctl enable ledfx
 sudo systemctl start ledfx
 sudo systemctl status ledfx
 echo "LedFx is now running. Please navigate to "$IP":8888 in your web browser"
-echo "You may need to restart your pi for the sound device to be fully functional"
+echo "If you have no audio devices in LedFx, please run 'sudo raspi-config' and setup your audio device (System Devices -> Audio)"
 
 else
 
 echo "LedFx is now installed. Please type ledfx to start."
+echo "If you have no audio devices in LedFx, please run 'sudo raspi-config' and setup your audio device (System Devices -> Audio)"
 fi
