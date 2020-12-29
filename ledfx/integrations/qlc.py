@@ -160,7 +160,8 @@ class QLC(Integration):
 
     def _remove_listener(self, event_type, event_filter):
         """ Internal function to remove ledfx events listener if it exists """
-        listener = self._get_listener(_event_type, event_filter)
+        # PLZ CHECK THIS. I needed to change _event_type to event_type
+        listener = self._get_listener(event_type, event_filter)
         if listener is not None:
             listener()
 
