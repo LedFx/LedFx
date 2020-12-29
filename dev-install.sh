@@ -22,6 +22,7 @@
   sleep 3
 
   install-ledfx () {
+  echo "Ensuring build environment setup correctly"
   sudo apt-get update
   sudo apt-get install -y gcc \
           git \
@@ -33,7 +34,7 @@
   python3 -m pip install  --upgrade pip wheel setuptools
   curruser=$USER
   IP=$(/sbin/ip -o route get to 8.8.8.8 | sed -n 's/.*src \([0-9.]\+\).*/\1/p')
-  echo "Downloading and installing latest version from github"
+  echo "Downloading and installing latest version of LedFx from github"
   python3 -m pip install git+https://github.com/LedFx/LedFx@dev
   echo "Adding" $curruser "to Audio Group"
   sudo usermod -a -G audio $curruser
@@ -112,7 +113,6 @@
   sudo rm /etc/systemd/system/ledfx.service 2> /dev/null
   install-ledfx
   }
-  # Check is LedFx has run before
 
   menu () {
   FILE=~/.ledfx/config.yaml
