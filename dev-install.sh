@@ -72,7 +72,7 @@
   }
 
   update-ledfx () {
-    python3 -m pip install git+https://github.com/LedFx/LedFx@dev --upgrade
+    python3 -m pip install --upgrade git+https://github.com/LedFx/LedFx@dev
     echo "All Updated, enjoy LedFx!"
   }
 
