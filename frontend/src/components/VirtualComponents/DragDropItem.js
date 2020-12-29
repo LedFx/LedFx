@@ -6,6 +6,7 @@ import {
     ListItemIcon,
     ListItemSecondaryAction,
     Switch,
+    TextField,
 } from '@material-ui/core';
 import { Draggable } from 'react-beautiful-dnd';
 import FormatLineSpacingIcon from '@material-ui/icons/FormatLineSpacing';
@@ -32,6 +33,12 @@ const DragDropItem = ({ listItem, virtual, index }) => {
         }),
     });
 
+    const handleInvert = (virtual, listItem) => {
+        dispatch({
+            type: 'virtuals/CHANGE_SEGMENT_INVERT',
+            payload: { virtual: virtual, device: listItem },
+        });
+    };
     return (
         <Draggable
             key={`${listItem.id}-${index}`}
@@ -59,9 +66,36 @@ const DragDropItem = ({ listItem, virtual, index }) => {
                     </ListItemText>
                     <UsedPixels virtual={virtual} device={listItem} />
                     <ListItemText
-                        primary={<Switch color="primary" />}
+                        primary={
+                            <TextField
+                                label=""
+                                defaultValue={30}
+                                style={{
+                                    minWidth: 'unset',
+                                    maxWidth: '80%',
+                                    margin: '0 1em 0 0',
+                                    textAlign: 'center',
+                                }}
+                                inputProps={{ style: { textAlign: 'center' } }}
+                                type="number"
+                            />
+                        }
+                        secondary={'PixelDensity'}
+                        style={{
+                            maxWidth: '10%',
+                            textAlign: 'center',
+                        }}
+                    />
+                    <ListItemText
+                        primary={
+                            <Switch
+                                color="primary"
+                                checked={listItem.invert}
+                                onChange={() => handleInvert(virtual, listItem)}
+                            />
+                        }
                         secondary={'Invert'}
-                        style={{ flexGrow: 0 }}
+                        style={{ flexGrow: 0, textAlign: 'center' }}
                     />
                     <ListItemSecondaryAction>
                         <PopoverSure onDeleteVitem={onDeleteVitem} listItem={listItem} />

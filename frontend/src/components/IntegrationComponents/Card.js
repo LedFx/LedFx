@@ -8,7 +8,7 @@ import Typography from '@material-ui/core/Typography';
 
 const useStyles = makeStyles({
     integrationCard: {
-        width: 220,
+        width: 300,
         height: 220,
         justifyContent: 'space-between',
         display: 'flex',

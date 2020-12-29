@@ -13,7 +13,7 @@ const IntegrationRow = ({ installedIntegrations, installedIntegration }) => {
         <TableRow key={installedIntegrations[installedIntegration].id}>
             <TableCell>{installedIntegrations[installedIntegration].config.name}</TableCell>
             <TableCell>{installedIntegrations[installedIntegration].type}</TableCell>
-            <TableCell>{JSON.stringify(installedIntegrations[installedIntegration])}</TableCell>
+            <TableCell>{installedIntegrations[installedIntegration].config.description}</TableCell>
             <TableCell>
                 <div style={{ display: 'flex' }}>
                     <PopoverSure

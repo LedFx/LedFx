@@ -14,7 +14,10 @@ class VirtualsEndpoint(RestEndpoint):
 
     async def get(self) -> web.Response:
         response = {
-            "virtuals": {"list": self._ledfx.config["virtuals"]},
+            "virtuals": {
+                "blade": True,
+                "list": self._ledfx.config["virtuals"],
+            },
         }
 
         return web.json_response(data=response, status=200)

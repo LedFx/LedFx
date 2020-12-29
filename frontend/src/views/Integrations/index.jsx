@@ -68,7 +68,7 @@ const IntegrationsView = () => {
                         <TableRow>
                             <TableCell>Name</TableCell>
                             <TableCell>Type</TableCell>
-                            <TableCell>Settings</TableCell>
+                            <TableCell>Description</TableCell>
                             <TableCell>Actions</TableCell>
                         </TableRow>
                     </TableHead>
