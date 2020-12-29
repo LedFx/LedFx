@@ -39,6 +39,12 @@ const DragDropItem = ({ listItem, virtual, index }) => {
             payload: { virtual: virtual, device: listItem },
         });
     };
+    const handlePixelDensity = (virtual, listItem, newValue) => {
+        dispatch({
+            type: 'virtuals/CHANGE_SEGMENT_PIXELDENSITY',
+            payload: { virtual: virtual, device: listItem, newValue: parseInt(newValue) },
+        });
+    };
     return (
         <Draggable
             key={`${listItem.id}-${index}`}
@@ -69,7 +75,7 @@ const DragDropItem = ({ listItem, virtual, index }) => {
                         primary={
                             <TextField
                                 label=""
-                                defaultValue={30}
+                                defaultValue={listItem.pixel_density || 30}
                                 style={{
                                     minWidth: 'unset',
                                     maxWidth: '80%',
@@ -78,6 +84,9 @@ const DragDropItem = ({ listItem, virtual, index }) => {
                                 }}
                                 inputProps={{ style: { textAlign: 'center' } }}
                                 type="number"
+                                onChange={e =>
+                                    handlePixelDensity(virtual, listItem, e.target.value)
+                                }
                             />
                         }
                         secondary={'PixelDensity'}

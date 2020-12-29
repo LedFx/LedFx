@@ -7,7 +7,7 @@ export const addVirtual = createAction(`${ACTION_ROOT}/VIRTUAL_ADD`);
 export const renameVirtual = createAction(`${ACTION_ROOT}/VIRTUAL_RENAME`);
 export const deleteVirtual = createAction(`${ACTION_ROOT}/VIRTUAL_DELETE`);
 export const addSegment = createAction(`${ACTION_ROOT}/ADD_SEGMENT`);
-export const changeSegment = createAction(`${ACTION_ROOT}/CHANGE_SEGMENT`);
+export const changeSegmentPixel = createAction(`${ACTION_ROOT}/CHANGE_SEGMENT_PXEL`);
 export const changeSegmentInvert = createAction(`${ACTION_ROOT}/CHANGE_SEGMENT_INVERT`);
 export const changeSegmentPixelDensity = createAction(`${ACTION_ROOT}/CHANGE_SEGMENT_PIXELDENSITY`);
 export const deleteSegment = createAction(`${ACTION_ROOT}/DELETE_SEGMENT`);
@@ -73,7 +73,7 @@ export default handleActions(
             };
             return newState;
         },
-        [changeSegment]: (state, { payload }) => {
+        [changeSegmentPixel]: (state, { payload }) => {
             const newState = {
                 ...state,
                 list: state.list.map(reduxItem => {
@@ -123,7 +123,7 @@ export default handleActions(
                     if (reduxItem.name === payload.virtual) {
                         reduxItem.items.map(device => {
                             if (device.id === payload.device.id) {
-                                device.invert = !!!device.invert;
+                                device.pixel_density = payload.newValue;
                             }
 
                             return device;
