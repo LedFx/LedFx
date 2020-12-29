@@ -13,7 +13,7 @@
       "INSTALL_NODE": "true",
       "NODE_VERSION": "lts/*",
       // User Options
-      "USERNAME": "ledfx"
+      // "USERNAME": "ledfx"
     }
   },
   "runArgs": [

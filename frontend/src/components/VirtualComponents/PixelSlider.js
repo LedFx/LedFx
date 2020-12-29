@@ -1,27 +1,31 @@
-import React from 'react'
+import React from 'react';
 import Slider from '@material-ui/core/Slider';
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch, useSelector } from 'react-redux';
 
 const PixelSlider = ({ virtual, device }) => {
     const dispatch = useDispatch();
-    const virtualsList = useSelector(state => state.virtuals.list)
-    const currentVirtual = virtualsList.find(reduxItem => reduxItem.name === virtual).items.find(d => d.id === device.id)
+    const virtualsList = useSelector(state => state.virtuals.list);
+    const currentVirtual = virtualsList
+        .find(reduxItem => reduxItem.name === virtual)
+        .items.find(d => d.id === device.id);
     if (!currentVirtual) {
-        return <></>
+        return <></>;
     }
-    const pixelRange = [currentVirtual.led_start, currentVirtual.led_end]
+    const pixelRange = [currentVirtual.led_start, currentVirtual.led_end];
 
     const handleChange = (event, newValue) => {
         if (newValue !== pixelRange) {
-            dispatch({ type: 'virtuals/CHANGE_SEGMENT', payload: { virtual: virtual, device: device.id, newValue: newValue } })
+            dispatch({
+                type: 'virtuals/CHANGE_SEGMENT_PXEL',
+                payload: { virtual: virtual, device: device.id, newValue: newValue },
+            });
         }
-    }
+    };
 
-    const marks =
-        [
-            { value: 1, label: 1, },
-            { value: currentVirtual.config.pixel_count, label: currentVirtual.config.pixel_count, },
-        ];
+    const marks = [
+        { value: 1, label: 1 },
+        { value: currentVirtual.config.pixel_count, label: currentVirtual.config.pixel_count },
+    ];
 
     return (
         <Slider
@@ -32,9 +36,9 @@ const PixelSlider = ({ virtual, device }) => {
             onChange={handleChange}
             aria-labelledby="range-slider"
             valueLabelDisplay="auto"
-            style={{ marginBottom: "15px" }}
+            style={{ marginBottom: '15px' }}
         />
-    )
-}
+    );
+};
 
-export default PixelSlider
+export default PixelSlider;

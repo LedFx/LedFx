@@ -5,13 +5,15 @@ import schemas from './schemas';
 import scenes from './scenes';
 import settings from './settings';
 import virtuals from './virtuals';
+import integrations from './integrations';
 
 export default {
     devices,
+    integrations,
     presets,
     schemas,
     scenes,
     settings,
     selectedDevice,
-    virtuals
+    virtuals,
 };

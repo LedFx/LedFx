@@ -6,9 +6,18 @@ from concurrent.futures import ThreadPoolExecutor
 from ledfx.config import load_config, load_default_presets, save_config
 from ledfx.devices import Devices
 from ledfx.effects import Effects
+
+from ledfx.integrations import Integrations
+from ledfx.config import (
+    load_config,
+    save_config,
+    load_default_presets,
+)
 from ledfx.events import Events, LedFxShutdownEvent
+
 from ledfx.http_manager import HttpServer
 from ledfx.utils import async_fire_and_forget
+
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -93,13 +102,17 @@ class LedFxCore(object):
 
         self.devices = Devices(self)
         self.effects = Effects(self)
+        self.integrations = Integrations(self)
 
         # TODO: Deferr
         self.devices.create_from_config(self.config["devices"])
+        self.integrations.create_from_config(self.config["integrations"])
 
         if not self.devices.values():
             _LOGGER.info("No devices saved in config.")
             async_fire_and_forget(self.devices.find_wled_devices(), self.loop)
+
+        await self.integrations.activate_integrations()
 
         if open_ui:
             import webbrowser

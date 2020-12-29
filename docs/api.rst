@@ -40,6 +40,14 @@ LedFx Logging
 
 Returns the error logs for the currently active LedFx session
 
+/api/schema/
+=========================
+
+Returns all LedFx schemas for devices, effects, and integrations
+
+.. rubric:: GET /api/schema/
+
+
 /api/schema/<schema_type>
 =========================
 
@@ -52,6 +60,10 @@ Returns all the valid schemas for a LedFx effect as JSON
 .. rubric:: GET /api/schema/*effects*
 
 Returns all the devices registered with LedFx as JSON
+
+.. rubric:: GET /api/schema/*integrations*
+
+Returns all the integrations registered with LedFx as JSON
 
 /api/devices
 =========================
@@ -191,6 +203,168 @@ Save effect configuration of devices as a scene
 .. rubric:: DELETE
 
 Delete a scene
+
+/api/integrations
+================================
+Endpoint for managing integrations. Integrations are written to allow ledfx to communicate with other software, and vice versa.
+
+.. rubric:: GET
+
+Get info of all integrations
+
+STATUS REFERENCE
+0: disconnected
+1: connected
+2: disconnecting
+3: connecting
+
+.. rubric:: PUT
+
+Toggle an integration on or off
+
+example:
+
+.. code-block:: json
+
+    {
+    "id": "myqlc"
+    }
+
+.. rubric:: POST
+
+Create a new integration, or update an existing one
+
+.. code-block:: json
+
+    {
+    "type": "qlc",
+    "config": {
+        "description": "QLC Test",
+        "ip_address": "127.0.0.1",
+        "name": "myQLC+"",
+        "port": 9999
+        }
+    }
+
+.. code-block:: json
+
+    {
+    "type": "spotify",
+    "config": {
+        "description": "Spotify triggers for party",
+        "name": "Party Spotify"
+        }
+    }
+
+.. rubric:: DELETE
+
+Delete an integration, erasing all its configuration and data.
+.. code-block:: json
+
+    {
+    "id": "myqlc"
+    }
+
+NOTE: This does not turn off the integration, it deletes it entirely! (though it will first turn off..)
+
+/api/integrations/qlc/<integration_id>
+================================
+Endpoint for querying and managing a QLC integration.
+
+.. rubric:: GET
+
+Get info from the QLC+ integration. Specify "info", one of: ["event_types", "qlc_widgets", "qlc_listeners"]
+
+event_types: retrieves a list of all the types of events and associated filters a qlc listener can subscribe to
+qlc_widgets: retrieves a list of all the widgets that can be modified, formatted as [(ID, Type, Name),...]
+             for "type":
+                 "Buttons" can be set to either off (0) or on (255)
+                 "Audio Triggers" are either off (0) or on (255)
+                 "Sliders" can be anywhere between 0 and 255
+qlc_listeners: retrieves a list of all of the events that QLC is listening to, and their associated widget value payloads
+
+.. code-block:: json
+    {
+    "info": "qlc_listeners"
+    }
+
+.. rubric:: PUT
+
+Toggle a QLC+ event listener on or off, so that it will or will not send its payload to set QLC+ widgets
+
+.. code-block:: json
+    {
+    "event_type": "scene_set",
+    "event_filter": {
+        "scene_name": "My Scene"
+        }
+    }
+
+.. rubric:: POST
+
+Add a new QLC event listener and QLC+ payload or update an existing one if it exists with same event_type and event_filter
+The "qlc_payload" is a dict of {"widget_id": value} that will be sent to QLC+
+
+.. code-block:: json
+    {
+    "event_type": "scene_set", 
+    "event_filter": {
+        "scene_name": "My Scene"
+        }, 
+    "qlc_payload": {
+        "0":255, 
+        "1":255, 
+        "2":169
+        }
+    }
+
+.. rubric:: DELETE
+
+Delete a QLC event listener, and associated payload data.
+
+.. code-block:: json
+    {
+    "event_type": "scene_set",
+    "event_filter": {
+        "scene_name": "My Scene"
+        }
+    }
+
+NOTE: This does not turn off the integration, it deletes it entirely! (though it will first turn off..)
+
+/api/integrations/spotify/<integration_id>
+================================
+Endpoint for querying and managing a Spotify integration.
+
+.. rubric:: GET
+
+Get all the song triggers
+
+.. rubric:: PUT
+
+Update a song trigger
+[TODO]
+
+.. rubric:: POST
+
+Create a new song trigger
+
+.. code-block:: json
+    {
+    "scene_id": "my_scene",
+    "song_id": "347956287364597",
+    "song_name": "Really Cool Song",
+    "song_position": "43764",
+    }
+
+.. rubric:: DELETE
+
+Delete a song trigger
+
+.. code-block:: json
+    {
+    "trigger_id": "Really Cool Song - 43764",
+    }
 
 ===================
    WebSocket API

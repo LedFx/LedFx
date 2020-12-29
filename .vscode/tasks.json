@@ -2,9 +2,21 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "[GIT|DEV][Backend]:8888",
+            "label": "[LOCAL][Backend]-Install",
             "type": "shell",
-            "command": "ledfx",
+            "command": "cd /workspaces/${workspaceFolderBasename}; python -m pip install -r requirements.txt -r requirements-dev.txt -r docs/requirements-docs.txt && python setup.py develop",
+            "problemMatcher": []
+        },
+        {
+            "label": "[GIT][Backend]-Install",
+            "type": "shell",
+            "command": "cd /ledfx-git; python -m pip install -r requirements.txt -r requirements-dev.txt -r docs/requirements-docs.txt && python setup.py develop",
+            "problemMatcher": []
+        },
+        {
+            "label": "[Backend]:8888",
+            "type": "shell",
+            "command": "PULSE_SERVER=$PULSE_SERVER ledfx",
             "problemMatcher": []
         },
         {

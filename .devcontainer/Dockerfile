@@ -4,6 +4,8 @@
 ARG VARIANT="3"
 FROM mcr.microsoft.com/vscode/devcontainers/python:0-${VARIANT} AS venv-image
 
+RUN echo "hi6"
+
 # [Option] Install Node.js
 ARG INSTALL_NODE="true"
 ARG NODE_VERSION="lts/*"
@@ -24,14 +26,14 @@ COPY --from=venv-image /ledfx/venv /ledfx/venv
 ENV PATH="/ledfx/venv/bin:$PATH"
 
 RUN python -m pip install -U pip setuptools wheel \
-    && git clone --depth 1 https://github.com/LedFx/LedFx -b dev ledfx-git \
-    && cd ledfx-git/frontend \
-    && npm install -g yarn
-WORKDIR /ledfx-git
-RUN python -m pip install -r requirements.txt \
-       -r requirements-dev.txt \
-       -r docs/requirements-docs.txt \
-    && python setup.py develop
+    && git clone --depth 1 https://github.com/LedFx/LedFx -b dev /ledfx-git
+    # && cd /ledfx-git/frontend \
+    # && npm install -g yarn
+# WORKDIR /ledfx-git
+# RUN python -m pip install -r requirements.txt \
+#        -r requirements-dev.txt \
+#        -r docs/requirements-docs.txt \
+#     && python setup.py develop
 
 EXPOSE 8888/tcp
 EXPOSE 5353/udp
