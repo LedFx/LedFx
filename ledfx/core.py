@@ -117,10 +117,11 @@ class LedFxCore(object):
         if open_ui:
             import webbrowser
 
-            # My prior fix sucked and caused more problems. This should be better.
+            # Check if we're binding to all adaptors
             if str(self.config["host"]) == "0.0.0.0":
                 url = f"http://127.0.0.1:{str(self.config['port'])}"
             else:
+                # If the user has specified an adaptor, launch its address
                 url = self.http.base_url
             try:
                 webbrowser.open(url)
