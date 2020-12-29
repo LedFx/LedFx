@@ -1,7 +1,8 @@
 from ledfx.config import save_config
 from ledfx.api import RestEndpoint
 from aiohttp import web
-from ledfx.events import Event
+
+# from ledfx.events import Event
 import logging
 
 _LOGGER = logging.getLogger(__name__)
@@ -31,7 +32,7 @@ class QLCEndpoint(RestEndpoint):
             return web.json_response(data=response, status=404)
 
         response = {
-            "Ok": 'This endpoint does nothing yet',
+            "Ok": "This endpoint does nothing yet",
         }
 
         return web.json_response(data=response, status=200)
@@ -44,10 +45,10 @@ class QLCEndpoint(RestEndpoint):
             return web.json_response(data=response, status=404)
 
         data = await request.json()
-        scene_id = data.get('scene_id')
-        song_id = data.get('song_id')
-        song_name = data.get('song_name')
-        song_position = data.get('song_position')
+        scene_id = data.get("scene_id")
+        song_id = data.get("song_id")
+        song_name = data.get("song_name")
+        song_position = data.get("song_position")
 
         scene_id = data.get("id")
         if scene_id is None:
@@ -74,8 +75,8 @@ class QLCEndpoint(RestEndpoint):
         integration.add_trigger(scene_id, song_id, song_name, song_position)
 
         save_config(
-            config = self._ledfx.config, 
-            config_dir = self._ledfx.config_dir)
+            config=self._ledfx.config, config_dir=self._ledfx.config_dir
+        )
 
         response = {"status": "success"}
         return web.json_response(data=response, status=200)
@@ -88,7 +89,7 @@ class QLCEndpoint(RestEndpoint):
             return web.json_response(data=response, status=404)
 
         data = await request.json()
-        trigger_id = data.get('trigger_id')
+        trigger_id = data.get("trigger_id")
 
         if trigger_id is None:
             response = {
@@ -101,8 +102,8 @@ class QLCEndpoint(RestEndpoint):
 
         # Update and save the config
         save_config(
-        config = self._ledfx.config, 
-        config_dir = self._ledfx.config_dir)
+            config=self._ledfx.config, config_dir=self._ledfx.config_dir
+        )
 
         response = {"status": "success"}
         return web.json_response(data=response, status=200)

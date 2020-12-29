@@ -13,7 +13,7 @@ from ledfx.config import (
     save_config,
     load_default_presets,
 )
-from ledfx.events import Events, LedFxShutdownEvent, Event
+from ledfx.events import Events, LedFxShutdownEvent
 
 from ledfx.http_manager import HttpServer
 from ledfx.utils import async_fire_and_forget
@@ -108,7 +108,6 @@ class LedFxCore(object):
         self.devices.create_from_config(self.config["devices"])
         self.integrations.create_from_config(self.config["integrations"])
 
-
         if not self.devices.values():
             _LOGGER.info("No devices saved in config.")
             async_fire_and_forget(self.devices.find_wled_devices(), self.loop)
@@ -117,15 +116,18 @@ class LedFxCore(object):
 
         if open_ui:
             import webbrowser
+
             # My prior fix sucked and caused more problems. This should be better.
-            if str(self.config['host']) == "0.0.0.0":
+            if str(self.config["host"]) == "0.0.0.0":
                 url = f"http://127.0.0.1:{str(self.config['port'])}"
             else:
                 url = self.http.base_url
             try:
                 webbrowser.open(url)
             except FileNotFoundError:
-                _LOGGER.warning(f"Failed to open default web browser. To access LedFx's web ui, open {url} in your browser. To prevent this error in future, configure a default browser for your system.")
+                _LOGGER.warning(
+                    f"Failed to open default web browser. To access LedFx's web ui, open {url} in your browser. To prevent this error in future, configure a default browser for your system."
+                )
 
         await self.flush_loop()
 

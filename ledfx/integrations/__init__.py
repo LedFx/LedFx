@@ -1,12 +1,15 @@
-from ledfx.utils import BaseRegistry, RegistryLoader, generate_id, async_fire_and_forget
-from ledfx.config import save_config
-from ledfx.events import DeviceUpdateEvent, Event
-from abc import abstractmethod
-import voluptuous as vol
-import numpy as np
-import requests
+from ledfx.utils import BaseRegistry, RegistryLoader, async_fire_and_forget
+
+# from ledfx.config import save_config
+from ledfx.events import Event
+
+# from abc import abstractmethod
+# import voluptuous as vol
+# import numpy as np
+# import requests
 import logging
-import asyncio
+
+# import asyncio
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -32,21 +35,27 @@ class Integration(BaseRegistry):
             self.deactivate()
 
     async def activate(self):
-        _LOGGER.info(("Activating {} integration").format(self._config["name"]))
+        _LOGGER.info(
+            ("Activating {} integration").format(self._config["name"])
+        )
         self._active = True
         self._status = 3
         await self.connect()
         self._status = 1
 
     async def deactivate(self):
-        _LOGGER.info(("Deactivating {} integration").format(self._config["name"]))
+        _LOGGER.info(
+            ("Deactivating {} integration").format(self._config["name"])
+        )
         self._active = False
         self._status = 2
         await self.disconnect()
         self._status = 0
 
     async def reconnect(self):
-        _LOGGER.info(("Reconnecting {} integration").format(self._config["name"]))
+        _LOGGER.info(
+            ("Reconnecting {} integration").format(self._config["name"])
+        )
         self._status = 2
         await self.disconnect()
         self._status = 3
@@ -107,7 +116,9 @@ class Integrations(RegistryLoader):
             for integration in self.values():
                 integration.on_shutdown()
             # TODO Make sure program lets this finish before closing!
-            async_fire_and_forget(self.close_all_connections(), self._ledfx.loop)
+            async_fire_and_forget(
+                self.close_all_connections(), self._ledfx.loop
+            )
 
         def notify_shutdown(e):
             self.notify_shutdown()
@@ -116,7 +127,9 @@ class Integrations(RegistryLoader):
 
     def create_from_config(self, config):
         for integration in config:
-            _LOGGER.info("Loading integration from config: {}".format(integration))
+            _LOGGER.info(
+                "Loading integration from config: {}".format(integration)
+            )
             self._ledfx.integrations.create(
                 id=integration["id"],
                 type=integration["type"],

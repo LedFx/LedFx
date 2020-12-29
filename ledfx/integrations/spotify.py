@@ -1,16 +1,20 @@
-from ledfx.utils import RegistryLoader, async_fire_and_forget, async_fire_and_return, async_callback
-from ledfx.events import Event
+# from ledfx.utils import RegistryLoader, async_fire_and_forget, async_fire_and_return, async_callback
+# from ledfx.events import Event
 from ledfx.integrations import Integration
-import aiohttp
-import asyncio
+
+# import aiohttp
+# import asyncio
 import voluptuous as vol
-import numpy as np
-import importlib
-import pkgutil
+
+# import numpy as np
+
+# import importlib
+# import pkgutil
 import logging
-import time
-import os
-import re
+
+# import time
+# import os
+# import re
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -24,15 +28,15 @@ class Spotify(Integration):
     CONFIG_SCHEMA = vol.Schema(
         {
             vol.Required(
-                "name", 
-                description="Name of this integration instance and associated settings", 
-                default="Spotify"
+                "name",
+                description="Name of this integration instance and associated settings",
+                default="Spotify",
             ): str,
             vol.Required(
                 "description",
                 description="Description of this integration",
                 default="Activate scenes with Spotify",
-            ): str
+            ): str,
         }
     )
 

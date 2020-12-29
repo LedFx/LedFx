@@ -1,16 +1,19 @@
-from ledfx.utils import RegistryLoader, async_fire_and_forget, async_fire_and_return, async_callback
-from ledfx.events import Event
+from ledfx.utils import async_fire_and_forget
+
+# from ledfx.events import Event
 from ledfx.integrations import Integration
 import aiohttp
 import asyncio
 import voluptuous as vol
-import numpy as np
-import importlib
-import pkgutil
+
+# import numpy as np
+# import importlib
+# import pkgutil
 import logging
-import time
-import os
-import re
+
+# import time
+# import os
+# import re
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -25,9 +28,9 @@ class QLC(Integration):
     CONFIG_SCHEMA = vol.Schema(
         {
             vol.Required(
-                "name", 
-                description="Name of this integration instance and associated settings", 
-                default="QLC+"
+                "name",
+                description="Name of this integration instance and associated settings",
+                default="QLC+",
             ): str,
             vol.Required(
                 "description",
@@ -35,16 +38,13 @@ class QLC(Integration):
                 default="Web Api Integration for Q Light Controller Plus",
             ): str,
             vol.Required(
-                "ip_address", 
-                description="QLC+ ip address", 
-                default="127.0.0.1"
+                "ip_address",
+                description="QLC+ ip address",
+                default="127.0.0.1",
             ): str,
             vol.Required(
-                "port", 
-                description="QLC+ port", 
-                default=9999
-            ): vol.All(vol.Coerce(int), vol.Range(min=1, max=65535)
-            ),
+                "port", description="QLC+ port", default=9999
+            ): vol.All(vol.Coerce(int), vol.Range(min=1, max=65535)),
         }
     )
 
@@ -65,29 +65,35 @@ class QLC(Integration):
             try:
                 for entry in data:
                     event_type, event_filter, active, qlc_payload = entry
-                    self.create_event(event_type, event_filter, active, qlc_payload)
+                    self.create_event(
+                        event_type, event_filter, active, qlc_payload
+                    )
             except ValueError:
                 _LOGGER.error("Failed to restore QLC+ settings")
 
-
     def get_events(self):
-        """ Get all events in data:
-            [(event_type, event_filter, active, qlc_payload), ...]
-            event_type : type of event, str
-            event_filter : filter for event, dict eg. {"effect_name": "Scroll"} 
-            active : whether there is an active listener for this event
-            qlc_payload : the payload that is sent when this event is triggered
+        """Get all events in data:
+        [(event_type, event_filter, active, qlc_payload), ...]
+        event_type : type of event, str
+        event_filter : filter for event, dict eg. {"effect_name": "Scroll"}
+        active : whether there is an active listener for this event
+        qlc_payload : the payload that is sent when this event is triggered
         """
         return self._data
 
     def create_event(self, event_type, event_filter, active, qlc_payload):
         """ Create or update event listener that sends a qlc payload on a specific event """
-        # If it exists, remove the existing listener and update data 
+        # If it exists, remove the existing listener and update data
         for idx, entry in enumerate(self._data):
             _event_type, _event_filter, _active, _qlc_payload = entry
             if (_event_type == event_type) and (_event_filter == event_filter):
                 active = _active
-                self._data[idx] = [event_type, event_filter, _active, qlc_payload]
+                self._data[idx] = [
+                    event_type,
+                    event_filter,
+                    _active,
+                    qlc_payload,
+                ]
                 # if there's a listener, remove it
                 listener = self._get_listener(_event_type, event_filter)
                 if listener is not None:
@@ -99,8 +105,9 @@ class QLC(Integration):
         # Finally, subscribe to the ledfx event if the listener is active
         if active:
             self._add_listener(event_type, event_filter, qlc_payload)
-        _LOGGER.info(f"QLC+ payload linked to event '{event_type}' with filter {event_filter}")
-
+        _LOGGER.info(
+            f"QLC+ payload linked to event '{event_type}' with filter {event_filter}"
+        )
 
     def delete_event(self, event_type, event_filter):
         """ Completely delete event listener and saved payload from data """
@@ -111,8 +118,9 @@ class QLC(Integration):
             _event_type, _event_filter, _active, _qlc_payload = entry
             if (_event_type == event_type) and (_event_filter == event_filter):
                 del self._data[idx]
-        _LOGGER.info(f"QLC+ payload deleted for event '{event_type}' with filter {event_filter}")
-
+        _LOGGER.info(
+            f"QLC+ payload deleted for event '{event_type}' with filter {event_filter}"
+        )
 
     def toggle_event(self, event_type, event_filter):
         """ Toggle a payload linked to event on or off """
@@ -121,9 +129,16 @@ class QLC(Integration):
             _event_type, _event_filter, _active, _qlc_payload = entry
             print(entry)
             if (_event_type == event_type) and (_event_filter == event_filter):
-                self._data[idx] = (event_type, event_filter, not _active, _qlc_payload)
+                self._data[idx] = (
+                    event_type,
+                    event_filter,
+                    not _active,
+                    _qlc_payload,
+                )
                 qlc_payload = _qlc_payload
-                _LOGGER.info(f"QLC+ payload {'disabled' if _active else 'enabled'} for event '{event_type}' with filter {event_filter}")
+                _LOGGER.info(
+                    f"QLC+ payload {'disabled' if _active else 'enabled'} for event '{event_type}' with filter {event_filter}"
+                )
 
         # Enable/disable listener
         listener = self._get_listener(_event_type, event_filter)
@@ -151,15 +166,22 @@ class QLC(Integration):
 
     def _add_listener(self, event_type, event_filter, qlc_payload):
         """ Internal function that links payload to send on the specified event """
+
         def make_callback(qlc_payload):
             def callback(_):
-                _LOGGER.info(f"QLC+ sent payload, triggered by event '{event_type}' with filter {event_filter}")
-                async_fire_and_forget(self._send_payload(qlc_payload), loop=self._ledfx.loop)
+                _LOGGER.info(
+                    f"QLC+ sent payload, triggered by event '{event_type}' with filter {event_filter}"
+                )
+                async_fire_and_forget(
+                    self._send_payload(qlc_payload), loop=self._ledfx.loop
+                )
+
             return callback
 
         callback = make_callback(qlc_payload)
         listener = self._ledfx.events.add_listener(
-            callback, event_type, event_filter)
+            callback, event_type, event_filter
+        )
         # store "listener", a function to remove the listener later if needed
         self._listeners.append((event_type, event_filter, listener))
 
@@ -194,6 +216,7 @@ class QLC(Integration):
         if self._client is not None:
             await self._client.disconnect()
 
+
 class QLCWebsocketClient(aiohttp.ClientSession):
     def __init__(self, url, domain):
         super().__init__()
@@ -209,7 +232,9 @@ class QLCWebsocketClient(aiohttp.ClientSession):
                 _LOGGER.info(f"Connected to QLC+ websocket at {self.domain}")
                 return
             except aiohttp.client_exceptions.ClientConnectorError:
-                _LOGGER.info(f"Connection to {self.domain} failed. Retrying in 5s...")
+                _LOGGER.info(
+                    f"Connection to {self.domain} failed. Retrying in 5s..."
+                )
                 await asyncio.sleep(5)
 
     async def disconnect(self):

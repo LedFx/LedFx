@@ -1,4 +1,3 @@
-
 import asyncio
 
 import concurrent.futures
@@ -10,7 +9,8 @@ import pkgutil
 import re
 import sys
 from abc import ABC
-from asyncio import coroutines, ensure_future
+
+# from asyncio import coroutines, ensure_future
 from subprocess import PIPE, Popen
 
 import voluptuous as vol
@@ -43,9 +43,7 @@ def install_package(package):
 
 def import_or_install(package):
     try:
-        _LOGGER.info(
-            f"Imported package: {package}"
-        )
+        _LOGGER.info(f"Imported package: {package}")
         return importlib.import_module(package)
 
     except ImportError:
@@ -70,6 +68,7 @@ def async_fire_and_forget(coro, loop):
     loop.call_soon_threadsafe(callback)
     return
 
+
 def async_fire_and_return(loop, coro, timeout=10):
     """Run some code in the core event loop with a result"""
 
@@ -77,16 +76,19 @@ def async_fire_and_return(loop, coro, timeout=10):
         raise TypeError(("A coroutine object is required: {}").format(coro))
 
     future = asyncio.run_coroutine_threadsafe(coro, loop=loop)
-    
+
     try:
         result = future.result(timeout)
     except asyncio.TimeoutError:
-        _LOGGER.warning(f'Coroutine {coro} timed out at {timeout}s, cancelling the task...')
+        _LOGGER.warning(
+            f"Coroutine {coro} timed out at {timeout}s, cancelling the task..."
+        )
         future.cancel()
     except Exception as exc:
-        _LOGGER.error(f'Coroutine {coro} raised an exception: {exc!r}')
+        _LOGGER.error(f"Coroutine {coro} raised an exception: {exc!r}")
     else:
         return result
+
 
 def async_callback(loop, callback, *args):
     """Run a callback in the event loop with access to the result"""
@@ -105,6 +107,7 @@ def async_callback(loop, callback, *args):
 
     loop.call_soon_threadsafe(run_callback)
     return future
+
 
 def generate_id(name):
     """Converts a name to a id"""

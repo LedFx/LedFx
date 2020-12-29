@@ -5,6 +5,7 @@ import numpy as np
 
 _LOGGER = logging.getLogger(__name__)
 
+
 class Event:
     """Base for events"""
 
@@ -45,6 +46,7 @@ class GraphUpdateEvent(Event):
         self.melbank = melbank.tolist()
         self.frequencies = frequencies.tolist()
 
+
 class EffectSetEvent(Event):
     """Event emitted when an effect is set"""
 
@@ -52,11 +54,13 @@ class EffectSetEvent(Event):
         super().__init__(Event.EFFECT_SET)
         self.effect_name = effect_name
 
+
 class EffectClearedEvent(Event):
     """Event emitted when an effect is cleared"""
 
     def __init__(self):
         super().__init__(Event.EFFECT_CLEARED)
+
 
 class SceneSetEvent(Event):
     """Event emitted when a scene is set"""
@@ -65,11 +69,13 @@ class SceneSetEvent(Event):
         super().__init__(Event.SCENE_SET)
         self.scene_name = scene_name
 
+
 class LedFxShutdownEvent(Event):
     """Event emitted when LedFx is shutting down"""
 
     def __init__(self):
         super().__init__(Event.LEDFX_SHUTDOWN)
+
 
 class EventListener:
     def __init__(self, callback: Callable, event_filter: dict = {}):
@@ -126,6 +132,7 @@ class Events:
                 self._listeners.pop(event_type)
         except (KeyError, ValueError):
             _LOGGER.warning("Failed to remove event listener %s", listener)
+
 
 # def get_event_types():
 #     """Get a list of the types of events available"""

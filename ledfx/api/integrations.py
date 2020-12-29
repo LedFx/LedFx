@@ -1,6 +1,7 @@
 from ledfx.config import save_config
 from ledfx.api import RestEndpoint
-from ledfx.api.websocket import WebsocketConnection
+
+# from ledfx.api.websocket import WebsocketConnection
 from ledfx.utils import generate_id
 from aiohttp import web
 import logging

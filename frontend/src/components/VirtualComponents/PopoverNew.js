@@ -62,11 +62,8 @@ export default function PopoverNew({
                         style={{ margin: '8px' }}
                         color="primary"
                         onClick={() => {
-                            console.log('WTF', name);
                             if (name === 'BladeMod') {
                                 window.localStorage.setItem('BladeMod', '1');
-                            } else {
-                                window.localStorage.removeItem('BladeMod');
                             }
                             onSubmit({ old: old, new: name });
                             setAnchorEl(null);
