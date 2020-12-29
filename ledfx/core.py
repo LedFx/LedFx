@@ -117,15 +117,19 @@ class LedFxCore(object):
 
         if open_ui:
             import webbrowser
-            # My prior fix sucked and caused more problems. This should be better.
-            if str(self.config['host']) == "0.0.0.0":
+
+            # Check if we're binding to all adaptors
+            if str(self.config["host"]) == "0.0.0.0":
                 url = f"http://127.0.0.1:{str(self.config['port'])}"
             else:
+                # If the user has specified an adaptor, launch its address
                 url = self.http.base_url
             try:
                 webbrowser.open(url)
             except FileNotFoundError:
-                _LOGGER.warning(f"Failed to open default web browser. To access LedFx's web ui, open {url} in your browser. To prevent this error in future, configure a default browser for your system.")
+                _LOGGER.warning(
+                    f"Failed to open default web browser. To access LedFx's web ui, open {url} in your browser. To prevent this error in future, configure a default browser for your system."
+                )
 
         await self.flush_loop()
 
