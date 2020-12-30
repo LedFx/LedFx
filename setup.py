@@ -38,6 +38,7 @@ INSTALL_REQUIRES = [
     "pyupdater>=3.1.0",
     "sentry-sdk>=0.19.0",
     "certifi>=2019.3.9",
+    "pyserial>=3.5",
 ]
 
 setup(
