@@ -78,10 +78,9 @@ class AdalightDevice(Device):
         self.buffer[4] = pixel_count_in_bytes[1]
         self.buffer[5] = self.buffer[3] ^ self.buffer[4] ^ 0x55
 
-        self.serial = serial.Serial(self.com_port, self.baudrate)
-
     def activate(self):
         super().activate()
+        self.serial = serial.Serial(self.com_port, self.baudrate)
 
     def deactivate(self):
         super().deactivate()
