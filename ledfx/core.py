@@ -116,8 +116,8 @@ class LedFxCore(object):
                 # If the user has specified an adaptor, launch its address
                 url = self.http.base_url
             try:
-                webbrowser.open(url)
-            except FileNotFoundError:
+                webbrowser.get().open(url)
+            except webbrowser.Error:
                 _LOGGER.warning(
                     f"Failed to open default web browser. To access LedFx's web ui, open {url} in your browser. To prevent this error in future, configure a default browser for your system."
                 )
