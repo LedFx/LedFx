@@ -89,4 +89,13 @@ GRADIENTS = {
         ],
         "method": "repeat",
     },
+    "Winamp": {
+        "colors": [
+            "green",
+            "yellow",
+            "orange",
+            "orange-deep",
+            "red",
+        ]
+    },
 }
