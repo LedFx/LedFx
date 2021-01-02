@@ -307,13 +307,13 @@ The "qlc_payload" is a dict of {"widget_id": value} that will be sent to QLC+
 
 .. code-block:: json
     {
-    "event_type": "scene_set", 
+    "event_type": "scene_set",
     "event_filter": {
         "scene_name": "My Scene"
-        }, 
+        },
     "qlc_payload": {
-        "0":255, 
-        "1":255, 
+        "0":255,
+        "1":255,
         "2":169
         }
     }

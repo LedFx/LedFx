@@ -1,11 +1,13 @@
-from ledfx.config import save_config
+import json
+import logging
+
+from aiohttp import web
+
 from ledfx.api import RestEndpoint
+from ledfx.config import save_config
 
 # from ledfx.api.websocket import WebsocketConnection
 from ledfx.utils import generate_id
-from aiohttp import web
-import logging
-import json
 
 _LOGGER = logging.getLogger(__name__)
 

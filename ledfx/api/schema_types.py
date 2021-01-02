@@ -47,7 +47,7 @@ class SchemaEndpoint(RestEndpoint):
                     "schema": convertToJsonSchema(integration.schema()),
                     "id": integration_type,
                     "name": integration.NAME,
-                    "description": integration.DESCRIPTION
+                    "description": integration.DESCRIPTION,
                 }
 
             return web.json_response(data=response, status=200)

@@ -6,18 +6,10 @@ from concurrent.futures import ThreadPoolExecutor
 from ledfx.config import load_config, load_default_presets, save_config
 from ledfx.devices import Devices
 from ledfx.effects import Effects
-
-from ledfx.integrations import Integrations
-from ledfx.config import (
-    load_config,
-    save_config,
-    load_default_presets,
-)
 from ledfx.events import Events, LedFxShutdownEvent
-
 from ledfx.http_manager import HttpServer
+from ledfx.integrations import Integrations
 from ledfx.utils import async_fire_and_forget
-
 
 _LOGGER = logging.getLogger(__name__)
 

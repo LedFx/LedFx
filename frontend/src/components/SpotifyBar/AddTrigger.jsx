@@ -64,11 +64,11 @@ export class AddTrigger extends Component {
                 <Grid container item xs='12' sm='4' justify='center' alignItems='center'>
                     <FormControl>
                         <InputLabel className={classes.label} id="preset-select">Preset</InputLabel>
-                        <Select 
-                            inputProps={{classes: {icon: classes.icon}}} 
-                            className={classes.presetSelect} 
-                            labelId='preset-select' 
-                            value={this.state.selectedPreset} 
+                        <Select
+                            inputProps={{classes: {icon: classes.icon}}}
+                            className={classes.presetSelect}
+                            labelId='preset-select'
+                            value={this.state.selectedPreset}
                             onChange={this.handleSelectChange}>
                             {renderPresetsMenu(this.props.presets)}
                         </Select>
@@ -76,18 +76,18 @@ export class AddTrigger extends Component {
                 </Grid>
                 <Grid container item xs='6' sm='3' justify='center' alignItems='center' direction='column'>
                     <FormControl>
-                        <FormControlLabel 
-                            style={{color: '#1ED760'}} 
-                            label='Song Position' 
-                            control={<Checkbox style={{color: '#1ED760'}} 
-                            checked={this.state.checked} 
+                        <FormControlLabel
+                            style={{color: '#1ED760'}}
+                            label='Song Position'
+                            control={<Checkbox style={{color: '#1ED760'}}
+                            checked={this.state.checked}
                             onChange={this.handleCheckChange}/>}
                         />
                     </FormControl>
                 </Grid>
                 <Grid container item xs='6' sm='3' justify='center' alignItems='center'>
-                    <Button 
-                        variant='contained' 
+                    <Button
+                        variant='contained'
                         onClick={() =>  this.handleSubmit(this.state.selectedPreset, this.props.trackState.id, this.props.trackState.name, this.state.checked, this.props.position)}
                         className={classes.submitButton}
                         >Add Trigger
@@ -101,8 +101,8 @@ export class AddTrigger extends Component {
 const renderPresetsMenu = (presets) => Object.keys(presets).map((key) => (<MenuItem value={key}>{key}</MenuItem>))
 
 
-const mapStateToProps = state => ({ 
-    presets: state.presets 
+const mapStateToProps = state => ({
+    presets: state.presets
 })
 
 const mapDispatchToProps = (dispatch) => ({
