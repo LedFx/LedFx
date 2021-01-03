@@ -10,11 +10,14 @@ UDP protocol. See below for a list of tested ESP8266 firmware that can be used w
 
 Here is everything you need to get started with LedFx:
 
-    #. A Computer (or Raspberry Pi) with Python >= 3.6 (Anaconda_ is recommended on Windows)
+    #. A Computer (or Raspberry Pi) with Python >= 3.7
     #. An E1.31 capable device with addressable LEDs connected
 
         - Commercial grade DMX controllers
         - ESP8266 modules can be purchased for as little as $2 USD from AliExpress
+
+.. note:: Anaconda is no longer recommended for installing LedFx. We are in the process of removing all references to Anaconda in the documentation.
+          If you come accross a reference to Anaconda in this documentation, please ignore it for now.
 
 Here is a list of tested ESP8266 firmware that works with LedFx:
 
