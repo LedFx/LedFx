@@ -4,6 +4,8 @@
 
 The development workflow is still being worked on, but this page covers the current state of the world.
 
+You will see ``pip install -e .`` frequently in the documentation. Please see the `pip documentation`_ for an explanation on what this does.
+
 ------------------------------
 
 -------------------------
@@ -15,20 +17,30 @@ Linux
 
 **1.** Clone the dev branch from the LedFx Github repository:
 
-.. code:: bash
+.. code:: console
 
-    $ git clone https://github.com/ahodges9/LedFx.git -b dev
+    $ git clone https://github.com/LedFx/LedFx.git -b dev
     $ cd LedFx
 
-**2.** Enable development mode to prevent having to reinstall and instead just load from the git repository:
+**2.** Install system dependencies via ``apt install``:
 
-.. code:: bash
+.. code:: console
 
-    $ python setup.py develop
+    $ sudo apt install libatlas3-base \
+          libavformat58 \
+          portaudio19-dev \
+          pulseaudio
 
-**3.** This will let you run LedFx directly from your Git repository via:
+**3.** Install LedFx and its requirements using pip:
 
-.. code:: bash
+.. code:: console
+
+    $ pip install -r requirements-dev.txt
+    $ pip install -e .
+
+**4.** This will let you run LedFx directly from your Git repository via:
+
+.. code:: console
 
     $ ledfx --open-ui
 
@@ -37,26 +49,30 @@ macOS
 
 **1.** Clone the dev branch from the LedFx Github repository:
 
-.. code:: bash
+.. code:: console
 
-    $ git clone https://github.com/ahodges9/LedFx.git -b dev
-    $ cd ./ledfx
+    $ git clone https://github.com/LedFx/LedFx.git -b dev
+    $ cd ./LedFx
 
-**2.** Create a conda environment for LedFx with Python 3.7 and install dependencies:
+**2.** Create a python venv for LedFx with python>=3.7 and install dependencies:
 
-.. code:: bash
+.. code:: console
 
-    $ conda create -n ledfx python=3.7
-    $ conda activate ledfx
-    $ conda config --add channels conda-forge
-    $ conda install aubio portaudio
+    $ python3 -m venv ~/ledfx-venv
+    $ source ~/ledfx-venv/bin/activate
+    $ brew install portaudio pulseaudio
 
 **3.** Install LedFx and its requirements using pip:
 
-.. code:: bash
+.. code:: console
 
-    $ pip install -r requirements.txt
+    $ pip install -r requirements-dev.txt
     $ pip install -e .
+
+**4.** This will let you run LedFx directly from your Git repository via:
+
+.. code:: console
+
     $ ledfx --open-ui
 
 ------------------------------
@@ -65,60 +81,75 @@ macOS
    Frontend Development
 --------------------------
 
+Building the LedFx frontend is different from how the core backend is built. The frontend is based on React.js and thus
+uses NPM as the core package management.
+
+.. note:: LedFx will need to be running in development mode for everything to work. To enable development mode,
+          open the ``config.yaml`` file in the ``.ledfx`` folder and set ``dev_mode: true``)
+
 Linux
 -------
 
-Building the LedFx frontend is different from how the core backend is built. The frontend is based on React.js and thus uses NPM as the core package management. To get started, first install npm and all the requirements:
+To get started, first install npm and all the requirements:
 
 **1.** Start in the LedFx repo directory:
 
-.. code:: bash
+.. code:: console
 
     $ pip install yarn
+    $ cd frontend
     $ yarn install
 
-The easiest way to test and validate your changes is to run a watcher that will automatically rebuild as you save and then just leave LedFx running in a separate command window. (Note: LedFx will need to be running in development mode for everything to work).
+The easiest way to test and validate your changes is to run a watcher that will automatically rebuild as you save and then
+just leave LedFx running in a separate command window.
 
 **2.** Start LedFx in development mode and start the watcher:
 
-.. code:: bash
+.. code:: console
 
     $ ledfx
     $ yarn start
 
-At that point any change you make to the frontend will be recompiled and after a browser refresh LedFx will pick up the new files. After development and testing you will need to run a full build to generate the appropriate distribution files prior to submitting any changes.
+At that point any change you make to the frontend will be recompiled and after a browser refresh LedFx will pick up the
+new files. After development and testing you will need to run a full build to generate the appropriate distribution files
+prior to submitting any changes.
 
-**3.** Build the frontend:
+**3.** When you are finished with your changes, build the frontend:
 
-.. code:: bash
+.. code:: console
 
     $ yarn build
 
 macOS
 -------
 
-**1.** Install nodejs and NPM requirements using homebrew:
+**1.** Install nodejs and NPM requirements using `homebrew`_:
 
-.. code:: bash
+.. code:: console
 
     $ brew install nodejs
     $ brew install yarn
     $ cd ~/frontend
     $ yarn install
 
-**2.** Start LedFx in developer mode and start the NPM watcher. (Open the config.yaml file in the .ledfx folder and set ``dev_mode: true``):
+**2.** Start LedFx in developer mode and start the NPM watcher:
 
-.. code:: bash
+.. code:: console
 
     $ ledfx
     $ yarn start
 
-**3.** Build the frontend:
+**3.** When you are finished with your changes, build the frontend:
 
-.. code:: bash
+.. code:: console
 
     $ yarn build
 
 ------------------------------
 
 .. include:: README.rst
+
+.. Links Down Here
+
+.. _`pip documentation`: https://pip.pypa.io/en/latest/reference/pip_install/#editable-installs
+.. _`homebrew`: https://docs.brew.sh/Installation

@@ -1,9 +1,5 @@
 .. include:: ../README.rst
 
-.. .. include:: quickstart.rst
-
-.. .. include:: contents.rst
-
 .. toctree::
    :maxdepth: 2
    :caption: Installation & Development
