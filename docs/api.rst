@@ -43,27 +43,26 @@ Returns the error logs for the currently active LedFx session
 /api/schema/
 =========================
 
-Returns all LedFx schemas for devices, effects, and integrations
+LedFx Schema Api
 
 .. rubric:: GET /api/schema/
 
+Returns all LedFx schemas for devices, effects, and integrations as JSON
 
 /api/schema/<schema_type>
-=========================
+============================
 
-LedFx Schemas
+Query a specific LedFx schema with the matching *schema_type* as JSON
 
-.. rubric:: GET /api/schema/*devices*
+.. rubric:: GET /api/schema/<schema_type>
 
-Returns all the valid schemas for a LedFx effect as JSON
+Returns the LedFx schema with the matching *schema_type* as JSON
 
-.. rubric:: GET /api/schema/*effects*
+- *devices*: Returns all the devices registered with LedFx
 
-Returns all the devices registered with LedFx as JSON
+- *effects*: Returns all the valid schemas for an LedFx effect
 
-.. rubric:: GET /api/schema/*integrations*
-
-Returns all the integrations registered with LedFx as JSON
+- *integrations*: Returns all the integrations registered with LedFx
 
 /api/devices
 =========================
@@ -78,9 +77,10 @@ Get configuration of all devices
 
 Adds a new device to LedFx based on the provided JSON configuration
 
-/api/devices/<deviceId>
+/api/devices/<device_id>
 =========================
-Query and manage a specific device with the matching device id as JSON
+
+Query and manage a specific device with the matching *device_id* as JSON
 
 .. rubric:: GET
 
@@ -92,7 +92,7 @@ Modifies the information pertaining to the device and returns the new device as 
 
 .. rubric:: DELETE
 
-Deletes the device
+Deletes a device with the matching *device_id*
 
 /api/effects
 =========================
@@ -107,10 +107,10 @@ Returns all the effects currently created in LedFx as JSON
 
 Create a new Effect based on the provided JSON configuration
 
-/api/effects/<effectId>
+/api/effects/<effect_id>
 =========================
 
-Query and manage a specific effect with the matching effect id as JSON
+Query and manage a specific effect with the matching *effect_id* as JSON
 
 .. rubric:: GET
 
@@ -122,12 +122,12 @@ Modifies the configuration of the effect and returns the new configuration as JS
 
 .. rubric:: DELETE (upcoming)
 
-Deletes the effect with the matching effect id.
+Deletes the effect with the matching *effect_id*.
 
 /api/devices/{device_id}/effects
-================================
+==================================
 
-Endpoint linking devices to effects with the matching device id as JSON
+Endpoint linking devices to effects with the matching *device_id* as JSON
 
 .. rubric:: GET
 
@@ -149,7 +149,7 @@ Clear the active effect of a device
 /api/devices/<device_id>/presets
 ================================
 
-Endpoint linking devices to effect presets (pre-configured effect configs) with the matching device id as JSON
+Endpoint linking devices to effect presets (pre-configured effect configs) with the matching *device_id* as JSON
 
 .. rubric:: GET
 
@@ -168,9 +168,9 @@ Save configuration of device's active effect as a custom preset for that effect
 Clear effect of a device
 
 /api/effects/<effect_id>/presets
-================================
+===================================
 
-Endpoint for querying and managing presets (pre-configured effect configs) for each effect with the matching effect id as JSON
+Endpoint for querying and managing presets (pre-configured effect configs) for each effect with the matching *effect_id* as JSON
 
 .. rubric:: GET
 
@@ -186,6 +186,7 @@ Delete a preset
 
 /api/scenes
 ================================
+
 Endpoint for managing scenes. Active effects and configs of all devices can be saved as a "scene".
 
 .. rubric:: GET
@@ -206,7 +207,9 @@ Delete a scene
 
 /api/integrations
 ================================
-Endpoint for managing integrations. Integrations are written to allow ledfx to communicate with other software, and vice versa.
+
+Endpoint for managing integrations. Integrations are written to allow ledfx to communicate with other software, and
+vice versa.
 
 .. rubric:: GET
 
@@ -241,7 +244,7 @@ Create a new integration, or update an existing one
     "config": {
         "description": "QLC Test",
         "ip_address": "127.0.0.1",
-        "name": "myQLC+"",
+        "name": "myQLC+",
         "port": 9999
         }
     }
@@ -259,6 +262,7 @@ Create a new integration, or update an existing one
 .. rubric:: DELETE
 
 Delete an integration, erasing all its configuration and data.
+
 .. code-block:: json
 
     {
@@ -268,22 +272,30 @@ Delete an integration, erasing all its configuration and data.
 NOTE: This does not turn off the integration, it deletes it entirely! (though it will first turn off..)
 
 /api/integrations/qlc/<integration_id>
-================================
+==============================================
+
 Endpoint for querying and managing a QLC integration.
 
 .. rubric:: GET
 
-Get info from the QLC+ integration. Specify "info", one of: ["event_types", "qlc_widgets", "qlc_listeners"]
+Returns info from the QLC+ integration.
 
-event_types: retrieves a list of all the types of events and associated filters a qlc listener can subscribe to
-qlc_widgets: retrieves a list of all the widgets that can be modified, formatted as [(ID, Type, Name),...]
-             for "type":
-                 "Buttons" can be set to either off (0) or on (255)
-                 "Audio Triggers" are either off (0) or on (255)
-                 "Sliders" can be anywhere between 0 and 255
-qlc_listeners: retrieves a list of all of the events that QLC is listening to, and their associated widget value payloads
+Specify "info", one of: ``["event_types", "qlc_widgets", "qlc_listeners"]``
+
+*event_types*: retrieves a list of all the types of events and associated filters a qlc listener can subscribe to
+
+*qlc_widgets*: retrieves a list of all the widgets that can be modified, formatted as [(ID, Type, Name),...] for "type":
+
+- "Buttons" can be set to either off (0) or on (255)
+
+- "Audio Triggers" are either off (0) or on (255)
+
+- "Sliders" can be anywhere between 0 and 255
+
+*qlc_listeners*: retrieves a list of all of the events that QLC is listening to, and their associated widget value payloads
 
 .. code-block:: json
+
     {
     "info": "qlc_listeners"
     }
@@ -293,6 +305,7 @@ qlc_listeners: retrieves a list of all of the events that QLC is listening to, a
 Toggle a QLC+ event listener on or off, so that it will or will not send its payload to set QLC+ widgets
 
 .. code-block:: json
+
     {
     "event_type": "scene_set",
     "event_filter": {
@@ -306,6 +319,7 @@ Add a new QLC event listener and QLC+ payload or update an existing one if it ex
 The "qlc_payload" is a dict of {"widget_id": value} that will be sent to QLC+
 
 .. code-block:: json
+
     {
     "event_type": "scene_set",
     "event_filter": {
@@ -323,6 +337,7 @@ The "qlc_payload" is a dict of {"widget_id": value} that will be sent to QLC+
 Delete a QLC event listener, and associated payload data.
 
 .. code-block:: json
+
     {
     "event_type": "scene_set",
     "event_filter": {
@@ -333,7 +348,7 @@ Delete a QLC event listener, and associated payload data.
 NOTE: This does not turn off the integration, it deletes it entirely! (though it will first turn off..)
 
 /api/integrations/spotify/<integration_id>
-================================
+=============================================
 Endpoint for querying and managing a Spotify integration.
 
 .. rubric:: GET
@@ -350,6 +365,7 @@ Update a song trigger
 Create a new song trigger
 
 .. code-block:: json
+
     {
     "scene_id": "my_scene",
     "song_id": "347956287364597",
@@ -362,6 +378,7 @@ Create a new song trigger
 Delete a song trigger
 
 .. code-block:: json
+
     {
     "trigger_id": "Really Cool Song - 43764",
     }
