@@ -2,37 +2,8 @@
    Troubleshooting
 =====================
 
-Install Issues
---------------
-
-Pyaudio:
-
-.. code:: console
-
-    $ conda install -c anaconda pyaudio
-
 Windows
 -------
-
-.. _win-alt-install:
-
-Alternative Install Instructions:
-+++++++++++++++++++++++++++++++++
-
-.. code:: doscon
-
-    > conda create -n ledfx-git python=3.6
-    > conda activate ledfx-git
-    > conda config --add channels conda-forge
-    > conda install pywin32 portaudio aubio
-    > conda install -c anaconda pyaudio
-    > cd %HOMEPATH%
-    > mkdir ledfx
-    > git clone https://github.com/ahodges9/LedFx.git ledfx
-    > cd ledfx
-    > pip install -r requirements.txt
-    > python setup.py install
-    > ledfx --open-ui
 
 .. _win-dev-install:
 
