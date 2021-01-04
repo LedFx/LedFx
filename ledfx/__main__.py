@@ -34,7 +34,7 @@ from ledfx.core import LedFxCore
 
 # Logger Variables
 warnings.filterwarnings("ignore", category=DeprecationWarning)
-_LOGGER = logging.getLogger(__name__)
+_LOGGER = logging.getLogger("LedFx Core")
 PYUPDATERLOGLEVEL = 35
 
 
@@ -123,7 +123,8 @@ def parse_args():
 
 
 def check_frozen():
-    return getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS")
+    return True
+    # return getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS")
 
 
 def update_ledfx():
