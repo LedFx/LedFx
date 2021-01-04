@@ -32,7 +32,7 @@ from ledfx.consts import (
     REQUIRED_PYTHON_VERSION,
 )
 from ledfx.core import LedFxCore
-from LedFx.utils import currently_frozen
+from ledfx.utils import currently_frozen
 
 # Logger Variables
 
