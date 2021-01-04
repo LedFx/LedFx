@@ -149,7 +149,7 @@ def update_ledfx():
         PUBLIC_KEY = "Txce3TE9BUixsBtqzDba6V5vBYltt/0pw5oKL8ueCDg"
         APP_NAME = PROJECT_NAME
         COMPANY_NAME = "LedFx Developers"
-        HTTP_TIMEOUT = 30
+        HTTP_TIMEOUT = 10
         MAX_DOWNLOAD_RETRIES = 3
         UPDATE_URLS = ["https://ledfx.app/downloads/"]
 
