@@ -10,7 +10,7 @@ from ledfx.api import RestEndpoint
 from ledfx.events import Event
 
 _LOGGER = logging.getLogger(__name__)
-MAX_PENDING_MESSAGES = 256
+MAX_PENDING_MESSAGES = 1024
 
 BASE_MESSAGE_SCHEMA = vol.Schema(
     {
