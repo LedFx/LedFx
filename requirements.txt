@@ -3,8 +3,6 @@
 
 # You will need a C compiler and proper setup for Cython
 # https://wiki.python.org/moin/WindowsCompilers
-# or use conda to install
-# conda install -c conda-forge aubio
 
 # Current windows bug requires no later than 1.19.3
 numpy==1.19.3

@@ -16,8 +16,7 @@ Here is everything you need to get started with LedFx:
         - Commercial grade DMX controllers
         - ESP8266 modules can be purchased for as little as $2 USD from AliExpress
 
-.. warning:: Anaconda is no longer recommended for installing LedFx. We are in the process of removing all references to Anaconda in the documentation.
-          If you come accross a reference to Anaconda in this documentation, please ignore it for now.
+.. warning:: Anaconda is no longer recommended for installing LedFx. We have removed all references to Anaconda. If you are coming from an old install, we reccomend removing Anaconda completely.
 
 Here is a list of tested ESP8266 firmware that works with LedFx:
 
