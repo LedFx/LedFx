@@ -32,6 +32,7 @@ from ledfx.consts import (
     REQUIRED_PYTHON_VERSION,
 )
 from ledfx.core import LedFxCore
+from LedFx.utils import currently_frozen
 
 # Logger Variables
 
@@ -123,10 +124,6 @@ def parse_args():
     return parser.parse_args()
 
 
-def check_frozen():
-    return getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS")
-
-
 def check_pip_installed():
     pip_package_command = subprocess.check_output(
         [sys.executable, "-m", "pip", "freeze"]
@@ -186,7 +183,7 @@ def main():
     args = parse_args()
     setup_logging(args.loglevel)
     # If LedFx is a frozen windows build, it can auto-update itself
-    if check_frozen():
+    if currently_frozen():
         # Import sentry if we're frozen and check for updates
         import ledfx.sentry_config
 

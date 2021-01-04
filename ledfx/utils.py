@@ -108,6 +108,10 @@ def async_callback(loop, callback, *args):
     return future
 
 
+def currently_frozen():
+    return getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS")
+
+
 def generate_id(name):
     """Converts a name to a id"""
     part1 = re.sub("[^a-zA-Z0-9]", " ", name).lower()
@@ -234,13 +238,8 @@ class RegistryLoader(object):
         # within the package changes.
         # Check ledfx is not running as a single exe built using pyinstaller
         # (sys frozen flag).
-        if (
-            ledfx.dev_enabled()
-            and import_or_install("watchdog")
-            and not getattr(sys, "frozen", False)
-            and hasattr(sys, "_MEIPASS")
-        ):
-
+        if ledfx.dev_enabled() and not currently_frozen():
+            import_or_install("watchdog")
             watchdog_events = import_or_install("watchdog.events")
             watchdog_observers = import_or_install("watchdog.observers")
 
