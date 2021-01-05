@@ -21,6 +21,7 @@ import logging
 import subprocess
 import sys
 import warnings
+from logging.handlers import RotatingFileHandler
 
 from pyupdater.client import Client
 
@@ -53,11 +54,21 @@ def setup_logging(loglevel):
 
     loglevel = loglevel if loglevel else logging.WARNING
     logformat = "[%(asctime)s] %(levelname)s:%(name)s:%(message)s"
+    rotating_file_handler = RotatingFileHandler(
+        config_helpers.get_log_file_location(),
+        mode="a",  # append
+        maxBytes=1 * 1000 * 1000,  # 1MB
+        encoding="utf8",
+        backupCount=5,  # once it hits 5MB total, start removing logs.
+    )
+    console = logging.StreamHandler()
+
     logging.basicConfig(
-        stream=sys.stdout,
         format=logformat,
         datefmt="%Y-%m-%d %H:%M:%S",
+        handlers=[rotating_file_handler, console],
     )
+
     logging.getLogger().setLevel(loglevel)
     logging.addLevelName(PYUPDATERLOGLEVEL, "Updater")
 
