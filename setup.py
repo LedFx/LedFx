@@ -14,14 +14,17 @@ PROJECT_MAINTAINER_EMAIL = "ledfx.app@gmail.com"
 PROJECT_URL = "https://github.com/LedFx/LedFx/tree/dev"
 
 # Need to install numpy first
-SETUP_REQUIRES = ["numpy>=1.19.3"]
+SETUP_REQUIRES = [
+    'numpy==1.19.3; platform_system == "Windows"',
+    'numpy>=1.19.3; platform_system != "Windows"',
+]
 
 INSTALL_REQUIRES = [
     # Nasty bug in windows 10 at the moment
     # https://developercommunity.visualstudio.com/content/problem/1207405/fmod-after-an-update-to-windows-2004-is-causing-a.html
     # numpy 1.19.3 has a workaround
-    'numpy==1.19.3;sys_platform == "Windows"',
-    'numpy>=1.19.3;sys_platform != "Windows"',
+    'numpy==1.19.3; platform_system == "Windows"',
+    'numpy>=1.19.3; platform_system != "Windows"',
     "voluptuous>=0.12.0",
     "pyaudio>=0.2.11",
     "sacn>=1.4.6",
@@ -33,7 +36,7 @@ INSTALL_REQUIRES = [
     "pyyaml>=5.3.1",
     "aubio>=0.4.9",
     "zeroconf>=0.28.6",
-    'pypiwin32>=223; sys_platform == "Windows"',
+    'pypiwin32>=223; platform_system == "Windows"',
     "cython<=0.29.21",
     "pyupdater>=3.1.0",
     "sentry-sdk>=0.19.0",
@@ -59,9 +62,7 @@ setup(
     install_requires=INSTALL_REQUIRES,
     setup_requires=SETUP_REQUIRES,
     python_requires=const.REQUIRED_PYTHON_STRING,
-    include_package_data=True,
-    # packages=find_packages(),
-    zip_safe=False,
+    # include_package_data=True,
+    # zip_safe=False,
     entry_points={"console_scripts": ["ledfx = ledfx.__main__:main"]},
-    package_data={"ledfx_frontend": ["*"], "": ["*.npy"], "": ["*.yaml"]},
 )
