@@ -7,5 +7,4 @@ recursive-include ledfx *.npy
 recursive-include ledfx_frontend *
 include ledfx/default_presets.yaml
 include ledfx/frontend/components/SceneCard/*
-recursive-exclude *.egg-info *
 global-exclude *.pyc
