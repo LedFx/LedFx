@@ -90,7 +90,7 @@ class Strobe(AudioReactiveEffect, GradientEffect):
             position = (
                 0
                 if length_diff == 0
-                else np.random.random_integers(self.pixel_count - strobe_width)
+                else np.random.randint(self.pixel_count - strobe_width)
             )
             self.strobe_overlay[
                 position : position + strobe_width
