@@ -100,35 +100,41 @@ class AdalightDevice(Device):
         return int(self._config["pixel_count"])
 
     def flush(self, data):
+        try:
 
-        byteData = data.astype(np.dtype("B"))
+            byteData = data.astype(np.dtype("B"))
 
-        i = 3
-        for rgb in byteData:
-            i += 3
-            rgb_bytes = rgb.tobytes()
-            self.buffer[i], self.buffer[i + 1], self.buffer[i + 2] = (
-                rgb_bytes[0],
-                rgb_bytes[1],
-                rgb_bytes[2],
+            i = 3
+            for rgb in byteData:
+                i += 3
+                rgb_bytes = rgb.tobytes()
+                self.buffer[i], self.buffer[i + 1], self.buffer[i + 2] = (
+                    rgb_bytes[0],
+                    rgb_bytes[1],
+                    rgb_bytes[2],
+                )
+
+                if self.color_order == ColorOrder.RGB:
+                    continue
+                elif self.color_order == ColorOrder.GRB:
+                    self.swap(self.buffer, i, i + 1)
+                elif self.color_order == ColorOrder.BGR:
+                    self.swap(self.buffer, i, i + 2)
+                elif self.color_order == ColorOrder.RBG:
+                    self.swap(self.buffer, i + 1, i + 2)
+                elif self.color_order == ColorOrder.BRG:
+                    self.swap(self.buffer, i, i + 1)
+                    self.swap(self.buffer, i + 1, i + 2)
+                elif self.color_order == ColorOrder.GBR:
+                    self.swap(self.buffer, i, i + 1)
+                    self.swap(self.buffer, i, i + 2)
+                self.serial.write(self.buffer)
+
+        except serial.SerialException:
+            _LOGGER.critical(
+                "Serial Connection Interrupted. Please check connections and ensure your device is functioning correctly."
             )
-
-            if self.color_order == ColorOrder.RGB:
-                continue
-            elif self.color_order == ColorOrder.GRB:
-                self.swap(self.buffer, i, i + 1)
-            elif self.color_order == ColorOrder.BGR:
-                self.swap(self.buffer, i, i + 2)
-            elif self.color_order == ColorOrder.RBG:
-                self.swap(self.buffer, i + 1, i + 2)
-            elif self.color_order == ColorOrder.BRG:
-                self.swap(self.buffer, i, i + 1)
-                self.swap(self.buffer, i + 1, i + 2)
-            elif self.color_order == ColorOrder.GBR:
-                self.swap(self.buffer, i, i + 1)
-                self.swap(self.buffer, i, i + 2)
-
-        self.serial.write(self.buffer)
+            self.clear_effect()
 
     def swap(self, array, pos1, pos2):
         array[pos1], array[pos2] = array[pos2], array[pos1]
