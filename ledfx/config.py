@@ -46,10 +46,11 @@ def get_config_file(config_dir: str) -> str:
     return config_path if os.path.isfile(config_path) else None
 
 
-def get_log_file_location() -> str:
-    config_dir = get_default_config_directory()
-    log_file_path = os.path.join(config_dir, "LedFx Log.log")
-    return log_file_path
+# Todo: Fix this
+# def get_log_file_location() -> str:
+#     config_dir = get_default_config_directory()
+#     log_file_path = os.path.join(config_dir, "LedFx Log.log")
+#     return log_file_path
 
 
 def create_default_config(config_dir: str) -> str:

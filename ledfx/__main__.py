@@ -21,7 +21,6 @@ import logging
 import subprocess
 import sys
 import warnings
-from logging.handlers import RotatingFileHandler
 
 from pyupdater.client import Client
 
@@ -34,6 +33,10 @@ from ledfx.consts import (
 )
 from ledfx.core import LedFxCore
 from ledfx.utils import currently_frozen
+
+# For Logging
+# from logging.handlers import RotatingFileHandler
+
 
 # Logger Variables
 
@@ -54,19 +57,20 @@ def setup_logging(loglevel):
 
     loglevel = loglevel if loglevel else logging.WARNING
     logformat = "[%(asctime)s] %(levelname)s:%(name)s:%(message)s"
-    rotating_file_handler = RotatingFileHandler(
-        config_helpers.get_log_file_location(),
-        mode="a",  # append
-        maxBytes=1 * 1000 * 1000,  # 1MB
-        encoding="utf8",
-        backupCount=5,  # once it hits 5MB total, start removing logs.
-    )
+    # Todo: Fix this
+    # rotating_file_handler = RotatingFileHandler(
+    #     config_helpers.get_log_file_location(),
+    #     mode="c",  # append
+    #     maxBytes=1 * 1000 * 1000,  # 1MB
+    #     encoding="utf8",
+    #     backupCount=5,  # once it hits 5MB total, start removing logs.
+    # )
     console = logging.StreamHandler()
 
     logging.basicConfig(
         format=logformat,
         datefmt="%Y-%m-%d %H:%M:%S",
-        handlers=[rotating_file_handler, console],
+        handlers=[console],
     )
 
     logging.getLogger().setLevel(loglevel)
