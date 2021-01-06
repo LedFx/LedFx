@@ -134,7 +134,7 @@ class AdalightDevice(Device):
             _LOGGER.critical(
                 "Serial Connection Interrupted. Please check connections and ensure your device is functioning correctly."
             )
-            self.clear_effect()
+            self.deactivate()
 
     def swap(self, array, pos1, pos2):
         array[pos1], array[pos2] = array[pos2], array[pos1]
