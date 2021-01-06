@@ -79,8 +79,17 @@ class AdalightDevice(Device):
         self.buffer[5] = self.buffer[3] ^ self.buffer[4] ^ 0x55
 
     def activate(self):
-        super().activate()
-        self.serial = serial.Serial(self.com_port, self.baudrate)
+        try:
+            self.serial = serial.Serial(self.com_port, self.baudrate)
+            if self.serial.isOpen:
+                super().activate()
+
+        except serial.SerialException:
+            _LOGGER.critical(
+                "Serial Error: Please ensure your device is connected, functioning and the correct COM port is selected."
+            )
+            # Todo: Trigger the UI to refresh after the clear effect call. Currently it still shows as active.
+            self.clear_effect()
 
     def deactivate(self):
         super().deactivate()
@@ -91,8 +100,6 @@ class AdalightDevice(Device):
         return int(self._config["pixel_count"])
 
     def flush(self, data):
-        if not self.serial:
-            raise Exception("serial not started.")
 
         byteData = data.astype(np.dtype("B"))
 
