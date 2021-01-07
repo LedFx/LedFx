@@ -78,6 +78,7 @@ const viewRoutes = [
         icon: Settings,
         component: DevicesView,
     },
+    integrations,
     virtuals,
     {
         path: '/settings',
