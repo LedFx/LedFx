@@ -65,6 +65,8 @@ class Integration(BaseRegistry):
 
     def disconnected(self, msg=None):
         self._status = 0
+        if msg:
+            _LOGGER.info(msg)
 
     async def connect(self):
         """

@@ -212,17 +212,19 @@ class QLC(Integration):
     async def connect(self):
         domain = f"{self._config['ip_address']}:{str(self._config['port'])}"
         url = f"http://{domain}/qlcplusWS"
-        self._client = QLCWebsocketClient(url, domain)
+        if self._client is None:
+            self._client = QLCWebsocketClient(url, domain)
         self._cancel_connect()
         self._connect_task = asyncio.create_task(self._client.connect())
-        await self._connect_task
-        self.connected(f"Connected to QLC+ websocket at {domain}")
+        if await self._connect_task:
+            self.connected(f"Connected to QLC+ websocket at {domain}")
 
     async def disconnect(self):
         self._cancel_connect()
         if self._client is not None:
-            await self._client.disconnect()
-        self.disconnected(f"Disconnected from QLC+ websocket")
+            # fire and forget bc for some reason close() never returns... -o-
+            async_fire_and_forget(self._client.disconnect(), loop=self._ledfx.loop)
+        self.disconnected("Disconnected from QLC+ websocket")
 
     def _cancel_connect(self):
         if self._connect_task is not None:
@@ -242,18 +244,18 @@ class QLCWebsocketClient(aiohttp.ClientSession):
         while True:
             try:
                 self.websocket = await self.ws_connect(self.url)
-                return
+                return True
             except aiohttp.client_exceptions.ClientConnectorError:
                 _LOGGER.info(
                     f"Connection to {self.domain} failed. Retrying in 5s..."
                 )
                 await asyncio.sleep(5)
             except asyncio.CancelledError:
-                return
+                return False
 
     async def disconnect(self):
         if self.websocket is not None:
-            return await self.websocket.close()
+            await self.websocket.close()
 
     async def begin(self, callback):
         """Connect and indefinitely read from websocket, returning messages to callback func"""
