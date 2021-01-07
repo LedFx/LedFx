@@ -30,7 +30,7 @@ class IntegrationsEndpoint(RestEndpoint):
                 "config": integration.config,
             }
 
-        if request is not None:
+        if request.body_exists:
             data = await request.json()
             info = data.get("info")
             for integration in self._ledfx.integrations.values():
