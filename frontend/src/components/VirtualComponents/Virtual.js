@@ -16,7 +16,7 @@ function Virtual({ v, setSnackbarState }) {
   const dispatch = useDispatch()
   const virtuals = useSelector(state => state.virtuals.list)
   const deviceList = useSelector(state => state.devices.list)
-  const allPixels = virtuals.filter(vi => vi.name === v.name).map(vir => vir.items.length > 0 && vir.items.map(d => d.led_end - d.led_start + 1).reduce((sum, part) => sum + part))[0]
+  const allPixels = virtuals.filter(vi => vi.name === v.name).map(vir => vir.items && vir.items.length > 0 && vir.items.map(d => d.led_end - d.led_start + 1).reduce((sum, part) => sum + part))[0]
 
   const deleteVirtual = (virtual) => {
     dispatch({ type: 'virtuals/VIRTUAL_DELETE', payload: virtual })
