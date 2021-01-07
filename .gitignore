@@ -11,6 +11,7 @@ __pycache__/*
 .cache/*
 .*.swp
 */.ipynb_checkpoints/*
+*.DS_Store
 
 # Python env
 env
@@ -26,7 +27,8 @@ package-lock.json
 .pydevproject
 .settings
 .idea
-.vscode
+.vscode/settings.json
+*.code-workspace
 
 # Package files
 *.egg
@@ -49,3 +51,17 @@ docs/api/*
 docs/_build/*
 cover/*
 MANIFEST
+
+
+
+# Keyfile and pyupdater files for signing pyupdater
+keypack.pyu
+.pyupdater/
+pyu-data/
+# Sentry Data
+ledfx/sentry_config.py
+formatting_test.bat
+
+
+# Misc
+.devcontainer/ledfx-config.yml

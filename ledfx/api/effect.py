@@ -1,9 +1,11 @@
-from ledfx.api import RestEndpoint
-from aiohttp import web
 import logging
-import json
+
+from aiohttp import web
+
+from ledfx.api import RestEndpoint
 
 _LOGGER = logging.getLogger(__name__)
+
 
 class EffectEndpoint(RestEndpoint):
 
@@ -12,9 +14,8 @@ class EffectEndpoint(RestEndpoint):
     async def get(self, effect_id) -> web.Response:
         effect = self._ledfx.effects.get_class(effect_id)
         if effect is None:
-            response = { 'not found': 404 }
-            return web.Response(text=json.dumps(response), status=404)
+            response = {"not found": 404}
+            return web.json_response(data=response, status=404)
 
-        response = { 'schema' : str(effect.schema()) }
-        return web.Response(text=json.dumps(response), status=200)
-
+        response = {"schema": str(effect.schema())}
+        return web.json_response(data=response, status=200)
