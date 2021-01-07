@@ -222,7 +222,7 @@ class QLC(Integration):
         self._cancel_connect()
         if self._client is not None:
             await self._client.disconnect()
-        self.disconnected(f"Disconnected from QLC+ websocket at {domain}")
+        self.disconnected(f"Disconnected from QLC+ websocket")
 
     def _cancel_connect(self):
         if self._connect_task is not None:

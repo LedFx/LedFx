@@ -13,11 +13,11 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class IntegrationsEndpoint(RestEndpoint):
-    """REST end-point for querying and managing QLC webhook"""
+    """REST end-point for querying and managing integrations"""
 
     ENDPOINT_PATH = "/api/integrations"
 
-    async def get(self) -> web.Response:
+    async def get(self, request=None) -> web.Response:
         """Get info of all integrations"""
         response = {"status": "success", "integrations": {}}
         for integration in self._ledfx.integrations.values():
@@ -29,6 +29,19 @@ class IntegrationsEndpoint(RestEndpoint):
                 "data": integration.data,
                 "config": integration.config,
             }
+
+        if request is not None:
+            data = await request.json()
+            info = data.get("info")
+            for integration in self._ledfx.integrations.values():
+                if not info in response["integrations"][integration.id].keys():
+                    response = {
+                        "status": "failed",
+                        "reason": f"info attribute {info} not found"
+                    }
+                    return web.json_response(data=response, status=404)
+                response["integrations"][integration.id] = {info: response["integrations"][integration.id][info]}
+
         return web.Response(text=json.dumps(response), status=200)
 
     async def put(self, request) -> web.Response:
