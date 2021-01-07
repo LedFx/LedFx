@@ -8,6 +8,7 @@ import numpy as np
 import voluptuous as vol
 
 from ledfx.utils import BaseRegistry, RegistryLoader
+from ledfx.color import COLORS
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -139,6 +140,11 @@ class Effect(BaseRegistry):
                 description="Brightness of strip",
                 default=1.0,
             ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
+            vol.Optional(
+                "background_color", 
+                description="Apply a background colour", 
+                default="black"
+            ): vol.In(list(COLORS.keys())),
         }
     )
 
@@ -169,6 +175,8 @@ class Effect(BaseRegistry):
         # TODO: Sync locks to ensure everything is thread safe
         validated_config = type(self).schema()(config)
         self._config = validated_config
+
+        self._bg_color = np.array(COLORS[self._config["background_color"]], dtype=float)
 
         def inherited(cls, method):
             if hasattr(cls, method) and hasattr(super(cls, cls), method):
@@ -230,14 +238,21 @@ class Effect(BaseRegistry):
         elif isinstance(pixels, np.ndarray):
 
             # Apply some of the base output filters if necessary
-            if self._config["blur"] != 0.0:
-                pixels = blur_pixels(pixels=pixels, sigma=self._config["blur"])
             if self._config["flip"]:
                 pixels = flip_pixels(pixels)
             if self._config["mirror"]:
                 pixels = mirror_pixels(pixels)
+            if self._config["background_color"]:
+                # TODO: colours in future should have an alpha value, which would work nicely to apply to dim the background colour
+                # for now, just set it a bit less bright.
+                bg_brightness = np.max(pixels, axis=1)
+                bg_brightness = (255 - bg_brightness)/510
+                _bg_color_array = np.tile(self._bg_color, (len(pixels), 1))
+                pixels += np.multiply(_bg_color_array.T, bg_brightness).T
             if self._config["brightness"]:
                 pixels = brightness_pixels(pixels, self._config["brightness"])
+            if self._config["blur"] != 0.0:
+                pixels = blur_pixels(pixels=pixels, sigma=self._config["blur"])
             self._pixels = np.copy(pixels)
         else:
             raise TypeError()
