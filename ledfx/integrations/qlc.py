@@ -57,6 +57,7 @@ class QLC(Integration):
         self._client = None
         self._data = []
         self._listeners = []
+        self._connect_task = None
 
         self.restore_from_data(data)
 
@@ -212,11 +213,21 @@ class QLC(Integration):
         domain = f"{self._config['ip_address']}:{str(self._config['port'])}"
         url = f"http://{domain}/qlcplusWS"
         self._client = QLCWebsocketClient(url, domain)
-        await self._client.connect()
+        self._cancel_connect()
+        self._connect_task = asyncio.create_task(self._client.connect())
+        await self._connect_task
+        self.connected(f"Connected to QLC+ websocket at {domain}")
 
     async def disconnect(self):
+        self._cancel_connect()
         if self._client is not None:
             await self._client.disconnect()
+        self.disconnected(f"Disconnected from QLC+ websocket at {domain}")
+
+    def _cancel_connect(self):
+        if self._connect_task is not None:
+            self._connect_task.cancel()
+            self._connect_task = None
 
 
 class QLCWebsocketClient(aiohttp.ClientSession):
@@ -231,13 +242,14 @@ class QLCWebsocketClient(aiohttp.ClientSession):
         while True:
             try:
                 self.websocket = await self.ws_connect(self.url)
-                _LOGGER.info(f"Connected to QLC+ websocket at {self.domain}")
                 return
             except aiohttp.client_exceptions.ClientConnectorError:
                 _LOGGER.info(
                     f"Connection to {self.domain} failed. Retrying in 5s..."
                 )
                 await asyncio.sleep(5)
+            except asyncio.CancelledError:
+                return
 
     async def disconnect(self):
         if self.websocket is not None:

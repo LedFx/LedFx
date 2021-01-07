@@ -71,7 +71,7 @@ class Spotify(Integration):
                 del self._data[scene_id][trigger_id]
 
     async def connect(self):
-        pass
+        self.connected()
 
     async def disconnect(self):
-        pass
+        self.disconnected()

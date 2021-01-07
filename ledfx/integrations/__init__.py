@@ -39,8 +39,7 @@ class Integration(BaseRegistry):
         )
         self._active = True
         self._status = 3
-        await self.connect()
-        self._status = 1
+        async_fire_and_forget(self.connect(), self._ledfx.loop)
 
     async def deactivate(self):
         _LOGGER.info(
@@ -48,8 +47,7 @@ class Integration(BaseRegistry):
         )
         self._active = False
         self._status = 2
-        await self.disconnect()
-        self._status = 0
+        async_fire_and_forget(self.disconnect(), self._ledfx.loop)
 
     async def reconnect(self):
         _LOGGER.info(
@@ -59,26 +57,35 @@ class Integration(BaseRegistry):
         await self.disconnect()
         self._status = 3
         await self.connect()
+
+    def connected(self, msg=None):
         self._status = 1
+        if msg:
+            _LOGGER.info(msg)
+
+    def disconnected(self, msg=None):
+        self._status = 0
 
     async def connect(self):
         """
         Establish a connection with the service.
-        This abstract method must be overwritten by the integration implementation.
+        This method must be overwritten by the integration implementation.
+        Be sure to end this function with self.connected()
         """
-        pass
+        self.connected()
 
     async def disconnect(self):
         """
         Disconnect from the service.
-        This abstract method must be overwritten by the integration implementation.
+        This method must be overwritten by the integration implementation.
+        Be sure to end this function with self.disconnected()
         """
-        pass
+        self.disconnected()
 
     def on_shutdown(self):
         """
         Integrations should reimplement this if there's anything they need to do on shutdown to close cleanly.
-        This abstract method must be overwritten by the integration implementation.
+        This method must be overwritten by the integration implementation.
         """
         pass
 

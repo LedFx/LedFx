@@ -51,9 +51,9 @@ class IntegrationsEndpoint(RestEndpoint):
         active = integration.active
 
         if not active:
-            integration.activate()
+            await integration.activate()
         else:
-            integration.deactivate()
+            await integration.deactivate()
 
         # Update and save the configuration
         for _integration in self._ledfx.config["integrations"]:
