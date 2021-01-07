@@ -174,6 +174,13 @@ class Device(BaseRegistry):
         merging multiple segments segments and alpha blending channels
         """
         frame = None
+
+        # quick bugfix.
+        # this all needs to be reworked for effects like real_strobe
+        # where the effect drives the device, not vice-versa
+        if self._active_effect is None:
+            return None
+
         if self._active_effect._dirty:
             # Get and process active effect frame
             pixels = self._active_effect.get_pixels()
