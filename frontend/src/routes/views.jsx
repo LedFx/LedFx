@@ -78,14 +78,6 @@ const viewRoutes = [
         icon: Settings,
         component: DevicesView,
     },
-    integrations,
-    {
-        path: '/integrations/:integrationId',
-        navbarName: 'Integration',
-        sidebarName: 'Integration',
-        icon: PowerIcon,
-        component: IntegrationView,
-    },
     virtuals,
     {
         path: '/settings',
