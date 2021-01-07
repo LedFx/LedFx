@@ -34,13 +34,15 @@ class IntegrationsEndpoint(RestEndpoint):
             data = await request.json()
             info = data.get("info")
             for integration in self._ledfx.integrations.values():
-                if not info in response["integrations"][integration.id].keys():
+                if info not in response["integrations"][integration.id].keys():
                     response = {
                         "status": "failed",
-                        "reason": f"info attribute {info} not found"
+                        "reason": f"info attribute {info} not found",
                     }
                     return web.json_response(data=response, status=404)
-                response["integrations"][integration.id] = {info: response["integrations"][integration.id][info]}
+                response["integrations"][integration.id] = {
+                    info: response["integrations"][integration.id][info]
+                }
 
         return web.Response(text=json.dumps(response), status=200)
 

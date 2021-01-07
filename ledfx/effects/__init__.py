@@ -7,8 +7,8 @@ from functools import lru_cache
 import numpy as np
 import voluptuous as vol
 
-from ledfx.utils import BaseRegistry, RegistryLoader
 from ledfx.color import COLORS
+from ledfx.utils import BaseRegistry, RegistryLoader
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -141,9 +141,9 @@ class Effect(BaseRegistry):
                 default=1.0,
             ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
             vol.Optional(
-                "background_color", 
-                description="Apply a background colour", 
-                default="black"
+                "background_color",
+                description="Apply a background colour",
+                default="black",
             ): vol.In(list(COLORS.keys())),
         }
     )
@@ -176,7 +176,9 @@ class Effect(BaseRegistry):
         validated_config = type(self).schema()(config)
         self._config = validated_config
 
-        self._bg_color = np.array(COLORS[self._config["background_color"]], dtype=float)
+        self._bg_color = np.array(
+            COLORS[self._config["background_color"]], dtype=float
+        )
 
         def inherited(cls, method):
             if hasattr(cls, method) and hasattr(super(cls, cls), method):
@@ -246,7 +248,7 @@ class Effect(BaseRegistry):
                 # TODO: colours in future should have an alpha value, which would work nicely to apply to dim the background colour
                 # for now, just set it a bit less bright.
                 bg_brightness = np.max(pixels, axis=1)
-                bg_brightness = (255 - bg_brightness)/510
+                bg_brightness = (255 - bg_brightness) / 510
                 _bg_color_array = np.tile(self._bg_color, (len(pixels), 1))
                 pixels += np.multiply(_bg_color_array.T, bg_brightness).T
             if self._config["brightness"]:

@@ -15,7 +15,6 @@ import ScenesView from '../views/Scenes';
 import DeviceView from '../views/Device';
 import VirtualsView from '../views/Virtuals';
 import IntegrationsView from '../views/Integrations';
-import IntegrationView from '../views/Integration';
 import SettingsView from '../views/Settings';
 import DeveloperView from '../views/Developer';
 

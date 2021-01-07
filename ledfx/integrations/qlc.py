@@ -196,7 +196,9 @@ class QLC(Integration):
         response = await self._client.query(message)
         widgets_list = response.lstrip(f"{message}|").split("|")
         # Then get the type for each widget (in individual requests bc QLC api be like that)
-        for widget_id, widget_name in zip(widgets_list[::2], widgets_list[1::2]):
+        for widget_id, widget_name in zip(
+            widgets_list[::2], widgets_list[1::2]
+        ):
             message = "QLC+API|getWidgetType"
             response = await self._client.query(f"{message}|{widget_id}")
             widget_type = response.lstrip(f"{message}|")
@@ -223,7 +225,9 @@ class QLC(Integration):
         self._cancel_connect()
         if self._client is not None:
             # fire and forget bc for some reason close() never returns... -o-
-            async_fire_and_forget(self._client.disconnect(), loop=self._ledfx.loop)
+            async_fire_and_forget(
+                self._client.disconnect(), loop=self._ledfx.loop
+            )
         self.disconnected("Disconnected from QLC+ websocket")
 
     def _cancel_connect(self):
