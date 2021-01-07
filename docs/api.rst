@@ -214,6 +214,15 @@ vice versa.
 .. rubric:: GET
 
 Get info of all integrations
+Optional, send request body to get specific info of integrations
+Any of: ["id", "type", "active", "status", "data", "config"]
+
+example:
+
+.. code-block:: json
+    {
+    "info":"status"
+    }
 
 STATUS REFERENCE
 0: disconnected
