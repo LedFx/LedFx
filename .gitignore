@@ -65,3 +65,4 @@ formatting_test.bat
 
 # Misc
 .devcontainer/ledfx-config.yml
+.vscode/launch.json
