@@ -74,8 +74,10 @@
   }
 
   update-ledfx () {
+    sudo systemctl stop ledfx 2> /dev/null
     python3 -m pip install --upgrade git+https://github.com/LedFx/LedFx@dev
     echo "All Updated, enjoy LedFx!"
+    sudo systemctl start ledfx 2> /dev/null
   }
 
   delete-config () {
