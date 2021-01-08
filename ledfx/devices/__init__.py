@@ -279,6 +279,7 @@ class Devices(RegistryLoader):
             self.clear_all_effects()
 
         self._ledfx.events.add_listener(cleanup_effects, Event.LEDFX_SHUTDOWN)
+        self.zeroconf = zeroconf.Zeroconf()
 
     def create_from_config(self, config):
         for device in config:
@@ -318,19 +319,23 @@ class Devices(RegistryLoader):
         # Scan the LAN network that match WLED using zeroconf - Multicast DNS
         # Service Discovery Library
         _LOGGER.info("Scanning for WLED devices...")
-        zeroconf_obj = zeroconf.Zeroconf()
-        listener = MyListener(self._ledfx)
-        browser = zeroconf.ServiceBrowser(
-            zeroconf_obj, "_wled._tcp.local.", listener
+        wled_listener = WLEDListener(self._ledfx)
+        wledbrowser = self.zeroconf.add_service_listener(
+            "_wled._tcp.local.", wled_listener
         )
         try:
             await asyncio.sleep(10)
         finally:
             _LOGGER.info("Scan Finished")
-            zeroconf_obj.close()
+            self.zeroconf.remove_service_listener(wled_listener)
 
+    def resolve_mDNS(self, mDNS_hostname):
+        info = self.zeroconf.get_service_info(mDNS_hostname)
+        print("found this info:")
+        print(info.__dict__)
+        print(f"IPv4 Addresses: {info.parsed_addresses(zeroconf.IPVersion.V4Only)}")
 
-class MyListener:
+class WLEDListener:
     def __init__(self, _ledfx):
         self._ledfx = _ledfx
 
