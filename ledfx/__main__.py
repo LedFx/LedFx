@@ -21,6 +21,7 @@ import logging
 import subprocess
 import sys
 import warnings
+from logging.handlers import RotatingFileHandler
 
 from pyupdater.client import Client
 
@@ -33,10 +34,6 @@ from ledfx.consts import (
 )
 from ledfx.core import LedFxCore
 from ledfx.utils import currently_frozen
-
-# For Logging
-# from logging.handlers import RotatingFileHandler
-
 
 # Logger Variables
 
@@ -57,20 +54,20 @@ def setup_logging(loglevel):
 
     loglevel = loglevel if loglevel else logging.WARNING
     logformat = "[%(asctime)s] %(levelname)s:%(name)s:%(message)s"
-    # Todo: Fix this
-    # rotating_file_handler = RotatingFileHandler(
-    #     config_helpers.get_log_file_location(),
-    #     mode="c",  # append
-    #     maxBytes=1 * 1000 * 1000,  # 1MB
-    #     encoding="utf8",
-    #     backupCount=5,  # once it hits 5MB total, start removing logs.
-    # )
+
+    rotating_file_handler = RotatingFileHandler(
+        config_helpers.get_log_file_location(),
+        mode="a",  # append
+        maxBytes=0.5 * 1000 * 1000,  # 512kB
+        encoding="utf8",
+        backupCount=5,  # once it hits 2.5MB total, start removing logs.
+    )
     console = logging.StreamHandler()
 
     logging.basicConfig(
         format=logformat,
         datefmt="%Y-%m-%d %H:%M:%S",
-        handlers=[console],
+        handlers=[rotating_file_handler, console],
     )
 
     logging.getLogger().setLevel(loglevel)
@@ -196,6 +193,7 @@ def update_ledfx():
 def main():
     """Main entry point allowing external calls"""
     args = parse_args()
+    config_helpers.ensure_config_directory(args.config)
     setup_logging(args.loglevel)
     # If LedFx is a frozen windows build, it can auto-update itself
     if currently_frozen():
@@ -204,7 +202,7 @@ def main():
 
         update_ledfx()
     check_pip_installed()
-    config_helpers.ensure_config_directory(args.config)
+
     ledfx = LedFxCore(config_dir=args.config, host=args.host, port=args.port)
 
     ledfx.start(open_ui=args.open_ui)
