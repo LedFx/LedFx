@@ -146,6 +146,8 @@ def check_pip_installed():
     # If the install is from pip, ignore DepreciationWarnings
     if "ledfx" in installed_packages:
         warnings.filterwarnings("ignore", category=DeprecationWarning)
+    else:
+        warnings.filterwarnings("default", category=DeprecationWarning)
 
 
 def update_ledfx():
