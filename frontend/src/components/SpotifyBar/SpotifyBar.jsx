@@ -16,7 +16,7 @@ const styles = theme => ({
     appBar: {
         backgroundColor: '#333333',
         top: 'auto',
-        bottom: 0,   
+        bottom: 0,
         boxShadow: 'none',
         [theme.breakpoints.up('md')]: {
             left: `calc(${drawerWidth}px - 2px)`,
@@ -48,7 +48,7 @@ class SpotifyBar extends Component {
         this.toggleSpotify = this.toggleSpotify.bind(this);
         this.props.getSpotifyEnabled()
     }
-    
+
     toggleSpotify() {
         if (this.state.showSpotify == true) {
             this.setState({showSpotify: false})
@@ -61,7 +61,7 @@ class SpotifyBar extends Component {
         let scopes = encodeURIComponent('streaming user-read-email user-read-private');
         let client_id = 'a4d6df0f4b0047c2b23216c46bfc0f27'
         let redirect_uri = 'http://127.0.0.1:8888/dashboard/'
-        
+
         window.location = [
             "https://accounts.spotify.com/authorize",
             `?client_id=${client_id}`,
@@ -79,17 +79,17 @@ class SpotifyBar extends Component {
         const accessToken = hash.split('&')[0].slice(13)
         return this.setState({
             token: accessToken
-        }) 
+        })
     }
 
     initializePlayer() {
-        // Make sure the 3rd-party Spotify script has loaded 
+        // Make sure the 3rd-party Spotify script has loaded
         window.onSpotifyWebPlaybackSDKReady = () => {
             const token = this.state.token;
             const player = new Spotify.Player({
                 name: 'LedFX Window',
-                getOAuthToken: cb => {  
-                    cb(token);  
+                getOAuthToken: cb => {
+                    cb(token);
                 }
             });
 
@@ -130,7 +130,7 @@ class SpotifyBar extends Component {
             return (
                 <AppBar className={classes.appBar}>
                     <Grid container justify="center" alignItems="center" className={classes.loginBar}>
-                        <Button  variant="contained" style={{backgroundColor: '#1ED760', color: '#FFFFFA'}}className={classes.spotifyLogin} onClick={this.spotifyLogin}>Log in with Spotify</Button>   
+                        <Button  variant="contained" style={{backgroundColor: '#1ED760', color: '#FFFFFA'}}className={classes.spotifyLogin} onClick={this.spotifyLogin}>Log in with Spotify</Button>
                     </Grid>
                 </AppBar>
             )
@@ -142,8 +142,8 @@ class SpotifyBar extends Component {
                             Select "LedFX Window" using Spotify Connect!
                         </Typography>
                     </Grid>
-                </AppBar>      
-            ) 
+                </AppBar>
+            )
         }   else if (this.state.showSpotify == false) {
             return (
                 <AppBar className={classes.appBar} style={{width:'12vw'}}>
@@ -167,7 +167,7 @@ class SpotifyBar extends Component {
                     </Grid>
                 </AppBar>
             )
-        }   
+        }
     }
 
 

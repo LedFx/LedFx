@@ -1,16 +1,17 @@
 # from ledfx.utils import RegistryLoader, async_fire_and_forget, async_fire_and_return, async_callback
 # from ledfx.events import Event
-from ledfx.integrations import Integration
+# import importlib
+# import pkgutil
+import logging
 
 # import aiohttp
 # import asyncio
 import voluptuous as vol
 
+from ledfx.integrations import Integration
+
 # import numpy as np
 
-# import importlib
-# import pkgutil
-import logging
 
 # import time
 # import os

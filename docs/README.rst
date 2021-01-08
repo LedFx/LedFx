@@ -6,10 +6,14 @@ The documentation is written in reStructuredText. Once you are finished
 making changes, you must build the documentation. To build the LedFx
 documentation follow the steps outlined below:
 
+.. note:: Alternatively, you may run ``make livehtml`` in place of ``make html`` to open a browser and view your changes in
+          realtime.
+
+
 Linux
 -------
 
-.. code:: bash
+.. code:: console
 
     $ cd ~/ledfx/docs
     $ pip install -r requirements-docs.txt
@@ -18,9 +22,9 @@ Linux
 macOS
 -------
 
-.. code:: bash
+.. code:: console
 
-    $ conda activate ledfx
+    $ source ~/ledfx-venv/bin/activate
     $ cd ~/ledfx/docs
     $ pip install -r requirements-docs.txt
     $ make html

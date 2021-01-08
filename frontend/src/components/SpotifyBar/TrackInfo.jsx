@@ -47,13 +47,13 @@ class TrackInfo extends Component {
             for (const trigger in triggersObject) {
                 const triggerSongID = triggersObject[trigger][0]
                 let triggerSongPosition = triggersObject[trigger][2]
-                
+
                 if (triggerSongPosition == null) {
                     triggerSongPosition = 0
                 }
 
                 if (triggerSongID == this.props.trackState.id) {
-                    
+
                     if (this.props.position >= triggerSongPosition && triggerSongPosition >= mostRecentTriggerPosition) {
                         mostRecentTriggerPosition = triggerSongPosition
                         presetToActivate = preset
@@ -63,7 +63,7 @@ class TrackInfo extends Component {
                 }
             }
         }
-        
+
         presetsToCountdown.forEach( (trigger) => {
             // trigger[0] = presetID
             // trigger[1] = songPosition
@@ -101,7 +101,7 @@ class TrackInfo extends Component {
                     <Grid item xs='9' container direction='column' justify='center' alignItems='flex-start'>
                         <h4 className={classes.songTitle}>{trackState.name}</h4>
                         <p className={classes.albumName}>{trackState.artists[0].name}</p>
-                    </Grid> 
+                    </Grid>
                     <Grid item xs='3' container direction='column' justify='center' alignItems='center'>
                         <p className={classes.positionText}>Position</p>
                         <p className={classes.positionText}>{position}</p>
@@ -112,8 +112,8 @@ class TrackInfo extends Component {
     }
 }
 
-const mapStateToProps = state => ({ 
-    presets: state.presets 
+const mapStateToProps = state => ({
+    presets: state.presets
 })
 
 const mapDispatchToProps = (dispatch) => ({

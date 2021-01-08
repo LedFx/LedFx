@@ -10,97 +10,60 @@ UDP protocol. See below for a list of tested ESP8266 firmware that can be used w
 
 Here is everything you need to get started with LedFx:
 
-    #. A Computer (or Raspberry Pi) with Python >= 3.6 (Anaconda_ is recommended on Windows)
+    #. A Computer (or Raspberry Pi) with Python >= 3.7
     #. An E1.31 capable device with addressable LEDs connected
 
         - Commercial grade DMX controllers
         - ESP8266 modules can be purchased for as little as $2 USD from AliExpress
 
+.. warning:: Anaconda is no longer recommended for installing LedFx. We have removed all references to Anaconda. If you are coming from an old install, we reccomend removing Anaconda completely.
+
 Here is a list of tested ESP8266 firmware that works with LedFx:
 
+    - WLED_ is preferred and has lots of great firmware effects
     - ESPixelStick_ is a great E1.31 based firmware
     - `Scott's Audio Reactive Firmware`_ which inspired this project!
-    - WLED_ has lots of firmware effects and supports E1.31 and UDP
 
 Windows Installation
 ----------------------
 
-To get started on Windows it is highly recommended that you use Anaconda_ to make installation of Cython components easier.
+To get started on Windows please use our `LedFx Windows Installer`_.
 
-Please see :ref:`this page <win-alt-install>` for alternative installation instructions for Windows.
-
-**1.** Create a `conda virtual environment`_ (this step is optional but highly recommended):
-
-.. code:: doscon
-
-    > conda create -n ledfx
-    > conda activate ledfx
-
-**2.** Install LedFx and all the dependencies using pip and the conda package manager:
-
-.. code:: doscon
-
-    > conda config --add channels conda-forge
-    > conda install aubio portaudio pywin32
-    > conda install -c anaconda pyaudio
-    > pip install ledfx
-
-**3.** Launch LedFx with the ``--open-ui`` option to launch the browser:
-
-.. code:: doscon
-
-    > ledfx --open-ui
+.. note:: See :ref:`this page <win-dev-install>` for alternative installation instructions for Windows.
 
 Linux Installation
 --------------------
 
-To install on Linux first ensure you have at least Python 3.6 installed (alternatively use Anaconda_).
+To install on Linux first ensure you have at least Python 3.7 installed.
 
-**1.** Install LedFx and all the dependencies using apt-get and pip:
-
-.. code:: bash
-
-    $ sudo apt-get install portaudio19-dev
-    $ pip install ledfx
-
-**2.** Launch LedFx with the ``open-ui`` option to launch the browser:
+**1.** Install LedFx and all the dependencies using our `LedFx Bash Install Script`_:
 
 .. code:: console
 
-    $ ledfx --open-ui
+    $ curl -sSL https://install.ledfx.app | bash
+
+**2.** Follow the instructions presented by the installer.
 
 macOS Installation
 --------------------
 
-To install on macOS first ensure you have at least Python 3.6 installed (alternatively use Anaconda_).
+To install on macOS first ensure you have at least Python 3.7 installed.
 
-**1.** Install LedFx and all the dependencies using homebrew and pip:
+**1.** Install LedFx and all the dependencies using `homebrew`_ and pip:
 
 .. code:: console
 
     $ brew install portaudio
-    $ pip install ledfx
+    $ python3 -m pip install git+https://github.com/LedFx/LedFx@dev
 
-**2.** Launch LedFx with the ``open-ui`` option to launch the browser:
-
-.. code:: console
-
-    $ ledfx --open-ui
-
-**1.** Alternatively, create a `conda virtual environment`_:
+**2.** Alternatively, install LedFx in a `python venv`_:
 
 .. code:: console
 
-    $ conda create -n ledfx python=3.7
-    $ conda activate ledfx
-
-**2.** Install LedFx and all the dependencies using pip and the conda package manager.
-
-.. code:: console
-
-    $ conda config --add channels conda-forge
-    $ conda install aubio portaudio
-    $ pip install ledfx
+    $ python3 -m venv ~/ledfx-venv
+    $ source ~/ledfx-venv/bin/activate
+    $ python -m pip install -U pip setuptools wheel
+    $ python -m pip install git+https://github.com/LedFx/LedFx@dev
 
 **3.** Launch LedFx with the ``open-ui`` option to launch the browser:
 
@@ -117,29 +80,9 @@ Raspberry Pi Installation
 .. note::
   To use LedFx on a pi you will need a USB audio card.
 
-Verify you have Python 3.6 or greater by running ``python3 --version``
+Verify you have Python 3.7 or greater by running ``python3 --version``
 
-**1.** Install, Create, and Activate a Python virtual environment:
-
-.. code:: console
-
-    $ sudo apt install python3-venv python3-pip
-    $ python3 -m venv ~/ledfx-venv
-    $ source ~/ledfx-venv/bin/activate
-
-**2.** Install required LedFx dependencies via ``apt``:
-
-.. code:: console
-
-    $ sudo apt install portaudio19-dev libatlas-base-dev libavcodec58 libavformat58 -y
-
-**3.** Install LedFx using ``pip``:
-
-.. code:: console
-
-    $ pip3 install ledfx-dev
-
-**4.** Modify /usr/share/alsa/alsa.conf:
+**1.** Modify /usr/share/alsa/alsa.conf:
 
 We need to change the default audio card from the built-in hardware on the pi to the USB audio card in use.
 
@@ -163,18 +106,11 @@ TO:
     defaults.ctl.card 1
     defaults.pcm.card 1
 
-**5.** Finally, start LedFx:
+**2.** Install LedFx and all the dependencies using our `LedFx Bash Install Script`_:
 
 .. code:: console
 
-    $ cd ~/ledfx-venv/bin
-    $ ./ledfx -v
-
-Optionally, open the UI:
-
-.. code:: console
-
-    $ ./ledfx --open-ui
+    $ curl -sSL https://install.ledfx.app/ | bash
 
 Device Firmware
 -----------------
@@ -208,8 +144,10 @@ Please visit one of the following links to obtain firmware for your ESP8266/ESP3
 
 .. Links Down Here
 
-.. _Anaconda: https://www.anaconda.com/download/
-.. _`conda virtual environment`: http://conda.pydata.org/docs/using/envs.html
+.. _`LedFx Windows Installer`: http://ledfx.app/download
+.. _`LedFx Bash Install Script`: https://install.ledfx.app
+.. _`homebrew`: https://docs.brew.sh/Installation
+.. _`python venv`: https://docs.python.org/3/tutorial/venv.html
 .. _`Scott's Audio Reactive Firmware`: https://github.com/scottlawsonbc/audio-reactive-led-strip
 .. _ESPixelStick: https://github.com/forkineye/ESPixelStick
 .. _WLED: https://github.com/Aircoookie/WLED

@@ -18,6 +18,7 @@ For non-development purposes run:
 
 import argparse
 import logging
+import subprocess
 import sys
 import warnings
 
@@ -33,8 +34,8 @@ from ledfx.consts import (
 from ledfx.core import LedFxCore
 
 # Logger Variables
-warnings.filterwarnings("ignore", category=DeprecationWarning)
-_LOGGER = logging.getLogger(__name__)
+
+_LOGGER = logging.getLogger("LedFx Core")
 PYUPDATERLOGLEVEL = 35
 
 
@@ -126,14 +127,29 @@ def check_frozen():
     return getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS")
 
 
+def check_pip_installed():
+    pip_package_command = subprocess.check_output(
+        [sys.executable, "-m", "pip", "freeze"]
+    )
+    installed_packages = [
+        r.decode().split("==")[0] for r in pip_package_command.split()
+    ]
+    # If the install is from pip, ignore DepreciationWarnings
+    if "ledfx" in installed_packages:
+        warnings.filterwarnings("ignore", category=DeprecationWarning)
+
+
 def update_ledfx():
 
+    # If we're frozen, we can shut up about DepreciationWarnings
+    warnings.filterwarnings("ignore", category=DeprecationWarning)
     # initialize & refresh in one update check client
+
     class ClientConfig(object):
         PUBLIC_KEY = "Txce3TE9BUixsBtqzDba6V5vBYltt/0pw5oKL8ueCDg"
         APP_NAME = PROJECT_NAME
         COMPANY_NAME = "LedFx Developers"
-        HTTP_TIMEOUT = 30
+        HTTP_TIMEOUT = 10
         MAX_DOWNLOAD_RETRIES = 3
         UPDATE_URLS = ["https://ledfx.app/downloads/"]
 
@@ -175,6 +191,7 @@ def main():
         import ledfx.sentry_config
 
         update_ledfx()
+    check_pip_installed()
     config_helpers.ensure_config_directory(args.config)
     ledfx = LedFxCore(config_dir=args.config, host=args.host, port=args.port)
 

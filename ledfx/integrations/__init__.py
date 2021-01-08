@@ -1,13 +1,12 @@
-from ledfx.utils import BaseRegistry, RegistryLoader, async_fire_and_forget
-
-# from ledfx.config import save_config
-from ledfx.events import Event
-
 # from abc import abstractmethod
 # import voluptuous as vol
 # import numpy as np
 # import requests
 import logging
+
+# from ledfx.config import save_config
+from ledfx.events import Event
+from ledfx.utils import BaseRegistry, RegistryLoader, async_fire_and_forget
 
 # import asyncio
 

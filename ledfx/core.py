@@ -6,18 +6,10 @@ from concurrent.futures import ThreadPoolExecutor
 from ledfx.config import load_config, load_default_presets, save_config
 from ledfx.devices import Devices
 from ledfx.effects import Effects
-
-from ledfx.integrations import Integrations
-from ledfx.config import (
-    load_config,
-    save_config,
-    load_default_presets,
-)
 from ledfx.events import Events, LedFxShutdownEvent
-
 from ledfx.http_manager import HttpServer
+from ledfx.integrations import Integrations
 from ledfx.utils import async_fire_and_forget
-
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -124,8 +116,8 @@ class LedFxCore(object):
                 # If the user has specified an adaptor, launch its address
                 url = self.http.base_url
             try:
-                webbrowser.open(url)
-            except FileNotFoundError:
+                webbrowser.get().open(url)
+            except webbrowser.Error:
                 _LOGGER.warning(
                     f"Failed to open default web browser. To access LedFx's web ui, open {url} in your browser. To prevent this error in future, configure a default browser for your system."
                 )
