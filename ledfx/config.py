@@ -48,7 +48,7 @@ def get_config_file(config_dir: str) -> str:
 
 def get_log_file_location():
     config_dir = get_default_config_directory()
-    log_file_path = os.path.join(config_dir, "LedFx.log")
+    log_file_path = os.path.abspath(os.path.join(config_dir, "LedFx.log"))
     return log_file_path
 
 
