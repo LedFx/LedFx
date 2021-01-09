@@ -1,8 +1,9 @@
+import numpy as np
+import voluptuous as vol
+
+from ledfx.color import COLORS, GRADIENTS
 from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.gradient import GradientEffect
-from ledfx.color import GRADIENTS, COLORS
-import voluptuous as vol
-import numpy as np
 
 
 class BandsMatrixAudioEffect(AudioReactiveEffect, GradientEffect):
@@ -55,7 +56,11 @@ class BandsMatrixAudioEffect(AudioReactiveEffect, GradientEffect):
             volume = int(out_split[i].max() * band_width)
             out_split[i][volume:] = self.bkg_color
             for p in range(volume):
-                gradient_value = 1 - p / band_width if self.flip_gradient else p / band_width
+                gradient_value = (
+                    1 - p / band_width
+                    if self.flip_gradient
+                    else p / band_width
+                )
                 out_split[i][p] = self.get_gradient_color(gradient_value)
 
             if i % 2 != 0:
