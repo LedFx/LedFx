@@ -5,6 +5,7 @@ import numpy as np
 import voluptuous as vol
 
 from ledfx.devices import Device
+from ledfx.utils import resolve_destination
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -43,6 +44,11 @@ class UDPDevice(Device):
 
     def activate(self):
         self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        # check if ip/hostname resolves okay
+        self.resolved_dest = resolve_destination(self._config["ip_address"])
+        if not self.resolved_dest:
+            _LOGGER.warning(f"Cannot resolve destination {self._config['ip_address']}, aborting device {self.name} activation. Make sure the IP/hostname is correct and device is online.")
+            return
         super().activate()
 
     def deactivate(self):
@@ -85,5 +91,5 @@ class UDPDevice(Device):
 
         self._sock.sendto(
             bytes(udpData),
-            (self._config["ip_address"], self._config["port"]),
+            (self.resolved_dest, self._config["port"]),
         )

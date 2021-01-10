@@ -329,16 +329,6 @@ class Devices(RegistryLoader):
             _LOGGER.info("Scan Finished")
             self._zeroconf.remove_service_listener(wled_listener)
 
-    def resolve_mDNS(self, mDNS_hostname):
-
-        info = self.zeroconf.get_service_info(mDNS_hostname)
-        print("found this info:")
-        print(info.__dict__)
-        print(
-            f"IPv4 Addresses: {info.parsed_addresses(zeroconf.IPVersion.V4Only)}"
-        )
-
-
 class WLEDListener:
     def __init__(self, _ledfx):
         self._ledfx = _ledfx

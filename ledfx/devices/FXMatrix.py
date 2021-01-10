@@ -5,6 +5,7 @@ import numpy as np
 import voluptuous as vol
 
 from ledfx.devices import Device
+from ledfx.utils import resolve_destination
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -37,6 +38,12 @@ class FXMatrix(Device):
         self._config["pixel_count"] = int(
             self._config["width"] * self._config["height"]
         )
+        # check if ip/hostname resolves okay
+        self.resolved_dest = resolve_destination(self._config["ip_address"])
+        if not self.resolved_dest:
+            _LOGGER.warning(f"Cannot resolve destination {self._config['ip_address']}, aborting device {self.name} activation. Make sure the IP/hostname is correct and device is online.")
+            return
+
         super().activate()
 
     def deactivate(self):
@@ -55,5 +62,6 @@ class FXMatrix(Device):
 
         self._sock.sendto(
             bytes(udpData),
-            (self._config["ip_address"], self._config["port"]),
+            (self.resolved_dest, self._config["port"]),
         )
+

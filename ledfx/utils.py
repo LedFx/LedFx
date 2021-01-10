@@ -7,6 +7,7 @@ import os
 import pkgutil
 import re
 import sys
+import socket
 from abc import ABC
 
 # from asyncio import coroutines, ensure_future
@@ -107,6 +108,14 @@ def async_callback(loop, callback, *args):
     loop.call_soon_threadsafe(run_callback)
     return future
 
+
+def resolve_destination(destination):
+    # check if ip/hostname resolves okay
+    cleaned_dest = destination.rstrip(".")
+    try:
+        return socket.gethostbyname(cleaned_dest)
+    except socket.gaierror:
+        return False
 
 def currently_frozen():
     return getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS")

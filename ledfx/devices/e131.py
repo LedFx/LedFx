@@ -6,6 +6,7 @@ import sacn
 import voluptuous as vol
 
 from ledfx.devices import Device
+from ledfx.utils import resolve_destination
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -68,6 +69,11 @@ class E131Device(Device):
     def activate(self):
         if self._sacn:
             raise Exception("sACN sender already started.")
+        # check if ip/hostname resolves okay
+        resolved_dest = resolve_destination(self._config["ip_address"])
+        if not resolved_dest:
+            _LOGGER.warning(f"Cannot resolve destination {self._config['ip_address']}, aborting device {self.name} activation. Make sure the IP/hostname is correct and device is online.")
+            return
 
         # Configure sACN and start the dedicated thread to flush the buffer
         self._sacn = sacn.sACNsender()
@@ -79,7 +85,7 @@ class E131Device(Device):
             if self._config["ip_address"] is None:
                 self._sacn[universe].multicast = True
             else:
-                self._sacn[universe].destination = self._config["ip_address"]
+                self._sacn[universe].destination = resolved_dest
                 self._sacn[universe].multicast = False
         # self._sacn.fps = 60
         self._sacn.start()
