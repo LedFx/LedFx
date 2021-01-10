@@ -329,6 +329,7 @@ class Devices(RegistryLoader):
             _LOGGER.info("Scan Finished")
             self._zeroconf.remove_service_listener(wled_listener)
 
+
 class WLEDListener:
     def __init__(self, _ledfx):
         self._ledfx = _ledfx

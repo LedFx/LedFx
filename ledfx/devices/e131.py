@@ -72,7 +72,9 @@ class E131Device(Device):
         # check if ip/hostname resolves okay
         resolved_dest = resolve_destination(self._config["ip_address"])
         if not resolved_dest:
-            _LOGGER.warning(f"Cannot resolve destination {self._config['ip_address']}, aborting device {self.name} activation. Make sure the IP/hostname is correct and device is online.")
+            _LOGGER.warning(
+                f"Cannot resolve destination {self._config['ip_address']}, aborting device {self.name} activation. Make sure the IP/hostname is correct and device is online."
+            )
             return
 
         # Configure sACN and start the dedicated thread to flush the buffer

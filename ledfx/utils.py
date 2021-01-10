@@ -6,8 +6,8 @@ import logging
 import os
 import pkgutil
 import re
-import sys
 import socket
+import sys
 from abc import ABC
 
 # from asyncio import coroutines, ensure_future
@@ -116,6 +116,7 @@ def resolve_destination(destination):
         return socket.gethostbyname(cleaned_dest)
     except socket.gaierror:
         return False
+
 
 def currently_frozen():
     return getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS")
