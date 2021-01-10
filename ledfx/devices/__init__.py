@@ -343,6 +343,7 @@ class WLEDListener:
 
         if info:
             address = socket.inet_ntoa(info.addresses[0])
+            hostname = str(info.server)
             url = f"http://{address}/json/info"
             # For each WLED device found, based on the WLED IPv4 address, do a
             # GET requests
@@ -371,12 +372,12 @@ class WLEDListener:
                 "universe_size": unisize,
                 "name": wledname,
                 "pixel_count": wledcount,
-                "ip_address": address,
+                "ip_address": hostname,
             }
 
             # Check this device doesn't share IP with any other device
             for device in self._ledfx.devices.values():
-                if device.config["ip_address"] == address:
+                if device.config["ip_address"] == hostname:
                     return
 
             # Create the device
