@@ -83,6 +83,7 @@ def parse_args():
     parser = argparse.ArgumentParser(
         description="A Networked LED Effect Controller"
     )
+
     parser.add_argument(
         "--version",
         action="version",
@@ -133,6 +134,12 @@ def parse_args():
         default=None,
         type=str,
     )
+    parser.add_argument(
+        "--offline",
+        dest="offline_mode",
+        action="store_true",
+        help="Disable automated updates and sentry crash logger",
+    )
     return parser.parse_args()
 
 
@@ -161,7 +168,7 @@ def update_ledfx():
         APP_NAME = PROJECT_NAME
         COMPANY_NAME = "LedFx Developers"
         HTTP_TIMEOUT = 5
-        MAX_DOWNLOAD_RETRIES = 3
+        MAX_DOWNLOAD_RETRIES = 2
         UPDATE_URLS = ["https://ledfx.app/downloads/"]
 
     client = Client(ClientConfig(), refresh=True)
@@ -197,13 +204,17 @@ def main():
     args = parse_args()
     config_helpers.ensure_config_directory(args.config)
     setup_logging(args.loglevel)
-    # If LedFx is a frozen windows build, it can auto-update itself
-    if currently_frozen():
-        # Import sentry if we're frozen and check for updates
-        import ledfx.sentry_config
+    if args.offline_mode:
+        _LOGGER.warning(
+            "Offline Mode Enabled - Please check for updates regularly."
+        )
+        if currently_frozen():
+            # Import sentry if we're frozen and check for updates
+            import ledfx.sentry_config
 
-        update_ledfx()
-    check_pip_installed()
+            update_ledfx()
+    if not currently_frozen():
+        check_pip_installed()
 
     ledfx = LedFxCore(config_dir=args.config, host=args.host, port=args.port)
 
