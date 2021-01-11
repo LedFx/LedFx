@@ -112,7 +112,8 @@ class WebsocketConnection:
                     err,
                     message,
                 )
-
+            except ConnectionResetError:
+                _LOGGER.error("Connection Reset.")
         _LOGGER.info("Stopping sender")
 
     async def handle(self, request):
