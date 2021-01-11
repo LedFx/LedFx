@@ -21,10 +21,10 @@ import logging
 import subprocess
 import sys
 import warnings
-
-from logging.handlers import RotatingFileHandler
-from pyupdater.client import Client
 from importlib import reload
+from logging.handlers import RotatingFileHandler
+
+from pyupdater.client import Client
 
 import ledfx.config as config_helpers
 from ledfx.consts import (
@@ -65,14 +65,20 @@ def setup_logging(loglevel):
         encoding="utf8",
         backupCount=5,  # once it hits 2.5MB total, start removing logs.
     )
-    file_handler.setLevel(file_loglevel)                        # set loglevel
-    file_formatter = logging.Formatter(file_logformat)          # a simple file format
-    file_handler.setFormatter(file_formatter)                   # tell the console handler to use this format
+    file_handler.setLevel(file_loglevel)  # set loglevel
+    file_formatter = logging.Formatter(file_logformat)  # a simple file format
+    file_handler.setFormatter(
+        file_formatter
+    )  # tell the console handler to use this format
 
     console_handler = logging.StreamHandler()
-    console_handler.setLevel(console_loglevel)                  # set loglevel
-    console_formatter = logging.Formatter(console_logformat)    # a simple console format
-    console_handler.setFormatter(console_formatter)             # tell the console handler to use this format
+    console_handler.setLevel(console_loglevel)  # set loglevel
+    console_formatter = logging.Formatter(
+        console_logformat
+    )  # a simple console format
+    console_handler.setFormatter(
+        console_formatter
+    )  # tell the console handler to use this format
 
     # add the handlers to the root logger
     root_logger.setLevel(logging.DEBUG)
