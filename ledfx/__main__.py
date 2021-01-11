@@ -21,9 +21,10 @@ import logging
 import subprocess
 import sys
 import warnings
-from logging.handlers import RotatingFileHandler
 
+from logging.handlers import RotatingFileHandler
 from pyupdater.client import Client
+from importlib import reload
 
 import ledfx.config as config_helpers
 from ledfx.consts import (
@@ -32,12 +33,8 @@ from ledfx.consts import (
     REQUIRED_PYTHON_STRING,
     REQUIRED_PYTHON_VERSION,
 )
-from ledfx.core import LedFxCore
-from ledfx.utils import currently_frozen
 
 # Logger Variables
-
-_LOGGER = logging.getLogger("LedFx Core")
 PYUPDATERLOGLEVEL = 35
 
 
@@ -51,32 +48,46 @@ def validate_python() -> None:
 
 def setup_logging(loglevel):
     # Create a custom logging level to display pyupdater progress
+    reload(logging)
 
-    loglevel = loglevel if loglevel else logging.WARNING
-    logformat = "[%(asctime)s] %(levelname)s:%(name)s:%(message)s"
+    console_loglevel = loglevel if loglevel else logging.WARNING
+    console_logformat = "[%(levelname)-8s] %(name)-30s : %(message)s"
 
-    rotating_file_handler = RotatingFileHandler(
+    file_loglevel = logging.DEBUG
+    file_logformat = "%(asctime)-8s %(name)-30s %(levelname)-8s %(message)s"
+
+    root_logger = logging.getLogger()
+
+    file_handler = RotatingFileHandler(
         config_helpers.get_log_file_location(),
         mode="a",  # append
         maxBytes=0.5 * 1000 * 1000,  # 512kB
         encoding="utf8",
         backupCount=5,  # once it hits 2.5MB total, start removing logs.
     )
-    console = logging.StreamHandler()
+    file_handler.setLevel(file_loglevel)                        # set loglevel
+    file_formatter = logging.Formatter(file_logformat)          # a simple file format
+    file_handler.setFormatter(file_formatter)                   # tell the console handler to use this format
 
-    logging.basicConfig(
-        format=logformat,
-        datefmt="%Y-%m-%d %H:%M:%S",
-        handlers=[rotating_file_handler, console],
-    )
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(console_loglevel)                  # set loglevel
+    console_formatter = logging.Formatter(console_logformat)    # a simple console format
+    console_handler.setFormatter(console_formatter)             # tell the console handler to use this format
 
-    logging.getLogger().setLevel(loglevel)
+    # add the handlers to the root logger
+    root_logger.setLevel(logging.DEBUG)
+    root_logger.addHandler(console_handler)
+    root_logger.addHandler(file_handler)
+
     logging.addLevelName(PYUPDATERLOGLEVEL, "Updater")
 
     # Suppress some of the overly verbose logs
     logging.getLogger("sacn").setLevel(logging.WARNING)
     logging.getLogger("aiohttp.access").setLevel(logging.WARNING)
     logging.getLogger("pyupdater").setLevel(logging.WARNING)
+
+    global _LOGGER
+    _LOGGER = logging.getLogger("__name__")
 
 
 def parse_args():
@@ -204,6 +215,11 @@ def main():
     args = parse_args()
     config_helpers.ensure_config_directory(args.config)
     setup_logging(args.loglevel)
+    config_helpers.load_logger()
+
+    from ledfx.core import LedFxCore
+    from ledfx.utils import currently_frozen
+
     if args.offline_mode:
         _LOGGER.warning(
             "Offline Mode Enabled - Please check for updates regularly."
