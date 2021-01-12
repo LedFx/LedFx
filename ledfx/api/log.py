@@ -3,32 +3,23 @@ import json
 import logging
 from concurrent import futures
 
-import voluptuous as vol
 from aiohttp import web
 
 from ledfx.api import RestEndpoint
 from ledfx.events import Event
 
 _LOGGER = logging.getLogger(__name__)
-MAX_PENDING_MESSAGES = 1024
-
-BASE_MESSAGE_SCHEMA = vol.Schema(
-    {
-        vol.Required("id"): vol.Coerce(int),
-        vol.Required("type"): str,
-    },
-    extra=vol.ALLOW_EXTRA,
-)
 
 
 class LogEndpoint(RestEndpoint):
 
     ENDPOINT_PATH = "/api/log"
 
+    def __init__(self, ledfx):
+        self.logwebsocket = LogWebsocket(ledfx, ledfx.logqueue)
+
     async def get(self, request) -> web.Response:
-        return await LogWebsocket(self._ledfx, self._ledfx.logqueue).handle(
-            request
-        )
+        return await self.logwebsocket.handle(request)
 
 
 class LogWebsocket:
@@ -43,45 +34,45 @@ class LogWebsocket:
         if self._sender_task:
             self._sender_task.cancel()
 
-    # def send(self, message):
-    #     """Sends a message to the websocket connection"""
-
-    #     try:
-    #         self._sender_queue.put_nowait(message)
-    #     except asyncio.QueueFull:
-    #         _LOGGER.error(
-    #             "Client sender queue size exceeded {}".format(
-    #                 MAX_PENDING_MESSAGES
-    #             )
-    #         )
-    #         self.close()
-
     async def _sender(self):
         """Async write loop to pull from the queue and send"""
 
-        _LOGGER.info("Starting sender")
+        _LOGGER.info("Starting log sender")
         while not self._socket.closed:
             message = await self._sender_queue.get()
-            if message is None:
-                break
 
             try:
-                await self._socket.send_json(message, dumps=json.dumps)
-            except TypeError as err:
-                _LOGGER.error(
-                    "Unable to serialize to JSON: %s\n%s",
-                    err,
-                    message,
+                await self._socket.send_json(
+                    message.__dict__, dumps=json.dumps
                 )
 
-        _LOGGER.info("Stopping sender")
+            except TypeError as e:
+                if self._socket.closed:
+                    _LOGGER.info("Logging connection closed by client.")
+                else:
+                    _LOGGER.exception("Unexpected TypeError: {}".format(e))
+
+            except (asyncio.CancelledError, futures.CancelledError):
+                _LOGGER.info("Logging connection cancelled")
+            # Hopefully get rid of the aiohttp connection reset errors
+            except ConnectionResetError:
+                _LOGGER.info("Logging connection reset")
+
+            except Exception as err:
+                _LOGGER.exception("Unexpected Exception: %s", err)
+
+        _LOGGER.info("Stopping log sender")
 
     async def handle(self, request):
         """Handle the websocket connection"""
+        # close existing connection and sender if it exists
+        self.close()
+        if self._socket is not None:
+            await self._socket.close()
 
         socket = self._socket = web.WebSocketResponse()
         await socket.prepare(request)
-        _LOGGER.info("Websocket connected.")
+        _LOGGER.info("Logging websocket opened")
 
         self._sender_task = self._ledfx.loop.create_task(self._sender())
 
@@ -99,27 +90,26 @@ class LogWebsocket:
 
         except TypeError as e:
             if socket.closed:
-                _LOGGER.info("Connection closed by client.")
+                _LOGGER.info("Logging connection closed by client.")
             else:
                 _LOGGER.exception("Unexpected TypeError: {}".format(e))
 
         except (asyncio.CancelledError, futures.CancelledError):
-            _LOGGER.info("Connection cancelled")
+            _LOGGER.info("Logging connection cancelled")
         # Hopefully get rid of the aiohttp connection reset errors
         except ConnectionResetError:
-            _LOGGER.info("Connection reset")
+            _LOGGER.info("Logging connection reset")
 
         except Exception as err:
             _LOGGER.exception("Unexpected Exception: %s", err)
 
         finally:
             remove_listeners()
-            # Gracefully stop the sender ensuring all messages get flushed
-            # self.send(None)
-            await self._sender_task
 
             # Close the connection
             await socket.close()
-            _LOGGER.info("Closed connection")
+            await self._sender_task
+
+            _LOGGER.info("Logging websocket closed")
 
         return socket

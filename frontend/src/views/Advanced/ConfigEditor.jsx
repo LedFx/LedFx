@@ -8,7 +8,7 @@ import 'ace-builds/src-noconflict/mode-yaml';
 import 'ace-builds/src-noconflict/theme-twilight';
 import 'ace-builds/src-noconflict/theme-github';
 
-const yaml = require('./ledfx-config.yml');
+// const yaml = require('./ledfx-config.yml');
 const yaml2 = `
 crossfade: 1.0
 custom_presets: {}
@@ -28,7 +28,6 @@ function onChange(newValue) {
 }
 
 const ConfigEditor = () => {
-    console.log(yaml);
     return (
         <Card>
             <CardHeader title="Config Editor" subheader="for development" />
