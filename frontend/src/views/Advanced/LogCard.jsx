@@ -37,7 +37,6 @@ const LogCard = ({ settings, error }) => {
                                     sock.send(JSON.stringify({ message: 'Logger Websocket Open' }));
                                 },
                                 formatMessage: e =>
-                                    console.log('WTF', JSON.parse(e)) ||
                                     `${
                                         JSON.parse(e).levelno === 10
                                             ? '\u001b[36m'
