@@ -89,22 +89,20 @@ class QLC(Integration):
         for idx, entry in enumerate(self._data):
             _event_type, _event_filter, _active, _qlc_payload = entry
             if (_event_type == event_type) and (_event_filter == event_filter):
-                active = _active
                 self._data[idx] = [
                     event_type,
                     event_filter,
-                    _active,
+                    active,
                     qlc_payload,
                 ]
-                # if there's a listener, remove it
-                listener = self._get_listener(_event_type, event_filter)
-                if listener is not None:
-                    # listener exists, so remove it
-                    listener()
-        # Otherwise, add it as a new entry to data
+                # if it was active, remove existing listener
+                if _active:
+                    self._remove_listener(_event_type, event_filter)
+                break
+        # If it doesn't already exist, add it as a new entry to data
         else:
             self.data.append([event_type, event_filter, active, qlc_payload])
-        # Finally, subscribe to the ledfx event if the listener is active
+        # Finally, subscribe to the ledfx event if the listener is now active
         if active:
             self._add_listener(event_type, event_filter, qlc_payload)
         _LOGGER.info(
@@ -129,43 +127,36 @@ class QLC(Integration):
         # Update "active" flag in data
         for idx, entry in enumerate(self._data):
             _event_type, _event_filter, _active, _qlc_payload = entry
-            print(entry)
             if (_event_type == event_type) and (_event_filter == event_filter):
-                self._data[idx] = (
+                # toggle active flag in data
+                self._data[idx] = [
                     event_type,
                     event_filter,
                     not _active,
                     _qlc_payload,
-                )
-                qlc_payload = _qlc_payload
+                ]
+                # Enable/disable listener
+                if _active:
+                    self._remove_listener(_event_type, event_filter)
+                else:
+                    # no listener exists, so create it
+                    self._add_listener(event_type, event_filter, _qlc_payload)
+                # log action
                 _LOGGER.info(
                     f"QLC+ payload {'disabled' if _active else 'enabled'} for event '{event_type}' with filter {event_filter}"
                 )
-
-        # Enable/disable listener
-        listener = self._get_listener(_event_type, event_filter)
-        if listener is not None:
-            # listener exists, so remove it
-            listener()
-        else:
-            # no listener exists, so create it
-            self._add_listener(event_type, event_filter, qlc_payload)
-
-    def _get_listener(self, event_type, event_filter):
-        """ Internal function to return ledfx events listener if it exists """
-        for _event_type, _event_filter, listener in self._listeners:
-            if (_event_type == event_type) and (_event_filter == event_filter):
-                # Call the listener function that removes the listener
-                return listener
-        else:
-            return None
+                return True  # success
+        return False  # failed to find event_type with this event_filter
 
     def _remove_listener(self, event_type, event_filter):
         """ Internal function to remove ledfx events listener if it exists """
-        # PLZ CHECK THIS. I needed to change _event_type to event_type
-        listener = self._get_listener(event_type, event_filter)
-        if listener is not None:
-            listener()
+        for idx, entry in enumerate(self._listeners):
+            _event_type, _event_filter, listener = entry
+            if (_event_type == event_type) and (_event_filter == event_filter):
+                # Call the listener function that removes the listener
+                listener()
+                del self._listeners[idx]
+                break
 
     def _add_listener(self, event_type, event_filter, qlc_payload):
         """ Internal function that links payload to send on the specified event """
@@ -219,7 +210,7 @@ class QLC(Integration):
         self._cancel_connect()
         self._connect_task = asyncio.create_task(self._client.connect())
         if await self._connect_task:
-            self.connected(f"Connected to QLC+ websocket at {domain}")
+            super().connect(f"Connected to QLC+ websocket at {domain}")
 
     async def disconnect(self):
         self._cancel_connect()
@@ -228,7 +219,9 @@ class QLC(Integration):
             async_fire_and_forget(
                 self._client.disconnect(), loop=self._ledfx.loop
             )
-        self.disconnected("Disconnected from QLC+ websocket")
+            await super().disconnect("Disconnected from QLC+ websocket")
+        else:
+            await super().disconnect()
 
     def _cancel_connect(self):
         if self._connect_task is not None:

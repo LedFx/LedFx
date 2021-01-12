@@ -102,13 +102,18 @@ class QLCEndpoint(RestEndpoint):
             }
             return web.json_response(data=response, status=500)
 
-        # Delete the listener and event from data
-        integration.toggle_event(event_type, event_filter)
+        # toggle the event listener
+        if not integration.toggle_event(event_type, event_filter):
+            response = {
+                "status": "failed",
+                "reason": f"Could not find event with type {event_type} and filter {event_filter}",
+            }
+            return web.json_response(data=response, status=500)
 
         # Save the configuration (integration will handle modifying "data")
-        for integration in self._ledfx.config["integrations"]:
-            if integration["id"] == integration_id:
-                integration["data"] = integration.data
+        for _integration in self._ledfx.config["integrations"]:
+            if _integration["id"] == integration_id:
+                _integration["data"] = integration.data
                 break
         save_config(
             config=self._ledfx.config,
@@ -210,9 +215,9 @@ class QLCEndpoint(RestEndpoint):
         integration.delete_event(event_type, event_filter)
 
         # Save the configuration (integration will handle modifying "data")
-        for integration in self._ledfx.config["integrations"]:
-            if integration["id"] == integration_id:
-                integration["data"] = integration.data
+        for _integration in self._ledfx.config["integrations"]:
+            if _integration["id"] == integration_id:
+                _integration["data"] = integration.data
                 break
         save_config(
             config=self._ledfx.config,
