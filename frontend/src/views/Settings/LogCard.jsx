@@ -15,7 +15,7 @@ const useStyles = makeStyles({
         flexDirection: 'column',
     },
 });
-const ws_log_url = 'ws://${wsBaseUrl}/api/log';
+const ws_log_url = `ws://${wsBaseUrl}/api/log`;
 let socket = null;
 const LogCard = ({ settings, error }) => {
     const classes = useStyles();
@@ -24,20 +24,20 @@ const LogCard = ({ settings, error }) => {
             <CardHeader title="Console" subheader="View the Console" />
             <CardContent className={classes.content}>
             <div>
-  <div style={{ height: 200, width: 902 }}>
-  <LazyLog
-    enableSearch
-    url={ws_log_url}
-    websocket
-    websocketOptions={{
-      onOpen: (e, sock) => {
-          socket = sock; sock.send(JSON.stringify({message: "Logger Websocket Open"}))
-        },
-      formatMessage: e => JSON.parse(e).message,
-    }}
-  />
-  </div>
-</div>
+              <div style={{ height: 300}}>
+                <LazyLog
+                  enableSearch
+                  url={ws_log_url}
+                  websocket
+                  websocketOptions={{
+                    onOpen: (e, sock) => {
+                        socket = sock; sock.send(JSON.stringify({message: "Logger Websocket Open"}))
+                      },
+                    formatMessage: e => `[${JSON.parse(e).levelname}] ${JSON.parse(e).message}`,
+                  }}
+                />
+              </div>
+            </div>
             </CardContent>
         </Card>
     );

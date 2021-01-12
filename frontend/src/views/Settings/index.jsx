@@ -22,13 +22,13 @@ class SettingsView extends Component {
 
         return (
             <Grid container direction="row" spacing={4}>
-                <Grid item md={4}>
+                <Grid item xs={3}>
                     <AudioInputCard {...audioInputs} onChange={setAudioInput} />
                 </Grid>
-                <Grid item md={4}>
+                <Grid item xs={3}>
                     <ConfigCard settings={settings} />
                 </Grid>
-                <Grid item md={4}>
+                <Grid item xs={12}>
                     <LogCard></LogCard>
                 </Grid>
             </Grid>

@@ -93,7 +93,7 @@ def setup_logging(loglevel):
     logging.getLogger("pyupdater").setLevel(logging.WARNING)
 
     global _LOGGER
-    _LOGGER = logging.getLogger("__name__")
+    _LOGGER = logging.getLogger(__name__)
 
 
 def parse_args():
@@ -237,6 +237,8 @@ def main():
             update_ledfx()
     if not currently_frozen():
         check_pip_installed()
+
+    _LOGGER.info("LedFx Core is initialising")
 
     ledfx = LedFxCore(config_dir=args.config, host=args.host, port=args.port)
 
