@@ -33,7 +33,7 @@ const LogCard = ({ settings, error }) => {
                     onOpen: (e, sock) => {
                         socket = sock; sock.send(JSON.stringify({message: "Logger Websocket Open"}))
                       },
-                    formatMessage: e => `[${JSON.parse(e).levelname}] ${JSON.parse(e).message}`,
+                    formatMessage: e => `[${JSON.parse(e).levelname}] ${JSON.parse(e).name} : ${JSON.parse(e).message}`,
                   }}
                 />
               </div>

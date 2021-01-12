@@ -15,10 +15,11 @@ class LogEndpoint(RestEndpoint):
 
     ENDPOINT_PATH = "/api/log"
 
+    def __init__(self, ledfx):
+        self.logwebsocket = LogWebsocket(ledfx, ledfx.logqueue)
+
     async def get(self, request) -> web.Response:
-        return await LogWebsocket(self._ledfx, self._ledfx.logqueue).handle(
-            request
-        )
+        return await self.logwebsocket.handle(request)
 
 
 class LogWebsocket:
@@ -33,23 +34,12 @@ class LogWebsocket:
         if self._sender_task:
             self._sender_task.cancel()
 
-    def send(self, message):
-        """Sends a message to the websocket connection"""
-
-        try:
-            self._sender_queue.put_nowait(message)
-        except asyncio.QueueFull:
-            self._sender_queue.get()
-            self._sender_queue.put_nowait(message)
-
     async def _sender(self):
         """Async write loop to pull from the queue and send"""
 
-        _LOGGER.debug("Starting log sender")
+        _LOGGER.info("Starting log sender")
         while not self._socket.closed:
             message = await self._sender_queue.get()
-            if message == "END":
-                break
 
             try:
                 await self._socket.send_json(
@@ -71,10 +61,14 @@ class LogWebsocket:
             except Exception as err:
                 _LOGGER.exception("Unexpected Exception: %s", err)
 
-        _LOGGER.debug("Stopping log sender")
+        _LOGGER.info("Stopping log sender")
 
     async def handle(self, request):
         """Handle the websocket connection"""
+        # close existing connection and sender if it exists
+        self.close()
+        if self._socket is not None:
+            await self._socket.close()
 
         socket = self._socket = web.WebSocketResponse()
         await socket.prepare(request)
@@ -111,12 +105,11 @@ class LogWebsocket:
 
         finally:
             remove_listeners()
-            # Gracefully stop the sender ensuring all messages get flushed
-            self.send("END")
-            await self._sender_task
 
             # Close the connection
             await socket.close()
+            await self._sender_task
+
             _LOGGER.info("Logging websocket closed")
 
         return socket
