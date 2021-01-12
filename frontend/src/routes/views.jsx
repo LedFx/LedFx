@@ -15,6 +15,7 @@ import ScenesView from '../views/Scenes';
 import DeviceView from '../views/Device';
 import VirtualsView from '../views/Virtuals';
 import IntegrationsView from '../views/Integrations';
+import AdvancedView from '../views/Advanced';
 import SettingsView from '../views/Settings';
 import DeveloperView from '../views/Developer';
 
@@ -47,6 +48,21 @@ const integrations =
               navbarName: 'Integrations',
               icon: PowerIcon,
               component: IntegrationsView,
+          };
+const advanced =
+    window.localStorage.getItem('BladeMod') === '1'
+        ? {
+              path: '/advanced',
+              sidebarName: 'Advanced',
+              navbarName: 'Advanced',
+              icon: Settings,
+              component: AdvancedView,
+          }
+        : {
+              path: '/advanced',
+              navbarName: 'Advanced',
+              icon: Settings,
+              component: AdvancedView,
           };
 const viewRoutes = [
     {
@@ -86,6 +102,7 @@ const viewRoutes = [
         icon: BuildIcon,
         component: SettingsView,
     },
+    advanced,
     {
         path: '/developer/:graphString',
         navbarName: 'Developer',
