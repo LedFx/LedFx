@@ -37,15 +37,18 @@ const LogCard = ({ settings, error }) => {
                                     sock.send(JSON.stringify({ message: 'Logger Websocket Open' }));
                                 },
                                 formatMessage: e =>
+                                    console.log('WTF', JSON.parse(e)) ||
                                     `${
-                                        JSON.parse(e).levelname === 'INFO'
-                                            ? '\u001b[34m'
-                                            : JSON.parse(e).levelname === 'WARNING'
-                                            ? '\u001b[33m'
-                                            : JSON.parse(e).levelname === 'ERROR'
-                                            ? '\u001b[31m'
-                                            : JSON.parse(e).levelname === 'DEBUG'
+                                        JSON.parse(e).levelno === 10
                                             ? '\u001b[36m'
+                                            : JSON.parse(e).levelno === 20
+                                            ? '\u001b[34m'
+                                            : JSON.parse(e).levelno === 30
+                                            ? '\u001b[33m'
+                                            : JSON.parse(e).levelno === 40
+                                            ? '\u001b[31m'
+                                            : JSON.parse(e).levelno === 50
+                                            ? '\u001b[35m'
                                             : '\u001b[32m'
                                     }[${JSON.parse(e).levelname}] \u001b[37m${
                                         JSON.parse(e).name

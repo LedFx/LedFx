@@ -37,44 +37,6 @@ class SettingsView extends Component {
                         <ConfigCard settings={settings} />
                     </Grid>
                 </Grid>
-                <Divider />
-                {window.localStorage.getItem('BladeMod') === '1' ? (
-                    <>
-                        <Divider />
-                        <Grid item md={4}>
-                            <Card>
-                                <CardHeader title="Controls" subheader="for development" />
-                                <CardContent>
-                                    <Button
-                                        size="small"
-                                        startIcon={<CloudUploadIcon />}
-                                        variant="contained"
-                                        style={{ marginRight: '10px' }}
-                                    >
-                                        Export Configuration
-                                    </Button>
-                                    <Button
-                                        size="small"
-                                        startIcon={<CloudDownloadIcon />}
-                                        variant="contained"
-                                        style={{ marginRight: '10px' }}
-                                    >
-                                        Import Configuration
-                                    </Button>
-                                    <Button
-                                        size="small"
-                                        startIcon={<PowerSettingsNewIcon />}
-                                        variant="contained"
-                                    >
-                                        Shutdown
-                                    </Button>
-                                </CardContent>
-                            </Card>
-                        </Grid>
-                    </>
-                ) : (
-                    <></>
-                )}
             </Grid>
         );
     }
