@@ -89,19 +89,21 @@ const LogCard = ({ settings, error }) => {
                                             );
                                         },
                                         formatMessage: e => {
-                                            const line = `${JSON.parse(e).levelno === 10
+                                            const line = `${
+                                                JSON.parse(e).levelno === 10
                                                     ? '\u001b[36m'
                                                     : JSON.parse(e).levelno === 20
-                                                        ? '\u001b[34m'
-                                                        : JSON.parse(e).levelno === 30
-                                                            ? '\u001b[33m'
-                                                            : JSON.parse(e).levelno === 40
-                                                                ? '\u001b[31m'
-                                                                : JSON.parse(e).levelno === 50
-                                                                    ? '\u001b[35m'
-                                                                    : '\u001b[32m'
-                                                }[${JSON.parse(e).levelname}] \u001b[37m${JSON.parse(e).name
-                                                } : ${JSON.parse(e).message}`;
+                                                    ? '\u001b[34m'
+                                                    : JSON.parse(e).levelno === 30
+                                                    ? '\u001b[33m'
+                                                    : JSON.parse(e).levelno === 40
+                                                    ? '\u001b[31m'
+                                                    : JSON.parse(e).levelno === 50
+                                                    ? '\u001b[35m'
+                                                    : '\u001b[32m'
+                                            }[${JSON.parse(e).levelname}] \u001b[37m${
+                                                JSON.parse(e).name
+                                            } : ${JSON.parse(e).message}`;
                                             const saveLine = {
                                                 levelno: JSON.parse(e).levelno,
                                                 levelname: JSON.parse(e).levelname,
@@ -150,6 +152,7 @@ const LogCard = ({ settings, error }) => {
                             <div>
                                 <Button
                                     size="small"
+                                    style={{ marginRight: '1rem' }}
                                     startIcon={<Delete />}
                                     variant="contained"
                                     onClick={() => {
@@ -187,14 +190,14 @@ const LogCard = ({ settings, error }) => {
                                                     l.levelno === 10
                                                         ? 'purple'
                                                         : l.levelno === 20
-                                                            ? 'cyan'
-                                                            : l.levelno === 30
-                                                                ? 'yellow'
-                                                                : l.levelno === 40
-                                                                    ? 'orange'
-                                                                    : l.levelno === 50
-                                                                        ? 'red'
-                                                                        : 'green',
+                                                        ? 'cyan'
+                                                        : l.levelno === 30
+                                                        ? 'yellow'
+                                                        : l.levelno === 40
+                                                        ? 'orange'
+                                                        : l.levelno === 50
+                                                        ? 'red'
+                                                        : 'green',
                                             }}
                                         >
                                             {l.levelname}
