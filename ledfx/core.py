@@ -2,6 +2,7 @@ import asyncio
 import logging
 import sys
 from concurrent.futures import ThreadPoolExecutor
+from logging.handlers import QueueHandler
 
 from ledfx.config import load_config, load_default_presets, save_config
 from ledfx.devices import Devices
@@ -32,6 +33,7 @@ class LedFxCore(object):
         self.loop.set_default_executor(self.executor)
         self.loop.set_exception_handler(self.loop_exception_handler)
 
+        self.setup_logqueue()
         self.events = Events(self)
         self.http = HttpServer(ledfx=self, host=host, port=port)
         self.exit_code = None
@@ -53,6 +55,16 @@ class LedFxCore(object):
             "Exception in core event loop: {}".format(context["message"]),
             **kwargs,
         )
+
+    def setup_logqueue(self):
+        def log_filter(record):
+            return (record.name != "ledfx.api.log") and (record.levelno >= 20)
+
+        self.logqueue = asyncio.Queue(maxsize=3000, loop=self.loop)
+        logqueue_handler = QueueHandler(self.logqueue)
+        logqueue_handler.addFilter(log_filter)
+        root_logger = logging.getLogger()
+        root_logger.addHandler(logqueue_handler)
 
     async def flush_loop(self):
         await asyncio.sleep(0, loop=self.loop)

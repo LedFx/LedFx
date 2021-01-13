@@ -210,7 +210,7 @@ class QLC(Integration):
         self._cancel_connect()
         self._connect_task = asyncio.create_task(self._client.connect())
         if await self._connect_task:
-            super().connect(f"Connected to QLC+ websocket at {domain}")
+            await super().connect(f"Connected to QLC+ websocket at {domain}")
 
     async def disconnect(self):
         self._cancel_connect()

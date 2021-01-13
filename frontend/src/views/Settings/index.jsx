@@ -20,12 +20,14 @@ class SettingsView extends Component {
         const { audioInputs } = settings;
 
         return (
-            <Grid container direction="row" spacing={4}>
-                <Grid item md={4}>
-                    <AudioInputCard {...audioInputs} onChange={setAudioInput} />
-                </Grid>
-                <Grid item md={4}>
-                    <ConfigCard settings={settings} />
+            <Grid container direction="column" spacing={4}>
+                <Grid container item direction="row" spacing={4}>
+                    <Grid item md={4}>
+                        <AudioInputCard {...audioInputs} onChange={setAudioInput} />
+                    </Grid>
+                    <Grid item md={4}>
+                        <ConfigCard settings={settings} />
+                    </Grid>
                 </Grid>
             </Grid>
         );
