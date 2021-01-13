@@ -58,31 +58,25 @@ class Integration(BaseRegistry):
         self._status = 3
         await self.connect()
 
-    def connected(self, msg=None):
+    async def connect(self, msg=None):
+        """
+        Establish a connection with the service.
+        This method must be overwritten by the integration implementation.
+        Be sure to end this function with await super().connect()
+        """
         self._status = 1
         if msg:
             _LOGGER.info(msg)
 
-    def disconnected(self, msg=None):
-        self._status = 0
-        if msg:
-            _LOGGER.info(msg)
-
-    async def connect(self):
-        """
-        Establish a connection with the service.
-        This method must be overwritten by the integration implementation.
-        Be sure to end this function with self.connected()
-        """
-        self.connected()
-
-    async def disconnect(self):
+    async def disconnect(self, msg=None):
         """
         Disconnect from the service.
         This method must be overwritten by the integration implementation.
-        Be sure to end this function with self.disconnected()
+        Be sure to end this function with await super().disconnect()
         """
-        self.disconnected()
+        self._status = 0
+        if msg:
+            _LOGGER.info(msg)
 
     def on_shutdown(self):
         """
