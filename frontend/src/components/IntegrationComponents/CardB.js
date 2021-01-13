@@ -11,7 +11,6 @@ import SettingsIcon from '@material-ui/icons/Settings';
 import { deleteAsyncIntegration } from 'modules/integrations';
 import { toggleAsyncIntegration } from 'modules/integrations';
 import { Switch, Chip } from '@material-ui/core';
-import DialogAddIntegration from 'components/IntegrationComponents/DialogAddIntegration';
 
 const useStyles = makeStyles({
     integrationCard: {
