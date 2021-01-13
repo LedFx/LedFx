@@ -8,10 +8,13 @@ import {
     AccordionSummary,
     AccordionDetails,
     Button,
+    TextField,
+    FormControlLabel,
+    Checkbox,
 } from '@material-ui/core';
 import Typography from '@material-ui/core/Typography';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
-import { Delete, Refresh } from '@material-ui/icons';
+import { Delete } from '@material-ui/icons';
 
 const { LazyLog } = require('react-lazylog');
 const { NODE_ENV } = process.env;
@@ -30,6 +33,7 @@ const useStyles = makeStyles({
         fontFamily: '"Monaco", monospace',
         fontSize: '12px',
         width: '100%',
+        overflowX: 'scroll',
     },
     lineno: {
         color: '#999',
@@ -50,14 +54,20 @@ const useStyles = makeStyles({
         justifyContent: 'space-between',
         margin: '0.5rem',
     },
+    wrapping: {
+        whiteSpace: 'wrap',
+    },
+    not_wrapping: {
+        whiteSpace: 'nowrap',
+    },
 });
 const ws_log_url = `ws://${wsBaseUrl}/api/log`;
 let socket = null;
 const LogCard = ({ settings, error }) => {
     const classes = useStyles();
-
     const [logger, setLogger] = useState(JSON.parse(window.sessionStorage.getItem('logger')) || []);
-    const [clearLogger, setClearLogger] = useState(false);
+    const [logLength, setLogLength] = useState(30);
+    const [wrap, setWrap] = useState(false);
     return (
         <Card>
             <CardHeader title="Console" subheader="View the Console" />
@@ -89,44 +99,45 @@ const LogCard = ({ settings, error }) => {
                                             );
                                         },
                                         formatMessage: e => {
-                                            const line = `${
-                                                JSON.parse(e).levelno === 10
+                                            const line = `${JSON.parse(e).levelno === 10
                                                     ? '\u001b[36m'
                                                     : JSON.parse(e).levelno === 20
-                                                    ? '\u001b[34m'
-                                                    : JSON.parse(e).levelno === 30
-                                                    ? '\u001b[33m'
-                                                    : JSON.parse(e).levelno === 40
-                                                    ? '\u001b[31m'
-                                                    : JSON.parse(e).levelno === 50
-                                                    ? '\u001b[35m'
-                                                    : '\u001b[32m'
-                                            }[${JSON.parse(e).levelname}] \u001b[37m${
-                                                JSON.parse(e).name
-                                            } : ${JSON.parse(e).message}`;
+                                                        ? '\u001b[34m'
+                                                        : JSON.parse(e).levelno === 30
+                                                            ? '\u001b[33m'
+                                                            : JSON.parse(e).levelno === 40
+                                                                ? '\u001b[31m'
+                                                                : JSON.parse(e).levelno === 50
+                                                                    ? '\u001b[35m'
+                                                                    : '\u001b[32m'
+                                                }[${JSON.parse(e).levelname}] \u001b[37m${JSON.parse(e).name
+                                                } : ${JSON.parse(e).message}`;
                                             const saveLine = {
                                                 levelno: JSON.parse(e).levelno,
                                                 levelname: JSON.parse(e).levelname,
                                                 message: JSON.parse(e).message,
                                                 asctime: JSON.parse(e).asctime,
                                             };
-                                            // setLogger[(...logger, saveLine]);
-                                            let log = logger;
 
-                                            if (clearLogger) {
-                                                window.sessionStorage.removeItem('logger');
-                                                setLogger([]);
-                                                setClearLogger(false);
-                                                log = [];
-                                            } else {
-                                                window.sessionStorage.setItem(
-                                                    'logger',
-                                                    JSON.stringify(
-                                                        log.slice(log.length - 30, log.length)
-                                                    )
-                                                );
-                                            }
+                                            const log =
+                                                JSON.parse(
+                                                    window.sessionStorage.getItem('logger')
+                                                ) || [];
+                                            console.log('before:', log.length);
                                             log.push(saveLine);
+                                            console.log('after', log.length);
+                                            const test = log.slice(
+                                                log.length > logLength - 1
+                                                    ? log.length - logLength
+                                                    : 0,
+                                                log.length
+                                            );
+                                            setLogger(test);
+
+                                            window.sessionStorage.setItem(
+                                                'logger',
+                                                JSON.stringify(test)
+                                            );
 
                                             return line;
                                         },
@@ -147,9 +158,39 @@ const LogCard = ({ settings, error }) => {
                     <AccordionDetails className={classes.root}>
                         <div className={classes.bar}>
                             <Typography className={classes.heading}>
-                                Showing last 30 saved log-messages
+                                Showing last {logLength} saved log-messages
                             </Typography>
-                            <div>
+                            <div
+                                style={{
+                                    display: 'flex',
+                                    justifyContent: 'center',
+                                    alignItems: 'center',
+                                }}
+                            >
+                                <FormControlLabel
+                                    value="top"
+                                    control={
+                                        <Checkbox
+                                            color="primary"
+                                            checked={wrap}
+                                            onChange={() => setWrap(!wrap)}
+                                        />
+                                    }
+                                    label="Wrap"
+                                    labelPlacement="top"
+                                />
+                                <TextField
+                                    id="standard-number"
+                                    label="Message to store"
+                                    style={{ minWidth: '150px' }}
+                                    defaultValue={logLength}
+                                    onChange={e => setLogLength(e.target.value)}
+                                    type="number"
+                                    InputLabelProps={{
+                                        shrink: true,
+                                    }}
+                                    InputProps={{ inputProps: { min: 0, max: 100 } }}
+                                />
                                 <Button
                                     size="small"
                                     style={{ marginRight: '1rem' }}
@@ -157,54 +198,59 @@ const LogCard = ({ settings, error }) => {
                                     variant="contained"
                                     onClick={() => {
                                         window.sessionStorage.removeItem('logger');
-                                        setLogger(null);
-                                        setClearLogger(true);
+                                        setLogger([]);
                                     }}
                                 >
                                     Clear
-                                </Button>
-                                <Button
-                                    size="small"
-                                    startIcon={<Refresh />}
-                                    variant="contained"
-                                    onClick={() => {
-                                        setLogger(
-                                            JSON.parse(window.sessionStorage.getItem('logger'))
-                                        );
-                                    }}
-                                >
-                                    REFRESH
                                 </Button>
                             </div>
                         </div>
                         <div className={classes.saved}>
                             {logger &&
                                 logger.length > 0 &&
-                                logger.map((l, i) => (
-                                    <div key={i}>
-                                        <span className={classes.lineno}>{i + 1}</span>{' '}
-                                        <span className={classes.linetime}>{l.asctime}</span> | [
-                                        <span
-                                            style={{
-                                                color:
-                                                    l.levelno === 10
-                                                        ? 'purple'
-                                                        : l.levelno === 20
-                                                        ? 'cyan'
-                                                        : l.levelno === 30
-                                                        ? 'yellow'
-                                                        : l.levelno === 40
-                                                        ? 'orange'
-                                                        : l.levelno === 50
-                                                        ? 'red'
-                                                        : 'green',
-                                            }}
-                                        >
-                                            {l.levelname}
-                                        </span>
-                                        ] {l.message}
-                                    </div>
-                                ))}
+                                logger.map(
+                                    (l, i) =>
+                                        console.log(wrap) || (
+                                            <div
+                                                key={i}
+                                                className={
+                                                    wrap ? classes.wrapping : classes.not_wrapping
+                                                }
+                                            >
+                                                <span className={classes.lineno}>{i + 1}</span>{' '}
+                                                <span className={classes.linetime}>
+                                                    {l.asctime}
+                                                </span>{' '}
+                                                | [
+                                                <span
+                                                    style={{
+                                                        color:
+                                                            l.levelno === 10
+                                                                ? 'purple'
+                                                                : l.levelno === 20
+                                                                    ? 'cyan'
+                                                                    : l.levelno === 30
+                                                                        ? 'yellow'
+                                                                        : l.levelno === 40
+                                                                            ? 'orange'
+                                                                            : l.levelno === 50
+                                                                                ? 'red'
+                                                                                : 'green',
+                                                    }}
+                                                >
+                                                    {l.levelname}
+                                                </span>
+                                                ]{' '}
+                                                <span
+                                                    style={{
+                                                        color: '#fff',
+                                                    }}
+                                                >
+                                                    {l.message}
+                                                </span>
+                                            </div>
+                                        )
+                                )}
                         </div>
                     </AccordionDetails>
                 </Accordion>
