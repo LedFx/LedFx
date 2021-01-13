@@ -9,6 +9,7 @@ import CardContent from '@material-ui/core/CardContent';
 import { loadDeviceInfo, setDeviceEffect, clearDeviceEffect } from 'modules/selectedDevice';
 import { activatePreset, getEffectPresets, addPreset } from 'modules/presets';
 import EffectControl from 'components/EffectControl';
+import EffectControlBlade from 'components/EffectControl/blade';
 import PixelColorGraph from 'components/PixelColorGraph';
 import PresetsCard from 'components/PresetsCard';
 
@@ -90,6 +91,22 @@ class DeviceView extends React.Component {
                         />
                     )}
                 </Grid>
+                {window.localStorage.getItem('BladeMod') > 2 && (
+                    <Grid item xs={12} lg={6}>
+                        <Card>
+                            <CardContent>
+                                <EffectControlBlade
+                                    device={device}
+                                    effect={effect}
+                                    schemas={schemas}
+                                    onClear={this.handleClearEffect}
+                                    onSubmit={this.handleSetEffect}
+                                    onTypeChange={this.handleTypeChange}
+                                />
+                            </CardContent>
+                        </Card>
+                    </Grid>
+                )}
             </Grid>
         );
     }

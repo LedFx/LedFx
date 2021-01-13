@@ -66,7 +66,9 @@ let socket = null;
 const LogCard = ({ settings, error }) => {
     const classes = useStyles();
     const [logger, setLogger] = useState(JSON.parse(window.sessionStorage.getItem('logger')) || []);
-    const [logLength, setLogLength] = useState(30);
+    const [logLength, setLogLength] = useState(
+        JSON.parse(window.sessionStorage.getItem('messages')) || 30
+    );
     const [wrap, setWrap] = useState(false);
     return (
         <Card>
@@ -99,19 +101,21 @@ const LogCard = ({ settings, error }) => {
                                             );
                                         },
                                         formatMessage: e => {
-                                            const line = `${JSON.parse(e).levelno === 10
+                                            const line = `${
+                                                JSON.parse(e).levelno === 10
                                                     ? '\u001b[36m'
                                                     : JSON.parse(e).levelno === 20
-                                                        ? '\u001b[34m'
-                                                        : JSON.parse(e).levelno === 30
-                                                            ? '\u001b[33m'
-                                                            : JSON.parse(e).levelno === 40
-                                                                ? '\u001b[31m'
-                                                                : JSON.parse(e).levelno === 50
-                                                                    ? '\u001b[35m'
-                                                                    : '\u001b[32m'
-                                                }[${JSON.parse(e).levelname}] \u001b[37m${JSON.parse(e).name
-                                                } : ${JSON.parse(e).message}`;
+                                                    ? '\u001b[34m'
+                                                    : JSON.parse(e).levelno === 30
+                                                    ? '\u001b[33m'
+                                                    : JSON.parse(e).levelno === 40
+                                                    ? '\u001b[31m'
+                                                    : JSON.parse(e).levelno === 50
+                                                    ? '\u001b[35m'
+                                                    : '\u001b[32m'
+                                            }[${JSON.parse(e).levelname}] \u001b[37m${
+                                                JSON.parse(e).name
+                                            } : ${JSON.parse(e).message}`;
                                             const saveLine = {
                                                 levelno: JSON.parse(e).levelno,
                                                 levelname: JSON.parse(e).levelname,
@@ -157,9 +161,7 @@ const LogCard = ({ settings, error }) => {
                     </AccordionSummary>
                     <AccordionDetails className={classes.root}>
                         <div className={classes.bar}>
-                            <Typography className={classes.heading}>
-                                Showing last {logLength} saved log-messages
-                            </Typography>
+                            <Typography className={classes.heading}></Typography>
                             <div
                                 style={{
                                     display: 'flex',
@@ -167,6 +169,16 @@ const LogCard = ({ settings, error }) => {
                                     alignItems: 'center',
                                 }}
                             >
+                                <Button
+                                    size="large"
+                                    style={{ marginRight: '1rem' }}
+                                    startIcon={<Delete />}
+                                    variant="text"
+                                    onClick={() => {
+                                        window.sessionStorage.removeItem('logger');
+                                        setLogger([]);
+                                    }}
+                                ></Button>
                                 <FormControlLabel
                                     value="top"
                                     control={
@@ -174,35 +186,37 @@ const LogCard = ({ settings, error }) => {
                                             color="primary"
                                             checked={wrap}
                                             onChange={() => setWrap(!wrap)}
+                                            style={{ padding: '2px 8px 13px' }}
                                         />
                                     }
-                                    label="Wrap"
                                     labelPlacement="top"
+                                    label={
+                                        <span style={{ fontSize: '0.7rem', color: '#bbb' }}>
+                                            Wrap
+                                        </span>
+                                    }
                                 />
                                 <TextField
                                     id="standard-number"
-                                    label="Message to store"
-                                    style={{ minWidth: '150px' }}
+                                    label="Stored logs"
+                                    style={{ minWidth: '90px' }}
                                     defaultValue={logLength}
-                                    onChange={e => setLogLength(e.target.value)}
+                                    onChange={e => {
+                                        window.sessionStorage.setItem('messages', e.target.value);
+                                        setLogLength(e.target.value);
+                                    }}
                                     type="number"
                                     InputLabelProps={{
                                         shrink: true,
                                     }}
-                                    InputProps={{ inputProps: { min: 0, max: 100 } }}
-                                />
-                                <Button
-                                    size="small"
-                                    style={{ marginRight: '1rem' }}
-                                    startIcon={<Delete />}
-                                    variant="contained"
-                                    onClick={() => {
-                                        window.sessionStorage.removeItem('logger');
-                                        setLogger([]);
+                                    InputProps={{
+                                        inputProps: {
+                                            min: 0,
+                                            max: 100,
+                                            style: { textAlign: 'center' },
+                                        },
                                     }}
-                                >
-                                    Clear
-                                </Button>
+                                />
                             </div>
                         </div>
                         <div className={classes.saved}>
@@ -228,14 +242,14 @@ const LogCard = ({ settings, error }) => {
                                                             l.levelno === 10
                                                                 ? 'purple'
                                                                 : l.levelno === 20
-                                                                    ? 'cyan'
-                                                                    : l.levelno === 30
-                                                                        ? 'yellow'
-                                                                        : l.levelno === 40
-                                                                            ? 'orange'
-                                                                            : l.levelno === 50
-                                                                                ? 'red'
-                                                                                : 'green',
+                                                                ? 'cyan'
+                                                                : l.levelno === 30
+                                                                ? 'yellow'
+                                                                : l.levelno === 40
+                                                                ? 'orange'
+                                                                : l.levelno === 50
+                                                                ? 'red'
+                                                                : 'green',
                                                     }}
                                                 >
                                                     {l.levelname}

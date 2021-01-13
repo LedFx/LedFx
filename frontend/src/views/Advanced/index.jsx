@@ -35,77 +35,81 @@ const AdvancedView = () => {
                 <Divider style={{ margin: '2rem 0' }} />
                 <LogCard />
                 <Divider style={{ margin: '2rem 0' }} />
-                <ControlsCard />
-                <Divider style={{ margin: '2rem 0' }} />
-                <ConfigEditor />
-                <Divider style={{ margin: '2rem 0' }} />
-                <Card>
-                    <CardHeader title="DevButtons" subheader="for development" />
-                    <CardContent>
-                        <Button
-                            size="small"
-                            startIcon={<Warning />}
-                            variant="contained"
-                            style={{ marginRight: '10px' }}
-                            onClick={() => {
-                                setSnackbarState({
-                                    ...snackbarState,
-                                    message: 'TEST ERROR',
-                                    open: true,
-                                });
-                            }}
-                        >
-                            Error Message
-                        </Button>
-                        <Button
-                            size="small"
-                            startIcon={<Check />}
-                            variant="contained"
-                            style={{ marginRight: '10px' }}
-                            onClick={() => {
-                                setSnackbarState({
-                                    ...snackbarState,
-                                    message: 'TEST SUCCESS',
-                                    open: true,
-                                    type: 'success',
-                                });
-                            }}
-                        >
-                            Success Message
-                        </Button>
-                        <Button
-                            size="small"
-                            startIcon={<Warning />}
-                            style={{ marginRight: '10px' }}
-                            variant="contained"
-                            onClick={() => {
-                                setSnackbarState({
-                                    ...snackbarState,
-                                    message: 'TEST WARNING',
-                                    open: true,
-                                    type: 'warning',
-                                });
-                            }}
-                        >
-                            Warning Message
-                        </Button>
-                        <Button
-                            size="small"
-                            startIcon={<Info />}
-                            variant="contained"
-                            onClick={() => {
-                                setSnackbarState({
-                                    ...snackbarState,
-                                    message: 'TEST INFO',
-                                    open: true,
-                                    type: 'info',
-                                });
-                            }}
-                        >
-                            Info Message
-                        </Button>
-                    </CardContent>
-                </Card>
+                {window.localStorage.getItem('BladeMod') > 1 && (
+                    <>
+                        <ControlsCard />
+                        <Divider style={{ margin: '2rem 0' }} />
+                        <ConfigEditor />
+                        <Divider style={{ margin: '2rem 0' }} />
+                        <Card>
+                            <CardHeader title="DevButtons" subheader="for development" />
+                            <CardContent>
+                                <Button
+                                    size="small"
+                                    startIcon={<Warning />}
+                                    variant="contained"
+                                    style={{ marginRight: '10px' }}
+                                    onClick={() => {
+                                        setSnackbarState({
+                                            ...snackbarState,
+                                            message: 'TEST ERROR',
+                                            open: true,
+                                        });
+                                    }}
+                                >
+                                    Error Message
+                                </Button>
+                                <Button
+                                    size="small"
+                                    startIcon={<Check />}
+                                    variant="contained"
+                                    style={{ marginRight: '10px' }}
+                                    onClick={() => {
+                                        setSnackbarState({
+                                            ...snackbarState,
+                                            message: 'TEST SUCCESS',
+                                            open: true,
+                                            type: 'success',
+                                        });
+                                    }}
+                                >
+                                    Success Message
+                                </Button>
+                                <Button
+                                    size="small"
+                                    startIcon={<Warning />}
+                                    style={{ marginRight: '10px' }}
+                                    variant="contained"
+                                    onClick={() => {
+                                        setSnackbarState({
+                                            ...snackbarState,
+                                            message: 'TEST WARNING',
+                                            open: true,
+                                            type: 'warning',
+                                        });
+                                    }}
+                                >
+                                    Warning Message
+                                </Button>
+                                <Button
+                                    size="small"
+                                    startIcon={<Info />}
+                                    variant="contained"
+                                    onClick={() => {
+                                        setSnackbarState({
+                                            ...snackbarState,
+                                            message: 'TEST INFO',
+                                            open: true,
+                                            type: 'info',
+                                        });
+                                    }}
+                                >
+                                    Info Message
+                                </Button>
+                            </CardContent>
+                        </Card>
+                    </>
+                )}
             </Grid>
             <Snackbar
                 anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
