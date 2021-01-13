@@ -36,7 +36,7 @@ const IntegrationsView = () => {
     }, [dispatch]);
 
     return (
-        <Grid container spacing={2}>
+        <><Grid container spacing={2}>
             <Grid item xs={12} md={12}>
                 <Typography
                     variant="h6"
@@ -63,35 +63,6 @@ const IntegrationsView = () => {
                 >
                     Installed Integrations
                 </Typography>
-                <Table>
-                    <TableHead>
-                        <TableRow>
-                            <TableCell>Name</TableCell>
-                            <TableCell>Type</TableCell>
-                            <TableCell>Description</TableCell>
-                            <TableCell>Actions</TableCell>
-                        </TableRow>
-                    </TableHead>
-
-                    <TableBody>
-                        {instInts &&
-                            Object.keys(instInts).map((instInt, i) => (
-                                <Row
-                                    key={instInts[instInt].id}
-                                    installedIntegrations={instInts}
-                                    installedIntegration={instInt}
-                                />
-                            ))}
-                    </TableBody>
-                </Table>
-                <Typography
-                    variant="h6"
-                    component="h2"
-                    color="textPrimary"
-                    style={{ marginBottom: '1em', marginTop: '3em' }}
-                >
-                    Installed Integrations
-                </Typography>
                 <Grid container justify="flex-start" spacing={5}>
                     {instInts &&
                         Object.keys(instInts).map((instInt, i) => (
@@ -110,7 +81,36 @@ const IntegrationsView = () => {
             >
                 <Alert severity={snackbarState.type}>{snackbarState.message}</Alert>
             </Snackbar>
-        </Grid>
+        </Grid><Typography
+            variant="h6"
+            component="h2"
+            color="textPrimary"
+            style={{ marginBottom: '1em', marginTop: '3em' }}
+        >
+                Integration Event Listeners
+            </Typography>
+            <Table>
+                <TableHead>
+                    <TableRow>
+                        <TableCell>Name</TableCell>
+                        <TableCell>Type</TableCell>
+                        <TableCell>Event Type</TableCell>
+                        <TableCell>Event Trigger</TableCell>
+                        <TableCell>Payload</TableCell>
+                        <TableCell>Actions</TableCell>
+                    </TableRow>
+                </TableHead>
+
+                <TableBody>
+                    {instInts &&
+                        Object.keys(instInts).map((instInt, i) => (
+                            <Row
+                                key={instInts[instInt].id}
+                                installedIntegrations={instInts}
+                                installedIntegration={instInt} />
+                        ))}
+                </TableBody>
+            </Table></>
     );
 };
 
