@@ -161,6 +161,15 @@ def getattr_explicit(cls, attr, *default):
     )
 
 
+class RollingQueueHandler(logging.handlers.QueueHandler):
+    def enqueue(self, record):
+        try:
+            self.queue.put_nowait(record)
+        except asyncio.QueueFull:
+            self.queue.get_nowait()
+            self.enqueue(record)
+
+
 class BaseRegistry(ABC):
     """
     Base registry class used for effects and devices. This maintains a
