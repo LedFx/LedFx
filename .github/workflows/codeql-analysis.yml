@@ -4,8 +4,8 @@ on:
   push:
     branches:
       - dev
-    # paths-ignore:
-    #   - '.*/**'
+    paths-ignore:
+      - '.*/**'
   pull_request:
     branches:
       - dev

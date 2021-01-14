@@ -5,8 +5,8 @@ on:
     paths-ignore:
       - 'docs/**'
       - '.*/**'
-    # branches:
-    #   - dev
+    branches:
+      - dev
   workflow_dispatch:
 
 env:
