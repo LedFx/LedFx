@@ -89,7 +89,7 @@ class E131Device(Device):
             else:
                 self._sacn[universe].destination = resolved_dest
                 self._sacn[universe].multicast = False
-        # self._sacn.fps = 60
+        self._sacn.fps = self._config["refresh_rate"]
         self._sacn.start()
         self._sacn.manual_flush = True
 
@@ -166,15 +166,15 @@ class E131Device(Device):
 
         # This is ugly - weird race condition where loading on startup from a device with a short ID results in the sACN thread trying to send data to NoneType.
         # No idea how to properly handle it - but this stops it breaking and seems to be reasonably resilient. Sorry to whoever stumbles onto it. -Shaun
-        # try:
-        #     self._sacn.flush()
-        # except AttributeError:
-        #     _LOGGER.critical(
-        #         "The wheels fell off the sACN thread. Restarting it."
-        #     )
-        #     self.activate
+        try:
+            self._sacn.flush()
+        except AttributeError:
+            _LOGGER.critical(
+                "The wheels fell off the sACN thread. Restarting it."
+            )
+            self.activate
 
-        # Hack up a manual flush of the E1.31 data vs having a background thread
-        if self._sacn._output_thread._socket:
-            for output in list(self._sacn._output_thread._outputs.values()):
-                self._sacn._output_thread.send_out(output)
+        # # Hack up a manual flush of the E1.31 data vs having a background thread
+        # if self._sacn._output_thread._socket:
+        #     for output in list(self._sacn._output_thread._outputs.values()):
+        #         self._sacn._output_thread.send_out(output)
