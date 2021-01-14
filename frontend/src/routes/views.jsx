@@ -7,6 +7,7 @@ import SaveAltIcon from '@material-ui/icons/SaveAlt';
 import BuildIcon from '@material-ui/icons/Build';
 import DeviceHubIcon from '@material-ui/icons/DeviceHub';
 import PowerIcon from '@material-ui/icons/Power';
+import LockOpenIcon from '@material-ui/icons/LockOpen';
 
 // Components and Views
 import DashboardView from '../views/Dashboard';
@@ -20,7 +21,7 @@ import SettingsView from '../views/Settings';
 import DeveloperView from '../views/Developer';
 
 const virtuals =
-    window.localStorage.getItem('BladeMod') === '1'
+    parseInt(window.localStorage.getItem('BladeMod')) > 1
         ? {
               path: '/virtuals',
               sidebarName: 'Virtual Strips',
@@ -35,7 +36,7 @@ const virtuals =
               component: VirtualsView,
           };
 const integrations =
-    window.localStorage.getItem('BladeMod') === '1'
+    parseInt(window.localStorage.getItem('BladeMod')) > 1
         ? {
               path: '/integrations',
               sidebarName: 'Integrations',
@@ -49,21 +50,21 @@ const integrations =
               icon: PowerIcon,
               component: IntegrationsView,
           };
-const advanced =
-    window.localStorage.getItem('BladeMod') === '1'
-        ? {
-              path: '/advanced',
-              sidebarName: 'Advanced',
-              navbarName: 'Advanced',
-              icon: Settings,
-              component: AdvancedView,
-          }
-        : {
-              path: '/advanced',
-              navbarName: 'Advanced',
-              icon: Settings,
-              component: AdvancedView,
-          };
+// const advanced =
+//     parseInt(window.localStorage.getItem('BladeMod')) > 0
+//         ? {
+//               path: '/advanced',
+//               sidebarName: 'Advanced',
+//               navbarName: 'Advanced',
+//               icon: LockOpenIcon,
+//               component: AdvancedView,
+//           }
+//         : {
+//               path: '/advanced',
+//               navbarName: 'Advanced',
+//               icon: LockOpenIcon,
+//               component: AdvancedView,
+//           };
 const viewRoutes = [
     {
         path: '/dashboard',
@@ -102,7 +103,13 @@ const viewRoutes = [
         icon: BuildIcon,
         component: SettingsView,
     },
-    advanced,
+    {
+        path: '/advanced',
+        sidebarName: 'Advanced',
+        navbarName: 'Advanced',
+        icon: LockOpenIcon,
+        component: AdvancedView,
+    },
     {
         path: '/developer/:graphString',
         navbarName: 'Developer',

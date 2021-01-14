@@ -21,11 +21,16 @@ const ConfigCard = ({ settings, error }) => {
             <CardHeader title="Configs" subheader="Manage network and developer settings" />
             <CardContent className={classes.content}>
                 <InputLabel id="host-label">Host</InputLabel>
-                <TextField disabled labelId="host-label" id="host" value={settings.host} />
+                <TextField disabled label-id="host-label" id="host" value={settings.host} />
                 <InputLabel id="port-label">Port</InputLabel>
-                <TextField disabled labelId="port-label" id="port" value={settings.port} />
+                <TextField disabled label-id="port-label" id="port" value={settings.port} />
                 <InputLabel id="devMode-label">DevMode</InputLabel>
-                <TextField disabled labelId="devMode-label" id="devMode" value={settings.devMode} />
+                <TextField
+                    disabled
+                    label-id="devMode-label"
+                    id="devMode"
+                    value={settings.devMode}
+                />
                 {error && <FormHelperText>{error}</FormHelperText>}
             </CardContent>
         </Card>

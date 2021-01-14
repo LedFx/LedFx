@@ -5,7 +5,7 @@ export function getIntegrations() {
 }
 
 export function getIntegrationsStatuses() {
-    return api.get(`/integrations`, {"info": "status"});
+    return api.get(`/integrations`, { info: 'status' });
 }
 
 export function toggleIntegration(data) {
@@ -17,7 +17,7 @@ export function createIntegration(data) {
 }
 
 export function deleteIntegration(data) {
-    console.log('YZ', data);
+    // console.log('YZ', data);
     return api.delete(`/integrations`, data);
 }
 
