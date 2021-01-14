@@ -11,7 +11,7 @@ import { deleteAsyncIntegration } from 'modules/integrations';
 import { toggleAsyncIntegration } from 'modules/integrations';
 import { Switch, Chip } from '@material-ui/core';
 import AddCircleIcon from '@material-ui/icons/AddCircle';
-import DialogAddIntegration from 'components/IntegrationComponents/DialogAddIntegration';
+// import DialogAddIntegration from 'components/IntegrationComponents/DialogAddIntegration';
 
 const useStyles = makeStyles({
     integrationCard: {
@@ -48,7 +48,7 @@ const IntegrationsCard = ({ int }) => {
                 </div>
                 <Typography variant="h6" component="p" gutterBottom>
                     Status:{' '}
-                     {int.status === 3
+                    {int.status === 3
                         ? 'Connecting...'
                         : int.status === 2
                         ? 'Disconnecting'
@@ -56,7 +56,7 @@ const IntegrationsCard = ({ int }) => {
                         ? 'Connected'
                         : int.status === 0
                         ? 'Disconnected'
-                        : 'Unknown'}           
+                        : 'Unknown'}
                 </Typography>
                 <Typography style={{ fontSize: '14px' }} color="textSecondary" gutterBottom>
                     QLC+ IP Address: {int.config.ip_address}:{int.config.port}
@@ -65,17 +65,17 @@ const IntegrationsCard = ({ int }) => {
                     Description: {int.config.description}
                 </Typography>
                 <Button
-                        variant="contained"
-                        color="primary"
-                        aria-label="Add"
-                        className={classes.button}
-                        endIcon={<AddCircleIcon />}
-                        aria-haspopup="true"
-                        //onClick={handleClickListItem}
-                        role="listitem"
-                    >
-                        ADD Event Listener
-                    </Button>
+                    variant="contained"
+                    color="primary"
+                    aria-label="Add"
+                    className={classes.button}
+                    endIcon={<AddCircleIcon />}
+                    aria-haspopup="true"
+                    //onClick={handleClickListItem}
+                    role="listitem"
+                >
+                    ADD Event Listener
+                </Button>
             </CardContent>
             <CardActions>
                 <PopoverSure
