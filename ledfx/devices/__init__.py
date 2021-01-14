@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import socket
+import time
 from abc import abstractmethod
 
 import numpy as np
@@ -67,6 +68,8 @@ class Device(BaseRegistry):
         # the multiplier to fade in/out of an effect. -ve values mean fading
         # in, +ve mean fading out
         self.fade_timer = 0
+
+        self._time0 = time.time()
 
     def __del__(self):
         if self._active:
@@ -149,11 +152,18 @@ class Device(BaseRegistry):
     def thread_function(self):
         # TODO: Evaluate switching over to asyncio with UV loop optimization
         # instead of spinning a separate thread.
-        sleep_interval = 1 / self._config["refresh_rate"]
-
         if self._active:
-            self._ledfx.loop.call_later(sleep_interval, self.thread_function)
+            sleep_interval = 1 / self._config["refresh_rate"]
+            start_time = time.time()
+
             self.process_active_effect()
+
+            # Calculate the time to sleep accounting for potential heavy
+            # frame assembly operations
+            time_to_sleep = sleep_interval - (time.time() - start_time)
+            # print(1/time_to_sleep, end="\r") prints current fps
+
+            self._ledfx.loop.call_later(time_to_sleep, self.thread_function)
 
         # while self._active:
         #     start_time = time.time()
