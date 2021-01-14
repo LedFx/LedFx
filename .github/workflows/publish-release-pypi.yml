@@ -1,0 +1,45 @@
+name: Publish Python distributions to PyPI and TestPyPI
+
+on:
+  push:
+    paths-ignore:
+      - 'docs/**'
+      - '.*/**'
+    # branches:
+    #   - dev
+  workflow_dispatch:
+
+env:
+  DEFAULT_PYTHON: 3.8
+
+jobs:
+  build-n-publish:
+    name: Build and publish Python distributions to TestPyPI
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code from GitHub
+        uses: actions/checkout@v2
+      - name: Set up Python ${{ env.DEFAULT_PYTHON }}
+        uses: actions/setup-python@v2.2.1
+        with:
+          python-version: ${{ env.DEFAULT_PYTHON }}
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update && sudo apt-get install -y \
+          gcc libatlas3-base portaudio19-dev
+      - name: Build a binary wheel and source tarball
+        run: |
+          python -m pip install --user -U pip wheel setuptools
+          python setup.py sdist bdist_wheel
+      - name: Publish distribution to Test PyPI
+        uses: pypa/gh-action-pypi-publish@master
+        with:
+          user: __token__
+          password: ${{ secrets.TEST_PYPI_API_TOKEN }}
+          repository_url: https://test.pypi.org/legacy/
+      - name: Publish distribution to PyPI
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
+        uses: pypa/gh-action-pypi-publish@master
+        with:
+          user: __token__
+          password: ${{ secrets.PYPI_API_TOKEN }}
