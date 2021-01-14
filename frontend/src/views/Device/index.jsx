@@ -91,7 +91,7 @@ class DeviceView extends React.Component {
                         />
                     )}
                 </Grid>
-                {window.localStorage.getItem('BladeMod') > 2 && (
+                {parseInt(window.localStorage.getItem('BladeMod')) > 2 && (
                     <Grid item xs={12} lg={6}>
                         <Card>
                             <CardContent>

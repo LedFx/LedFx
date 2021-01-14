@@ -21,7 +21,7 @@ import SettingsView from '../views/Settings';
 import DeveloperView from '../views/Developer';
 
 const virtuals =
-    window.localStorage.getItem('BladeMod') > 1
+    parseInt(window.localStorage.getItem('BladeMod')) > 1
         ? {
               path: '/virtuals',
               sidebarName: 'Virtual Strips',
@@ -36,7 +36,7 @@ const virtuals =
               component: VirtualsView,
           };
 const integrations =
-    window.localStorage.getItem('BladeMod') > 1
+    parseInt(window.localStorage.getItem('BladeMod')) > 1
         ? {
               path: '/integrations',
               sidebarName: 'Integrations',
@@ -51,7 +51,7 @@ const integrations =
               component: IntegrationsView,
           };
 const advanced =
-    window.localStorage.getItem('BladeMod') > 0
+    parseInt(window.localStorage.getItem('BladeMod')) > 0
         ? {
               path: '/advanced',
               sidebarName: 'Advanced',

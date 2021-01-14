@@ -34,9 +34,10 @@ const AdvancedView = () => {
                 <ThemesCard />
                 <Divider style={{ margin: '2rem 0' }} />
                 <LogCard />
-                <Divider style={{ margin: '2rem 0' }} />
-                {window.localStorage.getItem('BladeMod') > 1 && (
+
+                {parseInt(window.localStorage.getItem('BladeMod')) > 1 && (
                     <>
+                        <Divider style={{ margin: '2rem 0' }} />
                         <ControlsCard />
                         <Divider style={{ margin: '2rem 0' }} />
                         <ConfigEditor />

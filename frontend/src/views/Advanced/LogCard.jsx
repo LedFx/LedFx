@@ -74,157 +74,165 @@ const LogCard = ({ settings, error }) => {
         <Card>
             <CardHeader title="Console" subheader="View the Console" />
             <CardContent className={classes.content}>
-                <Accordion expanded={true}>
-                    <AccordionSummary aria-controls="panel1a-content" id="panel1a-header">
-                        <Typography className={classes.heading}>Realtime-Console</Typography>
-                    </AccordionSummary>
-                    <AccordionDetails>
-                        <div style={{ minHeight: 300, width: '100%' }}>
-                            <div style={{ height: 300 }}>
-                                <LazyLog
-                                    enableSearch
-                                    url={ws_log_url}
-                                    value={'hi'}
-                                    websocket
-                                    follow
-                                    websocketOptions={{
-                                        onClose: () => {
-                                            if (socket) {
-                                                return;
-                                            }
-                                        },
+                {parseInt(window.localStorage.getItem('BladeMod')) > 1 ? (
+                    <>
+                        <Accordion expanded={true}>
+                            <AccordionSummary aria-controls="panel1a-content" id="panel1a-header">
+                                <Typography className={classes.heading}>
+                                    Realtime-Console
+                                </Typography>
+                            </AccordionSummary>
 
-                                        onOpen: (e, sock) => {
-                                            socket = sock;
-                                            sock.send(
-                                                JSON.stringify({ message: 'Logger Websocket Open' })
-                                            );
-                                        },
-                                        formatMessage: e => {
-                                            const line = `${
-                                                JSON.parse(e).levelno === 10
-                                                    ? '\u001b[36m'
-                                                    : JSON.parse(e).levelno === 20
-                                                    ? '\u001b[34m'
-                                                    : JSON.parse(e).levelno === 30
-                                                    ? '\u001b[33m'
-                                                    : JSON.parse(e).levelno === 40
-                                                    ? '\u001b[31m'
-                                                    : JSON.parse(e).levelno === 50
-                                                    ? '\u001b[35m'
-                                                    : '\u001b[32m'
-                                            }[${JSON.parse(e).levelname}] \u001b[37m${
-                                                JSON.parse(e).name
-                                            } : ${JSON.parse(e).message}`;
-                                            const saveLine = {
-                                                levelno: JSON.parse(e).levelno,
-                                                levelname: JSON.parse(e).levelname,
-                                                message: JSON.parse(e).message,
-                                                asctime: JSON.parse(e).asctime,
-                                            };
+                            <AccordionDetails>
+                                <div style={{ minHeight: 300, width: '100%' }}>
+                                    <div style={{ height: 300 }}>
+                                        <LazyLog
+                                            enableSearch
+                                            url={ws_log_url}
+                                            value={'hi'}
+                                            websocket
+                                            follow
+                                            websocketOptions={{
+                                                onClose: () => {
+                                                    if (socket) {
+                                                        return;
+                                                    }
+                                                },
 
-                                            const log =
-                                                JSON.parse(
-                                                    window.sessionStorage.getItem('logger')
-                                                ) || [];
-                                            console.log('before:', log.length);
-                                            log.push(saveLine);
-                                            console.log('after', log.length);
-                                            const test = log.slice(
-                                                log.length > logLength - 1
-                                                    ? log.length - logLength
-                                                    : 0,
-                                                log.length
-                                            );
-                                            setLogger(test);
+                                                onOpen: (e, sock) => {
+                                                    socket = sock;
+                                                    sock.send(
+                                                        JSON.stringify({
+                                                            message: 'Logger Websocket Open',
+                                                        })
+                                                    );
+                                                },
+                                                formatMessage: e => {
+                                                    const line = `${
+                                                        JSON.parse(e).levelno === 10
+                                                            ? '\u001b[36m'
+                                                            : JSON.parse(e).levelno === 20
+                                                            ? '\u001b[34m'
+                                                            : JSON.parse(e).levelno === 30
+                                                            ? '\u001b[33m'
+                                                            : JSON.parse(e).levelno === 40
+                                                            ? '\u001b[31m'
+                                                            : JSON.parse(e).levelno === 50
+                                                            ? '\u001b[35m'
+                                                            : '\u001b[32m'
+                                                    }[${JSON.parse(e).levelname}] \u001b[37m${
+                                                        JSON.parse(e).name
+                                                    } : ${JSON.parse(e).message}`;
+                                                    const saveLine = {
+                                                        levelno: JSON.parse(e).levelno,
+                                                        levelname: JSON.parse(e).levelname,
+                                                        message: JSON.parse(e).message,
+                                                        asctime: JSON.parse(e).asctime,
+                                                    };
 
-                                            window.sessionStorage.setItem(
-                                                'logger',
-                                                JSON.stringify(test)
-                                            );
+                                                    const log =
+                                                        JSON.parse(
+                                                            window.sessionStorage.getItem('logger')
+                                                        ) || [];
+                                                    log.push(saveLine);
+                                                    const test = log.slice(
+                                                        log.length > logLength - 1
+                                                            ? log.length - logLength
+                                                            : 0,
+                                                        log.length
+                                                    );
+                                                    setLogger(test);
 
-                                            return line;
-                                        },
-                                    }}
-                                />
-                            </div>
-                        </div>
-                    </AccordionDetails>
-                </Accordion>
-                <Accordion>
-                    <AccordionSummary
-                        expandIcon={<ExpandMoreIcon />}
-                        aria-controls="panel2a-content"
-                        id="panel2a-header"
-                    >
-                        <Typography className={classes.heading}>SavedLogs-Console</Typography>
-                    </AccordionSummary>
-                    <AccordionDetails className={classes.root}>
-                        <div className={classes.bar}>
-                            <Typography className={classes.heading}></Typography>
-                            <div
-                                style={{
-                                    display: 'flex',
-                                    justifyContent: 'center',
-                                    alignItems: 'center',
-                                }}
-                            >
-                                <Button
-                                    size="large"
-                                    style={{ marginRight: '1rem' }}
-                                    startIcon={<Delete />}
-                                    variant="text"
-                                    onClick={() => {
-                                        window.sessionStorage.removeItem('logger');
-                                        setLogger([]);
-                                    }}
-                                ></Button>
-                                <FormControlLabel
-                                    value="top"
-                                    control={
-                                        <Checkbox
-                                            color="primary"
-                                            checked={wrap}
-                                            onChange={() => setWrap(!wrap)}
-                                            style={{ padding: '2px 8px 13px' }}
+                                                    window.sessionStorage.setItem(
+                                                        'logger',
+                                                        JSON.stringify(test)
+                                                    );
+
+                                                    return line;
+                                                },
+                                            }}
                                         />
-                                    }
-                                    labelPlacement="top"
-                                    label={
-                                        <span style={{ fontSize: '0.7rem', color: '#bbb' }}>
-                                            Wrap
-                                        </span>
-                                    }
-                                />
-                                <TextField
-                                    id="standard-number"
-                                    label="Stored logs"
-                                    style={{ minWidth: '90px' }}
-                                    defaultValue={logLength}
-                                    onChange={e => {
-                                        window.sessionStorage.setItem('messages', e.target.value);
-                                        setLogLength(e.target.value);
-                                    }}
-                                    type="number"
-                                    InputLabelProps={{
-                                        shrink: true,
-                                    }}
-                                    InputProps={{
-                                        inputProps: {
-                                            min: 0,
-                                            max: 100,
-                                            style: { textAlign: 'center' },
-                                        },
-                                    }}
-                                />
-                            </div>
-                        </div>
-                        <div className={classes.saved}>
-                            {logger &&
-                                logger.length > 0 &&
-                                logger.map(
-                                    (l, i) =>
-                                        console.log(wrap) || (
+                                    </div>
+                                </div>
+                            </AccordionDetails>
+                        </Accordion>
+                        <Accordion>
+                            <AccordionSummary
+                                expandIcon={<ExpandMoreIcon />}
+                                aria-controls="panel2a-content"
+                                id="panel2a-header"
+                            >
+                                <Typography className={classes.heading}>
+                                    SavedLogs-Console
+                                </Typography>
+                            </AccordionSummary>
+                            <AccordionDetails className={classes.root}>
+                                <div className={classes.bar}>
+                                    <Typography className={classes.heading}></Typography>
+                                    <div
+                                        style={{
+                                            display: 'flex',
+                                            justifyContent: 'center',
+                                            alignItems: 'center',
+                                        }}
+                                    >
+                                        <Button
+                                            size="large"
+                                            style={{ marginRight: '1rem' }}
+                                            startIcon={<Delete />}
+                                            variant="text"
+                                            onClick={() => {
+                                                window.sessionStorage.removeItem('logger');
+                                                setLogger([]);
+                                            }}
+                                        ></Button>
+                                        <FormControlLabel
+                                            value="top"
+                                            control={
+                                                <Checkbox
+                                                    color="primary"
+                                                    checked={wrap}
+                                                    onChange={() => setWrap(!wrap)}
+                                                    style={{ padding: '2px 8px 13px' }}
+                                                />
+                                            }
+                                            labelPlacement="top"
+                                            label={
+                                                <span style={{ fontSize: '0.7rem', color: '#bbb' }}>
+                                                    Wrap
+                                                </span>
+                                            }
+                                        />
+                                        <TextField
+                                            id="standard-number"
+                                            label="Stored logs"
+                                            style={{ minWidth: '90px' }}
+                                            defaultValue={logLength}
+                                            onChange={e => {
+                                                window.sessionStorage.setItem(
+                                                    'messages',
+                                                    e.target.value
+                                                );
+                                                setLogLength(e.target.value);
+                                            }}
+                                            type="number"
+                                            InputLabelProps={{
+                                                shrink: true,
+                                            }}
+                                            InputProps={{
+                                                inputProps: {
+                                                    min: 0,
+                                                    max: 100,
+                                                    style: { textAlign: 'center' },
+                                                },
+                                            }}
+                                        />
+                                    </div>
+                                </div>
+                                <div className={classes.saved}>
+                                    {logger &&
+                                        logger.length > 0 &&
+                                        logger.map((l, i) => (
                                             <div
                                                 key={i}
                                                 className={
@@ -263,11 +271,78 @@ const LogCard = ({ settings, error }) => {
                                                     {l.message}
                                                 </span>
                                             </div>
-                                        )
-                                )}
+                                        ))}
+                                </div>
+                            </AccordionDetails>
+                        </Accordion>
+                    </>
+                ) : (
+                    <div style={{ minHeight: 300, width: '100%' }}>
+                        <div style={{ height: 300 }}>
+                            <LazyLog
+                                enableSearch
+                                url={ws_log_url}
+                                value={'hi'}
+                                websocket
+                                follow
+                                websocketOptions={{
+                                    onClose: () => {
+                                        if (socket) {
+                                            return;
+                                        }
+                                    },
+
+                                    onOpen: (e, sock) => {
+                                        socket = sock;
+                                        sock.send(
+                                            JSON.stringify({ message: 'Logger Websocket Open' })
+                                        );
+                                    },
+                                    formatMessage: e => {
+                                        const line = `${
+                                            JSON.parse(e).levelno === 10
+                                                ? '\u001b[36m'
+                                                : JSON.parse(e).levelno === 20
+                                                ? '\u001b[34m'
+                                                : JSON.parse(e).levelno === 30
+                                                ? '\u001b[33m'
+                                                : JSON.parse(e).levelno === 40
+                                                ? '\u001b[31m'
+                                                : JSON.parse(e).levelno === 50
+                                                ? '\u001b[35m'
+                                                : '\u001b[32m'
+                                        }[${JSON.parse(e).levelname}] \u001b[37m${
+                                            JSON.parse(e).name
+                                        } : ${JSON.parse(e).message}`;
+                                        const saveLine = {
+                                            levelno: JSON.parse(e).levelno,
+                                            levelname: JSON.parse(e).levelname,
+                                            message: JSON.parse(e).message,
+                                            asctime: JSON.parse(e).asctime,
+                                        };
+
+                                        const log =
+                                            JSON.parse(window.sessionStorage.getItem('logger')) ||
+                                            [];
+                                        log.push(saveLine);
+                                        const test = log.slice(
+                                            log.length > logLength - 1 ? log.length - logLength : 0,
+                                            log.length
+                                        );
+                                        setLogger(test);
+
+                                        window.sessionStorage.setItem(
+                                            'logger',
+                                            JSON.stringify(test)
+                                        );
+
+                                        return line;
+                                    },
+                                }}
+                            />
                         </div>
-                    </AccordionDetails>
-                </Accordion>
+                    </div>
+                )}
             </CardContent>
         </Card>
     );
