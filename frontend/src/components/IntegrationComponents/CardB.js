@@ -62,7 +62,7 @@ const IntegrationsCard = ({ int }) => {
                     QLC+ IP Address: {int.config.ip_address}:{int.config.port}
                 </Typography>
                 <Typography style={{ fontSize: '14px' }} color="textSecondary" gutterBottom>
-                    Description: {int.config.description}
+                    Status: {int.status === 3 ? 'connecting...' : int.status === 2 ? 'disconnecting': int.status === 1 ? 'connected':int.status === 0 ? 'disconnected':'Unknown'}
                 </Typography>
                 <Button
                     variant="contained"
