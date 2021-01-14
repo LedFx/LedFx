@@ -20,7 +20,7 @@ let socket = null;
 const LogCard = ({ settings, error }) => {
     const classes = useStyles();
     if (socket != null) {
-        console.log('socket:', socket);
+        console.log('socket:');
     }
     return (
         <Card>

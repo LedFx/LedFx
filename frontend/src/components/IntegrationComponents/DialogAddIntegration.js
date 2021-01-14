@@ -18,7 +18,7 @@ function ConfirmationDialogRaw(props) {
     const integrationTypes = useSelector(state => state.schemas.integrationTypes || {});
     const integration = props.integration;
     const [model] = React.useState({});
-    // console.log('YZ2', integration, integrationTypes, ' ==> ', integrationTypes[integration]);
+
     React.useEffect(() => {
         if (!open) {
             setValue(valueProp);
