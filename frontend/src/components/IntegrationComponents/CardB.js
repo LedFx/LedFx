@@ -26,7 +26,7 @@ const IntegrationsCard = ({ int }) => {
     const classes = useStyles();
 
     const handleToggle = props => {
-        console.log('YO', props);
+        // console.log('YO', props);
         toggleAsyncIntegration(props);
     };
     return (
@@ -49,7 +49,16 @@ const IntegrationsCard = ({ int }) => {
                     {int.config.description}
                 </Typography>
                 <Typography style={{ fontSize: '14px' }} color="textSecondary" gutterBottom>
-                    Status: {int.status === 3 ? 'connecting...' : int.status === 2 ? 'disconnecting': int.status === 1 ? 'connected':int.status === 0 ? 'disconnected':'Unknown'}            
+                    Status:{' '}
+                    {int.status === 3
+                        ? 'connecting...'
+                        : int.status === 2
+                        ? 'disconnecting'
+                        : int.status === 1
+                        ? 'connected'
+                        : int.status === 0
+                        ? 'disconnected'
+                        : 'Unknown'}
                 </Typography>
             </CardContent>
             <CardActions>
@@ -83,12 +92,12 @@ const IntegrationsCard = ({ int }) => {
                     color="primary"
                     onChange={() =>
                         handleToggle({
-                            id: int.id, 
+                            id: int.id,
                         })
                     }
-                    checked={int.active} />
+                    checked={int.active}
+                />
             </CardActions>
-            
         </Card>
     );
 };

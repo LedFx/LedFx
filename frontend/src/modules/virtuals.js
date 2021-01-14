@@ -97,7 +97,7 @@ export default handleActions(
             return newState;
         },
         [changeSegmentInvert]: (state, { payload }) => {
-            console.log('YZ', payload);
+            // console.log('YZ', payload);
             const newState = {
                 ...state,
                 list: state.list.map(reduxItem => {
@@ -116,7 +116,7 @@ export default handleActions(
             return newState;
         },
         [changeSegmentPixelDensity]: (state, { payload }) => {
-            console.log('YZ', payload);
+            // console.log('YZ', payload);
             const newState = {
                 ...state,
                 list: state.list.map(reduxItem => {
@@ -152,7 +152,7 @@ export default handleActions(
             return newState;
         },
         [changeTheme]: (state, { payload }) => {
-            console.log('START', payload);
+            // console.log('START', payload);
             return {
                 ...state,
                 themeSelector: payload,
