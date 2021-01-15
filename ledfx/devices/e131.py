@@ -89,7 +89,7 @@ class E131Device(Device):
             else:
                 self._sacn[universe].destination = resolved_dest
                 self._sacn[universe].multicast = False
-        self._sacn.fps = self._config["refresh_rate"]
+        self._sacn._fps = self._config["refresh_rate"]
         self._sacn.start()
         self._sacn.manual_flush = True
 
