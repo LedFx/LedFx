@@ -157,6 +157,7 @@ class EffectControl extends React.Component {
     };
 
     render() {
+        const { classes, schemas } = this.props;
         if (schemas.effects) {
             return (
                 <>
