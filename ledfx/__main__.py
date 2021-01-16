@@ -53,7 +53,7 @@ def setup_logging(loglevel):
     console_loglevel = loglevel if loglevel else logging.WARNING
     console_logformat = "[%(levelname)-8s] %(name)-30s : %(message)s"
 
-    file_loglevel = logging.DEBUG
+    file_loglevel = logging.INFO
     file_logformat = "%(asctime)-8s %(name)-30s %(levelname)-8s %(message)s"
 
     root_logger = logging.getLogger()
