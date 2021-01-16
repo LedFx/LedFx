@@ -1,7 +1,6 @@
 import React from 'react'
 import { deleteAsyncIntegration } from 'modules/integrations';
 import EditIcon from '@material-ui/icons/Edit';
-import SettingsIcon from '@material-ui/icons/Settings';
 import { Switch } from '@material-ui/core';
 import Button from '@material-ui/core/Button';
 import TableRow from '@material-ui/core/TableRow';
@@ -25,15 +24,6 @@ const DataRow = ({id, name, type, data}) =>
                         })
                     }
                 />
-                <Button
-                    variant="text"
-                    color="secondary"
-                    onClick={() => {
-                        console.log('deleting');
-                    }}
-                >
-                    <SettingsIcon />
-                </Button>
                 <Button
                     variant="text"
                     color="secondary"

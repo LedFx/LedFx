@@ -41,7 +41,7 @@ const PresetsCard = ({ device, presets, effect, activatePreset, getEffectPresets
     const [name, setName] = useState('');
     const isNameValid = validateTextInput(name, presets);
 
-    console.log('what this here', effect);
+    // console.log('what this here', effect);
     useEffect(() => {
         getEffectPresets(effect.type);
     }, [effect.type, getEffectPresets]);
@@ -85,11 +85,11 @@ const PresetsCard = ({ device, presets, effect, activatePreset, getEffectPresets
         <Card variant="outlined">
             <CardHeader title="Presets" subheader="Explore different effect configurations" />
             <CardContent className={classes.content}>
-                <Typography variant="subtitle2">Default</Typography>
+                <Typography variant="subtitle2">LedFx Presets</Typography>
                 <Grid container className={classes.buttonGrid}>
                     {renderPresetsButton(presets?.defaultPresets, DEFAULT_CAT)}
                 </Grid>
-                <Typography variant="subtitle2">Custom</Typography>
+                <Typography variant="subtitle2">My Presets</Typography>
                 <Grid container className={classes.buttonGrid}>
                     {renderPresetsButton(presets?.customPresets, CUSTOM_CAT)}
                 </Grid>
