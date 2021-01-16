@@ -78,7 +78,8 @@ class E131Device(Device):
             return
 
         # Configure sACN and start the dedicated thread to flush the buffer
-        self._sacn = sacn.sACNsender()
+        # Some variables are immutable and must be called here
+        self._sacn = sacn.sACNsender(source_name=self.id)
         for universe in range(
             self._config["universe"], self._config["universe_end"] + 1
         ):
