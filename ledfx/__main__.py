@@ -66,10 +66,12 @@ def setup_logging(loglevel):
         backupCount=5,  # once it hits 2.5MB total, start removing logs.
     )
     file_handler.setLevel(file_loglevel)  # set loglevel
-    file_formatter = logging.Formatter(file_logformat)  # a simple file format
+    file_formatter = logging.Formatter(
+        file_logformat
+    )  # a simple log file format
     file_handler.setFormatter(
         file_formatter
-    )  # tell the console handler to use this format
+    )  # tell the file_handler to use this format
 
     console_handler = logging.StreamHandler()
     console_handler.setLevel(console_loglevel)  # set loglevel
@@ -78,7 +80,7 @@ def setup_logging(loglevel):
     )  # a simple console format
     console_handler.setFormatter(
         console_formatter
-    )  # tell the console handler to use this format
+    )  # tell the console_handler to use this format
 
     # add the handlers to the root logger
     root_logger.setLevel(logging.DEBUG)
@@ -167,7 +169,7 @@ def check_pip_installed():
     installed_packages = [
         r.decode().split("==")[0] for r in pip_package_command.split()
     ]
-    # If the install is from pip, ignore DepreciationWarnings
+    # If the install is from pip, ignore DeprecationWarnings
     if "ledfx" in installed_packages:
         warnings.filterwarnings("ignore", category=DeprecationWarning)
     else:
@@ -176,9 +178,9 @@ def check_pip_installed():
 
 def update_ledfx():
 
-    # If we're frozen, we can shut up about DepreciationWarnings
+    # If we're frozen, we can shut up about DeprecationWarnings
     warnings.filterwarnings("ignore", category=DeprecationWarning)
-    # initialize & refresh in one update check client
+    # initialize & refresh in one update, check client
 
     class ClientConfig(object):
         PUBLIC_KEY = "Txce3TE9BUixsBtqzDba6V5vBYltt/0pw5oKL8ueCDg"
@@ -191,7 +193,7 @@ def update_ledfx():
     client = Client(ClientConfig(), refresh=True)
     _LOGGER.log(PYUPDATERLOGLEVEL, "Checking for updates...")
     # First we check for updates.
-    # If an update is found an update object will be returned
+    # If an update is found, an update object will be returned
     # If no updates are available, None will be returned
     ledfx_update = client.update_check(PROJECT_NAME, PROJECT_VERSION)
     # Download the update
