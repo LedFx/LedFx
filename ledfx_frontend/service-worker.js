@@ -24,7 +24,6 @@ self.addEventListener('message', (event) => {
 });
 
 workbox.core.clientsClaim();
-
 /**
  * The workboxSW.precacheAndRoute() method efficiently caches and responds to
  * requests for URLs in the manifest.
@@ -32,8 +31,6 @@ workbox.core.clientsClaim();
  */
 self.__precacheManifest = [].concat(self.__precacheManifest || []);
 workbox.precaching.precacheAndRoute(self.__precacheManifest, {});
-
-workbox.routing.registerNavigationRoute(workbox.precaching.getCacheKeyForURL("/index.html"), {
-  
+workbox.routing.registerNavigationRoute(workbox.precaching.getCacheKeyForURL("/index.html"), {  
   blacklist: [/^\/_/,/\/[^/?]+\.[^/]+$/],
 });
