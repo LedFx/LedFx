@@ -263,7 +263,7 @@ magnitude(Reactive):
       blur: 1.3037737000651894
       brightness: 1.0
       flip: false
-      frequency_range: bass
+      frequency_range: "Bass (60-250Hz)"
       gradient_name: Frost
       gradient_roll: 5
       mirror: true
@@ -273,7 +273,7 @@ magnitude(Reactive):
       blur: 8.38330900342954
       brightness: 1.0
       flip: true
-      frequency_range: bass
+      frequency_range: "Bass (60-250Hz)"
       gradient_name: Jungle
       gradient_roll: 4
       mirror: true
@@ -283,7 +283,7 @@ magnitude(Reactive):
       blur: 2.3114887329706866
       brightness: 1.0
       flip: true
-      frequency_range: bass
+      frequency_range: "Bass (60-250Hz)"
       gradient_name: Viridis
       gradient_roll: 7
       mirror: true
@@ -293,7 +293,7 @@ magnitude(Reactive):
       blur: 5.378434095736014
       brightness: 1.0
       flip: false
-      frequency_range: bass
+      frequency_range: "Bass (60-250Hz)"
       gradient_name: Borealis
       gradient_roll: 5
       mirror: false
@@ -303,7 +303,7 @@ magnitude(Reactive):
       blur: 8.464669855377387
       brightness: 1.0
       flip: false
-      frequency_range: sub_bass
+      frequency_range: "Sub Bass (20-60Hz)"
       gradient_name: Christmas
       gradient_roll: 1
       mirror: false
