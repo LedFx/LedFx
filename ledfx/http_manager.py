@@ -51,12 +51,12 @@ class HttpServer(object):
         self.app.router.add_route("get", "/{extra:.+}", self.index)
 
     async def start(self):
-        self.handler = self.app.make_handler(loop=self._ledfx.loop)
+        self.runner = web.AppRunner(self.app)
+        await self.runner.setup()
 
         try:
-            self.server = await self._ledfx.loop.create_server(
-                self.handler, self.host, self.port
-            )
+            site = web.TCPSite(self.runner, self.host, self.port)
+            await site.start()
         except OSError as error:
             _LOGGER.error(
                 "Failed to create HTTP server at port %d: %s",
@@ -68,10 +68,7 @@ class HttpServer(object):
         print(("Started webinterface at {}").format(self.base_url))
 
     async def stop(self):
-        if self.server:
-            self.server.close()
-            await self.server.wait_closed()
         await self.app.shutdown()
-        if self.handler:
-            await self.handler.shutdown(10)
+        if self.runner:
+            await self.runner.cleanup()
         await self.app.cleanup()
