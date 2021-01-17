@@ -22,7 +22,7 @@ class SettingsView extends Component {
         const { audioInputs } = settings;
 
         return (
-            <Grid container direction="column" spacing={4}>
+            <Grid container direction="column" spacing={4} style={{ overflow: 'hidden' }}>
                 <Grid container item direction="row" spacing={4}>
                     <Grid item md={4}>
                         <AudioInputCard {...audioInputs} onChange={setAudioInput} />
@@ -35,7 +35,8 @@ class SettingsView extends Component {
                     </Grid>
                     <Grid item md={12}>
                         <LogCard />
-                    </Grid>`
+                    </Grid>
+                    `
                 </Grid>
             </Grid>
         );

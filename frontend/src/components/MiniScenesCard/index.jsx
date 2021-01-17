@@ -11,10 +11,6 @@ const styles = theme => ({
     sceneButton: {
         size: 'large',
         margin: theme.spacing(1),
-        textDecoration: 'none',
-        '&,&:hover': {
-            color: '#000000',
-        },
     },
     submitControls: {
         display: 'flex',
@@ -49,6 +45,8 @@ class MiniScenesCard extends React.Component {
                         scenes.list.map(scene => (
                             <Button
                                 key={scene.id}
+                                variant={'text'}
+                                color={'inherit'}
                                 className={classes.sceneButton}
                                 onClick={() => {
                                     activateScene(scene.id);
