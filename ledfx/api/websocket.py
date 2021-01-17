@@ -40,7 +40,12 @@ class WebsocketEndpoint(RestEndpoint):
     ENDPOINT_PATH = "/api/websocket"
 
     async def get(self, request) -> web.Response:
-        return await WebsocketConnection(self._ledfx).handle(request)
+        try:
+            return await WebsocketConnection(self._ledfx).handle(request)
+        except ConnectionResetError:
+            _LOGGER.info(
+                "Connection Reset Error on Websocket Connection - retrying."
+            )
 
 
 class WebsocketConnection:
