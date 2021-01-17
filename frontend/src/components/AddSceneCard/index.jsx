@@ -37,6 +37,7 @@ const AddSceneCard = ({ scenes = {}, addScene }) => {
 
     const handleSave = () => {
         addScene(name);
+        window.location = window.location.href;
     };
 
     const handleNameChanged = ({ target: { value } }) => {
@@ -46,7 +47,10 @@ const AddSceneCard = ({ scenes = {}, addScene }) => {
 
     return (
         <Card>
-            <CardHeader title="Add Scene" subheader="Save current effects of all devices as a Scene" />
+            <CardHeader
+                title="Add Scene"
+                subheader="Save current effects of all devices as a Scene"
+            />
             <CardContent>
                 <Box display="flex">
                     <Box item="true" flexGrow={1}>
