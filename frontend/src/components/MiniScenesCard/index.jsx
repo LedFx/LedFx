@@ -8,47 +8,53 @@ import Grid from '@material-ui/core/Grid';
 import CircularProgress from '@material-ui/core/CircularProgress';
 
 const styles = theme => ({
-  sceneButton: {
-    size: "large",
-    margin: theme.spacing(1),
-    textDecoration: "none",
-    "&,&:hover": {
-      color: "#000000"
-    }
-  },
-  submitControls: {
-    display: "flex",
-    flexWrap: "wrap",
-    width: "100%",
-    height: "100%"
-  }
-})
-
+    sceneButton: {
+        size: 'large',
+        margin: theme.spacing(1),
+        textDecoration: 'none',
+        '&,&:hover': {
+            color: '#000000',
+        },
+    },
+    submitControls: {
+        display: 'flex',
+        flexWrap: 'wrap',
+        width: '100%',
+        height: '100%',
+    },
+});
 
 class MiniScenesCard extends React.Component {
-
     render() {
         const { scenes, classes, activateScene } = this.props;
 
         return (
             <Card>
-                <CardHeader title="Scenes" subheader="Easily deploy effects across multiple devices" />
-                   {/*link header to scenes management page*/}
+                <CardHeader
+                    title="Scenes"
+                    subheader="Easily deploy effects across multiple devices"
+                />
+                {/*link header to scenes management page*/}
                 <CardContent className={classes.submitControls}>
                     {scenes.isLoading ? (
-                            <Grid
-                                container
-                                justify="center"
-                                alignContent="center"
-                                className={classes.spinnerContainer}
-                            >
-                                <CircularProgress size={80} />
-                            </Grid>
+                        <Grid
+                            container
+                            justify="center"
+                            alignContent="center"
+                            className={classes.spinnerContainer}
+                        >
+                            <CircularProgress size={80} />
+                        </Grid>
                     ) : (
                         scenes.list.map(scene => (
-                            <Button key={scene.id}
-                                    className={classes.sceneButton}
-                                    onClick={() => activateScene(scene.id)}>
+                            <Button
+                                key={scene.id}
+                                className={classes.sceneButton}
+                                onClick={() => {
+                                    activateScene(scene.id);
+                                    window.location = window.location.href;
+                                }}
+                            >
                                 {scene.name}
                             </Button>
                         ))
@@ -59,4 +65,4 @@ class MiniScenesCard extends React.Component {
     }
 }
 
-export default (withStyles(styles)(MiniScenesCard));
+export default withStyles(styles)(MiniScenesCard);

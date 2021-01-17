@@ -50,21 +50,21 @@ const integrations =
               icon: PowerIcon,
               component: IntegrationsView,
           };
-// const advanced =
-//     parseInt(window.localStorage.getItem('BladeMod')) > 0
-//         ? {
-//               path: '/advanced',
-//               sidebarName: 'Advanced',
-//               navbarName: 'Advanced',
-//               icon: LockOpenIcon,
-//               component: AdvancedView,
-//           }
-//         : {
-//               path: '/advanced',
-//               navbarName: 'Advanced',
-//               icon: LockOpenIcon,
-//               component: AdvancedView,
-//           };
+const advanced =
+    parseInt(window.localStorage.getItem('BladeMod')) > 0
+        ? {
+              path: '/advanced',
+              sidebarName: 'Advanced',
+              navbarName: 'Advanced',
+              icon: LockOpenIcon,
+              component: AdvancedView,
+          }
+        : {
+              path: '/advanced',
+              navbarName: 'Advanced',
+              icon: LockOpenIcon,
+              component: AdvancedView,
+          };
 const viewRoutes = [
     {
         path: '/dashboard',
@@ -103,13 +103,7 @@ const viewRoutes = [
         icon: BuildIcon,
         component: SettingsView,
     },
-    {
-        path: '/advanced',
-        sidebarName: 'Advanced',
-        navbarName: 'Advanced',
-        icon: LockOpenIcon,
-        component: AdvancedView,
-    },
+    advanced,
     {
         path: '/developer/:graphString',
         navbarName: 'Developer',

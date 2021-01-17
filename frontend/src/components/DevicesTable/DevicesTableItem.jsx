@@ -18,7 +18,7 @@ const styles = theme => ({
     },
     deviceLink: {
         textDecoration: 'none',
-        color: 'black',
+        color: 'inherit',
         '&:hover': {
             color: theme.palette.primary.main,
         },
@@ -28,6 +28,7 @@ const styles = theme => ({
 function DevicesTableItem({ device, onDelete, classes, onEdit, index }) {
     const handleDeleteDevice = () => {
         onDelete(device.id);
+        window.location = window.location.href;
     };
 
     const handleEditItem = () => {

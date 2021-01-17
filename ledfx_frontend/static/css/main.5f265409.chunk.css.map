@@ -1,0 +1,1 @@
+{"version":3,"sources":["style.css"],"names":[],"mappings":"AAAA,UACE,2CAA8C,CAC9C,eAAgB,CAGhB,eACF,CAEA,gBALE,WAAY,CACZ,UAOF","file":"main.5f265409.chunk.css","sourcesContent":["html, body {\n  font-family: 'Roboto', 'Helvetica', sans-serif;\n  font-weight: 300;\n  height: 100%;\n  width: 100%;\n  overflow: hidden;\n}\n\n#root {\n  height: 100%;\n  width: 100%;\n}"]}
