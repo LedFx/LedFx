@@ -58,19 +58,19 @@ Known Issues
 
 - **Audio Input Handling**
 
-    - LedFx might explode if you don't have a valid audio input stream. Sorry and whoops.
+  - LedFx might explode if you don't have a valid audio input stream. Sorry and whoops.
 
 - **sACN Display Rate**
 
-    - Still fiddling with the sACN library - currently the "refresh rate" variable is a best effort FPS and is not accurate.
+  - Still fiddling with the sACN library - currently the "refresh rate" variable is a best effort FPS and is not accurate.
 
 - **Editing active device breaks it**
 
-    - Maybe don't do this. We're working on it!
+  - Maybe don't do this. We're working on it!
 
- - **Incomplete Change List**
+- **Incomplete Change List**
 
-    - We just didn't keep track! Whoops!
+  - We just didn't keep track! Whoops!
 
 Coming up...
 ------------
@@ -99,6 +99,10 @@ Other News
   so we can fix them - in the unlikely event any sensitive personal data is transmitted with a crash report the developers will remove it as soon as possible.
   The crash reporter we use is Sentry - you can see their `privacy policy <https://sentry.io/privacy/>`_ that developers are held to. The LedFx privacy policy
   is pretty simple - we will use the logs to fix LedFx. We don't use any user analytics, user tracking or any of that.
+
+
+----------------------------------------------
+
 
 Version 0.9.2
 =============
