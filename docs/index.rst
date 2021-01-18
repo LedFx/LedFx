@@ -12,6 +12,7 @@
    :caption: Configuration
 
    configuring
+   directing_audio
 
 .. toctree::
    :maxdepth: 2
