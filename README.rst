@@ -67,7 +67,7 @@ The below image describes a basic setup - LedFx running on PC, communicating wit
 #. **Direct computer audio output to LedFx.**
       - Follow guide, `How to: Enable Stereo Mix in Windows 10`_.
       - Alternatively use `Voicemeeter`_. `Voicemeeter tutorial`_.
-      - Mac users can use `Loopback`_
+      - More information for Linux and macOS users `here`_.
       - Play some music in the background.
 
 #. **Start LedFx.**
@@ -112,6 +112,7 @@ License
 .. _`Voicemeeter`: https://vb-audio.com/Voicemeeter/index.htm
 .. _`Voicemeeter tutorial`: https://youtu.be/ZXKDzYXS60o?start=27&end=163
 .. _`Loopback`: https://rogueamoeba.com/loopback/
+.. _`here`: ./docs/directing_audio.rst
 
 .. |Build Status| image:: https://travis-ci.com/LedFx/LedFx.svg?branch=dev
    :target: https://travis-ci.com/LedFx/LedFx
