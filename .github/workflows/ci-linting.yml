@@ -1,0 +1,77 @@
+name: CI Linting
+
+on:
+  push:
+    branches:
+      - dev
+  pull_request: ~
+
+env:
+  CACHE_VERSION: 1
+  DEFAULT_PYTHON: 3.8
+  PRE_COMMIT_HOME: ~/.cache/pre-commit
+
+jobs:
+  linting:
+    name: Lint and format Python files
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code from GitHub
+        uses: actions/checkout@v2
+      - name: Set up Python ${{ env.DEFAULT_PYTHON }}
+        id: python
+        uses: actions/setup-python@v2.2.1
+        with:
+            python-version: ${{ env.DEFAULT_PYTHON }}
+      - name: Restore base Python virtual environment
+        id: cache-venv
+        uses: actions/cache@v2
+        with:
+          path: venv
+          key: >-
+            ${{ env.CACHE_VERSION }}-${{ runner.os }}-base-venv-${{
+            steps.python.outputs.python-version }}-${{
+            hashFiles('requirements-dev.txt') }}
+          restore-keys: |
+            ${{ env.CACHE_VERSION }}-${{ runner.os }}-base-venv-${{ steps.python.outputs.python-version }}-${{ hashFiles('requirements-dev.txt') }}-
+            ${{ env.CACHE_VERSION }}-${{ runner.os }}-base-venv-${{ steps.python.outputs.python-version }}-
+      - name: Create Python virtual environment
+        if: steps.cache-venv.outputs.cache-hit != 'true'
+        run: |
+          python -m venv venv
+          . venv/bin/activate
+          pip install -U pip setuptools wheel
+          pip install -r requirements-dev.txt
+      - name: Restore pre-commit environment from cache-name
+        id: cache-precommit
+        uses: actions/cache@v2
+        with:
+          path: ${{ env.PRE_COMMIT_HOME }}
+          key: |
+            ${{ env.CACHE_VERSION }}-${{ runner.os }}-pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}
+          restore-keys: |
+            ${{ env.CACHE_VERSION }}-${{ runner.os }}-pre-commit-
+      - name: Install pre-commit dependencies
+        if: steps.cache-precommit.outputs.cache-hit != 'true'
+        run: |
+          . venv/bin/activate
+          pre-commit install-hooks
+      - name: Run pre-commit hooks
+        run: |
+          . venv/bin/activate
+          pre-commit run check-yaml --all-files --show-diff-on-failure
+          pre-commit run check-ast --all-files --show-diff-on-failure
+          pre-commit run trailing-whitespace --all-files --show-diff-on-failure
+          pre-commit run check-toml --all-files --show-diff-on-failure
+      - name: Run black
+        run: |
+          . venv/bin/activate
+          pre-commit run black --all-files --show-diff-on-failure
+      - name: Run flake8
+        run: |
+          . venv/bin/activate
+          pre-commit run flake8 --all-files
+      - name: Run isort
+        run: |
+          . venv/bin/activate
+          pre-commit run isort --all-files --show-diff-on-failure

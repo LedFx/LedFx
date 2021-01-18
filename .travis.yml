@@ -1,46 +1,67 @@
-sudo: false
+# EXAMPLES CAN BE FOUND HERE
+# https://github.com/numpy/numpy/blob/master/.travis.yml
+
+_docs_job: &docs_job
+  addons:
+    apt:
+      update: false
+      packages:
+  cache: false
+  before_install:
+  install: pip install -r docs/requirements-docs.txt
+  script:
+    - travis-sphinx build --nowarn --source=docs
+
+os: linux
+dist: xenial
+language: python
+
+# Travis allows these packages, additions can be requested
+#   https://github.com/travis-ci/apt-package-safelist
 addons:
   apt:
+    update: true        # runs `apt-get update` before installs
     packages:
+      - portaudio19-dev # Install portaudio (requirement for pyaudio)
       - libudev-dev
-matrix:
+      - python3-dev
+
+jobs:
   fast_finish: true
   include:
-    - python: "3.6"
-      env: TOXENV=py36
-    #   #after_success: coveralls
     - python: "3.7"
-      env: TOXENV=py37
+      name: "Docs"
       dist: xenial
-    - python: "3.8-dev"
-      env: TOXENV=py38
+      <<: *docs_job
+    - python: "3.7"
       dist: xenial
-      if: branch = dev AND type = push
-  allow_failures:
-    - python: "3.8-dev"
-      env: TOXENV=py38
+    - python: "3.8"
+      dist: xenial
+    - python: "3.9"
       dist: xenial
 
-language: python
 cache:
   directories:
     - $HOME/.cache/pip
     - "node_modules"
+
 before_install:
-  - sudo apt-get update
-  - sudo apt-get install portaudio19-dev # Install portaudio (requirement for pyaudio)
+  - nvm install 12  # Use nvm to install Node.js v12.x
+  - pip install --upgrade pip wheel setuptools # Setup/upgrade pip/wheel/setuptools prior to install
+#  - pip install codecov - for uploading unit tests when we make unit tests
+
 install:
-  - npm install
-  - pip install tox-travis
-  - pip install -r requirements_docs.txt
+  - npm install -g yarn
 
 script:
   # Build the frontend first
-  - npm run build
+  - cd frontend
+  - yarn
+  - yarn build
+  - cd ..
   # Then, build the backend
-  - travis_wait 30 tox --develop
-  # Finally, build the docs
-  - travis-sphinx build --nowarn --source=docs
+  - python setup.py bdist_wheel
+  - pip install --pre --find-links=dist .
 
-after_success:
-  - travis-sphinx deploy
+# after_success:
+#    - codecov - for uploading unit tests when we make unit tests

@@ -1,38 +1,51 @@
-from asyncio import coroutines, ensure_future
-from subprocess import PIPE, Popen
+import asyncio
 import concurrent.futures
-import voluptuous as vol
-from abc import ABC
-import threading
-import logging
-import inspect
 import importlib
+import inspect
+import logging
+import os
 import pkgutil
 import re
-import imp
+import socket
 import sys
-import os
+from abc import ABC
+
+# from asyncio import coroutines, ensure_future
+from subprocess import PIPE, Popen
+
+import voluptuous as vol
 
 _LOGGER = logging.getLogger(__name__)
 
-from subprocess import PIPE, Popen
 
 def install_package(package):
-    _LOGGER.info('Installing package %s', package)
+    _LOGGER.info(f"Installed package: {package}")
     env = os.environ.copy()
-    args = [sys.executable, '-m', 'pip', 'install', '--quiet', package]
+    args = [
+        sys.executable,
+        "-m",
+        "pip",
+        "install",
+        "--quiet",
+        package,
+    ]
     process = Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE, env=env)
     _, stderr = process.communicate()
     if process.returncode != 0:
-        _LOGGER.error("Failed to install package %s: %s",
-                      package, stderr.decode('utf-8').lstrip().strip())
+        _LOGGER.error(
+            "Failed to install package %s: %s",
+            package,
+            stderr.decode("utf-8").lstrip().strip(),
+        )
         return False
     return True
 
+
 def import_or_install(package):
     try:
+        _LOGGER.info(f"Imported package: {package}")
         return importlib.import_module(package)
-        print("imported package")
+
     except ImportError:
         install_package(package)
         try:
@@ -41,18 +54,40 @@ def import_or_install(package):
             return False
     return False
 
+
 def async_fire_and_forget(coro, loop):
     """Run some code in the core event loop without a result"""
 
-    if not coroutines.iscoroutine(coro):
-        raise TypeError(('A coroutine object is required: {}').format(coro))
+    if not asyncio.coroutines.iscoroutine(coro):
+        raise TypeError(("A coroutine object is required: {}").format(coro))
 
     def callback():
         """Handle the firing of a coroutine."""
-        ensure_future(coro, loop=loop)
+        asyncio.ensure_future(coro, loop=loop)
 
     loop.call_soon_threadsafe(callback)
     return
+
+
+def async_fire_and_return(loop, coro, timeout=10):
+    """Run some code in the core event loop with a result"""
+
+    if not asyncio.coroutines.iscoroutine(coro):
+        raise TypeError(("A coroutine object is required: {}").format(coro))
+
+    future = asyncio.run_coroutine_threadsafe(coro, loop=loop)
+
+    try:
+        result = future.result(timeout)
+    except asyncio.TimeoutError:
+        _LOGGER.warning(
+            f"Coroutine {coro} timed out at {timeout}s, cancelling the task..."
+        )
+        future.cancel()
+    except Exception as exc:
+        _LOGGER.error(f"Coroutine {coro} raised an exception: {exc!r}")
+    else:
+        return result
 
 
 def async_callback(loop, callback, *args):
@@ -73,14 +108,30 @@ def async_callback(loop, callback, *args):
     loop.call_soon_threadsafe(run_callback)
     return future
 
+
+def resolve_destination(destination):
+    # check if ip/hostname resolves okay
+    cleaned_dest = destination.rstrip(".")
+    try:
+        return socket.gethostbyname(cleaned_dest)
+    except socket.gaierror:
+        return False
+
+
+def currently_frozen():
+    return getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS")
+
+
 def generate_id(name):
     """Converts a name to a id"""
-    part1 = re.sub('[^a-zA-Z0-9]', ' ', name).lower()
-    return re.sub(' +', ' ', part1).strip().replace(' ', '-')
+    part1 = re.sub("[^a-zA-Z0-9]", " ", name).lower()
+    return re.sub(" +", " ", part1).strip().replace(" ", "-")
+
 
 def generate_title(id):
     """Converts an id to a more human readable title"""
-    return re.sub('[^a-zA-Z0-9]', ' ', id).title()
+    return re.sub("[^a-zA-Z0-9]", " ", id).title()
+
 
 def hasattr_explicit(cls, attr):
     """Returns if the given object has explicitly declared an attribute"""
@@ -96,15 +147,27 @@ def getattr_explicit(cls, attr, *default):
     if len(default) > 1:
         raise TypeError(
             "getattr_explicit expected at most 3 arguments, got {}".format(
-                len(default) + 2))
+                len(default) + 2
+            )
+        )
 
     if hasattr_explicit(cls, attr):
         return getattr(cls, attr, default)
     if default:
         return default[0]
 
-    raise AttributeError("type object '{}' has no attribute '{}'.".format(
-        cls.__name__, attr))
+    raise AttributeError(
+        "type object '{}' has no attribute '{}'.".format(cls.__name__, attr)
+    )
+
+
+class RollingQueueHandler(logging.handlers.QueueHandler):
+    def enqueue(self, record):
+        try:
+            self.queue.put_nowait(record)
+        except asyncio.QueueFull:
+            self.queue.get_nowait()
+            self.enqueue(record)
 
 
 class BaseRegistry(ABC):
@@ -113,27 +176,28 @@ class BaseRegistry(ABC):
     list of automatically registered base classes and assembles schema
     information
 
-    The prevent registration for classes that are intended to serve as 
+    The prevent registration for classes that are intended to serve as
     base classes (i.e. GradientEffect) add the following declarator:
         @Effect.no_registration
     """
-    _schema_attr = 'CONFIG_SCHEMA'
+
+    _schema_attr = "CONFIG_SCHEMA"
 
     def __init_subclass__(cls, **kwargs):
         """Automatically register the class"""
         super().__init_subclass__(**kwargs)
 
-        if not hasattr(cls, '_registry'):
+        if not hasattr(cls, "_registry"):
             cls._registry = {}
 
-        name = cls.__module__.split('.')[-1]
+        name = cls.__module__.split(".")[-1]
         cls._registry[name] = cls
 
     @classmethod
     def no_registration(self, cls):
-        """Clear registration entiry based on special declarator"""
+        """Clear registration entity based on special declarator"""
 
-        name = cls.__module__.split('.')[-1]
+        name = cls.__module__.split(".")[-1]
         del cls._registry[name]
         return cls
 
@@ -143,7 +207,8 @@ class BaseRegistry(ABC):
 
         if extended is False:
             return getattr_explicit(
-                type(self), self._schema_attr, vol.Schema({}))
+                type(self), self._schema_attr, vol.Schema({})
+            )
 
         schema = vol.Schema({}, extra=extra)
         classes = inspect.getmro(self)[::-1]
@@ -163,21 +228,21 @@ class BaseRegistry(ABC):
     @property
     def id(self) -> str:
         """Returns the id for the object"""
-        return getattr(self, '_id', None)
+        return getattr(self, "_id", None)
 
     @property
     def type(self) -> str:
         """Returns the id for the object"""
-        return getattr(self, '_type', None)
+        return getattr(self, "_type", None)
 
     @property
     def config(self) -> dict:
         """Returns the config for the object"""
-        return getattr(self, '_config', None)
+        return getattr(self, "_config", None)
 
 
 class RegistryLoader(object):
-    """Manages loading of compoents for a given registry"""
+    """Manages loading of components for a given registry"""
 
     def __init__(self, ledfx, cls, package):
         self._package = package
@@ -187,15 +252,19 @@ class RegistryLoader(object):
 
         self._ledfx = ledfx
         self.import_registry(package)
-     
+
         # If running in developer mode autoreload the registry when any file
         # within the package changes.
-        if ledfx.dev_enabled() and import_or_install("watchdog"):
-
+        # Check ledfx is not running as a single exe built using pyinstaller
+        # (sys frozen flag).
+        if ledfx.dev_enabled() and not currently_frozen():
+            import_or_install("watchdog")
             watchdog_events = import_or_install("watchdog.events")
             watchdog_observers = import_or_install("watchdog.observers")
 
-            class RegistryReloadHandler(watchdog_events.FileSystemEventHandler):
+            class RegistryReloadHandler(
+                watchdog_events.FileSystemEventHandler
+            ):
                 def __init__(self, registry):
                     self.registry = registry
 
@@ -210,7 +279,8 @@ class RegistryLoader(object):
             self.observer.schedule(
                 self.auto_reload_handler,
                 os.path.dirname(sys.modules[package].__file__),
-                recursive=True)
+                recursive=True,
+            )
             self.observer.start()
 
     def import_registry(self, package):
@@ -229,7 +299,7 @@ class RegistryLoader(object):
         module = importlib.import_module(package)
 
         found = []
-        for _, name, _ in pkgutil.iter_modules(module.__path__, package + '.'):
+        for _, name, _ in pkgutil.iter_modules(module.__path__, package + "."):
             found.append(name)
 
         return found
@@ -242,7 +312,7 @@ class RegistryLoader(object):
         return list(self._cls.registry().keys())
 
     def classes(self):
-        """Returns all the classes in the regsitry"""
+        """Returns all the classes in the registry"""
         return self._cls.registry()
 
     def get_class(self, type):
@@ -255,11 +325,11 @@ class RegistryLoader(object):
     def reload_module(self, name):
         if name in sys.modules.keys():
             path = sys.modules[name].__file__
-            if path.endswith('.pyc') or path.endswith('.pyo'):
+            if path.endswith(".pyc") or path.endswith(".pyo"):
                 path = path[:-1]
-            
+
             try:
-                module = imp.load_source(name, path)
+                module = importlib.import_module(name, path)
                 sys.modules[name] = module
             except SyntaxError as e:
                 _LOGGER.error("Failed to reload {}: {}".format(name, e))
@@ -268,20 +338,20 @@ class RegistryLoader(object):
 
     def reload(self, force=False):
         """Reloads the registry"""
-
         found = self.discover_modules(self._package)
         _LOGGER.info("Reloading {} from {}".format(found, self._package))
         for name in found:
             self.reload_module(name)
 
-
-    def create(self, type, id = None, *args, **kwargs):
+    def create(self, type, id=None, *args, **kwargs):
         """Loads and creates a object from the registry by type"""
 
         if type not in self._cls.registry():
             raise AttributeError(
                 ("Couldn't find '{}' in the {} registry").format(
-                    type, self._cls.__name__.lower()))
+                    type, self._cls.__name__.lower()
+                )
+            )
 
         id = id or type
 
@@ -295,16 +365,16 @@ class RegistryLoader(object):
         # Create the new object based on the registry entires and
         # validate the schema.
         _cls = self._cls.registry().get(type)
-        _config = kwargs.pop('config', None)
-        if _config != None:
+        _config = kwargs.pop("config", None)
+        if _config is not None:
             _config = _cls.schema()(_config)
-            obj = _cls(config = _config, *args, **kwargs)
+            obj = _cls(config=_config, *args, **kwargs)
         else:
             obj = _cls(*args, **kwargs)
 
         # Attach some common properties
-        setattr(obj, '_id', id)
-        setattr(obj, '_type', type)
+        setattr(obj, "_id", id)
+        setattr(obj, "_type", type)
 
         # Store the object into the internal list and return it
         self._objects[id] = obj
@@ -314,7 +384,8 @@ class RegistryLoader(object):
 
         if id not in self._objects:
             raise AttributeError(
-                ("Object with id '{}' does not exist.").format(id))
+                ("Object with id '{}' does not exist.").format(id)
+            )
         del self._objects[id]
 
     def get(self, id):
