@@ -89,11 +89,7 @@ To join, click on the Discord button below:
 
 .. image:: https://discordapp.com/api/guilds/469985374052286474/widget.png?style=banner2
    :width: 30%
-<<<<<<< HEAD
-   :target: https://discord.gg/xyyHEquZKQ
-=======
    :target: https://discord.com/invite/wJ755dY
->>>>>>> origin/dev
 
 Contributing
 --------------
@@ -116,10 +112,7 @@ License
 .. _`Voicemeeter`: https://vb-audio.com/Voicemeeter/index.htm
 .. _`Voicemeeter tutorial`: https://youtu.be/ZXKDzYXS60o?start=27&end=163
 .. _`Loopback`: https://rogueamoeba.com/loopback/
-<<<<<<< HEAD
 .. _`here`: ./docs/directing_audio.rst
-=======
->>>>>>> origin/dev
 
 .. |Build Status| image:: https://travis-ci.com/LedFx/LedFx.svg?branch=dev
    :target: https://travis-ci.com/LedFx/LedFx
@@ -130,9 +123,5 @@ License
 .. |License| image:: https://img.shields.io/badge/license-MIT-blue.svg
    :alt: License
 .. |Discord| image:: https://img.shields.io/badge/chat-on%20discord-7289da.svg
-<<<<<<< HEAD
-   :target: https://discord.gg/xyyHEquZKQ
-=======
    :target: https://discord.gg/wJ755dY
->>>>>>> origin/dev
    :alt: Discord
