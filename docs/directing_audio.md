@@ -4,6 +4,8 @@ Here we explain how to pipe your system audio directly to LedFx without having t
 
 ## Linux
 
+Tested on Ubuntu 20.10 64-bit.
+
 ### Requirements
 
 - [PulseAudio](https://www.freedesktop.org/wiki/Software/PulseAudio/?)
