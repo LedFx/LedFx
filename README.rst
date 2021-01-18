@@ -89,7 +89,7 @@ To join, click on the Discord button below:
 
 .. image:: https://discordapp.com/api/guilds/469985374052286474/widget.png?style=banner2
    :width: 30%
-   :target: https://discord.com/invite/wJ755dY
+   :target: https://discord.com/invite/xyyHEquZKQ
 
 Contributing
 --------------
@@ -121,5 +121,5 @@ License
 .. |License| image:: https://img.shields.io/badge/license-MIT-blue.svg
    :alt: License
 .. |Discord| image:: https://img.shields.io/badge/chat-on%20discord-7289da.svg
-   :target: https://discord.gg/wJ755dY
+   :target: https://discord.gg/xyyHEquZKQ
    :alt: Discord
