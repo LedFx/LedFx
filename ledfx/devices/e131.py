@@ -25,6 +25,10 @@ class E131Device(Device):
                 description="Number of individual pixels",
             ): vol.All(vol.Coerce(int), vol.Range(min=1)),
             vol.Optional(
+                "icon_name",
+                description="https://material-ui.com/components/material-icons/",
+            ): str,
+            vol.Optional(
                 "universe",
                 description="DMX universe for the device",
                 default=1,
@@ -46,6 +50,7 @@ class E131Device(Device):
         super().__init__(ledfx, config)
 
         # Allow for configuring in terms of "pixels" or "channels"
+
         if "pixel_count" in self._config:
             self._config["channel_count"] = self._config["pixel_count"] * 3
         else:

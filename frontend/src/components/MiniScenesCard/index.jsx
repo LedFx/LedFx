@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useSelector } from 'react-redux';
 import withStyles from '@material-ui/core/styles/withStyles';
 import Card from '@material-ui/core/Card';
 import CardHeader from '@material-ui/core/CardHeader';
@@ -6,7 +7,7 @@ import CardContent from '@material-ui/core/CardContent';
 import Button from '@material-ui/core/Button';
 import Grid from '@material-ui/core/Grid';
 import CircularProgress from '@material-ui/core/CircularProgress';
-
+import { getScenes } from 'modules/scenes';
 const styles = theme => ({
     sceneButton: {
         size: 'large',
@@ -20,47 +21,43 @@ const styles = theme => ({
     },
 });
 
-class MiniScenesCard extends React.Component {
-    render() {
-        const { scenes, classes, activateScene } = this.props;
-
-        return (
-            <Card>
-                <CardHeader
-                    title="Scenes"
-                    subheader="Easily deploy effects across multiple devices"
-                />
-                {/*link header to scenes management page*/}
-                <CardContent className={classes.submitControls}>
-                    {scenes.isLoading ? (
-                        <Grid
-                            container
-                            justify="center"
-                            alignContent="center"
-                            className={classes.spinnerContainer}
+const MiniScenesCard = ({ classes, activateScene }) => {
+    const scenes = useSelector(state => state.scenes);
+    useEffect(() => {
+        getScenes();
+    }, []);
+    return (
+        <Card>
+            <CardHeader title="Scenes" subheader="Easily deploy effects across multiple devices" />
+            {/*link header to scenes management page*/}
+            <CardContent className={classes.submitControls}>
+                {scenes.isLoading ? (
+                    <Grid
+                        container
+                        justify="center"
+                        alignContent="center"
+                        className={classes.spinnerContainer}
+                    >
+                        <CircularProgress size={80} />
+                    </Grid>
+                ) : (
+                    scenes.list.map(scene => (
+                        <Button
+                            key={scene.id}
+                            variant={'text'}
+                            color={'inherit'}
+                            className={classes.sceneButton}
+                            onClick={() => {
+                                activateScene(scene.id);
+                            }}
                         >
-                            <CircularProgress size={80} />
-                        </Grid>
-                    ) : (
-                        scenes.list.map(scene => (
-                            <Button
-                                key={scene.id}
-                                variant={'text'}
-                                color={'inherit'}
-                                className={classes.sceneButton}
-                                onClick={() => {
-                                    activateScene(scene.id);
-                                    window.location = window.location.href;
-                                }}
-                            >
-                                {scene.name}
-                            </Button>
-                        ))
-                    )}
-                </CardContent>
-            </Card>
-        );
-    }
-}
+                            {scene.name}
+                        </Button>
+                    ))
+                )}
+            </CardContent>
+        </Card>
+    );
+};
 
 export default withStyles(styles)(MiniScenesCard);

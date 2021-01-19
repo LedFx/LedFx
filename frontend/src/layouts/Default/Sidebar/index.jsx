@@ -42,21 +42,22 @@ class Sidebar extends React.Component {
 
                     if (prop.sidebarName === 'Devices') {
                         return (
-                            <NavLink
-                                to={`/devices`}
-                                className={classes.item}
-                                key={key}
-                                activeClassName="active"
-                            >
+                            <div className={classes.item} key={key}>
                                 <ListItem button className={listItemClass} key={prop.sidebarName}>
-                                    <ListItemIcon className={classes.itemIcon}>
-                                        <prop.icon />
-                                    </ListItemIcon>
-                                    <ListItemText
-                                        primary={prop.sidebarName}
-                                        className={classes.itemText}
-                                        disableTypography={true}
-                                    />
+                                    <NavLink
+                                        to={`/devices`}
+                                        className={classes.item}
+                                        activeClassName="active"
+                                    >
+                                        <ListItemIcon className={classes.itemIcon}>
+                                            <prop.icon />
+                                        </ListItemIcon>
+                                        <ListItemText
+                                            primary={prop.sidebarName}
+                                            className={classes.itemText}
+                                            disableTypography={true}
+                                        />
+                                    </NavLink>
                                     <List className={classes.list}>
                                         {devices.map(device => {
                                             let listItemClass = classes.itemLink;
@@ -82,7 +83,7 @@ class Sidebar extends React.Component {
                                         })}
                                     </List>
                                 </ListItem>
-                            </NavLink>
+                            </div>
                         );
                     }
 

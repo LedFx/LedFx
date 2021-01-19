@@ -250,7 +250,7 @@ class EffectControl extends React.Component {
                                         <Palette />
                                     </Grid>
                                     <Grid item xs style={{ paddingRight: '1rem' }}>
-                                        <input type="color" value={'#ff0000'} />
+                                        <input type="color" defaultValue={'#ff0000'} />
                                     </Grid>
                                 </Grid>
                             </div>
@@ -326,7 +326,7 @@ class EffectControl extends React.Component {
                                         <Palette />
                                     </Grid>
                                     <Grid item xs style={{ paddingRight: '1rem' }}>
-                                        <input type="color" value={'#00ff00'} />
+                                        <input type="color" defaultValue={'#00ff00'} />
                                     </Grid>
                                 </Grid>
                             </div>
@@ -402,7 +402,7 @@ class EffectControl extends React.Component {
                                         <Palette />
                                     </Grid>
                                     <Grid item xs style={{ paddingRight: '1rem' }}>
-                                        <input type="color" value={'#0000ff'} />
+                                        <input type="color" defaultValue={'#0000ff'} />
                                     </Grid>
                                 </Grid>
                             </div>
@@ -478,7 +478,7 @@ class EffectControl extends React.Component {
                                         <Palette />
                                     </Grid>
                                     <Grid item xs style={{ paddingRight: '1rem' }}>
-                                        <input type="color" value={'#000000'} />
+                                        <input type="color" defaultValue={'#000000'} />
                                     </Grid>
                                 </Grid>
                             </div>

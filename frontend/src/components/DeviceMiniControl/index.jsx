@@ -24,16 +24,16 @@ const styles = theme => ({
         verticalAlign: 'middle',
     },
     deviceLink: {
-        size: "large",
+        size: 'large',
         margin: theme.spacing(1),
-        textDecoration: "none",
-        "&,&:hover": {
-          color: "#000000"
+        textDecoration: 'none',
+        '&,&:hover': {
+            color: 'inherit',
         },
     },
     actionsContainer: {
         display: 'flex',
-        justifyContent: 'flex-end'
+        justifyContent: 'flex-end',
     },
     toggleContainer: {
         width: '70px',
@@ -59,18 +59,13 @@ class DeviceMiniControl extends React.Component {
         return (
             <Grid container direction="row" spacing={1} justify="space-between">
                 <Grid item xs="auto">
-                    <Typography variant="h5">
-                        {config.name}
-                    </Typography>
+                    <Typography variant="h5">{config.name}</Typography>
                     <Typography variant="body1" color="textSecondary">
-                        Effect: {effect.name ? effect.name : "None"}
+                        Effect: {effect.name ? effect.name : 'None'}
                     </Typography>
                 </Grid>
 
-                <Grid
-                    item
-                    className={classes.actionsContainer}
-                >
+                <Grid item className={classes.actionsContainer}>
                     <Button
                         component={NavLink}
                         to={`/devices/${id}`}

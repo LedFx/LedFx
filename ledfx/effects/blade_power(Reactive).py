@@ -14,7 +14,7 @@ class BladePowerAudioEffect(AudioReactiveEffect):
             vol.Optional(
                 "mirror",
                 description="Mirror the effect",
-                default=True,
+                default=False,
             ): bool,
             vol.Optional(
                 "blur",
@@ -27,7 +27,12 @@ class BladePowerAudioEffect(AudioReactiveEffect):
                 default=0.5,
             ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
             vol.Optional(
-                "color", description="Color of bar", default="red"
+                "background_color",
+                description="Color of Background",
+                default="orange",
+            ): vol.In(list(COLORS.keys())),
+            vol.Optional(
+                "color", description="Color of bar", default="brown"
             ): vol.In(list(COLORS.keys())),
             vol.Optional(
                 "frequency_range",

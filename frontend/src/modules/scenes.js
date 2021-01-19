@@ -1,5 +1,6 @@
 import { createAction, handleActions } from 'redux-actions';
 import * as scenesProxies from 'proxies/scenes';
+import * as deviceProxies from './devices';
 
 // Actions
 const ACTION_ROOT = 'sceneManagement';
@@ -44,7 +45,7 @@ export default handleActions(
             return {
                 ...state,
                 dictionary: error ? {} : scenes,
-                list: !error ? [] : convertScenesDictionaryToList(scenes),
+                list: error ? [] : convertScenesDictionaryToList(scenes),
                 isProcessing: false,
                 error: error ? payload.message : '',
             };
@@ -92,8 +93,15 @@ export function deleteScene(id) {
 }
 
 export function activateScene(id) {
-    return async dispatch => {
+    return async (dispatch, getState) => {
+        const sceneDevices = getState().scenes.list.find(s => s.id === id).devices;
         await scenesProxies.activateScenes(id);
+        Object.keys(sceneDevices).map(d => {
+            dispatch(
+                deviceProxies.handleActiveDeviceEffect(d, sceneDevices[d].hasOwnProperty('config'))
+            );
+            return false;
+        });
     };
 }
 

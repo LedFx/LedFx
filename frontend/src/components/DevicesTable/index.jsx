@@ -25,25 +25,27 @@ function DevicesTable({ onDeleteDevice, classes, items, onEditDevice }) {
             <Table className={classes.table}>
                 <TableHead>
                     <TableRow>
-                        <TableCell >Name</TableCell>
-                        <TableCell >IP Address</TableCell>
-                        <TableCell >Pixel Count</TableCell>
-                        <TableCell >Type</TableCell>
+                        {parseInt(window.localStorage.getItem('BladeMod')) >= 2 && (
+                            <TableCell></TableCell>
+                        )}
+                        <TableCell>Name</TableCell>
+                        <TableCell>IP Address</TableCell>
+                        <TableCell>Pixel Count</TableCell>
+                        <TableCell>Type</TableCell>
                         <TableCell />
                     </TableRow>
                 </TableHead>
 
                 <TableBody>
-                    {items.map(device => {
-                        return (
-                            <DevicesTableItem
-                                key={device.id}
-                                device={device}
-                                onDelete={onDeleteDevice}
-                                onEdit={onEditDevice}
-                            />
-                        );
-                    })}
+                    {items.map(device => (
+                        <DevicesTableItem
+                            key={device.id}
+                            device={device}
+                            onDelete={onDeleteDevice}
+                            onEdit={onEditDevice}
+                            iconName={device.config.icon_name || 'settings-input-component'}
+                        />
+                    ))}
                 </TableBody>
             </Table>
         </div>
