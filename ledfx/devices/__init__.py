@@ -385,7 +385,10 @@ class WLEDListener:
 
             # Check this device doesn't share IP with any other device
             for device in self._ledfx.devices.values():
-                if device.config["ip_address"] == hostname:
+                if (
+                    device.config["ip_address"] == hostname
+                    or device.config["name"] == wledname
+                ):
                     return
 
             # Create the device
