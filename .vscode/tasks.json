@@ -42,6 +42,12 @@
             "type": "shell",
             "command": "cd /workspaces/${workspaceFolderBasename}/docs; make livehtml",
             "problemMatcher": []
+        },
+        {
+            "label": "[PRE-COMMIT]",
+            "type": "shell",
+            "command": "cd /workspaces/${workspaceFolderBasename}; pre-commit run --all-files",
+            "problemMatcher": []
         }
     ],
     "inputs": [
