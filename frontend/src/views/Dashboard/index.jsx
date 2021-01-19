@@ -79,10 +79,10 @@ class DashboardView extends React.Component {
                 </Grid>
                 <Grid container direction="row" spacing={4}>
                     <Grid item lg={6}>
-                        <MiniScenesCard scenes={scenes} activateScene={activateScene}/>
+                        <MiniScenesCard activateScene={activateScene} />
                     </Grid>
                     <Grid item lg={6}>
-                        <AddSceneCard scenes={scenes} addScene={addScene}/>
+                        <AddSceneCard scenes={scenes} addScene={addScene} />
                     </Grid>
                 </Grid>
             </div>

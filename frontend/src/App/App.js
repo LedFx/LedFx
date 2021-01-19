@@ -8,36 +8,33 @@ import defaultTheme, { darkTheme, bladeTheme, bladeDarkTheme } from './theme';
 // import { createMuiTheme } from '@material-ui/core/styles';
 import './style.css';
 
-
 export default function App() {
-  // const themeSelector = useSelector(state => state.themeSelector)
+    // const themeSelector = useSelector(state => state.themeSelector)
 
-  const theme = (
-    window.localStorage.getItem("blade") === '1') ? darkTheme : (
-      window.localStorage.getItem("blade") === '2') ? bladeTheme : (
-        window.localStorage.getItem("blade") === '3') ? bladeDarkTheme : defaultTheme
-  // console.log(themeSelector)
-  // React.useEffect(() => {
+    const theme =
+        window.localStorage.getItem('blade') === '1'
+            ? darkTheme
+            : window.localStorage.getItem('blade') === '2'
+            ? bladeTheme
+            : window.localStorage.getItem('blade') === '3'
+            ? bladeDarkTheme
+            : defaultTheme;
 
-  //   console.log(themeSelector)
-
-  // }, [themeSelector])
-
-  return (
-    <MuiThemeProvider theme={theme}>
-      <Router history={history}>
-        <Switch>
-          {indexRoutes.map(({ component: Component, path }, key) => {
-            return (
-              <Route
-                path={path}
-                key={key}
-                render={routeProps => <Component {...routeProps} />}
-              />
-            );
-          })}
-        </Switch>
-      </Router>
-    </MuiThemeProvider>
-  )
+    return (
+        <MuiThemeProvider theme={theme}>
+            <Router history={history}>
+                <Switch>
+                    {indexRoutes.map(({ component: Component, path }, key) => {
+                        return (
+                            <Route
+                                path={path}
+                                key={key}
+                                render={routeProps => <Component {...routeProps} />}
+                            />
+                        );
+                    })}
+                </Switch>
+            </Router>
+        </MuiThemeProvider>
+    );
 }
