@@ -7,6 +7,7 @@ import TableCell from '@material-ui/core/TableCell';
 import Button from '@material-ui/core/Button';
 import DeleteIcon from '@material-ui/icons/Delete';
 import EditIcon from '@material-ui/icons/Edit';
+import Icon from '@material-ui/core/Icon';
 
 const styles = theme => ({
     deleteButton: {
@@ -25,19 +26,27 @@ const styles = theme => ({
     },
 });
 
-function DevicesTableItem({ device, onDelete, classes, onEdit, index }) {
+function DevicesTableItem({ device, onDelete, classes, onEdit, index, iconName }) {
     const handleDeleteDevice = () => {
         onDelete(device.id);
-        window.location = window.location.href;
     };
 
     const handleEditItem = () => {
         onEdit(device);
     };
-
+    const camel_to_snake = str =>
+        str[0].toLowerCase() +
+        str.slice(1, str.length).replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
     return (
         <TableRow key={device.id}>
-            <TableCell component="th" scope="row">
+            {parseInt(window.localStorage.getItem('BladeMod')) >= 2 && (
+                <TableCell component="th" scope="row" width="40px">
+                    <Icon>
+                        {camel_to_snake(device.config.icon_name || 'SettingsInputComponent')}
+                    </Icon>
+                </TableCell>
+            )}
+            <TableCell>
                 <NavLink
                     to={'/devices/' + device.id}
                     className={classes.deviceLink}
