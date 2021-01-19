@@ -111,11 +111,19 @@ def async_callback(loop, callback, *args):
 
 def resolve_destination(destination):
     # check if ip/hostname resolves okay
+    # Attempts 3 times - takes approx 3 seconds in total for an offline/unresolvable address to fail
     cleaned_dest = destination.rstrip(".")
-    try:
-        return socket.gethostbyname(cleaned_dest)
-    except socket.gaierror:
-        return False
+    resolve_attempts = 0
+    while resolve_attempts <= 2:
+        try:
+            return socket.gethostbyname(cleaned_dest)
+        except socket.gaierror:
+            resolve_attempts += 1
+            _LOGGER.warning(
+                f"Failed resolving {cleaned_dest}, attempt {resolve_attempts} of 3."
+            )
+
+    return False
 
 
 def currently_frozen():

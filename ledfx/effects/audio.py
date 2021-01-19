@@ -132,18 +132,21 @@ class AudioInputSource(object):
                 )
 
         # Open the audio stream and start processing the input
-        self._stream = self._audio.open(
-            input_device_index=self._config["device_index"],
-            format=pyaudio.paFloat32,
-            channels=1,
-            rate=self._config["mic_rate"],
-            input=True,
-            frames_per_buffer=self._config["mic_rate"]
-            // self._config["sample_rate"],
-            stream_callback=self._audio_sample_callback,
-        )
-        self._stream.start_stream()
-
+        try:
+            self._stream = self._audio.open(
+                input_device_index=self._config["device_index"],
+                format=pyaudio.paFloat32,
+                channels=1,
+                rate=self._config["mic_rate"],
+                input=True,
+                frames_per_buffer=self._config["mic_rate"]
+                // self._config["sample_rate"],
+                stream_callback=self._audio_sample_callback,
+            )
+            self._stream.start_stream()
+        except OSError:
+            _LOGGER.critical("Unable to open Audio Device - please retry.")
+            self.deactivate
         _LOGGER.info("Audio source opened.")
 
     def deactivate(self):
