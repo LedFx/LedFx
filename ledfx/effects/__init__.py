@@ -87,10 +87,8 @@ def _gaussian_kernel1d(sigma, order, blur_radius):
 
 
 def smooth(x, sigma):
-    # If blur less than 0.125, radius = 0 and things break in the gaussian function.
-    # Using a float could fix it but would need to relook at the gaussian function which I don't have the maths skills to do.
-    # Todo: Investigate it.
-    # - Shaun
+    # If blur less than 0.125, radius becomes less than or equal to 0 - ie, under 1 pixel blur radius.
+    # We will just return a pixel blur instead. Could look at other ways of having minimums in the UI however this will do for now
     if sigma < 0.125:
         sigma = 0.125
     blur_radius = int(4.0 * float(sigma) + 0.5)
