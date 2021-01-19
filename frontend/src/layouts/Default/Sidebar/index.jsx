@@ -132,7 +132,7 @@ class Sidebar extends React.Component {
                     <div className={classes.logoImage}>
                         <img src={logoAsset} alt="logo" className={classes.img} />
                     </div>
-                    LedFx DevMode
+                    LedFx
                 </a>
             </div>
         );
