@@ -39,12 +39,12 @@ const styles = theme => ({
     },
 });
 
-class DeviceConfigDialog extends React.Component {
+class QLCConfigDialog extends React.Component {
     constructor(props) {
         super(props);
 
         this.state = {
-            deviceType: '',
+            QLCType: '',
             model: {},
             additionalPropertiesOpen: false,
         };
@@ -65,7 +65,7 @@ class DeviceConfigDialog extends React.Component {
     }
 
     handleTypeChange = (value, initial = {}) => {
-        this.setState({ deviceType: value, model: initial });
+        this.setState({ QLCType: value, model: initial });
     };
 
     onModelChange = (key, val) => {
@@ -83,27 +83,27 @@ class DeviceConfigDialog extends React.Component {
     };
 
     handleSubmit = () => {
-        const { initial, onAddDevice, onUpdateDevice } = this.props;
-        const { deviceType, model: config } = this.state;
+        const { initial, onAddQLC, onUpdateQLC } = this.props;
+        const { QLCType, model: config } = this.state;
 
         if (initial.id) {
-            onUpdateDevice(initial.id, deviceType, config);
+            onUpdateQLC(initial.id, QLCType, config);
         } else {
-            onAddDevice(deviceType, config);
+            onAddQLC(QLCType, config);
         }
 
         this.props.onClose();
     };
 
     render() {
-        const { classes, deviceTypes, open } = this.props;
-        const { model, additionalPropertiesOpen, deviceType } = this.state;
+        const { classes, QLCTypes, open } = this.props;
+        const { model, additionalPropertiesOpen, QLCType } = this.state;
 
         const currentSchema = {
             type: 'object',
             title: 'Configuration',
             properties: {},
-            ...(deviceType ? deviceTypes[deviceType].schema : {}),
+            ...(QLCType ? QLCTypes[QLCType].schema : {}),
         };
 
         const requiredKeys = currentSchema.required;
@@ -124,13 +124,13 @@ class DeviceConfigDialog extends React.Component {
                 <DialogContent className={classes.cardResponsive}>
                     <DialogContentText>
                         To add a Event Listener to LedFx, please first select the type of event you wish to
-                        trigger an event and then provide the necessary configuration.
+                        trigger an event (If This), and provide the output (Then That).
                     </DialogContentText>
                     <form onSubmit={this.handleSubmit} className={classes.form}>
                         <DropDown
-                            label="Type"
-                            value={deviceType}
-                            options={Object.keys(deviceTypes).map(key => ({
+                            label="Event Trigger"
+                            value={QLCType}
+                            options={Object.keys(QLCTypes).map(key => ({
                                 value: key,
                                 display: key,
                             }))}
@@ -189,7 +189,7 @@ class DeviceConfigDialog extends React.Component {
                                     type="submit"
                                     variant="contained"
                                     color="primary"
-                                    disabled={!deviceType}
+                                    disabled={!QLCType}
                                 >
                                     {'Submit'}
                                 </Button>
@@ -202,12 +202,12 @@ class DeviceConfigDialog extends React.Component {
     }
 }
 
-export default withStyles(styles)(DeviceConfigDialog);
+export default withStyles(styles)(QLCConfigDialog);
 
-DeviceConfigDialog.propTypes = {
-    deviceTypes: PropTypes.object,
+QLCConfigDialog.propTypes = {
+    QLCTypes: PropTypes.object,
 };
 
-DeviceConfigDialog.defaultProps = {
-    deviceTypes: {},
+QLCConfigDialog.defaultProps = {
+    QLCTypes: {},
 };

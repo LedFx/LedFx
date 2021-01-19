@@ -58,6 +58,7 @@ const IntegrationsCard = ({ int }) => {
                         ? 'Disconnected'
                         : 'Unknown'}
                 </Typography>
+                {/* Need to do: IF QLC Integration, then show below QLC IP address */}
                 <Typography style={{ fontSize: '14px' }} color="textSecondary" gutterBottom>
                     QLC+ IP Address: {int.config.ip_address}:{int.config.port}
                 </Typography>
@@ -71,7 +72,7 @@ const IntegrationsCard = ({ int }) => {
                     className={classes.button}
                     endIcon={<AddCircleIcon />}
                     aria-haspopup="true"
-                    //onClick={handleClickListItem}
+                    //onClick={this.openAddEventDialog}
                     role="listitem"
                 >
                     ADD Event Listener
