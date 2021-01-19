@@ -8,6 +8,7 @@ import Button from '@material-ui/core/Button';
 import DeleteIcon from '@material-ui/icons/Delete';
 import EditIcon from '@material-ui/icons/Edit';
 import Icon from '@material-ui/core/Icon';
+import { Link } from '@material-ui/core';
 
 const styles = theme => ({
     deleteButton: {
@@ -51,11 +52,16 @@ function DevicesTableItem({ device, onDelete, classes, onEdit, index, iconName }
                     to={'/devices/' + device.id}
                     className={classes.deviceLink}
                     key={device.id}
+                    color="inherit"
                 >
                     {device.config.name}
                 </NavLink>
             </TableCell>
-            <TableCell>{device.config.ip_address}</TableCell>
+            <TableCell>
+                <Link color="inherit" target="_blank" href={`http://${device.config.ip_address}`}>
+                    {device.config.ip_address}
+                </Link>
+            </TableCell>
             <TableCell>{device.config.pixel_count}</TableCell>
             <TableCell>{device.type}</TableCell>
             <TableCell align="right">
