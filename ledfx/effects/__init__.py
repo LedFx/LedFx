@@ -77,8 +77,6 @@ def brightness_pixels(pixels, brightness):
 
 @lru_cache(maxsize=32)
 def _gaussian_kernel1d(sigma, order, blur_radius):
-    if order < 0:
-        raise ValueError("order must be non-negative")
     p = np.polynomial.Polynomial([0, 0, -0.5 / (sigma * sigma)])
     x = np.arange(-blur_radius, blur_radius + 1)
     phi_x = np.exp(p(x), dtype=np.double)
@@ -158,14 +156,14 @@ class Effect(BaseRegistry):
         self._pixels = np.zeros((pixel_count, 3))
         self._active = True
 
-        _LOGGER.info("Effect {} activated.".format(self.NAME))
+        _LOGGER.info(f"Effect {self.NAME} activated.")
 
     def deactivate(self):
         """Detaches an output channel from the effect"""
         self._pixels = None
         self._active = False
 
-        _LOGGER.info("Effect {} deactivated.".format(self.NAME))
+        _LOGGER.info(f"Effect {self.NAME} deactivated.")
 
     def update_config(self, config):
         # TODO: Sync locks to ensure everything is thread safe
@@ -190,10 +188,10 @@ class Effect(BaseRegistry):
                 base.config_updated(self, self._config)
 
         _LOGGER.info(
-            "Effect {} config updated to {}.".format(
-                self.NAME, validated_config
-            )
+            f"Effect {self.NAME} config updated to {validated_config}."
         )
+
+        self.configured_blur = self._config["blur"]
 
     def config_updated(self, config):
         """
@@ -202,6 +200,7 @@ class Effect(BaseRegistry):
         complex properties off the configuration, otherwise the config
         should just be referenced in the effect's loop directly
         """
+        self.configured_blur = self._config["blur"]
         pass
 
     @property
@@ -249,8 +248,24 @@ class Effect(BaseRegistry):
                 pixels += np.multiply(_bg_color_array.T, bg_brightness).T
             if self._config["brightness"]:
                 pixels = brightness_pixels(pixels, self._config["brightness"])
-            if self._config["blur"] != 0.0:
-                pixels = blur_pixels(pixels=pixels, sigma=self._config["blur"])
+            # This is a bit complex.
+            # If the configured blur is greater than 0
+            if self.configured_blur != 0.0:
+                try:
+                    # try to blur the pixels using the pixel blur function.
+                    # This is clamped for blur values under 0.125 (equates to 1 pixel)
+                    pixels = blur_pixels(
+                        pixels=pixels, sigma=self.configured_blur
+                    )
+                    # Currently if the LED array is small and the blur value is high, the output is an array that is a different size to the LED array. This breaks the effect.
+                    # My math isn't good enough to figure out a good way of doing this multivariate analysis.
+                    # So for now we just warn and turn blur off to fail-safe.
+                    # Someone with a better maths background will be able to sort this out in the future.
+                except ValueError:
+                    _LOGGER.warning(
+                        f"You have too few LEDs for this sized blur - blur disabled for effect {self.NAME}. Try a smaller blur value."
+                    )
+                    self.configured_blur = 0
             self._pixels = np.copy(pixels)
         else:
             raise TypeError()
