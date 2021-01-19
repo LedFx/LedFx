@@ -16,14 +16,17 @@ import Fab from '@material-ui/core/Fab';
 
 const styles = theme => ({
     appBar: {
-        backgroundColor: 'transparent',
-        boxShadow: 'none',
-        position: 'absolute',
-        marginLeft: drawerWidth,
+        backgroundColor: console.log(theme.palette) || theme.palette.background.default,
+        paddingLeft: drawerWidth,
         [theme.breakpoints.up('md')]: {
-            width: `calc(100% - ${drawerWidth}px)`,
+            width: `100%`,
+            left: 0,
         },
     },
+    // toolBar: {
+    //     background: 'rgb(16,16,16)',
+    //     bordeBottom: '1px solid rgba(255, 255, 255, 0.12)',
+    // },
     flex: {
         flex: 1,
         fontSize: 18,
@@ -57,7 +60,7 @@ const Header = props => {
     const name = getPageName();
     return (
         <AppBar className={classes.appBar}>
-            <Toolbar>
+            <Toolbar className={classes.toolBar}>
                 <>
                     <Typography
                         variant="h2"
