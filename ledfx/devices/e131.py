@@ -31,8 +31,8 @@ class E131Device(Device):
             ): vol.All(vol.Coerce(int), vol.Range(min=1)),
             vol.Optional(
                 "universe_size",
-                description="Size of each DMX universe",
-                default=512,
+                description="Size of each DMX universe. Leave at 510 unless you know what you're doing.",
+                default=510,
             ): vol.All(vol.Coerce(int), vol.Range(min=1)),
             vol.Optional(
                 "channel_offset",
