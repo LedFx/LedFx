@@ -76,27 +76,23 @@ def brightness_pixels(pixels, brightness):
 
 
 @lru_cache(maxsize=32)
-def _gaussian_kernel1d(sigma, order, radius):
+def _gaussian_kernel1d(sigma, order, blur_radius):
     if order < 0:
         raise ValueError("order must be non-negative")
     p = np.polynomial.Polynomial([0, 0, -0.5 / (sigma * sigma)])
-    x = np.arange(-radius, radius + 1)
+    x = np.arange(-blur_radius, blur_radius + 1)
     phi_x = np.exp(p(x), dtype=np.double)
     phi_x /= phi_x.sum()
-    if order > 0:
-        q = np.polynomial.Polynomial([1])
-        p_deriv = p.deriv()
-        for _ in range(order):
-            # f(x) = q(x) * phi(x) = q(x) * exp(p(x))
-            # f'(x) = (q'(x) + q(x) * p'(x)) * phi(x)
-            q = q.deriv() + q * p_deriv
-        phi_x *= q(x)
     return phi_x
 
 
 def smooth(x, sigma):
-    lw = int(4.0 * float(sigma) + 0.5)
-    w = _gaussian_kernel1d(sigma, 0, lw)
+    # If blur less than 0.125, radius becomes less than or equal to 0 - ie, under 1 pixel blur radius.
+    # We will just return a pixel blur instead. Could look at other ways of having minimums in the UI however this will do for now
+    if sigma < 0.125:
+        sigma = 0.125
+    blur_radius = int(4.0 * float(sigma) + 0.5)
+    w = _gaussian_kernel1d(sigma, 0, blur_radius)
     window_len = len(w)
 
     s = np.r_[x[window_len - 1 : 0 : -1], x, x[-1:-window_len:-1]]

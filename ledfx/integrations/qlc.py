@@ -10,7 +10,7 @@ import voluptuous as vol
 
 # from ledfx.events import Event
 from ledfx.integrations import Integration
-from ledfx.utils import async_fire_and_forget
+from ledfx.utils import async_fire_and_forget, resolve_destination
 
 # import time
 # import os
@@ -203,7 +203,8 @@ class QLC(Integration):
             await self._client.send(f"{int(widget_id)}|{value}")
 
     async def connect(self):
-        domain = f"{self._config['ip_address']}:{str(self._config['port'])}"
+        resolved_ip = resolve_destination(self._config["ip_address"])
+        domain = f"{resolved_ip }:{self._config['port']}"
         url = f"http://{domain}/qlcplusWS"
         if self._client is None:
             self._client = QLCWebsocketClient(url, domain)
