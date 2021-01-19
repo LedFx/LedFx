@@ -28,11 +28,14 @@ class LogWebsocket:
         self._ledfx = ledfx
         self._sender_queue = queue
         self._socket = None
+        self._receiver_task = None
         self._sender_task = None
         self._log_history = []
 
     def close(self):
         """Closes the websocket connection"""
+        if self._receiver_task:
+            self._receiver_task.cancel()
         if self._sender_task:
             self._sender_task.cancel()
 
@@ -86,6 +89,7 @@ class LogWebsocket:
         await socket.prepare(request)
         _LOGGER.info("Logging websocket opened")
 
+        self._receiver_task = asyncio.current_task(loop=self._ledfx.loop)
         self._sender_task = self._ledfx.loop.create_task(self._sender())
 
         def shutdown_handler(e):

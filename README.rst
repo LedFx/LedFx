@@ -67,7 +67,7 @@ The below image describes a basic setup - LedFx running on PC, communicating wit
 #. **Direct computer audio output to LedFx.**
       - Follow guide, `How to: Enable Stereo Mix in Windows 10`_.
       - Alternatively use `Voicemeeter`_. `Voicemeeter tutorial`_.
-      - Mac users can use `Loopback`_
+      - More information for `Linux and macOS users here <https://ledfx.readthedocs.io/en/latest/directing_audio.html>`_.
       - Play some music in the background.
 
 #. **Start LedFx.**
@@ -89,7 +89,7 @@ To join, click on the Discord button below:
 
 .. image:: https://discordapp.com/api/guilds/469985374052286474/widget.png?style=banner2
    :width: 30%
-   :target: https://discord.com/invite/wJ755dY
+   :target: https://discord.com/invite/xyyHEquZKQ
 
 Contributing
 --------------
@@ -111,7 +111,6 @@ License
 .. _`How to: Enable Stereo Mix in Windows 10`: https://thegeekpage.com/stereo-mix/
 .. _`Voicemeeter`: https://vb-audio.com/Voicemeeter/index.htm
 .. _`Voicemeeter tutorial`: https://youtu.be/ZXKDzYXS60o?start=27&end=163
-.. _`Loopback`: https://rogueamoeba.com/loopback/
 
 .. |Build Status| image:: https://travis-ci.com/LedFx/LedFx.svg?branch=dev
    :target: https://travis-ci.com/LedFx/LedFx
@@ -122,5 +121,5 @@ License
 .. |License| image:: https://img.shields.io/badge/license-MIT-blue.svg
    :alt: License
 .. |Discord| image:: https://img.shields.io/badge/chat-on%20discord-7289da.svg
-   :target: https://discord.gg/wJ755dY
+   :target: https://discord.gg/xyyHEquZKQ
    :alt: Discord

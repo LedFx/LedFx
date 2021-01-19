@@ -15,16 +15,11 @@ PROJECT_URL = "https://github.com/LedFx/LedFx/tree/dev"
 
 # Need to install numpy first
 SETUP_REQUIRES = [
-    'numpy==1.19.3; platform_system == "Windows"',
-    'numpy>=1.19.3; platform_system != "Windows"',
+    "numpy>=1.19.5",
 ]
 
 INSTALL_REQUIRES = [
-    # Nasty bug in windows 10 at the moment
-    # https://developercommunity.visualstudio.com/content/problem/1207405/fmod-after-an-update-to-windows-2004-is-causing-a.html
-    # numpy 1.19.3 has a workaround
-    'numpy==1.19.3; platform_system == "Windows"',
-    'numpy>=1.19.3; platform_system != "Windows"',
+    "numpy>=1.19.5",
     "voluptuous>=0.12.0",
     "pyaudio>=0.2.11",
     "sacn>=1.4.6",
