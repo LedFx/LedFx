@@ -31,6 +31,13 @@ const styles = theme => ({
             color: 'inherit',
         },
     },
+    textLink: {
+        textDecoration: 'none',
+        color: 'inherit',
+        '&:hover': {
+            color: theme.palette.primary.main,
+        },
+    },
     actionsContainer: {
         display: 'flex',
         justifyContent: 'flex-end',
@@ -59,7 +66,13 @@ class DeviceMiniControl extends React.Component {
         return (
             <Grid container direction="row" spacing={1} justify="space-between">
                 <Grid item xs="auto">
-                    <Typography variant="h5">{config.name}</Typography>
+                    <NavLink
+                        to={`/devices/${id}`}
+                        className={classes.textLink}
+                        key={id}
+                    >
+                        <Typography variant="h5">{config.name}</Typography>
+                    </NavLink>
                     <Typography variant="body1" color="textSecondary">
                         Effect: {effect.name ? effect.name : 'None'}
                     </Typography>
