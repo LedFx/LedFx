@@ -310,7 +310,7 @@ class Effect(BaseRegistry):
                 bg_brightness = (255 - bg_brightness) / 510
                 _bg_color_array = np.tile(self._bg_color, (len(pixels), 1))
                 pixels += np.multiply(_bg_color_array.T, bg_brightness).T
-            if self._config["brightness"]:
+            if self._config["brightness"] is not None:
                 pixels = brightness_pixels(pixels, self._config["brightness"])
             # If the configured blur is greater than 0 we need to blur it
             if self.configured_blur != 0.0:
