@@ -80,14 +80,14 @@ class DefaultLayout extends React.Component {
                     location={location}
                     devicesDictionary={deviceDictionary}
                 />
-                {parseInt(window.localStorage.getItem('BladeMod')) >= 2 ? (
-                    <Sidebar2
-                        handleDrawerToggle={this.handleDrawerToggle}
-                        open={mobileOpen}
-                        location={location}
-                        devMode={settings.devMode}
-                    />
-                ) : (
+                {/* {parseInt(window.localStorage.getItem('BladeMod')) >= 2 ? ( */}
+                <Sidebar2
+                    handleDrawerToggle={this.handleDrawerToggle}
+                    open={mobileOpen}
+                    location={location}
+                    devMode={settings.devMode}
+                />
+                {/* ) : (
                     <Sidebar
                         handleDrawerToggle={this.handleDrawerToggle}
                         open={mobileOpen}
@@ -95,7 +95,7 @@ class DefaultLayout extends React.Component {
                         devices={settings.devices}
                         devMode={settings.devMode}
                     />
-                )}
+                )} */}
 
                 <div className={classes.content}>
                     <Switch>

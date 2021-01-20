@@ -40,13 +40,13 @@ function DevicesTableItem({ device, onDelete, classes, onEdit, index, iconName }
         str.slice(1, str.length).replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
     return (
         <TableRow key={device.id}>
-            {parseInt(window.localStorage.getItem('BladeMod')) >= 2 && (
-                <TableCell component="th" scope="row" width="40px">
-                    <Icon>
-                        {camel_to_snake(device.config.icon_name || 'SettingsInputComponent')}
-                    </Icon>
-                </TableCell>
-            )}
+            {/* {parseInt(window.localStorage.getItem('BladeMod')) >= 2 && ( */}
+            <TableCell component="th" scope="row" width="35px">
+                <Icon style={{ verticalAlign: 'bottom' }}>
+                    {camel_to_snake(device.config.icon_name || 'SettingsInputComponent')}
+                </Icon>
+            </TableCell>
+            {/* )} */}
             <TableCell>
                 <NavLink
                     to={'/devices/' + device.id}

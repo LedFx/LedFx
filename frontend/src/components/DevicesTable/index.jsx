@@ -25,9 +25,7 @@ function DevicesTable({ onDeleteDevice, classes, items, onEditDevice }) {
             <Table className={classes.table}>
                 <TableHead>
                     <TableRow>
-                        {parseInt(window.localStorage.getItem('BladeMod')) >= 2 && (
-                            <TableCell></TableCell>
-                        )}
+                        <TableCell></TableCell>
                         <TableCell>Name</TableCell>
                         <TableCell>IP Address</TableCell>
                         <TableCell>Pixel Count</TableCell>
