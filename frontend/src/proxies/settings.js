@@ -4,6 +4,10 @@ export function getSystemConfig() {
     return api.get('/config');
 }
 
+export function getSystemInfo() {
+    return api.get('/info');
+}
+
 export function getAudioInputs() {
     return api.get('/audio/devices');
 }

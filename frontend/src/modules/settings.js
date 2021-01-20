@@ -129,8 +129,13 @@ export function getConfig() {
             if (response.statusText !== 'OK') {
                 throw new Error('Error fetching system config');
             }
+            const responseInfo = await settingProxies.getSystemInfo();
+            if (responseInfo.statusText !== 'OK') {
+                throw new Error('Error fetching system config');
+            }
             const { dev_mode: devMode, port, host, devices } = response.data.config;
-            dispatch(configFetched({ devMode, host, port, devices }));
+            const { version } = responseInfo.data;
+            dispatch(configFetched({ devMode, host, port, devices, version }));
         } catch (error) {
             dispatch(configFetched(error));
         }

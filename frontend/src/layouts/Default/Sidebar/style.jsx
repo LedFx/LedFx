@@ -142,6 +142,16 @@ const sidebarStyle = theme => ({
         zIndex: '4',
         overflowScrolling: 'touch',
     },
+    bottomBar: {
+        margin: '15px',
+        marginTop: '2rem',
+        textAlign: 'center',
+        paddingTop: '1rem',
+        borderTop: `1px solid ${[theme.palette.background.default]}`,
+        '& > a': {
+            margin: '0 7px',
+        },
+    },
 });
 
 export default sidebarStyle;

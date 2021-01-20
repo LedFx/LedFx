@@ -16,7 +16,7 @@ import Fab from '@material-ui/core/Fab';
 
 const styles = theme => ({
     appBar: {
-        backgroundColor: console.log(theme.palette) || theme.palette.background.default,
+        backgroundColor: theme.palette.background.default,
         paddingLeft: drawerWidth,
         [theme.breakpoints.up('md')]: {
             width: `100%`,
