@@ -76,29 +76,93 @@ def brightness_pixels(pixels, brightness):
 
 
 @lru_cache(maxsize=32)
-def _gaussian_kernel1d(sigma, order, blur_radius):
+def _gaussian_kernel1d(sigma, order, radius):
+    """
+    Produces a 1D Gaussian or Gaussian-derivative filter kernel as a numpy array.
+
+    Args:
+        sigma (float): The standard deviation of the filter.
+        order (int): The derivative-order to use. 0 indicates a Gaussian function, 1 a 1st order derivative, etc.
+        radius (int): The kernel produced will be of length (2*radius+1)
+
+    Returns:
+        Array of length (2*radius+1) containing the filter kernel.
+    """
+    if order < 0:
+        raise ValueError("Order must non-negative")
+    if not (isinstance(radius, int) or radius.is_integer()) or radius <= 0:
+        raise ValueError("Radius must a positive integer")
+
     p = np.polynomial.Polynomial([0, 0, -0.5 / (sigma * sigma)])
-    x = np.arange(-blur_radius, blur_radius + 1)
+    x = np.arange(-radius, radius + 1)
     phi_x = np.exp(p(x), dtype=np.double)
     phi_x /= phi_x.sum()
+
+    if order > 0:
+        # For Gaussian-derivative filters, the function must be derived one or more times.
+        q = np.polynomial.Polynomial([1])
+        p_deriv = p.deriv()
+        for _ in range(order):
+            # f(x) = q(x) * phi(x) = q(x) * exp(p(x))
+            # f'(x) = (q'(x) + q(x) * p'(x)) * phi(x)
+            q = q.deriv() + q * p_deriv
+        phi_x *= q(x)
+
     return phi_x
 
 
 def smooth(x, sigma):
-    # If blur less than 0.125, radius becomes less than or equal to 0 - ie, under 1 pixel blur radius.
-    # We will just return a pixel blur instead. Could look at other ways of having minimums in the UI however this will do for now
-    if sigma < 0.125:
-        sigma = 0.125
-    blur_radius = int(4.0 * float(sigma) + 0.5)
-    w = _gaussian_kernel1d(sigma, 0, blur_radius)
-    window_len = len(w)
+    """
+    Smooths a 1D array via a Gaussian filter.
 
-    s = np.r_[x[window_len - 1 : 0 : -1], x, x[-1:-window_len:-1]]
-    y = np.convolve(w / w.sum(), s, mode="valid")
+    Args:
+        x (array of floats): The array to be smoothed.
+        sigma (float): The standard deviation of the smoothing filter to use.
 
-    if window_len < len(x):
-        return y[(window_len // 2) : -(window_len // 2)]
-    return y[0 : len(x)]
+    Returns:
+        Array of same length as x.
+    """
+
+    if len(x) == 0:
+        raise ValueError("Cannot smooth an empty array")
+
+    # Choose a radius for the filter kernel large enough to include all significant elements. Using
+    # a radius of 4 standard deviations (rounded to int) will only truncate tail values that are of
+    # the order of 1e-5 or smaller. For very small sigma values, just use a minimal radius.
+    kernel_radius = max(1, int(round(4.0 * sigma)))
+    filter_kernel = _gaussian_kernel1d(sigma, 0, kernel_radius)
+
+    # The filter kernel will be applied by convolution in 'valid' mode, which includes only the
+    # parts of the convolution in which the two signals full overlap, i.e. where the shorter signal
+    # is entirely contained within the longer signal, producing an output signal of length equal to
+    # the difference in length between the two input signals, plus one. So the input signal must be
+    # extended by mirroring the ends (to give realistic values for the first and last pixels after
+    # smoothing) until len(x_mirrored) - len(w) + 1 = len(x). This requires adding (len(w)-1)/2
+    # values to each end of the input. If len(x) < (len(w)-1)/2, then the mirroring will need to be
+    # performed over multiple iterations, as the mirrors can only, at most, triple the length of x
+    # each time they are applied.
+    extended_input_len = len(x) + len(filter_kernel) - 1
+    x_mirrored = x
+    while len(x_mirrored) < extended_input_len:
+        mirror_len = min(
+            len(x_mirrored), (extended_input_len - len(x_mirrored)) // 2
+        )
+        x_mirrored = np.r_[
+            x_mirrored[mirror_len - 1 :: -1],
+            x_mirrored,
+            x_mirrored[-1 : -(mirror_len + 1) : -1],
+        ]
+
+    # Convolve the extended input copy with the filter kernel to apply the filter.
+    # Convolving in 'valid' mode clips includes only the parts of the convolution in which the two
+    # signals full overlap, i.e. the shorter signal is entirely contained within the longer signal.
+    # It produces an output of length equal to the difference in length between the two input
+    # signals, plus one. So this relies on the assumption that len(s) - len(w) + 1 >= len(x).
+    y = np.convolve(x_mirrored, filter_kernel, mode="valid")
+
+    assert len(y) == len(x)
+
+    return y
 
 
 @BaseRegistry.no_registration
@@ -248,24 +312,9 @@ class Effect(BaseRegistry):
                 pixels += np.multiply(_bg_color_array.T, bg_brightness).T
             if self._config["brightness"]:
                 pixels = brightness_pixels(pixels, self._config["brightness"])
-            # This is a bit complex.
-            # If the configured blur is greater than 0
+            # If the configured blur is greater than 0 we need to blur it
             if self.configured_blur != 0.0:
-                try:
-                    # try to blur the pixels using the pixel blur function.
-                    # This is clamped for blur values under 0.125 (equates to 1 pixel)
-                    pixels = blur_pixels(
-                        pixels=pixels, sigma=self.configured_blur
-                    )
-                    # Currently if the LED array is small and the blur value is high, the output is an array that is a different size to the LED array. This breaks the effect.
-                    # My math isn't good enough to figure out a good way of doing this multivariate analysis.
-                    # So for now we just warn and turn blur off to fail-safe.
-                    # Someone with a better maths background will be able to sort this out in the future.
-                except ValueError:
-                    _LOGGER.warning(
-                        f"You have too few LEDs for this sized blur - blur disabled for effect {self.NAME}. Try a smaller blur value."
-                    )
-                    self.configured_blur = 0
+                pixels = blur_pixels(pixels=pixels, sigma=self.configured_blur)
             self._pixels = np.copy(pixels)
         else:
             raise TypeError()
