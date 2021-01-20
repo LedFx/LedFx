@@ -9,7 +9,7 @@ import EditIcon from '@material-ui/icons/Edit';
 import Icon from '@material-ui/core/Icon';
 import { Link } from '@material-ui/core';
 import PopoverSure from 'components/PopoverSure';
-
+import { camelToSnake } from 'utils/helpers';
 const styles = theme => ({
     deleteButton: {
         minWidth: 32,
@@ -27,7 +27,7 @@ const styles = theme => ({
     },
 });
 
-function DevicesTableItem({ device, onDelete, classes, onEdit, index, iconName }) {
+function DevicesTableItem({ device, onDelete, classes, onEdit }) {
     const handleDeleteDevice = () => {
         onDelete(device.id);
     };
@@ -35,15 +35,13 @@ function DevicesTableItem({ device, onDelete, classes, onEdit, index, iconName }
     const handleEditItem = () => {
         onEdit(device);
     };
-    const camel_to_snake = str =>
-        str[0].toLowerCase() +
-        str.slice(1, str.length).replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+
     return (
         <TableRow key={device.id}>
             {/* {parseInt(window.localStorage.getItem('BladeMod')) >= 2 && ( */}
             <TableCell component="th" scope="row" width="35px">
                 <Icon style={{ verticalAlign: 'bottom' }}>
-                    {camel_to_snake(device.config.icon_name || 'SettingsInputComponent')}
+                    {camelToSnake(device.config.icon_name || 'SettingsInputComponent')}
                 </Icon>
             </TableCell>
             {/* )} */}

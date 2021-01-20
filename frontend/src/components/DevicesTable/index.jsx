@@ -41,7 +41,6 @@ function DevicesTable({ onDeleteDevice, classes, items, onEditDevice }) {
                             device={device}
                             onDelete={onDeleteDevice}
                             onEdit={onEditDevice}
-                            iconName={device.config.icon_name || 'settings-input-component'}
                         />
                     ))}
                 </TableBody>

@@ -41,7 +41,6 @@ const PresetsCard = ({ device, presets, effect, activatePreset, getEffectPresets
     const [name, setName] = useState('');
     const isNameValid = validateTextInput(name, presets);
 
-    // console.log('what this here', effect);
     useEffect(() => {
         getEffectPresets(effect.type);
     }, [effect.type, getEffectPresets]);

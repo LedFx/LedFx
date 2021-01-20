@@ -14,12 +14,10 @@ import logoAsset from 'assets/img/icon/large_white_alpha.png';
 import sidebarStyle from './style.jsx';
 import Icon from '@material-ui/core/Icon';
 import { fetchDeviceList } from 'modules/devices.js';
+import { camelToSnake } from 'utils/helpers';
 
 const Links = ({ classes, devMode, effectLinks, isViewActive }) => {
     const devices = useSelector(state => state.settings.devices);
-    const camel_to_snake = str =>
-        str[0].toLowerCase() +
-        str.slice(1, str.length).replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
 
     return (
         <List className={classes.list}>
@@ -74,7 +72,7 @@ const Links = ({ classes, devMode, effectLinks, isViewActive }) => {
                                                 <ListItem button className={listItemClass}>
                                                     <ListItemIcon className={classes.itemIcon}>
                                                         <Icon>
-                                                            {camel_to_snake(
+                                                            {camelToSnake(
                                                                 device.config.icon_name ||
                                                                     'SettingsInputComponent'
                                                             )}

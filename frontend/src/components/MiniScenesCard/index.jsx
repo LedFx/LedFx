@@ -29,7 +29,6 @@ const MiniScenesCard = ({ classes, activateScene }) => {
     return (
         <Card>
             <CardHeader title="Scenes" subheader="Easily deploy effects across multiple devices" />
-            {/*link header to scenes management page*/}
             <CardContent className={classes.submitControls}>
                 {scenes.isLoading ? (
                     <Grid
