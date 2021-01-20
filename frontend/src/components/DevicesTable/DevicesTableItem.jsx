@@ -5,10 +5,10 @@ import { withStyles } from '@material-ui/core/styles';
 import TableRow from '@material-ui/core/TableRow';
 import TableCell from '@material-ui/core/TableCell';
 import Button from '@material-ui/core/Button';
-import DeleteIcon from '@material-ui/icons/Delete';
 import EditIcon from '@material-ui/icons/Edit';
 import Icon from '@material-ui/core/Icon';
 import { Link } from '@material-ui/core';
+import PopoverSure from 'components/PopoverSure';
 
 const styles = theme => ({
     deleteButton: {
@@ -65,15 +65,7 @@ function DevicesTableItem({ device, onDelete, classes, onEdit, index, iconName }
             <TableCell>{device.config.pixel_count}</TableCell>
             <TableCell>{device.type}</TableCell>
             <TableCell align="right">
-                <Button
-                    color="secondary"
-                    variant="contained"
-                    size="small"
-                    className={classes.deleteButton}
-                    onClick={handleDeleteDevice}
-                >
-                    <DeleteIcon />
-                </Button>
+                <PopoverSure onConfirm={handleDeleteDevice} className={classes.deleteButton} />
                 <Button
                     variant="contained"
                     size="small"

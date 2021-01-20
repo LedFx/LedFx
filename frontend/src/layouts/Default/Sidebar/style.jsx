@@ -104,8 +104,9 @@ const sidebarStyle = theme => ({
         height: '30px',
         float: 'left',
         marginRight: '15px',
+        marginTop: '2px',
         textAlign: 'center',
-        verticalAlign: 'middle',
+        verticalAlign: 'baseline',
         color: 'rgba(255, 255, 255, 0.8)',
     },
     itemText: {
@@ -114,6 +115,7 @@ const sidebarStyle = theme => ({
         fontSize: '14px',
         fontWeight: 300,
         color: '#FFFFFF',
+        verticalAlign: 'middle',
     },
     devicesItemText: {
         margin: '0',

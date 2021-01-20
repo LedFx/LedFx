@@ -11,7 +11,6 @@ import viewRoutes from 'routes/views';
 
 import Header from './Header';
 import Sidebar from './Sidebar';
-import Sidebar2 from './Sidebar2';
 
 const style = theme => ({
     root: {
@@ -80,22 +79,12 @@ class DefaultLayout extends React.Component {
                     location={location}
                     devicesDictionary={deviceDictionary}
                 />
-                {/* {parseInt(window.localStorage.getItem('BladeMod')) >= 2 ? ( */}
-                <Sidebar2
+                <Sidebar
                     handleDrawerToggle={this.handleDrawerToggle}
                     open={mobileOpen}
                     location={location}
                     devMode={settings.devMode}
                 />
-                {/* ) : (
-                    <Sidebar
-                        handleDrawerToggle={this.handleDrawerToggle}
-                        open={mobileOpen}
-                        location={location}
-                        devices={settings.devices}
-                        devMode={settings.devMode}
-                    />
-                )} */}
 
                 <div className={classes.content}>
                     <Switch>
