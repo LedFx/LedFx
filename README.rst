@@ -126,4 +126,4 @@ License
    :target: https://discord.gg/xyyHEquZKQ
    :alt: Discord
 .. |Contributor Covenant| image:: https://img.shields.io/badge/Contributor%20Covenant-v2.0%20adopted-ff69b4.svg
-   :target: code_of_conduct.md
+   :target: CODE_OF_CONDUCT.md
