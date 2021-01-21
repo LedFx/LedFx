@@ -45,13 +45,13 @@ Description:
 \`\`\`json
 ${JSON.stringify(description)}
 \`\`\`
-Infos: 
+Infos:
 \`\`\`json
 ${JSON.stringify(infos)}
 \`\`\`
 Settings:\`\`\`json
 ${JSON.stringify(settings)}
-\`\`\`Logs-URL: 
+\`\`\`Logs-URL:
 \`\`\`https://logsurl-are-incoming.com\`\`\`
 `,
         };

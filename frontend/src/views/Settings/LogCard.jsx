@@ -18,6 +18,7 @@ import Typography from '@material-ui/core/Typography';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import { Delete } from '@material-ui/icons';
 import BugReportIcon from '@material-ui/icons/BugReport';
+import { useSelector } from 'react-redux';
 
 const { LazyLog } = require('react-lazylog');
 const { NODE_ENV } = process.env;
@@ -70,9 +71,10 @@ const LogCard = ({ settings, error }) => {
     const classes = useStyles();
     const [logger, setLogger] = useState(JSON.parse(window.sessionStorage.getItem('logger')) || []);
     const [logLength, setLogLength] = useState(
-        JSON.parse(window.sessionStorage.getItem('messages')) || 30
+        JSON.parse(window.sessionStorage.getItem('messages')) || 20
     );
     const [wrap, setWrap] = useState(false);
+    const settings2 = useSelector(state => state.settings);
     return (
         <Card>
             <CardHeader title="Console" subheader="View the Console" />
@@ -362,7 +364,7 @@ const LogCard = ({ settings, error }) => {
 <!---DON'T TOUCH THE REST - JUST CLICK PREVIEW--->
 ## Settings:
 \`\`\`json
-${JSON.stringify(settings, null, 2)}
+${JSON.stringify(settings2, null, 2)}
 \`\`\`
 
 
