@@ -71,7 +71,7 @@ const LogCard = ({ settings, error }) => {
     const classes = useStyles();
     const [logger, setLogger] = useState(JSON.parse(window.sessionStorage.getItem('logger')) || []);
     const [logLength, setLogLength] = useState(
-        JSON.parse(window.sessionStorage.getItem('messages')) || 20
+        JSON.parse(window.sessionStorage.getItem('messages')) || 30
     );
     const [wrap, setWrap] = useState(false);
     const settings2 = useSelector(state => state.settings);
@@ -360,7 +360,6 @@ const LogCard = ({ settings, error }) => {
 <!---DESCRIBE YOUR ISSUE IN DETAIL--->
 
 
-
 <!---DON'T TOUCH THE REST - JUST CLICK PREVIEW--->
 ## Settings:
 \`\`\`json
@@ -376,12 +375,11 @@ ${navigator.userAgent.replaceAll(';', '-')}
 ## Logs:
 \`\`\`json
 ${JSON.stringify(
-    logger.map(l => l.message),
+    logger.map(l => l.message).filter((v, i, a) => a.indexOf(v) === i),
     null,
     2
 )}
 \`\`\`
-
     `;
                             window.open(
                                 `https://github.com/LedFx/LedFx/issues/new?body=${encodeURIComponent(
