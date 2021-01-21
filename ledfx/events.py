@@ -33,7 +33,7 @@ class DeviceUpdateEvent(Event):
 
 
 class GraphUpdateEvent(Event):
-    """Event emitted when a device's pixels are updated"""
+    """Event emitted when an audio graph is updated"""
 
     def __init__(
         self,

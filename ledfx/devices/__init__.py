@@ -1,8 +1,8 @@
 import asyncio
 import logging
 import socket
-import time
 from abc import abstractmethod
+from functools import cached_property
 
 import numpy as np
 import requests
@@ -10,10 +10,7 @@ import voluptuous as vol
 import zeroconf
 
 from ledfx.config import save_config
-from ledfx.events import (
-    DeviceUpdateEvent,
-    EffectClearedEvent,
-    EffectSetEvent,
+from ledfx.events import (  # DeviceUpdateEvent,; EffectClearedEvent,; EffectSetEvent,
     Event,
 )
 from ledfx.utils import BaseRegistry, RegistryLoader, generate_id
@@ -41,19 +38,9 @@ class Device(BaseRegistry):
             ): int,
             vol.Optional(
                 "refresh_rate",
-                description="Rate that pixels are sent to the device",
+                description="Maximum rate that pixels are sent to the device",
                 default=60,
             ): int,
-            vol.Optional(
-                "force_refresh",
-                description="Force the device to always refresh",
-                default=False,
-            ): bool,
-            vol.Optional(
-                "preview_only",
-                description="Preview the pixels without updating the device",
-                default=False,
-            ): bool,
         }
     )
 
@@ -77,103 +64,11 @@ class Device(BaseRegistry):
     def pixel_count(self):
         pass
 
-    def set_effect(self, effect, start_pixel=None, end_pixel=None):
-        self.fade_duration = (
-            self._config["refresh_rate"] * self._ledfx.config["crossfade"]
-        )
-        self.fade_timer = self.fade_duration
-
-        if self._active_effect is not None:
-            self._fadeout_effect = self._active_effect
-            self._ledfx.loop.call_later(
-                self._ledfx.config["crossfade"], self.clear_fadeout_effect
-            )
-
-        self._active_effect = effect
-        self._active_effect.activate(self.pixel_count)
-        # What does this do? Other than break stuff.
-        # self._active_effect.setDirtyCallback(self.process_active_effect)
-        self._ledfx.events.fire_event(EffectSetEvent(self.active_effect.name))
-        if not self._active:
-            self.activate()
-
-    def clear_effect(self):
-        self._ledfx.events.fire_event(EffectClearedEvent())
-
-        self.fade_duration = (
-            self._config["refresh_rate"] * self._ledfx.config["crossfade"]
-        )
-        self.fade_timer = -self.fade_duration
-
-        self._ledfx.loop.call_later(
-            self._ledfx.config["crossfade"], self.clear_frame
-        )
-
-    def clear_fadeout_effect(self):
-        if self._fadeout_effect is not None:
-            self._fadeout_effect.deactivate()
-        self._fadeout_effect = None
-
-    def clear_frame(self):
-        if self._active_effect is not None:
-            self._active_effect.deactivate()
-            self._active_effect = None
-
-        if self._active:
-            # Clear all the pixel data before deactivating the device
-            self.assembled_frame = np.zeros((self.pixel_count, 3))
-            self.flush(self.assembled_frame)
-            self._ledfx.events.fire_event(
-                DeviceUpdateEvent(self.id, self.assembled_frame)
-            )
-
-            self.deactivate()
-
-    @property
-    def active_effect(self):
-        return self._active_effect
-
-    def process_active_effect(self):
-        # Assemble the frame if necessary, if nothing changed just sleep
-        self.assembled_frame = self.assemble_frame()
-        if self.assembled_frame is not None:
-            if not self._config["preview_only"]:
-                self.flush(self.assembled_frame)
-
-            def trigger_device_update_event():
-                self._ledfx.events.fire_event(
-                    DeviceUpdateEvent(self.id, self.assembled_frame)
-                )
-
-            self._ledfx.loop.call_soon_threadsafe(trigger_device_update_event)
-
-    def thread_function(self):
-        # TODO: Evaluate switching over to asyncio with UV loop optimization
-        # instead of spinning a separate thread.
-        if self._active:
-            sleep_interval = 1 / self._config["refresh_rate"]
-            start_time = time.time()
-
-            self.process_active_effect()
-
-            # Calculate the time to sleep accounting for potential heavy
-            # frame assembly operations
-            time_to_sleep = sleep_interval - (time.time() - start_time)
-            # print(1/time_to_sleep, end="\r") prints current fps
-
-            self._ledfx.loop.call_later(time_to_sleep, self.thread_function)
-
-        # while self._active:
-        #     start_time = time.time()
-
-        #     self.process_active_effect()
-
-        #     # Calculate the time to sleep accounting for potential heavy
-        #     # frame assembly operations
-        #     time_to_sleep = sleep_interval - (time.time() - start_time)
-        #     if time_to_sleep > 0:
-        #         time.sleep(time_to_sleep)
-        # _LOGGER.info("Output device thread terminated.")
+    def update_pixels(self, display_id, pixels, start, end):
+        self._pixels[start : end + 1] = pixels
+        if display_id == self.priority_display.id:
+            frame = self.assemble_frame()
+            self.flush(frame)
 
     def assemble_frame(self):
         """
@@ -181,65 +76,13 @@ class Device(BaseRegistry):
         the active channels pixels, but will eventually handle things like
         merging multiple segments segments and alpha blending channels
         """
-        frame = None
-
-        # quick bugfix.
-        # this all needs to be reworked for effects like real_strobe
-        # where the effect drives the device, not vice-versa
-        if self._active_effect is None:
-            return None
-
-        if self._active_effect._dirty:
-            # Get and process active effect frame
-            pixels = self._active_effect.get_pixels()
-            frame = np.clip(
-                pixels * self._config["max_brightness"],
-                0,
-                255,
-            )
-            if self._config["center_offset"]:
-                frame = np.roll(frame, self._config["center_offset"], axis=0)
-            self._active_effect._dirty = self._config["force_refresh"]
-
-            # Handle fading effect in/out if just turned on or off
-            if self.fade_timer == 0:
-                pass
-            elif self.fade_timer > 0:
-                # if +ve fade timer, fade in the effect
-                frame *= 1 - (self.fade_timer / self.fade_duration)
-                self.fade_timer -= 1
-            elif self.fade_timer < 0:
-                # if -ve fade timer, fade out the effect
-                frame *= -self.fade_timer / self.fade_duration
-                self.fade_timer += 1
-
-        # This part handles blending two effects together
-        fadeout_frame = None
-        if self._fadeout_effect:
-            if self._fadeout_effect._dirty:
-                # Get and process fadeout effect frame
-                fadeout_frame = np.clip(
-                    self._fadeout_effect.pixels
-                    * self._config["max_brightness"],
-                    0,
-                    255,
-                )
-                if self._config["center_offset"]:
-                    fadeout_frame = np.roll(
-                        fadeout_frame,
-                        self._config["center_offset"],
-                        axis=0,
-                    )
-                self._fadeout_effect._dirty = self._config["force_refresh"]
-
-                # handle fading out the fadeout frame
-                if self.fade_timer:
-                    fadeout_frame *= self.fade_timer / self.fade_duration
-
-        # Blend both frames together
-        if (fadeout_frame is not None) and (frame is not None):
-            frame += fadeout_frame
-
+        frame = np.clip(
+            self._pixels * self._config["max_brightness"],
+            0,
+            255,
+        )
+        if self._config["center_offset"]:
+            frame = np.roll(frame, self._config["center_offset"], axis=0)
         return frame
 
     def activate(self):
@@ -272,7 +115,31 @@ class Device(BaseRegistry):
 
     @property
     def refresh_rate(self):
-        return self._config["refresh_rate"]
+        return self.priority_display.refresh_rate
+
+    @cached_property
+    def priority_display(self):
+        """
+        Returns the first display that has the highest refresh rate of all displays
+        associated with this device
+        """
+        refresh_rate = max(
+            display.refresh_rate
+            for display in self._displays
+            if display.is_active
+        )
+        return next(
+            display
+            for display in self._displays
+            if display.refresh_rate == refresh_rate
+        )
+
+    @cached_property
+    def _displays(self):
+        return [
+            self._ledfx.displays.get(display["id"])
+            for display in self._displays_config
+        ]
 
 
 class Devices(RegistryLoader):
