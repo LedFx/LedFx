@@ -35,6 +35,11 @@ class Device(BaseRegistry):
                 default=1.0,
             ): vol.All(vol.Coerce(float), vol.Range(min=0, max=1)),
             vol.Optional(
+                "icon_name",
+                description="https://material-ui.com/components/material-icons/",
+                default="SettingsInputComponent",
+            ): str,
+            vol.Optional(
                 "center_offset",
                 description="Number of pixels from the perceived center of the device",
                 default=0,
