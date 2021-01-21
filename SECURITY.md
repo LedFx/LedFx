@@ -11,7 +11,6 @@ Our pip package will be rebuilt automatically when new releases are pushed - we 
 | 0.9.2   | :white_check_mark: |
 | <0.9.2  | :x:                |
 
-
 ## Reporting a Vulnerability
 
 Please contact us at ledfx.app@gmail.com with any security issues.
