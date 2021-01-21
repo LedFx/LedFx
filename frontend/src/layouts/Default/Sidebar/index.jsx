@@ -15,8 +15,8 @@ import sidebarStyle from './style.jsx';
 import Icon from '@material-ui/core/Icon';
 import { fetchDeviceList } from 'modules/devices.js';
 import { camelToSnake } from 'utils/helpers';
-import { IconButton } from '@material-ui/core';
-import GitHubIcon from '@material-ui/icons/GitHub';
+
+import BottomBar from './BottomBar.js';
 const Links = ({ classes, devMode, effectLinks, isViewActive }) => {
     const devices = useSelector(state => state.settings.devices);
 
@@ -178,6 +178,7 @@ const Sidebar = props => {
                             effectLinks={effectLinks}
                             devMode={devMode}
                         />
+                        <BottomBar classes={classes} />
                     </div>
                     <div className={classes.background} />
                 </Drawer>
@@ -198,32 +199,7 @@ const Sidebar = props => {
                             effectLinks={effectLinks}
                             devMode={devMode}
                         />
-                        <div className={classes.bottomBar}>
-                            <IconButton
-                                aria-label="Website"
-                                color="inherit"
-                                href="https://ledfx.app/"
-                                target="_blank"
-                            >
-                                <Icon>language</Icon>
-                            </IconButton>
-                            <IconButton
-                                aria-label="Github"
-                                color="inherit"
-                                href="https://github.com/LedFx/LedFx/tree/dev"
-                                target="_blank"
-                            >
-                                <GitHubIcon />
-                            </IconButton>
-                            <IconButton
-                                aria-label="Discord"
-                                color="inherit"
-                                href="https://discord.gg/tFSKgTzRcj"
-                                target="_blank"
-                            >
-                                <Icon>forum</Icon>
-                            </IconButton>
-                        </div>
+                        <BottomBar classes={classes} />
                     </div>
                     <div className={classes.background} />
                 </Drawer>
