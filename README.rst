@@ -2,6 +2,7 @@
    Welcome to LedFx ✨ *-Making music come alive!*
 =====================================================
 |Build Status| |License| |Build Status Docs| |Discord|
+|Contributor Covenant|
 
 .. image:: https://i.imgur.com/SFWfhFr.png
 
@@ -94,6 +95,7 @@ To join, click on the Discord button below:
 Contributing
 --------------
 Pull requests are welcome. Once tested, contact LedFx developer community on Discord to discuss the next step.
+We expect and require all contributors to read, understand and follow our code of conduct.
 
 Credits: `Contributors-&-About`_
 
@@ -123,3 +125,5 @@ License
 .. |Discord| image:: https://img.shields.io/badge/chat-on%20discord-7289da.svg
    :target: https://discord.gg/xyyHEquZKQ
    :alt: Discord
+.. |Contributor Covenant| image:: https://img.shields.io/badge/Contributor%20Covenant-v2.0%20adopted-ff69b4.svg
+   :target: code_of_conduct.md
