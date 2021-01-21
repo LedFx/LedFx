@@ -1,8 +1,10 @@
 import React from 'react';
+
 import { IconButton } from '@material-ui/core';
 import GitHubIcon from '@material-ui/icons/GitHub';
 import LanguageIcon from '@material-ui/icons/Language';
 import ForumIcon from '@material-ui/icons/Forum';
+import BugTracker from 'components/BugTracker';
 
 const BottomBar = ({ classes }) => {
     return (
@@ -34,6 +36,7 @@ const BottomBar = ({ classes }) => {
             >
                 <ForumIcon />
             </IconButton>
+            {parseInt(window.localStorage.getItem('BladeMod')) >= 2 && <BugTracker />}
         </div>
     );
 };

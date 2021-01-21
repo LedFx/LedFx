@@ -38,13 +38,11 @@ function DevicesTableItem({ device, onDelete, classes, onEdit }) {
 
     return (
         <TableRow key={device.id}>
-            {/* {parseInt(window.localStorage.getItem('BladeMod')) >= 2 && ( */}
             <TableCell component="th" scope="row" width="35px">
                 <Icon style={{ verticalAlign: 'bottom' }}>
                     {camelToSnake(device.config.icon_name || 'SettingsInputComponent')}
                 </Icon>
             </TableCell>
-            {/* )} */}
             <TableCell>
                 <NavLink
                     to={'/devices/' + device.id}

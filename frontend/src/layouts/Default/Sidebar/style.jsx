@@ -154,7 +154,7 @@ const sidebarStyle = theme => ({
         borderTop: `1px solid ${[theme.palette.background.default]}`,
         color: '#FFFFFF',
         '& > a': {
-            margin: '0 7px',
+            margin: '0 5px',
         },
     },
 });
