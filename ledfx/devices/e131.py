@@ -25,10 +25,6 @@ class E131Device(Device):
                 description="Number of individual pixels",
             ): vol.All(vol.Coerce(int), vol.Range(min=1)),
             vol.Optional(
-                "icon_name",
-                description="https://material-ui.com/components/material-icons/",
-            ): str,
-            vol.Optional(
                 "universe",
                 description="DMX universe for the device",
                 default=1,
