@@ -11,53 +11,51 @@ Developer Setup Installation - Python venv
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
- - Install Python 3.9
- - Install Git.
- - Using "Build Tools for Visual Studio 2019" installer.
-    - https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2019
-    - You require the mandatory selected build tools, and the following optional tools;
-        - Windows 10 SDK (or your equivalent Windows Version)
-        - C++ CMAKE tools for Windows
-        - MSVC v142 (or above) - VS 2019 C++ x64/x86 build tools
-    - Default install options are appropriate.
- - Reboot
+**1.** Install Python 3.9
+**2.** Install Git.
+**3.** Using "Build Tools for Visual Studio 2019" installer.
+       - https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2019
+       - You require the mandatory selected build tools, and the following optional tools;
+           - Windows 10 SDK (or your equivalent Windows Version)
+           - C++ CMAKE tools for Windows
+           - MSVC v142 (or above) - VS 2019 C++ x64/x86 build tools
+       - Default install options are appropriate.
+**4.** Reboot
 
 
-  .. code:: doscon
+.. code:: console
 
-    >python -m venv C:\ledfx
-    >cd C:\ledfx
-    >.\Scripts\activate.bat
-    >pip install pipwin
-    >pipwin refresh
-    >pipwin install pyaudio
-    >pipwin install pywin32
-    >python .\Scripts\pywin32_postinstall.py -install
-    >pip install numpy
-    >pip install "chardet<4.0"
-    >pip install --upgrade git+https://github.com/Digital-Sapphire/PyUpdater.git@master
-    >git clone -b dev https://github.com/LedFx/LedFx .\ledfx-git
-    >cd .\ledfx-git
-    >python setup.py develop
-    >ledfx --open-ui
+    $ python -m venv C:\ledfx
+    $ cd C:\ledfx
+    $ .\Scripts\activate.bat
+    $ pip install pipwin
+    $ pipwin refresh
+    $ pipwin install pyaudio
+    $ pipwin install pywin32
+    $ python .\Scripts\pywin32_postinstall.py -install
+    $ pip install numpy
+    $ pip install "chardet<4.0"
+    $ pip install --upgrade git+https://github.com/Digital-Sapphire/PyUpdater.git@master
+    $ git clone -b dev https://github.com/LedFx/LedFx .\ledfx-git
+    $ cd .\ledfx-git
+    $ python setup.py develop
+    $ ledfx --open-ui
 
-  - To develop:
-  - Open up a terminal and activate the ledfx virtual environment
+To develop:
+**1.** Open up a terminal and activate the ledfx virtual environment
 
-  .. code:: doscon
+.. code:: console
 
-    >C:\ledfx\Scripts\activate.bat
+    $ C:\ledfx\Scripts\activate.bat
 
-  - Make changes to LedFx's files in C:\ledfx\ledfx-git
-  - Your changed files will be run when you run LedFx
+**2.** Make changes to LedFx's files in C:/ledfx/ledfx-git. Your changed files will be run when you run LedFx
 
-  .. code:: doscon
+.. code:: console
 
-    >ledfx --open-ui
+    $ ledfx --open-ui
 
-  - You can keep the ledfx virtual environment open and keep making changes then running ledfx.
-  - No need to reactivate the virtual environment between changes.
-
+You can keep the ledfx virtual environment open and keep making changes then running ledfx.
+No need to reactivate the virtual environment between changes.
 
 Firmware Issues
 ---------------
