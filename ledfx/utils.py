@@ -110,8 +110,15 @@ def async_callback(loop, callback, *args):
 
 
 def resolve_destination(destination):
-    # check if ip/hostname resolves okay
-    # Attempts 3 times - takes approx 3 seconds in total for an offline/unresolvable address to fail
+    """Uses a socket to attempt domain lookup
+
+    Args:
+        destination (string): The domain name to be resolved.
+
+    Returns:
+        On success: string containing the resolved IP address.
+        On failure: boolean false.
+    """
     cleaned_dest = destination.rstrip(".")
     resolve_attempts = 0
     while resolve_attempts <= 2:
@@ -127,6 +134,13 @@ def resolve_destination(destination):
 
 
 def currently_frozen():
+    """Checks to see if running in a frozen environment such as pyinstaller or pyupdater package
+    Args:
+        Nil
+
+    Returns:
+        boolean
+    """
     return getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS")
 
 

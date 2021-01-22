@@ -1,5 +1,6 @@
 import logging
 import time
+import warnings
 from collections import namedtuple
 from functools import lru_cache
 from math import log
@@ -16,6 +17,20 @@ from ledfx.effects.math import ExpFilter
 from ledfx.events import GraphUpdateEvent
 
 _LOGGER = logging.getLogger(__name__)
+
+
+"""
+
+    ***THIS IS SUPER IMPORTANT***
+
+    PYAUDIO BINDINGS ARE APPROACHING END OF LIFE
+    FOR PYTHON 3.8/3.9 WE HAVE TO IGNORE ALL WARNINGS THROWN IN THIS FILE
+    OTHERWISE WE GET A DEPRECIATIONWARNING *EVERY AUDIO SAMPLE*
+
+
+"""
+warnings.filterwarnings("ignore")
+
 
 FrequencyRange = namedtuple("FrequencyRange", "min,max")
 
