@@ -7,6 +7,7 @@ import { history } from './createStore';
 import defaultTheme, { darkTheme, bladeTheme, bladeDarkTheme } from './theme';
 // import { createMuiTheme } from '@material-ui/core/styles';
 import './style.css';
+import SnackbarDynamic from '../components/SnackbarDynamic';
 
 export default function App() {
     // const themeSelector = useSelector(state => state.themeSelector)
@@ -22,6 +23,7 @@ export default function App() {
 
     return (
         <MuiThemeProvider theme={theme}>
+            <SnackbarDynamic />
             <Router history={history}>
                 <Switch>
                     {indexRoutes.map(({ component: Component, path }, key) => {
