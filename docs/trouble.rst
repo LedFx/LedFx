@@ -11,16 +11,16 @@ Developer Setup Installation - Python venv
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
-**1.** Install Python 3.9
-**2.** Install Git.
-**3.** Using "Build Tools for Visual Studio 2019" installer.
-       - https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2019
-       - You require the mandatory selected build tools, and the following optional tools;
-           - Windows 10 SDK (or your equivalent Windows Version)
-           - C++ CMAKE tools for Windows
-           - MSVC v142 (or above) - VS 2019 C++ x64/x86 build tools
-       - Default install options are appropriate.
-**4.** Reboot
+  - Install Python 3.9
+  - Install Git.
+  - Using "Build Tools for Visual Studio 2019" installer:
+    - https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2019
+    - You require the mandatory selected build tools, and the following optional tools;
+        - Windows 10 SDK (or your equivalent Windows Version)
+        - C++ CMAKE tools for Windows
+        - MSVC v142 (or above) - VS 2019 C++ x64/x86 build tools
+    - Default install options are appropriate.
+  - Reboot
 
 
 .. code:: console
@@ -41,8 +41,7 @@ Developer Setup Installation - Python venv
     $ python setup.py develop
     $ ledfx --open-ui
 
-To develop:
-**1.** Open up a terminal and activate the ledfx virtual environment
+**1.** To develop, open up a terminal and activate the ledfx virtual environment
 
 .. code:: console
 
