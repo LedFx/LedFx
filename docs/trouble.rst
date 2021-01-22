@@ -45,12 +45,14 @@ Developer Setup Installation - Python venv
   - Open up a terminal and activate the ledfx virtual environment
 
   .. code:: doscon
+
     >C:\ledfx\Scripts\activate.bat
 
-  - Make changes to files in C:\ledfx\ledfx-git
+  - Make changes to LedFx's files in C:\ledfx\ledfx-git
   - Your changed files will be run when you run LedFx
 
   .. code:: doscon
+
     >ledfx --open-ui
 
   - You can keep the ledfx virtual environment open and keep making changes then running ledfx.
