@@ -6,6 +6,7 @@ from logging.handlers import QueueHandler
 
 from ledfx.config import load_config, load_default_presets, save_config
 from ledfx.devices import Devices
+from ledfx.displays import Displays
 from ledfx.effects import Effects
 from ledfx.events import Events, LedFxShutdownEvent
 from ledfx.http_manager import HttpServer
@@ -106,10 +107,12 @@ class LedFxCore(object):
 
         self.devices = Devices(self)
         self.effects = Effects(self)
+        self.displays = Displays(self)
         self.integrations = Integrations(self)
 
         # TODO: Deferr
         self.devices.create_from_config(self.config["devices"])
+        self.displays.create_from_config(self.config["displays"])
         self.integrations.create_from_config(self.config["integrations"])
 
         if not self.devices.values():

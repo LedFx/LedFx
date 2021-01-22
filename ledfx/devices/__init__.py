@@ -10,9 +10,13 @@ import voluptuous as vol
 import zeroconf
 
 from ledfx.config import save_config
-from ledfx.events import (  # DeviceUpdateEvent,; EffectClearedEvent,; EffectSetEvent,
-    Event,
-)
+
+# from ledfx.events import (
+#     DeviceUpdateEvent,
+#     EffectClearedEvent,
+#     EffectSetEvent,
+#     Event,
+# )
 from ledfx.utils import BaseRegistry, RegistryLoader, generate_id
 
 _LOGGER = logging.getLogger(__name__)
@@ -55,6 +59,8 @@ class Device(BaseRegistry):
         # the multiplier to fade in/out of an effect. -ve values mean fading
         # in, +ve mean fading out
         self.fade_timer = 0
+        self._segments = []
+        self._pixels = None
 
     def __del__(self):
         if self._active:
@@ -64,11 +70,21 @@ class Device(BaseRegistry):
     def pixel_count(self):
         pass
 
-    def update_pixels(self, display_id, pixels, start, end):
-        self._pixels[start : end + 1] = pixels
+    def update_pixels(self, display_id, data):
+        # update each segment from this display
+        if not self._active:
+            _LOGGER.warning(
+                f"Cannot update pixels of inactive device {self.name}"
+            )
+            return
+
+        for pixels, start, end in data:
+            self._pixels[start : end + 1] = pixels
+
         if display_id == self.priority_display.id:
             frame = self.assemble_frame()
             self.flush(frame)
+            _LOGGER.debug(f"Device {self.id} flushed by Display {display_id}")
 
     def assemble_frame(self):
         """
@@ -86,17 +102,13 @@ class Device(BaseRegistry):
         return frame
 
     def activate(self):
+        self._pixels = np.zeros((self.pixel_count, 3))
         self._active = True
-        # self._device_thread = Thread(target = self.thread_function)
-        # self._device_thread.start()
-        self._device_thread = None
-        self.thread_function()
 
     def deactivate(self):
+        self._pixels = None
         self._active = False
-        if self._device_thread:
-            self._device_thread.join()
-            self._device_thread = None
+        # self.flush(np.zeros((self.pixel_count, 3)))
 
     @abstractmethod
     def flush(self, data):
@@ -114,6 +126,10 @@ class Device(BaseRegistry):
         return self._config["max_brightness"] * 256
 
     @property
+    def max_refresh_rate(self):
+        return self._config["refresh_rate"]
+
+    @property
     def refresh_rate(self):
         return self.priority_display.refresh_rate
 
@@ -123,6 +139,9 @@ class Device(BaseRegistry):
         Returns the first display that has the highest refresh rate of all displays
         associated with this device
         """
+        if not self._displays:
+            return None
+
         refresh_rate = max(
             display.refresh_rate
             for display in self._displays
@@ -137,9 +156,46 @@ class Device(BaseRegistry):
     @cached_property
     def _displays(self):
         return [
-            self._ledfx.displays.get(display["id"])
-            for display in self._displays_config
+            self._ledfx.displays.get(display_id)
+            for display_id in (segment[0] for segment in self._segments)
         ]
+
+    def add_segment(self, display_id, start_pixel, end_pixel):
+        # if the segment is from a new device, we need to recheck our priority display
+        if display_id not in (segment[0] for segment in self._segments):
+            self.invalidate_cached_props()
+
+        # make sure this segment is within range of this device's total pixels
+        if (start_pixel < 0) or (end_pixel >= self.pixel_count):
+            raise ValueError(
+                f"Invalid segment pixels: ({start_pixel}, {end_pixel}). Device '{self.name}' valid pixels between (0, {self.pixel_count-1})"
+            )
+
+        # make sure this segment doesn't overlap with any others
+        for _, segment_start, segment_end in self._segments:
+            overlap = (
+                min(segment_end, end_pixel)
+                - max(segment_start, start_pixel)
+                + 1
+            )
+            if overlap > 0:
+                raise ValueError(
+                    f"Failed to add segment to device '{self.name}': {overlap} pixel overlap with existing segment"
+                )
+
+        self._segments.append((display_id, start_pixel, end_pixel))
+
+    def clear_segments(self):
+        self._segments = []
+
+    def invalidate_cached_props(self):
+        # invalidate cached properties
+        for prop in [
+            "priority_display",
+            "_displays",
+        ]:
+            if hasattr(self, prop):
+                delattr(self, prop)
 
 
 class Devices(RegistryLoader):
@@ -153,7 +209,7 @@ class Devices(RegistryLoader):
         def cleanup_effects(e):
             self.clear_all_effects()
 
-        self._ledfx.events.add_listener(cleanup_effects, Event.LEDFX_SHUTDOWN)
+        # self._ledfx.events.add_listener(cleanup_effects, Event.LEDFX_SHUTDOWN)
         self._zeroconf = zeroconf.Zeroconf()
 
     def create_from_config(self, config):
@@ -165,20 +221,6 @@ class Devices(RegistryLoader):
                 config=device["config"],
                 ledfx=self._ledfx,
             )
-            if "effect" in device:
-                try:
-                    effect = self._ledfx.effects.create(
-                        ledfx=self._ledfx,
-                        type=device["effect"]["type"],
-                        config=device["effect"]["config"],
-                    )
-                    self._ledfx.devices.get_device(device["id"]).set_effect(
-                        effect
-                    )
-                except vol.MultipleInvalid:
-                    _LOGGER.warning(
-                        "Effect schema changed. Not restoring effect"
-                    )
 
     def clear_all_effects(self):
         for device in self.values():

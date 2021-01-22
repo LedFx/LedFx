@@ -68,7 +68,8 @@ class E131Device(Device):
 
     def activate(self):
         if self._sacn:
-            raise Exception("sACN sender already started.")
+            return
+            # raise Exception("sACN sender already started.")
         # check if ip/hostname resolves okay
         resolved_dest = resolve_destination(self._config["ip_address"])
         if not resolved_dest:
