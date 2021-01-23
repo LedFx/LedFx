@@ -11,12 +11,12 @@ import { deleteAsyncIntegration } from 'modules/integrations';
 import { toggleAsyncIntegration } from 'modules/integrations';
 import { Switch, Chip } from '@material-ui/core';
 import AddCircleIcon from '@material-ui/icons/AddCircle';
-// import DialogAddIntegration from 'components/IntegrationComponents/DialogAddIntegration';
+import DialogAddEventListener from 'components/IntegrationComponents/DialogAddEventListener';
 
 const useStyles = makeStyles({
     integrationCard: {
         width: 300,
-        height: 230,
+        height: 260,
         justifyContent: 'space-between',
         display: 'flex',
         flexDirection: 'column',
@@ -65,20 +65,11 @@ const IntegrationsCard = ({ int }) => {
                 <Typography style={{ fontSize: '14px' }} color="textSecondary" gutterBottom>
                     Description: {int.config.description}
                 </Typography>
-                <Button
-                    variant="contained"
-                    color="primary"
-                    aria-label="Add"
-                    className={classes.button}
-                    endIcon={<AddCircleIcon />}
-                    aria-haspopup="true"
-                    //onClick={this.openAddEventDialog}
-                    role="listitem"
-                >
-                    ADD Event Listener
-                </Button>
             </CardContent>
             <CardActions>
+                <DialogAddEventListener />
+            </CardActions>
+            <CardActions>                
                 <PopoverSure
                     variant="text"
                     onDeleteVitem={() =>
