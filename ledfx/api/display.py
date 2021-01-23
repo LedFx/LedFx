@@ -25,7 +25,21 @@ class DisplayEndpoint(RestEndpoint):
             }
             return web.json_response(data=response, status=404)
 
-        response = display.config
+        response = {"status": "success"}
+        response[display.id] = {
+            "config": display.config,
+            "id": display.id,
+            "segments": display.segments,
+            "active": display.active,
+            "effect": {},
+        }
+        if display.active_effect:
+            effect_response = {}
+            effect_response["config"] = display.active_effect.config
+            effect_response["name"] = display.active_effect.name
+            effect_response["type"] = display.active_effect.type
+            response[display.id]["effect"] = effect_response
+
         return web.json_response(data=response, status=200)
 
     async def put(self, display_id, request) -> web.Response:
@@ -49,9 +63,15 @@ class DisplayEndpoint(RestEndpoint):
             }
             return web.json_response(data=response, status=500)
 
-        active = bool(active)
         # Update the display's configuration
-        display.active = active
+        try:
+            display.active = active
+        except RuntimeError as msg:
+            response = {
+                "status": "failed",
+                "payload": {"type": "warning", "reason": str(msg)},
+            }
+            return web.json_response(data=response, status=500)
 
         # Update ledfx's config
         for idx, item in enumerate(self._ledfx.config["displays"]):
@@ -65,7 +85,7 @@ class DisplayEndpoint(RestEndpoint):
             config_dir=self._ledfx.config_dir,
         )
 
-        response = {"status": "success"}
+        response = {"status": "success", "active": display.active}
         return web.json_response(data=response, status=200)
 
     async def post(self, display_id, request) -> web.Response:
@@ -93,10 +113,10 @@ class DisplayEndpoint(RestEndpoint):
         old_segments = display.segments
         try:
             display.update_segments(display_segments)
-        except ValueError as e:
+        except ValueError as msg:
             response = {
                 "status": "failed",
-                "payload": {"type": "error", "message": e},
+                "payload": {"type": "error", "message": str(msg)},
             }
             display.update_segments(old_segments)
             return web.json_response(data=response, status=500)
@@ -113,7 +133,7 @@ class DisplayEndpoint(RestEndpoint):
             config_dir=self._ledfx.config_dir,
         )
 
-        response = {"status": "success"}
+        response = {"status": "success", "segments": display.segments}
         return web.json_response(data=response, status=200)
 
     async def delete(self, display_id) -> web.Response:

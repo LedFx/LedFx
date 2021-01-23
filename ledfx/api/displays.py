@@ -63,6 +63,9 @@ class DisplaysEndpoint(RestEndpoint):
                 return web.json_response(data=response, status=404)
             # Update the display's configuration
             display.config = display_config
+            _LOGGER.info(
+                f"Updating display {display.id} config to {display_config}"
+            )
             # Update ledfx's config
             for idx, item in enumerate(self._ledfx.config["displays"]):
                 if item["id"] == display.id:

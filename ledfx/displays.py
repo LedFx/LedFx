@@ -88,10 +88,14 @@ class Display(object):
         else:
             raise ValueError
 
-    def register_devices(self):
-        for device_id, start_pixel, end_pixel, invert in self._segments:
+    def register_segments(self, segments):
+        for device_id, start_pixel, end_pixel, invert in segments:
             device = self._ledfx.devices.get(device_id)
             device.add_segment(self.id, start_pixel, end_pixel)
+
+    def clear_segments(self):
+        for device in self._devices:
+            device.clear_display_segments(self.id)
 
     def update_segments(self, segments_config):
         segments_config = [list(item) for item in segments_config]
@@ -99,6 +103,16 @@ class Display(object):
         _pixel_count = self.pixel_count
 
         if _segments != self._segments:
+            self.clear_segments()
+            # try to register this new set of segments
+            # if it fails, restore previous segments and raise the error
+            try:
+                self.register_segments(_segments)
+            except ValueError:
+                self.clear_segments()
+                self.register_segments(self._segments)
+                raise
+
             self._segments = _segments
 
             # invalidate cached properties
@@ -111,23 +125,18 @@ class Display(object):
                 if hasattr(self, prop):
                     delattr(self, prop)
 
-            try:
-                self.register_devices()
-            except ValueError:
-                raise
-
             _LOGGER.info(
-                f"Updating display {self.name} with {len(self._segments)} segments, totalling {self.pixel_count} pixels"
+                f"Updated display {self.name} with {len(self._segments)} segments, totalling {self.pixel_count} pixels"
             )
 
-        # Restart active effect if total pixel count has changed
-        # eg. devices might be reordered, but total pixel count is same
-        # so no need to restart the effect
-        if self.pixel_count != _pixel_count:
-            if self._active_effect is not None:
-                self._active_effect.deactivate()
-                if self.pixel_count > 0:
-                    self._active_effect.activate(self.pixel_count)
+            # Restart active effect if total pixel count has changed
+            # eg. devices might be reordered, but total pixel count is same
+            # so no need to restart the effect
+            if self.pixel_count != _pixel_count:
+                if self._active_effect is not None:
+                    self._active_effect.deactivate()
+                    if self.pixel_count > 0:
+                        self._active_effect.activate(self.pixel_count)
 
     def set_effect(self, effect):
         self.fade_duration = (
@@ -279,10 +288,19 @@ class Display(object):
         return frame
 
     def activate(self):
+        if not self._devices:
+            error = f"Cannot activate display {self.id}, it has no configured device segments"
+            _LOGGER.warning(error)
+            raise RuntimeError(error)
+        if not self._active_effect:
+            error = f"Cannot activate display {self.id}, it has no configured effect"
+            _LOGGER.warning(error)
+            raise RuntimeError(error)
+
         _LOGGER.info(f"Activating display {self.id}")
-        self._active = True
         for device in self._devices:
             device.activate()
+        self._active = True
         self.thread_function()
 
     def deactivate(self):
@@ -317,8 +335,19 @@ class Display(object):
         return self._config["max_brightness"] * 256
 
     @property
-    def is_active(self):
+    def active(self):
         return self._active
+
+    @active.setter
+    def active(self, _active):
+        _active = bool(_active)
+        try:
+            if _active:
+                self.deactivate()
+            else:
+                self.activate()
+        except RuntimeError:
+            raise
 
     @property
     def id(self) -> str:
@@ -372,6 +401,8 @@ class Display(object):
 
     @cached_property
     def refresh_rate(self):
+        if not self._devices:
+            return False
         return min(device.max_refresh_rate for device in self._devices)
 
     @cached_property
@@ -380,6 +411,17 @@ class Display(object):
         for device_id, start_pixel, end_pixel, invert in self._segments:
             total += end_pixel - start_pixel + 1
         return total
+
+    @property
+    def config(self) -> dict:
+        """Returns the config for the object"""
+        return getattr(self, "_config", None)
+
+    @config.setter
+    def config(self, _config):
+        """Updates the config for an object"""
+        _config = self.CONFIG_SCHEMA(_config)
+        return setattr(self, "_config", _config)
 
 
 class Displays(object):
@@ -447,6 +489,13 @@ class Displays(object):
         # Store the object into the internal list and return it
         self._displays[id] = obj
         return obj
+
+    def destroy(self, id):
+        if id not in self._displays:
+            raise AttributeError(
+                ("Object with id '{}' does not exist.").format(id)
+            )
+        del self._displays[id]
 
     def __iter__(self):
         return iter(self._displays)

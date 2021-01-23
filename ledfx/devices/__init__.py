@@ -145,7 +145,7 @@ class Device(BaseRegistry):
         refresh_rate = max(
             display.refresh_rate
             for display in self._displays
-            if display.is_active
+            if display.active
         )
         return next(
             display
@@ -161,15 +161,12 @@ class Device(BaseRegistry):
         ]
 
     def add_segment(self, display_id, start_pixel, end_pixel):
-        # if the segment is from a new device, we need to recheck our priority display
-        if display_id not in (segment[0] for segment in self._segments):
-            self.invalidate_cached_props()
-
         # make sure this segment is within range of this device's total pixels
         if (start_pixel < 0) or (end_pixel >= self.pixel_count):
             raise ValueError(
                 f"Invalid segment pixels: ({start_pixel}, {end_pixel}). Device '{self.name}' valid pixels between (0, {self.pixel_count-1})"
             )
+            return
 
         # make sure this segment doesn't overlap with any others
         for _, segment_start, segment_end in self._segments:
@@ -182,8 +179,17 @@ class Device(BaseRegistry):
                 raise ValueError(
                     f"Failed to add segment to device '{self.name}': {overlap} pixel overlap with existing segment"
                 )
+                return
 
+        # if the segment is from a new device, we need to recheck our priority display
+        if display_id not in (segment[0] for segment in self._segments):
+            self.invalidate_cached_props()
         self._segments.append((display_id, start_pixel, end_pixel))
+
+    def clear_display_segments(self, display_id):
+        self._segments = [
+            segment for segment in self._segments if segment[0] != display_id
+        ]
 
     def clear_segments(self):
         self._segments = []
