@@ -1,7 +1,7 @@
 import { createAction, handleActions } from 'redux-actions';
 import * as deviceProxies from 'proxies/device';
 import { updateDevices } from './settings';
-import { showSuccessSnackbar } from './ui';
+import { showdynSnackbar } from './ui';
 // Actions
 const ACTION_ROOT = 'devices';
 
@@ -151,7 +151,7 @@ export function setDeviceEffect(id, data) {
                     effect: { ...data, ...response.data.effect, isProcessing: false },
                 })
             );
-            dispatch(showSuccessSnackbar('Success!'));
+            dispatch(showdynSnackbar('Success!'));
         } catch (error) {
             deviceUpdated(error);
         }
