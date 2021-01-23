@@ -91,6 +91,7 @@ class Display(object):
             device.add_segment(self.id, start_pixel, end_pixel)
 
     def update_segments(self, segments_config):
+        segments_config = [tuple(item) for item in segments_config]
         _segments = self.SEGMENTS_SCHEMA(segments_config)
         _pixel_count = self.pixel_count
 
@@ -107,7 +108,11 @@ class Display(object):
                 if hasattr(self, prop):
                     delattr(self, prop)
 
-            self.register_devices()
+            try:
+                self.register_devices()
+            except ValueError:
+                raise
+
             _LOGGER.info(
                 f"Updating display {self.name} with {len(self._segments)} segments, totalling {self.pixel_count} pixels"
             )
@@ -289,20 +294,12 @@ class Display(object):
         for device_id, segments in self._segments_by_device.items():
             data = []
             for (
-                data_start,
-                segment_width,
+                start,
+                stop,
+                step,
                 device_start,
                 device_end,
-                inverse,
             ) in segments:
-                if not inverse:
-                    start = data_start
-                    stop = data_start + segment_width
-                    step = 1
-                else:
-                    start = data_start + segment_width - 1
-                    stop = None if data_start == 0 else data_start - 1
-                    step = -1
                 data.append(
                     (pixels[start:stop:step], device_start, device_end)
                 )
@@ -320,6 +317,15 @@ class Display(object):
     def is_active(self):
         return self._active
 
+    @property
+    def id(self) -> str:
+        """Returns the id for the display"""
+        return getattr(self, "_id", None)
+
+    @property
+    def segments(self):
+        return self._segments
+
     @cached_property
     def _segments_by_device(self):
         """
@@ -329,12 +335,20 @@ class Display(object):
         segments_by_device = {}
         for device_id, device_start, device_end, inverse in self._segments:
             segment_width = device_end - device_start + 1
+            if not inverse:
+                start = data_start
+                stop = data_start + segment_width
+                step = 1
+            else:
+                start = data_start + segment_width - 1
+                stop = None if data_start == 0 else data_start - 1
+                step = -1
             segment_info = (
-                data_start,
-                segment_width,
+                start,
+                stop,
+                step,
                 device_start,
                 device_end,
-                inverse,
             )
             if device_id in segments_by_device.keys():
                 segments_by_device[device_id].append(segment_info)
@@ -364,11 +378,6 @@ class Display(object):
             total += end_pixel - start_pixel + 1
         return total
 
-    @property
-    def id(self) -> str:
-        """Returns the id for the object"""
-        return getattr(self, "_id", None)
-
 
 class Displays(object):
     """Thin wrapper around the device registry that manages displays"""
@@ -395,9 +404,8 @@ class Displays(object):
                 ledfx=self._ledfx,
             )
             if "segments" in display:
-                segments = [tuple(item) for item in display["segments"]]
                 self._ledfx.displays.get(display["id"]).update_segments(
-                    segments
+                    display["segments"]
                 )
             if "effect" in display:
                 try:
@@ -422,8 +430,7 @@ class Displays(object):
             id = "{}-{}".format(dupe_id, dupe_index)
             dupe_index = dupe_index + 1
 
-        # Create the new object based on the registry entires and
-        # validate the schema.
+        # Create the new display and validate the schema.
         _config = kwargs.pop("config", None)
         if _config is not None:
             _config = Display.CONFIG_SCHEMA(_config)

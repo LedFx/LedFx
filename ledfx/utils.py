@@ -223,13 +223,19 @@ class BaseRegistry(ABC):
 
     @property
     def type(self) -> str:
-        """Returns the id for the object"""
+        """Returns the type for the object"""
         return getattr(self, "_type", None)
 
     @property
     def config(self) -> dict:
         """Returns the config for the object"""
         return getattr(self, "_config", None)
+
+    @config.setter
+    def config(self, _config):
+        """Updates the config for an object"""
+        _config = self.schema()(_config)
+        return setattr(self, "_config", _config)
 
 
 class RegistryLoader(object):
