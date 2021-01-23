@@ -71,8 +71,11 @@ class Display(object):
         self._segments = []
 
         # list of devices in order of their mapping on the display
-        # [(id, start, end, invert)...]
-        self.SEGMENTS_SCHEMA = vol.Schema([(self._valid_id, int, int, bool)])
+        # [[id, start, end, invert]...]
+        # not a very good schema, but vol seems a bit handicapped in terms of lists.
+        # this won't necessarily ensure perfectly validated segments, but it at
+        # least gives an idea of the format
+        self.SEGMENTS_SCHEMA = vol.Schema([[self._valid_id, int, int, bool]])
 
     def __del__(self):
         if self._active:
@@ -91,7 +94,7 @@ class Display(object):
             device.add_segment(self.id, start_pixel, end_pixel)
 
     def update_segments(self, segments_config):
-        segments_config = [tuple(item) for item in segments_config]
+        segments_config = [list(item) for item in segments_config]
         _segments = self.SEGMENTS_SCHEMA(segments_config)
         _pixel_count = self.pixel_count
 
