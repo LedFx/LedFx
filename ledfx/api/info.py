@@ -17,7 +17,7 @@ class InfoEndpoint(RestEndpoint):
             "url": self._ledfx.http.base_url,
             "name": "LedFx Controller",
             "version": PROJECT_VERSION,
-            "debug_mode": True,
+            "developer_mode": self._ledfx.config["dev_mode"],
         }
 
         return web.json_response(data=response, status=200)

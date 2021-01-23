@@ -77,13 +77,29 @@ def brightness_pixels(pixels, brightness):
 
 @lru_cache(maxsize=32)
 def _gaussian_kernel1d(sigma, order, radius):
+    """
+    Produces a 1D Gaussian or Gaussian-derivative filter kernel as a numpy array.
+
+    Args:
+        sigma (float): The standard deviation of the filter.
+        order (int): The derivative-order to use. 0 indicates a Gaussian function, 1 a 1st order derivative, etc.
+        radius (int): The kernel produced will be of length (2*radius+1)
+
+    Returns:
+        Array of length (2*radius+1) containing the filter kernel.
+    """
     if order < 0:
-        raise ValueError("order must be non-negative")
+        raise ValueError("Order must non-negative")
+    if not (isinstance(radius, int) or radius.is_integer()) or radius <= 0:
+        raise ValueError("Radius must a positive integer")
+
     p = np.polynomial.Polynomial([0, 0, -0.5 / (sigma * sigma)])
     x = np.arange(-radius, radius + 1)
     phi_x = np.exp(p(x), dtype=np.double)
     phi_x /= phi_x.sum()
+
     if order > 0:
+        # For Gaussian-derivative filters, the function must be derived one or more times.
         q = np.polynomial.Polynomial([1])
         p_deriv = p.deriv()
         for _ in range(order):
@@ -91,20 +107,62 @@ def _gaussian_kernel1d(sigma, order, radius):
             # f'(x) = (q'(x) + q(x) * p'(x)) * phi(x)
             q = q.deriv() + q * p_deriv
         phi_x *= q(x)
+
     return phi_x
 
 
 def smooth(x, sigma):
-    lw = int(4.0 * float(sigma) + 0.5)
-    w = _gaussian_kernel1d(sigma, 0, lw)
-    window_len = len(w)
+    """
+    Smooths a 1D array via a Gaussian filter.
 
-    s = np.r_[x[window_len - 1 : 0 : -1], x, x[-1:-window_len:-1]]
-    y = np.convolve(w / w.sum(), s, mode="valid")
+    Args:
+        x (array of floats): The array to be smoothed.
+        sigma (float): The standard deviation of the smoothing filter to use.
 
-    if window_len < len(x):
-        return y[(window_len // 2) : -(window_len // 2)]
-    return y[0 : len(x)]
+    Returns:
+        Array of same length as x.
+    """
+
+    if len(x) == 0:
+        raise ValueError("Cannot smooth an empty array")
+
+    # Choose a radius for the filter kernel large enough to include all significant elements. Using
+    # a radius of 4 standard deviations (rounded to int) will only truncate tail values that are of
+    # the order of 1e-5 or smaller. For very small sigma values, just use a minimal radius.
+    kernel_radius = max(1, int(round(4.0 * sigma)))
+    filter_kernel = _gaussian_kernel1d(sigma, 0, kernel_radius)
+
+    # The filter kernel will be applied by convolution in 'valid' mode, which includes only the
+    # parts of the convolution in which the two signals full overlap, i.e. where the shorter signal
+    # is entirely contained within the longer signal, producing an output signal of length equal to
+    # the difference in length between the two input signals, plus one. So the input signal must be
+    # extended by mirroring the ends (to give realistic values for the first and last pixels after
+    # smoothing) until len(x_mirrored) - len(w) + 1 = len(x). This requires adding (len(w)-1)/2
+    # values to each end of the input. If len(x) < (len(w)-1)/2, then the mirroring will need to be
+    # performed over multiple iterations, as the mirrors can only, at most, triple the length of x
+    # each time they are applied.
+    extended_input_len = len(x) + len(filter_kernel) - 1
+    x_mirrored = x
+    while len(x_mirrored) < extended_input_len:
+        mirror_len = min(
+            len(x_mirrored), (extended_input_len - len(x_mirrored)) // 2
+        )
+        x_mirrored = np.r_[
+            x_mirrored[mirror_len - 1 :: -1],
+            x_mirrored,
+            x_mirrored[-1 : -(mirror_len + 1) : -1],
+        ]
+
+    # Convolve the extended input copy with the filter kernel to apply the filter.
+    # Convolving in 'valid' mode clips includes only the parts of the convolution in which the two
+    # signals full overlap, i.e. the shorter signal is entirely contained within the longer signal.
+    # It produces an output of length equal to the difference in length between the two input
+    # signals, plus one. So this relies on the assumption that len(s) - len(w) + 1 >= len(x).
+    y = np.convolve(x_mirrored, filter_kernel, mode="valid")
+
+    assert len(y) == len(x)
+
+    return y
 
 
 @BaseRegistry.no_registration
@@ -162,14 +220,14 @@ class Effect(BaseRegistry):
         self._pixels = np.zeros((pixel_count, 3))
         self._active = True
 
-        _LOGGER.info("Effect {} activated.".format(self.NAME))
+        _LOGGER.info(f"Effect {self.NAME} activated.")
 
     def deactivate(self):
         """Detaches an output channel from the effect"""
         self._pixels = None
         self._active = False
 
-        _LOGGER.info("Effect {} deactivated.".format(self.NAME))
+        _LOGGER.info(f"Effect {self.NAME} deactivated.")
 
     def update_config(self, config):
         # TODO: Sync locks to ensure everything is thread safe
@@ -194,10 +252,10 @@ class Effect(BaseRegistry):
                 base.config_updated(self, self._config)
 
         _LOGGER.info(
-            "Effect {} config updated to {}.".format(
-                self.NAME, validated_config
-            )
+            f"Effect {self.NAME} config updated to {validated_config}."
         )
+
+        self.configured_blur = self._config["blur"]
 
     def config_updated(self, config):
         """
@@ -206,6 +264,7 @@ class Effect(BaseRegistry):
         complex properties off the configuration, otherwise the config
         should just be referenced in the effect's loop directly
         """
+        self.configured_blur = self._config["blur"]
         pass
 
     @property
@@ -251,10 +310,11 @@ class Effect(BaseRegistry):
                 bg_brightness = (255 - bg_brightness) / 510
                 _bg_color_array = np.tile(self._bg_color, (len(pixels), 1))
                 pixels += np.multiply(_bg_color_array.T, bg_brightness).T
-            if self._config["brightness"]:
+            if self._config["brightness"] is not None:
                 pixels = brightness_pixels(pixels, self._config["brightness"])
-            if self._config["blur"] != 0.0:
-                pixels = blur_pixels(pixels=pixels, sigma=self._config["blur"])
+            # If the configured blur is greater than 0 we need to blur it
+            if self.configured_blur != 0.0:
+                pixels = blur_pixels(pixels=pixels, sigma=self.configured_blur)
             self._pixels = np.copy(pixels)
         else:
             raise TypeError()

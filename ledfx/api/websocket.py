@@ -43,7 +43,7 @@ class WebsocketEndpoint(RestEndpoint):
         try:
             return await WebsocketConnection(self._ledfx).handle(request)
         except ConnectionResetError:
-            _LOGGER.info(
+            _LOGGER.debug(
                 "Connection Reset Error on Websocket Connection - retrying."
             )
 

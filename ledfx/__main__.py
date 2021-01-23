@@ -27,12 +27,15 @@ from logging.handlers import RotatingFileHandler
 from pyupdater.client import Client
 
 import ledfx.config as config_helpers
+import ledfx.sentry_config  # noqa: F401
 from ledfx.consts import (
     PROJECT_NAME,
     PROJECT_VERSION,
     REQUIRED_PYTHON_STRING,
     REQUIRED_PYTHON_VERSION,
 )
+from ledfx.core import LedFxCore
+from ledfx.utils import currently_frozen
 
 # Logger Variables
 PYUPDATERLOGLEVEL = 35
@@ -162,24 +165,26 @@ def parse_args():
     return parser.parse_args()
 
 
-def check_pip_installed():
+def installed_via_pip():
+
+    """Check to see if LedFx is installed via pip
+    Returns:
+        boolean
+    """
     pip_package_command = subprocess.check_output(
         [sys.executable, "-m", "pip", "freeze"]
     )
     installed_packages = [
         r.decode().split("==")[0] for r in pip_package_command.split()
     ]
-    # If the install is from pip, ignore DeprecationWarnings
     if "ledfx" in installed_packages:
-        warnings.filterwarnings("ignore", category=DeprecationWarning)
+        return True
     else:
-        warnings.filterwarnings("default", category=DeprecationWarning)
+        return False
 
 
 def update_ledfx():
 
-    # If we're frozen, we can shut up about DeprecationWarnings
-    warnings.filterwarnings("ignore", category=DeprecationWarning)
     # initialize & refresh in one update, check client
 
     class ClientConfig(object):
@@ -225,20 +230,18 @@ def main():
     setup_logging(args.loglevel)
     config_helpers.load_logger()
 
-    from ledfx.core import LedFxCore
-    from ledfx.utils import currently_frozen
+    if args.offline_mode is False and currently_frozen():
+
+        warnings.filterwarnings("ignore", category=DeprecationWarning)
+        update_ledfx()
 
     if args.offline_mode:
         _LOGGER.warning(
             "Offline Mode Enabled - Please check for updates regularly."
         )
-        if currently_frozen():
-            # Import sentry if we're frozen and check for updates
-            import ledfx.sentry_config
 
-            update_ledfx()
-    if not currently_frozen():
-        check_pip_installed()
+    if not currently_frozen() and installed_via_pip():
+        warnings.filterwarnings("ignore", category=DeprecationWarning)
 
     _LOGGER.info("LedFx Core is initialising")
 

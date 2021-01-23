@@ -3,6 +3,7 @@ import { makeStyles } from '@material-ui/core/styles';
 import {
     Card,
     CardHeader,
+    CardActions,
     CardContent,
     Accordion,
     AccordionSummary,
@@ -11,10 +12,13 @@ import {
     TextField,
     FormControlLabel,
     Checkbox,
+    IconButton,
 } from '@material-ui/core';
 import Typography from '@material-ui/core/Typography';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import { Delete } from '@material-ui/icons';
+import BugReportIcon from '@material-ui/icons/BugReport';
+import { useSelector } from 'react-redux';
 
 const { LazyLog } = require('react-lazylog');
 const { NODE_ENV } = process.env;
@@ -70,6 +74,7 @@ const LogCard = ({ settings, error }) => {
         JSON.parse(window.sessionStorage.getItem('messages')) || 30
     );
     const [wrap, setWrap] = useState(false);
+    const settings2 = useSelector(state => state.settings);
     return (
         <Card>
             <CardHeader title="Console" subheader="View the Console" />
@@ -344,6 +349,51 @@ const LogCard = ({ settings, error }) => {
                     </div>
                 )}
             </CardContent>
+            <CardActions style={{ justifyContent: 'flex-end' }}>
+                {logger.length > 2 && (
+                    <IconButton
+                        aria-label="BugTracker"
+                        color="inherit"
+                        onClick={() => {
+                            const message = `
+<!---ENTER A TITLE--->
+<!---DESCRIBE YOUR ISSUE IN DETAIL--->
+
+
+<!---DON'T TOUCH THE REST - JUST CLICK PREVIEW--->
+## Settings:
+\`\`\`json
+${JSON.stringify(settings2, null, 2)}
+\`\`\`
+
+
+## userAgent:
+\`\`\`json
+${navigator.userAgent.replaceAll(';', '-')}
+\`\`\`
+
+## Logs:
+\`\`\`json
+${JSON.stringify(
+    logger.map(l => l.message).filter((v, i, a) => a.indexOf(v) === i),
+    null,
+    2
+)}
+\`\`\`
+    `;
+                            window.open(
+                                `https://github.com/LedFx/LedFx/issues/new?body=${encodeURIComponent(
+                                    message
+                                )}`
+                            );
+                        }}
+                        target="_blank"
+                        title="BugTracker"
+                    >
+                        <BugReportIcon />
+                    </IconButton>
+                )}
+            </CardActions>
         </Card>
     );
 };

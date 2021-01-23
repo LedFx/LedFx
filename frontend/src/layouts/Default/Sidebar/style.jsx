@@ -104,8 +104,9 @@ const sidebarStyle = theme => ({
         height: '30px',
         float: 'left',
         marginRight: '15px',
+        marginTop: '2px',
         textAlign: 'center',
-        verticalAlign: 'middle',
+        verticalAlign: 'baseline',
         color: 'rgba(255, 255, 255, 0.8)',
     },
     itemText: {
@@ -114,6 +115,7 @@ const sidebarStyle = theme => ({
         fontSize: '14px',
         fontWeight: 300,
         color: '#FFFFFF',
+        verticalAlign: 'middle',
     },
     devicesItemText: {
         margin: '0',
@@ -139,6 +141,21 @@ const sidebarStyle = theme => ({
         overflow: 'auto',
         zIndex: '4',
         overflowScrolling: 'touch',
+    },
+    bottomBar: {
+        position: 'absolute',
+        background: theme.palette.grey[900],
+        bottom: 0,
+        left: 0,
+        right: 0,
+        paddingTop: '0.4rem',
+        paddingBottom: '0.4rem',
+        textAlign: 'center',
+        borderTop: `1px solid ${[theme.palette.background.default]}`,
+        color: '#FFFFFF',
+        '& > a': {
+            margin: '0 5px',
+        },
     },
 });
 

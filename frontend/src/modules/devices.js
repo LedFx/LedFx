@@ -1,6 +1,7 @@
 import { createAction, handleActions } from 'redux-actions';
 import * as deviceProxies from 'proxies/device';
-
+import { updateDevices } from './settings';
+import { showSuccessSnackbar } from './ui';
 // Actions
 const ACTION_ROOT = 'devices';
 
@@ -64,8 +65,8 @@ export function fetchDeviceList() {
                     const data = devices[key];
                     data.effect.active = !!data.effect.name;
                 });
-
                 dispatch(devicesReceived(devices));
+                dispatch(updateDevices(convertDevicesDictionaryToList(devices)));
             }
         } catch (error) {
             dispatch(devicesReceived(error));
@@ -150,9 +151,20 @@ export function setDeviceEffect(id, data) {
                     effect: { ...data, ...response.data.effect, isProcessing: false },
                 })
             );
+            dispatch(showSuccessSnackbar('Success!'));
         } catch (error) {
             deviceUpdated(error);
         }
+    };
+}
+
+export function handleActiveDeviceEffect(id, payload) {
+    return async (dispatch, getState) => {
+        const device = getState().devices.dictionary[id];
+        if (device)
+            dispatch(
+                deviceUpdated({ id, ...device, effect: { ...device.effect, active: payload } })
+            );
     };
 }
 

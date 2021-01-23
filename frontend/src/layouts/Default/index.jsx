@@ -24,8 +24,10 @@ const style = theme => ({
         backgroundColor: theme.palette.background.default,
         padding: theme.spacing(3),
         minWidth: 200,
+        marginTop: '44px',
         [theme.breakpoints.up('md')]: {
             marginLeft: drawerWidth,
+            marginTop: '64px',
         },
         overflowY: 'auto',
     },
@@ -81,12 +83,10 @@ class DefaultLayout extends React.Component {
                     handleDrawerToggle={this.handleDrawerToggle}
                     open={mobileOpen}
                     location={location}
-                    devices={settings.devices}
                     devMode={settings.devMode}
                 />
 
                 <div className={classes.content}>
-                    <div className={classes.toolbar} />
                     <Switch>
                         {viewRoutes.map(({ redirect, path, to, component: Component }, key) => {
                             if (redirect) {

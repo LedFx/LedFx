@@ -5,9 +5,11 @@ import { withStyles } from '@material-ui/core/styles';
 import TableRow from '@material-ui/core/TableRow';
 import TableCell from '@material-ui/core/TableCell';
 import Button from '@material-ui/core/Button';
-import DeleteIcon from '@material-ui/icons/Delete';
 import EditIcon from '@material-ui/icons/Edit';
-
+import Icon from '@material-ui/core/Icon';
+import { Link } from '@material-ui/core';
+import PopoverSure from 'components/PopoverSure';
+import { camelToSnake } from 'utils/helpers';
 const styles = theme => ({
     deleteButton: {
         minWidth: 32,
@@ -25,10 +27,9 @@ const styles = theme => ({
     },
 });
 
-function DevicesTableItem({ device, onDelete, classes, onEdit, index }) {
+function DevicesTableItem({ device, onDelete, classes, onEdit }) {
     const handleDeleteDevice = () => {
         onDelete(device.id);
-        window.location = window.location.href;
     };
 
     const handleEditItem = () => {
@@ -37,28 +38,30 @@ function DevicesTableItem({ device, onDelete, classes, onEdit, index }) {
 
     return (
         <TableRow key={device.id}>
-            <TableCell component="th" scope="row">
+            <TableCell component="th" scope="row" width="35px">
+                <Icon style={{ verticalAlign: 'bottom' }}>
+                    {camelToSnake(device.config.icon_name || 'SettingsInputComponent')}
+                </Icon>
+            </TableCell>
+            <TableCell>
                 <NavLink
                     to={'/devices/' + device.id}
                     className={classes.deviceLink}
                     key={device.id}
+                    color="inherit"
                 >
                     {device.config.name}
                 </NavLink>
             </TableCell>
-            <TableCell>{device.config.ip_address}</TableCell>
+            <TableCell>
+                <Link color="inherit" target="_blank" href={`http://${device.config.ip_address}`}>
+                    {device.config.ip_address}
+                </Link>
+            </TableCell>
             <TableCell>{device.config.pixel_count}</TableCell>
             <TableCell>{device.type}</TableCell>
             <TableCell align="right">
-                <Button
-                    color="secondary"
-                    variant="contained"
-                    size="small"
-                    className={classes.deleteButton}
-                    onClick={handleDeleteDevice}
-                >
-                    <DeleteIcon />
-                </Button>
+                <PopoverSure onConfirm={handleDeleteDevice} className={classes.deleteButton} />
                 <Button
                     variant="contained"
                     size="small"

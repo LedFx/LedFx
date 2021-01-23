@@ -37,7 +37,6 @@ const AddSceneCard = ({ scenes = {}, addScene }) => {
 
     const handleSave = () => {
         addScene(name);
-        window.location = window.location.href;
     };
 
     const handleNameChanged = ({ target: { value } }) => {

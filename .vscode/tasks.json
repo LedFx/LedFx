@@ -2,27 +2,30 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "[LOCAL][Backend]-Install",
+            "label": "[1]-[Backend]-install",
             "type": "shell",
+            "group": "build",
             "command": "cd /workspaces/${workspaceFolderBasename}; python -m pip install -r requirements.txt -r requirements-dev.txt -r docs/requirements-docs.txt && python setup.py develop",
             "problemMatcher": []
         },
         {
-            "label": "[GIT][Backend]-Install",
+            "label": "[GIT][Backend]-install",
             "type": "shell",
             "command": "cd /ledfx-git; python -m pip install -r requirements.txt -r requirements-dev.txt -r docs/requirements-docs.txt && python setup.py develop",
             "problemMatcher": []
         },
         {
-            "label": "[Backend]:8888",
+            "label": "[2]-[Backend]:8888-start",
             "type": "shell",
+            "group": "build",
             "command": "PULSE_SERVER=$PULSE_SERVER ledfx",
             "problemMatcher": []
         },
         {
-            "label": "[LOCAL][Frontend]:3000",
+            "label": "[3]-[Frontend]:3000-start",
             "type": "shell",
-            "command": "cd /workspaces/${workspaceFolderBasename}/frontend; yarn; yarn start",
+            "command": "runuser -l vscode -c 'cd /workspaces/${workspaceFolderBasename}/frontend; yarn; yarn start'",
+            "group": "build",
             "problemMatcher": []
         },
         {
@@ -38,11 +41,25 @@
             "problemMatcher": []
         },
         {
-            "label": "[LOCAL][Docs]:8000",
+            "label": "[6]-[Docs]:8000",
             "type": "shell",
             "command": "cd /workspaces/${workspaceFolderBasename}/docs; make livehtml",
             "problemMatcher": []
-        }
+        },
+        {
+            "label": "[5]-[PRE-COMMIT]",
+            "type": "shell",
+            "group": "build",
+            "command": "cd /workspaces/${workspaceFolderBasename}; pre-commit run --all-files",
+            "problemMatcher": []
+        },
+        {
+            "label": "[4]-[Frontend]-build",
+            "group": "build",
+            "type": "shell",
+            "command": "rm -rf /workspaces/${workspaceFolderBasename}/ledfx_frontend/*; runuser -l vscode -c 'cd /workspaces/${workspaceFolderBasename}/frontend; yarn build'",
+            "problemMatcher": []
+        },
     ],
     "inputs": [
         {

@@ -6,21 +6,21 @@ import CardHeader from '@material-ui/core/CardHeader';
 import CardContent from '@material-ui/core/CardContent';
 import CardActions from '@material-ui/core/CardActions';
 import Button from '@material-ui/core/Button';
-import DeleteIcon from '@material-ui/icons/Delete';
 import CheckCircleIcon from '@material-ui/icons/CheckCircle';
 
 import SceneConfigTable from 'components/SceneCard/SceneConfigTable';
+import PopoverSure from 'components/PopoverSure';
 
 const useStyles = makeStyles(theme => ({
     deleteButton: {
         margin: theme.spacing(1),
-        size: "medium",
+        size: 'medium',
     },
     button: {
-        color: "primary",
+        color: 'primary',
         margin: theme.spacing(1),
-        size: "medium",
-        variant: "contained",
+        size: 'medium',
+        variant: 'contained',
     },
     submitControls: {
         flex: 1,
@@ -43,19 +43,10 @@ export default function SceneCard({ scene, activateScene, deleteScene }) {
         <Card>
             <CardHeader title={scene.name} />
             <CardContent>
-                {scene.devices && <SceneConfigTable devices={scene.devices} />}
+                {scene.devices && <SceneConfigTable classes={classes} devices={scene.devices} />}
             </CardContent>
             <CardActions className={classes.submitControls}>
-                <Button
-                    className={classes.deleteButton}
-                    aria-label="Delete"
-                    color="secondary"
-                    variant="contained"
-                    onClick={handleDelete}
-                    endIcon={<DeleteIcon />}
-                >
-                    Delete
-                </Button>
+                <PopoverSure onConfirm={handleDelete} label="delete" size="medium" />
                 <Button
                     className={classes.button}
                     aria-label="Activate"

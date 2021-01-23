@@ -6,6 +6,7 @@ import scenes from './scenes';
 import settings from './settings';
 import virtuals from './virtuals';
 import integrations from './integrations';
+import ui from './ui';
 
 export default {
     devices,
@@ -16,4 +17,5 @@ export default {
     settings,
     selectedDevice,
     virtuals,
+    ui,
 };
