@@ -1,8 +1,8 @@
 import asyncio
 import logging
 import sys
+import warnings
 from concurrent.futures import ThreadPoolExecutor
-from logging.handlers import QueueHandler
 
 from ledfx.config import load_config, load_default_presets, save_config
 from ledfx.devices import Devices
@@ -11,9 +11,15 @@ from ledfx.effects import Effects
 from ledfx.events import Events, LedFxShutdownEvent
 from ledfx.http_manager import HttpServer
 from ledfx.integrations import Integrations
-from ledfx.utils import async_fire_and_forget
+from ledfx.utils import (
+    RollingQueueHandler,
+    async_fire_and_forget,
+    currently_frozen,
+)
 
 _LOGGER = logging.getLogger(__name__)
+if currently_frozen():
+    warnings.filterwarnings("ignore")
 
 
 class LedFxCore(object):
@@ -61,8 +67,8 @@ class LedFxCore(object):
         def log_filter(record):
             return (record.name != "ledfx.api.log") and (record.levelno >= 20)
 
-        self.logqueue = asyncio.Queue(maxsize=3000, loop=self.loop)
-        logqueue_handler = QueueHandler(self.logqueue)
+        self.logqueue = asyncio.Queue(maxsize=100, loop=self.loop)
+        logqueue_handler = RollingQueueHandler(self.logqueue)
         logqueue_handler.addFilter(log_filter)
         root_logger = logging.getLogger()
         root_logger.addHandler(logqueue_handler)

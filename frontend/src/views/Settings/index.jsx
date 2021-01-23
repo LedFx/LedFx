@@ -7,6 +7,8 @@ import { getAudioInputs, setAudioInput } from 'modules/settings';
 
 import AudioInputCard from './AudioInput';
 import ConfigCard from './ConfigCard';
+import LogCard from './LogCard';
+import ThemesCard from './ThemesCard';
 
 const styles = theme => ({});
 
@@ -20,14 +22,21 @@ class SettingsView extends Component {
         const { audioInputs } = settings;
 
         return (
-            <Grid container direction="column" spacing={4}>
+            <Grid container direction="column" spacing={4} style={{ overflow: 'hidden' }}>
                 <Grid container item direction="row" spacing={4}>
                     <Grid item md={4}>
                         <AudioInputCard {...audioInputs} onChange={setAudioInput} />
                     </Grid>
                     <Grid item md={4}>
+                        <ThemesCard />
+                    </Grid>
+                    <Grid item md={4}>
                         <ConfigCard settings={settings} />
                     </Grid>
+                    <Grid item md={12}>
+                        <LogCard />
+                    </Grid>
+                    `
                 </Grid>
             </Grid>
         );

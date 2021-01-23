@@ -110,15 +110,37 @@ def async_callback(loop, callback, *args):
 
 
 def resolve_destination(destination):
-    # check if ip/hostname resolves okay
+    """Uses a socket to attempt domain lookup
+
+    Args:
+        destination (string): The domain name to be resolved.
+
+    Returns:
+        On success: string containing the resolved IP address.
+        On failure: boolean false.
+    """
     cleaned_dest = destination.rstrip(".")
-    try:
-        return socket.gethostbyname(cleaned_dest)
-    except socket.gaierror:
-        return False
+    resolve_attempts = 0
+    while resolve_attempts <= 2:
+        try:
+            return socket.gethostbyname(cleaned_dest)
+        except socket.gaierror:
+            resolve_attempts += 1
+            _LOGGER.warning(
+                f"Failed resolving {cleaned_dest}, attempt {resolve_attempts} of 3."
+            )
+
+    return False
 
 
 def currently_frozen():
+    """Checks to see if running in a frozen environment such as pyinstaller or pyupdater package
+    Args:
+        Nil
+
+    Returns:
+        boolean
+    """
     return getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS")
 
 
@@ -159,6 +181,15 @@ def getattr_explicit(cls, attr, *default):
     raise AttributeError(
         "type object '{}' has no attribute '{}'.".format(cls.__name__, attr)
     )
+
+
+class RollingQueueHandler(logging.handlers.QueueHandler):
+    def enqueue(self, record):
+        try:
+            self.queue.put_nowait(record)
+        except asyncio.QueueFull:
+            self.queue.get_nowait()
+            self.enqueue(record)
 
 
 class BaseRegistry(ABC):

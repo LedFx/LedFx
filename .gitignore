@@ -59,10 +59,10 @@ keypack.pyu
 .pyupdater/
 pyu-data/
 # Sentry Data
-ledfx/sentry_config.py
 formatting_test.bat
 
 
 # Misc
 .devcontainer/ledfx-config.yml
 .vscode/launch.json
+win.spec

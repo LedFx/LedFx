@@ -24,25 +24,32 @@ const styles = theme => ({
         verticalAlign: 'middle',
     },
     deviceLink: {
-        size: "large",
+        size: 'large',
         margin: theme.spacing(1),
-        textDecoration: "none",
-        "&,&:hover": {
-          color: "#000000"
+        textDecoration: 'none',
+        '&,&:hover': {
+            color: 'inherit',
+        },
+    },
+    textLink: {
+        textDecoration: 'none',
+        color: 'inherit',
+        '&:hover': {
+            color: theme.palette.primary.main,
         },
     },
     actionsContainer: {
         display: 'flex',
-        justifyContent: 'flex-end'
+        justifyContent: 'flex-end',
     },
     toggleContainer: {
         width: '70px',
     },
 });
 
-class DeviceMiniControl extends React.Component {
-    toggleOn = ({ target: { checked } }) => {
-        const { device, setDeviceEffect } = this.props;
+const DeviceMiniControl = props => {
+    const toggleOn = ({ target: { checked } }) => {
+        const { device, setDeviceEffect } = props;
 
         setDeviceEffect(device.id, {
             ...device.effect,
@@ -50,56 +57,47 @@ class DeviceMiniControl extends React.Component {
         });
     };
 
-    render() {
-        const {
-            classes,
-            device: { id, config, effect },
-        } = this.props;
+    const {
+        classes,
+        device: { id, config, effect },
+    } = props;
 
-        return (
-            <Grid container direction="row" spacing={1} justify="space-between">
-                <Grid item xs="auto">
-                    <Typography variant="h5">
-                        {config.name}
-                    </Typography>
-                    <Typography variant="body1" color="textSecondary">
-                        Effect: {effect.name ? effect.name : "None"}
-                    </Typography>
-                </Grid>
+    return (
+        <Grid container direction="row" spacing={1} justify="space-between">
+            <Grid item xs="auto">
+                <NavLink to={`/devices/${id}`} className={classes.textLink} key={id}>
+                    <Typography variant="h5">{config.name}</Typography>
+                </NavLink>
+                <Typography variant="body1" color="textSecondary">
+                    Effect: {effect.name ? effect.name : 'None'}
+                </Typography>
+            </Grid>
 
-                <Grid
-                    item
-                    className={classes.actionsContainer}
+            <Grid item className={classes.actionsContainer}>
+                <Button
+                    component={NavLink}
+                    to={`/devices/${id}`}
+                    className={classes.deviceLink}
+                    key={id}
                 >
-                    <Button
-                        component={NavLink}
-                        to={`/devices/${id}`}
-                        className={classes.deviceLink}
-                        key={id}
-                    >
-                        Change Effect
-                    </Button>
-                    <Grid
-                        container
-                        justify="center"
-                        alignContent="center"
-                        className={classes.toggleContainer}
-                    >
-                        {effect.isProcessing ? (
-                            <CircularProgress size={20} />
-                        ) : (
-                            <Switch
-                                checked={effect.active}
-                                onChange={this.toggleOn}
-                                color="primary"
-                            />
-                        )}
-                    </Grid>
+                    Change Effect
+                </Button>
+                <Grid
+                    container
+                    justify="center"
+                    alignContent="center"
+                    className={classes.toggleContainer}
+                >
+                    {effect.isProcessing ? (
+                        <CircularProgress size={20} />
+                    ) : (
+                        <Switch checked={effect.active} onChange={toggleOn} color="primary" />
+                    )}
                 </Grid>
             </Grid>
-        );
-    }
-}
+        </Grid>
+    );
+};
 
 DeviceMiniControl.propTypes = {
     classes: PropTypes.object.isRequired,

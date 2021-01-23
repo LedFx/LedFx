@@ -115,6 +115,13 @@ class ScenesEndpoint(RestEndpoint):
                     device.clear_effect()
 
             self._ledfx.events.fire_event(SceneSetEvent(scene["name"]))
+            response = {
+                "status": "success",
+                "payload": {
+                    "type": "info",
+                    "message": f"Activated scene {scene['name']}",
+                },
+            }
 
         elif action == "rename":
             name = data.get("name")
@@ -132,7 +139,13 @@ class ScenesEndpoint(RestEndpoint):
                 config_dir=self._ledfx.config_dir,
             )
 
-        response = {"status": "success"}
+            response = {
+                "status": "success",
+                "payload": {
+                    "type": "info",
+                    "message": f"Renamed scene to {name}",
+                },
+            }
         return web.json_response(data=response, status=200)
 
     async def post(self, request) -> web.Response:

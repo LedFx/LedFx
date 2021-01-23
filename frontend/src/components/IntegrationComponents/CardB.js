@@ -7,15 +7,16 @@ import Typography from '@material-ui/core/Typography';
 import PopoverSure from 'components/VirtualComponents/PopoverSure';
 import Button from '@material-ui/core/Button';
 import EditIcon from '@material-ui/icons/Edit';
-import SettingsIcon from '@material-ui/icons/Settings';
 import { deleteAsyncIntegration } from 'modules/integrations';
 import { toggleAsyncIntegration } from 'modules/integrations';
 import { Switch, Chip } from '@material-ui/core';
+import AddCircleIcon from '@material-ui/icons/AddCircle';
+// import DialogAddIntegration from 'components/IntegrationComponents/DialogAddIntegration';
 
 const useStyles = makeStyles({
     integrationCard: {
         width: 300,
-        height: 170,
+        height: 230,
         justifyContent: 'space-between',
         display: 'flex',
         flexDirection: 'column',
@@ -26,7 +27,7 @@ const IntegrationsCard = ({ int }) => {
     const classes = useStyles();
 
     const handleToggle = props => {
-        console.log('YO', props);
+        // console.log('YO', props);
         toggleAsyncIntegration(props);
     };
     return (
@@ -45,12 +46,36 @@ const IntegrationsCard = ({ int }) => {
                     </Typography>
                     <Chip label={`type: ${int.type}`} size="small" />
                 </div>
-                <Typography style={{ fontSize: '14px' }} color="textSecondary" gutterBottom>
-                    {int.config.description}
+                <Typography variant="h6" component="p" gutterBottom>
+                    Status:{' '}
+                    {int.status === 3
+                        ? 'Connecting...'
+                        : int.status === 2
+                        ? 'Disconnecting'
+                        : int.status === 1
+                        ? 'Connected'
+                        : int.status === 0
+                        ? 'Disconnected'
+                        : 'Unknown'}
                 </Typography>
                 <Typography style={{ fontSize: '14px' }} color="textSecondary" gutterBottom>
-                    Status: {int.status === 3 ? 'connecting...' : int.status === 2 ? 'disconnecting': int.status === 1 ? 'connected':int.status === 0 ? 'disconnected':'Unknown'}
+                    QLC+ IP Address: {int.config.ip_address}:{int.config.port}
                 </Typography>
+                <Typography style={{ fontSize: '14px' }} color="textSecondary" gutterBottom>
+                    Description: {int.config.description}
+                </Typography>
+                <Button
+                    variant="contained"
+                    color="primary"
+                    aria-label="Add"
+                    className={classes.button}
+                    endIcon={<AddCircleIcon />}
+                    aria-haspopup="true"
+                    //onClick={handleClickListItem}
+                    role="listitem"
+                >
+                    ADD Event Listener
+                </Button>
             </CardContent>
             <CardActions>
                 <PopoverSure
@@ -61,15 +86,6 @@ const IntegrationsCard = ({ int }) => {
                         })
                     }
                 />
-                <Button
-                    variant="text"
-                    color="secondary"
-                    onClick={() => {
-                        console.log('deleting');
-                    }}
-                >
-                    <SettingsIcon />
-                </Button>
                 <Button
                     variant="text"
                     color="secondary"
@@ -86,9 +102,9 @@ const IntegrationsCard = ({ int }) => {
                             id: int.id,
                         })
                     }
-                    checked={int.active} />
+                    checked={int.active}
+                />
             </CardActions>
-
         </Card>
     );
 };

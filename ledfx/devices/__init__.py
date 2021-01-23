@@ -36,6 +36,11 @@ class Device(BaseRegistry):
                 default=1.0,
             ): vol.All(vol.Coerce(float), vol.Range(min=0, max=1)),
             vol.Optional(
+                "icon_name",
+                description="https://material-ui.com/components/material-icons/",
+                default="SettingsInputComponent",
+            ): str,
+            vol.Optional(
                 "center_offset",
                 description="Number of pixels from the perceived center of the device",
                 default=0,
@@ -298,9 +303,13 @@ class WLEDListener:
                 "ip_address": hostname,
             }
 
-            # Check this device doesn't share IP with any other device
+            # Check this device doesn't share IP, name or hostname with any current saved device
             for device in self._ledfx.devices.values():
-                if device.config["ip_address"] == hostname:
+                if (
+                    device.config["ip_address"] == hostname
+                    or device.config["name"] == wledname
+                    or device.config["ip_address"] == address
+                ):
                     return
 
             # Create the device

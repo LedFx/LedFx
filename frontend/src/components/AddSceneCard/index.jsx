@@ -46,7 +46,10 @@ const AddSceneCard = ({ scenes = {}, addScene }) => {
 
     return (
         <Card>
-            <CardHeader title="Add Scene" subheader="Save current effects of all devices as a Scene" />
+            <CardHeader
+                title="Add Scene"
+                subheader="Save current effects of all devices as a Scene"
+            />
             <CardContent>
                 <Box display="flex">
                     <Box item="true" flexGrow={1}>

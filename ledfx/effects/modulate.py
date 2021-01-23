@@ -71,7 +71,7 @@ class ModulateEffect(Effect):
 
         elif self._config["modulation_effect"] == "breath":
             self._counter += self._config["modulation_speed"]
-            if self._counter == 9 * _rate:
+            if int(self._counter) >= 9 * _rate - 1:
                 self._counter = 0
 
             pixels[
