@@ -40,6 +40,11 @@ class Display(object):
                 description="Preview the pixels without updating the devices",
                 default=False,
             ): bool,
+            vol.Optional(
+                "crossfade",
+                description="Fade time between effects",
+                default=1.0,
+            ): vol.All(vol.Coerce(float), vol.Range(min=0, max=5)),
         }
     )
 
@@ -139,15 +144,13 @@ class Display(object):
                         self._active_effect.activate(self.pixel_count)
 
     def set_effect(self, effect):
-        self.fade_duration = (
-            self.refresh_rate * self._ledfx.config["crossfade"]
-        )
+        self.fade_duration = self.refresh_rate * self._config["crossfade"]
         self.fade_timer = self.fade_duration
 
         if self._active_effect is not None:
             self._fadeout_effect = self._active_effect
             self._ledfx.loop.call_later(
-                self._ledfx.config["crossfade"], self.clear_fadeout_effect
+                self._config["crossfade"], self.clear_fadeout_effect
             )
 
         self._active_effect = effect
@@ -159,13 +162,11 @@ class Display(object):
     def clear_effect(self):
         self._ledfx.events.fire_event(EffectClearedEvent())
 
-        self.fade_duration = (
-            self.refresh_rate * self._ledfx.config["crossfade"]
-        )
+        self.fade_duration = self.refresh_rate * self._config["crossfade"]
         self.fade_timer = -self.fade_duration
 
         self._ledfx.loop.call_later(
-            self._ledfx.config["crossfade"], self.clear_frame
+            self._config["crossfade"], self.clear_frame
         )
 
     def clear_fadeout_effect(self):

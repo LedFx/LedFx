@@ -15,7 +15,6 @@ CORE_CONFIG_SCHEMA = vol.Schema(
         vol.Optional("port", default=8888): int,
         vol.Optional("dev_mode", default=False): bool,
         vol.Optional("max_workers", default=10): int,
-        vol.Optional("crossfade", default=1.0): float,
         vol.Optional("devices", default=[]): list,
         vol.Optional("displays", default=[]): list,
         vol.Optional("default_presets", default={}): dict,
