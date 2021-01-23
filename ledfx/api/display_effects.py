@@ -129,6 +129,9 @@ class EffectsEndpoint(RestEndpoint):
         return web.json_response(data=response, status=200)
 
     async def post(self, display_id, request) -> web.Response:
+        """
+        Set the active effect of a display
+        """
         display = self._ledfx.displays.get(display_id)
         if display is None:
             response = {

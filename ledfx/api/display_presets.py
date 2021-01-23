@@ -55,7 +55,7 @@ class DisplayPresetsEndpoint(RestEndpoint):
         return web.json_response(data=response, status=200)
 
     async def put(self, display_id, request) -> web.Response:
-        """set active effect of display to a preset"""
+        """Set active effect of display to a preset"""
         display = self._ledfx.displays.get(display_id)
         if display is None:
             response = {

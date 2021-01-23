@@ -139,7 +139,7 @@ class Device(BaseRegistry):
         Returns the first display that has the highest refresh rate of all displays
         associated with this device
         """
-        if not self._displays:
+        if not any(display.active for display in self._displays):
             return None
 
         refresh_rate = max(

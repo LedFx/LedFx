@@ -305,8 +305,8 @@ class Display(object):
 
     def deactivate(self):
         self._active = False
-        for device in self._devices:
-            device.deactivate()
+        # for device in self._devices:
+        #     device.deactivate()
 
     def flush(self, pixels):
         """
