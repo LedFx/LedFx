@@ -24,7 +24,7 @@ const SnackbarDynamic = ({ type = 'error' }) => {
                 horizontal: 'center',
             }}
             open={successSnackbarOpen}
-            autoHideDuration={1000 + successSnackbarMessage.length * 60}
+            autoHideDuration={1000 + (successSnackbarMessage || 0).length * 60}
             onClose={handleClose}
             aria-describedby="client-snackbar"
             action={[
