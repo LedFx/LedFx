@@ -10,6 +10,7 @@ export const audioInputSaving = createAction(`${ACTION_ROOT}/AUDIO_DEVICES_SAVIN
 export const configFetching = createAction(`${ACTION_ROOT}/CONFIG_FETCHING`);
 export const configFetched = createAction(`${ACTION_ROOT}/CONFIG_FETCHED`);
 export const updateDevices = createAction('settings/DEVICES_UPDATED');
+export const updateDisplays = createAction('settings/DISPLAYS_UPDATED');
 
 // Reducer
 const INITIAL_STATE = {
@@ -31,6 +32,10 @@ const INITIAL_STATE = {
 export default handleActions(
     {
         [updateDevices]: (state, { payload }) => ({
+            ...state,
+            devices: payload,
+        }),
+        [updateDisplays]: (state, { payload }) => ({
             ...state,
             devices: payload,
         }),

@@ -8,6 +8,7 @@ import BuildIcon from '@material-ui/icons/Build';
 import DeviceHubIcon from '@material-ui/icons/DeviceHub';
 import PowerIcon from '@material-ui/icons/Power';
 import LockOpenIcon from '@material-ui/icons/LockOpen';
+import TvIcon from '@material-ui/icons/Tv';
 
 // Components and Views
 import DashboardView from '../views/Dashboard';
@@ -15,6 +16,7 @@ import DevicesView from '../views/Devices';
 import ScenesView from '../views/Scenes';
 import DeviceView from '../views/Device';
 import VirtualsView from '../views/Virtuals';
+import DisplaysView from '../views/Displays';
 import IntegrationsView from '../views/Integrations';
 import AdvancedView from '../views/Advanced';
 import SettingsView from '../views/Settings';
@@ -34,6 +36,21 @@ const virtuals =
               navbarName: 'Virtual Strips',
               icon: DeviceHubIcon,
               component: VirtualsView,
+          };
+const displays =
+    parseInt(window.localStorage.getItem('BladeMod')) > 1
+        ? {
+              path: '/displays',
+              sidebarName: 'Display Management',
+              navbarName: 'Displays',
+              icon: TvIcon,
+              component: DisplaysView,
+          }
+        : {
+              path: '/displays',
+              navbarName: 'Displays',
+              icon: TvIcon,
+              component: DisplaysView,
           };
 const integrations =
     parseInt(window.localStorage.getItem('BladeMod')) > 1
@@ -74,6 +91,13 @@ const viewRoutes = [
         component: DashboardView,
     },
     {
+        path: '/displays/:displayId',
+        navbarName: 'Displays',
+        sidebarName: 'Displays',
+        icon: List,
+        component: DeviceView,
+    },
+    {
         path: '/devices/:deviceId',
         navbarName: 'Devices',
         sidebarName: 'Devices',
@@ -94,6 +118,7 @@ const viewRoutes = [
         icon: Settings,
         component: DevicesView,
     },
+    displays,
     integrations,
     virtuals,
     {
