@@ -24,8 +24,6 @@ class SchemaEndpoint(RestEndpoint):
                     "schema": convertToJsonSchema(device.schema()),
                     "id": device_type,
                 }
-
-            return web.json_response(data=response, status=200)
         elif schema_type == "effects":
             # Generate all the effect schema
             for (
@@ -49,7 +47,16 @@ class SchemaEndpoint(RestEndpoint):
                     "name": integration.NAME,
                     "description": integration.DESCRIPTION,
                 }
-
-            return web.json_response(data=response, status=200)
+        elif schema_type == "displays":
+            # Get displays schema
+            response["displays"] = {
+                "schema": convertToJsonSchema(self._ledfx.displays.schema()),
+            }
         else:
-            return web.json_response(data=response, status=200)
+            response = {
+                "status": "failed",
+                "reason": f"Schema for '{schema_type}' not found",
+            }
+            return web.json_response(data=response, status=404)
+
+        return web.json_response(data=response, status=200)

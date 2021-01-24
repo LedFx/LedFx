@@ -9,7 +9,7 @@ import zeroconf
 
 # from ledfx.config import save_config
 from ledfx.events import (
-    DeviceUpdateEvent,
+    DisplayUpdateEvent,
     EffectClearedEvent,
     EffectSetEvent,
     Event,
@@ -184,7 +184,7 @@ class Display(object):
             self.assembled_frame = np.zeros((self.pixel_count, 3))
             self.flush(self.assembled_frame)
             self._ledfx.events.fire_event(
-                DeviceUpdateEvent(self.id, self.assembled_frame)
+                DisplayUpdateEvent(self.id, self.assembled_frame)
             )
 
             self.deactivate()
@@ -200,12 +200,12 @@ class Display(object):
             if not self._config["preview_only"]:
                 self.flush(self.assembled_frame)
 
-            def trigger_device_update_event():
+            def trigger_display_update_event():
                 self._ledfx.events.fire_event(
-                    DeviceUpdateEvent(self.id, self.assembled_frame)
+                    DisplayUpdateEvent(self.id, self.assembled_frame)
                 )
 
-            self._ledfx.loop.call_soon_threadsafe(trigger_device_update_event)
+            self._ledfx.loop.call_soon_threadsafe(trigger_display_update_event)
 
     def thread_function(self):
         # TODO: Evaluate switching # over to asyncio with UV loop optimization
@@ -465,6 +465,9 @@ class Displays(object):
                     _LOGGER.warning(
                         "Effect schema changed. Not restoring effect"
                     )
+
+    def schema(self):
+        return Display.CONFIG_SCHEMA
 
     def create(self, id=None, *args, **kwargs):
         """Creates a display"""

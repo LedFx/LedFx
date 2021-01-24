@@ -69,6 +69,33 @@ class DevicesEndpoint(RestEndpoint):
                 "config": device.config,
             }
         )
+
+        # Generate display configuration for the device
+        _LOGGER.info(f"Creating a display for device {device.name}")
+        display_name = f"{device.name} Display"
+        display_id = generate_id(display_name)
+        display_config = {"name": display_name}
+        segments = [[device.id, 0, device_config["pixel_count"] - 1, False]]
+
+        # create the display
+        display = self._ledfx.displays.create(
+            id=display_id,
+            config=display_config,
+            ledfx=self._ledfx,
+        )
+
+        # create the device as a single segment on the display
+        display.update_segments(segments)
+
+        # Update the configuration
+        self._ledfx.config["displays"].append(
+            {
+                "id": display.id,
+                "config": display.config,
+                "segments": display.segments,
+            }
+        )
+
         save_config(
             config=self._ledfx.config,
             config_dir=self._ledfx.config_dir,
@@ -80,6 +107,7 @@ class DevicesEndpoint(RestEndpoint):
                 "type": device.type,
                 "config": device.config,
                 "id": device.id,
+                "displays": device.displays,
             },
         }
         return web.json_response(data=response, status=200)
