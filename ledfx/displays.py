@@ -466,6 +466,9 @@ class Displays(object):
                         "Effect schema changed. Not restoring effect"
                     )
 
+    def schema(self):
+        return Display.CONFIG_SCHEMA
+
     def create(self, id=None, *args, **kwargs):
         """Creates a display"""
 
