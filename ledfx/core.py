@@ -157,13 +157,15 @@ class LedFxCore(object):
         print("Stopping LedFx.")
 
         # Fire a shutdown event and flush the loop
+        _LOGGER.info("Firing LedFxShutdownEvent...")
         self.events.fire_event(LedFxShutdownEvent())
         await asyncio.sleep(0, loop=self.loop)
 
+        _LOGGER.info("Stopping HttpServer...")
         await self.http.stop()
 
         # Cancel all the remaining task and wait
-
+        _LOGGER.info("Killing remaining tasks...")
         tasks = [
             task
             for task in asyncio.all_tasks()
@@ -174,6 +176,7 @@ class LedFxCore(object):
         # Save the configuration before shutting down
         save_config(config=self.config, config_dir=self.config_dir)
 
+        _LOGGER.info("Flushing loop...")
         await self.flush_loop()
         self.executor.shutdown()
         self.exit_code = exit_code

@@ -10,13 +10,7 @@ import voluptuous as vol
 import zeroconf
 
 from ledfx.config import save_config
-
-# from ledfx.events import (
-#     DeviceUpdateEvent,
-#     EffectClearedEvent,
-#     EffectSetEvent,
-#     Event,
-# )
+from ledfx.events import DeviceUpdateEvent
 from ledfx.utils import BaseRegistry, RegistryLoader, generate_id
 
 _LOGGER = logging.getLogger(__name__)
@@ -91,6 +85,13 @@ class Device(BaseRegistry):
             self.flush(frame)
             _LOGGER.debug(f"Device {self.id} flushed by Display {display_id}")
 
+            def trigger_device_update_event():
+                self._ledfx.events.fire_event(
+                    DeviceUpdateEvent(self.id, frame)
+                )
+
+            self._ledfx.loop.call_soon_threadsafe(trigger_device_update_event)
+
     def assemble_frame(self):
         """
         Assembles the frame to be flushed. Currently this will just return
@@ -144,26 +145,30 @@ class Device(BaseRegistry):
         Returns the first display that has the highest refresh rate of all displays
         associated with this device
         """
-        if not any(display.active for display in self._displays):
+        if not any(display.active for display in self._displays_objs):
             return None
 
         refresh_rate = max(
             display.refresh_rate
-            for display in self._displays
+            for display in self._displays_objs
             if display.active
         )
         return next(
             display
-            for display in self._displays
+            for display in self._displays_objs
             if display.refresh_rate == refresh_rate
         )
 
     @cached_property
-    def _displays(self):
-        return [
+    def _displays_objs(self):
+        return list(
             self._ledfx.displays.get(display_id)
-            for display_id in (segment[0] for segment in self._segments)
-        ]
+            for display_id in self.displays
+        )
+
+    @cached_property
+    def displays(self):
+        return list(segment[0] for segment in self._segments)
 
     def add_segment(self, display_id, start_pixel, end_pixel):
         # make sure this segment is within range of this device's total pixels
@@ -201,10 +206,7 @@ class Device(BaseRegistry):
 
     def invalidate_cached_props(self):
         # invalidate cached properties
-        for prop in [
-            "priority_display",
-            "_displays",
-        ]:
+        for prop in ["priority_display", "_displays_objs", "displays"]:
             if hasattr(self, prop):
                 delattr(self, prop)
 

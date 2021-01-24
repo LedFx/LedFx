@@ -21,14 +21,8 @@ class DevicesEndpoint(RestEndpoint):
                 "config": device.config,
                 "id": device.id,
                 "type": device.type,
-                "effect": {},
+                "displays": device.displays,
             }
-            if device.active_effect:
-                effect_response = {}
-                effect_response["config"] = device.active_effect.config
-                effect_response["name"] = device.active_effect.name
-                effect_response["type"] = device.active_effect.type
-                response["devices"][device.id]["effect"] = effect_response
 
         return web.json_response(data=response, status=200)
 
