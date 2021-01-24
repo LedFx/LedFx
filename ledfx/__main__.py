@@ -21,7 +21,6 @@ import logging
 import subprocess
 import sys
 import warnings
-from importlib import reload
 from logging.handlers import RotatingFileHandler
 
 from pyupdater.client import Client
@@ -49,11 +48,34 @@ def validate_python() -> None:
         sys.exit(1)
 
 
+def reset_logging():
+    manager = logging.root.manager
+    manager.disabled = logging.NOTSET
+    for logger in manager.loggerDict.values():
+        if isinstance(logger, logging.Logger):
+            logger.setLevel(logging.NOTSET)
+            logger.propagate = True
+            logger.disabled = False
+            logger.filters.clear()
+            handlers = logger.handlers.copy()
+            for handler in handlers:
+                # Copied from `logging.shutdown`.
+                try:
+                    handler.acquire()
+                    handler.flush()
+                    handler.close()
+                except (OSError, ValueError):
+                    pass
+                finally:
+                    handler.release()
+                logger.removeHandler(handler)
+
+
 def setup_logging(loglevel):
     # Create a custom logging level to display pyupdater progress
-    reload(logging)
+    reset_logging()
 
-    console_loglevel = loglevel if loglevel else logging.WARNING
+    console_loglevel = loglevel or logging.WARNING
     console_logformat = "[%(levelname)-8s] %(name)-30s : %(message)s"
 
     file_loglevel = logging.INFO
