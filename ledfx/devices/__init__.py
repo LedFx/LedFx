@@ -343,7 +343,7 @@ class Devices(RegistryLoader):
             self._zeroconf.remove_service_listener(wled_listener)
 
 
-class WLEDListener:
+class WLEDListener(zeroconf.ServiceBrowser):
     def __init__(self, _ledfx):
         self._ledfx = _ledfx
 
@@ -351,6 +351,8 @@ class WLEDListener:
         _LOGGER.info(f"Service {name} removed")
 
     def add_service(self, zeroconf_obj, type, name):
+
+        _LOGGER.info("Found Device!")
 
         info = zeroconf_obj.get_service_info(type, name)
 

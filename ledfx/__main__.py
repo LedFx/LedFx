@@ -118,6 +118,7 @@ def setup_logging(loglevel):
     logging.getLogger("sacn").setLevel(logging.WARNING)
     logging.getLogger("aiohttp.access").setLevel(logging.WARNING)
     logging.getLogger("pyupdater").setLevel(logging.WARNING)
+    logging.getLogger("zeroconf").setLevel(logging.DEBUG)
 
     global _LOGGER
     _LOGGER = logging.getLogger(__name__)
