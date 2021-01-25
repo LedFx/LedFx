@@ -30,6 +30,7 @@ class DisplayEndpoint(RestEndpoint):
             "config": display.config,
             "id": display.id,
             "segments": display.segments,
+            "pixel_count": display.pixel_count,
             "active": display.active,
             "effect": {},
         }
