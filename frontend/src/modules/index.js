@@ -8,7 +8,7 @@ import virtuals from './virtuals';
 import integrations from './integrations';
 import ui from './ui';
 import displays from './displays';
-
+import selectedDisplay from './selectedDisplay';
 export default {
     devices,
     integrations,
@@ -20,4 +20,5 @@ export default {
     virtuals,
     ui,
     displays,
+    selectedDisplay,
 };

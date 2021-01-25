@@ -5,41 +5,43 @@ import { connect } from 'react-redux';
 import Grid from '@material-ui/core/Grid';
 import Card from '@material-ui/core/Card';
 import CardContent from '@material-ui/core/CardContent';
+import Typography from '@material-ui/core/Typography';
 
-import { loadDeviceInfo, setDeviceEffect, clearDeviceEffect } from 'modules/selectedDevice';
+import { loadDisplayInfo, setDisplayEffect, clearDisplayEffect } from 'modules/selectedDisplay';
 import { activatePreset, getEffectPresets, addPreset } from 'modules/presets';
-// import EffectControl from 'components/EffectControl';
+import EffectControl from 'components/EffectControl';
 // import EffectControlBlade from 'components/EffectControl/blade';
 import PixelColorGraph from 'components/PixelColorGraph';
-// import PresetsCard from 'components/PresetsCard';
-
-class DeviceView extends React.Component {
+import PresetsCard from 'components/PresetsCard';
+import { fetchDisplayList } from 'modules/displays';
+class DisplayView extends React.Component {
     componentDidMount() {
-        const { deviceId } = this.props.match.params;
-        this.handleLoadDevice(deviceId);
+        const { displayId } = this.props.match.params;
+        this.handleLoadDisplay(displayId);
+        this.props.fetchDisplayList();
     }
 
     componentWillReceiveProps(nextProps) {
-        const { deviceId } = this.props.match.params;
-        const { deviceId: newDeviceId } = nextProps.match.params;
-        if (deviceId !== newDeviceId) {
-            this.handleLoadDevice(newDeviceId);
+        const { displayId } = this.props.match.params;
+        const { displayId: newDisplayId } = nextProps.match.params;
+        if (displayId !== newDisplayId) {
+            this.handleLoadDisplay(newDisplayId);
         }
     }
 
-    handleLoadDevice = deviceId => {
-        const { loadDeviceInfo } = this.props;
-        loadDeviceInfo(deviceId);
+    handleLoadDisplay = displayId => {
+        const { loadDisplayInfo } = this.props;
+        loadDisplayInfo(displayId);
     };
 
-    handleClearEffect = deviceId => {
-        const { clearDeviceEffect } = this.props;
-        clearDeviceEffect(deviceId);
+    handleClearEffect = displayId => {
+        const { clearDisplayEffect } = this.props;
+        clearDisplayEffect(displayId);
     };
 
     handleSetEffect = data => {
-        const { setDeviceEffect } = this.props;
-        setDeviceEffect(data.deviceId, data);
+        const { setDisplayEffect } = this.props;
+        setDisplayEffect(data.displayId, data);
     };
 
     handleTypeChange = effectType => {
@@ -51,79 +53,90 @@ class DeviceView extends React.Component {
         const {
             presets,
             schemas,
-            selectedDevice,
+            selectedDisplay,
             activatePreset,
             getEffectPresets,
             addPreset,
         } = this.props;
-        const { device, effect, isDeviceLoading, isEffectLoading } = selectedDevice;
+        const { display, effect, isDisplayLoading, isEffectLoading } = selectedDisplay;
 
-        if (schemas.isLoading || isDeviceLoading || !device) {
-            return <p>Loading</p>;
+        if (schemas.isLoading || isDisplayLoading || !display) {
+            return <p>Loading...</p>;
         }
 
         return (
-            <Card>
-                <CardContent>
-                    <PixelColorGraph device={device} />
-                </CardContent>
-            </Card>
-            // <Grid container direction="row" spacing={4}>
-            //     {renderPixelGraph(device, effect)}
-            //     <Grid item xs={12} lg={6}>
-            //         <Card>
-            //             <CardContent>
-            //                 <EffectControl
-            //                     device={device}
-            //                     effect={effect}
-            //                     schemas={schemas}
-            //                     onClear={this.handleClearEffect}
-            //                     onSubmit={this.handleSetEffect}
-            //                     onTypeChange={this.handleTypeChange}
-            //                 />
-            //             </CardContent>
-            //         </Card>
-            //     </Grid>
-            //     <Grid item xs={12} lg={6}>
-            //         {effect.type && (
-            //             <PresetsCard
-            //                 device={device}
-            //                 presets={presets}
-            //                 effect={effect}
-            //                 activatePreset={activatePreset}
-            //                 getEffectPresets={getEffectPresets}
-            //                 addPreset={addPreset}
-            //             />
-            //         )}
-            //     </Grid>
-            //     {parseInt(window.localStorage.getItem('BladeMod')) > 2 && (
-            //         <Grid item xs={12} lg={6}>
-            //             <Card>
-            //                 <CardContent>
-            //                     <EffectControlBlade
-            //                         device={device}
-            //                         effect={effect}
-            //                         schemas={schemas}
-            //                         onClear={this.handleClearEffect}
-            //                         onSubmit={this.handleSetEffect}
-            //                         onTypeChange={this.handleTypeChange}
-            //                     />
-            //                 </CardContent>
-            //             </Card>
-            //         </Grid>
-            //     )}
-            // </Grid>
+            <>
+                <Grid container direction="row" spacing={4}>
+                    <Grid item xs={12} lg={12}>
+                        <Card>
+                            <CardContent>
+                                <PixelColorGraph device={display} />
+                            </CardContent>
+                        </Card>
+                    </Grid>
+                    {renderPixelGraph(display, effect)}
+                    <Grid item xs={12} lg={6}>
+                        <Card>
+                            <CardContent>
+                                <EffectControl
+                                    device={display}
+                                    effect={effect}
+                                    schemas={schemas}
+                                    onClear={this.handleClearEffect}
+                                    onSubmit={this.handleSetEffect}
+                                    onTypeChange={this.handleTypeChange}
+                                />
+                            </CardContent>
+                        </Card>
+                    </Grid>
+                    <Grid item xs={12} lg={6}>
+                        {effect.type && (
+                            <PresetsCard
+                                device={display}
+                                presets={presets}
+                                effect={effect}
+                                activatePreset={activatePreset}
+                                getEffectPresets={getEffectPresets}
+                                addPreset={addPreset}
+                            />
+                        )}
+                    </Grid>
+                    {/* {parseInt(window.localStorage.getItem('BladeMod')) > 2 && (
+                        <Grid item xs={12} lg={6}>
+                            <Card>
+                                <CardContent>
+                                    <EffectControlBlade
+                                        display={display}
+                                        effect={effect}
+                                        schemas={schemas}
+                                        onClear={this.handleClearEffect}
+                                        onSubmit={this.handleSetEffect}
+                                        onTypeChange={this.handleTypeChange}
+                                    />
+                                </CardContent>
+                            </Card>
+                        </Grid>
+                    )} */}
+                    <Grid item xs={12} lg={12}>
+                        <Card>
+                            <CardContent>
+                                <Typography variant="h5">Display Config</Typography>
+                            </CardContent>
+                        </Card>
+                    </Grid>
+                </Grid>
+            </>
         );
     }
 }
 
-const renderPixelGraph = (device, effect) => {
-    if (device && effect?.name) {
+const renderPixelGraph = (display, effect) => {
+    if (display && effect?.name) {
         return (
             <Grid item xs={12}>
                 <Card>
                     <CardContent>
-                        <PixelColorGraph device={device} />
+                        <PixelColorGraph device={display} />
                     </CardContent>
                 </Card>
             </Grid>
@@ -131,23 +144,25 @@ const renderPixelGraph = (device, effect) => {
     }
 };
 
-DeviceView.propTypes = {
+DisplayView.propTypes = {
     schemas: PropTypes.object.isRequired,
-    selectedDevice: PropTypes.object.isRequired,
+    selectedDisplay: PropTypes.object.isRequired,
 };
 
 export default connect(
     state => ({
         schemas: state.schemas,
-        selectedDevice: state.selectedDevice,
+        selectedDisplay: state.selectedDisplay,
+        clearDisplayEffect: state.clearDisplayEffect,
         presets: state.presets,
     }),
     {
-        loadDeviceInfo,
-        clearDeviceEffect,
-        setDeviceEffect,
+        loadDisplayInfo,
+        clearDisplayEffect,
+        setDisplayEffect,
         activatePreset,
         getEffectPresets,
         addPreset,
+        fetchDisplayList,
     }
-)(DeviceView);
+)(DisplayView);

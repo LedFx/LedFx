@@ -15,6 +15,7 @@ import DashboardView from '../views/Dashboard';
 import DevicesView from '../views/Devices';
 import ScenesView from '../views/Scenes';
 import DeviceView from '../views/Device';
+import DisplayView from '../views/Display';
 import VirtualsView from '../views/Virtuals';
 import DisplaysView from '../views/Displays';
 import IntegrationsView from '../views/Integrations';
@@ -95,7 +96,7 @@ const viewRoutes = [
         navbarName: 'Displays',
         sidebarName: 'Displays',
         icon: List,
-        component: DeviceView,
+        component: DisplayView,
     },
     {
         path: '/devices/:deviceId',
