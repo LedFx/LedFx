@@ -3,13 +3,13 @@ import { connect } from 'react-redux';
 import withStyles from '@material-ui/core/styles/withStyles';
 import Grid from '@material-ui/core/Grid';
 import Card from '@material-ui/core/Card';
-import Box from '@material-ui/core/Box';
+// import Box from '@material-ui/core/Box';
 import Typography from '@material-ui/core/Typography';
 import CardContent from '@material-ui/core/CardContent';
-import Button from '@material-ui/core/Button';
+// import Button from '@material-ui/core/Button';
 
 import DisplaysTable from 'components/DisplaysTable';
-import DisplayConfigDialog from 'components/DeviceConfigDialog';
+// import DisplayConfigDialog from 'components/DeviceConfigDialog';
 import {
     addDisplay,
     deleteDisplay,
@@ -70,17 +70,13 @@ class DisplaysView extends React.Component {
 
     render() {
         const {
-            classes,
             displayList,
-            schemas,
-            addDisplay,
-            deleteDisplay,
-            updateDisplayConfig,
+            // schemas,
+            // addDisplay,
+            // deleteDisplay,
+            // updateDisplayConfig,
         } = this.props;
-        const { addDialogOpened, selectedDisplay } = this.state;
-        const helpText = `Ensure WLED Displays are on and connected to your WiFi.\n
-                          If not detected, check WLED device mDNS setting. Go to:\n
-                          WLED device ip > Config > WiFi Setup > mDNS Address \n`;
+        // const { addDialogOpened, selectedDisplay } = this.state;
 
         return (
             <>

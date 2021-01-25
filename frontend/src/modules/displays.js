@@ -1,6 +1,6 @@
 import { createAction, handleActions } from 'redux-actions';
 import * as displayProxies from 'proxies/display';
-import { updateDisplays } from './settings';
+// import { updateDisplays } from './settings';
 import { showdynSnackbar } from './ui';
 // Actions
 const ACTION_ROOT = 'displays';
@@ -58,7 +58,7 @@ export function fetchDisplayList() {
         dispatch(displaysRequested());
         try {
             const response = await displayProxies.getDisplays();
-            console.log('BOOM', response);
+            // console.log('BOOM', response);
             if (response.statusText === 'OK') {
                 const { displays } = response.data;
                 Object.keys(displays).forEach(key => {
@@ -91,9 +91,9 @@ export function addDisplay(type, config) {
     };
 }
 
-const sleep = ms => {
-    return new Promise(resolve => setTimeout(resolve, ms));
-};
+// const sleep = ms => {
+//     return new Promise(resolve => setTimeout(resolve, ms));
+// };
 
 export function findWLEDDisplays({ resolve, reject }) {
     return async dispatch => {

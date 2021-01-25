@@ -7,7 +7,7 @@ import TableCell from '@material-ui/core/TableCell';
 import Button from '@material-ui/core/Button';
 import EditIcon from '@material-ui/icons/Edit';
 import Icon from '@material-ui/core/Icon';
-import { Link, Switch } from '@material-ui/core';
+import { Switch } from '@material-ui/core';
 import PopoverSure from 'components/PopoverSure';
 import { camelToSnake } from 'utils/helpers';
 const styles = theme => ({

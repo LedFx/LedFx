@@ -58,7 +58,7 @@ class DisplayView extends React.Component {
             getEffectPresets,
             addPreset,
         } = this.props;
-        const { display, effect, isDisplayLoading, isEffectLoading } = selectedDisplay;
+        const { display, effect, isDisplayLoading } = selectedDisplay;
 
         if (schemas.isLoading || isDisplayLoading || !display) {
             return <p>Loading...</p>;

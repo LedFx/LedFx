@@ -62,13 +62,13 @@ export function fetchDeviceList() {
 
             if (response.statusText === 'OK') {
                 const { devices } = response.data;
-                console.log(devices);
+                // console.log(devices);
                 Object.keys(devices).forEach(key => {
                     const data = devices[key];
 
                     data.effect = { active: false };
                 });
-                console.log('WTF', devices);
+                // console.log('WTF', devices);
                 dispatch(devicesReceived(devices));
                 dispatch(updateDevices(convertDevicesDictionaryToList(devices)));
             }
