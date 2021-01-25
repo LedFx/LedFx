@@ -141,9 +141,12 @@ const sidebarStyle = theme => ({
         overflow: 'auto',
         zIndex: '4',
         overflowScrolling: 'touch',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
     },
     bottomBar: {
-        position: 'absolute',
+        position: 'relative',
         background: theme.palette.grey[900],
         bottom: 0,
         left: 0,

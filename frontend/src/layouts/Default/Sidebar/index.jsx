@@ -14,12 +14,13 @@ import logoAsset from 'assets/img/icon/large_white_alpha.png';
 import sidebarStyle from './style.jsx';
 import Icon from '@material-ui/core/Icon';
 import { fetchDeviceList } from 'modules/devices.js';
+import { fetchDisplayList } from 'modules/displays.js';
 import { camelToSnake } from 'utils/helpers';
 
 import BottomBar from './BottomBar.js';
 const Links = ({ classes, devMode, effectLinks, isViewActive }) => {
     const devices = useSelector(state => state.settings.devices);
-    const displays = useSelector(state => state.displays.list) || [];
+    const displays = useSelector(state => state.displays.list);
 
     return (
         <List className={classes.list}>
@@ -211,8 +212,10 @@ const Sidebar = props => {
         </div>
     );
     useEffect(() => {
+        fetchDisplayList();
         fetchDeviceList();
     }, []);
+
     return (
         <div>
             <Hidden mdUp>

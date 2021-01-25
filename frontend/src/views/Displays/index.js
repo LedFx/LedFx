@@ -7,10 +7,6 @@ import Box from '@material-ui/core/Box';
 import Typography from '@material-ui/core/Typography';
 import CardContent from '@material-ui/core/CardContent';
 import Button from '@material-ui/core/Button';
-import Tooltip from '@material-ui/core/Tooltip';
-import AddCircleIcon from '@material-ui/icons/AddCircle';
-import WifiTetheringIcon from '@material-ui/icons/WifiTethering';
-import CircularProgress from '@material-ui/core/CircularProgress';
 
 import DisplaysTable from 'components/DisplaysTable';
 import DisplayConfigDialog from 'components/DeviceConfigDialog';
@@ -58,8 +54,8 @@ class DisplaysView extends React.Component {
         this.setState({ selectedDisplay: {}, addDialogOpened: false });
     };
 
-    handleEditDisplay = device => {
-        this.setState({ selectedDisplay: device, addDialogOpened: true });
+    handleEditDisplay = display => {
+        this.setState({ selectedDisplay: display, addDialogOpened: true });
     };
 
     handleFindDisplays = () => {
@@ -75,13 +71,11 @@ class DisplaysView extends React.Component {
     render() {
         const {
             classes,
-            deviceList,
             displayList,
             schemas,
             addDisplay,
             deleteDisplay,
             updateDisplayConfig,
-            scanProgress,
         } = this.props;
         const { addDialogOpened, selectedDisplay } = this.state;
         const helpText = `Ensure WLED Displays are on and connected to your WiFi.\n
@@ -101,57 +95,6 @@ class DisplaysView extends React.Component {
                                             Manage displays connected to LedFx
                                         </Typography>
                                     </Grid>
-                                    {!schemas.isLoading && (
-                                        <>
-                                            <Grid item>
-                                                <Box
-                                                    display="flex"
-                                                    flexDirection="row"
-                                                    alignItems="center"
-                                                    justifyContent="center"
-                                                >
-                                                    <CircularProgress
-                                                        variant="determinate"
-                                                        value={scanProgress * 10}
-                                                        size={35}
-                                                    />
-                                                    <Tooltip title={helpText} interactive arrow>
-                                                        <Button
-                                                            variant="contained"
-                                                            color="primary"
-                                                            aria-label="Scan"
-                                                            disabled={
-                                                                this.state.searchDisplaysLoading
-                                                            }
-                                                            className={classes.button}
-                                                            onClick={this.handleFindDisplays}
-                                                            endIcon={<WifiTetheringIcon />}
-                                                        >
-                                                            Find WLED Displays
-                                                        </Button>
-                                                    </Tooltip>
-                                                    <Button
-                                                        variant="contained"
-                                                        color="primary"
-                                                        aria-label="Add"
-                                                        className={classes.button}
-                                                        onClick={this.openAddDisplayDialog}
-                                                        endIcon={<AddCircleIcon />}
-                                                    >
-                                                        Add Display
-                                                    </Button>
-                                                    <DisplayConfigDialog
-                                                        open={addDialogOpened}
-                                                        onClose={this.closeAddDisplayDialog}
-                                                        deviceTypes={schemas.deviceTypes}
-                                                        onAddDisplay={addDisplay}
-                                                        initial={selectedDisplay}
-                                                        onUpdateDisplay={updateDisplayConfig}
-                                                    />
-                                                </Box>
-                                            </Grid>
-                                        </>
-                                    )}
                                 </Grid>
 
                                 <DisplaysTable
@@ -170,10 +113,8 @@ class DisplaysView extends React.Component {
 
 export default connect(
     state => ({
-        deviceList: state.devices.list,
         displayList: state.displays.list || [],
         schemas: state.schemas,
-        scanProgress: state.devices.scanProgress,
     }),
     {
         addDisplay,

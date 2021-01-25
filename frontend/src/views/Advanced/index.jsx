@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useDispatch } from 'react-redux';
 import Grid from '@material-ui/core/Grid';
 import MuiAlert from '@material-ui/lab/Alert';
 import Snackbar from '@material-ui/core/Snackbar';
@@ -16,6 +17,7 @@ import LogCard from './LogCard';
 import ControlsCard from './ControlsCard';
 import ThemesCard from './ThemesCard';
 import ConfigEditor from './ConfigEditor';
+import { fetchDisplayList } from 'modules/displays';
 
 function Alert(props) {
     return <MuiAlert elevation={6} variant="filled" {...props} />;
@@ -27,7 +29,10 @@ const AdvancedView = () => {
     const handleClose = () => {
         setSnackbarState({ ...snackbarState, open: false });
     };
-
+    const dispatch = useDispatch();
+    useEffect(() => {
+        dispatch(fetchDisplayList());
+    }, [dispatch]);
     return (
         <Grid container spacing={2}>
             <Grid item xs={12} md={12}>

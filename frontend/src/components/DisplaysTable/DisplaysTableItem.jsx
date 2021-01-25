@@ -7,7 +7,7 @@ import TableCell from '@material-ui/core/TableCell';
 import Button from '@material-ui/core/Button';
 import EditIcon from '@material-ui/icons/Edit';
 import Icon from '@material-ui/core/Icon';
-import { Link } from '@material-ui/core';
+import { Link, Switch } from '@material-ui/core';
 import PopoverSure from 'components/PopoverSure';
 import { camelToSnake } from 'utils/helpers';
 const styles = theme => ({
@@ -18,7 +18,7 @@ const styles = theme => ({
         minWidth: 32,
         marginLeft: theme.spacing(1),
     },
-    deviceLink: {
+    displayLink: {
         textDecoration: 'none',
         color: 'inherit',
         '&:hover': {
@@ -27,39 +27,38 @@ const styles = theme => ({
     },
 });
 
-function DevicesTableItem({ device, onDelete, classes, onEdit }) {
+function DevicesTableItem({ display, onDelete, classes, onEdit }) {
     const handleDeleteDevice = () => {
-        onDelete(device.id);
+        onDelete(display.id);
     };
 
     const handleEditItem = () => {
-        onEdit(device);
+        onEdit(display);
     };
 
     return (
-        <TableRow key={device.id}>
+        <TableRow key={display.id}>
             <TableCell component="th" scope="row" width="35px">
                 <Icon style={{ verticalAlign: 'bottom' }}>
-                    {camelToSnake(device.config.icon_name || 'SettingsInputComponent')}
+                    {camelToSnake(display.config.icon_name || 'SettingsInputComponent')}
                 </Icon>
             </TableCell>
             <TableCell>
                 <NavLink
-                    to={'/devices/' + device.id}
-                    className={classes.deviceLink}
-                    key={device.id}
+                    to={'/displays/' + display.id}
+                    className={classes.displayLink}
+                    key={display.id}
                     color="inherit"
                 >
-                    {device.config.name}
+                    {display.config.name}
                 </NavLink>
             </TableCell>
+            <TableCell>{display.config.max_brightness}</TableCell>
+            <TableCell>{display.config.crossfade}</TableCell>
+            <TableCell>{display.config.center_offset}</TableCell>
             <TableCell>
-                <Link color="inherit" target="_blank" href={`http://${device.config.ip_address}`}>
-                    {device.config.ip_address}
-                </Link>
+                <Switch checked={display.config.preview_only} />
             </TableCell>
-            <TableCell>{device.config.pixel_count}</TableCell>
-            <TableCell>{device.type}</TableCell>
             <TableCell align="right">
                 <PopoverSure onConfirm={handleDeleteDevice} className={classes.deleteButton} />
                 <Button
@@ -77,7 +76,7 @@ function DevicesTableItem({ device, onDelete, classes, onEdit }) {
 
 DevicesTableItem.propTypes = {
     classes: PropTypes.object.isRequired,
-    device: PropTypes.object.isRequired,
+    display: PropTypes.object.isRequired,
     onDelete: PropTypes.func.isRequired,
 };
 

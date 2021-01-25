@@ -21,6 +21,7 @@ import {
     fetchDeviceList,
     findWLEDDevices,
 } from 'modules/devices';
+import { fetchDisplayList } from 'modules/displays';
 
 const styles = theme => ({
     cardResponsive: {
@@ -46,8 +47,10 @@ class DevicesView extends React.Component {
         };
     }
     componentDidMount() {
-        const { fetchDeviceList } = this.props;
+        const { fetchDeviceList, fetchDisplayList } = this.props;
         fetchDeviceList();
+
+        fetchDisplayList();
     }
 
     openAddDeviceDialog = () => {
@@ -158,8 +161,6 @@ class DevicesView extends React.Component {
                                     onDeleteDevice={deleteDevice}
                                     onEditDevice={this.handleEditDevice}
                                 />
-
-
                             </CardContent>
                         </Card>
                     </Grid>
@@ -181,5 +182,6 @@ export default connect(
         updateDeviceConfig,
         fetchDeviceList,
         findWLEDDevices,
+        fetchDisplayList,
     }
 )(withStyles(styles)(DevicesView));

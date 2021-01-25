@@ -9,6 +9,7 @@ import Typography from '@material-ui/core/Typography';
 
 import { loadDeviceInfo, setDeviceEffect, clearDeviceEffect } from 'modules/selectedDevice';
 import { fetchDeviceList } from 'modules/devices';
+import { fetchDisplayList } from 'modules/displays';
 import { activatePreset, getEffectPresets, addPreset } from 'modules/presets';
 // import EffectControl from 'components/EffectControl';
 // import EffectControlBlade from 'components/EffectControl/blade';
@@ -20,6 +21,7 @@ class DeviceView extends React.Component {
         const { deviceId } = this.props.match.params;
         this.handleLoadDevice(deviceId);
         this.props.fetchDeviceList();
+        this.props.fetchDisplayList();
     }
 
     componentWillReceiveProps(nextProps) {
@@ -188,5 +190,6 @@ export default connect(
         getEffectPresets,
         addPreset,
         fetchDeviceList,
+        fetchDisplayList,
     }
 )(DeviceView);

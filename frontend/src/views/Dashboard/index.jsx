@@ -12,6 +12,7 @@ import AddSceneCard from 'components/AddSceneCard';
 import MiniScenesCard from 'components/MiniScenesCard';
 import { addScene, getScenes, activateScene } from 'modules/scenes';
 import { setDeviceEffect, clearDeviceEffect, fetchDeviceList } from 'modules/devices';
+import { fetchDisplayList } from 'modules/displays';
 
 const styles = theme => ({
     root: {
@@ -33,6 +34,7 @@ class DashboardView extends React.Component {
     componentDidMount() {
         this.props.getScenes();
         this.props.fetchDeviceList();
+        this.props.fetchDisplayList();
     }
 
     handleUpdateDeviceEffect = (deviceId, data) => {
@@ -100,5 +102,13 @@ export default connect(
         devices: state.devices,
         scenes: state.scenes,
     }),
-    { addScene, activateScene, getScenes, setDeviceEffect, clearDeviceEffect, fetchDeviceList }
+    {
+        addScene,
+        activateScene,
+        getScenes,
+        setDeviceEffect,
+        clearDeviceEffect,
+        fetchDeviceList,
+        fetchDisplayList,
+    }
 )(withStyles(styles)(DashboardView));

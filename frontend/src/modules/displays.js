@@ -7,13 +7,14 @@ const ACTION_ROOT = 'displays';
 
 export const displaysRequested = createAction(`${ACTION_ROOT}/DISPLAYS_REQUESTED`);
 export const displaysReceived = createAction(`${ACTION_ROOT}/DISPLAYS_RECEIVED`);
-export const displayUpdated = createAction(`${ACTION_ROOT}/DEVICE_UPDATED`);
-export const scanProgressUpdated = createAction(`${ACTION_ROOT}/DEVICE_SCAN_PROGRESS_UPDATED`);
+export const displayUpdated = createAction(`${ACTION_ROOT}/DISPLAY_UPDATED`);
+export const scanProgressUpdated = createAction(`${ACTION_ROOT}/DISPLAY_SCAN_PROGRESS_UPDATED`);
 
 // Reducer
 const INITIAL_STATE = {
     isLoading: false,
     scanProgress: 0,
+    list: [],
 };
 
 export default handleActions(
@@ -65,7 +66,7 @@ export function fetchDisplayList() {
                     data.effect.active = !!data.effect.name;
                 });
                 dispatch(displaysReceived(displays));
-                dispatch(updateDisplays(convertDisplaysDictionaryToList(displays)));
+                // dispatch(updateDisplays(convertDisplaysDictionaryToList(displays)));
             }
         } catch (error) {
             dispatch(displaysReceived(error));
