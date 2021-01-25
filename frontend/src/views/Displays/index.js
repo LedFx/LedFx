@@ -12,7 +12,7 @@ import AddCircleIcon from '@material-ui/icons/AddCircle';
 import WifiTetheringIcon from '@material-ui/icons/WifiTethering';
 import CircularProgress from '@material-ui/core/CircularProgress';
 
-import DisplaysTable from 'components/DevicesTable';
+import DisplaysTable from 'components/DisplaysTable';
 import DisplayConfigDialog from 'components/DeviceConfigDialog';
 import {
     addDisplay,
@@ -76,6 +76,7 @@ class DisplaysView extends React.Component {
         const {
             classes,
             deviceList,
+            displayList,
             schemas,
             addDisplay,
             deleteDisplay,
@@ -97,7 +98,7 @@ class DisplaysView extends React.Component {
                                     <Grid item xs="auto">
                                         <Typography variant="h5">Displays</Typography>
                                         <Typography variant="body1" color="textSecondary">
-                                            Manage devices connected to LedFx
+                                            Manage displays connected to LedFx
                                         </Typography>
                                     </Grid>
                                     {!schemas.isLoading && (
@@ -154,7 +155,7 @@ class DisplaysView extends React.Component {
                                 </Grid>
 
                                 <DisplaysTable
-                                    items={deviceList}
+                                    items={displayList}
                                     onDeleteDisplay={deleteDisplay}
                                     onEditDisplay={this.handleEditDisplay}
                                 />
@@ -170,6 +171,7 @@ class DisplaysView extends React.Component {
 export default connect(
     state => ({
         deviceList: state.devices.list,
+        displayList: state.displays.list || [],
         schemas: state.schemas,
         scanProgress: state.devices.scanProgress,
     }),

@@ -13,8 +13,6 @@ export const scanProgressUpdated = createAction(`${ACTION_ROOT}/DEVICE_SCAN_PROG
 // Reducer
 const INITIAL_STATE = {
     isLoading: false,
-    list: [],
-    dictionary: {},
     scanProgress: 0,
 };
 

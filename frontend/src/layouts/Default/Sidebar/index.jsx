@@ -19,7 +19,7 @@ import { camelToSnake } from 'utils/helpers';
 import BottomBar from './BottomBar.js';
 const Links = ({ classes, devMode, effectLinks, isViewActive }) => {
     const devices = useSelector(state => state.settings.devices);
-    const displays = useSelector(state => state.settings.displays) || [];
+    const displays = useSelector(state => state.displays.list) || [];
 
     return (
         <List className={classes.list}>
