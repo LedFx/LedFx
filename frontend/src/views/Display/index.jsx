@@ -40,9 +40,7 @@ class DisplayView extends React.Component {
     };
 
     handleSetEffect = data => {
-        console.log('WTF', data);
         const { setDisplayEffect } = this.props;
-        // HERE NEEDS TO BE DISPLAYID
         setDisplayEffect(data.displayId, data);
     };
 
@@ -69,14 +67,18 @@ class DisplayView extends React.Component {
         return (
             <>
                 <Grid container direction="row" spacing={4}>
-                    {/* <Grid item xs={12} lg={12}>
-                        <Card>
-                            <CardContent>
-                                <DisplayPixelColorGraph display={display} />
-                            </CardContent>
-                        </Card>
-                    </Grid> */}
-                    {renderPixelGraph(display, effect)}
+                    {Object.keys(effect).length === 0 ? (
+                        <Grid item xs={12} lg={12}>
+                            <Card>
+                                <CardContent>
+                                    <DisplayPixelColorGraph display={display} />
+                                </CardContent>
+                            </Card>
+                        </Grid>
+                    ) : (
+                        renderPixelGraph(display, effect)
+                    )}
+
                     <Grid item xs={12} lg={6}>
                         <Card>
                             <CardContent>

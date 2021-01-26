@@ -73,7 +73,7 @@ class DisplaysView extends React.Component {
             displayList,
             // schemas,
             // addDisplay,
-            // deleteDisplay,
+            deleteDisplay,
             // updateDisplayConfig,
         } = this.props;
         // const { addDialogOpened, selectedDisplay } = this.state;

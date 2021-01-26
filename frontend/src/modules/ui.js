@@ -39,7 +39,7 @@ export default handleActions(
 );
 
 export const showdynSnackbar = payload => {
-    console.log(payload);
+    // console.log(payload);
     return async dispatch => {
         dispatch(snackbarSuccess(payload));
     };

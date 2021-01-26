@@ -27,7 +27,7 @@ const styles = theme => ({
     },
 });
 
-function DevicesTableItem({ display, onDelete, classes, onEdit }) {
+function DisplaysTableItem({ display, onDelete, classes, onEdit }) {
     const handleDeleteDevice = () => {
         onDelete(display.id);
     };
@@ -74,10 +74,10 @@ function DevicesTableItem({ display, onDelete, classes, onEdit }) {
     );
 }
 
-DevicesTableItem.propTypes = {
+DisplaysTableItem.propTypes = {
     classes: PropTypes.object.isRequired,
     display: PropTypes.object.isRequired,
     onDelete: PropTypes.func.isRequired,
 };
 
-export default withStyles(styles)(DevicesTableItem);
+export default withStyles(styles)(DisplaysTableItem);

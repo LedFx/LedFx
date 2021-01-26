@@ -19,8 +19,7 @@ const styles = theme => ({
     },
 });
 
-function DevicesTable({ onDeleteDevice, classes, items, onEditDevice }) {
-    console.log(items);
+function DisplaysTable({ onDeleteDisplay, classes, items, onEditDevice }) {
     return (
         <div className={classes.tableResponsive}>
             <Table className={classes.table}>
@@ -41,7 +40,7 @@ function DevicesTable({ onDeleteDevice, classes, items, onEditDevice }) {
                         <DisplaysTableItem
                             key={display.id}
                             display={display}
-                            onDelete={onDeleteDevice}
+                            onDelete={onDeleteDisplay}
                             onEdit={onEditDevice}
                         />
                     ))}
@@ -51,9 +50,9 @@ function DevicesTable({ onDeleteDevice, classes, items, onEditDevice }) {
     );
 }
 
-DevicesTable.propTypes = {
+DisplaysTable.propTypes = {
     classes: PropTypes.object.isRequired,
     items: PropTypes.array.isRequired,
 };
 
-export default withStyles(styles)(DevicesTable);
+export default withStyles(styles)(DisplaysTable);

@@ -24,7 +24,7 @@ virtuals: []
 
 `;
 function onChange(newValue) {
-    console.log('change', newValue);
+    // console.log('change', newValue);
 }
 
 const ConfigEditor = () => {

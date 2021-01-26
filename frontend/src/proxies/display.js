@@ -43,12 +43,10 @@ export function getDisplayEffect(displayId) {
 }
 
 export function setDisplayEffect(displayId, data) {
-    console.log('display', displayId);
     return api.post(`displays/${displayId}/effects`, data);
 }
 
 export function updateDisplayEffect(displayId, data) {
-    console.log('display', displayId);
     return api.put(`displays/${displayId}/effects`, data);
 }
 

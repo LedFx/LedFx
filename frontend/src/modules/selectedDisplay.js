@@ -63,7 +63,6 @@ export function clearDisplayEffect(displayId) {
 export function setDisplayEffect(displayId, { type, config }) {
     return async (dispatch, getState) => {
         const currentEffect = getState().selectedDisplay.effect;
-        console.log('NEEEXT', currentEffect, displayId);
         const proxy = currentEffect.type
             ? displayProxies.updateDisplayEffect
             : displayProxies.setDisplayEffect;

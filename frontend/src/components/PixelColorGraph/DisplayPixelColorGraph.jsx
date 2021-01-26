@@ -25,9 +25,7 @@ class DisplayPixelColorGraph extends React.Component {
     }
 
     getChartOptionsForDisplay(display) {
-        console.log('AND AGAAAAIN: Hole 99999 display.config.pixel_count missing...', display);
         const { pixel_count } = display.config[display.id];
-        // const { pixel_count } = { pixel_count: 50 };
 
         return {
             chartData: {
@@ -195,7 +193,6 @@ class DisplayPixelColorGraph extends React.Component {
 
     render() {
         const { classes } = this.props;
-        console.log(this.props);
         return (
             <Box className={classes.content}>
                 <Line data={this.state.chartData} options={this.state.chartOptions} />
