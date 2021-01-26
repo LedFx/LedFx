@@ -1,6 +1,5 @@
 import { api } from 'utils/api';
 
-
 export function getDisplays() {
     return api.get('/displays');
 }
@@ -39,16 +38,17 @@ export function deleteDisplay(displayId) {
     return api.delete(`/displays/${displayId}`);
 }
 
-
 export function getDisplayEffect(displayId) {
     return api.get(`displays/${displayId}/effects`);
 }
 
 export function setDisplayEffect(displayId, data) {
+    console.log('display', displayId);
     return api.post(`displays/${displayId}/effects`, data);
 }
 
 export function updateDisplayEffect(displayId, data) {
+    console.log('display', displayId);
     return api.put(`displays/${displayId}/effects`, data);
 }
 

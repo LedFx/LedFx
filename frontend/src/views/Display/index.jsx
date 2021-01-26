@@ -9,9 +9,9 @@ import Typography from '@material-ui/core/Typography';
 
 import { loadDisplayInfo, setDisplayEffect, clearDisplayEffect } from 'modules/selectedDisplay';
 import { activatePreset, getEffectPresets, addPreset } from 'modules/presets';
-import EffectControl from 'components/EffectControl';
+import DisplayEffectControl from 'components/EffectControl/DisplayEffectControl';
 // import EffectControlBlade from 'components/EffectControl/blade';
-import PixelColorGraph from 'components/PixelColorGraph';
+import DisplayPixelColorGraph from 'components/PixelColorGraph/DisplayPixelColorGraph';
 import PresetsCard from 'components/PresetsCard';
 import { fetchDisplayList } from 'modules/displays';
 class DisplayView extends React.Component {
@@ -40,7 +40,9 @@ class DisplayView extends React.Component {
     };
 
     handleSetEffect = data => {
+        console.log('WTF', data);
         const { setDisplayEffect } = this.props;
+        // HERE NEEDS TO BE DISPLAYID
         setDisplayEffect(data.displayId, data);
     };
 
@@ -67,19 +69,19 @@ class DisplayView extends React.Component {
         return (
             <>
                 <Grid container direction="row" spacing={4}>
-                    <Grid item xs={12} lg={12}>
+                    {/* <Grid item xs={12} lg={12}>
                         <Card>
                             <CardContent>
-                                <PixelColorGraph device={display} />
+                                <DisplayPixelColorGraph display={display} />
                             </CardContent>
                         </Card>
-                    </Grid>
+                    </Grid> */}
                     {renderPixelGraph(display, effect)}
                     <Grid item xs={12} lg={6}>
                         <Card>
                             <CardContent>
-                                <EffectControl
-                                    device={display}
+                                <DisplayEffectControl
+                                    display={display}
                                     effect={effect}
                                     schemas={schemas}
                                     onClear={this.handleClearEffect}
@@ -136,7 +138,7 @@ const renderPixelGraph = (display, effect) => {
             <Grid item xs={12}>
                 <Card>
                     <CardContent>
-                        <PixelColorGraph device={display} />
+                        <DisplayPixelColorGraph display={display} />
                     </CardContent>
                 </Card>
             </Grid>

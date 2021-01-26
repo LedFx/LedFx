@@ -13,23 +13,20 @@ const styles = theme => ({
     },
 });
 
-class PixelColorGraph extends React.Component {
+class DisplayPixelColorGraph extends React.Component {
     constructor(props) {
         super(props);
 
         this.ws = undefined;
         this.websocketActive = false;
         this.websocketPacketId = 1;
-        this.deviceUpdateSubscription = null;
-        this.state = this.getChartOptionsForDevice(props.device);
+        this.displayUpdateSubscription = null;
+        this.state = this.getChartOptionsForDisplay(props.display);
     }
 
-    getChartOptionsForDevice(device) {
-        // console.log(
-        //     'AND AGAAAAIN: Hole 99999 display.config.pixel_count missing...',
-        //     device.config[device.id]
-        // );
-        const { pixel_count } = device.config;
+    getChartOptionsForDisplay(display) {
+        console.log('AND AGAAAAIN: Hole 99999 display.config.pixel_count missing...', display);
+        const { pixel_count } = display.config[display.id];
         // const { pixel_count } = { pixel_count: 50 };
 
         return {
@@ -110,10 +107,10 @@ class PixelColorGraph extends React.Component {
     handleMessage = e => {
         var messageData = JSON.parse(e.data);
 
-        // Ensure this message is for the current device. This can happen
-        // during transistions between devices where the component stays
+        // Ensure this message is for the current display. This can happen
+        // during transistions between displays where the component stays
         // loaded
-        if (messageData.device_id !== this.props.device.id) {
+        if (messageData.display_id !== this.props.display.id) {
             return;
         }
 
@@ -130,7 +127,7 @@ class PixelColorGraph extends React.Component {
     };
 
     handleOpen = e => {
-        this.enablePixelVisualization(this.props.device);
+        this.enablePixelVisualization(this.props.display);
         this.websocketActive = true;
     };
 
@@ -138,15 +135,15 @@ class PixelColorGraph extends React.Component {
         this.websocketActive = false;
     };
 
-    enablePixelVisualization = device => {
+    enablePixelVisualization = display => {
         if (this.ws) {
             this.ws.json({
                 id: this.websocketPacketId,
                 type: 'subscribe_event',
-                event_type: 'device_update',
-                event_filter: { device_id: device.id },
+                event_type: 'display_update',
+                event_filter: { display_id: display.id },
             });
-            this.deviceUpdateSubscription = this.websocketPacketId;
+            this.displayUpdateSubscription = this.websocketPacketId;
             this.websocketPacketId++;
         }
     };
@@ -155,9 +152,9 @@ class PixelColorGraph extends React.Component {
         this.ws.json({
             id: this.websocketPacketId,
             type: 'unsubscribe_event',
-            subscription_id: this.deviceUpdateSubscription,
+            subscription_id: this.displayUpdateSubscription,
         });
-        this.deviceUpdateSubscription = null;
+        this.displayUpdateSubscription = null;
         this.websocketPacketId++;
     };
 
@@ -188,16 +185,17 @@ class PixelColorGraph extends React.Component {
     }
 
     componentDidUpdate(prevProps) {
-        const { device } = this.props;
-        if (prevProps.device.id !== device.id && this.websocketActive) {
+        const { display } = this.props;
+        if (prevProps.display.id !== display.id && this.websocketActive) {
             this.disablePixelVisualization();
-            this.enablePixelVisualization(device);
-            this.setState(this.getChartOptionsForDevice(device));
+            this.enablePixelVisualization(display);
+            this.setState(this.getChartOptionsForDisplay(display));
         }
     }
 
     render() {
         const { classes } = this.props;
+        console.log(this.props);
         return (
             <Box className={classes.content}>
                 <Line data={this.state.chartData} options={this.state.chartOptions} />
@@ -206,9 +204,9 @@ class PixelColorGraph extends React.Component {
     }
 }
 
-PixelColorGraph.propTypes = {
+DisplayPixelColorGraph.propTypes = {
     classes: PropTypes.object.isRequired,
-    device: PropTypes.object.isRequired,
+    display: PropTypes.object.isRequired,
 };
 
-export default withStyles(styles)(PixelColorGraph);
+export default withStyles(styles)(DisplayPixelColorGraph);
