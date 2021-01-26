@@ -121,10 +121,40 @@ class DisplayView extends React.Component {
                             </Card>
                         </Grid>
                     )} */}
-                    <Grid item xs={12} lg={12}>
+                    <Grid item xs={6} lg={6}>
                         <Card>
                             <CardContent>
                                 <Typography variant="h5">Display Config</Typography>
+                                <Typography variant="subtitle1">
+                                    Total Pixels: {display.config[display.id].pixel_count}
+                                </Typography>
+                                <br />
+                                <Typography variant="caption">
+                                    Active: {JSON.stringify(display.config[display.id].active)}
+                                    <br />
+                                    Center Offset: {display.config[display.id].config.center_offset}
+                                    <br />
+                                    Crossfade: {display.config[display.id].config.crossfade}
+                                    <br />
+                                    Max Brightness: {display.config[display.id].config.crossfade}
+                                    <br />
+                                    Preview only:{' '}
+                                    {JSON.stringify(display.config[display.id].config.preview_only)}
+                                </Typography>
+                            </CardContent>
+                        </Card>
+                    </Grid>
+                    <Grid item xs={6} lg={6}>
+                        <Card>
+                            <CardContent>
+                                <Typography variant="h5">Display Segments</Typography>
+                                <Typography variant="subtitle1">
+                                    Segments: {display.config[display.id].segments.length}
+                                </Typography>
+                                <br />
+                                {display.config[display.id].segments.map(
+                                    (s, i) => console.log(s) || <li key={i}>{s.join(',')}</li>
+                                )}
                             </CardContent>
                         </Card>
                     </Grid>
