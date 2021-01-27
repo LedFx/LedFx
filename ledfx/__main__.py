@@ -185,6 +185,12 @@ def parse_args():
         action="store_true",
         help="Disable automated updates and sentry crash logger",
     )
+    parser.add_argument(
+        "--sentry-crash-test",
+        dest="sentry_test",
+        action="store_true",
+        help="This crashes LedFx to test the sentry crash logger",
+    )
     return parser.parse_args()
 
 
@@ -252,6 +258,11 @@ def main():
     config_helpers.ensure_config_directory(args.config)
     setup_logging(args.loglevel)
     config_helpers.load_logger()
+
+    if args.sentry_test:
+        """ This will crash LedFx and submit a Sentry error if Sentry is configured """
+        _LOGGER.warning("Steering LedFx into a brick wall")
+        div_by_zero = 1 / 0
 
     if args.offline_mode is False and currently_frozen():
 
