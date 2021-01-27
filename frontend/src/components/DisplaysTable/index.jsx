@@ -19,7 +19,14 @@ const styles = theme => ({
     },
 });
 
-function DisplaysTable({ onDeleteDisplay, classes, items, onEditDevice }) {
+function DisplaysTable({
+    onDeleteDisplay,
+    classes,
+    items,
+    onEditDevice,
+    onEditDisplay,
+    deviceList,
+}) {
     return (
         <div className={classes.tableResponsive}>
             <Table className={classes.table}>
@@ -40,8 +47,10 @@ function DisplaysTable({ onDeleteDisplay, classes, items, onEditDevice }) {
                         <DisplaysTableItem
                             key={display.id}
                             display={display}
+                            deviceList={deviceList}
                             onDelete={onDeleteDisplay}
-                            onEdit={onEditDevice}
+                            onEditDevice={onEditDevice}
+                            onEditDisplay={onEditDisplay}
                         />
                     ))}
                 </TableBody>

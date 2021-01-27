@@ -6,6 +6,7 @@ import TableRow from '@material-ui/core/TableRow';
 import TableCell from '@material-ui/core/TableCell';
 import Button from '@material-ui/core/Button';
 import EditIcon from '@material-ui/icons/Edit';
+import SettingsIcon from '@material-ui/icons/Settings';
 import Icon from '@material-ui/core/Icon';
 import { Switch } from '@material-ui/core';
 import PopoverSure from 'components/PopoverSure';
@@ -27,13 +28,24 @@ const styles = theme => ({
     },
 });
 
-function DisplaysTableItem({ display, onDelete, classes, onEdit }) {
+function DisplaysTableItem({
+    display,
+    device,
+    onDelete,
+    classes,
+    onEditDevice,
+    onEditDisplay,
+    deviceList,
+}) {
     const handleDeleteDevice = () => {
         onDelete(display.id);
     };
 
-    const handleEditItem = () => {
-        onEdit(display);
+    const handleEditDisplay = () => {
+        onEditDisplay(display);
+    };
+    const handleEditDevice = () => {
+        onEditDevice(deviceList.find(d => d.id === display.config.isDevice));
     };
 
     return (
@@ -61,13 +73,24 @@ function DisplaysTableItem({ display, onDelete, classes, onEdit }) {
             </TableCell>
             <TableCell align="right">
                 <PopoverSure onConfirm={handleDeleteDevice} className={classes.deleteButton} />
+
+                {display.config.isDevice && (
+                    <Button
+                        variant="contained"
+                        size="small"
+                        className={classes.editButton}
+                        onClick={handleEditDevice}
+                    >
+                        <EditIcon />
+                    </Button>
+                )}
                 <Button
                     variant="contained"
                     size="small"
                     className={classes.editButton}
-                    onClick={handleEditItem}
+                    onClick={handleEditDisplay}
                 >
-                    <EditIcon />
+                    <SettingsIcon />
                 </Button>
             </TableCell>
         </TableRow>

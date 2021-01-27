@@ -46,7 +46,7 @@ const Links = ({ classes, devMode, effectLinks, isViewActive }) => {
 
                 if (prop.sidebarName === 'Devices') {
                     return (
-                        <div className={classes.item} key={key}>
+                        <div className={classes.item} key={key} style={{ display: 'none' }}>
                             <ListItem button className={listItemClass} key={prop.sidebarName}>
                                 <NavLink
                                     to={`/devices`}
@@ -111,7 +111,7 @@ const Links = ({ classes, devMode, effectLinks, isViewActive }) => {
                                         <prop.icon />
                                     </ListItemIcon>
                                     <ListItemText
-                                        primary={prop.sidebarName}
+                                        primary={'Devices'}
                                         className={classes.itemText}
                                         disableTypography={true}
                                     />
