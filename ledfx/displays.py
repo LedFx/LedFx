@@ -90,7 +90,7 @@ class Display(object):
         # not a very good schema, but vol seems a bit handicapped in terms of lists.
         # this won't necessarily ensure perfectly validated segments, but it at
         # least gives an idea of the format
-        self.SEGMENTS_SCHEMA = vol.Schema([[self._valid_id, int, int, bool]])
+        self.SEGMENTS_SCHEMA = vol.Schema([self.validate_segment])
 
     def __del__(self):
         if self._active:
@@ -114,15 +114,38 @@ class Display(object):
         for device in self._devices:
             device.clear_display_segments(self.id)
 
-    def validate_segments(self, segments_config):
-        for device_id, start_pixel, end_pixel, invert in segments_config:
-            device = self._ledfx.devices.get(device_id)
-            device.validate_segment(self.id, start_pixel, end_pixel)
+    def validate_segment(self, segment):
+        valid = True
+        msg = None
+
+        if len(segment) != 4:
+            msg = f"Invalid segment format: {segment}, should be [device_id, start, end, invert]"
+            valid = False
+
+        device_id, start_pixel, end_pixel, invert = segment
+        device = self._ledfx.devices.get(device_id)
+
+        if device is None:
+            msg = f"Invalid device id: {device_id}"
+            valid = False
+
+        if (
+            (start_pixel < 0)
+            or (start_pixel >= end_pixel)
+            or (end_pixel >= device.pixel_count)
+        ):
+            msg = f"Invalid segment pixels: ({start_pixel}, {end_pixel}). Device '{self.name}' valid pixels between (0, {self.pixel_count-1})"
+            valid = False
+
+        if not valid:
+            _LOGGER.error(msg)
+            raise ValueError(msg)
+        else:
+            return segment
 
     def update_segments(self, segments_config):
         segments_config = [list(item) for item in segments_config]
         _segments = self.SEGMENTS_SCHEMA(segments_config)
-        self.validate_segments(_segments)
 
         _pixel_count = self.pixel_count
 
