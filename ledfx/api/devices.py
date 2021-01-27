@@ -72,9 +72,13 @@ class DevicesEndpoint(RestEndpoint):
 
         # Generate display configuration for the device
         _LOGGER.info(f"Creating a display for device {device.name}")
-        display_name = f"{device.name} Display"
+        display_name = f"{device.name}"
         display_id = generate_id(display_name)
-        display_config = {"name": display_name}
+        display_config = {
+            "name": display_name,
+            "icon_name": device_config["icon_name"],
+            "isDevice": device.id,
+        }
         segments = [[device.id, 0, device_config["pixel_count"] - 1, False]]
 
         # create the display
