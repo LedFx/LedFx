@@ -1,19 +1,19 @@
 import React from 'react';
 // import PropTypes from 'prop-types';
-import { SchemaForm } from 'react-schema-form';
-// import clsx from 'clsx';
+import { SchemaForm, utils } from 'react-schema-form';
+import clsx from 'clsx';
 import withStyles from '@material-ui/core/styles/withStyles';
 import Button from '@material-ui/core/Button';
 import DialogActions from '@material-ui/core/DialogActions';
 import Box from '@material-ui/core/Box';
-// import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
+import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import Dialog from '@material-ui/core/Dialog';
 import DialogContent from '@material-ui/core/DialogContent';
 import DialogTitle from '@material-ui/core/DialogTitle';
 import DialogContentText from '@material-ui/core/DialogContentText';
 
 // import DropDown from 'components/forms/DropDown';
-// import AdditionalProperties from './AdditionalProperties';
+import AdditionalProperties from './AdditionalProperties';
 
 const styles = theme => ({
     form: {
@@ -48,7 +48,14 @@ class DisplayConfigDialog extends React.Component {
             additionalPropertiesOpen: false,
         };
     }
-
+    toggleShowAdditional = e => {
+        this.setState(prevState => ({
+            additionalPropertiesOpen: !prevState.additionalPropertiesOpen,
+        }));
+    };
+    onModelChange = (key, val) => {
+        utils.selectOrSet(key, this.state.model, val);
+    };
     handleCancel = () => {
         this.props.onClose();
     };
@@ -68,19 +75,22 @@ class DisplayConfigDialog extends React.Component {
 
     render() {
         const { classes, open, displays } = this.props;
-        const { model } = this.state;
-        console.log(displays);
+        const { model, additionalPropertiesOpen } = this.state;
+
         const currentSchema = {
+            type: 'object',
             title: 'Configuration',
             properties: {},
             ...(displays ? displays.schema : {}),
         };
 
-        console.log(currentSchema);
+        console.log(typeof currentSchema);
         const requiredKeys = currentSchema.required;
         const optionalKeys = Object.keys(currentSchema.properties).filter(
             key => !(requiredKeys && requiredKeys.some(rk => key === rk))
         );
+        const showAdditionalUi = optionalKeys.length > 0;
+        console.table('HERE', model, currentSchema, requiredKeys, optionalKeys);
         return (
             <Dialog
                 onClose={this.handleClose}
@@ -99,9 +109,20 @@ class DisplayConfigDialog extends React.Component {
                         <SchemaForm
                             className={classes.schemaForm}
                             schema={currentSchema}
-                            form={(requiredKeys, optionalKeys)}
+                            form={requiredKeys}
                             model={model}
+                            onModelChange={this.onModelChange}
                         />
+
+                        {showAdditionalUi && (
+                            <AdditionalProperties
+                                schema={currentSchema}
+                                form={optionalKeys}
+                                model={model}
+                                onChange={this.onModelChange}
+                                open={additionalPropertiesOpen}
+                            />
+                        )}
 
                         <DialogActions className={classes.bottomContainer}>
                             <Box
@@ -110,6 +131,21 @@ class DisplayConfigDialog extends React.Component {
                                 justifyContent="flex-end"
                                 className={classes.actionButtons}
                             >
+                                {showAdditionalUi && (
+                                    <Button
+                                        size="medium"
+                                        className={classes.additionalButton}
+                                        onClick={this.toggleShowAdditional}
+                                    >
+                                        <ExpandMoreIcon
+                                            color="disabled"
+                                            className={clsx({
+                                                [classes.expandIcon]: additionalPropertiesOpen,
+                                            })}
+                                        />
+                                        {`Show ${!additionalPropertiesOpen ? 'More' : 'Less'}`}
+                                    </Button>
+                                )}
                                 <Button
                                     className={classes.button}
                                     onClick={this.handleCancel}

@@ -44,6 +44,9 @@ function DisplaysTableItem({
     const handleEditDisplay = () => {
         onEditDisplay(display);
     };
+    const handleEditDeviceSegments = () => {
+        alert('Coming soon');
+    };
     const handleEditDevice = () => {
         onEditDevice(deviceList.find(d => d.id === display.config.isDevice));
     };
@@ -74,14 +77,23 @@ function DisplaysTableItem({
             <TableCell align="right">
                 <PopoverSure onConfirm={handleDeleteDevice} className={classes.deleteButton} />
 
-                {display.config.isDevice && (
+                {display.config.isDevice ? (
                     <Button
                         variant="contained"
                         size="small"
                         className={classes.editButton}
                         onClick={handleEditDevice}
                     >
-                        <EditIcon />
+                        <SettingsIcon />
+                    </Button>
+                ) : (
+                    <Button
+                        variant="contained"
+                        size="small"
+                        className={classes.editButton}
+                        onClick={handleEditDeviceSegments}
+                    >
+                        <SettingsIcon />
                     </Button>
                 )}
                 <Button
@@ -90,7 +102,7 @@ function DisplaysTableItem({
                     className={classes.editButton}
                     onClick={handleEditDisplay}
                 >
-                    <SettingsIcon />
+                    <EditIcon />
                 </Button>
             </TableCell>
         </TableRow>

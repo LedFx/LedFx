@@ -63,6 +63,9 @@ class DevicesView extends React.Component {
     closeAddDeviceDialog = () => {
         this.setState({ selectedDevice: {}, addDialogOpened: false });
     };
+    closeAddDisplayDialog = () => {
+        this.setState({ selectedDisplay: {}, addDisplayOpened: false });
+    };
 
     handleEditDevice = device => {
         this.setState({ selectedDevice: device, addDialogOpened: true });
