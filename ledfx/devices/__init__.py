@@ -170,26 +170,25 @@ class Device(BaseRegistry):
     def displays(self):
         return list(segment[0] for segment in self._segments)
 
-    def add_segment(self, display_id, start_pixel, end_pixel):
+    def validate_segment(self, display_id, start_pixel, end_pixel):
         # make sure this segment is within range of this device's total pixels
         if (start_pixel < 0) or (end_pixel >= self.pixel_count):
-            raise ValueError(
-                f"Invalid segment pixels: ({start_pixel}, {end_pixel}). Device '{self.name}' valid pixels between (0, {self.pixel_count-1})"
-            )
-            return
+            msg = f"Invalid segment pixels: ({start_pixel}, {end_pixel}). Device '{self.name}' valid pixels between (0, {self.pixel_count-1})"
+            _LOGGER.warning(msg)
+            raise ValueError(msg)
 
+    def add_segment(self, display_id, start_pixel, end_pixel):
         # make sure this segment doesn't overlap with any others
-        # for _, segment_start, segment_end in self._segments:
-        #     overlap = (
-        #         min(segment_end, end_pixel)
-        #         - max(segment_start, start_pixel)
-        #         + 1
-        #     )
-        #     if overlap > 0:
-        #         raise ValueError(
-        #             f"Failed to add segment to device '{self.name}': {overlap} pixel overlap with existing segment"
-        #         )
-        #         return
+        for _display, segment_start, segment_end in self._segments:
+            overlap = (
+                min(segment_end, end_pixel)
+                - max(segment_start, start_pixel)
+                + 1
+            )
+            if overlap > 0:
+                msg = f"Failed to activate display '{display_id}': {overlap}px overlap with display '{_display}' on device '{self.name}'"
+                _LOGGER.warning(msg)
+                raise ValueError(msg)
 
         # if the segment is from a new device, we need to recheck our priority display
         if display_id not in (segment[0] for segment in self._segments):

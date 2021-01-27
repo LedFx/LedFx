@@ -101,32 +101,42 @@ class Display(object):
         if device is not None:
             return id
         else:
-            raise ValueError
+            msg = f"Invalid device id: {id}"
+            _LOGGER.warning(msg)
+            raise ValueError(msg)
 
-    def register_segments(self, segments):
+    def activate_segments(self, segments):
         for device_id, start_pixel, end_pixel, invert in segments:
             device = self._ledfx.devices.get(device_id)
             device.add_segment(self.id, start_pixel, end_pixel)
 
-    def clear_segments(self):
+    def deactivate_segments(self):
         for device in self._devices:
             device.clear_display_segments(self.id)
+
+    def validate_segments(self, segments_config):
+        for device_id, start_pixel, end_pixel, invert in segments_config:
+            device = self._ledfx.devices.get(device_id)
+            device.validate_segment(self.id, start_pixel, end_pixel)
 
     def update_segments(self, segments_config):
         segments_config = [list(item) for item in segments_config]
         _segments = self.SEGMENTS_SCHEMA(segments_config)
+        self.validate_segments(_segments)
+
         _pixel_count = self.pixel_count
 
         if _segments != self._segments:
-            self.clear_segments()
-            # try to register this new set of segments
-            # if it fails, restore previous segments and raise the error
-            try:
-                self.register_segments(_segments)
-            except ValueError:
-                self.clear_segments()
-                self.register_segments(self._segments)
-                raise
+            if self._active:
+                self.deactivate_segments()
+                # try to register this new set of segments
+                # if it fails, restore previous segments and raise the error
+                try:
+                    self.activate_segments(_segments)
+                except ValueError:
+                    self.deactivate_segments()
+                    self.activate_segments(self._segments)
+                    raise
 
             self._segments = _segments
 
@@ -309,6 +319,7 @@ class Display(object):
             raise RuntimeError(error)
 
         _LOGGER.info(f"Activating display {self.id}")
+        self.activate_segments(self._segments)
         for device in self._devices:
             device.activate()
         self._active = True
@@ -316,6 +327,7 @@ class Display(object):
 
     def deactivate(self):
         self._active = False
+        self.deactivate_segments()
         # for device in self._devices:
         #     device.deactivate()
 
@@ -352,13 +364,10 @@ class Display(object):
     @active.setter
     def active(self, _active):
         _active = bool(_active)
-        try:
-            if _active:
-                self.deactivate()
-            else:
-                self.activate()
-        except RuntimeError:
-            raise
+        if _active:
+            self.deactivate()
+        else:
+            self.activate()
 
     @property
     def id(self) -> str:

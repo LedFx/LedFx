@@ -105,7 +105,14 @@ class EffectsEndpoint(RestEndpoint):
         effect = self._ledfx.effects.create(
             ledfx=self._ledfx, type=effect_type, config=effect_config
         )
-        display.set_effect(effect)
+        try:
+            display.set_effect(effect)
+        except (ValueError, RuntimeError) as msg:
+            response = {
+                "status": "failed",
+                "payload": {"type": "warning", "reason": str(msg)},
+            }
+            return web.json_response(data=response, status=500)
 
         # Update and save the configuration
         for display in self._ledfx.config["displays"]:
@@ -157,7 +164,14 @@ class EffectsEndpoint(RestEndpoint):
         effect = self._ledfx.effects.create(
             ledfx=self._ledfx, type=effect_type, config=effect_config
         )
-        display.set_effect(effect)
+        try:
+            display.set_effect(effect)
+        except (ValueError, RuntimeError) as msg:
+            response = {
+                "status": "failed",
+                "payload": {"type": "warning", "reason": str(msg)},
+            }
+            return web.json_response(data=response, status=500)
 
         # Update and save the configuration
         for display in self._ledfx.config["displays"]:

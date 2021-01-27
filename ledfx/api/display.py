@@ -1,5 +1,6 @@
 import logging
 
+import voluptuous as vol
 from aiohttp import web
 
 from ledfx.api import RestEndpoint
@@ -67,7 +68,7 @@ class DisplayEndpoint(RestEndpoint):
         # Update the display's configuration
         try:
             display.active = active
-        except RuntimeError as msg:
+        except ValueError as msg:
             response = {
                 "status": "failed",
                 "payload": {"type": "warning", "reason": str(msg)},
@@ -114,7 +115,7 @@ class DisplayEndpoint(RestEndpoint):
         old_segments = display.segments
         try:
             display.update_segments(display_segments)
-        except ValueError as msg:
+        except (ValueError, vol.MultipleInvalid, vol.Invalid) as msg:
             response = {
                 "status": "failed",
                 "payload": {"type": "error", "message": str(msg)},
