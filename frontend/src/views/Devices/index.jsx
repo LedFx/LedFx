@@ -14,6 +14,7 @@ import CircularProgress from '@material-ui/core/CircularProgress';
 import DisplaysTable from 'components/DisplaysTable';
 // import DevicesTable from 'components/DevicesTable';
 import DeviceConfigDialog from 'components/DeviceConfigDialog';
+import DisplayConfigDialog from 'components/DisplayConfigDialog';
 import {
     addDevice,
     // deleteDevice,
@@ -21,7 +22,7 @@ import {
     fetchDeviceList,
     findWLEDDevices,
 } from 'modules/devices';
-import { deleteDisplay, fetchDisplayList } from 'modules/displays';
+import { deleteDisplay, fetchDisplayList, updateDisplayConfig, addDisplay } from 'modules/displays';
 
 const styles = theme => ({
     cardResponsive: {
@@ -42,7 +43,9 @@ class DevicesView extends React.Component {
         super(props);
         this.state = {
             addDialogOpened: false,
+            addDisplayOpened: false,
             selectedDevice: {},
+            selectedDisplay: {},
             searchDevicesLoading: false,
         };
     }
@@ -65,8 +68,8 @@ class DevicesView extends React.Component {
         this.setState({ selectedDevice: device, addDialogOpened: true });
     };
     handleEditDisplay = display => {
-        alert('NOT YET BROOO');
-        // this.setState({ selectedDisplay: display, addDialogOpened: true });
+        console.log('11', display);
+        this.setState({ selectedDisplay: display, addDisplayOpened: true });
     };
     handleFindDevices = () => {
         const { findWLEDDevices } = this.props;
@@ -91,10 +94,11 @@ class DevicesView extends React.Component {
             scanProgress,
         } = this.props;
         const { addDialogOpened, selectedDevice } = this.state;
+        const { addDisplayOpened, selectedDisplay } = this.state;
         const helpText = `Ensure WLED Devices are on and connected to your WiFi.\n
                           If not detected, check WLED device mDNS setting. Go to:\n
                           WLED device ip > Config > WiFi Setup > mDNS Address \n`;
-
+        console.log('GGGG', schemas);
         return (
             <>
                 <Grid container spacing={2}>
@@ -283,6 +287,14 @@ class DevicesView extends React.Component {
                                                         onAddDevice={addDevice}
                                                         initial={selectedDevice}
                                                         onUpdateDevice={updateDeviceConfig}
+                                                    />
+                                                    <DisplayConfigDialog
+                                                        open={addDisplayOpened}
+                                                        displays={schemas.displays}
+                                                        onClose={this.closeAddDisplayDialog}
+                                                        onAddDisplay={addDisplay}
+                                                        initial={selectedDisplay}
+                                                        onUpdateDisplay={updateDisplayConfig}
                                                     />
                                                 </Box>
                                             </Grid>
