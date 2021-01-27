@@ -5,6 +5,7 @@ import numpy as np
 import sacn
 import voluptuous as vol
 
+from ledfx.color import COLORS
 from ledfx.devices import Device
 from ledfx.utils import resolve_destination
 
@@ -39,6 +40,11 @@ class E131Device(Device):
                 description="Channel offset within the DMX universe",
                 default=0,
             ): vol.All(vol.Coerce(int), vol.Range(min=0)),
+            vol.Optional(
+                "test_color",
+                description="mystery colour, extra special!",
+                default="green",
+            ): vol.In(list(COLORS.keys())),
         }
     )
 
