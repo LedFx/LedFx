@@ -19,6 +19,12 @@ jobs:
     steps:
       - name: Check out code from GitHub
         uses: actions/checkout@v2
+      - name: Setup sentry config
+        shell: bash
+        env:
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN_PYPI }}
+        run: |
+          sed -i 's,SENTRY-DSN,'"$SENTRY_DSN"',g' ./ledfx/sentry_config.py
       - name: Set up Python ${{ env.DEFAULT_PYTHON }}
         uses: actions/setup-python@v2.2.1
         with:
