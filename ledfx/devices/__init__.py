@@ -179,17 +179,17 @@ class Device(BaseRegistry):
             return
 
         # make sure this segment doesn't overlap with any others
-        for _, segment_start, segment_end in self._segments:
-            overlap = (
-                min(segment_end, end_pixel)
-                - max(segment_start, start_pixel)
-                + 1
-            )
-            if overlap > 0:
-                raise ValueError(
-                    f"Failed to add segment to device '{self.name}': {overlap} pixel overlap with existing segment"
-                )
-                return
+        # for _, segment_start, segment_end in self._segments:
+        #     overlap = (
+        #         min(segment_end, end_pixel)
+        #         - max(segment_start, start_pixel)
+        #         + 1
+        #     )
+        #     if overlap > 0:
+        #         raise ValueError(
+        #             f"Failed to add segment to device '{self.name}': {overlap} pixel overlap with existing segment"
+        #         )
+        #         return
 
         # if the segment is from a new device, we need to recheck our priority display
         if display_id not in (segment[0] for segment in self._segments):
