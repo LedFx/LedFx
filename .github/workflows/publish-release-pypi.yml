@@ -6,7 +6,7 @@ on:
       - 'docs/**'
       - '.*/**'
     branches:
-      - dev
+      - v0.9.2
   workflow_dispatch:
 
 env:
