@@ -1,3 +1,5 @@
+import time
+
 import numpy as np
 import voluptuous as vol
 
@@ -19,13 +21,27 @@ class HSVTest(AudioReactiveEffect):
     def activate(self, pixel_count):
         self.hsv_array = np.ones((pixel_count, 3))
         self.colour_array = np.linspace(0, 1, num=pixel_count)
+        self.colour_array = np.sin(range(pixel_count))
 
-        self.hsv_array[:, 2] *= 256
-        self.hsv_array[:, 0] *= self.colour_array
+        # self.hsv_array[:, 0] *= self.colour_array
+        self.last_time = time.time()
+        self._timestep = 0
         super().activate(pixel_count)
 
+    def timestep(self, modifier=1):
+        dt = time.time() - self.last_time
+        self.last_time = time.time()
+        self._timestep += dt * modifier
+        self._timestep %= 1
+        return self._timestep
+
     def audio_data_updated(self, data):
+        dt = self.timestep(modifier=0.01)
+        lows_power = min(data.melbank_lows().max(), 1)
         self._dirty = True
+        for i in range(self.pixel_count):
+            # v = np.sin(dt) + i / self.pixel_count
+            self.hsv_array[i] = (dt, 1, 1 - lows_power)
 
     def get_pixels(self):
         return self.hsv_to_rgb(self.hsv_array)
@@ -55,7 +71,7 @@ class HSVTest(AudioReactiveEffect):
         """
         input_shape = hsv.shape
         hsv = hsv.reshape(-1, 3)
-        h, s, v = hsv[:, 0], hsv[:, 1], hsv[:, 2]
+        h, s, v = hsv[:, 0], hsv[:, 1], hsv[:, 2] * 256
 
         i = np.int32(h * 6.0)
         f = (h * 6.0) - i
