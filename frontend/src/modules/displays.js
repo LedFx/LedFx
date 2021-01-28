@@ -58,7 +58,6 @@ export function fetchDisplayList() {
         dispatch(displaysRequested());
         try {
             const response = await displayProxies.getDisplays();
-            // console.log('BOOM', response);
             if (response.statusText === 'OK') {
                 const { displays } = response.data;
                 Object.keys(displays).forEach(key => {
