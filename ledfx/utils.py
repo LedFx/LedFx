@@ -133,7 +133,7 @@ def wled_device(device_ip):
 
 def turn_wled_on(device_ip):
     """
-        Uses a HTTP psot call to turn a WLED compatible device on and up to max brightness
+        Uses a HTTP post call to turn a WLED compatible device on and up to max brightness
 
     Args:
         device_ip (string): The device IP to be turned on
@@ -154,7 +154,7 @@ def turn_wled_on(device_ip):
 
 def turn_wled_off(device_ip):
     """
-        Uses a HTTP psot call to turn a WLED compatible device off
+        Uses a HTTP post call to turn a WLED compatible device off
 
     Args:
         device_ip (string): The device IP to be turned off
