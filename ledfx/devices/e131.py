@@ -6,7 +6,7 @@ import sacn
 import voluptuous as vol
 
 from ledfx.devices import Device
-from ledfx.utils import resolve_destination
+from ledfx.utils import resolve_destination, turn_wled_on, wled_device
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -77,6 +77,10 @@ class E131Device(Device):
                 f"Cannot resolve destination {self._config['ip_address']}, aborting device {self.name} activation. Make sure the IP/hostname is correct and device is online."
             )
             return
+
+        # If the device is a WLED device, turn it on
+        if wled_device(resolved_dest):
+            turn_wled_on(resolved_dest)
 
         # Configure sACN and start the dedicated thread to flush the buffer
         # Some variables are immutable and must be called here

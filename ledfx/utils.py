@@ -13,6 +13,7 @@ from abc import ABC
 # from asyncio import coroutines, ensure_future
 from subprocess import PIPE, Popen
 
+import requests
 import voluptuous as vol
 
 _LOGGER = logging.getLogger(__name__)
@@ -107,6 +108,99 @@ def async_callback(loop, callback, *args):
 
     loop.call_soon_threadsafe(run_callback)
     return future
+
+
+def wled_device(device_ip):
+    """
+        Uses a JSON API call to determine if the device is WLED or WLED compatible
+        Specifically searches for "WLED" in the brand json - currently all major
+        branches/forks of WLED contain WLED in the branch data.
+
+    Args:
+        device_ip (string): The device IP to be queried
+
+    Returns:
+        boolean
+    """
+    device_info = requests.get(f"http://{device_ip}/json/info")
+    device_json = device_info.json()
+
+    if device_json["brand"] in "WLED":
+        return True
+    else:
+        return False
+
+
+def turn_wled_on(device_ip):
+    """
+        Uses a HTTP psot call to turn a WLED compatible device on and up to max brightness
+
+    Args:
+        device_ip (string): The device IP to be turned on
+
+    Returns:
+        boolean: Success or failure of API call
+    """
+
+    turn_on = requests.post(f"http://{device_ip}/win&T=1")
+
+    if turn_on.ok:
+        _LOGGER.info(f"Turning WLED device at {device_ip} on.")
+        return True
+    else:
+        _LOGGER.warning(f"Unable to turn WLED device at {device_ip} on.")
+        return False
+
+
+def turn_wled_off(device_ip):
+    """
+        Uses a HTTP psot call to turn a WLED compatible device off
+
+    Args:
+        device_ip (string): The device IP to be turned off
+
+    Returns:
+        boolean: Success or failure of API call
+    """
+
+    turn_off = requests.post(f"http://{device_ip}/win&T=0")
+
+    if turn_off.ok:
+        _LOGGER.info(f"Turning WLED device at {device_ip} off.")
+        return True
+    else:
+        _LOGGER.warning(f"Unable to turn WLED device at {device_ip} off.")
+        return False
+
+
+def adjust_wled_brightness(device_ip, brightness):
+    """
+        Uses a HTTP post call to adjust a WLED compatible device's
+        brightness
+
+
+    Args:
+        device_ip (string): The device IP to adjust brightness
+        brightness (int): The brightness value between 0-255
+
+    Returns:
+        boolean: Success or failure of API call
+    """
+    if brightness < 0:
+        brightness = 0
+    if brightness > 255:
+        brightness = 255
+
+    adjust_brightness = requests.post(f"http://{device_ip}/win&A={brightness}")
+
+    if adjust_brightness.ok:
+        _LOGGER.info(
+            f"Adjusting WLED brightness at {device_ip} too {brightness}."
+        )
+        return True
+    else:
+        _LOGGER.warning(f"Unable to adjust WLED device at {device_ip}.")
+        return False
 
 
 def resolve_destination(destination):
