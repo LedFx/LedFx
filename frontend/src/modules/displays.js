@@ -74,12 +74,9 @@ export function fetchDisplayList() {
     };
 }
 
-export function addDisplay(type, config) {
+export function addDisplay(config) {
     return async dispatch => {
-        const data = {
-            type: type,
-            config: config,
-        };
+        const data = config;
         try {
             const response = await displayProxies.createDisplay(data);
             if (response.statusText === 'OK') {

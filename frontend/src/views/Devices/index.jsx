@@ -94,6 +94,7 @@ class DevicesView extends React.Component {
             deleteDisplay,
             schemas,
             addDevice,
+            addDisplay,
             // deleteDevice,
             updateDeviceConfig,
             scanProgress,
@@ -231,6 +232,7 @@ export default connect(
     }),
     {
         addDevice,
+        addDisplay,
         // deleteDevice,
         deleteDisplay,
         updateDeviceConfig,

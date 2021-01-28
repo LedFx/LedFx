@@ -67,9 +67,9 @@ class DisplayConfigDialog extends React.Component {
         if (initial.id) {
             onUpdateDisplay(initial.id, config);
         } else {
-            onAddDisplay(config);
+            onAddDisplay({ config });
         }
-        alert("NOT YET BROO")
+        // alert("NOT YET BROO")
         this.props.onClose();
     };
 
@@ -83,7 +83,6 @@ class DisplayConfigDialog extends React.Component {
             properties: {},
             ...(displays ? displays.schema : {}),
         };
-
 
         const requiredKeys = currentSchema.required;
         const optionalKeys = Object.keys(currentSchema.properties).filter(
