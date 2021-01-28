@@ -14,75 +14,89 @@ import DisplayEffectControl from 'components/EffectControl/DisplayEffectControl'
 import DisplayPixelColorGraph from 'components/PixelColorGraph/DisplayPixelColorGraph';
 import PresetsCard from 'components/PresetsCard';
 import { fetchDisplayList } from 'modules/displays';
-class DisplayView extends React.Component {
-    componentDidMount() {
-        const { displayId } = this.props.match.params;
-        this.handleLoadDisplay(displayId);
-        this.props.fetchDisplayList();
-    }
 
-    componentWillReceiveProps(nextProps) {
-        const { displayId } = this.props.match.params;
-        const { displayId: newDisplayId } = nextProps.match.params;
-        if (displayId !== newDisplayId) {
-            this.handleLoadDisplay(newDisplayId);
+
+const DisplayView = ({match: {params}, presets, schemas, selectedDisplay, addPreset, activatePreset, clearDisplayEffect, loadDisplayInfo, setDisplayEffect, getEffectPresets}) => {
+    const [state, setState] = useState();
+    useEffect(() => {
+        fetchDisplayList();
+        setState(params);
+    }, []);
+    useEffect(() => {
+        if(params !== state){
+            handleLoadDisplay(params);
+            setState(params);
         }
-    }
+    }, [params]);
 
-    handleLoadDisplay = displayId => {
-        const { loadDisplayInfo } = this.props;
+    const handleLoadDisplay = displayId => {
         loadDisplayInfo(displayId);
     };
 
-    handleClearEffect = displayId => {
-        const { clearDisplayEffect } = this.props;
+    const handleClearEffect = displayId => {
         clearDisplayEffect(displayId);
     };
 
-    handleSetEffect = data => {
-        const { setDisplayEffect } = this.props;
+    const handleSetEffect = data => {
         setDisplayEffect(data.displayId, data);
     };
 
-    handleTypeChange = effectType => {
-        const { getEffectPresets } = this.props;
+    const handleTypeChange = effectType => {
         getEffectPresets(effectType);
     };
 
-    render() {
-        const {
-            presets,
-            schemas,
-            selectedDisplay,
-            activatePreset,
-            getEffectPresets,
-            addPreset,
-        } = this.props;
-        const { display, effect, isDisplayLoading } = selectedDisplay;
+    const { display, effect, isDisplayLoading } = selectedDisplay;
 
-        if (schemas.isLoading || isDisplayLoading || !display) {
-            return <p>Loading...</p>;
-        }
+    if (schemas.isLoading || isDisplayLoading || !display) {
+        return <p>Loading...</p>;
+    }
 
-        return (
-            <>
-                <Grid container direction="row" spacing={4}>
-                    {Object.keys(effect).length === 0 ? (
-                        <Grid item xs={12} lg={12}>
-                            <Card>
-                                <CardContent>
-                                    <DisplayPixelColorGraph display={display} />
-                                </CardContent>
-                            </Card>
-                        </Grid>
-                    ) : (
-                        renderPixelGraph(display, effect)
+    return (
+        <>
+            <Grid container direction="row" spacing={4}>
+                {Object.keys(effect).length === 0 ? (
+                    <Grid item xs={12} lg={12}>
+                        <Card>
+                            <CardContent>
+                                <DisplayPixelColorGraph display={display} />
+                            </CardContent>
+                        </Card>
+                    </Grid>
+                ) : (
+                    renderPixelGraph(display, effect)
+                )}
+
+                <Grid item xs={12} lg={6}>
+                    <Card>
+                        <CardContent>
+                            <DisplayEffectControl
+                                display={display}
+                                effect={effect}
+                                schemas={schemas}
+                                onClear={handleClearEffect}
+                                onSubmit={handleSetEffect}
+                                onTypeChange={this.handleTypeChange}
+                            />
+                        </CardContent>
+                    </Card>
+                </Grid>
+                <Grid item xs={12} lg={6}>
+                    {effect.type && (
+                        <PresetsCard
+                            device={display}
+                            presets={presets}
+                            effect={effect}
+                            activatePreset={activatePreset}
+                            getEffectPresets={getEffectPresets}
+                            addPreset={addPreset}
+                        />
                     )}
-
+                </Grid>
+                {/* {parseInt(window.localStorage.getItem('BladeMod')) > 2 && (
                     <Grid item xs={12} lg={6}>
                         <Card>
                             <CardContent>
-                                <DisplayEffectControl
+                                <EffectControlBlade
                                     display={display}
                                     effect={effect}
                                     schemas={schemas}
@@ -93,76 +107,48 @@ class DisplayView extends React.Component {
                             </CardContent>
                         </Card>
                     </Grid>
-                    <Grid item xs={12} lg={6}>
-                        {effect.type && (
-                            <PresetsCard
-                                device={display}
-                                presets={presets}
-                                effect={effect}
-                                activatePreset={activatePreset}
-                                getEffectPresets={getEffectPresets}
-                                addPreset={addPreset}
-                            />
-                        )}
-                    </Grid>
-                    {/* {parseInt(window.localStorage.getItem('BladeMod')) > 2 && (
-                        <Grid item xs={12} lg={6}>
-                            <Card>
-                                <CardContent>
-                                    <EffectControlBlade
-                                        display={display}
-                                        effect={effect}
-                                        schemas={schemas}
-                                        onClear={this.handleClearEffect}
-                                        onSubmit={this.handleSetEffect}
-                                        onTypeChange={this.handleTypeChange}
-                                    />
-                                </CardContent>
-                            </Card>
-                        </Grid>
-                    )} */}
-                    {parseInt(window.localStorage.getItem('BladeMod')) > 1 && <>
-                    <Grid item xs={6} lg={6}>
-                        <Card>
-                            <CardContent>
-                                <Typography variant="h5">Display Config</Typography>
-                                <Typography variant="subtitle1">
-                                    Total Pixels: {display.config[display.id].pixel_count}
-                                </Typography>
+                )} */}
+                {parseInt(window.localStorage.getItem('BladeMod')) > 1 && <>
+                <Grid item xs={6} lg={6}>
+                    <Card>
+                        <CardContent>
+                            <Typography variant="h5">Display Config</Typography>
+                            <Typography variant="subtitle1">
+                                Total Pixels: {display.config[display.id].pixel_count}
+                            </Typography>
+                            <br />
+                            <Typography variant="caption">
+                                Active: {JSON.stringify(display.config[display.id].active)}
                                 <br />
-                                <Typography variant="caption">
-                                    Active: {JSON.stringify(display.config[display.id].active)}
-                                    <br />
-                                    Center Offset: {display.config[display.id].config.center_offset}
-                                    <br />
-                                    Crossfade: {display.config[display.id].config.crossfade}
-                                    <br />
-                                    Max Brightness: {display.config[display.id].config.crossfade}
-                                    <br />
-                                    Preview only:{' '}
-                                    {JSON.stringify(display.config[display.id].config.preview_only)}
-                                </Typography>
-                            </CardContent>
-                        </Card>
-                    </Grid>
-                    <Grid item xs={6} lg={6}>
-                        <Card>
-                            <CardContent>
-                                <Typography variant="h5">Display Segments</Typography>
-                                <Typography variant="subtitle1">
-                                    Segments: {display.config[display.id].segments.length}
-                                </Typography>
+                                Center Offset: {display.config[display.id].config.center_offset}
                                 <br />
-                                {display.config[display.id].segments.map(
-                                    (s, i) => <li key={i}>{s.join(',')}</li>
-                                )}
-                            </CardContent>
-                        </Card>
-                    </Grid></>}
+                                Crossfade: {display.config[display.id].config.crossfade}
+                                <br />
+                                Max Brightness: {display.config[display.id].config.crossfade}
+                                <br />
+                                Preview only:{' '}
+                                {JSON.stringify(display.config[display.id].config.preview_only)}
+                            </Typography>
+                        </CardContent>
+                    </Card>
                 </Grid>
-            </>
-        );
-    }
+                <Grid item xs={6} lg={6}>
+                    <Card>
+                        <CardContent>
+                            <Typography variant="h5">Display Segments</Typography>
+                            <Typography variant="subtitle1">
+                                Segments: {display.config[display.id].segments.length}
+                            </Typography>
+                            <br />
+                            {display.config[display.id].segments.map(
+                                (s, i) => <li key={i}>{s.join(',')}</li>
+                            )}
+                        </CardContent>
+                    </Card>
+                </Grid></>}
+            </Grid>
+        </>
+    );
 }
 
 const renderPixelGraph = (display, effect) => {
