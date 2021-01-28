@@ -101,9 +101,6 @@ class DevicesView extends React.Component {
         } = this.props;
         const { addDialogOpened, selectedDevice } = this.state;
         const { addDisplayOpened, selectedDisplay } = this.state;
-        const helpText = `Ensure WLED Devices are on and connected to your WiFi.\n
-                          If not detected, check WLED device mDNS setting. Go to:\n
-                          WLED device ip > Config > WiFi Setup > mDNS Address \n`;
 
         return (
             <>
@@ -133,7 +130,16 @@ class DevicesView extends React.Component {
                                                         value={scanProgress * 10}
                                                         size={35}
                                                     />
-                                                    <Tooltip title={helpText} interactive arrow>
+                                                    <Tooltip title={
+                                                            <ul style={{ padding: '0.5rem' }}>
+                                                                <li>Ensure WLED Devices are on and connected to your WiFi.</li>
+                                                                <li>If not detected, check WLED device mDNS setting. Go to:</li>
+                                                                <li>WLED device ip - Config - WiFi Setup - mDNS Address </li>
+                                                            </ul>
+                                                        }
+                                                        interactive
+                                                        arrow
+                                                    >
                                                         <Button
                                                             variant="contained"
                                                             color="primary"
@@ -151,14 +157,10 @@ class DevicesView extends React.Component {
                                                     <Tooltip
                                                         title={
                                                             <ul style={{ padding: '0.5rem' }}>
-                                                                <li>Split Devices into Segments</li>
-                                                                <li>
-                                                                    Combine multi Segments into
-                                                                    Virtuals
-                                                                </li>
-                                                                <li>
-                                                                    Re-order and Fine-tune Segements
-                                                                </li>
+                                                                <li>A virtual device lets you control the mapping of an effect onto devices. You can:</li>
+                                                                <li>Split a device to show multiple effects</li>
+                                                                <li>Combine devices to show a single effect</li>
+                                                                <li>Or any combination of the two!</li>
                                                             </ul>
                                                         }
                                                         interactive
