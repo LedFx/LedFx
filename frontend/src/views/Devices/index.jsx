@@ -59,6 +59,9 @@ class DevicesView extends React.Component {
     openAddDeviceDialog = () => {
         this.setState({ selectedDevice: {}, addDialogOpened: true });
     };
+    openAddDisplayDialog = () => {
+        this.setState({ selectedDisplay: {}, addDisplayOpened: true });
+    };
 
     closeAddDeviceDialog = () => {
         this.setState({ selectedDevice: {}, addDialogOpened: false });
@@ -100,111 +103,10 @@ class DevicesView extends React.Component {
         const helpText = `Ensure WLED Devices are on and connected to your WiFi.\n
                           If not detected, check WLED device mDNS setting. Go to:\n
                           WLED device ip > Config > WiFi Setup > mDNS Address \n`;
-        
+
         return (
             <>
                 <Grid container spacing={2}>
-                    {/* <Grid item xs={12} md={12}>
-                        <Card>
-                            <CardContent>
-                                <Grid container direction="row" spacing={1} justify="space-between">
-                                    <Grid item xs="auto">
-                                        <Typography variant="h5">Devices</Typography>
-                                        <Typography variant="body1" color="textSecondary">
-                                            Manage devices connected to LedFx
-                                        </Typography>
-                                    </Grid>
-                                    {!schemas.isLoading && (
-                                        <>
-                                            <Grid item>
-                                                <Box
-                                                    display="flex"
-                                                    flexDirection="row"
-                                                    alignItems="center"
-                                                    justifyContent="center"
-                                                >
-                                                    <CircularProgress
-                                                        variant="determinate"
-                                                        value={scanProgress * 10}
-                                                        size={35}
-                                                    />
-                                                    <Tooltip title={helpText} interactive arrow>
-                                                        <Button
-                                                            variant="contained"
-                                                            color="primary"
-                                                            aria-label="Scan"
-                                                            disabled={
-                                                                this.state.searchDevicesLoading
-                                                            }
-                                                            className={classes.button}
-                                                            onClick={this.handleFindDevices}
-                                                            endIcon={<WifiTetheringIcon />}
-                                                        >
-                                                            Find WLED Devices
-                                                        </Button>
-                                                    </Tooltip>
-                                                    <Tooltip
-                                                        title={
-                                                            <ul style={{ padding: '0.5rem' }}>
-                                                                <li>Split Devices into Segments</li>
-                                                                <li>
-                                                                    Combine multi Segments into
-                                                                    Virtuals
-                                                                </li>
-                                                                <li>
-                                                                    Re-order and Fine-tune Segements
-                                                                </li>
-                                                            </ul>
-                                                        }
-                                                        interactive
-                                                        arrow
-                                                    >
-                                                        <Button
-                                                            variant="contained"
-                                                            color="primary"
-                                                            aria-label="Scan"
-                                                            disabled={
-                                                                this.state.searchDevicesLoading
-                                                            }
-                                                            className={classes.button}
-                                                            onClick={this.handleFindDevices}
-                                                            endIcon={<AddCircleIcon />}
-                                                        >
-                                                            Add Virtual Device
-                                                        </Button>
-                                                    </Tooltip>
-                                                    <Button
-                                                        variant="contained"
-                                                        color="primary"
-                                                        aria-label="Add"
-                                                        className={classes.button}
-                                                        onClick={this.openAddDeviceDialog}
-                                                        endIcon={<AddCircleIcon />}
-                                                    >
-                                                        Add Device
-                                                    </Button>
-                                                    <DeviceConfigDialog
-                                                        open={addDialogOpened}
-                                                        onClose={this.closeAddDeviceDialog}
-                                                        deviceTypes={schemas.deviceTypes}
-                                                        onAddDevice={addDevice}
-                                                        initial={selectedDevice}
-                                                        onUpdateDevice={updateDeviceConfig}
-                                                    />
-                                                </Box>
-                                            </Grid>
-                                        </>
-                                    )}
-                                </Grid>
-
-                                <DevicesTable
-                                    items={deviceList}
-                                    onDeleteDevice={deleteDevice}
-                                    onEditDevice={this.handleEditDevice}
-                                />
-                            </CardContent>
-                        </Card>
-                    </Grid> */}
                     <Grid item xs={12}>
                         <Card>
                             <CardContent>
@@ -266,7 +168,7 @@ class DevicesView extends React.Component {
                                                             color="primary"
                                                             aria-label="Scan"
                                                             className={classes.button}
-                                                            onClick={() => alert('NOT YET BROO')}
+                                                            onClick={this.openAddDisplayDialog}
                                                             endIcon={<AddCircleIcon />}
                                                         >
                                                             Add Virtual Device

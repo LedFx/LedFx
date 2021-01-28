@@ -69,7 +69,7 @@ class DisplayConfigDialog extends React.Component {
         } else {
             onAddDisplay(config);
         }
-
+        alert("NOT YET BROO")
         this.props.onClose();
     };
 
@@ -84,7 +84,7 @@ class DisplayConfigDialog extends React.Component {
             ...(displays ? displays.schema : {}),
         };
 
-        
+
         const requiredKeys = currentSchema.required;
         const optionalKeys = Object.keys(currentSchema.properties).filter(
             key => !(requiredKeys && requiredKeys.some(rk => key === rk))

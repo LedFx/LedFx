@@ -116,7 +116,7 @@ class DeviceView extends React.Component {
                         </ul>
                     </CardContent>
                 </Card>}
-                
+
             </>
         );
     }

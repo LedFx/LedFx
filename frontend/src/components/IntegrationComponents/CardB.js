@@ -69,7 +69,7 @@ const IntegrationsCard = ({ int }) => {
                     color="primary"
                     aria-label="Add"
                     className={classes.button}
-                    endIcon={<AddCircleIcon />}                    
+                    endIcon={<AddCircleIcon />}
                     //onClick={handleClickListItem}
                     role="listitem"
                 >
