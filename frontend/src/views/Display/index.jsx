@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 
@@ -15,23 +15,37 @@ import DisplayPixelColorGraph from 'components/PixelColorGraph/DisplayPixelColor
 import PresetsCard from 'components/PresetsCard';
 import { fetchDisplayList } from 'modules/displays';
 
-
-const DisplayView = ({match: {params}, presets, schemas, selectedDisplay, addPreset, activatePreset, clearDisplayEffect, loadDisplayInfo, setDisplayEffect, getEffectPresets}) => {
+const DisplayView = ({
+    match: {
+        params: { displayId },
+    },
+    presets,
+    schemas,
+    selectedDisplay,
+    addPreset,
+    activatePreset,
+    clearDisplayEffect,
+    loadDisplayInfo,
+    setDisplayEffect,
+    getEffectPresets,
+}) => {
     const [state, setState] = useState();
+
+    useEffect(() => {
+        if (displayId !== state) {
+            loadDisplayInfo(displayId);
+            setState(displayId);
+            fetchDisplayList();
+        }
+    }, [displayId, loadDisplayInfo, state]);
     useEffect(() => {
         fetchDisplayList();
-        setState(params);
-    }, []);
-    useEffect(() => {
-        if(params !== state){
-            handleLoadDisplay(params);
-            setState(params);
-        }
-    }, [params]);
+        setState(displayId);
+    }, [displayId]);
 
-    const handleLoadDisplay = displayId => {
-        loadDisplayInfo(displayId);
-    };
+    // const handleLoadDisplay = displayId => {
+    //     loadDisplayInfo(displayId);
+    // };
 
     const handleClearEffect = displayId => {
         clearDisplayEffect(displayId);
@@ -75,7 +89,7 @@ const DisplayView = ({match: {params}, presets, schemas, selectedDisplay, addPre
                                 schemas={schemas}
                                 onClear={handleClearEffect}
                                 onSubmit={handleSetEffect}
-                                onTypeChange={this.handleTypeChange}
+                                onTypeChange={handleTypeChange}
                             />
                         </CardContent>
                     </Card>
@@ -100,56 +114,63 @@ const DisplayView = ({match: {params}, presets, schemas, selectedDisplay, addPre
                                     display={display}
                                     effect={effect}
                                     schemas={schemas}
-                                    onClear={this.handleClearEffect}
-                                    onSubmit={this.handleSetEffect}
-                                    onTypeChange={this.handleTypeChange}
+                                    onClear={handleClearEffect}
+                                    onSubmit={handleSetEffect}
+                                    onTypeChange={handleTypeChange}
                                 />
                             </CardContent>
                         </Card>
                     </Grid>
                 )} */}
-                {parseInt(window.localStorage.getItem('BladeMod')) > 1 && <>
-                <Grid item xs={6} lg={6}>
-                    <Card>
-                        <CardContent>
-                            <Typography variant="h5">Display Config</Typography>
-                            <Typography variant="subtitle1">
-                                Total Pixels: {display.config[display.id].pixel_count}
-                            </Typography>
-                            <br />
-                            <Typography variant="caption">
-                                Active: {JSON.stringify(display.config[display.id].active)}
-                                <br />
-                                Center Offset: {display.config[display.id].config.center_offset}
-                                <br />
-                                Crossfade: {display.config[display.id].config.crossfade}
-                                <br />
-                                Max Brightness: {display.config[display.id].config.crossfade}
-                                <br />
-                                Preview only:{' '}
-                                {JSON.stringify(display.config[display.id].config.preview_only)}
-                            </Typography>
-                        </CardContent>
-                    </Card>
-                </Grid>
-                <Grid item xs={6} lg={6}>
-                    <Card>
-                        <CardContent>
-                            <Typography variant="h5">Display Segments</Typography>
-                            <Typography variant="subtitle1">
-                                Segments: {display.config[display.id].segments.length}
-                            </Typography>
-                            <br />
-                            {display.config[display.id].segments.map(
-                                (s, i) => <li key={i}>{s.join(',')}</li>
-                            )}
-                        </CardContent>
-                    </Card>
-                </Grid></>}
+                {parseInt(window.localStorage.getItem('BladeMod')) > 1 && (
+                    <>
+                        <Grid item xs={6} lg={6}>
+                            <Card>
+                                <CardContent>
+                                    <Typography variant="h5">Display Config</Typography>
+                                    <Typography variant="subtitle1">
+                                        Total Pixels: {display.config[display.id].pixel_count}
+                                    </Typography>
+                                    <br />
+                                    <Typography variant="caption">
+                                        Active: {JSON.stringify(display.config[display.id].active)}
+                                        <br />
+                                        Center Offset:{' '}
+                                        {display.config[display.id].config.center_offset}
+                                        <br />
+                                        Crossfade: {display.config[display.id].config.crossfade}
+                                        <br />
+                                        Max Brightness:{' '}
+                                        {display.config[display.id].config.crossfade}
+                                        <br />
+                                        Preview only:{' '}
+                                        {JSON.stringify(
+                                            display.config[display.id].config.preview_only
+                                        )}
+                                    </Typography>
+                                </CardContent>
+                            </Card>
+                        </Grid>
+                        <Grid item xs={6} lg={6}>
+                            <Card>
+                                <CardContent>
+                                    <Typography variant="h5">Display Segments</Typography>
+                                    <Typography variant="subtitle1">
+                                        Segments: {display.config[display.id].segments.length}
+                                    </Typography>
+                                    <br />
+                                    {display.config[display.id].segments.map((s, i) => (
+                                        <li key={i}>{s.join(',')}</li>
+                                    ))}
+                                </CardContent>
+                            </Card>
+                        </Grid>
+                    </>
+                )}
             </Grid>
         </>
     );
-}
+};
 
 const renderPixelGraph = (display, effect) => {
     if (display && effect?.name) {
