@@ -170,13 +170,6 @@ class Device(BaseRegistry):
     def displays(self):
         return list(segment[0] for segment in self._segments)
 
-    def validate_segment(self, display_id, start_pixel, end_pixel):
-        # make sure this segment is within range of this device's total pixels
-        if (start_pixel < 0) or (end_pixel >= self.pixel_count):
-            msg = f"Invalid segment pixels: ({start_pixel}, {end_pixel}). Device '{self.name}' valid pixels between (0, {self.pixel_count-1})"
-            _LOGGER.warning(msg)
-            raise ValueError(msg)
-
     def add_segment(self, display_id, start_pixel, end_pixel):
         # make sure this segment doesn't overlap with any others
         for _display, segment_start, segment_end in self._segments:
