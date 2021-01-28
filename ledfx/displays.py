@@ -489,6 +489,7 @@ class Displays(object):
             self._ledfx.displays.create(
                 id=display["id"],
                 config=display["config"],
+                is_device=display["is_device"],
                 ledfx=self._ledfx,
             )
             if "segments" in display:
@@ -523,6 +524,7 @@ class Displays(object):
 
         # Create the new display and validate the schema.
         _config = kwargs.pop("config", None)
+        _is_device = kwargs.pop("is_device", False)
         if _config is not None:
             _config = Display.CONFIG_SCHEMA(_config)
             obj = Display(config=_config, *args, **kwargs)
@@ -531,6 +533,7 @@ class Displays(object):
 
         # Attach some common properties
         setattr(obj, "_id", id)
+        setattr(obj, "is_device", _is_device)
 
         # Store the object into the internal list and return it
         self._displays[id] = obj

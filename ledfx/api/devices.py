@@ -77,7 +77,6 @@ class DevicesEndpoint(RestEndpoint):
         display_config = {
             "name": display_name,
             "icon_name": device_config["icon_name"],
-            "isDevice": device.id,
         }
         segments = [[device.id, 0, device_config["pixel_count"] - 1, False]]
 
@@ -86,6 +85,7 @@ class DevicesEndpoint(RestEndpoint):
             id=display_id,
             config=display_config,
             ledfx=self._ledfx,
+            is_device=device.id,
         )
 
         # create the device as a single segment on the display
@@ -97,6 +97,7 @@ class DevicesEndpoint(RestEndpoint):
                 "id": display.id,
                 "config": display.config,
                 "segments": display.segments,
+                "is_device": device.id,
             }
         )
 

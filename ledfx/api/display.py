@@ -30,6 +30,7 @@ class DisplayEndpoint(RestEndpoint):
         response[display.id] = {
             "config": display.config,
             "id": display.id,
+            "is_device": display.is_device,
             "segments": display.segments,
             "pixel_count": display.pixel_count,
             "active": display.active,

@@ -23,6 +23,7 @@ class DisplaysEndpoint(RestEndpoint):
             response["displays"][display.id] = {
                 "config": display.config,
                 "id": display.id,
+                "is_device": display.is_device,
                 "segments": display.segments,
                 "pixel_count": display.pixel_count,
                 "active": display.active,
@@ -82,6 +83,7 @@ class DisplaysEndpoint(RestEndpoint):
 
             display = self._ledfx.displays.create(
                 id=display_id,
+                is_device=False,
                 config=display_config,
                 ledfx=self._ledfx,
             )
@@ -91,6 +93,7 @@ class DisplaysEndpoint(RestEndpoint):
                 {
                     "id": display.id,
                     "config": display.config,
+                    "is_device": display.is_device,
                 }
             )
 
@@ -105,6 +108,7 @@ class DisplaysEndpoint(RestEndpoint):
             "display": {
                 "config": display.config,
                 "id": display.id,
+                "is_device": display.is_device,
             },
         }
         return web.json_response(data=response, status=200)
