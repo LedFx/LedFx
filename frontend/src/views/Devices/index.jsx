@@ -71,7 +71,6 @@ class DevicesView extends React.Component {
         this.setState({ selectedDevice: device, addDialogOpened: true });
     };
     handleEditDisplay = display => {
-        console.log('11', display);
         this.setState({ selectedDisplay: display, addDisplayOpened: true });
     };
     handleFindDevices = () => {
@@ -101,7 +100,7 @@ class DevicesView extends React.Component {
         const helpText = `Ensure WLED Devices are on and connected to your WiFi.\n
                           If not detected, check WLED device mDNS setting. Go to:\n
                           WLED device ip > Config > WiFi Setup > mDNS Address \n`;
-        console.log('GGGG', schemas);
+        
         return (
             <>
                 <Grid container spacing={2}>

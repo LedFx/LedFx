@@ -1,5 +1,5 @@
 import React from 'react';
-import DefaultNumberField from 'react-schema-form/lib/Number';
+// import  {NumberField as DefaultNumberField} from 'react-schema-form/core';
 
 import Slider from './customFields/Slider';
 
@@ -15,7 +15,7 @@ const mapper = {
             return <Slider {...props} />;
         }
 
-        return <DefaultNumberField {...props}/>
+        return <div {...props}/>
     },
 };
 

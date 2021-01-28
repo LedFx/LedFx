@@ -84,13 +84,13 @@ class DisplayConfigDialog extends React.Component {
             ...(displays ? displays.schema : {}),
         };
 
-        console.log(typeof currentSchema);
+        
         const requiredKeys = currentSchema.required;
         const optionalKeys = Object.keys(currentSchema.properties).filter(
             key => !(requiredKeys && requiredKeys.some(rk => key === rk))
         );
         const showAdditionalUi = optionalKeys.length > 0;
-        console.table('HERE', model, currentSchema, requiredKeys, optionalKeys);
+
         return (
             <Dialog
                 onClose={this.handleClose}

@@ -1,5 +1,5 @@
 import React from 'react';
-import ComposedComponent from 'react-schema-form/lib/ComposedComponent';
+import {ComposedComponent} from 'react-schema-form';
 
 import { makeStyles } from '@material-ui/core/styles';
 import Slider from '@material-ui/core/Slider';

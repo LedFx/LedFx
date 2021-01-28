@@ -9,7 +9,7 @@ import integrations from './integrations';
 import ui from './ui';
 import displays from './displays';
 import selectedDisplay from './selectedDisplay';
-export default {
+const modules = {
     devices,
     integrations,
     presets,
@@ -22,3 +22,5 @@ export default {
     displays,
     selectedDisplay,
 };
+
+export default modules
