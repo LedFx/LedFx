@@ -101,7 +101,7 @@ class DeviceView extends React.Component {
                         <PixelColorGraph device={device} />
                     </CardContent>
                 </Card>
-                <Card style={{ marginTop: '2rem' }}>
+                {parseInt(window.localStorage.getItem('BladeMod')) > 2 && <Card style={{ marginTop: '2rem' }}>
                     <CardContent>
                         <Typography variant="h5">Displays</Typography>
 
@@ -115,7 +115,8 @@ class DeviceView extends React.Component {
                                     .displays.map(display => <li key={display}>{display}</li>)}
                         </ul>
                     </CardContent>
-                </Card>
+                </Card>}
+                
             </>
         );
     }

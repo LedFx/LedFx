@@ -48,6 +48,13 @@ const Header = props => {
                         ? devicesDictionary[deviceId].config.name
                         : '';
                 name = 'Devices / ' + deviceName;
+            } else if (pathname.startsWith('/displays/')) {
+                const deviceId = pathname.replace('/displays/', '');
+                const deviceName =
+                    devicesDictionary[deviceId] !== undefined
+                        ? devicesDictionary[deviceId].config.name
+                        : '';
+                name = 'Devices / ' + deviceName;
             } else if (pathname.startsWith('/developer/')) {
                 name = 'Developer / Custom';
             }

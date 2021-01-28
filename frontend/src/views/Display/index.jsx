@@ -121,6 +121,7 @@ class DisplayView extends React.Component {
                             </Card>
                         </Grid>
                     )} */}
+                    {parseInt(window.localStorage.getItem('BladeMod')) > 1 && <>
                     <Grid item xs={6} lg={6}>
                         <Card>
                             <CardContent>
@@ -153,11 +154,11 @@ class DisplayView extends React.Component {
                                 </Typography>
                                 <br />
                                 {display.config[display.id].segments.map(
-                                    (s, i) => console.log(s) || <li key={i}>{s.join(',')}</li>
+                                    (s, i) => <li key={i}>{s.join(',')}</li>
                                 )}
                             </CardContent>
                         </Card>
-                    </Grid>
+                    </Grid></>}
                 </Grid>
             </>
         );

@@ -103,7 +103,7 @@ const Links = ({ classes, devMode, effectLinks, isViewActive }) => {
                         <div className={classes.item} key={key}>
                             <ListItem button className={listItemClass} key={prop.sidebarName}>
                                 <NavLink
-                                    to={`/displays`}
+                                    to={`/devices`}
                                     className={classes.item}
                                     activeClassName="active"
                                 >

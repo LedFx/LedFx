@@ -24,7 +24,7 @@ import SettingsView from '../views/Settings';
 import DeveloperView from '../views/Developer';
 
 const virtuals =
-    parseInt(window.localStorage.getItem('BladeMod')) > 1
+    parseInt(window.localStorage.getItem('BladeMod')) > 2
         ? {
               path: '/virtuals',
               sidebarName: 'Virtual Strips',
@@ -42,7 +42,6 @@ const displays =
     parseInt(window.localStorage.getItem('BladeMod')) > 1
         ? {
               path: '/displays',
-              sidebarName: 'Display Management',
               navbarName: 'Displays',
               icon: TvIcon,
               component: DisplaysView,
@@ -69,7 +68,7 @@ const integrations =
               component: IntegrationsView,
           };
 const advanced =
-    parseInt(window.localStorage.getItem('BladeMod')) > 0
+    parseInt(window.localStorage.getItem('BladeMod')) > 2
         ? {
               path: '/advanced',
               sidebarName: 'Advanced',
