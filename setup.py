@@ -9,7 +9,7 @@ PROJECT_VERSION = const.PROJECT_VERSION
 PROJECT_LICENSE = "The MIT License"
 PROJECT_AUTHOR = "Austin Hodges"
 PROJECT_AUTHOR_EMAIL = "austin.b.hodges@gmail.com"
-PROJECT_MAINTAINER = "LedFx Devs"
+PROJECT_MAINTAINER = "LedFx Developers"
 PROJECT_MAINTAINER_EMAIL = "ledfx.app@gmail.com"
 PROJECT_URL = "https://github.com/LedFx/LedFx/tree/dev"
 
