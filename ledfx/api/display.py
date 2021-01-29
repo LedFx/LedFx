@@ -152,6 +152,17 @@ class DisplayEndpoint(RestEndpoint):
             return web.json_response(data=response, status=404)
 
         display.clear_effect()
+        device_id = display.is_device
+        if self._ledfx.devices.get(device_id) is not None:
+            self._ledfx.devices.destroy(device_id)
+
+            # Update and save the configuration
+            self._ledfx.config["devices"] = [
+                device
+                for device in self._ledfx.config["devices"]
+                if device["id"] != device_id
+            ]
+
         self._ledfx.displays.destroy(display_id)
 
         # Update and save the configuration
