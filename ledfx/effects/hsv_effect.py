@@ -8,10 +8,6 @@ from ledfx.effects import Effect
 @Effect.no_registration
 class HSVEffect(Effect):
 
-    # CONFIG_SCHEMA = vol.Schema(
-    #     {}
-    # )
-
     _last_time = time.time()
     _timestep = 0
     hsv_array = None
@@ -20,15 +16,8 @@ class HSVEffect(Effect):
         super().__init__(ledfx, config)
 
     def activate(self, pixel_count):
-        self.hsv_array = np.ones((pixel_count, 3))
+        self.hsv_array = np.zeros((pixel_count, 3))
         super().activate(pixel_count)
-
-    # def _invalidate_caches(self):
-    #     """Invalidates the cache for all wavefunctions"""
-    #     self.time.cache_clear()
-    #     self.triangle.cache_clear()
-    #     self.sin.cache_clear()
-    #     self.square.cache_clear()
 
     def get_pixels(self):
         # self._invalidate_caches()
@@ -49,16 +38,57 @@ class HSVEffect(Effect):
         self._last_time = time_now
 
     def time(self, modifier=1.0):
+        """
+        sawtooth 0->1, looping every 1/modifier seconds
+        lower modifier, slower looping
+        """
         return modifier * self._timestep % 1
 
     def triangle(self, x=1.0):
+        """
+        Perform the 'triangle' wavefunction on a value
+        """
         return 1 - 2 * np.abs(x - 0.5)
 
     def sin(self, x=1.0):
+        """
+        Perform the 'sin' wavefunction on a value
+        """
         return 0.5 * np.sin(x * 2 * np.pi) + 0.5
 
     def square(self, x=1.0):
+        """
+        Perform the 'square' wavefunction on a value
+        """
         return 0.5 * np.sign(np.sin(x * 2 * np.pi)) + 0.5
+
+    def array_triangle(self, a):
+        """
+        Perform the 'triangle' wavefunction on an array
+        """
+        np.subtract(a, 0.5, out=a)
+        np.abs(a, out=a)
+        np.multiply(a, 2, out=a)
+        np.subtract(1, a, out=a)
+
+    def array_sin(self, a):
+        """
+        Perform the 'sin' wavefunction on an array
+        """
+        np.multiply(2 * np.pi, a, out=a)
+        np.sin(a, out=a)
+        np.multiply(0.5, a, out=a)
+        np.add(0.5, a, out=a)
+
+    def array_square(self, a):
+        """
+        Perform the 'square' wavefunction on an array
+        """
+        np.multiply(2 * np.pi, a, out=a)
+        np.sin(a, out=a)
+        np.sign(a, out=a)
+        np.multiply(0.5, a, out=a)
+        np.add(0.5, a, out=a)
 
     def hsv_to_rgb(self, hsv):
         """
