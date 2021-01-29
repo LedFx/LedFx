@@ -1,3 +1,4 @@
+import numpy as np
 import voluptuous as vol
 
 from ledfx.effects.audio import AudioReactiveEffect
@@ -33,11 +34,24 @@ class HSVTest(AudioReactiveEffect, HSVEffect):
 
         t1 = self.time(self._config["speed"])
 
-        # "Pixel expression"
-        for i in range(self.pixel_count):
-            v = self.triangle(
-                (2.0 * self.sin(t1) + i / self.pixel_count) % 1.0
-            )
-            v **= 5.0
-            s = v < 0.9
-            self.hsv_array[i] = (self.lows_power, s, v)
+        # Vectorised pixel expression
+        self.v = np.linspace(0, 1, self.pixel_count)
+        np.add(2.0 * self.sin(t1), self.v, out=self.v)
+        np.mod(self.v, 1, out=self.v)
+        self.array_triangle(self.v)
+        np.power(self.v, 5, out=self.v)
+        s = self.v < 0.9
+
+        self.hsv_array[:, 0] = self.lows_power
+        self.hsv_array[:, 1] = s
+        self.hsv_array[:, 2] = self.v
+
+        # # "Pixel expression"
+        # for i in range(self.pixel_count):
+
+        #     v = self.triangle(
+        #         (2.0 * self.sin(t1) + i / self.pixel_count) % 1.0
+        #     )
+        #     v **= 5.0
+        #     s = v < 0.9
+        #     self.hsv_array[i] = (self.lows_power, s, v)
