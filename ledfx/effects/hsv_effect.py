@@ -26,13 +26,11 @@ plt.plot(_triangle)
 
 @Effect.no_registration
 class HSVEffect(Effect):
-
-    _last_time = time.time()
-    _timestep = 0
-    hsv_array = None
-
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
+        self._last_time = time.time()
+        self._timestep = 0
+        self.hsv_array = None
 
     def activate(self, pixel_count):
         self.hsv_array = np.zeros((pixel_count, 3))
