@@ -112,20 +112,33 @@ export function findWLEDDisplays({ resolve, reject }) {
     };
 }
 
-export function updateDisplayConfig(id, type, config) {
+export function updateDisplayConfig(id, data) {
+    console.log(id, data);
     return async dispatch => {
         try {
-            const response = await displayProxies.updateDisplaySegments(id, {
-                config: { ...config, type },
-            });
+            const response = await displayProxies.updateDisplaySegments(id, data);
             if (response.statusText === 'OK') {
                 dispatch(fetchDisplayList());
             }
         } catch (error) {
-            console.log('Error adding display', error.message);
+            console.log('Error updating display', error.message);
         }
     };
 }
+// export function updateDisplayConfig(id, type, config) {
+//     return async dispatch => {
+//         try {
+//             const response = await displayProxies.updateDisplaySegments(id, {
+//                 config: { ...config, type },
+//             });
+//             if (response.statusText === 'OK') {
+//                 dispatch(fetchDisplayList());
+//             }
+//         } catch (error) {
+//             console.log('Error updating display', error.message);
+//         }
+//     };
+// }
 
 export function setDisplayEffect(id, data) {
     return async (dispatch, getState) => {

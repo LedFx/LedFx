@@ -10,6 +10,7 @@ import SettingsIcon from '@material-ui/icons/Settings';
 import Icon from '@material-ui/core/Icon';
 import { Switch } from '@material-ui/core';
 import PopoverSure from 'components/PopoverSure';
+import DisplaySegmentsDialog from 'components/DisplaySegmentsDialog';
 import { camelToSnake } from 'utils/helpers';
 const styles = theme => ({
     deleteButton: {
@@ -44,11 +45,8 @@ function DisplaysTableItem({
     const handleEditDisplay = () => {
         onEditDisplay(display);
     };
-    const handleEditDeviceSegments = () => {
-        alert('Coming soon');
-    };
     const handleEditDevice = () => {
-        onEditDevice(deviceList.find(d => d.id === display.config.isDevice));
+        onEditDevice(deviceList.find(d => d.id === display.is_device));
     };
 
     return (
@@ -77,7 +75,7 @@ function DisplaysTableItem({
             <TableCell align="right">
                 <PopoverSure onConfirm={handleDeleteDevice} className={classes.deleteButton} />
 
-                {display.config.isDevice ? (
+                {display.is_device ? (
                     <Button
                         variant="contained"
                         size="small"
@@ -87,14 +85,11 @@ function DisplaysTableItem({
                         <SettingsIcon />
                     </Button>
                 ) : (
-                    <Button
-                        variant="contained"
-                        size="small"
+                    <DisplaySegmentsDialog
+                        display={display}
                         className={classes.editButton}
-                        onClick={handleEditDeviceSegments}
-                    >
-                        <SettingsIcon />
-                    </Button>
+                        icon={<SettingsIcon />}
+                    />
                 )}
                 <Button
                     variant="contained"

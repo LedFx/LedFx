@@ -12,16 +12,9 @@ import AddCircleIcon from '@material-ui/icons/AddCircle';
 import WifiTetheringIcon from '@material-ui/icons/WifiTethering';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import DisplaysTable from 'components/DisplaysTable';
-// import DevicesTable from 'components/DevicesTable';
 import DeviceConfigDialog from 'components/DeviceConfigDialog';
 import DisplayConfigDialog from 'components/DisplayConfigDialog';
-import {
-    addDevice,
-    // deleteDevice,
-    updateDeviceConfig,
-    fetchDeviceList,
-    findWLEDDevices,
-} from 'modules/devices';
+import { addDevice, updateDeviceConfig, fetchDeviceList, findWLEDDevices } from 'modules/devices';
 import { deleteDisplay, fetchDisplayList, updateDisplayConfig, addDisplay } from 'modules/displays';
 
 const styles = theme => ({
@@ -95,7 +88,6 @@ class DevicesView extends React.Component {
             schemas,
             addDevice,
             addDisplay,
-            // deleteDevice,
             updateDeviceConfig,
             scanProgress,
         } = this.props;
@@ -130,11 +122,21 @@ class DevicesView extends React.Component {
                                                         value={scanProgress * 10}
                                                         size={35}
                                                     />
-                                                    <Tooltip title={
+                                                    <Tooltip
+                                                        title={
                                                             <ul style={{ padding: '0.5rem' }}>
-                                                                <li>Ensure WLED Devices are on and connected to your WiFi.</li>
-                                                                <li>If not detected, check WLED device mDNS setting. Go to:</li>
-                                                                <li>WLED device ip - Config - WiFi Setup - mDNS Address </li>
+                                                                <li>
+                                                                    Ensure WLED Devices are on and
+                                                                    connected to your WiFi.
+                                                                </li>
+                                                                <li>
+                                                                    If not detected, check WLED
+                                                                    device mDNS setting. Go to:
+                                                                </li>
+                                                                <li>
+                                                                    WLED device ip - Config - WiFi
+                                                                    Setup - mDNS Address{' '}
+                                                                </li>
                                                             </ul>
                                                         }
                                                         interactive
@@ -157,10 +159,22 @@ class DevicesView extends React.Component {
                                                     <Tooltip
                                                         title={
                                                             <ul style={{ padding: '0.5rem' }}>
-                                                                <li>A virtual device lets you control the mapping of an effect onto devices. You can:</li>
-                                                                <li>Split a device to show multiple effects</li>
-                                                                <li>Combine devices to show a single effect</li>
-                                                                <li>Or any combination of the two!</li>
+                                                                <li>
+                                                                    A virtual device lets you
+                                                                    control the mapping of an effect
+                                                                    onto devices. You can:
+                                                                </li>
+                                                                <li>
+                                                                    Split a device to show multiple
+                                                                    effects
+                                                                </li>
+                                                                <li>
+                                                                    Combine devices to show a single
+                                                                    effect
+                                                                </li>
+                                                                <li>
+                                                                    Or any combination of the two!
+                                                                </li>
                                                             </ul>
                                                         }
                                                         interactive
@@ -235,7 +249,6 @@ export default connect(
     {
         addDevice,
         addDisplay,
-        // deleteDevice,
         deleteDisplay,
         updateDeviceConfig,
         fetchDeviceList,
