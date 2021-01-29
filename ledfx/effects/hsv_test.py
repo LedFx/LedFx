@@ -21,26 +21,27 @@ class HSVTest(AudioReactiveEffect, HSVEffect):
     lows_power = 0
 
     def config_updated(self, config):
-        self._p_filter = self.create_filter(alpha_decay=0.2, alpha_rise=0.2)
+        self._lows_filter = self.create_filter(alpha_decay=0.1, alpha_rise=0.1)
+        # self._mids_filter = self.create_filter(alpha_decay=0.1, alpha_rise=0.1)
 
     def audio_data_updated(self, data):
         self._dirty = True
-        self.lows_power = self._p_filter.update(
-            min(data.melbank_lows().max(), 1)
-        )
+        self.lows_power = self._lows_filter.update(data.melbank_lows().max())
+        # self.mids_power = self._lows_filter.update(data.melbank_mids().max())
 
     def render(self):
         # "Global expression"
 
         t1 = self.time(self._config["speed"])
+        t1 += 0.2 * self.lows_power
 
         # Vectorised pixel expression
         self.v = np.linspace(0, 1, self.pixel_count)
         np.add(2.0 * self.sin(t1), self.v, out=self.v)
         np.mod(self.v, 1, out=self.v)
         self.array_triangle(self.v)
-        np.power(self.v, 5, out=self.v)
-        s = self.v < 0.9
+        np.power(self.v, 2, out=self.v)
+        s = self.v < (0.9 - self.lows_power)
 
         self.hsv_array[:, 0] = self.lows_power
         self.hsv_array[:, 1] = s
