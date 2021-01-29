@@ -1,10 +1,13 @@
 name: Publish Python distributions to PyPI
 
 on:
-  push:
-    paths-ignore:
-      - 'docs/**'
-      - '.*/**'
+  release:
+    types:
+      - published
+  # push:
+  #   paths-ignore:
+  #     - 'docs/**'
+  #     - '.*/**'
   workflow_dispatch:
 
 env:
