@@ -4,6 +4,25 @@ import numpy as np
 
 from ledfx.effects import Effect
 
+"""
+# Example plots of the wavefunctions
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+x=np.linspace(0,1,60)
+duty = 0.75
+_time     = np.hstack((x,x,x))
+_triangle = 1-2*np.abs(_time-0.5)
+_sin      = 0.5*np.sin(_time*2*np.pi)+0.5
+_square   = 0.5*np.sign(duty-_time)+0.5
+
+plt.plot(_time)
+plt.plot(_sin)
+plt.plot(_square)
+plt.plot(_triangle)
+"""
+
 
 @Effect.no_registration
 class HSVEffect(Effect):
@@ -41,26 +60,38 @@ class HSVEffect(Effect):
         """
         sawtooth 0->1, looping every 1/modifier seconds
         lower modifier, slower looping
+
+        From Pixelblaze docs:
+        A sawtooth waveform between 0.0 and 1.0 that loops about every 65.536*interval seconds. e.g. use .015 for an approximately 1 second.
         """
         return modifier * self._timestep % 1
 
     def triangle(self, x=1.0):
         """
         Perform the 'triangle' wavefunction on a value
+
+        From Pixelblaze docs:
+        Converts a sawtooth waveform v between 0.0 and 1.0 to a triangle waveform between 0.0 to 1.0. v "wraps" between 0.0 and 1.0.
         """
         return 1 - 2 * np.abs(x - 0.5)
 
     def sin(self, x=1.0):
         """
         Perform the 'sin' wavefunction on a value
+
+        From Pixelblaze docs:
+        Converts a sawtooth waveform v between 0.0 and 1.0 to a sinusoidal waveform between 0.0 to 1.0. Same as (1+sin(v*PI2))/2 but faster. v "wraps" between 0.0 and 1.0.
         """
         return 0.5 * np.sin(x * 2 * np.pi) + 0.5
 
-    def square(self, x=1.0):
+    def square(self, x=1.0, duty=0.5):
         """
         Perform the 'square' wavefunction on a value
+
+        From Pixelblaze docs:
+        Converts a sawtooth waveform v to a square wave using the provided duty cycle where duty is a number between 0.0 and 1.0. v "wraps" between 0.0 and 1.0.
         """
-        return 0.5 * np.sign(np.sin(x * 2 * np.pi)) + 0.5
+        return 0.5 * np.sign(duty - x) + 0.5
 
     def array_triangle(self, a):
         """
@@ -80,12 +111,11 @@ class HSVEffect(Effect):
         np.multiply(0.5, a, out=a)
         np.add(0.5, a, out=a)
 
-    def array_square(self, a):
+    def array_square(self, a, duty=0.5):
         """
         Perform the 'square' wavefunction on an array
         """
-        np.multiply(2 * np.pi, a, out=a)
-        np.sin(a, out=a)
+        np.subtract(duty, a, out=a)
         np.sign(a, out=a)
         np.multiply(0.5, a, out=a)
         np.add(0.5, a, out=a)
