@@ -23,16 +23,13 @@ class Energy2(AudioReactiveEffect, HSVEffect):
         }
     )
 
-    lows_power = 0
-
     def config_updated(self, config):
+        self._lows_power = 0
         self._lows_filter = self.create_filter(alpha_decay=0.1, alpha_rise=0.1)
-        # self._mids_filter = self.create_filter(alpha_decay=0.1, alpha_rise=0.1)
 
     def audio_data_updated(self, data):
         self._dirty = True
-        self.lows_power = self._lows_filter.update(data.melbank_lows().max())
-        # self.mids_power = self._lows_filter.update(data.melbank_mids().max())
+        self._lows_power = self._lows_filter.update(data.melbank_lows().max())
 
     def render(self):
         # "Global expression"
@@ -42,7 +39,7 @@ class Energy2(AudioReactiveEffect, HSVEffect):
         # Vectorised pixel expression
         self.v = np.linspace(0, 1, self.pixel_count)
         np.add(
-            2.0 * self.sin(t1 + self._config["reactivity"] * self.lows_power),
+            2.0 * self.sin(t1 + self._config["reactivity"] * self._lows_power),
             self.v,
             out=self.v,
         )
@@ -50,10 +47,10 @@ class Energy2(AudioReactiveEffect, HSVEffect):
         self.array_triangle(self.v)
         np.power(self.v, 2, out=self.v)
         s = self.v < (
-            0.9 - (self._config["reactivity"] + 0.3) * self.lows_power
+            0.9 - (self._config["reactivity"] + 0.3) * self._lows_power
         )
 
-        self.hsv_array[:, 0] = self.lows_power + t1
+        self.hsv_array[:, 0] = self._lows_power + t1
         self.hsv_array[:, 1] = s
         self.hsv_array[:, 2] = self.v
 
@@ -65,4 +62,4 @@ class Energy2(AudioReactiveEffect, HSVEffect):
         #     )
         #     v **= 5.0
         #     s = v < 0.9
-        #     self.hsv_array[i] = (self.lows_power, s, v)
+        #     self.hsv_array[i] = (self._lows_power, s, v)
