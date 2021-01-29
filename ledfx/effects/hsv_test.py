@@ -35,13 +35,25 @@ class HSVTest(AudioReactiveEffect):
         self._timestep %= 1
         return self._timestep
 
+    def triangle(self, x):
+        return 1 - 2 * np.abs(x - 0.5)
+
     def audio_data_updated(self, data):
-        dt = self.timestep(modifier=0.01)
-        lows_power = min(data.melbank_lows().max(), 1)
+        dt = self.timestep(modifier=0.1)
+        triangle = 1 - 2 * np.abs(dt - 0.5)
+        sin = np.sin(dt * 2 * np.pi)
+        square = 0.5 * np.sign(sin) + 0.5
+        sin = 0.5 * sin + 0.5
         self._dirty = True
+
+        # print(dt, sin, square, triangle)
+        # lows_power = min(data.melbank_lows().max(), 1)
+
         for i in range(self.pixel_count):
-            # v = np.sin(dt) + i / self.pixel_count
-            self.hsv_array[i] = (dt, 1, 1 - lows_power)
+            v = self.triangle((2 * sin + i / self.pixel_count) % 1)
+            v **= 5
+            s = v < 0.9
+            self.hsv_array[i] = (dt, s, v)
 
     def get_pixels(self):
         return self.hsv_to_rgb(self.hsv_array)
@@ -93,7 +105,7 @@ class HSVTest(AudioReactiveEffect):
         rgb[i == 3] = np.hstack([p, q, v])[i == 3]
         rgb[i == 4] = np.hstack([t, p, v])[i == 4]
         rgb[i == 5] = np.hstack([v, p, q])[i == 5]
-        rgb[s == 0.0] = np.hstack([v, v, v])[s == 0.0]
+        rgb[s <= 0.0] = np.hstack([v, v, v])[s == 0.0]
 
         return rgb.reshape(input_shape)
 
