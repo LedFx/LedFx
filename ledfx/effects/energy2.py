@@ -5,15 +5,20 @@ from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.hsv_effect import HSVEffect
 
 
-class HSVTest(AudioReactiveEffect, HSVEffect):
+class Energy2(AudioReactiveEffect, HSVEffect):
 
-    NAME = "HSV Test"
+    NAME = "Energy 2"
     CONFIG_SCHEMA = vol.Schema(
         {
             vol.Optional(
                 "speed",
                 description="Effect Speed",
                 default=0.1,
+            ): vol.All(vol.Coerce(float), vol.Range(min=0.00001, max=1.0)),
+            vol.Optional(
+                "reactivity",
+                description="Audio Reactive modifier",
+                default=0.2,
             ): vol.All(vol.Coerce(float), vol.Range(min=0.00001, max=1.0)),
         }
     )
@@ -33,17 +38,20 @@ class HSVTest(AudioReactiveEffect, HSVEffect):
         # "Global expression"
 
         t1 = self.time(self._config["speed"])
-        t1 += 0.2 * self.lows_power
 
         # Vectorised pixel expression
         self.v = np.linspace(0, 1, self.pixel_count)
-        np.add(2.0 * self.sin(t1), self.v, out=self.v)
+        np.add(
+            2.0 * self.sin(self._config["reactivity"] * self.lows_power + t1),
+            self.v,
+            out=self.v,
+        )
         np.mod(self.v, 1, out=self.v)
         self.array_triangle(self.v)
         np.power(self.v, 2, out=self.v)
         s = self.v < (0.9 - self.lows_power)
 
-        self.hsv_array[:, 0] = self.lows_power
+        self.hsv_array[:, 0] = self.lows_power + t1
         self.hsv_array[:, 1] = s
         self.hsv_array[:, 2] = self.v
 
