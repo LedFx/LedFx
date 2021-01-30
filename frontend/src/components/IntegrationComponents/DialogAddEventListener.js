@@ -80,9 +80,22 @@ function ConfirmationDialogRaw(props) {
                     To add a Event Listener to LedFx, please first select the type of event trigger (If This),
                     and then provide the expected output (Then That).
                 </DialogContentText>
+                    {/*
+                    Note: This will be conditional based on the integration. Dynamic?
+                    QLC+ = event trigger(Such as LedFx Scene), than output QLC payload, as defined from GET qlc_widgets
+                    While Spotify = event trigger: Song/time, than output, such as LedFx Scene.
+                    For example, if a QLC+ intergration, than dropdown option comes from API:  
+                    value={deviceType}
+                    options={Object.keys(deviceTypes).map(key => ({
+                        value: key,
+                        display: key,
+                    }))}
+                    onChange={this.handleTypeChange}
+                    */}
                 <FormControl>
                     <InputLabel htmlFor="grouped-select">Event Trigger (If This)</InputLabel>
                     <Select defaultValue="" id="grouped-select">
+                    {/*GET API: event_types*/}
                         <MenuItem value="">
                             <em>None</em>
                         </MenuItem>
@@ -94,29 +107,18 @@ function ConfirmationDialogRaw(props) {
                         <MenuItem value={3}>test2</MenuItem>
                         <MenuItem value={4}>test3</MenuItem>
                         </Select>
-                    {/*
-                    Note: This will be conditional based on the integration. Dynamic?
-                    QLC+ = event trigger(Such as LedFx Scene), than output QLC payload, as defined from GET qlc_widgets
-                    While Spotify = event trigger: Song/time, than output , such as LedFx Scene.
-                    For example, if a QLC+ intergration, than dropdown option comes from API:  
-                    value={deviceType}
-                    options={Object.keys(deviceTypes).map(key => ({
-                        value: key,
-                        display: key,
-                    }))}
-                    onChange={this.handleTypeChange}
-                    */}
                 </FormControl>
                 <form>
                     <DropDown
                     label="Then Do This"
                     //GET API: qlc_widgets
-                    //Think we should show options something like: 
-                    //value={deviceType}
-                    //options={Object.keys(deviceTypes).map(key => ({
-                        //value: key,
-                        //display: key,
-                    //}))}
+                    //Think we should convert API data from:
+                    //[
+                    //    "7",
+                    //    "Button",
+                    //    "Button 7"
+                    //]
+                    //to show dropdown feild of '7, Button, Button 7'
                     />
                 </form>
 
@@ -132,7 +134,7 @@ function ConfirmationDialogRaw(props) {
                     Below is for ONLY if QLC+ widget selected above is 'slider'
                     */}
                     <div style={{ minWidth: '150px' }}>
-                                <label>QLC Widget Value</label>
+                                <label>QLC Slider Widget Value</label>
                                         <Slider
                                             aria-labelledby="discrete-slider"
                                             valueLabelDisplay="auto"
