@@ -71,7 +71,10 @@ export default function PopoverSure({
                         aria-describedby={id}
                         variant="contained"
                         color="primary"
-                        onClick={onConfirm}
+                        onClick={() => {
+                            onConfirm();
+                            setAnchorEl(null);
+                        }}
                     >
                         <CheckIcon />
                     </Button>

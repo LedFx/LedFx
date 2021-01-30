@@ -4,12 +4,12 @@ import Button from '@material-ui/core/Button';
 
 import PixelSlider from './PixelSlider';
 import { useSelector, useDispatch } from 'react-redux';
-import { ButtonGroup, Switch } from '@material-ui/core';
+import { ButtonGroup } from '@material-ui/core';
 import PopoverSure from 'components/PopoverSure';
 import ExpandLess from '@material-ui/icons/ExpandLess';
 import ExpandMore from '@material-ui/icons/ExpandMore';
 import SwapHorizIcon from '@material-ui/icons/SwapHoriz';
-import { handleSegmentChange } from 'modules/displays';
+import { handleSegmentChange, orderSegmentChange, deleteSegment } from 'modules/displays';
 const Segment = ({ s, i, display }) => {
     const devices = useSelector(state => state.devices.list);
     const title = devices.find(d => d.id === s[0])['name'];
@@ -17,7 +17,13 @@ const Segment = ({ s, i, display }) => {
 
     const dispatch = useDispatch();
     const handleInvert = () => {
-        dispatch(handleSegmentChange({ segIndex: i, displayId: display.id, invert: !s[3] }));
+        dispatch(handleSegmentChange({ segIndex: i, displayId: display.id, invert: true }));
+    };
+    const reorder = direction => {
+        dispatch(orderSegmentChange({ segIndex: i, displayId: display.id, order: direction }));
+    };
+    const handleDeleteSegment = direction => {
+        dispatch(deleteSegment({ segIndex: i, displayId: display.id }));
     };
 
     return (
@@ -37,7 +43,7 @@ const Segment = ({ s, i, display }) => {
                             disabled={i === 0}
                             variant={'outlined'}
                             color={'inherit'}
-                            onClick={() => console.log('BOOM')}
+                            onClick={() => reorder('UP')}
                             size={'small'}
                         >
                             <ExpandLess />
@@ -46,7 +52,7 @@ const Segment = ({ s, i, display }) => {
                             disabled={i === display.segments.length - 1}
                             variant={'outlined'}
                             color={'inherit'}
-                            onClick={() => console.log('BOOM')}
+                            onClick={() => reorder('DOWN')}
                             size={'small'}
                         >
                             <ExpandMore />
@@ -68,7 +74,7 @@ const Segment = ({ s, i, display }) => {
                     </Button>
                 </div>
                 <div style={{ paddingLeft: '2rem' }}>
-                    <PopoverSure variant="outlined" onConfirm={() => console.log('YO')} />
+                    <PopoverSure variant="outlined" onConfirm={handleDeleteSegment} />
                 </div>
             </div>
         </div>
