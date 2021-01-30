@@ -68,6 +68,7 @@ class E131Device(Device):
             self._config["universe_end"] -= 1
 
         self._sacn = None
+        self.WLEDReceiver = False
 
     @property
     def pixel_count(self):
@@ -123,7 +124,7 @@ class E131Device(Device):
         self.flush(np.zeros(self._config["channel_count"]))
         time.sleep(1.5)
 
-        if self.WLEDReceiver and self.wled_state is False:
+        if self.WLEDReceiver is True and self.wled_state is False:
             turn_wled_off(self.device_ip)
 
         self._sacn.stop()
