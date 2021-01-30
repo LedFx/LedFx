@@ -5,7 +5,13 @@ import numpy as np
 import voluptuous as vol
 
 from ledfx.devices import Device
-from ledfx.utils import resolve_destination, turn_wled_on, wled_device
+from ledfx.utils import (
+    resolve_destination,
+    turn_wled_off,
+    turn_wled_on,
+    wled_device,
+    wled_power_state,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -45,19 +51,24 @@ class UDPDevice(Device):
     def activate(self):
         self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         # check if ip/hostname resolves okay
-        self.resolved_dest = resolve_destination(self._config["ip_address"])
+        self.device_ip = resolve_destination(self._config["ip_address"])
         if not self.resolved_dest:
             _LOGGER.warning(
                 f"Cannot resolve destination {self._config['ip_address']}, aborting device {self.name} activation. Make sure the IP/hostname is correct and device is online."
             )
             return
             # If the device is a WLED device, turn it on
-        if wled_device(self.resolved_dest):
-            turn_wled_on(self.resolved_dest)
+        if wled_device(self.device_ip):
+            self.WLEDReceiver = True
+            self.wled_state = wled_power_state(self.device_ip)
+            if self.wled_state is False:
+                turn_wled_on(self.device_ip)
         super().activate()
 
     def deactivate(self):
         super().deactivate()
+        if self.WLEDReceiver and self.wled_state is False:
+            turn_wled_off(self.device_ip)
         self._sock = None
 
     @property

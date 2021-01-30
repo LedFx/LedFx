@@ -131,9 +131,28 @@ def wled_device(device_ip):
         return False
 
 
+def wled_power_state(device_ip):
+    """
+        Uses a JSON API call to determine the WLED device power state (on/off)
+
+    Args:
+        device_ip (string): The device IP to be queried
+
+    Returns:
+        boolean: True is "On", False is "Off"
+    """
+    device_state = requests.get(f"http://{device_ip}/json/state")
+    device_json = device_state.json()
+
+    if device_json["on"] == "true":
+        return True
+    else:
+        return False
+
+
 def turn_wled_on(device_ip):
     """
-        Uses a HTTP post call to turn a WLED compatible device on and up to max brightness
+        Uses a HTTP post call to turn a WLED compatible device on
 
     Args:
         device_ip (string): The device IP to be turned on

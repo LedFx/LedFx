@@ -277,7 +277,7 @@ def main():
     if not currently_frozen() and installed_via_pip():
         warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-    _LOGGER.info("LedFx Core is initialising")
+    _LOGGER.info("LedFx Core is initializing")
 
     ledfx = LedFxCore(config_dir=args.config, host=args.host, port=args.port)
 
