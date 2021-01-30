@@ -36,7 +36,9 @@ const BottomBar = ({ classes }) => {
             >
                 <ForumIcon />
             </IconButton>
-            {parseInt(window.localStorage.getItem('BladeMod')) >= 2 && <BugTracker />}
+            {parseInt(window.localStorage.getItem('BladeMod')) >= 2 && (
+                <BugTracker color="inherit" />
+            )}
         </div>
     );
 };
