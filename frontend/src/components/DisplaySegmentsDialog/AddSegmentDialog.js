@@ -93,8 +93,7 @@ ConfirmationDialogRaw.propTypes = {
 
 const useStyles = makeStyles(theme => ({
     root: {
-        width: '100%',
-        maxWidth: 360,
+        margin: '1rem auto',
         backgroundColor: theme.palette.background.paper,
     },
     paper: {
@@ -117,19 +116,13 @@ export default function ConfirmationDialog({ display, config }) {
         setOpen(false);
         if (newValue) {
             const device = { ...deviceList.find(d => d.name === newValue) };
-            console.log([device.id, 0, device.config.pixel_count - 1, false], {
-                id: display.id,
-                data: display.segments,
-            });
-            const temp = [];
-            temp.push(display.segments);
-            temp.push([device.id, 0, device.config.pixel_count - 1, false]);
-            dispatch(
-                updateDisplayConfig(
-                    display.id,
-                    temp.filter(t => t.length === 4)
-                )
-            );
+            const temp = [
+                ...display.segments,
+                [device.id, 0, device.config.pixel_count - 1, false],
+            ];
+            console.log('1', temp);
+            const test = temp.filter(t => console.log('WTF', t) || t.length === 4);
+            dispatch(updateDisplayConfig({ id: display.id, data: test }));
         }
     };
 
