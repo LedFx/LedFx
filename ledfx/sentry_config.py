@@ -8,7 +8,7 @@ from ledfx.consts import PROJECT_VERSION
 # This current key is disabled and no data will be sent to anyone if you use this sentry key.
 
 sentry_dsn = (
-    "https://f2c38998265e4a9b8fa46356d4461237@o482797.ingest.sentry.io/5533553"
+    ""
 )
 
 sentry_sdk.init(
