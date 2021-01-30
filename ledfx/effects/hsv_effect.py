@@ -10,8 +10,9 @@ from ledfx.effects import Effect
 import numpy as np
 import matplotlib.pyplot as plt
 
-x=np.linspace(0,1,60)
-duty = 0.75
+period = 60
+x=np.linspace(0,1,period)
+duty = 0.5
 _time     = np.hstack((x,x,x))
 _triangle = 1-2*np.abs(_time-0.5)
 _sin      = 0.5*np.sin(_time*2*np.pi)+0.5
@@ -21,11 +22,49 @@ plt.plot(_time)
 plt.plot(_sin)
 plt.plot(_square)
 plt.plot(_triangle)
+
+
+export function beforeRender(delta) {
+  t1 = time(1/65.535)   // Animate hue's phase angle
+  t2 = time(12/65.535)  // Switch between modes every 4 seconds
+}
+
+export function render(index) {
+  // Cycle three modes: linear h, fixH(), and fixH2()
+  h = index/pixelCount + t1  // Remove t1 to freeze the rainbow. Add 0.5 to inspect reds.
+  if (t2 > 0.33 && t2 < 0.66) {
+    h = fixH(h)
+  }
+  else if (t2 > 0.66) {
+    h = fixH2(h)
+  }
+  v = (t2 % 0.33) > 0.05  // Blink off between the modes being compared
+  hsv(h, 1, v)
+}
 """
 
 
 @Effect.no_registration
 class HSVEffect(Effect):
+
+    hMapSize = 10
+    binWidth = 1 / (
+        hMapSize - 1
+    )  # A 10-point map divides hue's 0-1 phase into 9 arcs of length (binWidth) 0.111
+    hMap = np.zeros(hMapSize + 1)
+    # The values below were subjectively chosen for perceived equidistant color
+    hMap[0] = 0.00  # red
+    hMap[1] = 0.015  # orange
+    hMap[2] = 0.08  # yellow
+    hMap[3] = 0.30  # green
+    hMap[4] = 0.44  # cyan
+    hMap[5] = 0.65  # blue
+    hMap[6] = 0.70  # indigo
+    hMap[7] = 0.77  # purple
+    hMap[8] = 0.985  # pink
+    hMap[9] = 1.00  # red again - same as 0
+    hMap[10] = 1.00  # overflow bin
+
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
         self._last_time = time.time()
@@ -117,6 +156,51 @@ class HSVEffect(Effect):
         np.sign(a, out=a)
         np.multiply(0.5, a, out=a)
         np.add(0.5, a, out=a)
+
+    #  Perceptual hue utility - for better rainbows
+
+    #   The HSV model's hue parameter isn't linear to human perception of equidistant color.
+    #   fix_hue() and fix_hue_fast() stretch reds and compresses greens and blues to produce a more even rainbow.
+    #   fix_hue() makes better rainbows and is customizable, but fix_hue_fast() is faster
+
+    #   See a more complete discussion and intense approaches at:
+    #   https://stackoverflow.com/questions/5162458/fade-through-more-more-natural-rainbow-spectrum-in-hsv-hsb
+
+    def fix_hue(self, hue):
+        """
+        fix_hue(hue) => hue
+        Returns 0-1 hue values for hsv()
+        Takes a "perceptual hue" (pH) that aspires to progress evenly across a human-perceived rainbow
+        """
+        # Wrap inputs
+        np.mod(hue, 1, out=hue)
+        # Calculate hue's starting bin index, 0..(hMapSize-1)
+        bin = np.divide(hue, self.binWidth)
+        np.floor(bin, out=bin)
+        # Find hue's percentage into that bin index
+        binPct = np.mod(hue, self.binWidth)
+        np.divide(hue, self.binWidth, out=binPct)
+        # base value in hsv()'s h unit
+        base = self.hMap[bin]
+        # gap is the distance in hsv()'s h units between this base bin and the next
+        np.add(bin, 1, out=bin)
+        gap = self.hMap[bin]
+        np.subtract(gap, base, out=gap)
+        # Interpolate the result between the base bin's h value and the next bin's
+        np.multiply(binPct, gap, out=gap)
+        np.add(base, gap, out=hue)
+
+    def fix_hue_fast(self, hue):
+        """
+        Returns 0-1 hue values for hsv()
+        Takes a "perceptual hue" (pH) that aspires to progress evenly across a human-perceived rainbow
+        This simpler approach is 40% faster than fixH() but to my eyes, bright greens feel over-represented
+        and deep blues are under-represented
+        """
+        np.mod(hue, 1, out=hue)
+        np.subtract(hue, 0.5, out=hue)
+        np.divide(hue, 2, out=hue)
+        self.sin(hue)
 
     def hsv_to_rgb(self, hsv):
         """
