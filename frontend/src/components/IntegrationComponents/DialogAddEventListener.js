@@ -12,7 +12,12 @@ import { SchemaForm, utils } from 'react-schema-form';
 import * as integrationsProxies from 'proxies/integrations';
 import DialogContentText from '@material-ui/core/DialogContentText';
 import DropDown from 'components/forms/DropDown';
-
+import InputLabel from '@material-ui/core/InputLabel';
+import MenuItem from '@material-ui/core/MenuItem';
+import ListSubheader from '@material-ui/core/ListSubheader';
+import FormControl from '@material-ui/core/FormControl';
+import Select from '@material-ui/core/Select';
+import { Slider, Switch } from '@material-ui/core';
 
 function ConfirmationDialogRaw(props) {
     const { onClose, value: valueProp, open, ...other } = props;
@@ -75,25 +80,38 @@ function ConfirmationDialogRaw(props) {
                     To add a Event Listener to LedFx, please first select the type of event trigger (If This),
                     and then provide the expected output (Then That).
                 </DialogContentText>
-                <form>
-                    <DropDown
-                    label="Event Trigger (If This)"
-                    // Note: This will be conditional based on the integration. Dynamic?
-                    // QLC+ = event trigger(Such as LedFx Scene), than output QLC payload, as defined from GET qlc_widgets
-                    // While Spotify = event trigger: Song/time, than output , such as LedFx Scene.
-                    // For example, if a QLC+ intergration, than dropdown option comes from API:  
-                    //value={deviceType}
-                    //options={Object.keys(deviceTypes).map(key => ({
-                        //value: key,
-                        //display: key,
-                    //}))}
-                    //onChange={this.handleTypeChange}
-                    
-                    />
-                </form>
+                <FormControl>
+                    <InputLabel htmlFor="grouped-select">Event Trigger (If This)</InputLabel>
+                    <Select defaultValue="" id="grouped-select">
+                        <MenuItem value="">
+                            <em>None</em>
+                        </MenuItem>
+                        <ListSubheader>Effect Set</ListSubheader>
+                        <MenuItem value={1}>Bands Matrix</MenuItem>
+                        <MenuItem value={2}>Blade Power</MenuItem>
+                        <ListSubheader>Effect Cleared</ListSubheader>
+                        <ListSubheader>Scene Set</ListSubheader>
+                        <MenuItem value={3}>test2</MenuItem>
+                        <MenuItem value={4}>test3</MenuItem>
+                        </Select>
+                    {/*
+                    Note: This will be conditional based on the integration. Dynamic?
+                    QLC+ = event trigger(Such as LedFx Scene), than output QLC payload, as defined from GET qlc_widgets
+                    While Spotify = event trigger: Song/time, than output , such as LedFx Scene.
+                    For example, if a QLC+ intergration, than dropdown option comes from API:  
+                    value={deviceType}
+                    options={Object.keys(deviceTypes).map(key => ({
+                        value: key,
+                        display: key,
+                    }))}
+                    onChange={this.handleTypeChange}
+                    */}
+                </FormControl>
                 <form>
                     <DropDown
                     label="Then Do This"
+                    //GET API: qlc_widgets
+                    //Think we should show options something like: 
                     //value={deviceType}
                     //options={Object.keys(deviceTypes).map(key => ({
                         //value: key,
@@ -101,6 +119,42 @@ function ConfirmationDialogRaw(props) {
                     //}))}
                     />
                 </form>
+
+                    {/*
+                    Below is  ONLY if QLC+ widget selected above is either 'Button' or 'Audio Triggers'
+                    “Buttons” can be set to either off (0) or on (255)
+                    “Audio Triggers” are either off (0) or on (255)
+                    */}
+                    <label>QLC+ widget selected above (On/Off) </label>
+                    <Switch color="primary" checked={true} />
+
+                    {/*
+                    Below is for ONLY if QLC+ widget selected above is 'slider'
+                    */}
+                    <div style={{ minWidth: '150px' }}>
+                                <label>QLC Widget Value</label>
+                                        <Slider
+                                            aria-labelledby="discrete-slider"
+                                            valueLabelDisplay="auto"
+                                            marks
+                                            step={1}
+                                            min={0}
+                                            max={255}
+                                            defaultValue={1}
+                                        />
+                            </div> 
+                
+                <Button
+                    variant="contained"
+                    color="primary"
+                    aria-label="Add"
+                    endIcon={<AddCircleIcon />}
+                    aria-haspopup="true"
+                    //onClick={handleClickListItem}
+                    role="listitem"
+                >
+                    ADD additional 'then do this'
+                </Button>
                 <SchemaForm
                     // className={classes.schemaForm}
                     schema={{

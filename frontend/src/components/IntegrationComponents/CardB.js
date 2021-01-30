@@ -10,13 +10,12 @@ import EditIcon from '@material-ui/icons/Edit';
 import { deleteAsyncIntegration } from 'modules/integrations';
 import { toggleAsyncIntegration } from 'modules/integrations';
 import { Switch, Chip } from '@material-ui/core';
-import AddCircleIcon from '@material-ui/icons/AddCircle';
 import DialogAddEventListener from 'components/IntegrationComponents/DialogAddEventListener';
 
 const useStyles = makeStyles({
     integrationCard: {
         width: 300,
-        height: 260,
+        height: 280,
         justifyContent: 'space-between',
         display: 'flex',
         flexDirection: 'column',
@@ -58,16 +57,19 @@ const IntegrationsCard = ({ int }) => {
                         ? 'Disconnected'
                         : 'Unknown'}
                 </Typography>
-                {/* Need to do: IF QLC Integration, then show below QLC IP address */}
-                <Typography style={{ fontSize: '14px' }} color="textSecondary" gutterBottom>
-                    QLC+ IP Address: {int.config.ip_address}:{int.config.port}
+                <Typography color="textSecondary" gutterBottom>    
+                    {int.type === 'qlc'
+                    ? `QLC+ API: http://${int.config.ip_address}:${int.config.port}`
+                    : ''}
                 </Typography>
                 <Typography style={{ fontSize: '14px' }} color="textSecondary" gutterBottom>
                     Description: {int.config.description}
                 </Typography>
             </CardContent>
             <CardActions>
-                <DialogAddEventListener />
+                {int.status === 1
+                ? <DialogAddEventListener />
+                : 'Must be in connected status, to add new event listener'}
             </CardActions>
             <CardActions>                
                 <PopoverSure
