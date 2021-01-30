@@ -24,7 +24,10 @@ const PixelSlider = ({ s, i, display }) => {
 
     const marks = [
         { value: 0, label: 0 },
-        { value: currentDevice.config.pixel_count, label: currentDevice.config.pixel_count },
+        {
+            value: currentDevice.config.pixel_count - 1,
+            label: currentDevice.config.pixel_count - 1,
+        },
     ];
 
     return (
@@ -32,7 +35,7 @@ const PixelSlider = ({ s, i, display }) => {
             value={pixelRange}
             marks={marks}
             min={0}
-            max={currentDevice.config.pixel_count}
+            max={currentDevice.config.pixel_count - 1}
             onChange={handleChange}
             aria-labelledby="range-slider"
             valueLabelDisplay="auto"
