@@ -1,19 +1,19 @@
 import React from 'react';
+// import React, { useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import { makeStyles } from '@material-ui/core/styles';
 import Button from '@material-ui/core/Button';
 import Dialog from '@material-ui/core/Dialog';
 import AppBar from '@material-ui/core/AppBar';
 import Toolbar from '@material-ui/core/Toolbar';
-import IconButton from '@material-ui/core/IconButton';
 import Typography from '@material-ui/core/Typography';
-import CloseIcon from '@material-ui/icons/Close';
 import Slide from '@material-ui/core/Slide';
 import AddCircleIcon from '@material-ui/icons/AddCircle';
 import SaveIcon from '@material-ui/icons/Save';
 import AddSegmentDialog from './AddSegmentDialog';
 import Segment from './Segment';
 import { updateDisplayConfig } from 'modules/displays';
+import NavigateBeforeIcon from '@material-ui/icons/NavigateBefore';
 
 const useStyles = makeStyles(theme => ({
     appBar: {
@@ -39,18 +39,24 @@ export default function FullScreenDialog({ display, icon, className }) {
     const dispatch = useDispatch();
     const classes = useStyles();
     const [open, setOpen] = React.useState(false);
-
+    // const oldState = [...display.segments];
     const handleClickOpen = () => {
         setOpen(true);
     };
 
     const handleClose = () => {
+        // console.log(oldState, 'vs', display.segments);
+        // if (JSON.stringify(oldState) !== JSON.stringify(display.segments)) {
+        //     alert('UNSAVED CHANGES!!!');
+        // } else {
+        //     setOpen(false);
+        // }
         setOpen(false);
     };
 
     const handleSave = () => {
         dispatch(updateDisplayConfig({ id: display.id, data: display.segments }));
-        setOpen(false);
+        // setOpen(false);
     };
 
     return (
@@ -67,26 +73,40 @@ export default function FullScreenDialog({ display, icon, className }) {
             <Dialog fullScreen open={open} onClose={handleClose} TransitionComponent={Transition}>
                 <AppBar className={classes.appBar}>
                     <Toolbar>
-                        <IconButton
-                            edge="start"
-                            color="inherit"
-                            onClick={handleClose}
-                            aria-label="close"
-                        >
-                            <CloseIcon />
-                        </IconButton>
-                        <Typography variant="h6" className={classes.title}>
-                            {display.config.name}{' '}
-                        </Typography>
                         <Button
                             autoFocus
                             color="primary"
                             variant="contained"
-                            endIcon={<SaveIcon />}
-                            onClick={handleSave}
+                            startIcon={<NavigateBeforeIcon />}
+                            onClick={handleClose}
+                            style={{ marginRight: '1rem' }}
                         >
-                            save
+                            back
                         </Button>
+                        <Typography variant="h6" className={classes.title}>
+                            {display.config.name}{' '}
+                        </Typography>
+                        <div>
+                            {/* <Button
+                                autoFocus
+                                color="primary"
+                                variant="contained"
+                                endIcon={<SaveIcon />}
+                                onClick={handleSave}
+                                style={{ marginRight: '1rem' }}
+                            >
+                                reset
+                            </Button> */}
+                            <Button
+                                autoFocus
+                                color="primary"
+                                variant="contained"
+                                endIcon={<SaveIcon />}
+                                onClick={handleSave}
+                            >
+                                save
+                            </Button>
+                        </div>
                     </Toolbar>
                 </AppBar>
                 <div

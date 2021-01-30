@@ -187,8 +187,12 @@ export function updateDisplayConfig({ id, data }) {
             });
             if (response.statusText === 'OK') {
                 dispatch(fetchDisplayList());
+                dispatch(
+                    showdynSnackbar({ message: 'Successfully saved segments!', type: 'success' })
+                );
             }
         } catch (error) {
+            showdynSnackbar({ message: error.message });
             console.log('Error updating display', error.message);
         }
     };
