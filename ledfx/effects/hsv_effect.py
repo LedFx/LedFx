@@ -1,6 +1,7 @@
 import time
 
 import numpy as np
+import voluptuous as vol
 
 from ledfx.effects import Effect
 
@@ -22,25 +23,6 @@ plt.plot(_time)
 plt.plot(_sin)
 plt.plot(_square)
 plt.plot(_triangle)
-
-
-export function beforeRender(delta) {
-  t1 = time(1/65.535)   // Animate hue's phase angle
-  t2 = time(12/65.535)  // Switch between modes every 4 seconds
-}
-
-export function render(index) {
-  // Cycle three modes: linear h, fixH(), and fixH2()
-  h = index/pixelCount + t1  // Remove t1 to freeze the rainbow. Add 0.5 to inspect reds.
-  if (t2 > 0.33 && t2 < 0.66) {
-    h = fixH(h)
-  }
-  else if (t2 > 0.66) {
-    h = fixH2(h)
-  }
-  v = (t2 % 0.33) > 0.05  // Blink off between the modes being compared
-  hsv(h, 1, v)
-}
 """
 
 
@@ -65,6 +47,16 @@ class HSVEffect(Effect):
     hMap[9] = 1.00  # red again - same as 0
     hMap[10] = 1.00  # overflow bin
 
+    CONFIG_SCHEMA = vol.Schema(
+        {
+            vol.Optional(
+                "color_correction",
+                description="Color correct hue for more vivid colors",
+                default=True,
+            ): bool
+        }
+    )
+
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
         self._last_time = time.time()
@@ -79,6 +71,8 @@ class HSVEffect(Effect):
         # self._invalidate_caches()
         self._update_timestep()
         self.render()
+        if self._config["color_correction"]:
+            self.fix_hue_fast(self.hsv_array[:, 0])
         return self.hsv_to_rgb(self.hsv_array)
 
     def render(self):
@@ -107,7 +101,6 @@ class HSVEffect(Effect):
         """
         Perform the 'triangle' wavefunction on a value
 
-        From Pixelblaze docs:
         Converts a sawtooth waveform v between 0.0 and 1.0 to a triangle waveform between 0.0 to 1.0. v "wraps" between 0.0 and 1.0.
         """
         return 1 - 2 * np.abs(x - 0.5)
@@ -116,7 +109,6 @@ class HSVEffect(Effect):
         """
         Perform the 'sin' wavefunction on a value
 
-        From Pixelblaze docs:
         Converts a sawtooth waveform v between 0.0 and 1.0 to a sinusoidal waveform between 0.0 to 1.0. Same as (1+sin(v*PI2))/2 but faster. v "wraps" between 0.0 and 1.0.
         """
         return 0.5 * np.sin(x * 2 * np.pi) + 0.5
@@ -125,7 +117,6 @@ class HSVEffect(Effect):
         """
         Perform the 'square' wavefunction on a value
 
-        From Pixelblaze docs:
         Converts a sawtooth waveform v to a square wave using the provided duty cycle where duty is a number between 0.0 and 1.0. v "wraps" between 0.0 and 1.0.
         """
         return 0.5 * np.sign(duty - x) + 0.5
@@ -157,26 +148,28 @@ class HSVEffect(Effect):
         np.multiply(0.5, a, out=a)
         np.add(0.5, a, out=a)
 
-    #  Perceptual hue utility - for better rainbows
+    # Perceptual hue utility - for better rainbows
 
-    #   The HSV model's hue parameter isn't linear to human perception of equidistant color.
-    #   fix_hue() and fix_hue_fast() stretch reds and compresses greens and blues to produce a more even rainbow.
-    #   fix_hue() makes better rainbows and is customizable, but fix_hue_fast() is faster
+    # The HSV model's hue parameter isn't linear to human perception of equidistant color.
+    # fix_hue() and fix_hue_fast() stretch reds and compresses greens and blues to produce a more even rainbow.
+    # fix_hue() makes better rainbows and is customizable, but fix_hue_fast() is faster
 
-    #   See a more complete discussion and intense approaches at:
-    #   https://stackoverflow.com/questions/5162458/fade-through-more-more-natural-rainbow-spectrum-in-hsv-hsb
+    # See a more complete discussion and intense approaches at:
+    # https://stackoverflow.com/questions/5162458/fade-through-more-more-natural-rainbow-spectrum-in-hsv-hsb
 
     def fix_hue(self, hue):
         """
         fix_hue(hue) => hue
         Returns 0-1 hue values for hsv()
         Takes a "perceptual hue" (pH) that aspires to progress evenly across a human-perceived rainbow
+
+        # CURRENTLY BUGGED, MAKING WEIRD COLOURS!
         """
         # Wrap inputs
         np.mod(hue, 1, out=hue)
         # Calculate hue's starting bin index, 0..(hMapSize-1)
         bin = np.divide(hue, self.binWidth)
-        np.floor(bin, out=bin)
+        bin = np.floor(bin).astype(np.int)
         # Find hue's percentage into that bin index
         binPct = np.mod(hue, self.binWidth)
         np.divide(hue, self.binWidth, out=binPct)
@@ -200,7 +193,7 @@ class HSVEffect(Effect):
         np.mod(hue, 1, out=hue)
         np.subtract(hue, 0.5, out=hue)
         np.divide(hue, 2, out=hue)
-        self.sin(hue)
+        self.array_sin(hue)
 
     def hsv_to_rgb(self, hsv):
         """
