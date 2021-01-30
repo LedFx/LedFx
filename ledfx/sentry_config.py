@@ -7,9 +7,7 @@ from ledfx.consts import PROJECT_VERSION
 # You're welcome to plug your own sentry key in if you're forking/doing development - sentry.io
 # This current key is disabled and no data will be sent to anyone if you use this sentry key.
 
-sentry_dsn = (
-    ""
-)
+sentry_dsn = ""
 
 sentry_sdk.init(
     sentry_dsn,
