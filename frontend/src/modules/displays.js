@@ -6,6 +6,7 @@ import { showdynSnackbar } from './ui';
 const ACTION_ROOT = 'displays';
 
 export const displaysRequested = createAction(`${ACTION_ROOT}/DISPLAYS_REQUESTED`);
+export const handleSegmentChange = createAction(`${ACTION_ROOT}/DISPLAYS_HANDLE_SEGMENTS`);
 export const displaysReceived = createAction(`${ACTION_ROOT}/DISPLAYS_RECEIVED`);
 export const displayUpdated = createAction(`${ACTION_ROOT}/DISPLAY_UPDATED`);
 export const scanProgressUpdated = createAction(`${ACTION_ROOT}/DISPLAY_SCAN_PROGRESS_UPDATED`);
@@ -19,6 +20,26 @@ const INITIAL_STATE = {
 
 export default handleActions(
     {
+        [handleSegmentChange]: (state, { payload }) => {
+            const { displayId, newValue, segIndex, invert } = payload;
+            console.log('EYY', payload);
+            const newState = {
+                ...state,
+                list: state.list.map(reduxItem => {
+                    if (reduxItem.id === displayId) {
+                        if (newValue) {
+                            reduxItem.segments[segIndex][1] = newValue[0];
+                            reduxItem.segments[segIndex][2] = newValue[1];
+                        }
+                        console.log('EYY2', reduxItem.segments[segIndex][3]);
+                        reduxItem.segments[segIndex][3] = !reduxItem.segments[segIndex][3];
+                        console.log('EYY3', reduxItem.segments[segIndex][3]);
+                    }
+                    return reduxItem;
+                }),
+            };
+            return newState;
+        },
         [displaysRequested]: state => ({
             ...state,
             isLoading: true,
@@ -112,11 +133,13 @@ export function findWLEDDisplays({ resolve, reject }) {
     };
 }
 
-export function updateDisplayConfig(id, data) {
+export function updateDisplayConfig({ id, data }) {
     console.log(id, data);
     return async dispatch => {
         try {
-            const response = await displayProxies.updateDisplaySegments(id, data);
+            const response = await displayProxies.updateDisplaySegments(id, {
+                segments: [...data],
+            });
             if (response.statusText === 'OK') {
                 dispatch(fetchDisplayList());
             }

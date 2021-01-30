@@ -2,10 +2,7 @@ import React from 'react';
 import { makeStyles } from '@material-ui/core/styles';
 import Button from '@material-ui/core/Button';
 import Dialog from '@material-ui/core/Dialog';
-import ListItemText from '@material-ui/core/ListItemText';
-import ListItem from '@material-ui/core/ListItem';
 import List from '@material-ui/core/List';
-import Divider from '@material-ui/core/Divider';
 import AppBar from '@material-ui/core/AppBar';
 import Toolbar from '@material-ui/core/Toolbar';
 import IconButton from '@material-ui/core/IconButton';
@@ -14,6 +11,10 @@ import CloseIcon from '@material-ui/icons/Close';
 import Slide from '@material-ui/core/Slide';
 import AddCircleIcon from '@material-ui/icons/AddCircle';
 import AddSegmentDialog from './AddSegmentDialog';
+import Segment from './Segment';
+import Grid from '@material-ui/core/Grid';
+import Card from '@material-ui/core/Card';
+import CardContent from '@material-ui/core/CardContent';
 
 const useStyles = makeStyles(theme => ({
     appBar: {
@@ -76,17 +77,11 @@ export default function FullScreenDialog({ display, icon, className }) {
                     </Toolbar>
                 </AppBar>
 
-                <List>
-                    {display.segments.length > 0 &&
-                        display.segments.map(s => (
-                            <>
-                                <ListItem button>
-                                    <ListItemText primary="Hold" secondary="On" />
-                                </ListItem>
-                                <Divider />
-                            </>
-                        ))}
-                </List>
+                {display.segments.length > 0 &&
+                    display.segments.map((s, i) => (
+                        <Segment s={s} i={i} key={i} display={display} />
+                    ))}
+
                 <AddSegmentDialog display={display} />
             </Dialog>
         </>
