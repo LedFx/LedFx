@@ -6,7 +6,9 @@ import { showdynSnackbar } from './ui';
 const ACTION_ROOT = 'displays';
 
 export const displaysRequested = createAction(`${ACTION_ROOT}/DISPLAYS_REQUESTED`);
-export const handleSegmentChange = createAction(`${ACTION_ROOT}/DISPLAYS_HANDLE_SEGMENTS`);
+export const deleteSegment = createAction(`${ACTION_ROOT}/DISPLAY_DELETE_SEGMENT`);
+export const handleSegmentChange = createAction(`${ACTION_ROOT}/DISPLAY_HANDLE_SEGMENTS`);
+export const orderSegmentChange = createAction(`${ACTION_ROOT}/DISPLAY_ORDER_SEGMENTS`);
 export const displaysReceived = createAction(`${ACTION_ROOT}/DISPLAYS_RECEIVED`);
 export const displayUpdated = createAction(`${ACTION_ROOT}/DISPLAY_UPDATED`);
 export const scanProgressUpdated = createAction(`${ACTION_ROOT}/DISPLAY_SCAN_PROGRESS_UPDATED`);
@@ -20,9 +22,24 @@ const INITIAL_STATE = {
 
 export default handleActions(
     {
+        [deleteSegment]: (state, { payload }) => {
+            const { displayId, segIndex } = payload;
+            const newState = {
+                ...state,
+                list: state.list.map(reduxItem => {
+                    if (reduxItem.id === displayId) {
+                        reduxItem.segments = [
+                            ...reduxItem.segments.slice(0, segIndex),
+                            ...reduxItem.segments.slice(segIndex + 1),
+                        ];
+                    }
+                    return reduxItem;
+                }),
+            };
+            return newState;
+        },
         [handleSegmentChange]: (state, { payload }) => {
             const { displayId, newValue, segIndex, invert } = payload;
-            console.log('EYY', payload);
             const newState = {
                 ...state,
                 list: state.list.map(reduxItem => {
@@ -31,9 +48,37 @@ export default handleActions(
                             reduxItem.segments[segIndex][1] = newValue[0];
                             reduxItem.segments[segIndex][2] = newValue[1];
                         }
-                        console.log('EYY2', reduxItem.segments[segIndex][3]);
-                        reduxItem.segments[segIndex][3] = !reduxItem.segments[segIndex][3];
-                        console.log('EYY3', reduxItem.segments[segIndex][3]);
+                        if (invert) {
+                            reduxItem.segments[segIndex][3] = !reduxItem.segments[segIndex][3];
+                        }
+                    }
+                    return reduxItem;
+                }),
+            };
+            return newState;
+        },
+        [orderSegmentChange]: (state, { payload }) => {
+            const { displayId, segIndex, order } = payload;
+            const newState = {
+                ...state,
+                list: state.list.map(reduxItem => {
+                    if (reduxItem.id === displayId) {
+                        let data = [...reduxItem.segments];
+
+                        if (order === 'UP') {
+                            let temp = data[segIndex - 1];
+                            data[segIndex - 1] = data[segIndex];
+                            data[segIndex] = temp;
+
+                            reduxItem.segments = data;
+                        }
+                        if (order === 'DOWN') {
+                            let temp = data[segIndex + 1];
+                            data[segIndex + 1] = data[segIndex];
+                            data[segIndex] = temp;
+
+                            reduxItem.segments = data;
+                        }
                     }
                     return reduxItem;
                 }),
