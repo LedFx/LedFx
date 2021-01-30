@@ -120,8 +120,7 @@ export default function ConfirmationDialog({ display, config }) {
                 ...display.segments,
                 [device.id, 0, device.config.pixel_count - 1, false],
             ];
-            console.log('1', temp);
-            const test = temp.filter(t => console.log('WTF', t) || t.length === 4);
+            const test = temp.filter(t => t.length === 4);
             dispatch(updateDisplayConfig({ id: display.id, data: test }));
         }
     };
