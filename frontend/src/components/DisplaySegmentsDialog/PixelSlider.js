@@ -11,25 +11,19 @@ const PixelSlider = ({ s, i, display }) => {
     }, [dispatch]);
 
     const currentDevice = devices.find(reduxItem => reduxItem.id === s[0]);
-    // console.log(devices);
     if (!currentDevice) {
         return <></>;
     }
     const pixelRange = [s[1], s[2]];
 
     const handleChange = (event, newValue) => {
-        console.log(newValue, display, i);
         if (newValue !== pixelRange) {
             dispatch(handleSegmentChange({ newValue, displayId: display.id, segIndex: i }));
-            // dispatch({
-            //     type: 'virtuals/CHANGE_SEGMENT_PXEL',
-            //     payload: { virtual: virtual, device: device.id, newValue: newValue },
-            // });
         }
     };
 
     const marks = [
-        { value: 1, label: 1 },
+        { value: 0, label: 0 },
         { value: currentDevice.config.pixel_count, label: currentDevice.config.pixel_count },
     ];
 
@@ -37,12 +31,11 @@ const PixelSlider = ({ s, i, display }) => {
         <Slider
             value={pixelRange}
             marks={marks}
-            min={1}
+            min={0}
             max={currentDevice.config.pixel_count}
             onChange={handleChange}
             aria-labelledby="range-slider"
             valueLabelDisplay="auto"
-            style={{ flex: '0 0 50%' }}
         />
     );
 };

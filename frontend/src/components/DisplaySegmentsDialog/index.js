@@ -1,4 +1,5 @@
 import React from 'react';
+import { useDispatch } from 'react-redux';
 import { makeStyles } from '@material-ui/core/styles';
 import Button from '@material-ui/core/Button';
 import Dialog from '@material-ui/core/Dialog';
@@ -9,16 +10,24 @@ import Typography from '@material-ui/core/Typography';
 import CloseIcon from '@material-ui/icons/Close';
 import Slide from '@material-ui/core/Slide';
 import AddCircleIcon from '@material-ui/icons/AddCircle';
+import SaveIcon from '@material-ui/icons/Save';
 import AddSegmentDialog from './AddSegmentDialog';
 import Segment from './Segment';
+import { updateDisplayConfig } from 'modules/displays';
 
 const useStyles = makeStyles(theme => ({
     appBar: {
         position: 'relative',
+        marginBottom: '1rem',
+        background: theme.palette.background.default,
+        color: theme.palette.text.primary,
     },
     title: {
         marginLeft: theme.spacing(2),
         flex: 1,
+    },
+    dialog: {
+        background: theme.palette.background.default,
     },
 }));
 
@@ -27,6 +36,7 @@ const Transition = React.forwardRef(function Transition(props, ref) {
 });
 
 export default function FullScreenDialog({ display, icon, className }) {
+    const dispatch = useDispatch();
     const classes = useStyles();
     const [open, setOpen] = React.useState(false);
 
@@ -39,6 +49,7 @@ export default function FullScreenDialog({ display, icon, className }) {
     };
 
     const handleSave = () => {
+        dispatch(updateDisplayConfig({ id: display.id, data: display.segments }));
         setOpen(false);
     };
 
@@ -65,14 +76,31 @@ export default function FullScreenDialog({ display, icon, className }) {
                             <CloseIcon />
                         </IconButton>
                         <Typography variant="h6" className={classes.title}>
-                            {display.config.name} Segments-Settings
+                            {display.config.name}{' '}
                         </Typography>
-                        <Button autoFocus color="inherit" onClick={handleSave}>
+                        <Button
+                            autoFocus
+                            color="primary"
+                            variant="contained"
+                            endIcon={<SaveIcon />}
+                            onClick={handleSave}
+                        >
                             save
                         </Button>
                     </Toolbar>
                 </AppBar>
-
+                <div
+                    style={{
+                        display: 'flex',
+                        borderBottom: '1px dashed #aaa',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        padding: '0.5rem 0',
+                        margin: '0 1rem',
+                    }}
+                >
+                    <Typography variant="caption">Segments-Settings</Typography>
+                </div>
                 {display.segments.length > 0 &&
                     display.segments.map((s, i) => (
                         <Segment s={s} i={i} key={i} display={display} />
