@@ -1,6 +1,7 @@
 import time
 
 import numpy as np
+import voluptuous as vol
 
 from ledfx.effects import Effect
 
@@ -10,8 +11,9 @@ from ledfx.effects import Effect
 import numpy as np
 import matplotlib.pyplot as plt
 
-x=np.linspace(0,1,60)
-duty = 0.75
+period = 60
+x=np.linspace(0,1,period)
+duty = 0.5
 _time     = np.hstack((x,x,x))
 _triangle = 1-2*np.abs(_time-0.5)
 _sin      = 0.5*np.sin(_time*2*np.pi)+0.5
@@ -26,6 +28,35 @@ plt.plot(_triangle)
 
 @Effect.no_registration
 class HSVEffect(Effect):
+
+    hMapSize = 10
+    binWidth = 1 / (
+        hMapSize - 1
+    )  # A 10-point map divides hue's 0-1 phase into 9 arcs of length (binWidth) 0.111
+    hMap = np.zeros(hMapSize + 1)
+    # The values below were subjectively chosen for perceived equidistant color
+    hMap[0] = 0.00  # red
+    hMap[1] = 0.015  # orange
+    hMap[2] = 0.08  # yellow
+    hMap[3] = 0.30  # green
+    hMap[4] = 0.44  # cyan
+    hMap[5] = 0.65  # blue
+    hMap[6] = 0.70  # indigo
+    hMap[7] = 0.77  # purple
+    hMap[8] = 0.985  # pink
+    hMap[9] = 1.00  # red again - same as 0
+    hMap[10] = 1.00  # overflow bin
+
+    CONFIG_SCHEMA = vol.Schema(
+        {
+            vol.Optional(
+                "color_correction",
+                description="Color correct hue for more vivid colors",
+                default=True,
+            ): bool
+        }
+    )
+
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
         self._last_time = time.time()
@@ -40,6 +71,8 @@ class HSVEffect(Effect):
         # self._invalidate_caches()
         self._update_timestep()
         self.render()
+        if self._config["color_correction"]:
+            self.fix_hue_fast(self.hsv_array[:, 0])
         return self.hsv_to_rgb(self.hsv_array)
 
     def render(self):
@@ -68,7 +101,6 @@ class HSVEffect(Effect):
         """
         Perform the 'triangle' wavefunction on a value
 
-        From Pixelblaze docs:
         Converts a sawtooth waveform v between 0.0 and 1.0 to a triangle waveform between 0.0 to 1.0. v "wraps" between 0.0 and 1.0.
         """
         return 1 - 2 * np.abs(x - 0.5)
@@ -77,7 +109,6 @@ class HSVEffect(Effect):
         """
         Perform the 'sin' wavefunction on a value
 
-        From Pixelblaze docs:
         Converts a sawtooth waveform v between 0.0 and 1.0 to a sinusoidal waveform between 0.0 to 1.0. Same as (1+sin(v*PI2))/2 but faster. v "wraps" between 0.0 and 1.0.
         """
         return 0.5 * np.sin(x * 2 * np.pi) + 0.5
@@ -86,7 +117,6 @@ class HSVEffect(Effect):
         """
         Perform the 'square' wavefunction on a value
 
-        From Pixelblaze docs:
         Converts a sawtooth waveform v to a square wave using the provided duty cycle where duty is a number between 0.0 and 1.0. v "wraps" between 0.0 and 1.0.
         """
         return 0.5 * np.sign(duty - x) + 0.5
@@ -117,6 +147,53 @@ class HSVEffect(Effect):
         np.sign(a, out=a)
         np.multiply(0.5, a, out=a)
         np.add(0.5, a, out=a)
+
+    # Perceptual hue utility - for better rainbows
+
+    # The HSV model's hue parameter isn't linear to human perception of equidistant color.
+    # fix_hue() and fix_hue_fast() stretch reds and compresses greens and blues to produce a more even rainbow.
+    # fix_hue() makes better rainbows and is customizable, but fix_hue_fast() is faster
+
+    # See a more complete discussion and intense approaches at:
+    # https://stackoverflow.com/questions/5162458/fade-through-more-more-natural-rainbow-spectrum-in-hsv-hsb
+
+    def fix_hue(self, hue):
+        """
+        fix_hue(hue) => hue
+        Returns 0-1 hue values for hsv()
+        Takes a "perceptual hue" (pH) that aspires to progress evenly across a human-perceived rainbow
+
+        # CURRENTLY BUGGED, MAKING WEIRD COLOURS!
+        """
+        # Wrap inputs
+        np.mod(hue, 1, out=hue)
+        # Calculate hue's starting bin index, 0..(hMapSize-1)
+        bin = np.divide(hue, self.binWidth)
+        bin = np.floor(bin).astype(np.int)
+        # Find hue's percentage into that bin index
+        binPct = np.mod(hue, self.binWidth)
+        np.divide(hue, self.binWidth, out=binPct)
+        # base value in hsv()'s h unit
+        base = self.hMap[bin]
+        # gap is the distance in hsv()'s h units between this base bin and the next
+        np.add(bin, 1, out=bin)
+        gap = self.hMap[bin]
+        np.subtract(gap, base, out=gap)
+        # Interpolate the result between the base bin's h value and the next bin's
+        np.multiply(binPct, gap, out=gap)
+        np.add(base, gap, out=hue)
+
+    def fix_hue_fast(self, hue):
+        """
+        Returns 0-1 hue values for hsv()
+        Takes a "perceptual hue" (pH) that aspires to progress evenly across a human-perceived rainbow
+        This simpler approach is 40% faster than fixH() but to my eyes, bright greens feel over-represented
+        and deep blues are under-represented
+        """
+        np.mod(hue, 1, out=hue)
+        np.subtract(hue, 0.5, out=hue)
+        np.divide(hue, 2, out=hue)
+        self.array_sin(hue)
 
     def hsv_to_rgb(self, hsv):
         """
