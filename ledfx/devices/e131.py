@@ -24,7 +24,9 @@ class E131Device(Device):
         {
             vol.Required(
                 "ip_address",
-                description="Hostname or IP address of the device",
+                description="Hostname or IP address of the device, or "
+                "multicast"
+                " for multicast",
             ): str,
             vol.Required(
                 "pixel_count",
@@ -37,7 +39,7 @@ class E131Device(Device):
             ): vol.All(vol.Coerce(int), vol.Range(min=1)),
             vol.Optional(
                 "universe_size",
-                description="Size of each DMX universe. Leave at 510 unless you know what you're doing.",
+                description="Size of each DMX universe. Leave at 510 unless you know what you're doing",
                 default=510,
             ): vol.All(vol.Coerce(int), vol.Range(min=1)),
             vol.Optional(
@@ -74,31 +76,37 @@ class E131Device(Device):
         return int(self._config["pixel_count"])
 
     def activate(self):
+        if self._config["ip_address"].lower() == "multicast":
+            multicast = True
+        else:
+            multicast = False
         if self._sacn:
             raise Exception("sACN sender already started.")
-        # check if ip/hostname resolves okay
-        self.device_ip = resolve_destination(self._config["ip_address"])
-        if not self.device_ip:
-            _LOGGER.warning(
-                f"Cannot resolve destination {self._config['ip_address']}, aborting device {self.name} activation. Make sure the IP/hostname is correct and device is online."
-            )
-            return
 
-        if wled_device(self.device_ip, self.name):
-            self.WLEDReceiver = True
-            self.wled_state = wled_power_state(self.device_ip, self.name)
-            if self.wled_state is False:
-                turn_wled_on(self.device_ip, self.name)
+        if multicast is False:
+            self.device_ip = resolve_destination(self._config["ip_address"])
+            if not self.device_ip:
+                _LOGGER.warning(
+                    f"Cannot resolve destination {self._config['ip_address']}, aborting device {self.name} activation. Make sure the IP/hostname is correct and device is online."
+                )
+                return
+
+            if wled_device(self.device_ip, self.name):
+                self.WLEDReceiver = True
+                self.wled_state = wled_power_state(self.device_ip, self.name)
+                if self.wled_state is False:
+                    turn_wled_on(self.device_ip, self.name)
 
         # Configure sACN and start the dedicated thread to flush the buffer
         # Some variables are immutable and must be called here
-        self._sacn = sacn.sACNsender(source_name=self.id)
+        self._sacn = sacn.sACNsender(source_name=self.name)
         for universe in range(
             self._config["universe"], self._config["universe_end"] + 1
         ):
-            _LOGGER.info("sACN activating universe {}".format(universe))
+            _LOGGER.info(f"sACN activating universe {universe}")
             self._sacn.activate_output(universe)
-            if self._config["ip_address"] is None:
+
+            if self._config["ip_address"] == "multicast":
                 self._sacn[universe].multicast = True
             else:
                 self._sacn[universe].destination = self.device_ip
@@ -137,9 +145,7 @@ class E131Device(Device):
             raise Exception("sACN sender not started.")
         if data.size != self._config["channel_count"]:
             raise Exception(
-                "Invalid buffer size. ({} != {})".format(
-                    data.size, self._config["channel_count"]
-                )
+                f"Invalid buffer size. {data.size} != {self._config['channel_count']}"
             )
 
         data = data.flatten()
