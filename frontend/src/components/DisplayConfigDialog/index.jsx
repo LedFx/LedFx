@@ -114,12 +114,15 @@ class DisplayConfigDialog extends React.Component {
                 open={open}
             >
                 <DialogTitle id="form-dialog-title">
-                    {initial.id ? 'Edit Virtual Device' : 'Add Virtual Device'}
+                    {initial.id ? 'Edit Device Settings' : 'Add Virtual Device'}
                 </DialogTitle>
                 <DialogContent className={classes.cardResponsive}>
                     <DialogContentText>
-                        To add a device to LedFx, please first select the type of device you wish to
-                        add then provide the necessary configuration.
+                        {initial.id
+                            ? ` Inside Virtual-Devices, you can split devices into segments and merge
+                             several segments over several devices into one VirtualDevice.`
+                            : ` Inside Virtual-Devices, you can split devices into segments and merge
+                             several segments over several devices into one VirtualDevice.`}
                     </DialogContentText>
                     <form onSubmit={this.handleSubmit} className={classes.form}>
                         <SchemaForm

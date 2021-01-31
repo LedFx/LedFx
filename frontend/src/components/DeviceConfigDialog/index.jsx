@@ -125,8 +125,10 @@ class DeviceConfigDialog extends React.Component {
                 </DialogTitle>
                 <DialogContent className={classes.cardResponsive}>
                     <DialogContentText>
-                        To add a device to LedFx, please first select the type of device you wish to
-                        add then provide the necessary configuration.
+                        {initial.id
+                            ? ` Edit your device configuration.`
+                            : ` To add a device to LedFx, please first select the type of device you wish to
+                                add then provide the necessary configuration.`}
                     </DialogContentText>
                     <form onSubmit={this.handleSubmit} className={classes.form}>
                         <DropDown
