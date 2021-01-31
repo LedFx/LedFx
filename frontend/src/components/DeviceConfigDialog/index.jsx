@@ -96,7 +96,7 @@ class DeviceConfigDialog extends React.Component {
     };
 
     render() {
-        const { classes, deviceTypes, open } = this.props;
+        const { classes, deviceTypes, open, initial } = this.props;
         const { model, additionalPropertiesOpen, deviceType } = this.state;
 
         const currentSchema = {
@@ -120,7 +120,9 @@ class DeviceConfigDialog extends React.Component {
                 disableBackdropClick
                 open={open}
             >
-                <DialogTitle id="form-dialog-title">Add Device</DialogTitle>
+                <DialogTitle id="form-dialog-title">
+                    {initial.id ? 'Edit Device' : 'Add Device'}
+                </DialogTitle>
                 <DialogContent className={classes.cardResponsive}>
                     <DialogContentText>
                         To add a device to LedFx, please first select the type of device you wish to

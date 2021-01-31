@@ -15,7 +15,8 @@ import DisplaysTable from 'components/DisplaysTable';
 import DeviceConfigDialog from 'components/DeviceConfigDialog';
 import DisplayConfigDialog from 'components/DisplayConfigDialog';
 import { addDevice, updateDeviceConfig, fetchDeviceList, findWLEDDevices } from 'modules/devices';
-import { deleteDisplay, fetchDisplayList, updateDisplayConfig, addDisplay } from 'modules/displays';
+import { deleteDisplay, fetchDisplayList, addDisplay } from 'modules/displays';
+import { updateDisplay } from 'proxies/display';
 
 const styles = theme => ({
     cardResponsive: {
@@ -215,7 +216,7 @@ class DevicesView extends React.Component {
                                                         onClose={this.closeAddDisplayDialog}
                                                         onAddDisplay={addDisplay}
                                                         initial={selectedDisplay}
-                                                        onUpdateDisplay={updateDisplayConfig}
+                                                        onUpdateDisplay={updateDisplay}
                                                     />
                                                 </Box>
                                             </Grid>

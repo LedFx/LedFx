@@ -115,6 +115,7 @@ export default function FullScreenDialog({ display, icon, className }) {
                         </div>
                     </Toolbar>
                 </AppBar>
+
                 <div
                     style={{
                         display: 'flex',
@@ -131,8 +132,17 @@ export default function FullScreenDialog({ display, icon, className }) {
                     display.segments.map((s, i) => (
                         <Segment s={s} i={i} key={i} display={display} />
                     ))}
-
-                <AddSegmentDialog display={display} />
+                <div
+                    style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        padding: '0.5rem 0',
+                        margin: '0 1rem',
+                    }}
+                >
+                    <AddSegmentDialog display={display} />
+                </div>
             </Dialog>
         </>
     );

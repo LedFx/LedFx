@@ -9,6 +9,12 @@ export function getDisplays() {
 export function createDisplay(config) {
     return api.post('/displays', config);
 }
+export function updateDisplay(displayId, config) {
+    return api.post('/displays', {
+        id: displayId,
+        config: config,
+    });
+}
 
 // Get info on a display, including its segments
 export function getDisplay(displayId) {
