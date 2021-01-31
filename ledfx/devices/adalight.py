@@ -89,11 +89,12 @@ class AdalightDevice(Device):
                 "Serial Error: Please ensure your device is connected, functioning and the correct COM port is selected."
             )
             # Todo: Trigger the UI to refresh after the clear effect call. Currently it still shows as active.
-            self.clear_effect()
+            self.deactivate()
 
     def deactivate(self):
         super().deactivate()
-        self.serial.close()
+        if self.serial:
+            self.serial.close()
 
     @property
     def pixel_count(self):
