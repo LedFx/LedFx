@@ -179,7 +179,6 @@ export function findWLEDDisplays({ resolve, reject }) {
 }
 
 export function updateDisplayConfig({ id, data }) {
-    console.log(id, data);
     return async dispatch => {
         try {
             const response = await displayProxies.updateDisplaySegments(id, {

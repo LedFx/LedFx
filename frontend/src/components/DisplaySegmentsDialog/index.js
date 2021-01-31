@@ -1,5 +1,4 @@
 import React from 'react';
-// import React, { useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import { makeStyles } from '@material-ui/core/styles';
 import Button from '@material-ui/core/Button';
@@ -13,6 +12,7 @@ import SaveIcon from '@material-ui/icons/Save';
 import AddSegmentDialog from './AddSegmentDialog';
 import Segment from './Segment';
 import { updateDisplayConfig } from 'modules/displays';
+import { showdynSnackbar } from 'modules/ui';
 import NavigateBeforeIcon from '@material-ui/icons/NavigateBefore';
 
 const useStyles = makeStyles(theme => ({
@@ -39,24 +39,40 @@ export default function FullScreenDialog({ display, icon, className }) {
     const dispatch = useDispatch();
     const classes = useStyles();
     const [open, setOpen] = React.useState(false);
-    // const oldState = [...display.segments];
     const handleClickOpen = () => {
         setOpen(true);
     };
 
     const handleClose = () => {
-        // console.log(oldState, 'vs', display.segments);
-        // if (JSON.stringify(oldState) !== JSON.stringify(display.segments)) {
-        //     alert('UNSAVED CHANGES!!!');
-        // } else {
-        //     setOpen(false);
-        // }
         setOpen(false);
     };
 
     const handleSave = () => {
-        dispatch(updateDisplayConfig({ id: display.id, data: display.segments }));
-        // setOpen(false);
+        let output = {};
+        let overlap = false;
+        display.segments.forEach(([name, start, end, someBool]) => {
+            if (!(name in output)) {
+                output[name] = [];
+            }
+            for (let i = 0; i < output[name].length; i++) {
+                const [tmpStart, tmpEnd] = output[name][i];
+                if (!tmpStart) {
+                }
+                if (tmpEnd >= start) {
+                    overlap = true;
+                }
+                // console.log('HERE', tmpStart, tmpEnd, start, end);
+            }
+            output[name].push([start, end]);
+        });
+        if (overlap) {
+            dispatch(
+                showdynSnackbar({ message: 'Overlapping detected! Please Check your config' })
+            );
+        } else {
+            dispatch(updateDisplayConfig({ id: display.id, data: display.segments }));
+            // setOpen(false);
+        }
     };
 
     return (
@@ -87,16 +103,6 @@ export default function FullScreenDialog({ display, icon, className }) {
                             {display.config.name}{' '}
                         </Typography>
                         <div>
-                            {/* <Button
-                                autoFocus
-                                color="primary"
-                                variant="contained"
-                                endIcon={<SaveIcon />}
-                                onClick={handleSave}
-                                style={{ marginRight: '1rem' }}
-                            >
-                                reset
-                            </Button> */}
                             <Button
                                 autoFocus
                                 color="primary"
