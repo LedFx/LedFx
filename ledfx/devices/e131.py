@@ -66,9 +66,8 @@ class E131Device(Device):
         )
         if span % self._config["universe_size"] == 0:
             self._config["universe_end"] -= 1
-
-        self._sacn = None
         self.WLEDReceiver = False
+        self._sacn = None
 
     @property
     def pixel_count(self):
@@ -85,11 +84,11 @@ class E131Device(Device):
             )
             return
 
-        if wled_device(self.device_ip):
+        if wled_device(self.device_ip, self.name):
             self.WLEDReceiver = True
-            self.wled_state = wled_power_state(self.device_ip)
+            self.wled_state = wled_power_state(self.device_ip, self.name)
             if self.wled_state is False:
-                turn_wled_on(self.device_ip)
+                turn_wled_on(self.device_ip, self.name)
 
         # Configure sACN and start the dedicated thread to flush the buffer
         # Some variables are immutable and must be called here
@@ -125,7 +124,7 @@ class E131Device(Device):
         time.sleep(1.5)
 
         if self.WLEDReceiver is True and self.wled_state is False:
-            turn_wled_off(self.device_ip)
+            turn_wled_off(self.device_ip, self.name)
 
         self._sacn.stop()
         self._sacn = None

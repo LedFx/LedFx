@@ -112,7 +112,7 @@ def async_callback(loop, callback, *args):
     return future
 
 
-def wled_device(device_ip):
+def wled_device(device_ip, device_name):
 
     """
         Uses a JSON API call to determine if the device is WLED or WLED compatible
@@ -121,7 +121,7 @@ def wled_device(device_ip):
 
     Args:
         device_ip (string): The device IP to be queried
-
+        device_name (string): The name of the device
     Returns:
         boolean
     """
@@ -134,33 +134,33 @@ def wled_device(device_ip):
 
             if device_json["brand"] in "WLED":
                 _LOGGER.info(
-                    f"Device at {device_ip} identified as WLED compatible: {device_json['brand']}"
+                    f"{device_name} is WLED compatible: {device_json['brand']}"
                 )
                 return True
             else:
                 _LOGGER.info(
-                    f"Device at {device_ip} identified as NOT WLED compatible: {device_json['brand']}"
+                    f"{device_name} is NOT WLED compatible: {device_json['brand']}"
                 )
                 return False
         else:
             _LOGGER.warning(
-                f"WLED API Error on {device_ip}: {device_info.status_code}"
+                f"WLED API Error on {device_name}: {device_info.status_code}"
             )
             return False
     except requests.exceptions.RequestException:
         _LOGGER.info(
-            f"WLED Identifier can't connect to {device_ip}. Likely not WLED."
+            f"WLED Identifier can't connect to {device_name}. Likely not WLED."
         )
         return False
 
 
-def wled_power_state(device_ip):
+def wled_power_state(device_ip, device_name):
     """
         Uses a JSON API call to determine the WLED device power state (on/off)
 
     Args:
         device_ip (string): The device IP to be queried
-
+        device_name (string): The name of the device
     Returns:
         boolean: True is "On", False is "Off"
     """
@@ -170,35 +170,30 @@ def wled_power_state(device_ip):
         )
         if device_state.ok:
             device_json = device_state.json()
+            _LOGGER.info(f"{device_name} State: {device_json['on']}")
             if device_json["on"] is True:
-                _LOGGER.info(
-                    f"Device Power State for {device_ip}: {device_json['on']}"
-                )
                 return True
             else:
-                _LOGGER.info(
-                    f"Device Power State for {device_ip}: {device_json['on']}"
-                )
                 return False
         else:
             _LOGGER.warning(
-                f"WLED API Error on {device_ip}: {device_state.status_code}"
+                f"WLED API Error on {device_name}: {device_state.status_code}"
             )
             return False
     except requests.exceptions.RequestException as CapturedError:
         _LOGGER.warning(
-            f"Error Obtaining WLED Power State for {device_ip}: {CapturedError}"
+            f"Error Obtaining WLED Power State for {device_name}: {CapturedError}"
         )
         return False
 
 
-def turn_wled_on(device_ip):
+def turn_wled_on(device_ip, device_name):
     """
         Uses a HTTP post call to turn a WLED compatible device on
 
     Args:
         device_ip (string): The device IP to be turned on
-
+        device_name (string): The name of the device
     Returns:
         boolean: Success or failure of API call
     """
@@ -206,22 +201,24 @@ def turn_wled_on(device_ip):
         turn_on = requests.post(f"http://{device_ip}/win&T=1", timeout=0.25)
 
         if turn_on.ok:
-            _LOGGER.info(f"Turning WLED device at {device_ip} on.")
+            _LOGGER.info(f"Turning WLED device {device_name} on.")
             return True
         else:
-            _LOGGER.warning(f"WLED API Error on {device_ip} on.")
+            _LOGGER.warning(
+                f"WLED API Error on {device_name}: {turn_on.status_code}"
+            )
             return False
     except requests.exceptions.RequestException as CapturedError:
-        _LOGGER.warning(f"Error turning {device_ip} on: {CapturedError}")
+        _LOGGER.warning(f"Error turning {device_name} on: {CapturedError}")
 
 
-def turn_wled_off(device_ip):
+def turn_wled_off(device_ip, device_name):
     """
         Uses a HTTP post call to turn a WLED compatible device off
 
     Args:
         device_ip (string): The device IP to be turned off
-
+        device_name (string): The name of the device
     Returns:
         boolean: Success or failure of API call
     """
@@ -229,18 +226,19 @@ def turn_wled_off(device_ip):
         turn_off = requests.post(f"http://{device_ip}/win&T=0", timeout=0.25)
 
         if turn_off.ok:
-            _LOGGER.info(f"Turning WLED device at {device_ip} off.")
+            _LOGGER.info(f"Turning WLED device {device_name} off.")
             return True
         else:
             _LOGGER.warning(
-                f"WLED API Error while trying to turn device {device_ip} on: {turn_off.status_code}"
+                f"WLED API Error on {device_name}: {turn_off.status_code}"
             )
             return False
+            return False
     except requests.exceptions.RequestException as CapturedError:
-        _LOGGER.warning(f"Error turning {device_ip} off: {CapturedError}")
+        _LOGGER.warning(f"Error turning {device_name} off: {CapturedError}")
 
 
-def adjust_wled_brightness(device_ip, brightness):
+def adjust_wled_brightness(device_ip, device_name, brightness):
     """
         Uses a HTTP post call to adjust a WLED compatible device's
         brightness
@@ -248,6 +246,7 @@ def adjust_wled_brightness(device_ip, brightness):
 
     Args:
         device_ip (string): The device IP to adjust brightness
+        device_name (string): The name of the device
         brightness (int): The brightness value between 0-255
 
     Returns:
@@ -262,17 +261,17 @@ def adjust_wled_brightness(device_ip, brightness):
 
         if adjust_brightness.ok:
             _LOGGER.info(
-                f"Adjusting WLED brightness at {device_ip} to {validated_brightness}."
+                f"Adjusting {device_name} brightness to: {validated_brightness}."
             )
             return True
         else:
             _LOGGER.warning(
-                f"WLED API Error while trying to adjust brightness on {device_ip}."
+                f"WLED API Error while trying to adjust brightness on {device_name}."
             )
             return False
     except requests.exceptions.RequestException as CapturedError:
         _LOGGER.warning(
-            f"Error Adjusting Brightness on {device_ip} - {CapturedError}"
+            f"Error Adjusting {device_name} brightness: {CapturedError}"
         )
 
 
