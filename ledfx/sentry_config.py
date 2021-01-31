@@ -8,10 +8,10 @@ from ledfx.consts import PROJECT_VERSION
 
 
 sentry_dsn = ""
-
-sentry_sdk.init(
-    sentry_dsn,
-    traces_sample_rate=1,
-    integrations=[AioHttpIntegration()],
-    release=f"ledfx@{PROJECT_VERSION}",
-)
+if sentry_dsn != "":
+    sentry_sdk.init(
+        sentry_dsn,
+        traces_sample_rate=1,
+        integrations=[AioHttpIntegration()],
+        release=f"ledfx@{PROJECT_VERSION}",
+    )
