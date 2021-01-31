@@ -8,12 +8,12 @@ import pkgutil
 import re
 import socket
 import sys
-import requests
 from abc import ABC
 
 # from asyncio import coroutines, ensure_future
 from subprocess import PIPE, Popen
 
+import requests
 import voluptuous as vol
 
 _LOGGER = logging.getLogger(__name__)
@@ -141,6 +141,7 @@ def wled_get_segments(device_ip, device_name):
         )
         # Probably just return a single segment of LED length here?
         return False
+
 
 def resolve_destination(destination):
     """Uses a socket to attempt domain lookup
