@@ -45,9 +45,24 @@ class DisplayConfigDialog extends React.Component {
 
         this.state = {
             model: {},
-            additionalPropertiesOpen: false,
+            additionalPropertiesOpen: true,
         };
     }
+    componentDidMount() {
+        const { initial } = this.props;
+
+        this.handleTypeChange(initial.config);
+    }
+
+    componentDidUpdate(prevProps) {
+        const { initial } = this.props;
+        if (initial !== prevProps.initial) {
+            this.handleTypeChange(initial.config);
+        }
+    }
+    handleTypeChange = (initial = {}) => {
+        this.setState({ model: initial });
+    };
     toggleShowAdditional = e => {
         this.setState(prevState => ({
             additionalPropertiesOpen: !prevState.additionalPropertiesOpen,
@@ -74,7 +89,7 @@ class DisplayConfigDialog extends React.Component {
     };
 
     render() {
-        const { classes, open, displays } = this.props;
+        const { classes, open, displays, display, initial } = this.props;
         const { model, additionalPropertiesOpen } = this.state;
 
         const currentSchema = {
@@ -89,7 +104,7 @@ class DisplayConfigDialog extends React.Component {
             key => !(requiredKeys && requiredKeys.some(rk => key === rk))
         );
         const showAdditionalUi = optionalKeys.length > 0;
-
+        console.log('3', display, model, initial);
         return (
             <Dialog
                 onClose={this.handleClose}
@@ -98,7 +113,9 @@ class DisplayConfigDialog extends React.Component {
                 disableBackdropClick
                 open={open}
             >
-                <DialogTitle id="form-dialog-title">Add Display</DialogTitle>
+                <DialogTitle id="form-dialog-title">
+                    {initial.id ? 'Edit Virtual Device' : 'Add Virtual Device'}
+                </DialogTitle>
                 <DialogContent className={classes.cardResponsive}>
                     <DialogContentText>
                         To add a device to LedFx, please first select the type of device you wish to
