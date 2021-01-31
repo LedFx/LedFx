@@ -8,6 +8,7 @@ import pkgutil
 import re
 import socket
 import sys
+import requests
 from abc import ABC
 
 # from asyncio import coroutines, ensure_future
@@ -108,6 +109,38 @@ def async_callback(loop, callback, *args):
     loop.call_soon_threadsafe(run_callback)
     return future
 
+
+def wled_get_segments(device_ip, device_name):
+    """
+        Uses a JSON API call to determine the WLED segment setup
+
+    Args:
+        device_ip (string): The device IP to be queried
+        device_name (string): The name of the device
+    Returns:
+        dict: JSON array of segments
+    """
+    try:
+        device_data = requests.get(
+            f"http://{device_ip}/json/state", timeout=0.25
+        )
+        if device_data.ok:
+            device_json = device_data.json()
+            # This is where my skillset ends.
+            # I have no idea how to iterate over the returned data and extract out the useful bits.
+            print(device_json["seg"])
+        else:
+            _LOGGER.warning(
+                f"WLED API Error on {device_name}: {device_data.status_code}"
+            )
+            # Probably just return a single segment of LED length here?
+            return False
+    except requests.exceptions.RequestException as CapturedError:
+        _LOGGER.warning(
+            f"Error Connecting to WLED device {device_name}: {CapturedError}"
+        )
+        # Probably just return a single segment of LED length here?
+        return False
 
 def resolve_destination(destination):
     """Uses a socket to attempt domain lookup
