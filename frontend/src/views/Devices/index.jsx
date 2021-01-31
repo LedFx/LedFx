@@ -30,6 +30,16 @@ const styles = theme => ({
     dialogButton: {
         float: 'right',
     },
+    buttonWrapper: {
+        display: 'flex',
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        '@media (max-width: 540px)': {
+            flexDirection: 'column',
+            alignItems: 'stretch',
+        },
+    },
 });
 
 class DevicesView extends React.Component {
@@ -112,17 +122,15 @@ class DevicesView extends React.Component {
                                     {!schemas.isLoading && (
                                         <>
                                             <Grid item>
-                                                <Box
-                                                    display="flex"
-                                                    flexDirection="row"
-                                                    alignItems="center"
-                                                    justifyContent="center"
-                                                >
-                                                    <CircularProgress
-                                                        variant="determinate"
-                                                        value={scanProgress * 10}
-                                                        size={35}
-                                                    />
+                                                <Box className={classes.buttonWrapper}>
+                                                    {this.state.searchDevicesLoading && (
+                                                        <CircularProgress
+                                                            variant="determinate"
+                                                            value={scanProgress * 10}
+                                                            size={35}
+                                                        />
+                                                    )}
+
                                                     <Tooltip
                                                         title={
                                                             <ul style={{ padding: '0.5rem' }}>

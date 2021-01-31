@@ -14,6 +14,11 @@ const styles = theme => ({
         borderSpacing: '0',
         borderCollapse: 'collapse',
     },
+    tableTitles: {
+        '@media (max-width: 1200px)': {
+            display: 'none',
+        },
+    },
     tableResponsive: {
         overflowX: 'auto',
     },
@@ -31,7 +36,7 @@ function DisplaysTable({
         <div className={classes.tableResponsive}>
             <Table className={classes.table}>
                 <TableHead>
-                    <TableRow>
+                    <TableRow className={classes.tableTitles}>
                         <TableCell></TableCell>
                         <TableCell>Name</TableCell>
                         <TableCell>Max Brightness</TableCell>

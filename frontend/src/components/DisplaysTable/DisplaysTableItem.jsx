@@ -27,6 +27,11 @@ const styles = theme => ({
             color: theme.palette.primary.main,
         },
     },
+    displaySettings: {
+        '@media (max-width: 1200px)': {
+            display: 'none',
+        },
+    },
 });
 
 function DisplaysTableItem({
@@ -66,10 +71,14 @@ function DisplaysTableItem({
                     {display.config.name}
                 </NavLink>
             </TableCell>
-            <TableCell>{display.config.max_brightness}</TableCell>
-            <TableCell>{display.config.crossfade}</TableCell>
-            <TableCell>{display.config.center_offset}</TableCell>
-            <TableCell>
+            <TableCell className={classes.displaySettings}>
+                {display.config.max_brightness}
+            </TableCell>
+            <TableCell className={classes.displaySettings}>{display.config.crossfade}</TableCell>
+            <TableCell className={classes.displaySettings}>
+                {display.config.center_offset}
+            </TableCell>
+            <TableCell className={classes.displaySettings}>
                 <Switch checked={display.config.preview_only} />
             </TableCell>
             <TableCell align="right">
