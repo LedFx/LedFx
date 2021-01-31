@@ -330,7 +330,7 @@ class Effect(BaseRegistry):
     @property
     def pixel_count(self):
         """Returns the number of pixels for the channel"""
-        return len(self.pixels)
+        return len(self._pixels)
 
     @property
     def name(self):

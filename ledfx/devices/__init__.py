@@ -69,6 +69,9 @@ class Device(BaseRegistry):
     def pixel_count(self):
         pass
 
+    def is_active(self):
+        return self._active
+
     def update_pixels(self, display_id, data):
         # update each segment from this display
         if not self._active:

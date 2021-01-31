@@ -365,7 +365,9 @@ class Display(object):
                 data.append(
                     (pixels[start:stop:step], device_start, device_end)
                 )
-            self._ledfx.devices.get(device_id).update_pixels(self.id, data)
+            device = self._ledfx.devices.get(device_id)
+            if device.is_active():
+                device.update_pixels(self.id, data)
 
     @property
     def name(self):
