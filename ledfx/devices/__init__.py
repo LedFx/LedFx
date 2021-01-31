@@ -387,13 +387,14 @@ class WLEDListener(zeroconf.ServiceBrowser):
                 "universe_size": unisize,
                 "name": wledname,
                 "pixel_count": wledcount,
-                "ip_address": hostname,
+                "ip_address": hostname.rstrip("."),
             }
 
             # Check this device doesn't share IP, name or hostname with any current saved device
             for device in self._ledfx.devices.values():
                 if (
-                    device.config["ip_address"] == hostname
+                    device.config["ip_address"] == hostname.rstrip(".")
+                    or device.config["ip_address"] == hostname
                     or device.config["name"] == wledname
                     or device.config["ip_address"] == address
                 ):
