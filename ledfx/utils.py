@@ -112,7 +112,7 @@ def async_callback(loop, callback, *args):
     return future
 
 
-def wled_device(device_ip, device_name):
+def wled_identifier(device_ip, device_name):
 
     """
         Uses a JSON API call to determine if the device is WLED or WLED compatible
@@ -170,7 +170,7 @@ def wled_power_state(device_ip, device_name):
         )
         if device_state.ok:
             device_json = device_state.json()
-            _LOGGER.info(f"{device_name} State: {device_json['on']}")
+            _LOGGER.info(f"{device_name} powered on: {device_json['on']}")
             if device_json["on"] is True:
                 return True
             else:
@@ -233,7 +233,6 @@ def turn_wled_off(device_ip, device_name):
                 f"WLED API Error on {device_name}: {turn_off.status_code}"
             )
             return False
-            return False
     except requests.exceptions.RequestException as CapturedError:
         _LOGGER.warning(f"Error turning {device_name} off: {CapturedError}")
 
@@ -287,7 +286,6 @@ def resolve_destination(destination):
     """
     try:
         ipaddress.ip_address(destination)
-
         return destination
     except ValueError:
 

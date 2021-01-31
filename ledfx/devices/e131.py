@@ -10,7 +10,7 @@ from ledfx.utils import (
     resolve_destination,
     turn_wled_off,
     turn_wled_on,
-    wled_device,
+    wled_identifier,
     wled_power_state,
 )
 
@@ -91,7 +91,7 @@ class E131Device(Device):
                 )
                 return
 
-            if wled_device(self.device_ip, self.name):
+            if wled_identifier(self.device_ip, self.name):
                 self.WLEDReceiver = True
                 self.wled_state = wled_power_state(self.device_ip, self.name)
                 if self.wled_state is False:
