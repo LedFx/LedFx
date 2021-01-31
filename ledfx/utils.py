@@ -2,6 +2,7 @@ import asyncio
 import concurrent.futures
 import importlib
 import inspect
+import ipaddress
 import logging
 import os
 import pkgutil
@@ -125,7 +126,9 @@ def wled_device(device_ip):
         boolean
     """
     try:
-        device_info = requests.get(f"http://{device_ip}/json/info")
+        device_info = requests.get(
+            f"http://{device_ip}/json/info", timeout=0.25
+        )
         if device_info.ok:
             device_json = device_info.json()
 
@@ -136,7 +139,7 @@ def wled_device(device_ip):
                 return True
             else:
                 _LOGGER.info(
-                    f"Device at {device_ip} not WLED compatible: {device_json['brand']}"
+                    f"Device at {device_ip} identified as NOT WLED compatible: {device_json['brand']}"
                 )
                 return False
         else:
@@ -144,9 +147,9 @@ def wled_device(device_ip):
                 f"WLED API Error on {device_ip}: {device_info.status_code}"
             )
             return False
-    except requests.exceptions.RequestException as CapturedError:
-        _LOGGER.warning(
-            f"WLED Identifier can't connect to {device_ip}. Error {CapturedError}"
+    except requests.exceptions.RequestException:
+        _LOGGER.info(
+            f"WLED Identifier can't connect to {device_ip}. Likely not WLED."
         )
         return False
 
@@ -162,7 +165,9 @@ def wled_power_state(device_ip):
         boolean: True is "On", False is "Off"
     """
     try:
-        device_state = requests.get(f"http://{device_ip}/json/state")
+        device_state = requests.get(
+            f"http://{device_ip}/json/state", timeout=0.25
+        )
         if device_state.ok:
             device_json = device_state.json()
             if device_json["on"] is True:
@@ -198,7 +203,7 @@ def turn_wled_on(device_ip):
         boolean: Success or failure of API call
     """
     try:
-        turn_on = requests.post(f"http://{device_ip}/win&T=1")
+        turn_on = requests.post(f"http://{device_ip}/win&T=1", timeout=0.25)
 
         if turn_on.ok:
             _LOGGER.info(f"Turning WLED device at {device_ip} on.")
@@ -221,7 +226,7 @@ def turn_wled_off(device_ip):
         boolean: Success or failure of API call
     """
     try:
-        turn_off = requests.post(f"http://{device_ip}/win&T=0")
+        turn_off = requests.post(f"http://{device_ip}/win&T=0", timeout=0.25)
 
         if turn_off.ok:
             _LOGGER.info(f"Turning WLED device at {device_ip} off.")
@@ -252,7 +257,7 @@ def adjust_wled_brightness(device_ip, brightness):
 
     try:
         adjust_brightness = requests.post(
-            f"http://{device_ip}/win&A={validated_brightness}"
+            f"http://{device_ip}/win&A={validated_brightness}", timeout=0.25
         )
 
         if adjust_brightness.ok:
@@ -281,18 +286,21 @@ def resolve_destination(destination):
         On success: string containing the resolved IP address.
         On failure: boolean false.
     """
-    cleaned_dest = destination.rstrip(".")
-    resolve_attempts = 0
-    while resolve_attempts <= 2:
+    try:
+        ipaddress.ip_address(destination)
+
+        return destination
+    except ValueError:
+
+        cleaned_dest = destination.rstrip(".")
+
         try:
             return socket.gethostbyname(cleaned_dest)
         except socket.gaierror:
-            resolve_attempts += 1
-            _LOGGER.warning(
-                f"Failed resolving {cleaned_dest}, attempt {resolve_attempts} of 3."
-            )
 
-    return False
+            _LOGGER.warning(f"Failed resolving {cleaned_dest}.")
+
+        return False
 
 
 def currently_frozen():
