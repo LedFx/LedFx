@@ -57,9 +57,10 @@ class HSVEffect(Effect):
         }
     )
 
+    _start_time = time.time()
+
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
-        self._last_time = time.time()
         self._timestep = 0
         self.hsv_array = None
 
@@ -68,8 +69,9 @@ class HSVEffect(Effect):
         super().activate(pixel_count)
 
     def get_pixels(self):
-        # self._invalidate_caches()
-        self._update_timestep()
+        # update the timestep
+        self._timestep = time.time() - self._start_time
+
         self.render()
         if self._config["color_correction"]:
             self.fix_hue_fast(self.hsv_array[:, 0])
@@ -82,20 +84,13 @@ class HSVEffect(Effect):
         """
         pass
 
-    def _update_timestep(self):
-        time_now = time.time()
-        self._timestep += time_now - self._last_time
-        self._last_time = time_now
-
     def time(self, modifier=1.0):
         """
-        sawtooth 0->1, looping every 1/modifier seconds
+        sawtooth 0->1, looping every 65.536/modifier seconds
         lower modifier, slower looping
-
-        From Pixelblaze docs:
-        A sawtooth waveform between 0.0 and 1.0 that loops about every 65.536*interval seconds. e.g. use .015 for an approximately 1 second.
+        you can consider modifier = 1 / sawtooth period
         """
-        return modifier * self._timestep % 1
+        return (self._timestep % (65.536 / modifier)) / (65.536 / modifier)
 
     def triangle(self, x=1.0):
         """
