@@ -74,7 +74,7 @@ class DisplayEndpoint(RestEndpoint):
                 "status": "failed",
                 "payload": {"type": "warning", "reason": str(msg)},
             }
-            return web.json_response(data=response, status=500)
+            return web.json_response(data=response, status=202)
 
         # Update ledfx's config
         for idx, item in enumerate(self._ledfx.config["displays"]):
@@ -122,7 +122,7 @@ class DisplayEndpoint(RestEndpoint):
                 "payload": {"type": "error", "message": str(msg)},
             }
             display.update_segments(old_segments)
-            return web.json_response(data=response, status=500)
+            return web.json_response(data=response, status=202)
 
         # Update ledfx's config
         for idx, item in enumerate(self._ledfx.config["displays"]):

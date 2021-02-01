@@ -112,7 +112,7 @@ class EffectsEndpoint(RestEndpoint):
                 "status": "failed",
                 "payload": {"type": "warning", "reason": str(msg)},
             }
-            return web.json_response(data=response, status=500)
+            return web.json_response(data=response, status=202)
 
         # Update and save the configuration
         for display in self._ledfx.config["displays"]:
@@ -171,7 +171,7 @@ class EffectsEndpoint(RestEndpoint):
                 "status": "failed",
                 "payload": {"type": "warning", "reason": str(msg)},
             }
-            return web.json_response(data=response, status=500)
+            return web.json_response(data=response, status=202)
 
         # Update and save the configuration
         for display in self._ledfx.config["displays"]:
