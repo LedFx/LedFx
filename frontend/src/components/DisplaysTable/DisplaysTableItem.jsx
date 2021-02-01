@@ -5,13 +5,15 @@ import { withStyles } from '@material-ui/core/styles';
 import TableRow from '@material-ui/core/TableRow';
 import TableCell from '@material-ui/core/TableCell';
 import Button from '@material-ui/core/Button';
-import EditIcon from '@material-ui/icons/Edit';
 import SettingsIcon from '@material-ui/icons/Settings';
 import Icon from '@material-ui/core/Icon';
 import { Switch } from '@material-ui/core';
 import PopoverSure from 'components/PopoverSure';
 import DisplaySegmentsDialog from 'components/DisplaySegmentsDialog';
 import { camelToSnake } from 'utils/helpers';
+import TuneIcon from '@material-ui/icons/Tune';
+import BuildIcon from '@material-ui/icons/Build';
+
 const styles = theme => ({
     deleteButton: {
         minWidth: 32,
@@ -91,13 +93,13 @@ function DisplaysTableItem({
                         className={classes.editButton}
                         onClick={handleEditDevice}
                     >
-                        <SettingsIcon />
+                        <BuildIcon />
                     </Button>
                 ) : (
                     <DisplaySegmentsDialog
                         display={display}
                         className={classes.editButton}
-                        icon={<SettingsIcon />}
+                        icon={<TuneIcon />}
                     />
                 )}
                 <Button
@@ -106,7 +108,7 @@ function DisplaysTableItem({
                     className={classes.editButton}
                     onClick={handleEditDisplay}
                 >
-                    <EditIcon />
+                    <SettingsIcon />
                 </Button>
             </TableCell>
         </TableRow>
