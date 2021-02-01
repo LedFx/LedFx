@@ -89,7 +89,7 @@ class DisplayConfigDialog extends React.Component {
     };
 
     render() {
-        const { classes, open, displays, display, initial } = this.props;
+        const { classes, open, displays, initial } = this.props;
         const { model, additionalPropertiesOpen } = this.state;
 
         const currentSchema = {
@@ -104,7 +104,7 @@ class DisplayConfigDialog extends React.Component {
             key => !(requiredKeys && requiredKeys.some(rk => key === rk))
         );
         const showAdditionalUi = optionalKeys.length > 0;
-        console.log('3', display, model, initial);
+
         return (
             <Dialog
                 onClose={this.handleClose}

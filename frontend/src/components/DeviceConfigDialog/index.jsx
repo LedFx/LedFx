@@ -105,11 +105,22 @@ class DeviceConfigDialog extends React.Component {
             properties: {},
             ...(deviceType ? deviceTypes[deviceType].schema : {}),
         };
+        let requiredKeys = [];
+        let optionalKeys = [];
+        if (initial.id) {
+            requiredKeys =
+                currentSchema.required && currentSchema.required.filter(k => k !== 'name');
+            optionalKeys = Object.keys(currentSchema.properties)
+                .filter(key => !(requiredKeys && requiredKeys.some(rk => key === rk)))
+                .filter(k => k !== 'icon_name')
+                .filter(k => k !== 'name');
+        } else {
+            requiredKeys = currentSchema.required;
+            optionalKeys = Object.keys(currentSchema.properties).filter(
+                key => !(requiredKeys && requiredKeys.some(rk => key === rk))
+            );
+        }
 
-        const requiredKeys = currentSchema.required;
-        const optionalKeys = Object.keys(currentSchema.properties).filter(
-            key => !(requiredKeys && requiredKeys.some(rk => key === rk))
-        );
         const showAdditionalUi = optionalKeys.length > 0;
 
         return (
