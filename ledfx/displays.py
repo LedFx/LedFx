@@ -337,7 +337,6 @@ class Display(object):
             raise RuntimeError(error)
 
         _LOGGER.info(f"Activating display {self.id}")
-        self.activate_segments(self._segments)
         if not self._active:
             self.activate_segments(self._segments)
         for device in self._devices:
