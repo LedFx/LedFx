@@ -47,27 +47,43 @@ export default function FullScreenDialog({ display, icon, className }) {
         setOpen(false);
     };
 
-    const handleSave = () => {
-        let output = {};
-        let overlap = false;
-        display.segments.forEach(([name, start, end, someBool]) => {
-            if (!(name in output)) {
-                output[name] = [];
+    function getOverlapping(data) {
+        const tmp = {};
+        data.forEach(([name, start, end]) => {
+            if (!tmp[name]) {
+                tmp[name] = {};
+                data.forEach(y => {
+                    tmp[name].items = [];
+                    tmp[name].overlap = false;
+                    tmp[name].items.push([start, end]);
+                });
+            } else {
+                tmp[name].items.push([start, end]);
             }
-            for (let i = 0; i < output[name].length; i++) {
-                const [tmpStart, tmpEnd] = output[name][i];
-                if (!tmpStart) {
-                }
-                if (tmpEnd >= start) {
-                    overlap = true;
-                }
-                // console.log('HERE', tmpStart, tmpEnd, start, end);
-            }
-            output[name].push([start, end]);
         });
+        Object.keys(tmp).forEach(e =>
+            tmp[e].items
+                .sort(([startA], [startB]) => startA > startB)
+                .forEach(([start, end], i) => {
+                    if (tmp[e].items[i + 1]) {
+                        const [startNew, endNew] = tmp[e].items[i + 1];
+                        if (startNew <= end && endNew >= start) {
+                            tmp[e].overlap = true;
+                        }
+                    }
+                })
+        );
+        return tmp;
+    }
+
+    const handleSave = () => {
+        const output = getOverlapping(display.segments);
+        const overlap = Object.keys(output).find(k => output[k].overlap);
         if (overlap) {
             dispatch(
-                showdynSnackbar({ message: 'Overlapping detected! Please Check your config' })
+                showdynSnackbar({
+                    message: `Overlapping in ${overlap} detected! Please Check your config`,
+                })
             );
         } else {
             dispatch(updateDisplayConfig({ id: display.id, data: display.segments }));
