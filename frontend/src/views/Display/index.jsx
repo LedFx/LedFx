@@ -9,8 +9,10 @@ import { loadDisplayInfo, setDisplayEffect, clearDisplayEffect } from 'modules/s
 import { activatePreset, getEffectPresets, addPreset } from 'modules/presets';
 import DisplayEffectControl from 'components/EffectControl/DisplayEffectControl';
 import DisplayPixelColorGraph from 'components/PixelColorGraph/DisplayPixelColorGraph';
+import PixelColorGraph from 'components/PixelColorGraph';
 import PresetsCard from 'components/PresetsCard';
 import { fetchDisplayList } from 'modules/displays';
+import { fetchDeviceList } from 'modules/devices';
 import MoreInfo from './MoreInfo';
 
 const DisplayView = ({
@@ -22,6 +24,8 @@ const DisplayView = ({
     const selectedDisplay = useSelector(state => state.selectedDisplay);
     const { display, effect, isDisplayLoading } = selectedDisplay;
     const presets = useSelector(state => state.presets);
+    const devices = useSelector(state => state.devices.list);
+    const device = devices.find(d => d.id === display.config[display.id].is_device);
     const dispatch = useDispatch();
     const [dispId, setDispId] = useState();
 
@@ -34,12 +38,12 @@ const DisplayView = ({
 
     useEffect(() => {
         dispatch(fetchDisplayList());
+        dispatch(fetchDeviceList());
     }, [dispatch]);
 
     if (schemas.isLoading || isDisplayLoading || !display) {
         return <p>Loading...</p>;
     }
-
     return (
         <>
             <Grid container direction="row" spacing={4}>
@@ -47,7 +51,11 @@ const DisplayView = ({
                     <Grid item xs={12} lg={12}>
                         <Card>
                             <CardContent>
-                                <DisplayPixelColorGraph display={display} />
+                                {device ? (
+                                    <PixelColorGraph device={device} />
+                                ) : (
+                                    <DisplayPixelColorGraph display={display} />
+                                )}
                             </CardContent>
                         </Card>
                     </Grid>
