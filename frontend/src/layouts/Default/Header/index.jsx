@@ -37,7 +37,7 @@ const styles = theme => ({
 
 const Header = props => {
     const getPageName = () => {
-        const { location, devicesDictionary } = props;
+        const { location, devicesDictionary, selectedDisplay } = props;
         const { pathname } = location;
         let name = viewRoutes.find((prop, key) => prop.path === pathname)?.navbarName;
 
@@ -50,12 +50,16 @@ const Header = props => {
                         : '';
                 name = 'Devices / ' + deviceName;
             } else if (pathname.startsWith('/displays/')) {
-                const deviceId = pathname.replace('/displays/', '');
-                const deviceName =
-                    devicesDictionary[deviceId] !== undefined
-                        ? devicesDictionary[deviceId].config.name
+                const displayId = pathname.replace('/displays/', '');
+                const displayName =
+                    devicesDictionary[displayId] !== undefined
+                        ? devicesDictionary[displayId].config.name
+                        : selectedDisplay
+                        ? selectedDisplay.config[selectedDisplay.id] &&
+                          selectedDisplay.config[selectedDisplay.id].config.name
                         : '';
-                name = 'Devices / ' + deviceName;
+
+                name = 'Devices / ' + displayName;
             } else if (pathname.startsWith('/developer/')) {
                 name = 'Developer / Custom';
             }
