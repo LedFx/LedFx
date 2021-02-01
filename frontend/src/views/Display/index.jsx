@@ -25,7 +25,7 @@ const DisplayView = ({
     const { display, effect, isDisplayLoading } = selectedDisplay;
     const presets = useSelector(state => state.presets);
     const devices = useSelector(state => state.devices.list);
-    const device = devices.find(d => d.id === display.config[display.id].is_device);
+    const device = devices.find(d => d.id === display && display.config[display.id].is_device);
     const dispatch = useDispatch();
     const [dispId, setDispId] = useState();
 
