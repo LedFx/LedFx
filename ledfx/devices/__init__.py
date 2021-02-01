@@ -298,6 +298,7 @@ class WLEDListener:
                 "name": wledname,
                 "pixel_count": wledcount,
                 "ip_address": hostname,
+                "icon_name": "SettingsInputComponent"
             }
 
             # Check this device doesn't share IP, name or hostname with any current saved device
@@ -330,7 +331,36 @@ class WLEDListener:
                     "config": device.config,
                 }
             )
-            save_config(
+            display_name = f"{device.name}"
+            display_id = generate_id(display_name)
+            display_config = {
+                "name": display_name,
+                "icon_name": device_config["icon_name"],
+                }
+            segments = [[device.id, 0, device_config["pixel_count"] - 1, False]]
+
+        # create the display
+            display = self._ledfx.displays.create(
+            id=display_id,
+            config=display_config,
+            ledfx=self._ledfx,
+            is_device=device.id,
+        )
+
+        # create the device as a single segment on the display
+        display.update_segments(segments)
+
+        # Update the configuration
+        self._ledfx.config["displays"].append(
+            {
+                "id": display.id,
+                "config": display.config,
+                "segments": display.segments,
+                "is_device": device.id,
+            }
+            )    
+        save_config(
                 config=self._ledfx.config,
                 config_dir=self._ledfx.config_dir,
             )
+            
