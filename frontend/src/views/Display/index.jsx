@@ -25,7 +25,8 @@ const DisplayView = ({
     const { display, effect, isDisplayLoading } = selectedDisplay;
     const presets = useSelector(state => state.presets);
     const devices = useSelector(state => state.devices.list);
-    const device = devices.find(d => d.id === display && display.config[display.id].is_device);
+    const deviceId = display && display.config[display.id].is_device;
+    const device = devices.find(d => d.id === deviceId);
     const dispatch = useDispatch();
     const [dispId, setDispId] = useState();
 
@@ -47,22 +48,7 @@ const DisplayView = ({
     return (
         <>
             <Grid container direction="row" spacing={4}>
-                {Object.keys(effect).length === 0 ? (
-                    <Grid item xs={12} lg={12}>
-                        <Card>
-                            <CardContent>
-                                {device ? (
-                                    <PixelColorGraph device={device} />
-                                ) : (
-                                    <DisplayPixelColorGraph display={display} />
-                                )}
-                            </CardContent>
-                        </Card>
-                    </Grid>
-                ) : (
-                    renderPixelGraph(display, effect)
-                )}
-
+                {renderPixelGraph(display, effect, device)}
                 <Grid item xs={12} lg={6}>
                     <Card>
                         <CardContent>
@@ -98,13 +84,17 @@ const DisplayView = ({
     );
 };
 
-const renderPixelGraph = (display, effect) => {
-    if (display && effect?.name) {
+const renderPixelGraph = (display, effect, device) => {
+    if (display) {
         return (
             <Grid item xs={12}>
                 <Card>
-                    <CardContent>
-                        <DisplayPixelColorGraph display={display} />
+                    <CardContent className={`effect-${!!effect}`}>
+                        {device ? (
+                            <PixelColorGraph device={device} />
+                        ) : (
+                            <DisplayPixelColorGraph display={display} />
+                        )}
                     </CardContent>
                 </Card>
             </Grid>
