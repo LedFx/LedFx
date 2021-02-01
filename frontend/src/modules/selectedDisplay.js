@@ -1,6 +1,6 @@
 import { createAction, handleActions } from 'redux-actions';
 import * as displayProxies from 'proxies/display';
-
+import { showdynSnackbar } from './ui';
 // Actions
 const ACTION_ROOT = 'selectedDisplay';
 
@@ -69,14 +69,21 @@ export function setDisplayEffect(displayId, { type, config }) {
         try {
             const {
                 statusText,
-                data: { effect },
+                data: { effect, payload },
             } = await proxy(displayId, {
                 type,
                 config,
             });
-
+            if (payload) {
+                dispatch(
+                    showdynSnackbar({
+                        message: payload.reason,
+                        type: payload.type,
+                    })
+                );
+            }
             if (statusText !== 'OK') {
-                throw new Error(`Error Clearing Display:${displayId} Effect`);
+                throw new Error(`Error setting Display:${displayId} Effect`);
             }
             dispatch(effectReceived(effect));
         } catch (error) {
