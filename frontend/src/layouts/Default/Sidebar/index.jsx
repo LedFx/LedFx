@@ -19,7 +19,6 @@ import { camelToSnake } from 'utils/helpers';
 
 import BottomBar from './BottomBar.js';
 const Links = ({ classes, devMode, effectLinks, isViewActive }) => {
-    const devices = useSelector(state => state.settings.devices);
     const displays = useSelector(state => state.displays.list);
 
     return (
@@ -44,60 +43,6 @@ const Links = ({ classes, devMode, effectLinks, isViewActive }) => {
                     listItemClass = listItemClass + ' ' + classes.activeView;
                 }
 
-                if (prop.sidebarName === 'Devices') {
-                    return (
-                        <div className={classes.item} key={key} style={{ display: 'none' }}>
-                            <ListItem button className={listItemClass} key={prop.sidebarName}>
-                                <NavLink
-                                    to={`/devices`}
-                                    className={classes.item}
-                                    activeClassName="active"
-                                >
-                                    <ListItemIcon className={classes.itemIcon}>
-                                        <prop.icon />
-                                    </ListItemIcon>
-                                    <ListItemText
-                                        primary={prop.sidebarName}
-                                        className={classes.itemText}
-                                        disableTypography={true}
-                                    />
-                                </NavLink>
-                                <List className={classes.list}>
-                                    {devices.map(device => {
-                                        let listItemClass = classes.itemLink;
-                                        if (isViewActive(`/devices/${device.id}`)) {
-                                            listItemClass = `${listItemClass} ${classes.activeView}`;
-                                        }
-                                        return (
-                                            <NavLink
-                                                to={`/devices/${device.id}`}
-                                                className={classes.item}
-                                                key={device.id}
-                                                activeClassName="active"
-                                            >
-                                                <ListItem button className={listItemClass}>
-                                                    <ListItemIcon className={classes.itemIcon}>
-                                                        <Icon>
-                                                            {camelToSnake(
-                                                                device.config.icon_name ||
-                                                                    'SettingsInputComponent'
-                                                            )}
-                                                        </Icon>
-                                                    </ListItemIcon>
-                                                    <ListItemText
-                                                        primary={device.config.name}
-                                                        className={classes.devicesItemText}
-                                                        disableTypography={true}
-                                                    />
-                                                </ListItem>
-                                            </NavLink>
-                                        );
-                                    })}
-                                </List>
-                            </ListItem>
-                        </div>
-                    );
-                }
                 if (prop.sidebarName === 'Displays') {
                     return (
                         <div className={classes.item} key={key}>
