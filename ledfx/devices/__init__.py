@@ -175,14 +175,18 @@ class Device(BaseRegistry):
 
     def add_segment(self, display_id, start_pixel, end_pixel):
         # make sure this segment doesn't overlap with any others
-        for _display, segment_start, segment_end in self._segments:
+        for _display_id, segment_start, segment_end in self._segments:
             overlap = (
                 min(segment_end, end_pixel)
                 - max(segment_start, start_pixel)
                 + 1
             )
             if overlap > 0:
-                msg = f"Failed to activate display '{display_id}': {overlap}px overlap with display '{_display}' on device '{self.name}'"
+                display_name = self._ledfx.displays.get(display_id).name
+                blocking_display_name = self._ledfx.displays.get(
+                    _display_id
+                ).name
+                msg = f"Failed to activate effect! '{display_name}' and '{blocking_display_name}' have 68px overlap"
                 _LOGGER.warning(msg)
                 raise ValueError(msg)
 
@@ -195,6 +199,8 @@ class Device(BaseRegistry):
         self._segments = [
             segment for segment in self._segments if segment[0] != display_id
         ]
+        if display_id == self.priority_display:
+            self.invalidate_cached_props()
 
     def clear_segments(self):
         self._segments = []
