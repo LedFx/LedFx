@@ -21,6 +21,7 @@
         "glob": "^7.1.6",
         "history": "^4.10.1",
         "material-ui-theme-state": "^1.0.30",
+        "pkce-challenge": "^2.1.0",
         "react": "^16.13.1",
         "react-ace": "^9.2.1",
         "react-beautiful-dnd": "^13.0.0",
@@ -39,6 +40,7 @@
         "spotify-web-api-node": "^4.0.0",
         "styled-components": "^5.2.1",
         "tv4": "^1.3.0",
+        "universal-cookie": "^4.0.4",
         "uuid": "^8.3.2"
     },
     "scripts": {

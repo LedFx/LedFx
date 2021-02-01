@@ -7,6 +7,7 @@ import settings from './settings';
 import virtuals from './virtuals';
 import integrations from './integrations';
 import ui from './ui';
+import spotify from './spotify'
 
 export default {
     devices,
@@ -18,4 +19,5 @@ export default {
     selectedDevice,
     virtuals,
     ui,
+    spotify
 };
