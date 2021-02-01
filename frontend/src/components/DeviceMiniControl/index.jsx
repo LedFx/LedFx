@@ -53,7 +53,7 @@ const DeviceMiniControl = props => {
     return (
         <Grid container direction="row" spacing={1} justify="space-between">
             <Grid item xs="auto">
-                <NavLink to={`/devices/${id}`} className={classes.textLink} key={id}>
+                <NavLink to={`/displays/${id}`} className={classes.textLink} key={id}>
                     <Typography variant="h5">{config.name}</Typography>
                 </NavLink>
                 <Typography variant="body1" color="textSecondary">
@@ -67,7 +67,6 @@ const DeviceMiniControl = props => {
 DeviceMiniControl.propTypes = {
     classes: PropTypes.object.isRequired,
     device: PropTypes.object.isRequired,
-    setDeviceEffect: PropTypes.func.isRequired,
 };
 
 export default withStyles(styles)(DeviceMiniControl);
