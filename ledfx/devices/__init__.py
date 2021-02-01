@@ -186,7 +186,7 @@ class Device(BaseRegistry):
                 blocking_display_name = self._ledfx.displays.get(
                     _display_id
                 ).name
-                msg = f"Failed to activate effect! '{display_name}' and '{blocking_display_name}' have 68px overlap"
+                msg = f"Failed to activate effect! '{display_name}' overlaps with active display '{blocking_display_name}'"
                 _LOGGER.warning(msg)
                 raise ValueError(msg)
 
