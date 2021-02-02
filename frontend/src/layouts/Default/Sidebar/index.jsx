@@ -18,6 +18,7 @@ import { fetchDisplayList } from 'modules/displays.js';
 import { camelToSnake } from 'utils/helpers';
 
 import BottomBar from './BottomBar.js';
+import Wled from 'components/CustomIcons/Wled.js';
 const Links = ({ classes, devMode, effectLinks, isViewActive }) => {
     const displays = useSelector(state => state.displays.list);
 
@@ -63,6 +64,7 @@ const Links = ({ classes, devMode, effectLinks, isViewActive }) => {
                                 </NavLink>
                                 <List className={classes.list}>
                                     {displays.map(display => {
+                                        console.log(typeof display.config.icon_name);
                                         let listItemClass = classes.itemLink;
                                         if (isViewActive(`/displays/${display.id}`)) {
                                             listItemClass = `${listItemClass} ${classes.activeView}`;
@@ -77,9 +79,26 @@ const Links = ({ classes, devMode, effectLinks, isViewActive }) => {
                                                 <ListItem button className={listItemClass}>
                                                     <ListItemIcon className={classes.itemIcon}>
                                                         <Icon>
-                                                            {camelToSnake(
-                                                                display.config.icon_name ||
-                                                                    'SettingsInputComponent'
+                                                            {display.config.icon_name &&
+                                                            display.config.icon_name.startsWith(
+                                                                'wled'
+                                                            ) ? (
+                                                                <Wled />
+                                                            ) : display.config.icon_name.startsWith(
+                                                                  'mdi:'
+                                                              ) ? (
+                                                                <span
+                                                                    className={`mdi mdi-${
+                                                                        display.config.icon_name.split(
+                                                                            'mdi:'
+                                                                        )[1]
+                                                                    }`}
+                                                                ></span>
+                                                            ) : (
+                                                                camelToSnake(
+                                                                    display.config.icon_name ||
+                                                                        'SettingsInputComponent'
+                                                                )
                                                             )}
                                                         </Icon>
                                                     </ListItemIcon>
