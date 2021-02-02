@@ -38,7 +38,6 @@ class SettingsView extends Component {
                     <Grid item md={12}>
                         <LogCard />
                     </Grid>
-                    `
                 </Grid>
             </Grid>
         );
