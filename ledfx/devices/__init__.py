@@ -32,7 +32,7 @@ class Device(BaseRegistry):
             vol.Optional(
                 "icon_name",
                 description="https://material-ui.com/components/material-icons/",
-                default="SettingsInputComponent",
+                default="mdi:led-strip",
             ): str,
             vol.Optional(
                 "center_offset",
@@ -304,7 +304,7 @@ class WLEDListener:
                 "name": wledname,
                 "pixel_count": wledcount,
                 "ip_address": hostname,
-                "icon_name": "SettingsInputComponent",
+                "icon_name": "wled",
             }
 
             # Check this device doesn't share IP, name or hostname with any current saved device
