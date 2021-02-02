@@ -64,7 +64,6 @@ const Links = ({ classes, devMode, effectLinks, isViewActive }) => {
                                 </NavLink>
                                 <List className={classes.list}>
                                     {displays.map(display => {
-                                        console.log(typeof display.config.icon_name);
                                         let listItemClass = classes.itemLink;
                                         if (isViewActive(`/displays/${display.id}`)) {
                                             listItemClass = `${listItemClass} ${classes.activeView}`;
