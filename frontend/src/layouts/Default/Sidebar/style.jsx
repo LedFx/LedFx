@@ -104,7 +104,6 @@ const sidebarStyle = theme => ({
         height: '30px',
         float: 'left',
         marginRight: '15px',
-        marginTop: '2px',
         textAlign: 'center',
         verticalAlign: 'baseline',
         color: 'rgba(255, 255, 255, 0.8)',
