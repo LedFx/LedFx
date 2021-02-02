@@ -77,7 +77,18 @@ const Links = ({ classes, devMode, effectLinks, isViewActive }) => {
                                             >
                                                 <ListItem button className={listItemClass}>
                                                     <ListItemIcon className={classes.itemIcon}>
-                                                        <Icon>
+                                                        <Icon
+                                                            color={
+                                                                display.effect &&
+                                                                display.effect.active === true
+                                                                    ? isViewActive(
+                                                                          `/displays/${display.id}`
+                                                                      )
+                                                                        ? 'inherit'
+                                                                        : 'primary'
+                                                                    : 'inherit'
+                                                            }
+                                                        >
                                                             {display.config.icon_name &&
                                                             display.config.icon_name.startsWith(
                                                                 'wled'
