@@ -232,7 +232,7 @@ class Effect(BaseRegistry):
     def update_config(self, config):
         # TODO: Sync locks to ensure everything is thread safe
         validated_config = type(self).schema()(config)
-        self._config = validated_config
+        self._config = self._config | validated_config
 
         self._bg_color = np.array(
             COLORS[self._config["background_color"]], dtype=float

@@ -102,11 +102,15 @@ class EffectsEndpoint(RestEndpoint):
                 effect_config[setting.schema] = val
 
         # Create the effect and add it to the display
-        effect = self._ledfx.effects.create(
-            ledfx=self._ledfx, type=effect_type, config=effect_config
-        )
+
         try:
-            display.set_effect(effect)
+            if display.active_effect.type == effect_type:
+                display.active_effect.update_config(effect_config)
+            else:
+                effect = self._ledfx.effects.create(
+                    ledfx=self._ledfx, type=effect_type, config=effect_config
+                )
+                display.set_effect(effect)
         except (ValueError, RuntimeError) as msg:
             response = {
                 "status": "failed",
