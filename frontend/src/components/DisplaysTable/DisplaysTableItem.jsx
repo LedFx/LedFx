@@ -13,6 +13,7 @@ import DisplaySegmentsDialog from 'components/DisplaySegmentsDialog';
 import { camelToSnake } from 'utils/helpers';
 import TuneIcon from '@material-ui/icons/Tune';
 import BuildIcon from '@material-ui/icons/Build';
+import Wled from 'components/CustomIcons/Wled';
 
 const styles = theme => ({
     deleteButton: {
@@ -59,8 +60,16 @@ function DisplaysTableItem({
     return (
         <TableRow key={display.id}>
             <TableCell component="th" scope="row" width="35px">
-                <Icon style={{ verticalAlign: 'bottom' }}>
-                    {camelToSnake(display.config.icon_name || 'SettingsInputComponent')}
+                <Icon>
+                    {display.config.icon_name && display.config.icon_name.startsWith('wled') ? (
+                        <Wled />
+                    ) : display.config.icon_name.startsWith('mdi:') ? (
+                        <span
+                            className={`mdi mdi-${display.config.icon_name.split('mdi:')[1]}`}
+                        ></span>
+                    ) : (
+                        camelToSnake(display.config.icon_name || 'SettingsInputComponent')
+                    )}
                 </Icon>
             </TableCell>
             <TableCell>
