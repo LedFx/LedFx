@@ -14,6 +14,8 @@ import { camelToSnake } from 'utils/helpers';
 import TuneIcon from '@material-ui/icons/Tune';
 import BuildIcon from '@material-ui/icons/Build';
 import Wled from 'components/CustomIcons/Wled';
+import DoneIcon from '@material-ui/icons/Done';
+import ClearIcon from '@material-ui/icons/Clear';
 
 const styles = theme => ({
     deleteButton: {
@@ -60,7 +62,9 @@ function DisplaysTableItem({
     return (
         <TableRow key={display.id}>
             <TableCell component="th" scope="row" width="35px">
-                <Icon>
+                <Icon
+                    color={display.effect && display.effect.active === true ? 'primary' : 'inherit'}
+                >
                     {display.config.icon_name && display.config.icon_name.startsWith('wled') ? (
                         <Wled />
                     ) : display.config.icon_name.startsWith('mdi:') ? (
@@ -86,13 +90,13 @@ function DisplaysTableItem({
                 {display.config.max_brightness}
             </TableCell>
             <TableCell className={classes.displaySettings}>{display.config.crossfade}</TableCell>
-            <TableCell className={classes.displaySettings}>
+            <TableCell align="center" className={classes.displaySettings}>
                 {display.config.center_offset}
             </TableCell>
-            <TableCell className={classes.displaySettings}>
-                <Switch checked={display.config.preview_only} />
+            <TableCell valign="bottom" className={classes.displaySettings}>
+                {display.config.preview_only ? <DoneIcon /> : <ClearIcon />}
             </TableCell>
-            <TableCell align="right">
+            <TableCell align="right" valign="bottom">
                 <PopoverSure onConfirm={handleDeleteDevice} className={classes.deleteButton} />
 
                 {display.is_device ? (
