@@ -28,7 +28,7 @@ class Display(object):
             vol.Optional(
                 "icon_name",
                 description="https://material-ui.com/components/material-icons/",
-                default="SettingsInputComponent",
+                default="mdi:led-strip-variant",
             ): str,
             vol.Optional(
                 "max_brightness",
