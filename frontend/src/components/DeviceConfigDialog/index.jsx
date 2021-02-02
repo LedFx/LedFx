@@ -141,6 +141,7 @@ class DeviceConfigDialog extends React.Component {
                             : ` To add a device to LedFx, please first select the type of device you wish to
                                 add then provide the necessary configuration.`}
                     </DialogContentText>
+
                     <form onSubmit={this.handleSubmit} className={classes.form}>
                         <DropDown
                             label="Type"
@@ -161,13 +162,20 @@ class DeviceConfigDialog extends React.Component {
                         />
 
                         {showAdditionalUi && (
-                            <AdditionalProperties
-                                schema={currentSchema}
-                                form={optionalKeys}
-                                model={model}
-                                onChange={this.onModelChange}
-                                open={additionalPropertiesOpen}
-                            />
+                            <>
+
+                                <AdditionalProperties
+                                    schema={currentSchema}
+                                    form={optionalKeys}
+                                    model={model}
+                                    onChange={this.onModelChange}
+                                    open={additionalPropertiesOpen}
+                                />
+                                <DialogContentText>
+                                    {additionalPropertiesOpen &&
+                                        'You can choose between 2 sets of icons'}
+                                </DialogContentText>
+                            </>
                         )}
 
                         <DialogActions className={classes.bottomContainer}>
