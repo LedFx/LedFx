@@ -8,6 +8,7 @@ import yaml
 
 CONFIG_DIRECTORY = ".ledfx"
 CONFIG_FILE_NAME = "config.json"
+OLD_CONFIG_FILE_NAME = "config.yaml"
 DEFAULT_PRESETS_FILE_NAME = "default_presets.json"
 
 CORE_CONFIG_SCHEMA = vol.Schema(
@@ -44,10 +45,18 @@ def get_default_config_directory() -> str:
 
 
 def get_config_file(config_dir: str) -> str:
-    """Finds a supported configuration fill in the provided directory"""
+    """Finds a supported configuration file in the provided directory"""
 
-    config_path = os.path.join(config_dir, CONFIG_FILE_NAME)
-    return config_path if os.path.isfile(config_path) else None
+    json_path = os.path.join(config_dir, CONFIG_FILE_NAME)
+    if os.path.isfile(json_path) is False:  # Can't find a JSON file
+        yaml_path = os.path.join(
+            config_dir, OLD_CONFIG_FILE_NAME
+        )  # Look for an old YAML file
+        if os.path.isfile(yaml_path):  # Found one!
+            return yaml_path  # Return the YAML File
+        else:
+            return None  # No Valid Configs, return None to build another one
+    return json_path  # Return the JSON file if we find one.
 
 
 def get_log_file_location():
@@ -61,8 +70,8 @@ def create_default_config(config_dir: str) -> str:
 
     config_path = os.path.join(config_dir, CONFIG_FILE_NAME)
     try:
-        with open(config_path, "rt") as file:
-            file.write(orjson.dump(CORE_CONFIG_SCHEMA({})))
+        with open(config_path, "wb") as file:
+            file.write(orjson.dumps(CORE_CONFIG_SCHEMA({})))
         return config_path
 
     except IOError:
@@ -113,14 +122,17 @@ def load_config(config_dir: str) -> dict:
 
     config_file = ensure_config_file(config_dir)
     print(("Loading configuration file from {}").format(config_dir))
+
     if config_file.endswith("yaml"):
         migrate_config(config_dir, config_file)
-    try:
-        with open(config_file, "rt") as file:
-            config_json = orjson.loads(file.read())
-            return CORE_CONFIG_SCHEMA(config_json)
-    except orjson.JSONDecodeError:
-        return CORE_CONFIG_SCHEMA({})
+        try:
+            with open(config_dir, "rt") as file:
+                config_json = orjson.loads(file.read())
+                return CORE_CONFIG_SCHEMA(config_json)
+        except orjson.JSONDecodeError:
+            _LOGGER.warning(f"Error loading {config_file}.")
+            return CORE_CONFIG_SCHEMA({})
+    return CORE_CONFIG_SCHEMA({})
 
 
 def load_default_presets() -> dict:
@@ -154,3 +166,9 @@ def migrate_config(config_dir, config_file):
     with open(config_file, "rt") as file:
         config_yaml = yaml.safe_load(file)
         save_config(config_yaml, config_dir)
+    try:
+        os.remove(config_file)
+    except PermissionError as DelError:
+        _LOGGER.warning(
+            f"Unable to Delete Old Configuration File: {DelError}."
+        )
