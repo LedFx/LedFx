@@ -19,7 +19,7 @@ SETUP_REQUIRES = [
 ]
 
 INSTALL_REQUIRES = [
-    "numpy>=1.19.5",
+    "numpy>=1.20",
     "voluptuous>=0.12.0",
     "pyaudio>=0.2.11",
     "sacn>=1.4.6",
