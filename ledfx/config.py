@@ -1,6 +1,7 @@
 import logging
 import os
 import sys
+import time
 
 import orjson
 import voluptuous as vol
@@ -125,13 +126,16 @@ def load_config(config_dir: str) -> dict:
 
     if config_file.endswith("yaml"):
         migrate_config(config_dir, config_file)
-        try:
-            with open(config_dir, "rt") as file:
-                config_json = orjson.loads(file.read())
-                return CORE_CONFIG_SCHEMA(config_json)
-        except orjson.JSONDecodeError:
-            _LOGGER.warning(f"Error loading {config_file}.")
-            return CORE_CONFIG_SCHEMA({})
+    try:
+        open_timer = time.time_ns()
+        with open(config_file, "rt") as file:
+            config_json = orjson.loads(file.read())
+            finish_time = time.time_ns() - open_timer
+            print(finish_time)
+            return CORE_CONFIG_SCHEMA(config_json)
+    except orjson.JSONDecodeError:
+        _LOGGER.warning(f"Error loading {config_file}.")
+        return CORE_CONFIG_SCHEMA({})
     return CORE_CONFIG_SCHEMA({})
 
 
