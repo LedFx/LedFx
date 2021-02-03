@@ -1,3 +1,4 @@
+import datetime
 import logging
 import os
 import sys
@@ -132,7 +133,17 @@ def load_config(config_dir: str) -> dict:
             config_json = orjson.loads(file.read())
             return CORE_CONFIG_SCHEMA(config_json)
     except orjson.JSONDecodeError:
-        _LOGGER.warning(f"Error loading {config_file}.")
+        date = datetime.date.today()
+        backup_location = os.path.join(
+            config_dir, f"config.json.backup.{date}"
+        )
+        os.rename(config_file, backup_location)
+        _LOGGER.warning(
+            "Error loading configuration. Backup created, empty configuration used."
+        )
+        _LOGGER.warning(
+            f"Please check the backup for JSON errors if required - {backup_location}"
+        )
         return CORE_CONFIG_SCHEMA({})
 
 
@@ -170,8 +181,12 @@ def migrate_config(config_dir, config_file):
         with open(json_config_file, "wb") as file:
             file.write(orjson.dumps(config_yaml, option=orjson.OPT_INDENT_2))
     try:
-        os.remove(config_file)
+        old_config_location = os.path.join(
+            config_dir, f"{datetime.date.today()}_config.yaml.backup"
+        )
+        _LOGGER.info(f"Renaming old configuration to {old_config_location}")
+        os.rename(config_file, old_config_location)
     except PermissionError as DelError:
         _LOGGER.warning(
-            f"Unable to Delete Old Configuration File: {DelError}."
+            f"Unable to rename old configuration file: {DelError}."
         )
