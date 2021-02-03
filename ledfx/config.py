@@ -1,7 +1,6 @@
 import logging
 import os
 import sys
-import time
 
 import orjson
 import voluptuous as vol
@@ -126,17 +125,15 @@ def load_config(config_dir: str) -> dict:
 
     if config_file.endswith("yaml"):
         migrate_config(config_dir, config_file)
+        config_file = os.path.join(config_dir, CONFIG_FILE_NAME)
     try:
-        open_timer = time.time_ns()
+
         with open(config_file, "rt") as file:
             config_json = orjson.loads(file.read())
-            finish_time = time.time_ns() - open_timer
-            print(finish_time)
             return CORE_CONFIG_SCHEMA(config_json)
     except orjson.JSONDecodeError:
         _LOGGER.warning(f"Error loading {config_file}.")
         return CORE_CONFIG_SCHEMA({})
-    return CORE_CONFIG_SCHEMA({})
 
 
 def load_default_presets() -> dict:
@@ -169,7 +166,9 @@ def migrate_config(config_dir, config_file):
     print(f"Migrating configuration file to JSON: {config_file}")
     with open(config_file, "rt") as file:
         config_yaml = yaml.safe_load(file)
-        save_config(config_yaml, config_dir)
+        json_config_file = os.path.join(config_dir, CONFIG_FILE_NAME)
+        with open(json_config_file, "wb") as file:
+            file.write(orjson.dumps(config_yaml, option=orjson.OPT_INDENT_2))
     try:
         os.remove(config_file)
     except PermissionError as DelError:
