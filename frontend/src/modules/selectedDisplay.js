@@ -81,11 +81,12 @@ export function setDisplayEffect(displayId, { type, config }) {
                         type: payload.type,
                     })
                 );
+                dispatch(clearDisplayEffect(displayId));
             }
             if (statusText !== 'OK') {
                 throw new Error(`Error setting Display:${displayId} Effect`);
             }
-            dispatch(effectReceived(effect));
+            if (!payload) dispatch(effectReceived(effect));
         } catch (error) {
             dispatch(effectReceived(error));
         }
