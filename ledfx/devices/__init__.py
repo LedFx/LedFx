@@ -25,6 +25,11 @@ class Device(BaseRegistry):
                 "name", description="Friendly name for the device"
             ): str,
             vol.Optional(
+                "rgbw_led",
+                description="RGBW LED's",
+                default=False,
+            ): bool,
+            vol.Optional(
                 "icon_name",
                 description="https://material-ui.com/components/material-icons/",
                 default="mdi:led-strip",
@@ -274,24 +279,20 @@ class WLEDListener:
             wledled = b["leds"]
             wledname = b["name"]
             wledcount = wledled["count"]
-
+            wledrgbmode = wledled["rgbw"]
             # We need to use a universe size of 510 if there are more than 170
             # pixels to prevent spanning pixel data across sequential universes
-            if wledcount > 170:
-                unisize = 510
-            else:
-                unisize = 512
 
             device_id = generate_id(wledname)
             device_type = "e131"
             device_config = {
                 "refresh_rate": 60,
                 "universe": 1,
-                "universe_size": unisize,
                 "name": wledname,
                 "pixel_count": wledcount,
                 "ip_address": hostname,
                 "icon_name": "wled",
+                "rgbw_led": wledrgbmode,
             }
 
             # Check this device doesn't share IP, name or hostname with any current saved device

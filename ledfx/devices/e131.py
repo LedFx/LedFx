@@ -31,11 +31,6 @@ class E131Device(Device):
                 default=1,
             ): vol.All(vol.Coerce(int), vol.Range(min=1)),
             vol.Optional(
-                "universe_size",
-                description="Size of each DMX universe. Leave at 510 unless you know what you're doing.",
-                default=510,
-            ): vol.All(vol.Coerce(int), vol.Range(min=1)),
-            vol.Optional(
                 "channel_offset",
                 description="Channel offset within the DMX universe",
                 default=0,
@@ -50,7 +45,13 @@ class E131Device(Device):
 
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
-
+        # Since RGBW data is 4 packets, we can use 512 for RGBW LEDs; 512/4 = 128
+        # The 129th pixels data will span into the next universe correctly
+        # If it's not, we lose nothing by using a smaller universe size and keeping things easy for the end user (and us!)
+        if self._config["rgbw_led"] is True:
+            self._config["universe_size"] = 512
+        else:
+            self._config["universe_size"] = 510
         # Allow for configuring in terms of "pixels" or "channels"
 
         if "pixel_count" in self._config:
