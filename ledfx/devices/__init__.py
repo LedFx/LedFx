@@ -25,11 +25,6 @@ class Device(BaseRegistry):
                 "name", description="Friendly name for the device"
             ): str,
             vol.Optional(
-                "max_brightness",
-                description="Max brightness for the device",
-                default=1.0,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0, max=1)),
-            vol.Optional(
                 "icon_name",
                 description="https://material-ui.com/components/material-icons/",
                 default="mdi:led-strip",
@@ -101,11 +96,8 @@ class Device(BaseRegistry):
         the active channels pixels, but will eventually handle things like
         merging multiple segments segments and alpha blending channels
         """
-        frame = np.clip(
-            self._pixels * self._config["max_brightness"],
-            0,
-            255,
-        )
+        frame = self._pixels
+
         if self._config["center_offset"]:
             frame = np.roll(frame, self._config["center_offset"], axis=0)
         return frame
@@ -129,10 +121,6 @@ class Device(BaseRegistry):
     @property
     def name(self):
         return self._config["name"]
-
-    @property
-    def max_brightness(self):
-        return self._config["max_brightness"] * 256
 
     @property
     def max_refresh_rate(self):
@@ -297,7 +285,6 @@ class WLEDListener:
             device_id = generate_id(wledname)
             device_type = "e131"
             device_config = {
-                "max_brightness": 1,
                 "refresh_rate": 60,
                 "universe": 1,
                 "universe_size": unisize,
