@@ -1,0 +1,1110 @@
+{
+  "bar(Reactive)": {
+    "bouncing-blues": {
+      "config": {
+        "blur": 0,
+        "brightness": 1,
+        "color_step": 0.125,
+        "ease_method": "ease_in",
+        "flip": true,
+        "gradient_name": "Winter",
+        "gradient_roll": 0,
+        "mirror": true,
+        "mode": "bounce"
+      },
+      "name": "Bouncing Blues"
+    },
+    "passing-by": {
+      "config": {
+        "blur": 2.839485681326729,
+        "brightness": 1,
+        "color_step": 0.3,
+        "ease_method": "linear",
+        "flip": true,
+        "gradient_name": "Borealis",
+        "gradient_roll": 0,
+        "mirror": false,
+        "mode": "wipe"
+      },
+      "name": "Passing By"
+    },
+    "plasma-cascade": {
+      "config": {
+        "blur": 0,
+        "brightness": 1,
+        "color_step": 0.125,
+        "ease_method": "ease_out",
+        "flip": true,
+        "gradient_name": "Plasma",
+        "gradient_roll": 0,
+        "mirror": true,
+        "mode": "wipe"
+      },
+      "name": "Plasma Cascade"
+    },
+    "smooth-bounce": {
+      "config": {
+        "blur": 7.887483619649835,
+        "brightness": 0.41398053171237414,
+        "color_step": 0.17968481885863682,
+        "ease_method": "ease_in_out",
+        "flip": true,
+        "gradient_name": "Dancefloor",
+        "gradient_roll": 3,
+        "mirror": true,
+        "mode": "bounce"
+      },
+      "name": "Smooth Bounce"
+    },
+    "Rainbow-lr": {
+      "config": {
+        "blur": 0,
+        "brightness": 1,
+        "color_step": 0.125,
+        "ease_method": "ease_out",
+        "flip": false,
+        "gradient_name": "Rainbow",
+        "gradient_roll": 0,
+        "mirror": false,
+        "mode": "wipe"
+      },
+      "name": "Rainbow LR"
+    }
+  },
+  "energy(Reactive)": {
+    "clear-sky": {
+      "config": {
+        "blur": 0.5,
+        "brightness": 1,
+        "color_high": "cyan",
+        "color_lows": "yellow",
+        "color_mids": "green",
+        "flip": false,
+        "mirror": true,
+        "mixing_mode": "overlap",
+        "sensitivity": 0.65
+      },
+      "name": "Clear Sky"
+    },
+    "smooth-plasma": {
+      "config": {
+        "blur": 8.272401272970361,
+        "brightness": 1,
+        "color_high": "red",
+        "color_lows": "blue",
+        "color_mids": "pink",
+        "flip": false,
+        "mirror": true,
+        "mixing_mode": "overlap",
+        "sensitivity": 0.4
+      },
+      "name": "Smooth Plasma"
+    },
+    "smooth-rainbow": {
+      "config": {
+        "block_count": 4,
+        "blur": 7.887483619649835,
+        "brightness": 0.41398053171237414,
+        "color_high": "blue",
+        "color_lows": "red",
+        "color_mids": "green",
+        "color_step": 0.17968481885863682,
+        "ease_method": "ease_in_out",
+        "flip": false,
+        "gradient_name": "Dancefloor",
+        "gradient_roll": 3,
+        "mirror": true,
+        "mixing_mode": "overlap",
+        "mode": "bounce",
+        "sensitivity": 0.7
+      },
+      "name": "Smooth Rainbow"
+    },
+    "snappy-blues": {
+      "config": {
+        "blur": 1.2106147823794156,
+        "brightness": 0.7261714611489691,
+        "color_high": "green",
+        "color_lows": "blue",
+        "color_mids": "blue-aqua",
+        "flip": true,
+        "mirror": true,
+        "mixing_mode": "additive",
+        "sensitivity": 0.9341200404219574
+      },
+      "name": "Snappy Blues"
+    }
+  },
+  "fade": {
+    "blues": {
+      "config": {
+        "blur": 4.555260047376609,
+        "brightness": 1,
+        "flip": true,
+        "gradient_name": "Ocean",
+        "gradient_roll": 1,
+        "mirror": false,
+        "speed": 5
+      },
+      "name": "Blues"
+    },
+    "calm-reds": {
+      "config": {
+        "blur": 4.555260047376609,
+        "brightness": 1,
+        "flip": true,
+        "gradient_name": "Rust",
+        "gradient_roll": 1,
+        "mirror": false,
+        "speed": 5
+      },
+      "name": "Calm Reds"
+    },
+    "rainbow-cycle": {
+      "config": {
+        "blur": 4.555260047376609,
+        "brightness": 1,
+        "flip": true,
+        "gradient_name": "Rainbow",
+        "gradient_roll": 1,
+        "mirror": false,
+        "speed": 5
+      },
+      "name": "Rainbow Cycle"
+    },
+    "red-to-blue": {
+      "config": {
+        "blur": 4.555260047376609,
+        "brightness": 1,
+        "flip": true,
+        "gradient_name": "Dancefloor",
+        "gradient_roll": 1,
+        "mirror": false,
+        "speed": 4.947172298543705
+      },
+      "name": "Red to Blue"
+    },
+    "sunset": {
+      "config": {
+        "blur": 4.555260047376609,
+        "brightness": 1,
+        "flip": true,
+        "gradient_name": "Sunset",
+        "gradient_roll": 1,
+        "mirror": false,
+        "speed": 5
+      },
+      "name": "Sunset"
+    }
+  },
+  "gradient": {
+    "breathing": {
+      "config": {
+        "blur": 0.4148550128345929,
+        "brightness": 0.8915312043037767,
+        "flip": false,
+        "gradient_name": "Viridis",
+        "gradient_roll": 6,
+        "mirror": true,
+        "modulate": true,
+        "modulation_effect": "breath",
+        "modulation_speed": 0.5869113302419875,
+        "speed": 0.4156627763155395
+      },
+      "name": "Breathing"
+    },
+    "falling-blues": {
+      "config": {
+        "blur": 4.009287732631032,
+        "brightness": 0.9051452799816977,
+        "flip": true,
+        "gradient_name": "Ocean",
+        "gradient_roll": 4,
+        "mirror": true,
+        "modulate": false,
+        "modulation_effect": "breath",
+        "modulation_speed": 0.11693932144812554,
+        "speed": 2.8306554810607767
+      },
+      "name": "Falling Blues"
+    },
+    "rolling-sunset": {
+      "config": {
+        "blur": 8.587469069357562,
+        "brightness": 1,
+        "flip": true,
+        "gradient_name": "Sunset",
+        "gradient_roll": 4,
+        "mirror": false,
+        "modulate": false,
+        "modulation_effect": "sine",
+        "modulation_speed": 0.5,
+        "speed": 1
+      },
+      "name": "Rolling Sunset"
+    },
+    "Rainbow-roll": {
+      "config": {
+        "blur": 0.24438981530504167,
+        "brightness": 0.7114940200156161,
+        "flip": false,
+        "gradient_name": "Rainbow",
+        "gradient_roll": 1,
+        "mirror": true,
+        "modulate": true,
+        "modulation_effect": "sine",
+        "modulation_speed": 0.9690619871670397,
+        "speed": 5.608624445883839
+      },
+      "name": "Rainbow Roll"
+    },
+    "spectrum": {
+      "config": {
+        "blur": 0.24438981530504167,
+        "brightness": 0.7114940200156161,
+        "flip": false,
+        "gradient_name": "Rainbow",
+        "gradient_roll": 0,
+        "mirror": false,
+        "modulate": false,
+        "modulation_effect": "sine",
+        "modulation_speed": 0.9690619871670397,
+        "speed": 5.608624445883839
+      },
+      "name": "Spectrum"
+    },
+    "twister": {
+      "config": {
+        "blur": 9.302811759842648,
+        "brightness": 0.8849752609033179,
+        "flip": false,
+        "gradient_name": "Viridis",
+        "gradient_roll": 7,
+        "mirror": false,
+        "modulate": true,
+        "modulation_effect": "breath",
+        "modulation_speed": 0.34110727149960707,
+        "speed": 6.7198130241977845
+      },
+      "name": "Twister"
+    },
+    "waves": {
+      "config": {
+        "blur": 6.170079760529817,
+        "brightness": 1,
+        "flip": false,
+        "gradient_name": "Spring",
+        "gradient_roll": 3,
+        "mirror": true,
+        "modulate": true,
+        "modulation_effect": "sine",
+        "modulation_speed": 0.5210822547308631,
+        "speed": 6.433979311861081
+      },
+      "name": "Waves"
+    }
+  },
+  "magnitude(Reactive)": {
+    "cold-fire": {
+      "config": {
+        "blur": 1.3037737000651894,
+        "brightness": 1,
+        "flip": false,
+        "frequency_range": "Bass (60-250Hz)",
+        "gradient_name": "Frost",
+        "gradient_roll": 5,
+        "mirror": true
+      },
+      "name": "Cold Fire"
+    },
+    "jungle-cascade": {
+      "config": {
+        "blur": 8.38330900342954,
+        "brightness": 1,
+        "flip": true,
+        "frequency_range": "Bass (60-250Hz)",
+        "gradient_name": "Jungle",
+        "gradient_roll": 4,
+        "mirror": true
+      },
+      "name": "Jungle Cascade"
+    },
+    "lively": {
+      "config": {
+        "blur": 2.3114887329706866,
+        "brightness": 1,
+        "flip": true,
+        "frequency_range": "Bass (60-250Hz)",
+        "gradient_name": "Viridis",
+        "gradient_roll": 7,
+        "mirror": true
+      },
+      "name": "Lively"
+    },
+    "rolling-rainbow": {
+      "config": {
+        "blur": 5.378434095736014,
+        "brightness": 1,
+        "flip": false,
+        "frequency_range": "Bass (60-250Hz)",
+        "gradient_name": "Borealis",
+        "gradient_roll": 5,
+        "mirror": false
+      },
+      "name": "Rolling Rainbow"
+    },
+    "warm-bass": {
+      "config": {
+        "blur": 8.464669855377387,
+        "brightness": 1,
+        "flip": false,
+        "frequency_range": "Sub Bass (20-60Hz)",
+        "gradient_name": "Christmas",
+        "gradient_roll": 1,
+        "mirror": false
+      },
+      "name": "Warm Bass"
+    }
+  },
+  "multiBar(Reactive)": {
+    "bright-cascade": {
+      "config": {
+        "blur": 3.761401491539508,
+        "brightness": 1,
+        "color_step": 0.40995121399889745,
+        "ease_method": "linear",
+        "flip": true,
+        "gradient_name": "Borealis",
+        "gradient_roll": 7,
+        "mirror": true,
+        "mode": "cascade"
+      },
+      "name": "Bright Cascade"
+    },
+    "falling-blues": {
+      "config": {
+        "blur": 9.090235261100872,
+        "brightness": 0.9689105214410654,
+        "color_step": 0.2,
+        "ease_method": "ease_in",
+        "flip": false,
+        "gradient_name": "Ocean",
+        "gradient_roll": 0,
+        "mirror": false,
+        "mode": "cascade"
+      },
+      "name": "Falling Blues"
+    },
+    "red-blue-expanse": {
+      "config": {
+        "blur": 3.761401491539508,
+        "brightness": 1,
+        "color_step": 0.40995121399889745,
+        "ease_method": "ease_out",
+        "flip": false,
+        "gradient_name": "Dancefloor",
+        "gradient_roll": 7,
+        "mirror": true,
+        "mode": "cascade"
+      },
+      "name": "Red Blue Expanse"
+    },
+    "Rainbow-oscillation": {
+      "config": {
+        "blur": 0,
+        "brightness": 1,
+        "color_step": 0.125,
+        "ease_method": "ease_in_out",
+        "flip": false,
+        "gradient_name": "Rainbow",
+        "gradient_roll": 0,
+        "mirror": false,
+        "mode": "wipe"
+      },
+      "name": "Rainbow Oscillation"
+    }
+  },
+  "rain(Reactive)": {
+    "cold-drops": {
+      "config": {
+        "blur": 1,
+        "brightness": 1,
+        "flip": false,
+        "high_colour": "pink",
+        "high_sensitivity": 0.1,
+        "lows_colour": "white",
+        "lows_sensitivity": 0.1,
+        "mids_colour": "cyan",
+        "mids_sensitivity": 0.05,
+        "mirror": true,
+        "raindrop_animation": "droplet_1.npy"
+      },
+      "name": "Cold Drops"
+    },
+    "meteor-shower": {
+      "config": {
+        "blur": 2.3348743111776225,
+        "brightness": 1,
+        "flip": false,
+        "high_colour": "yellow",
+        "high_sensitivity": 0.1,
+        "lows_colour": "red",
+        "lows_sensitivity": 0.1,
+        "mids_colour": "orange",
+        "mids_sensitivity": 0.05,
+        "mirror": false,
+        "raindrop_animation": "droplet_2.npy"
+      },
+      "name": "Meteor Shower"
+    },
+    "prismatic": {
+      "config": {
+        "blur": 4.864718590808794,
+        "brightness": 1,
+        "flip": false,
+        "high_colour": "pink",
+        "high_sensitivity": 0.1,
+        "lows_colour": "orange",
+        "lows_sensitivity": 0.1,
+        "mids_colour": "green",
+        "mids_sensitivity": 0.05,
+        "mirror": true,
+        "raindrop_animation": "droplet_1.npy"
+      },
+      "name": "Prismatic"
+    },
+    "ripples": {
+      "config": {
+        "blur": 0.7900862850493173,
+        "brightness": 1,
+        "flip": false,
+        "high_colour": "cyan",
+        "high_sensitivity": 0.1,
+        "lows_colour": "orange-deep",
+        "lows_sensitivity": 0.1,
+        "mids_colour": "yellow-acid",
+        "mids_sensitivity": 0.05,
+        "mirror": true,
+        "raindrop_animation": "droplet_0.npy"
+      },
+      "name": "Ripples"
+    },
+    "smooth-rwb": {
+      "config": {
+        "blur": 9.802290441262594,
+        "brightness": 1,
+        "fade_rate": 0.6995150854402795,
+        "flip": false,
+        "gradient_name": "Dancefloor",
+        "gradient_roll": 8,
+        "high_colour": "blue",
+        "high_sensitivity": 0.1,
+        "lows_colour": "white",
+        "lows_sensitivity": 0.1,
+        "mids_colour": "red",
+        "mids_sensitivity": 0.05,
+        "mirror": false,
+        "raindrop_animation": "droplet_0.npy",
+        "responsiveness": 0.8805526178803261
+      },
+      "name": "Smooth RWB"
+    }
+  },
+  "rainbow": {
+    "cascade": {
+      "config": {
+        "blur": 7.723939087082861,
+        "brightness": 1,
+        "flip": false,
+        "frequency": 0.32010374421218135,
+        "mirror": true,
+        "speed": 0.3
+      },
+      "name": "Cascade"
+    },
+    "crawl": {
+      "config": {
+        "blur": 2.264493237992604,
+        "brightness": 1,
+        "flip": true,
+        "frequency": 3.59395180415761,
+        "mirror": false,
+        "speed": 3.5219725685240606
+      },
+      "name": "Crawl"
+    },
+    "faded": {
+      "config": {
+        "blur": 6.446696350342175,
+        "brightness": 1,
+        "flip": true,
+        "frequency": 5.9182720067675705,
+        "mirror": false,
+        "speed": 9.726277976438702
+      },
+      "name": "Faded"
+    },
+    "gentle": {
+      "config": {
+        "blur": 7.722362005672311,
+        "brightness": 0.9790047015060797,
+        "flip": true,
+        "frequency": 1.8998083313002854,
+        "mirror": true,
+        "speed": 3.3340652233785817
+      },
+      "name": "Gentle"
+    },
+    "slow-roll": {
+      "config": {
+        "blur": 0,
+        "brightness": 1,
+        "flip": true,
+        "frequency": 4.442061196764945,
+        "mirror": true,
+        "speed": 1.1239404505421837
+      },
+      "name": "Slow Roll"
+    }
+  },
+  "scroll(Reactive)": {
+    "cold-crawl": {
+      "config": {
+        "blur": 1,
+        "brightness": 1,
+        "color_high": "cyan",
+        "color_lows": "pink",
+        "color_mids": "lightpink",
+        "decay": 1,
+        "flip": false,
+        "mirror": true,
+        "speed": 1,
+        "threshold": 1
+      },
+      "name": "Cold Crawl"
+    },
+    "dynamic-rgb": {
+      "config": {
+        "blur": 3,
+        "brightness": 1,
+        "color_high": "blue",
+        "color_lows": "red",
+        "color_mids": "green",
+        "decay": 0.97,
+        "flip": false,
+        "mirror": true,
+        "speed": 5,
+        "threshold": 0
+      },
+      "name": "Dynamic RGB"
+    },
+    "fast-hits": {
+      "config": {
+        "blur": 0.20444417171673668,
+        "brightness": 1,
+        "color_high": "orange",
+        "color_lows": "green-spring",
+        "color_mids": "plum",
+        "decay": 0.907001664505631,
+        "flip": false,
+        "mirror": true,
+        "speed": 6,
+        "threshold": 0.590340110398889
+      },
+      "name": "Fast Hits"
+    },
+    "gentle-rgb": {
+      "config": {
+        "blur": 7,
+        "brightness": 1,
+        "color_high": "blue",
+        "color_lows": "red",
+        "color_mids": "green",
+        "decay": 0.97,
+        "flip": false,
+        "frequency": 1.8998083313002854,
+        "mirror": true,
+        "speed": 3,
+        "threshold": 0
+      },
+      "name": "Gentle RGB"
+    },
+    "icicles": {
+      "config": {
+        "blur": 1,
+        "brightness": 1,
+        "color_high": "green-coral",
+        "color_lows": "lightblue",
+        "color_mids": "cyan",
+        "decay": 0.9743899623617388,
+        "flip": true,
+        "mirror": false,
+        "speed": 2,
+        "threshold": 0.021527497964141662
+      },
+      "name": "Icicles"
+    },
+    "rays": {
+      "config": {
+        "blur": 0,
+        "brightness": 1,
+        "color_high": "cyan",
+        "color_lows": "orange-deep",
+        "color_mids": "yellow",
+        "decay": 1,
+        "flip": false,
+        "mirror": true,
+        "speed": 5,
+        "threshold": 0.7
+      },
+      "name": "Rays"
+    },
+    "warmth": {
+      "config": {
+        "blur": 8.121234386391503,
+        "brightness": 1,
+        "color_high": "green-coral",
+        "color_lows": "red",
+        "color_mids": "orange",
+        "decay": 0.97,
+        "flip": false,
+        "mirror": true,
+        "speed": 8,
+        "threshold": 0.5466364412932588
+      },
+      "name": "Warmth"
+    }
+  },
+  "singleColor": {
+    "blue": {
+      "config": {
+        "blur": 0,
+        "brightness": 1,
+        "color": "blue",
+        "color_high": "cyan",
+        "color_lows": "orange-deep",
+        "color_mids": "yellow",
+        "decay": 1,
+        "flip": false,
+        "mirror": true,
+        "modulate": false,
+        "modulation_effect": "sine",
+        "modulation_speed": 0.5,
+        "speed": 5,
+        "threshold": 0.7
+      },
+      "name": "Blue"
+    },
+    "cyan": {
+      "config": {
+        "blur": 0,
+        "brightness": 1,
+        "color": "cyan",
+        "color_high": "cyan",
+        "color_lows": "orange-deep",
+        "color_mids": "yellow",
+        "decay": 1,
+        "flip": false,
+        "mirror": true,
+        "modulate": false,
+        "modulation_effect": "sine",
+        "modulation_speed": 0.5,
+        "speed": 5,
+        "threshold": 0.7
+      },
+      "name": "Cyan"
+    },
+    "green": {
+      "config": {
+        "blur": 0,
+        "brightness": 1,
+        "color": "green",
+        "color_high": "cyan",
+        "color_lows": "orange-deep",
+        "color_mids": "yellow",
+        "decay": 1,
+        "flip": false,
+        "mirror": true,
+        "modulate": false,
+        "modulation_effect": "sine",
+        "modulation_speed": 0.5,
+        "speed": 5,
+        "threshold": 0.7
+      },
+      "name": "Green"
+    },
+    "magenta": {
+      "config": {
+        "blur": 0,
+        "brightness": 1,
+        "color": "magenta",
+        "color_high": "cyan",
+        "color_lows": "orange-deep",
+        "color_mids": "yellow",
+        "decay": 1,
+        "flip": false,
+        "mirror": true,
+        "modulate": false,
+        "modulation_effect": "sine",
+        "modulation_speed": 0.5,
+        "speed": 5,
+        "threshold": 0.7
+      },
+      "name": "Magenta"
+    },
+    "orange": {
+      "config": {
+        "blur": 0,
+        "brightness": 1,
+        "color": "orange-deep",
+        "color_high": "cyan",
+        "color_lows": "orange-deep",
+        "color_mids": "yellow",
+        "decay": 1,
+        "flip": false,
+        "mirror": true,
+        "modulate": false,
+        "modulation_effect": "sine",
+        "modulation_speed": 0.5,
+        "speed": 5,
+        "threshold": 0.7
+      },
+      "name": "Orange"
+    },
+    "pink": {
+      "config": {
+        "blur": 0,
+        "brightness": 1,
+        "color": "pink",
+        "color_high": "cyan",
+        "color_lows": "orange-deep",
+        "color_mids": "yellow",
+        "decay": 1,
+        "flip": false,
+        "mirror": true,
+        "modulate": false,
+        "modulation_effect": "sine",
+        "modulation_speed": 0.5,
+        "speed": 5,
+        "threshold": 0.7
+      },
+      "name": "Pink"
+    },
+    "red": {
+      "config": {
+        "blur": 0,
+        "brightness": 1,
+        "color": "red",
+        "color_high": "cyan",
+        "color_lows": "orange-deep",
+        "color_mids": "yellow",
+        "decay": 1,
+        "flip": false,
+        "mirror": true,
+        "modulate": false,
+        "modulation_effect": "sine",
+        "modulation_speed": 0.5,
+        "speed": 5,
+        "threshold": 0.7
+      },
+      "name": "Red"
+    },
+    "red-waves": {
+      "config": {
+        "blur": 6.176594831274896,
+        "brightness": 1,
+        "color": "red",
+        "flip": false,
+        "mirror": true,
+        "modulate": true,
+        "modulation_effect": "sine",
+        "modulation_speed": 0.7573696862826024,
+        "speed": 0.6209270937076822
+      },
+      "name": "Red Waves"
+    },
+    "steel-pulse": {
+      "config": {
+        "blur": 6.176594831274896,
+        "brightness": 1,
+        "color": "steelblue",
+        "flip": false,
+        "mirror": true,
+        "modulate": true,
+        "modulation_effect": "breath",
+        "modulation_speed": 0.7573696862826024,
+        "speed": 0.6209270937076822
+      },
+      "name": "Steel Pulse"
+    },
+    "turquoise-roll": {
+      "config": {
+        "blur": 6.176594831274896,
+        "brightness": 1,
+        "color": "green-turquoise",
+        "flip": false,
+        "mirror": false,
+        "modulate": true,
+        "modulation_effect": "sine",
+        "modulation_speed": 0.7573696862826024,
+        "speed": 0.6209270937076822
+      },
+      "name": "Turquoise Roll"
+    },
+    "yellow": {
+      "config": {
+        "blur": 0,
+        "brightness": 1,
+        "color": "yellow",
+        "color_high": "cyan",
+        "color_lows": "orange-deep",
+        "color_mids": "yellow",
+        "decay": 1,
+        "flip": false,
+        "mirror": true,
+        "modulate": false,
+        "modulation_effect": "sine",
+        "modulation_speed": 0.5,
+        "speed": 5,
+        "threshold": 0.7
+      },
+      "name": "Yellow"
+    }
+  },
+  "strobe(Reactive)": {
+    "aggro-red": {
+      "config": {
+        "blur": 6.176594831274896,
+        "brightness": 1,
+        "color": "red",
+        "flip": false,
+        "frequency": "1/4 (.o. )",
+        "mirror": false,
+        "modulate": true,
+        "modulation_effect": "sine",
+        "modulation_speed": 0.7573696862826024,
+        "speed": 0.6209270937076822
+      },
+      "name": "Aggro Red"
+    },
+    "blues-on-the-beat": {
+      "config": {
+        "blur": 6.176594831274896,
+        "brightness": 1,
+        "color": "blue",
+        "flip": false,
+        "frequency": "1/2 (.-. )",
+        "mirror": false,
+        "modulate": true,
+        "modulation_effect": "sine",
+        "modulation_speed": 0.7573696862826024,
+        "speed": 0.6209270937076822
+      },
+      "name": "Blues on the Beat"
+    },
+    "fast-strobe": {
+      "config": {
+        "blur": 2.6503112162794054,
+        "brightness": 1,
+        "color": "white",
+        "flip": true,
+        "frequency": "1/4 (.o. )",
+        "mirror": false
+      },
+      "name": "Fast Strobe"
+    },
+    "faster-strobe": {
+      "config": {
+        "blur": 2.6503112162794054,
+        "brightness": 1,
+        "color": "white",
+        "flip": true,
+        "frequency": "1/16 (◉﹏◉ )",
+        "mirror": false
+      },
+      "name": "Faster Strobe"
+    },
+    "painful": {
+      "config": {
+        "blur": 2.6503112162794054,
+        "brightness": 1,
+        "color": "white",
+        "flip": true,
+        "frequency": "1/32 (⊙▃⊙ )",
+        "mirror": false
+      },
+      "name": "Painful"
+    }
+  },
+  "wavelength(Reactive)": {
+    "classic": {
+      "config": {
+        "blur": 3,
+        "brightness": 1,
+        "flip": false,
+        "gradient_name": "Rainbow",
+        "gradient_roll": 0,
+        "mirror": false
+      },
+      "name": "Classic"
+    },
+    "greens": {
+      "config": {
+        "blur": 5.143255366747034,
+        "brightness": 1,
+        "flip": false,
+        "gradient_name": "Winter",
+        "gradient_roll": 1,
+        "mirror": true
+      },
+      "name": "Greens"
+    },
+    "icy": {
+      "config": {
+        "blur": 5.650204358080329,
+        "brightness": 0.8276705055726487,
+        "flip": false,
+        "gradient_name": "Frost",
+        "gradient_roll": 1,
+        "mirror": false
+      },
+      "name": "Icy"
+    },
+    "plasma": {
+      "config": {
+        "blur": 1.7617836591953162,
+        "brightness": 1,
+        "flip": false,
+        "gradient_name": "Plasma",
+        "gradient_roll": 6,
+        "mirror": true
+      },
+      "name": "Plasma"
+    },
+    "rolling-blues": {
+      "config": {
+        "blur": 1.001320116516412,
+        "brightness": 0.6110039696205498,
+        "flip": false,
+        "gradient_name": "Dancefloor",
+        "gradient_roll": 3,
+        "mirror": true
+      },
+      "name": "rolling blues"
+    },
+    "rolling-warmth": {
+      "config": {
+        "blur": 5.941265629676581,
+        "brightness": 1,
+        "flip": false,
+        "gradient_name": "Sunset",
+        "gradient_roll": 7,
+        "mirror": true
+      },
+      "name": "Rolling Warmth"
+    },
+    "sunset-sweep": {
+      "config": {
+        "blur": 8.587469069357562,
+        "brightness": 1,
+        "flip": true,
+        "gradient_name": "Sunset",
+        "gradient_roll": 4,
+        "mirror": false
+      },
+      "name": "Sunset Sweep"
+    }
+  },
+  "real_strobe(Reactive)": {
+    "dancefloor": {
+      "config": {
+        "bass_strobe_decay_rate": 0.7,
+        "bass_threshold": 0.4,
+        "blur": 0,
+        "brightness": 1,
+        "color_step": 0.0625,
+        "flip": false,
+        "gradient_name": "Dancefloor",
+        "gradient_repeat": 1,
+        "gradient_roll": 0,
+        "mirror": false,
+        "strobe_color": "white",
+        "strobe_decay_rate": 0.85,
+        "strobe_width": 50
+      },
+      "name": "Dance floor"
+    },
+    "strobe_only": {
+      "config": {
+        "bass_strobe_decay_rate": 0.7,
+        "bass_threshold": 1,
+        "blur": 0,
+        "brightness": 1,
+        "color_step": 0.0625,
+        "flip": false,
+        "gradient_name": "Dancefloor",
+        "gradient_repeat": 1,
+        "gradient_roll": 0,
+        "mirror": false,
+        "strobe_color": "white",
+        "strobe_decay_rate": 0.85,
+        "strobe_width": 50
+      },
+      "name": "Strobe only"
+    },
+    "bass_only": {
+      "config": {
+        "bass_strobe_decay_rate": 0.7,
+        "bass_threshold": 0.4,
+        "blur": 0,
+        "brightness": 1,
+        "color_step": 0.0625,
+        "flip": false,
+        "gradient_name": "Dancefloor",
+        "gradient_repeat": 1,
+        "gradient_roll": 0,
+        "mirror": false,
+        "strobe_color": "black",
+        "strobe_decay_rate": 0.85,
+        "strobe_width": 0
+      },
+      "name": "Bass only"
+    },
+    "extreme": {
+      "config": {
+        "bass_strobe_decay_rate": 1,
+        "bass_threshold": 0.45,
+        "blur": 0,
+        "brightness": 1,
+        "color_step": 0.0625,
+        "flip": false,
+        "gradient_name": "Dancefloor",
+        "gradient_repeat": 1,
+        "gradient_roll": 0,
+        "mirror": false,
+        "strobe_color": "white",
+        "strobe_decay_rate": 1,
+        "strobe_width": 50
+      },
+      "name": "Extreme"
+    },
+    "glitter": {
+      "config": {
+        "bass_strobe_decay_rate": 0.01,
+        "bass_threshold": 0,
+        "blur": 0,
+        "brightness": 1,
+        "color_step": 0.015,
+        "flip": false,
+        "gradient_name": "Dancefloor",
+        "gradient_repeat": 1,
+        "gradient_roll": 0,
+        "mirror": true,
+        "strobe_color": "white",
+        "strobe_decay_rate": 0.5,
+        "strobe_width": 50
+      },
+      "name": "Glitter"
+    }
+  }
+}
