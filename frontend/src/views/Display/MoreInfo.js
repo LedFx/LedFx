@@ -41,7 +41,7 @@ const MoreInfo = ({ display }) => {
                             <br />
                             Crossfade: {display.config[display.id].config.crossfade}
                             <br />
-                            Max Brightness: {display.config[display.id].config.crossfade}
+                            Max Brightness: {display.config[display.id].config.max_brightness * 100 + '%'}
                             <br />
                             Preview only:{' '}
                             {JSON.stringify(display.config[display.id].config.preview_only)}

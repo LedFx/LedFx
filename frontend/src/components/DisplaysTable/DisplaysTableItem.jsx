@@ -87,7 +87,7 @@ function DisplaysTableItem({
                 </NavLink>
             </TableCell>
             <TableCell className={classes.displaySettings}>
-                {display.config.max_brightness}
+                {display.config.max_brightness * 100 + '%'}
             </TableCell>
             <TableCell className={classes.displaySettings}>{display.config.crossfade}</TableCell>
             <TableCell align="center" className={classes.displaySettings}>
