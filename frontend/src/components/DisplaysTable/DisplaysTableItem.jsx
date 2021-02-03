@@ -7,7 +7,6 @@ import TableCell from '@material-ui/core/TableCell';
 import Button from '@material-ui/core/Button';
 import SettingsIcon from '@material-ui/icons/Settings';
 import Icon from '@material-ui/core/Icon';
-import { Switch } from '@material-ui/core';
 import PopoverSure from 'components/PopoverSure';
 import DisplaySegmentsDialog from 'components/DisplaySegmentsDialog';
 import { camelToSnake } from 'utils/helpers';
