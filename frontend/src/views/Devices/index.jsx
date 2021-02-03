@@ -40,6 +40,12 @@ const styles = theme => ({
             alignItems: 'stretch',
         },
     },
+    topBar: {
+        '@media (max-width: 540px)': {
+            flexDirection: 'column',
+            alignItems: 'stretch',
+        },
+    },
 });
 
 class DevicesView extends React.Component {
@@ -111,7 +117,13 @@ class DevicesView extends React.Component {
                     <Grid item xs={12}>
                         <Card>
                             <CardContent>
-                                <Grid container direction="row" spacing={1} justify="space-between">
+                                <Grid
+                                    className={classes.topBar}
+                                    container
+                                    direction="row"
+                                    spacing={1}
+                                    justify="space-between"
+                                >
                                     <Grid item xs="auto">
                                         <Typography variant="h5">Devices</Typography>
                                         <Typography
