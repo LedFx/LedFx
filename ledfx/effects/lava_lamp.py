@@ -14,21 +14,13 @@ class Lavalamp(AudioReactiveEffect, HSVEffect):
                 "speed",
                 description="Effect Speed modifier",
                 default=0.1,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.00001, max=10.0)),
-            vol.Optional(
-                "reactivity",
-                description="Audio Reactive modifier",
-                default=0.33,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.00001, max=1.0)),
+            ): vol.All(vol.Coerce(float), vol.Range(min=0.00001, max=10.0))
         }
     )
 
     def config_updated(self, config):
         self._lows_power = 0
-        reactivity = self._config["reactivity"]
-        self._lows_filter = self.create_filter(
-            alpha_decay=0.2, alpha_rise=reactivity
-        )
+        self._lows_filter = self.create_filter(alpha_decay=0.1, alpha_rise=0.1)
 
     def audio_data_updated(self, data):
         self._dirty = True
@@ -60,13 +52,13 @@ class Lavalamp(AudioReactiveEffect, HSVEffect):
         np.add(h, self._lows_power * 0.15, out=h)
 
         np.add(w1, 0.1, out=w1)
-        np.add(w2, self._lows_power * 0.2, out=w2)
+        np.add(w2, self._lows_power * 0.6, out=w2)
         np.add(w3, self._lows_power * 0.3, out=w3)
 
         np.multiply(w1, w2, out=w1)
         np.multiply(w1, w3, out=w1)
 
-        np.add(w1, 0.2, where=np.less_equal(w1, 0.2), out=w1)
+        np.add(w1, 0.6, out=w1)
         np.power(w1, 2, out=w1)
 
         self.hsv_array[:, 0] = h
