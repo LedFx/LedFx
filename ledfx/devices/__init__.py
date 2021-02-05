@@ -86,7 +86,7 @@ class Device(BaseRegistry):
         if display_id == self.priority_display.id:
             frame = self.assemble_frame()
             self.flush(frame)
-            _LOGGER.debug(f"Device {self.id} flushed by Display {display_id}")
+            # _LOGGER.debug(f"Device {self.id} flushed by Display {display_id}")
 
             def trigger_device_update_event():
                 self._ledfx.events.fire_event(
