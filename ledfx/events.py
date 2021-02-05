@@ -30,7 +30,7 @@ class DeviceUpdateEvent(Event):
     def __init__(self, device_id: str, pixels: np.ndarray):
         super().__init__(Event.DEVICE_UPDATE)
         self.device_id = device_id
-        self.pixels = pixels.T.tolist()
+        self.pixels = pixels.astype(np.uint8).T.tolist()
 
 
 class DisplayUpdateEvent(Event):
@@ -39,7 +39,7 @@ class DisplayUpdateEvent(Event):
     def __init__(self, display_id: str, pixels: np.ndarray):
         super().__init__(Event.DISPLAY_UPDATE)
         self.display_id = display_id
-        self.pixels = pixels.T.tolist()
+        self.pixels = pixels.astype(np.uint8).T.tolist()
 
 
 class GraphUpdateEvent(Event):
