@@ -134,7 +134,7 @@ def load_config(config_dir: str) -> dict:
         config_file = os.path.join(config_dir, CONFIG_FILE_NAME)
     try:
 
-        with open(config_file) as file:
+        with open(config_file, encoding="utf-8") as file:
             config_json = json.load(file)
             return CORE_CONFIG_SCHEMA(config_json)
     except json.JSONDecodeError:
@@ -172,7 +172,7 @@ def save_config(config: dict, config_dir: str) -> None:
     config_view = dict(config)
     if "default_presets" in config_view.keys():
         del config_view["default_presets"]
-    with open(config_file, "w") as file:
+    with open(config_file, "w", encoding="utf-8") as file:
         json.dump(
             config_view, file, ensure_ascii=False, sort_keys=True, indent=4
         )
@@ -181,11 +181,11 @@ def save_config(config: dict, config_dir: str) -> None:
 def migrate_config(config_dir, config_file):
     """Save the old configuration file as a new JSON object and resume the loading process"""
 
-    print(f"Migrating configuration file to JSON: {config_file}")
+    print("Migrating configuration file to JSON")
     with open(config_file, "rt") as file:
         config_yaml = yaml.safe_load(file)
         json_config_file = os.path.join(config_dir, CONFIG_FILE_NAME)
-        with open(json_config_file, "w") as file:
+        with open(json_config_file, "w", encoding="utf-8") as file:
             json.dump(
                 config_yaml, file, ensure_ascii=False, sort_keys=True, indent=4
             )
