@@ -1,9 +1,9 @@
 import datetime
+import json
 import logging
 import os
 import sys
 
-import orjson
 import voluptuous as vol
 import yaml
 
@@ -70,8 +70,14 @@ def create_default_config(config_dir: str) -> str:
 
     config_path = os.path.join(config_dir, CONFIG_FILE_NAME)
     try:
-        with open(config_path, "wb") as file:
-            file.write(orjson.dumps(CORE_CONFIG_SCHEMA({})))
+        with open(config_path, "w", encoding="utf-8") as file:
+            json.dump(
+                CORE_CONFIG_SCHEMA({}),
+                file,
+                ensure_ascii=False,
+                sort_keys=True,
+                indent=4,
+            )
         return config_path
 
     except IOError:
@@ -128,10 +134,10 @@ def load_config(config_dir: str) -> dict:
         config_file = os.path.join(config_dir, CONFIG_FILE_NAME)
     try:
 
-        with open(config_file, "rt") as file:
-            config_json = orjson.loads(file.read())
+        with open(config_file) as file:
+            config_json = json.load(file)
             return CORE_CONFIG_SCHEMA(config_json)
-    except orjson.JSONDecodeError:
+    except json.JSONDecodeError:
         date = datetime.date.today()
         backup_location = os.path.join(
             config_dir, f"config.json.backup.{date}"
@@ -152,8 +158,8 @@ def load_default_presets() -> dict:
     print("Loading default presets from {}".format(ledfx_dir))
     if not os.path.isfile(default_presets_path):
         print("Failed to load {}".format(DEFAULT_PRESETS_FILE_NAME))
-    with open(default_presets_path, encoding="utf8") as file:
-        return orjson.loads(file.read())
+    with open(default_presets_path, encoding="utf-8") as file:
+        return json.load(file)
 
 
 def save_config(config: dict, config_dir: str) -> None:
@@ -166,8 +172,10 @@ def save_config(config: dict, config_dir: str) -> None:
     config_view = dict(config)
     if "default_presets" in config_view.keys():
         del config_view["default_presets"]
-    with open(config_file, "wb") as file:
-        file.write(orjson.dumps(config_view, option=orjson.OPT_INDENT_2))
+    with open(config_file, "w") as file:
+        json.dump(
+            config_view, file, ensure_ascii=False, sort_keys=True, indent=4
+        )
 
 
 def migrate_config(config_dir, config_file):
@@ -177,8 +185,10 @@ def migrate_config(config_dir, config_file):
     with open(config_file, "rt") as file:
         config_yaml = yaml.safe_load(file)
         json_config_file = os.path.join(config_dir, CONFIG_FILE_NAME)
-        with open(json_config_file, "wb") as file:
-            file.write(orjson.dumps(config_yaml, option=orjson.OPT_INDENT_2))
+        with open(json_config_file, "w") as file:
+            json.dump(
+                config_yaml, file, ensure_ascii=False, sort_keys=True, indent=4
+            )
     try:
         old_config_location = os.path.join(
             config_dir, f"{datetime.date.today()}_config.yaml.backup"

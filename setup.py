@@ -37,7 +37,6 @@ INSTALL_REQUIRES = [
     "sentry-sdk>=0.19.0",
     "certifi>=2019.3.9",
     "pyserial>=3.5",
-    "orjson>=3.4.7",
 ]
 
 setup(
