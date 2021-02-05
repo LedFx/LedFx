@@ -101,10 +101,15 @@ class EffectsEndpoint(RestEndpoint):
                         val = random.randint(lower, upper)
                 effect_config[setting.schema] = val
 
-        # Create the effect and add it to the display
-
+        # See if display's active effect type matches this effect type,
+        # if so update the effect config
+        # otherwise, create a new effect and add it to the display
         try:
-            if display.active_effect.type == effect_type:
+            if (
+                display.active_effect
+                and display.active_effect.type == effect_type
+            ):
+                effect = display.active_effect
                 display.active_effect.update_config(effect_config)
             else:
                 effect = self._ledfx.effects.create(
@@ -126,6 +131,7 @@ class EffectsEndpoint(RestEndpoint):
                 display["effect"]["type"] = effect_type
                 display["effect"]["config"] = effect_config
                 break
+
         save_config(
             config=self._ledfx.config,
             config_dir=self._ledfx.config_dir,
