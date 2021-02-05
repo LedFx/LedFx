@@ -18,6 +18,10 @@ class MagnitudeAudioEffect(AudioReactiveEffect, GradientEffect):
         }
     )
 
+    def activate(self, pixel_count):
+        self.magnitude = 0
+        super().activate(pixel_count)
+
     def config_updated(self, config):
         self._frequency_range = np.linspace(
             FREQUENCY_RANGES[self.config["frequency_range"]].min,
@@ -26,9 +30,12 @@ class MagnitudeAudioEffect(AudioReactiveEffect, GradientEffect):
         )
 
     def audio_data_updated(self, data):
+        self.magnitude = np.max(
+            data.sample_melbank(list(self._frequency_range))
+        )
+        if self.magnitude > 1.0:
+            self.magnitude = 1.0
 
+    def render(self):
         # Grab the filtered and interpolated melbank data
-        magnitude = np.max(data.sample_melbank(list(self._frequency_range)))
-        if magnitude > 1.0:
-            magnitude = 1.0
-        self.pixels = self.apply_gradient(magnitude)
+        return self.apply_gradient(self.magnitude)

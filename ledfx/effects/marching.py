@@ -30,7 +30,6 @@ class Marching(AudioReactiveEffect, HSVEffect):
         )
 
     def audio_data_updated(self, data):
-        self._dirty = True
         self._lows_power = self._lows_filter.update(data.melbank_lows().max())
 
     def render(self):

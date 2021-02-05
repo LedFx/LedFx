@@ -42,6 +42,10 @@ class BladePowerAudioEffect(AudioReactiveEffect):
         }
     )
 
+    def activate(self, pixel_count):
+        self.bar = 0
+        super().activate(pixel_count)
+
     def config_updated(self, config):
 
         # Create the filters used for the effect
@@ -55,15 +59,18 @@ class BladePowerAudioEffect(AudioReactiveEffect):
 
     def audio_data_updated(self, data):
         # Get frequency range power through filter
-        out = np.zeros(np.shape(self.pixels))
-        bar = (
+
+        self.bar = (
             np.max(data.sample_melbank(list(self._frequency_range)))
             * self.config["multiplier"]
         )
-        bar = self._bar_filter.update(bar)
+        self.bar = self._bar_filter.update(self.bar)
+
+    def render(self):
+        self.out = np.zeros((self.pixel_count, 3))
         # Map it to the length of the strip and apply it
-        bar_idx = int(bar * self.pixel_count)
-        out[:bar_idx] = self.bar_color
+        bar_idx = int(self.bar * self.pixel_count)
+        self.out[:bar_idx] = self.bar_color
 
         # Update the pixels
-        self.pixels = out
+        return self.out

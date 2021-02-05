@@ -33,6 +33,10 @@ class BandsAudioEffect(AudioReactiveEffect, GradientEffect):
         }
     )
 
+    def activate(self, pixel_count):
+        self.r = np.zeros(pixel_count)
+        super().activate(pixel_count)
+
     def config_updated(self, config):
         # Create the filters used for the effect
         self._r_filter = self.create_filter(alpha_decay=0.05, alpha_rise=0.999)
@@ -45,12 +49,12 @@ class BandsAudioEffect(AudioReactiveEffect, GradientEffect):
 
         # Grab the filtered difference between the filtered melbank and the
         # raw melbank.
-        r = self._r_filter.update(y - filtered_y)
-        out = np.tile(r, (3, 1)).T
-        out_clipped = np.clip(out, 0, 1)
-        out_split = np.array_split(
-            out_clipped, self._config["band_count"], axis=0
-        )
+        self.r = self._r_filter.update(y - filtered_y)
+
+    def render(self):
+        out = np.tile(self.r, (3, 1)).T
+        np.clip(out, 0, 1, out=out)
+        out_split = np.array_split(out, self._config["band_count"], axis=0)
         for i in range(self._config["band_count"]):
             band_width = len(out_split[i])
             color = self.get_gradient_color(i / self._config["band_count"])
@@ -69,4 +73,4 @@ class BandsAudioEffect(AudioReactiveEffect, GradientEffect):
             elif self._config["align"] == "left":
                 pass
 
-        self.pixels = np.vstack(out_split)
+        return np.vstack(out_split)

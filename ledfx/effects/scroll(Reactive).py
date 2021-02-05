@@ -52,6 +52,13 @@ class ScrollAudioEffect(AudioReactiveEffect):
         }
     )
 
+    def activate(self, pixel_count):
+        self.output = np.zeros((pixel_count, 3))
+        self.lows_max = 0
+        self.mids_max = 0
+        self.highs_max = 0
+        super().activate(pixel_count)
+
     def config_updated(self, config):
 
         # TODO: Determine how buffers based on the pixels should be
@@ -76,27 +83,24 @@ class ScrollAudioEffect(AudioReactiveEffect):
         self.high_cutoff = self._config["threshold"] / 7
 
     def audio_data_updated(self, data):
-
-        if self.output is None:
-            self.output = self.pixels
-
         # Divide the melbank into lows, mids and highs
-        lows_max = np.clip(np.max(data.melbank_lows() ** 2), 0, 1)
-        mids_max = np.clip(np.max(data.melbank_mids() ** 2), 0, 1)
-        highs_max = np.clip(np.max(data.melbank_highs() ** 2), 0, 1)
+        self.lows_max = np.clip(np.max(data.melbank_lows() ** 2), 0, 1)
+        self.mids_max = np.clip(np.max(data.melbank_mids() ** 2), 0, 1)
+        self.highs_max = np.clip(np.max(data.melbank_highs() ** 2), 0, 1)
 
-        if lows_max < self.lows_cutoff:
-            lows_max = 0
-        if mids_max < self.mids_cutoff:
-            mids_max = 0
-        if highs_max < self.high_cutoff:
-            highs_max = 0
+        if self.lows_max < self.lows_cutoff:
+            self.lows_max = 0
+        if self.mids_max < self.mids_cutoff:
+            self.mids_max = 0
+        if self.highs_max < self.high_cutoff:
+            self.highs_max = 0
 
         # Compute the value for each range based on the max
-        # lows_val = (np.array((255,0,0)) * lows_max)
-        # mids_val = (np.array((0,255,0)) * mids_max)
-        # high_val = (np.array((0,0,255)) * highs_max)
+        # lows_val = (np.array((255,0,0)) * self.lows_max)
+        # mids_val = (np.array((0,255,0)) * self.mids_max)
+        # high_val = (np.array((0,0,255)) * self.highs_max)
 
+    def render(self):
         # Roll the effect and apply the decay
         speed = self.config["speed"]
         self.output[speed:, :] = self.output[:-speed, :]
@@ -107,9 +111,9 @@ class ScrollAudioEffect(AudioReactiveEffect):
         # self.output[:speed, 1] = lows_val[1] + mids_val[1] + high_val[1]
         # self.output[:speed, 2] = lows_val[2] + mids_val[2] + high_val[2]
 
-        self.output[:speed] = self.lows_colour * lows_max
-        self.output[:speed] += self.mids_colour * mids_max
-        self.output[:speed] += self.high_colour * highs_max
+        self.output[:speed] = self.lows_colour * self.lows_max
+        self.output[:speed] += self.mids_colour * self.mids_max
+        self.output[:speed] += self.high_colour * self.highs_max
 
         # Set the pixels
-        self.pixels = self.output
+        return self.output

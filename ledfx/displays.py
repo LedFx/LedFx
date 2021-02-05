@@ -194,6 +194,7 @@ class Display(object):
         self._active_effect = effect
         self._active_effect.activate(self.pixel_count)
         self._ledfx.events.fire_event(EffectSetEvent(self.active_effect.name))
+
         if not self._active:
             self.activate()
 
@@ -275,50 +276,47 @@ class Display(object):
         if self._active_effect is None:
             return None
 
-        if self._active_effect._dirty:
-            # Get and process active effect frame
-            pixels = self._active_effect.get_pixels()
-            frame = np.clip(
-                pixels * self._config["max_brightness"],
-                0,
-                255,
-            )
-            if self._config["center_offset"]:
-                frame = np.roll(frame, self._config["center_offset"], axis=0)
+        # Get and process active effect frame
+        pixels = self._active_effect.render()
+        frame = np.clip(
+            pixels * self._config["max_brightness"],
+            0,
+            255,
+        )
+        if self._config["center_offset"]:
+            frame = np.roll(frame, self._config["center_offset"], axis=0)
 
-            # Handle fading effect in/out if just turned on or off
-            if self.fade_timer == 0:
-                pass
-            elif self.fade_timer > 0:
-                # if +ve fade timer, fade in the effect
-                frame *= 1 - (self.fade_timer / self.fade_duration)
-                self.fade_timer -= 1
-            elif self.fade_timer < 0:
-                # if -ve fade timer, fade out the effect
-                frame *= -self.fade_timer / self.fade_duration
-                self.fade_timer += 1
+        # Handle fading effect in/out if just turned on or off
+        if self.fade_timer == 0:
+            pass
+        elif self.fade_timer > 0:
+            # if +ve fade timer, fade in the effect
+            frame *= 1 - (self.fade_timer / self.fade_duration)
+            self.fade_timer -= 1
+        elif self.fade_timer < 0:
+            # if -ve fade timer, fade out the effect
+            frame *= -self.fade_timer / self.fade_duration
+            self.fade_timer += 1
 
         # This part handles blending two effects together
         fadeout_frame = None
         if self._fadeout_effect:
-            if self._fadeout_effect._dirty:
-                # Get and process fadeout effect frame
-                fadeout_frame = np.clip(
-                    self._fadeout_effect.pixels
-                    * self._config["max_brightness"],
-                    0,
-                    255,
+            # Get and process fadeout effect frame
+            fadeout_frame = np.clip(
+                self._fadeout_effect.pixels * self._config["max_brightness"],
+                0,
+                255,
+            )
+            if self._config["center_offset"]:
+                fadeout_frame = np.roll(
+                    fadeout_frame,
+                    self._config["center_offset"],
+                    axis=0,
                 )
-                if self._config["center_offset"]:
-                    fadeout_frame = np.roll(
-                        fadeout_frame,
-                        self._config["center_offset"],
-                        axis=0,
-                    )
 
-                # handle fading out the fadeout frame
-                if self.fade_timer:
-                    fadeout_frame *= self.fade_timer / self.fade_duration
+            # handle fading out the fadeout frame
+            if self.fade_timer:
+                fadeout_frame *= self.fade_timer / self.fade_duration
 
         # Blend both frames together
         if (fadeout_frame is not None) and (frame is not None):

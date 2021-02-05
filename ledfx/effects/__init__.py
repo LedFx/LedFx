@@ -173,7 +173,6 @@ class Effect(BaseRegistry):
 
     NAME = ""
     _pixels = None
-    _dirty = False
     _config = None
     _active = False
 
@@ -208,7 +207,7 @@ class Effect(BaseRegistry):
 
     def __init__(self, ledfx, config):
         self._ledfx = ledfx
-        self._dirty_callback = None
+        self._config = {}
         self.update_config(config)
 
     def __del__(self):
@@ -274,7 +273,7 @@ class Effect(BaseRegistry):
         """Return if the effect is currently active"""
         return self._active
 
-    def get_pixels(self):
+    def render(self):
         return self.pixels
 
     @property
@@ -320,14 +319,6 @@ class Effect(BaseRegistry):
             self._pixels = np.copy(pixels)
         else:
             raise TypeError()
-
-        self._dirty = True
-
-        if self._dirty_callback:
-            self._dirty_callback()
-
-    def setDirtyCallback(self, callback):
-        self._dirty_callback = callback
 
     @property
     def pixel_count(self):

@@ -57,20 +57,22 @@ class HSVEffect(Effect):
         }
     )
 
-    _start_time = time.time()
+    _start_time = time.time_ns()
+    # 65.536 s expressed in ns
+    _conversion_factor = 65.536 * 1000000000.0
 
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
-        self._timestep = 0
+        self._dt = 0
         self.hsv_array = None
 
     def activate(self, pixel_count):
         self.hsv_array = np.zeros((pixel_count, 3))
         super().activate(pixel_count)
 
-    def get_pixels(self):
-        # update the timestep
-        self._timestep = time.time() - self._start_time
+    def render(self):
+        # update the timestep, converting ns to s
+        self._dt = time.time_ns() - self._start_time
 
         self.render()
         if self._config["color_correction"]:
@@ -90,7 +92,8 @@ class HSVEffect(Effect):
         lower modifier, slower looping
         you can consider modifier = 1 / sawtooth period
         """
-        return (self._timestep % (65.536 / modifier)) / (65.536 / modifier)
+        period = self._conversion_factor / modifier
+        return (self._dt % period) / period
 
     def triangle(self, x=1.0):
         """
