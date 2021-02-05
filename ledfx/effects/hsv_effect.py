@@ -74,12 +74,12 @@ class HSVEffect(Effect):
         # update the timestep, converting ns to s
         self._dt = time.time_ns() - self._start_time
 
-        self.render()
+        self.render_hsv()
         if self._config["color_correction"]:
             self.fix_hue_fast(self.hsv_array[:, 0])
         return self.hsv_to_rgb(self.hsv_array)
 
-    def render(self):
+    def render_hsv(self):
         """
         To be defined by child class
         Be sure to update self.hsv_array

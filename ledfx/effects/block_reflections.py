@@ -32,7 +32,7 @@ class BlockReflections(AudioReactiveEffect, HSVEffect):
     def audio_data_updated(self, data):
         self._lows_power = self._lows_filter.update(data.melbank_lows().max())
 
-    def render(self):
+    def render_hsv(self):
         t2 = self.time(0.1 * self._config["speed"]) * (np.pi ** 2) + (
             0.8 * self._config["reactivity"] * self._lows_power
         )

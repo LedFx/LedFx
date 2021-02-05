@@ -25,7 +25,7 @@ class Lavalamp(AudioReactiveEffect, HSVEffect):
     def audio_data_updated(self, data):
         self._lows_power = self._lows_filter.update(data.melbank_lows().max())
 
-    def render(self):
+    def render_hsv(self):
         # "Global expression"
         t1 = self.time(
             self._config["speed"] * np.maximum(1, 1 + self._lows_power * 0.002)
