@@ -6,13 +6,7 @@ import voluptuous as vol
 
 from ledfx.color import COLORS
 from ledfx.devices import Device
-from ledfx.utils import (
-    resolve_destination,
-    turn_wled_off,
-    turn_wled_on,
-    wled_identifier,
-    wled_power_state,
-)
+from ledfx.utils import resolve_destination
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -74,7 +68,8 @@ class E131Device(Device):
         )
         if span % self._config["universe_size"] == 0:
             self._config["universe_end"] -= 1
-        self.WLEDReceiver = False
+
+        self.resolved_dest = resolve_destination(config["ip_address"])
         self._sacn = None
 
     @property
@@ -86,22 +81,11 @@ class E131Device(Device):
             multicast = True
         else:
             multicast = False
+
         if self._sacn:
-            raise Exception("sACN sender already started.")
-
-        if multicast is False:
-            self.device_ip = resolve_destination(self._config["ip_address"])
-            if not self.device_ip:
-                _LOGGER.warning(
-                    f"Cannot resolve destination {self._config['ip_address']}, aborting device {self.name} activation. Make sure the IP/hostname is correct and device is online."
-                )
-                return
-
-            if wled_identifier(self.device_ip, self.name):
-                self.WLEDReceiver = True
-                self.wled_state = wled_power_state(self.device_ip, self.name)
-                if self.wled_state is False:
-                    turn_wled_on(self.device_ip, self.name)
+            _LOGGER.warning(
+                f"sACN sender already started for device {self.id}"
+            )
 
         # Configure sACN and start the dedicated thread to flush the buffer
         # Some variables are immutable and must be called here
@@ -112,12 +96,10 @@ class E131Device(Device):
             _LOGGER.info(f"sACN activating universe {universe}")
             self._sacn.activate_output(universe)
 
-            if self._config["ip_address"] == "multicast":
-                self._sacn[universe].multicast = True
-            else:
-                self._sacn[universe].destination = self.device_ip
-                self._sacn[universe].multicast = False
-        self._sacn._fps = self._config["refresh_rate"]
+            self._sacn[universe].multicast = multicast
+            if not multicast:
+                self._sacn[universe].destination = self.resolved_dest
+
         self._sacn.start()
         self._sacn.manual_flush = True
 
@@ -126,13 +108,10 @@ class E131Device(Device):
 
     def deactivate(self):
         super().deactivate()
-        try:
-            if self.WLEDReceiver is True and self.wled_state is False:
-                turn_wled_off(self.device_ip, self.name)
-        except ValueError as explosion:
-            _LOGGER.warning(f"How'd we get here? Error: {explosion}")
+
         if not self._sacn:
             # He's dead, Jim
+            # _LOGGER.warning("sACN sender not started.")
             return
 
         self.flush(np.zeros(self._config["channel_count"]))
@@ -198,7 +177,7 @@ class E131Device(Device):
             _LOGGER.critical(
                 "The wheels fell off the sACN thread. Restarting it."
             )
-            self.activate
+            self.activate()
 
         # # Hack up a manual flush of the E1.31 data vs having a background thread
         # if self._sacn._output_thread._socket:
