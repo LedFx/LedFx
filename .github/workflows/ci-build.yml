@@ -2,8 +2,6 @@ name: CI Build LedFx
 
 on:
   push:
-    branches:
-      - dev
   pull_request:
 
 jobs:
