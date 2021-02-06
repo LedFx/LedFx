@@ -21,23 +21,15 @@ class Device(BaseRegistry):
 
     CONFIG_SCHEMA = vol.Schema(
         {
-            vol.Required(
-                "name", description="Friendly name for the device"
-            ): str,
             vol.Optional(
                 "rgbw_led",
-                description="RGBW LED's",
+                description="RGBW LEDs",
                 default=False,
             ): bool,
             vol.Optional(
                 "icon_name",
                 description="https://material-ui.com/components/material-icons/",
                 default="mdi:led-strip",
-            ): str,
-            vol.Optional(
-                "icon_name",
-                description="https://material-ui.com/components/material-icons/",
-                default="SettingsInputComponent",
             ): str,
             vol.Optional(
                 "center_offset",

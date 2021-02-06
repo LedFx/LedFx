@@ -16,6 +16,9 @@ class UDPDevice(Device):
     CONFIG_SCHEMA = vol.Schema(
         {
             vol.Required(
+                "name", description="Friendly name for the device"
+            ): str,
+            vol.Required(
                 "ip_address",
                 description="Hostname or IP address of the device",
             ): str,

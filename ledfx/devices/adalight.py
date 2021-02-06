@@ -35,6 +35,9 @@ class AdalightDevice(Device):
     CONFIG_SCHEMA = vol.Schema(
         {
             vol.Required(
+                "name", description="Friendly name for the device"
+            ): str,
+            vol.Required(
                 "com_port",
                 description="COM port",
             ): str,
