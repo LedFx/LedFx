@@ -85,7 +85,7 @@
     sudo systemctl stop ledfx 2> /dev/null
     echo "Stopping Service..."
     sleep 2
-    rm ~/.ledfx/config.yaml
+    rm ~/.ledfx/config.json
     echo "Configuration Deleted"
     echo "Restarting Service..."
     sudo systemctl start ledfx 2> /dev/null
@@ -93,7 +93,7 @@
   }
 
   backup-config (){
-    cp ~/.ledfx/config.yaml ~/config.yaml.bak
+    cp ~/.ledfx/config.json ~/config.json.bak
     menu
   }
 
@@ -119,7 +119,7 @@
   }
 
   menu () {
-    FILE=~/.ledfx/config.yaml
+    FILE=~/.ledfx/config.json
     if [ -f "$FILE" ]; then
 
     INSTALLOPTION=$(
