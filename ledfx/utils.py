@@ -72,13 +72,18 @@ def async_fire_and_forget(coro, loop):
     return
 
 
-def async_fire_and_return(loop, coro, timeout=10):
+def async_fire_and_return(coro, loop, timeout=10):
     """Run some code in the core event loop with a result"""
 
     if not asyncio.coroutines.iscoroutine(coro):
         raise TypeError(("A coroutine object is required: {}").format(coro))
 
-    future = asyncio.run_coroutine_threadsafe(coro, loop=loop)
+    def callback(result):
+        print("Callback!")
+        print(result.result())
+
+    future = asyncio.ensure_future(coro, loop=loop)
+    future.add_done_callback(callback)
 
     try:
         result = future.result(timeout)
@@ -110,48 +115,6 @@ def async_callback(loop, callback, *args):
 
     loop.call_soon_threadsafe(run_callback)
     return future
-
-
-def wled_identifier(device_ip, device_name):
-
-    """
-        Uses a JSON API call to determine if the device is WLED or WLED compatible
-        Specifically searches for "WLED" in the brand json - currently all major
-        branches/forks of WLED contain WLED in the branch data.
-
-    Args:
-        device_ip (string): The device IP to be queried
-        device_name (string): The name of the device
-    Returns:
-        boolean
-    """
-    try:
-        device_info = requests.get(
-            f"http://{device_ip}/json/info", timeout=0.25
-        )
-        if device_info.ok:
-            device_json = device_info.json()
-
-            if device_json["brand"] in "WLED":
-                _LOGGER.info(
-                    f"{device_name} is WLED compatible: {device_json['brand']}"
-                )
-                return True
-            else:
-                _LOGGER.info(
-                    f"{device_name} is NOT WLED compatible: {device_json['brand']}"
-                )
-                return False
-        else:
-            _LOGGER.warning(
-                f"WLED API Error on {device_name}: {device_info.status_code}"
-            )
-            return False
-    except requests.exceptions.RequestException:
-        _LOGGER.info(
-            f"WLED Identifier can't connect to {device_name}. Likely not WLED."
-        )
-        return False
 
 
 def wled_power_state(device_ip, device_name):
