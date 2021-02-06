@@ -118,6 +118,7 @@ def setup_logging(loglevel):
     logging.getLogger("sacn").setLevel(logging.WARNING)
     logging.getLogger("aiohttp.access").setLevel(logging.WARNING)
     logging.getLogger("pyupdater").setLevel(logging.WARNING)
+    logging.getLogger("zeroconf").setLevel(logging.DEBUG)
 
     global _LOGGER
     _LOGGER = logging.getLogger(__name__)
@@ -183,6 +184,12 @@ def parse_args():
         dest="offline_mode",
         action="store_true",
         help="Disable automated updates and sentry crash logger",
+    )
+    parser.add_argument(
+        "--sentry-crash-test",
+        dest="sentry_test",
+        action="store_true",
+        help="This crashes LedFx to test the sentry crash logger",
     )
     return parser.parse_args()
 
@@ -252,6 +259,11 @@ def main():
     setup_logging(args.loglevel)
     config_helpers.load_logger()
 
+    if args.sentry_test:
+        """ This will crash LedFx and submit a Sentry error if Sentry is configured """
+        _LOGGER.warning("Steering LedFx into a brick wall")
+        div_by_zero = 1 / 0
+
     if args.offline_mode is False and currently_frozen():
 
         warnings.filterwarnings("ignore", category=DeprecationWarning)
@@ -265,7 +277,7 @@ def main():
     if not currently_frozen() and installed_via_pip():
         warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-    _LOGGER.info("LedFx Core is initialising")
+    _LOGGER.info("LedFx Core is initializing")
 
     ledfx = LedFxCore(config_dir=args.config, host=args.host, port=args.port)
 

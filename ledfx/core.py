@@ -34,9 +34,8 @@ class LedFxCore(object):
             self.loop = asyncio.ProactorEventLoop()
         else:
             self.loop = asyncio.get_event_loop()
-        executor_opts = {"max_workers": self.config.get("max_workers")}
 
-        self.executor = ThreadPoolExecutor(**executor_opts)
+        self.executor = ThreadPoolExecutor()
         self.loop.set_default_executor(self.executor)
         self.loop.set_exception_handler(self.loop_exception_handler)
 

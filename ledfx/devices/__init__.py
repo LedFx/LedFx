@@ -35,6 +35,11 @@ class Device(BaseRegistry):
                 default="mdi:led-strip",
             ): str,
             vol.Optional(
+                "icon_name",
+                description="https://material-ui.com/components/material-icons/",
+                default="SettingsInputComponent",
+            ): str,
+            vol.Optional(
                 "center_offset",
                 description="Number of pixels from the perceived center of the device",
                 default=0,
@@ -249,7 +254,7 @@ class Devices(RegistryLoader):
             self._zeroconf.remove_service_listener(wled_listener)
 
 
-class WLEDListener:
+class WLEDListener(zeroconf.ServiceBrowser):
     def __init__(self, _ledfx):
         self._ledfx = _ledfx
 
@@ -257,6 +262,8 @@ class WLEDListener:
         _LOGGER.info(f"Service {name} removed")
 
     def add_service(self, zeroconf_obj, type, name):
+
+        _LOGGER.info("Found Device!")
 
         info = zeroconf_obj.get_service_info(type, name)
 
@@ -293,7 +300,8 @@ class WLEDListener:
             # Check this device doesn't share IP, name or hostname with any current saved device
             for device in self._ledfx.devices.values():
                 if (
-                    device.config["ip_address"] == hostname
+                    device.config["ip_address"] == hostname.rstrip(".")
+                    or device.config["ip_address"] == hostname
                     or device.config["name"] == wledname
                     or device.config["ip_address"] == address
                 ):

@@ -41,6 +41,8 @@ class PitchSpectrumAudioEffect(AudioReactiveEffect, GradientEffect):
     def audio_data_updated(self, data):
         y = data.interpolated_melbank(self.pixel_count, filtered=False)
         midi_value = data.midi_value()
+        if midi_value is None:
+            midi_value = 0
         note_color = COLORS["black"]
         if not self.avg_midi:
             self.avg_midi = midi_value

@@ -1,3 +1,5 @@
+import datetime
+import json
 import logging
 import os
 import sys
@@ -6,15 +8,16 @@ import voluptuous as vol
 import yaml
 
 CONFIG_DIRECTORY = ".ledfx"
-CONFIG_FILE_NAME = "config.yaml"
-DEFAULT_PRESETS_FILE_NAME = "default_presets.yaml"
+CONFIG_FILE_NAME = "config.json"
+OLD_CONFIG_FILE_NAME = "config.yaml"
+DEFAULT_PRESETS_FILE_NAME = "default_presets.json"
 
 CORE_CONFIG_SCHEMA = vol.Schema(
     {
         vol.Optional("host", default="0.0.0.0"): str,
         vol.Optional("port", default=8888): int,
         vol.Optional("dev_mode", default=False): bool,
-        vol.Optional("max_workers", default=10): int,
+        vol.Optional("crossfade", default=1.0): float,
         vol.Optional("devices", default=[]): list,
         vol.Optional("displays", default=[]): list,
         vol.Optional("default_presets", default={}): dict,
@@ -42,10 +45,18 @@ def get_default_config_directory() -> str:
 
 
 def get_config_file(config_dir: str) -> str:
-    """Finds a supported configuration fill in the provided directory"""
+    """Finds a supported configuration file in the provided directory"""
 
-    config_path = os.path.join(config_dir, CONFIG_FILE_NAME)
-    return config_path if os.path.isfile(config_path) else None
+    json_path = os.path.join(config_dir, CONFIG_FILE_NAME)
+    if os.path.isfile(json_path) is False:  # Can't find a JSON file
+        yaml_path = os.path.join(
+            config_dir, OLD_CONFIG_FILE_NAME
+        )  # Look for an old YAML file
+        if os.path.isfile(yaml_path):  # Found one!
+            return yaml_path  # Return the YAML File
+        else:
+            return None  # No Valid Configs, return None to build another one
+    return json_path  # Return the JSON file if we find one.
 
 
 def get_log_file_location():
@@ -59,16 +70,19 @@ def create_default_config(config_dir: str) -> str:
 
     config_path = os.path.join(config_dir, CONFIG_FILE_NAME)
     try:
-        with open(config_path, "wt") as file:
-            yaml.dump(CORE_CONFIG_SCHEMA({}), file, default_flow_style=False)
+        with open(config_path, "w", encoding="utf-8") as file:
+            json.dump(
+                CORE_CONFIG_SCHEMA({}),
+                file,
+                ensure_ascii=False,
+                sort_keys=True,
+                indent=4,
+            )
         return config_path
 
     except IOError:
-        print(
-            ("Unable to create default configuration file {}").format(
-                config_path
-            )
-        )
+        print(f"Unable to create default configuration file {config_path}.")
+
         return None
 
 
@@ -114,11 +128,28 @@ def load_config(config_dir: str) -> dict:
 
     config_file = ensure_config_file(config_dir)
     print(("Loading configuration file from {}").format(config_dir))
-    with open(config_file, "rt") as file:
-        config_yaml = yaml.safe_load(file)
-        if config_yaml is None:
-            config_yaml = {}
-        return CORE_CONFIG_SCHEMA(config_yaml)
+
+    if config_file.endswith("yaml"):
+        migrate_config(config_dir, config_file)
+        config_file = os.path.join(config_dir, CONFIG_FILE_NAME)
+    try:
+
+        with open(config_file, encoding="utf-8") as file:
+            config_json = json.load(file)
+            return CORE_CONFIG_SCHEMA(config_json)
+    except json.JSONDecodeError:
+        date = datetime.date.today()
+        backup_location = os.path.join(
+            config_dir, f"config.json.backup.{date}"
+        )
+        os.rename(config_file, backup_location)
+        _LOGGER.warning(
+            "Error loading configuration. Backup created, empty configuration used."
+        )
+        _LOGGER.warning(
+            f"Please check the backup for JSON errors if required - {backup_location}"
+        )
+        return CORE_CONFIG_SCHEMA({})
 
 
 def load_default_presets() -> dict:
@@ -127,8 +158,8 @@ def load_default_presets() -> dict:
     print("Loading default presets from {}".format(ledfx_dir))
     if not os.path.isfile(default_presets_path):
         print("Failed to load {}".format(DEFAULT_PRESETS_FILE_NAME))
-    with open(default_presets_path, "rt") as file:
-        return yaml.safe_load(file)
+    with open(default_presets_path, encoding="utf-8") as file:
+        return json.load(file)
 
 
 def save_config(config: dict, config_dir: str) -> None:
@@ -141,5 +172,30 @@ def save_config(config: dict, config_dir: str) -> None:
     config_view = dict(config)
     if "default_presets" in config_view.keys():
         del config_view["default_presets"]
-    with open(config_file, "w") as file:
-        yaml.dump(config_view, file, default_flow_style=False)
+    with open(config_file, "w", encoding="utf-8") as file:
+        json.dump(
+            config_view, file, ensure_ascii=False, sort_keys=True, indent=4
+        )
+
+
+def migrate_config(config_dir, config_file):
+    """Save the old configuration file as a new JSON object and resume the loading process"""
+
+    print("Migrating configuration file to JSON")
+    with open(config_file, "rt") as file:
+        config_yaml = yaml.safe_load(file)
+        json_config_file = os.path.join(config_dir, CONFIG_FILE_NAME)
+        with open(json_config_file, "w", encoding="utf-8") as file:
+            json.dump(
+                config_yaml, file, ensure_ascii=False, sort_keys=True, indent=4
+            )
+    try:
+        old_config_location = os.path.join(
+            config_dir, f"{datetime.date.today()}_config.yaml.backup"
+        )
+        _LOGGER.info(f"Renaming old configuration to {old_config_location}")
+        os.rename(config_file, old_config_location)
+    except PermissionError as DelError:
+        _LOGGER.warning(
+            f"Unable to rename old configuration file: {DelError}."
+        )

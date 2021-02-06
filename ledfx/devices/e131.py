@@ -7,7 +7,13 @@ import voluptuous as vol
 
 from ledfx.color import COLORS
 from ledfx.devices import Device
-from ledfx.utils import resolve_destination
+from ledfx.utils import (
+    resolve_destination,
+    turn_wled_off,
+    turn_wled_on,
+    wled_identifier,
+    wled_power_state,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -19,7 +25,9 @@ class E131Device(Device):
         {
             vol.Required(
                 "ip_address",
-                description="Hostname or IP address of the device",
+                description="Hostname or IP address of the device, or "
+                "multicast"
+                " for multicast",
             ): str,
             vol.Required(
                 "pixel_count",
@@ -67,7 +75,7 @@ class E131Device(Device):
         )
         if span % self._config["universe_size"] == 0:
             self._config["universe_end"] -= 1
-
+        self.WLEDReceiver = False
         self._sacn = None
 
     @property
@@ -75,29 +83,40 @@ class E131Device(Device):
         return int(self._config["pixel_count"])
 
     def activate(self):
+        if self._config["ip_address"].lower() == "multicast":
+            multicast = True
+        else:
+            multicast = False
         if self._sacn:
-            return
-            # raise Exception("sACN sender already started.")
-        # check if ip/hostname resolves okay
-        resolved_dest = resolve_destination(self._config["ip_address"])
-        if not resolved_dest:
-            _LOGGER.warning(
-                f"Cannot resolve destination {self._config['ip_address']}, aborting device {self.name} activation. Make sure the IP/hostname is correct and device is online."
-            )
-            return
+            raise Exception("sACN sender already started.")
+
+        if multicast is False:
+            self.device_ip = resolve_destination(self._config["ip_address"])
+            if not self.device_ip:
+                _LOGGER.warning(
+                    f"Cannot resolve destination {self._config['ip_address']}, aborting device {self.name} activation. Make sure the IP/hostname is correct and device is online."
+                )
+                return
+
+            if wled_identifier(self.device_ip, self.name):
+                self.WLEDReceiver = True
+                self.wled_state = wled_power_state(self.device_ip, self.name)
+                if self.wled_state is False:
+                    turn_wled_on(self.device_ip, self.name)
 
         # Configure sACN and start the dedicated thread to flush the buffer
         # Some variables are immutable and must be called here
-        self._sacn = sacn.sACNsender(source_name=self.id)
+        self._sacn = sacn.sACNsender(source_name=self.name)
         for universe in range(
             self._config["universe"], self._config["universe_end"] + 1
         ):
-            _LOGGER.info("sACN activating universe {}".format(universe))
+            _LOGGER.info(f"sACN activating universe {universe}")
             self._sacn.activate_output(universe)
-            if self._config["ip_address"] is None:
+
+            if self._config["ip_address"] == "multicast":
                 self._sacn[universe].multicast = True
             else:
-                self._sacn[universe].destination = resolved_dest
+                self._sacn[universe].destination = self.device_ip
                 self._sacn[universe].multicast = False
         self._sacn._fps = self._config["refresh_rate"]
         self._sacn.start()
@@ -119,6 +138,9 @@ class E131Device(Device):
         self.flush(np.zeros(self._config["channel_count"]))
         time.sleep(1.5)
 
+        if self.WLEDReceiver is True and self.wled_state is False:
+            turn_wled_off(self.device_ip, self.name)
+
         self._sacn.stop()
         self._sacn = None
         _LOGGER.info("sACN sender stopped.")
@@ -130,9 +152,7 @@ class E131Device(Device):
             raise Exception("sACN sender not started.")
         if data.size != self._config["channel_count"]:
             raise Exception(
-                "Invalid buffer size. ({} != {})".format(
-                    data.size, self._config["channel_count"]
-                )
+                f"Invalid buffer size. {data.size} != {self._config['channel_count']}"
             )
 
         data = data.flatten()
