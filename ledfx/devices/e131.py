@@ -1,5 +1,4 @@
 import logging
-import time
 
 import numpy as np
 import sacn
@@ -129,14 +128,10 @@ class E131Device(Device):
         super().deactivate()
 
         if not self._sacn:
-            raise Exception("sACN sender not started.")
+            # He's dead, Jim
+            return
 
-        # Turn off all the LEDs when deactivating. With how the sender
-        # works currently we need to sleep to ensure the pixels actually
-        # get updated. Need to replace the sACN sender such that flush
-        # directly writes the pixels.
         self.flush(np.zeros(self._config["channel_count"]))
-        time.sleep(1.5)
 
         if self.WLEDReceiver is True and self.wled_state is False:
             turn_wled_off(self.device_ip, self.name)
