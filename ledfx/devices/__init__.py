@@ -10,7 +10,7 @@ import voluptuous as vol
 import zeroconf
 
 from ledfx.config import save_config
-from ledfx.events import DeviceUpdateEvent
+from ledfx.events import DeviceUpdateEvent, Event
 from ledfx.utils import BaseRegistry, RegistryLoader, generate_id
 
 _LOGGER = logging.getLogger(__name__)
@@ -48,16 +48,10 @@ class Device(BaseRegistry):
     )
 
     _active = False
-    _output_thread = None
-    _active_effect = None
-    _fadeout_effect = None
 
     def __init__(self, ledfx, config):
         self._ledfx = ledfx
         self._config = config
-        # the multiplier to fade in/out of an effect. -ve values mean fading
-        # in, +ve mean fading out
-        self.fade_timer = 0
         self._segments = []
         self._pixels = None
 
@@ -213,10 +207,11 @@ class Devices(RegistryLoader):
     def __init__(self, ledfx):
         super().__init__(ledfx, Device, self.PACKAGE_NAME)
 
-        def cleanup_effects(e):
-            self.clear_all_effects()
+        def on_shutdown(e):
+            self._zeroconf.close()
+            self.deactivate_devices()
 
-        # self._ledfx.events.add_listener(cleanup_effects, Event.LEDFX_SHUTDOWN)
+        self._ledfx.events.add_listener(on_shutdown, Event.LEDFX_SHUTDOWN)
         self._zeroconf = zeroconf.Zeroconf()
 
     def create_from_config(self, config):
@@ -229,9 +224,9 @@ class Devices(RegistryLoader):
                 ledfx=self._ledfx,
             )
 
-    def clear_all_effects(self):
+    def deactivate_devices(self):
         for device in self.values():
-            device.clear_frame()
+            device.deactivate()
 
     def get_device(self, device_id):
         for device in self.values():
