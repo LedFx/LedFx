@@ -30,7 +30,8 @@
             libavformat58 \
             portaudio19-dev \
             pulseaudio \
-            python3-pip
+            python3-pip \
+            avahi-daemon
     python3 -m pip install --upgrade pip wheel setuptools
     curruser=$USER
     IP=$(/sbin/ip -o route get to 8.8.8.8 | sed -n 's/.*src \([0-9.]\+\).*/\1/p')
