@@ -160,21 +160,6 @@ const sidebarStyle = theme => ({
             margin: '0 5px',
         },
     },
-    bottomBar: {
-        position: 'absolute',
-        background: theme.palette.grey[900],
-        bottom: 0,
-        left: 0,
-        right: 0,
-        paddingTop: '0.4rem',
-        paddingBottom: '0.4rem',
-        textAlign: 'center',
-        borderTop: `1px solid ${[theme.palette.background.default]}`,
-        color: '#FFFFFF',
-        '& > a': {
-            margin: '0 5px',
-        },
-    },
 });
 
 export default sidebarStyle;
