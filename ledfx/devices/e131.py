@@ -126,15 +126,16 @@ class E131Device(Device):
 
     def deactivate(self):
         super().deactivate()
-
+        try:
+            if self.WLEDReceiver is True and self.wled_state is False:
+                turn_wled_off(self.device_ip, self.name)
+        except ValueError as explosion:
+            _LOGGER.warning(f"How'd we get here? Error: {explosion}")
         if not self._sacn:
             # He's dead, Jim
             return
 
         self.flush(np.zeros(self._config["channel_count"]))
-
-        if self.WLEDReceiver is True and self.wled_state is False:
-            turn_wled_off(self.device_ip, self.name)
 
         self._sacn.stop()
         self._sacn = None
