@@ -346,6 +346,37 @@ def getattr_explicit(cls, attr, *default):
     )
 
 
+def identify(ip_address):
+    """
+        Uses a JSON API call to determine if the device is WLED or WLED compatible
+        and return its state.
+        Specifically searches for "WLED" in the brand json - currently all major
+        branches/forks of WLED contain WLED in the branch data.
+    Args:
+        ip_address (String): the IP to query
+    Returns:
+        config: dict, with all wled configuration info
+        or None for any error
+    """
+    try:
+        response = requests.get(f"http://{ip_address}/json/info", timeout=1)
+    except requests.exceptions.RequestException:
+        msg = f"WLED Identifier can't connect to {ip_address}. Likely not a WLED device."
+        raise ValueError(msg)
+
+    if not response.ok:
+        msg = f"WLED API Error on {ip_address}: {response.status_code}"
+        raise ValueError(msg)
+
+    wled_config = response.json()
+
+    if not wled_config["brand"] in "WLED":
+        msg = f"{ip_address} is not WLED compatible, brand: {wled_config['brand']}"
+        raise ValueError(msg)
+
+    return wled_config
+
+
 class RollingQueueHandler(logging.handlers.QueueHandler):
     def enqueue(self, record):
         try:

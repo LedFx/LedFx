@@ -5,13 +5,12 @@ from abc import abstractmethod
 from functools import cached_property
 
 import numpy as np
-import requests
 import voluptuous as vol
 import zeroconf
 
 from ledfx.config import save_config
 from ledfx.events import DeviceUpdateEvent, Event
-from ledfx.utils import BaseRegistry, RegistryLoader, generate_id
+from ledfx.utils import BaseRegistry, RegistryLoader, generate_id, identify
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -262,31 +261,24 @@ class WLEDListener(zeroconf.ServiceBrowser):
         if info:
             address = socket.inet_ntoa(info.addresses[0])
             hostname = str(info.server)
-            url = f"http://{address}/json/info"
-            # For each WLED device found, based on the WLED IPv4 address, do a
-            # GET requests
-            response = requests.get(url)
-            b = response.json()
-            # For each WLED json response, format from WLED payload to LedFx payload.
-            # Note, set universe_size to 510 if LED 170 or less, If you have
-            # more than 170 LED, set universe_size to 510
-            wledled = b["leds"]
-            wledname = b["name"]
-            wledcount = wledled["count"]
-            wledrgbmode = wledled["rgbw"]
-            # We need to use a universe size of 510 if there are more than 170
-            # pixels to prevent spanning pixel data across sequential universes
+            try:
+                wled_config = identify(address)
+            except ValueError as msg:
+                _LOGGER.warning(msg)
+                return
+            led_info = wled_config["leds"]
+            wled_name = wled_config["name"]
 
-            device_id = generate_id(wledname)
-            device_type = "e131"
-            device_config = {
-                "refresh_rate": 60,
-                "universe": 1,
-                "name": wledname,
-                "pixel_count": wledcount,
-                "ip_address": hostname,
+            wled_count = led_info["count"]
+            wled_rgbmode = led_info["rgbw"]
+            device_id = generate_id(wled_name)
+            device_type = "wled"
+            wled_config = {
+                "name": wled_name,
+                "pixel_count": wled_count,
                 "icon_name": "wled",
-                "rgbw_led": wledrgbmode,
+                "rgbw_led": wled_rgbmode,
+                "ip_address": hostname.rstrip("."),
             }
 
             # Check this device doesn't share IP, name or hostname with any current saved device
@@ -294,7 +286,7 @@ class WLEDListener(zeroconf.ServiceBrowser):
                 if (
                     device.config["ip_address"] == hostname.rstrip(".")
                     or device.config["ip_address"] == hostname
-                    or device.config["name"] == wledname
+                    or device.config["name"] == wled_name
                     or device.config["ip_address"] == address
                 ):
                     return
@@ -302,13 +294,14 @@ class WLEDListener(zeroconf.ServiceBrowser):
             # Create the device
             _LOGGER.info(
                 "Adding device of type {} with config {}".format(
-                    device_type, device_config
+                    device_type, wled_config
                 )
             )
+
             device = self._ledfx.devices.create(
                 id=device_id,
                 type=device_type,
-                config=device_config,
+                config=wled_config,
                 ledfx=self._ledfx,
             )
 
@@ -324,11 +317,9 @@ class WLEDListener(zeroconf.ServiceBrowser):
             display_id = generate_id(display_name)
             display_config = {
                 "name": display_name,
-                "icon_name": device_config["icon_name"],
+                "icon_name": wled_config["icon_name"],
             }
-            segments = [
-                [device.id, 0, device_config["pixel_count"] - 1, False]
-            ]
+            segments = [[device.id, 0, wled_config["pixel_count"] - 1, False]]
 
             # create the display
             display = self._ledfx.displays.create(

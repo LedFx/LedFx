@@ -44,10 +44,16 @@ class DevicesEndpoint(RestEndpoint):
                 "reason": 'Required attribute "type" was not provided',
             }
             return web.json_response(data=response, status=500)
-
-        device_id = generate_id(device_config.get("name"))
-        # Remove the device it if already exist?
-
+        """
+        WORK IN PROGRESS
+        """
+        if device_config.get("name") is None:
+            device_id = "PLACEHOLDER NAME FOR DEVICES ADDED TO FRONTEND WITHOUT A NAME - DELIBERATELY LONG AND ANNOYING"
+        else:
+            device_id = generate_id(device_config.get("name"))
+        """
+        END WORK IN PROGRESS
+        """
         # Create the device
         _LOGGER.info(
             "Adding device of type {} with config {}".format(
