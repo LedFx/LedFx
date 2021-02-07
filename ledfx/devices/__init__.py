@@ -10,7 +10,7 @@ import zeroconf
 
 from ledfx.config import save_config
 from ledfx.events import DeviceUpdateEvent, Event
-from ledfx.utils import BaseRegistry, RegistryLoader, generate_id, identify
+from ledfx.utils import WLED, BaseRegistry, RegistryLoader, generate_id
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -262,7 +262,7 @@ class WLEDListener(zeroconf.ServiceBrowser):
             address = socket.inet_ntoa(info.addresses[0])
             hostname = str(info.server)
             try:
-                wled_config = identify(address)
+                wled_config = WLED.get_config(address)
             except ValueError as msg:
                 _LOGGER.warning(msg)
                 return

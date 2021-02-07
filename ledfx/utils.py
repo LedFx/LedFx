@@ -14,7 +14,6 @@ from abc import ABC
 # from asyncio import coroutines, ensure_future
 from subprocess import PIPE, Popen
 
-import numpy as np
 import requests
 import voluptuous as vol
 
@@ -117,124 +116,142 @@ def async_callback(loop, callback, *args):
     return future
 
 
-def wled_power_state(device_ip, device_name):
+class WLED:
     """
-        Uses a JSON API call to determine the WLED device power state (on/off)
-
-    Args:
-        device_ip (string): The device IP to be queried
-        device_name (string): The name of the device
-    Returns:
-        boolean: True is "On", False is "Off"
+    A collection of WLED helper functions
+    These are currently blocking, syncronous calls
+    Should make them async in future
     """
-    try:
-        device_state = requests.get(
-            f"http://{device_ip}/json/state", timeout=0.25
-        )
-        if device_state.ok:
-            device_json = device_state.json()
-            _LOGGER.info(f"{device_name} powered on: {device_json['on']}")
-            if device_json["on"] is True:
-                return True
-            else:
-                return False
-        else:
-            _LOGGER.warning(
-                f"WLED API Error on {device_name}: {device_state.status_code}"
-            )
-            return False
-    except requests.exceptions.RequestException as CapturedError:
-        _LOGGER.warning(
-            f"Error Obtaining WLED Power State for {device_name}: {CapturedError}"
-        )
-        return False
 
+    SYNC_MODES = {"ddp": 4048, "e131": 5568, "artnet": 6454}
 
-def turn_wled_on(device_ip, device_name):
-    """
-        Uses a HTTP post call to turn a WLED compatible device on
+    def _wled_request(
+        self, method, ip_address, endpoint, timeout=0.5, **kwargs
+    ):
+        url = f"http://{ip_address}/{endpoint}"
 
-    Args:
-        device_ip (string): The device IP to be turned on
-        device_name (string): The name of the device
-    Returns:
-        boolean: Success or failure of API call
-    """
-    try:
-        turn_on = requests.post(f"http://{device_ip}/win&T=1", timeout=0.25)
+        try:
+            response = method(url, timeout=timeout, **kwargs)
 
-        if turn_on.ok:
-            _LOGGER.info(f"Turning WLED device {device_name} on.")
-            return True
-        else:
-            _LOGGER.warning(
-                f"WLED API Error on {device_name}: {turn_on.status_code}"
-            )
-            return False
-    except requests.exceptions.RequestException as CapturedError:
-        _LOGGER.warning(f"Error turning {device_name} on: {CapturedError}")
+        except requests.exceptions.RequestException:
+            msg = f"Cannot connect to WLED device at {ip_address}"
+            raise ValueError(msg)
 
+        if not response.ok:
+            msg = f"WLED API Error at {ip_address}: {response.status_code}"
+            raise ValueError(msg)
 
-def turn_wled_off(device_ip, device_name):
-    """
-        Uses a HTTP post call to turn a WLED compatible device off
+        return response
 
-    Args:
-        device_ip (string): The device IP to be turned off
-        device_name (string): The name of the device
-    Returns:
-        boolean: Success or failure of API call
-    """
-    try:
-        turn_off = requests.post(f"http://{device_ip}/win&T=0", timeout=0.25)
+    def get_config(self, ip_address):
+        """
+            Uses a JSON API call to determine if the device is WLED or WLED compatible
+            and return its config.
+            Specifically searches for "WLED" in the brand json - currently all major
+            branches/forks of WLED contain WLED in the branch data.
+        Args:
+            ip_address (String): the IP to query
+        Returns:
+            config: dict, with all wled configuration info
+        """
+        response = self._wled_request(requests.get, ip_address, "json/info")
 
-        if turn_off.ok:
-            _LOGGER.info(f"Turning WLED device {device_name} off.")
-            return True
-        else:
-            _LOGGER.warning(
-                f"WLED API Error on {device_name}: {turn_off.status_code}"
-            )
-            return False
-    except requests.exceptions.RequestException as CapturedError:
-        _LOGGER.warning(f"Error turning {device_name} off: {CapturedError}")
+        wled_config = response.json()
 
+        if not wled_config["brand"] in "WLED":
+            msg = f"{ip_address} is not WLED compatible, brand: {wled_config['brand']}"
+            raise ValueError(msg)
 
-def adjust_wled_brightness(device_ip, device_name, brightness):
-    """
-        Uses a HTTP post call to adjust a WLED compatible device's
-        brightness
+        return wled_config
 
+    def get_state(self, ip_address):
+        """
+            Uses a JSON API call to determine the full WLED device state
 
-    Args:
-        device_ip (string): The device IP to adjust brightness
-        device_name (string): The name of the device
-        brightness (int): The brightness value between 0-255
+        Args:
+            ip_address (string): The device IP to be queried
+        Returns:
+            state, dict. Full device state
+        """
+        response = self._wled_request(requests.get, ip_address, "json/state")
 
-    Returns:
-        boolean: Success or failure of API call
-    """
-    validated_brightness = np.clip(brightness, 0, 255)
+        return response.json()
 
-    try:
-        adjust_brightness = requests.post(
-            f"http://{device_ip}/win&A={validated_brightness}", timeout=0.25
+    def get_power_state(self, ip_address):
+        """
+            Uses a JSON API call to determine the WLED device power state (on/off)
+
+        Args:
+            ip_address (string): The device IP to be queried
+        Returns:
+            boolean: True is "On", False is "Off"
+        """
+        return self.get_state(ip_address)["on"]
+
+    def get_segments(self, ip_address):
+        """
+            Uses a JSON API call to determine the WLED segment setup
+
+        Args:
+            ip_address (string): The device IP to be queried
+        Returns:
+            dict: array of segments
+        """
+        return self.get_state(ip_address)["seg"]
+
+    def set_power_state(self, ip_address, state):
+        """
+            Uses a HTTP post call to set the power of a WLED compatible device on/off
+
+        Args:
+            ip_address (string): The device IP to be turned on
+            state (bool): on/off
+        """
+        self._wled_request(
+            requests.post, ip_address, f"win&T={'1' if state else '0'}"
         )
 
-        if adjust_brightness.ok:
-            _LOGGER.info(
-                f"Adjusting {device_name} brightness to: {validated_brightness}."
-            )
-            return True
-        else:
-            _LOGGER.warning(
-                f"WLED API Error while trying to adjust brightness on {device_name}."
-            )
-            return False
-    except requests.exceptions.RequestException as CapturedError:
-        _LOGGER.warning(
-            f"Error Adjusting {device_name} brightness: {CapturedError}"
+        _LOGGER.info(
+            f"Turned WLED device at {ip_address} {'on' if state else 'off'}."
         )
+
+    def set_brightness(self, ip_address, brightness):
+        """
+            Uses a HTTP post call to adjust a WLED compatible device's
+            brightness
+
+        Args:
+            ip_address (string): The device IP to adjust brightness
+            brightness (int): The brightness value between 0-255
+        """
+        # cast to int and clamp to range
+        brightness = max(0, max(int(brightness), 255))
+
+        self._wled_request(requests.post, ip_address, f"win&A={brightness}")
+
+        _LOGGER.info(
+            f"Set WLED device brightness at {ip_address} to {brightness}."
+        )
+
+    def set_sync_mode(self, ip_address, mode):
+        """
+            Uses a HTTP post call to set a WLED compatible device's
+            sync mode
+
+        Args:
+            ip_address (string): The device IP to adjust brightness
+            mode: str, in ["ddp", "e131", "artnet"]
+        """
+        port = self.SYNC_MODES["mode"]
+
+        self._wled_request(
+            requests.post,
+            ip_address,
+            "settings/sync",
+            data={"DI": port, "EP": port},
+        )
+
+        _LOGGER.info(f"Set WLED device at {ip_address} to sync mode '{mode}'")
 
 
 def resolve_destination(destination):
@@ -257,42 +274,7 @@ def resolve_destination(destination):
         try:
             return socket.gethostbyname(cleaned_dest)
         except socket.gaierror:
-
             _LOGGER.warning(f"Failed resolving {cleaned_dest}.")
-
-        return False
-
-
-def wled_get_segments(device_ip, device_name):
-    """
-        Uses a JSON API call to determine the WLED segment setup
-
-    Args:
-        device_ip (string): The device IP to be queried
-        device_name (string): The name of the device
-    Returns:
-        dict: JSON array of segments
-    """
-    try:
-        device_data = requests.get(
-            f"http://{device_ip}/json/state", timeout=0.25
-        )
-        if device_data.ok:
-            device_json = device_data.json()
-            # This is where my skillset ends.
-            # I have no idea how to iterate over the returned data and extract out the useful bits.
-            print(device_json["seg"])
-        else:
-            _LOGGER.warning(
-                f"WLED API Error on {device_name}: {device_data.status_code}"
-            )
-            # Probably just return a single segment of LED length here?
-            return False
-    except requests.exceptions.RequestException as CapturedError:
-        _LOGGER.warning(
-            f"Error Connecting to WLED device {device_name}: {CapturedError}"
-        )
-        # Probably just return a single segment of LED length here?
         return False
 
 
@@ -344,37 +326,6 @@ def getattr_explicit(cls, attr, *default):
     raise AttributeError(
         "type object '{}' has no attribute '{}'.".format(cls.__name__, attr)
     )
-
-
-def identify(ip_address):
-    """
-        Uses a JSON API call to determine if the device is WLED or WLED compatible
-        and return its state.
-        Specifically searches for "WLED" in the brand json - currently all major
-        branches/forks of WLED contain WLED in the branch data.
-    Args:
-        ip_address (String): the IP to query
-    Returns:
-        config: dict, with all wled configuration info
-        or None for any error
-    """
-    try:
-        response = requests.get(f"http://{ip_address}/json/info", timeout=1)
-    except requests.exceptions.RequestException:
-        msg = f"WLED Identifier can't connect to {ip_address}. Likely not a WLED device."
-        raise ValueError(msg)
-
-    if not response.ok:
-        msg = f"WLED API Error on {ip_address}: {response.status_code}"
-        raise ValueError(msg)
-
-    wled_config = response.json()
-
-    if not wled_config["brand"] in "WLED":
-        msg = f"{ip_address} is not WLED compatible, brand: {wled_config['brand']}"
-        raise ValueError(msg)
-
-    return wled_config
 
 
 class RollingQueueHandler(logging.handlers.QueueHandler):

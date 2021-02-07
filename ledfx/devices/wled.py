@@ -3,11 +3,10 @@ import socket
 import struct
 
 import numpy as np
-import requests
 import voluptuous as vol
 
 from ledfx.devices import Device
-from ledfx.utils import resolve_destination
+from ledfx.utils import WLED, resolve_destination
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -53,36 +52,6 @@ class WLEDDevice(Device):
         }
     )
 
-    def identify(self, ip_address):
-        """
-            Uses a JSON API call to determine if the device is WLED or WLED compatible
-            Specifically searches for "WLED" in the brand json - currently all major
-            branches/forks of WLED contain WLED in the branch data.
-
-        Returns:
-            config: dict, with all wled configuration info
-            or None for any error
-        """
-        try:
-            response = requests.get(
-                f"http://{ip_address}/json/info", timeout=self.TIMEOUT
-            )
-        except requests.exceptions.RequestException:
-            msg = f"WLED Identifier can't connect to {ip_address}. Likely not a WLED device."
-            raise ValueError(msg)
-
-        if not response.ok:
-            msg = f"WLED API Error on {ip_address}: {response.status_code}"
-            raise ValueError(msg)
-
-        wled_config = response.json()
-
-        if not wled_config["brand"] in "WLED":
-            msg = f"{ip_address} is not WLED compatible, brand: {wled_config['brand']}"
-            raise ValueError(msg)
-
-        return wled_config
-
     def __init__(self, ledfx, config):
         # TASK: using just the ip address, get all necessary info from the wled device, fill config, and pass this on to super()
         # check if ip/hostname resolves okay
@@ -95,7 +64,7 @@ class WLEDDevice(Device):
             return
 
         try:
-            wled_config = self.identify(self.resolved_dest)
+            wled_config = WLED.get_config(self.resolved_dest)
         except ValueError as msg:
             _LOGGER.warning(msg)
             return
@@ -115,7 +84,6 @@ class WLEDDevice(Device):
 
         # that's a nice operation u got there python
         config |= wled_config
-        print(config)
 
         super().__init__(ledfx, config)
 
