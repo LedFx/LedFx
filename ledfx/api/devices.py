@@ -4,7 +4,7 @@ from aiohttp import web
 
 from ledfx.api import RestEndpoint
 from ledfx.config import save_config
-from ledfx.utils import generate_id
+from ledfx.utils import WLED, generate_id
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -44,16 +44,28 @@ class DevicesEndpoint(RestEndpoint):
                 "reason": 'Required attribute "type" was not provided',
             }
             return web.json_response(data=response, status=500)
-        """
-        WORK IN PROGRESS
-        """
-        if device_config.get("name") is None:
-            device_id = "PLACEHOLDER NAME FOR DEVICES ADDED TO FRONTEND WITHOUT A NAME - DELIBERATELY LONG AND ANNOYING"
-        else:
-            device_id = generate_id(device_config.get("name"))
-        """
-        END WORK IN PROGRESS
-        """
+
+        if device_type == "wled":
+            wled_config = await WLED.get_config(device_config["ip_address"])
+
+            led_info = wled_config["leds"]
+            wled_name = wled_config["name"]
+
+            wled_count = led_info["count"]
+            wled_rgbmode = led_info["rgbw"]
+
+            wled_config = {
+                "name": wled_name,
+                "pixel_count": wled_count,
+                "icon_name": "wled",
+                "rgbw_led": wled_rgbmode,
+            }
+
+            # that's a nice operation u got there python
+            device_config |= wled_config
+
+        device_id = generate_id(device_config.get("name"))
+
         # Create the device
         _LOGGER.info(
             "Adding device of type {} with config {}".format(
