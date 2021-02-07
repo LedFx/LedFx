@@ -118,8 +118,9 @@ class WLED:
 
     SYNC_MODES = {"ddp": 4048, "e131": 5568, "artnet": 6454}
 
+    @staticmethod
     async def _wled_request(
-        self, method, ip_address, endpoint, timeout=0.5, **kwargs
+        method, ip_address, endpoint, timeout=0.5, **kwargs
     ):
         url = f"http://{ip_address}/{endpoint}"
 
@@ -136,7 +137,8 @@ class WLED:
 
         return response
 
-    async def get_config(self, ip_address):
+    @staticmethod
+    async def get_config(ip_address):
         """
             Uses a JSON API call to determine if the device is WLED or WLED compatible
             and return its config.
@@ -147,7 +149,7 @@ class WLED:
         Returns:
             config: dict, with all wled configuration info
         """
-        response = await self._wled_request(
+        response = await WLED._wled_request(
             requests.get, ip_address, "json/info"
         )
 
@@ -159,7 +161,8 @@ class WLED:
 
         return wled_config
 
-    async def get_state(self, ip_address):
+    @staticmethod
+    async def get_state(ip_address):
         """
             Uses a JSON API call to determine the full WLED device state
 
@@ -168,13 +171,14 @@ class WLED:
         Returns:
             state, dict. Full device state
         """
-        response = await self._wled_request(
+        response = await WLED._wled_request(
             requests.get, ip_address, "json/state"
         )
 
         return response.json()
 
-    async def get_power_state(self, ip_address):
+    @staticmethod
+    async def get_power_state(ip_address):
         """
             Uses a JSON API call to determine the WLED device power state (on/off)
 
@@ -183,9 +187,10 @@ class WLED:
         Returns:
             boolean: True is "On", False is "Off"
         """
-        return await self.get_state(ip_address)["on"]
+        return await WLED.get_state(ip_address)["on"]
 
-    async def get_segments(self, ip_address):
+    @staticmethod
+    async def get_segments(ip_address):
         """
             Uses a JSON API call to determine the WLED segment setup
 
@@ -194,9 +199,10 @@ class WLED:
         Returns:
             dict: array of segments
         """
-        return await self.get_state(ip_address)["seg"]
+        return await WLED.get_state(ip_address)["seg"]
 
-    async def set_power_state(self, ip_address, state):
+    @staticmethod
+    async def set_power_state(ip_address, state):
         """
             Uses a HTTP post call to set the power of a WLED compatible device on/off
 
@@ -204,7 +210,7 @@ class WLED:
             ip_address (string): The device IP to be turned on
             state (bool): on/off
         """
-        await self._wled_request(
+        await WLED._wled_request(
             requests.post, ip_address, f"win&T={'1' if state else '0'}"
         )
 
@@ -212,7 +218,8 @@ class WLED:
             f"Turned WLED device at {ip_address} {'on' if state else 'off'}."
         )
 
-    async def set_brightness(self, ip_address, brightness):
+    @staticmethod
+    async def set_brightness(ip_address, brightness):
         """
             Uses a HTTP post call to adjust a WLED compatible device's
             brightness
@@ -224,7 +231,7 @@ class WLED:
         # cast to int and clamp to range
         brightness = max(0, max(int(brightness), 255))
 
-        await self._wled_request(
+        await WLED._wled_request(
             requests.post, ip_address, f"win&A={brightness}"
         )
 
@@ -232,7 +239,8 @@ class WLED:
             f"Set WLED device brightness at {ip_address} to {brightness}."
         )
 
-    async def set_sync_mode(self, ip_address, mode):
+    @staticmethod
+    async def set_sync_mode(ip_address, mode):
         """
             Uses a HTTP post call to set a WLED compatible device's
             sync mode
@@ -241,9 +249,9 @@ class WLED:
             ip_address (string): The device IP to adjust brightness
             mode: str, in ["ddp", "e131", "artnet"]
         """
-        port = self.SYNC_MODES["mode"]
+        port = WLED.SYNC_MODES["mode"]
 
-        await self._wled_request(
+        await WLED._wled_request(
             requests.post,
             ip_address,
             "settings/sync",
@@ -252,13 +260,14 @@ class WLED:
 
         _LOGGER.info(f"Set WLED device at {ip_address} to sync mode '{mode}'")
 
-    async def reboot(self, ip_address):
-        await self._wled_request(
+    @staticmethod
+    async def reboot(ip_address):
+        await WLED._wled_request(
             requests.post, ip_address, "win&RB", timeout=3
         )
 
 
-def resolve_destination(destination):
+async def resolve_destination(destination):
     """Uses a socket to attempt domain lookup
 
     Args:
@@ -271,10 +280,9 @@ def resolve_destination(destination):
     try:
         ipaddress.ip_address(destination)
         return destination
+
     except ValueError:
-
         cleaned_dest = destination.rstrip(".")
-
         try:
             return socket.gethostbyname(cleaned_dest)
         except socket.gaierror:
