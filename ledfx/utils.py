@@ -119,13 +119,11 @@ def async_callback(loop, callback, *args):
 class WLED:
     """
     A collection of WLED helper functions
-    These are currently blocking, syncronous calls
-    Should make them async in future
     """
 
     SYNC_MODES = {"ddp": 4048, "e131": 5568, "artnet": 6454}
 
-    def _wled_request(
+    async def _wled_request(
         self, method, ip_address, endpoint, timeout=0.5, **kwargs
     ):
         url = f"http://{ip_address}/{endpoint}"
@@ -143,7 +141,7 @@ class WLED:
 
         return response
 
-    def get_config(self, ip_address):
+    async def get_config(self, ip_address):
         """
             Uses a JSON API call to determine if the device is WLED or WLED compatible
             and return its config.
@@ -154,7 +152,9 @@ class WLED:
         Returns:
             config: dict, with all wled configuration info
         """
-        response = self._wled_request(requests.get, ip_address, "json/info")
+        response = await self._wled_request(
+            requests.get, ip_address, "json/info"
+        )
 
         wled_config = response.json()
 
@@ -164,7 +164,7 @@ class WLED:
 
         return wled_config
 
-    def get_state(self, ip_address):
+    async def get_state(self, ip_address):
         """
             Uses a JSON API call to determine the full WLED device state
 
@@ -173,11 +173,13 @@ class WLED:
         Returns:
             state, dict. Full device state
         """
-        response = self._wled_request(requests.get, ip_address, "json/state")
+        response = await self._wled_request(
+            requests.get, ip_address, "json/state"
+        )
 
         return response.json()
 
-    def get_power_state(self, ip_address):
+    async def get_power_state(self, ip_address):
         """
             Uses a JSON API call to determine the WLED device power state (on/off)
 
@@ -186,9 +188,9 @@ class WLED:
         Returns:
             boolean: True is "On", False is "Off"
         """
-        return self.get_state(ip_address)["on"]
+        return await self.get_state(ip_address)["on"]
 
-    def get_segments(self, ip_address):
+    async def get_segments(self, ip_address):
         """
             Uses a JSON API call to determine the WLED segment setup
 
@@ -197,9 +199,9 @@ class WLED:
         Returns:
             dict: array of segments
         """
-        return self.get_state(ip_address)["seg"]
+        return await self.get_state(ip_address)["seg"]
 
-    def set_power_state(self, ip_address, state):
+    async def set_power_state(self, ip_address, state):
         """
             Uses a HTTP post call to set the power of a WLED compatible device on/off
 
@@ -207,7 +209,7 @@ class WLED:
             ip_address (string): The device IP to be turned on
             state (bool): on/off
         """
-        self._wled_request(
+        await self._wled_request(
             requests.post, ip_address, f"win&T={'1' if state else '0'}"
         )
 
@@ -215,7 +217,7 @@ class WLED:
             f"Turned WLED device at {ip_address} {'on' if state else 'off'}."
         )
 
-    def set_brightness(self, ip_address, brightness):
+    async def set_brightness(self, ip_address, brightness):
         """
             Uses a HTTP post call to adjust a WLED compatible device's
             brightness
@@ -227,13 +229,15 @@ class WLED:
         # cast to int and clamp to range
         brightness = max(0, max(int(brightness), 255))
 
-        self._wled_request(requests.post, ip_address, f"win&A={brightness}")
+        await self._wled_request(
+            requests.post, ip_address, f"win&A={brightness}"
+        )
 
         _LOGGER.info(
             f"Set WLED device brightness at {ip_address} to {brightness}."
         )
 
-    def set_sync_mode(self, ip_address, mode):
+    async def set_sync_mode(self, ip_address, mode):
         """
             Uses a HTTP post call to set a WLED compatible device's
             sync mode
@@ -244,7 +248,7 @@ class WLED:
         """
         port = self.SYNC_MODES["mode"]
 
-        self._wled_request(
+        await self._wled_request(
             requests.post,
             ip_address,
             "settings/sync",
@@ -253,8 +257,10 @@ class WLED:
 
         _LOGGER.info(f"Set WLED device at {ip_address} to sync mode '{mode}'")
 
-    def reboot(self, ip_address):
-        self._wled_request(requests.post, ip_address, "win&RB", timeout=3)
+    async def reboot(self, ip_address):
+        await self._wled_request(
+            requests.post, ip_address, "win&RB", timeout=3
+        )
 
 
 def resolve_destination(destination):
