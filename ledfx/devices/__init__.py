@@ -242,7 +242,7 @@ class Devices(RegistryLoader):
                 async_fire_and_return(
                     WLED.get_config(device.config["ip_address"]),
                     device.update_config,
-                    timeout=2,
+                    timeout=1,
                 )
 
     async def find_wled_devices(self):
