@@ -5,7 +5,7 @@ import numpy as np
 import voluptuous as vol
 
 from ledfx.devices import Device
-from ledfx.utils import resolve_destination
+from ledfx.utils import async_fire_and_return, resolve_destination
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -35,14 +35,16 @@ class FXMatrix(Device):
     )
 
     def __init__(self, ledfx, config):
-        # check if ip/hostname resolves okay
-        self.resolved_dest = resolve_destination(config["ip_address"])
-        if not self.resolved_dest:
-            _LOGGER.warning(
-                f"Cannot resolve destination {config['ip_address']}, aborting device {config['name']} activation. Make sure the IP/hostname is correct and device is online."
-            )
-            return
         super().__init__(ledfx, config)
+
+        self.resolved_dest = self._config["ip_address"]
+
+        async_fire_and_return(
+            resolve_destination(self.resolved_dest), self.on_resolved_dest, 0.5
+        )
+
+    def on_resolved_dest(self, dest):
+        self.resolved_dest = dest
 
     def activate(self):
         self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)

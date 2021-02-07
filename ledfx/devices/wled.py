@@ -58,13 +58,13 @@ class WLEDDevice(Device):
     )
 
     def __init__(self, ledfx, config):
-        self.resolved_dest = config["ip_address"]
+        super().__init__(ledfx, config)
+
+        self.resolved_dest = self._config["ip_address"]
 
         async_fire_and_return(
             resolve_destination(self.resolved_dest), self.on_resolved_dest, 0.5
         )
-
-        super().__init__(ledfx, config)
 
     def on_resolved_dest(self, dest):
         self.resolved_dest = dest
