@@ -253,6 +253,9 @@ class WLED:
 
         _LOGGER.info(f"Set WLED device at {ip_address} to sync mode '{mode}'")
 
+    def reboot(self, ip_address):
+        self._wled_request(requests.post, ip_address, "win&RB", timeout=3)
+
 
 def resolve_destination(destination):
     """Uses a socket to attempt domain lookup
