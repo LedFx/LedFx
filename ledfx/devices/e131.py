@@ -72,13 +72,20 @@ class E131Device(Device):
         if span % self._config["universe_size"] == 0:
             self._config["universe_end"] -= 1
 
-        self.resolved_dest = config["ip_address"]
-
-        async_fire_and_return(
-            resolve_destination(self.resolved_dest), self.on_resolved_dest, 0.5
-        )
+        self.resolved_dest = None
+        self.attempt_resolve_dest()
 
         self._sacn = None
+
+    def attempt_resolve_dest(self):
+        _LOGGER.info(
+            f"Attempting to resolve device {self.name} address {self._config['ip_address']} ..."
+        )
+        async_fire_and_return(
+            resolve_destination(self._config["ip_address"]),
+            self.on_resolved_dest,
+            0.5,
+        )
 
     def on_resolved_dest(self, dest):
         self.resolved_dest = dest
@@ -88,6 +95,13 @@ class E131Device(Device):
         return int(self._config["pixel_count"])
 
     def activate(self):
+        if not self.resolved_dest:
+            _LOGGER.error(
+                f"Cannot activate device {self.name} - destination address {self._config['ip_address']} is not resolved"
+            )
+            self.attempt_resolve_dest()
+            return
+
         if self._config["ip_address"].lower() == "multicast":
             multicast = True
         else:

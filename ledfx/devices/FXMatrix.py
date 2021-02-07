@@ -37,16 +37,30 @@ class FXMatrix(Device):
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
 
-        self.resolved_dest = self._config["ip_address"]
+        self.resolved_dest = None
+        self.attempt_resolve_dest()
 
+    def attempt_resolve_dest(self):
+        _LOGGER.info(
+            f"Attempting to resolve device {self.name} address {self._config['ip_address']} ..."
+        )
         async_fire_and_return(
-            resolve_destination(self.resolved_dest), self.on_resolved_dest, 0.5
+            resolve_destination(self._config["ip_address"]),
+            self.on_resolved_dest,
+            0.5,
         )
 
     def on_resolved_dest(self, dest):
         self.resolved_dest = dest
 
     def activate(self):
+        if not self.resolved_dest:
+            _LOGGER.error(
+                f"Cannot activate device {self.name} - destination address {self._config['ip_address']} is not resolved"
+            )
+            self.attempt_resolve_dest()
+            return
+
         self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self._config["pixel_count"] = int(
             self._config["width"] * self._config["height"]
