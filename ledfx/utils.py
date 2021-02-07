@@ -71,21 +71,18 @@ def async_fire_and_forget(coro, loop):
     return
 
 
-def async_fire_and_return(coro, loop, timeout=10):
-    """Run some code in the core event loop with a result"""
+def async_fire_and_return(coro, callback, timeout=10):
+    """Run some async code in the core event loop with a callback to handle result"""
 
     if not asyncio.coroutines.iscoroutine(coro):
         raise TypeError(("A coroutine object is required: {}").format(coro))
 
-    def callback(result):
-        print("Callback!")
-        print(result.result())
-
-    future = asyncio.ensure_future(coro, loop=loop)
-    future.add_done_callback(callback)
+    def _callback(future):
+        callback(future.result())
 
     try:
-        result = future.result(timeout)
+        future = asyncio.create_task(asyncio.wait_for(coro, timeout=timeout))
+        future.add_done_callback(_callback)
     except asyncio.TimeoutError:
         _LOGGER.warning(
             f"Coroutine {coro} timed out at {timeout}s, cancelling the task..."
@@ -93,8 +90,6 @@ def async_fire_and_return(coro, loop, timeout=10):
         future.cancel()
     except Exception as exc:
         _LOGGER.error(f"Coroutine {coro} raised an exception: {exc!r}")
-    else:
-        return result
 
 
 def async_callback(loop, callback, *args):

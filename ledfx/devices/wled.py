@@ -53,18 +53,20 @@ class WLEDDevice(Device):
     )
 
     def __init__(self, ledfx, config):
-        # TASK: using just the ip address, get all necessary info from the wled device, fill config, and pass this on to super()
-        # check if ip/hostname resolves okay
-
         self.resolved_dest = resolve_destination(config["ip_address"])
+
         if not self.resolved_dest:
             _LOGGER.warning(
                 f"Cannot resolve destination {config['ip_address']} - Make sure the IP/hostname is correct and device is online."
             )
             return
 
+        super().__init__(ledfx, config)
+
+    async def update_config(self):
+        # Get all necessary info from the wled device and update configuration
         try:
-            wled_config = WLED.get_config(self.resolved_dest)
+            wled_config = await WLED.get_config(self.resolved_dest)
         except ValueError as msg:
             _LOGGER.warning(msg)
             return
@@ -83,9 +85,7 @@ class WLEDDevice(Device):
         }
 
         # that's a nice operation u got there python
-        config |= wled_config
-
-        super().__init__(ledfx, config)
+        self._config |= wled_config
 
     def activate(self):
         self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
