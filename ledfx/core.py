@@ -128,6 +128,8 @@ class LedFxCore(object):
             self.integrations.activate_integrations(), self.loop
         )
 
+        self.devices.update_wled_configs()
+
         if open_ui:
             import webbrowser
 

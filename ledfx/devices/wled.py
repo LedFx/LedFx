@@ -6,7 +6,7 @@ import numpy as np
 import voluptuous as vol
 
 from ledfx.devices import Device
-from ledfx.utils import WLED, resolve_destination
+from ledfx.utils import async_fire_and_return, resolve_destination
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -49,27 +49,37 @@ class WLEDDevice(Device):
                 description="Maximum rate that pixels are sent to the device",
                 default=60,
             ): int,
+            vol.Optional(
+                "icon_name",
+                description="https://material-ui.com/components/material-icons/",
+                default="wled",
+            ): str,
         }
     )
 
     def __init__(self, ledfx, config):
-        self.resolved_dest = resolve_destination(config["ip_address"])
+        self.resolved_dest = config["ip_address"]
 
-        if not self.resolved_dest:
-            _LOGGER.warning(
-                f"Cannot resolve destination {config['ip_address']} - Make sure the IP/hostname is correct and device is online."
-            )
-            return
+        async_fire_and_return(
+            resolve_destination(self.resolved_dest), self.on_resolved_dest, 0.5
+        )
 
         super().__init__(ledfx, config)
 
-    async def update_config(self):
-        # Get all necessary info from the wled device and update configuration
-        try:
-            wled_config = await WLED.get_config(self.resolved_dest)
-        except ValueError as msg:
-            _LOGGER.warning(msg)
-            return
+    def on_resolved_dest(self, dest):
+        self.resolved_dest = dest
+
+    # async def get_config(self):
+    #     # Get all necessary info from the wled device and update configuration
+    #     try:
+    #         wled_config = await WLED.get_config(self.resolved_dest)
+    #     except ValueError as msg:
+    #         _LOGGER.warning(msg)
+    #         return
+
+    def update_config(self, wled_config):
+
+        _LOGGER.info(f"Received WLED config from {self.resolved_dest}")
 
         led_info = wled_config["leds"]
         wled_name = wled_config["name"]
@@ -80,7 +90,6 @@ class WLEDDevice(Device):
         wled_config = {
             "name": wled_name,
             "pixel_count": wled_count,
-            "icon_name": "wled",
             "rgbw_led": wled_rgbmode,
         }
 

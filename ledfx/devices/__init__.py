@@ -10,7 +10,13 @@ import zeroconf
 
 from ledfx.config import save_config
 from ledfx.events import DeviceUpdateEvent, Event
-from ledfx.utils import WLED, BaseRegistry, RegistryLoader, generate_id
+from ledfx.utils import (
+    WLED,
+    BaseRegistry,
+    RegistryLoader,
+    async_fire_and_return,
+    generate_id,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -230,10 +236,19 @@ class Devices(RegistryLoader):
                 return device
         return None
 
+    def update_wled_configs(self):
+        for device in self.values():
+            if device.type == "wled":
+                async_fire_and_return(
+                    WLED.get_config(device.config["ip_address"]),
+                    device.update_config,
+                    timeout=2,
+                )
+
     async def find_wled_devices(self):
         # Scan the LAN network that match WLED using zeroconf - Multicast DNS
         # Service Discovery Library
-        _LOGGER.info("Scanning for WLED devices...")
+        _LOGGER.info("Scanning for new WLED devices...")
         wled_listener = WLEDListener(self._ledfx)
         wledbrowser = self._zeroconf.add_service_listener(
             "_wled._tcp.local.", wled_listener
