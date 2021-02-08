@@ -329,13 +329,23 @@ class WLED:
             mode: str, in ["ddp", "e131", "artnet"]
         """
         sync_settings = await WLED._get_sync_settings(ip_address)
-        port = WLED.SYNC_MODES["mode"]
+
+        if mode == "udp":
+            # if realtime udp is already enabled, we're good to go
+            if sync_settings["RD"] == 1:
+                return
+            else:
+                data = {"RD": "on"}
+
+        else:
+            port = WLED.SYNC_MODES["mode"]
+            data = {"DI": port, "EP": port}
 
         await WLED._wled_request(
             requests.post,
             ip_address,
             "settings/sync",
-            data=sync_settings | {"DI": port, "EP": port},
+            data=sync_settings | data,
         )
 
         _LOGGER.info(f"Set WLED device at {ip_address} to sync mode '{mode}'")
