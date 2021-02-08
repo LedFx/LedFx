@@ -299,6 +299,26 @@ class WLED:
         )
 
     @staticmethod
+    async def set_force_max_brightness(ip_address, mode):
+        """
+            Uses a HTTP post call to set a WLED compatible device's
+            sync option "Force Max Brightness"
+
+        Args:
+            ip_address (string): The device IP to adjust brightness
+        """
+        sync_settings = await WLED._get_sync_settings(ip_address)
+
+        await WLED._wled_request(
+            requests.post,
+            ip_address,
+            "settings/sync",
+            data=sync_settings | {"FB": "on"},
+        )
+
+        _LOGGER.info(f"Set WLED device at {ip_address} to sync mode '{mode}'")
+
+    @staticmethod
     async def set_sync_mode(ip_address, mode):
         """
             Uses a HTTP post call to set a WLED compatible device's
