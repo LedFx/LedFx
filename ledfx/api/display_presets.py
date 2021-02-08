@@ -34,13 +34,13 @@ class DisplayPresetsEndpoint(RestEndpoint):
 
         effect_id = display.active_effect.type
 
-        if effect_id in self._ledfx.config["default_presets"].keys():
-            default = self._ledfx.config["default_presets"][effect_id]
+        if effect_id in self._ledfx.config["ledfx_presets"].keys():
+            default = self._ledfx.config["ledfx_presets"][effect_id]
         else:
             default = {}
 
-        if effect_id in self._ledfx.config["custom_presets"].keys():
-            custom = self._ledfx.config["custom_presets"][effect_id]
+        if effect_id in self._ledfx.config["user_presets"].keys():
+            custom = self._ledfx.config["user_presets"][effect_id]
         else:
             custom = {}
 
@@ -76,10 +76,10 @@ class DisplayPresetsEndpoint(RestEndpoint):
             }
             return web.json_response(data=response, status=500)
 
-        if category not in ["default_presets", "custom_presets"]:
+        if category not in ["ledfx_presets", "user_presets"]:
             response = {
                 "status": "failed",
-                "reason": f'Category {category} is not "default_presets" or "custom_presets"',
+                "reason": f'Category {category} is not "ledfx_presets" or "user_presets"',
             }
             return web.json_response(data=response, status=500)
 
@@ -180,15 +180,15 @@ class DisplayPresetsEndpoint(RestEndpoint):
         effect_id = display.active_effect.type
 
         # If no presets for the effect, create a dict to store them
-        if effect_id not in self._ledfx.config["custom_presets"].keys():
-            self._ledfx.config["custom_presets"][effect_id] = {}
+        if effect_id not in self._ledfx.config["user_presets"].keys():
+            self._ledfx.config["user_presets"][effect_id] = {}
 
         # Update the preset if it already exists, else create it
-        self._ledfx.config["custom_presets"][effect_id][preset_id] = {}
-        self._ledfx.config["custom_presets"][effect_id][preset_id][
+        self._ledfx.config["user_presets"][effect_id][preset_id] = {}
+        self._ledfx.config["user_presets"][effect_id][preset_id][
             "name"
         ] = preset_name
-        self._ledfx.config["custom_presets"][effect_id][preset_id][
+        self._ledfx.config["user_presets"][effect_id][preset_id][
             "config"
         ] = display.active_effect.config
 

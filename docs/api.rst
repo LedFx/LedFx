@@ -231,6 +231,13 @@ Get preset effect configs for active effect of a display
 
 Set active effect config of display to a preset
 
+.. code-block:: json
+    {
+    "category": "user_presets",
+    "effect_id": "wavelength",
+    "preset_id": "my_wavelength_preset"
+    }
+
 .. rubric:: POST
 
 Save configuration of display's active effect as a custom preset for that effect

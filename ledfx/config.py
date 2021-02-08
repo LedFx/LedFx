@@ -10,7 +10,6 @@ import yaml
 CONFIG_DIRECTORY = ".ledfx"
 CONFIG_FILE_NAME = "config.json"
 OLD_CONFIG_FILE_NAME = "config.yaml"
-DEFAULT_PRESETS_FILE_NAME = "default_presets.json"
 
 CORE_CONFIG_SCHEMA = vol.Schema(
     {
@@ -19,8 +18,8 @@ CORE_CONFIG_SCHEMA = vol.Schema(
         vol.Optional("dev_mode", default=False): bool,
         vol.Optional("devices", default=[]): list,
         vol.Optional("displays", default=[]): list,
-        vol.Optional("default_presets", default={}): dict,
-        vol.Optional("custom_presets", default={}): dict,
+        vol.Optional("ledfx_presets", default={}): dict,
+        vol.Optional("user_presets", default={}): dict,
         vol.Optional("scenes", default={}): dict,
         vol.Optional("integrations", default=[]): list,
         vol.Optional("virtuals", default=[]): list,
@@ -151,16 +150,6 @@ def load_config(config_dir: str) -> dict:
         return CORE_CONFIG_SCHEMA({})
 
 
-def load_default_presets() -> dict:
-    ledfx_dir = os.path.dirname(os.path.realpath(__file__))
-    default_presets_path = os.path.join(ledfx_dir, DEFAULT_PRESETS_FILE_NAME)
-    print("Loading default presets from {}".format(ledfx_dir))
-    if not os.path.isfile(default_presets_path):
-        print("Failed to load {}".format(DEFAULT_PRESETS_FILE_NAME))
-    with open(default_presets_path, encoding="utf-8") as file:
-        return json.load(file)
-
-
 def save_config(config: dict, config_dir: str) -> None:
     """Saves the configuration to the provided directory"""
 
@@ -169,8 +158,8 @@ def save_config(config: dict, config_dir: str) -> None:
     # prevent defaults being saved to config.yaml by creating a copy (python
     # no pass by value)
     config_view = dict(config)
-    if "default_presets" in config_view.keys():
-        del config_view["default_presets"]
+    if "ledfx_presets" in config_view.keys():
+        del config_view["ledfx_presets"]
     with open(config_file, "w", encoding="utf-8") as file:
         json.dump(
             config_view, file, ensure_ascii=False, sort_keys=True, indent=4

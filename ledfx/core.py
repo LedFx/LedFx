@@ -4,13 +4,14 @@ import sys
 import warnings
 from concurrent.futures import ThreadPoolExecutor
 
-from ledfx.config import load_config, load_default_presets, save_config
+from ledfx.config import load_config, save_config
 from ledfx.devices import Devices
 from ledfx.displays import Displays
 from ledfx.effects import Effects
 from ledfx.events import Events, LedFxShutdownEvent
 from ledfx.http_manager import HttpServer
 from ledfx.integrations import Integrations
+from ledfx.presets import ledfx_presets
 from ledfx.utils import (
     RollingQueueHandler,
     async_fire_and_forget,
@@ -26,7 +27,7 @@ class LedFxCore(object):
     def __init__(self, config_dir, host=None, port=None):
         self.config_dir = config_dir
         self.config = load_config(config_dir)
-        self.config["default_presets"] = load_default_presets()
+        self.config["ledfx_presets"] = ledfx_presets
         host = host if host else self.config["host"]
         port = port if port else self.config["port"]
 
