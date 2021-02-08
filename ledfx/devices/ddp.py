@@ -104,7 +104,7 @@ class DDPDevice(Device):
         DDPDevice.send_out(self._sock, self.resolved_dest, data)
 
     @staticmethod
-    def send_out(self, sock, dest, data):
+    def send_out(sock, dest, data):
         byteData = data.astype(np.uint8).flatten().tobytes()
         packets, remainder = divmod(len(byteData), DDPDevice.MAX_DATALEN)
 
@@ -131,9 +131,7 @@ class DDPDevice(Device):
         )
 
     @staticmethod
-    def send_packet(
-        self, sock, dest, packet_count, data_len, data, push=False
-    ):
+    def send_packet(sock, dest, packet_count, data_len, data, push=False):
         udpData = bytearray()
         header = struct.pack(
             "BBBBLH",

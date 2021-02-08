@@ -96,7 +96,6 @@ class UDPDevice(Device):
 
     @staticmethod
     def send_out(
-        self,
         sock,
         dest,
         port,
