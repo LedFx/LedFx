@@ -57,7 +57,7 @@ class DDPDevice(Device):
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
 
-        self.resolved_dest = None
+        DDPDevice.resolved_dest = None
         self.attempt_resolve_dest()
 
     def attempt_resolve_dest(self):
@@ -101,36 +101,54 @@ class DDPDevice(Device):
         return int(self._config["pixel_count"])
 
     def flush(self, data):
+        DDPDevice.send_out(self._sock, self.resolved_dest, data)
+
+    @staticmethod
+    def send_out(self, sock, dest, data):
         byteData = data.astype(np.uint8).flatten().tobytes()
-        packets, remainder = divmod(len(byteData), self.MAX_DATALEN)
+        packets, remainder = divmod(len(byteData), DDPDevice.MAX_DATALEN)
 
         for i in range(packets):
-            data_start = i * self.MAX_DATALEN
-            data_end = data_start + self.MAX_DATALEN
-            self.send_ddp(i, self.MAX_DATALEN, byteData[data_start:data_end])
+            data_start = i * DDPDevice.MAX_DATALEN
+            data_end = data_start + DDPDevice.MAX_DATALEN
+            DDPDevice.send_packet(
+                sock,
+                dest,
+                i,
+                DDPDevice.MAX_DATALEN,
+                byteData[data_start:data_end],
+            )
 
-        data_start = packets * self.MAX_DATALEN
+        data_start = packets * DDPDevice.MAX_DATALEN
         data_end = data_start + remainder
-        self.send_ddp(
-            packets, remainder, byteData[data_start:data_end], push=True
+        DDPDevice.send_packet(
+            sock,
+            dest,
+            packets,
+            remainder,
+            byteData[data_start:data_end],
+            push=True,
         )
 
-    def send_ddp(self, packet_count, data_len, data, push=False):
+    @staticmethod
+    def send_packet(
+        self, sock, dest, packet_count, data_len, data, push=False
+    ):
         udpData = bytearray()
         header = struct.pack(
             "BBBBLH",
-            self.VER1 | self.PUSH if push else self.VER1,
+            DDPDevice.VER1 | DDPDevice.PUSH if push else DDPDevice.VER1,
             0,
-            self.DATATYPE,
-            self.SOURCE,
-            packet_count * self.MAX_DATALEN,
+            DDPDevice.DATATYPE,
+            DDPDevice.SOURCE,
+            packet_count * DDPDevice.MAX_DATALEN,
             data_len,
         )
 
         udpData.extend(header)
         udpData.extend(data)
 
-        self._sock.sendto(
+        sock.sendto(
             bytes(udpData),
-            (self.resolved_dest, self.PORT),
+            (dest, DDPDevice.PORT),
         )
