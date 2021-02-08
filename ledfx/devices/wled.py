@@ -134,7 +134,7 @@ class WLEDDevice(Device):
         data_start = packets * DDP.MAX_DATALEN
         data_end = data_start + remainder
         self.send_ddp(
-            packets, remainder, byteData[data_start:data_end], push=True
+            packets, remainder * 3, byteData[data_start:data_end], push=True
         )
 
     def send_ddp(self, sequence, data_len, data, push=False):
