@@ -115,5 +115,5 @@ class UDPDevice(Device):
 
         self._sock.sendto(
             bytes(udpData),
-            (self.device_ip, self._config["port"]),
+            (self.resolved_dest, self._config["port"]),
         )
