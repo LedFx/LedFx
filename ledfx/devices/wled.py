@@ -123,7 +123,7 @@ class WLEDDevice(Device):
         return int(self._config["pixel_count"])
 
     def flush(self, data):
-        byteData = data.astype(np.dtype("B")).flatten().tobytes()
+        byteData = data.astype(np.uint8).flatten().tobytes()
         packets, remainder = divmod(len(byteData), DDP.MAX_DATALEN)
 
         for i in range(packets):
@@ -134,20 +134,21 @@ class WLEDDevice(Device):
         data_start = packets * DDP.MAX_DATALEN
         data_end = data_start + remainder
         self.send_ddp(
-            packets, remainder * 3, byteData[data_start:data_end], push=True
+            packets, remainder, byteData[data_start:data_end], push=True
         )
 
-    def send_ddp(self, sequence, data_len, data, push=False):
+    def send_ddp(self, packet_count, data_len, data, push=False):
         udpData = bytearray()
         header = struct.pack(
             "BBBBLH",
             DDP.VER1 | DDP.PUSH if push else DDP.VER1,
-            sequence,
+            0,
             DDP.DATATYPE,
             DDP.SOURCE,
-            sequence * DDP.MAX_DATALEN,
+            packet_count * DDP.MAX_DATALEN,
             data_len,
         )
+
         udpData.extend(header)
         udpData.extend(data)
 
