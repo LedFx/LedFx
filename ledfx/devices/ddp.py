@@ -31,7 +31,7 @@ class DDPDevice(Device):
     REPLY = 0x04
     STORAGE = 0x08
     TIME = 0x10
-    DATATYPE = 0x00
+    DATATYPE = 0x01
     SOURCE = 0x01
     TIMEOUT = 1
 
@@ -57,7 +57,8 @@ class DDPDevice(Device):
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
 
-        DDPDevice.resolved_dest = None
+        self.frame_count = 0
+        self.resolved_dest = None
         self.attempt_resolve_dest()
 
     def attempt_resolve_dest(self):
@@ -72,14 +73,6 @@ class DDPDevice(Device):
 
     def on_resolved_dest(self, dest):
         self.resolved_dest = dest
-
-    # async def get_config(self):
-    #     # Get all necessary info from the wled device and update configuration
-    #     try:
-    #         wled_config = await WLED.get_config(self.resolved_dest)
-    #     except ValueError as msg:
-    #         _LOGGER.warning(msg)
-    #         return
 
     def activate(self):
         if not self.resolved_dest:
@@ -101,10 +94,14 @@ class DDPDevice(Device):
         return int(self._config["pixel_count"])
 
     def flush(self, data):
-        DDPDevice.send_out(self._sock, self.resolved_dest, data)
+        self.frame_count += 1
+        DDPDevice.send_out(
+            self._sock, self.resolved_dest, data, self.frame_count
+        )
 
     @staticmethod
-    def send_out(sock, dest, data):
+    def send_out(sock, dest, data, frame_count):
+        sequence = frame_count % 15 + 1
         byteData = data.astype(np.uint8).flatten().tobytes()
         packets, remainder = divmod(len(byteData), DDPDevice.MAX_DATALEN)
 
@@ -124,6 +121,7 @@ class DDPDevice(Device):
         DDPDevice.send_packet(
             sock,
             dest,
+            sequence,
             packets,
             remainder,
             byteData[data_start:data_end],
@@ -131,12 +129,14 @@ class DDPDevice(Device):
         )
 
     @staticmethod
-    def send_packet(sock, dest, packet_count, data_len, data, push=False):
+    def send_packet(
+        sock, dest, sequence, packet_count, data_len, data, push=False
+    ):
         udpData = bytearray()
         header = struct.pack(
             "BBBBLH",
             DDPDevice.VER1 | DDPDevice.PUSH if push else DDPDevice.VER1,
-            0,
+            sequence,
             DDPDevice.DATATYPE,
             DDPDevice.SOURCE,
             packet_count * DDPDevice.MAX_DATALEN,
