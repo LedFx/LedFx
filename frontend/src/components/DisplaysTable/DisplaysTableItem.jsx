@@ -63,6 +63,7 @@ function DisplaysTableItem({
             <TableCell component="th" scope="row" width="35px">
                 <Icon
                     color={display.effect && display.effect.active === true ? 'primary' : 'inherit'}
+                    style={{ position: 'relative' }}
                 >
                     {display.config.icon_name && display.config.icon_name.startsWith('wled') ? (
                         <Wled />

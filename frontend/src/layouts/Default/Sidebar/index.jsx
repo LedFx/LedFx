@@ -88,6 +88,7 @@ const Links = ({ classes, devMode, effectLinks, isViewActive }) => {
                                                                         : 'primary'
                                                                     : 'inherit'
                                                             }
+                                                            style={{ position: 'relative' }}
                                                         >
                                                             {display.config.icon_name &&
                                                             display.config.icon_name.startsWith(
