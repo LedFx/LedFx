@@ -111,6 +111,7 @@ class DDPDevice(Device):
             DDPDevice.send_packet(
                 sock,
                 dest,
+                sequence,
                 i,
                 DDPDevice.MAX_DATALEN,
                 byteData[data_start:data_end],
@@ -134,7 +135,7 @@ class DDPDevice(Device):
     ):
         udpData = bytearray()
         header = struct.pack(
-            "BBBBLH",
+            "!BBBBLH",
             DDPDevice.VER1 | DDPDevice.PUSH if push else DDPDevice.VER1,
             sequence,
             DDPDevice.DATATYPE,
