@@ -3,8 +3,6 @@ import logging
 from aiohttp import web
 
 from ledfx.api import RestEndpoint
-from ledfx.config import save_config
-from ledfx.utils import WLED, generate_id
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -45,87 +43,23 @@ class DevicesEndpoint(RestEndpoint):
             }
             return web.json_response(data=response, status=500)
 
-        if device_type == "wled":
-            wled_config = await WLED.get_config(device_config["ip_address"])
-
-            led_info = wled_config["leds"]
-            wled_name = wled_config["name"]
-
-            wled_count = led_info["count"]
-            wled_rgbmode = led_info["rgbw"]
-
-            wled_config = {
-                "name": wled_name,
-                "pixel_count": wled_count,
-                "icon_name": "wled",
-                "rgbw_led": wled_rgbmode,
-            }
-
-            # that's a nice operation u got there python
-            device_config |= wled_config
-
-        device_id = generate_id(device_config.get("name"))
-
-        # Create the device
-        _LOGGER.info(
-            "Adding device of type {} with config {}".format(
+        try:
+            device = await self._ledfx.devices.add_new_device(
                 device_type, device_config
             )
-        )
-        device = self._ledfx.devices.create(
-            id=device_id,
-            type=device_type,
-            config=device_config,
-            ledfx=self._ledfx,
-        )
-
-        # Update and save the configuration
-        self._ledfx.config["devices"].append(
-            {
-                "id": device.id,
-                "type": device.type,
-                "config": device.config,
+        except ValueError as msg:
+            response = {
+                "status": "failed",
+                "payload": {"type": "error", "reason": str(msg)},
             }
-        )
-
-        # Generate display configuration for the device
-        _LOGGER.info(f"Creating a display for device {device.name}")
-        display_name = f"{device.name}"
-        display_id = generate_id(display_name)
-        display_config = {
-            "name": display_name,
-            "icon_name": device_config["icon_name"],
-        }
-        segments = [[device.id, 0, device_config["pixel_count"] - 1, False]]
-
-        # create the display
-        display = self._ledfx.displays.create(
-            id=display_id,
-            config=display_config,
-            ledfx=self._ledfx,
-            is_device=device.id,
-        )
-
-        # create the device as a single segment on the display
-        display.update_segments(segments)
-
-        # Update the configuration
-        self._ledfx.config["displays"].append(
-            {
-                "id": display.id,
-                "config": display.config,
-                "segments": display.segments,
-                "is_device": device.id,
-            }
-        )
-
-        save_config(
-            config=self._ledfx.config,
-            config_dir=self._ledfx.config_dir,
-        )
+            return web.json_response(data=response, status=202)
 
         response = {
             "status": "success",
+            "payload": {
+                "type": "success",
+                "reason": f"Created device {device.name}",
+            },
             "device": {
                 "type": device.type,
                 "config": device.config,

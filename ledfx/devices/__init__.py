@@ -14,8 +14,9 @@ from ledfx.utils import (
     WLED,
     BaseRegistry,
     RegistryLoader,
-    async_fire_and_return,
+    async_fire_and_forget,
     generate_id,
+    resolve_destination,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -236,14 +237,111 @@ class Devices(RegistryLoader):
                 return device
         return None
 
-    def update_wled_configs(self):
+    async def update_wled_configs(self):
         for device in self.values():
             if device.type == "wled":
-                async_fire_and_return(
-                    WLED.get_config(device.config["ip_address"]),
-                    device.update_config,
-                    timeout=1,
-                )
+                config = await WLED.get_config(device.config["ip_address"])
+                device.update_config(config)
+
+    async def add_new_device(self, device_type, device_config):
+        """
+        Creates a new device.
+        """
+        # First, we try to make sure this device doesn't share a destination with any existing device
+        if "ip_address" in device_config.keys():
+            device_ip = device_config["ip_address"]
+            resolved_dest = await resolve_destination(device_ip)
+
+            for existing_device in self._ledfx.devices.values():
+                if (
+                    existing_device.config["ip_address"] == device_ip
+                    or existing_device.config["ip_address"] == resolved_dest
+                ):
+                    msg = f"New device at {device_ip} shares destination with existing device {existing_device.name}"
+                    _LOGGER.error(msg)
+                    raise ValueError(msg)
+
+        # If WLED device, get all the necessary config from the device itself
+        if device_type == "wled":
+            wled_config = await WLED.get_config(device_config["ip_address"])
+
+            led_info = wled_config["leds"]
+            wled_name = wled_config["name"]
+
+            wled_count = led_info["count"]
+            wled_rgbmode = led_info["rgbw"]
+
+            wled_config = {
+                "name": wled_name,
+                "pixel_count": wled_count,
+                "icon_name": "wled",
+                "rgbw_led": wled_rgbmode,
+            }
+
+            # that's a nice operation u got there python
+            device_config |= wled_config
+
+        device_id = generate_id(device_config["name"])
+
+        # Create the device
+        _LOGGER.info(
+            "Adding device of type {} with config {}".format(
+                device_type, device_config
+            )
+        )
+        device = self._ledfx.devices.create(
+            id=device_id,
+            type=device_type,
+            config=device_config,
+            ledfx=self._ledfx,
+        )
+
+        # Update and save the configuration
+        self._ledfx.config["devices"].append(
+            {
+                "id": device.id,
+                "type": device.type,
+                "config": device.config,
+            }
+        )
+
+        # Generate display configuration for the device
+        _LOGGER.info(f"Creating a display for device {device.name}")
+        display_id = generate_id(device.name)
+        display_config = {
+            "name": device.name,
+            "icon_name": device_config["icon_name"],
+        }
+        segments = [[device.id, 0, device_config["pixel_count"] - 1, False]]
+
+        # Create the display
+        display = self._ledfx.displays.create(
+            id=display_id,
+            config=display_config,
+            ledfx=self._ledfx,
+            is_device=device.id,
+        )
+
+        # Create the device as a single segment on the display
+        display.update_segments(segments)
+
+        # Update the configuration
+        self._ledfx.config["displays"].append(
+            {
+                "id": display.id,
+                "config": display.config,
+                "segments": display.segments,
+                "is_device": device.id,
+            }
+        )
+
+        # Finally, save the config to file!
+        save_config(
+            config=self._ledfx.config,
+            config_dir=self._ledfx.config_dir,
+        )
+
+        return device
 
     async def find_wled_devices(self):
         # Scan the LAN network that match WLED using zeroconf - Multicast DNS
@@ -268,95 +366,171 @@ class WLEDListener(zeroconf.ServiceBrowser):
         _LOGGER.info(f"Service {name} removed")
 
     def add_service(self, zeroconf_obj, type, name):
-
-        _LOGGER.info("Found Device!")
-
         info = zeroconf_obj.get_service_info(type, name)
 
         if info:
             address = socket.inet_ntoa(info.addresses[0])
             hostname = str(info.server)
-            try:
-                wled_config = WLED.get_config(address)
-            except ValueError as msg:
-                _LOGGER.warning(msg)
-                return
-            led_info = wled_config["leds"]
-            wled_name = wled_config["name"]
+            _LOGGER.info(f"Found device at {address}")
 
-            wled_count = led_info["count"]
-            wled_rgbmode = led_info["rgbw"]
-            device_id = generate_id(wled_name)
             device_type = "wled"
-            wled_config = {
-                "name": wled_name,
-                "pixel_count": wled_count,
-                "icon_name": "wled",
-                "rgbw_led": wled_rgbmode,
-                "ip_address": hostname.rstrip("."),
-            }
+            device_config = {"ip_address": hostname}
 
-            # Check this device doesn't share IP, name or hostname with any current saved device
-            for device in self._ledfx.devices.values():
-                if (
-                    device.config["ip_address"] == hostname.rstrip(".")
-                    or device.config["ip_address"] == hostname
-                    or device.config["name"] == wled_name
-                    or device.config["ip_address"] == address
-                ):
-                    return
-
-            # Create the device
-            _LOGGER.info(
-                "Adding device of type {} with config {}".format(
-                    device_type, wled_config
-                )
+            async_fire_and_forget(
+                self._ledfx.devices.add_new_device(device_type, device_config)
             )
 
-            device = self._ledfx.devices.create(
-                id=device_id,
-                type=device_type,
-                config=wled_config,
-                ledfx=self._ledfx,
-            )
+    #         try:
+    #             wled_config = WLED.get_config(address)
+    #         except ValueError as msg:
+    #             _LOGGER.warning(msg)
+    #             return
+    #         led_info = wled_config["leds"]
+    #         wled_name = wled_config["name"]
 
-            # Update and save the configuration
-            self._ledfx.config["devices"].append(
-                {
-                    "id": device.id,
-                    "type": device.type,
-                    "config": device.config,
-                }
-            )
-            display_name = f"{device.name}"
-            display_id = generate_id(display_name)
-            display_config = {
-                "name": display_name,
-                "icon_name": wled_config["icon_name"],
-            }
-            segments = [[device.id, 0, wled_config["pixel_count"] - 1, False]]
+    #         wled_count = led_info["count"]
+    #         wled_rgbmode = led_info["rgbw"]
+    #         device_id = generate_id(wled_name)
+    #         device_type = "wled"
+    #         wled_config = {
+    #             "name": wled_name,
+    #             "pixel_count": wled_count,
+    #             "icon_name": "wled",
+    #             "rgbw_led": wled_rgbmode,
+    #             "ip_address": hostname.rstrip("."),
+    #         }
 
-            # create the display
-            display = self._ledfx.displays.create(
-                id=display_id,
-                config=display_config,
-                ledfx=self._ledfx,
-                is_device=device.id,
-            )
+    #         # Create the device
+    #         _LOGGER.info(
+    #             "Adding device of type {} with config {}".format(
+    #                 device_type, wled_config
+    #             )
+    #         )
 
-        # create the device as a single segment on the display
-        display.update_segments(segments)
+    #         device = self._ledfx.devices.create(
+    #             id=device_id,
+    #             type=device_type,
+    #             config=wled_config,
+    #             ledfx=self._ledfx,
+    #         )
 
-        # Update the configuration
-        self._ledfx.config["displays"].append(
-            {
-                "id": display.id,
-                "config": display.config,
-                "segments": display.segments,
-                "is_device": device.id,
-            }
-        )
-        save_config(
-            config=self._ledfx.config,
-            config_dir=self._ledfx.config_dir,
-        )
+    #         # Update and save the configuration
+    #         self._ledfx.config["devices"].append(
+    #             {
+    #                 "id": device.id,
+    #                 "type": device.type,
+    #                 "config": device.config,
+    #             }
+    #         )
+    #         display_name = f"{device.name}"
+    #         display_id = generate_id(display_name)
+    #         display_config = {
+    #             "name": display_name,
+    #             "icon_name": wled_config["icon_name"],
+    #         }
+    #         segments = [[device.id, 0, wled_config["pixel_count"] - 1, False]]
+
+    #         # create the display
+    #         display = self._ledfx.displays.create(
+    #             id=display_id,
+    #             config=display_config,
+    #             ledfx=self._ledfx,
+    #             is_device=device.id,
+    #         )
+
+    #     # create the device as a single segment on the display
+    #     display.update_segments(segments)
+
+    #     # Update the configuration
+    #     self._ledfx.config["displays"].append(
+    #         {
+    #             "id": display.id,
+    #             "config": display.config,
+    #             "segments": display.segments,
+    #             "is_device": device.id,
+    #         }
+    #     )
+    #     save_config(
+    #         config=self._ledfx.config,
+    #         config_dir=self._ledfx.config_dir,
+    #     )
+
+    # async def create_wled_device(self, ip_address):
+    #     try:
+    #         device_config = await WLED.get_config(ip_address)
+    #     except ValueError as msg:
+    #         _LOGGER.warning(msg)
+    #         return
+
+    #     led_info = device_config["leds"]
+    #     wled_name = device_config["name"]
+
+    #     wled_count = led_info["count"]
+    #     wled_rgbmode = led_info["rgbw"]
+
+    #     device_config = {
+    #         "name": wled_name,
+    #         "pixel_count": wled_count,
+    #         "icon_name": "wled",
+    #         "rgbw_led": wled_rgbmode,
+    #         "ip_address": ip_address
+    #     }
+
+    #     device_id = generate_id(wled_name)
+
+    #     # Create the device
+    #     _LOGGER.info(
+    #         "Adding device of type {} with config {}".format(
+    #             device_type, device_config
+    #         )
+    #     )
+    #     device = self._ledfx.devices.create(
+    #         id=device_id,
+    #         type="wled",
+    #         config=device_config,
+    #         ledfx=self._ledfx,
+    #     )
+
+    #     # Update and save the configuration
+    #     self._ledfx.config["devices"].append(
+    #         {
+    #             "id": device.id,
+    #             "type": device.type,
+    #             "config": device.config,
+    #         }
+    #     )
+
+    #     # Generate display configuration for the device
+    #     _LOGGER.info(f"Creating a display for device {wled_name}")
+    #     display_id = generate_id(wled_name)
+    #     display_config = {
+    #         "name": wled_name,
+    #         "icon_name": device_config["icon_name"],
+    #     }
+    #     segments = [[device.id, 0, device_config["pixel_count"] - 1, False]]
+
+    #     # create the display
+    #     display = self._ledfx.displays.create(
+    #         id=display_id,
+    #         config=display_config,
+    #         ledfx=self._ledfx,
+    #         is_device=device.id,
+    #     )
+
+    #     # create the device as a single segment on the display
+    #     display.update_segments(segments)
+
+    #     # Update the configuration
+    #     self._ledfx.config["displays"].append(
+    #         {
+    #             "id": display.id,
+    #             "config": display.config,
+    #             "segments": display.segments,
+    #             "is_device": device.id,
+    #         }
+    #     )
+
+    #     save_config(
+    #         config=self._ledfx.config,
+    #         config_dir=self._ledfx.config_dir,
+    #     )

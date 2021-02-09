@@ -118,7 +118,7 @@ class LedFxCore(object):
 
         # TODO: Deferr
         self.devices.create_from_config(self.config["devices"])
-        self.devices.update_wled_configs()
+        await self.devices.update_wled_configs()
         # little pause to allow devices to resolve their destinations
         await asyncio.sleep(1)
         self.displays.create_from_config(self.config["displays"])

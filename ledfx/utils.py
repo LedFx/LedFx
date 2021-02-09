@@ -208,6 +208,7 @@ class WLED:
         Returns:
             config: dict, with all wled configuration info
         """
+        _LOGGER.info(f"Attempting to contact WLED device at {ip_address}...")
         response = await WLED._wled_request(
             requests.get, ip_address, "json/info"
         )
@@ -376,7 +377,9 @@ async def resolve_destination(destination):
         try:
             return socket.gethostbyname(cleaned_dest)
         except socket.gaierror:
-            _LOGGER.warning(f"Failed resolving {cleaned_dest}.")
+            msg = f"Failed to resolve destination {cleaned_dest}"
+            _LOGGER.warning(msg)
+            raise ValueError(msg)
         return False
 
 
