@@ -84,11 +84,30 @@ class UDPDevice(Device):
         return int(self._config["pixel_count"])
 
     def flush(self, data):
+        UDPDevice.send_out(
+            self._sock,
+            self.resolved_dest,
+            self._config["port"],
+            data,
+            self._config.get("data_prefix"),
+            self._config.get("data_postfix"),
+            self._config["include_indexes"],
+        )
+
+    @staticmethod
+    def send_out(
+        sock,
+        dest,
+        port,
+        data,
+        prefix=None,
+        postfix=None,
+        include_indexes=False,
+    ):
         udpData = bytearray()
         byteData = data.astype(np.dtype("B"))
 
         # Append the prefix if provided
-        prefix = self._config.get("data_prefix")
         if prefix:
             try:
                 udpData.extend(bytes.fromhex(prefix))
@@ -96,7 +115,7 @@ class UDPDevice(Device):
                 _LOGGER.warning(f"Cannot convert prefix {prefix} to hex value")
 
         # Append all of the pixel data
-        if self._config["include_indexes"]:
+        if include_indexes:
             for i in range(len(byteData)):
                 udpData.extend(bytes([i]))
                 udpData.extend(byteData[i].flatten().tobytes())
@@ -104,7 +123,6 @@ class UDPDevice(Device):
             udpData.extend(byteData.flatten().tobytes())
 
         # Append the postfix if provided
-        postfix = self._config.get("data_postfix")
         if postfix:
             try:
                 udpData.extend(bytes.fromhex(postfix))
@@ -113,7 +131,7 @@ class UDPDevice(Device):
                     f"Cannot convert postfix {postfix} to hex value"
                 )
 
-        self._sock.sendto(
+        sock.sendto(
             bytes(udpData),
-            (self.resolved_dest, self._config["port"]),
+            (dest, port),
         )
