@@ -6,7 +6,7 @@ import voluptuous as vol
 
 from ledfx.color import COLORS
 from ledfx.devices import Device
-from ledfx.utils import async_fire_and_return, resolve_destination
+from ledfx.utils import resolve_destination
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -77,18 +77,12 @@ class E131Device(Device):
 
         self._sacn = None
 
-    def attempt_resolve_dest(self):
+    async def async_initialize(self):
+        ip_address = self._config["ip_address"]
         _LOGGER.info(
-            f"Attempting to resolve device {self.name} address {self._config['ip_address']} ..."
+            f"Attempting to resolve device {self.name} address {ip_address} ..."
         )
-        async_fire_and_return(
-            resolve_destination(self._config["ip_address"]),
-            self.on_resolved_dest,
-            0.5,
-        )
-
-    def on_resolved_dest(self, dest):
-        self.resolved_dest = dest
+        self.resolved_dest = await resolve_destination(ip_address)
 
     @property
     def pixel_count(self):

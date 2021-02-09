@@ -237,11 +237,13 @@ class Devices(RegistryLoader):
                 return device
         return None
 
-    async def update_wled_configs(self):
-        for device in self.values():
-            if device.type == "wled":
-                config = await WLED.get_config(device.config["ip_address"])
-                device.update_config(config)
+    async def async_initialize_devices(self):
+        tasks = [
+            device.async_initialize()
+            for device in self.values()
+            if hasattr(device, "async_initialize")
+        ]
+        await asyncio.gather(*tasks)
 
     async def add_new_device(self, device_type, device_config):
         """

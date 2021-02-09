@@ -5,15 +5,13 @@ import voluptuous as vol
 
 from ledfx.devices import Device
 from ledfx.devices.ddp import DDPDevice
-from ledfx.utils import async_fire_and_return, resolve_destination
+from ledfx.utils import WLED, resolve_destination
 
 _LOGGER = logging.getLogger(__name__)
 
 
 class WLEDDevice(Device):
     """Dedicated WLED device support"""
-
-    UDPPort = 21324
 
     CONFIG_SCHEMA = vol.Schema(
         {
@@ -40,17 +38,14 @@ class WLEDDevice(Device):
         self.resolved_dest = None
         self.frame_count = 0
 
-        self.attempt_resolve_dest()
-
-    def attempt_resolve_dest(self):
+    async def async_initialize(self):
+        ip_address = self._config["ip_address"]
         _LOGGER.info(
-            f"Attempting to resolve device {self.name} address {self._config['ip_address']} ..."
+            f"Attempting to resolve device {self.name} address {ip_address} ..."
         )
-        async_fire_and_return(
-            resolve_destination(self._config["ip_address"]),
-            self.on_resolved_dest,
-            0.5,
-        )
+        self.resolved_dest = await resolve_destination(ip_address)
+        config = await WLED.get_config(ip_address)
+        self.update_config(config)
 
     def activate(self):
         if not self.resolved_dest:
@@ -70,9 +65,6 @@ class WLEDDevice(Device):
     @property
     def pixel_count(self):
         return self._config["pixel_count"]
-
-    def on_resolved_dest(self, dest):
-        self.resolved_dest = dest
 
     def update_config(self, wled_config):
 
