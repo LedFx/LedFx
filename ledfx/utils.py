@@ -170,19 +170,21 @@ class WLED:
                 (setting[0].split("."), setting[1])
                 for setting in sync_settings
             ]
-            # only keep the settings that are "checked"
+            # only keep the settings that are "checked" or "EP"
             sync_settings = [
                 setting
                 for setting in sync_settings
-                if any(i == "checked" for i in setting[0])
+                if any(i in ["checked", "EP"] for i in setting[0])
             ]
             # remove empty string "value" keys
             # extract the setting identifier and value eg: d.Sf.BT.checked=1 => BT, 1
             sync_settings = [
                 (
-                    [i for i in setting[0] if i not in ["d", "sF", "checked"]][
-                        -1
-                    ],
+                    [
+                        i
+                        for i in setting[0]
+                        if i not in ["d", "sF", "checked", "value"]
+                    ][-1],
                     int(setting[1]),
                 )
                 for setting in sync_settings
@@ -323,12 +325,16 @@ class WLED:
     async def set_sync_mode(ip_address, mode):
         """
             Uses a HTTP post call to set a WLED compatible device's
-            sync mode
+            sync mode and then reboot
+
+            Will return without rebooting is the mode is already set.
 
         Args:
             ip_address (string): The device IP to adjust brightness
             mode: str, in ["ddp", "e131", "artnet"]
         """
+        assert mode in WLED.SYNC_MODES.keys()
+
         sync_settings = await WLED._get_sync_settings(ip_address)
 
         if mode == "udp":
@@ -339,6 +345,15 @@ class WLED:
                 data = {"RD": "on"}
 
         else:
+            # make sure the mode isn't already set, if so no need to go on
+            current_mode = next(
+                key
+                for key, value in WLED.SYNC_MODES.items()
+                if value == sync_settings["EP"]
+            )
+            if current_mode == mode:
+                return
+
             port = WLED.SYNC_MODES["mode"]
             data = {"DI": port, "EP": port}
 
@@ -350,6 +365,25 @@ class WLED:
         )
 
         _LOGGER.info(f"Set WLED device at {ip_address} to sync mode '{mode}'")
+
+        await WLED.reboot(ip_address)
+
+        _LOGGER.info(f"Rebooting WLED device at {ip_address}")
+
+    @staticmethod
+    async def get_sync_mode(ip_address):
+        """
+            Uses a HTTP post call to get a WLED compatible device's
+            sync mode
+
+        Args:
+            ip_address (string): The device IP to adjust brightness
+        """
+        sync_port = await WLED._get_sync_settings(ip_address)["EP"]
+
+        return next(
+            key for key, value in WLED.SYNC_MODES.items() if value == sync_port
+        )
 
     @staticmethod
     async def reboot(ip_address):
