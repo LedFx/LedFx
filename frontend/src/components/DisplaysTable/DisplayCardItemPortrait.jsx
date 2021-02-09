@@ -32,13 +32,21 @@ const styles = theme => ({
         marginLeft: '0.5rem',
         flexGrow: 0,
     },
+    previewButton: {
+        height: '16px',
+        fontSize: '12px',
+        minWidth: 'unset',
+        padding: '2px 4px',
+        marginLeft: '0.5rem',
+        flexGrow: 0,
+    },
     displayLink: {
-        flexGrow: 1,
+        flexGrow: 0,
         padding: '0 0.5rem',
         textDecoration: 'none',
         fontSize: 'large',
         color: 'inherit',
-        whiteSpace: 'nowrap',
+
         '&:hover': {
             color: theme.palette.primary.main,
         },
@@ -48,28 +56,17 @@ const styles = theme => ({
             display: 'none',
         },
     },
-    displayCard: {
+    displayCardPortrait: {
         padding: '1rem',
         margin: '0.5rem',
         display: 'flex',
         alignItems: 'flex-start',
         flexDirection: 'column',
-        minWidth: '400px',
-        '@media (max-width: 1123px)': {
-            width: '100%',
-            minWidth: 'unset',
-            marginBottom: '0.5rem',
-        },
-    },
-    actionButtons: {
-        display: 'flex',
-        '@media (max-width: 420px)': {
-            flexDirection: 'column',
-            alignItems: 'flex-end',
-        },
+        minWidth: '180px',
+        height: '240px',
     },
 });
-const DisplayCardItem = ({
+const DisplayCardItemPortrait = ({
     display,
     classes,
     variant = 'outlined',
@@ -89,18 +86,26 @@ const DisplayCardItem = ({
         onEditDevice(deviceList.find(d => d.id === display.is_device));
     };
     return (
-        <Card className={classes.displayCard}>
+        <Card className={classes.displayCardPortrait}>
             <div
                 style={{
                     display: 'flex',
                     alignItems: 'center',
                     // paddingBottom: '1rem',
+                    flexDirection: 'column',
                     width: '100%',
+                    height: '100%',
+                    justifyContent: 'space-between',
                 }}
             >
                 <Icon
                     color={display.effect && display.effect.active === true ? 'primary' : 'inherit'}
-                    style={{ margingBottom: '4px', marginRight: '0.5rem', position: 'relative' }}
+                    style={{
+                        margingBottom: '4px',
+                        marginRight: '0.5rem',
+                        position: 'relative',
+                        fontSize: '50px',
+                    }}
                 >
                     {display.config.icon_name && display.config.icon_name.startsWith('wled') ? (
                         <Wled />
@@ -112,35 +117,17 @@ const DisplayCardItem = ({
                         camelToSnake(display.config.icon_name || 'SettingsInputComponent')
                     )}
                 </Icon>
-                <div
-                    style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        flexGrow: 1,
-                    }}
-                >
-                    <div
-                        style={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                        }}
-                    >
-                        <NavLink
-                            to={'/displays/' + display.id}
-                            className={classes.displayLink}
-                            key={display.id}
-                            color={
-                                display.effect && display.effect.active === true
-                                    ? 'primary'
-                                    : 'inherit'
-                            }
-                        >
-                            {display.config.name}
-                        </NavLink>
 
-                        <div>
-                            {/* {deviceList.find(d => d.id === display.is_device) &&
+                <NavLink
+                    to={'/displays/' + display.id}
+                    className={classes.displayLink}
+                    key={display.id}
+                    color={display.effect && display.effect.active === true ? 'primary' : 'inherit'}
+                >
+                    {display.config.name}
+                </NavLink>
+
+                {/* {deviceList.find(d => d.id === display.is_device) &&
                             deviceList.find(d => d.id === display.is_device).type === 'udp' ? (
                                 <Button
                                     variant={variant}
@@ -153,29 +140,25 @@ const DisplayCardItem = ({
                                     </Badge>
                                 </Button>
                             ) : ( */}
-                            <Button
-                                variant={variant}
-                                disabled
-                                size="small"
-                                className={classes.badgeButton}
-                            >
-                                {deviceList.find(d => d.id === display.is_device) &&
-                                    deviceList.find(d => d.id === display.is_device).type}
-                            </Button>
-                            {display.config.preview_only && (
-                                <Button
-                                    variant={'text'}
-                                    disabled
-                                    size="small"
-                                    className={classes.badgeButton}
-                                >
-                                    <VisibilityIcon />
-                                </Button>
-                            )}
-                            {/* )} */}
-                        </div>
-                    </div>
-                    {/* <div>
+                <div>
+                    <Button variant={variant} disabled size="small" className={classes.badgeButton}>
+                        {deviceList.find(d => d.id === display.is_device) &&
+                            deviceList.find(d => d.id === display.is_device).type}
+                    </Button>
+                    {display.config.preview_only && (
+                        <Button
+                            variant={'text'}
+                            disabled
+                            size="small"
+                            className={classes.previewButton}
+                        >
+                            <VisibilityIcon />
+                        </Button>
+                    )}
+                </div>
+                {/* )} */}
+
+                {/* <div>
                         {deviceList.find(d => d.id === display.is_device) &&
                         deviceList.find(d => d.id === display.is_device).type === 'udp' ? (
                             <Button
@@ -210,39 +193,38 @@ const DisplayCardItem = ({
                             </Button>
                         )}
                     </div> */}
-                    <div className={classes.actionButtons}>
-                        <PopoverSure
-                            variant={variant}
-                            onConfirm={handleDeleteDevice}
-                            className={classes.deleteButton}
-                        />
+                <div>
+                    <PopoverSure
+                        variant={variant}
+                        onConfirm={handleDeleteDevice}
+                        className={classes.deleteButton}
+                    />
 
-                        {display.is_device ? (
-                            <Button
-                                variant={variant}
-                                size="small"
-                                className={classes.editButton}
-                                onClick={handleEditDevice}
-                            >
-                                <BuildIcon />
-                            </Button>
-                        ) : (
-                            <DisplaySegmentsDialog
-                                variant={variant}
-                                display={display}
-                                className={classes.editButton}
-                                icon={<TuneIcon />}
-                            />
-                        )}
+                    {display.is_device ? (
                         <Button
                             variant={variant}
                             size="small"
                             className={classes.editButton}
-                            onClick={handleEditDisplay}
+                            onClick={handleEditDevice}
                         >
-                            <SettingsIcon />
+                            <BuildIcon />
                         </Button>
-                    </div>
+                    ) : (
+                        <DisplaySegmentsDialog
+                            variant={variant}
+                            display={display}
+                            className={classes.editButton}
+                            icon={<TuneIcon />}
+                        />
+                    )}
+                    <Button
+                        variant={variant}
+                        size="small"
+                        className={classes.editButton}
+                        onClick={handleEditDisplay}
+                    >
+                        <SettingsIcon />
+                    </Button>
                 </div>
             </div>
             {/* <div>
@@ -282,4 +264,4 @@ const DisplayCardItem = ({
     );
 };
 
-export default withStyles(styles)(DisplayCardItem);
+export default withStyles(styles)(DisplayCardItemPortrait);

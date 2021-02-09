@@ -17,6 +17,18 @@ import DisplayConfigDialog from 'components/DisplayConfigDialog';
 import { addDevice, updateDeviceConfig, fetchDeviceList, findWLEDDevices } from 'modules/devices';
 import { deleteDisplay, fetchDisplayList, addDisplay } from 'modules/displays';
 import { updateDisplay } from 'proxies/display';
+import DisplayCards from 'components/DisplaysTable/DisplayCards';
+import ViewListIcon from '@material-ui/icons/ViewList';
+import ViewModuleIcon from '@material-ui/icons/ViewModule';
+import ToggleButton from '@material-ui/lab/ToggleButton';
+import ToggleButtonGroup from '@material-ui/lab/ToggleButtonGroup';
+import TableChartIcon from '@material-ui/icons/TableChart';
+// import Fab from '@material-ui/core/Fab';
+// import AddIcon from '@material-ui/icons/Add';
+// import Menu from '@material-ui/core/Menu';
+// import MenuItem from '@material-ui/core/MenuItem';
+// import ListItemIcon from '@material-ui/core/ListItemIcon';
+// import ListItemText from '@material-ui/core/ListItemText';
 
 const styles = theme => ({
     cardResponsive: {
@@ -46,6 +58,11 @@ const styles = theme => ({
             alignItems: 'stretch',
         },
     },
+    // fab: {
+    //     position: 'absolute',
+    //     bottom: theme.spacing(2),
+    //     right: theme.spacing(2),
+    // },
 });
 
 class DevicesView extends React.Component {
@@ -57,8 +74,13 @@ class DevicesView extends React.Component {
             selectedDevice: {},
             selectedDisplay: {},
             searchDevicesLoading: false,
+            view: 'list',
         };
     }
+    handleChange = (event, nextView) => {
+        this.setState({ view: nextView });
+    };
+
     componentDidMount() {
         const { fetchDeviceList, fetchDisplayList } = this.props;
         fetchDeviceList();
@@ -95,7 +117,9 @@ class DevicesView extends React.Component {
             this.setState({ searchDevicesLoading: false });
         });
     };
-
+    // openMenu = () => {
+    //     alert('menu');
+    // };
     render() {
         const {
             classes,
@@ -125,7 +149,7 @@ class DevicesView extends React.Component {
                                     justify="space-between"
                                 >
                                     <Grid item xs="auto">
-                                        <Typography variant="h5">Devices</Typography>
+                                        <Typography variant="h5">{/* Devices */}</Typography>
                                         <Typography
                                             variant="body1"
                                             color="textSecondary"
@@ -222,6 +246,34 @@ class DevicesView extends React.Component {
                                                     >
                                                         Add Device
                                                     </Button>
+                                                    {parseInt(
+                                                        window.localStorage.getItem('BladeMod')
+                                                    ) > 1 && (
+                                                        <ToggleButtonGroup
+                                                            value={this.state.view}
+                                                            exclusive
+                                                            onChange={this.handleChange}
+                                                        >
+                                                            <ToggleButton
+                                                                value="list"
+                                                                aria-label="list"
+                                                            >
+                                                                <TableChartIcon />
+                                                            </ToggleButton>
+                                                            <ToggleButton
+                                                                value="cards"
+                                                                aria-label="cards"
+                                                            >
+                                                                <ViewListIcon />
+                                                            </ToggleButton>
+                                                            <ToggleButton
+                                                                value="cardsPortrait"
+                                                                aria-label="cardsPortrait"
+                                                            >
+                                                                <ViewModuleIcon />
+                                                            </ToggleButton>
+                                                        </ToggleButtonGroup>
+                                                    )}
                                                     <DeviceConfigDialog
                                                         open={addDialogOpened}
                                                         onClose={this.closeAddDeviceDialog}
@@ -243,18 +295,71 @@ class DevicesView extends React.Component {
                                         </>
                                     )}
                                 </Grid>
-
-                                <DisplaysTable
-                                    items={displayList}
-                                    deviceList={deviceList}
-                                    onEditDevice={this.handleEditDevice}
-                                    onDeleteDisplay={deleteDisplay}
-                                    onEditDisplay={this.handleEditDisplay}
-                                />
+                                {this.state.view === 'list' && (
+                                    <DisplaysTable
+                                        items={displayList}
+                                        deviceList={deviceList}
+                                        onEditDevice={this.handleEditDevice}
+                                        onDeleteDisplay={deleteDisplay}
+                                        onEditDisplay={this.handleEditDisplay}
+                                    />
+                                )}
                             </CardContent>
                         </Card>
                     </Grid>
+                    {this.state.view === 'cards' && (
+                        <Grid item xs={12}>
+                            <DisplayCards
+                                items={displayList}
+                                deviceList={deviceList}
+                                onEditDevice={this.handleEditDevice}
+                                onDeleteDisplay={deleteDisplay}
+                                onEditDisplay={this.handleEditDisplay}
+                                view={'cards'}
+                            />
+                        </Grid>
+                    )}
+                    {this.state.view === 'cardsPortrait' && (
+                        <Grid item xs={12}>
+                            <DisplayCards
+                                items={displayList}
+                                deviceList={deviceList}
+                                onEditDevice={this.handleEditDevice}
+                                onDeleteDisplay={deleteDisplay}
+                                onEditDisplay={this.handleEditDisplay}
+                                view={'cardsPortrait'}
+                            />
+                        </Grid>
+                    )}
                 </Grid>
+                {/* <Fab
+                    color="primary"
+                    aria-label="add"
+                    className={classes.fab}
+                    onClick={this.openMenu}
+                >
+                    <AddIcon />
+                </Fab>
+                <Menu>
+                    <MenuItem>
+                        <ListItemIcon>
+                            <AddIcon fontSize="small" />
+                        </ListItemIcon>
+                        <ListItemText primary="Sent mail" />
+                    </MenuItem>
+                    <MenuItem>
+                        <ListItemIcon>
+                            <AddIcon fontSize="small" />
+                        </ListItemIcon>
+                        <ListItemText primary="Drafts" />
+                    </MenuItem>
+                    <MenuItem>
+                        <ListItemIcon>
+                            <AddIcon fontSize="small" />
+                        </ListItemIcon>
+                        <ListItemText primary="Inbox" />
+                    </MenuItem>
+                </Menu> */}
             </>
         );
     }

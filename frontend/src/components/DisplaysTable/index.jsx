@@ -56,7 +56,7 @@ function DisplaysTable({
                             <TableCell>Center-Offset</TableCell>
                             <TableCell>Preview-Only</TableCell>
                             <TableCell align="right">
-                                {parseInt(window.localStorage.getItem('BladeMod')) > 2 && (
+                                {/* {parseInt(window.localStorage.getItem('BladeMod')) > 2 && (
                                     <ToggleButtonGroup
                                         value={view}
                                         exclusive
@@ -69,7 +69,7 @@ function DisplaysTable({
                                             <ViewModuleIcon />
                                         </ToggleButton>
                                     </ToggleButtonGroup>
-                                )}
+                                )} */}
                             </TableCell>
                         </TableRow>
                     </TableHead>
