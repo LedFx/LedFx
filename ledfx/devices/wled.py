@@ -46,6 +46,7 @@ class WLEDDevice(Device):
         self.resolved_dest = await resolve_destination(ip_address)
         config = await WLED.get_config(ip_address)
         self.update_config(config)
+        await WLED.set_sync_mode(ip_address, "ddp")
 
     def activate(self):
         if not self.resolved_dest:

@@ -145,9 +145,10 @@ class WLED:
         Would be ideal to have an api exposed for the functions we're doing here,
         but for now we'll just send these sensitive values with our posts
         """
-        response_text = WLED._wled_request(
+        response = await WLED._wled_request(
             requests.get, ip_address, "settings/sync"
-        ).text
+        )
+        response_text = response.text
 
         try:
             # find start of "GetV()"" function that defines all the settings' values on the page
@@ -354,7 +355,7 @@ class WLED:
             if current_mode == mode:
                 return
 
-            port = WLED.SYNC_MODES["mode"]
+            port = WLED.SYNC_MODES[mode]
             data = {"DI": port, "EP": port}
 
         await WLED._wled_request(
