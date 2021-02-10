@@ -166,6 +166,8 @@ class Device(BaseRegistry):
     def add_segment(self, display_id, start_pixel, end_pixel):
         # make sure this segment doesn't overlap with any others
         for _display_id, segment_start, segment_end in self._segments:
+            if display_id == _display_id:
+                continue
             overlap = (
                 min(segment_end, end_pixel)
                 - max(segment_start, start_pixel)
