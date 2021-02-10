@@ -1,23 +1,21 @@
 import logging
+import socket
 
 import voluptuous as vol
 
+from ledfx.devices import NetworkedDevice
 from ledfx.devices.udp import UDPDevice
 
 _LOGGER = logging.getLogger(__name__)
 
 
-class FXMatrix(UDPDevice):
+class FXMatrix(NetworkedDevice):
     """FXMatrix device support"""
 
     CONFIG_SCHEMA = vol.Schema(
         {
             vol.Required(
                 "name", description="Friendly name for the device"
-            ): str,
-            vol.Required(
-                "ip_address",
-                description="Hostname or IP address of the device",
             ): str,
             vol.Required(
                 "port", description="Port for the UDP device"
@@ -30,6 +28,14 @@ class FXMatrix(UDPDevice):
             ): vol.All(vol.Coerce(int), vol.Range(min=1)),
         }
     )
+
+    def activate(self):
+        self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        super().activate()
+
+    def deactivate(self):
+        super().deactivate()
+        self._sock = None
 
     @property
     def pixel_count(self):

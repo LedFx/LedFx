@@ -18,10 +18,6 @@ class UDPDevice(NetworkedDevice):
                 "name", description="Friendly name for the device"
             ): str,
             vol.Required(
-                "ip_address",
-                description="Hostname or IP address of the device",
-            ): str,
-            vol.Required(
                 "port", description="Port for the UDP device"
             ): vol.All(vol.Coerce(int), vol.Range(min=1, max=65535)),
             vol.Required(

@@ -15,7 +15,7 @@ class WLEDDevice(DDPDevice):
         {
             vol.Optional(
                 "timeout",
-                description="Time between LedFx effect off and WLED effect activates",
+                description="Time between LedFx effect off and WLED effect activate",
                 default=2.0,
             ): float,
         }
@@ -39,8 +39,6 @@ class WLEDDevice(DDPDevice):
         }
         # that's a nice operation u got there python
         self._config |= wled_config
-
-        print(self._config["timeout"])
 
         await WLED.set_sync_mode(self.destination, "ddp")
         await WLED.set_inactivity_timeout(

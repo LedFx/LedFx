@@ -27,11 +27,11 @@ class Device(BaseRegistry):
 
     CONFIG_SCHEMA = vol.Schema(
         {
-            vol.Optional(
-                "rgbw_led",
-                description="RGBW LEDs",
-                default=False,
-            ): bool,
+            # vol.Optional(
+            #     "rgbw_led",
+            #     description="RGBW LEDs",
+            #     default=False,
+            # ): bool,
             vol.Optional(
                 "icon_name",
                 description="https://material-ui.com/components/material-icons/",
@@ -390,6 +390,15 @@ class NetworkedDevice(Device):
     """
     Networked device, handles resolving IP
     """
+
+    CONFIG_SCHEMA = vol.Schema(
+        {
+            vol.Required(
+                "ip_address",
+                description="Hostname or IP address of the device",
+            ): str,
+        }
+    )
 
     async def async_initialize(self):
         self._destination = None

@@ -4,7 +4,6 @@ import numpy as np
 import sacn
 import voluptuous as vol
 
-from ledfx.color import COLORS
 from ledfx.devices import NetworkedDevice
 
 _LOGGER = logging.getLogger(__name__)
@@ -17,10 +16,6 @@ class E131Device(NetworkedDevice):
         {
             vol.Required(
                 "name", description="Friendly name for the device"
-            ): str,
-            vol.Required(
-                "ip_address",
-                description="Hostname or IP address of the device, or 'multicast' for multicast",
             ): str,
             vol.Required(
                 "pixel_count",
@@ -36,11 +31,6 @@ class E131Device(NetworkedDevice):
                 description="Channel offset within the DMX universe",
                 default=0,
             ): vol.All(vol.Coerce(int), vol.Range(min=0)),
-            vol.Optional(
-                "test_color",
-                description="mystery colour, extra special!",
-                default="green",
-            ): vol.In(list(COLORS.keys())),
         }
     )
 

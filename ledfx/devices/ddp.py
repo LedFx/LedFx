@@ -36,18 +36,7 @@ class DDPDevice(NetworkedDevice):
     CONFIG_SCHEMA = vol.Schema(
         {
             vol.Required(
-                "ip_address",
-                description="Hostname or IP address of the device",
-            ): str,
-            vol.Optional(
-                "refresh_rate",
-                description="Maximum rate that pixels are sent to the device",
-                default=60,
-            ): int,
-            vol.Optional(
-                "icon_name",
-                description="https://material-ui.com/components/material-icons/",
-                default="wled",
+                "name", description="Friendly name for the device"
             ): str,
         }
     )
