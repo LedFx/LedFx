@@ -5,16 +5,14 @@ import struct
 import numpy as np
 import voluptuous as vol
 
-from ledfx.devices import Device
-from ledfx.utils import resolve_destination
+from ledfx.devices import NetworkedDevice
 
 _LOGGER = logging.getLogger(__name__)
 
 
-class DDPDevice(Device):
+class DDPDevice(NetworkedDevice):
     """DDP device support"""
 
-    # Timeout in seconds for ddp communication
     PORT = 4048
     HEADER_LEN = 0x0A
     # DDP_ID_DISPLAY     = 1
@@ -55,27 +53,10 @@ class DDPDevice(Device):
     )
 
     def __init__(self, ledfx, config):
+        self.frame_count = 0
         super().__init__(ledfx, config)
 
-        self.frame_count = 0
-        self.resolved_dest = None
-        self.attempt_resolve_dest()
-
-    async def async_initialize(self):
-        ip_address = self._config["ip_address"]
-        _LOGGER.info(
-            f"Attempting to resolve device {self.name} address {ip_address} ..."
-        )
-        self.resolved_dest = await resolve_destination(ip_address)
-
     def activate(self):
-        if not self.resolved_dest:
-            _LOGGER.error(
-                f"Cannot activate device {self.name} - destination address {self._config['ip_address']} is not resolved"
-            )
-            self.attempt_resolve_dest()
-            return
-
         self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         super().activate()
 
@@ -83,14 +64,10 @@ class DDPDevice(Device):
         super().deactivate()
         self._sock = None
 
-    @property
-    def pixel_count(self):
-        return int(self._config["pixel_count"])
-
     def flush(self, data):
         self.frame_count += 1
         DDPDevice.send_out(
-            self._sock, self.resolved_dest, data, self.frame_count
+            self._sock, self.destination, data, self.frame_count
         )
 
     @staticmethod

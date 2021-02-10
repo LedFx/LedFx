@@ -5,13 +5,12 @@ import sacn
 import voluptuous as vol
 
 from ledfx.color import COLORS
-from ledfx.devices import Device
-from ledfx.utils import resolve_destination
+from ledfx.devices import NetworkedDevice
 
 _LOGGER = logging.getLogger(__name__)
 
 
-class E131Device(Device):
+class E131Device(NetworkedDevice):
     """E1.31 device support"""
 
     CONFIG_SCHEMA = vol.Schema(
@@ -72,30 +71,9 @@ class E131Device(Device):
         if span % self._config["universe_size"] == 0:
             self._config["universe_end"] -= 1
 
-        self.resolved_dest = None
-        self.attempt_resolve_dest()
-
         self._sacn = None
 
-    async def async_initialize(self):
-        ip_address = self._config["ip_address"]
-        _LOGGER.info(
-            f"Attempting to resolve device {self.name} address {ip_address} ..."
-        )
-        self.resolved_dest = await resolve_destination(ip_address)
-
-    @property
-    def pixel_count(self):
-        return int(self._config["pixel_count"])
-
     def activate(self):
-        if not self.resolved_dest:
-            _LOGGER.error(
-                f"Cannot activate device {self.name} - destination address {self._config['ip_address']} is not resolved"
-            )
-            self.attempt_resolve_dest()
-            return
-
         if self._config["ip_address"].lower() == "multicast":
             multicast = True
         else:
@@ -117,7 +95,7 @@ class E131Device(Device):
 
             self._sacn[universe].multicast = multicast
             if not multicast:
-                self._sacn[universe].destination = self.resolved_dest
+                self._sacn[universe].destination = self.destination
 
         self._sacn.start()
         self._sacn.manual_flush = True

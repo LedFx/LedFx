@@ -4,13 +4,12 @@ import socket
 import numpy as np
 import voluptuous as vol
 
-from ledfx.devices import Device
-from ledfx.utils import resolve_destination
+from ledfx.devices import NetworkedDevice
 
 _LOGGER = logging.getLogger(__name__)
 
 
-class FXMatrix(Device):
+class FXMatrix(NetworkedDevice):
     """FXMatrix device support"""
 
     CONFIG_SCHEMA = vol.Schema(
@@ -34,31 +33,8 @@ class FXMatrix(Device):
         }
     )
 
-    def __init__(self, ledfx, config):
-        super().__init__(ledfx, config)
-
-        self.resolved_dest = None
-        self.attempt_resolve_dest()
-
-    async def async_initialize(self):
-        ip_address = self._config["ip_address"]
-        _LOGGER.info(
-            f"Attempting to resolve device {self.name} address {ip_address} ..."
-        )
-        self.resolved_dest = await resolve_destination(ip_address)
-
     def activate(self):
-        if not self.resolved_dest:
-            _LOGGER.error(
-                f"Cannot activate device {self.name} - destination address {self._config['ip_address']} is not resolved"
-            )
-            self.attempt_resolve_dest()
-            return
-
         self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self._config["pixel_count"] = int(
-            self._config["width"] * self._config["height"]
-        )
         super().activate()
 
     def deactivate(self):
@@ -77,5 +53,5 @@ class FXMatrix(Device):
 
         self._sock.sendto(
             bytes(udpData),
-            (self.resolved_dest, self._config["port"]),
+            (self.destination, self._config["port"]),
         )

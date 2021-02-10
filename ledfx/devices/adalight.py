@@ -99,10 +99,6 @@ class AdalightDevice(Device):
         if self.serial:
             self.serial.close()
 
-    @property
-    def pixel_count(self):
-        return int(self._config["pixel_count"])
-
     def flush(self, data):
 
         byteData = data.astype(np.dtype("B"))
