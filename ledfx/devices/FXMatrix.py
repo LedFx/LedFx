@@ -1,15 +1,13 @@
 import logging
-import socket
 
-import numpy as np
 import voluptuous as vol
 
-from ledfx.devices import NetworkedDevice
+from ledfx.devices import UDPDevice
 
 _LOGGER = logging.getLogger(__name__)
 
 
-class FXMatrix(NetworkedDevice):
+class FXMatrix(UDPDevice):
     """FXMatrix device support"""
 
     CONFIG_SCHEMA = vol.Schema(
@@ -33,25 +31,17 @@ class FXMatrix(NetworkedDevice):
         }
     )
 
-    def activate(self):
-        self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        super().activate()
-
-    def deactivate(self):
-        super().deactivate()
-        self._sock = None
-
     @property
     def pixel_count(self):
         return int(self._config["width"] * self._config["height"])
 
     def flush(self, data):
-        udpData = bytearray()
-        byteData = data.astype(np.dtype("B"))
-        # Append all of the pixel data
-        udpData.extend(byteData.flatten().tobytes())
-
-        self._sock.sendto(
-            bytes(udpData),
-            (self.destination, self._config["port"]),
+        UDPDevice.send_out(
+            self._sock,
+            self.destination,
+            self._config["port"],
+            data,
+            None,
+            None,
+            None,
         )
