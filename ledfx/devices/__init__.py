@@ -64,7 +64,7 @@ class Device(BaseRegistry):
 
     @property
     def pixel_count(self):
-        pass
+        return int(self._config["pixel_count"])
 
     def is_active(self):
         return self._active
@@ -243,7 +243,10 @@ class Devices(RegistryLoader):
             for device in self.values()
             if hasattr(device, "async_initialize")
         ]
-        await asyncio.gather(*tasks)
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        for result in results:
+            if type(result) is ValueError:
+                _LOGGER.warning(result)
 
     async def add_new_device(self, device_type, device_config):
         """
@@ -381,3 +384,49 @@ class WLEDListener(zeroconf.ServiceBrowser):
             async_fire_and_forget(
                 self._ledfx.devices.add_new_device(device_type, device_config)
             )
+
+
+class NetworkedDevice(Device):
+    """
+    Networked device, handles resolving IP
+    """
+
+    async def async_initialize(self):
+        self._destination = None
+        await self.resolve_address(self._config["ip_address"])
+
+    async def resolve_address(self):
+        try:
+            self._destination = await resolve_destination(
+                self._ledfx.loop, self._config["ip_address"]
+            )
+            _LOGGER.info(
+                f"Resolved device {self.name} destination to {self._destination} ..."
+            )
+        except ValueError as msg:
+            _LOGGER.warning(f"Device {self.name}: {msg}")
+
+    def activate(self, *args, **kwargs):
+        if self._destination is None:
+            _LOGGER.warning(
+                f"Cannot activate device {self.name}: Destination {self._config['ip_address']} is not yet resolved"
+            )
+            async_fire_and_forget(
+                self.resolve_address(), loop=self._ledfx.loop
+            )
+            return
+        else:
+            super().activate(*args, **kwargs)
+
+    @property
+    def destination(self):
+        if self._destination is None:
+            _LOGGER.warning(
+                f"Device {self.name} destination {self._config['ip_address']} is not yet resolved"
+            )
+            async_fire_and_forget(
+                self.resolve_address(), loop=self._ledfx.loop
+            )
+            return
+        else:
+            return self._destination
