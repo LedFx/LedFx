@@ -1,19 +1,20 @@
 import { createAction, handleActions } from 'redux-actions';
-import * as integrationsProxies from 'proxies/integrations';
+import * as qlclistenersProxies from 'proxies/qlclisteners';
 
-const ACTION_ROOT = 'integrations';
+// Actions
+const ACTION_ROOT = 'qlc';
+export const setqlclistener = createAction(`${ACTION_ROOT}/qlclistener_SET`);
+export const addqlclistener = createAction(`${ACTION_ROOT}/qlclistener_ADD`);
+export const deleteqlclistener = createAction(`${ACTION_ROOT}/qlclistener_DELETE`);
 
-export const addIntegration = createAction(`${ACTION_ROOT}/INTEGRATION_ADD`);
-export const setIntegration = createAction(`${ACTION_ROOT}/INTEGRATION_SET`);
-export const deleteIntegration = createAction(`${ACTION_ROOT}/INTEGRATION_DELETE`);
-
+// // Reducer
 const INITIAL_STATE = {
     list: [],
 };
 
 export default handleActions(
     {
-        [addIntegration]: (state, { payload }) => {
+        [addqlclistener]: (state, { payload }) => {
             return {
                 ...state,
                 list: [
@@ -24,25 +25,25 @@ export default handleActions(
                 ],
             };
         },
-        [setIntegration]: (state, { payload }) => {
+        [setqlclistener]: (state, { payload }) => {
             return {
                 ...state,
                 list: payload,
             };
         },
-        [deleteIntegration]: (state, { payload }) => {
+        [deleteqlclistener]: (state, { payload }) => {
             return { ...state, list: state.list.filter(v => v.id !== payload.id) };
         },
     },
     INITIAL_STATE
 );
 
-export function getAsyncIntegrations() {
+export function getAsyncqlclisteners() {
     return async dispatch => {
         try {
-            const response = await integrationsProxies.getIntegrations();
+            const response = await qlclistenersProxies.getQLCInfo();
             if (response.statusText === 'OK') {
-                dispatch(setIntegration(response.data.integrations));
+                dispatch(setqlclistener(response.data.qlclisteners));
             }
         } catch (error) {
             console.log(error);
@@ -50,19 +51,19 @@ export function getAsyncIntegrations() {
     };
 }
 
-export async function deleteAsyncIntegration(data) {
+export async function deleteAsyncqlclistener(data) {
     console.log('damn', data);
-    const response = await integrationsProxies.deleteIntegration({ data });
+    const response = await qlclistenersProxies.deleteqlclistener({ data });
     console.log('damn', response);
     window.location = window.location.href;
-    // integrationsProxies.deleteIntegration(data);
+    // qlclistenersProxies.deleteqlclistener(data);
     return async dispatch => {
         try {
             console.log('damn', data);
-            const response = await integrationsProxies.deleteIntegration(data);
+            const response = await qlclistenersProxies.deleteqlclistener(data);
             if (response.statusText === 'OK') {
                 console.log('OMG', response.data);
-                // dispatch(deleteIntegration(response.data.integrations));
+                // dispatch(deleteqlclistener(response.data.qlclisteners));
             }
         } catch (error) {
             console.log(error);
@@ -70,19 +71,19 @@ export async function deleteAsyncIntegration(data) {
     };
 }
 
-export async function toggleAsyncIntegration(data) {
+export async function toggleAsyncqlclistener(data) {
     console.log('damn', data);
-    const response = await integrationsProxies.toggleIntegration(data);
+    const response = await qlclistenersProxies.toggleqlclistener(data);
     console.log('damn', response);
     // window.location = window.location.href;
-    // integrationsProxies.deleteIntegration(data);
+    // qlclistenersProxies.deleteqlclistener(data);
     return async dispatch => {
         try {
             console.log('damn', data);
-            const response = await integrationsProxies.toggleIntegration(data);
+            const response = await qlclistenersProxies.toggleqlclistener(data);
             if (response.statusText === 'OK') {
                 console.log('OMG', response.data);
-                // dispatch(deleteIntegration(response.data.integrations));
+                // dispatch(deleteqlclistener(response.data.qlclisteners));
             }
         } catch (error) {
             console.log(error);

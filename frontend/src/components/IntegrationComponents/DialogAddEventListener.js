@@ -7,7 +7,6 @@ import DialogContent from '@material-ui/core/DialogContent';
 import DialogActions from '@material-ui/core/DialogActions';
 import Dialog from '@material-ui/core/Dialog';
 import AddCircleIcon from '@material-ui/icons/AddCircle';
-import { useSelector } from 'react-redux';
 import { SchemaForm, utils } from 'react-schema-form';
 import * as integrationsProxies from 'proxies/integrations';
 import DialogContentText from '@material-ui/core/DialogContentText';
@@ -23,8 +22,6 @@ function ConfirmationDialogRaw(props) {
     const { onClose, value: valueProp, open, ...other } = props;
     const [value, setValue] = React.useState(valueProp);
     const radioGroupRef = React.useRef(null);
-    const integrationTypes = useSelector(state => state.schemas.integrationTypes || {});
-    const integration = props.integration;
     const [model] = React.useState({});
 
     React.useEffect(() => {
@@ -49,13 +46,9 @@ function ConfirmationDialogRaw(props) {
         window.location = window.location.href;
     };
 
-    // const handleChange = event => {
-    //     // setValue(event.target.value);
-    // };
     const onModelChange = (key, val) => {
         utils.selectOrSet(key, model, val);
 
-        // setModel(val);
     };
     delete other.deviceList;
     return (
@@ -74,6 +67,7 @@ function ConfirmationDialogRaw(props) {
                 {integrationTypes[integration].name} 
                 installedIntegrations[installedIntegration].id
                 */}
+                {integrationsProxies.getQLCInfo}
             </DialogTitle>
             <DialogContent dividers>
                 <DialogContentText>
