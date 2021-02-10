@@ -393,7 +393,7 @@ class NetworkedDevice(Device):
 
     async def async_initialize(self):
         self._destination = None
-        await self.resolve_address(self._config["ip_address"])
+        await self.resolve_address()
 
     async def resolve_address(self):
         try:

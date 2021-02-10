@@ -2,7 +2,7 @@ import logging
 
 import voluptuous as vol
 
-from ledfx.devices import UDPDevice
+from ledfx.devices.udp import UDPDevice
 
 _LOGGER = logging.getLogger(__name__)
 
