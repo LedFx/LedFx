@@ -67,7 +67,7 @@ class LedFxCore(object):
         def log_filter(record):
             return (record.name != "ledfx.api.log") and (record.levelno >= 20)
 
-        self.logqueue = asyncio.Queue(maxsize=100, loop=self.loop)
+        self.logqueue = asyncio.Queue(maxsize=100)
         logqueue_handler = RollingQueueHandler(self.logqueue)
         logqueue_handler.addFilter(log_filter)
         root_logger = logging.getLogger()
