@@ -20,9 +20,7 @@ class E131Device(NetworkedDevice):
             ): str,
             vol.Required(
                 "ip_address",
-                description="Hostname or IP address of the device, or "
-                "multicast"
-                " for multicast",
+                description="Hostname or IP address of the device, or 'multicast' for multicast",
             ): str,
             vol.Required(
                 "pixel_count",
