@@ -125,7 +125,9 @@ def load_config(config_dir: str) -> dict:
     """Validates and loads the configuration file in the provided directory"""
 
     config_file = ensure_config_file(config_dir)
-    print(("Loading configuration file from {}").format(config_dir))
+    print(
+        f"Loading configuration file: {os.path.join(config_dir, CONFIG_FILE_NAME)}"
+    )
 
     if config_file.endswith("yaml"):
         migrate_config(config_dir, config_file)
