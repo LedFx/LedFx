@@ -175,7 +175,7 @@ class WLED:
             sync_settings = [
                 setting
                 for setting in sync_settings
-                if any(i in ["checked", "EP"] for i in setting[0])
+                if any(i in ["checked", "EP", "ET"] for i in setting[0])
             ]
             # remove empty string "value" keys
             # extract the setting identifier and value eg: d.Sf.BT.checked=1 => BT, 1
@@ -323,6 +323,40 @@ class WLED:
         _LOGGER.info(f"Set WLED device at {ip_address} to sync mode '{mode}'")
 
     @staticmethod
+    async def get_inactivity_timeout(ip_address):
+        """
+            Uses a HTTP get call to get a WLED compatible device's
+            timeout for after effect streaming finishes
+
+        Args:
+            timeout: int/float, seconds
+        """
+        sync_settings = await WLED._get_sync_settings(ip_address)
+        return sync_settings["ET"]
+
+    @staticmethod
+    async def set_inactivity_timeout(ip_address, timeout=2.5):
+        """
+            Uses a HTTP post call to set a WLED compatible device's
+            timeout for after effect streaming finishes
+
+        Args:
+            timeout: int/float, seconds
+        """
+        sync_settings = await WLED._get_sync_settings(ip_address)
+        if sync_settings["ET"] / 1000 == timeout:
+            return
+
+        await WLED._wled_request(
+            requests.post,
+            ip_address,
+            "settings/sync",
+            data=sync_settings | {"ET": timeout * 1000},
+        )
+
+        _LOGGER.info(f"Set WLED device at {ip_address} timeout to {timeout}s")
+
+    @staticmethod
     async def set_sync_mode(ip_address, mode):
         """
             Uses a HTTP post call to set a WLED compatible device's
@@ -412,7 +446,6 @@ async def resolve_destination(loop, destination, port=7777, timeout=3):
         cleaned_dest = destination.rstrip(".")
         try:
             dest = await loop.getaddrinfo(cleaned_dest, port)
-            print(dest)
             return dest
         except socket.gaierror:
             raise ValueError(f"Failed to resolve destination {cleaned_dest}")
