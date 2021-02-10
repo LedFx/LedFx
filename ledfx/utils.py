@@ -393,11 +393,12 @@ class WLED:
         )
 
 
-async def resolve_destination(destination):
-    """Uses a socket to attempt domain lookup
+async def resolve_destination(loop, destination, port=7777, timeout=3):
+    """Uses asyncio's non blocking DNS funcs to attempt domain lookup
 
     Args:
         destination (string): The domain name to be resolved.
+        timeout, optional (int/float): timeout for the operation
 
     Returns:
         On success: string containing the resolved IP address.
@@ -410,11 +411,11 @@ async def resolve_destination(destination):
     except ValueError:
         cleaned_dest = destination.rstrip(".")
         try:
-            return socket.gethostbyname(cleaned_dest)
+            dest = await loop.getaddrinfo(cleaned_dest, port)
+            print(dest)
+            return dest
         except socket.gaierror:
-            msg = f"Failed to resolve destination {cleaned_dest}"
-            _LOGGER.warning(msg)
-            raise ValueError(msg)
+            raise ValueError(f"Failed to resolve destination {cleaned_dest}")
         return False
 
 
