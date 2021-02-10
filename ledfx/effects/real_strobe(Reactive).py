@@ -80,7 +80,7 @@ class Strobe(AudioReactiveEffect, GradientEffect):
             1 - self._config["bass_strobe_decay_rate"]
         )
 
-    def get_pixels(self):
+    def render(self):
         pixels = np.copy(self.bass_strobe_overlay)
 
         if not self.onsets_queue.empty():
@@ -104,7 +104,6 @@ class Strobe(AudioReactiveEffect, GradientEffect):
         return self.pixels
 
     def audio_data_updated(self, data):
-        self._dirty = True
 
         currentTime = time.time()
 

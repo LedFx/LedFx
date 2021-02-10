@@ -17,14 +17,13 @@ devices: []
 fade: 1.0
 host: 0.0.0.0
 integrations: []
-max_workers: 10
 port: 8888
 scenes: {}
 virtuals: []
 
 `;
 function onChange(newValue) {
-    console.log('change', newValue);
+    // console.log('change', newValue);
 }
 
 const ConfigEditor = () => {

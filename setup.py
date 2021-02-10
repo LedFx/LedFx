@@ -9,7 +9,7 @@ PROJECT_VERSION = const.PROJECT_VERSION
 PROJECT_LICENSE = "The MIT License"
 PROJECT_AUTHOR = "Austin Hodges"
 PROJECT_AUTHOR_EMAIL = "austin.b.hodges@gmail.com"
-PROJECT_MAINTAINER = "LedFx Devs"
+PROJECT_MAINTAINER = "LedFx Developers"
 PROJECT_MAINTAINER_EMAIL = "ledfx.app@gmail.com"
 PROJECT_URL = "https://github.com/LedFx/LedFx/tree/dev"
 
@@ -19,7 +19,7 @@ SETUP_REQUIRES = [
 ]
 
 INSTALL_REQUIRES = [
-    "numpy>=1.19.5",
+    "numpy>=1.20",
     "voluptuous>=0.12.0",
     "pyaudio>=0.2.11",
     "sacn>=1.4.6",
@@ -32,7 +32,7 @@ INSTALL_REQUIRES = [
     "aubio>=0.4.9",
     "zeroconf>=0.28.6",
     'pypiwin32>=223; platform_system == "Windows"',
-    "cython<=0.29.21",
+    "cython==0.29.21",
     "pyupdater>=3.1.0",
     "sentry-sdk>=0.19.0",
     "certifi>=2019.3.9",

@@ -8,6 +8,7 @@ import CircularProgress from '@material-ui/core/CircularProgress';
 import ScenesCard from 'components/SceneCard';
 import AddSceneCard from 'components/AddSceneCard';
 import { getScenes, addScene, activateScene, deleteScene } from 'modules/scenes';
+import { fetchDisplayList } from 'modules/displays';
 
 const styles = theme => ({
     cardResponsive: {
@@ -30,6 +31,7 @@ const styles = theme => ({
 class ScenesView extends React.Component {
     componentDidMount() {
         this.props.getScenes();
+        this.props.fetchDisplayList();
     }
 
     handleAddScene = name => {
@@ -75,5 +77,5 @@ export default connect(
     state => ({
         scenes: state.scenes,
     }),
-    { getScenes, addScene, activateScene, deleteScene }
+    { getScenes, addScene, activateScene, deleteScene, fetchDisplayList }
 )(withStyles(styles)(ScenesView));

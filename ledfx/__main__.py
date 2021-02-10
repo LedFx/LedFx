@@ -21,7 +21,6 @@ import logging
 import subprocess
 import sys
 import warnings
-from importlib import reload
 from logging.handlers import RotatingFileHandler
 
 from pyupdater.client import Client
@@ -49,11 +48,34 @@ def validate_python() -> None:
         sys.exit(1)
 
 
+def reset_logging():
+    manager = logging.root.manager
+    manager.disabled = logging.NOTSET
+    for logger in manager.loggerDict.values():
+        if isinstance(logger, logging.Logger):
+            logger.setLevel(logging.NOTSET)
+            logger.propagate = True
+            logger.disabled = False
+            logger.filters.clear()
+            handlers = logger.handlers.copy()
+            for handler in handlers:
+                # Copied from `logging.shutdown`.
+                try:
+                    handler.acquire()
+                    handler.flush()
+                    handler.close()
+                except (OSError, ValueError):
+                    pass
+                finally:
+                    handler.release()
+                logger.removeHandler(handler)
+
+
 def setup_logging(loglevel):
     # Create a custom logging level to display pyupdater progress
-    reload(logging)
+    reset_logging()
 
-    console_loglevel = loglevel if loglevel else logging.WARNING
+    console_loglevel = loglevel or logging.WARNING
     console_logformat = "[%(levelname)-8s] %(name)-30s : %(message)s"
 
     file_loglevel = logging.INFO
@@ -96,6 +118,7 @@ def setup_logging(loglevel):
     logging.getLogger("sacn").setLevel(logging.WARNING)
     logging.getLogger("aiohttp.access").setLevel(logging.WARNING)
     logging.getLogger("pyupdater").setLevel(logging.WARNING)
+    logging.getLogger("zeroconf").setLevel(logging.DEBUG)
 
     global _LOGGER
     _LOGGER = logging.getLogger(__name__)
@@ -161,6 +184,12 @@ def parse_args():
         dest="offline_mode",
         action="store_true",
         help="Disable automated updates and sentry crash logger",
+    )
+    parser.add_argument(
+        "--sentry-crash-test",
+        dest="sentry_test",
+        action="store_true",
+        help="This crashes LedFx to test the sentry crash logger",
     )
     return parser.parse_args()
 
@@ -230,6 +259,11 @@ def main():
     setup_logging(args.loglevel)
     config_helpers.load_logger()
 
+    if args.sentry_test:
+        """ This will crash LedFx and submit a Sentry error if Sentry is configured """
+        _LOGGER.warning("Steering LedFx into a brick wall")
+        div_by_zero = 1 / 0
+
     if args.offline_mode is False and currently_frozen():
 
         warnings.filterwarnings("ignore", category=DeprecationWarning)
@@ -243,7 +277,7 @@ def main():
     if not currently_frozen() and installed_via_pip():
         warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-    _LOGGER.info("LedFx Core is initialising")
+    _LOGGER.info("LedFx Core is initializing")
 
     ledfx = LedFxCore(config_dir=args.config, host=args.host, port=args.port)
 

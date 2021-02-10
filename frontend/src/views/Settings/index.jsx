@@ -9,12 +9,14 @@ import AudioInputCard from './AudioInput';
 import ConfigCard from './ConfigCard';
 import LogCard from './LogCard';
 import ThemesCard from './ThemesCard';
+import { fetchDisplayList } from 'modules/displays';
 
 const styles = theme => ({});
 
 class SettingsView extends Component {
     componentDidMount() {
         this.props.getAudioInputs();
+        this.props.fetchDisplayList();
     }
 
     render() {
@@ -36,7 +38,6 @@ class SettingsView extends Component {
                     <Grid item md={12}>
                         <LogCard />
                     </Grid>
-                    `
                 </Grid>
             </Grid>
         );
@@ -50,5 +51,6 @@ export default connect(
     {
         getAudioInputs,
         setAudioInput,
+        fetchDisplayList,
     }
 )(withStyles(styles)(SettingsView));

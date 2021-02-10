@@ -11,6 +11,12 @@ class SpectrumAudioEffect(AudioReactiveEffect):
 
     _prev_y = None
 
+    def activate(self, pixel_count):
+        self.r = np.zeros(pixel_count)
+        self.g = np.zeros(pixel_count)
+        self.b = np.zeros(pixel_count)
+        super().activate(pixel_count)
+
     def config_updated(self, config):
 
         # Create all the filters used for the effect
@@ -26,11 +32,12 @@ class SpectrumAudioEffect(AudioReactiveEffect):
             self._prev_y = y
 
         # Update all the filters and build up the RGB values
-        r = self._r_filter.update(y - filtered_y)
-        g = np.abs(y - self._prev_y)
-        b = self._b_filter.update(y)
+        self.r = self._r_filter.update(y - filtered_y)
+        self.g = np.abs(y - self._prev_y)
+        self.b = self._b_filter.update(y)
 
         self._prev_y = y
 
-        output = np.array([r, g, b]) * 255
-        self.pixels = output.T
+    def render(self):
+        output = np.array([self.r, self.g, self.b]) * 255
+        return output.T

@@ -53,6 +53,15 @@ class EnergyAudioEffect(AudioReactiveEffect):
         }
     )
 
+    def activate(self, pixel_count):
+        self.p = np.zeros((pixel_count, 3))
+        self.beat_now = False
+        self.lows_idx = 0
+        self.mids_idx = 0
+        self.highs_idx = 0
+
+        super().activate(pixel_count)
+
     def config_updated(self, config):
         # scale decay value between 0.1 and 0.2
         decay_sensitivity = (self._config["sensitivity"] - 0.2) * 0.25
@@ -74,16 +83,17 @@ class EnergyAudioEffect(AudioReactiveEffect):
         )
 
     def audio_data_updated(self, data):
-
         # Calculate the low, mids, and high indexes scaling based on the pixel
         # count
-        lows_idx = int(np.mean(self.pixel_count * data.melbank_lows()))
-        mids_idx = int(np.mean(self.pixel_count * data.melbank_mids()))
-        highs_idx = int(np.mean(self.pixel_count * data.melbank_highs()))
+        self.lows_idx = int(np.mean(self.pixel_count * data.melbank_lows()))
+        self.mids_idx = int(np.mean(self.pixel_count * data.melbank_mids()))
+        self.highs_idx = int(np.mean(self.pixel_count * data.melbank_highs()))
+        _, self.beat_now = data.oscillator()
 
+    def render(self):
         if self._config["color_cycler"]:
-            beat_now = data.oscillator()
-            if beat_now:
+
+            if self.beat_now:
                 # Cycle between 0,1,2 for lows, mids and highs
                 self.color_cycler = (self.color_cycler + 1) % 3
                 color = np.random.choice(list(COLORS.keys()))
@@ -97,15 +107,15 @@ class EnergyAudioEffect(AudioReactiveEffect):
 
         # Build the new energy profile based on the mids, highs and lows setting
         # the colors as red, green, and blue channel respectively
-        p = np.zeros(np.shape(self.pixels))
+        self.p[:, :] = 0
         if self._config["mixing_mode"] == "additive":
-            p[:lows_idx] = self.lows_colour
-            p[:mids_idx] += self.mids_colour
-            p[:highs_idx] += self.high_colour
+            self.p[: self.lows_idx] = self.lows_colour
+            self.p[: self.mids_idx] += self.mids_colour
+            self.p[: self.highs_idx] += self.high_colour
         elif self._config["mixing_mode"] == "overlap":
-            p[:lows_idx] = self.lows_colour
-            p[:mids_idx] = self.mids_colour
-            p[:highs_idx] = self.high_colour
+            self.p[: self.lows_idx] = self.lows_colour
+            self.p[: self.mids_idx] = self.mids_colour
+            self.p[: self.highs_idx] = self.high_colour
 
         # Filter and update the pixel values
-        self.pixels = self._p_filter.update(p)
+        return self._p_filter.update(self.p)

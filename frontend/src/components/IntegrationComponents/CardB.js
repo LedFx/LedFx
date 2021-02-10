@@ -84,7 +84,7 @@ const IntegrationsCard = ({ int }) => {
                     variant="text"
                     color="secondary"
                     onClick={() => {
-                        console.log('edit');
+                        // console.log('edit');
                     }}
                 >
                     <EditIcon />

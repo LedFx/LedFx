@@ -19,6 +19,10 @@ class BlocksAudioEffect(AudioReactiveEffect, GradientEffect):
         }
     )
 
+    def activate(self, pixel_count):
+        self.r = np.zeros(pixel_count)
+        super().activate(pixel_count)
+
     def config_updated(self, config):
         # Create the filters used for the effect
         self._r_filter = self.create_filter(alpha_decay=0.2, alpha_rise=0.99)
@@ -30,8 +34,10 @@ class BlocksAudioEffect(AudioReactiveEffect, GradientEffect):
 
         # Grab the filtered difference between the filtered melbank and the
         # raw melbank.
-        r = self._r_filter.update(y - filtered_y)
-        out = np.tile(r, (3, 1))
+        self.r = self._r_filter.update(y - filtered_y)
+
+    def render(self):
+        out = np.tile(self.r, (3, 1))
         out_split = np.array_split(out, self._config["block_count"], axis=1)
         for i in range(self._config["block_count"]):
             color = self.get_gradient_color(i / self._config["block_count"])[
@@ -41,4 +47,4 @@ class BlocksAudioEffect(AudioReactiveEffect, GradientEffect):
                 out_split[i], (out_split[i].max() * color)
             )
 
-        self.pixels = np.hstack(out_split).T
+        return np.hstack(out_split).T

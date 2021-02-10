@@ -16,6 +16,9 @@ class FXMatrix(Device):
     CONFIG_SCHEMA = vol.Schema(
         {
             vol.Required(
+                "name", description="Friendly name for the device"
+            ): str,
+            vol.Required(
                 "ip_address",
                 description="Hostname or IP address of the device",
             ): str,
@@ -28,24 +31,34 @@ class FXMatrix(Device):
             vol.Required(
                 "height", description="Number of pixels height"
             ): vol.All(vol.Coerce(int), vol.Range(min=1)),
-            # vol.Required('pixel_count', description='Number of individual
-            # pixels'): vol.All(vol.Coerce(int), vol.Range(min=1)),
         }
     )
 
+    def __init__(self, ledfx, config):
+        super().__init__(ledfx, config)
+
+        self.resolved_dest = None
+        self.attempt_resolve_dest()
+
+    async def async_initialize(self):
+        ip_address = self._config["ip_address"]
+        _LOGGER.info(
+            f"Attempting to resolve device {self.name} address {ip_address} ..."
+        )
+        self.resolved_dest = await resolve_destination(ip_address)
+
     def activate(self):
+        if not self.resolved_dest:
+            _LOGGER.error(
+                f"Cannot activate device {self.name} - destination address {self._config['ip_address']} is not resolved"
+            )
+            self.attempt_resolve_dest()
+            return
+
         self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self._config["pixel_count"] = int(
             self._config["width"] * self._config["height"]
         )
-        # check if ip/hostname resolves okay
-        self.resolved_dest = resolve_destination(self._config["ip_address"])
-        if not self.resolved_dest:
-            _LOGGER.warning(
-                f"Cannot resolve destination {self._config['ip_address']}, aborting device {self.name} activation. Make sure the IP/hostname is correct and device is online."
-            )
-            return
-
         super().activate()
 
     def deactivate(self):

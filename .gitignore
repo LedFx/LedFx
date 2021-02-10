@@ -66,3 +66,6 @@ formatting_test.bat
 .devcontainer/ledfx-config.yml
 .vscode/launch.json
 win.spec
+frontend/.eslintcache
+frontend/.eslintcache
+frontend/.eslintcache

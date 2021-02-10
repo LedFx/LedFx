@@ -7,8 +7,9 @@ import settings from './settings';
 import virtuals from './virtuals';
 import integrations from './integrations';
 import ui from './ui';
-
-export default {
+import displays from './displays';
+import selectedDisplay from './selectedDisplay';
+const modules = {
     devices,
     integrations,
     presets,
@@ -18,4 +19,8 @@ export default {
     selectedDevice,
     virtuals,
     ui,
+    displays,
+    selectedDisplay,
 };
+
+export default modules

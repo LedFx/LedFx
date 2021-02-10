@@ -1,3 +1,4 @@
+import numpy as np
 import voluptuous as vol
 
 from ledfx.effects.audio import AudioReactiveEffect
@@ -20,6 +21,10 @@ class WavelengthAudioEffect(AudioReactiveEffect, GradientEffect):
         }
     )
 
+    def activate(self, pixel_count):
+        self.r = np.zeros(pixel_count)
+        super().activate(pixel_count)
+
     def config_updated(self, config):
 
         # Create the filters used for the effect
@@ -33,7 +38,8 @@ class WavelengthAudioEffect(AudioReactiveEffect, GradientEffect):
 
         # Grab the filtered difference between the filtered melbank and the
         # raw melbank.
-        r = self._r_filter.update(y - filtered_y)
+        self.r = self._r_filter.update(y - filtered_y)
 
+    def render(self):
         # Apply the melbank data to the gradient curve and update the pixels
-        self.pixels = self.apply_gradient(r)
+        return self.apply_gradient(self.r)

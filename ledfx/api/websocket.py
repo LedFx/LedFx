@@ -109,7 +109,7 @@ class WebsocketConnection:
                 break
 
             try:
-                _LOGGER.debug("Sending websocket message")
+                # _LOGGER.debug("Sending websocket message")
                 await self._socket.send_json(message, dumps=json.dumps)
             except TypeError as err:
                 _LOGGER.error(

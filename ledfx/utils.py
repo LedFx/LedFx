@@ -2,6 +2,7 @@ import asyncio
 import concurrent.futures
 import importlib
 import inspect
+import ipaddress
 import logging
 import os
 import pkgutil
@@ -13,6 +14,7 @@ from abc import ABC
 # from asyncio import coroutines, ensure_future
 from subprocess import PIPE, Popen
 
+import requests
 import voluptuous as vol
 
 _LOGGER = logging.getLogger(__name__)
@@ -69,25 +71,25 @@ def async_fire_and_forget(coro, loop):
     return
 
 
-def async_fire_and_return(loop, coro, timeout=10):
-    """Run some code in the core event loop with a result"""
+def async_fire_and_return(coro, callback, timeout=10):
+    """Run some async code in the core event loop with a callback to handle result"""
 
     if not asyncio.coroutines.iscoroutine(coro):
         raise TypeError(("A coroutine object is required: {}").format(coro))
 
-    future = asyncio.run_coroutine_threadsafe(coro, loop=loop)
+    def _callback(future):
+        exc = future.exception()
+        if exc:
+            # Handle wonderful empty TimeoutError exception
+            if type(exc) == TimeoutError:
+                _LOGGER.warning(f"Coroutine {future} timed out.")
+            else:
+                _LOGGER.error(exc)
+        else:
+            callback(future.result())
 
-    try:
-        result = future.result(timeout)
-    except asyncio.TimeoutError:
-        _LOGGER.warning(
-            f"Coroutine {coro} timed out at {timeout}s, cancelling the task..."
-        )
-        future.cancel()
-    except Exception as exc:
-        _LOGGER.error(f"Coroutine {coro} raised an exception: {exc!r}")
-    else:
-        return result
+    future = asyncio.create_task(asyncio.wait_for(coro, timeout=timeout))
+    future.add_done_callback(_callback)
 
 
 def async_callback(loop, callback, *args):
@@ -109,7 +111,289 @@ def async_callback(loop, callback, *args):
     return future
 
 
-def resolve_destination(destination):
+class WLED:
+    """
+    A collection of WLED helper functions
+    """
+
+    SYNC_MODES = {"ddp": 4048, "e131": 5568, "artnet": 6454}
+
+    @staticmethod
+    async def _wled_request(
+        method, ip_address, endpoint, timeout=0.5, **kwargs
+    ):
+        url = f"http://{ip_address}/{endpoint}"
+
+        try:
+            response = method(url, timeout=timeout, **kwargs)
+
+        except requests.exceptions.RequestException:
+            msg = f"Cannot connect to WLED device at {ip_address}"
+            raise ValueError(msg)
+
+        if not response.ok:
+            msg = f"WLED API Error at {ip_address}: {response.status_code}"
+            raise ValueError(msg)
+
+        return response
+
+    @staticmethod
+    async def _get_sync_settings(ip_address):
+        """
+        when doing posts to settings/sync we need to include the values of
+        all the existing checkboxes on that page, otherwise they get set to "off"!
+        Would be ideal to have an api exposed for the functions we're doing here,
+        but for now we'll just send these sensitive values with our posts
+        """
+        response = await WLED._wled_request(
+            requests.get, ip_address, "settings/sync"
+        )
+        response_text = response.text
+
+        try:
+            # find start of "GetV()"" function that defines all the settings' values on the page
+            getV_index = response_text.find("function GetV()")
+            # find indexes of {}
+            sync_settings_start = response_text.find("{", getV_index)
+            sync_settings_end = response_text.find("}", sync_settings_start)
+            # get the settings contained in the {}
+            sync_settings = response_text[
+                sync_settings_start + 1 : sync_settings_end
+            ]
+            # clean and split into individual setting strings eg: d.Sf.BT.checked=1
+            sync_settings = sync_settings.lstrip().split(";")
+            # split each string by key and value
+            sync_settings = [
+                setting.split("=") for setting in sync_settings if setting
+            ]
+            # break down key by "." to parse
+            sync_settings = [
+                (setting[0].split("."), setting[1])
+                for setting in sync_settings
+            ]
+            # only keep the settings that are "checked" or "EP"
+            sync_settings = [
+                setting
+                for setting in sync_settings
+                if any(i in ["checked", "EP"] for i in setting[0])
+            ]
+            # remove empty string "value" keys
+            # extract the setting identifier and value eg: d.Sf.BT.checked=1 => BT, 1
+            sync_settings = [
+                (
+                    [
+                        i
+                        for i in setting[0]
+                        if i not in ["d", "sF", "checked", "value"]
+                    ][-1],
+                    int(setting[1]),
+                )
+                for setting in sync_settings
+            ]
+        except Exception as e:
+            _LOGGER.critical(
+                f"!! IF YOU SEE THIS ERROR !! - Please let an LedFx developer know that wled sync settings have changed format. Thank you <3. {e}"
+            )
+
+        # we now have a list of tuples for the value of each checkbox eg: [("BT", 1), ("HL", 0), ...]
+        # and we'll give it as a nice dict
+        return dict(sync_settings)
+
+    @staticmethod
+    async def get_config(ip_address):
+        """
+            Uses a JSON API call to determine if the device is WLED or WLED compatible
+            and return its config.
+            Specifically searches for "WLED" in the brand json - currently all major
+            branches/forks of WLED contain WLED in the branch data.
+        Args:
+            ip_address (String): the IP to query
+        Returns:
+            config: dict, with all wled configuration info
+        """
+        _LOGGER.info(f"Attempting to contact WLED device at {ip_address}...")
+        response = await WLED._wled_request(
+            requests.get, ip_address, "json/info"
+        )
+
+        wled_config = response.json()
+
+        if not wled_config["brand"] in "WLED":
+            msg = f"{ip_address} is not WLED compatible, brand: {wled_config['brand']}"
+            raise ValueError(msg)
+
+        return wled_config
+
+    @staticmethod
+    async def get_state(ip_address):
+        """
+            Uses a JSON API call to determine the full WLED device state
+
+        Args:
+            ip_address (string): The device IP to be queried
+        Returns:
+            state, dict. Full device state
+        """
+        response = await WLED._wled_request(
+            requests.get, ip_address, "json/state"
+        )
+
+        return response.json()
+
+    @staticmethod
+    async def get_power_state(ip_address):
+        """
+            Uses a JSON API call to determine the WLED device power state (on/off)
+
+        Args:
+            ip_address (string): The device IP to be queried
+        Returns:
+            boolean: True is "On", False is "Off"
+        """
+        return await WLED.get_state(ip_address)["on"]
+
+    @staticmethod
+    async def get_segments(ip_address):
+        """
+            Uses a JSON API call to determine the WLED segment setup
+
+        Args:
+            ip_address (string): The device IP to be queried
+        Returns:
+            dict: array of segments
+        """
+        return await WLED.get_state(ip_address)["seg"]
+
+    @staticmethod
+    async def set_power_state(ip_address, state):
+        """
+            Uses a HTTP post call to set the power of a WLED compatible device on/off
+
+        Args:
+            ip_address (string): The device IP to be turned on
+            state (bool): on/off
+        """
+        await WLED._wled_request(
+            requests.post, ip_address, f"win&T={'1' if state else '0'}"
+        )
+
+        _LOGGER.info(
+            f"Turned WLED device at {ip_address} {'on' if state else 'off'}."
+        )
+
+    @staticmethod
+    async def set_brightness(ip_address, brightness):
+        """
+            Uses a HTTP post call to adjust a WLED compatible device's
+            brightness
+
+        Args:
+            ip_address (string): The device IP to adjust brightness
+            brightness (int): The brightness value between 0-255
+        """
+        # cast to int and clamp to range
+        brightness = max(0, max(int(brightness), 255))
+
+        await WLED._wled_request(
+            requests.post, ip_address, f"win&A={brightness}"
+        )
+
+        _LOGGER.info(
+            f"Set WLED device brightness at {ip_address} to {brightness}."
+        )
+
+    @staticmethod
+    async def set_force_max_brightness(ip_address, mode):
+        """
+            Uses a HTTP post call to set a WLED compatible device's
+            sync option "Force Max Brightness"
+
+        Args:
+            ip_address (string): The device IP to adjust brightness
+        """
+        sync_settings = await WLED._get_sync_settings(ip_address)
+
+        await WLED._wled_request(
+            requests.post,
+            ip_address,
+            "settings/sync",
+            data=sync_settings | {"FB": "on"},
+        )
+
+        _LOGGER.info(f"Set WLED device at {ip_address} to sync mode '{mode}'")
+
+    @staticmethod
+    async def set_sync_mode(ip_address, mode):
+        """
+            Uses a HTTP post call to set a WLED compatible device's
+            sync mode and then reboot
+
+            Will return without rebooting is the mode is already set.
+
+        Args:
+            ip_address (string): The device IP to adjust brightness
+            mode: str, in ["ddp", "e131", "artnet"]
+        """
+        assert mode in WLED.SYNC_MODES.keys()
+
+        sync_settings = await WLED._get_sync_settings(ip_address)
+
+        if mode == "udp":
+            # if realtime udp is already enabled, we're good to go
+            if sync_settings["RD"] == 1:
+                return
+            else:
+                data = {"RD": "on"}
+
+        else:
+            # make sure the mode isn't already set, if so no need to go on
+            current_mode = next(
+                key
+                for key, value in WLED.SYNC_MODES.items()
+                if value == sync_settings["EP"]
+            )
+            if current_mode == mode:
+                return
+
+            port = WLED.SYNC_MODES[mode]
+            data = {"DI": port, "EP": port}
+
+        await WLED._wled_request(
+            requests.post,
+            ip_address,
+            "settings/sync",
+            data=sync_settings | data,
+        )
+
+        _LOGGER.info(f"Set WLED device at {ip_address} to sync mode '{mode}'")
+
+        await WLED.reboot(ip_address)
+
+        _LOGGER.info(f"Rebooting WLED device at {ip_address}")
+
+    @staticmethod
+    async def get_sync_mode(ip_address):
+        """
+            Uses a HTTP post call to get a WLED compatible device's
+            sync mode
+
+        Args:
+            ip_address (string): The device IP to adjust brightness
+        """
+        sync_port = await WLED._get_sync_settings(ip_address)["EP"]
+
+        return next(
+            key for key, value in WLED.SYNC_MODES.items() if value == sync_port
+        )
+
+    @staticmethod
+    async def reboot(ip_address):
+        await WLED._wled_request(
+            requests.post, ip_address, "win&RB", timeout=3
+        )
+
+
+async def resolve_destination(destination):
     """Uses a socket to attempt domain lookup
 
     Args:
@@ -119,18 +403,19 @@ def resolve_destination(destination):
         On success: string containing the resolved IP address.
         On failure: boolean false.
     """
-    cleaned_dest = destination.rstrip(".")
-    resolve_attempts = 0
-    while resolve_attempts <= 2:
+    try:
+        ipaddress.ip_address(destination)
+        return destination
+
+    except ValueError:
+        cleaned_dest = destination.rstrip(".")
         try:
             return socket.gethostbyname(cleaned_dest)
         except socket.gaierror:
-            resolve_attempts += 1
-            _LOGGER.warning(
-                f"Failed resolving {cleaned_dest}, attempt {resolve_attempts} of 3."
-            )
-
-    return False
+            msg = f"Failed to resolve destination {cleaned_dest}"
+            _LOGGER.warning(msg)
+            raise ValueError(msg)
+        return False
 
 
 def currently_frozen():
@@ -254,13 +539,19 @@ class BaseRegistry(ABC):
 
     @property
     def type(self) -> str:
-        """Returns the id for the object"""
+        """Returns the type for the object"""
         return getattr(self, "_type", None)
 
     @property
     def config(self) -> dict:
         """Returns the config for the object"""
         return getattr(self, "_config", None)
+
+    @config.setter
+    def config(self, _config):
+        """Updates the config for an object"""
+        _config = self.schema()(_config)
+        return setattr(self, "_config", _config)
 
 
 class RegistryLoader(object):

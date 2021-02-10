@@ -16,6 +16,9 @@ class UDPDevice(Device):
     CONFIG_SCHEMA = vol.Schema(
         {
             vol.Required(
+                "name", description="Friendly name for the device"
+            ): str,
+            vol.Required(
                 "ip_address",
                 description="Hostname or IP address of the device",
             ): str,
@@ -42,15 +45,28 @@ class UDPDevice(Device):
         }
     )
 
+    def __init__(self, ledfx, config):
+        super().__init__(ledfx, config)
+
+        self.resolved_dest = None
+        self.attempt_resolve_dest()
+
+    async def async_initialize(self):
+        ip_address = self._config["ip_address"]
+        _LOGGER.info(
+            f"Attempting to resolve device {self.name} address {ip_address} ..."
+        )
+        self.resolved_dest = await resolve_destination(ip_address)
+
     def activate(self):
-        self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        # check if ip/hostname resolves okay
-        self.resolved_dest = resolve_destination(self._config["ip_address"])
         if not self.resolved_dest:
-            _LOGGER.warning(
-                f"Cannot resolve destination {self._config['ip_address']}, aborting device {self.name} activation. Make sure the IP/hostname is correct and device is online."
+            _LOGGER.error(
+                f"Cannot activate device {self.name} - destination address {self._config['ip_address']} is not resolved"
             )
+            self.attempt_resolve_dest()
             return
+
+        self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         super().activate()
 
     def deactivate(self):
@@ -62,11 +78,30 @@ class UDPDevice(Device):
         return int(self._config["pixel_count"])
 
     def flush(self, data):
+        UDPDevice.send_out(
+            self._sock,
+            self.resolved_dest,
+            self._config["port"],
+            data,
+            self._config.get("data_prefix"),
+            self._config.get("data_postfix"),
+            self._config["include_indexes"],
+        )
+
+    @staticmethod
+    def send_out(
+        sock,
+        dest,
+        port,
+        data,
+        prefix=None,
+        postfix=None,
+        include_indexes=False,
+    ):
         udpData = bytearray()
         byteData = data.astype(np.dtype("B"))
 
         # Append the prefix if provided
-        prefix = self._config.get("data_prefix")
         if prefix:
             try:
                 udpData.extend(bytes.fromhex(prefix))
@@ -74,7 +109,7 @@ class UDPDevice(Device):
                 _LOGGER.warning(f"Cannot convert prefix {prefix} to hex value")
 
         # Append all of the pixel data
-        if self._config["include_indexes"]:
+        if include_indexes:
             for i in range(len(byteData)):
                 udpData.extend(bytes([i]))
                 udpData.extend(byteData[i].flatten().tobytes())
@@ -82,7 +117,6 @@ class UDPDevice(Device):
             udpData.extend(byteData.flatten().tobytes())
 
         # Append the postfix if provided
-        postfix = self._config.get("data_postfix")
         if postfix:
             try:
                 udpData.extend(bytes.fromhex(postfix))
@@ -91,7 +125,7 @@ class UDPDevice(Device):
                     f"Cannot convert postfix {postfix} to hex value"
                 )
 
-        self._sock.sendto(
+        sock.sendto(
             bytes(udpData),
-            (self.resolved_dest, self._config["port"]),
+            (dest, port),
         )

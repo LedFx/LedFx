@@ -13,7 +13,7 @@ import LockOpenIcon from '@material-ui/icons/LockOpen';
 import DashboardView from '../views/Dashboard';
 import DevicesView from '../views/Devices';
 import ScenesView from '../views/Scenes';
-import DeviceView from '../views/Device';
+import DisplayView from '../views/Display';
 import VirtualsView from '../views/Virtuals';
 import IntegrationsView from '../views/Integrations';
 import AdvancedView from '../views/Advanced';
@@ -21,7 +21,7 @@ import SettingsView from '../views/Settings';
 import DeveloperView from '../views/Developer';
 
 const virtuals =
-    parseInt(window.localStorage.getItem('BladeMod')) > 1
+    parseInt(window.localStorage.getItem('BladeMod')) > 2
         ? {
               path: '/virtuals',
               sidebarName: 'Virtual Strips',
@@ -35,6 +35,7 @@ const virtuals =
               icon: DeviceHubIcon,
               component: VirtualsView,
           };
+
 const integrations =
     parseInt(window.localStorage.getItem('BladeMod')) > 1
         ? {
@@ -51,7 +52,7 @@ const integrations =
               component: IntegrationsView,
           };
 const advanced =
-    parseInt(window.localStorage.getItem('BladeMod')) > 0
+    parseInt(window.localStorage.getItem('BladeMod')) > 2
         ? {
               path: '/advanced',
               sidebarName: 'Advanced',
@@ -74,11 +75,11 @@ const viewRoutes = [
         component: DashboardView,
     },
     {
-        path: '/devices/:deviceId',
-        navbarName: 'Devices',
-        sidebarName: 'Devices',
+        path: '/displays/:displayId',
+        navbarName: 'Displays',
+        sidebarName: 'Displays',
         icon: List,
-        component: DeviceView,
+        component: DisplayView,
     },
     {
         path: '/scenes',

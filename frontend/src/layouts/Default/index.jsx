@@ -69,7 +69,7 @@ class DefaultLayout extends React.Component {
     };
 
     render() {
-        const { classes, deviceDictionary, location, settings } = this.props;
+        const { classes, deviceDictionary, location, settings, selectedDisplay } = this.props;
         const { mobileOpen } = this.state;
 
         return (
@@ -78,6 +78,7 @@ class DefaultLayout extends React.Component {
                     handleDrawerToggle={this.handleDrawerToggle}
                     location={location}
                     devicesDictionary={deviceDictionary}
+                    selectedDisplay={selectedDisplay}
                 />
                 <Sidebar
                     handleDrawerToggle={this.handleDrawerToggle}
@@ -119,6 +120,7 @@ DefaultLayout.propTypes = {
 export default connect(
     state => ({
         deviceDictionary: state.devices.dictionary,
+        selectedDisplay: state.selectedDisplay.display,
         schemas: state.schemas,
         settings: state.settings,
     }),
