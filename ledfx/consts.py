@@ -30,3 +30,6 @@ if POST > 0:
     POST_VERSION = "{}-post{}".format(PROJECT_VERSION, POST)
 
 __version__ = PROJECT_VERSION
+
+if __name__ == "__main__":
+    print(__version__)
