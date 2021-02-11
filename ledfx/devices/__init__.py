@@ -415,9 +415,13 @@ class WLEDListener(zeroconf.ServiceBrowser):
             device_type = "wled"
             device_config = {"ip_address": hostname}
 
+            def handle_exception(future):
+                pass
+
             async_fire_and_forget(
                 self._ledfx.devices.add_new_device(device_type, device_config),
                 loop=self._ledfx.loop,
+                exc_handler=handle_exception,
             )
 
 

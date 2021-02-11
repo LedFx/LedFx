@@ -57,7 +57,7 @@ def import_or_install(package):
     return False
 
 
-def async_fire_and_forget(coro, loop):
+def async_fire_and_forget(coro, loop, exc_handler=None):
     """Run some code in the core event loop without a result"""
 
     if not asyncio.coroutines.iscoroutine(coro):
@@ -65,7 +65,9 @@ def async_fire_and_forget(coro, loop):
 
     def callback():
         """Handle the firing of a coroutine."""
-        asyncio.ensure_future(coro, loop=loop)
+        task = asyncio.create_task(coro)
+        if exc_handler is not None:
+            task.add_done_callback(exc_handler)
 
     loop.call_soon_threadsafe(callback)
     return
