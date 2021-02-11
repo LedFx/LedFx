@@ -339,8 +339,6 @@ class Display(object):
         _LOGGER.info(f"Activating display {self.id}")
         if not self._active:
             self.activate_segments(self._segments)
-        for device in self._devices:
-            device.activate()
         self._active = True
         self.thread_function()
 
