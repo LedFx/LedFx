@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import socket
 from abc import abstractmethod
 from functools import cached_property
 
@@ -257,9 +256,12 @@ class Devices(RegistryLoader):
         # First, we try to make sure this device doesn't share a destination with any existing device
         if "ip_address" in device_config.keys():
             device_ip = device_config["ip_address"]
-            resolved_dest = await resolve_destination(
-                self._ledfx.loop, device_ip
-            )
+            try:
+                resolved_dest = await resolve_destination(
+                    self._ledfx.loop, device_ip
+                )
+            except ValueError:
+                _LOGGER.error(f"Failed to resolve address {device_ip}")
 
             for existing_device in self._ledfx.devices.values():
                 if (
@@ -381,17 +383,21 @@ class WLEDListener(zeroconf.ServiceBrowser):
         info = zeroconf_obj.get_service_info(type, name)
 
         if info:
-            address = socket.inet_ntoa(info.addresses[0])
             hostname = str(info.server)
-            _LOGGER.info(f"Found device at {address}")
+            _LOGGER.info(f"Found device: {hostname}")
 
             device_type = "wled"
             device_config = {"ip_address": hostname}
 
-            async_fire_and_forget(
-                self._ledfx.devices.add_new_device(device_type, device_config),
-                self._ledfx.loop,
-            )
+            try:
+                async_fire_and_forget(
+                    self._ledfx.devices.add_new_device(
+                        device_type, device_config
+                    ),
+                    self._ledfx.loop,
+                )
+            except ValueError as msg:
+                _LOGGER.error(f"Failed to add device: {msg}")
 
 
 class NetworkedDevice(Device):
