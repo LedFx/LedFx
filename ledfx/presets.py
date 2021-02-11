@@ -1,4 +1,4 @@
-{
+ledfx_presets = {
     "bar": {
         "reset": {"config": {}, "name": "Reset"},
         "bouncing-blues": {
