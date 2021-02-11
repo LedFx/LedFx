@@ -62,6 +62,31 @@ class Device(BaseRegistry):
         if self._active:
             self.deactivate()
 
+    def update_config(self, config):
+        # TODO: Sync locks to ensure everything is thread safe
+        validated_config = type(self).schema()(config)
+        if self._config is not None:
+            self._config = self._config | validated_config
+        else:
+            self._config = validated_config
+
+        # Iterate all the base classes and check to see if there is a custom
+        # implementation of config updates. If to notify the base class.
+        valid_classes = list(type(self).__bases__)
+        valid_classes.append(type(self))
+        for base in valid_classes:
+            if hasattr(base, "config_updated"):
+                if base.config_updated != super(base, base).config_updated:
+                    base.config_updated(self, self._config)
+
+        _LOGGER.info(
+            f"Device {self.name} config updated to {validated_config}."
+        )
+
+        for display in self._displays_objs:
+            display.deactivate_segments()
+            display.activate_segments(display._segments)
+
     @property
     def pixel_count(self):
         return int(self._config["pixel_count"])
