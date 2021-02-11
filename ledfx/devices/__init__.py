@@ -305,6 +305,9 @@ class Devices(RegistryLoader):
             ledfx=self._ledfx,
         )
 
+        if hasattr(device, "async_initialize"):
+            await device.async_initialize()
+
         # Update and save the configuration
         self._ledfx.config["devices"].append(
             {
