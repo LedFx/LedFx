@@ -27,6 +27,11 @@ class E131Device(NetworkedDevice):
                 default=1,
             ): vol.All(vol.Coerce(int), vol.Range(min=1)),
             vol.Optional(
+                "universe_size",
+                description="Size of each DMX universe",
+                default=510,
+            ): vol.All(vol.Coerce(int), vol.Range(min=1)),
+            vol.Optional(
                 "channel_offset",
                 description="Channel offset within the DMX universe",
                 default=0,
