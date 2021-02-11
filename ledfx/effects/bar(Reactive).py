@@ -9,6 +9,8 @@ from ledfx.effects.gradient import GradientEffect
 class BarAudioEffect(AudioReactiveEffect, GradientEffect):
 
     NAME = "Bar"
+    CATEGORY = "BPM"
+
     CONFIG_SCHEMA = vol.Schema(
         {
             vol.Optional(

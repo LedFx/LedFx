@@ -8,6 +8,7 @@ from ledfx.effects.gradient import GradientEffect
 class WavelengthAudioEffect(AudioReactiveEffect, GradientEffect):
 
     NAME = "Wavelength"
+    CATEGORY = "Classic"
 
     # There is no additional configuration here, but override the blur
     # default to be 3.0 so blurring is enabled.

@@ -7,6 +7,8 @@ from ledfx.effects.audio import AudioReactiveEffect
 class SpectrumAudioEffect(AudioReactiveEffect):
 
     NAME = "Spectrum"
+    CATEGORY = "Classic"
+
     CONFIG_SCHEMA = vol.Schema({})
 
     _prev_y = None

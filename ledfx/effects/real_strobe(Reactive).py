@@ -12,6 +12,8 @@ from ledfx.effects.gradient import GradientEffect
 class Strobe(AudioReactiveEffect, GradientEffect):
 
     NAME = "Real Strobe"
+    CATEGORY = "Classic"
+
     CONFIG_SCHEMA = vol.Schema(
         {
             vol.Optional(

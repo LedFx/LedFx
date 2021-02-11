@@ -9,6 +9,7 @@ from ledfx.effects.gradient import GradientEffect
 class PitchSpectrumAudioEffect(AudioReactiveEffect, GradientEffect):
 
     NAME = "PitchSpectrum"
+    CATEGORY = "Classic"
 
     CONFIG_SCHEMA = vol.Schema(
         {

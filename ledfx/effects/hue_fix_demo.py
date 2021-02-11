@@ -8,6 +8,8 @@ from ledfx.effects.hsv_effect import HSVEffect
 class HueFixDemo(AudioReactiveEffect, HSVEffect):
 
     NAME = "Hue Fix Demo"
+    CATEGORY = "Next Gen"
+
     CONFIG_SCHEMA = vol.Schema(
         {
             vol.Optional(

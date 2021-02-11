@@ -12,6 +12,8 @@ from ledfx.effects.effectlets import EFFECTLET_LIST
 class RainAudioEffect(AudioReactiveEffect):
 
     NAME = "Rain"
+    CATEGORY = "Classic"
+
     CONFIG_SCHEMA = vol.Schema(
         {
             vol.Optional(
