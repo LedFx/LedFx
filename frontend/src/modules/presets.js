@@ -65,21 +65,23 @@ export default handleActions(
 );
 
 export function getEffectPresets(effectType) {
-    return async dispatch => {
-        dispatch(presetsFetching());
-        try {
-            const response = await effectsProxies.getEffectPresets(effectType);
+    if (effectType) {
+        return async dispatch => {
+            dispatch(presetsFetching());
+            try {
+                const response = await effectsProxies.getEffectPresets(effectType);
 
-            if (response.statusText === 'OK') {
-                const { default_presets, custom_presets, effect } = response.data;
-                const defaultPresets = convertDictionaryToList(default_presets);
-                const customPresets = convertDictionaryToList(custom_presets);
-                dispatch(presetsFetched({ defaultPresets, customPresets, effectType: effect }));
+                if (response.statusText === 'OK') {
+                    const { default_presets, custom_presets, effect } = response.data;
+                    const defaultPresets = convertDictionaryToList(default_presets);
+                    const customPresets = convertDictionaryToList(custom_presets);
+                    dispatch(presetsFetched({ defaultPresets, customPresets, effectType: effect }));
+                }
+            } catch (error) {
+                dispatch(presetsFetched(error));
             }
-        } catch (error) {
-            dispatch(presetsFetched(error));
-        }
-    };
+        };
+    }
 }
 
 export function addPreset(deviceId, name) {

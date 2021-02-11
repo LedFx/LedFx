@@ -58,7 +58,11 @@ const DisplayView = ({
                                 schemas={schemas}
                                 onClear={() => dispatch(clearDisplayEffect(displayId))}
                                 onSubmit={data => dispatch(setDisplayEffect(data.displayId, data))}
-                                onTypeChange={effectType => dispatch(getEffectPresets(effectType))}
+                                onTypeChange={effectType =>
+                                    effectType
+                                        ? dispatch(getEffectPresets(effectType))
+                                        : console.log('test')
+                                }
                             />
                         </CardContent>
                     </Card>
@@ -85,20 +89,38 @@ const DisplayView = ({
 };
 
 const renderPixelGraph = (display, effect, device) => {
-    if (display) {
+    if (display && device) {
         return (
             <Grid item xs={12}>
                 <Card>
                     <CardContent className={`effect-${!!effect}`}>
-                        {device ? (
+               
                             <PixelColorGraph device={device} />
-                        ) : (
-                            <DisplayPixelColorGraph display={display} />
-                        )}
+                        
                     </CardContent>
                 </Card>
             </Grid>
         );
+    } else if (display && !device) {
+        return (
+            <Grid item xs={12}>
+                <Card>
+                    <CardContent className={`effect-${!!effect}`}>
+                        <DisplayPixelColorGraph display={display} />
+                    </CardContent>
+                </Card>
+            </Grid>
+        );
+    } else {
+        return (
+            <Grid item xs={12}>
+            <Card>
+                <CardContent className={'effect'}>
+                    
+                </CardContent>
+            </Card>
+        </Grid>
+        )
     }
 };
 
