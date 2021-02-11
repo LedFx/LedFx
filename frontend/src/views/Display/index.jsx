@@ -59,9 +59,7 @@ const DisplayView = ({
                                 onClear={() => dispatch(clearDisplayEffect(displayId))}
                                 onSubmit={data => dispatch(setDisplayEffect(data.displayId, data))}
                                 onTypeChange={effectType =>
-                                    effectType
-                                        ? dispatch(getEffectPresets(effectType))
-                                        : console.log('test')
+                                    effectType ? dispatch(getEffectPresets(effectType)) : false
                                 }
                             />
                         </CardContent>
@@ -88,40 +86,20 @@ const DisplayView = ({
     );
 };
 
-const renderPixelGraph = (display, effect, device) => {
-    if (display && device) {
-        return (
-            <Grid item xs={12}>
-                <Card>
-                    <CardContent className={`effect-${!!effect}`}>
-               
-                            <PixelColorGraph device={device} />
-                        
-                    </CardContent>
-                </Card>
-            </Grid>
-        );
-    } else if (display && !device) {
-        return (
-            <Grid item xs={12}>
-                <Card>
-                    <CardContent className={`effect-${!!effect}`}>
-                        <DisplayPixelColorGraph display={display} />
-                    </CardContent>
-                </Card>
-            </Grid>
-        );
-    } else {
-        return (
-            <Grid item xs={12}>
-            <Card>
-                <CardContent className={'effect'}>
-                    
-                </CardContent>
-            </Card>
-        </Grid>
-        )
-    }
-};
+const renderPixelGraph = (display, effect, device) => (
+    <Grid item xs={12}>
+        <Card>
+            <CardContent className={`effect-${!!effect}`}>
+                {display && device ? (
+                    <PixelColorGraph device={device} />
+                ) : display && !device ? (
+                    <DisplayPixelColorGraph display={display} />
+                ) : (
+                    <></>
+                )}
+            </CardContent>
+        </Card>
+    </Grid>
+);
 
 export default DisplayView;
