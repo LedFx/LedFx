@@ -104,6 +104,8 @@ class Display(object):
         for device_id, start_pixel, end_pixel, invert in segments:
             device = self._ledfx.devices.get(device_id)
             device.add_segment(self.id, start_pixel, end_pixel)
+            if not device.is_active():
+                device.activate()
 
     def deactivate_segments(self):
         for device in self._devices:
