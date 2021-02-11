@@ -262,6 +262,7 @@ class Devices(RegistryLoader):
                 )
             except ValueError:
                 _LOGGER.error(f"Failed to resolve address {device_ip}")
+                return
 
             for existing_device in self._ledfx.devices.values():
                 if (
@@ -274,7 +275,7 @@ class Devices(RegistryLoader):
 
         # If WLED device, get all the necessary config from the device itself
         if device_type == "wled":
-            wled_config = await WLED.get_config(device_config["ip_address"])
+            wled_config = await WLED.get_config(resolved_dest)
 
             led_info = wled_config["leds"]
             wled_name = wled_config["name"]

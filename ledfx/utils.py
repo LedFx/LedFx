@@ -264,6 +264,10 @@ class WLED:
         """
         return await WLED.get_state(ip_address)["seg"]
 
+    # make sure gamma is enabled (checkbox off)
+    # dont force max brightness
+    # only disable wifi sleep for esp32
+
     @staticmethod
     async def set_power_state(ip_address, state):
         """
@@ -446,7 +450,7 @@ async def resolve_destination(loop, destination, port=7777, timeout=3):
         cleaned_dest = destination.rstrip(".")
         try:
             dest = await loop.getaddrinfo(cleaned_dest, port)
-            return dest
+            return dest[0][4][0]
         except socket.gaierror:
             raise ValueError(f"Failed to resolve destination {cleaned_dest}")
         return False
