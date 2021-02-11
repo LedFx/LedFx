@@ -60,12 +60,7 @@ class EffectsEndpoint(RestEndpoint):
         effect_config = data.get("config")
         effect_type = data.get("type")
         if effect_config is None:
-            response = {
-                "status": "failed",
-                "reason": 'Required attribute "config" was not provided',
-            }
-            return web.json_response(data=response, status=500)
-
+            effect_config = {}
         if effect_config == "RANDOMIZE":
             # Parse and break down schema for effect, in order to generate
             # acceptable random values
@@ -128,8 +123,8 @@ class EffectsEndpoint(RestEndpoint):
             if display["id"] == display_id:
                 # if not ('effect' in display):
                 display["effect"] = {}
-                display["effect"]["type"] = effect_type
-                display["effect"]["config"] = effect_config
+                display["effect"]["type"] = effect.type
+                display["effect"]["config"] = effect.config
                 break
 
         save_config(
