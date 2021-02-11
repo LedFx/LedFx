@@ -14,7 +14,6 @@ from ledfx.utils import (
     BaseRegistry,
     RegistryLoader,
     async_fire_and_forget,
-    async_fire_and_return,
     generate_id,
     resolve_destination,
 )
@@ -416,12 +415,9 @@ class WLEDListener(zeroconf.ServiceBrowser):
             device_type = "wled"
             device_config = {"ip_address": hostname}
 
-            def callback(_):
-                pass
-
-            async_fire_and_return(
+            async_fire_and_forget(
                 self._ledfx.devices.add_new_device(device_type, device_config),
-                callback,
+                loop=self._ledfx.loop,
             )
 
 
