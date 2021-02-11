@@ -416,7 +416,8 @@ class WLEDListener(zeroconf.ServiceBrowser):
             device_config = {"ip_address": hostname}
 
             def handle_exception(future):
-                pass
+                # Ignore exceptions, these will be raised when a device is found that already exists
+                exc = future.exception()
 
             async_fire_and_forget(
                 self._ledfx.devices.add_new_device(device_type, device_config),
