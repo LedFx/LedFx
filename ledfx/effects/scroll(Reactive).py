@@ -67,8 +67,6 @@ class ScrollAudioEffect(AudioReactiveEffect):
         # is bound to a device while the config gets updated. Might need
         # to move to a model where effects are created for a device and
         # must be destroyed and recreated to be moved to another device.
-        self.output = None
-
         self.lows_colour = np.array(
             COLORS[self._config["color_lows"]], dtype=float
         )
