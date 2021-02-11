@@ -39,10 +39,10 @@ class E131Device(NetworkedDevice):
         # Since RGBW data is 4 packets, we can use 512 for RGBW LEDs; 512/4 = 128
         # The 129th pixels data will span into the next universe correctly
         # If it's not, we lose nothing by using a smaller universe size and keeping things easy for the end user (and us!)
-        if self._config["rgbw_led"] is True:
-            self._config["universe_size"] = 512
-        else:
-            self._config["universe_size"] = 510
+        # if self._config["rgbw_led"] is True:
+        #     self._config["universe_size"] = 512
+        # else:
+        #     self._config["universe_size"] = 510
         # Allow for configuring in terms of "pixels" or "channels"
 
         if "pixel_count" in self._config:
