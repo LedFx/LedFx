@@ -427,6 +427,7 @@ class WLEDListener(zeroconf.ServiceBrowser):
             )
 
 
+@BaseRegistry.no_registration
 class NetworkedDevice(Device):
     """
     Networked device, handles resolving IP

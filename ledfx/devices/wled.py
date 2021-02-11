@@ -1,14 +1,16 @@
 import logging
+import socket
 
 import voluptuous as vol
 
+from ledfx.devices import NetworkedDevice
 from ledfx.devices.ddp import DDPDevice
 from ledfx.utils import WLED
 
 _LOGGER = logging.getLogger(__name__)
 
 
-class WLEDDevice(DDPDevice):
+class WLEDDevice(NetworkedDevice):
     """Dedicated WLED device support"""
 
     CONFIG_SCHEMA = vol.Schema(
@@ -20,6 +22,24 @@ class WLEDDevice(DDPDevice):
             ): vol.All(vol.Coerce(float), vol.Range(0, 10)),
         }
     )
+
+    def __init__(self, ledfx, config):
+        self.frame_count = 0
+        super().__init__(ledfx, config)
+
+    def activate(self):
+        self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        super().activate()
+
+    def deactivate(self):
+        super().deactivate()
+        self._sock = None
+
+    def flush(self, data):
+        self.frame_count += 1
+        DDPDevice.send_out(
+            self._sock, self.destination, data, self.frame_count
+        )
 
     async def async_initialize(self):
         await super().async_initialize()
