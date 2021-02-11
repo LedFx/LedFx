@@ -8,7 +8,7 @@ from ledfx.effects.audio import FREQUENCY_RANGES, AudioReactiveEffect
 class BladePowerAudioEffect(AudioReactiveEffect):
 
     NAME = "Blade Power"
-    CATEGORY = "Classic"
+    CATEGORY = "1.0"
 
     CONFIG_SCHEMA = vol.Schema(
         {

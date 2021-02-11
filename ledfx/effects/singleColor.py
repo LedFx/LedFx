@@ -9,7 +9,7 @@ from ledfx.effects.temporal import TemporalEffect
 class SingleColorEffect(TemporalEffect, ModulateEffect):
 
     NAME = "Single Color"
-    CATEGORY = "Non Reactive"
+    CATEGORY = "BASIC"
 
     CONFIG_SCHEMA = vol.Schema(
         {

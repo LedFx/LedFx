@@ -9,7 +9,7 @@ from ledfx.effects.gradient import GradientEffect
 class BandsAudioEffect(AudioReactiveEffect, GradientEffect):
 
     NAME = "Bands"
-    CATEGORY = "Classic"
+    CATEGORY = "1.0"
 
     CONFIG_SCHEMA = vol.Schema(
         {

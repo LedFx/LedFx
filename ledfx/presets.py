@@ -1,5 +1,5 @@
 ledfx_presets = {
-    "bar(Reactive)": {
+    "bar": {
         "bouncing-blues": {
             "config": {
                 "blur": 0,
@@ -66,7 +66,7 @@ ledfx_presets = {
             "name": "Rainbow LR",
         },
     },
-    "energy(Reactive)": {
+    "energy": {
         "clear-sky": {
             "config": {
                 "blur": 0.5,
@@ -283,7 +283,7 @@ ledfx_presets = {
             "name": "Waves",
         },
     },
-    "magnitude(Reactive)": {
+    "magnitude": {
         "cold-fire": {
             "config": {
                 "blur": 1.3037737000651894,
@@ -340,7 +340,7 @@ ledfx_presets = {
             "name": "Warm Bass",
         },
     },
-    "multiBar(Reactive)": {
+    "multiBar": {
         "bright-cascade": {
             "config": {
                 "blur": 3.761401491539508,
@@ -394,7 +394,7 @@ ledfx_presets = {
             "name": "Rainbow Oscillation",
         },
     },
-    "rain(Reactive)": {
+    "rain": {
         "cold-drops": {
             "config": {
                 "blur": 1,
@@ -527,7 +527,7 @@ ledfx_presets = {
             "name": "Slow Roll",
         },
     },
-    "scroll(Reactive)": {
+    "scroll": {
         "cold-crawl": {
             "config": {
                 "blur": 1,
@@ -813,7 +813,7 @@ ledfx_presets = {
             "name": "Yellow",
         },
     },
-    "strobe(Reactive)": {
+    "strobe": {
         "aggro-red": {
             "config": {
                 "blur": 6.176594831274896,
@@ -873,7 +873,7 @@ ledfx_presets = {
             "name": "Painful",
         },
     },
-    "wavelength(Reactive)": {
+    "wavelength": {
         "classic": {
             "config": {
                 "blur": 3,
@@ -945,7 +945,7 @@ ledfx_presets = {
             "name": "Sunset Sweep",
         },
     },
-    "real_strobe(Reactive)": {
+    "real_strobe": {
         "dancefloor": {
             "config": {
                 "bass_strobe_decay_rate": 0.7,

@@ -49,11 +49,11 @@ class HSVEffect(Effect):
 
     CONFIG_SCHEMA = vol.Schema(
         {
-            vol.Optional(
-                "color_correction",
-                description="Color correct hue for more vivid colors",
-                default=True,
-            ): bool
+            # vol.Optional(
+            #     "color_correction",
+            #     description="Color correct hue for more vivid colors",
+            #     default=True,
+            # ): bool
         }
     )
 
@@ -63,6 +63,7 @@ class HSVEffect(Effect):
 
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
+        self._config["color_correction"] = True
         self._dt = 0
         self.hsv_array = None
 

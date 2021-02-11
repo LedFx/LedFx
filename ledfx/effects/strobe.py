@@ -16,7 +16,7 @@ class Strobe(AudioReactiveEffect):
     }
 
     NAME = "Strobe"
-    CATEGORY = "Classic"
+    CATEGORY = "1.0"
 
     CONFIG_SCHEMA = vol.Schema(
         {

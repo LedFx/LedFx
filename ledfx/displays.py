@@ -25,6 +25,11 @@ class Display(object):
             vol.Required(
                 "name", description="Friendly name for the display"
             ): str,
+            vol.Required(
+                "mapping",
+                description="Span: Effect spans all segments. Copy: Effect copied on each segment",
+                default="span",
+            ): vol.In(["span", "copy"]),
             vol.Optional(
                 "icon_name",
                 description="https://material-ui.com/components/material-icons/",
@@ -49,7 +54,10 @@ class Display(object):
                 "crossfade",
                 description="Fade time between effects",
                 default=1.0,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0, max=5)),
+            ): vol.All(
+                vol.Coerce(float),
+                vol.Range(min=0, max=5, min_included=True, max_included=True),
+            ),
         }
     )
 
@@ -279,7 +287,7 @@ class Display(object):
             return None
 
         # Get and process active effect frame
-        pixels = self._active_effect.render()
+        pixels = self._active_effect.get_pixels()
         frame = np.clip(
             pixels * self._config["max_brightness"],
             0,
