@@ -14,6 +14,7 @@ from ledfx.utils import (
     BaseRegistry,
     RegistryLoader,
     async_fire_and_forget,
+    async_fire_and_return,
     generate_id,
     resolve_destination,
 )
@@ -367,7 +368,7 @@ class Devices(RegistryLoader):
             "_wled._tcp.local.", wled_listener
         )
         try:
-            await asyncio.sleep(10)
+            await asyncio.sleep(30)
         finally:
             _LOGGER.info("Scan Finished")
             self._zeroconf.remove_service_listener(wled_listener)
@@ -390,15 +391,13 @@ class WLEDListener(zeroconf.ServiceBrowser):
             device_type = "wled"
             device_config = {"ip_address": hostname}
 
-            try:
-                async_fire_and_forget(
-                    self._ledfx.devices.add_new_device(
-                        device_type, device_config
-                    ),
-                    self._ledfx.loop,
-                )
-            except ValueError as msg:
-                _LOGGER.error(f"Failed to add device: {msg}")
+            def callback(_):
+                pass
+
+            async_fire_and_return(
+                self._ledfx.devices.add_new_device(device_type, device_config),
+                callback,
+            )
 
 
 class NetworkedDevice(Device):
