@@ -257,7 +257,9 @@ class Devices(RegistryLoader):
         # First, we try to make sure this device doesn't share a destination with any existing device
         if "ip_address" in device_config.keys():
             device_ip = device_config["ip_address"]
-            resolved_dest = await resolve_destination(device_ip)
+            resolved_dest = await resolve_destination(
+                self._ledfx.loop, device_ip
+            )
 
             for existing_device in self._ledfx.devices.values():
                 if (
@@ -384,7 +386,8 @@ class WLEDListener(zeroconf.ServiceBrowser):
             device_config = {"ip_address": hostname}
 
             async_fire_and_forget(
-                self._ledfx.devices.add_new_device(device_type, device_config)
+                self._ledfx.devices.add_new_device(device_type, device_config),
+                self._ledfx.loop,
             )
 
 
