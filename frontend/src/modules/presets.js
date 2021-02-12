@@ -1,8 +1,8 @@
 import { createAction, handleActions } from 'redux-actions';
-import * as deviceProxies from 'proxies/device';
+import * as displayProxies from 'proxies/display';
 import * as effectsProxies from 'proxies/effects';
 import { convertDictionaryToList } from 'utils/helpers';
-import { effectReceived } from 'modules/selectedDevice';
+import { effectReceived } from 'modules/selectedDisplay';
 
 // Actions
 const ACTION_ROOT = 'sceneManagement';
@@ -84,11 +84,11 @@ export function getEffectPresets(effectType) {
     }
 }
 
-export function addPreset(deviceId, name) {
+export function addPreset(displayId, name) {
     return async dispatch => {
         dispatch(presetAdding());
         try {
-            const { data, statusText } = await deviceProxies.addPreset(deviceId, { name });
+            const { data, statusText } = await displayProxies.addPreset(displayId, { name });
             if (statusText === 'OK') {
                 dispatch(presetAdded(data.preset));
             }
@@ -98,7 +98,7 @@ export function addPreset(deviceId, name) {
     };
 }
 
-export function activatePreset(deviceId, category, effectId, presetId) {
+export function activatePreset(displayId, category, effectId, presetId) {
     return async dispatch => {
         try {
             const request = {
@@ -107,7 +107,7 @@ export function activatePreset(deviceId, category, effectId, presetId) {
                 preset_id: presetId,
             };
 
-            const { data, statusText } = await deviceProxies.updatePreset(deviceId, request);
+            const { data, statusText } = await displayProxies.updatePreset(displayId, request);
             if (statusText === 'OK') {
                 dispatch(effectReceived(data.effect));
             }
