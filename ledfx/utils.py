@@ -305,7 +305,7 @@ class WLED:
         )
 
     @staticmethod
-    async def disable_gamma(ip_address, brightness):
+    async def disable_gamma(ip_address):
         sync_settings = await WLED._get_sync_settings(ip_address)
         if "RG" not in sync_settings.keys():
             return
