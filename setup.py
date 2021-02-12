@@ -15,7 +15,7 @@ PROJECT_URL = "https://github.com/LedFx/LedFx/tree/dev"
 
 # Need to install numpy first
 SETUP_REQUIRES = [
-    "numpy>=1.19.5",
+    "numpy>=1.20",
 ]
 
 INSTALL_REQUIRES = [
