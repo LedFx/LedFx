@@ -3,7 +3,8 @@ import logging
 from aiohttp import web
 
 from ledfx.api import RestEndpoint
-from ledfx.consts import GIT_COMMIT_ID, PROJECT_VERSION
+from ledfx.consts import PROJECT_VERSION
+from ledfx.utils import git_version
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -13,6 +14,7 @@ class InfoEndpoint(RestEndpoint):
     ENDPOINT_PATH = "/api/info"
 
     async def get(self) -> web.Response:
+        GIT_COMMIT_ID = git_version()
         response = {
             "url": self._ledfx.http.base_url,
             "name": "LedFx Controller",

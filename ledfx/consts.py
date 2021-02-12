@@ -1,6 +1,5 @@
 # Couldn't get this to work. Will revisit.
 # from packaging.version import Version
-from ledfx.utils import git_version
 
 __author__ = "Austin Hodges"
 __copyright__ = "Austin Hodges"
@@ -14,7 +13,7 @@ REQUIRED_PYTHON_STRING = ">={}.{}.{}".format(
     REQUIRED_PYTHON_VERSION[1],
     REQUIRED_PYTHON_VERSION[2],
 )
-GIT_COMMIT_ID = git_version()
+
 MAJOR_VERSION = 0
 MINOR_VERSION = 10
 MICRO_VERSION = 3
