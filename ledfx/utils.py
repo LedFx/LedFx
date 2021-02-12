@@ -8,6 +8,7 @@ import os
 import pkgutil
 import re
 import socket
+import subprocess
 import sys
 from abc import ABC
 
@@ -111,6 +112,43 @@ def async_callback(loop, callback, *args):
 
     loop.call_soon_threadsafe(run_callback)
     return future
+
+
+def git_version():
+
+    """Uses a subprocess to attempt to get the git revision of the running build.
+
+    Args:
+        None
+
+    Returns:
+        On success: string containing the git revision
+        On failure: string containing "Unknown"
+    """
+
+    def _minimal_ext_cmd(cmd):
+        # construct minimal environment
+        env = {}
+        for k in ["SYSTEMROOT", "PATH"]:
+            v = os.environ.get(k)
+            if v is not None:
+                env[k] = v
+        # LANGUAGE is used on win32
+        env["LANGUAGE"] = "C"
+        env["LANG"] = "C"
+        env["LC_ALL"] = "C"
+        out = subprocess.Popen(
+            cmd, stdout=subprocess.PIPE, env=env
+        ).communicate()[0]
+        return out
+
+    try:
+        out = _minimal_ext_cmd(["git", "rev-parse", "HEAD"])
+        GIT_REVISION = out.strip().decode("ascii")
+    except OSError:
+        GIT_REVISION = "Unknown"
+
+    return GIT_REVISION
 
 
 class WLED:
