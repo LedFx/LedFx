@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useDispatch } from 'react-redux'
 import { makeStyles } from '@material-ui/core/styles';
 import Card from '@material-ui/core/Card';
 import CardContent from '@material-ui/core/CardContent';
@@ -9,8 +10,9 @@ import Grid from '@material-ui/core/Grid';
 import Typography from '@material-ui/core/Typography';
 import TextField from '@material-ui/core/TextField';
 import SaveIcon from '@material-ui/icons/Save';
+import { activatePreset } from 'modules/presets'
 
-// CONSTANT device categories
+// CONSTANT display categories
 export const DEFAULT_CAT = 'default_presets';
 export const CUSTOM_CAT = 'custom_presets';
 
@@ -36,17 +38,18 @@ const useStyles = makeStyles(theme => ({
     },
 }));
 
-const PresetsCard = ({ device, presets, effect, activatePreset, getEffectPresets, addPreset }) => {
+const PresetsCard = ({ display, presets, effect, getEffectPresets, addPreset }) => {
     const classes = useStyles();
     const [name, setName] = useState('');
     const isNameValid = validateTextInput(name, presets);
+    const dispatch = useDispatch();
 
     useEffect(() => {
         getEffectPresets(effect.type);
     }, [effect.type, getEffectPresets]);
 
-    const handleActivatePreset = (deviceId, category, type, presetId) => () => {
-        activatePreset(deviceId, category, type, presetId);
+    const handleActivatePreset = (displayId, category, type, presetId) => () => {
+        dispatch(activatePreset(displayId, category, type, presetId));
         setName('');
     };
 
@@ -63,7 +66,7 @@ const PresetsCard = ({ device, presets, effect, activatePreset, getEffectPresets
                     <Button
                         className={classes.presetButton}
                         onClick={handleActivatePreset(
-                            device.id,
+                            display.id,
                             CATEGORY,
                             presets.effectType,
                             preset.id
@@ -77,7 +80,7 @@ const PresetsCard = ({ device, presets, effect, activatePreset, getEffectPresets
     };
 
     const handleAddPreset = () => {
-        addPreset(device.id, name);
+        addPreset(display.id, name);
     };
 
     return (

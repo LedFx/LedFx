@@ -76,12 +76,17 @@ class DisplayPresetsEndpoint(RestEndpoint):
             }
             return web.json_response(data=response, status=500)
 
-        if category not in ["ledfx_presets", "user_presets"]:
+        if category not in ["default_presets", "custom_presets"]:
             response = {
                 "status": "failed",
                 "reason": f'Category {category} is not "ledfx_presets" or "user_presets"',
             }
             return web.json_response(data=response, status=500)
+
+        if category == "default_presets":
+            category = "ledfx_presets"
+        else:
+            category = "user_presets"
 
         if effect_id is None:
             response = {
