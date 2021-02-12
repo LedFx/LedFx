@@ -68,7 +68,7 @@ const DisplayView = ({
                 <Grid item xs={12} lg={6}>
                     {effect.type && (
                         <PresetsCard
-                            device={display}
+                            display={display}
                             presets={presets}
                             effect={effect}
                             activatePreset={() => dispatch(activatePreset)}
@@ -95,8 +95,8 @@ const renderPixelGraph = (display, effect, device) => (
                 ) : display && !device ? (
                     <DisplayPixelColorGraph display={display} />
                 ) : (
-                    <></>
-                )}
+                            <></>
+                        )}
             </CardContent>
         </Card>
     </Grid>
