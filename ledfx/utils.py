@@ -387,6 +387,7 @@ class WLED:
 
         else:
             # make sure the mode isn't already set, if so no need to go on
+            # this is a reverse dict lookup
             current_mode = next(
                 key
                 for key, value in WLED.SYNC_MODES.items()
