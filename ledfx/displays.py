@@ -1,7 +1,7 @@
 # import asyncio
 import logging
 import time
-from functools import cached_property
+from functools import cached_property, lru_cache
 
 import numpy as np
 import voluptuous as vol
@@ -148,6 +148,17 @@ class Display(object):
         else:
             return segment
 
+    def invalidate_cached_props(self):
+        # invalidate cached properties
+        for prop in [
+            "pixel_count",
+            "refresh_rate",
+            "_devices",
+            "_segments_by_device",
+        ]:
+            if hasattr(self, prop):
+                delattr(self, prop)
+
     def update_segments(self, segments_config):
         segments_config = [list(item) for item in segments_config]
         _segments = self.SEGMENTS_SCHEMA(segments_config)
@@ -168,15 +179,7 @@ class Display(object):
 
             self._segments = _segments
 
-            # invalidate cached properties
-            for prop in [
-                "pixel_count",
-                "refresh_rate",
-                "_devices",
-                "_segments_by_device",
-            ]:
-                if hasattr(self, prop):
-                    delattr(self, prop)
+            self.invalidate_cached_props()
 
             _LOGGER.info(
                 f"Updated display {self.name} with {len(self._segments)} segments, totalling {self.pixel_count} pixels"
@@ -356,6 +359,27 @@ class Display(object):
         # for device in self._devices:
         #     device.deactivate()
 
+    @lru_cache(maxsize=32)
+    def _normalized_linspace(self, size):
+        return np.linspace(0, 1, size)
+
+    def interp_channel(self, channel, x_new, x_old):
+        return np.interp(x_new, x_old, channel)
+
+    # TODO cache this!
+    # need to be able to access pixels but not through args
+    # @lru_cache(maxsize=8)
+    def interpolate(self, pixels, new_length):
+        """Resizes the array by linearly interpolating the values"""
+        if len(pixels) == new_length:
+            return pixels
+
+        x_old = self._normalized_linspace(len(pixels))
+        x_new = self._normalized_linspace(new_length)
+
+        z = np.apply_along_axis(self.interp_channel, 0, pixels, x_new, x_old)
+        return z
+
     def flush(self, pixels):
         """
         Flushes the provided data to the devices.
@@ -369,12 +393,23 @@ class Display(object):
                 device_start,
                 device_end,
             ) in segments:
-                data.append(
-                    (pixels[start:stop:step], device_start, device_end)
-                )
+                if self._config["mapping"] == "span":
+                    data.append(
+                        (pixels[start:stop:step], device_start, device_end)
+                    )
+                elif self._config["mapping"] == "copy":
+                    target_len = device_end - device_start + 1
+                    data.append(
+                        (
+                            self.interpolate(pixels, target_len)[::step],
+                            device_start,
+                            device_end,
+                        )
+                    )
             device = self._ledfx.devices.get(device_id)
             if device.is_active():
                 device.update_pixels(self.id, data)
+        # self.interpolate.cache_clear()
 
     @property
     def name(self):
@@ -454,10 +489,19 @@ class Display(object):
 
     @cached_property
     def pixel_count(self):
-        total = 0
-        for device_id, start_pixel, end_pixel, invert in self._segments:
-            total += end_pixel - start_pixel + 1
-        return total
+        if self._config["mapping"] == "span":
+            total = 0
+            for device_id, start_pixel, end_pixel, invert in self._segments:
+                total += end_pixel - start_pixel + 1
+            return total
+        elif self._config["mapping"] == "copy":
+            if self._segments:
+                return max(
+                    end_pixel - start_pixel + 1
+                    for _, start_pixel, end_pixel, _ in self._segments
+                )
+            else:
+                return 0
 
     @property
     def config(self) -> dict:
@@ -468,7 +512,16 @@ class Display(object):
     def config(self, _config):
         """Updates the config for an object"""
         _config = self.CONFIG_SCHEMA(_config)
-        return setattr(self, "_config", _config)
+
+        if _config["mapping"] != self._config["mapping"]:
+            self.invalidate_cached_props()
+
+        setattr(self, "_config", _config)
+
+        if self._active_effect is not None:
+            self._active_effect.deactivate()
+            if self.pixel_count > 0:
+                self._active_effect.activate(self.pixel_count)
 
 
 class Displays(object):
