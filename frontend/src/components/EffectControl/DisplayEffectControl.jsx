@@ -11,8 +11,9 @@ import CancelIcon from '@material-ui/icons/Cancel';
 import CheckCircleIcon from '@material-ui/icons/CheckCircle';
 import CasinoIcon from '@material-ui/icons/Casino';
 
-import DropDown from 'components/forms/DropDown';
+
 import mapper from 'components/SchemaForm/mapper';
+import BladeDropDown from './BladeDropDown';
 
 const styles = theme => ({
     form: {
@@ -121,16 +122,7 @@ class DisplayEffectControl extends React.Component {
                         Set and configure effects
                     </Typography>
                     <form onSubmit={this.handleSubmit} className={classes.form}>
-                        <DropDown
-                            label="Type"
-                            value={selectedType}
-                            options={Object.keys(schemas?.effects).map(key => ({
-                                value: key,
-                                display: key,
-                            }))}
-                            onChange={this.handleTypeChange}
-                        />
-
+                        <BladeDropDown />
                         <SchemaForm
                             className={classes.schemaForm}
                             schema={currentSchema}
@@ -139,7 +131,6 @@ class DisplayEffectControl extends React.Component {
                             onModelChange={this.onModelChange}
                             mapper={mapper}
                         />
-
                         <DialogActions className={classes.bottomContainer}>
                             {selectedType && (
                                 <Button
