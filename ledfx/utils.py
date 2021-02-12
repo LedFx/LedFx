@@ -177,7 +177,7 @@ class WLED:
             sync_settings = [
                 setting
                 for setting in sync_settings
-                if any(i in ["checked", "EP", "ET"] for i in setting[0])
+                if any(i in ["checked", "EP", "ET", "RG"] for i in setting[0])
             ]
             # remove empty string "value" keys
             # extract the setting identifier and value eg: d.Sf.BT.checked=1 => BT, 1
@@ -266,10 +266,6 @@ class WLED:
         """
         return await WLED.get_state(ip_address)["seg"]
 
-    # make sure gamma is enabled (checkbox off)
-    # dont force max brightness
-    # only disable wifi sleep for esp32
-
     @staticmethod
     async def set_power_state(ip_address, state):
         """
@@ -306,6 +302,25 @@ class WLED:
 
         _LOGGER.info(
             f"Set WLED device brightness at {ip_address} to {brightness}."
+        )
+
+    @staticmethod
+    async def disable_gamma(ip_address, brightness):
+        sync_settings = await WLED._get_sync_settings(ip_address)
+        if "RG" not in sync_settings.keys():
+            return
+
+        del sync_settings["RG"]
+
+        await WLED._wled_request(
+            requests.post,
+            ip_address,
+            "settings/sync",
+            data=sync_settings,
+        )
+
+        _LOGGER.info(
+            f"Disabled WLED device at {ip_address} realtime gamma correction"
         )
 
     @staticmethod

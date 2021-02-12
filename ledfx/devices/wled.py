@@ -60,6 +60,7 @@ class WLEDDevice(NetworkedDevice):
         # that's a nice operation u got there python
         self._config |= wled_config
 
+        await WLED.disable_gamma(self.destination)
         await WLED.set_sync_mode(self.destination, "ddp")
         await WLED.set_inactivity_timeout(
             self.destination, self._config["timeout"]
