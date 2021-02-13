@@ -42,7 +42,7 @@ function ConfirmationDialogRaw(props) {
 
     const handleOk = () => {
         onClose(value);
-        integrationsProxies.createIntegration({ config: model, type: 'qlc' });
+        integrationsProxies.getQLCInfo({ info: 'event_types' });
         window.location = window.location.href;
     };
 
@@ -82,7 +82,6 @@ function ConfirmationDialogRaw(props) {
                     <InputLabel htmlFor="grouped-select">Event Trigger (If This)</InputLabel>
                     <Select defaultValue="" id="grouped-select">
                     {/*GET API: event_types*/}
-                    {integrationsProxies.getQLCEventTypes}
                         <MenuItem value="">
                             <em>None</em>
                         </MenuItem>
@@ -141,6 +140,7 @@ function ConfirmationDialogRaw(props) {
                     aria-label="Add"
                     endIcon={<AddCircleIcon />}
                     aria-haspopup="true"
+                    // integrationsProxies.deleteIntegration(data);
                     //onClick={handleClickListItem}
                     role="listitem"
                 >
@@ -199,6 +199,8 @@ export default function ConfirmationDialog({ virtual, deviceList, config, integr
 
     const handleClickListItem = () => {
         setOpen(true);
+        integrationsProxies.getQLCInfo({ info: 'event_types' });
+        integrationsProxies.getQLCInfo({info: 'qlc_widgets' });
     };
 
     const handleClose = newValue => {

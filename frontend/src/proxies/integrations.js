@@ -27,14 +27,6 @@ export function getQLCInfo(integrationId, data) {
     return api.get(`/integrations/qlc/${integrationId}`, data);
 }
 
-export function getQLCEventTypes(integrationId, data) {
-    return api.get(`/integrations/qlc/${integrationId}`, { info: 'event_types' });
-}
-
-export function getQLCWidgets(integrationId, data) {
-    return api.get(`/integrations/qlc/${integrationId}`, { info: 'qlc_widgets' });
-}
-
 export function toggleQLCListener(integrationId, data) {
     return api.put(`/integrations/qlc/${integrationId}`, data);
 }

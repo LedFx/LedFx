@@ -1,5 +1,5 @@
 import { createAction, handleActions } from 'redux-actions';
-import * as qlclistenersProxies from 'proxies/qlclisteners';
+import * as integrationsProxies from 'proxies/integrations';
 
 // Actions
 const ACTION_ROOT = 'qlc';
@@ -41,7 +41,7 @@ export default handleActions(
 export function getAsyncqlclisteners() {
     return async dispatch => {
         try {
-            const response = await qlclistenersProxies.getQLCInfo();
+            const response = await integrationsProxies.getQLCEventTypes();
             if (response.statusText === 'OK') {
                 dispatch(setqlclistener(response.data.qlclisteners));
             }
@@ -53,14 +53,14 @@ export function getAsyncqlclisteners() {
 
 export async function deleteAsyncqlclistener(data) {
     console.log('damn', data);
-    const response = await qlclistenersProxies.deleteqlclistener({ data });
+    const response = await integrationsProxies.deleteqlclistener({ data });
     console.log('damn', response);
     window.location = window.location.href;
     // qlclistenersProxies.deleteqlclistener(data);
     return async dispatch => {
         try {
             console.log('damn', data);
-            const response = await qlclistenersProxies.deleteqlclistener(data);
+            const response = await integrationsProxies.deleteqlclistener(data);
             if (response.statusText === 'OK') {
                 console.log('OMG', response.data);
                 // dispatch(deleteqlclistener(response.data.qlclisteners));
@@ -73,14 +73,14 @@ export async function deleteAsyncqlclistener(data) {
 
 export async function toggleAsyncqlclistener(data) {
     console.log('damn', data);
-    const response = await qlclistenersProxies.toggleqlclistener(data);
+    const response = await integrationsProxies.toggleqlclistener(data);
     console.log('damn', response);
     // window.location = window.location.href;
     // qlclistenersProxies.deleteqlclistener(data);
     return async dispatch => {
         try {
             console.log('damn', data);
-            const response = await qlclistenersProxies.toggleqlclistener(data);
+            const response = await integrationsProxies.toggleqlclistener(data);
             if (response.statusText === 'OK') {
                 console.log('OMG', response.data);
                 // dispatch(deleteqlclistener(response.data.qlclisteners));
