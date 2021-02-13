@@ -181,6 +181,12 @@ def parse_args():
         type=str,
     )
     parser.add_argument(
+        "--tray",
+        dest="tray",
+        action="store_true",
+        help="Hide LedFx console to the system tray",
+    )
+    parser.add_argument(
         "--performance",
         dest="performance",
         action="store_true",
@@ -284,6 +290,28 @@ def main():
     if not currently_frozen() and installed_via_pip():
         warnings.filterwarnings("ignore", category=DeprecationWarning)
 
+    if args.tray:
+        import os
+
+        import pystray
+        from PIL import Image
+
+        icon = pystray.Icon("test name")
+        icon_file = os.path.join(os.path.dirname(__file__), "icon.png")
+        icon.icon = Image.open(icon_file)
+        icon.run(setup=entry_point)
+    else:
+        entry_point()
+
+
+def entry_point(icon=None):
+    if icon:
+        icon.visible = True
+
+    args = (
+        parse_args()
+    )  # have to re-parse args here :/ no way to pass them through pysicon's setup
+
     _LOGGER.info("LedFx Core is initializing")
     ledfx = LedFxCore(config_dir=args.config, host=args.host, port=args.port)
 
@@ -302,6 +330,9 @@ def main():
         )
     else:
         ledfx.start(open_ui=args.open_ui)
+
+    if icon:
+        icon.stop()
 
 
 if __name__ == "__main__":

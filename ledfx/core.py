@@ -35,6 +35,7 @@ class LedFxCore(object):
             self.loop = asyncio.ProactorEventLoop()
         else:
             self.loop = asyncio.get_event_loop()
+        asyncio.set_event_loop(self.loop)
 
         self.executor = ThreadPoolExecutor()
         self.loop.set_default_executor(self.executor)
