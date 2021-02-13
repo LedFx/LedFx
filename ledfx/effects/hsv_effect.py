@@ -87,14 +87,16 @@ class HSVEffect(Effect):
         """
         pass
 
-    def time(self, modifier=1.0):
+    def time(self, modifier=1.0, timestep=None):
         """
         sawtooth 0->1, looping every 65.536/modifier seconds
         lower modifier, slower looping
         you can consider modifier = 1 / sawtooth period
         """
         period = self._conversion_factor / modifier
-        return (self._dt % period) / period
+        if timestep is None:
+            timestep = self._dt
+        return (timestep % period) / period
 
     def triangle(self, x=1.0):
         """
