@@ -2,6 +2,7 @@ import asyncio
 import logging
 import sys
 import warnings
+import webbrowser
 from concurrent.futures import ThreadPoolExecutor
 
 from ledfx.config import load_config, save_config
@@ -24,7 +25,8 @@ if currently_frozen():
 
 
 class LedFxCore(object):
-    def __init__(self, config_dir, host=None, port=None):
+    def __init__(self, config_dir, host=None, port=None, icon=None):
+        self.icon = icon
         self.config_dir = config_dir
         self.config = load_config(config_dir)
         self.config["ledfx_presets"] = ledfx_presets
@@ -40,6 +42,9 @@ class LedFxCore(object):
         self.executor = ThreadPoolExecutor()
         self.loop.set_default_executor(self.executor)
         self.loop.set_exception_handler(self.loop_exception_handler)
+
+        if self.icon:
+            self.setup_icon_menu()
 
         self.setup_logqueue()
         self.events = Events(self)
@@ -62,6 +67,28 @@ class LedFxCore(object):
         _LOGGER.error(
             "Exception in core event loop: {}".format(context["message"]),
             **kwargs,
+        )
+
+    def open_ui(self):
+        # Check if we're binding to all adaptors
+        if str(self.config["host"]) == "0.0.0.0":
+            url = f"http://127.0.0.1:{str(self.config['port'])}"
+        else:
+            # If the user has specified an adaptor, launch its address
+            url = self.http.base_url
+        try:
+            webbrowser.get().open(url)
+        except webbrowser.Error:
+            _LOGGER.warning(
+                f"Failed to open default web browser. To access LedFx's web ui, open {url} in your browser. To prevent this error in future, configure a default browser for your system."
+            )
+
+    def setup_icon_menu(self):
+        import pystray
+
+        self.icon.menu = pystray.Menu(
+            pystray.MenuItem("Open", self.open_ui, default=True),
+            pystray.MenuItem("Quit Ledfx", self.stop),
         )
 
     def setup_logqueue(self):
@@ -132,20 +159,7 @@ class LedFxCore(object):
         )
 
         if open_ui:
-            import webbrowser
-
-            # Check if we're binding to all adaptors
-            if str(self.config["host"]) == "0.0.0.0":
-                url = f"http://127.0.0.1:{str(self.config['port'])}"
-            else:
-                # If the user has specified an adaptor, launch its address
-                url = self.http.base_url
-            try:
-                webbrowser.get().open(url)
-            except webbrowser.Error:
-                _LOGGER.warning(
-                    f"Failed to open default web browser. To access LedFx's web ui, open {url} in your browser. To prevent this error in future, configure a default browser for your system."
-                )
+            self.open_ui()
 
         await self.flush_loop()
 

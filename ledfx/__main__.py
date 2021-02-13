@@ -296,24 +296,23 @@ def main():
         import pystray
         from PIL import Image
 
-        icon = pystray.Icon("test name")
         icon_file = os.path.join(os.path.dirname(__file__), "icon.png")
-        icon.icon = Image.open(icon_file)
+
+        icon = pystray.Icon("LedFx", icon=Image.open(icon_file), title="LedFx")
+        icon.visible = True
         icon.run(setup=entry_point)
     else:
         entry_point()
 
 
 def entry_point(icon=None):
-    if icon:
-        icon.visible = True
-
-    args = (
-        parse_args()
-    )  # have to re-parse args here :/ no way to pass them through pysicon's setup
+    # have to re-parse args here :/ no way to pass them through pysicon's setup
+    args = parse_args()
 
     _LOGGER.info("LedFx Core is initializing")
-    ledfx = LedFxCore(config_dir=args.config, host=args.host, port=args.port)
+    ledfx = LedFxCore(
+        config_dir=args.config, host=args.host, port=args.port, icon=icon
+    )
 
     if args.performance:
         print("Collecting performance data...")
