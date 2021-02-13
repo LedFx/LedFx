@@ -17,6 +17,7 @@ For non-development purposes run:
 """
 
 import argparse
+import cProfile
 import logging
 import subprocess
 import sys
@@ -180,6 +181,12 @@ def parse_args():
         type=str,
     )
     parser.add_argument(
+        "--performance",
+        dest="performance",
+        action="store_true",
+        help="Profile LedFx's performance. A developer can use this to diagnose performance issues.",
+    )
+    parser.add_argument(
         "--offline",
         dest="offline_mode",
         action="store_true",
@@ -278,10 +285,23 @@ def main():
         warnings.filterwarnings("ignore", category=DeprecationWarning)
 
     _LOGGER.info("LedFx Core is initializing")
-
     ledfx = LedFxCore(config_dir=args.config, host=args.host, port=args.port)
 
-    ledfx.start(open_ui=args.open_ui)
+    if args.performance:
+        print("Collecting performance data...")
+        profiler = cProfile.Profile()
+        profiler.enable()
+        ledfx.start(open_ui=args.open_ui)
+        profiler.disable()
+        print("Finished collecting performance data")
+        filename = config_helpers.get_profile_dump_location()
+        profiler.dump_stats(filename)
+        print(f"Saved performance data to config directory      : {filename}")
+        print(
+            "Please send the performance data to a developer : https://ledfx.app/contact/"
+        )
+    else:
+        ledfx.start(open_ui=args.open_ui)
 
 
 if __name__ == "__main__":

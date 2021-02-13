@@ -57,6 +57,12 @@ def get_config_file(config_dir: str) -> str:
     return json_path  # Return the JSON file if we find one.
 
 
+def get_profile_dump_location() -> str:
+    config_dir = get_default_config_directory()
+    date_time = datetime.datetime.now().strftime("%d-%m-%y_%H-%M-%S")
+    return os.path.join(config_dir, f"LedFx_{date_time}.profile")
+
+
 def get_log_file_location():
     config_dir = get_default_config_directory()
     log_file_path = os.path.abspath(os.path.join(config_dir, "LedFx.log"))
