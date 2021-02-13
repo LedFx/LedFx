@@ -39,6 +39,7 @@ class SchemaEndpoint(RestEndpoint):
                 "schema": convertToJsonSchema(effect.schema()),
                 "id": effect_type,
                 "name": effect.NAME,
+                "category": effect.CATEGORY,
             }
 
         # Generate all the integrations schema

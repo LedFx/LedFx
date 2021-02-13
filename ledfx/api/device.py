@@ -37,21 +37,22 @@ class DeviceEndpoint(RestEndpoint):
             }
             return web.json_response(data=response, status=500)
 
-        # TODO: Support dynamic device configuration updates. For now
-        # remove the device and re-create it
         _LOGGER.info(
             ("Updating device {} with config {}").format(
                 device_id, device_config
             )
         )
-        self._ledfx.devices.destroy(device_id)
 
-        device = self._ledfx.devices.create(
-            id=device_id,
-            type=device_config.get("type"),
-            config=device_config,
-            ledfx=self._ledfx,
-        )
+        try:
+            device.update_config(device_config)
+            response = {"status": "success"}
+            status = 200
+        except ValueError as msg:
+            response = {
+                "status": "failed",
+                "payload": {"type": "warning", "reason": str(msg)},
+            }
+            status = 202
 
         # Update and save the configuration
         for device in self._ledfx.config["devices"]:
@@ -63,8 +64,7 @@ class DeviceEndpoint(RestEndpoint):
             config_dir=self._ledfx.config_dir,
         )
 
-        response = {"status": "success"}
-        return web.json_response(data=response, status=200)
+        return web.json_response(data=response, status=status)
 
     async def delete(self, device_id) -> web.Response:
         device = self._ledfx.devices.get(device_id)

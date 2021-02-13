@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import socket
 from abc import abstractmethod
 from functools import cached_property
 
@@ -27,11 +26,11 @@ class Device(BaseRegistry):
 
     CONFIG_SCHEMA = vol.Schema(
         {
-            vol.Optional(
-                "rgbw_led",
-                description="RGBW LEDs",
-                default=False,
-            ): bool,
+            # vol.Optional(
+            #     "rgbw_led",
+            #     description="RGBW LEDs",
+            #     default=False,
+            # ): bool,
             vol.Optional(
                 "icon_name",
                 description="https://material-ui.com/components/material-icons/",
@@ -62,9 +61,34 @@ class Device(BaseRegistry):
         if self._active:
             self.deactivate()
 
+    def update_config(self, config):
+        # TODO: Sync locks to ensure everything is thread safe
+        validated_config = type(self).schema()(config)
+        if self._config is not None:
+            self._config = self._config | validated_config
+        else:
+            self._config = validated_config
+
+        # Iterate all the base classes and check to see if there is a custom
+        # implementation of config updates. If to notify the base class.
+        valid_classes = list(type(self).__bases__)
+        valid_classes.append(type(self))
+        for base in valid_classes:
+            if hasattr(base, "config_updated"):
+                if base.config_updated != super(base, base).config_updated:
+                    base.config_updated(self, self._config)
+
+        _LOGGER.info(
+            f"Device {self.name} config updated to {validated_config}."
+        )
+
+        for display in self._displays_objs:
+            display.deactivate_segments()
+            display.activate_segments(display._segments)
+
     @property
     def pixel_count(self):
-        pass
+        return int(self._config["pixel_count"])
 
     def is_active(self):
         return self._active
@@ -166,6 +190,8 @@ class Device(BaseRegistry):
     def add_segment(self, display_id, start_pixel, end_pixel):
         # make sure this segment doesn't overlap with any others
         for _display_id, segment_start, segment_end in self._segments:
+            if display_id == _display_id:
+                continue
             overlap = (
                 min(segment_end, end_pixel)
                 - max(segment_start, start_pixel)
@@ -243,7 +269,10 @@ class Devices(RegistryLoader):
             for device in self.values()
             if hasattr(device, "async_initialize")
         ]
-        await asyncio.gather(*tasks)
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        for result in results:
+            if type(result) is ValueError:
+                _LOGGER.warning(result)
 
     async def add_new_device(self, device_type, device_config):
         """
@@ -251,8 +280,15 @@ class Devices(RegistryLoader):
         """
         # First, we try to make sure this device doesn't share a destination with any existing device
         if "ip_address" in device_config.keys():
-            device_ip = device_config["ip_address"]
-            resolved_dest = await resolve_destination(device_ip)
+            device_ip = device_config["ip_address"].rstrip(".")
+            device_config["ip_address"] = device_ip
+            try:
+                resolved_dest = await resolve_destination(
+                    self._ledfx.loop, device_ip
+                )
+            except ValueError:
+                _LOGGER.error(f"Failed to resolve address {device_ip}")
+                return
 
             for existing_device in self._ledfx.devices.values():
                 if (
@@ -265,7 +301,7 @@ class Devices(RegistryLoader):
 
         # If WLED device, get all the necessary config from the device itself
         if device_type == "wled":
-            wled_config = await WLED.get_config(device_config["ip_address"])
+            wled_config = await WLED.get_config(resolved_dest)
 
             led_info = wled_config["leds"]
             wled_name = wled_config["name"]
@@ -297,6 +333,9 @@ class Devices(RegistryLoader):
             config=device_config,
             ledfx=self._ledfx,
         )
+
+        if hasattr(device, "async_initialize"):
+            await device.async_initialize()
 
         # Update and save the configuration
         self._ledfx.config["devices"].append(
@@ -354,7 +393,7 @@ class Devices(RegistryLoader):
             "_wled._tcp.local.", wled_listener
         )
         try:
-            await asyncio.sleep(10)
+            await asyncio.sleep(30)
         finally:
             _LOGGER.info("Scan Finished")
             self._zeroconf.remove_service_listener(wled_listener)
@@ -371,13 +410,74 @@ class WLEDListener(zeroconf.ServiceBrowser):
         info = zeroconf_obj.get_service_info(type, name)
 
         if info:
-            address = socket.inet_ntoa(info.addresses[0])
             hostname = str(info.server)
-            _LOGGER.info(f"Found device at {address}")
+            _LOGGER.info(f"Found device: {hostname}")
 
             device_type = "wled"
             device_config = {"ip_address": hostname}
 
+            def handle_exception(future):
+                # Ignore exceptions, these will be raised when a device is found that already exists
+                exc = future.exception()
+
             async_fire_and_forget(
-                self._ledfx.devices.add_new_device(device_type, device_config)
+                self._ledfx.devices.add_new_device(device_type, device_config),
+                loop=self._ledfx.loop,
+                exc_handler=handle_exception,
             )
+
+
+@BaseRegistry.no_registration
+class NetworkedDevice(Device):
+    """
+    Networked device, handles resolving IP
+    """
+
+    CONFIG_SCHEMA = vol.Schema(
+        {
+            vol.Required(
+                "ip_address",
+                description="Hostname or IP address of the device",
+            ): str,
+        }
+    )
+
+    async def async_initialize(self):
+        self._destination = None
+        await self.resolve_address()
+
+    async def resolve_address(self):
+        try:
+            self._destination = await resolve_destination(
+                self._ledfx.loop, self._config["ip_address"]
+            )
+            _LOGGER.info(
+                f"Resolved device {self.name} destination to {self._destination} ..."
+            )
+        except ValueError as msg:
+            _LOGGER.warning(f"Device {self.name}: {msg}")
+
+    def activate(self, *args, **kwargs):
+        if self._destination is None:
+            _LOGGER.warning(
+                f"Cannot activate device {self.name}: Destination {self._config['ip_address']} is not yet resolved"
+            )
+            async_fire_and_forget(
+                self.resolve_address(), loop=self._ledfx.loop
+            )
+            return
+        else:
+            super().activate(*args, **kwargs)
+
+    @property
+    def destination(self):
+        if self._destination is None:
+            _LOGGER.warning(
+                f"Device {self.name} destination {self._config['ip_address']} is not yet resolved"
+            )
+            async_fire_and_forget(
+                self.resolve_address(), loop=self._ledfx.loop
+            )
+            return
+        else:
+            return self._destination

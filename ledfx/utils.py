@@ -8,6 +8,7 @@ import os
 import pkgutil
 import re
 import socket
+import subprocess
 import sys
 from abc import ABC
 
@@ -57,7 +58,7 @@ def import_or_install(package):
     return False
 
 
-def async_fire_and_forget(coro, loop):
+def async_fire_and_forget(coro, loop, exc_handler=None):
     """Run some code in the core event loop without a result"""
 
     if not asyncio.coroutines.iscoroutine(coro):
@@ -65,7 +66,9 @@ def async_fire_and_forget(coro, loop):
 
     def callback():
         """Handle the firing of a coroutine."""
-        asyncio.ensure_future(coro, loop=loop)
+        task = asyncio.create_task(coro)
+        if exc_handler is not None:
+            task.add_done_callback(exc_handler)
 
     loop.call_soon_threadsafe(callback)
     return
@@ -109,6 +112,43 @@ def async_callback(loop, callback, *args):
 
     loop.call_soon_threadsafe(run_callback)
     return future
+
+
+def git_version():
+
+    """Uses a subprocess to attempt to get the git revision of the running build.
+
+    Args:
+        None
+
+    Returns:
+        On success: string containing the git revision
+        On failure: string containing "Unknown"
+    """
+
+    def _minimal_ext_cmd(cmd):
+        # construct minimal environment
+        env = {}
+        for k in ["SYSTEMROOT", "PATH"]:
+            v = os.environ.get(k)
+            if v is not None:
+                env[k] = v
+        # LANGUAGE is used on win32
+        env["LANGUAGE"] = "C"
+        env["LANG"] = "C"
+        env["LC_ALL"] = "C"
+        out = subprocess.Popen(
+            cmd, stdout=subprocess.PIPE, env=env
+        ).communicate()[0]
+        return out
+
+    try:
+        out = _minimal_ext_cmd(["git", "rev-parse", "HEAD"])
+        GIT_REVISION = out.strip().decode("ascii")
+    except OSError:
+        GIT_REVISION = "Unknown"
+
+    return GIT_REVISION
 
 
 class WLED:
@@ -175,7 +215,7 @@ class WLED:
             sync_settings = [
                 setting
                 for setting in sync_settings
-                if any(i in ["checked", "EP"] for i in setting[0])
+                if any(i in ["checked", "EP", "ET", "RG"] for i in setting[0])
             ]
             # remove empty string "value" keys
             # extract the setting identifier and value eg: d.Sf.BT.checked=1 => BT, 1
@@ -303,6 +343,25 @@ class WLED:
         )
 
     @staticmethod
+    async def disable_gamma(ip_address):
+        sync_settings = await WLED._get_sync_settings(ip_address)
+        if "RG" not in sync_settings.keys():
+            return
+
+        del sync_settings["RG"]
+
+        await WLED._wled_request(
+            requests.post,
+            ip_address,
+            "settings/sync",
+            data=sync_settings,
+        )
+
+        _LOGGER.info(
+            f"Disabled WLED device at {ip_address} realtime gamma correction"
+        )
+
+    @staticmethod
     async def set_force_max_brightness(ip_address, mode):
         """
             Uses a HTTP post call to set a WLED compatible device's
@@ -321,6 +380,40 @@ class WLED:
         )
 
         _LOGGER.info(f"Set WLED device at {ip_address} to sync mode '{mode}'")
+
+    @staticmethod
+    async def get_inactivity_timeout(ip_address):
+        """
+            Uses a HTTP get call to get a WLED compatible device's
+            timeout for after effect streaming finishes
+
+        Args:
+            timeout: int/float, seconds
+        """
+        sync_settings = await WLED._get_sync_settings(ip_address)
+        return sync_settings["ET"]
+
+    @staticmethod
+    async def set_inactivity_timeout(ip_address, timeout=2.5):
+        """
+            Uses a HTTP post call to set a WLED compatible device's
+            timeout for after effect streaming finishes
+
+        Args:
+            timeout: int/float, seconds
+        """
+        sync_settings = await WLED._get_sync_settings(ip_address)
+        if sync_settings["ET"] / 1000 == timeout:
+            return
+
+        await WLED._wled_request(
+            requests.post,
+            ip_address,
+            "settings/sync",
+            data=sync_settings | {"ET": timeout * 1000},
+        )
+
+        _LOGGER.info(f"Set WLED device at {ip_address} timeout to {timeout}s")
 
     @staticmethod
     async def set_sync_mode(ip_address, mode):
@@ -347,6 +440,7 @@ class WLED:
 
         else:
             # make sure the mode isn't already set, if so no need to go on
+            # this is a reverse dict lookup
             current_mode = next(
                 key
                 for key, value in WLED.SYNC_MODES.items()
@@ -393,11 +487,12 @@ class WLED:
         )
 
 
-async def resolve_destination(destination):
-    """Uses a socket to attempt domain lookup
+async def resolve_destination(loop, destination, port=7777, timeout=3):
+    """Uses asyncio's non blocking DNS funcs to attempt domain lookup
 
     Args:
         destination (string): The domain name to be resolved.
+        timeout, optional (int/float): timeout for the operation
 
     Returns:
         On success: string containing the resolved IP address.
@@ -410,11 +505,10 @@ async def resolve_destination(destination):
     except ValueError:
         cleaned_dest = destination.rstrip(".")
         try:
-            return socket.gethostbyname(cleaned_dest)
+            dest = await loop.getaddrinfo(cleaned_dest, port)
+            return dest[0][4][0]
         except socket.gaierror:
-            msg = f"Failed to resolve destination {cleaned_dest}"
-            _LOGGER.warning(msg)
-            raise ValueError(msg)
+            raise ValueError(f"Failed to resolve destination {cleaned_dest}")
         return False
 
 

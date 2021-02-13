@@ -1,5 +1,6 @@
 ledfx_presets = {
-    "bar(Reactive)": {
+    "bar": {
+        "reset": {"config": {}, "name": "Reset"},
         "bouncing-blues": {
             "config": {
                 "blur": 0,
@@ -66,7 +67,8 @@ ledfx_presets = {
             "name": "Rainbow LR",
         },
     },
-    "energy(Reactive)": {
+    "energy": {
+        "reset": {"config": {}, "name": "Reset"},
         "clear-sky": {
             "config": {
                 "blur": 0.5,
@@ -127,6 +129,7 @@ ledfx_presets = {
         },
     },
     "fade": {
+        "reset": {"config": {}, "name": "Reset"},
         "blues": {
             "config": {
                 "blur": 4.555260047376609,
@@ -184,6 +187,7 @@ ledfx_presets = {
         },
     },
     "gradient": {
+        "reset": {"config": {}, "name": "Reset"},
         "breathing": {
             "config": {
                 "blur": 0.4148550128345929,
@@ -283,7 +287,8 @@ ledfx_presets = {
             "name": "Waves",
         },
     },
-    "magnitude(Reactive)": {
+    "magnitude": {
+        "reset": {"config": {}, "name": "Reset"},
         "cold-fire": {
             "config": {
                 "blur": 1.3037737000651894,
@@ -340,7 +345,8 @@ ledfx_presets = {
             "name": "Warm Bass",
         },
     },
-    "multiBar(Reactive)": {
+    "multiBar": {
+        "reset": {"config": {}, "name": "Reset"},
         "bright-cascade": {
             "config": {
                 "blur": 3.761401491539508,
@@ -394,7 +400,8 @@ ledfx_presets = {
             "name": "Rainbow Oscillation",
         },
     },
-    "rain(Reactive)": {
+    "rain": {
+        "reset": {"config": {}, "name": "Reset"},
         "cold-drops": {
             "config": {
                 "blur": 1,
@@ -476,6 +483,7 @@ ledfx_presets = {
         },
     },
     "rainbow": {
+        "reset": {"config": {}, "name": "Reset"},
         "cascade": {
             "config": {
                 "blur": 7.723939087082861,
@@ -527,7 +535,8 @@ ledfx_presets = {
             "name": "Slow Roll",
         },
     },
-    "scroll(Reactive)": {
+    "scroll": {
+        "reset": {"config": {}, "name": "Reset"},
         "cold-crawl": {
             "config": {
                 "blur": 1,
@@ -629,6 +638,7 @@ ledfx_presets = {
         },
     },
     "singleColor": {
+        "reset": {"config": {}, "name": "Reset"},
         "blue": {
             "config": {
                 "blur": 0,
@@ -813,7 +823,8 @@ ledfx_presets = {
             "name": "Yellow",
         },
     },
-    "strobe(Reactive)": {
+    "strobe": {
+        "reset": {"config": {}, "name": "Reset"},
         "aggro-red": {
             "config": {
                 "blur": 6.176594831274896,
@@ -873,7 +884,8 @@ ledfx_presets = {
             "name": "Painful",
         },
     },
-    "wavelength(Reactive)": {
+    "wavelength": {
+        "reset": {"config": {}, "name": "Reset"},
         "classic": {
             "config": {
                 "blur": 3,
@@ -945,7 +957,8 @@ ledfx_presets = {
             "name": "Sunset Sweep",
         },
     },
-    "real_strobe(Reactive)": {
+    "real_strobe": {
+        "reset": {"config": {}, "name": "Reset"},
         "dancefloor": {
             "config": {
                 "bass_strobe_decay_rate": 0.7,
@@ -1032,4 +1045,18 @@ ledfx_presets = {
             "name": "Glitter",
         },
     },
+    "bands": {"reset": {"config": {}, "name": "Reset"}},
+    "bands_matrix": {"reset": {"config": {}, "name": "Reset"}},
+    "blade_power": {"reset": {"config": {}, "name": "Reset"}},
+    "block_reflections": {"reset": {"config": {}, "name": "Reset"}},
+    "blocks": {"reset": {"config": {}, "name": "Reset"}},
+    "energy2": {"reset": {"config": {}, "name": "Reset"}},
+    "equalizer": {"reset": {"config": {}, "name": "Reset"}},
+    "fire": {"reset": {"config": {}, "name": "Reset"}},
+    "hue_fix_demo": {"reset": {"config": {}, "name": "Reset"}},
+    "lava_lamp": {"reset": {"config": {}, "name": "Reset"}},
+    "marching": {"reset": {"config": {}, "name": "Reset"}},
+    "pitchSpectrum": {"reset": {"config": {}, "name": "Reset"}},
+    "power": {"reset": {"config": {}, "name": "Reset"}},
+    "spectrum": {"reset": {"config": {}, "name": "Reset"}},
 }

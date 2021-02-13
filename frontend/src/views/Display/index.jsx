@@ -58,7 +58,9 @@ const DisplayView = ({
                                 schemas={schemas}
                                 onClear={() => dispatch(clearDisplayEffect(displayId))}
                                 onSubmit={data => dispatch(setDisplayEffect(data.displayId, data))}
-                                onTypeChange={effectType => dispatch(getEffectPresets(effectType))}
+                                onTypeChange={effectType =>
+                                    effectType ? dispatch(getEffectPresets(effectType)) : false
+                                }
                             />
                         </CardContent>
                     </Card>
@@ -66,7 +68,7 @@ const DisplayView = ({
                 <Grid item xs={12} lg={6}>
                     {effect.type && (
                         <PresetsCard
-                            device={display}
+                            display={display}
                             presets={presets}
                             effect={effect}
                             activatePreset={() => dispatch(activatePreset)}
@@ -84,22 +86,20 @@ const DisplayView = ({
     );
 };
 
-const renderPixelGraph = (display, effect, device) => {
-    if (display) {
-        return (
-            <Grid item xs={12}>
-                <Card>
-                    <CardContent className={`effect-${!!effect}`}>
-                        {device ? (
-                            <PixelColorGraph device={device} />
-                        ) : (
-                            <DisplayPixelColorGraph display={display} />
+const renderPixelGraph = (display, effect, device) => (
+    <Grid item xs={12}>
+        <Card>
+            <CardContent className={`effect-${!!effect}`}>
+                {display && device ? (
+                    <PixelColorGraph device={device} />
+                ) : display && !device ? (
+                    <DisplayPixelColorGraph display={display} />
+                ) : (
+                            <></>
                         )}
-                    </CardContent>
-                </Card>
-            </Grid>
-        );
-    }
-};
+            </CardContent>
+        </Card>
+    </Grid>
+);
 
 export default DisplayView;

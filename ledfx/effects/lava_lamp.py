@@ -8,6 +8,8 @@ from ledfx.effects.hsv_effect import HSVEffect
 class Lavalamp(AudioReactiveEffect, HSVEffect):
 
     NAME = "Lava lamp"
+    CATEGORY = "2.0"
+
     CONFIG_SCHEMA = vol.Schema(
         {
             vol.Optional(

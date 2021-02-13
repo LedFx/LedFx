@@ -21,7 +21,7 @@ const BottomBar = ({ classes }) => {
             <IconButton
                 aria-label="Github"
                 color="inherit"
-                href="https://github.com/LedFx/LedFx/tree/dev"
+                href="https://git.ledfx.app/"
                 target="_blank"
                 title="Github"
             >

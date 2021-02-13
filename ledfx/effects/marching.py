@@ -8,6 +8,8 @@ from ledfx.effects.hsv_effect import HSVEffect
 class Marching(AudioReactiveEffect, HSVEffect):
 
     NAME = "Marching"
+    CATEGORY = "2.0"
+
     CONFIG_SCHEMA = vol.Schema(
         {
             vol.Optional(
