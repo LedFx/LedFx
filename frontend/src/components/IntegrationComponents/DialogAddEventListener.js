@@ -7,7 +7,6 @@ import DialogContent from '@material-ui/core/DialogContent';
 import DialogActions from '@material-ui/core/DialogActions';
 import Dialog from '@material-ui/core/Dialog';
 import AddCircleIcon from '@material-ui/icons/AddCircle';
-import { useSelector } from 'react-redux';
 import { SchemaForm, utils } from 'react-schema-form';
 import * as integrationsProxies from 'proxies/integrations';
 import DialogContentText from '@material-ui/core/DialogContentText';
@@ -23,8 +22,6 @@ function ConfirmationDialogRaw(props) {
     const { onClose, value: valueProp, open, ...other } = props;
     const [value, setValue] = React.useState(valueProp);
     const radioGroupRef = React.useRef(null);
-    const integrationTypes = useSelector(state => state.schemas.integrationTypes || {});
-    const integration = props.integration;
     const [model] = React.useState({});
 
     React.useEffect(() => {
@@ -45,17 +42,13 @@ function ConfirmationDialogRaw(props) {
 
     const handleOk = () => {
         onClose(value);
-        integrationsProxies.createIntegration({ config: model, type: 'qlc' });
+        integrationsProxies.getQLCInfo({ info: 'event_types' });
         window.location = window.location.href;
     };
 
-    // const handleChange = event => {
-    //     // setValue(event.target.value);
-    // };
     const onModelChange = (key, val) => {
         utils.selectOrSet(key, model, val);
 
-        // setModel(val);
     };
     delete other.deviceList;
     return (
@@ -81,16 +74,9 @@ function ConfirmationDialogRaw(props) {
                     and then provide the expected output (Then That).
                 </DialogContentText>
                     {/*
-                    Note: This will be conditional based on the integration. Dynamic?
-                    QLC+ = event trigger(Such as LedFx Scene), than output QLC payload, as defined from GET qlc_widgets
-                    While Spotify = event trigger: Song/time, than output, such as LedFx Scene.
-                    For example, if a QLC+ intergration, than dropdown option comes from API:  
-                    value={deviceType}
-                    options={Object.keys(deviceTypes).map(key => ({
-                        value: key,
-                        display: key,
-                    }))}
-                    onChange={this.handleTypeChange}
+                    QLC+ = When user clicks  'Add event listener' button, then load into Redux:
+                    {integrationsProxies.getQLCEventTypes} & {integrationsProxies.getQLCWidgets}
+                    Use above to populate the dropdown fields.
                     */}
                 <FormControl>
                     <InputLabel htmlFor="grouped-select">Event Trigger (If This)</InputLabel>
@@ -111,14 +97,16 @@ function ConfirmationDialogRaw(props) {
                 <form>
                     <DropDown
                     label="Then Do This"
-                    //GET API: qlc_widgets
-                    //Think we should convert API data from:
-                    //[
-                    //    "7",
-                    //    "Button",
-                    //    "Button 7"
-                    //]
-                    //to show dropdown feild of '7, Button, Button 7'
+                    /*GET API: qlc_widgets
+                    {integrationsProxies.getQLCWidgets}
+                    Think we should convert API data from:
+                    [
+                        "7",
+                        "Button",
+                        "Button 7"
+                    ]
+                    to show dropdown feild of 'ID: 7, Button, Button 7' 
+                    */
                     />
                 </form>
 
@@ -152,6 +140,7 @@ function ConfirmationDialogRaw(props) {
                     aria-label="Add"
                     endIcon={<AddCircleIcon />}
                     aria-haspopup="true"
+                    // integrationsProxies.deleteIntegration(data);
                     //onClick={handleClickListItem}
                     role="listitem"
                 >
@@ -210,6 +199,8 @@ export default function ConfirmationDialog({ virtual, deviceList, config, integr
 
     const handleClickListItem = () => {
         setOpen(true);
+        integrationsProxies.getQLCInfo({ info: 'event_types' });
+        integrationsProxies.getQLCInfo({info: 'qlc_widgets' });
     };
 
     const handleClose = newValue => {

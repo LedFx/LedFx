@@ -691,11 +691,11 @@ class MelbankInputSource(AudioInputSource):
 
     @lru_cache(maxsize=32)
     def midi_value(self):
-        # If pyaudio is returning null, then this catches it hopefully. Rare error that's hard to reproduce.
+        # If pyaudio is returning null, then we just return 0 for midi_value and wait for the device starts sending audio.
         try:
             return self.pitch_o(self.audio_sample())[0]
         except ValueError:
-            _LOGGER.warning("ValueError - No Audio Data. Retrying...")
+            return 0
 
     @lru_cache(maxsize=32)
     def onset(self):

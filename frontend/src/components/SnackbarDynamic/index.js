@@ -8,10 +8,12 @@ import { clearSnackbar } from '../../modules/ui';
 
 const Alert = props => <MuiAlert elevation={6} variant="filled" {...props} />;
 
-const SnackbarDynamic = ({ type = 'error' }) => {
+const SnackbarDynamic = () => {
     const dispatch = useDispatch();
 
-    const { successSnackbarMessage, successSnackbarOpen } = useSelector(state => state.ui);
+    const { dynSnackbarMessage, dynSnackbarOpen, dynSnackbarType } = useSelector(
+        state => state.ui.snackbar
+    );
 
     function handleClose() {
         dispatch(clearSnackbar());
@@ -23,8 +25,8 @@ const SnackbarDynamic = ({ type = 'error' }) => {
                 vertical: 'bottom',
                 horizontal: 'center',
             }}
-            open={successSnackbarOpen}
-            autoHideDuration={1000 + (successSnackbarMessage || 0).length * 60}
+            open={dynSnackbarOpen}
+            autoHideDuration={1000 + (dynSnackbarMessage || 0).length * 60}
             onClose={handleClose}
             aria-describedby="client-snackbar"
             action={[
@@ -33,7 +35,7 @@ const SnackbarDynamic = ({ type = 'error' }) => {
                 </IconButton>,
             ]}
         >
-            <Alert severity={type}>{successSnackbarMessage}</Alert>
+            <Alert severity={dynSnackbarType}>{dynSnackbarMessage}</Alert>
         </Snackbar>
     );
 };

@@ -173,7 +173,6 @@ class Effect(BaseRegistry):
 
     NAME = ""
     _pixels = None
-    _dirty = False
     _config = None
     _active = False
 
@@ -208,7 +207,7 @@ class Effect(BaseRegistry):
 
     def __init__(self, ledfx, config):
         self._ledfx = ledfx
-        self._dirty_callback = None
+        self._config = {}
         self.update_config(config)
 
     def __del__(self):
@@ -232,8 +231,10 @@ class Effect(BaseRegistry):
     def update_config(self, config):
         # TODO: Sync locks to ensure everything is thread safe
         validated_config = type(self).schema()(config)
-        self._config = validated_config
-
+        if self._config is not None:
+            self._config = self._config | validated_config
+        else:
+            self._config = validated_config
         self._bg_color = np.array(
             COLORS[self._config["background_color"]], dtype=float
         )
@@ -272,8 +273,38 @@ class Effect(BaseRegistry):
         """Return if the effect is currently active"""
         return self._active
 
-    def get_pixels(self):
+    def render(self):
         return self.pixels
+
+    def get_pixels(self):
+        pixels = self.render()
+
+        if isinstance(pixels, tuple):
+            self._pixels = np.copy(pixels)
+        elif isinstance(pixels, np.ndarray):
+
+            # Apply some of the base output filters if necessary
+            if self._config["flip"]:
+                pixels = flip_pixels(pixels)
+            if self._config["mirror"]:
+                pixels = mirror_pixels(pixels)
+            if self._config["background_color"]:
+                # TODO: colours in future should have an alpha value, which would work nicely to apply to dim the background colour
+                # for now, just set it a bit less bright.
+                bg_brightness = np.max(pixels, axis=1)
+                bg_brightness = (255 - bg_brightness) / 510
+                _bg_color_array = np.tile(self._bg_color, (len(pixels), 1))
+                pixels += np.multiply(_bg_color_array.T, bg_brightness).T
+            if self._config["brightness"] is not None:
+                pixels = brightness_pixels(pixels, self._config["brightness"])
+            # If the configured blur is greater than 0 we need to blur it
+            if self.configured_blur != 0.0:
+                pixels = blur_pixels(pixels=pixels, sigma=self.configured_blur)
+            self._pixels = np.copy(pixels)
+        else:
+            raise TypeError()
+
+        return pixels
 
     @property
     def pixels(self):
@@ -319,18 +350,10 @@ class Effect(BaseRegistry):
         else:
             raise TypeError()
 
-        self._dirty = True
-
-        if self._dirty_callback:
-            self._dirty_callback()
-
-    def setDirtyCallback(self, callback):
-        self._dirty_callback = callback
-
     @property
     def pixel_count(self):
         """Returns the number of pixels for the channel"""
-        return len(self.pixels)
+        return len(self._pixels)
 
     @property
     def name(self):

@@ -17,10 +17,11 @@ import Fab from '@material-ui/core/Fab';
 const styles = theme => ({
     appBar: {
         backgroundColor: theme.palette.background.default,
-        paddingLeft: drawerWidth,
+        paddingLeft: 0,
         [theme.breakpoints.up('md')]: {
             width: `100%`,
             left: 0,
+            paddingLeft: drawerWidth,
         },
     },
     // toolBar: {
@@ -36,7 +37,7 @@ const styles = theme => ({
 
 const Header = props => {
     const getPageName = () => {
-        const { location, devicesDictionary } = props;
+        const { location, devicesDictionary, selectedDisplay } = props;
         const { pathname } = location;
         let name = viewRoutes.find((prop, key) => prop.path === pathname)?.navbarName;
 
@@ -48,6 +49,17 @@ const Header = props => {
                         ? devicesDictionary[deviceId].config.name
                         : '';
                 name = 'Devices / ' + deviceName;
+            } else if (pathname.startsWith('/displays/')) {
+                const displayId = pathname.replace('/displays/', '');
+                const displayName =
+                    devicesDictionary[displayId] !== undefined
+                        ? devicesDictionary[displayId].config.name
+                        : selectedDisplay
+                        ? selectedDisplay.config[selectedDisplay.id] &&
+                          selectedDisplay.config[selectedDisplay.id].config.name
+                        : '';
+
+                name = 'Devices / ' + displayName;
             } else if (pathname.startsWith('/developer/')) {
                 name = 'Developer / Custom';
             }

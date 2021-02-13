@@ -1,24 +1,21 @@
 import logging
-import time
 
 import numpy as np
 import sacn
 import voluptuous as vol
 
-from ledfx.devices import Device
-from ledfx.utils import resolve_destination
+from ledfx.devices import NetworkedDevice
 
 _LOGGER = logging.getLogger(__name__)
 
 
-class E131Device(Device):
+class E131Device(NetworkedDevice):
     """E1.31 device support"""
 
     CONFIG_SCHEMA = vol.Schema(
         {
             vol.Required(
-                "ip_address",
-                description="Hostname or IP address of the device",
+                "name", description="Friendly name for the device"
             ): str,
             vol.Required(
                 "pixel_count",
@@ -31,7 +28,7 @@ class E131Device(Device):
             ): vol.All(vol.Coerce(int), vol.Range(min=1)),
             vol.Optional(
                 "universe_size",
-                description="Size of each DMX universe. Leave at 510 unless you know what you're doing.",
+                description="Size of each DMX universe",
                 default=510,
             ): vol.All(vol.Coerce(int), vol.Range(min=1)),
             vol.Optional(
@@ -44,7 +41,13 @@ class E131Device(Device):
 
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
-
+        # Since RGBW data is 4 packets, we can use 512 for RGBW LEDs; 512/4 = 128
+        # The 129th pixels data will span into the next universe correctly
+        # If it's not, we lose nothing by using a smaller universe size and keeping things easy for the end user (and us!)
+        # if self._config["rgbw_led"] is True:
+        #     self._config["universe_size"] = 512
+        # else:
+        #     self._config["universe_size"] = 510
         # Allow for configuring in terms of "pixels" or "channels"
 
         if "pixel_count" in self._config:
@@ -63,35 +66,30 @@ class E131Device(Device):
 
         self._sacn = None
 
-    @property
-    def pixel_count(self):
-        return int(self._config["pixel_count"])
-
     def activate(self):
+        if self._config["ip_address"].lower() == "multicast":
+            multicast = True
+        else:
+            multicast = False
+
         if self._sacn:
-            raise Exception("sACN sender already started.")
-        # check if ip/hostname resolves okay
-        resolved_dest = resolve_destination(self._config["ip_address"])
-        if not resolved_dest:
             _LOGGER.warning(
-                f"Cannot resolve destination {self._config['ip_address']}, aborting device {self.name} activation. Make sure the IP/hostname is correct and device is online."
+                f"sACN sender already started for device {self.id}"
             )
-            return
 
         # Configure sACN and start the dedicated thread to flush the buffer
         # Some variables are immutable and must be called here
-        self._sacn = sacn.sACNsender(source_name=self.id)
+        self._sacn = sacn.sACNsender(source_name=self.name)
         for universe in range(
             self._config["universe"], self._config["universe_end"] + 1
         ):
-            _LOGGER.info("sACN activating universe {}".format(universe))
+            _LOGGER.info(f"sACN activating universe {universe}")
             self._sacn.activate_output(universe)
-            if self._config["ip_address"] is None:
-                self._sacn[universe].multicast = True
-            else:
-                self._sacn[universe].destination = resolved_dest
-                self._sacn[universe].multicast = False
-        self._sacn._fps = self._config["refresh_rate"]
+
+            self._sacn[universe].multicast = multicast
+            if not multicast:
+                self._sacn[universe].destination = self.destination
+
         self._sacn.start()
         self._sacn.manual_flush = True
 
@@ -102,14 +100,11 @@ class E131Device(Device):
         super().deactivate()
 
         if not self._sacn:
-            raise Exception("sACN sender not started.")
+            # He's dead, Jim
+            # _LOGGER.warning("sACN sender not started.")
+            return
 
-        # Turn off all the LEDs when deactivating. With how the sender
-        # works currently we need to sleep to ensure the pixels actually
-        # get updated. Need to replace the sACN sender such that flush
-        # directly writes the pixels.
         self.flush(np.zeros(self._config["channel_count"]))
-        time.sleep(1.5)
 
         self._sacn.stop()
         self._sacn = None
@@ -122,9 +117,7 @@ class E131Device(Device):
             raise Exception("sACN sender not started.")
         if data.size != self._config["channel_count"]:
             raise Exception(
-                "Invalid buffer size. ({} != {})".format(
-                    data.size, self._config["channel_count"]
-                )
+                f"Invalid buffer size. {data.size} != {self._config['channel_count']}"
             )
 
         data = data.flatten()
@@ -174,7 +167,7 @@ class E131Device(Device):
             _LOGGER.critical(
                 "The wheels fell off the sACN thread. Restarting it."
             )
-            self.activate
+            self.activate()
 
         # # Hack up a manual flush of the E1.31 data vs having a background thread
         # if self._sacn._output_thread._socket:

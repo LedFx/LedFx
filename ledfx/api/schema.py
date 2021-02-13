@@ -17,6 +17,7 @@ class SchemaEndpoint(RestEndpoint):
             "devices": {},
             "effects": {},
             "integrations": {},
+            "displays": {},
         }
 
         # Generate all the device schema
@@ -38,6 +39,7 @@ class SchemaEndpoint(RestEndpoint):
                 "schema": convertToJsonSchema(effect.schema()),
                 "id": effect_type,
                 "name": effect.NAME,
+                "category": effect.CATEGORY,
             }
 
         # Generate all the integrations schema
@@ -51,5 +53,10 @@ class SchemaEndpoint(RestEndpoint):
                 "name": integration.NAME,
                 "description": integration.DESCRIPTION,
             }
+
+        # Get displays schema
+        response["displays"] = {
+            "schema": convertToJsonSchema(self._ledfx.displays.schema()),
+        }
 
         return web.json_response(data=response, status=200)

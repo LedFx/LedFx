@@ -12,6 +12,7 @@ import { toggleAsyncIntegration } from 'modules/integrations';
 import { Switch, Chip } from '@material-ui/core';
 import DialogAddEventListener from 'components/IntegrationComponents/DialogAddEventListener';
 
+
 const useStyles = makeStyles({
     integrationCard: {
         width: 300,
@@ -84,7 +85,7 @@ const IntegrationsCard = ({ int }) => {
                     variant="text"
                     color="secondary"
                     onClick={() => {
-                        console.log('edit');
+                        // console.log('edit');
                     }}
                 >
                     <EditIcon />

@@ -13,6 +13,7 @@ import CasinoIcon from '@material-ui/icons/Casino';
 
 import DropDown from 'components/forms/DropDown';
 import mapper from 'components/SchemaForm/mapper';
+import BladeDropDown from './BladeDropDown';
 
 const styles = theme => ({
     form: {
@@ -121,6 +122,7 @@ class EffectControl extends React.Component {
                         Set and configure effects
                     </Typography>
                     <form onSubmit={this.handleSubmit} className={classes.form}>
+                        <BladeDropDown effects={Object.keys(schemas?.effects)} />
                         <DropDown
                             label="Type"
                             value={selectedType}

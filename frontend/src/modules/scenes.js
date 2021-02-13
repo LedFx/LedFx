@@ -98,7 +98,10 @@ export function activateScene(id) {
         const sceneDevices = getState().scenes.list.find(s => s.id === id).devices;
         const res = await scenesProxies.activateScenes(id);
         if (res.status && res.status === 200) {
-            dispatch(uiProxies.showSuccessSnackbar(JSON.stringify(res.data)));
+            if (res.data.payload) {
+                dispatch(uiProxies.showdynSnackbar(res.data.payload));
+            }
+
             Object.keys(sceneDevices).map(d => {
                 dispatch(
                     deviceProxies.handleActiveDeviceEffect(
@@ -109,7 +112,7 @@ export function activateScene(id) {
                 return false;
             });
         } else {
-            dispatch(uiProxies.showSuccessSnackbar(JSON.stringify(res)));
+            dispatch(uiProxies.showdynSnackbar(JSON.stringify(res)));
         }
     };
 }

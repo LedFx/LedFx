@@ -10,6 +10,7 @@ import { fetchDeviceList } from 'modules/devices';
 import { getAsyncVirtuals } from 'modules/virtuals';
 import SaveIcon from '@material-ui/icons/Save';
 import * as virtualsProxies from 'proxies/virtuals';
+import { fetchDisplayList } from 'modules/displays';
 
 function Alert(props) {
     return <MuiAlert elevation={6} variant="filled" {...props} />;
@@ -44,6 +45,7 @@ const VirtualsView = () => {
     };
     useEffect(() => {
         dispatch(fetchDeviceList());
+        dispatch(fetchDisplayList());
         dispatch(getAsyncVirtuals());
     }, [dispatch]);
 

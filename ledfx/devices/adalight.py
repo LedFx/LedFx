@@ -35,6 +35,9 @@ class AdalightDevice(Device):
     CONFIG_SCHEMA = vol.Schema(
         {
             vol.Required(
+                "name", description="Friendly name for the device"
+            ): str,
+            vol.Required(
                 "com_port",
                 description="COM port",
             ): str,
@@ -80,6 +83,9 @@ class AdalightDevice(Device):
 
     def activate(self):
         try:
+            if self.serial and self.serial.isOpen:
+                return
+
             self.serial = serial.Serial(self.com_port, self.baudrate)
             if self.serial.isOpen:
                 super().activate()
@@ -89,15 +95,12 @@ class AdalightDevice(Device):
                 "Serial Error: Please ensure your device is connected, functioning and the correct COM port is selected."
             )
             # Todo: Trigger the UI to refresh after the clear effect call. Currently it still shows as active.
-            self.clear_effect()
+            self.deactivate()
 
     def deactivate(self):
         super().deactivate()
-        self.serial.close()
-
-    @property
-    def pixel_count(self):
-        return int(self._config["pixel_count"])
+        if self.serial:
+            self.serial.close()
 
     def flush(self, data):
 

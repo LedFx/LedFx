@@ -11,16 +11,24 @@ import Tooltip from '@material-ui/core/Tooltip';
 import AddCircleIcon from '@material-ui/icons/AddCircle';
 import WifiTetheringIcon from '@material-ui/icons/WifiTethering';
 import CircularProgress from '@material-ui/core/CircularProgress';
-
-import DevicesTable from 'components/DevicesTable';
+import DisplaysTable from 'components/DisplaysTable';
 import DeviceConfigDialog from 'components/DeviceConfigDialog';
-import {
-    addDevice,
-    deleteDevice,
-    updateDeviceConfig,
-    fetchDeviceList,
-    findWLEDDevices,
-} from 'modules/devices';
+import DisplayConfigDialog from 'components/DisplayConfigDialog';
+import { addDevice, updateDeviceConfig, fetchDeviceList, findWLEDDevices } from 'modules/devices';
+import { deleteDisplay, fetchDisplayList, addDisplay } from 'modules/displays';
+import { updateDisplay } from 'proxies/display';
+import DisplayCards from 'components/DisplaysTable/DisplayCards';
+import ViewListIcon from '@material-ui/icons/ViewList';
+import ViewModuleIcon from '@material-ui/icons/ViewModule';
+import ToggleButton from '@material-ui/lab/ToggleButton';
+import ToggleButtonGroup from '@material-ui/lab/ToggleButtonGroup';
+import TableChartIcon from '@material-ui/icons/TableChart';
+// import Fab from '@material-ui/core/Fab';
+// import AddIcon from '@material-ui/icons/Add';
+// import Menu from '@material-ui/core/Menu';
+// import MenuItem from '@material-ui/core/MenuItem';
+// import ListItemIcon from '@material-ui/core/ListItemIcon';
+// import ListItemText from '@material-ui/core/ListItemText';
 
 const styles = theme => ({
     cardResponsive: {
@@ -34,6 +42,27 @@ const styles = theme => ({
     dialogButton: {
         float: 'right',
     },
+    buttonWrapper: {
+        display: 'flex',
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        '@media (max-width: 540px)': {
+            flexDirection: 'column',
+            alignItems: 'stretch',
+        },
+    },
+    topBar: {
+        '@media (max-width: 540px)': {
+            flexDirection: 'column',
+            alignItems: 'stretch',
+        },
+    },
+    // fab: {
+    //     position: 'absolute',
+    //     bottom: theme.spacing(2),
+    //     right: theme.spacing(2),
+    // },
 });
 
 class DevicesView extends React.Component {
@@ -41,27 +70,44 @@ class DevicesView extends React.Component {
         super(props);
         this.state = {
             addDialogOpened: false,
+            addDisplayOpened: false,
             selectedDevice: {},
+            selectedDisplay: {},
             searchDevicesLoading: false,
+            view: 'list',
         };
     }
+    handleChange = (event, nextView) => {
+        this.setState({ view: nextView });
+    };
+
     componentDidMount() {
-        const { fetchDeviceList } = this.props;
+        const { fetchDeviceList, fetchDisplayList } = this.props;
         fetchDeviceList();
+
+        fetchDisplayList();
     }
 
     openAddDeviceDialog = () => {
         this.setState({ selectedDevice: {}, addDialogOpened: true });
     };
+    openAddDisplayDialog = () => {
+        this.setState({ selectedDisplay: {}, addDisplayOpened: true });
+    };
 
     closeAddDeviceDialog = () => {
         this.setState({ selectedDevice: {}, addDialogOpened: false });
+    };
+    closeAddDisplayDialog = () => {
+        this.setState({ selectedDisplay: {}, addDisplayOpened: false });
     };
 
     handleEditDevice = device => {
         this.setState({ selectedDevice: device, addDialogOpened: true });
     };
-
+    handleEditDisplay = display => {
+        this.setState({ selectedDisplay: display, addDisplayOpened: true });
+    };
     handleFindDevices = () => {
         const { findWLEDDevices } = this.props;
         this.setState({ searchDevicesLoading: true });
@@ -71,50 +117,76 @@ class DevicesView extends React.Component {
             this.setState({ searchDevicesLoading: false });
         });
     };
-
+    // openMenu = () => {
+    //     alert('menu');
+    // };
     render() {
         const {
             classes,
             deviceList,
+            displayList,
+            deleteDisplay,
             schemas,
             addDevice,
-            deleteDevice,
+            addDisplay,
             updateDeviceConfig,
             scanProgress,
         } = this.props;
         const { addDialogOpened, selectedDevice } = this.state;
-        const helpText = `Ensure WLED Devices are on and connected to your WiFi.\n
-                          If not detected, check WLED device mDNS setting. Go to:\n
-                          WLED device ip > Config > WiFi Setup > mDNS Address \n`;
+        const { addDisplayOpened, selectedDisplay } = this.state;
 
         return (
             <>
                 <Grid container spacing={2}>
-                    <Grid item xs={12} md={12}>
+                    <Grid item xs={12}>
                         <Card>
                             <CardContent>
-                                <Grid container direction="row" spacing={1} justify="space-between">
+                                <Grid
+                                    className={classes.topBar}
+                                    container
+                                    direction="row"
+                                    spacing={1}
+                                    justify="space-between"
+                                >
                                     <Grid item xs="auto">
-                                        <Typography variant="h5">Devices</Typography>
-                                        <Typography variant="body1" color="textSecondary">
-                                            Manage devices connected to LedFx
-                                        </Typography>
+                                        <Typography variant="h5">{/* Devices */}</Typography>
+                                        <Typography
+                                            variant="body1"
+                                            color="textSecondary"
+                                        ></Typography>
                                     </Grid>
                                     {!schemas.isLoading && (
                                         <>
                                             <Grid item>
-                                                <Box
-                                                    display="flex"
-                                                    flexDirection="row"
-                                                    alignItems="center"
-                                                    justifyContent="center"
-                                                >
-                                                    <CircularProgress
-                                                        variant="determinate"
-                                                        value={scanProgress * 10}
-                                                        size={35}
-                                                    />
-                                                    <Tooltip title={helpText} interactive arrow>
+                                                <Box className={classes.buttonWrapper}>
+                                                    {this.state.searchDevicesLoading && (
+                                                        <CircularProgress
+                                                            variant="determinate"
+                                                            value={scanProgress * 10}
+                                                            size={35}
+                                                        />
+                                                    )}
+
+                                                    <Tooltip
+                                                        title={
+                                                            <ul style={{ padding: '0.5rem' }}>
+                                                                <li>
+                                                                    Ensure WLED Devices are on and
+                                                                    connected to your WiFi.
+                                                                </li>
+                                                                <li>
+                                                                    If not detected, check WLED
+                                                                    device mDNS setting. Go to:
+                                                                </li>
+                                                                <li>
+                                                                    WLED device ip - Config - WiFi
+                                                                    Setup - mDNS Address{' '}
+                                                                </li>
+                                                            </ul>
+                                                        }
+                                                        interactive
+                                                        arrow
+                                                    >
                                                         <Button
                                                             variant="contained"
                                                             color="primary"
@@ -129,6 +201,41 @@ class DevicesView extends React.Component {
                                                             Find WLED Devices
                                                         </Button>
                                                     </Tooltip>
+                                                    <Tooltip
+                                                        title={
+                                                            <ul style={{ padding: '0.5rem' }}>
+                                                                <li>
+                                                                    A virtual device lets you
+                                                                    control the mapping of an effect
+                                                                    onto devices. You can:
+                                                                </li>
+                                                                <li>
+                                                                    Split a device to show multiple
+                                                                    effects
+                                                                </li>
+                                                                <li>
+                                                                    Combine devices to show a single
+                                                                    effect
+                                                                </li>
+                                                                <li>
+                                                                    Or any combination of the two!
+                                                                </li>
+                                                            </ul>
+                                                        }
+                                                        interactive
+                                                        arrow
+                                                    >
+                                                        <Button
+                                                            variant="contained"
+                                                            color="primary"
+                                                            aria-label="Scan"
+                                                            className={classes.button}
+                                                            onClick={this.openAddDisplayDialog}
+                                                            endIcon={<AddCircleIcon />}
+                                                        >
+                                                            Add Virtual Device
+                                                        </Button>
+                                                    </Tooltip>
                                                     <Button
                                                         variant="contained"
                                                         color="primary"
@@ -139,6 +246,34 @@ class DevicesView extends React.Component {
                                                     >
                                                         Add Device
                                                     </Button>
+                                                    {parseInt(
+                                                        window.localStorage.getItem('BladeMod')
+                                                    ) > 1 && (
+                                                        <ToggleButtonGroup
+                                                            value={this.state.view}
+                                                            exclusive
+                                                            onChange={this.handleChange}
+                                                        >
+                                                            <ToggleButton
+                                                                value="list"
+                                                                aria-label="list"
+                                                            >
+                                                                <TableChartIcon />
+                                                            </ToggleButton>
+                                                            <ToggleButton
+                                                                value="cards"
+                                                                aria-label="cards"
+                                                            >
+                                                                <ViewListIcon />
+                                                            </ToggleButton>
+                                                            <ToggleButton
+                                                                value="cardsPortrait"
+                                                                aria-label="cardsPortrait"
+                                                            >
+                                                                <ViewModuleIcon />
+                                                            </ToggleButton>
+                                                        </ToggleButtonGroup>
+                                                    )}
                                                     <DeviceConfigDialog
                                                         open={addDialogOpened}
                                                         onClose={this.closeAddDeviceDialog}
@@ -147,23 +282,84 @@ class DevicesView extends React.Component {
                                                         initial={selectedDevice}
                                                         onUpdateDevice={updateDeviceConfig}
                                                     />
+                                                    <DisplayConfigDialog
+                                                        open={addDisplayOpened}
+                                                        displays={schemas.displays}
+                                                        onClose={this.closeAddDisplayDialog}
+                                                        onAddDisplay={addDisplay}
+                                                        initial={selectedDisplay}
+                                                        onUpdateDisplay={updateDisplay}
+                                                    />
                                                 </Box>
                                             </Grid>
                                         </>
                                     )}
                                 </Grid>
-
-                                <DevicesTable
-                                    items={deviceList}
-                                    onDeleteDevice={deleteDevice}
-                                    onEditDevice={this.handleEditDevice}
-                                />
-
-
+                                {this.state.view === 'list' && (
+                                    <DisplaysTable
+                                        items={displayList}
+                                        deviceList={deviceList}
+                                        onEditDevice={this.handleEditDevice}
+                                        onDeleteDisplay={deleteDisplay}
+                                        onEditDisplay={this.handleEditDisplay}
+                                    />
+                                )}
                             </CardContent>
                         </Card>
                     </Grid>
+                    {this.state.view === 'cards' && (
+                        <Grid item xs={12}>
+                            <DisplayCards
+                                items={displayList}
+                                deviceList={deviceList}
+                                onEditDevice={this.handleEditDevice}
+                                onDeleteDisplay={deleteDisplay}
+                                onEditDisplay={this.handleEditDisplay}
+                                view={'cards'}
+                            />
+                        </Grid>
+                    )}
+                    {this.state.view === 'cardsPortrait' && (
+                        <Grid item xs={12}>
+                            <DisplayCards
+                                items={displayList}
+                                deviceList={deviceList}
+                                onEditDevice={this.handleEditDevice}
+                                onDeleteDisplay={deleteDisplay}
+                                onEditDisplay={this.handleEditDisplay}
+                                view={'cardsPortrait'}
+                            />
+                        </Grid>
+                    )}
                 </Grid>
+                {/* <Fab
+                    color="primary"
+                    aria-label="add"
+                    className={classes.fab}
+                    onClick={this.openMenu}
+                >
+                    <AddIcon />
+                </Fab>
+                <Menu>
+                    <MenuItem>
+                        <ListItemIcon>
+                            <AddIcon fontSize="small" />
+                        </ListItemIcon>
+                        <ListItemText primary="Sent mail" />
+                    </MenuItem>
+                    <MenuItem>
+                        <ListItemIcon>
+                            <AddIcon fontSize="small" />
+                        </ListItemIcon>
+                        <ListItemText primary="Drafts" />
+                    </MenuItem>
+                    <MenuItem>
+                        <ListItemIcon>
+                            <AddIcon fontSize="small" />
+                        </ListItemIcon>
+                        <ListItemText primary="Inbox" />
+                    </MenuItem>
+                </Menu> */}
             </>
         );
     }
@@ -172,14 +368,17 @@ class DevicesView extends React.Component {
 export default connect(
     state => ({
         deviceList: state.devices.list,
+        displayList: state.displays.list || [],
         schemas: state.schemas,
         scanProgress: state.devices.scanProgress,
     }),
     {
         addDevice,
-        deleteDevice,
+        addDisplay,
+        deleteDisplay,
         updateDeviceConfig,
         fetchDeviceList,
         findWLEDDevices,
+        fetchDisplayList,
     }
 )(withStyles(styles)(DevicesView));

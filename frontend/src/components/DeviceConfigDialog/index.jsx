@@ -96,7 +96,7 @@ class DeviceConfigDialog extends React.Component {
     };
 
     render() {
-        const { classes, deviceTypes, open } = this.props;
+        const { classes, deviceTypes, open, initial } = this.props;
         const { model, additionalPropertiesOpen, deviceType } = this.state;
 
         const currentSchema = {
@@ -105,11 +105,22 @@ class DeviceConfigDialog extends React.Component {
             properties: {},
             ...(deviceType ? deviceTypes[deviceType].schema : {}),
         };
+        let requiredKeys = [];
+        let optionalKeys = [];
+        if (initial.id) {
+            requiredKeys =
+                currentSchema.required && currentSchema.required.filter(k => k !== 'name');
+            optionalKeys = Object.keys(currentSchema.properties)
+                .filter(key => !(requiredKeys && requiredKeys.some(rk => key === rk)))
+                .filter(k => k !== 'icon_name')
+                .filter(k => k !== 'name');
+        } else {
+            requiredKeys = currentSchema.required;
+            optionalKeys = Object.keys(currentSchema.properties).filter(
+                key => !(requiredKeys && requiredKeys.some(rk => key === rk))
+            );
+        }
 
-        const requiredKeys = currentSchema.required;
-        const optionalKeys = Object.keys(currentSchema.properties).filter(
-            key => !(requiredKeys && requiredKeys.some(rk => key === rk))
-        );
         const showAdditionalUi = optionalKeys.length > 0;
 
         return (
@@ -120,12 +131,17 @@ class DeviceConfigDialog extends React.Component {
                 disableBackdropClick
                 open={open}
             >
-                <DialogTitle id="form-dialog-title">Add Device</DialogTitle>
+                <DialogTitle id="form-dialog-title">
+                    {initial.id ? 'Edit Device' : 'Add Device'}
+                </DialogTitle>
                 <DialogContent className={classes.cardResponsive}>
                     <DialogContentText>
-                        To add a device to LedFx, please first select the type of device you wish to
-                        add then provide the necessary configuration.
+                        {initial.id
+                            ? ` Edit your device configuration.`
+                            : ` To add a device to LedFx, please first select the type of device you wish to
+                                add then provide the necessary configuration.`}
                     </DialogContentText>
+
                     <form onSubmit={this.handleSubmit} className={classes.form}>
                         <DropDown
                             label="Type"
@@ -146,13 +162,20 @@ class DeviceConfigDialog extends React.Component {
                         />
 
                         {showAdditionalUi && (
-                            <AdditionalProperties
-                                schema={currentSchema}
-                                form={optionalKeys}
-                                model={model}
-                                onChange={this.onModelChange}
-                                open={additionalPropertiesOpen}
-                            />
+                            <>
+
+                                <AdditionalProperties
+                                    schema={currentSchema}
+                                    form={optionalKeys}
+                                    model={model}
+                                    onChange={this.onModelChange}
+                                    open={additionalPropertiesOpen}
+                                />
+                                <DialogContentText>
+                                    {additionalPropertiesOpen &&
+                                        'You can choose between 2 sets of icons'}
+                                </DialogContentText>
+                            </>
                         )}
 
                         <DialogActions className={classes.bottomContainer}>

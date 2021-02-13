@@ -15,8 +15,15 @@ class FindDevicesEndpoint(RestEndpoint):
 
     async def post(self) -> web.Response:
         """ Find and add all WLED devices on the LAN """
+
+        def handle_exception(future):
+            # Ignore exceptions, these will be raised when a device is found that already exists
+            exc = future.exception()
+
         async_fire_and_forget(
-            self._ledfx.devices.find_wled_devices(), self._ledfx.loop
+            self._ledfx.devices.find_wled_devices(),
+            loop=self._ledfx.loop,
+            exc_handler=handle_exception,
         )
 
         response = {"status": "success"}

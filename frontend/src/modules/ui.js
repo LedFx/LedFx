@@ -9,38 +9,39 @@ export const snackbarClear = createAction(`${ACTION_ROOT}/SNACKBAR_CLEAR`);
 // Reducer
 const INITIAL_STATE = {
     snackbar: {
-        successSnackbarOpen: false,
-        successSnackbarMessage: 'NO MESSAGE',
+        dynSnackbarOpen: false,
+        dynSnackbarType: 'error',
+        dynSnackbarMessage: 'NO MESSAGE',
     },
 };
 
 export default handleActions(
     {
         [snackbarSuccess]: (state, { payload }) => ({
-            // console.log('MESSAGE: success', payload) ||
             ...state,
             snackbar: {
                 ...state.snackbar,
-                successSnackbarOpen: true,
-                successSnackbarMessage: payload.message,
+                dynSnackbarOpen: true,
+                dynSnackbarMessage: payload.message,
+                dynSnackbarType: payload.type ? payload.type : 'error',
             },
         }),
         [snackbarClear]: state => ({
             ...state,
             snackbar: {
-                successSnackbarOpen: false,
-                errorSnackbarOpen: false,
-                infoSnackbarOpen: false,
+                dynSnackbarOpen: false,
+                dynSnackbarType: state.snackbar.dynSnackbarType,
+                dynSnackbarMessage: state.snackbar.dynSnackbarMessage,
             },
         }),
     },
     INITIAL_STATE
 );
 
-export const showSuccessSnackbar = message => {
-    // console.log(message);
+export const showdynSnackbar = payload => {
+    // console.log(payload);
     return async dispatch => {
-        dispatch(snackbarSuccess({ message }));
+        dispatch(snackbarSuccess(payload));
     };
 };
 

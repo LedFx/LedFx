@@ -25,13 +25,13 @@ class PresetsEndpoint(RestEndpoint):
             }
             return web.json_response(data=response, status=500)
 
-        if effect_id in self._ledfx.config["default_presets"].keys():
-            default = self._ledfx.config["default_presets"][effect_id]
+        if effect_id in self._ledfx.config["ledfx_presets"].keys():
+            default = self._ledfx.config["ledfx_presets"][effect_id]
         else:
             default = {}
 
-        if effect_id in self._ledfx.config["custom_presets"].keys():
-            custom = self._ledfx.config["custom_presets"][effect_id]
+        if effect_id in self._ledfx.config["user_presets"].keys():
+            custom = self._ledfx.config["user_presets"][effect_id]
         else:
             custom = {}
 
@@ -58,10 +58,10 @@ class PresetsEndpoint(RestEndpoint):
             }
             return web.json_response(data=response, status=500)
 
-        if category not in ["default_presets", "custom_presets"]:
+        if category not in ["ledfx_presets", "user_presets"]:
             response = {
                 "status": "failed",
-                "reason": 'Category {} is not "default_presets" or "custom_presets"'.format(
+                "reason": 'Category {} is not "ledfx_presets" or "user_presets"'.format(
                     category
                 ),
             }
@@ -138,10 +138,10 @@ class PresetsEndpoint(RestEndpoint):
             }
             return web.json_response(data=response, status=500)
 
-        if category not in ["default_presets", "custom_presets"]:
+        if category not in ["ledfx_presets", "user_presets"]:
             response = {
                 "status": "failed",
-                "reason": 'Category {} is not "default_presets" or "custom_presets"'.format(
+                "reason": 'Category {} is not "ledfx_presets" or "user_presets"'.format(
                     category
                 ),
             }

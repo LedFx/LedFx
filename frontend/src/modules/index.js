@@ -8,8 +8,9 @@ import virtuals from './virtuals';
 import integrations from './integrations';
 import ui from './ui';
 import spotify from './spotify'
-
-export default {
+import displays from './displays';
+import selectedDisplay from './selectedDisplay';
+const modules = {
     devices,
     integrations,
     presets,
@@ -19,5 +20,9 @@ export default {
     selectedDevice,
     virtuals,
     ui,
-    spotify
+    spotify,
+    displays,
+    selectedDisplay,
 };
+
+export default modules

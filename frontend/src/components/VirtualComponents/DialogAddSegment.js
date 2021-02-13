@@ -145,7 +145,6 @@ export default function ConfirmationDialog({ virtual, deviceList, config }) {
                         aria-label="Add"
                         className={classes.button}
                         endIcon={<AddCircleIcon />}
-                        aria-haspopup="true"
                         onClick={handleClickListItem}
                         role="listitem"
                     >

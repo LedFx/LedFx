@@ -7,16 +7,16 @@ __license__ = "mit"
 
 PROJECT_NAME = "LedFx"
 
-REQUIRED_PYTHON_VERSION = (3, 7, 0)
+REQUIRED_PYTHON_VERSION = (3, 9, 0)
 REQUIRED_PYTHON_STRING = ">={}.{}.{}".format(
     REQUIRED_PYTHON_VERSION[0],
     REQUIRED_PYTHON_VERSION[1],
     REQUIRED_PYTHON_VERSION[2],
 )
 
-MAJOR_VERSION = 1
-MINOR_VERSION = 0
-MICRO_VERSION = 0
+MAJOR_VERSION = 0
+MINOR_VERSION = 10
+MICRO_VERSION = 3
 POST = 0
 DEV = 0
 PROJECT_VERSION = "{}.{}.{}".format(
@@ -30,3 +30,6 @@ if POST > 0:
     POST_VERSION = "{}-post{}".format(PROJECT_VERSION, POST)
 
 __version__ = PROJECT_VERSION
+
+if __name__ == "__main__":
+    print(__version__)
