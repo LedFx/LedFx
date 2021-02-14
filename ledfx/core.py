@@ -161,12 +161,13 @@ class LedFxCore(object):
         if open_ui:
             self.open_ui()
 
-        if self.icon.HAS_NOTIFICATION:
-            self.icon.notify(
-                "LedFx is now running.\nPlease select "
-                "Open"
-                " to launch the web interface."
-            )
+        if self.icon is not None:
+            if self.icon.HAS_NOTIFICATION:
+                self.icon.notify(
+                    "LedFx is now running.\nPlease select "
+                    "Open"
+                    " to launch the web interface."
+                )
         await self.flush_loop()
 
     def stop(self, exit_code=0):
