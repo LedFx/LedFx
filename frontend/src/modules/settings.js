@@ -27,6 +27,8 @@ const INITIAL_STATE = {
     host: '',
     devices: [],
     error: '',
+    version: '',
+    git_build_commit: '',
 };
 
 export default handleActions(
@@ -139,8 +141,8 @@ export function getConfig() {
                 throw new Error('Error fetching system config');
             }
             const { dev_mode: devMode, port, host, devices } = response.data.config;
-            const { version } = responseInfo.data;
-            dispatch(configFetched({ devMode, host, port, devices, version }));
+            const { version, git_build_commit } = responseInfo.data;
+            dispatch(configFetched({ devMode, host, port, devices, version, git_build_commit }));
         } catch (error) {
             dispatch(configFetched(error));
         }
