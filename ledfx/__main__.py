@@ -290,15 +290,23 @@ def main():
     if not currently_frozen() and installed_via_pip():
         warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-    if args.tray:
+    if args.tray or currently_frozen():
         import os
 
         import pystray
         from PIL import Image
 
-        icon_file = os.path.join(os.path.dirname(__file__), "icon.png")
-
-        icon = pystray.Icon("LedFx", icon=Image.open(icon_file), title="LedFx")
+        if currently_frozen():
+            current_directory = os.path.dirname(__file__)
+            icon_location = os.path.join(current_directory, "tray.png")
+        else:
+            current_directory = os.path.dirname(__file__)
+            icon_location = os.path.join(
+                current_directory, "..", "icons/" "tray.png"
+            )
+        icon = pystray.Icon(
+            "LedFx", icon=Image.open(icon_location), title="LedFx"
+        )
         icon.visible = True
         icon.run(setup=entry_point)
     else:
