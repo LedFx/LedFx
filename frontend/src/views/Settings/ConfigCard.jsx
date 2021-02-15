@@ -15,10 +15,11 @@ const useStyles = makeStyles({
 });
 
 const ConfigCard = ({ settings, error }) => {
+
     const classes = useStyles();
     return (
         <Card>
-            <CardHeader title="Configs" subheader="Manage network and developer settings" />
+            <CardHeader title="Info" subheader="View detailed informations" />
             <CardContent className={classes.content}>
                 <InputLabel id="host-label">Host</InputLabel>
                 <TextField disabled label-id="host-label" id="host" value={settings.host} />
@@ -29,8 +30,14 @@ const ConfigCard = ({ settings, error }) => {
                     disabled
                     label-id="devMode-label"
                     id="devMode"
-                    value={settings.devMode}
+                    defaultValue={settings.devMode}
                 />
+                <InputLabel id="backend-version-label">LedFx-Version</InputLabel>
+                <TextField disabled label-id="backend-version-label" id="backend-version" defaultValue={settings.version} />
+                <InputLabel id="frontend-version-label">Frontend-Version</InputLabel>
+                <TextField disabled label-id="frontend-version-label" id="frontend-version" value={process.env.REACT_APP_VERSION} />
+                <InputLabel id="commit-label">BuildCommit</InputLabel>
+                <TextField disabled label-id="commit-label" id="commit" value={settings.git_build_commit} />
                 {error && <FormHelperText>{error}</FormHelperText>}
             </CardContent>
         </Card>

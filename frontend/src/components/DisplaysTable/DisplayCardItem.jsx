@@ -6,9 +6,7 @@ import Icon from '@material-ui/core/Icon';
 
 import { NavLink } from 'react-router-dom';
 import { withStyles } from '@material-ui/core/styles';
-
 import Button from '@material-ui/core/Button';
-// import Badge from '@material-ui/core/Badge';
 import SettingsIcon from '@material-ui/icons/Settings';
 import PopoverSure from 'components/PopoverSure';
 import DisplaySegmentsDialog from 'components/DisplaySegmentsDialog';
@@ -68,6 +66,11 @@ const styles = theme => ({
             alignItems: 'flex-end',
         },
     },
+    displayCardContainer: {
+        display: 'flex',
+        alignItems: 'center',
+        width: '100%',
+    }
 });
 const DisplayCardItem = ({
     display,
@@ -91,12 +94,7 @@ const DisplayCardItem = ({
     return (
         <Card className={classes.displayCard}>
             <div
-                style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    // paddingBottom: '1rem',
-                    width: '100%',
-                }}
+                className={classes.displayCardContainer}
             >
                 <Icon
                     color={display.effect && display.effect.active === true ? 'primary' : 'inherit'}
@@ -109,8 +107,8 @@ const DisplayCardItem = ({
                             className={`mdi mdi-${display.config.icon_name.split('mdi:')[1]}`}
                         ></span>
                     ) : (
-                        camelToSnake(display.config.icon_name || 'SettingsInputComponent')
-                    )}
+                                camelToSnake(display.config.icon_name || 'SettingsInputComponent')
+                            )}
                 </Icon>
                 <div
                     style={{
@@ -140,19 +138,6 @@ const DisplayCardItem = ({
                         </NavLink>
 
                         <div>
-                            {/* {deviceList.find(d => d.id === display.is_device) &&
-                            deviceList.find(d => d.id === display.is_device).type === 'udp' ? (
-                                <Button
-                                    variant={variant}
-                                    color="secondary"
-                                    size="small"
-                                    className={classes.badgeButton}
-                                >
-                                    <Badge badgeContent={'!'} color="primary">
-                                        UDP{' '}
-                                    </Badge>
-                                </Button>
-                            ) : ( */}
                             <Button
                                 variant={variant}
                                 disabled
@@ -172,44 +157,8 @@ const DisplayCardItem = ({
                                     <VisibilityIcon />
                                 </Button>
                             )}
-                            {/* )} */}
                         </div>
                     </div>
-                    {/* <div>
-                        {deviceList.find(d => d.id === display.is_device) &&
-                        deviceList.find(d => d.id === display.is_device).type === 'udp' ? (
-                            <Button
-                                variant={variant}
-                                color="secondary"
-                                size="small"
-                                className={classes.editButton}
-                            >
-                                <Badge badgeContent={'!'} color="primary">
-                                    UDP{' '}
-                                </Badge>
-                            </Button>
-                        ) : (
-                            <Button
-                                variant={variant}
-                                disabled
-                                size="small"
-                                className={classes.editButton}
-                            >
-                                {deviceList.find(d => d.id === display.is_device) &&
-                                    deviceList.find(d => d.id === display.is_device).type}
-                            </Button>
-                        )}
-                        {display.config.preview_only && (
-                            <Button
-                                variant={variant}
-                                disabled
-                                size="small"
-                                className={classes.editButton}
-                            >
-                                <VisibilityIcon />
-                            </Button>
-                        )}
-                    </div> */}
                     <div className={classes.actionButtons}>
                         <PopoverSure
                             variant={variant}
@@ -227,13 +176,13 @@ const DisplayCardItem = ({
                                 <BuildIcon />
                             </Button>
                         ) : (
-                            <DisplaySegmentsDialog
-                                variant={variant}
-                                display={display}
-                                className={classes.editButton}
-                                icon={<TuneIcon />}
-                            />
-                        )}
+                                <DisplaySegmentsDialog
+                                    variant={variant}
+                                    display={display}
+                                    className={classes.editButton}
+                                    icon={<TuneIcon />}
+                                />
+                            )}
                         <Button
                             variant={variant}
                             size="small"
@@ -245,39 +194,6 @@ const DisplayCardItem = ({
                     </div>
                 </div>
             </div>
-            {/* <div>
-                <PopoverSure
-                    variant={variant}
-                    onConfirm={handleDeleteDevice}
-                    className={classes.deleteButton}
-                />
-
-                {display.is_device ? (
-                    <Button
-                        variant={variant}
-                        size="small"
-                        className={classes.editButton}
-                        onClick={handleEditDevice}
-                    >
-                        <BuildIcon />
-                    </Button>
-                ) : (
-                    <DisplaySegmentsDialog
-                        variant={variant}
-                        display={display}
-                        className={classes.editButton}
-                        icon={<TuneIcon />}
-                    />
-                )}
-                <Button
-                    variant={variant}
-                    size="small"
-                    className={classes.editButton}
-                    onClick={handleEditDisplay}
-                >
-                    <SettingsIcon />
-                </Button>
-            </div> */}
         </Card>
     );
 };

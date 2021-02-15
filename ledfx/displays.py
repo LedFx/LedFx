@@ -23,7 +23,7 @@ class Display(object):
     CONFIG_SCHEMA = vol.Schema(
         {
             vol.Required(
-                "name", description="Friendly name for the display"
+                "name", description="Friendly name for the device"
             ): str,
             vol.Required(
                 "mapping",
@@ -32,17 +32,17 @@ class Display(object):
             ): vol.In(["span", "copy"]),
             vol.Optional(
                 "icon_name",
-                description="https://material-ui.com/components/material-icons/",
+                description="Icon for the device*",
                 default="mdi:led-strip-variant",
             ): str,
             vol.Optional(
                 "max_brightness",
-                description="Max brightness for the display",
+                description="Max brightness for the device",
                 default=1.0,
             ): vol.All(vol.Coerce(float), vol.Range(min=0, max=1)),
             vol.Optional(
                 "center_offset",
-                description="Number of pixels from the perceived center of the display",
+                description="Number of pixels from the perceived center of the device",
                 default=0,
             ): int,
             vol.Optional(

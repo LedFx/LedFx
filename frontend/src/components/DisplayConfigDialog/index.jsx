@@ -14,6 +14,7 @@ import DialogContentText from '@material-ui/core/DialogContentText';
 
 // import DropDown from 'components/forms/DropDown';
 import AdditionalProperties from './AdditionalProperties';
+import { Link } from '@material-ui/core';
 
 const styles = theme => ({
     form: {
@@ -134,13 +135,30 @@ class DisplayConfigDialog extends React.Component {
                         />
 
                         {showAdditionalUi && (
-                            <AdditionalProperties
-                                schema={currentSchema}
-                                form={optionalKeys}
-                                model={model}
-                                onChange={this.onModelChange}
-                                open={additionalPropertiesOpen}
-                            />
+                            <>
+                                <AdditionalProperties
+                                    schema={currentSchema}
+                                    form={optionalKeys}
+                                    model={model}
+                                    onChange={this.onModelChange}
+                                    open={additionalPropertiesOpen}
+                                />
+                                <DialogContentText>
+                                    {additionalPropertiesOpen &&
+                                        <div>
+                                            *Available icons:
+                                            <br />
+                                            <Link href="https://material-ui.com/components/material-icons/">
+                                                Material Icons,
+                                            </Link>
+                                            {' '}
+                                            <Link href="https://materialdesignicons.com/">
+                                                Material Design Icons
+                                            </Link>
+                                        </div>
+                                    }
+                                </DialogContentText>
+                            </>
                         )}
 
                         <DialogActions className={classes.bottomContainer}>

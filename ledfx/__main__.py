@@ -17,6 +17,7 @@ For non-development purposes run:
 """
 
 import argparse
+import cProfile
 import logging
 import subprocess
 import sys
@@ -180,6 +181,18 @@ def parse_args():
         type=str,
     )
     parser.add_argument(
+        "--tray",
+        dest="tray",
+        action="store_true",
+        help="Hide LedFx console to the system tray",
+    )
+    parser.add_argument(
+        "--performance",
+        dest="performance",
+        action="store_true",
+        help="Profile LedFx's performance. A developer can use this to diagnose performance issues.",
+    )
+    parser.add_argument(
         "--offline",
         dest="offline_mode",
         action="store_true",
@@ -277,11 +290,56 @@ def main():
     if not currently_frozen() and installed_via_pip():
         warnings.filterwarnings("ignore", category=DeprecationWarning)
 
+    if args.tray or currently_frozen():
+        import os
+
+        import pystray
+        from PIL import Image
+
+        if currently_frozen():
+            current_directory = os.path.dirname(__file__)
+            icon_location = os.path.join(current_directory, "tray.png")
+        else:
+            current_directory = os.path.dirname(__file__)
+            icon_location = os.path.join(
+                current_directory, "..", "icons/" "tray.png"
+            )
+        icon = pystray.Icon(
+            "LedFx", icon=Image.open(icon_location), title="LedFx"
+        )
+        icon.visible = True
+        icon.run(setup=entry_point)
+    else:
+        entry_point()
+
+
+def entry_point(icon=None):
+    # have to re-parse args here :/ no way to pass them through pysicon's setup
+    args = parse_args()
+
     _LOGGER.info("LedFx Core is initializing")
+    ledfx = LedFxCore(
+        config_dir=args.config, host=args.host, port=args.port, icon=icon
+    )
 
-    ledfx = LedFxCore(config_dir=args.config, host=args.host, port=args.port)
+    if args.performance:
+        print("Collecting performance data...")
+        profiler = cProfile.Profile()
+        profiler.enable()
+        ledfx.start(open_ui=args.open_ui)
+        profiler.disable()
+        print("Finished collecting performance data")
+        filename = config_helpers.get_profile_dump_location()
+        profiler.dump_stats(filename)
+        print(f"Saved performance data to config directory      : {filename}")
+        print(
+            "Please send the performance data to a developer : https://ledfx.app/contact/"
+        )
+    else:
+        ledfx.start(open_ui=args.open_ui)
 
-    ledfx.start(open_ui=args.open_ui)
+    if icon:
+        icon.stop()
 
 
 if __name__ == "__main__":

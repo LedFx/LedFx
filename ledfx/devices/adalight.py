@@ -39,7 +39,7 @@ class AdalightDevice(Device):
             ): str,
             vol.Required(
                 "com_port",
-                description="COM port",
+                description="e.g. COM5",
             ): str,
             vol.Required(
                 "baudrate", description="baudrate", default=500000
