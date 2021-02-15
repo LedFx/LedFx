@@ -152,7 +152,8 @@ def git_version():
     if GIT_REVISION in ["", "Unknown"]:
         dir_path = os.path.dirname(os.path.realpath(__file__))
         if "git_version" in os.listdir(dir_path):
-            with open("git_version") as f:
+            ver_file = os.path.join(dir_path, "git_version")
+            with open(ver_file) as f:
                 GIT_REVISION = next(f.readlines())
         else:
             GIT_REVISION = "Unknown"
