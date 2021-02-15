@@ -171,10 +171,7 @@ class DeviceConfigDialog extends React.Component {
                                     onChange={this.onModelChange}
                                     open={additionalPropertiesOpen}
                                 />
-                                <DialogContentText>
-                                    {additionalPropertiesOpen &&
-                                        'You can choose between 2 sets of icons'}
-                                </DialogContentText>
+
                             </>
                         )}
 

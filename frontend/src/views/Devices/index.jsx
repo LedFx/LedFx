@@ -74,7 +74,7 @@ class DevicesView extends React.Component {
             selectedDevice: {},
             selectedDisplay: {},
             searchDevicesLoading: false,
-            view: 'list',
+            view: 'cardsPortrait',
         };
     }
     handleChange = (event, nextView) => {
@@ -188,8 +188,8 @@ class DevicesView extends React.Component {
                                                         arrow
                                                     >
                                                         <Button
-                                                            variant="contained"
-                                                            color="primary"
+                                                            variant={"contained"}
+                                                            color={"primary"}
                                                             aria-label="Scan"
                                                             disabled={
                                                                 this.state.searchDevicesLoading
@@ -198,82 +198,83 @@ class DevicesView extends React.Component {
                                                             onClick={this.handleFindDevices}
                                                             endIcon={<WifiTetheringIcon />}
                                                         >
-                                                            Find WLED Devices
+                                                            Find WLEDs
                                                         </Button>
                                                     </Tooltip>
                                                     <Tooltip
                                                         title={
-                                                            <ul style={{ padding: '0.5rem' }}>
-                                                                <li>
-                                                                    A virtual device lets you
-                                                                    control the mapping of an effect
-                                                                    onto devices. You can:
+                                                            <>
+                                                                <h2>Add Virtual Device</h2>
+                                                                <ul style={{ padding: '0.5rem' }}>
+                                                                    <li>
+                                                                        A virtual device lets you
+                                                                        control the mapping of an effect
+                                                                        onto devices. You can:
                                                                 </li>
-                                                                <li>
-                                                                    Split a device to show multiple
-                                                                    effects
+                                                                    <li>
+                                                                        Split a device to show multiple
+                                                                        effects
                                                                 </li>
-                                                                <li>
-                                                                    Combine devices to show a single
-                                                                    effect
+                                                                    <li>
+                                                                        Combine devices to show a single
+                                                                        effect
                                                                 </li>
-                                                                <li>
-                                                                    Or any combination of the two!
+                                                                    <li>
+                                                                        Or any combination of the two!
                                                                 </li>
-                                                            </ul>
+                                                                </ul>
+                                                            </>
                                                         }
                                                         interactive
                                                         arrow
                                                     >
                                                         <Button
-                                                            variant="contained"
-                                                            color="primary"
+                                                            variant={"contained"}
+                                                            color={"primary"}
                                                             aria-label="Scan"
                                                             className={classes.button}
                                                             onClick={this.openAddDisplayDialog}
                                                             endIcon={<AddCircleIcon />}
                                                         >
-                                                            Add Virtual Device
+                                                            Virtual
                                                         </Button>
                                                     </Tooltip>
                                                     <Button
-                                                        variant="contained"
-                                                        color="primary"
+                                                        variant={"contained"}
+                                                        color={"primary"}
                                                         aria-label="Add"
                                                         className={classes.button}
                                                         onClick={this.openAddDeviceDialog}
                                                         endIcon={<AddCircleIcon />}
                                                     >
-                                                        Add Device
+                                                        Device
                                                     </Button>
-                                                    {parseInt(
-                                                        window.localStorage.getItem('BladeMod')
-                                                    ) > 1 && (
-                                                        <ToggleButtonGroup
-                                                            value={this.state.view}
-                                                            exclusive
-                                                            onChange={this.handleChange}
+
+                                                    <ToggleButtonGroup
+                                                        value={this.state.view}
+                                                        exclusive
+                                                        onChange={this.handleChange}
+                                                    >
+                                                        <ToggleButton
+                                                            value="list"
+                                                            aria-label="list"
                                                         >
-                                                            <ToggleButton
-                                                                value="list"
-                                                                aria-label="list"
-                                                            >
-                                                                <TableChartIcon />
-                                                            </ToggleButton>
-                                                            <ToggleButton
-                                                                value="cards"
-                                                                aria-label="cards"
-                                                            >
-                                                                <ViewListIcon />
-                                                            </ToggleButton>
-                                                            <ToggleButton
-                                                                value="cardsPortrait"
-                                                                aria-label="cardsPortrait"
-                                                            >
-                                                                <ViewModuleIcon />
-                                                            </ToggleButton>
-                                                        </ToggleButtonGroup>
-                                                    )}
+                                                            <TableChartIcon />
+                                                        </ToggleButton>
+                                                        <ToggleButton
+                                                            value="cards"
+                                                            aria-label="cards"
+                                                        >
+                                                            <ViewListIcon />
+                                                        </ToggleButton>
+                                                        <ToggleButton
+                                                            value="cardsPortrait"
+                                                            aria-label="cardsPortrait"
+                                                        >
+                                                            <ViewModuleIcon />
+                                                        </ToggleButton>
+                                                    </ToggleButtonGroup>
+
                                                     <DeviceConfigDialog
                                                         open={addDialogOpened}
                                                         onClose={this.closeAddDeviceDialog}

@@ -38,6 +38,7 @@ INSTALL_REQUIRES = [
     "certifi>=2019.3.9",
     "pyserial>=3.5",
     "chardet==3.0.4",
+    "pystray>=0.17",
 ]
 
 setup(

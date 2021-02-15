@@ -35,7 +35,13 @@ const Transition = React.forwardRef(function Transition(props, ref) {
     return <Slide direction="up" ref={ref} {...props} />;
 });
 
-export default function FullScreenDialog({ display, icon, className, variant = 'contained' }) {
+export default function FullScreenDialog({
+    display,
+    icon,
+    className,
+    color = 'default',
+    variant = 'contained',
+}) {
     const dispatch = useDispatch();
     const classes = useStyles();
     const [open, setOpen] = React.useState(false);
@@ -95,7 +101,7 @@ export default function FullScreenDialog({ display, icon, className, variant = '
         <>
             <Button
                 variant={variant}
-                color={'default'}
+                color={color}
                 onClick={handleClickOpen}
                 size="small"
                 className={className}
