@@ -148,6 +148,15 @@ def git_version():
     except OSError:
         GIT_REVISION = "Unknown"
 
+    # dirty little hack for pipeline builds
+    if GIT_REVISION in ["", "Unknown"]:
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        if "git_version" in os.listdir(dir_path):
+            with open("git_version") as f:
+                GIT_REVISION = next(f.readlines())
+        else:
+            GIT_REVISION = "Unknown"
+
     return GIT_REVISION
 
 
