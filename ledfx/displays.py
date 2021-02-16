@@ -426,9 +426,9 @@ class Display(object):
     def active(self, _active):
         _active = bool(_active)
         if _active:
-            self.deactivate()
-        else:
             self.activate()
+        else:
+            self.deactivate()
 
     @property
     def id(self) -> str:
