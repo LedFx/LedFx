@@ -96,8 +96,7 @@ class Display(object):
         self.SEGMENTS_SCHEMA = vol.Schema([self.validate_segment])
 
     def __del__(self):
-        if self._active:
-            self.deactivate()
+        self.deactivate()
 
     def _valid_id(self, id):
         device = self._ledfx.devices.get(id)

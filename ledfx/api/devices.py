@@ -20,6 +20,7 @@ class DevicesEndpoint(RestEndpoint):
                 "id": device.id,
                 "type": device.type,
                 "displays": device.displays,
+                "active_displays": device.active_displays,
             }
 
         return web.json_response(data=response, status=200)
