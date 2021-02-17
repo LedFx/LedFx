@@ -1,0 +1,384 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Development Setup &mdash; LedFx 0.10.0 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/css/custom.css" type="text/css" />
+
+  
+  
+    <link rel="shortcut icon" href="_static/favicon.ico"/>
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Configuration" href="configuring.html" />
+    <link rel="prev" title="Installation and Setup" href="installing.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html">
+          
+
+          
+            
+            <img src="_static/small_white_alpha.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.10.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Installation &amp; Development</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="installing.html">Installation and Setup</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Development Setup</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#backend-development">Backend Development</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#linux">Linux</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#macos">macOS</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#frontend-development">Frontend Development</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id1">Linux</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id2">macOS</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#document-development">Document Development</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id3">Linux</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id4">macOS</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption"><span class="caption-text">Configuration</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="configuring.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="directing_audio.html">Directing Audio</a></li>
+</ul>
+<p class="caption"><span class="caption-text">LedFx API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api.html">REST API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html#websocket-api">WebSocket API</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Help</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="trouble.html">Troubleshooting</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">LedFx</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>Development Setup</li>
+    
+    
+
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="development-setup">
+<h1>Development Setup<a class="headerlink" href="#development-setup" title="Permalink to this headline">¶</a></h1>
+<p>The development workflow is still being worked on, but this page covers the current state of the world.</p>
+<p>You will see <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">-e</span> <span class="pre">.</span></code> frequently in the documentation. Please see the <a class="reference external" href="https://pip.pypa.io/en/latest/reference/pip_install/#editable-installs">pip documentation</a> for an explanation on what this does.</p>
+<hr class="docutils" />
+<div class="section" id="backend-development">
+<h2>Backend Development<a class="headerlink" href="#backend-development" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="linux">
+<h3>Linux<a class="headerlink" href="#linux" title="Permalink to this headline">¶</a></h3>
+<p><strong>1.</strong> Clone the dev branch from the LedFx Github repository:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>git clone https://github.com/LedFx/LedFx.git -b dev
+<span class="gp">$ </span><span class="nb">cd</span> LedFx
+</pre></div>
+</div>
+<p><strong>2.</strong> Install system dependencies via <code class="docutils literal notranslate"><span class="pre">apt</span> <span class="pre">install</span></code>:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>sudo apt install libatlas3-base <span class="se">\</span>
+<span class="go">      libavformat58 \</span>
+<span class="go">      portaudio19-dev \</span>
+<span class="go">      pulseaudio</span>
+</pre></div>
+</div>
+<p><strong>3.</strong> Install LedFx and its requirements using pip:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>pip install -r requirements-dev.txt
+<span class="gp">$ </span>pip install -e .
+</pre></div>
+</div>
+<p><strong>4.</strong> This will let you run LedFx directly from your Git repository via:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>ledfx --open-ui
+</pre></div>
+</div>
+</div>
+<div class="section" id="macos">
+<h3>macOS<a class="headerlink" href="#macos" title="Permalink to this headline">¶</a></h3>
+<p><strong>1.</strong> Clone the dev branch from the LedFx Github repository:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>git clone https://github.com/LedFx/LedFx.git -b dev
+<span class="gp">$ </span><span class="nb">cd</span> ./LedFx
+</pre></div>
+</div>
+<p><strong>2.</strong> Create a python venv for LedFx with python&gt;=3.7 and install dependencies:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>python3 -m venv ~/ledfx-venv
+<span class="gp">$ </span><span class="nb">source</span> ~/ledfx-venv/bin/activate
+<span class="gp">$ </span>brew install portaudio pulseaudio
+</pre></div>
+</div>
+<p><strong>3.</strong> Install LedFx and its requirements using pip:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>pip install -r requirements-dev.txt
+<span class="gp">$ </span>pip install -e .
+</pre></div>
+</div>
+<p><strong>4.</strong> This will let you run LedFx directly from your Git repository via:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>ledfx --open-ui
+</pre></div>
+</div>
+</div>
+</div>
+<hr class="docutils" />
+<div class="section" id="frontend-development">
+<h2>Frontend Development<a class="headerlink" href="#frontend-development" title="Permalink to this headline">¶</a></h2>
+<p>Building the LedFx frontend is different from how the core backend is built. The frontend is based on React.js and thus
+uses NPM as the core package management.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>LedFx will need to be running in development mode for everything to work. To enable development mode,
+open the <code class="docutils literal notranslate"><span class="pre">config.yaml</span></code> file in the <code class="docutils literal notranslate"><span class="pre">.ledfx</span></code> folder and set <code class="docutils literal notranslate"><span class="pre">dev_mode:</span> <span class="pre">true</span></code>)</p>
+</div>
+<div class="section" id="id1">
+<h3>Linux<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
+<p>To get started, first install npm and all the requirements:</p>
+<p><strong>1.</strong> Start in the LedFx repo directory:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>pip install yarn
+<span class="gp">$ </span><span class="nb">cd</span> frontend
+<span class="gp">$ </span>yarn install
+</pre></div>
+</div>
+<p>The easiest way to test and validate your changes is to run a watcher that will automatically rebuild as you save and then
+just leave LedFx running in a separate command window.</p>
+<p><strong>2.</strong> Start LedFx in development mode and start the watcher:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>ledfx
+<span class="gp">$ </span>yarn start
+</pre></div>
+</div>
+<p>At that point any change you make to the frontend will be recompiled and after a browser refresh LedFx will pick up the
+new files. After development and testing you will need to run a full build to generate the appropriate distribution files
+prior to submitting any changes.</p>
+<p><strong>3.</strong> When you are finished with your changes, build the frontend:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>yarn build
+</pre></div>
+</div>
+</div>
+<div class="section" id="id2">
+<h3>macOS<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h3>
+<p><strong>1.</strong> Install nodejs and NPM requirements using <a class="reference external" href="https://docs.brew.sh/Installation">homebrew</a>:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>brew install nodejs
+<span class="gp">$ </span>brew install yarn
+<span class="gp">$ </span><span class="nb">cd</span> ~/frontend
+<span class="gp">$ </span>yarn install
+</pre></div>
+</div>
+<p><strong>2.</strong> Start LedFx in developer mode and start the NPM watcher:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>ledfx
+<span class="gp">$ </span>yarn start
+</pre></div>
+</div>
+<p><strong>3.</strong> When you are finished with your changes, build the frontend:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span>yarn build
+</pre></div>
+</div>
+</div>
+</div>
+<hr class="docutils" />
+<div class="section" id="document-development">
+<h2>Document Development<a class="headerlink" href="#document-development" title="Permalink to this headline">¶</a></h2>
+<p>The documentation is written in reStructuredText. Once you are finished
+making changes, you must build the documentation. To build the LedFx
+documentation follow the steps outlined below:</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Alternatively, you may run <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">livehtml</span></code> in place of <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">html</span></code> to open a browser and view your changes in
+realtime.</p>
+</div>
+<div class="section" id="id3">
+<h3>Linux<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span><span class="nb">cd</span> ~/ledfx/docs
+<span class="gp">$ </span>pip install -r requirements-docs.txt
+<span class="gp">$ </span>make html
+</pre></div>
+</div>
+</div>
+<div class="section" id="id4">
+<h3>macOS<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$ </span><span class="nb">source</span> ~/ledfx-venv/bin/activate
+<span class="gp">$ </span><span class="nb">cd</span> ~/ledfx/docs
+<span class="gp">$ </span>pip install -r requirements-docs.txt
+<span class="gp">$ </span>make html
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="configuring.html" class="btn btn-neutral float-right" title="Configuration" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="installing.html" class="btn btn-neutral float-left" title="Installation and Setup" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright  2018, Austin Hodges &amp; contributors
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
