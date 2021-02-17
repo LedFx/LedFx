@@ -25,7 +25,7 @@ a = Analysis([f'{spec_root}\\ledfx\\__main__.py'],
 pyz = PYZ(a.pure, a.zipped_data,
              cipher=block_cipher)
 exe = EXE(pyz,
-          icon="discord.ico"
+          icon="discord.ico",
           a.scripts,
           [],
           exclude_binaries=True,
