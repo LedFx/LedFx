@@ -138,7 +138,11 @@ class LedFxCore(object):
     async def async_start(self, open_ui=False):
         _LOGGER.info("Starting ledfx")
         await self.http.start()
-
+        if self.icon is not None:
+            if self.icon.HAS_NOTIFICATION:
+                self.icon.notify(
+                    "Starting in background.\nUse the tray icon to open."
+                )
         self.devices = Devices(self)
         self.effects = Effects(self)
         self.displays = Displays(self)
@@ -161,13 +165,6 @@ class LedFxCore(object):
         if open_ui:
             self.open_ui()
 
-        if self.icon is not None:
-            if self.icon.HAS_NOTIFICATION:
-                self.icon.notify(
-                    "LedFx is now running.\nPlease select "
-                    "Open"
-                    " to launch the web interface."
-                )
         await self.flush_loop()
 
     def stop(self, exit_code=0):

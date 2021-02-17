@@ -1,6 +1,7 @@
 import logging
 import os
 import sys
+import time
 
 import aiohttp_jinja2
 import jinja2
@@ -57,15 +58,21 @@ class HttpServer(object):
         try:
             site = web.TCPSite(self.runner, self.host, self.port)
             await site.start()
+            self.base_url = ("http://{}:{}").format(self.host, self.port)
+            print(("Started webinterface at {}").format(self.base_url))
         except OSError as error:
             _LOGGER.error(
-                "Failed to create HTTP server at port %d: %s",
+                "Shutting down - Failed to create HTTP server at port %d: %s.",
                 self.port,
                 error,
             )
-
-        self.base_url = ("http://{}:{}").format(self.host, self.port)
-        print(("Started webinterface at {}").format(self.base_url))
+            if self._ledfx.icon is not None:
+                if self._ledfx.icon.HAS_NOTIFICATION:
+                    self._ledfx.icon.notify(
+                        f"Failed to bind to port {self.port}\nIs LedFx already running?"
+                    )
+            time.sleep(2)
+            self._ledfx.stop()
 
     async def stop(self):
         await self.app.shutdown()
