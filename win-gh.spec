@@ -25,7 +25,6 @@ a = Analysis([f'{spec_root}\\ledfx\\__main__.py'],
 pyz = PYZ(a.pure, a.zipped_data,
              cipher=block_cipher)
 exe = EXE(pyz,
-          icon="discord.ico",
           a.scripts,
           [],
           exclude_binaries=True,
@@ -34,7 +33,7 @@ exe = EXE(pyz,
           bootloader_ignore_signals=False,
           strip=False,
           upx=True,
-          console=False)
+          console=False, icon="./discord.ico")
 coll = COLLECT(exe,
                a.binaries,
                a.zipfiles,
