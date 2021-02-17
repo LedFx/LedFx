@@ -8,6 +8,8 @@ import voluptuous as vol
 import zeroconf
 
 # from ledfx.config import save_config
+from ledfx.blender import Blender
+from ledfx.effects import DummyEffect
 from ledfx.events import (
     DisplayUpdateEvent,
     EffectClearedEvent,
@@ -51,13 +53,18 @@ class Display(object):
                 default=False,
             ): bool,
             vol.Optional(
-                "crossfade",
-                description="Fade time between effects",
-                default=1.0,
+                "transition_time",
+                description="Length of transition between effects",
+                default=1,
             ): vol.All(
                 vol.Coerce(float),
                 vol.Range(min=0, max=5, min_included=True, max_included=True),
             ),
+            vol.Optional(
+                "transition_mode",
+                description="Type of transition between effects",
+                default="Add",
+            ): vol.In([mode for mode in Blender]),
         }
     )
 
@@ -78,7 +85,7 @@ class Display(object):
     _active = False
     _output_thread = None
     _active_effect = None
-    _fadeout_effect = None
+    _transition_effect = None
 
     def __init__(self, ledfx, config):
         self._ledfx = ledfx
@@ -188,47 +195,82 @@ class Display(object):
             # eg. devices might be reordered, but total pixel count is same
             # so no need to restart the effect
             if self.pixel_count != _pixel_count:
+                self.blender = Blender(self.pixel_count)
                 if self._active_effect is not None:
                     self._active_effect.deactivate()
                     if self.pixel_count > 0:
                         self._active_effect.activate(self.pixel_count)
 
+            mode = self._config["transition_mode"]
+            self.frame_blender = self.blender[mode]
+
     def set_effect(self, effect):
-        self.fade_duration = self.refresh_rate * self._config["crossfade"]
-        self.fade_timer = self.fade_duration
+        self.transition_frame_total = (
+            self.refresh_rate * self._config["transition_time"]
+        )
+        self.transition_frame_counter = 0
 
-        if self._active_effect is not None:
-            self._fadeout_effect = self._active_effect
+        if self._active_effect is None:
+            self._transition_effect = DummyEffect(self.pixel_count)
+            self._active_effect = effect
+            self._active_effect.activate(self.pixel_count)
             self._ledfx.loop.call_later(
-                self._config["crossfade"], self.clear_fadeout_effect
+                self._config["transition_time"], self.clear_transition_effect
             )
-
-        self._active_effect = effect
-        self._active_effect.activate(self.pixel_count)
-        self._ledfx.events.fire_event(EffectSetEvent(self.active_effect.name))
+            self._ledfx.events.fire_event(
+                EffectSetEvent(self._active_effect.name)
+            )
+        else:
+            self.clear_transition_effect()
+            self._transition_effect = self._active_effect
+            self._active_effect = effect
+            self._active_effect.activate(self.pixel_count)
+            self._ledfx.loop.call_later(
+                self._config["transition_time"], self.clear_transition_effect
+            )
+            self._ledfx.events.fire_event(
+                EffectSetEvent(self._active_effect.name)
+            )
 
         if not self._active:
             self.activate()
 
+    def transition_to_active(self):
+        self._active_effect = self._transition_effect
+        self._transition_effect = None
+
+    def active_to_transition(self):
+        self._transition_effect = self._active_effect
+        self._active_effect = None
+
     def clear_effect(self):
         self._ledfx.events.fire_event(EffectClearedEvent())
 
-        self.fade_duration = self.refresh_rate * self._config["crossfade"]
-        self.fade_timer = -self.fade_duration
+        self._transition_effect = self._active_effect
+        self._active_effect = DummyEffect(self.pixel_count)
+
+        self.transition_frame_total = (
+            self.refresh_rate * self._config["transition_time"]
+        )
+        self.transition_frame_counter = 0
 
         self._ledfx.loop.call_later(
-            self._config["crossfade"], self.clear_frame
+            self._config["transition_time"], self.clear_frame
         )
 
-    def clear_fadeout_effect(self):
-        if self._fadeout_effect is not None:
-            self._fadeout_effect.deactivate()
-        self._fadeout_effect = None
+    def clear_transition_effect(self):
+        if self._transition_effect is not None:
+            self._transition_effect.deactivate()
+        self._transition_effect = None
 
-    def clear_frame(self):
+    def clear_active_effect(self):
         if self._active_effect is not None:
             self._active_effect.deactivate()
-            self._active_effect = None
+        self._active_effect = None
+
+    def clear_frame(self):
+        self.clear_active_effect()
+        self.clear_transition_effect()
 
         if self._active:
             # Clear all the pixel data before deactivating the device
@@ -276,17 +318,9 @@ class Display(object):
 
     def assemble_frame(self):
         """
-        Assembles the frame to be flushed. Currently this will just return
-        the active channels pixels, but will eventually handle things like
-        merging multiple segments segments and alpha blending channels
+        Assembles the frame to be flushed.
         """
         frame = None
-
-        # quick bugfix.
-        # this all needs to be reworked for effects like real_strobe
-        # where the effect drives the device, not vice-versa
-        if self._active_effect is None:
-            return None
 
         # Get and process active effect frame
         pixels = self._active_effect.get_pixels()
@@ -298,41 +332,28 @@ class Display(object):
         if self._config["center_offset"]:
             frame = np.roll(frame, self._config["center_offset"], axis=0)
 
-        # Handle fading effect in/out if just turned on or off
-        if self.fade_timer == 0:
-            pass
-        elif self.fade_timer > 0:
-            # if +ve fade timer, fade in the effect
-            frame *= 1 - (self.fade_timer / self.fade_duration)
-            self.fade_timer -= 1
-        elif self.fade_timer < 0:
-            # if -ve fade timer, fade out the effect
-            frame *= -self.fade_timer / self.fade_duration
-            self.fade_timer += 1
-
         # This part handles blending two effects together
-        fadeout_frame = None
-        if self._fadeout_effect:
-            # Get and process fadeout effect frame
-            fadeout_frame = np.clip(
-                self._fadeout_effect.pixels * self._config["max_brightness"],
-                0,
-                255,
-            )
+        if self._transition_effect is not None:
+            # Get and process transition effect frame
+            transition_frame = self._transition_effect.get_pixels()
+
             if self._config["center_offset"]:
-                fadeout_frame = np.roll(
-                    fadeout_frame,
+                transition_frame = np.roll(
+                    transition_frame,
                     self._config["center_offset"],
                     axis=0,
                 )
 
-            # handle fading out the fadeout frame
-            if self.fade_timer:
-                fadeout_frame *= self.fade_timer / self.fade_duration
-
-        # Blend both frames together
-        if (fadeout_frame is not None) and (frame is not None):
-            frame += fadeout_frame
+            # Blend both frames together
+            self.transition_frame_counter += 1
+            self.transition_frame_counter = min(
+                max(self.transition_frame_counter, 0),
+                self.transition_frame_total,
+            )
+            weight = (
+                self.transition_frame_counter / self.transition_frame_total
+            )
+            self.frame_blender(self.blender, frame, transition_frame, weight)
 
         return frame
 
@@ -355,8 +376,6 @@ class Display(object):
     def deactivate(self):
         self._active = False
         self.deactivate_segments()
-        # for device in self._devices:
-        #     device.deactivate()
 
     @lru_cache(maxsize=32)
     def _normalized_linspace(self, size):
@@ -512,8 +531,12 @@ class Display(object):
         """Updates the config for an object"""
         _config = self.CONFIG_SCHEMA(_config)
 
-        if _config["mapping"] != self._config["mapping"]:
-            self.invalidate_cached_props()
+        if hasattr(self, "_config"):
+            if _config["mapping"] != self._config["mapping"]:
+                self.invalidate_cached_props()
+            if _config["transition_mode"] != self._config["transition_mode"]:
+                mode = self._config["transition_mode"]
+                self.frame_blender = self.blender[mode]
 
         setattr(self, "_config", _config)
 
