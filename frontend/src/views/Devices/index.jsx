@@ -169,20 +169,24 @@ class DevicesView extends React.Component {
 
                                                     <Tooltip
                                                         title={
-                                                            <ul style={{ padding: '0.5rem' }}>
-                                                                <li>
-                                                                    Ensure WLED Devices are on and
-                                                                    connected to your WiFi.
-                                                                </li>
-                                                                <li>
-                                                                    If not detected, check WLED
-                                                                    device mDNS setting. Go to:
-                                                                </li>
-                                                                <li>
-                                                                    WLED device ip - Config - WiFi
-                                                                    Setup - mDNS Address{' '}
-                                                                </li>
-                                                            </ul>
+                                                            <>
+                                                                <h2>Automatically Find WLED Devices</h2>
+                                                                <ul style={{ padding: '0.5rem' }}>
+                                                                    <li>
+                                                                        Ensure WLED Devices are on and
+                                                                        connected to your WiFi.
+                                                                    </li>
+                                                                    <li>
+                                                                        If not detected, check WLED
+                                                                        device mDNS setting. Go to:
+                                                                    </li>
+                                                                    <li>
+                                                                        WLED device ip - Config - WiFi
+                                                                        Setup - mDNS Address{' '}
+                                                                    </li>
+                                                                </ul>
+                                                            </>
+
                                                         }
                                                         interactive
                                                         arrow
@@ -239,16 +243,37 @@ class DevicesView extends React.Component {
                                                             Virtual
                                                         </Button>
                                                     </Tooltip>
-                                                    <Button
-                                                        variant={"contained"}
-                                                        color={"primary"}
-                                                        aria-label="Add"
-                                                        className={classes.button}
-                                                        onClick={this.openAddDeviceDialog}
-                                                        endIcon={<AddCircleIcon />}
+                                                    <Tooltip
+                                                        title={
+                                                            <>
+                                                                <h2>Manually Add Device</h2>
+                                                                <ul style={{ padding: '0.5rem' }}>
+                                                                    <li>
+                                                                        A device is an output to which LedFx
+                                                                        can stream pixel data.
+                                                                    </li>
+                                                                    <li>
+                                                                        LedFx can send pixel data through a
+                                                                        variety of protocols.
+                                                                    </li>
+                                                                </ul>
+                                                            </>
+
+                                                        }
+                                                        interactive
+                                                        arrow
                                                     >
-                                                        Device
-                                                    </Button>
+                                                        <Button
+                                                            variant={"contained"}
+                                                            color={"primary"}
+                                                            aria-label="Add"
+                                                            className={classes.button}
+                                                            onClick={this.openAddDeviceDialog}
+                                                            endIcon={<AddCircleIcon />}
+                                                        >
+                                                            Device
+                                                        </Button>
+                                                    </Tooltip>
 
                                                     <ToggleButtonGroup
                                                         value={this.state.view}

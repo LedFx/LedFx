@@ -13,6 +13,20 @@ from ledfx.utils import BaseRegistry, RegistryLoader
 _LOGGER = logging.getLogger(__name__)
 
 
+class DummyEffect(object):
+    def __init__(self, pixel_count):
+        self._pixels = np.zeros((pixel_count, 3))
+
+    def get_pixels(self):
+        return self._pixels
+
+    def activate(self):
+        pass
+
+    def deactivate(self):
+        pass
+
+
 def mix_colors(color_1, color_2, ratio):
     if np.array_equal(color_2, []):
         return (

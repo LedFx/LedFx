@@ -183,6 +183,17 @@ class Device(BaseRegistry):
             for display_id in self.displays
         )
 
+    @property
+    def active_displays(self):
+        """
+        list of id of the displays active on this device.
+        it's a list bc there can be more than one display streaming
+        to a device.
+        """
+        return list(
+            display.id for display in self._displays_objs if display.active
+        )
+
     @cached_property
     def displays(self):
         return list(segment[0] for segment in self._segments)
@@ -301,7 +312,8 @@ class Devices(RegistryLoader):
 
         # If WLED device, get all the necessary config from the device itself
         if device_type == "wled":
-            wled_config = await WLED.get_config(resolved_dest)
+            wled = WLED(resolved_dest)
+            wled_config = await wled.get_config()
 
             led_info = wled_config["leds"]
             wled_name = wled_config["name"]

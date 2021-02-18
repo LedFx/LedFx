@@ -43,7 +43,8 @@ class WLEDDevice(NetworkedDevice):
 
     async def async_initialize(self):
         await super().async_initialize()
-        wled_config = await WLED.get_config(self.destination)
+        self.wled = WLED(self.destination)
+        wled_config = await self.wled.get_config()
 
         _LOGGER.info(f"Received WLED config from {self.destination}")
 
@@ -60,8 +61,8 @@ class WLEDDevice(NetworkedDevice):
         # that's a nice operation u got there python
         self._config |= wled_config
 
-        await WLED.disable_gamma(self.destination)
-        await WLED.set_sync_mode(self.destination, "ddp")
-        await WLED.set_inactivity_timeout(
-            self.destination, self._config["timeout"]
-        )
+        await self.wled.get_sync_settings()
+        self.wled.enable_realtime_gamma()
+        self.wled.set_sync_mode("ddp")
+        self.wled.set_inactivity_timeout(self._config["timeout"])
+        await self.wled.flush_sync_settings()

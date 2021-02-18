@@ -18,7 +18,7 @@ class Glitch(AudioReactiveEffect, HSVEffect):
                 "speed",
                 description="Effect Speed modifier",
                 default=0.5,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.00001, max=1.0)),
+            ): vol.All(vol.Coerce(float), vol.Range(min=0.00001, max=10.0)),
             vol.Optional(
                 "reactivity",
                 description="Audio Reactive modifier",
@@ -52,7 +52,7 @@ class Glitch(AudioReactiveEffect, HSVEffect):
             self._lows_power
             * self._config["reactivity"]
             / self._config["speed"]
-            * 1000000000.0
+            * 1000.0
         )
         self.last_time = time.time_ns()
 

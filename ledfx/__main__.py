@@ -293,7 +293,15 @@ def main():
     if args.tray or currently_frozen():
         import os
 
-        import pystray
+        # If pystray is imported on a device that can't display it, it explodes. Catch it
+        try:
+            import pystray
+        except Exception as Error:
+            _LOGGER.critical(
+                f"Error: Unable to display tray icon. Shutting down. Error: {Error}"
+            )
+            sys.exit(main())
+
         from PIL import Image
 
         if currently_frozen():
