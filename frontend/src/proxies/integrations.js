@@ -23,7 +23,8 @@ export function deleteIntegration(data) {
 
 // QLC+ Proxies
 
-export function getQLCInfo(integrationId, data) {
+export function getQLCInfo({integrationId, data}) {
+    console.log("YZ01", integrationId, data);
     return api.get(`/integrations/qlc/${integrationId}`, data);
 }
 

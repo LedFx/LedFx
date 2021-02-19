@@ -69,7 +69,7 @@ const IntegrationsCard = ({ int }) => {
             </CardContent>
             <CardActions>
                 {int.status === 1
-                ? <DialogAddEventListener />
+                ? <DialogAddEventListener integration={int} />
                 : 'Must be in connected status, to add new event listener'}
             </CardActions>
             <CardActions>                

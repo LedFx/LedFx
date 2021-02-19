@@ -9,6 +9,8 @@ import Dialog from '@material-ui/core/Dialog';
 import AddCircleIcon from '@material-ui/icons/AddCircle';
 import { SchemaForm, utils } from 'react-schema-form';
 import * as integrationsProxies from 'proxies/integrations';
+//import { getAsyncqlclisteners  } from 'modules/qlc'
+import {useDispatch} from 'react-redux'
 import DialogContentText from '@material-ui/core/DialogContentText';
 import DropDown from 'components/forms/DropDown';
 import InputLabel from '@material-ui/core/InputLabel';
@@ -42,7 +44,6 @@ function ConfirmationDialogRaw(props) {
 
     const handleOk = () => {
         onClose(value);
-        integrationsProxies.getQLCInfo({ info: 'event_types' });
         window.location = window.location.href;
     };
 
@@ -193,14 +194,19 @@ const useStyles = makeStyles(theme => ({
     },
 }));
 
-export default function ConfirmationDialog({ virtual, deviceList, config, integration }) {
+export default function ConfirmationDialog({ deviceList, config, integration }) {
     const classes = useStyles();
     const [open, setOpen] = React.useState(false);
-
-    const handleClickListItem = () => {
-        setOpen(true);
-        integrationsProxies.getQLCInfo({ info: 'event_types' });
-        integrationsProxies.getQLCInfo({info: 'qlc_widgets' });
+    const dispatch = useDispatch();
+    console.log("YZ03:", integration)
+    const handleClickListItem = async() => {
+        setOpen(true);        
+        dispatch(integrationsProxies.getQLCInfo({
+            integrationId: integration.id, 
+            data: {
+                info: "event_types"
+            }
+        }));
     };
 
     const handleClose = newValue => {

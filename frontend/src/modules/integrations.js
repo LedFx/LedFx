@@ -4,6 +4,7 @@ import * as integrationsProxies from 'proxies/integrations';
 const ACTION_ROOT = 'integrations';
 
 export const addIntegration = createAction(`${ACTION_ROOT}/INTEGRATION_ADD`);
+// export const getIntegrations = createAction(`${ACTION_ROOT}/INTEGRATIONS_GET`);
 export const setIntegration = createAction(`${ACTION_ROOT}/INTEGRATION_SET`);
 export const deleteIntegration = createAction(`${ACTION_ROOT}/INTEGRATION_DELETE`);
 
@@ -38,6 +39,7 @@ export default handleActions(
 );
 
 export function getAsyncIntegrations() {
+    console.log("YZ02")
     return async dispatch => {
         try {
             const response = await integrationsProxies.getIntegrations();

@@ -25,15 +25,6 @@ export default handleActions(
                 ],
             };
         },
-        [setqlclistener]: (state, { payload }) => {
-            return {
-                ...state,
-                list: payload,
-            };
-        },
-        [deleteqlclistener]: (state, { payload }) => {
-            return { ...state, list: state.list.filter(v => v.id !== payload.id) };
-        },
     },
     INITIAL_STATE
 );
@@ -41,49 +32,9 @@ export default handleActions(
 export function getAsyncqlclisteners() {
     return async dispatch => {
         try {
-            const response = await integrationsProxies.getQLCEventTypes();
+            const response = await integrationsProxies.getQLCInfo();
             if (response.statusText === 'OK') {
                 dispatch(setqlclistener(response.data.qlclisteners));
-            }
-        } catch (error) {
-            console.log(error);
-        }
-    };
-}
-
-export async function deleteAsyncqlclistener(data) {
-    console.log('damn', data);
-    const response = await integrationsProxies.deleteqlclistener({ data });
-    console.log('damn', response);
-    window.location = window.location.href;
-    // qlclistenersProxies.deleteqlclistener(data);
-    return async dispatch => {
-        try {
-            console.log('damn', data);
-            const response = await integrationsProxies.deleteqlclistener(data);
-            if (response.statusText === 'OK') {
-                console.log('OMG', response.data);
-                // dispatch(deleteqlclistener(response.data.qlclisteners));
-            }
-        } catch (error) {
-            console.log(error);
-        }
-    };
-}
-
-export async function toggleAsyncqlclistener(data) {
-    console.log('damn', data);
-    const response = await integrationsProxies.toggleqlclistener(data);
-    console.log('damn', response);
-    // window.location = window.location.href;
-    // qlclistenersProxies.deleteqlclistener(data);
-    return async dispatch => {
-        try {
-            console.log('damn', data);
-            const response = await integrationsProxies.toggleqlclistener(data);
-            if (response.statusText === 'OK') {
-                console.log('OMG', response.data);
-                // dispatch(deleteqlclistener(response.data.qlclisteners));
             }
         } catch (error) {
             console.log(error);
