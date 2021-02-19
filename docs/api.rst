@@ -220,8 +220,9 @@ Any of: ["id", "type", "active", "status", "data", "config"]
 example:
 
 .. code-block:: json
+
     {
-    "info":"status"
+      "info":"status"
     }
 
 STATUS REFERENCE
@@ -239,7 +240,7 @@ example:
 .. code-block:: json
 
     {
-    "id": "myqlc"
+      "id": "myqlc"
     }
 
 .. rubric:: POST
@@ -249,23 +250,23 @@ Create a new integration, or update an existing one
 .. code-block:: json
 
     {
-    "type": "qlc",
-    "config": {
-        "description": "QLC Test",
-        "ip_address": "127.0.0.1",
-        "name": "myQLC+",
-        "port": 9999
-        }
+      "type": "qlc",
+      "config": {
+          "description": "QLC Test",
+          "ip_address": "127.0.0.1",
+          "name": "myQLC+",
+          "port": 9999
+          }
     }
 
 .. code-block:: json
 
     {
-    "type": "spotify",
-    "config": {
-        "description": "Spotify triggers for party",
-        "name": "Party Spotify"
-        }
+      "type": "spotify",
+      "config": {
+          "description": "Spotify triggers for party",
+          "name": "Party Spotify"
+          }
     }
 
 .. rubric:: DELETE
@@ -275,7 +276,7 @@ Delete an integration, erasing all its configuration and data.
 .. code-block:: json
 
     {
-    "id": "myqlc"
+      "id": "myqlc"
     }
 
 NOTE: This does not turn off the integration, it deletes it entirely! (though it will first turn off..)
@@ -306,7 +307,7 @@ Specify "info", one of: ``["event_types", "qlc_widgets", "qlc_listeners"]``
 .. code-block:: json
 
     {
-    "info": "qlc_listeners"
+      "info": "qlc_listeners"
     }
 
 .. rubric:: PUT
@@ -316,10 +317,10 @@ Toggle a QLC+ event listener on or off, so that it will or will not send its pay
 .. code-block:: json
 
     {
-    "event_type": "scene_set",
-    "event_filter": {
-        "scene_name": "My Scene"
-        }
+      "event_type": "scene_set",
+      "event_filter": {
+          "scene_name": "My Scene"
+          }
     }
 
 .. rubric:: POST
@@ -330,15 +331,15 @@ The "qlc_payload" is a dict of {"widget_id": value} that will be sent to QLC+
 .. code-block:: json
 
     {
-    "event_type": "scene_set",
-    "event_filter": {
-        "scene_name": "My Scene"
-        },
-    "qlc_payload": {
-        "0":255,
-        "1":255,
-        "2":169
-        }
+      "event_type": "scene_set",
+      "event_filter": {
+          "scene_name": "My Scene"
+          },
+      "qlc_payload": {
+          "0":255,
+          "1":255,
+          "2":169
+          }
     }
 
 .. rubric:: DELETE
@@ -348,10 +349,10 @@ Delete a QLC event listener, and associated payload data.
 .. code-block:: json
 
     {
-    "event_type": "scene_set",
-    "event_filter": {
-        "scene_name": "My Scene"
-        }
+      "event_type": "scene_set",
+      "event_filter": {
+          "scene_name": "My Scene"
+          }
     }
 
 NOTE: This does not turn off the integration, it deletes it entirely! (though it will first turn off..)
@@ -376,10 +377,10 @@ Create a new song trigger
 .. code-block:: json
 
     {
-    "scene_id": "my_scene",
-    "song_id": "347956287364597",
-    "song_name": "Really Cool Song",
-    "song_position": "43764",
+      "scene_id": "my_scene",
+      "song_id": "347956287364597",
+      "song_name": "Really Cool Song",
+      "song_position": "43764",
     }
 
 .. rubric:: DELETE
@@ -389,7 +390,7 @@ Delete a song trigger
 .. code-block:: json
 
     {
-    "trigger_id": "Really Cool Song - 43764",
+      "trigger_id": "Really Cool Song - 43764",
     }
 
 ===================
