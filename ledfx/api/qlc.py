@@ -14,59 +14,42 @@ class QLCEndpoint(RestEndpoint):
 
     ENDPOINT_PATH = "/api/integrations/qlc/{integration_id}"
 
-    async def get(self, integration_id, request) -> web.Response:
+    async def get(self, integration_id) -> web.Response:
         """Get info from QLC+ integration"""
         integration = self._ledfx.integrations.get(integration_id)
         if (integration is None) or (integration.type != "qlc"):
             response = {"not found": 404}
             return web.json_response(data=response, status=404)
 
-        data = await request.json()
-        info = data.get("info")
-        if info is None:
-            response = {
-                "status": "failed",
-                "reason": 'Required attribute "info" was not provided',
-            }
-            return web.json_response(data=response, status=500)
+        response = {}
 
-        if info == "event_types":
-            # generate dict of {effect_id: effect_name}
-            effect_names = []
-            for effect_type, effect in self._ledfx.effects.classes().items():
-                effect_names.append(effect.NAME)
+        # generate dict of {effect_id: effect_name}
+        effect_names = []
+        for effect_type, effect in self._ledfx.effects.classes().items():
+            effect_names.append(effect.NAME)
 
-            scene_names = []
-            for scene in self._ledfx.config["scenes"]:
-                scene_names.append(self._ledfx.config["scenes"][scene]["name"])
+        scene_names = []
+        for scene in self._ledfx.config["scenes"]:
+            scene_names.append(self._ledfx.config["scenes"][scene]["name"])
 
-            response = {
-                Event.EFFECT_SET: {
-                    "event_name": "Effect Set",
-                    "event_filters": {"effect_name": effect_names},
-                },
-                Event.EFFECT_CLEARED: {
-                    "event_name": "Effect Cleared",
-                    "event_filters": {},
-                },
-                Event.SCENE_SET: {
-                    "event_name": "Scene Set",
-                    "event_filters": {"scene_name": scene_names},
-                },
-            }
+        response["event_types"] = {
+            Event.EFFECT_SET: {
+                "event_name": "Effect Set",
+                "event_filters": {"effect_name": effect_names},
+            },
+            Event.EFFECT_CLEARED: {
+                "event_name": "Effect Cleared",
+                "event_filters": {},
+            },
+            Event.SCENE_SET: {
+                "event_name": "Scene Set",
+                "event_filters": {"scene_name": scene_names},
+            },
+        }
 
-        elif info == "qlc_widgets":
-            response = await integration.get_widgets()
+        response["qlc_widgets"] = await integration.get_widgets()
 
-        elif info == "qlc_listeners":
-            response = integration.data
-
-        else:
-            response = {
-                "status": "failed",
-                "reason": f'Unknown info parameter "{info}"',
-            }
-            return web.json_response(data=response, status=500)
+        response["qlc_listeners"] = integration.data
 
         return web.json_response(data=response, status=200)
 
