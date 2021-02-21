@@ -31,11 +31,11 @@ class UDPDevice(NetworkedDevice):
             ): bool,
             vol.Optional(
                 "data_prefix",
-                description="Data to be appended in hex format",
+                description="Data to be prepended in hex format",
             ): str,
             vol.Optional(
                 "data_postfix",
-                description="Data to be prepended in hex format",
+                description="Data to be appended in hex format",
             ): str,
         }
     )
