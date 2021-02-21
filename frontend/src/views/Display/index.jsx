@@ -82,9 +82,6 @@ const DisplayView = ({
                     <Grid item xs={12} lg={6}>
                         <TransitionCard
                             display={display}
-                            config={() => dispatch(getEffectPresets)}
-                            getEffectPresets={() => dispatch(getEffectPresets)}
-                            addPreset={() => dispatch(addPreset)}
                         />
                     </Grid>
                 )}

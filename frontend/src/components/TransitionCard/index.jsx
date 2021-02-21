@@ -46,25 +46,24 @@ const TransitionCard = ({ display, config, addDisplay }) => {
     const dispatch = useDispatch();
 
     const schemas = useSelector(state => state.schemas.displays.schema.properties)
+    const displays = useSelector(state => state.displays)
+    console.log(displays)
 
     const transition_mode = display.config[display.id] && display.config[display.id].config && display.config[display.id].config.transition_mode
     const transition_time = display.config[display.id] && display.config[display.id].config && display.config[display.id].config.transition_time
 
     const handleSetTransition = (displayId, config) => () => {
-        console.log({ "id": displayId, "config": config })
+        // useDispatch()
+        console.log("Hello!")
+        console.log(displayId, config)
         dispatch(addDisplay({ "id": displayId, "config": config }));
     };
 
     const debouncedOnChangeHandler = debounce(handleSetTransition, 200)
 
     const onChange = (e, newValue) => {
-        console.log(newValue)
         debouncedOnChangeHandler(newValue);
     };
-
-    // const addDevice = () => {
-    //     console.log('adding now')
-    // }
 
     const marks = [
         {
@@ -82,7 +81,7 @@ const TransitionCard = ({ display, config, addDisplay }) => {
             <CardHeader title="Transitions" subheader="Seamlessly blend between effects" />
             <CardContent className={classes.content}>
                 <FormControl className={classes.formControl}>
-                    <Typography variant="formlabel">
+                    <Typography variant="subtitle2">
                       Transition Duration
                     </Typography>
                     <Slider
