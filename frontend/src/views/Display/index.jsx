@@ -77,14 +77,12 @@ const DisplayView = ({
                             addPreset={() => dispatch(addPreset)}
                         />
                     )}
-                </Grid>
-                {parseInt(window.localStorage.getItem('BladeMod')) > 1 && (
-                    <Grid item xs={12} lg={6}>
+                    {parseInt(window.localStorage.getItem('BladeMod')) > 1 && (
                         <TransitionCard
                             display={display}
                         />
-                    </Grid>
-                )}
+                    )}
+                </Grid>
                 {parseInt(window.localStorage.getItem('BladeMod')) > 1 && (
                     <MoreInfo display={display} />
                 )}
