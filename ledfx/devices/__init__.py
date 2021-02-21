@@ -365,9 +365,20 @@ class Devices(RegistryLoader):
                     existing_device.config["ip_address"] == device_ip
                     or existing_device.config["ip_address"] == resolved_dest
                 ):
-                    msg = f"Ignoring {device_ip}: Shares destination with existing device {existing_device.name}"
-                    _LOGGER.info(msg)
-                    raise ValueError(msg)
+                    if device_type == "e131":
+                        # check the universes for e131, it might still be okay at a shared ip_address
+                        # eg. for multi output controllers
+                        if (
+                            device_config["universe"]
+                            == existing_device.config["universe"]
+                        ):
+                            msg = f"Ignoring {device_ip}: Shares IP and starting universe with existing device {existing_device.name}"
+                            _LOGGER.info(msg)
+                            raise ValueError(msg)
+                    else:
+                        msg = f"Ignoring {device_ip}: Shares destination with existing device {existing_device.name}"
+                        _LOGGER.info(msg)
+                        raise ValueError(msg)
 
         # If WLED device, get all the necessary config from the device itself
         if device_type == "wled":
