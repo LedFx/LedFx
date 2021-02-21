@@ -11,6 +11,7 @@ import DisplayEffectControl from 'components/EffectControl/DisplayEffectControl'
 import DisplayPixelColorGraph from 'components/PixelColorGraph/DisplayPixelColorGraph';
 import PixelColorGraph from 'components/PixelColorGraph';
 import PresetsCard from 'components/PresetsCard';
+import TransitionCard from 'components/TransitionCard';
 import { fetchDisplayList } from 'modules/displays';
 import { fetchDeviceList } from 'modules/devices';
 import MoreInfo from './MoreInfo';
@@ -76,6 +77,14 @@ const DisplayView = ({
                             addPreset={() => dispatch(addPreset)}
                         />
                     )}
+                </Grid>
+                <Grid item xs={12} lg={6}>
+                    <TransitionCard
+                        display={display}
+                        config={() => dispatch(getEffectPresets)}
+                        getEffectPresets={() => dispatch(getEffectPresets)}
+                        addPreset={() => dispatch(addPreset)}
+                    />
                 </Grid>
 
                 {parseInt(window.localStorage.getItem('BladeMod')) > 1 && (
