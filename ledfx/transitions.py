@@ -7,7 +7,7 @@ class IterClass(type):
             yield mode
 
 
-class Blender(metaclass=IterClass):
+class Transitions(metaclass=IterClass):
     def __init__(self, pixel_count, max_brightness=1, min_brightness=0):
         self.pixel_count = pixel_count
         self.max_brightness = max_brightness

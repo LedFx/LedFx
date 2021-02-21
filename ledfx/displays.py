@@ -7,8 +7,6 @@ import numpy as np
 import voluptuous as vol
 import zeroconf
 
-# from ledfx.config import save_config
-from ledfx.blender import Blender
 from ledfx.effects import DummyEffect
 from ledfx.events import (
     DisplayUpdateEvent,
@@ -16,6 +14,9 @@ from ledfx.events import (
     EffectSetEvent,
     Event,
 )
+
+# from ledfx.config import save_config
+from ledfx.transitions import Transitions
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -64,7 +65,7 @@ class Display(object):
                 "transition_mode",
                 description="Type of transition between effects",
                 default="Add",
-            ): vol.In([mode for mode in Blender]),
+            ): vol.In([mode for mode in Transitions]),
         }
     )
 
@@ -195,14 +196,14 @@ class Display(object):
             # eg. devices might be reordered, but total pixel count is same
             # so no need to restart the effect
             if self.pixel_count != _pixel_count:
-                self.blender = Blender(self.pixel_count)
+                self.transitions = Transitions(self.pixel_count)
                 if self._active_effect is not None:
                     self._active_effect.deactivate()
                     if self.pixel_count > 0:
                         self._active_effect.activate(self.pixel_count)
 
             mode = self._config["transition_mode"]
-            self.frame_blender = self.blender[mode]
+            self.frame_transitions = self.transitions[mode]
 
     def set_effect(self, effect):
         self.transition_frame_total = (
@@ -353,7 +354,9 @@ class Display(object):
             weight = (
                 self.transition_frame_counter / self.transition_frame_total
             )
-            self.frame_blender(self.blender, frame, transition_frame, weight)
+            self.frame_transitions(
+                self.transitions, frame, transition_frame, weight
+            )
 
         return frame
 
@@ -536,7 +539,7 @@ class Display(object):
                 self.invalidate_cached_props()
             if _config["transition_mode"] != self._config["transition_mode"]:
                 mode = self._config["transition_mode"]
-                self.frame_blender = self.blender[mode]
+                self.frame_transitions = self.transitions[mode]
 
         setattr(self, "_config", _config)
 
