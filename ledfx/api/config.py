@@ -54,7 +54,10 @@ class ConfigEndpoint(RestEndpoint):
             }
             return web.json_response(data=response, status=202)
 
-        self._ledfx.config |= validated_config
+        new_valid_config = {
+            key: validated_config[key] for key in config.keys()
+        }
+        self._ledfx.config |= new_valid_config
 
         # should restart ledfx at this point
 
