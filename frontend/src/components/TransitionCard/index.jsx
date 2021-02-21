@@ -16,6 +16,7 @@ import Select from "@material-ui/core/Select";
 import MenuItem from "@material-ui/core/MenuItem";
 import InputLabel from "@material-ui/core/InputLabel";
 import Slider from "@material-ui/core/Slider";
+import debounce from 'debounce';
 
 // CONSTANT display categories
 export const DEFAULT_CAT = 'default_presets';
@@ -24,7 +25,8 @@ export const CUSTOM_CAT = 'custom_presets';
 const useStyles = makeStyles(theme => ({
     content: {
         display: 'flex',
-        flexDirection: 'column',
+        flexDirection: 'row',
+        alignItems: 'center',
         width: '100%',
         padding: theme.spacing(2),
         paddingBottom: 0,
@@ -33,6 +35,9 @@ const useStyles = makeStyles(theme => ({
         display: 'flex',
         flexDirection: 'row',
         paddingBottom: theme.spacing(3),
+    },
+    formControl: {
+        marginRight: theme.spacing(3),
     },
 }));
 
@@ -44,37 +49,60 @@ const TransitionCard = ({ display, config, addDisplay }) => {
 
     const transition_mode = display.config[display.id] && display.config[display.id].config && display.config[display.id].config.transition_mode
     const transition_time = display.config[display.id] && display.config[display.id].config && display.config[display.id].config.transition_time
-    console.log("YZ-NOTMATT1:", transition_mode, transition_time)
-    console.log("YZ-NOTMATT2:", schemas.transition_mode.enum, schemas.transition_time)
+
     const handleSetTransition = (displayId, config) => () => {
         dispatch(addDisplay({ "id": displayId, "config": config }));
     };
+
+    const debouncedOnChangeHandler = debounce(handleSetTransition, 200)
+
+    const onChange = (e, newValue) => {
+        console.log(newValue)
+        debouncedOnChangeHandler(newValue);
+    };
+
     const addDevice = () => {
         console.log('adding now')
     }
+
+    const marks = [
+        {
+            value: schemas.transition_time.minimum,
+            label: `${schemas.transition_time.minimum}s`
+        },
+        {
+            value: schemas.transition_time.maximum,
+            label: `${schemas.transition_time.maximum}s`
+        },
+    ]
+
     return (
         <Card variant="outlined">
             <CardHeader title="Transitions" subheader="Seamlessly blend between effects" />
             <CardContent className={classes.content}>
                 <FormControl className={classes.formControl}>
-                    <InputLabel id="demo-simple-select-helper-label">Save this effect configuration as a preset</InputLabel>
+                    <Typography variant="formlabel">
+                      Transition Duration
+                    </Typography>
+                    <Slider
+                        defaultValue={schemas.transition_time.default}
+                        // value={transitionTime}
+                        onChange={onChange}
+                        aria-labelledby="discrete-slider-always"
+                        step={0.1}
+                        marks={marks}
+                        min={schemas.transition_time.minimum}
+                        max={schemas.transition_time.maximum}
+                        // disabled={type === "instant"}
+                        valueLabelDisplay="auto"
+                    />
+                </FormControl>
+                <FormControl className={classes.formControl}>
+                    <InputLabel id="demo-simple-select-helper-label">Select a transition effect</InputLabel>
                     <Select onChange={addDevice} >
                         {schemas.transition_mode.enum.map(mode => <MenuItem value={mode}>{mode}</MenuItem>)}
                     </Select>
                 </FormControl>
-                <Slider
-                    defaultValue={schemas.transition_time.default}
-                    // value={transitionTime}
-                    // onChange={(event, value) => setTransitionTime(value)}
-                    aria-labelledby="discrete-slider-always"
-                    step={0.1}
-                    // marks={marks}
-                    min={schemas.transition_time.minimum}
-                    max={schemas.transition_time.maximum}
-                    // disabled={type === "instant"}
-                    valueLabelDisplay="on"
-                />
-
             </CardContent>
         </Card>
     );
