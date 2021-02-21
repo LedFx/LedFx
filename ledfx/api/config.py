@@ -4,7 +4,7 @@ import voluptuous as vol
 from aiohttp import web
 
 from ledfx.api import RestEndpoint
-from ledfx.config import save_config
+from ledfx.config import CORE_CONFIG_SCHEMA, save_config
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -46,7 +46,7 @@ class ConfigEndpoint(RestEndpoint):
                 return web.json_response(data=response, status=500)
 
         try:
-            validated_config = self._ledfx.config.CORE_CONFIG_SCHEMA(config)
+            validated_config = CORE_CONFIG_SCHEMA(config)
         except vol.MultipleInvalid as msg:
             response = {
                 "status": "failed",
@@ -62,3 +62,5 @@ class ConfigEndpoint(RestEndpoint):
             config=self._ledfx.config,
             config_dir=self._ledfx.config_dir,
         )
+
+        return web.json_response(data={"status": "success"}, status=200)
