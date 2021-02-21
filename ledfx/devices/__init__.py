@@ -86,6 +86,12 @@ class Device(BaseRegistry):
             display.deactivate_segments()
             display.activate_segments(display._segments)
 
+    def config_updated(self, config):
+        """
+        to be reimplemented by child classes
+        """
+        pass
+
     @property
     def pixel_count(self):
         return int(self._config["pixel_count"])
