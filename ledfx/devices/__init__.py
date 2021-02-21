@@ -63,11 +63,11 @@ class Device(BaseRegistry):
 
     def update_config(self, config):
         # TODO: Sync locks to ensure everything is thread safe
-        validated_config = type(self).schema()(config)
         if self._config is not None:
-            self._config = self._config | validated_config
-        else:
-            self._config = validated_config
+            config = self._config | config
+        
+        validated_config = type(self).schema()(config)
+        self._config = validated_config
 
         # Iterate all the base classes and check to see if there is a custom
         # implementation of config updates. If to notify the base class.
