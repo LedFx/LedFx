@@ -76,7 +76,7 @@ class Blender(metaclass=IterClass):
         """
         x2 "pushes" x1 to the side, proportional to weight
         """
-        idx = weight * self.pixel_count
+        idx = int(weight * self.pixel_count)
         np.roll(x1, idx, axis=1)
         x1[:idx, :] = x2[:idx, :]
 
