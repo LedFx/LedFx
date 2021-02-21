@@ -51,6 +51,7 @@ const TransitionCard = ({ display, config, addDisplay }) => {
     const transition_time = display.config[display.id] && display.config[display.id].config && display.config[display.id].config.transition_time
 
     const handleSetTransition = (displayId, config) => () => {
+        console.log({ "id": displayId, "config": config })
         dispatch(addDisplay({ "id": displayId, "config": config }));
     };
 
@@ -61,9 +62,9 @@ const TransitionCard = ({ display, config, addDisplay }) => {
         debouncedOnChangeHandler(newValue);
     };
 
-    const addDevice = () => {
-        console.log('adding now')
-    }
+    // const addDevice = () => {
+    //     console.log('adding now')
+    // }
 
     const marks = [
         {
@@ -99,7 +100,7 @@ const TransitionCard = ({ display, config, addDisplay }) => {
                 </FormControl>
                 <FormControl className={classes.formControl}>
                     <InputLabel id="demo-simple-select-helper-label">Select a transition effect</InputLabel>
-                    <Select onChange={addDevice} >
+                    <Select onChange={handleSetTransition} >
                         {schemas.transition_mode.enum.map(mode => <MenuItem value={mode}>{mode}</MenuItem>)}
                     </Select>
                 </FormControl>
