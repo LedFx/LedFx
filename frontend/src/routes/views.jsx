@@ -11,6 +11,7 @@ import LockOpenIcon from '@material-ui/icons/LockOpen';
 
 // Components and Views
 import DashboardView from '../views/Dashboard';
+import BladeboardView from '../views/Dashboard/BladeBoard';
 import DevicesView from '../views/Devices';
 import ScenesView from '../views/Scenes';
 import DisplayView from '../views/Display';
@@ -20,60 +21,70 @@ import AdvancedView from '../views/Advanced';
 import SettingsView from '../views/Settings';
 import DeveloperView from '../views/Developer';
 
+const dashboard =
+    parseInt(window.localStorage.getItem('BladeMod')) > 0
+        ? {
+            path: '/dashboard',
+            sidebarName: 'Bladeboard',
+            navbarName: 'Dashboard',
+            icon: Dashboard,
+            component: BladeboardView,
+        }
+        : {
+            path: '/dashboard',
+            sidebarName: 'Dashboard',
+            navbarName: 'Dashboard',
+            icon: Dashboard,
+            component: DashboardView,
+        };
 const virtuals =
     parseInt(window.localStorage.getItem('BladeMod')) > 2
         ? {
-              path: '/virtuals',
-              sidebarName: 'Virtual Strips',
-              navbarName: 'Virtual Strips',
-              icon: DeviceHubIcon,
-              component: VirtualsView,
-          }
+            path: '/virtuals',
+            sidebarName: 'Virtual Strips',
+            navbarName: 'Virtual Strips',
+            icon: DeviceHubIcon,
+            component: VirtualsView,
+        }
         : {
-              path: '/virtuals',
-              navbarName: 'Virtual Strips',
-              icon: DeviceHubIcon,
-              component: VirtualsView,
-          };
+            path: '/virtuals',
+            navbarName: 'Virtual Strips',
+            icon: DeviceHubIcon,
+            component: VirtualsView,
+        };
 
 const integrations =
     parseInt(window.localStorage.getItem('BladeMod')) > 1
         ? {
-              path: '/integrations',
-              sidebarName: 'Integrations',
-              navbarName: 'Integrations',
-              icon: PowerIcon,
-              component: IntegrationsView,
-          }
+            path: '/integrations',
+            sidebarName: 'Integrations',
+            navbarName: 'Integrations',
+            icon: PowerIcon,
+            component: IntegrationsView,
+        }
         : {
-              path: '/integrations',
-              navbarName: 'Integrations',
-              icon: PowerIcon,
-              component: IntegrationsView,
-          };
+            path: '/integrations',
+            navbarName: 'Integrations',
+            icon: PowerIcon,
+            component: IntegrationsView,
+        };
 const advanced =
-    parseInt(window.localStorage.getItem('BladeMod')) > 2
+    parseInt(window.localStorage.getItem('BladeMod')) > 1
         ? {
-              path: '/advanced',
-              sidebarName: 'Advanced',
-              navbarName: 'Advanced',
-              icon: LockOpenIcon,
-              component: AdvancedView,
-          }
+            path: '/advanced',
+            sidebarName: 'Advanced',
+            navbarName: 'Advanced',
+            icon: LockOpenIcon,
+            component: AdvancedView,
+        }
         : {
-              path: '/advanced',
-              navbarName: 'Advanced',
-              icon: LockOpenIcon,
-              component: AdvancedView,
-          };
+            path: '/advanced',
+            navbarName: 'Advanced',
+            icon: LockOpenIcon,
+            component: AdvancedView,
+        };
 const viewRoutes = [
-    {
-        path: '/dashboard',
-        sidebarName: 'Dashboard',
-        navbarName: 'Dashboard',
-        icon: Dashboard,
-        component: DashboardView,
-    },
+    dashboard,
     {
         path: '/displays/:displayId',
         navbarName: 'Displays',

@@ -11,7 +11,7 @@ import Dialog from '@material-ui/core/Dialog';
 import DialogContent from '@material-ui/core/DialogContent';
 import DialogTitle from '@material-ui/core/DialogTitle';
 import DialogContentText from '@material-ui/core/DialogContentText';
-
+// import mapper from "./mapper"
 import DropDown from 'components/forms/DropDown';
 import AdditionalProperties from './AdditionalProperties';
 
@@ -158,6 +158,7 @@ class DeviceConfigDialog extends React.Component {
                             schema={currentSchema}
                             form={requiredKeys}
                             model={model}
+                            // mapper={mapper}
                             onModelChange={this.onModelChange}
                         />
 

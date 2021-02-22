@@ -26,24 +26,35 @@ function onChange(newValue) {
     // console.log('change', newValue);
 }
 
-const ConfigEditor = () => {
-    return (
-        <Card>
-            <CardHeader title="Config Editor" subheader="for development" />
-            <CardContent>
-                <AceEditor
-                    mode="yaml"
-                    theme={window.localStorage.getItem('blade') === '3' ? 'twilight' : 'github'}
-                    onChange={onChange}
-                    value={yaml2}
-                    name="UNIQUE_ID_OF_DIV"
-                    editorProps={{ $blockScrolling: true }}
-                    placeholder={'AWESOME SHIT INCOMING.... - hacked by Blade'}
-                    style={{ width: '100%' }}
-                />
-            </CardContent>
-        </Card>
-    );
-};
+const ConfigEditor = ({ raw = false }) =>
+    raw ? (
+        <AceEditor
+            mode="yaml"
+            theme={window.localStorage.getItem('blade') === '3' ? 'twilight' : 'github'}
+            onChange={onChange}
+            value={yaml2}
+            name="UNIQUE_ID_OF_DIV"
+            editorProps={{ $blockScrolling: true }}
+            placeholder={'AWESOME SHIT INCOMING.... - hacked by Blade'}
+            style={{ width: '100%' }}
+        />
+    ) : (
+            <Card>
+                <CardHeader title="Config Editor" subheader="for development" />
+                <CardContent>
+                    <AceEditor
+                        mode="yaml"
+                        theme={window.localStorage.getItem('blade') === '3' ? 'twilight' : 'github'}
+                        onChange={onChange}
+                        value={yaml2}
+                        name="UNIQUE_ID_OF_DIV"
+                        editorProps={{ $blockScrolling: true }}
+                        placeholder={'AWESOME SHIT INCOMING.... - hacked by Blade'}
+                        style={{ width: '100%' }}
+                    />
+                </CardContent>
+            </Card>
+        );
+
 
 export default ConfigEditor;

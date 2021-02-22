@@ -1,6 +1,25 @@
 import { drawerWidth } from 'utils/style';
+import blademod from './blademod.svg';
 
 const sidebarStyle = theme => ({
+    '@global': {
+        '*::-webkit-scrollbar': {
+            backgroundColor: '#ffffff30',
+            width: '8px',
+            borderRadius: '8px',
+        },
+        '*::-webkit-scrollbar-track': {
+            backgroundColor: '#00000060',
+            borderRadius: '8px',
+        },
+        '*::-webkit-scrollbar-thumb': {
+            backgroundColor: '#555555',
+            borderRadius: '8px',
+        },
+        '*::-webkit-scrollbar-button': {
+            display: 'none',
+        }
+    },
     drawerPaper: {
         width: drawerWidth,
         [theme.breakpoints.up('md')]: {
@@ -160,6 +179,19 @@ const sidebarStyle = theme => ({
             margin: '0 5px',
         },
     },
+    devbadge: {
+        backgroundImage: `url(${blademod})`,
+        backgroundColor: '#600000',
+        border: '1px solid #600000',
+        color: '#fff',
+        borderRadius: '15px',
+        width: '100%',
+        padding: '5px 25px',
+        backgroundSize: '250px',
+        backgroundRepeat: 'no-repeat',
+        textAlign: 'right',
+        backgroundPosition: '-40px 50%',
+    }
 });
 
 export default sidebarStyle;

@@ -60,7 +60,7 @@ export function clearDisplayEffect(displayId) {
     };
 }
 
-export function setDisplayEffect(displayId, { type, config }) {
+export function setDisplayEffect(displayId, { type, config, active }) {
     return async (dispatch, getState) => {
         const currentEffect = getState().selectedDisplay.effect;
         const proxy = currentEffect.type
@@ -73,6 +73,7 @@ export function setDisplayEffect(displayId, { type, config }) {
             } = await proxy(displayId, {
                 type,
                 config,
+                active,
             });
             if (payload) {
                 dispatch(

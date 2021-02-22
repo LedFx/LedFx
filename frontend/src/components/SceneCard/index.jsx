@@ -43,7 +43,7 @@ export default function SceneCard({ scene, activateScene, deleteScene }) {
         <Card>
             <CardHeader title={scene.name} />
             <CardContent>
-                {scene.devices && <SceneConfigTable classes={classes} devices={scene.devices} />}
+                {scene.displays && <SceneConfigTable classes={classes} displays={scene.displays} />}
             </CardContent>
             <CardActions className={classes.submitControls}>
                 <PopoverSure onConfirm={handleDelete} label="delete" size="medium" />

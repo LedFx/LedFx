@@ -12,6 +12,7 @@ import DisplaySegmentsDialog from 'components/DisplaySegmentsDialog';
 import TuneIcon from '@material-ui/icons/Tune';
 import VisibilityIcon from '@material-ui/icons/Visibility';
 import BuildIcon from '@material-ui/icons/Build';
+import TypeBadge from './TypeBadge';
 
 const styles = theme => ({
     deleteButton: {
@@ -26,7 +27,6 @@ const styles = theme => ({
         fontSize: '12px',
         minWidth: 'unset',
         padding: '3px 5px',
-        marginLeft: '0.5rem',
         flexGrow: 0,
     },
     previewButton: {
@@ -77,6 +77,7 @@ const styles = theme => ({
         justifyContent: 'space-between',
     }
 });
+
 const DisplayCardItemPortrait = ({
     display,
     classes,
@@ -87,6 +88,7 @@ const DisplayCardItemPortrait = ({
     onEditDisplay,
     deviceList,
 }) => {
+
     const handleDeleteDevice = () => {
         onDelete(display.id);
     };
@@ -128,11 +130,7 @@ const DisplayCardItemPortrait = ({
 
 
                 <div>
-                    <Button variant={variant} disabled size="small" className={classes.badgeButton}>
-                        {(deviceList.find(d => d.id === display.is_device) &&
-                            deviceList.find(d => d.id === display.is_device).type) || 'VIRTUAL'}
-                    </Button>
-
+                    <TypeBadge variant={variant} display={display} />
                     {display.config.preview_only && (
                         <Button
                             variant={'text'}

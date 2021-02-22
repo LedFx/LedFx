@@ -28,6 +28,8 @@ export function getDevice(deviceId) {
             id: deviceId,
             name: device.name,
             config: device,
+            displays: device.displays,
+            active_displays: device.active_displays,
         };
     });
 }

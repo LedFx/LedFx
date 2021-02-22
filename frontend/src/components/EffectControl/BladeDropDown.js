@@ -42,6 +42,9 @@ const useStyles = makeStyles(theme => ({
         background: theme.palette.primary.main,
         color: '#fff',
     },
+    FormListItem: {
+        paddingLeft: '2rem',
+    },
     FormToggleWrapper: {
         '@media (max-width: 580px)': {
             order: -1,
@@ -106,7 +109,11 @@ const BladeDropDown = () => {
                                     >
                                         {c}
                                     </ListSubheader>,
-                                    group[c].map(e => <MenuItem value={e.id}>{e.name}</MenuItem>),
+                                    group[c].map(e => (
+                                        <MenuItem className={classes.FormListItem} value={e.id}>
+                                            {e.name}
+                                        </MenuItem>
+                                    )),
                                 ]
                         )}
                 </Select>
