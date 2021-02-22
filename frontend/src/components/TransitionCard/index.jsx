@@ -41,13 +41,11 @@ const useStyles = makeStyles(theme => ({
     },
 }));
 
-const TransitionCard = ({ display, config, addDisplay }) => {
+const TransitionCard = ({ display }) => {
     const classes = useStyles();
     const dispatch = useDispatch();
 
     const schemas = useSelector(state => state.schemas.displays.schema.properties)
-    const displays = useSelector(state => state.displays)
-    console.log(displays)
 
     const transition_mode = display.config[display.id] && display.config[display.id].config && display.config[display.id].config.transition_mode
     const transition_time = display.config[display.id] && display.config[display.id].config && display.config[display.id].config.transition_time
