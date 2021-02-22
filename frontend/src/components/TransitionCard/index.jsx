@@ -1,5 +1,6 @@
 import React from 'react';
-import { useSelector, useDispatch } from 'react-redux'
+import { useSelector } from 'react-redux'
+// import { useSelector, useDispatch } from 'react-redux'
 import { makeStyles } from '@material-ui/core/styles';
 import Card from '@material-ui/core/Card';
 import CardContent from '@material-ui/core/CardContent';
@@ -43,7 +44,7 @@ const useStyles = makeStyles(theme => ({
 
 const TransitionCard = ({ display }) => {
     const classes = useStyles();
-    const dispatch = useDispatch();
+    // const dispatch = useDispatch();
 
     const schemas = useSelector(state => state.schemas.displays.schema.properties)
 
@@ -55,7 +56,7 @@ const TransitionCard = ({ display }) => {
         console.log(transition_mode, transition_time)
         console.log("Hello!")
         console.log(displayId, config)
-        dispatch(addDisplay({ "id": displayId, "config": config }));
+        // dispatch(addDisplay({ "id": displayId, "config": config }));
     };
 
     const debouncedOnChangeHandler = debounce(handleSetTransition, 200)

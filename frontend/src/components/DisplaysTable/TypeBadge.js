@@ -107,7 +107,7 @@ const TypeBadge = ({ display, variant, style }) => {
     };
     const dev = deviceList.find(d => d.id === display.is_device);
     const type = dev && dev.type;
-    console.log(dev);
+
     return (
         <div>
             {type === 'wled' ? (
