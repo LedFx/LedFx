@@ -1,5 +1,7 @@
 import { createAction, handleActions } from 'redux-actions';
 import * as displayProxies from 'proxies/display';
+import * as devicesProxies from 'modules/devices';
+import * as deviceProxies from 'proxies/device';
 // import { updateDisplays } from './settings';
 import { showdynSnackbar } from './ui';
 // Actions
@@ -11,6 +13,7 @@ export const handleSegmentChange = createAction(`${ACTION_ROOT}/DISPLAY_HANDLE_S
 export const orderSegmentChange = createAction(`${ACTION_ROOT}/DISPLAY_ORDER_SEGMENTS`);
 export const displaysReceived = createAction(`${ACTION_ROOT}/DISPLAYS_RECEIVED`);
 export const displayUpdated = createAction(`${ACTION_ROOT}/DISPLAY_UPDATED`);
+export const displayToggled = createAction(`${ACTION_ROOT}/DISPLAY_TOGGLED`);
 export const scanProgressUpdated = createAction(`${ACTION_ROOT}/DISPLAY_SCAN_PROGRESS_UPDATED`);
 
 // Reducer
@@ -189,6 +192,39 @@ export function updateDisplayConfig({ id, data }) {
                 dispatch(
                     showdynSnackbar({ message: 'Successfully saved segments!', type: 'success' })
                 );
+            }
+        } catch (error) {
+            showdynSnackbar({ message: error.message });
+            console.log('Error updating display', error.message);
+        }
+    };
+}
+export function toggleDisplay(id, { active }) {
+    return async dispatch => {
+        try {
+            const response = await displayProxies.toggleDisplay(id, {
+                active: active,
+            });
+            if (response.statusText === 'OK') {
+                dispatch(fetchDisplayList());
+                dispatch(devicesProxies.fetchDeviceList());
+            }
+        } catch (error) {
+            showdynSnackbar({ message: error.message });
+            console.log('Error updating display', error.message);
+        }
+    };
+}
+export function setDisplay(id, { config }) {
+    console.log('YZ11', config);
+    return async dispatch => {
+        try {
+            const response = await deviceProxies.updateDevice(id, {
+                config: config,
+            });
+            if (response.statusText === 'OK') {
+                dispatch(fetchDisplayList());
+                dispatch(devicesProxies.fetchDeviceList());
             }
         } catch (error) {
             showdynSnackbar({ message: error.message });

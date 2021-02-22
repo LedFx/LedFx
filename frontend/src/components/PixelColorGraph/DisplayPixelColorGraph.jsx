@@ -25,7 +25,14 @@ class DisplayPixelColorGraph extends React.Component {
     }
 
     getChartOptionsForDisplay(display) {
-        const { pixel_count } = display.config[display.id];
+
+        let pixel_count = 0
+        if (display.config[display.id]) {
+            pixel_count = display.config[display.id].pixel_count
+        } else {
+            pixel_count = display.pixel_count
+        }
+
 
         return {
             chartData: {
@@ -184,6 +191,10 @@ class DisplayPixelColorGraph extends React.Component {
 
     componentDidUpdate(prevProps) {
         const { display } = this.props;
+        if (prevProps.display.active && display.active === false && this.websocketActive) {
+            this.setState(this.getChartOptionsForDisplay(display));
+            return
+        }
         if (prevProps.display.id !== display.id && this.websocketActive) {
             this.disablePixelVisualization();
             this.enablePixelVisualization(display);

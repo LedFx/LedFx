@@ -1,16 +1,16 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { useSelector, useDispatch } from 'react-redux'
 import { makeStyles } from '@material-ui/core/styles';
 import Card from '@material-ui/core/Card';
 import CardContent from '@material-ui/core/CardContent';
-import CardActions from '@material-ui/core/CardActions';
+// import CardActions from '@material-ui/core/CardActions';
 import CardHeader from '@material-ui/core/CardHeader';
-import Button from '@material-ui/core/Button';
-import Grid from '@material-ui/core/Grid';
+// import Button from '@material-ui/core/Button';
+// import Grid from '@material-ui/core/Grid';
 import Typography from '@material-ui/core/Typography';
-import TextField from '@material-ui/core/TextField';
-import SaveIcon from '@material-ui/icons/Save';
-import { addDisplay } from 'modules/displays'
+// import TextField from '@material-ui/core/TextField';
+// import SaveIcon from '@material-ui/icons/Save';
+// import { addDisplay } from 'modules/displays'
 import FormControl from "@material-ui/core/FormControl";
 import Select from "@material-ui/core/Select";
 import MenuItem from "@material-ui/core/MenuItem";
@@ -54,6 +54,7 @@ const TransitionCard = ({ display, config, addDisplay }) => {
 
     const handleSetTransition = (displayId, config) => () => {
         // useDispatch()
+        console.log(transition_mode, transition_time)
         console.log("Hello!")
         console.log(displayId, config)
         dispatch(addDisplay({ "id": displayId, "config": config }));
@@ -82,7 +83,7 @@ const TransitionCard = ({ display, config, addDisplay }) => {
             <CardContent className={classes.content}>
                 <FormControl className={classes.formControl}>
                     <Typography variant="subtitle2">
-                      Transition Duration
+                        Transition Duration
                     </Typography>
                     <Slider
                         defaultValue={schemas.transition_time.default}

@@ -11,6 +11,8 @@ export const configFetching = createAction(`${ACTION_ROOT}/CONFIG_FETCHING`);
 export const configFetched = createAction(`${ACTION_ROOT}/CONFIG_FETCHED`);
 export const updateDevices = createAction('settings/DEVICES_UPDATED');
 export const updateDisplays = createAction('settings/DISPLAYS_UPDATED');
+// export const setConfig = createAction('settings/CONFIG_SET');
+export const setPreferred = createAction('settings/CONFIG_SET_PREFERED');
 
 // Reducer
 const INITIAL_STATE = {
@@ -29,10 +31,16 @@ const INITIAL_STATE = {
     error: '',
     version: '',
     git_build_commit: '',
+    wled_preferred_mode: '',
+    scan_on_startup: true,
 };
 
 export default handleActions(
     {
+        [setPreferred]: (state, { payload }) => ({
+            ...state,
+            wled_preferred_mode: payload,
+        }),
         [updateDevices]: (state, { payload }) => ({
             ...state,
             devices: payload,
@@ -128,6 +136,26 @@ export function setAudioInput({ value, index }) {
     };
 }
 
+export function setConfig(config) {
+    console.log('YZ2', config);
+    if (config) {
+        return async dispatch => {
+            // dispatch(setConfig());
+            try {
+                const response = await settingProxies.setSystemConfig(config);
+                if (response.statusText !== 'OK') {
+                    throw new Error('Error fetching system config');
+                }
+                console.log('YEEEEEES');
+                dispatch(getConfig());
+            } catch (error) {
+                dispatch(configFetched(error));
+            }
+        };
+    } else {
+        return {};
+    }
+}
 export function getConfig() {
     return async dispatch => {
         dispatch(configFetching());
@@ -140,9 +168,27 @@ export function getConfig() {
             if (responseInfo.statusText !== 'OK') {
                 throw new Error('Error fetching system config');
             }
-            const { dev_mode: devMode, port, host, devices } = response.data.config;
+            const {
+                dev_mode: devMode,
+                port,
+                host,
+                devices,
+                wled_preferred_mode,
+                scan_on_startup,
+            } = response.data.config;
             const { version, git_build_commit } = responseInfo.data;
-            dispatch(configFetched({ devMode, host, port, devices, version, git_build_commit }));
+            dispatch(
+                configFetched({
+                    devMode,
+                    host,
+                    port,
+                    devices,
+                    version,
+                    git_build_commit,
+                    wled_preferred_mode,
+                    scan_on_startup,
+                })
+            );
         } catch (error) {
             dispatch(configFetched(error));
         }
