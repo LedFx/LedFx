@@ -35,35 +35,6 @@ class Transitions(metaclass=IterClass):
         x3 = np.multiply(x2, 1 - weight)
         np.add(x1, x3, x1)
 
-    def subtract(self, x1, x2, weight):
-        """
-        weighted subtractive blending of x1 and x2
-        operates on x1 directly
-        """
-        np.multiply(x1, weight, x1)
-        x3 = np.multiply(x2, 1 - weight)
-        np.subtract(x1, x3, x1)
-
-    def multiply(self, x1, x2, weight):
-        """
-        weighted multiplicative blending of x1 and x2
-        operates on x1 directly
-        """
-        np.multiply(x1, weight, x1)
-        x3 = np.multiply(x2, 1 - weight)
-        np.multiply(x1, x3, x1)
-        np.divide(x1, self.max_brightness, x1)
-
-    def divide(self, x1, x2, weight):
-        """
-        weighted divisive blending of x1 and x2
-        operates on x1 directly
-        """
-        np.multiply(x1, weight, x1)
-        x3 = np.multiply(x2, 1 - weight)
-        np.divide(x1, x3, where=x3 > 0, out=x1)
-        np.multiply(x1, self.max_brightness, x1)
-
     def dissolve(self, x1, x2, weight):
         """
         random indexes of x1 are set to the value of x2
@@ -74,17 +45,17 @@ class Transitions(metaclass=IterClass):
 
     def push(self, x1, x2, weight):
         """
-        x2 "pushes" x1 to the side, proportional to weight
+        x1 "pushes" x2 to the side, proportional to weight
         """
-        idx = int(weight * self.pixel_count)
-        np.roll(x1, idx, axis=1)
+        idx = int((1 - weight) * self.pixel_count)
+        x2 = np.roll(x2, idx, axis=0)
         x1[:idx, :] = x2[:idx, :]
 
     def slide(self, x1, x2, weight):
         """
-        x2 overlaps x1 from the side, proportional to weight
+        x1 overlaps x2 from the side, proportional to weight
         """
-        idx = weight * self.pixel_count
+        idx = int((1 - weight) * self.pixel_count)
         x1[:idx, :] = x2[:idx, :]
 
     def iris(self, x1, x2, weight):
@@ -99,24 +70,21 @@ class Transitions(metaclass=IterClass):
         fades x1 into white, then out into x2
         """
         if weight < 0.5:
-            np.clip(x1, weight * 2, None, x1)
+            np.clip(x2, weight * 2 * 255, None, out=x1)
         else:
-            np.clip(x2, (1 - weight) * 2, None, x1)
+            np.clip(x1, (1 - weight) * 2 * 255, None, out=x1)
 
     def throughBlack(self, x1, x2, weight):
         """
         fades x1 into black, then out into x2
         """
         if weight < 0.5:
-            np.clip(x1, None, 1 - (weight * 2), x1)
+            np.clip(x2, None, 255 * (1 - (weight * 2)), x1)
         else:
-            np.clip(x2, None, 2 * (weight - 0.5), x1)
+            np.clip(x1, None, 255 * 2 * (weight - 0.5), x1)
 
     NAMED_FUNCTIONS = {
         "Add": add,
-        "Subtract": subtract,
-        "Multiply": multiply,
-        "Divide": divide,
         "Dissolve": dissolve,
         "Push": push,
         "Slide": slide,

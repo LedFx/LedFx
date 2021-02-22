@@ -321,15 +321,11 @@ class Display(object):
         """
         Assembles the frame to be flushed.
         """
-        frame = None
 
         # Get and process active effect frame
-        pixels = self._active_effect.get_pixels()
-        frame = np.clip(
-            pixels * self._config["max_brightness"],
-            0,
-            255,
-        )
+        frame = self._active_effect.get_pixels()
+        np.clip(frame, 0, 255, frame)
+
         if self._config["center_offset"]:
             frame = np.roll(frame, self._config["center_offset"], axis=0)
 
@@ -337,6 +333,7 @@ class Display(object):
         if self._transition_effect is not None:
             # Get and process transition effect frame
             transition_frame = self._transition_effect.get_pixels()
+            np.clip(transition_frame, 0, 255, transition_frame)
 
             if self._config["center_offset"]:
                 transition_frame = np.roll(
@@ -357,6 +354,8 @@ class Display(object):
             self.frame_transitions(
                 self.transitions, frame, transition_frame, weight
             )
+
+        np.multiply(frame, self._config["max_brightness"], frame)
 
         return frame
 
@@ -530,10 +529,12 @@ class Display(object):
         return getattr(self, "_config", None)
 
     @config.setter
-    def config(self, _config):
+    def config(self, new_config):
         """Updates the config for an object"""
         if self._config is not None:
-            _config = self._config | _config
+            _config = self._config | new_config
+        else:
+            _config = new_config
 
         _config = self.CONFIG_SCHEMA(_config)
 
@@ -541,7 +542,7 @@ class Display(object):
             if _config["mapping"] != self._config["mapping"]:
                 self.invalidate_cached_props()
             if _config["transition_mode"] != self._config["transition_mode"]:
-                mode = self._config["transition_mode"]
+                mode = _config["transition_mode"]
                 self.frame_transitions = self.transitions[mode]
 
         setattr(self, "_config", _config)
