@@ -408,6 +408,7 @@ class Devices(RegistryLoader):
                 if preferred_mode:
                     sync_mode = preferred_mode
                 else:
+                    await wled.get_sync_settings()
                     sync_mode = wled.get_sync_mode()
 
             if sync_mode == "ARTNET":
@@ -482,6 +483,17 @@ class Devices(RegistryLoader):
         )
 
         return device
+
+    async def set_wleds_sync_mode(self, mode):
+        for device in self.values():
+            if (
+                device.type == "wled"
+                and device.pixel_count > 480
+                and device.config["sync_mode"] != mode
+            ):
+                device.wled.set_sync_mode(mode)
+                await device.wled.flush_sync_settings()
+                device.update_config({"sync_mode": mode})
 
     async def find_wled_devices(self):
         # Scan the LAN network that match WLED using zeroconf - Multicast DNS

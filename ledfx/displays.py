@@ -532,6 +532,9 @@ class Display(object):
     @config.setter
     def config(self, _config):
         """Updates the config for an object"""
+        if self._config is not None:
+            _config = self._config | _config
+
         _config = self.CONFIG_SCHEMA(_config)
 
         if hasattr(self, "_config"):

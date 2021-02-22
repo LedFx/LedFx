@@ -423,6 +423,8 @@ class WLED(object):
         Args:
             mode: str, in ["ddp", "e131", "artnet" or "udp"]
         """
+        mode = mode.upper()
+
         assert mode in WLED.SYNC_MODES.keys()
 
         if mode == "udp":
