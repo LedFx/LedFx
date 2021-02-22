@@ -199,7 +199,6 @@ export function updateDisplayConfig({ id, data }) {
         }
     };
 }
-
 export function toggleDisplay(id, { active }) {
     return async dispatch => {
         try {
@@ -217,7 +216,6 @@ export function toggleDisplay(id, { active }) {
     };
 }
 export function setDisplay(id, { config }) {
-    // console.log('YZ11', config);
     return async dispatch => {
         try {
             const response = await deviceProxies.updateDevice(id, {

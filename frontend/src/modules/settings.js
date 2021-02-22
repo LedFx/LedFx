@@ -137,7 +137,6 @@ export function setAudioInput({ value, index }) {
 }
 
 export function setConfig(config) {
-    console.log('YZ2', config);
     if (config) {
         return async dispatch => {
             // dispatch(setConfig());
@@ -146,7 +145,6 @@ export function setConfig(config) {
                 if (response.statusText !== 'OK') {
                     throw new Error('Error fetching system config');
                 }
-                console.log('YEEEEEES');
                 dispatch(getConfig());
             } catch (error) {
                 dispatch(configFetched(error));

@@ -1,16 +1,10 @@
 import React from 'react';
-// import { useSelector } from 'react-redux'
 import { useSelector, useDispatch } from 'react-redux'
 import { makeStyles } from '@material-ui/core/styles';
 import Card from '@material-ui/core/Card';
 import CardContent from '@material-ui/core/CardContent';
-// import CardActions from '@material-ui/core/CardActions';
 import CardHeader from '@material-ui/core/CardHeader';
-// import Button from '@material-ui/core/Button';
-// import Grid from '@material-ui/core/Grid';
 import Typography from '@material-ui/core/Typography';
-// import TextField from '@material-ui/core/TextField';
-// import SaveIcon from '@material-ui/icons/Save';
 import { addDisplay } from 'modules/displays'
 import FormControl from "@material-ui/core/FormControl";
 import Select from "@material-ui/core/Select";
@@ -18,10 +12,6 @@ import MenuItem from "@material-ui/core/MenuItem";
 import InputLabel from "@material-ui/core/InputLabel";
 import Slider from "@material-ui/core/Slider";
 
-
-// CONSTANT display categories
-export const DEFAULT_CAT = 'default_presets';
-export const CUSTOM_CAT = 'custom_presets';
 
 const useStyles = makeStyles(theme => ({
     content: {
@@ -31,11 +21,6 @@ const useStyles = makeStyles(theme => ({
         width: '100%',
         padding: theme.spacing(2),
         paddingBottom: 0,
-    },
-    actions: {
-        display: 'flex',
-        flexDirection: 'row',
-        paddingBottom: theme.spacing(3),
     },
     formControl: {
         marginRight: theme.spacing(3),
@@ -53,7 +38,6 @@ const TransitionCard = ({ display }) => {
         "id": displayId, "config": config
     }));
 
-
     const onSliderChange = (e, newValue) => handleSetTransition(display.id, {
         transition_time: newValue
     })
@@ -70,7 +54,7 @@ const TransitionCard = ({ display }) => {
     ]
 
     return (
-        <Card variant="outlined">
+        <Card variant="outlined" style={{ marginTop: '2rem' }}>
             <CardHeader title="Transitions" subheader="Seamlessly blend between effects" />
             <CardContent className={classes.content}>
                 <FormControl className={classes.formControl}>
@@ -79,25 +63,19 @@ const TransitionCard = ({ display }) => {
                     </Typography>
                     <Slider
                         defaultValue={transition_time || schemas.transition_time.default}
-                        // value={transitionTime}
                         onChangeCommitted={onSliderChange}
-                        aria-labelledby="discrete-slider-always"
+                        aria-labelledby="discrete-slider"
                         step={0.1}
-                        marks={marks}
                         min={schemas.transition_time.minimum}
                         max={schemas.transition_time.maximum}
-                        // disabled={type === "instant"}
+                        marks={marks}
                         valueLabelDisplay="auto"
                     />
                 </FormControl>
                 <FormControl className={classes.formControl}>
                     <InputLabel id="demo-simple-select-helper-label">Select a transition effect</InputLabel>
                     <Select defaultValue={transition_mode || schemas.transition_mode.default} onChange={(e) => {
-                        handleSetTransition(display.id, {
-
-                            transition_mode: e.target.value
-
-                        })
+                        handleSetTransition(display.id, { transition_mode: e.target.value })
                     }} >
                         {schemas.transition_mode.enum.map((mode, i) => <MenuItem key={i} value={mode}>{mode}</MenuItem>)}
                     </Select>
