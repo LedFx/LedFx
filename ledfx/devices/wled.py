@@ -63,10 +63,11 @@ class WLEDDevice(NetworkedDevice):
         super().__init__(ledfx, config)
         self.subdevice = None
 
-    def config_updated(self, new_config):
-        if "sync_mode" in new_config.keys():
-            if new_config["sync_mode"] != self._config["sync_mode"]:
-                self.setup_subdevice()
+    def config_updated(self, config):
+        if not isinstance(
+            self.subdevice, self.SYNC_MODES[self._config["sync_mode"]]
+        ):
+            self.setup_subdevice()
 
     def setup_subdevice(self):
         if self.subdevice is not None:
