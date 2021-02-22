@@ -79,7 +79,6 @@ class DisplayConfigDialog extends React.Component {
     handleSubmit = () => {
         const { initial, onAddDisplay, onUpdateDisplay } = this.props;
         const { model: config } = this.state;
-        console.log("Yz0001", initial, config)
         if (initial.id) {
             onUpdateDisplay(initial.id, { config });
         } else {
