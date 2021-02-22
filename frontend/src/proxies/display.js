@@ -15,6 +15,11 @@ export function updateDisplay(displayId, { config }) {
         config: config,
     });
 }
+export function updatePostDisplay(displayId, { config }) {
+    return api.post(`/displays${displayId}`, {
+        config: config,
+    });
+}
 export function updateDisplayConf(displayId, { config }) {
     return api.put(`/displays/${displayId}`, {
         id: displayId,

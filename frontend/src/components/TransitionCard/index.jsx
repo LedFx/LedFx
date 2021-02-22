@@ -1,6 +1,6 @@
 import React from 'react';
-import { useSelector } from 'react-redux'
-// import { useSelector, useDispatch } from 'react-redux'
+// import { useSelector } from 'react-redux'
+import { useSelector, useDispatch } from 'react-redux'
 import { makeStyles } from '@material-ui/core/styles';
 import Card from '@material-ui/core/Card';
 import CardContent from '@material-ui/core/CardContent';
@@ -11,13 +11,13 @@ import CardHeader from '@material-ui/core/CardHeader';
 import Typography from '@material-ui/core/Typography';
 // import TextField from '@material-ui/core/TextField';
 // import SaveIcon from '@material-ui/icons/Save';
-// import { addDisplay } from 'modules/displays'
+import { addDisplay } from 'modules/displays'
 import FormControl from "@material-ui/core/FormControl";
 import Select from "@material-ui/core/Select";
 import MenuItem from "@material-ui/core/MenuItem";
 import InputLabel from "@material-ui/core/InputLabel";
 import Slider from "@material-ui/core/Slider";
-import debounce from 'debounce';
+
 
 // CONSTANT display categories
 export const DEFAULT_CAT = 'default_presets';
@@ -44,26 +44,19 @@ const useStyles = makeStyles(theme => ({
 
 const TransitionCard = ({ display }) => {
     const classes = useStyles();
-    // const dispatch = useDispatch();
-
+    const dispatch = useDispatch();
     const schemas = useSelector(state => state.schemas.displays.schema.properties)
-
     const transition_mode = display.config[display.id] && display.config[display.id].config && display.config[display.id].config.transition_mode
     const transition_time = display.config[display.id] && display.config[display.id].config && display.config[display.id].config.transition_time
 
-    const handleSetTransition = (displayId, config) => () => {
-        // useDispatch()
-        console.log(transition_mode, transition_time)
-        console.log("Hello!")
-        console.log(displayId, config)
-        // dispatch(addDisplay({ "id": displayId, "config": config }));
-    };
+    const handleSetTransition = (displayId, config) => dispatch(addDisplay({
+        "id": displayId, "config": config
+    }));
 
-    const debouncedOnChangeHandler = debounce(handleSetTransition, 200)
 
-    const onChange = (e, newValue) => {
-        debouncedOnChangeHandler(newValue);
-    };
+    const onSliderChange = (e, newValue) => handleSetTransition(display.id, {
+        transition_time: newValue
+    })
 
     const marks = [
         {
@@ -85,9 +78,9 @@ const TransitionCard = ({ display }) => {
                         Transition Duration
                     </Typography>
                     <Slider
-                        defaultValue={schemas.transition_time.default}
+                        defaultValue={transition_time || schemas.transition_time.default}
                         // value={transitionTime}
-                        onChange={onChange}
+                        onChangeCommitted={onSliderChange}
                         aria-labelledby="discrete-slider-always"
                         step={0.1}
                         marks={marks}
@@ -99,8 +92,14 @@ const TransitionCard = ({ display }) => {
                 </FormControl>
                 <FormControl className={classes.formControl}>
                     <InputLabel id="demo-simple-select-helper-label">Select a transition effect</InputLabel>
-                    <Select onChange={handleSetTransition} >
-                        {schemas.transition_mode.enum.map(mode => <MenuItem value={mode}>{mode}</MenuItem>)}
+                    <Select defaultValue={transition_mode || schemas.transition_mode.default} onChange={(e) => {
+                        handleSetTransition(display.id, {
+
+                            transition_mode: e.target.value
+
+                        })
+                    }} >
+                        {schemas.transition_mode.enum.map((mode, i) => <MenuItem key={i} value={mode}>{mode}</MenuItem>)}
                     </Select>
                 </FormControl>
             </CardContent>
