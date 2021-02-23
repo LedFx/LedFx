@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import { makeStyles } from '@material-ui/core/styles';
 import Button from '@material-ui/core/Button';
@@ -8,7 +8,7 @@ import DialogActions from '@material-ui/core/DialogActions';
 import Dialog from '@material-ui/core/Dialog';
 import AddCircleIcon from '@material-ui/icons/AddCircle';
 import { SchemaForm, utils } from 'react-schema-form';
-import * as integrationsProxies from 'proxies/integrations';
+//import * as integrationsProxies from 'proxies/integrations';
 //import { getAsyncqlclisteners  } from 'modules/qlc'
 import {useDispatch} from 'react-redux'
 import DialogContentText from '@material-ui/core/DialogContentText';
@@ -199,15 +199,9 @@ export default function ConfirmationDialog({ deviceList, config, integration }) 
     const [open, setOpen] = React.useState(false);
     const dispatch = useDispatch();
     console.log("YZ03:", integration)
+    
     const handleClickListItem = async() => {
-        setOpen(true);        
-        dispatch(integrationsProxies.getQLCInfo({
-            integrationId: integration.id, 
-            data: {
-                info: "event_types"
-            }
-        }));
-    };
+        setOpen(true)};
 
     const handleClose = newValue => {
         setOpen(false);

@@ -1,4 +1,5 @@
-import React from 'react';
+import React, {useEffect} from 'react';
+import { useDispatch} from 'react-redux';
 import Card from '@material-ui/core/Card';
 import CardActions from '@material-ui/core/CardActions';
 import CardContent from '@material-ui/core/CardContent';
@@ -11,7 +12,8 @@ import { deleteAsyncIntegration } from 'modules/integrations';
 import { toggleAsyncIntegration } from 'modules/integrations';
 import { Switch, Chip } from '@material-ui/core';
 import DialogAddEventListener from 'components/IntegrationComponents/DialogAddEventListener';
-
+import { getAsyncqlclisteners  } from 'modules/qlc'
+//import { Call } from '@material-ui/icons';
 
 const useStyles = makeStyles({
     integrationCard: {
@@ -25,11 +27,13 @@ const useStyles = makeStyles({
 
 const IntegrationsCard = ({ int }) => {
     const classes = useStyles();
-
-    const handleToggle = props => {
-        // console.log('YO', props);
-        toggleAsyncIntegration(props);
-    };
+    const dispatch = useDispatch();
+    const handleToggle = (props) => toggleAsyncIntegration(props);
+        
+    useEffect(() => {     
+        // EVERTHING HERE IS ONLY CALLED ONCE WHEN THIS COMPONENT IS RENDERED   
+       dispatch(getAsyncqlclisteners(int.id))
+    }, [dispatch, int.id])
     return (
         <Card className={classes.integrationCard} variant="outlined">
             <CardContent style={{ paddingBottom: 0 }}>
@@ -72,7 +76,7 @@ const IntegrationsCard = ({ int }) => {
                 ? <DialogAddEventListener integration={int} />
                 : 'Must be in connected status, to add new event listener'}
             </CardActions>
-            <CardActions>                
+            <CardActions>
                 <PopoverSure
                     variant="text"
                     onDeleteVitem={() =>
@@ -92,11 +96,7 @@ const IntegrationsCard = ({ int }) => {
                 </Button>
                 <Switch
                     color="primary"
-                    onChange={() =>
-                        handleToggle({
-                            id: int.id,
-                        })
-                    }
+                    onChange={() => handleToggle(int.id)}
                     checked={int.active}
                 />
             </CardActions>
