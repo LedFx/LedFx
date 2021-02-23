@@ -99,18 +99,33 @@ class EffectsEndpoint(RestEndpoint):
         # See if display's active effect type matches this effect type,
         # if so update the effect config
         # otherwise, create a new effect and add it to the display
+
+        # DO NOT DELETE THIS
+        # this is nice code to UPDATE the effect config of an active effect
+        # this is commented out until frontend sends incremental effect updates
+        # so that transitions can now apply on any effect config change.
+        # with incremental updates, we can be smart and only apply transition
+        # on changes to keys like gradient or colour. but we're gonna wait until
+        # frontend incremental updates bc it would make that so much easier
+
+        # try:
+        #     if (
+        #         display.active_effect
+        #         and display.active_effect.type == effect_type
+        #     ):
+        #         effect = display.active_effect
+        #         display.active_effect.update_config(effect_config)
+        #     else:
+        #         effect = self._ledfx.effects.create(
+        #             ledfx=self._ledfx, type=effect_type, config=effect_config
+        #         )
+        #         display.set_effect(effect)
+
         try:
-            if (
-                display.active_effect
-                and display.active_effect.type == effect_type
-            ):
-                effect = display.active_effect
-                display.active_effect.update_config(effect_config)
-            else:
-                effect = self._ledfx.effects.create(
-                    ledfx=self._ledfx, type=effect_type, config=effect_config
-                )
-                display.set_effect(effect)
+            effect = self._ledfx.effects.create(
+                ledfx=self._ledfx, type=effect_type, config=effect_config
+            )
+            display.set_effect(effect)
         except (ValueError, RuntimeError) as msg:
             response = {
                 "status": "failed",
