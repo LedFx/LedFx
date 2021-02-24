@@ -7,7 +7,6 @@
 *.orig
 *.log
 *.pot
-__pycache__/*
 .cache/*
 .*.swp
 */.ipynb_checkpoints/*
@@ -68,3 +67,9 @@ formatting_test.bat
 win.spec
 frontend/.eslintcache
 *.eslintcache
+
+
+#Pycache from numba
+ledfx/effects/__pycache__/*
+ledfx/__pycache__/*
+__pycache__/*
