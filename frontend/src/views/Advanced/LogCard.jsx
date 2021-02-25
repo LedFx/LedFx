@@ -3,6 +3,7 @@ import { makeStyles } from '@material-ui/core/styles';
 import {
     Card,
     CardHeader,
+    CardActions,
     CardContent,
     Accordion,
     AccordionSummary,
@@ -11,10 +12,13 @@ import {
     TextField,
     FormControlLabel,
     Checkbox,
+    IconButton,
 } from '@material-ui/core';
 import Typography from '@material-ui/core/Typography';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import { Delete } from '@material-ui/icons';
+import BugReportIcon from '@material-ui/icons/BugReport';
+import { useSelector } from 'react-redux';
 
 const { LazyLog } = require('react-lazylog');
 const { NODE_ENV } = process.env;
@@ -70,20 +74,21 @@ const LogCard = ({ settings, error }) => {
         JSON.parse(window.sessionStorage.getItem('messages')) || 30
     );
     const [wrap, setWrap] = useState(false);
+    const settings2 = useSelector(state => state.settings);
     return (
         <Card>
-            <CardHeader title="Console" subheader="View the Console" />
+            <CardHeader title="Tools" subheader="for advanced users only" />
             <CardContent className={classes.content}>
                 {parseInt(window.localStorage.getItem('BladeMod')) > 1 ? (
                     <>
-                        <Accordion expanded={true}>
-                            <AccordionSummary aria-controls="panel1a-content" id="panel1a-header">
+                        <Accordion>
+                            <AccordionSummary expandIcon={<ExpandMoreIcon />} aria-controls="panel1a-content" id="panel1a-header">
                                 <Typography className={classes.heading}>
                                     Realtime-Console
                                 </Typography>
                             </AccordionSummary>
 
-                            <AccordionDetails>
+                            <AccordionDetails className={classes.root}>
                                 <div style={{ minHeight: 300, width: '100%' }}>
                                     <div style={{ height: 300 }}>
                                         <LazyLog
@@ -108,21 +113,19 @@ const LogCard = ({ settings, error }) => {
                                                     );
                                                 },
                                                 formatMessage: e => {
-                                                    const line = `${
-                                                        JSON.parse(e).levelno === 10
-                                                            ? '\u001b[36m'
-                                                            : JSON.parse(e).levelno === 20
+                                                    const line = `${JSON.parse(e).levelno === 10
+                                                        ? '\u001b[36m'
+                                                        : JSON.parse(e).levelno === 20
                                                             ? '\u001b[34m'
                                                             : JSON.parse(e).levelno === 30
-                                                            ? '\u001b[33m'
-                                                            : JSON.parse(e).levelno === 40
-                                                            ? '\u001b[31m'
-                                                            : JSON.parse(e).levelno === 50
-                                                            ? '\u001b[35m'
-                                                            : '\u001b[32m'
-                                                    }[${JSON.parse(e).levelname}] \u001b[37m${
-                                                        JSON.parse(e).name
-                                                    } : ${JSON.parse(e).message}`;
+                                                                ? '\u001b[33m'
+                                                                : JSON.parse(e).levelno === 40
+                                                                    ? '\u001b[31m'
+                                                                    : JSON.parse(e).levelno === 50
+                                                                        ? '\u001b[35m'
+                                                                        : '\u001b[32m'
+                                                        }[${JSON.parse(e).levelname}] \u001b[37m${JSON.parse(e).name
+                                                        } : ${JSON.parse(e).message}`;
                                                     const saveLine = {
                                                         levelno: JSON.parse(e).levelno,
                                                         levelname: JSON.parse(e).levelname,
@@ -250,14 +253,14 @@ const LogCard = ({ settings, error }) => {
                                                             l.levelno === 10
                                                                 ? 'purple'
                                                                 : l.levelno === 20
-                                                                ? 'cyan'
-                                                                : l.levelno === 30
-                                                                ? 'yellow'
-                                                                : l.levelno === 40
-                                                                ? 'orange'
-                                                                : l.levelno === 50
-                                                                ? 'red'
-                                                                : 'green',
+                                                                    ? 'cyan'
+                                                                    : l.levelno === 30
+                                                                        ? 'yellow'
+                                                                        : l.levelno === 40
+                                                                            ? 'orange'
+                                                                            : l.levelno === 50
+                                                                                ? 'red'
+                                                                                : 'green',
                                                     }}
                                                 >
                                                     {l.levelname}
@@ -277,73 +280,116 @@ const LogCard = ({ settings, error }) => {
                         </Accordion>
                     </>
                 ) : (
-                    <div style={{ minHeight: 300, width: '100%' }}>
-                        <div style={{ height: 300 }}>
-                            <LazyLog
-                                enableSearch
-                                url={ws_log_url}
-                                value={'hi'}
-                                websocket
-                                follow
-                                websocketOptions={{
-                                    onClose: () => {
-                                        if (socket) {
-                                            return;
-                                        }
-                                    },
+                        <div style={{ minHeight: 300, width: '100%' }}>
+                            <div style={{ height: 300 }}>
+                                <LazyLog
+                                    enableSearch
+                                    url={ws_log_url}
+                                    value={'hi'}
+                                    websocket
+                                    follow
+                                    websocketOptions={{
+                                        onClose: () => {
+                                            if (socket) {
+                                                return;
+                                            }
+                                        },
 
-                                    onOpen: (e, sock) => {
-                                        socket = sock;
-                                        sock.send(
-                                            JSON.stringify({ message: 'Logger Websocket Open' })
-                                        );
-                                    },
-                                    formatMessage: e => {
-                                        const line = `${
-                                            JSON.parse(e).levelno === 10
+                                        onOpen: (e, sock) => {
+                                            socket = sock;
+                                            sock.send(
+                                                JSON.stringify({ message: 'Logger Websocket Open' })
+                                            );
+                                        },
+                                        formatMessage: e => {
+                                            const line = `${JSON.parse(e).levelno === 10
                                                 ? '\u001b[36m'
                                                 : JSON.parse(e).levelno === 20
-                                                ? '\u001b[34m'
-                                                : JSON.parse(e).levelno === 30
-                                                ? '\u001b[33m'
-                                                : JSON.parse(e).levelno === 40
-                                                ? '\u001b[31m'
-                                                : JSON.parse(e).levelno === 50
-                                                ? '\u001b[35m'
-                                                : '\u001b[32m'
-                                        }[${JSON.parse(e).levelname}] \u001b[37m${
-                                            JSON.parse(e).name
-                                        } : ${JSON.parse(e).message}`;
-                                        const saveLine = {
-                                            levelno: JSON.parse(e).levelno,
-                                            levelname: JSON.parse(e).levelname,
-                                            message: JSON.parse(e).message,
-                                            asctime: JSON.parse(e).asctime,
-                                        };
+                                                    ? '\u001b[34m'
+                                                    : JSON.parse(e).levelno === 30
+                                                        ? '\u001b[33m'
+                                                        : JSON.parse(e).levelno === 40
+                                                            ? '\u001b[31m'
+                                                            : JSON.parse(e).levelno === 50
+                                                                ? '\u001b[35m'
+                                                                : '\u001b[32m'
+                                                }[${JSON.parse(e).levelname}] \u001b[37m${JSON.parse(e).name
+                                                } : ${JSON.parse(e).message}`;
+                                            const saveLine = {
+                                                levelno: JSON.parse(e).levelno,
+                                                levelname: JSON.parse(e).levelname,
+                                                message: JSON.parse(e).message,
+                                                asctime: JSON.parse(e).asctime,
+                                            };
 
-                                        const log =
-                                            JSON.parse(window.sessionStorage.getItem('logger')) ||
-                                            [];
-                                        log.push(saveLine);
-                                        const test = log.slice(
-                                            log.length > logLength - 1 ? log.length - logLength : 0,
-                                            log.length
-                                        );
-                                        setLogger(test);
+                                            const log =
+                                                JSON.parse(window.sessionStorage.getItem('logger')) ||
+                                                [];
+                                            log.push(saveLine);
+                                            const test = log.slice(
+                                                log.length > logLength - 1 ? log.length - logLength : 0,
+                                                log.length
+                                            );
+                                            setLogger(test);
 
-                                        window.sessionStorage.setItem(
-                                            'logger',
-                                            JSON.stringify(test)
-                                        );
+                                            window.sessionStorage.setItem(
+                                                'logger',
+                                                JSON.stringify(test)
+                                            );
 
-                                        return line;
-                                    },
-                                }}
-                            />
+                                            return line;
+                                        },
+                                    }}
+                                />
+                            </div>
                         </div>
-                    </div>
-                )}
+                    )}
             </CardContent>
+            <CardActions style={{ justifyContent: 'flex-end' }}>
+                {logger.length > 2 && (
+                    <IconButton
+                        aria-label="BugTracker"
+                        color="inherit"
+                        onClick={() => {
+                            const message = `
+<!---ENTER A TITLE--->
+<!---DESCRIBE YOUR ISSUE IN DETAIL--->
+
+
+<!---DON'T TOUCH THE REST - JUST CLICK PREVIEW--->
+## Settings:
+\`\`\`json
+${JSON.stringify(settings2, null, 2)}
+\`\`\`
+
+
+## userAgent:
+\`\`\`json
+${navigator.userAgent.replaceAll(';', '-')}
+\`\`\`
+
+## Logs:
+\`\`\`json
+${JSON.stringify(
+                                logger.map(l => l.message).filter((v, i, a) => a.indexOf(v) === i),
+                                null,
+                                2
+                            )}
+\`\`\`
+    `;
+                            window.open(
+                                `https://github.com/LedFx/LedFx/issues/new?body=${encodeURIComponent(
+                                    message
+                                )}`
+                            );
+                        }}
+                        target="_blank"
+                        title="BugTracker"
+                    >
+                        <BugReportIcon />
+                    </IconButton>
+                )}
+            </CardActions>
         </Card>
     );
 };

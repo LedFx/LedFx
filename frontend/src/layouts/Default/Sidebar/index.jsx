@@ -80,10 +80,10 @@ const Links = ({ classes, devMode, effectLinks, isViewActive }) => {
                                                         <Icon
                                                             color={
                                                                 display.effect &&
-                                                                display.effect.active === true
+                                                                    display.effect.active === true
                                                                     ? isViewActive(
-                                                                          `/displays/${display.id}`
-                                                                      )
+                                                                        `/displays/${display.id}`
+                                                                    )
                                                                         ? 'inherit'
                                                                         : 'primary'
                                                                     : 'inherit'
@@ -91,26 +91,25 @@ const Links = ({ classes, devMode, effectLinks, isViewActive }) => {
                                                             style={{ position: 'relative' }}
                                                         >
                                                             {display.config.icon_name &&
-                                                            display.config.icon_name.startsWith(
-                                                                'wled'
-                                                            ) ? (
-                                                                <Wled />
-                                                            ) : display.config.icon_name.startsWith(
-                                                                  'mdi:'
-                                                              ) ? (
-                                                                <span
-                                                                    className={`mdi mdi-${
-                                                                        display.config.icon_name.split(
-                                                                            'mdi:'
-                                                                        )[1]
-                                                                    }`}
-                                                                ></span>
-                                                            ) : (
-                                                                camelToSnake(
-                                                                    display.config.icon_name ||
-                                                                        'SettingsInputComponent'
-                                                                )
-                                                            )}
+                                                                display.config.icon_name.startsWith(
+                                                                    'wled'
+                                                                ) ? (
+                                                                    <Wled />
+                                                                ) : display.config.icon_name.startsWith(
+                                                                    'mdi:'
+                                                                ) ? (
+                                                                        <span
+                                                                            className={`mdi mdi-${display.config.icon_name.split(
+                                                                                'mdi:'
+                                                                            )[1]
+                                                                                }`}
+                                                                        ></span>
+                                                                    ) : (
+                                                                        camelToSnake(
+                                                                            display.config.icon_name ||
+                                                                            'SettingsInputComponent'
+                                                                        )
+                                                                    )}
                                                         </Icon>
                                                     </ListItemIcon>
                                                     <ListItemText
@@ -184,7 +183,15 @@ const Sidebar = props => {
                 LedFx
                 <span style={{ fontSize: 'small', color: '#999' }}> - v{version}</span>
             </a>
-        </div>
+            {((parseInt(window.localStorage.getItem('BladeMod')) > 0) || window.ledfx_mode === 'dev')
+                && (<div className={classes.devbadge} onClick={() => {
+                    if (parseInt(window.localStorage.getItem('BladeMod')) === 1 && props.location.pathname === '/devices') {
+                        window.location = '/advanced'
+                    }
+                }}>v{process.env.REACT_APP_VERSION}</div>)}
+
+
+        </div >
     );
     useEffect(() => {
         fetchDisplayList();

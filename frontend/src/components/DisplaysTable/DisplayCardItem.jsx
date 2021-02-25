@@ -13,6 +13,7 @@ import DisplaySegmentsDialog from 'components/DisplaySegmentsDialog';
 import TuneIcon from '@material-ui/icons/Tune';
 import VisibilityIcon from '@material-ui/icons/Visibility';
 import BuildIcon from '@material-ui/icons/Build';
+import TypeBadge from './TypeBadge';
 
 const styles = theme => ({
     deleteButton: {
@@ -138,15 +139,9 @@ const DisplayCardItem = ({
                         </NavLink>
 
                         <div>
-                            <Button
-                                variant={variant}
-                                disabled
-                                size="small"
-                                className={classes.badgeButton}
-                            >
-                                {deviceList.find(d => d.id === display.is_device) &&
-                                    deviceList.find(d => d.id === display.is_device).type}
-                            </Button>
+                            <TypeBadge variant={variant} display={display} style={{
+                                marginLeft: '0.5rem'
+                            }} />
                             {display.config.preview_only && (
                                 <Button
                                     variant={'text'}

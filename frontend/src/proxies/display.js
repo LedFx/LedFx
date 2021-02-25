@@ -9,8 +9,19 @@ export function getDisplays() {
 export function createDisplay(config) {
     return api.post('/displays', config);
 }
-export function updateDisplay(displayId, config) {
-    return api.post('/displays', {
+export function updateDisplay(displayId, { config }) {
+    return api.post(`/displays`, {
+        id: displayId,
+        config: config,
+    });
+}
+export function updatePostDisplay(displayId, { config }) {
+    return api.post(`/displays${displayId}`, {
+        config: config,
+    });
+}
+export function updateDisplayConf(displayId, { config }) {
+    return api.put(`/displays/${displayId}`, {
         id: displayId,
         config: config,
     });

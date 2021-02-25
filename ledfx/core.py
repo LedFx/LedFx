@@ -151,11 +151,15 @@ class LedFxCore(object):
         # TODO: Deferr
         self.devices.create_from_config(self.config["devices"])
         await self.devices.async_initialize_devices()
+
+        sync_mode = self.config["wled_preferred_mode"]
+        if sync_mode:
+            await self.devices.set_wleds_sync_mode(sync_mode)
+
         self.displays.create_from_config(self.config["displays"])
         self.integrations.create_from_config(self.config["integrations"])
 
-        if not self.devices.values():
-            _LOGGER.info("No devices saved in config.")
+        if self.config["scan_on_startup"]:
             async_fire_and_forget(self.devices.find_wled_devices(), self.loop)
 
         async_fire_and_forget(

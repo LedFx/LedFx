@@ -51,8 +51,8 @@ const AddSceneCard = ({ scenes = {}, addScene }) => {
                 subheader="Save current effects of all devices as a Scene"
             />
             <CardContent>
-                <Box display="flex">
-                    <Box item="true" flexGrow={1}>
+                <Box display="flex" flexWrap="wrap" alignItems="flex-end">
+                    <Box item="true" flexGrow={1} paddingX={1}>
                         <TextField
                             error={!!error}
                             id="SceneNameInput"
@@ -62,7 +62,7 @@ const AddSceneCard = ({ scenes = {}, addScene }) => {
                             helperText={error}
                         />
                     </Box>
-                    <Box item="true">
+                    <Box item="true" paddingX={1}>
                         <Button
                             className={classes.button}
                             color="primary"

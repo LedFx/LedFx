@@ -166,7 +166,7 @@ class WLED(object):
     A collection of WLED helper functions
     """
 
-    SYNC_MODES = {"ddp": 4048, "e131": 5568, "artnet": 6454}
+    SYNC_MODES = {"DDP": 4048, "E131": 5568, "ARTNET": 6454}
 
     def __init__(self, ip_address):
         self.ip_address = ip_address
@@ -185,11 +185,11 @@ class WLED(object):
             response = method(url, timeout=timeout, **kwargs)
 
         except requests.exceptions.RequestException:
-            msg = f"Cannot connect to WLED device at {ip_address}"
+            msg = f"WLED {ip_address}: Failed to connect"
             raise ValueError(msg)
 
         if not response.ok:
-            msg = f"WLED API Error at {ip_address}: {response.status_code}"
+            msg = f"WLED {ip_address}: API Error - {response.status_code}"
             raise ValueError(msg)
 
         return response
@@ -288,7 +288,7 @@ class WLED(object):
             config: dict, with all wled configuration info
         """
         _LOGGER.info(
-            f"Attempting to contact WLED device at {self.ip_address}..."
+            f"WLED {self.ip_address}: Attempting to contact device..."
         )
         response = await WLED._wled_request(
             requests.get, self.ip_address, "json/info"
@@ -297,8 +297,10 @@ class WLED(object):
         wled_config = response.json()
 
         if not wled_config["brand"] in "WLED":
-            msg = f"{self.ip_address} is not WLED compatible, brand: {wled_config['brand']}"
+            msg = f"WLED {self.ip_address}: Not a compatible WLED brand '{wled_config['brand']}'"
             raise ValueError(msg)
+
+        _LOGGER.info(f"WLED {self.ip_address}: Received config")
 
         return wled_config
 
@@ -349,7 +351,7 @@ class WLED(object):
         )
 
         _LOGGER.info(
-            f"Turned WLED device at {self.ip_address} {'on' if state else 'off'}."
+            f"WLED {self.ip_address}: Turned {'on' if state else 'off'}."
         )
 
     async def set_brightness(self, brightness):
@@ -368,7 +370,7 @@ class WLED(object):
         )
 
         _LOGGER.info(
-            f"Set WLED device brightness at {self.ip_address} to {brightness}."
+            f"WLED {self.ip_address}: Set brightness to {brightness}."
         )
 
     def enable_realtime_gamma(self):
@@ -381,7 +383,7 @@ class WLED(object):
         del self.sync_settings["RG"]
 
         _LOGGER.info(
-            f"Enables WLED device at {self.ip_address} realtime gamma correction"
+            f"WLED {self.ip_address}: Enabled realtime gamma correction"
         )
 
     def force_max_brightness(self):
@@ -390,9 +392,7 @@ class WLED(object):
         """
         self.sync_settings |= ({"FB": "on"},)
 
-        _LOGGER.info(
-            f"Set WLED device at {self.ip_address} to force max brightness"
-        )
+        _LOGGER.info(f"WLED {self.ip_address}: Enabled force max brightness")
 
     def get_inactivity_timeout(self):
         """
@@ -410,7 +410,7 @@ class WLED(object):
         if self.sync_settings["ET"] / 1000 == timeout:
             return
 
-        self.sync_settings |= ({"ET": timeout * 1000},)
+        self.sync_settings |= {"ET": timeout * 1000}
 
         _LOGGER.info(
             f"Set WLED device at {self.ip_address} timeout to {timeout}s"
@@ -423,6 +423,8 @@ class WLED(object):
         Args:
             mode: str, in ["ddp", "e131", "artnet" or "udp"]
         """
+        mode = mode.upper()
+
         assert mode in WLED.SYNC_MODES.keys()
 
         if mode == "udp":
