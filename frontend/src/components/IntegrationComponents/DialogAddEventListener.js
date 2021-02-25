@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
 import PropTypes from 'prop-types';
 import { makeStyles } from '@material-ui/core/styles';
 import Button from '@material-ui/core/Button';
@@ -8,9 +9,6 @@ import DialogActions from '@material-ui/core/DialogActions';
 import Dialog from '@material-ui/core/Dialog';
 import AddCircleIcon from '@material-ui/icons/AddCircle';
 import { SchemaForm, utils } from 'react-schema-form';
-//import * as integrationsProxies from 'proxies/integrations';
-//import { getAsyncqlclisteners  } from 'modules/qlc'
-import {useDispatch} from 'react-redux'
 import DialogContentText from '@material-ui/core/DialogContentText';
 import DropDown from 'components/forms/DropDown';
 import InputLabel from '@material-ui/core/InputLabel';
@@ -47,6 +45,28 @@ function ConfirmationDialogRaw(props) {
         window.location = window.location.href;
     };
 
+    //const classes = useStyles();
+    //const event_types = useSelector(state => state.);
+    //console.log("YZ05:", event_types)
+
+    {/*
+    const effectNames = Object.keys(event_types).map(eid => ({
+        name: event_types[eid].name,
+        id: event_types[eid].id,
+        category: event_types[eid].category,
+    }));
+    
+    const selectedDisplay = useSelector(state => state.selectedDisplay);
+    const { display } = selectedDisplay;
+
+    let group = effectNames.reduce((r, a) => {
+        r[a.category] = [...(r[a.category] || []), a];
+        return r;
+    }, {});
+
+    const [formats, list] = React.useState(() => Object.keys(group).map(c => c || []));
+    */}
+
     const onModelChange = (key, val) => {
         utils.selectOrSet(key, model, val);
 
@@ -74,32 +94,34 @@ function ConfirmationDialogRaw(props) {
                     To add a Event Listener to LedFx, please first select the type of event trigger (If This),
                     and then provide the expected output (Then That).
                 </DialogContentText>
-                    {/*
-                    QLC+ = When user clicks  'Add event listener' button, then load into Redux:
-                    {integrationsProxies.getQLCEventTypes} & {integrationsProxies.getQLCWidgets}
-                    Use above to populate the dropdown fields.
-                    */}
                 <FormControl>
                     <InputLabel htmlFor="grouped-select">Event Trigger (If This)</InputLabel>
                     <Select defaultValue="" id="grouped-select">
-                    {/*GET API: event_types*/}
+                    {/*From Redux: qlclistener_add, show dropdown event_types*/}
                         <MenuItem value="">
                             <em>None</em>
                         </MenuItem>
-                        <ListSubheader>Effect Set</ListSubheader>
-                        <MenuItem value={1}>Bands Matrix</MenuItem>
-                        <MenuItem value={2}>Blade Power</MenuItem>
-                        <ListSubheader>Effect Cleared</ListSubheader>
-                        <ListSubheader>Scene Set</ListSubheader>
-                        <MenuItem value={3}>test2</MenuItem>
-                        <MenuItem value={4}>test3</MenuItem>
+                        {/*
+                        {event_types &&
+                        Object.keys(group).map(
+                            c =>
+                                formats.indexOf(c) !== -1 && [
+                                    <ListSubheader
+                                        className={classes.FormListHeaders}
+                                        color="primary"
+                                    >
+                                        {c}
+                                    </ListSubheader>,
+                                    group[c].map(e => <MenuItem value={e.id}>{e.name}</MenuItem>),
+                                ]
+                        )}
+                        */}
                         </Select>
                 </FormControl>
                 <form>
                     <DropDown
                     label="Then Do This"
-                    /*GET API: qlc_widgets
-                    {integrationsProxies.getQLCWidgets}
+                    /*From Redux: qlclistener_add, show dropdown qlc_widgets
                     Think we should convert API data from:
                     [
                         "7",

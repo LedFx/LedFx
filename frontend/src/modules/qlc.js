@@ -3,12 +3,12 @@ import * as integrationsProxies from 'proxies/integrations';
 
 // Actions
 const ACTION_ROOT = 'qlc';
-export const setqlclistener = createAction(`${ACTION_ROOT}/qlclistener_SET`);
-export const addqlclistener = createAction(`${ACTION_ROOT}/qlclistener_ADD`);
+export const setqlclistener = createAction(`${ACTION_ROOT}/QLCLISTENER_SET`);
+export const addqlclistener = createAction(`${ACTION_ROOT}/QLCLISTENER_ADD`);
 
 // // Reducer
 const INITIAL_STATE = {
-    list: []
+    event_types: []
 };
 
 export default handleActions(
