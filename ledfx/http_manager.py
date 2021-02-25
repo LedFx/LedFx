@@ -5,7 +5,7 @@ import time
 
 import aiohttp_jinja2
 import jinja2
-from aiohttp import web, web_fileresponse
+from aiohttp import web
 
 import ledfx_frontend
 from ledfx.api import RestApi
@@ -55,12 +55,12 @@ class HttpServer(object):
 
     async def favicon(self, response):
 
-        return web_fileresponse.FileResponse(
+        return web.FileResponse(
             path=ledfx_frontend.where() + "/favicon.ico", status=200
         )
 
     async def manifest(self, response):
-        return web_fileresponse.FileResponse(
+        return web.FileResponse(
             path=ledfx_frontend.where() + "/manifest.json", status=200
         )
 
