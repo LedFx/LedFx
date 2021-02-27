@@ -58,7 +58,8 @@ export async function deleteAsyncIntegration(data) {
     // integrationsProxies.deleteIntegration(data);
     return async dispatch => {
         try {            
-            const response = await integrationsProxies.deleteIntegration(data);
+            //const response = 
+            await integrationsProxies.deleteIntegration(data);
             if (response.statusText === 'OK') {
                 console.log('OMG', response.data);
                 // dispatch(deleteIntegration(response.data.integrations));
@@ -72,7 +73,8 @@ export async function deleteAsyncIntegration(data) {
 export async function toggleAsyncIntegration(data) {
     console.log('toggleAsyncIntegration: ', data);
     // 1) You would want to do a try catch around this. but its ok for dev
-    const response = await integrationsProxies.toggleIntegration({id: data});    
+    //const response = 
+    await integrationsProxies.toggleIntegration({id: data});    
 
     // 2) you dont want to do the reload here 
     //    delete this after you have dispatched the new data to the store

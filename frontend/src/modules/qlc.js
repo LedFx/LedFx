@@ -8,15 +8,15 @@ export const addqlclistener = createAction(`${ACTION_ROOT}/QLCLISTENER_ADD`);
 
 // // Reducer
 const INITIAL_STATE = {
-    event_types: []
+    list: []
 };
 
 export default handleActions(
     {
-        [addqlclistener]: (state, { payload }) => {
+        [setqlclistener]: (state, { payload }) => {
             return {
                 ...state,
-                list: payload,
+                payload,
             };
         },
     },
@@ -29,8 +29,8 @@ export function getAsyncqlclisteners(data) {
         try {
             const response = await integrationsProxies.getQLCInfo(data);
             if (response.statusText === 'OK') {
-                console.log("GetQLCInfo - Response: ", response)
-                dispatch(addqlclistener(response.data.integrations));
+                console.log("GetQLCInfo - Response: ", response.data)
+                dispatch(setqlclistener(response.data));
             }
         } catch (error) {
             console.log(error);

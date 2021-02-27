@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
+import React from 'react'; //, { useEffect, useState }
+//import {useDispatch } from 'react-redux'; //useSelector,
 import PropTypes from 'prop-types';
 import { makeStyles } from '@material-ui/core/styles';
 import Button from '@material-ui/core/Button';
@@ -13,7 +13,7 @@ import DialogContentText from '@material-ui/core/DialogContentText';
 import DropDown from 'components/forms/DropDown';
 import InputLabel from '@material-ui/core/InputLabel';
 import MenuItem from '@material-ui/core/MenuItem';
-import ListSubheader from '@material-ui/core/ListSubheader';
+//import ListSubheader from '@material-ui/core/ListSubheader';
 import FormControl from '@material-ui/core/FormControl';
 import Select from '@material-ui/core/Select';
 import { Slider, Switch } from '@material-ui/core';
@@ -45,27 +45,7 @@ function ConfirmationDialogRaw(props) {
         window.location = window.location.href;
     };
 
-    //const classes = useStyles();
-    //const event_types = useSelector(state => state.);
-    //console.log("YZ05:", event_types)
-
-    {/*
-    const effectNames = Object.keys(event_types).map(eid => ({
-        name: event_types[eid].name,
-        id: event_types[eid].id,
-        category: event_types[eid].category,
-    }));
-    
-    const selectedDisplay = useSelector(state => state.selectedDisplay);
-    const { display } = selectedDisplay;
-
-    let group = effectNames.reduce((r, a) => {
-        r[a.category] = [...(r[a.category] || []), a];
-        return r;
-    }, {});
-
-    const [formats, list] = React.useState(() => Object.keys(group).map(c => c || []));
-    */}
+    const classes = useStyles();
 
     const onModelChange = (key, val) => {
         utils.selectOrSet(key, model, val);
@@ -73,6 +53,7 @@ function ConfirmationDialogRaw(props) {
     };
     delete other.deviceList;
     return (
+        console.log('MattTestDropdown Get: QLCInfo', ),
         <Dialog
             disableBackdropClick
             disableEscapeKeyDown
@@ -83,20 +64,22 @@ function ConfirmationDialogRaw(props) {
             {...other}
         >
             <DialogTitle id="confirmation-dialog-title">
-                Event Listener Setup 
-                {/*
-                {integrationTypes[integration].name} 
-                installedIntegrations[installedIntegration].id
-                */}
+                Event Listener Setup: {props.integration.id}
+
             </DialogTitle>
             <DialogContent dividers>
                 <DialogContentText>
                     To add a Event Listener to LedFx, please first select the type of event trigger (If This),
                     and then provide the expected output (Then That).
                 </DialogContentText>
-                <FormControl>
+                <FormControl className={classes.FormRow}>
                     <InputLabel htmlFor="grouped-select">Event Trigger (If This)</InputLabel>
-                    <Select defaultValue="" id="grouped-select">
+                    <Select
+                    //defaultValue={props.event_types}
+                    //onChange={onEffectTypeChange}
+                    id="grouped-select"
+                    className={classes.FormSelect}
+                >
                     {/*From Redux: qlclistener_add, show dropdown event_types*/}
                         <MenuItem value="">
                             <em>None</em>
@@ -165,7 +148,7 @@ function ConfirmationDialogRaw(props) {
                     aria-haspopup="true"
                     // integrationsProxies.deleteIntegration(data);
                     //onClick={handleClickListItem}
-                    role="listitem"
+                    //role="listitem"
                 >
                     ADD additional 'then do this'
                 </Button>
@@ -219,8 +202,8 @@ const useStyles = makeStyles(theme => ({
 export default function ConfirmationDialog({ deviceList, config, integration }) {
     const classes = useStyles();
     const [open, setOpen] = React.useState(false);
-    const dispatch = useDispatch();
-    console.log("YZ03:", integration)
+    //const dispatch = useDispatch();
+    //console.log("YZ03:", integration)
     
     const handleClickListItem = async() => {
         setOpen(true)};
@@ -240,7 +223,7 @@ export default function ConfirmationDialog({ deviceList, config, integration }) 
                     endIcon={<AddCircleIcon />}
                     aria-haspopup="true"
                     onClick={handleClickListItem}
-                    role="listitem"
+                    //role="listitem"
                 >
                     ADD EVENT LISTENER 
                 </Button>
