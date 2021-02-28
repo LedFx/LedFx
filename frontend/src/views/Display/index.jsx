@@ -8,6 +8,7 @@ import CardContent from '@material-ui/core/CardContent';
 import { loadDisplayInfo, setDisplayEffect, clearDisplayEffect } from 'modules/selectedDisplay';
 import { activatePreset, getEffectPresets, addPreset } from 'modules/presets';
 import DisplayEffectControl from 'components/EffectControl/DisplayEffectControl';
+import BladeDisplayEffectControl from 'components/EffectControl/BladeDisplayEffectControl';
 import DisplayPixelColorGraph from 'components/PixelColorGraph/DisplayPixelColorGraph';
 import PixelColorGraph from 'components/PixelColorGraph';
 import PresetsCard from 'components/PresetsCard';
@@ -51,20 +52,37 @@ const DisplayView = ({
             <Grid container direction="row" spacing={4}>
                 {renderPixelGraph(display, effect, device)}
                 <Grid item xs={12} lg={6}>
-                    <Card>
-                        <CardContent>
-                            <DisplayEffectControl
-                                display={display}
-                                effect={effect}
-                                schemas={schemas}
-                                onClear={() => dispatch(clearDisplayEffect(displayId))}
-                                onSubmit={data => dispatch(setDisplayEffect(data.displayId, data))}
-                                onTypeChange={effectType =>
-                                    effectType ? dispatch(getEffectPresets(effectType)) : false
-                                }
-                            />
-                        </CardContent>
-                    </Card>
+
+                    {parseInt(window.localStorage.getItem('BladeMod')) > 2 ? (
+                        <Card>
+                            <CardContent>
+                                <BladeDisplayEffectControl
+                                    display={display}
+                                    effect={effect}
+                                    schemas={schemas}
+                                    onClear={() => dispatch(clearDisplayEffect(displayId))}
+                                    onSubmit={data => dispatch(setDisplayEffect(data.displayId, data))}
+                                    onTypeChange={effectType =>
+                                        effectType ? dispatch(getEffectPresets(effectType)) : false
+                                    }
+                                />
+                            </CardContent>
+                        </Card>) : (
+                            <Card>
+                                <CardContent>
+                                    <DisplayEffectControl
+                                        display={display}
+                                        effect={effect}
+                                        schemas={schemas}
+                                        onClear={() => dispatch(clearDisplayEffect(displayId))}
+                                        onSubmit={data => dispatch(setDisplayEffect(data.displayId, data))}
+                                        onTypeChange={effectType =>
+                                            effectType ? dispatch(getEffectPresets(effectType)) : false
+                                        }
+                                    />
+                                </CardContent>
+                            </Card>
+                        )}
                 </Grid>
                 <Grid item xs={12} lg={6}>
                     {effect.type && (
