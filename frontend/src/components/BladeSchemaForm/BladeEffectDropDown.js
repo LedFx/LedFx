@@ -14,7 +14,7 @@ const useStyles = makeStyles(theme => ({
     FormRow: {
         display: 'flex',
         flexDirection: 'row',
-        border: '1px solid',
+        border: '1px solid #999',
         borderRadius: '10px',
         '@media (max-width: 580px)': {
             flexDirection: 'column',
