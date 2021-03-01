@@ -26,6 +26,7 @@ INSTALL_REQUIRES = [
     "aiohttp>=3.7.4",
     "yarl>=1.5.1",
     "multidict==4.7.6",
+    "chardet==3.0.4",
     "aiohttp_jinja2>=1.1.0",
     "requests>=2.24.0",
     "pyyaml>=5.3.1",
