@@ -25,7 +25,7 @@ INSTALL_REQUIRES = [
     "sacn>=1.5",
     "aiohttp>=3.7.4",
     "yarl>=1.5.1",
-    "multidict>=5.0.0",
+    "multidict==4.7.6",
     "aiohttp_jinja2>=1.1.0",
     "requests>=2.24.0",
     "pyyaml>=5.3.1",
