@@ -231,20 +231,18 @@ export function setDisplay(id, { config }) {
         }
     };
 }
-// export function updateDisplayConfig(id, type, config) {
-//     return async dispatch => {
-//         try {
-//             const response = await displayProxies.updateDisplaySegments(id, {
-//                 config: { ...config, type },
-//             });
-//             if (response.statusText === 'OK') {
-//                 dispatch(fetchDisplayList());
-//             }
-//         } catch (error) {
-//             console.log('Error updating display', error.message);
-//         }
-//     };
-// }
+export function updateDisplayConf(id, config) {
+    return async dispatch => {
+        try {
+            const response = await displayProxies.updatePostDisplay(id, config);
+            if (response.statusText === 'OK') {
+                dispatch(fetchDisplayList());
+            }
+        } catch (error) {
+            console.log('Error updating display', error.message);
+        }
+    };
+}
 
 export function setDisplayEffect(id, data) {
     return async (dispatch, getState) => {
@@ -257,11 +255,37 @@ export function setDisplayEffect(id, data) {
                     effect: { ...display.effect, isProcessing: true },
                 })
             );
-
+            // yzhere
             const response = await displayProxies.setDisplayEffect(id, {
                 type: data.type || 'wavelength(Reactive)',
                 config: data,
             });
+
+            dispatch(
+                displayUpdated({
+                    id,
+                    effect: { ...data, ...response.data.effect, isProcessing: false },
+                })
+            );
+            dispatch(showdynSnackbar('Success!'));
+        } catch (error) {
+            displayUpdated(error);
+        }
+    };
+}
+export function updateDisplayEffect(id, data) {
+    return async (dispatch, getState) => {
+        const display = getState().displays.dictionary[id];
+        try {
+            dispatch(
+                displayUpdated({
+                    id,
+                    ...display,
+                    effect: { ...display.effect, isProcessing: true },
+                })
+            );
+            // yzhere
+            const response = await displayProxies.setDisplayEffect(id, data);
 
             dispatch(
                 displayUpdated({

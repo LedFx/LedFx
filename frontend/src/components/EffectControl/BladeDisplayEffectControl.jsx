@@ -95,7 +95,7 @@ const DisplayEffectControl = ({ onSubmit, onClear, display, effect }) => {
                     Set and configure effects
                 </Typography>
                 <BladeDropDown />
-                <BladeSchemaForm schema={currentSchema} model={model} />
+                <BladeSchemaForm schema={currentSchema} model={model} display_id={display.id} selectedType={selectedType} />
                 {/* <div style={{ display: 'flex', flexWrap: 'wrap' }}>
                     {pickerKeys.map(k => Object.keys(model).indexOf(k) !== -1 && <BladeColorDropDown key={k} type={"color"} clr={k} />)}
 

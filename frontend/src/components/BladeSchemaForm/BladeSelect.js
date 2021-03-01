@@ -25,7 +25,7 @@ const useStyles = makeStyles(theme => ({
         },
     },
 }));
-const BladeSelect = ({ variant = 'outlined', schema, model, model_id }) => {
+const BladeSelect = ({ variant = 'outlined', schema, model, model_id, onChange }) => {
     // console.log(model, schema, model_id);
     const classes = useStyles();
 
@@ -41,19 +41,36 @@ const BladeSelect = ({ variant = 'outlined', schema, model, model_id }) => {
 
     return (
         <Frame>
-            <Select
-                style={{ flexGrow: variant === 'outlined' ? 1 : 'unset' }}
-                disableUnderline
-                defaultValue={schema.default}
-                value={model && model[model_id]}
-                onChange={(e, b) => console.log(e, b)}
-            >
-                {schema.enum.map((item, i) => (
-                    <MenuItem key={i} value={item}>
-                        {item}
-                    </MenuItem>
-                ))}
-            </Select>
+            {variant === 'contained' ? (
+                <Select
+                    variant="filled"
+                    style={{ flexGrow: variant === 'outlined' ? 1 : 'unset' }}
+                    disableUnderline
+                    defaultValue={schema.default}
+                    value={model && model[model_id]}
+                    onChange={e => onChange(model_id, e.target.value)}
+                >
+                    {schema.enum.map((item, i) => (
+                        <MenuItem key={i} value={item}>
+                            {item}
+                        </MenuItem>
+                    ))}
+                </Select>
+            ) : (
+                <Select
+                    style={{ flexGrow: variant === 'outlined' ? 1 : 'unset' }}
+                    disableUnderline
+                    defaultValue={schema.default}
+                    value={model && model[model_id]}
+                    onChange={e => onChange(model_id, e.target.value)}
+                >
+                    {schema.enum.map((item, i) => (
+                        <MenuItem key={i} value={item}>
+                            {item}
+                        </MenuItem>
+                    ))}
+                </Select>
+            )}
         </Frame>
     );
 };

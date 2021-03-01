@@ -54,7 +54,7 @@ const DisplayView = ({
                 <Grid item xs={12} lg={6}>
 
                     {parseInt(window.localStorage.getItem('BladeMod')) > 2 ? (
-                        <Card>
+                        <Card style={{ position: 'relative' }}>
                             <CardContent>
                                 <BladeDisplayEffectControl
                                     display={display}

@@ -32,8 +32,15 @@ const useStyles = makeStyles(theme => ({
         },
     },
 }));
-const BladeBoolean = ({ type = 'switch', variant = 'outlined', schema, model, model_id }) => {
-    // console.log(model);
+const BladeBoolean = ({
+    onClick,
+    type = 'switch',
+    variant = 'outlined',
+    schema,
+    model,
+    model_id,
+}) => {
+    // console.log(schema);
     const classes = useStyles();
     const Frame = ({ children }) =>
         variant === 'outlined' ? (
@@ -46,15 +53,15 @@ const BladeBoolean = ({ type = 'switch', variant = 'outlined', schema, model, mo
         ) : (
             { children }
         );
-    // console.log(schema.title, schema.description, schema.default);
+    // console.log(model_id);
     switch (type) {
         case 'switch':
             return (
                 <Frame>
                     <Switch
-                        defaultValue={schema.default}
+                        defaultValue={(model && model[model_id]) || schema.default}
                         checked={model && model[model_id]}
-                        onChange={(e, b) => console.log(e, b)}
+                        onChange={(e, b) => onClick(model_id, b)}
                         name={schema.title}
                         color="primary"
                     />
@@ -66,7 +73,7 @@ const BladeBoolean = ({ type = 'switch', variant = 'outlined', schema, model, mo
                     <Checkbox
                         defaultValue={schema.default}
                         checked={model && model[model_id]}
-                        onChange={(e, b) => console.log(e, b)}
+                        onChange={(e, b) => onClick(model_id, b)}
                         name="checkedB"
                         color="primary"
                     />
@@ -74,7 +81,11 @@ const BladeBoolean = ({ type = 'switch', variant = 'outlined', schema, model, mo
             );
         case 'button':
             return (
-                <Button color={'primary'} variant={variant}>
+                <Button
+                    color={'primary'}
+                    variant={model[model_id] ? 'contained' : 'outlined'}
+                    onClick={() => onClick(model_id, !model[model_id])}
+                >
                     {schema.title}
                 </Button>
             );

@@ -27,19 +27,25 @@ const useStyles = makeStyles(theme => ({
         },
     },
 }));
-const BladeSlider = ({ variant = 'outlined', schema, model, model_id, step }) => {
+const BladeSlider = ({ variant = 'outlined', schema, model, model_id, step, onChange }) => {
     const classes = useStyles();
     return variant === 'outlined' ? (
         <div className={classes.wrapper}>
             <label>{schema.title}</label>
-            <BladeSliderInner schema={schema} model={model} model_id={model_id} step={step} />
+            <BladeSliderInner
+                schema={schema}
+                model={model}
+                model_id={model_id}
+                step={step}
+                onChange={onChange}
+            />
         </div>
     ) : (
-        <BladeSliderInner schema={schema} model={model} model_id={model_id} />
+        <BladeSliderInner schema={schema} model={model} model_id={model_id} onChange={onChange} />
     );
 };
 
-const BladeSliderInner = ({ schema, model, model_id, step }) => {
+const BladeSliderInner = ({ schema, model, model_id, step, onChange }) => {
     // console.log(model, schema, model_id);
     const classes = useStyles();
     const [value, setValue] = React.useState(model[model_id] || schema.default);
@@ -72,6 +78,7 @@ const BladeSliderInner = ({ schema, model, model_id, step }) => {
                 max={schema.maximum}
                 value={typeof value === 'number' ? value : 0}
                 onChange={handleSliderChange}
+                onChangeCommitted={(e, b) => onChange(model_id, b)}
                 // defaultValue={model[model_id] || schema.default}
                 // value={model && model[model_id]}
             />
