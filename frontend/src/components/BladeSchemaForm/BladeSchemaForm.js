@@ -80,88 +80,6 @@ const BladeSchemaForm = props => {
                     style={{ position: 'absolute', right: '1rem', top: '1rem' }}
                 >
                     <SettingsIcon />
-                    <Dialog open={open} onClose={handleClose} aria-labelledby="form-dialog-title">
-                        <DialogTitle id="form-dialog-title">
-                            Blade's SchemaForm Settings
-                        </DialogTitle>
-                        <DialogContent>
-                            <DialogContentText>
-                                Customize the appearance of dynamically generated forms
-                            </DialogContentText>
-                            <FormControl>
-                                <InputLabel id="ColorVariantLabel">Color Mode</InputLabel>
-                                <Select
-                                    labelId="ColorVariantLabel"
-                                    id="ColorVariant"
-                                    value={_colorMode}
-                                    onChange={e => _setColorMode(e.target.value)}
-                                >
-                                    <MenuItem value={'picker'}>Picker</MenuItem>
-                                    <MenuItem value={'select'}>Select</MenuItem>
-                                </Select>
-                            </FormControl>
-                            <FormControl>
-                                <InputLabel id="BoolModeLabel">Bool Mode</InputLabel>
-                                <Select
-                                    labelId="BoolModeLabel"
-                                    id="BoolMode"
-                                    value={_boolMode}
-                                    onChange={e => _setBoolMode(e.target.value)}
-                                >
-                                    <MenuItem value={'switch'}>Switch</MenuItem>
-                                    <MenuItem value={'checkbox'}>Checkbox</MenuItem>
-                                    <MenuItem value={'button'}>Button</MenuItem>
-                                </Select>
-                            </FormControl>
-                            <FormControl>
-                                <InputLabel id="BoolVariantLabel">Bool Variant</InputLabel>
-                                <Select
-                                    labelId="BoolVariantLabel"
-                                    id="BoolVariant"
-                                    value={_boolVariant}
-                                    onChange={e => _setBoolVariant(e.target.value)}
-                                >
-                                    <MenuItem value={'text'}>Text</MenuItem>
-                                    <MenuItem value={'outlined'}>Outlined</MenuItem>
-                                    <MenuItem value={'contained'}>Contained</MenuItem>
-                                </Select>
-                            </FormControl>
-                            <FormControl>
-                                <InputLabel id="SelectVariantLabel">Select Variant</InputLabel>
-                                <Select
-                                    labelId="SelectVariantLabel"
-                                    id="SelectVariant"
-                                    value={_selectVariant}
-                                    onChange={e => _setSelectVariant(e.target.value)}
-                                >
-                                    <MenuItem value={'text'}>Text</MenuItem>
-                                    <MenuItem value={'outlined'}>Outlined</MenuItem>
-                                    <MenuItem value={'contained'}>Contained</MenuItem>
-                                </Select>
-                            </FormControl>
-                            <FormControl>
-                                <InputLabel id="SliderVariantLabel">Slider Variant</InputLabel>
-                                <Select
-                                    labelId="SliderVariantLabel"
-                                    id="SliderVariant"
-                                    value={_sliderVariant}
-                                    onChange={e => _setSliderVariant(e.target.value)}
-                                >
-                                    <MenuItem value={'text'}>Text</MenuItem>
-                                    <MenuItem value={'outlined'}>Outlined</MenuItem>
-                                </Select>
-                            </FormControl>
-
-                            <DialogActions>
-                                <Button onClick={handleClose} color="primary">
-                                    Cancel
-                                </Button>
-                                <Button onClick={handleClose} color="primary">
-                                    Subscribe
-                                </Button>
-                            </DialogActions>
-                        </DialogContent>
-                    </Dialog>
                 </Fab>
             )}
             {pickerKeys.map(
@@ -249,6 +167,82 @@ const BladeSchemaForm = props => {
                         return <>Unsupported type: {schema.properties[s].type}</>;
                 }
             })}
+            <Dialog open={open} onClose={handleClose} aria-labelledby="form-dialog-title">
+                <DialogTitle id="form-dialog-title">Blade's SchemaForm Settings</DialogTitle>
+                <DialogContent>
+                    <DialogContentText>
+                        Customize the appearance of dynamically generated forms
+                    </DialogContentText>
+                    <FormControl>
+                        <InputLabel id="ColorVariantLabel">Color Mode</InputLabel>
+                        <Select
+                            labelId="ColorVariantLabel"
+                            id="ColorVariant"
+                            value={_colorMode}
+                            onChange={e => _setColorMode(e.target.value)}
+                        >
+                            <MenuItem value={'picker'}>Picker</MenuItem>
+                            <MenuItem value={'select'}>Select</MenuItem>
+                        </Select>
+                    </FormControl>
+                    <FormControl>
+                        <InputLabel id="BoolModeLabel">Bool Mode</InputLabel>
+                        <Select
+                            labelId="BoolModeLabel"
+                            id="BoolMode"
+                            value={_boolMode}
+                            onChange={e => _setBoolMode(e.target.value)}
+                        >
+                            <MenuItem value={'switch'}>Switch</MenuItem>
+                            <MenuItem value={'checkbox'}>Checkbox</MenuItem>
+                            <MenuItem value={'button'}>Button</MenuItem>
+                        </Select>
+                    </FormControl>
+                    <FormControl>
+                        <InputLabel id="BoolVariantLabel">Bool Variant</InputLabel>
+                        <Select
+                            labelId="BoolVariantLabel"
+                            id="BoolVariant"
+                            value={_boolVariant}
+                            onChange={e => _setBoolVariant(e.target.value)}
+                        >
+                            <MenuItem value={'text'}>Text</MenuItem>
+                            <MenuItem value={'outlined'}>Outlined</MenuItem>
+                        </Select>
+                    </FormControl>
+                    <FormControl>
+                        <InputLabel id="SelectVariantLabel">Select Variant</InputLabel>
+                        <Select
+                            labelId="SelectVariantLabel"
+                            id="SelectVariant"
+                            value={_selectVariant}
+                            onChange={e => _setSelectVariant(e.target.value)}
+                        >
+                            <MenuItem value={'text'}>Text</MenuItem>
+                            <MenuItem value={'outlined'}>Outlined</MenuItem>
+                            <MenuItem value={'contained'}>Contained</MenuItem>
+                        </Select>
+                    </FormControl>
+                    <FormControl>
+                        <InputLabel id="SliderVariantLabel">Slider Variant</InputLabel>
+                        <Select
+                            labelId="SliderVariantLabel"
+                            id="SliderVariant"
+                            value={_sliderVariant}
+                            onChange={e => _setSliderVariant(e.target.value)}
+                        >
+                            <MenuItem value={'text'}>Text</MenuItem>
+                            <MenuItem value={'outlined'}>Outlined</MenuItem>
+                        </Select>
+                    </FormControl>
+
+                    <DialogActions>
+                        <Button onClick={handleClose} variant="contained" color="primary">
+                            Ok
+                        </Button>
+                    </DialogActions>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 };

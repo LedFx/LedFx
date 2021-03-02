@@ -81,8 +81,13 @@ const BladeDropDown = () => {
         setFormats(newFormats);
     };
     const onEffectTypeChange = e =>
-        display &&
-        dispatch(setDisplayEffect(display.id, { displayId: display.id, type: e.target.value }));
+        dispatch(
+            setDisplayEffect(display.id, {
+                displayId: display.id,
+                type: e.target.value,
+            })
+        );
+    // dispatch(setDisplayEffect(display.id, { displayId: display.id, type: e.target.value }));
 
     return (
         <>

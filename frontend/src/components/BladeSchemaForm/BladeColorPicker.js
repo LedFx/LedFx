@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useCallback, useRef } from 'react';
 import { makeStyles } from '@material-ui/core/styles';
 import Popper from '@material-ui/core/Popper';
 import ClickAwayListener from '@material-ui/core/ClickAwayListener';
+import useClickOutside from 'views/Advanced/useClickOutside';
 const useStyles = makeStyles(theme => ({
     paper: {
         border: '1px solid',
@@ -81,6 +82,7 @@ const coloring = {
 
 const BladeColorPicker = ({ sendColor, col, clr }) => {
     const classes = useStyles();
+    const popover = useRef();
     const [anchorEl, setAnchorEl] = React.useState(null);
 
     const handleClick = event => {
@@ -93,9 +95,10 @@ const BladeColorPicker = ({ sendColor, col, clr }) => {
     //     }
     //     // setAnchorEl(anchorEl ? null : event.currentTarget);
     // };
-    const handleClose = () => {
+    const handleClose = useCallback(() => {
         setAnchorEl(null);
-    };
+    }, []);
+    useClickOutside(popover, handleClose);
     const open = Boolean(anchorEl);
     const id = open ? 'simple-popper' : undefined;
 
@@ -117,7 +120,7 @@ const BladeColorPicker = ({ sendColor, col, clr }) => {
                     // setAnchorEl(null);
                 }}
             >
-                <Popper id={id} open={open} onClose={handleClose} anchorEl={anchorEl}>
+                <Popper id={id} open={open} onClose={handleClose} anchorEl={anchorEl} ref={popover}>
                     <div className={classes.paper}>
                         {Object.keys(coloring).map(c => (
                             <div

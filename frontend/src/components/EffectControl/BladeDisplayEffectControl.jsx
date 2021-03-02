@@ -6,11 +6,10 @@ import Typography from '@material-ui/core/Typography';
 import Button from '@material-ui/core/Button';
 import DialogActions from '@material-ui/core/DialogActions';
 import Box from '@material-ui/core/Box';
-import CancelIcon from '@material-ui/icons/Cancel';
-import CasinoIcon from '@material-ui/icons/Casino';
 import { getEffectPresets } from 'modules/presets';
 import BladeDropDown from '../BladeSchemaForm/BladeEffectDropDown';
 import BladeSchemaForm from '../BladeSchemaForm/BladeSchemaForm';
+import { Delete, Casino } from '@material-ui/icons';
 
 const useStyles = makeStyles(theme => ({
     form: {
@@ -27,9 +26,13 @@ const useStyles = makeStyles(theme => ({
         marginTop: 8,
     },
     actionButtons: {
-        '& > *': {
-            marginLeft: theme.spacing(2),
+        fontSize: '2rem',
+        '& >button': {
+            marginRight: '1rem',
         },
+        '& >button:last-child': {
+            marginRight: '0rem'
+        }
     },
     expandIcon: {
         transform: 'rotate(180deg)',
@@ -95,7 +98,7 @@ const DisplayEffectControl = ({ onSubmit, onClear, display, effect }) => {
                     Set and configure effects
                 </Typography>
                 <BladeDropDown />
-                <BladeSchemaForm schema={currentSchema} model={model} display_id={display.id} selectedType={selectedType} />
+                {effect && effect.config && <BladeSchemaForm schema={currentSchema} model={model} display_id={display.id} selectedType={selectedType} />}
                 {/* <div style={{ display: 'flex', flexWrap: 'wrap' }}>
                     {pickerKeys.map(k => Object.keys(model).indexOf(k) !== -1 && <BladeColorDropDown key={k} type={"color"} clr={k} />)}
 
@@ -121,20 +124,16 @@ const DisplayEffectControl = ({ onSubmit, onClear, display, effect }) => {
                             {selectedType && (
                                 <Button
                                     onClick={handleRandomize}
-                                    endIcon={<CasinoIcon />}
-                                    color="primary"
-                                >
-                                    Randomize
+                                    variant="outlined"
+                                ><Casino />
                                 </Button>
                             )}
                             <Button
                                 className={classes.button}
+                                variant="outlined"
                                 onClick={handleClearEffect}
-                                color="primary"
-                                endIcon={<CancelIcon />}
-                            >
-                                Clear Effect
-                                </Button>
+                            ><Delete />
+                            </Button>
 
                         </Box>
                     </DialogActions>
