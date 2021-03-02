@@ -64,8 +64,8 @@ function ConfirmationDialogRaw(props) {
                 >
                     {props.deviceList.map(device => (
                         <FormControlLabel
-                            value={device.name}
-                            key={device.name}
+                            value={device.id}
+                            key={device.id}
                             control={<Radio />}
                             label={device.name}
                         />
@@ -115,7 +115,7 @@ export default function ConfirmationDialog({ display, config }) {
     const handleClose = newValue => {
         setOpen(false);
         if (newValue) {
-            const device = { ...deviceList.find(d => d.name === newValue) };
+            const device = { ...deviceList.find(d => d.id === newValue) };
             const temp = [
                 ...display.segments,
                 [device.id, 0, device.config.pixel_count - 1, false],
@@ -150,7 +150,7 @@ export default function ConfirmationDialog({ display, config }) {
                         keepMounted
                         open={open}
                         onClose={handleClose}
-                        value={deviceList[0].name}
+                        value={deviceList[0].id}
                         deviceList={deviceList}
                     />
                 </>
