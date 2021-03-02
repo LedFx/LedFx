@@ -427,7 +427,10 @@ class Display(object):
                         )
                     )
             device = self._ledfx.devices.get(device_id)
-            if device.is_active():
+            if device is None:
+                msg = f"There are no added device yet! Click find device button or add device manually"
+                _LOGGER.info(msg)
+            elif device.is_active():
                 device.update_pixels(self.id, data)
         # self.interpolate.cache_clear()
 
