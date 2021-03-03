@@ -21,7 +21,7 @@ INSTALL_REQUIRES = [
     'voluptuous==0.11.1',
     'pyaudio>=0.2.11',
     'sacn==1.3',
-    'aiohttp==3.3.2',
+    'aiohttp>=3.7.4',
     'aiohttp_jinja2==1.0.0',
     'requests>=2.22.0',
 	'pyyaml>=5.1',
