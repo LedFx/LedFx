@@ -1,5 +1,6 @@
-import React from 'react'; //, { useEffect, useState }
-//import {useDispatch } from 'react-redux'; //useSelector,
+import React, { useEffect, useState } from 'react';
+import { getAsyncqlclisteners  } from 'modules/qlc'
+import { useSelector, useDispatch } from 'react-redux';
 import PropTypes from 'prop-types';
 import { makeStyles } from '@material-ui/core/styles';
 import Button from '@material-ui/core/Button';
@@ -13,16 +14,27 @@ import DialogContentText from '@material-ui/core/DialogContentText';
 import DropDown from 'components/forms/DropDown';
 import InputLabel from '@material-ui/core/InputLabel';
 import MenuItem from '@material-ui/core/MenuItem';
-//import ListSubheader from '@material-ui/core/ListSubheader';
+import ListSubheader from '@material-ui/core/ListSubheader';
 import FormControl from '@material-ui/core/FormControl';
 import Select from '@material-ui/core/Select';
 import { Slider, Switch } from '@material-ui/core';
+import FormHelperText from '@material-ui/core/FormHelperText';
 
 function ConfirmationDialogRaw(props) {
     const { onClose, value: valueProp, open, ...other } = props;
     const [value, setValue] = React.useState(valueProp);
     const radioGroupRef = React.useRef(null);
     const [model] = React.useState({});
+
+    const dispatch = useDispatch();
+    const qlcInfo = useSelector(state=>state.qlc.payload);
+    console.log("qlcInfo - Response: ", qlcInfo);
+    const effectNames = qlcInfo && qlcInfo.event_types && qlcInfo.event_types.effect_set.event_filters.effect_name
+    //const effectCleared = qlcInfo && qlcInfo.event_types && qlcInfo.event_types.effect_cleared.event_name
+    const SceneSet = qlcInfo && qlcInfo.event_types && qlcInfo.event_types.scene_set.event_filters.scene_name
+    const QLCWidgets = qlcInfo && qlcInfo.qlc_widgets && qlcInfo.qlc_widgets
+    QLCWidgets.sort(function(g, h){return h - g});
+    console.log("LETS START THIS SHIT - Response: ", QLCWidgets);
 
     React.useEffect(() => {
         if (!open) {
@@ -44,16 +56,13 @@ function ConfirmationDialogRaw(props) {
         onClose(value);
         window.location = window.location.href;
     };
-
-    const classes = useStyles();
-
+    
     const onModelChange = (key, val) => {
         utils.selectOrSet(key, model, val);
 
     };
     delete other.deviceList;
     return (
-        console.log('MattTestDropdown Get: QLCInfo', ),
         <Dialog
             disableBackdropClick
             disableEscapeKeyDown
@@ -65,46 +74,58 @@ function ConfirmationDialogRaw(props) {
         >
             <DialogTitle id="confirmation-dialog-title">
                 Event Listener Setup: {props.integration.id}
-
             </DialogTitle>
             <DialogContent dividers>
                 <DialogContentText>
                     To add a Event Listener to LedFx, please first select the type of event trigger (If This),
                     and then provide the expected output (Then That).
                 </DialogContentText>
-                <FormControl className={classes.FormRow}>
+                <FormControl>
                     <InputLabel htmlFor="grouped-select">Event Trigger (If This)</InputLabel>
-                    <Select
-                    //defaultValue={props.event_types}
-                    //onChange={onEffectTypeChange}
-                    id="grouped-select"
-                    className={classes.FormSelect}
-                >
-                    {/*From Redux: qlclistener_add, show dropdown event_types*/}
+                    <Select defaultValue="" id="grouped-select">
+                    
                         <MenuItem value="">
                             <em>None</em>
                         </MenuItem>
-                        {/*
-                        {event_types &&
-                        Object.keys(group).map(
-                            c =>
-                                formats.indexOf(c) !== -1 && [
-                                    <ListSubheader
-                                        className={classes.FormListHeaders}
-                                        color="primary"
-                                    >
-                                        {c}
-                                    </ListSubheader>,
-                                    group[c].map(e => <MenuItem value={e.id}>{e.name}</MenuItem>),
-                                ]
-                        )}
-                        */}
-                        </Select>
+                        <ListSubheader color="primary">
+                            Scene Set
+                        </ListSubheader>
+                            {SceneSet && SceneSet.length > 0 && SceneSet.map((a,b)=><MenuItem key={b} value=""><option>{a}</option></MenuItem>)}
+                        <ListSubheader color="primary">
+                            Effect Set
+                        </ListSubheader>
+                            {effectNames && effectNames.length > 1 && effectNames.map((c,d)=><MenuItem key={d} value=""><option>{c}</option></MenuItem>)}
+                        <ListSubheader color="primary">
+                            Effect Cleared
+                        </ListSubheader>
+                        <MenuItem><option>Effect Cleared</option></MenuItem>
+                        </Select> 
                 </FormControl>
-                <form>
+                
+                <FormControl>
+                    <InputLabel id="Then Do This">Then Do This</InputLabel>
+                    <Select
+                    labelId="demo-simple-select-helper-label"
+                    id="demo-simple-select-helper"
+                    value={QLCWidgets}
+                    //onChange={handleChange}
+                    >
+                    <MenuItem value=""></MenuItem>
+                    {QLCWidgets && QLCWidgets.length > 1 && QLCWidgets.map((e,f)=><MenuItem key={f} value=""><option>{e}</option></MenuItem>)}
+                    </Select>
+                    <FormHelperText>Some important helper text</FormHelperText>
+                </FormControl>
+
+
+                {/*<form>
                     <DropDown
                     label="Then Do This"
-                    /*From Redux: qlclistener_add, show dropdown qlc_widgets
+                    value={QLCWidgets}
+                    {...effectNames && effectNames.length > 1 && effectNames.map((c,d)=><MenuItem key={d} value=""><option>{c}</option></MenuItem>)}
+                    //{...QLCWidgets && QLCWidgets.length > 1 && QLCWidgets.map((e,f)=><MenuItem key={f} value=""><option>{e}</option></MenuItem>)}
+                    />
+                    
+                    {/*From Redux: qlclistener_add, show dropdown qlc_widgets
                     Think we should convert API data from:
                     [
                         "7",
@@ -112,15 +133,16 @@ function ConfirmationDialogRaw(props) {
                         "Button 7"
                     ]
                     to show dropdown feild of 'ID: 7, Button, Button 7' 
-                    */
-                    />
-                </form>
+                                   
+                    
+                </form>*/}
 
                     {/*
                     Below is  ONLY if QLC+ widget selected above is either 'Button' or 'Audio Triggers'
                     “Buttons” can be set to either off (0) or on (255)
                     “Audio Triggers” are either off (0) or on (255)
                     */}
+                    <div style={{ minWidth: '150px' }}></div>
                     <label>QLC+ widget selected above (On/Off) </label>
                     <Switch color="primary" checked={true} />
 
@@ -148,7 +170,7 @@ function ConfirmationDialogRaw(props) {
                     aria-haspopup="true"
                     // integrationsProxies.deleteIntegration(data);
                     //onClick={handleClickListItem}
-                    //role="listitem"
+                    role="listitem"
                 >
                     ADD additional 'then do this'
                 </Button>
@@ -202,8 +224,8 @@ const useStyles = makeStyles(theme => ({
 export default function ConfirmationDialog({ deviceList, config, integration }) {
     const classes = useStyles();
     const [open, setOpen] = React.useState(false);
-    //const dispatch = useDispatch();
-    //console.log("YZ03:", integration)
+    const dispatch = useDispatch();
+    //console.log("YZ03:", event_types)
     
     const handleClickListItem = async() => {
         setOpen(true)};
@@ -223,7 +245,7 @@ export default function ConfirmationDialog({ deviceList, config, integration }) 
                     endIcon={<AddCircleIcon />}
                     aria-haspopup="true"
                     onClick={handleClickListItem}
-                    //role="listitem"
+                    role="listitem"
                 >
                     ADD EVENT LISTENER 
                 </Button>

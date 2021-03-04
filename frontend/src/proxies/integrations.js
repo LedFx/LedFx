@@ -24,7 +24,6 @@ export function deleteIntegration(data) {
 // QLC+ Proxies
 
 export function getQLCInfo(integrationId) {
-    console.log("getQLCInfo", integrationId);
     return api.get(`/integrations/qlc/${integrationId}`);
 }
 
