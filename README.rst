@@ -57,7 +57,7 @@ The below image describes a basic setup - LedFx running on PC, communicating wit
       - For most, this is the difficult step. Don't worry! There's guides here and online, and plenty of people able to help on WLED and LedFx Discord.
       - Follow the WLED guide to connect the LED strip and ESP together: https://github.com/Aircoookie/WLED/wiki.
       - Flash WLED to the ESP device: https://github.com/Aircoookie/WLED/wiki/Install-WLED-binary
-      - Ensure all WLED devices are powered on, and connected to your Wi-Fi 5Ghz.
+      - Ensure all WLED devices are powered on, and connected to your Wi-Fi.
       - Test you can access the WLED web interface from your PC. If so, then you're good to go!
 
 #. **Install LedFx.**
