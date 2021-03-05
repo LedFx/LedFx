@@ -115,6 +115,7 @@ class DevicesView extends React.Component {
             findWLEDDevices({ resolve, reject });
         }).then(() => {
             this.setState({ searchDevicesLoading: false });
+            setTimeout(function(){window.location.reload();}, 20000);
         });
     };
     // openMenu = () => {
