@@ -32,8 +32,8 @@ function ConfirmationDialogRaw(props) {
     const effectNames = qlcInfo && qlcInfo.event_types && qlcInfo.event_types.effect_set.event_filters.effect_name
     //const effectCleared = qlcInfo && qlcInfo.event_types && qlcInfo.event_types.effect_cleared.event_name
     const SceneSet = qlcInfo && qlcInfo.event_types && qlcInfo.event_types.scene_set.event_filters.scene_name
-    const QLCWidgets = qlcInfo && qlcInfo.qlc_widgets && qlcInfo.qlc_widgets
-    QLCWidgets.sort(function(g, h){return h - g});
+    const QLCWidgets = qlcInfo && qlcInfo.qlc_widgets && qlcInfo.qlc_widgets.sort((a,b) => parseInt(a[0]) - parseInt(b[0]) )
+    
     console.log("LETS START THIS SHIT - Response: ", QLCWidgets);
 
     React.useEffect(() => {
@@ -57,6 +57,10 @@ function ConfirmationDialogRaw(props) {
         window.location = window.location.href;
     };
     
+    //const handleChange = event => {
+    //    setValue(event.target.value);
+    //};
+
     const onModelChange = (key, val) => {
         utils.selectOrSet(key, model, val);
 
@@ -91,10 +95,10 @@ function ConfirmationDialogRaw(props) {
                             Scene Set
                         </ListSubheader>
                             {SceneSet && SceneSet.length > 0 && SceneSet.map((a,b)=><MenuItem key={b} value=""><option>{a}</option></MenuItem>)}
-                        <ListSubheader color="primary">
+                        {/*<ListSubheader color="primary">
                             Effect Set
                         </ListSubheader>
-                            {effectNames && effectNames.length > 1 && effectNames.map((c,d)=><MenuItem key={d} value=""><option>{c}</option></MenuItem>)}
+                            {effectNames && effectNames.length > 1 && effectNames.map((c,d)=><MenuItem key={d} value=""><option>{c}</option></MenuItem>)}*/}
                         <ListSubheader color="primary">
                             Effect Cleared
                         </ListSubheader>
@@ -103,7 +107,7 @@ function ConfirmationDialogRaw(props) {
                 </FormControl>
                 
                 <FormControl>
-                    <InputLabel id="Then Do This">Then Do This</InputLabel>
+                    <InputLabel htmlFor="grouped-select">Then Do This</InputLabel>
                     <Select
                     labelId="demo-simple-select-helper-label"
                     id="demo-simple-select-helper"
@@ -115,7 +119,6 @@ function ConfirmationDialogRaw(props) {
                     </Select>
                     <FormHelperText>Some important helper text</FormHelperText>
                 </FormControl>
-
 
                 {/*<form>
                     <DropDown
