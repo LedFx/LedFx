@@ -17,10 +17,11 @@ import Fab from '@material-ui/core/Fab';
 const styles = theme => ({
     appBar: {
         backgroundColor: theme.palette.background.default,
-        paddingLeft: drawerWidth,
+        paddingLeft: 0,
         [theme.breakpoints.up('md')]: {
             width: `100%`,
             left: 0,
+            paddingLeft: drawerWidth,
         },
     },
     // toolBar: {

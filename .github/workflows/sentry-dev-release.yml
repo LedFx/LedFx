@@ -19,5 +19,5 @@ jobs:
           SENTRY_ORG: ledfx-org
           SENTRY_PROJECT: ledfx-betas
         with:
-          environment: developement
+          environment: development
           finalize: false

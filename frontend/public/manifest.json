@@ -1,0 +1,36 @@
+{
+  "name": "LedFx",
+  "short_name": "LedFx",
+  "description": "LedFx Frontend",
+  "lang": "en-US",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "icons": [
+    {
+      "src": "https://raw.githubusercontent.com/LedFx/LedFx/dev/icons/ios/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    },
+    {
+      "src": "https://raw.githubusercontent.com/LedFx/LedFx/dev/icons/ios/square-120.png",
+      "sizes": "120x120",
+      "type": "image/png"
+    },
+    {
+      "src": "https://raw.githubusercontent.com/LedFx/LedFx/dev/icons/ios/square-152.png",
+      "sizes": "152x152",
+      "type": "image/png"
+    },
+    {
+      "src": "https://raw.githubusercontent.com/LedFx/LedFx/dev/icons/ios/square-167.png",
+      "sizes": "167x167",
+      "type": "image/png"
+    },
+    {
+      "src": "https://raw.githubusercontent.com/LedFx/LedFx/dev/icons/ios/square-180.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ]
+}

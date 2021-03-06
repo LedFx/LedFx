@@ -63,7 +63,7 @@ class DashboardView extends React.Component {
                 <Grid container direction="row" spacing={4}>
                     {devices.list.map(device => {
                         return (
-                            <Grid key={device.id} item lg={6}>
+                            <Grid key={device.id} item xs sm={6} lg={4} xl={3}>
                                 <Card className={classes.card}>
                                     <CardContent>
                                         <DeviceMiniControl
@@ -78,10 +78,10 @@ class DashboardView extends React.Component {
                     })}
                 </Grid>
                 <Grid container direction="row" spacing={4}>
-                    <Grid item lg={6}>
+                    <Grid item sm>
                         <MiniScenesCard activateScene={activateScene} />
                     </Grid>
-                    <Grid item lg={6}>
+                    <Grid item sm>
                         <AddSceneCard scenes={scenes} addScene={addScene} />
                     </Grid>
                 </Grid>
@@ -100,5 +100,12 @@ export default connect(
         devices: state.devices,
         scenes: state.scenes,
     }),
-    { addScene, activateScene, getScenes, setDeviceEffect, clearDeviceEffect, fetchDeviceList }
+    {
+        addScene,
+        activateScene,
+        getScenes,
+        setDeviceEffect,
+        clearDeviceEffect,
+        fetchDeviceList,
+    }
 )(withStyles(styles)(DashboardView));

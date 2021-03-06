@@ -3,11 +3,13 @@ name: CodeQL Analysis
 on:
   push:
     branches:
+      - master
       - dev
     paths-ignore:
       - '.*/**'
   pull_request:
     branches:
+      - master
       - dev
     paths-ignore:
       - '.*/**'
@@ -17,7 +19,7 @@ on:
 
 env:
   CACHE_VERSION: 1
-  DEFAULT_PYTHON: 3.9
+  DEFAULT_PYTHON: 3.8
 
 jobs:
   analyze-python:

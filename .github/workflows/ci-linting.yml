@@ -3,8 +3,12 @@ name: CI Linting
 on:
   push:
     branches:
+      - master
       - dev
-  pull_request: ~
+  pull_request:
+    branches:
+      - master
+      - dev
 
 env:
   CACHE_VERSION: 1

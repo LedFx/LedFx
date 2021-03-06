@@ -1,6 +1,24 @@
 import { drawerWidth } from 'utils/style';
 
 const sidebarStyle = theme => ({
+    '@global': {
+        '*::-webkit-scrollbar': {
+            backgroundColor: '#ffffff30',
+            width: '8px',
+            borderRadius: '8px',
+        },
+        '*::-webkit-scrollbar-track': {
+            backgroundColor: '#00000060',
+            borderRadius: '8px',
+        },
+        '*::-webkit-scrollbar-thumb': {
+            backgroundColor: '#555555',
+            borderRadius: '8px',
+        },
+        '*::-webkit-scrollbar-button': {
+            display: 'none',
+        }
+    },
     drawerPaper: {
         width: drawerWidth,
         [theme.breakpoints.up('md')]: {
@@ -141,9 +159,12 @@ const sidebarStyle = theme => ({
         overflow: 'auto',
         zIndex: '4',
         overflowScrolling: 'touch',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
     },
     bottomBar: {
-        position: 'absolute',
+        position: 'relative',
         background: theme.palette.grey[900],
         bottom: 0,
         left: 0,

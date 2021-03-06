@@ -21,7 +21,7 @@ const BottomBar = ({ classes }) => {
             <IconButton
                 aria-label="Github"
                 color="inherit"
-                href="https://github.com/LedFx/LedFx/tree/dev"
+                href="https://git.ledfx.app/"
                 target="_blank"
                 title="Github"
             >
@@ -36,7 +36,9 @@ const BottomBar = ({ classes }) => {
             >
                 <ForumIcon />
             </IconButton>
-            {parseInt(window.localStorage.getItem('BladeMod')) >= 2 && <BugTracker />}
+            {parseInt(window.localStorage.getItem('BladeMod')) >= 2 && (
+                <BugTracker color="inherit" />
+            )}
         </div>
     );
 };

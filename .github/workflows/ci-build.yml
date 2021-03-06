@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python: [3.8, 3.9]
+        python: [3.7, 3.8, 3.9]
     steps:
       - name: Check out code from GitHub
         uses: actions/checkout@v2
@@ -27,7 +27,7 @@ jobs:
         run: |
           python -m pip install --user -U pip wheel setuptools
           python setup.py bdist_wheel
-      - name: Intsall LedFx
+      - name: Install LedFx
         run: |
           pip install --pre --find-links=dist .
 
@@ -36,7 +36,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [10, 12]
+        node-version: [10, 12, 14]
     steps:
       - name: Check out code from GitHub
         uses: actions/checkout@v2

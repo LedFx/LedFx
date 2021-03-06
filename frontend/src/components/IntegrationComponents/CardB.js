@@ -70,7 +70,6 @@ const IntegrationsCard = ({ int }) => {
                     aria-label="Add"
                     className={classes.button}
                     endIcon={<AddCircleIcon />}
-                    aria-haspopup="true"
                     //onClick={handleClickListItem}
                     role="listitem"
                 >
@@ -90,7 +89,7 @@ const IntegrationsCard = ({ int }) => {
                     variant="text"
                     color="secondary"
                     onClick={() => {
-                        console.log('edit');
+                        // console.log('edit');
                     }}
                 >
                     <EditIcon />
