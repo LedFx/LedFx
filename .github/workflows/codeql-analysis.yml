@@ -3,12 +3,12 @@ name: CodeQL Analysis
 on:
   push:
     branches:
-      - dev
+      - Virtuals
     paths-ignore:
       - '.*/**'
   pull_request:
     branches:
-      - dev
+      - Virtuals
     paths-ignore:
       - '.*/**'
   schedule:
