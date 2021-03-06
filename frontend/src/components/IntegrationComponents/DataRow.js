@@ -31,6 +31,7 @@ const DataRow = ({ id, name, type, data }) =>
                         onClick={() => {
                             // console.log('edit');
                         }}
+                        //Need to do, onClick edit DialogAddEventListener.
                     >
                         <EditIcon />
                     </Button>

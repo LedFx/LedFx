@@ -91,6 +91,7 @@ const IntegrationsCard = ({ int }) => {
                     onClick={() => {
                         // console.log('edit');
                     }}
+                    //Need to do, onClick edit Integration.
                 >
                     <EditIcon />
                 </Button>
@@ -98,6 +99,8 @@ const IntegrationsCard = ({ int }) => {
                     color="primary"
                     onChange={() => handleToggle(int.id)}
                     checked={int.active}
+                    //onClick={handleClickListItem}
+                    //Need to do, onClick: Re-render switch and integrations Redux.
                 />
             </CardActions>
         </Card>

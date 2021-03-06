@@ -11,7 +11,6 @@ import Dialog from '@material-ui/core/Dialog';
 import AddCircleIcon from '@material-ui/icons/AddCircle';
 import { SchemaForm, utils } from 'react-schema-form';
 import DialogContentText from '@material-ui/core/DialogContentText';
-import DropDown from 'components/forms/DropDown';
 import InputLabel from '@material-ui/core/InputLabel';
 import MenuItem from '@material-ui/core/MenuItem';
 import ListSubheader from '@material-ui/core/ListSubheader';
@@ -34,7 +33,7 @@ function ConfirmationDialogRaw(props) {
     const SceneSet = qlcInfo && qlcInfo.event_types && qlcInfo.event_types.scene_set.event_filters.scene_name
     const QLCWidgets = qlcInfo && qlcInfo.qlc_widgets && qlcInfo.qlc_widgets.sort((a,b) => parseInt(a[0]) - parseInt(b[0]) )
     
-    console.log("LETS START THIS SHIT - Response: ", QLCWidgets);
+    console.log("Check it out now, funk soul brother: ", QLCWidgets);
 
     React.useEffect(() => {
         if (!open) {
@@ -57,10 +56,6 @@ function ConfirmationDialogRaw(props) {
         window.location = window.location.href;
     };
     
-    //const handleChange = event => {
-    //    setValue(event.target.value);
-    //};
-
     const onModelChange = (key, val) => {
         utils.selectOrSet(key, model, val);
 
@@ -95,14 +90,15 @@ function ConfirmationDialogRaw(props) {
                             Scene Set
                         </ListSubheader>
                             {SceneSet && SceneSet.length > 0 && SceneSet.map((a,b)=><MenuItem key={b} value=""><option>{a}</option></MenuItem>)}
-                        {/*<ListSubheader color="primary">
+                        {/* We may want this at a later time.
+                        <ListSubheader color="primary">
                             Effect Set
                         </ListSubheader>
-                            {effectNames && effectNames.length > 1 && effectNames.map((c,d)=><MenuItem key={d} value=""><option>{c}</option></MenuItem>)}*/}
+                            {effectNames && effectNames.length > 1 && effectNames.map((c,d)=><MenuItem key={d} value=""><option>{c}</option></MenuItem>)}
                         <ListSubheader color="primary">
                             Effect Cleared
                         </ListSubheader>
-                        <MenuItem><option>Effect Cleared</option></MenuItem>
+                        <MenuItem><option>Effect Cleared</option></MenuItem>*/}
                         </Select> 
                 </FormControl>
                 
@@ -115,43 +111,29 @@ function ConfirmationDialogRaw(props) {
                     //onChange={handleChange}
                     >
                     <MenuItem value=""></MenuItem>
-                    {QLCWidgets && QLCWidgets.length > 1 && QLCWidgets.map((e,f)=><MenuItem key={f} value=""><option>{e}</option></MenuItem>)}
+                    {QLCWidgets && QLCWidgets.length > 0 && QLCWidgets.map((e,f)=><MenuItem key={f} value="">
+                        <option>
+                            {/*ID: {qlcID}, Type: {qlcType}, Name: {qlcName}*/}
+                            </option>
+                    {/*{QLCWidgets && QLCWidgets.length > 0 && QLCWidgets.map((e,f)=><MenuItem key={f} value="">
+                        <option>{e}</option>*/}
+                        </MenuItem>)}
                     </Select>
                     <FormHelperText>Some important helper text</FormHelperText>
-                </FormControl>
-
-                {/*<form>
-                    <DropDown
-                    label="Then Do This"
-                    value={QLCWidgets}
-                    {...effectNames && effectNames.length > 1 && effectNames.map((c,d)=><MenuItem key={d} value=""><option>{c}</option></MenuItem>)}
-                    //{...QLCWidgets && QLCWidgets.length > 1 && QLCWidgets.map((e,f)=><MenuItem key={f} value=""><option>{e}</option></MenuItem>)}
-                    />
                     
-                    {/*From Redux: qlclistener_add, show dropdown qlc_widgets
-                    Think we should convert API data from:
-                    [
-                        "7",
-                        "Button",
-                        "Button 7"
-                    ]
-                    to show dropdown feild of 'ID: 7, Button, Button 7' 
-                                   
-                    
-                </form>*/}
-
                     {/*
-                    Below is  ONLY if QLC+ widget selected above is either 'Button' or 'Audio Triggers'
-                    “Buttons” can be set to either off (0) or on (255)
-                    “Audio Triggers” are either off (0) or on (255)
+                    If {qlcType}  === 'Button' or 'Audio Triggers'
+                    return switch off (Value: 0) or on (Value: 255)
+                    If {qlcType}  === 'slider'
+                    return Slider
+                    Slider range: (0 to 255)
+                        Else hide below buttons.
                     */}
+                </FormControl>
                     <div style={{ minWidth: '150px' }}></div>
                     <label>QLC+ widget selected above (On/Off) </label>
                     <Switch color="primary" checked={true} />
 
-                    {/*
-                    Below is for ONLY if QLC+ widget selected above is 'slider'
-                    */}
                     <div style={{ minWidth: '150px' }}>
                                 <label>QLC Slider Widget Value</label>
                                         <Slider
@@ -164,7 +146,9 @@ function ConfirmationDialogRaw(props) {
                                             defaultValue={1}
                                         />
                             </div> 
-                
+                {/*
+                If Below button pressed, then show additional 'Then do this' dropdown field.
+                */}
                 <Button
                     variant="contained"
                     color="primary"
@@ -177,6 +161,23 @@ function ConfirmationDialogRaw(props) {
                 >
                     ADD additional 'then do this'
                 </Button>
+                {/*
+                On Button 'OK', check both dropdowns are defined: 'If this' & 'Then do this' and
+                create JSON for qlc.js module: addqlclistener. If not defined, give error message.
+                We will also need to create addqlclistener function.
+                
+                JSON:
+                {"event_type": "scene_set", "event_filter": {"scene_name": "test1"},"qlc_payload": {[qlcID]:255,[qlcID]:255}}
+
+                Example JSON:
+                {"event_type": "scene_set", "event_filter": {"scene_name": "test2"},"qlc_payload": {"53":255,"3":255}}
+                
+                Show API response on frontend.
+
+                Will also need to populate this form on edit button.
+
+
+                */}
                 <SchemaForm
                     // className={classes.schemaForm}
                     schema={{
