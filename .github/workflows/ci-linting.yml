@@ -3,12 +3,12 @@ name: CI Linting
 on:
   push:
     branches:
-      - dev
+      - Virtuals
   pull_request: ~
 
 env:
   CACHE_VERSION: 1
-  DEFAULT_PYTHON: 3.8
+  DEFAULT_PYTHON: 3.9
   PRE_COMMIT_HOME: ~/.cache/pre-commit
 
 jobs:
