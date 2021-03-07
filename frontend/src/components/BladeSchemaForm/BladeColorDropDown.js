@@ -1,4 +1,3 @@
-import React, { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import InputLabel from '@material-ui/core/InputLabel';
 import MenuItem from '@material-ui/core/MenuItem';
@@ -38,34 +37,32 @@ const useStyles = makeStyles(theme => ({
     },
 }));
 
-const BladeColorDropDown = ({ clr = 'color', type = 'both' }) => {
-    // console.log(type);
+const BladeColorDropDown = ({ clr = 'color', type = 'both', selectedType, model }) => {
     const dispatch = useDispatch();
     const classes = useStyles();
     const effects = useSelector(state => state.schemas.effects);
     const selectedDisplay = useSelector(state => state.selectedDisplay);
-    const { display, effect } = selectedDisplay;
+    const { display } = selectedDisplay;
+    const displays = useSelector(state => state.displays.list);
+    const effectyz = displays.find(d => d.id === display.id);
     const curEffSchema = effects[display.config[display.id].effect.type];
     const colors =
         curEffSchema &&
         curEffSchema.schema.properties[clr] &&
         curEffSchema.schema.properties[clr].enum;
-    const [col, setCol] = useState(effect.config && effect.config[clr]);
     const sendColor = e => {
-        setCol(e);
         return (
             display &&
             dispatch(
                 setDisplayEffect(display.id, {
                     displayId: display.id,
-                    type: display.config[display.id].effect.type,
+                    type: effectyz.effect.type,
                     config: { [clr]: e },
                 })
             )
         );
     };
     const onEffectTypeChange = e => {
-        setCol(e.target.value);
         return (
             display &&
             dispatch(
@@ -77,7 +74,6 @@ const BladeColorDropDown = ({ clr = 'color', type = 'both' }) => {
             )
         );
     };
-
     return (
         <div style={{ display: 'flex', alignItems: 'center' }}>
             {(type === 'text' || type === 'both') && (
@@ -86,7 +82,7 @@ const BladeColorDropDown = ({ clr = 'color', type = 'both' }) => {
                         {clr.replaceAll('_', ' ')}
                     </InputLabel>
                     <Select
-                        value={col}
+                        value={model[clr]}
                         onChange={onEffectTypeChange}
                         id="grouped-select"
                         className={classes.FormSelect}
@@ -102,7 +98,13 @@ const BladeColorDropDown = ({ clr = 'color', type = 'both' }) => {
             )}
 
             {(type === 'color' || type === 'both') && (
-                <BladeColorPicker col={col} clr={clr} sendColor={sendColor} />
+                <BladeColorPicker
+                    col={model[clr]}
+                    clr={clr}
+                    sendColor={sendColor}
+                    selectedType={selectedType}
+                    model={model}
+                />
             )}
         </div>
     );

@@ -86,6 +86,8 @@ const BladeSchemaForm = props => {
                 k =>
                     Object.keys(model).indexOf(k) !== -1 && (
                         <BladeColorDropDown
+                            selectedType={selectedType}
+                            model={model}
                             key={k}
                             type={_colorMode === 'select' ? 'text' : 'color'}
                             clr={k}

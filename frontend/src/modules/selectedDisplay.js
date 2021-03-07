@@ -1,5 +1,7 @@
 import { createAction, handleActions } from 'redux-actions';
 import * as displayProxies from 'proxies/display';
+import * as displayModules from 'modules/displays';
+import * as devicesModules from 'modules/devices';
 import { showdynSnackbar } from './ui';
 // Actions
 const ACTION_ROOT = 'selectedDisplay';
@@ -87,7 +89,12 @@ export function setDisplayEffect(displayId, { type, config, active }) {
             if (statusText !== 'OK') {
                 throw new Error(`Error setting Display:${displayId} Effect`);
             }
-            if (!payload) dispatch(effectReceived(effect));
+            if (!payload) {
+                dispatch(effectReceived(effect));
+                dispatch(displayModules.fetchDisplayList()).then(() =>
+                    dispatch(devicesModules.fetchDeviceList())
+                );
+            }
         } catch (error) {
             dispatch(effectReceived(error));
         }
