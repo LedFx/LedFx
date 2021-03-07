@@ -5,11 +5,11 @@
 # https://wiki.python.org/moin/WindowsCompilers
 
 
-    numpy>=1.20
+    numpy>=1.20.1
     voluptuous>=0.12.0
     pyaudio>=0.2.11
     sacn>=1.5
-    aiohttp>=3.7.4
+    aiohttp>=3.7.4.post0
     yarl>=1.5.1
     multidict>=5.0.0
     aiohttp_jinja2>=1.1.0
