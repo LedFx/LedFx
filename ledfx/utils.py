@@ -402,6 +402,22 @@ class WLED(object):
 
         _LOGGER.info(f"WLED {self.ip_address}: Enabled Multi RGB")
 
+    def first_universe(self):
+        """
+        Updates first universe to "1"
+        """
+        self.sync_settings |= {"EU": "1"}
+
+        _LOGGER.info(f"WLED {self.ip_address}: Đã cài Universe đầu tiên = 1")
+    
+    def first_dmx_address(self):
+        """
+        Updates first dmx address to "1"
+        """
+        self.sync_settings |= {"DA": "1"}
+
+        _LOGGER.info(f"WLED {self.ip_address}: Đã dmx address đầu tiên = 1")
+
     def get_inactivity_timeout(self):
         """
         Get inactivity timeout from internal sync settings
