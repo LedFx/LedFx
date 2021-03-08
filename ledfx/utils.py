@@ -408,7 +408,7 @@ class WLED(object):
         """
         self.sync_settings |= {"EU": "1"}
 
-        _LOGGER.info(f"WLED {self.ip_address}: Đã cài Universe đầu tiên = 1")
+        _LOGGER.info(f"WLED {self.ip_address}: Set first Universe = 1")
     
     def first_dmx_address(self):
         """
@@ -416,7 +416,7 @@ class WLED(object):
         """
         self.sync_settings |= {"DA": "1"}
 
-        _LOGGER.info(f"WLED {self.ip_address}: Đã dmx address đầu tiên = 1")
+        _LOGGER.info(f"WLED {self.ip_address}: Set first DMX address = 1")
 
     def get_inactivity_timeout(self):
         """
