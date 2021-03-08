@@ -232,7 +232,7 @@ class WLED(object):
             sync_settings = [
                 setting
                 for setting in sync_settings
-                if any(i in ["checked", "EP", "ET", "RG", "DM"] for i in setting[0])
+                if any(i in ["checked", "EP", "ET", "RG", "DM", "EU", "DA"] for i in setting[0])
             ]
             # Discard any unchecked checkboxes
             sync_settings = [
