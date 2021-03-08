@@ -232,7 +232,7 @@ class WLED(object):
             sync_settings = [
                 setting
                 for setting in sync_settings
-                if any(i in ["checked", "EP", "ET", "RG"] for i in setting[0])
+                if any(i in ["checked", "EP", "ET", "RG", "DM"] for i in setting[0])
             ]
             # Discard any unchecked checkboxes
             sync_settings = [
@@ -393,6 +393,14 @@ class WLED(object):
         self.sync_settings |= ({"FB": "on"},)
 
         _LOGGER.info(f"WLED {self.ip_address}: Enabled force max brightness")
+
+    def multirgb_dmx_mode(self):
+        """
+        Updates DMX mode to "Multi RGB"
+        """
+        self.sync_settings |= {"DM": "4"}
+
+        _LOGGER.info(f"WLED {self.ip_address}: Enabled Multi RGB")
 
     def get_inactivity_timeout(self):
         """
