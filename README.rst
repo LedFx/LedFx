@@ -21,7 +21,7 @@ Demos
 
 We are actively adding and perfecting the effects, but here is a quick demo of LedFx running three different effects synced across three different ESP8266 devices:
 
-.. image:: https://raw.githubusercontent.com/LedFx/LedFx/gh-pages/demos/ledfx_demo.gif
+.. image:: https://raw.githubusercontent.com/LedFx/LedFx/gh-pages-old/demos/ledfx_demo-small.gif
 
 📑 Quick start guide and documentation📖
 ------------------------------------------
