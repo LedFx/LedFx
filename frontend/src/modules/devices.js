@@ -48,7 +48,7 @@ export default handleActions(
                 ...state,
                 list: error ? state.list : convertDevicesDictionaryToList(updatedDevices),
                 dictionary: error ? state.dictionary : updatedDevices,
-                error: error ? payload.mesasge : '',
+                error: error ? payload.message : '',
             };
         },
     },
