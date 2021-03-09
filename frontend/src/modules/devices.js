@@ -1,6 +1,6 @@
 import { createAction, handleActions } from 'redux-actions';
 import * as deviceProxies from 'proxies/device';
-import * as displayModules from 'modules/displays';
+// import * as displayModules from 'modules/displays';
 import { updateDevices } from './settings';
 import { showdynSnackbar } from './ui';
 // Actions
@@ -108,7 +108,7 @@ export function findWLEDDevices({ resolve, reject }) {
                 for (let sec = 1; sec <= 10; sec++) {
                     await sleep(1000).then(() => {
                         dispatch(fetchDeviceList());
-                        dispatch(displayModules.fetchDiplayList());
+                        // dispatch(displayModules.fetchDiplayList());
                         dispatch(scanProgressUpdated(sec));
                     });
                 }
