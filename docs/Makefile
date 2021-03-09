@@ -2,8 +2,8 @@
 #
 
 # You can set these variables from the command line.
-SPHINXOPTS    = -b dirhtml
-SPHINXBUILD   = python -msphinx
+SPHINXOPTS    = -a -b dirhtml
+SPHINXBUILD   = sphinx-build
 SPHINXPROJ    = LedFx
 SOURCEDIR     = .
 BUILDDIR      = _build
@@ -18,3 +18,6 @@ help:
 # "make mode" option.  $(O) is meant as a shortcut for $(SPHINXOPTS).
 %: Makefile
 	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
+
+livehtml:
+	sphinx-autobuild "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O) --open-browser

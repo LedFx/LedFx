@@ -1,0 +1,23 @@
+name: Create Sentry Dev Release
+
+on:
+  push:
+    branches:
+      - dev
+
+jobs:
+  sentry-release:
+    name: Create sentry release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code from GitHub
+        uses: actions/checkout@v2
+      - name: Create sentry release
+        uses: getsentry/action-release@v1
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ledfx-org
+          SENTRY_PROJECT: ledfx-betas
+        with:
+          environment: development
+          finalize: false

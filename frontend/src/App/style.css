@@ -1,0 +1,12 @@
+html, body {
+  font-family: 'Roboto', 'Helvetica', sans-serif;
+  font-weight: 300;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+#root {
+  height: 100%;
+  width: 100%;
+}

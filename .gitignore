@@ -7,10 +7,10 @@
 *.orig
 *.log
 *.pot
-__pycache__/*
 .cache/*
 .*.swp
 */.ipynb_checkpoints/*
+*.DS_Store
 
 # Python env
 env
@@ -26,7 +26,8 @@ package-lock.json
 .pydevproject
 .settings
 .idea
-.vscode
+.vscode/settings.json
+*.code-workspace
 
 # Package files
 *.egg
@@ -49,3 +50,26 @@ docs/api/*
 docs/_build/*
 cover/*
 MANIFEST
+
+
+
+# Keyfile and pyupdater files for signing pyupdater
+keypack.pyu
+.pyupdater/
+pyu-data/
+# Sentry Data
+formatting_test.bat
+
+
+# Misc
+.devcontainer/ledfx-config.yml
+.vscode/launch.json
+win.spec
+frontend/*.eslintcache
+*.eslintcache
+
+
+#Pycache from numba
+ledfx/effects/__pycache__/*
+ledfx/__pycache__/*
+__pycache__/*
