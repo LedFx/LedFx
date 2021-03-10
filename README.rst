@@ -68,7 +68,7 @@ The below image describes a basic setup - LedFx running on PC, communicating wit
 #. **Direct computer audio output to LedFx.**
       - Follow guide, `How to: Enable Stereo Mix in Windows 10`_.
       - Alternatively use `Voicemeeter`_. `Voicemeeter tutorial`_.
-      - More information for `Linux and macOS users here <https://ledfx.readthedocs.io/en/latest/directing_audio.html>`_.
+      - More information for `Linux and macOS users here <https://ledfx.readthedocs.io/en/master/directing_audio.html>`_.
       - Play some music in the background.
 
 #. **Start LedFx.**
@@ -106,19 +106,19 @@ License
 
 .. _`MIT`: https://choosealicense.com/licenses/mit/
 .. _`LedFx.exe`: https://ledfx.app/download/
-.. _`LedFx Guide`: https://ledfx.readthedocs.io/en/dev/index.html
+.. _`LedFx Guide`: https://ledfx.readthedocs.io/en/master/index.html
 .. _`WLED`: https://github.com/Aircoookie/WLED/wiki
-.. _`installation documentation`: https://ledfx.readthedocs.io/en/dev/installing.html
+.. _`installation documentation`: https://ledfx.readthedocs.io/en/master/installing.html
 .. _`Contributors-&-About`: https://ledfx.app/about/
 .. _`How to: Enable Stereo Mix in Windows 10`: https://thegeekpage.com/stereo-mix/
 .. _`Voicemeeter`: https://vb-audio.com/Voicemeeter/index.htm
 .. _`Voicemeeter tutorial`: https://youtu.be/ZXKDzYXS60o?start=27&end=163
 
-.. |Build Status| image:: https://travis-ci.com/LedFx/LedFx.svg?branch=dev
-   :target: https://travis-ci.com/LedFx/LedFx
-   :alt: Build Status
-.. |Build Status Docs| image:: https://readthedocs.org/projects/ledfx/badge/?version=dev
-   :target: https://ledfx.readthedocs.io/en/dev/?badge=dev
+.. |Build Status| image:: https://github.com/LedFx/LedFx/actions/workflows/ci-build.yml/badge.svg
+   :target: https://github.com/LedFx/LedFx/actions/workflows/ci-build.yml
+   :alt: CI Build LedFx
+.. |Build Status Docs| image:: https://readthedocs.org/projects/ledfx/badge/?version=master
+   :target: https://ledfx.readthedocs.io/en/master/?badge=master
    :alt: Documentation Status
 .. |License| image:: https://img.shields.io/badge/license-MIT-blue.svg
    :alt: License
