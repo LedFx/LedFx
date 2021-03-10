@@ -20,13 +20,18 @@ import sphinx_rtd_theme
 sys.path.insert(0, os.path.abspath(".."))
 
 import ledfx.consts as const
-from ledfx.consts import PROJECT_NAME, PROJECT_VERSION
+from ledfx.consts import (
+    DEV_VERSION,
+    POST_VERSION,
+    PROJECT_NAME,
+    PROJECT_VERSION,
+)
 
 # -- Project information -----------------------------------------------------
 
 PROJECT_PACKAGE_NAME = PROJECT_NAME
 PROJECT_AUTHOR = const.__author__
-PROJECT_COPYRIGHT = " 2018, {}".format(PROJECT_AUTHOR)
+PROJECT_COPYRIGHT = " 2018-2021, {}".format(PROJECT_AUTHOR)
 PROJECT_SHORT_DESCRIPTION = "LedFx is an open-source effect controller"
 PROJECT_LONG_DESCRIPTION = (
     "LedFx is an open-source effect controller "
@@ -44,9 +49,13 @@ PROJECT_GITHUB_URL = "https://github.com/{}".format(PROJECT_GITHUB_PATH)
 project = "{}".format(PROJECT_NAME)
 author = "{}".format(PROJECT_AUTHOR)
 copyright = "{}".format(PROJECT_COPYRIGHT) + " & contributors"
-version = PROJECT_VERSION
 release = PROJECT_VERSION
+version = PROJECT_VERSION
 
+if DEV_VERSION:
+    version = DEV_VERSION
+elif POST_VERSION:
+    version = POST_VERSION
 
 # -- General configuration ---------------------------------------------------
 

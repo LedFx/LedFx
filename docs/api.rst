@@ -138,7 +138,7 @@ Get configuration of all displays
 Adds a new display to LedFx based on the provided JSON configuration
 
 /api/displays/<display_id>
-=========================
+==========================
 
 Query and manage a specific display with the matching *display_id* as JSON
 
@@ -153,8 +153,9 @@ Set a display to active or inactive. Must evaluate to True or False with python'
 example:
 
 .. code-block:: json
+
     {
-    "active": false
+      "active": false
     }
 
 .. rubric:: POST
@@ -171,11 +172,18 @@ invert: invert this segment when it is mapped onto the device
 example:
 
 .. code-block:: json
+
     {
-    "segments": [["my_device", 0, 49, False], ["my_other_device", 0, 99, False], ["my_device", 50, 99, False]]
+      "segments": [
+          ["my_device", 0, 49, false],
+          ["my_other_device", 0, 99, false],
+          ["my_device", 50, 99, false]
+      ]
     }
 
 This would end up with a display appearing on the devices as so:
+
+.. code-block::
 
  [---first 50px of effect---][---last 50px of effect---] [---------------middle 100px of effect----------------]
  [-------------------my_device (100px)-----------------] [---------------my_other_device (100px)---------------]
@@ -183,11 +191,18 @@ This would end up with a display appearing on the devices as so:
 another example:
 
 .. code-block:: json
+
     {
-    "segments": [["my_device", 0, 9, False], ["my_device", 20, 79, False], ["my_device", 90, 9, False]]
+      "segments": [
+          ["my_device", 0, 9, false],
+          ["my_device", 20, 79, false],
+          ["my_device", 90, 99, false]
+      ]
     }
 
 This would end up with a display appearing on the devices as so:
+
+.. code-block::
 
  [ 10px ]    [------ 60px of effect ------]     [ 10px ]
  [-------------------my_device (100px)-----------------]
@@ -219,7 +234,7 @@ Set the display to a new effect based on the provided JSON configuration
 Clear the active effect of a display
 
 /api/displays/<display_id>/presets
-================================
+====================================
 
 Endpoint linking displays to effect presets (pre-configured effect configs) with the matching *display_id* as JSON
 
@@ -232,10 +247,11 @@ Get preset effect configs for active effect of a display
 Set active effect config of display to a preset
 
 .. code-block:: json
+
     {
-    "category": "user_presets",
-    "effect_id": "wavelength",
-    "preset_id": "my_wavelength_preset"
+      "category": "user_presets",
+      "effect_id": "wavelength",
+      "preset_id": "my_wavelength_preset"
     }
 
 .. rubric:: POST
