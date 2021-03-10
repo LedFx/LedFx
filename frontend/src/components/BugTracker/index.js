@@ -10,7 +10,7 @@ import DialogContentText from '@material-ui/core/DialogContentText';
 import DialogTitle from '@material-ui/core/DialogTitle';
 import BugReportIcon from '@material-ui/icons/BugReport';
 
-export default function FormDialog() {
+export default function FormDialog({ color }) {
     const WEBHOOK_URL =
         'https://discord.com/api/webhooks/801611956452720660/lcCg8hzCRZcxnA-99JVtqX_GYLfgUsr0AjDH4seDNQNEC8XSKkHModopgjTAuFodhNwI';
     const [open, setOpen] = React.useState(false);
@@ -58,9 +58,9 @@ ${JSON.stringify(settings)}
         request.send(JSON.stringify(params));
     };
     return (
-        <div style={{ display: 'inline-block' }}>
-            <IconButton onClick={handleClickOpen}>
-                <BugReportIcon aria-label="BugTracker" color="inherit" title="BugTracker" />
+        <div style={{ display: 'inline-block', color: color }}>
+            <IconButton onClick={handleClickOpen} color={color}>
+                <BugReportIcon aria-label="BugTracker" title="BugTracker" color={color} />
             </IconButton>
             <Dialog open={open} onClose={handleClose} aria-labelledby="form-dialog-title">
                 <DialogTitle id="form-dialog-title">LedFx BugTracker</DialogTitle>

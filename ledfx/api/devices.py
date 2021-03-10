@@ -3,8 +3,6 @@ import logging
 from aiohttp import web
 
 from ledfx.api import RestEndpoint
-from ledfx.config import save_config
-from ledfx.utils import generate_id
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -21,14 +19,9 @@ class DevicesEndpoint(RestEndpoint):
                 "config": device.config,
                 "id": device.id,
                 "type": device.type,
-                "effect": {},
+                "displays": device.displays,
+                "active_displays": device.active_displays,
             }
-            if device.active_effect:
-                effect_response = {}
-                effect_response["config"] = device.active_effect.config
-                effect_response["name"] = device.active_effect.name
-                effect_response["type"] = device.active_effect.type
-                response["devices"][device.id]["effect"] = effect_response
 
         return web.json_response(data=response, status=200)
 
@@ -51,41 +44,28 @@ class DevicesEndpoint(RestEndpoint):
             }
             return web.json_response(data=response, status=500)
 
-        device_id = generate_id(device_config.get("name"))
-        # Remove the device it if already exist?
-
-        # Create the device
-        _LOGGER.info(
-            "Adding device of type {} with config {}".format(
+        try:
+            device = await self._ledfx.devices.add_new_device(
                 device_type, device_config
             )
-        )
-        device = self._ledfx.devices.create(
-            id=device_id,
-            type=device_type,
-            config=device_config,
-            ledfx=self._ledfx,
-        )
-
-        # Update and save the configuration
-        self._ledfx.config["devices"].append(
-            {
-                "id": device.id,
-                "type": device.type,
-                "config": device.config,
+        except ValueError as msg:
+            response = {
+                "status": "failed",
+                "payload": {"type": "error", "reason": str(msg)},
             }
-        )
-        save_config(
-            config=self._ledfx.config,
-            config_dir=self._ledfx.config_dir,
-        )
+            return web.json_response(data=response, status=202)
 
         response = {
             "status": "success",
+            "payload": {
+                "type": "success",
+                "reason": f"Created device {device.name}",
+            },
             "device": {
                 "type": device.type,
                 "config": device.config,
                 "id": device.id,
+                "displays": device.displays,
             },
         }
         return web.json_response(data=response, status=200)

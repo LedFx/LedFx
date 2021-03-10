@@ -7,6 +7,7 @@ import { history } from './createStore';
 import defaultTheme, { darkTheme, bladeTheme, bladeDarkTheme } from './theme';
 // import { createMuiTheme } from '@material-ui/core/styles';
 import './style.css';
+import './materialdesignicons.css';
 import SnackbarDynamic from '../components/SnackbarDynamic';
 
 export default function App() {

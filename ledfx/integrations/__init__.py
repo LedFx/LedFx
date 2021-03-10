@@ -117,13 +117,10 @@ class Integrations(RegistryLoader):
         def on_shutdown(e):
             for integration in self.values():
                 integration.on_shutdown()
-            # TODO Make sure program lets this finish before closing!
+
             async_fire_and_forget(
                 self.close_all_connections(), self._ledfx.loop
             )
-
-        def notify_shutdown(e):
-            self.notify_shutdown()
 
         self._ledfx.events.add_listener(on_shutdown, Event.LEDFX_SHUTDOWN)
 
@@ -143,7 +140,8 @@ class Integrations(RegistryLoader):
 
     async def close_all_connections(self):
         for integration in self.values():
-            await integration.deactivate()
+            if integration._active:
+                await integration.deactivate()
 
     async def activate_integrations(self):
         for integration in self.values():

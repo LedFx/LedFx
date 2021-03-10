@@ -9,6 +9,7 @@ import Typography from '@material-ui/core/Typography';
 import Menu from '@material-ui/icons/Menu';
 import RedeemIcon from '@material-ui/icons/Redeem';
 import StarIcon from '@material-ui/icons/Star';
+import WarningIcon from '@material-ui/icons/Warning';
 import DevIcon from '@material-ui/icons/DeveloperMode';
 import viewRoutes from 'routes/views.jsx';
 import { drawerWidth } from 'utils/style';
@@ -37,7 +38,7 @@ const styles = theme => ({
 
 const Header = props => {
     const getPageName = () => {
-        const { location, devicesDictionary } = props;
+        const { location, devicesDictionary, selectedDisplay } = props;
         const { pathname } = location;
         let name = viewRoutes.find((prop, key) => prop.path === pathname)?.navbarName;
 
@@ -49,6 +50,17 @@ const Header = props => {
                         ? devicesDictionary[deviceId].config.name
                         : '';
                 name = 'Devices / ' + deviceName;
+            } else if (pathname.startsWith('/displays/')) {
+                const displayId = pathname.replace('/displays/', '');
+                const displayName =
+                    devicesDictionary[displayId] !== undefined
+                        ? devicesDictionary[displayId].config.name
+                        : selectedDisplay
+                            ? selectedDisplay.config[selectedDisplay.id] &&
+                            selectedDisplay.config[selectedDisplay.id].config.name
+                            : '';
+
+                name = 'Devices / ' + displayName;
             } else if (pathname.startsWith('/developer/')) {
                 name = 'Developer / Custom';
             }
@@ -101,11 +113,11 @@ const Header = props => {
                         >
                             {window.localStorage.getItem('BladeMod') === '1' ? (
                                 <DevIcon />
-                            ) : parseInt(window.localStorage.getItem('BladeMod')) > 1 ? (
+                            ) : parseInt(window.localStorage.getItem('BladeMod')) === "2" ? (
                                 <StarIcon />
-                            ) : (
-                                <RedeemIcon />
-                            )}
+                            ) : parseInt(window.localStorage.getItem('BladeMod')) > "2" ? (
+                                <WarningIcon />
+                            ) : (<RedeemIcon />)}
                         </Fab>
                     )}
                     <Hidden mdUp>

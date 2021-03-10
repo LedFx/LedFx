@@ -91,28 +91,28 @@ class ScenesEndpoint(RestEndpoint):
         scene = self._ledfx.config["scenes"][scene_id]
 
         if action == "activate":
-            for device in self._ledfx.devices.values():
-                # Check device is in scene, make no changes if it isn't
-                if device.id not in scene["devices"].keys():
+            for display in self._ledfx.displays.values():
+                # Check display is in scene, make no changes if it isn't
+                if display.id not in scene["displays"].keys():
                     _LOGGER.info(
-                        ("Device with id {} has no data in scene {}").format(
-                            device.id, scene_id
+                        ("display with id {} has no data in scene {}").format(
+                            display.id, scene_id
                         )
                     )
                     continue
 
-                # Set effect of device to that saved in the scene,
-                # clear active effect of device if no effect in scene
-                if scene["devices"][device.id]:
-                    # Create the effect and add it to the device
+                # Set effect of display to that saved in the scene,
+                # clear active effect of display if no effect in scene
+                if scene["displays"][display.id]:
+                    # Create the effect and add it to the display
                     effect = self._ledfx.effects.create(
                         ledfx=self._ledfx,
-                        type=scene["devices"][device.id]["type"],
-                        config=scene["devices"][device.id]["config"],
+                        type=scene["displays"][display.id]["type"],
+                        config=scene["displays"][display.id]["config"],
                     )
-                    device.set_effect(effect)
+                    display.set_effect(effect)
                 else:
-                    device.clear_effect()
+                    display.clear_effect()
 
             self._ledfx.events.fire_event(SceneSetEvent(scene["name"]))
             response = {
@@ -149,7 +149,7 @@ class ScenesEndpoint(RestEndpoint):
         return web.json_response(data=response, status=200)
 
     async def post(self, request) -> web.Response:
-        """Save current effects of devices as a scene"""
+        """Save current effects of displays as a scene"""
         data = await request.json()
 
         scene_name = data.get("name")
@@ -164,14 +164,14 @@ class ScenesEndpoint(RestEndpoint):
 
         scene_config = {}
         scene_config["name"] = scene_name
-        scene_config["devices"] = {}
-        for device in self._ledfx.devices.values():
+        scene_config["displays"] = {}
+        for display in self._ledfx.displays.values():
             effect = {}
-            if device.active_effect:
-                effect["type"] = device.active_effect.type
-                effect["config"] = device.active_effect.config
-                # effect['name'] = device.active_effect.name
-            scene_config["devices"][device.id] = effect
+            if display.active_effect:
+                effect["type"] = display.active_effect.type
+                effect["config"] = display.active_effect.config
+                # effect['name'] = display.active_effect.name
+            scene_config["displays"][display.id] = effect
 
         # Update the scene if it already exists, else create it
         self._ledfx.config["scenes"][scene_id] = scene_config

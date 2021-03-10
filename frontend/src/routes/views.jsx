@@ -11,74 +11,86 @@ import LockOpenIcon from '@material-ui/icons/LockOpen';
 
 // Components and Views
 import DashboardView from '../views/Dashboard';
+import BladeboardView from '../views/Dashboard/BladeBoard';
 import DevicesView from '../views/Devices';
 import ScenesView from '../views/Scenes';
-import DeviceView from '../views/Device';
+import DisplayView from '../views/Display';
 import VirtualsView from '../views/Virtuals';
 import IntegrationsView from '../views/Integrations';
 import AdvancedView from '../views/Advanced';
 import SettingsView from '../views/Settings';
 import DeveloperView from '../views/Developer';
 
-const virtuals =
-    parseInt(window.localStorage.getItem('BladeMod')) > 1
+const dashboard =
+    parseInt(window.localStorage.getItem('BladeMod')) > 0
         ? {
-              path: '/virtuals',
-              sidebarName: 'Virtual Strips',
-              navbarName: 'Virtual Strips',
-              icon: DeviceHubIcon,
-              component: VirtualsView,
-          }
+            path: '/dashboard',
+            sidebarName: 'Bladeboard',
+            navbarName: 'Dashboard',
+            icon: Dashboard,
+            component: BladeboardView,
+        }
         : {
-              path: '/virtuals',
-              navbarName: 'Virtual Strips',
-              icon: DeviceHubIcon,
-              component: VirtualsView,
-          };
+            path: '/dashboard',
+            sidebarName: 'Dashboard',
+            navbarName: 'Dashboard',
+            icon: Dashboard,
+            component: DashboardView,
+        };
+const virtuals =
+    parseInt(window.localStorage.getItem('BladeMod')) > 2
+        ? {
+            path: '/virtuals',
+            sidebarName: 'Virtual Strips',
+            navbarName: 'Virtual Strips',
+            icon: DeviceHubIcon,
+            component: VirtualsView,
+        }
+        : {
+            path: '/virtuals',
+            navbarName: 'Virtual Strips',
+            icon: DeviceHubIcon,
+            component: VirtualsView,
+        };
+
 const integrations =
     parseInt(window.localStorage.getItem('BladeMod')) > 1
         ? {
-              path: '/integrations',
-              sidebarName: 'Integrations',
-              navbarName: 'Integrations',
-              icon: PowerIcon,
-              component: IntegrationsView,
-          }
+            path: '/integrations',
+            sidebarName: 'Integrations',
+            navbarName: 'Integrations',
+            icon: PowerIcon,
+            component: IntegrationsView,
+        }
         : {
-              path: '/integrations',
-              navbarName: 'Integrations',
-              icon: PowerIcon,
-              component: IntegrationsView,
-          };
+            path: '/integrations',
+            navbarName: 'Integrations',
+            icon: PowerIcon,
+            component: IntegrationsView,
+        };
 const advanced =
-    parseInt(window.localStorage.getItem('BladeMod')) > 0
+    parseInt(window.localStorage.getItem('BladeMod')) > 1
         ? {
-              path: '/advanced',
-              sidebarName: 'Advanced',
-              navbarName: 'Advanced',
-              icon: LockOpenIcon,
-              component: AdvancedView,
-          }
+            path: '/advanced',
+            sidebarName: 'Advanced',
+            navbarName: 'Advanced',
+            icon: LockOpenIcon,
+            component: AdvancedView,
+        }
         : {
-              path: '/advanced',
-              navbarName: 'Advanced',
-              icon: LockOpenIcon,
-              component: AdvancedView,
-          };
+            path: '/advanced',
+            navbarName: 'Advanced',
+            icon: LockOpenIcon,
+            component: AdvancedView,
+        };
 const viewRoutes = [
+    dashboard,
     {
-        path: '/dashboard',
-        sidebarName: 'Dashboard',
-        navbarName: 'Dashboard',
-        icon: Dashboard,
-        component: DashboardView,
-    },
-    {
-        path: '/devices/:deviceId',
-        navbarName: 'Devices',
-        sidebarName: 'Devices',
+        path: '/displays/:displayId',
+        navbarName: 'Displays',
+        sidebarName: 'Displays',
         icon: List,
-        component: DeviceView,
+        component: DisplayView,
     },
     {
         path: '/scenes',

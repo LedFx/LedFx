@@ -11,6 +11,7 @@ class Event:
 
     LEDFX_SHUTDOWN = "shutdown"
     DEVICE_UPDATE = "device_update"
+    DISPLAY_UPDATE = "display_update"
     GRAPH_UPDATE = "graph_update"
     EFFECT_SET = "effect_set"
     EFFECT_CLEARED = "effect_cleared"
@@ -29,11 +30,20 @@ class DeviceUpdateEvent(Event):
     def __init__(self, device_id: str, pixels: np.ndarray):
         super().__init__(Event.DEVICE_UPDATE)
         self.device_id = device_id
-        self.pixels = pixels.T.tolist()
+        self.pixels = pixels.astype(np.uint8).T.tolist()
+
+
+class DisplayUpdateEvent(Event):
+    """Event emitted when a display's pixels are updated"""
+
+    def __init__(self, display_id: str, pixels: np.ndarray):
+        super().__init__(Event.DISPLAY_UPDATE)
+        self.display_id = display_id
+        self.pixels = pixels.astype(np.uint8).T.tolist()
 
 
 class GraphUpdateEvent(Event):
-    """Event emitted when a device's pixels are updated"""
+    """Event emitted when an audio graph is updated"""
 
     def __init__(
         self,

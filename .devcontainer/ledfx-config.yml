@@ -2,6 +2,7 @@ crossfade: 1.0
 custom_presets: {}
 dev_mode: false
 devices: []
+displays: []
 fade: 1.0
 host: 0.0.0.0
 integrations: []

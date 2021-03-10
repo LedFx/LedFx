@@ -25,7 +25,13 @@ class PixelColorGraph extends React.Component {
     }
 
     getChartOptionsForDevice(device) {
+        // console.log(
+        //     'AND AGAAAAIN: Hole 99999 display.config.pixel_count missing...',
+        //     device.config[device.id]
+        // );
         const { pixel_count } = device.config;
+        // const { pixel_count } = { pixel_count: 50 };
+
         return {
             chartData: {
                 labels: Array.apply(null, { length: pixel_count }).map(Function.call, Number),

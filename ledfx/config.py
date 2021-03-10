@@ -10,21 +10,21 @@ import yaml
 CONFIG_DIRECTORY = ".ledfx"
 CONFIG_FILE_NAME = "config.json"
 OLD_CONFIG_FILE_NAME = "config.yaml"
-DEFAULT_PRESETS_FILE_NAME = "default_presets.json"
 
 CORE_CONFIG_SCHEMA = vol.Schema(
     {
         vol.Optional("host", default="0.0.0.0"): str,
         vol.Optional("port", default=8888): int,
         vol.Optional("dev_mode", default=False): bool,
-        vol.Optional("crossfade", default=1.0): float,
         vol.Optional("devices", default=[]): list,
-        vol.Optional("default_presets", default={}): dict,
-        vol.Optional("custom_presets", default={}): dict,
+        vol.Optional("displays", default=[]): list,
+        vol.Optional("ledfx_presets", default={}): dict,
+        vol.Optional("user_presets", default={}): dict,
         vol.Optional("scenes", default={}): dict,
         vol.Optional("integrations", default=[]): list,
-        vol.Optional("fade", default=1.0): float,
         vol.Optional("virtuals", default=[]): list,
+        vol.Optional("wled_preferred_mode", default=""): str,
+        vol.Optional("scan_on_startup", default=True): bool,
     },
     extra=vol.ALLOW_EXTRA,
 )
@@ -57,6 +57,12 @@ def get_config_file(config_dir: str) -> str:
         else:
             return None  # No Valid Configs, return None to build another one
     return json_path  # Return the JSON file if we find one.
+
+
+def get_profile_dump_location() -> str:
+    config_dir = get_default_config_directory()
+    date_time = datetime.datetime.now().strftime("%d-%m-%y_%H-%M-%S")
+    return os.path.join(config_dir, f"LedFx_{date_time}.profile")
 
 
 def get_log_file_location():
@@ -127,7 +133,9 @@ def load_config(config_dir: str) -> dict:
     """Validates and loads the configuration file in the provided directory"""
 
     config_file = ensure_config_file(config_dir)
-    print(("Loading configuration file from {}").format(config_dir))
+    print(
+        f"Loading configuration file: {os.path.join(config_dir, CONFIG_FILE_NAME)}"
+    )
 
     if config_file.endswith("yaml"):
         migrate_config(config_dir, config_file)
@@ -152,16 +160,6 @@ def load_config(config_dir: str) -> dict:
         return CORE_CONFIG_SCHEMA({})
 
 
-def load_default_presets() -> dict:
-    ledfx_dir = os.path.dirname(os.path.realpath(__file__))
-    default_presets_path = os.path.join(ledfx_dir, DEFAULT_PRESETS_FILE_NAME)
-    print("Loading default presets from {}".format(ledfx_dir))
-    if not os.path.isfile(default_presets_path):
-        print("Failed to load {}".format(DEFAULT_PRESETS_FILE_NAME))
-    with open(default_presets_path, encoding="utf-8") as file:
-        return json.load(file)
-
-
 def save_config(config: dict, config_dir: str) -> None:
     """Saves the configuration to the provided directory"""
 
@@ -170,8 +168,8 @@ def save_config(config: dict, config_dir: str) -> None:
     # prevent defaults being saved to config.yaml by creating a copy (python
     # no pass by value)
     config_view = dict(config)
-    if "default_presets" in config_view.keys():
-        del config_view["default_presets"]
+    if "ledfx_presets" in config_view.keys():
+        del config_view["ledfx_presets"]
     with open(config_file, "w", encoding="utf-8") as file:
         json.dump(
             config_view, file, ensure_ascii=False, sort_keys=True, indent=4

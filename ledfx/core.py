@@ -2,14 +2,17 @@ import asyncio
 import logging
 import sys
 import warnings
+import webbrowser
 from concurrent.futures import ThreadPoolExecutor
 
-from ledfx.config import load_config, load_default_presets, save_config
+from ledfx.config import load_config, save_config
 from ledfx.devices import Devices
+from ledfx.displays import Displays
 from ledfx.effects import Effects
 from ledfx.events import Events, LedFxShutdownEvent
 from ledfx.http_manager import HttpServer
 from ledfx.integrations import Integrations
+from ledfx.presets import ledfx_presets
 from ledfx.utils import (
     RollingQueueHandler,
     async_fire_and_forget,
@@ -22,10 +25,11 @@ if currently_frozen():
 
 
 class LedFxCore(object):
-    def __init__(self, config_dir, host=None, port=None):
+    def __init__(self, config_dir, host=None, port=None, icon=None):
+        self.icon = icon
         self.config_dir = config_dir
         self.config = load_config(config_dir)
-        self.config["default_presets"] = load_default_presets()
+        self.config["ledfx_presets"] = ledfx_presets
         host = host if host else self.config["host"]
         port = port if port else self.config["port"]
 
@@ -33,10 +37,14 @@ class LedFxCore(object):
             self.loop = asyncio.ProactorEventLoop()
         else:
             self.loop = asyncio.get_event_loop()
+        asyncio.set_event_loop(self.loop)
 
         self.executor = ThreadPoolExecutor()
         self.loop.set_default_executor(self.executor)
         self.loop.set_exception_handler(self.loop_exception_handler)
+
+        if self.icon:
+            self.setup_icon_menu()
 
         self.setup_logqueue()
         self.events = Events(self)
@@ -61,11 +69,33 @@ class LedFxCore(object):
             **kwargs,
         )
 
+    def open_ui(self):
+        # Check if we're binding to all adaptors
+        if str(self.config["host"]) == "0.0.0.0":
+            url = f"http://127.0.0.1:{str(self.config['port'])}"
+        else:
+            # If the user has specified an adaptor, launch its address
+            url = self.http.base_url
+        try:
+            webbrowser.get().open(url)
+        except webbrowser.Error:
+            _LOGGER.warning(
+                f"Failed to open default web browser. To access LedFx's web ui, open {url} in your browser. To prevent this error in future, configure a default browser for your system."
+            )
+
+    def setup_icon_menu(self):
+        import pystray
+
+        self.icon.menu = pystray.Menu(
+            pystray.MenuItem("Open", self.open_ui, default=True),
+            pystray.MenuItem("Quit Ledfx", self.stop),
+        )
+
     def setup_logqueue(self):
         def log_filter(record):
             return (record.name != "ledfx.api.log") and (record.levelno >= 20)
 
-        self.logqueue = asyncio.Queue(maxsize=100, loop=self.loop)
+        self.logqueue = asyncio.Queue(maxsize=100)
         logqueue_handler = RollingQueueHandler(self.logqueue)
         logqueue_handler.addFilter(log_filter)
         root_logger = logging.getLogger()
@@ -108,17 +138,28 @@ class LedFxCore(object):
     async def async_start(self, open_ui=False):
         _LOGGER.info("Starting ledfx")
         await self.http.start()
-
+        if self.icon is not None:
+            if self.icon.HAS_NOTIFICATION:
+                self.icon.notify(
+                    "Starting in background.\nUse the tray icon to open."
+                )
         self.devices = Devices(self)
         self.effects = Effects(self)
+        self.displays = Displays(self)
         self.integrations = Integrations(self)
 
         # TODO: Deferr
         self.devices.create_from_config(self.config["devices"])
+        await self.devices.async_initialize_devices()
+
+        sync_mode = self.config["wled_preferred_mode"]
+        if sync_mode:
+            await self.devices.set_wleds_sync_mode(sync_mode)
+
+        self.displays.create_from_config(self.config["displays"])
         self.integrations.create_from_config(self.config["integrations"])
 
-        if not self.devices.values():
-            _LOGGER.info("No devices saved in config.")
+        if self.config["scan_on_startup"]:
             async_fire_and_forget(self.devices.find_wled_devices(), self.loop)
 
         async_fire_and_forget(
@@ -126,20 +167,7 @@ class LedFxCore(object):
         )
 
         if open_ui:
-            import webbrowser
-
-            # Check if we're binding to all adaptors
-            if str(self.config["host"]) == "0.0.0.0":
-                url = f"http://127.0.0.1:{str(self.config['port'])}"
-            else:
-                # If the user has specified an adaptor, launch its address
-                url = self.http.base_url
-            try:
-                webbrowser.get().open(url)
-            except webbrowser.Error:
-                _LOGGER.warning(
-                    f"Failed to open default web browser. To access LedFx's web ui, open {url} in your browser. To prevent this error in future, configure a default browser for your system."
-                )
+            self.open_ui()
 
         await self.flush_loop()
 
@@ -153,13 +181,15 @@ class LedFxCore(object):
         print("Stopping LedFx.")
 
         # Fire a shutdown event and flush the loop
+        _LOGGER.info("Firing LedFxShutdownEvent...")
         self.events.fire_event(LedFxShutdownEvent())
         await asyncio.sleep(0, loop=self.loop)
 
+        _LOGGER.info("Stopping HttpServer...")
         await self.http.stop()
 
         # Cancel all the remaining task and wait
-
+        _LOGGER.info("Killing remaining tasks...")
         tasks = [
             task
             for task in asyncio.all_tasks()
@@ -170,6 +200,7 @@ class LedFxCore(object):
         # Save the configuration before shutting down
         save_config(config=self.config, config_dir=self.config_dir)
 
+        _LOGGER.info("Flushing loop...")
         await self.flush_loop()
         self.executor.shutdown()
         self.exit_code = exit_code

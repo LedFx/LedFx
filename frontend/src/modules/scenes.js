@@ -1,6 +1,6 @@
 import { createAction, handleActions } from 'redux-actions';
 import * as scenesProxies from 'proxies/scenes';
-import * as deviceProxies from './devices';
+import * as displayProxies from './displays';
 import * as uiProxies from './ui';
 
 // Actions
@@ -94,19 +94,20 @@ export function deleteScene(id) {
 }
 
 export function activateScene(id) {
+    console.log('YZ1:', id);
     return async (dispatch, getState) => {
-        const sceneDevices = getState().scenes.list.find(s => s.id === id).devices;
+        const sceneDisplays = getState().scenes.list.find(s => s.id === id).displays;
         const res = await scenesProxies.activateScenes(id);
         if (res.status && res.status === 200) {
             if (res.data.payload) {
                 dispatch(uiProxies.showdynSnackbar(res.data.payload));
             }
 
-            Object.keys(sceneDevices).map(d => {
+            Object.keys(sceneDisplays).map(d => {
                 dispatch(
-                    deviceProxies.handleActiveDeviceEffect(
+                    displayProxies.handleActiveDisplayEffect(
                         d,
-                        sceneDevices[d].hasOwnProperty('config')
+                        sceneDisplays[d].hasOwnProperty('config')
                     )
                 );
                 return false;

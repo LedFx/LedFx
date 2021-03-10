@@ -9,6 +9,8 @@ from ledfx.effects.temporal import TemporalEffect
 class SingleColorEffect(TemporalEffect, ModulateEffect):
 
     NAME = "Single Color"
+    CATEGORY = "BASIC"
+
     CONFIG_SCHEMA = vol.Schema(
         {
             vol.Optional(

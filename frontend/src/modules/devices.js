@@ -1,5 +1,6 @@
 import { createAction, handleActions } from 'redux-actions';
 import * as deviceProxies from 'proxies/device';
+// import * as displayModules from 'modules/displays';
 import { updateDevices } from './settings';
 import { showdynSnackbar } from './ui';
 // Actions
@@ -47,7 +48,7 @@ export default handleActions(
                 ...state,
                 list: error ? state.list : convertDevicesDictionaryToList(updatedDevices),
                 dictionary: error ? state.dictionary : updatedDevices,
-                error: error ? payload.mesasge : '',
+                error: error ? payload.message : '',
             };
         },
     },
@@ -59,12 +60,16 @@ export function fetchDeviceList() {
         dispatch(devicesRequested());
         try {
             const response = await deviceProxies.getDevices();
+
             if (response.statusText === 'OK') {
                 const { devices } = response.data;
+                // console.log(devices);
                 Object.keys(devices).forEach(key => {
                     const data = devices[key];
-                    data.effect.active = !!data.effect.name;
+
+                    data.effect = { active: false };
                 });
+                // console.log('WTF', devices);
                 dispatch(devicesReceived(devices));
                 dispatch(updateDevices(convertDevicesDictionaryToList(devices)));
             }
@@ -103,10 +108,10 @@ export function findWLEDDevices({ resolve, reject }) {
                 for (let sec = 1; sec <= 10; sec++) {
                     await sleep(1000).then(() => {
                         dispatch(fetchDeviceList());
+                        // dispatch(displayModules.fetchDiplayList());
                         dispatch(scanProgressUpdated(sec));
                     });
                 }
-
                 resolve();
                 dispatch(scanProgressUpdated(0));
             }

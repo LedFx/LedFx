@@ -14,11 +14,13 @@ import logoAsset from 'assets/img/icon/large_white_alpha.png';
 import sidebarStyle from './style.jsx';
 import Icon from '@material-ui/core/Icon';
 import { fetchDeviceList } from 'modules/devices.js';
+import { fetchDisplayList } from 'modules/displays.js';
 import { camelToSnake } from 'utils/helpers';
 
 import BottomBar from './BottomBar.js';
+import Wled from 'components/CustomIcons/Wled.js';
 const Links = ({ classes, devMode, effectLinks, isViewActive }) => {
-    const devices = useSelector(state => state.settings.devices);
+    const displays = useSelector(state => state.displays.list);
 
     return (
         <List className={classes.list}>
@@ -35,11 +37,14 @@ const Links = ({ classes, devMode, effectLinks, isViewActive }) => {
                 if (isViewActive(prop.path) && prop.sidebarName !== 'Devices') {
                     listItemClass = listItemClass + ' ' + classes.activeView;
                 }
+                if (isViewActive(prop.path) && prop.sidebarName !== 'Displays') {
+                    listItemClass = listItemClass + ' ' + classes.activeView;
+                }
                 if (isViewActive(prop.path) && prop.sidebarName !== 'EffectPresets') {
                     listItemClass = listItemClass + ' ' + classes.activeView;
                 }
 
-                if (prop.sidebarName === 'Devices') {
+                if (prop.sidebarName === 'Displays') {
                     return (
                         <div className={classes.item} key={key}>
                             <ListItem button className={listItemClass} key={prop.sidebarName}>
@@ -52,35 +57,63 @@ const Links = ({ classes, devMode, effectLinks, isViewActive }) => {
                                         <prop.icon />
                                     </ListItemIcon>
                                     <ListItemText
-                                        primary={prop.sidebarName}
+                                        primary={'Devices'}
                                         className={classes.itemText}
                                         disableTypography={true}
                                     />
                                 </NavLink>
                                 <List className={classes.list}>
-                                    {devices.map(device => {
+                                    {displays.map(display => {
                                         let listItemClass = classes.itemLink;
-                                        if (isViewActive(`/devices/${device.id}`)) {
+                                        if (isViewActive(`/displays/${display.id}`)) {
                                             listItemClass = `${listItemClass} ${classes.activeView}`;
                                         }
                                         return (
                                             <NavLink
-                                                to={`/devices/${device.id}`}
+                                                to={`/displays/${display.id}`}
                                                 className={classes.item}
-                                                key={device.id}
+                                                key={display.id}
                                                 activeClassName="active"
                                             >
                                                 <ListItem button className={listItemClass}>
                                                     <ListItemIcon className={classes.itemIcon}>
-                                                        <Icon>
-                                                            {camelToSnake(
-                                                                device.config.icon_name ||
-                                                                    'SettingsInputComponent'
-                                                            )}
+                                                        <Icon
+                                                            color={
+                                                                display.effect &&
+                                                                    display.effect.active === true
+                                                                    ? isViewActive(
+                                                                        `/displays/${display.id}`
+                                                                    )
+                                                                        ? 'inherit'
+                                                                        : 'primary'
+                                                                    : 'inherit'
+                                                            }
+                                                            style={{ position: 'relative' }}
+                                                        >
+                                                            {display.config.icon_name &&
+                                                                display.config.icon_name.startsWith(
+                                                                    'wled'
+                                                                ) ? (
+                                                                    <Wled />
+                                                                ) : display.config.icon_name.startsWith(
+                                                                    'mdi:'
+                                                                ) ? (
+                                                                        <span
+                                                                            className={`mdi mdi-${display.config.icon_name.split(
+                                                                                'mdi:'
+                                                                            )[1]
+                                                                                }`}
+                                                                        ></span>
+                                                                    ) : (
+                                                                        camelToSnake(
+                                                                            display.config.icon_name ||
+                                                                            'SettingsInputComponent'
+                                                                        )
+                                                                    )}
                                                         </Icon>
                                                     </ListItemIcon>
                                                     <ListItemText
-                                                        primary={device.config.name}
+                                                        primary={display.config.name}
                                                         className={classes.devicesItemText}
                                                         disableTypography={true}
                                                     />
@@ -150,11 +183,21 @@ const Sidebar = props => {
                 LedFx
                 <span style={{ fontSize: 'small', color: '#999' }}> - v{version}</span>
             </a>
-        </div>
+            {((parseInt(window.localStorage.getItem('BladeMod')) > 0) || window.ledfx_mode === 'dev')
+                && (<div className={classes.devbadge} onClick={() => {
+                    if (parseInt(window.localStorage.getItem('BladeMod')) === 1 && props.location.pathname === '/devices') {
+                        window.location = '/advanced'
+                    }
+                }}>v{process.env.REACT_APP_VERSION}</div>)}
+
+
+        </div >
     );
     useEffect(() => {
+        fetchDisplayList();
         fetchDeviceList();
     }, []);
+
     return (
         <div>
             <Hidden mdUp>

@@ -21,11 +21,12 @@ export default handleActions(
         }),
         [schemasFetched]: (
             state,
-            { payload, payload: { deviceTypes, effects, integrationTypes }, error }
+            { payload, payload: { deviceTypes, effects, integrationTypes, displays }, error }
         ) => ({
             ...state,
             isLoading: false,
             effects: error ? {} : effects,
+            displays: error ? {} : displays,
             deviceTypes: error ? {} : deviceTypes,
             integrationTypes: error ? {} : integrationTypes,
             error: error ? payload.message : '',
@@ -44,8 +45,9 @@ export function fetchSchemas() {
                     devices: deviceTypes,
                     effects,
                     integrations: integrationTypes,
+                    displays,
                 } = response.data;
-                dispatch(schemasFetched({ deviceTypes, effects, integrationTypes }));
+                dispatch(schemasFetched({ deviceTypes, effects, integrationTypes, displays }));
             }
         } catch (error) {
             dispatch(schemasFetched(error));

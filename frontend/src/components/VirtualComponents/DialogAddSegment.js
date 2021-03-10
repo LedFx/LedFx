@@ -64,8 +64,8 @@ function ConfirmationDialogRaw(props) {
                 >
                     {props.deviceList.map(device => (
                         <FormControlLabel
-                            value={device.name}
-                            key={device.name}
+                            value={device.id}
+                            key={device.id}
                             control={<Radio />}
                             label={device.name}
                         />
@@ -121,7 +121,7 @@ export default function ConfirmationDialog({ virtual, deviceList, config }) {
         setOpen(false);
         if (newValue) {
             const id = uuidv1();
-            const output = { ...deviceList.find(d => d.name === newValue) };
+            const output = { ...deviceList.find(d => d.id === newValue) };
             output['device_key'] = output.key;
             output['id'] = '' + output.key + '_' + id;
             output['key'] = output['id'];
@@ -145,7 +145,6 @@ export default function ConfirmationDialog({ virtual, deviceList, config }) {
                         aria-label="Add"
                         className={classes.button}
                         endIcon={<AddCircleIcon />}
-                        aria-haspopup="true"
                         onClick={handleClickListItem}
                         role="listitem"
                     >
@@ -161,7 +160,7 @@ export default function ConfirmationDialog({ virtual, deviceList, config }) {
                         keepMounted
                         open={open}
                         onClose={handleClose}
-                        value={deviceList[0].name}
+                        value={deviceList[0].id}
                         deviceList={deviceList}
                     />
                 </>

@@ -205,6 +205,7 @@ class TemporalGradientEffect(TemporalEffect, GradientEffect, ModulateEffect):
     """
 
     NAME = "Gradient"
+    CATEGORY = "BASIC"
 
     def effect_loop(self):
         # TODO: Could add some cool effects like twinkle or sin modulation

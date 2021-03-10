@@ -124,48 +124,127 @@ Modifies the configuration of the effect and returns the new configuration as JS
 
 Deletes the effect with the matching *effect_id*.
 
-/api/devices/{device_id}/effects
-==================================
+/api/displays
+=========================
 
-Endpoint linking devices to effects with the matching *device_id* as JSON
+Query and manage displays connected to LedFx
 
 .. rubric:: GET
 
-Returns the active effect config of a device
+Get configuration of all displays
+
+.. rubric:: POST
+
+Adds a new display to LedFx based on the provided JSON configuration
+
+/api/displays/<display_id>
+=========================
+
+Query and manage a specific display with the matching *display_id* as JSON
+
+.. rubric:: GET
+
+Returns information about the display
 
 .. rubric:: PUT
 
-Update the active effect config of a device based on the provided JSON configuration
+Set a display to active or inactive. Must evaluate to True or False with python's bool() (eg, True, 1, ..)
+
+example:
+
+.. code-block:: json
+    {
+    "active": false
+    }
+
+.. rubric:: POST
+
+Update a display's segments configuration. Format is a list of lists in segment order.
+
+[[id, start, end, invert], ...]
+
+id: valid device id
+start: first pixel on the device for this segment
+end: last pixel on the device for this segment (inclusive)
+invert: invert this segment when it is mapped onto the device
+
+example:
+
+.. code-block:: json
+    {
+    "segments": [["my_device", 0, 49, False], ["my_other_device", 0, 99, False], ["my_device", 50, 99, False]]
+    }
+
+This would end up with a display appearing on the devices as so:
+
+ [---first 50px of effect---][---last 50px of effect---] [---------------middle 100px of effect----------------]
+ [-------------------my_device (100px)-----------------] [---------------my_other_device (100px)---------------]
+
+another example:
+
+.. code-block:: json
+    {
+    "segments": [["my_device", 0, 9, False], ["my_device", 20, 79, False], ["my_device", 90, 9, False]]
+    }
+
+This would end up with a display appearing on the devices as so:
+
+ [ 10px ]    [------ 60px of effect ------]     [ 10px ]
+ [-------------------my_device (100px)-----------------]
+
+.. rubric:: DELETE
+
+Deletes a display with the matching *display_id*
+
+/api/displays/{display_id}/effects
+==================================
+
+Endpoint linking displays to effects with the matching *display_id* as JSON
+
+.. rubric:: GET
+
+Returns the active effect config of a display
+
+.. rubric:: PUT
+
+Update the active effect config of a display based on the provided JSON configuration
 If config given is "RANDOMIZE", the active effect config will be automatically generated to random values
 
 .. rubric:: POST
 
-Set the device to a new effect based on the provided JSON configuration
+Set the display to a new effect based on the provided JSON configuration
 
 .. rubric:: DELETE
 
-Clear the active effect of a device
+Clear the active effect of a display
 
-/api/devices/<device_id>/presets
+/api/displays/<display_id>/presets
 ================================
 
-Endpoint linking devices to effect presets (pre-configured effect configs) with the matching *device_id* as JSON
+Endpoint linking displays to effect presets (pre-configured effect configs) with the matching *display_id* as JSON
 
 .. rubric:: GET
 
-Get preset effect configs for active effect of a device
+Get preset effect configs for active effect of a display
 
 .. rubric:: PUT
 
-Set active effect config of device to a preset
+Set active effect config of display to a preset
+
+.. code-block:: json
+    {
+    "category": "user_presets",
+    "effect_id": "wavelength",
+    "preset_id": "my_wavelength_preset"
+    }
 
 .. rubric:: POST
 
-Save configuration of device's active effect as a custom preset for that effect
+Save configuration of display's active effect as a custom preset for that effect
 
 .. rubric:: DELETE
 
-Clear effect of a device
+Clear effect of a display
 
 /api/effects/<effect_id>/presets
 ===================================

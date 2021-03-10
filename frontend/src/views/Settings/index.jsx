@@ -6,15 +6,17 @@ import Grid from '@material-ui/core/Grid';
 import { getAudioInputs, setAudioInput } from 'modules/settings';
 
 import AudioInputCard from './AudioInput';
-import ConfigCard from './ConfigCard';
+import InfoCard from './InfoCard';
 import LogCard from './LogCard';
 import ThemesCard from './ThemesCard';
+import { fetchDisplayList } from 'modules/displays';
 
 const styles = theme => ({});
 
 class SettingsView extends Component {
     componentDidMount() {
         this.props.getAudioInputs();
+        this.props.fetchDisplayList();
     }
 
     render() {
@@ -27,16 +29,15 @@ class SettingsView extends Component {
                     <Grid item md={4}>
                         <AudioInputCard {...audioInputs} onChange={setAudioInput} />
                     </Grid>
-                    <Grid item md={4}>
+                    <Grid item md={4}  >
                         <ThemesCard />
                     </Grid>
                     <Grid item md={4}>
-                        <ConfigCard settings={settings} />
+                        <InfoCard settings={settings} />
                     </Grid>
                     <Grid item md={12}>
                         <LogCard />
                     </Grid>
-                    `
                 </Grid>
             </Grid>
         );
@@ -50,5 +51,6 @@ export default connect(
     {
         getAudioInputs,
         setAudioInput,
+        fetchDisplayList,
     }
 )(withStyles(styles)(SettingsView));
