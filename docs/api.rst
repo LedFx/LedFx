@@ -380,7 +380,7 @@ Create a new song trigger
       "scene_id": "my_scene",
       "song_id": "347956287364597",
       "song_name": "Really Cool Song",
-      "song_position": "43764",
+      "song_position": "43764"
     }
 
 .. rubric:: DELETE
@@ -390,7 +390,7 @@ Delete a song trigger
 .. code-block:: json
 
     {
-      "trigger_id": "Really Cool Song - 43764",
+      "trigger_id": "Really Cool Song - 43764"
     }
 
 ===================
