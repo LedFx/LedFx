@@ -16,9 +16,9 @@
     requests>=2.24.0
     aubio>=0.4.9
     zeroconf>=0.28.6
-    cython==0.29.21
+    cython>=0.29.21
     pyupdater>=3.1.0
-    sentry-sdk==1.0.0
+    sentry-sdk>=1.0.0
     certifi>=2019.3.9
     pyserial>=3.5
     pystray>=0.17
