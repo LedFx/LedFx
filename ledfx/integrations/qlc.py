@@ -275,7 +275,8 @@ class QLCWebsocketClient(aiohttp.ClientSession):
             return
 
         await self.websocket.send_str(message)
-        _LOGGER.debug(f"Sent message {message} to {self.domain}")
+        # Every call to the logger is a performance hit
+        # _LOGGER.debug(f"Sent message {message} to {self.domain}")
 
     async def receive(self):
         """Receive one message from the WebSocket."""
