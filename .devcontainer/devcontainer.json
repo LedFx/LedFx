@@ -21,7 +21,7 @@
     "host",
   ],
   "mounts": [
-    "source=${localWorkspaceFolder}/.devcontainer/ledfx-config.yml,target=/root/.ledfx/config.yaml,type=bind,consistency=cached"
+    "source=${localWorkspaceFolder}/.devcontainer/ledfx-config.yml,target=/root/.ledfx/config.json,type=bind,consistency=cached"
   ],
   // Set *default* container specific settings.json values on container create.
   "settings": {

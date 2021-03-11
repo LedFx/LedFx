@@ -5,11 +5,12 @@ import os
 import sys
 
 import voluptuous as vol
-import yaml
+
+from ledfx.consts import CONFIGURATION_VERSION
 
 CONFIG_DIRECTORY = ".ledfx"
 CONFIG_FILE_NAME = "config.json"
-OLD_CONFIG_FILE_NAME = "config.yaml"
+PRESETS_FILE_NAME = "presets.json"
 
 CORE_CONFIG_SCHEMA = vol.Schema(
     {
@@ -25,6 +26,9 @@ CORE_CONFIG_SCHEMA = vol.Schema(
         vol.Optional("virtuals", default=[]): list,
         vol.Optional("wled_preferred_mode", default=""): str,
         vol.Optional("scan_on_startup", default=True): bool,
+        vol.Optional(
+            "configuration_version", default=CONFIGURATION_VERSION
+        ): str,
     },
     extra=vol.ALLOW_EXTRA,
 )
@@ -49,13 +53,16 @@ def get_config_file(config_dir: str) -> str:
 
     json_path = os.path.join(config_dir, CONFIG_FILE_NAME)
     if os.path.isfile(json_path) is False:  # Can't find a JSON file
-        yaml_path = os.path.join(
-            config_dir, OLD_CONFIG_FILE_NAME
-        )  # Look for an old YAML file
-        if os.path.isfile(yaml_path):  # Found one!
-            return yaml_path  # Return the YAML File
-        else:
-            return None  # No Valid Configs, return None to build another one
+        return None  # No Valid Configs, return None to build another one
+    return json_path  # Return the JSON file if we find one.
+
+
+def get_preset_file(config_dir: str) -> str:
+    """Finds a supported preset file in the provided directory"""
+
+    json_path = os.path.join(config_dir, PRESETS_FILE_NAME)
+    if os.path.isfile(json_path) is False:  # Can't find a JSON file
+        return None  # No Valid Configs, return None to build another one
     return json_path  # Return the JSON file if we find one.
 
 
@@ -103,6 +110,16 @@ def ensure_config_file(config_dir: str) -> str:
     return config_path
 
 
+def check_preset_file(config_dir: str) -> str:
+
+    ensure_config_directory(config_dir)
+    presets_path = get_preset_file(config_dir)
+    if presets_path is None:
+        return None
+
+    return presets_path
+
+
 def ensure_config_directory(config_dir: str) -> None:
     """Validate that the config directory is valid."""
 
@@ -136,17 +153,13 @@ def load_config(config_dir: str) -> dict:
     print(
         f"Loading configuration file: {os.path.join(config_dir, CONFIG_FILE_NAME)}"
     )
-
-    if config_file.endswith("yaml"):
-        migrate_config(config_dir, config_file)
-        config_file = os.path.join(config_dir, CONFIG_FILE_NAME)
     try:
 
         with open(config_file, encoding="utf-8") as file:
             config_json = json.load(file)
             return CORE_CONFIG_SCHEMA(config_json)
     except json.JSONDecodeError:
-        date = datetime.date.today()
+        date = datetime.datetime.now().strftime("%d-%m-%y_%H-%M-%S")
         backup_location = os.path.join(
             config_dir, f"config.json.backup.{date}"
         )
@@ -165,35 +178,29 @@ def save_config(config: dict, config_dir: str) -> None:
 
     config_file = ensure_config_file(config_dir)
     _LOGGER.info(("Saving configuration file to {}").format(config_dir))
-    # prevent defaults being saved to config.yaml by creating a copy (python
-    # no pass by value)
+    config["configuration_version"] = CONFIGURATION_VERSION
     config_view = dict(config)
-    if "ledfx_presets" in config_view.keys():
-        del config_view["ledfx_presets"]
+    unneeded_keys = ["ledfx_presets"]
+    for key in [key for key in config_view if key in unneeded_keys]:
+        del config_view[key]
+
     with open(config_file, "w", encoding="utf-8") as file:
         json.dump(
             config_view, file, ensure_ascii=False, sort_keys=True, indent=4
         )
 
 
-def migrate_config(config_dir, config_file):
-    """Save the old configuration file as a new JSON object and resume the loading process"""
+def save_presets(config: dict, config_dir: str) -> None:
+    """Saves the configuration to the provided directory"""
 
-    print("Migrating configuration file to JSON")
-    with open(config_file, "rt") as file:
-        config_yaml = yaml.safe_load(file)
-        json_config_file = os.path.join(config_dir, CONFIG_FILE_NAME)
-        with open(json_config_file, "w", encoding="utf-8") as file:
-            json.dump(
-                config_yaml, file, ensure_ascii=False, sort_keys=True, indent=4
-            )
-    try:
-        old_config_location = os.path.join(
-            config_dir, f"{datetime.date.today()}_config.yaml.backup"
-        )
-        _LOGGER.info(f"Renaming old configuration to {old_config_location}")
-        os.rename(config_file, old_config_location)
-    except PermissionError as DelError:
-        _LOGGER.warning(
-            f"Unable to rename old configuration file: {DelError}."
+    presets_file = check_preset_file(config_dir)
+    _LOGGER.info(("Saving user presets to {}").format(config_dir))
+
+    config_view = dict(config)
+    for key in [key for key in config_view if key != "user_presets"]:
+        del config_view[key]
+
+    with open(presets_file, "w", encoding="utf-8") as file:
+        json.dump(
+            config_view, file, ensure_ascii=False, sort_keys=True, indent=4
         )

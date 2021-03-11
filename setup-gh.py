@@ -29,7 +29,6 @@ INSTALL_REQUIRES = [
     "chardet==3.0.4",
     "aiohttp_jinja2>=1.1.0",
     "requests>=2.24.0",
-    "pyyaml>=5.3.1",
     "aubio>=0.4.9",
     "zeroconf>=0.28.6",
     'pywin32>=300; platform_system == "Windows"',

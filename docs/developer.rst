@@ -89,7 +89,7 @@ Building the LedFx frontend is different from how the core backend is built. The
 uses NPM as the core package management.
 
 .. note:: LedFx will need to be running in development mode for everything to work. To enable development mode,
-          open the ``config.yaml`` file in the ``.ledfx`` folder and set ``dev_mode: true``)
+          open the ``config.json`` file in the ``.ledfx`` folder and set ``dev_mode: true``)
 
 .. _linux-frontend:
 
