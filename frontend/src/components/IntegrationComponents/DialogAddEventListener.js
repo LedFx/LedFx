@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { getAsyncqlclisteners  } from 'modules/qlc'
+import { getAsyncqlclisteners, setqlclistener  } from 'modules/qlc'
 import { useSelector, useDispatch } from 'react-redux';
 import PropTypes from 'prop-types';
 import { makeStyles } from '@material-ui/core/styles';
@@ -33,8 +33,15 @@ function ConfirmationDialogRaw(props) {
     const SceneSet = qlcInfo && qlcInfo.event_types && qlcInfo.event_types.scene_set.event_filters.scene_name
     const QLCWidgets = qlcInfo && qlcInfo.qlc_widgets && qlcInfo.qlc_widgets.sort((a,b) => parseInt(a[0]) - parseInt(b[0]) )
     
-    console.log("Check it out now, funk soul brother: ", QLCWidgets);
-
+    const qlcStuff = []
+    //const qlcID = {}
+    //const qlcType = {}
+        qlcInfo && qlcInfo.qlc_widgets && qlcInfo.qlc_widgets.map((a) => {        
+        qlcStuff[a[0]] = {id: a[0], Type: a[1], Name: a[2]}
+        //qlcID[a[0]] = (a[1]);
+        //qlcType[a[0]] = (a[1]);
+    });
+    
     React.useEffect(() => {
         if (!open) {
             setValue(valueProp);
@@ -60,6 +67,11 @@ function ConfirmationDialogRaw(props) {
         utils.selectOrSet(key, model, val);
 
     };
+
+    const handleChange = (event) => {
+        setqlclistener(event.target.value);
+      };
+
     delete other.deviceList;
     return (
         <Dialog
@@ -99,7 +111,7 @@ function ConfirmationDialogRaw(props) {
                             Effect Cleared
                         </ListSubheader>
                         <MenuItem><option>Effect Cleared</option></MenuItem>*/}
-                        </Select> 
+                        </Select>
                 </FormControl>
                 
                 <FormControl>
@@ -108,14 +120,16 @@ function ConfirmationDialogRaw(props) {
                     labelId="demo-simple-select-helper-label"
                     id="demo-simple-select-helper"
                     value={QLCWidgets}
-                    //onChange={handleChange}
+                    onChange={handleEntering}
                     >
                     <MenuItem value=""></MenuItem>
                     {QLCWidgets && QLCWidgets.length > 0 && QLCWidgets.map((e,f)=><MenuItem key={f} value="">
                         <option>
-                            {/*ID: {qlcID}, Type: {qlcType}, Name: {qlcName}*/}
+                        ID: {e[0]}, Type: {e[1]}, Name: {e[2]}
                             </option>
-                    {/*{QLCWidgets && QLCWidgets.length > 0 && QLCWidgets.map((e,f)=><MenuItem key={f} value="">
+                    {/* {Object.entries(qlcStuff)}
+
+                        {QLCWidgets && QLCWidgets.length > 0 && QLCWidgets.map((e,f)=><MenuItem key={f} value="">
                         <option>{e}</option>*/}
                         </MenuItem>)}
                     </Select>

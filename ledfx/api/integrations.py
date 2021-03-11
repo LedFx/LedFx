@@ -169,7 +169,7 @@ class IntegrationsEndpoint(RestEndpoint):
         integration = self._ledfx.integrations.create(
             id=integration_id,
             type=integration_type,
-            active=True,
+            active=False,
             config=integration_config,
             data=None,
             ledfx=self._ledfx,

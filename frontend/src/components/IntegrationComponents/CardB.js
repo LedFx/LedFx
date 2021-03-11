@@ -89,13 +89,14 @@ const IntegrationsCard = ({ int }) => {
                     variant="text"
                     color="secondary"
                     onClick={() => {
-                        // console.log('edit');
+                         console.log('edit');
                     }}
                     //Need to do, onClick edit Integration.
                 >
                     <EditIcon />
                 </Button>
                 <Switch
+                    //checked={false}
                     color="primary"
                     onChange={() => handleToggle(int.id)}
                     checked={int.active}
