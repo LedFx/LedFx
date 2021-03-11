@@ -115,7 +115,7 @@ export default handleActions(
                 ...state,
                 list: error ? state.list : convertDisplaysDictionaryToList(updatedDisplays),
                 dictionary: error ? state.dictionary : updatedDisplays,
-                error: error ? payload.mesasge : '',
+                error: error ? payload.message : '',
             };
         },
     },
