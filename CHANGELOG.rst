@@ -2,6 +2,13 @@
 Changelog
 =========
 
+Version 0.10.4
+==============
+
+- Fix Device Add bug on FireFox - Thanks again @MPM1107
+- List COM Ports instead of free text entry for Adalight devices.
+ - This list is populated on launch.
+
 Version 0.10.3
 ==============
 

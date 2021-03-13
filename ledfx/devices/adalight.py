@@ -3,6 +3,7 @@ from enum import Enum
 
 import numpy as np
 import serial
+import serial.tools.list_ports
 import voluptuous as vol
 
 from ledfx.devices import Device
@@ -29,6 +30,15 @@ COLOR_ORDERS = {
 }
 
 
+class AvailableCOMPorts:
+    ports = serial.tools.list_ports.comports()
+
+    available_ports = []
+
+    for p in ports:
+        available_ports.append(p.device)
+
+
 class AdalightDevice(Device):
     """Adalight device support"""
 
@@ -36,8 +46,8 @@ class AdalightDevice(Device):
         {
             vol.Required(
                 "com_port",
-                description="COM port",
-            ): str,
+                description="COM port for Adalight compatible device",
+            ): vol.In(list(AvailableCOMPorts.available_ports)),
             vol.Required(
                 "baudrate", description="baudrate", default=500000
             ): vol.All(vol.Coerce(int), vol.Range(min=115200)),
