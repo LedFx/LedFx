@@ -2,6 +2,19 @@
 Changelog
 =========
 
+Version 0.10.2
+==============
+
+- Update documentation
+- Update documentation endpoints
+- Update supported versions
+- Drop sACN race condition error level to info
+
+Version 0.10.1
+==============
+
+- **Bugfix release**
+
 Version 0.10.0
 ==============
 
