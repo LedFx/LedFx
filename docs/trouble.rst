@@ -14,12 +14,16 @@ Developer Setup Installation - Python venv
   - Install Python 3.9
   - Install Git.
   - Using "Build Tools for Visual Studio 2019" installer:
+
     - https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2019
     - You require the mandatory selected build tools, and the following optional tools;
+
         - Windows 10 SDK (or your equivalent Windows Version)
         - C++ CMAKE tools for Windows
         - MSVC v142 (or above) - VS 2019 C++ x64/x86 build tools
+
     - Default install options are appropriate.
+
   - Reboot
 
 
@@ -62,7 +66,7 @@ Firmware Issues
 WLED
 ++++
 
-  - Sending data, WLED going into E1.31 mode but lights not working?
+  - Sending data, WLED going into E1.31 mode but lights aren't working?
 
     - Try turning off multicast and setting the start universe to 1.
 
@@ -90,7 +94,7 @@ universe, which limits you to 170 pixels. More advanced FW will consume input sp
 LedFx Configuration File
 ------------------------
 
-Did you try host: 0.0.0.0 or host: your-ipv4 (i.e.: 192.168.1.10)? The 127 is your localhost internal network and
+Did you try host: 0.0.0.0 or host: YOUR_IPV4 (i.e.: 192.168.1.10)? The 127 is your localhost internal network and
 running anything on that subnet will only be available from that device. Putting it on 0.0.0.0 or your host's
 LAN IP opens up the port, 8888 in our case, to other devices on your LAN from your host's IP.
 

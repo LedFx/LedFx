@@ -6,6 +6,8 @@ The development workflow is still being worked on, but this page covers the curr
 
 You will see ``pip install -e .`` frequently in the documentation. Please see the `pip documentation`_ for an explanation on what this does.
 
+.. note:: All current development versions of LedFx now require Python 3.9.x
+
 ------------------------------
 
 -------------------------
@@ -58,7 +60,7 @@ macOS
     $ git clone https://github.com/LedFx/LedFx.git -b dev
     $ cd ./LedFx
 
-**2.** Create a python venv for LedFx with python>=3.7 and install dependencies:
+**2.** Create a python venv for LedFx with python>=3.9 and install dependencies:
 
 .. code:: console
 
