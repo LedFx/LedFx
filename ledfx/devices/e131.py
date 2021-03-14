@@ -192,8 +192,8 @@ class E131Device(Device):
         try:
             self._sacn.flush()
         except AttributeError:
-            _LOGGER.critical(
-                "The wheels fell off the sACN thread. Restarting it."
+            _LOGGER.info(
+                "Attempted to start sACN thread prior to sACN activating. Restarting sACN thread."
             )
             self.activate
 
