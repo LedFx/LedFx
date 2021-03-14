@@ -4,6 +4,7 @@ from setuptools import setup
 
 import ledfx.consts as const
 
+PROJECT_DOCS = "https://ledfx.readthedocs.io"
 PROJECT_PACKAGE_NAME = "ledfx"
 PROJECT_VERSION = const.PROJECT_VERSION
 PROJECT_LICENSE = "The MIT License"
