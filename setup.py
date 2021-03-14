@@ -49,7 +49,7 @@ setup(
     maintainer_email=PROJECT_MAINTAINER_EMAIL,
     url=PROJECT_URL,
     project_urls={
-        "Documentation": "https://ledfx.readthedocs.io/en/docs/index.html",
+        "Documentation": "https://ledfx.readthedocs.io/en/master/index.html",
         "Website": "https://ledfx.app",
         "Source": "https://github.com/LedFx/LedFx",
         "Discord": "https://discord.gg/PqXMuthSNx",
