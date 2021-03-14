@@ -11,7 +11,9 @@ PROJECT_AUTHOR = "Austin Hodges"
 PROJECT_AUTHOR_EMAIL = "austin.b.hodges@gmail.com"
 PROJECT_MAINTAINER = "LedFx Developers"
 PROJECT_MAINTAINER_EMAIL = "ledfx.app@gmail.com"
-PROJECT_URL = "https://github.com/LedFx/LedFx/tree/dev"
+PROJECT_URL = "https://github.com/LedFx/LedFx"
+PROJECT_WEBSITE = "https://ledfx.app"
+PROJECT_DOCS = "https://ledfx.readthedocs.io"
 
 # Need to install numpy first
 SETUP_REQUIRES = [
@@ -49,9 +51,9 @@ setup(
     maintainer_email=PROJECT_MAINTAINER_EMAIL,
     url=PROJECT_URL,
     project_urls={
-        "Documentation": "https://ledfx.readthedocs.io/en/docs/index.html",
-        "Website": "https://ledfx.app",
-        "Source": "https://github.com/LedFx/LedFx",
+        "Documentation": PROJECT_DOCS,
+        "Website": PROJECT_WEBSITE,
+        "Source": PROJECT_URL,
         "Discord": "https://discord.gg/PqXMuthSNx",
     },
     install_requires=INSTALL_REQUIRES,
