@@ -156,7 +156,9 @@ class E131Device(NetworkedDevice):
             dmx_data = np.array(self._sacn[universe].dmx_data)
             dmx_data[dmx_start:dmx_end] = data[input_start:input_end]
 
-            self._sacn[universe].dmx_data = dmx_data.clip(0, 255)
+            # Because the sACN library checks for data to be of int type, we have to
+            # convert the numpy array into a python list of ints using tolist()
+            self._sacn[universe].dmx_data = dmx_data.clip(0, 255).tolist()
             # output = dmx_data.clip(0, 255)
 
         # This is ugly - weird race condition where loading on startup from a device with a short ID results in the sACN thread trying to send data to NoneType.
