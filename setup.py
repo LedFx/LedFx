@@ -17,16 +17,14 @@ PROJECT_WEBSITE = "https://ledfx.app"
 PROJECT_DOCS = "https://ledfx.readthedocs.io"
 
 # Need to install numpy first
-SETUP_REQUIRES = [
-    "numpy>=1.20.1",
-]
+SETUP_REQUIRES = ["numpy>=1.20.1", "wheel>=0.36.2"]
 
 INSTALL_REQUIRES = [
     "numpy>=1.20.1",
     "voluptuous>=0.12.0",
     "pyaudio>=0.2.11",
     "sacn>=1.5",
-    "aiohttp>=3.7.4.post0",
+    "aiohttp~=3.7.4.post0",
     "yarl>=1.5.1",
     "multidict>=5.0.0",
     "aiohttp_jinja2>=1.1.0",
