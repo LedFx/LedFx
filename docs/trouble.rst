@@ -33,12 +33,11 @@ Developer Setup Installation - Python venv
     $ cd C:\ledfx
     $ .\Scripts\activate.bat
     $ pip install pipwin
+    $ pip install wheel
     $ pipwin refresh
     $ pipwin install pyaudio
-    $ pipwin install pywin32
+    $ pip install pywin32
     $ python .\Scripts\pywin32_postinstall.py -install
-    $ pip install numpy
-    $ pip install "chardet<4.0"
     $ pip install --upgrade git+https://github.com/Digital-Sapphire/PyUpdater.git@master
     $ git clone -b dev https://github.com/LedFx/LedFx .\ledfx-git
     $ cd .\ledfx-git
