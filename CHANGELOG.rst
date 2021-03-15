@@ -2,6 +2,16 @@
 Changelog
 =========
 
+Version 0.10.3
+==============
+
+**Bugfix Release**
+
+- Convert sACN data from numpy array to python list - Thanks @MPM1107
+- Update windows dev instructions
+- Add wheel as a setup dependency
+- Clamp aiohttp version
+
 Version 0.10.2
 ==============
 
