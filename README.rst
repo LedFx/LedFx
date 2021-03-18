@@ -114,11 +114,11 @@ License
 .. _`Voicemeeter`: https://vb-audio.com/Voicemeeter/index.htm
 .. _`Voicemeeter tutorial`: https://youtu.be/ZXKDzYXS60o?start=27&end=163
 
-.. |Build Status| image:: https://travis-ci.com/LedFx/LedFx.svg?branch=dev
-   :target: https://travis-ci.com/LedFx/LedFx
+.. |Build Status| image:: https://github.com/LedFx/LedFx/actions/workflows/ci-build.yml/badge.svg
+   :target: https://github.com/LedFx/LedFx/actions/workflows/ci-build.yml
    :alt: Build Status
 .. |Build Status Docs| image:: https://readthedocs.org/projects/ledfx/badge/?version=dev
-   :target: https://ledfx.readthedocs.io/en/dev/?badge=dev
+   :target: https://ledfx.readthedocs.io/
    :alt: Documentation Status
 .. |License| image:: https://img.shields.io/badge/license-MIT-blue.svg
    :alt: License
