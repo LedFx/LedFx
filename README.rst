@@ -116,9 +116,9 @@ License
 
 .. |Build Status| image:: https://github.com/LedFx/LedFx/actions/workflows/ci-build.yml/badge.svg
    :target: https://github.com/LedFx/LedFx/actions/workflows/ci-build.yml
-   :alt: CI Build LedFx
+   :alt: Build Status
 .. |Build Status Docs| image:: https://readthedocs.org/projects/ledfx/badge/?version=master
-   :target: https://ledfx.readthedocs.io/en/master/?badge=master
+   :target: https://ledfx.readthedocs.io/
    :alt: Documentation Status
 .. |License| image:: https://img.shields.io/badge/license-MIT-blue.svg
    :alt: License
