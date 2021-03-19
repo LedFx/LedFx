@@ -382,7 +382,7 @@ class Display(object):
             self.activate_segments(self._segments)
         self._active = True
 
-        self._thread_clock = self._ledfx.loop.time()+1
+        self._thread_clock = self._ledfx.loop.time() + 1
         self.thread_function()
 
     def deactivate(self):
