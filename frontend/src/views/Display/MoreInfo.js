@@ -106,7 +106,10 @@ const MoreInfo = ({ display }) => {
                                                             MAXIMUM PING
                                                         </Typography>
                                                         <Typography>
-                                                            {pingData.max_ping.toFixed(2)} ms
+                                                            {pingData.max_ping
+                                                                ? pingData.max_ping.toFixed(2)
+                                                                : 0}{' '}
+                                                            ms
                                                         </Typography>
                                                     </div>
                                                     <div
@@ -120,7 +123,10 @@ const MoreInfo = ({ display }) => {
                                                             AVERAGE PING
                                                         </Typography>
                                                         <Typography>
-                                                            {pingData.avg_ping.toFixed(2)} ms
+                                                            {pingData.avg_ping
+                                                                ? pingData.avg_ping.toFixed(2)
+                                                                : 0}{' '}
+                                                            ms
                                                         </Typography>
                                                     </div>
                                                     <div
@@ -134,7 +140,10 @@ const MoreInfo = ({ display }) => {
                                                             MINIMUM PING
                                                         </Typography>
                                                         <Typography>
-                                                            {pingData.min_ping.toFixed(2)} ms
+                                                            {pingData.min_ping
+                                                                ? pingData.min_ping.toFixed(2)
+                                                                : 0}{' '}
+                                                            ms
                                                         </Typography>
                                                     </div>
                                                     <div
@@ -150,7 +159,11 @@ const MoreInfo = ({ display }) => {
                                                         <Typography
                                                             style={{ paddingRight: '0.1rem' }}
                                                         >
-                                                            {pingData.packets_lost.toFixed(2)}
+                                                            {pingData.packetlosspercent
+                                                                ? pingData.packetlosspercent.toFixed(
+                                                                      2
+                                                                  )
+                                                                : 0}
                                                             &nbsp;%&nbsp;
                                                         </Typography>
                                                     </div>
