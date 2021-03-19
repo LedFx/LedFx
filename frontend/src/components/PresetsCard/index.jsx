@@ -87,7 +87,7 @@ const PresetsCard = ({ display, presets, effect, getEffectPresets }) => {
     }));
 
     return (
-        <Card variant="outlined">
+        <Card variant="outlined" style={{ marginBottom: '2rem' }}>
             <CardHeader title="Presets" subheader="Explore different effect configurations" />
             <CardContent className={classes.content}>
                 <Typography variant="subtitle2">LedFx Presets</Typography>

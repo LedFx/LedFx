@@ -82,3 +82,6 @@ export function updatePreset(displayId, data) {
 export function addPreset(displayId, data) {
     return api.post(`displays/${displayId}/presets`, data);
 }
+export function getPing(displayId) {
+    return api.get(`ping/${displayId}`);
+}

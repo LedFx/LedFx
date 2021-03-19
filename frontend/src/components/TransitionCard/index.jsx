@@ -54,7 +54,7 @@ const TransitionCard = ({ display }) => {
     ]
 
     return (
-        <Card variant="outlined" style={{ marginTop: '2rem' }}>
+        <Card variant="outlined" >
             <CardHeader title="Transitions" subheader="Seamlessly blend between effects" />
             <CardContent className={classes.content}>
                 <FormControl className={classes.formControl}>
