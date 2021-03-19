@@ -38,6 +38,7 @@ INSTALL_REQUIRES = [
     "certifi>=2019.3.9",
     "pyserial>=3.5",
     "pystray>=0.17",
+    "tcp-latency>=0.0.10",
 ]
 
 setup(
