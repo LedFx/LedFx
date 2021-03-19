@@ -28,7 +28,7 @@ class InfoEndpoint(RestEndpoint):
 
         output = measure_latency(
             host=ping_target,
-            port=443,
+            port=80,
             runs=10,
             wait=0.25,
             timeout=0.2,
