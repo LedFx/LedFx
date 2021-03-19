@@ -11,7 +11,7 @@ from ledfx.events import Event
 from ledfx.utils import empty_queue
 
 _LOGGER = logging.getLogger(__name__)
-MAX_PENDING_MESSAGES = 20
+MAX_PENDING_MESSAGES = 256
 
 BASE_MESSAGE_SCHEMA = vol.Schema(
     {
