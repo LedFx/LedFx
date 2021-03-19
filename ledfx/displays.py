@@ -304,18 +304,26 @@ class Display(object):
     def thread_function(self):
         # TODO: Evaluate switching # over to asyncio with UV loop optimization
         # instead of spinning a separate thread.
+        # if self._active:
+        #     sleep_interval = 1 / self.refresh_rate
+        #     start_time = time.time()
+
+        #     self.process_active_effect()
+
+        #     # Calculate the time to sleep accounting for potential heavy
+        #     # frame assembly operations
+        #     time_to_sleep = sleep_interval - (time.time() - start_time)
+        #     # print(1/time_to_sleep, end="\r") prints current fps
+
+        #     self._ledfx.loop.call_later(time_to_sleep, self.thread_function)
+
         if self._active:
             sleep_interval = 1 / self.refresh_rate
-            start_time = time.time()
+            self._thread_clock += sleep_interval
 
             self.process_active_effect()
 
-            # Calculate the time to sleep accounting for potential heavy
-            # frame assembly operations
-            time_to_sleep = sleep_interval - (time.time() - start_time)
-            # print(1/time_to_sleep, end="\r") prints current fps
-
-            self._ledfx.loop.call_later(time_to_sleep, self.thread_function)
+            self._ledfx.loop.call_at(self._thread_clock, self.thread_function)
 
     def assemble_frame(self):
         """
@@ -373,6 +381,8 @@ class Display(object):
         if not self._active:
             self.activate_segments(self._segments)
         self._active = True
+
+        self._thread_clock = self._ledfx.loop.time()+1
         self.thread_function()
 
     def deactivate(self):
