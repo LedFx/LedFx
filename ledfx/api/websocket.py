@@ -8,9 +8,10 @@ from aiohttp import web
 
 from ledfx.api import RestEndpoint
 from ledfx.events import Event
+from ledfx.utils import empty_queue
 
 _LOGGER = logging.getLogger(__name__)
-MAX_PENDING_MESSAGES = 1024
+MAX_PENDING_MESSAGES = 20
 
 BASE_MESSAGE_SCHEMA = vol.Schema(
     {
@@ -72,6 +73,10 @@ class WebsocketConnection:
 
     def send(self, message):
         """Sends a message to the websocket connection"""
+
+        # If the queue is full, dump it and start again
+        if self._sender_queue.qsize() == MAX_PENDING_MESSAGES:
+            empty_queue(self._sender_queue)
 
         try:
             self._sender_queue.put_nowait(message)

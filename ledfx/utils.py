@@ -495,6 +495,17 @@ class WLED(object):
         )
 
 
+def empty_queue(queue: asyncio.Queue):
+    """Empty an asycio queue
+
+    Args:
+        queue (asyncio.Queue): The asycio queue to empty
+    """
+    for _ in range(queue.qsize()):
+        queue.get_nowait()
+        queue.task_done()
+
+
 async def resolve_destination(loop, destination, port=7777, timeout=3):
     """Uses asyncio's non blocking DNS funcs to attempt domain lookup
 
