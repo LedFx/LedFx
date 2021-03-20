@@ -18,10 +18,15 @@ import FormControl from '@material-ui/core/FormControl';
 import Select from '@material-ui/core/Select';
 import { Slider, Switch } from '@material-ui/core';
 import FormHelperText from '@material-ui/core/FormHelperText';
+import DropDown from 'components/forms/DropDown';
 
 function ConfirmationDialogRaw(props) {
     const { onClose, value: valueProp, open, ...other } = props;
     const [value, setValue] = React.useState(valueProp);
+    const [checkButtonType, setButtonType] = React.useState(false);
+    const [checkSliderType, setSliderType] = React.useState(false);
+    const [dropDownRenderCount, setdropDownRenderCount] = React.useState(1);
+    const [dropDownRenderList, setdropDownRenderList] = React.useState([]);
     const radioGroupRef = React.useRef(null);
     const [model] = React.useState({});
 
@@ -34,11 +39,11 @@ function ConfirmationDialogRaw(props) {
     const QLCWidgets = qlcInfo && qlcInfo.qlc_widgets && qlcInfo.qlc_widgets.sort((a,b) => parseInt(a[0]) - parseInt(b[0]) )
     
     const qlcStuff = []
-    //const qlcID = {}
+    const qlcID = {}
     //const qlcType = {}
         qlcInfo && qlcInfo.qlc_widgets && qlcInfo.qlc_widgets.map((a) => {        
         qlcStuff[a[0]] = {id: a[0], Type: a[1], Name: a[2]}
-        //qlcID[a[0]] = (a[1]);
+        qlcID[a[0]] = (a[1]);
         //qlcType[a[0]] = (a[1]);
     });
     
@@ -65,14 +70,54 @@ function ConfirmationDialogRaw(props) {
     
     const onModelChange = (key, val) => {
         utils.selectOrSet(key, model, val);
-
     };
 
-    const handleChange = (event) => {
-        setqlclistener(event.target.value);
-      };
+    //const [f, setAge] = React.useState('');
+
+    const handleTypeChange = (event) => {
+        // this.setState({ value, model: initial });
+        // setButtonType(true);
+        // console.log("statevalue", checkButtonType)
+        // console.log("test",event.target.value.includes("Button"))
+        event.target.value.includes("Button")?setButtonType(true):setButtonType(false);
+        event.target.value.includes("Slider")?setSliderType(true):setSliderType(false);
+    };
+
+    const handleTypeAddDropDown = (event) => {
+        const newItem={
+            id: Date.now()
+        }
+        
+        setdropDownRenderList(dropDownRenderList.concat(newItem))
+        // setdropDownRenderCount(dropDownRenderCount + 1)
+        // console.log("ddcount", dropDownItemsList)
+    };
+
+    const handleTypeRemoveDropDown = (itemId,idx)=>{
+        const newArr = dropDownRenderList.slice();
+        newArr.splice(idx, 1);
+        console.log("test",newArr);
+        // const updatedItems = dropDownRenderList.filter(item=>{
+        //     // console.log("test",itemId);
+        //     // console.log("test12",item.id !== itemId); 
+        //     return item.id!==itemId   
+        // })
+        // console.log("test6",updatedItems);
+        return setdropDownRenderList(newArr);    
+        // setdropDownRenderList(updatedItems)
+        
+    }
+
+    //handleTypeChange = (value = '', initial = {}) => {
+    //    const { onTypeChange } = this.props;
+    //    this.setState({ selectedType: value, model: initial });
+    //    if (onTypeChange) {
+    //        onTypeChange(value);
+    //    }
+    //};
 
     delete other.deviceList;
+    
     return (
         <Dialog
             disableBackdropClick
@@ -93,64 +138,103 @@ function ConfirmationDialogRaw(props) {
                 </DialogContentText>
                 <FormControl>
                     <InputLabel htmlFor="grouped-select">Event Trigger (If This)</InputLabel>
-                    <Select defaultValue="" id="grouped-select">
-                    
-                        <MenuItem value="">
-                            <em>None</em>
+                    <Select 
+                    // value={props.selectedValue}
+                    // onChange={handleTypeChange}
+                    id="grouped-select"
+                    >
+                    <MenuItem value="">
+                        <em>None</em>
                         </MenuItem>
                         <ListSubheader color="primary">
                             Scene Set
                         </ListSubheader>
-                            {SceneSet && SceneSet.length > 0 && SceneSet.map((a,b)=><MenuItem key={b} value=""><option>{a}</option></MenuItem>)}
-                        {/* We may want this at a later time.
+                            {SceneSet && SceneSet.length > 0 && SceneSet.map((a,b)=><MenuItem key={b} value={a}><option>{a}</option></MenuItem>)}
+                        
                         <ListSubheader color="primary">
                             Effect Set
                         </ListSubheader>
-                            {effectNames && effectNames.length > 1 && effectNames.map((c,d)=><MenuItem key={d} value=""><option>{c}</option></MenuItem>)}
+                            {effectNames && effectNames.length > 1 && effectNames.map((c,d)=><MenuItem key={d} value={c}><option>{c}</option></MenuItem>)}
+                        {/* We may want this at a later time.
                         <ListSubheader color="primary">
                             Effect Cleared
                         </ListSubheader>
                         <MenuItem><option>Effect Cleared</option></MenuItem>*/}
                         </Select>
                 </FormControl>
-                
                 <FormControl>
-                    <InputLabel htmlFor="grouped-select">Then Do This</InputLabel>
-                    <Select
-                    labelId="demo-simple-select-helper-label"
-                    id="demo-simple-select-helper"
-                    value={QLCWidgets}
-                    onChange={handleEntering}
-                    >
-                    <MenuItem value=""></MenuItem>
-                    {QLCWidgets && QLCWidgets.length > 0 && QLCWidgets.map((e,f)=><MenuItem key={f} value="">
-                        <option>
-                        ID: {e[0]}, Type: {e[1]}, Name: {e[2]}
-                            </option>
-                    {/* {Object.entries(qlcStuff)}
+                <InputLabel htmlFor="grouped-select">Then Do This</InputLabel>
+                <Select
+                labelId="demo-simple-select-helper-label"
+                id="demo-simple-select-helper"
+                // value={qlcID}
+                onChange={handleTypeChange}
+                >
+                <MenuItem value=""></MenuItem>
+                {QLCWidgets && QLCWidgets.length > 0 && QLCWidgets.map((e,f)=><MenuItem key={f} value={e}>
+                    <option>
+                    ID: {e[0]}, Type: {e[1]}, Name: {e[2]}
+                        </option>
+                {/* {Object.entries(qlcStuff)}
 
-                        {QLCWidgets && QLCWidgets.length > 0 && QLCWidgets.map((e,f)=><MenuItem key={f} value="">
-                        <option>{e}</option>*/}
-                        </MenuItem>)}
-                    </Select>
-                    <FormHelperText>Some important helper text</FormHelperText>
-                    
-                    {/*
-                    If {qlcType}  === 'Button' or 'Audio Triggers'
-                    return switch off (Value: 0) or on (Value: 255)
-                    If {qlcType}  === 'slider'
-                    return Slider
-                    Slider range: (0 to 255)
-                        Else hide below buttons.
-                    */}
-                </FormControl>
+                    {QLCWidgets && QLCWidgets.length > 0 && QLCWidgets.map((e,f)=><MenuItem key={f} value="">
+                    <option>{e}</option>*/}
+                    </MenuItem>)}
+                </Select>
+                <FormHelperText>Some important helper text</FormHelperText>
+                
+                {/*
+                If {qlcType}  === 'Button' or 'Audio Triggers'
+                return switch off (Value: 0) or on (Value: 255)
+                If {qlcType}  === 'slider'
+                return Slider
+                Slider range: (0 to 255)
+                    Else hide below buttons.
+                */}
+            </FormControl>
+                {dropDownRenderList.map((item,idx) => (
+                    <div key={item}>
+                    <FormControl>
+                        <InputLabel htmlFor="grouped-select">Then Do This</InputLabel>
+                        <Select
+                        labelId="demo-simple-select-helper-label"
+                        id="demo-simple-select-helper"
+                        // value={qlcID}
+                        onChange={handleTypeChange}
+                        >
+                        <MenuItem value=""></MenuItem>
+                        {QLCWidgets && QLCWidgets.length > 0 && QLCWidgets.map((e,f)=><MenuItem key={f} value={e}>
+                            <option>
+                            ID: {e[0]}, Type: {e[1]}, Name: {e[2]}
+                                </option>
+                        {/* {Object.entries(qlcStuff)}
+        
+                            {QLCWidgets && QLCWidgets.length > 0 && QLCWidgets.map((e,f)=><MenuItem key={f} value="">
+                            <option>{e}</option>*/}
+                            </MenuItem>)}
+                        </Select>
+                        <FormHelperText>Some important helper text</FormHelperText>
+                        
+                        {/*
+                        If {qlcType}  === 'Button' or 'Audio Triggers'
+                        return switch off (Value: 0) or on (Value: 255)
+                        If {qlcType}  === 'slider'
+                        return Slider
+                        Slider range: (0 to 255)
+                            Else hide below buttons.
+                        */}
+                    </FormControl>
+                    <button onClick={() => handleTypeRemoveDropDown(item,idx)}>remove</button>
+                    </div>
+                    ))} 
+                
                     <div style={{ minWidth: '150px' }}></div>
-                    <label>QLC+ widget selected above (On/Off) </label>
-                    <Switch color="primary" checked={true} />
+                    {checkButtonType && <label>QLC+ widget selected above (On/Off) </label>}
+                    {checkButtonType && <Switch color="primary" checked={true} />}
 
                     <div style={{ minWidth: '150px' }}>
-                                <label>QLC Slider Widget Value</label>
-                                        <Slider
+                    {checkSliderType &&<label>QLC Slider Widget Value</label>}
+                                {checkSliderType &&<Slider
                                             aria-labelledby="discrete-slider"
                                             valueLabelDisplay="auto"
                                             marks
@@ -158,7 +242,7 @@ function ConfirmationDialogRaw(props) {
                                             min={0}
                                             max={255}
                                             defaultValue={1}
-                                        />
+                                        />}
                             </div> 
                 {/*
                 If Below button pressed, then show additional 'Then do this' dropdown field.
@@ -170,7 +254,7 @@ function ConfirmationDialogRaw(props) {
                     endIcon={<AddCircleIcon />}
                     aria-haspopup="true"
                     // integrationsProxies.deleteIntegration(data);
-                    //onClick={handleClickListItem}
+                    onClick={handleTypeAddDropDown}
                     role="listitem"
                 >
                     ADD additional 'then do this'
@@ -245,8 +329,9 @@ export default function ConfirmationDialog({ deviceList, config, integration }) 
     const dispatch = useDispatch();
     //console.log("YZ03:", event_types)
     
-    const handleClickListItem = async() => {
-        setOpen(true)};
+    const handleClickListItem = ()=> {
+        setOpen(true);
+    };
 
     const handleClose = newValue => {
         setOpen(false);
