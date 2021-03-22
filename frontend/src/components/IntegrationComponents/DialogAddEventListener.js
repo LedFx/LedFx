@@ -20,6 +20,7 @@ import Select from '@material-ui/core/Select';
 import { Slider, Switch } from '@material-ui/core';
 import FormHelperText from '@material-ui/core/FormHelperText';
 import DropDown from 'components/forms/DropDown';
+import ThisDropDown from './DialogAddEventListnerDropDown';
 
 function ConfirmationDialogRaw(props) {
     const { onClose, value: valueProp, open, ...other } = props;
@@ -84,29 +85,39 @@ function ConfirmationDialogRaw(props) {
         event.target.value.includes("Slider")?setSliderType(true):setSliderType(false);
     };
 
+    const handleDropTypeChange = (event, index) => {
+        const newArr = dropDownRenderList.slice();
+        console.log("test",event.target.value);
+        if(event.target.value.includes("Button")){
+            newArr[index].showSwitch = true;
+            newArr[index].showSlider = false;
+        }else if(event.target.value.includes("Slider")){
+            newArr[index].showSlider = true;
+            newArr[index].showSwitch = false;
+        }
+       
+        return setdropDownRenderList(newArr);
+        
+      };
+
     const handleTypeAddDropDown = (event) => {
         const newItem={
-            id: Date.now()
+            id: Date.now(),
+            value:"",
+            showSwitch: false,
+            showSlider:false
         }
-        
-        setdropDownRenderList(dropDownRenderList.concat(newItem))
-        // setdropDownRenderCount(dropDownRenderCount + 1)
-        // console.log("ddcount", dropDownItemsList)
+
+        const newArr = dropDownRenderList.slice();
+        newArr.splice(0, 0, newItem);
+        setdropDownRenderList(newArr);
     };
 
-    const handleTypeRemoveDropDown = (itemId,idx)=>{
+    const handleTypeRemoveDropDown = (idx)=>{
         const newArr = dropDownRenderList.slice();
         newArr.splice(idx, 1);
-        console.log("test",newArr);
-        // const updatedItems = dropDownRenderList.filter(item=>{
-        //     // console.log("test",itemId);
-        //     // console.log("test12",item.id !== itemId); 
-        //     return item.id!==itemId   
-        // })
-        // console.log("test6",updatedItems);
-        return setdropDownRenderList(newArr);    
-        // setdropDownRenderList(updatedItems)
-        
+       
+        return setdropDownRenderList(newArr);     
     }
 
     delete other.deviceList;
@@ -183,42 +194,8 @@ function ConfirmationDialogRaw(props) {
                     Else hide below buttons.
                 */}
             </FormControl>
-                {dropDownRenderList.map((item,idx) => (
-                    <div key={item}>
-                    <FormControl>
-                        <InputLabel htmlFor="grouped-select">Then Do This</InputLabel>
-                        <Select
-                        labelId="demo-simple-select-helper-label"
-                        id="demo-simple-select-helper"
-                        // value={qlcID}
-                        onChange={handleTypeChange}
-                        >
-                        <MenuItem value=""></MenuItem>
-                        {QLCWidgets && QLCWidgets.length > 0 && QLCWidgets.map((e,f)=><MenuItem key={f} value={e}>
-                            <option>
-                            ID: {e[0]}, Type: {e[1]}, Name: {e[2]}
-                                </option>
-                        {/* {Object.entries(qlcStuff)}
-        
-                            {QLCWidgets && QLCWidgets.length > 0 && QLCWidgets.map((e,f)=><MenuItem key={f} value="">
-                            <option>{e}</option>*/}
-                            </MenuItem>)}
-                        </Select>
-                        <FormHelperText>Some important helper text</FormHelperText>
-                        
-                        {/*
-                        If {qlcType}  === 'Button' or 'Audio Triggers'
-                        return switch off (Value: 0) or on (Value: 255)
-                        If {qlcType}  === 'slider'
-                        return Slider
-                        Slider range: (0 to 255)
-                            Else hide below buttons.
-                        */}
-                    </FormControl>
-
-                    <button variant="contained" color="primary" onClick={() => handleTypeRemoveDropDown(item,idx)}><DeleteIcon /></button>
-                    </div>
-                    ))} 
+             
+            
                 
                 {/*    For delete button using delete icon.
                 <Button aria-describedby={id} variant="contained" color="primary" onClick={() => { onDeleteVitem(listItem) }}>
@@ -226,7 +203,7 @@ function ConfirmationDialogRaw(props) {
                     </Button>
                     */}
                 
-                    <div style={{ minWidth: '150px' }}></div>
+                    {/* <div style={{ minWidth: '150px' }}></div> */}
                     {checkButtonType && <label>QLC+ widget selected above (On/Off) </label>}
                     {checkButtonType && <Switch color="primary" checked={true} />}
 
@@ -242,6 +219,20 @@ function ConfirmationDialogRaw(props) {
                                             defaultValue={1}
                                         />}
                             </div> 
+            {dropDownRenderList.map((item,idx) => (
+                    <ThisDropDown
+                        key={idx}
+                        idx={idx}
+                        QLCWidgets={QLCWidgets}
+                        id={item.id}
+                        value={item.value}
+                        showSwitch={item.showSwitch}
+                        showSlider={item.showSlider}
+                        handleDropTypeChange={handleDropTypeChange}
+                        handleTypeRemoveDropDown={handleTypeRemoveDropDown}
+                    />
+                ))
+            }
                 {/*
                 If Below button pressed, then show additional 'Then do this' dropdown field.
                 */}
