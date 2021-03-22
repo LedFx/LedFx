@@ -4,6 +4,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import PropTypes from 'prop-types';
 import { makeStyles } from '@material-ui/core/styles';
 import Button from '@material-ui/core/Button';
+import DeleteIcon from '@material-ui/icons/Delete';
 import DialogTitle from '@material-ui/core/DialogTitle';
 import DialogContent from '@material-ui/core/DialogContent';
 import DialogActions from '@material-ui/core/DialogActions';
@@ -108,14 +109,6 @@ function ConfirmationDialogRaw(props) {
         
     }
 
-    //handleTypeChange = (value = '', initial = {}) => {
-    //    const { onTypeChange } = this.props;
-    //    this.setState({ selectedType: value, model: initial });
-    //    if (onTypeChange) {
-    //        onTypeChange(value);
-    //    }
-    //};
-
     delete other.deviceList;
     
     return (
@@ -138,9 +131,7 @@ function ConfirmationDialogRaw(props) {
                 </DialogContentText>
                 <FormControl>
                     <InputLabel htmlFor="grouped-select">Event Trigger (If This)</InputLabel>
-                    <Select 
-                    // value={props.selectedValue}
-                    // onChange={handleTypeChange}
+                    <Select
                     id="grouped-select"
                     >
                     <MenuItem value="">
@@ -224,9 +215,16 @@ function ConfirmationDialogRaw(props) {
                             Else hide below buttons.
                         */}
                     </FormControl>
-                    <button onClick={() => handleTypeRemoveDropDown(item,idx)}>remove</button>
+
+                    <button variant="contained" color="primary" onClick={() => handleTypeRemoveDropDown(item,idx)}><DeleteIcon /></button>
                     </div>
                     ))} 
+                
+                {/*    For delete button using delete icon.
+                <Button aria-describedby={id} variant="contained" color="primary" onClick={() => { onDeleteVitem(listItem) }}>
+                        <DeleteIcon />
+                    </Button>
+                    */}
                 
                     <div style={{ minWidth: '150px' }}></div>
                     {checkButtonType && <label>QLC+ widget selected above (On/Off) </label>}
