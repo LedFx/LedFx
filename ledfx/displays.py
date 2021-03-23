@@ -1,6 +1,5 @@
 # import asyncio
 import logging
-import time
 from functools import cached_property, lru_cache
 
 import numpy as np
@@ -304,19 +303,6 @@ class Display(object):
     def thread_function(self):
         # TODO: Evaluate switching # over to asyncio with UV loop optimization
         # instead of spinning a separate thread.
-        # if self._active:
-        #     sleep_interval = 1 / self.refresh_rate
-        #     start_time = time.time()
-
-        #     self.process_active_effect()
-
-        #     # Calculate the time to sleep accounting for potential heavy
-        #     # frame assembly operations
-        #     time_to_sleep = sleep_interval - (time.time() - start_time)
-        #     # print(1/time_to_sleep, end="\r") prints current fps
-
-        #     self._ledfx.loop.call_later(time_to_sleep, self.thread_function)
-
         if self._active:
             sleep_interval = 1 / self.refresh_rate
             self._thread_clock += sleep_interval
