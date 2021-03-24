@@ -7,6 +7,11 @@ import Select from '@material-ui/core/Select';
 import DeleteIcon from '@material-ui/icons/Delete';
 import { Slider, Switch } from '@material-ui/core';
 
+const marks = [
+    {value: 1, label: '1',},
+    {value: 255, label: '255',},
+  ];
+
 export default function ThisDropDown(props) {
     return (
         <>
@@ -35,7 +40,7 @@ export default function ThisDropDown(props) {
                 {props.showSlider &&<Slider
                     aria-labelledby="discrete-slider"
                     valueLabelDisplay="auto"
-                    marks
+                    marks={marks}
                     step={1}
                     min={0}
                     max={255}

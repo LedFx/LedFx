@@ -116,9 +116,13 @@ function ConfirmationDialogRaw(props) {
     const handleTypeRemoveDropDown = (idx)=>{
         const newArr = dropDownRenderList.slice();
         newArr.splice(idx, 1);
-       
         return setdropDownRenderList(newArr);     
     }
+
+    const marks = [
+        {value: 1, label: '1',},
+        {value: 255, label: '255',},
+      ];
 
     delete other.deviceList;
     
@@ -212,7 +216,7 @@ function ConfirmationDialogRaw(props) {
                                 {checkSliderType &&<Slider
                                             aria-labelledby="discrete-slider"
                                             valueLabelDisplay="auto"
-                                            marks
+                                            marks={marks}
                                             step={1}
                                             min={0}
                                             max={255}
