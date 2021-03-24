@@ -8,6 +8,7 @@ import virtuals from './virtuals';
 import integrations from './integrations';
 import qlc from './qlc';
 import ui from './ui';
+import spotify from './spotify'
 import displays from './displays';
 import selectedDisplay from './selectedDisplay';
 const modules = {
@@ -21,6 +22,7 @@ const modules = {
     selectedDevice,
     virtuals,
     ui,
+    spotify,
     displays,
     selectedDisplay,
 };
