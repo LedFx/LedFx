@@ -32,7 +32,7 @@ Tested on Ubuntu 20.10 64-bit
 .. image:: ./_static/direct_audio_linux_2.png
    :align: center
    :width: 100%
-   
+
 Linux CLI
 =========
 
@@ -62,7 +62,7 @@ Tested on Ubuntu 20.10 64-bit, Raspberry Pi OS (32 and 64-Bit)
 .. image:: ./_static/direct_audio_linux_cli_out.png
    :align: center
    :width: 100%
-   
+
 -  In Pulsemixer under "F2 Input", choose "python"
    and move it to the audio stream you want to capture (e.g.
    "Monitor of Built-in Audio Digital Stereo")
