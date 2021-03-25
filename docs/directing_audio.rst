@@ -32,6 +32,44 @@ Tested on Ubuntu 20.10 64-bit
 .. image:: ./_static/direct_audio_linux_2.png
    :align: center
    :width: 100%
+   
+Linux CLI
+=========
+
+.. note::
+  Python will not show in Pulsemixer until pulse is set like Audio Input in LedFx UI and some reactive effect is set and send to device.
+
+Tested on Ubuntu 20.10 64-bit, Raspberry Pi OS (32 and 64-Bit)
+
+.. rubric:: Requirements
+
+-  `PulseAudio <https://www.freedesktop.org/wiki/Software/PulseAudio/>`__
+-  `Pulsemixer <https://github.com/GeorgeFilipkin/pulsemixer/>`__
+
+.. rubric:: Instructions
+
+-  In the LedFx UI under "Settings" -> "Audio Input", choose "pulse" as
+   the current device
+
+.. image:: ./_static/direct_audio_linux_1.png
+   :align: center
+   :width: 100%
+
+-  In Pulsemixer under "F1 Output", choose your audio application
+   and move it to output stream you want to listen on (e.g.
+   "Built-in Audio Digital Stereo")
+
+.. image:: ./_static/direct_audio_linux_cli_out.png
+   :align: center
+   :width: 100%
+   
+-  In Pulsemixer under "F2 Input", choose "python"
+   and move it to the audio stream you want to capture (e.g.
+   "Monitor of Built-in Audio Digital Stereo")
+
+.. image:: ./_static/direct_audio_linux_cli_in.png
+   :align: center
+   :width: 100%
 
 macOS
 ======
