@@ -5,6 +5,7 @@ import CardActions from '@material-ui/core/CardActions';
 import CardContent from '@material-ui/core/CardContent';
 import { makeStyles } from '@material-ui/core/styles';
 import Typography from '@material-ui/core/Typography';
+import Link from '@material-ui/core/Link';
 import PopoverSure from 'components/VirtualComponents/PopoverSure';
 import Button from '@material-ui/core/Button';
 import EditIcon from '@material-ui/icons/Edit';
@@ -29,7 +30,8 @@ const IntegrationsCard = ({ int }) => {
     const classes = useStyles();
     const dispatch = useDispatch();
     const handleToggle = (props) => toggleAsyncIntegration(props);
-        
+    const preventDefault = (event) => event.preventDefault();
+
     useEffect(() => {     
         // EVERTHING HERE IS ONLY CALLED ONCE WHEN THIS COMPONENT IS RENDERED   
        dispatch(getAsyncqlclisteners(int.id))
@@ -62,10 +64,12 @@ const IntegrationsCard = ({ int }) => {
                         ? 'Disconnected'
                         : 'Unknown'}
                 </Typography>
-                <Typography color="textSecondary" gutterBottom>    
+                <Typography color="textSecondary" gutterBottom>
+                <Link href="http://127.0.0.1:9999" >   
                     {int.type === 'qlc'
                     ? `QLC+ API: http://${int.config.ip_address}:${int.config.port}`
                     : ''}
+                    </Link>
                 </Typography>
                 <Typography style={{ fontSize: '14px' }} color="textSecondary" gutterBottom>
                     Description: {int.config.description}
@@ -75,6 +79,11 @@ const IntegrationsCard = ({ int }) => {
                 {int.status === 1
                 ? <DialogAddEventListener integration={int} />
                 : 'Must be in connected status, to add new event listener'}
+            </CardActions>
+            <CardActions>
+                {int.type === 'spotify'
+                ? <DialogAddEventListener integration={int} />
+                : ''}
             </CardActions>
             <CardActions>
                 <PopoverSure

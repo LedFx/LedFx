@@ -4,7 +4,6 @@ import { useSelector, useDispatch } from 'react-redux';
 import PropTypes from 'prop-types';
 import { makeStyles } from '@material-ui/core/styles';
 import Button from '@material-ui/core/Button';
-import DeleteIcon from '@material-ui/icons/Delete';
 import DialogTitle from '@material-ui/core/DialogTitle';
 import DialogContent from '@material-ui/core/DialogContent';
 import DialogActions from '@material-ui/core/DialogActions';
@@ -19,7 +18,6 @@ import FormControl from '@material-ui/core/FormControl';
 import Select from '@material-ui/core/Select';
 import { Slider, Switch } from '@material-ui/core';
 import FormHelperText from '@material-ui/core/FormHelperText';
-import DropDown from 'components/forms/DropDown';
 import ThisDropDown from './DialogAddEventListnerDropDown';
 
 function ConfirmationDialogRaw(props) {
