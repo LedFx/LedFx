@@ -65,7 +65,7 @@ const IntegrationsCard = ({ int }) => {
                         : 'Unknown'}
                 </Typography>
                 <Typography color="textSecondary" gutterBottom>
-                <Link href="http://127.0.0.1:9999" >   
+                <Link target="_blank" href="http://127.0.0.1:9999" >   
                     {int.type === 'qlc'
                     ? `QLC+ API: http://${int.config.ip_address}:${int.config.port}`
                     : ''}
@@ -76,12 +76,23 @@ const IntegrationsCard = ({ int }) => {
                 </Typography>
             </CardContent>
             <CardActions>
-                {int.status === 1
+                {int.status === 1 & int.type === 'qlc'
                 ? <DialogAddEventListener integration={int} />
-                : 'Must be in connected status, to add new event listener'}
-                {int.type === 'spotify'
-                ? <DialogAddEventListener integration={int} />
+                : int.status !== 1 & int.type === 'qlc'
+                ? 'Must be in connected status, to add new event listener'
                 : ''}
+                {int.type === 'spotify' /*&& !spotify.accessToken && !spotify.refreshToken */
+                ? 
+                <Button variant='contained' color="primary" /*onClick={() => this.beginAuth()}*/>
+                        Connect to Spotify
+                    </Button> 
+                    : 
+                        int.type === 'spotify' /*&& !spotify.accessToken && spotify.refreshToken */
+                        ? 
+                        <Button variant='contained' color="primary" /*onClick={() => refreshAuth()}*/>
+                            Connect to Spotify
+                        </Button>
+                        : ''}
             </CardActions>
             <CardActions>
                 <PopoverSure
