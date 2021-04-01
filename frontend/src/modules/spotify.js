@@ -94,3 +94,10 @@ export function updatePlayerState(playerState) {
         }
     }
 }
+
+export const increaseSongTime = (time) => {
+    return {
+      type: 'INCREASE_SONG_TIME',
+      time
+    };
+  };

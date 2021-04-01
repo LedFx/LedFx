@@ -179,7 +179,7 @@ function ConfirmationDialogRaw(props) {
                                     value={val}
                                 >
                                     <option>
-                                        {val}
+                                        scene_set, scene_name: {val}
                                     </option>
                                 </MenuItem>)
                             }
@@ -193,7 +193,7 @@ function ConfirmationDialogRaw(props) {
                                     value={val}
                                 >
                                     <option>
-                                        {val}
+                                        effect_set, effect_name: {val}
                                     </option>
                                 </MenuItem>)
                             }
@@ -201,7 +201,7 @@ function ConfirmationDialogRaw(props) {
                         <ListSubheader color="primary">
                             Effect Cleared
                         </ListSubheader>
-                        <MenuItem><option>Effect Cleared</option></MenuItem>*/}
+                        <MenuItem><option>effect_cleared, effect_name: Effect Cleared</option></MenuItem>*/}
                     </Select>
                 </FormControl>
                 <FormControl>

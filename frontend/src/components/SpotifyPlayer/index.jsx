@@ -3,17 +3,18 @@ import { connect, useSelector, useDispatch } from 'react-redux';
 import withStyles from '@material-ui/core/styles/withStyles';
 import { makeStyles } from '@material-ui/core/styles';
 import Button from '@material-ui/core/Button';
-import Card from '@material-ui/core/Card';
-import CardHeader from '@material-ui/core/CardHeader';
-import CardContent from '@material-ui/core/CardContent';
+//import Card from '@material-ui/core/Card';
+//import CardHeader from '@material-ui/core/CardHeader';
+//import CardContent from '@material-ui/core/CardContent';
 import { AppBar, Checkbox, FormControl, FormControlLabel, Grid, InputLabel, Select, Typography } from '@material-ui/core';
 import { updatePlayerState  } from 'modules/spotify'
-import AddCircleIcon from '@material-ui/icons/AddCircle';
-import PlayArrowIcon from '@material-ui/icons/PlayArrow';
-import CircularProgress from '@material-ui/core/CircularProgress';
+//import AddCircleIcon from '@material-ui/icons/AddCircle';
+//import PlayArrowIcon from '@material-ui/icons/PlayArrow';
+//import CircularProgress from '@material-ui/core/CircularProgress';
 import InfoIcon from '@material-ui/icons/Info';
 import Link from '@material-ui/core/Link';
-import { getScenes, activateScene } from 'modules/scenes';
+//import { getScenes, activateScene } from 'modules/scenes';
+//import uniqBy from 'lodash/uniqBy';
 
 const styles = theme => ({
     appBar: {
@@ -51,6 +52,21 @@ const useStyles = makeStyles(theme => ({
         height: '100%',
     },
 }));
+
+function msToTime(duration) {
+    var milliseconds = parseInt((duration % 1000) / 100),
+      seconds = Math.floor((duration / 1000) % 60),
+      minutes = Math.floor((duration / (1000 * 60)) % 60),
+      hours = Math.floor((duration / (1000 * 60 * 60)) % 24);
+  
+    hours = (hours < 10) ? "0" + hours : hours;
+    minutes = (minutes < 10) ? "0" + minutes : minutes;
+    seconds = (seconds < 10) ? "0" + seconds : seconds;
+  
+    return minutes + ":" + seconds + "." + milliseconds;
+  }
+  //console.log(msToTime(300000))
+
 
 class SpotifyPlayer extends React.Component {
     constructor(props) {
@@ -105,7 +121,7 @@ class SpotifyPlayer extends React.Component {
     };
 
     componentDidMount() {
-        if (Object.keys(this.props.playerState).length == 0 && this.props.playerState.constructor == Object) {
+        if (Object.keys(this.props.playerState).length === 0 && this.props.playerState.constructor == Object) {
             console.log('creating player')
             this.createWebPlayer(this.props.accessToken)
         }
@@ -116,6 +132,10 @@ class SpotifyPlayer extends React.Component {
             this.setState({sliderPositon: this.props.playerState.position})
         }
     }
+
+     //componentGetScenes(() => {  
+       //dispatch(getScenes()}
+       //));
 
     render() {
         const { playerState, classes } = this.props;
@@ -154,7 +174,7 @@ class SpotifyPlayer extends React.Component {
                             </Grid>
                             <Grid container item xs={6} justify='center'>
                             <Typography align='center' variant='body1'>
-                                    Track Position: {playerState.position} 
+                                    Track Position: {msToTime(playerState.position)} 
                                     </Typography>
                                 <FormControlLabel
                                     control={<Checkbox checked={this.state.includePosition} onChange={(e) => this.handleCheckChange(e)} name="includePosition" />}
@@ -169,6 +189,23 @@ class SpotifyPlayer extends React.Component {
         );
     }
 }
+
+/*
+SongControls.propTypes = {
+    timeElapsed: PropTypes.number,
+    songPlaying: PropTypes.bool,
+    songPaused: PropTypes.bool,
+    songName: PropTypes.string,
+    artistName: PropTypes.string,
+    stopSong: PropTypes.func,
+    resumeSong: PropTypes.func,
+    increaseSongTime: PropTypes.func,
+    pauseSong: PropTypes.func,
+    songs: PropTypes.array,
+    songDetails: PropTypes.object,
+    audioControl: PropTypes.func
+  };
+  */
 
 export default connect(
     state => ({

@@ -1,10 +1,10 @@
 import React, {useEffect} from 'react';
-import { useDispatch} from 'react-redux';
+import {connect, useDispatch} from 'react-redux';
 import Card from '@material-ui/core/Card';
 import CardActions from '@material-ui/core/CardActions';
 import CardContent from '@material-ui/core/CardContent';
 import { makeStyles } from '@material-ui/core/styles';
-import Typography from '@material-ui/core/Typography';
+import { Grid, Typography } from '@material-ui/core';
 import Link from '@material-ui/core/Link';
 import PopoverSure from 'components/VirtualComponents/PopoverSure';
 import Button from '@material-ui/core/Button';
@@ -81,18 +81,14 @@ const IntegrationsCard = ({ int }) => {
                 : int.status !== 1 & int.type === 'qlc'
                 ? 'Must be in connected status, to add new event listener'
                 : ''}
-                {int.type === 'spotify' /*&& !spotify.accessToken && !spotify.refreshToken */
+                
+                {int.type === 'spotify' && int.active !== 'true' /* && !spotify.accessToken && !spotify.refreshToken */
                 ? 
-                <Button variant='contained' color="primary" /*onClick={() => this.beginAuth()}*/>
-                        Connect to Spotify
-                    </Button> 
-                    : 
-                        int.type === 'spotify' /*&& !spotify.accessToken && spotify.refreshToken */
-                        ? 
-                        <Button variant='contained' color="primary" /*onClick={() => refreshAuth()}*/>
-                            Connect to Spotify
-                        </Button>
-                        : ''}
+                // For Connect to Spotify button
+                <Button variant='contained' color="primary" > 
+                    <Typography>Connect to Spotify</Typography>
+                </Button> 
+                    : ''}
             </CardActions>
             <CardActions>
                 <PopoverSure
@@ -121,9 +117,20 @@ const IntegrationsCard = ({ int }) => {
                     //onClick={handleClickListItem}
                     //Need to do, onClick: Re-render switch and integrations Redux.
                 />
+                
             </CardActions>
         </Card>
+        
     );
 };
+
+
+
+/*export default connect(
+    state => ({
+        spotify: state.spotify
+    }),
+    { checkCookiesForTokens, finishAuth, refreshAuth }
+)(withStyles(styles)(SpotifyView));*/
 
 export default IntegrationsCard;

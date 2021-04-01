@@ -95,8 +95,8 @@ const IntegrationsView = () => {
                         <TableCell>Name</TableCell>
                         <TableCell>Type</TableCell>
                         <TableCell>Event Type</TableCell>
-                        <TableCell>Event Trigger</TableCell>
-                        <TableCell>Payload</TableCell>
+                        <TableCell>Event Trigger (If This)</TableCell>
+                        <TableCell>Payload (Do This)</TableCell>
                         <TableCell>Actions</TableCell>
                     </TableRow>
                 </TableHead>

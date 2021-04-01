@@ -37,7 +37,7 @@ function ConfirmationDialogRaw(props) {
 
     const handleOk = () => {
         onClose(value);
-        integrationsProxies.createIntegration({ config: model, type: 'spotify' });
+        integrationsProxies.createIntegration({ config: model, type: integrationTypes[integration].id });
                 window.location = window.location.href;
     };
 

@@ -22,6 +22,7 @@
         "glob": "^7.1.6",
         "history": "^4.10.1",
         "material-ui-theme-state": "^1.0.30",
+        "moment": "^2.29.1",
         "pkce-challenge": "^2.1.0",
         "react": "^16.13.1",
         "react-ace": "^9.2.1",

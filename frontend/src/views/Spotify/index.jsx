@@ -49,12 +49,12 @@ class SpotifyView extends React.Component {
         return (
             <Grid container justify='center' alignContent='center' style={{height: '90%'}}>
                 {!spotify.accessToken && !spotify.refreshToken ? 
-                <Button variant='contained' onClick={() => this.beginAuth()}>
+                <Button variant='contained' color="primary" onClick={() => this.beginAuth()}>
                     <Typography>Connect to Spotify</Typography>
                 </Button> 
                 : 
                     !spotify.accessToken && spotify.refreshToken ? 
-                    <Button variant='contained' onClick={() => refreshAuth()}>
+                    <Button variant='contained' color="primary" onClick={() => refreshAuth()}>
                         <Typography>Connect to Spotify</Typography>
                     </Button>
                     : 
