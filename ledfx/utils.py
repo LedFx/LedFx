@@ -496,10 +496,10 @@ class WLED(object):
 
 
 def empty_queue(queue: asyncio.Queue):
-    """Empty an asycio queue
+    """Empty an asyncio queue
 
     Args:
-        queue (asyncio.Queue): The asycio queue to empty
+        queue (asyncio.Queue): The asyncio queue to empty
     """
     for _ in range(queue.qsize()):
         queue.get_nowait()
@@ -528,7 +528,6 @@ async def resolve_destination(loop, destination, port=7777, timeout=3):
             return dest[0][4][0]
         except socket.gaierror:
             raise ValueError(f"Failed to resolve destination {cleaned_dest}")
-        return False
 
 
 def currently_frozen():

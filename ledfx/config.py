@@ -2,6 +2,7 @@ import datetime
 import json
 import logging
 import os
+import shutil
 import sys
 
 import voluptuous as vol
@@ -157,20 +158,56 @@ def load_config(config_dir: str) -> dict:
 
         with open(config_file, encoding="utf-8") as file:
             config_json = json.load(file)
-            return CORE_CONFIG_SCHEMA(config_json)
+            try:
+                # If there's no config version in the config, it's pre-1.0.0 and won't work
+                # Probably scope to iterate through it and create a display for every device, but that's beyond me
+                _LOGGER.info(
+                    f"LedFx Configuration Version: {config_json['configuration_version']}"
+                )
+                return CORE_CONFIG_SCHEMA(config_json)
+            except KeyError:
+                create_backup(config_dir, config_file, "VERSION")
+                return CORE_CONFIG_SCHEMA({})
     except json.JSONDecodeError:
-        date = datetime.datetime.now().strftime("%d-%m-%y_%H-%M-%S")
-        backup_location = os.path.join(
-            config_dir, f"config.json.backup.{date}"
-        )
+        create_backup(config_dir, config_file, "DECODE")
+        return CORE_CONFIG_SCHEMA({})
+    except OSError:
+        create_backup(config_dir, config_file, "OSERROR")
+        return CORE_CONFIG_SCHEMA({})
+
+
+def create_backup(config_dir, config_file, errortype):
+    """This function creates a backup of the current configuration file - it uses the format dd-mm-yyyy_hh-mm-ss for the backup file.
+
+    Args:
+        config_dir (path): The path to the current configuration directory
+        config_file (path): The path to the current configuration file
+        errortype (string): The type of error we encounter to allow for better logging
+    """
+
+    date = datetime.datetime.now().strftime("%d-%m-%y_%H-%M-%S")
+    backup_location = os.path.join(config_dir, f"config.json.backup.{date}")
+    try:
         os.rename(config_file, backup_location)
+    except OSError:
+        shutil.copy2(config_file, backup_location)
+
+    if errortype == "DECODE":
         _LOGGER.warning(
             "Error loading configuration. Backup created, empty configuration used."
         )
+
+    if errortype == "VERSION":
         _LOGGER.warning(
-            f"Please check the backup for JSON errors if required - {backup_location}"
+            "Incompatible Configuration Detected. Backup Created, empty configuration used."
         )
-        return CORE_CONFIG_SCHEMA({})
+
+    if errortype == "OSERROR":
+        _LOGGER.warning(
+            "Unable to Open Configuration. Backup Created, empty configuration used."
+        )
+
+    _LOGGER.warning(f"Backup Located at: {backup_location}")
 
 
 def save_config(config: dict, config_dir: str) -> None:
