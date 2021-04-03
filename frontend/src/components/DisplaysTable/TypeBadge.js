@@ -14,6 +14,7 @@ import { makeStyles } from '@material-ui/core/styles';
 import { setConfig } from 'modules/settings';
 import { setDisplay } from 'modules/displays';
 
+
 const useStyles = makeStyles(theme => ({
     badgeButton: {
         height: '16px',
@@ -38,15 +39,23 @@ function SimpleDialog({ onClose, open, display }) {
 
     return (
         <Dialog onClose={handleDialogClose} aria-labelledby="simple-dialog-title" open={open}>
-            <DialogTitle id="simple-dialog-title">More Performace!</DialogTitle>
+            <DialogTitle id="simple-dialog-title">Possible Performance Improvement</DialogTitle>
 
-            <DialogContent>
+            <DialogContent dividers>
                 <DialogContentText>
-                    WLED device with more than 480 leds has been detected in E1.31 mode. To increase
-                    performance, a new mode called DDP has been introduced. LedFx can switch the
-                    mode of WLED for you. Do you want to convert all exsisting WLEDs to DDP?
-                </DialogContentText>
-                <Button variant="outlined">Click here for more info...</Button>
+
+            A WLED device with over 480 LEDs has been detected in E1.31 mode.
+            DDP has less overhead and is supported by WLED.
+            LedFx can switch the mode of WLED for you.
+            Do you want to convert all existing WLED devices to DDP?
+
+            You will be unable to send E1.31 to these devices without changing back to E1.31
+
+            </DialogContentText>
+                <Button
+                    variant="outlined"
+                    onClick={() => window.open("https://ledfx.readthedocs.io/en/master/trouble.html#id3", "_blank")}
+                >Click here for more info...</Button>
                 <div
                     style={{
                         display: 'flex',
@@ -63,7 +72,7 @@ function SimpleDialog({ onClose, open, display }) {
                                 color="primary"
                             />
                         }
-                        label="Set as preferred Mode"
+                        label="Set as Preferred Mode"
                     />
                     <div>
                         <Button
