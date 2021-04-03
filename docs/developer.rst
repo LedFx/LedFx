@@ -13,6 +13,62 @@ You will see ``pip install -e .`` frequently in the documentation. Please see th
 -------------------------
    Backend Development
 -------------------------
+Windows
+-------
+
+.. _win-dev-install:
+
+Developer Setup Installation - Python venv
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+  - Install Python 3.9
+  - Install Git.
+  - Using "Build Tools for Visual Studio 2019" installer:
+
+    - https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2019
+    - You require the mandatory selected build tools, and the following optional tools;
+
+        - Windows 10 SDK (or your equivalent Windows Version)
+        - C++ CMAKE tools for Windows
+        - MSVC v142 (or above) - VS 2019 C++ x64/x86 build tools
+
+    - Default install options are appropriate.
+
+  - Reboot
+
+
+.. code:: console
+
+    $ python -m venv C:\ledfx
+    $ cd C:\ledfx
+    $ .\Scripts\activate.bat
+    $ pip install pipwin
+    $ pip install wheel
+    $ pipwin refresh
+    $ pipwin install pyaudio
+    $ pip install pywin32
+    $ python .\Scripts\pywin32_postinstall.py -install
+    $ pip install --upgrade git+https://github.com/Digital-Sapphire/PyUpdater.git@master
+    $ git clone -b dev https://github.com/LedFx/LedFx .\ledfx-git
+    $ cd .\ledfx-git
+    $ python setup.py develop
+    $ ledfx --open-ui
+
+**1.** To develop, open up a terminal and activate the ledfx virtual environment
+
+.. code:: console
+
+    $ C:\ledfx\Scripts\activate.bat
+
+**2.** Make changes to LedFx's files in C:/ledfx/ledfx-git. Your changed files will be run when you run LedFx
+
+.. code:: console
+
+    $ ledfx --open-ui
+
+You can keep the ledfx virtual environment open and keep making changes then running ledfx.
+No need to reactivate the virtual environment between changes.
 
 .. _linux-dev:
 

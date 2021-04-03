@@ -2,63 +2,6 @@
    Troubleshooting
 =====================
 
-Windows
--------
-
-.. _win-dev-install:
-
-Developer Setup Installation - Python venv
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-
-  - Install Python 3.9
-  - Install Git.
-  - Using "Build Tools for Visual Studio 2019" installer:
-
-    - https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2019
-    - You require the mandatory selected build tools, and the following optional tools;
-
-        - Windows 10 SDK (or your equivalent Windows Version)
-        - C++ CMAKE tools for Windows
-        - MSVC v142 (or above) - VS 2019 C++ x64/x86 build tools
-
-    - Default install options are appropriate.
-
-  - Reboot
-
-
-.. code:: console
-
-    $ python -m venv C:\ledfx
-    $ cd C:\ledfx
-    $ .\Scripts\activate.bat
-    $ pip install pipwin
-    $ pip install wheel
-    $ pipwin refresh
-    $ pipwin install pyaudio
-    $ pip install pywin32
-    $ python .\Scripts\pywin32_postinstall.py -install
-    $ pip install --upgrade git+https://github.com/Digital-Sapphire/PyUpdater.git@master
-    $ git clone -b dev https://github.com/LedFx/LedFx .\ledfx-git
-    $ cd .\ledfx-git
-    $ python setup.py develop
-    $ ledfx --open-ui
-
-**1.** To develop, open up a terminal and activate the ledfx virtual environment
-
-.. code:: console
-
-    $ C:\ledfx\Scripts\activate.bat
-
-**2.** Make changes to LedFx's files in C:/ledfx/ledfx-git. Your changed files will be run when you run LedFx
-
-.. code:: console
-
-    $ ledfx --open-ui
-
-You can keep the ledfx virtual environment open and keep making changes then running ledfx.
-No need to reactivate the virtual environment between changes.
-
 Firmware Issues
 ---------------
 
@@ -93,9 +36,9 @@ universe, which limits you to 170 pixels. More advanced FW will consume input sp
 LedFx Configuration File
 ------------------------
 
-Did you try host: 0.0.0.0 or host: YOUR_IPV4 (i.e.: 192.168.1.10)? The 127 is your localhost internal network and
-running anything on that subnet will only be available from that device. Putting it on 0.0.0.0 or your host's
-LAN IP opens up the port, 8888 in our case, to other devices on your LAN from your host's IP.
+By default the configuration file is located in %appdata%/.ledfx on Windows and ~/.ledfx on *nix.
+It is called config.json - you can view it manually if required, and if there are any issues you can delete
+it - LedFx will start with a fresh configuration. You will of course lose any devices and custom presets/scenes.
 
 Speaker Sound
 -------------
@@ -130,10 +73,10 @@ https://www.audioanimals.co.uk/news/reviews/v-player-2-review-free-standalone-vs
 Networking Improvements
 -----------------------
 
-**DPC Latency**
+**Latency**
 
 LedFx is *extremely* latency sensitive and will expose inherit weaknesses in WiFi.
-To minimize this, we reccomend:
+To minimize this, we recommend:
 
 1. Disabling WiFi Sleep Mode on WLED.
 2. Minimize WiFi activity on your network - using ethernet where possible.
@@ -143,6 +86,14 @@ To minimize this, we reccomend:
 **Access via LAN**
 
 All current builds should be able to be accessed from LAN - please ensure that you allow traffic from port 8888 from the host machine.
+
+.. _protocol_choice:
+Protocol Choice
+-----------------------
+
+ Broadly speaking, UDP is the fastest protocol due to a lack of overheads - however it is limited to 480 LEDs. DDP as implemented in WLED is very close in performance with no pixel limits, and following that is E1.31 with similarly unrestricted pixel limits.
+ In general, you should only really notice the difference on low power devices such as Raspberry Pi's and the like, however if you are having issues it is worth changing modes.
+
 
 Need more help?
 ---------------
