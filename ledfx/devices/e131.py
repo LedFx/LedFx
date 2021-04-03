@@ -93,7 +93,7 @@ class E131Device(NetworkedDevice):
         self._sacn.start()
         self._sacn.manual_flush = True
 
-        _LOGGER.info("sACN sender started.")
+        _LOGGER.info(f"sACN sender for {self.config['name']} started.")
         super().activate()
 
     def deactivate(self):
@@ -108,13 +108,13 @@ class E131Device(NetworkedDevice):
 
         self._sacn.stop()
         self._sacn = None
-        _LOGGER.info("sACN sender stopped.")
+        _LOGGER.info(f"sACN sender for {self.config['name']} stopped.")
 
     def flush(self, data):
         """Flush the data to all the E1.31 channels account for spanning universes"""
 
         if not self._sacn:
-            raise Exception("sACN sender not started.")
+            self.activate()
         if data.size != self._config["channel_count"]:
             raise Exception(
                 f"Invalid buffer size. {data.size} != {self._config['channel_count']}"
