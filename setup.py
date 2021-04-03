@@ -17,28 +17,29 @@ PROJECT_DOCS = "https://ledfx.readthedocs.io"
 
 # Need to install numpy first
 SETUP_REQUIRES = [
-    "numpy>=1.20.1",
+    "numpy>=1.20.2",
     "wheel>=0.36.2",
 ]
 
 INSTALL_REQUIRES = [
-    "numpy>=1.20.1",
+    "numpy>=1.20.2",
     "voluptuous>=0.12.0",
     "pyaudio>=0.2.11",
-    "sacn>=1.5",
+    "sacn>=1.6.3",
     "aiohttp~=3.7.4.post0",
-    "yarl>=1.5.1",
     "multidict>=5.0.0",
-    "aiohttp_jinja2>=1.1.0",
+    "aiohttp_jinja2>=1.4.0",
     "requests>=2.24.0",
     "pyyaml>=5.3.1",
     "aubio>=0.4.9",
-    "zeroconf>=0.28.6",
-    'pypiwin32>=223; platform_system == "Windows"',
+    # Zeroconf Bug introduced in 0.29
+    # https://github.com/jstasiak/python-zeroconf/issues/337
+    "zeroconf<=0.28.8",
+    'pywin32>=300; platform_system == "Windows"',
     "cython>=0.29.21",
     "pyupdater>=3.1.0",
-    "sentry-sdk==1.0.0",
-    "certifi>=2019.3.9",
+    "sentry-sdk~=1.0.0",
+    "certifi>=2020.12.5",
     "pyserial>=3.5",
 ]
 
