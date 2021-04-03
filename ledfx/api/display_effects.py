@@ -108,24 +108,19 @@ class EffectsEndpoint(RestEndpoint):
         # on changes to keys like gradient or colour. but we're gonna wait until
         # frontend incremental updates bc it would make that so much easier
 
-        # try:
-        #     if (
-        #         display.active_effect
-        #         and display.active_effect.type == effect_type
-        #     ):
-        #         effect = display.active_effect
-        #         display.active_effect.update_config(effect_config)
-        #     else:
-        #         effect = self._ledfx.effects.create(
-        #             ledfx=self._ledfx, type=effect_type, config=effect_config
-        #         )
-        #         display.set_effect(effect)
-
         try:
-            effect = self._ledfx.effects.create(
-                ledfx=self._ledfx, type=effect_type, config=effect_config
-            )
-            display.set_effect(effect)
+            if (
+                display.active_effect
+                and display.active_effect.type == effect_type
+            ):
+                effect = display.active_effect
+                display.active_effect.update_config(effect_config)
+            else:
+                effect = self._ledfx.effects.create(
+                    ledfx=self._ledfx, type=effect_type, config=effect_config
+                )
+                display.set_effect(effect)
+
         except (ValueError, RuntimeError) as msg:
             response = {
                 "status": "failed",
