@@ -42,12 +42,12 @@ class UDPDevice(NetworkedDevice):
 
     def activate(self):
         self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        _LOGGER.info(f"Starting UDP Sender for {self._config['name']}.")
+        _LOGGER.info(f"UDP sender for {self.config['name']} started.")
         super().activate()
 
     def deactivate(self):
         super().deactivate()
-        _LOGGER.info(f"Stopping UDP Sender for {self._config['name']}.")
+        _LOGGER.info(f"UDP sender for {self.config['name']} stopped.")
         self._sock = None
 
     def flush(self, data):
