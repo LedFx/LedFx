@@ -142,7 +142,8 @@ class Display(object):
 
         if (
             (start_pixel < 0)
-            or (start_pixel >= end_pixel)
+            or (end_pixel < 0)
+            or (start_pixel > end_pixel)
             or (end_pixel >= device.pixel_count)
         ):
             msg = f"Invalid segment pixels: ({start_pixel}, {end_pixel}). Device '{self.name}' valid pixels between (0, {self.pixel_count-1})"
