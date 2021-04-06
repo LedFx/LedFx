@@ -50,6 +50,14 @@ in on my computer in a separate room that LedFx is running on.
 They're perfectly synchronized, but if you need to, you can do a delay on any of the ChromeCasts within the group
 to adjust sync.
 
+Mac OS X:
++++++++++++
+Audio Errors
+-------------
+In newer version of Mac OS X you will be prompted to allow microphone permissions on first launch - you must allow
+this otherwise LedFx won't be allowed access to audio. Please see
+`this page <https://stackoverflow.com/questions/57940639/cannot-access-microphone-on-mac-mojave-using-pyaudio>`__ for more information.
+
 Windows:
 ++++++++
 
