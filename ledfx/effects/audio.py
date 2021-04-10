@@ -164,7 +164,7 @@ class AudioInputSource(object):
             self._stream.start_stream()
         except OSError:
             _LOGGER.critical("Unable to open Audio Device - please retry.")
-            self.deactivate
+            self.deactivate()
         _LOGGER.info("Audio source opened.")
 
     def deactivate(self):
