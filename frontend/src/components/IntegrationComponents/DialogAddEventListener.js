@@ -176,10 +176,10 @@ function ConfirmationDialogRaw(props) {
                             {SceneSet && SceneSet.length > 0 && SceneSet.map((val,idx)=>
                                 <MenuItem 
                                     key={idx} 
-                                    value={val}
+                                    value={`scene_set, scene_name: ${val}`}
                                 >
                                     <option>
-                                        scene_set, scene_name: {val}
+                                        {val}
                                     </option>
                                 </MenuItem>)
                             }

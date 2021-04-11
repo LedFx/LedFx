@@ -79,7 +79,7 @@ const IntegrationsCard = ({ int }) => {
                 {int.status === 1 & int.type === 'qlc'
                 ? <DialogAddEventListener integration={int} />
                 : int.status !== 1 & int.type === 'qlc'
-                ? 'Must be in connected status, to add new event listener'
+                ? 'Must be in connected status, to add new event listener. Guide: shorturl.at/uMSV7'
                 : ''}
                 
                 {int.type === 'spotify' && int.active !== 'true' /* && !spotify.accessToken && !spotify.refreshToken */
