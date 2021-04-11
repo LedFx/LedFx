@@ -14,11 +14,10 @@ You will see ``pip install -e .`` frequently in the documentation. Please see th
    Backend Development
 -------------------------
 
-.. _win-dev-install:
+.. _win-dev:
 
-Developer Setup Installation - Python venv
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
+Windows
+-------
 
   - Install Python 3.9
   - Install Git.
