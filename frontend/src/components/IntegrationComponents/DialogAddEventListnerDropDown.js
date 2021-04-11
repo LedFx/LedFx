@@ -20,6 +20,7 @@ export default function ThisDropDown(props) {
                     <Select
                         labelId="demo-simple-select-helper-label"
                         id="demo-simple-select-helper"
+                        name="qlc_payload"
                         // value={props.value}
                         onChange={(event)=>props.handleDropTypeChange(event,props.idx)}
                     >
@@ -34,7 +35,14 @@ export default function ThisDropDown(props) {
             <button variant="contained" color="primary" onClick={()=>props.handleTypeRemoveDropDown(props.idx)}><DeleteIcon/></button>
             <div style={{ minWidth: '150px' }}></div>
             {props.showSwitch && <label>QLC+ widget selected above (On/Off) </label>}
-            {props.showSwitch && <Switch color="primary"/>}
+            {props.showSwitch && 
+            <Switch 
+                color="primary"
+                name={props.value}
+                checked={props.switchValue}
+                onChange={(event)=>props.handleDropTypeChange(event,props.idx)}
+            />
+            }
             <div style={{ minWidth: '150px' }}>
                 {props.showSlider &&<label>QLC Slider Widget Value</label>}
                 {props.showSlider &&<Slider
