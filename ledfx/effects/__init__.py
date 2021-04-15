@@ -216,6 +216,11 @@ class Effect(BaseRegistry):
                 description="Apply a background colour",
                 default="black",
             ): vol.In(list(COLORS.keys())),
+            vol.Optional(
+                "background_brightness",
+                description="Brightness of the background colour",
+                default=1.0,
+            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
         }
     )
 
@@ -303,10 +308,9 @@ class Effect(BaseRegistry):
             if self._config["mirror"]:
                 pixels = mirror_pixels(pixels)
             if self._config["background_color"]:
-                # TODO: colours in future should have an alpha value, which would work nicely to apply to dim the background colour
-                # for now, just set it a bit less bright.
-                bg_brightness = np.max(pixels, axis=1)
-                bg_brightness = (255 - bg_brightness) / 510
+                # This is hacky - would be nice to use alpha blending so effects with a maximum brightness
+                # less than the background colour pop through, but eh. This works for now.
+                bg_brightness = self._config["background_brightness"]
                 _bg_color_array = np.tile(self._bg_color, (len(pixels), 1))
                 pixels += np.multiply(_bg_color_array.T, bg_brightness).T
             if self._config["brightness"] is not None:
