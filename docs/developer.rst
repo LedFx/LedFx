@@ -46,7 +46,7 @@ Windows
     $ pipwin install pyaudio
     $ pip install pywin32
     $ python .\Scripts\pywin32_postinstall.py -install
-    $ pip install --upgrade git+https://github.com/Digital-Sapphire/PyUpdater.git@master
+    $ pip install --upgrade git+https://github.com/Digital-Sapphire/PyUpdater.git@main
     $ git clone -b dev https://github.com/LedFx/LedFx .\ledfx-git
     $ cd .\ledfx-git
     $ python setup.py develop
