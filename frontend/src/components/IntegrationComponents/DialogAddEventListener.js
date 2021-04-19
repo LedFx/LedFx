@@ -308,6 +308,7 @@ function ConfirmationDialogRaw(props) {
                     */}
                 
                     {/* <div style={{ minWidth: '150px' }}></div> */}
+                    <div>
                 {checkButtonType && <label>QLC+ widget selected above (On/Off) </label>}
                 {checkButtonType && 
                     <Switch 
@@ -317,7 +318,7 @@ function ConfirmationDialogRaw(props) {
                         name={checkID}
                         onChange={handleEventChange} 
                     />
-                }
+                }</div>
 
                 <div style={{ minWidth: '150px' }}>
                     {checkSliderType && <label>QLC Slider Widget Value</label>}
