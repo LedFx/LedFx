@@ -249,9 +249,13 @@ class Effect(BaseRegistry):
 
     def update_config(self, config):
         # TODO: Sync locks to ensure everything is thread safe
+
         validated_config = type(self).schema()(config)
-        if self._config is not None:
-            self._config = self._config | validated_config
+        prior_config = self._config
+
+        if self._config != {}:
+
+            self._config = prior_config | config
         else:
             self._config = validated_config
         self._bg_color = np.array(
@@ -355,8 +359,7 @@ class Effect(BaseRegistry):
             if self._config["background_color"]:
                 # TODO: colours in future should have an alpha value, which would work nicely to apply to dim the background colour
                 # for now, just set it a bit less bright.
-                bg_brightness = np.max(pixels, axis=1)
-                bg_brightness = (255 - bg_brightness) / 510
+                bg_brightness = self._config["background_brightness"]
                 _bg_color_array = np.tile(self._bg_color, (len(pixels), 1))
                 pixels += np.multiply(_bg_color_array.T, bg_brightness).T
             if self._config["brightness"] is not None:
