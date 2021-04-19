@@ -131,11 +131,11 @@ class EffectsEndpoint(RestEndpoint):
         # Update and save the configuration
         for display in self._ledfx.config["displays"]:
             if display["id"] == display_id:
-                # if not ('effect' in display):
-                display["effect"] = {}
-                display["effect"]["type"] = effect.type
-                display["effect"]["config"] = effect.config
-                break
+                if not ("effect" in display):
+                    display["effect"] = {}
+                    display["effect"]["type"] = effect.type
+                    display["effect"]["config"] = effect.config
+                    break
 
         save_config(
             config=self._ledfx.config,
