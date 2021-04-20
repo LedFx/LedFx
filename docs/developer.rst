@@ -46,7 +46,6 @@ Windows
     $ pipwin install pyaudio
     $ pip install pywin32
     $ python .\Scripts\pywin32_postinstall.py -install
-    $ pip install --upgrade git+https://github.com/Digital-Sapphire/PyUpdater.git@main
     $ git clone -b dev https://github.com/LedFx/LedFx .\ledfx-git
     $ cd .\ledfx-git
     $ python setup.py develop
@@ -88,12 +87,11 @@ Linux
           portaudio19-dev \
           pulseaudio
 
-**3.** Install LedFx and its requirements using pip:
+**3.** Install LedFx in development mode:
 
 .. code:: console
 
-    $ pip install -r requirements-dev.txt
-    $ pip install -e .
+    $ python setup.py develop
 
 **4.** This will let you run LedFx directly from your Git repository via:
 
@@ -125,8 +123,7 @@ macOS
 
 .. code:: console
 
-    $ pip install -r requirements-dev.txt
-    $ pip install -e .
+    $ python setup.py develop
 
 **4.** This will let you run LedFx directly from your Git repository via:
 
@@ -141,7 +138,7 @@ macOS
 --------------------------
 
 Building the LedFx frontend is different from how the core backend is built. The frontend is based on React.js and thus
-uses NPM as the core package management.
+uses yarn as the core package management.
 
 .. note:: LedFx will need to be running in development mode for everything to work. To enable development mode,
           open the ``config.yaml`` file in the ``.ledfx`` folder and set ``dev_mode: true``)
@@ -153,7 +150,7 @@ Linux
 
 .. note:: The following instructions assume you have already followed the steps above to :ref:`install the LedFx dev environment <linux-dev>`
 
-To get started, first install npm and all the requirements:
+To get started, first install yarn and all the requirements:
 
 **1.** Start in the LedFx repo directory:
 
@@ -190,7 +187,7 @@ macOS
 
 .. note:: The following instructions assume you have already followed the steps above to :ref:`install the LedFx dev environment <macos-dev>`
 
-**1.** Install nodejs and NPM requirements using `homebrew`_:
+**1.** Install nodejs and yarn requirements using `homebrew`_:
 
 .. code:: console
 
@@ -199,7 +196,7 @@ macOS
     $ cd ~/frontend
     $ yarn
 
-**2.** Start LedFx in developer mode and start the NPM watcher:
+**2.** Start LedFx in developer mode and start the yarn watcher:
 
 .. code:: console
 

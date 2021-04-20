@@ -37,7 +37,7 @@ INSTALL_REQUIRES = [
     "zeroconf<=0.28.8",
     'pywin32>=300; platform_system == "Windows"',
     "cython>=0.29.21",
-    "pyupdater>=3.1.0",
+    "pyupdater>=4.0.0",
     "sentry-sdk~=1.0.0",
     "certifi>=2020.12.5",
     "pyserial>=3.5",
