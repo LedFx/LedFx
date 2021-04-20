@@ -109,12 +109,30 @@ class EffectsEndpoint(RestEndpoint):
         # frontend incremental updates bc it would make that so much easier
 
         try:
+            # handling an effect update. nested if else and repeated code bleh. ain't a looker ;)
             if (
                 display.active_effect
                 and display.active_effect.type == effect_type
             ):
-                effect = display.active_effect
-                display.active_effect.update_config(effect_config)
+
+                # substring search to match any key containing "color"
+                # this handles special cases where we want to update an effect and also trigger
+                # a transition by creating a new effect.
+                if next(
+                    (key for key in effect_config.keys() if "color" in key),
+                    None,
+                ):
+                    effect = self._ledfx.effects.create(
+                        ledfx=self._ledfx,
+                        type=effect_type,
+                        config=display.active_effect.config | effect_config,
+                    )
+                    display.set_effect(effect)
+                else:
+                    effect = display.active_effect
+                    display.active_effect.update_config(effect_config)
+
+            # handling a new effect
             else:
                 effect = self._ledfx.effects.create(
                     ledfx=self._ledfx, type=effect_type, config=effect_config
