@@ -114,11 +114,15 @@ class EffectsEndpoint(RestEndpoint):
                 display.active_effect
                 and display.active_effect.type == effect_type
             ):
-                # substring search to match any key containing "color"
+                # substring search to match any key containing "color" or "colour"
                 # this handles special cases where we want to update an effect and also trigger
                 # a transition by creating a new effect.
                 if next(
-                    (key for key in effect_config.keys() if "color" in key),
+                    (
+                        key
+                        for key in effect_config.keys()
+                        if "color" or "colour" in key
+                    ),
                     None,
                 ):
                     effect = self._ledfx.effects.create(
