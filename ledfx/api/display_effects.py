@@ -114,6 +114,10 @@ class EffectsEndpoint(RestEndpoint):
                 and display.active_effect.type == effect_type
             ):
                 effect = display.active_effect
+                ### Blade: 
+                ### We need to trigger transition on certain keys as mentioned by not_matt
+                ### if key.type is "color":
+                ### color, color_lows, color_mids, color_highs, background_color
                 display.active_effect.update_config(effect_config)
             else:
                 effect = self._ledfx.effects.create(
