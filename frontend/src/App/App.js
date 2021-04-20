@@ -4,7 +4,15 @@ import { MuiThemeProvider } from '@material-ui/core/styles';
 // import { useSelector } from "react-redux"
 import indexRoutes from 'routes';
 import { history } from './createStore';
-import defaultTheme, { darkTheme, bladeTheme, bladeDarkTheme } from './theme';
+import defaultTheme, {
+    darkTheme,
+    bladeTheme,
+    bladeDarkTheme,
+    greenLightTheme,
+    greenDarkTheme,
+    curacaoLightTheme,
+    curacaoDarkTheme,
+} from './theme';
 // import { createMuiTheme } from '@material-ui/core/styles';
 import './style.css';
 import './materialdesignicons.css';
@@ -20,6 +28,14 @@ export default function App() {
             ? bladeTheme
             : window.localStorage.getItem('blade') === '3'
             ? bladeDarkTheme
+            : window.localStorage.getItem('blade') === '4'
+            ? greenLightTheme
+            : window.localStorage.getItem('blade') === '5'
+            ? greenDarkTheme
+            : window.localStorage.getItem('blade') === '6'
+            ? curacaoLightTheme
+            : window.localStorage.getItem('blade') === '7'
+            ? curacaoDarkTheme
             : defaultTheme;
 
     return (

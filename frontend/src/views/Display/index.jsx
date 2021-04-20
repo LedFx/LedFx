@@ -7,7 +7,7 @@ import CardContent from '@material-ui/core/CardContent';
 
 import { loadDisplayInfo, setDisplayEffect, clearDisplayEffect } from 'modules/selectedDisplay';
 import { activatePreset, getEffectPresets } from 'modules/presets';
-import DisplayEffectControl from 'components/EffectControl/DisplayEffectControl';
+// import DisplayEffectControl from 'components/EffectControl/DisplayEffectControl';
 import BladeDisplayEffectControl from 'components/EffectControl/BladeDisplayEffectControl';
 import DisplayPixelColorGraph from 'components/PixelColorGraph/DisplayPixelColorGraph';
 import PixelColorGraph from 'components/PixelColorGraph';
@@ -52,8 +52,21 @@ const DisplayView = ({
             <Grid container direction="row" spacing={4}>
                 {renderPixelGraph(display, effect, device)}
                 <Grid item xs={12} lg={6}>
-
-                    {parseInt(window.localStorage.getItem('BladeMod')) > 2 ? (
+                    <Card style={{ position: 'relative' }}>
+                        <CardContent>
+                            <BladeDisplayEffectControl
+                                display={display}
+                                effect={effect}
+                                schemas={schemas}
+                                onClear={() => dispatch(clearDisplayEffect(displayId))}
+                                onSubmit={data => dispatch(setDisplayEffect(data.displayId, data))}
+                                onTypeChange={effectType =>
+                                    effectType ? dispatch(getEffectPresets(effectType)) : false
+                                }
+                            />
+                        </CardContent>
+                    </Card>
+                    {/* {parseInt(window.localStorage.getItem('BladeMod')) > 2 ? (
                         <Card style={{ position: 'relative' }}>
                             <CardContent>
                                 <BladeDisplayEffectControl
@@ -82,7 +95,7 @@ const DisplayView = ({
                                 />
                             </CardContent>
                         </Card>
-                    )}
+                    )} */}
                 </Grid>
                 <Grid item xs={12} lg={6}>
                     {effect.type && (
@@ -94,11 +107,11 @@ const DisplayView = ({
                             getEffectPresets={() => dispatch(getEffectPresets)}
                         />
                     )}
-                    {parseInt(window.localStorage.getItem('BladeMod')) > 1 && (
-                        <TransitionCard
-                            display={display}
-                        />
-                    )}
+                    {/* {parseInt(window.localStorage.getItem('BladeMod')) > 1 && ( */}
+                    <TransitionCard
+                        display={display}
+                    />
+                    {/* )} */}
                 </Grid>
                 {parseInt(window.localStorage.getItem('BladeMod')) > 1 && (
                     <MoreInfo display={display} />
