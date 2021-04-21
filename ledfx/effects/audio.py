@@ -31,7 +31,7 @@ _LOGGER = logging.getLogger(__name__)
 """
 warnings.filterwarnings("ignore")
 
-
+_LOGGER = logging.getLogger(__name__)
 FrequencyRange = namedtuple("FrequencyRange", "min,max")
 
 FREQUENCY_RANGES = {
@@ -93,8 +93,11 @@ class AudioInputSource(object):
     def activate(self):
 
         if self._audio is None:
-            self._audio = pyaudio.PyAudio()
-
+            try:
+                self._audio = pyaudio.PyAudio()
+            except OSError as Error:
+                _LOGGER.critical(f"Error: {Error}. Shutting down.")
+                self._ledfx.stop()
         # Setup a pre-emphasis filter to help balance the highs
         self.pre_emphasis = None
         if self._config["pre_emphasis"]:
@@ -161,7 +164,7 @@ class AudioInputSource(object):
             self._stream.start_stream()
         except OSError:
             _LOGGER.critical("Unable to open Audio Device - please retry.")
-            self.deactivate
+            self.deactivate()
         _LOGGER.info("Audio source opened.")
 
     def deactivate(self):

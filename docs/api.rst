@@ -138,7 +138,7 @@ Get configuration of all displays
 Adds a new display to LedFx based on the provided JSON configuration
 
 /api/displays/<display_id>
-=========================
+==========================
 
 Query and manage a specific display with the matching *display_id* as JSON
 
@@ -153,8 +153,9 @@ Set a display to active or inactive. Must evaluate to True or False with python'
 example:
 
 .. code-block:: json
+
     {
-    "active": false
+      "active": false
     }
 
 .. rubric:: POST
@@ -171,11 +172,18 @@ invert: invert this segment when it is mapped onto the device
 example:
 
 .. code-block:: json
+
     {
-    "segments": [["my_device", 0, 49, False], ["my_other_device", 0, 99, False], ["my_device", 50, 99, False]]
+      "segments": [
+          ["my_device", 0, 49, false],
+          ["my_other_device", 0, 99, false],
+          ["my_device", 50, 99, false]
+      ]
     }
 
 This would end up with a display appearing on the devices as so:
+
+.. code-block::
 
  [---first 50px of effect---][---last 50px of effect---] [---------------middle 100px of effect----------------]
  [-------------------my_device (100px)-----------------] [---------------my_other_device (100px)---------------]
@@ -183,11 +191,18 @@ This would end up with a display appearing on the devices as so:
 another example:
 
 .. code-block:: json
+
     {
-    "segments": [["my_device", 0, 9, False], ["my_device", 20, 79, False], ["my_device", 90, 9, False]]
+      "segments": [
+          ["my_device", 0, 9, false],
+          ["my_device", 20, 79, false],
+          ["my_device", 90, 99, false]
+      ]
     }
 
 This would end up with a display appearing on the devices as so:
+
+.. code-block::
 
  [ 10px ]    [------ 60px of effect ------]     [ 10px ]
  [-------------------my_device (100px)-----------------]
@@ -219,7 +234,7 @@ Set the display to a new effect based on the provided JSON configuration
 Clear the active effect of a display
 
 /api/displays/<display_id>/presets
-================================
+====================================
 
 Endpoint linking displays to effect presets (pre-configured effect configs) with the matching *display_id* as JSON
 
@@ -232,10 +247,11 @@ Get preset effect configs for active effect of a display
 Set active effect config of display to a preset
 
 .. code-block:: json
+
     {
-    "category": "user_presets",
-    "effect_id": "wavelength",
-    "preset_id": "my_wavelength_preset"
+      "category": "user_presets",
+      "effect_id": "wavelength",
+      "preset_id": "my_wavelength_preset"
     }
 
 .. rubric:: POST
@@ -299,8 +315,9 @@ Any of: ["id", "type", "active", "status", "data", "config"]
 example:
 
 .. code-block:: json
+
     {
-    "info":"status"
+      "info":"status"
     }
 
 STATUS REFERENCE
@@ -318,7 +335,7 @@ example:
 .. code-block:: json
 
     {
-    "id": "myqlc"
+      "id": "myqlc"
     }
 
 .. rubric:: POST
@@ -328,23 +345,23 @@ Create a new integration, or update an existing one
 .. code-block:: json
 
     {
-    "type": "qlc",
-    "config": {
-        "description": "QLC Test",
-        "ip_address": "127.0.0.1",
-        "name": "myQLC+",
-        "port": 9999
-        }
+      "type": "qlc",
+      "config": {
+          "description": "QLC Test",
+          "ip_address": "127.0.0.1",
+          "name": "myQLC+",
+          "port": 9999
+          }
     }
 
 .. code-block:: json
 
     {
-    "type": "spotify",
-    "config": {
-        "description": "Spotify triggers for party",
-        "name": "Party Spotify"
-        }
+      "type": "spotify",
+      "config": {
+          "description": "Spotify triggers for party",
+          "name": "Party Spotify"
+          }
     }
 
 .. rubric:: DELETE
@@ -354,7 +371,7 @@ Delete an integration, erasing all its configuration and data.
 .. code-block:: json
 
     {
-    "id": "myqlc"
+      "id": "myqlc"
     }
 
 NOTE: This does not turn off the integration, it deletes it entirely! (though it will first turn off..)
@@ -385,7 +402,7 @@ Specify "info", one of: ``["event_types", "qlc_widgets", "qlc_listeners"]``
 .. code-block:: json
 
     {
-    "info": "qlc_listeners"
+      "info": "qlc_listeners"
     }
 
 .. rubric:: PUT
@@ -395,10 +412,10 @@ Toggle a QLC+ event listener on or off, so that it will or will not send its pay
 .. code-block:: json
 
     {
-    "event_type": "scene_set",
-    "event_filter": {
-        "scene_name": "My Scene"
-        }
+      "event_type": "scene_set",
+      "event_filter": {
+          "scene_name": "My Scene"
+          }
     }
 
 .. rubric:: POST
@@ -409,15 +426,15 @@ The "qlc_payload" is a dict of {"widget_id": value} that will be sent to QLC+
 .. code-block:: json
 
     {
-    "event_type": "scene_set",
-    "event_filter": {
-        "scene_name": "My Scene"
-        },
-    "qlc_payload": {
-        "0":255,
-        "1":255,
-        "2":169
-        }
+      "event_type": "scene_set",
+      "event_filter": {
+          "scene_name": "My Scene"
+          },
+      "qlc_payload": {
+          "0":255,
+          "1":255,
+          "2":169
+          }
     }
 
 .. rubric:: DELETE
@@ -427,10 +444,10 @@ Delete a QLC event listener, and associated payload data.
 .. code-block:: json
 
     {
-    "event_type": "scene_set",
-    "event_filter": {
-        "scene_name": "My Scene"
-        }
+      "event_type": "scene_set",
+      "event_filter": {
+          "scene_name": "My Scene"
+          }
     }
 
 NOTE: This does not turn off the integration, it deletes it entirely! (though it will first turn off..)
@@ -455,10 +472,10 @@ Create a new song trigger
 .. code-block:: json
 
     {
-    "scene_id": "my_scene",
-    "song_id": "347956287364597",
-    "song_name": "Really Cool Song",
-    "song_position": "43764",
+      "scene_id": "my_scene",
+      "song_id": "347956287364597",
+      "song_name": "Really Cool Song",
+      "song_position": "43764",
     }
 
 .. rubric:: DELETE
@@ -468,7 +485,7 @@ Delete a song trigger
 .. code-block:: json
 
     {
-    "trigger_id": "Really Cool Song - 43764",
+      "trigger_id": "Really Cool Song - 43764",
     }
 
 ===================

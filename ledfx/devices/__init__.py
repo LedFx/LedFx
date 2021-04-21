@@ -361,7 +361,7 @@ class Devices(RegistryLoader):
                 return
 
             for existing_device in self._ledfx.devices.values():
-                if (
+                if "ip_address" in existing_device.config.keys() and (
                     existing_device.config["ip_address"] == device_ip
                     or existing_device.config["ip_address"] == resolved_dest
                 ):

@@ -119,7 +119,10 @@ class WLEDDevice(NetworkedDevice):
 
         self._config |= wled_config
         self.setup_subdevice()
-        self.wled.enable_realtime_gamma()
+        # self.wled.enable_realtime_gamma()
         self.wled.set_inactivity_timeout(self._config["timeout"])
+        self.wled.first_universe()
+        self.wled.first_dmx_address()
+        self.wled.multirgb_dmx_mode()
 
         await self.wled.flush_sync_settings()

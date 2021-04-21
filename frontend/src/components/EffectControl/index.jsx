@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSelector } from 'react-redux';
 import PropTypes from 'prop-types';
 import { SchemaForm, utils } from 'react-schema-form';
-import withStyles from '@material-ui/core/styles/withStyles';
+import { makeStyles } from '@material-ui/core/styles';
 import Typography from '@material-ui/core/Typography';
 import Button from '@material-ui/core/Button';
 import DialogActions from '@material-ui/core/DialogActions';
@@ -13,9 +14,9 @@ import CasinoIcon from '@material-ui/icons/Casino';
 
 import DropDown from 'components/forms/DropDown';
 import mapper from 'components/SchemaForm/mapper';
-import BladeDropDown from './BladeDropDown';
+import BladeDropDown from '../BladeSchemaForm/BladeEffectDropDown';
 
-const styles = theme => ({
+const useStyles = makeStyles(theme => ({
     form: {
         display: 'flex',
         flexWrap: 'wrap',
@@ -37,154 +38,138 @@ const styles = theme => ({
     expandIcon: {
         transform: 'rotate(180deg)',
     },
-});
+}));
 
-class EffectControl extends React.Component {
-    constructor(props) {
-        super(props);
+const EffectControl = ({ effect, ...props }) => {
+    const [selectedType, setSelectedType] = useState('')
+    const [model, setModel] = useState({})
+    const schemas = useSelector(state => state.schemas)
+    const classes = useStyles();
+    // useEffect(() => {
+    //     if (effect.type) {
+    //         handleTypeChange(effect.type, effect.config);
+    //     }
+    // }, [effect.type, effect.config, handleTypeChange])
 
-        this.state = {
-            selectedType: '',
-            model: {},
-        };
-    }
 
-    componentDidMount() {
-        const { effect } = this.props;
-        if (effect.type) {
-            this.handleTypeChange(effect?.type, effect.config);
-        }
-    }
 
-    componentDidUpdate(prevProps) {
-        const { effect } = this.props;
-        if (effect.type !== prevProps.effect.type || effect?.config !== prevProps.effect?.config) {
-            this.handleTypeChange(effect.type, effect.config);
-        }
-    }
-
-    handleTypeChange = (value = '', initial = {}) => {
-        const { onTypeChange } = this.props;
-        this.setState({ selectedType: value, model: initial });
+    const handleTypeChange = (value = '', initial = {}) => {
+        const { onTypeChange } = props;
+        setSelectedType(value);
+        setModel(initial);
         if (onTypeChange) {
             onTypeChange(value);
         }
     };
 
-    onModelChange = (key, val) => {
-        const model = utils.selectOrSet(key, this.state.model, val);
-        this.setState({ model });
+    const onModelChange = (key, val) => {
+        const modelc = utils.selectOrSet(key, model, val);
+        setModel({ modelc });
     };
 
-    handleSubmit = e => {
-        const { onSubmit, device } = this.props;
-        const { selectedType, model } = this.state;
-
+    const handleSubmit = e => {
+        const { onSubmit, device } = props;
         e.preventDefault();
         if (onSubmit) {
             onSubmit({ deviceId: device.id, type: selectedType, config: model });
         }
     };
 
-    handleRandomize = e => {
-        const { onSubmit, device } = this.props;
-        const { selectedType } = this.state;
-
+    const handleRandomize = e => {
+        const { onSubmit, device } = props;
         e.preventDefault();
         if (onSubmit) {
             onSubmit({ deviceId: device.id, type: selectedType, config: 'RANDOMIZE' });
         }
     };
 
-    handleClearEffect = () => {
-        const { onClear, device } = this.props;
+    const handleClearEffect = ({ onClear, device }) => {
         onClear(device.id);
     };
 
-    render() {
-        const { classes, schemas } = this.props;
-        const { model, selectedType } = this.state;
 
-        const currentSchema = {
-            type: 'object',
-            title: 'Configuration',
-            properties: {},
-            ...(selectedType ? schemas.effects[selectedType].schema : {}),
-        };
 
-        const requiredKeys = Object.keys(currentSchema.properties);
 
-        if (schemas.effects) {
-            return (
-                <>
-                    <Typography variant="h5">Effect Control</Typography>
-                    <Typography variant="body1" color="textSecondary">
-                        Set and configure effects
+    const currentSchema = {
+        type: 'object',
+        title: 'Configuration',
+        properties: {},
+        ...(selectedType ? schemas.effects[selectedType].schema : {}),
+    };
+
+    const requiredKeys = Object.keys(currentSchema.properties);
+
+    if (schemas.effects) {
+        return (
+            <>
+                <Typography variant="h5">Effect Control</Typography>
+                <Typography variant="body1" color="textSecondary">
+                    Set and configure effects!
                     </Typography>
-                    <form onSubmit={this.handleSubmit} className={classes.form}>
-                        <BladeDropDown effects={Object.keys(schemas?.effects)} />
-                        <DropDown
-                            label="Type"
-                            value={selectedType}
-                            options={Object.keys(schemas?.effects).map(key => ({
-                                value: key,
-                                display: key,
-                            }))}
-                            onChange={this.handleTypeChange}
-                        />
+                <form onSubmit={handleSubmit} className={classes.form}>
+                    <BladeDropDown effects={Object.keys(schemas?.effects)} />
+                    <DropDown
+                        label="Type"
+                        value={selectedType}
+                        options={Object.keys(schemas?.effects).map(key => ({
+                            value: key,
+                            display: key,
+                        }))}
+                        onChange={handleTypeChange}
+                    />
 
-                        <SchemaForm
-                            className={classes.schemaForm}
-                            schema={currentSchema}
-                            form={requiredKeys}
-                            model={model}
-                            onModelChange={this.onModelChange}
-                            mapper={mapper}
-                        />
+                    <SchemaForm
+                        className={classes.schemaForm}
+                        schema={currentSchema}
+                        form={requiredKeys}
+                        model={model}
+                        onModelChange={onModelChange}
+                        mapper={mapper}
+                    />
 
-                        <DialogActions className={classes.bottomContainer}>
-                            {selectedType && (
-                                <Button
-                                    onClick={this.handleRandomize}
-                                    endIcon={<CasinoIcon />}
-                                    color="primary"
-                                >
-                                    Randomize
-                                </Button>
-                            )}
-                            <Box
-                                flex={1}
-                                display="flex"
-                                justifyContent="flex-end"
-                                className={classes.actionButtons}
+                    <DialogActions className={classes.bottomContainer}>
+                        {selectedType && (
+                            <Button
+                                onClick={handleRandomize}
+                                endIcon={<CasinoIcon />}
+                                color="primary"
                             >
-                                <Button
-                                    className={classes.button}
-                                    onClick={this.handleClearEffect}
-                                    color="primary"
-                                    endIcon={<CancelIcon />}
-                                >
-                                    Clear Effect
+                                Randomize
+                            </Button>
+                        )}
+                        <Box
+                            flex={1}
+                            display="flex"
+                            justifyContent="flex-end"
+                            className={classes.actionButtons}
+                        >
+                            <Button
+                                className={classes.button}
+                                onClick={handleClearEffect}
+                                color="primary"
+                                endIcon={<CancelIcon />}
+                            >
+                                Clear Effect
                                 </Button>
-                                <Button
-                                    className={classes.button}
-                                    type="submit"
-                                    variant="contained"
-                                    color="primary"
-                                    disabled={!selectedType}
-                                    endIcon={<CheckCircleIcon />}
-                                >
-                                    Set Effect
+                            <Button
+                                className={classes.button}
+                                type="submit"
+                                variant="contained"
+                                color="primary"
+                                disabled={!selectedType}
+                                endIcon={<CheckCircleIcon />}
+                            >
+                                Set Effect
                                 </Button>
-                            </Box>
-                        </DialogActions>
-                    </form>
-                </>
-            );
-        }
-
-        return <p>Loading</p>;
+                        </Box>
+                    </DialogActions>
+                </form>
+            </>
+        );
     }
+
+    return <p>Loading</p>;
+
 }
 
 EffectControl.propTypes = {
@@ -194,4 +179,4 @@ EffectControl.propTypes = {
     effect: PropTypes.object.isRequired,
 };
 
-export default withStyles(styles)(EffectControl);
+export default EffectControl;

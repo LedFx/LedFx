@@ -12,6 +12,8 @@ You will see ``pip install -e .`` frequently in the documentation. Please see th
    Backend Development
 -------------------------
 
+.. _linux-dev:
+
 Linux
 -------
 
@@ -43,6 +45,8 @@ Linux
 .. code:: console
 
     $ ledfx --open-ui
+
+.. _macos-dev:
 
 macOS
 -------
@@ -85,10 +89,14 @@ Building the LedFx frontend is different from how the core backend is built. The
 uses NPM as the core package management.
 
 .. note:: LedFx will need to be running in development mode for everything to work. To enable development mode,
-          open the ``config.yaml`` file in the ``.ledfx`` folder and set ``dev_mode: true``)
+          open the ``config.json`` file in the ``.ledfx`` folder and set ``dev_mode: true``)
+
+.. _linux-frontend:
 
 Linux
 -------
+
+.. note:: The following instructions assume you have already followed the steps above to :ref:`install the LedFx dev environment <linux-dev>`
 
 To get started, first install npm and all the requirements:
 
@@ -98,7 +106,7 @@ To get started, first install npm and all the requirements:
 
     $ pip install yarn
     $ cd frontend
-    $ yarn install
+    $ yarn
 
 The easiest way to test and validate your changes is to run a watcher that will automatically rebuild as you save and then
 just leave LedFx running in a separate command window.
@@ -107,7 +115,7 @@ just leave LedFx running in a separate command window.
 
 .. code:: console
 
-    $ ledfx
+    $ python3 ledfx
     $ yarn start
 
 At that point any change you make to the frontend will be recompiled and after a browser refresh LedFx will pick up the
@@ -120,8 +128,12 @@ prior to submitting any changes.
 
     $ yarn build
 
+.. _macos-frontend:
+
 macOS
 -------
+
+.. note:: The following instructions assume you have already followed the steps above to :ref:`install the LedFx dev environment <macos-dev>`
 
 **1.** Install nodejs and NPM requirements using `homebrew`_:
 
@@ -130,13 +142,13 @@ macOS
     $ brew install nodejs
     $ brew install yarn
     $ cd ~/frontend
-    $ yarn install
+    $ yarn
 
 **2.** Start LedFx in developer mode and start the NPM watcher:
 
 .. code:: console
 
-    $ ledfx
+    $ python3 ledfx
     $ yarn start
 
 **3.** When you are finished with your changes, build the frontend:

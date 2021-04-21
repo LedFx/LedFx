@@ -15,7 +15,7 @@ PROJECT_URL = "https://github.com/LedFx/LedFx/tree/dev"
 
 # Need to install numpy first
 SETUP_REQUIRES = [
-    "numpy>=1.19.5",
+    "numpy>=1.20",
 ]
 
 INSTALL_REQUIRES = [
@@ -23,12 +23,12 @@ INSTALL_REQUIRES = [
     "voluptuous>=0.12.0",
     "pyaudio>=0.2.11",
     "sacn>=1.5",
-    "aiohttp==3.7.3",
+    "aiohttp>=3.7.4",
     "yarl>=1.5.1",
-    "multidict<=5.0.0",
+    "multidict==4.7.6",
+    "chardet==3.0.4",
     "aiohttp_jinja2>=1.1.0",
     "requests>=2.24.0",
-    "pyyaml>=5.3.1",
     "aubio>=0.4.9",
     "zeroconf>=0.28.6",
     'pywin32>=300; platform_system == "Windows"',
@@ -37,7 +37,6 @@ INSTALL_REQUIRES = [
     "sentry-sdk>=0.19.0",
     "certifi>=2019.3.9",
     "pyserial>=3.5",
-    "chardet==3.0.4",
     "pystray>=0.17",
 ]
 

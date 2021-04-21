@@ -124,12 +124,16 @@ export default function MatrixCard() {
       {[...Array(value)].map((e, i) => (
         <>
           {i % value2 === 0 && <br />}
-          <span className="busterCards" key={i}>
+          <span className="busterCards" key={i} onDoubleClick={() => {
+            value === 13 && value2 === 37 && window.localStorage.setItem('BladeMod', 3);
+            window.location.pathname = '/advanced'
+          }}>
             ♦
-          </span>
+        </span>
         </>
-      ))}
+      ))
+      }
 
-    </div>
+    </div >
   );
 }

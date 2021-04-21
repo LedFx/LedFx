@@ -4,6 +4,7 @@ from setuptools import setup
 
 import ledfx.consts as const
 
+PROJECT_DOCS = "https://ledfx.readthedocs.io"
 PROJECT_PACKAGE_NAME = "ledfx"
 PROJECT_VERSION = const.PROJECT_VERSION
 PROJECT_LICENSE = "The MIT License"
@@ -11,33 +12,37 @@ PROJECT_AUTHOR = "Austin Hodges"
 PROJECT_AUTHOR_EMAIL = "austin.b.hodges@gmail.com"
 PROJECT_MAINTAINER = "LedFx Developers"
 PROJECT_MAINTAINER_EMAIL = "ledfx.app@gmail.com"
-PROJECT_URL = "https://github.com/LedFx/LedFx/tree/dev"
+PROJECT_URL = "https://github.com/LedFx/LedFx"
+PROJECT_WEBSITE = "https://ledfx.app"
+PROJECT_DOCS = "https://ledfx.readthedocs.io"
 
 # Need to install numpy first
 SETUP_REQUIRES = [
-    "numpy>=1.20",
+    "numpy>=1.20.2",
+    "wheel>=0.36.2",
 ]
 
 INSTALL_REQUIRES = [
-    "numpy>=1.20",
+    "numpy>=1.20.2",
     "voluptuous>=0.12.0",
     "pyaudio>=0.2.11",
-    "sacn>=1.5",
-    "aiohttp>=3.7.3",
-    "yarl>=1.5.1",
-    "multidict>=4.7.6",
-    "aiohttp_jinja2>=1.1.0",
+    "sacn>=1.6.3",
+    "aiohttp~=3.7.4.post0",
+    "multidict>=5.0.0",
+    "aiohttp_jinja2>=1.4.0",
     "requests>=2.24.0",
-    "pyyaml>=5.3.1",
     "aubio>=0.4.9",
-    "zeroconf>=0.28.6",
-    'pypiwin32>=223; platform_system == "Windows"',
-    "cython==0.29.21",
+    # Zeroconf Bug introduced in 0.29
+    # https://github.com/jstasiak/python-zeroconf/issues/337
+    "zeroconf<=0.28.8",
+    'pywin32>=300; platform_system == "Windows"',
+    "cython>=0.29.21",
     "pyupdater>=3.1.0",
-    "sentry-sdk>=0.19.0",
-    "certifi>=2019.3.9",
+    "sentry-sdk~=1.0.0",
+    "certifi>=2020.12.5",
     "pyserial>=3.5",
     "pystray>=0.17",
+    "tcp-latency>=0.0.10",
 ]
 
 setup(
@@ -50,15 +55,13 @@ setup(
     maintainer_email=PROJECT_MAINTAINER_EMAIL,
     url=PROJECT_URL,
     project_urls={
-        "Documentation": "https://ledfx.readthedocs.io/en/docs/index.html",
-        "Website": "https://ledfx.app",
-        "Source": "https://github.com/LedFx/LedFx",
+        "Documentation": PROJECT_DOCS,
+        "Website": PROJECT_WEBSITE,
+        "Source": PROJECT_URL,
         "Discord": "https://discord.gg/PqXMuthSNx",
     },
     install_requires=INSTALL_REQUIRES,
     setup_requires=SETUP_REQUIRES,
     python_requires=const.REQUIRED_PYTHON_STRING,
-    # include_package_data=True,
-    # zip_safe=False,
     entry_points={"console_scripts": ["ledfx = ledfx.__main__:main"]},
 )

@@ -93,7 +93,7 @@ class E131Device(NetworkedDevice):
         self._sacn.start()
         self._sacn.manual_flush = True
 
-        _LOGGER.info("sACN sender started.")
+        _LOGGER.info(f"sACN sender for {self.config['name']} started.")
         super().activate()
 
     def deactivate(self):
@@ -108,13 +108,13 @@ class E131Device(NetworkedDevice):
 
         self._sacn.stop()
         self._sacn = None
-        _LOGGER.info("sACN sender stopped.")
+        _LOGGER.info(f"sACN sender for {self.config['name']} stopped.")
 
     def flush(self, data):
         """Flush the data to all the E1.31 channels account for spanning universes"""
 
         if not self._sacn:
-            raise Exception("sACN sender not started.")
+            self.activate()
         if data.size != self._config["channel_count"]:
             raise Exception(
                 f"Invalid buffer size. {data.size} != {self._config['channel_count']}"
@@ -156,7 +156,9 @@ class E131Device(NetworkedDevice):
             dmx_data = np.array(self._sacn[universe].dmx_data)
             dmx_data[dmx_start:dmx_end] = data[input_start:input_end]
 
-            self._sacn[universe].dmx_data = dmx_data.clip(0, 255)
+            # Because the sACN library checks for data to be of int type, we have to
+            # convert the numpy array into a python list of ints using tolist()
+            self._sacn[universe].dmx_data = dmx_data.clip(0, 255).tolist()
             # output = dmx_data.clip(0, 255)
 
         # This is ugly - weird race condition where loading on startup from a device with a short ID results in the sACN thread trying to send data to NoneType.
@@ -164,8 +166,8 @@ class E131Device(NetworkedDevice):
         try:
             self._sacn.flush()
         except AttributeError:
-            _LOGGER.critical(
-                "The wheels fell off the sACN thread. Restarting it."
+            _LOGGER.info(
+                "Attempted to start sACN thread prior to sACN activating. Restarting sACN thread."
             )
             self.activate()
 

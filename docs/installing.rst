@@ -10,7 +10,7 @@ UDP protocol. See below for a list of tested ESP8266 firmware that can be used w
 
 Here is everything you need to get started with LedFx:
 
-    #. A Computer (or Raspberry Pi) with Python >= 3.7
+    #. A Computer (or Raspberry Pi) with Python >= 3.9
     #. An E1.31 capable device with addressable LEDs connected
 
         - Commercial grade DMX controllers
@@ -20,7 +20,7 @@ Here is everything you need to get started with LedFx:
 
 Here is a list of tested ESP8266 firmware that works with LedFx:
 
-    - WLED_ is preferred and has lots of great firmware effects
+    - WLED_ is preferred and has lots of great firmware effects (ESP32/ESP8266)
     - ESPixelStick_ is a great E1.31 based firmware
     - `Scott's Audio Reactive Firmware`_ which inspired this project!
 
@@ -34,7 +34,7 @@ To get started on Windows please use our `LedFx Windows Installer`_.
 Linux Installation
 --------------------
 
-To install on Linux first ensure you have at least Python 3.7 installed.
+To install on Linux first ensure you have at least Python 3.9 installed.
 
 **1.** Install LedFx and all the dependencies using our `LedFx Bash Install Script`_:
 
@@ -47,14 +47,14 @@ To install on Linux first ensure you have at least Python 3.7 installed.
 macOS Installation
 --------------------
 
-To install on macOS first ensure you have at least Python 3.7 installed.
+To install on macOS first ensure you have at least Python 3.9 installed.
 
 **1.** Install LedFx and all the dependencies using `homebrew`_ and pip:
 
 .. code:: console
 
     $ brew install portaudio
-    $ python3 -m pip install git+https://github.com/LedFx/LedFx@dev
+    $ python3 -m pip install ledfx
 
 **2.** Alternatively, install LedFx in a `python venv`_:
 
@@ -63,7 +63,7 @@ To install on macOS first ensure you have at least Python 3.7 installed.
     $ python3 -m venv ~/ledfx-venv
     $ source ~/ledfx-venv/bin/activate
     $ python -m pip install -U pip setuptools wheel
-    $ python -m pip install git+https://github.com/LedFx/LedFx@dev
+    $ python -m pip install ledfx
 
 **3.** Launch LedFx with the ``open-ui`` option to launch the browser:
 
@@ -80,7 +80,7 @@ Raspberry Pi Installation
 .. note::
   To use LedFx on a pi you will need a USB audio card.
 
-Verify you have Python 3.7 or greater by running ``python3 --version``
+Verify you have Python 3.9 or greater by running ``python3 --version``
 
 **1.** Modify /usr/share/alsa/alsa.conf:
 
@@ -122,16 +122,14 @@ Please visit one of the following links to obtain firmware for your ESP8266/ESP3
         - Compatible Devices:
 
           - ESP8266
-
-        - :ref:`Configuration Settings <conf-firmware>`
+          - :doc:`Configuration Settings </configuring>`
 
     * `Scott's Audio Reactive Firmware`_
 
         - Compatible Devices:
 
           - ESP8266
-
-        - :ref:`Configuration Settings <conf-firmware>`
+          - :doc:`Configuration Settings </configuring>`
 
     * WLED_
 
@@ -139,8 +137,7 @@ Please visit one of the following links to obtain firmware for your ESP8266/ESP3
 
           - ESP8266
           - ESP32
-
-        - :ref:`Configuration Settings <conf-firmware>`
+          - :doc:`Configuration Settings </configuring>`
 
 .. Links Down Here
 

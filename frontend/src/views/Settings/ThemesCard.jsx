@@ -27,10 +27,14 @@ const ThemesCard = () => {
                         value={theme}
                         onChange={changeTheme}
                     >
-                        <MenuItem value={0}>Default</MenuItem>
-                        <MenuItem value={1}>Dark</MenuItem>
-                        <MenuItem value={2}>Blade</MenuItem>
+                        <MenuItem value={0}>Original</MenuItem>
+                        <MenuItem value={1}>OriginalDark</MenuItem>
+                        <MenuItem value={2}>BladeLight</MenuItem>
                         <MenuItem value={3}>BladeDark</MenuItem>
+                        <MenuItem value={4}>GreenLight</MenuItem>
+                        <MenuItem value={5}>GreenDark</MenuItem>
+                        <MenuItem value={6}>BlueLight</MenuItem>
+                        <MenuItem value={7}>BlueDark</MenuItem>
                     </Select>
                 </FormControl>
             </CardContent>

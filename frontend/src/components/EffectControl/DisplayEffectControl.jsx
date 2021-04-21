@@ -13,7 +13,7 @@ import CasinoIcon from '@material-ui/icons/Casino';
 
 
 import mapper from 'components/SchemaForm/mapper';
-import BladeDropDown from './BladeDropDown';
+import BladeDropDown from '../BladeSchemaForm/BladeEffectDropDown';
 
 const styles = theme => ({
     form: {
