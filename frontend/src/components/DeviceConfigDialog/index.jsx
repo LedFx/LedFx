@@ -94,6 +94,7 @@ class DeviceConfigDialog extends React.Component {
         }
 
         this.props.onClose();
+        window.location.reload();
     };
 
     render() {
