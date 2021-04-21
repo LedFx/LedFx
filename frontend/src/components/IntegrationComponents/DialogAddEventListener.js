@@ -142,7 +142,8 @@ function ConfirmationDialogRaw(props) {
             newArr[index].showSwitch = false;
         }
         newArr[index]["value"] = event.target.value[0];
-        // handleEventChange(event);
+        // console.log("test",newArr)
+        // handleEventCha,nge(event);
         let value = event.target.value;
         if(event.target.type === "checkbox"){
             newArr[index].switchValue = event.target.checked;
@@ -156,6 +157,10 @@ function ConfirmationDialogRaw(props) {
             };
             setformData(newSwitchState);  
         }else if(event.target.name === 'qlc_payload'){
+            let newqlcPayload = {...formData["qlc_payload"]};
+            console.log("test",Object.keys(newqlcPayload));
+            console.log("test",index);
+            console.log("test",Object.keys(newqlcPayload)[index - 1]);
             let newSwitchState = {
                 ...formData,
                 "qlc_payload":{
