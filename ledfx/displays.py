@@ -325,7 +325,10 @@ class Display(object):
             frame = np.roll(frame, self._config["center_offset"], axis=0)
 
         # This part handles blending two effects together
-        if self._transition_effect is not None:
+        if (
+            self._transition_effect is not None
+            and self.transition_frame_total >= 1
+        ):
             # Get and process transition effect frame
             transition_frame = self._transition_effect.get_pixels()
             np.clip(transition_frame, 0, 255, transition_frame)
