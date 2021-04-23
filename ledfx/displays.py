@@ -327,7 +327,8 @@ class Display(object):
         # This part handles blending two effects together
         if (
             self._transition_effect is not None
-            and self.transition_frame_total >= 1
+            and self._config["transition_mode"] != "None"
+            and self._config["transition_time"] > 0
         ):
             # Get and process transition effect frame
             transition_frame = self._transition_effect.get_pixels()
