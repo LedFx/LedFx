@@ -18,8 +18,8 @@ class AudioDevicesEndpoint(RestEndpoint):
     _audio = None
 
     async def get(self) -> web.Response:
-        """Get list of audio devices and active audio device WIP"""
-
+        """Get list of audio devices using sound device"""
+        # Need to map out what host API actually means - however for now, just display it
         if self._audio is None:
             self._audio = sd
 
@@ -31,19 +31,32 @@ class AudioDevicesEndpoint(RestEndpoint):
                 input_devices += [device]
 
         audio_config = self._ledfx.config.get("audio", {"device_index": 0})
-
+        input_device_count = len(input_devices)
+        print(input_devices)
         audio_devices = {}
         audio_devices["devices"] = {}
         audio_devices["active_device_index"] = audio_config["device_index"]
-
-        return web.json_response(data=input_devices, status=200)
+        for i in range(0, input_device_count):
+            audio_devices["devices"][i] = (
+                input_devices[i]["name"]
+                + " using host API : "
+                + str(input_devices[i]["hostapi"])
+            )
+            print()
+        return web.json_response(data=audio_devices, status=200)
 
     async def put(self, request) -> web.Response:
         """Set audio device to use as input"""
         data = await request.json()
         index = data.get("index")
 
-        info = self._audio.get_host_api_info_by_index(0)
+        devices = self._audio.query_devices()
+        input_devices = []
+        for device in devices:
+            if device["max_input_channels"] > 0:
+                device["index"] = devices.index(device)
+                input_devices += [device]
+
         if index is None:
             response = {
                 "status": "failed",
@@ -51,7 +64,7 @@ class AudioDevicesEndpoint(RestEndpoint):
             }
             return web.json_response(data=response, status=500)
 
-        if index not in range(0, info.get("deviceCount")):
+        if index not in range(0, len(input_devices)):
             response = {
                 "status": "failed",
                 "reason": "Invalid device index [{}]".format(index),
