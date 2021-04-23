@@ -50,17 +50,22 @@ class DDPDevice(NetworkedDevice):
 
     def activate(self):
         self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        _LOGGER.info(f"DDP sender for {self.config['name']} started.")
         super().activate()
 
     def deactivate(self):
+        _LOGGER.info(f"DDP sender for {self.config['name']} stopped.")
         super().deactivate()
         self._sock = None
 
     def flush(self, data):
         self.frame_count += 1
-        DDPDevice.send_out(
-            self._sock, self.destination, data, self.frame_count
-        )
+        try:
+            DDPDevice.send_out(
+                self._sock, self.destination, data, self.frame_count
+            )
+        except AttributeError:
+            self.activate()
 
     @staticmethod
     def send_out(sock, dest, data, frame_count):

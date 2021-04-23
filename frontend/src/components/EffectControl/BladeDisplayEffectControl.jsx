@@ -93,7 +93,7 @@ const DisplayEffectControl = ({ onSubmit, onClear, display, effect }) => {
     if (schemas.effects) {
         return (
             <>
-                <Typography variant="h5">BladeMOD: Effect Control</Typography>
+                <Typography variant="h5">Effect Control</Typography>
                 <Typography variant="body1" color="textSecondary">
                     Set and configure effects
                 </Typography>

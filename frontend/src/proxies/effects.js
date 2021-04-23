@@ -11,3 +11,6 @@ export function updateEffectPreset(effectId, data) {
 export function addEffectPreset(effectId, data) {
     return api.post(`effects/${effectId}/presets`, data);
 }
+export function removeEffectPreset(effectId, data) {
+    return api.delete(`effects/${effectId}/presets`, { data });
+}

@@ -1,5 +1,6 @@
 import logging
 
+import voluptuous
 from aiohttp import web
 
 from ledfx.api import RestEndpoint
@@ -47,12 +48,14 @@ class DeviceEndpoint(RestEndpoint):
             device.update_config(device_config)
             response = {"status": "success"}
             status = 200
-        except ValueError as msg:
+        except (voluptuous.Error, ValueError) as msg:
             response = {
                 "status": "failed",
                 "payload": {"type": "warning", "reason": str(msg)},
             }
             status = 202
+            # If there's an error updating config, don't write that config, just return an error
+            return web.json_response(data=response, status=status)
 
         # Update and save the configuration
         for device in self._ledfx.config["devices"]:

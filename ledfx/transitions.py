@@ -91,4 +91,5 @@ class Transitions(metaclass=IterClass):
         "Iris": iris,
         "Through White": throughWhite,
         "Through Black": throughBlack,
+        "None": "None",
     }

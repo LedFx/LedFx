@@ -42,22 +42,27 @@ class UDPDevice(NetworkedDevice):
 
     def activate(self):
         self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        _LOGGER.info(f"UDP sender for {self.config['name']} started.")
         super().activate()
 
     def deactivate(self):
         super().deactivate()
+        _LOGGER.info(f"UDP sender for {self.config['name']} stopped.")
         self._sock = None
 
     def flush(self, data):
-        UDPDevice.send_out(
-            self._sock,
-            self.destination,
-            self._config["port"],
-            data,
-            self._config.get("data_prefix"),
-            self._config.get("data_postfix"),
-            self._config["include_indexes"],
-        )
+        try:
+            UDPDevice.send_out(
+                self._sock,
+                self.destination,
+                self._config["port"],
+                data,
+                self._config.get("data_prefix"),
+                self._config.get("data_postfix"),
+                self._config["include_indexes"],
+            )
+        except AttributeError:
+            self.activate()
 
     @staticmethod
     def send_out(

@@ -82,10 +82,11 @@ class DeviceConfigDialog extends React.Component {
         this.props.onClose();
     };
 
-    handleSubmit = () => {
+    handleSubmit = e => {
         const { initial, onAddDevice, onUpdateDevice } = this.props;
         const { deviceType, model: config } = this.state;
 
+        e.preventDefault();
         if (initial.id) {
             onUpdateDevice(initial.id, deviceType, config);
         } else {

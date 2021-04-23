@@ -10,8 +10,9 @@ import PowerIcon from '@material-ui/icons/Power';
 import LockOpenIcon from '@material-ui/icons/LockOpen';
 
 // Components and Views
-import DashboardView from '../views/Dashboard';
-import BladeboardView from '../views/Dashboard/BladeBoard';
+// import DashboardView from '../views/Dashboard';
+// import BladeboardView from '../views/Dashboard/BladeBoard';
+import BladeboardDnDView from '../views/Dashboard/BladeBoardDnD';
 import DevicesView from '../views/Devices';
 import ScenesView from '../views/Scenes';
 import DisplayView from '../views/Display';
@@ -21,22 +22,40 @@ import AdvancedView from '../views/Advanced';
 import SettingsView from '../views/Settings';
 import DeveloperView from '../views/Developer';
 
-const dashboard =
-    parseInt(window.localStorage.getItem('BladeMod')) > 0
-        ? {
-            path: '/dashboard',
-            sidebarName: 'Bladeboard',
-            navbarName: 'Dashboard',
-            icon: Dashboard,
-            component: BladeboardView,
-        }
-        : {
-            path: '/dashboard',
-            sidebarName: 'Dashboard',
-            navbarName: 'Dashboard',
-            icon: Dashboard,
-            component: DashboardView,
-        };
+// const dashboard =
+//     parseInt(window.localStorage.getItem('BladeMod')) > 2
+//         ? {
+//             path: '/dashboard',
+//             sidebarName: 'Bladeboard',
+//             navbarName: 'Dashboard',
+//             icon: Dashboard,
+//             component: BladeboardDnDView,
+//         }
+//         : (parseInt(window.localStorage.getItem('BladeMod')) > 0
+//             ? {
+//                 path: '/dashboard',
+//                 sidebarName: 'Bladeboard',
+//                 navbarName: 'Dashboard',
+//                 icon: Dashboard,
+//                 component: BladeboardView,
+//             }
+//             : {
+//                 path: '/dashboard',
+//                 sidebarName: 'Dashboard',
+//                 navbarName: 'Dashboard',
+//                 icon: Dashboard,
+//                 component: DashboardView,
+//             })
+const dashboard = {
+    path: '/dashboard',
+    sidebarName: 'Dashboard',
+    navbarName: 'Dashboard',
+    icon: Dashboard,
+    component: BladeboardDnDView,
+}
+
+
+
 const virtuals =
     parseInt(window.localStorage.getItem('BladeMod')) > 2
         ? {

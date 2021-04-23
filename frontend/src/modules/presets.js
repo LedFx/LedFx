@@ -10,6 +10,8 @@ export const presetsFetching = createAction(`${ACTION_ROOT}/PRESETS_FETCHING`);
 export const presetsFetched = createAction(`${ACTION_ROOT}/PRESETS_FETCHED`);
 export const presetAdding = createAction(`${ACTION_ROOT}/PRESET_ADDING`);
 export const presetAdded = createAction(`${ACTION_ROOT}/PRESET_ADDED`);
+export const presetRemoving = createAction(`${ACTION_ROOT}/PRESET_REMOVING`);
+export const presetRemoved = createAction(`${ACTION_ROOT}/PRESET_REMOVED`);
 
 // Reducer
 const INITIAL_STATE = {
@@ -60,6 +62,20 @@ export default handleActions(
                 error: error ? payload.message : '',
             };
         },
+        [presetRemoving]: state => ({
+            ...state,
+            isProcessing: true,
+        }),
+
+        [presetRemoved]: (state, { payload, payload: { id }, error }) => {
+            const customPresets = [...state.customPresets].filter(c => c.id !== id);
+            return {
+                ...state,
+                customPresets: error ? state.customPresets : customPresets,
+                isProcessing: false,
+                error: error ? payload.message : '',
+            };
+        },
     },
     INITIAL_STATE
 );
@@ -94,6 +110,19 @@ export function addPreset(displayId, name) {
             }
         } catch (error) {
             dispatch(presetAdded(error));
+        }
+    };
+}
+export function removePreset(effectId, payload) {
+    return async dispatch => {
+        dispatch(presetRemoving());
+        try {
+            const { statusText } = await effectsProxies.removeEffectPreset(effectId, payload);
+            if (statusText === 'OK') {
+                dispatch(presetRemoved({ id: payload.preset_id }));
+            }
+        } catch (error) {
+            dispatch(presetRemoved(error));
         }
     };
 }

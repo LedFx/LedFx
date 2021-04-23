@@ -10,7 +10,7 @@ import Grid from '@material-ui/core/Grid';
 import Typography from '@material-ui/core/Typography';
 import TextField from '@material-ui/core/TextField';
 import SaveIcon from '@material-ui/icons/Save';
-import { activatePreset } from 'modules/presets'
+import { activatePreset, addPreset, removePreset } from 'modules/presets';
 
 // CONSTANT display categories
 export const DEFAULT_CAT = 'default_presets';
@@ -38,7 +38,7 @@ const useStyles = makeStyles(theme => ({
     },
 }));
 
-const PresetsCard = ({ display, presets, effect, getEffectPresets, addPreset }) => {
+const PresetsCard = ({ display, presets, effect, getEffectPresets }) => {
     const classes = useStyles();
     const [name, setName] = useState('');
     const isNameValid = validateTextInput(name, presets);
@@ -71,6 +71,7 @@ const PresetsCard = ({ display, presets, effect, getEffectPresets, addPreset }) 
                             presets.effectType,
                             preset.id
                         )}
+                        onDoubleClick={handleRemovePreset(effect.type, preset.id)}
                     >
                         {preset.name}
                     </Button>
@@ -79,12 +80,14 @@ const PresetsCard = ({ display, presets, effect, getEffectPresets, addPreset }) 
         });
     };
 
-    const handleAddPreset = () => {
-        addPreset(display.id, name);
-    };
+    const handleAddPreset = () => dispatch(addPreset(display.id, name));
+    const handleRemovePreset = (effectId, presetId) => () => dispatch(removePreset(effectId, {
+        preset_id: presetId,
+        category: "user_presets"
+    }));
 
     return (
-        <Card variant="outlined">
+        <Card variant="outlined" style={{ marginBottom: '2rem' }}>
             <CardHeader title="Presets" subheader="Explore different effect configurations" />
             <CardContent className={classes.content}>
                 <Typography variant="subtitle2">LedFx Presets</Typography>
