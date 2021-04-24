@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { getAsyncqlclisteners, setqlclistener  } from 'modules/qlc'
 import { useSelector, useDispatch } from 'react-redux';
 import PropTypes from 'prop-types';
 import { makeStyles } from '@material-ui/core/styles';
@@ -19,6 +18,7 @@ import Select from '@material-ui/core/Select';
 import { Slider, Switch } from '@material-ui/core';
 import FormHelperText from '@material-ui/core/FormHelperText';
 import ThisDropDown from './DialogAddEventListnerDropDown';
+import * as integrationsProxies from 'proxies/integrations';
 
 function ConfirmationDialogRaw(props) {
     const { onClose, value: valueProp, open, ...other } = props;
@@ -34,6 +34,7 @@ function ConfirmationDialogRaw(props) {
         "event_filter":{"scene_name":null},
         "qlc_payload":null,
       });
+    const [qlcData, setqlcData] = React.useState([]);
     const radioGroupRef = React.useRef(null);
     const [model] = React.useState({});
 
@@ -73,6 +74,8 @@ function ConfirmationDialogRaw(props) {
 
     const handleOk = () => {
         onClose(value);
+        console.log("QLCFormEventTest",formData)
+        integrationsProxies.createQLCListener(props.integration.id, formData);
         window.location = window.location.href;
     };
     
@@ -85,24 +88,39 @@ function ConfirmationDialogRaw(props) {
         let value = event.target.value;
         if(event.target.type === "checkbox"){
             event.target.checked? value=255 : value=0;
+            const qlcDatanewArr = qlcData.slice();
+            qlcDatanewArr[0][event.target.name] = value;
+            let newqlcPayload = Object.assign({},...qlcDatanewArr)
             let newSwitchState = {
                 ...formData,
                 "qlc_payload":{
-                    ...formData["qlc_payload"],
-                    [JSON.stringify(event.target.name)]: value
+                    ...newqlcPayload
                 },
             };
             setSwitchValue(event.target.checked);
+            setqlcData(qlcDatanewArr);
+            console.log("test",newSwitchState)
             setformData(newSwitchState);  
         }else if(event.target.name === 'qlc_payload'){
-            let newSwitchState = {
-                ...formData,
-                "qlc_payload":{
-                    ...formData["qlc_payload"],
-                    [JSON.stringify(event.target.value[0])]: 0,
-                },
-            };
-            setformData(newSwitchState);
+            const qlcDatanewArr = qlcData.slice();
+            let qlcDataObj = {
+                [event.target.value[0]]: 0,
+            }
+            qlcDatanewArr[0] = (qlcDataObj);
+            setSwitchValue(false);
+            setqlcData(qlcDatanewArr);
+            let newqlcPayload = Object.assign({},...qlcDatanewArr);
+           
+           
+                let newSwitchState = {
+                    ...formData,
+                    "qlc_payload":{
+                        ...newqlcPayload,
+                    },
+                };
+                console.log("test",newSwitchState)
+                setformData(newSwitchState)
+            
         }else if(event.target.name === 'scene_name'){
             value = JSON.parse(value);
             let newFormState = {
@@ -141,35 +159,52 @@ function ConfirmationDialogRaw(props) {
             newArr[index].showSlider = true;
             newArr[index].showSwitch = false;
         }
+        if(event.target.type !== "checkbox"){
         newArr[index]["value"] = event.target.value[0];
-        // console.log("test",newArr)
+        }
+        console.log("testnew",newArr)
         // handleEventCha,nge(event);
         let value = event.target.value;
         if(event.target.type === "checkbox"){
             newArr[index].switchValue = event.target.checked;
             event.target.checked? value=255 : value=0;
+            const qlcDatanewArr = qlcData.slice();
+            qlcDatanewArr[index+1][event.target.name] = value;
+            let newqlcPayload = Object.assign({},...qlcDatanewArr)
             let newSwitchState = {
                 ...formData,
                 "qlc_payload":{
-                    ...formData["qlc_payload"],
-                    [JSON.stringify(event.target.name)]: value
-                },
-            };
-            setformData(newSwitchState);  
-        }else if(event.target.name === 'qlc_payload'){
-            let newqlcPayload = {...formData["qlc_payload"]};
-            console.log("test",Object.keys(newqlcPayload));
-            console.log("test",index);
-            console.log("test",Object.keys(newqlcPayload)[index - 1]);
-            let newSwitchState = {
-                ...formData,
-                "qlc_payload":{
-                    ...formData["qlc_payload"],
-                    [JSON.stringify(event.target.value[0])]: 0,
+                    ...newqlcPayload
                 },
             };
             
-            setformData(newSwitchState)
+            setqlcData(qlcDatanewArr);
+            setformData(newSwitchState);  
+        }else if(event.target.name === 'qlc_payload'){
+            const qlcDatanewArr = qlcData.slice();
+            let qlcDataObj = {
+                [event.target.value[0]]: 0,
+            }
+            console.log("test0",qlcDataObj);
+            if(qlcDatanewArr[index+1] === undefined){
+                qlcDatanewArr.push(qlcDataObj);
+            }else{
+                newArr[index].switchValue = false;
+                qlcDatanewArr[index+1] = qlcDataObj;
+            }
+            
+            setqlcData(qlcDatanewArr);
+            
+            let newqlcPayload = Object.assign({},...qlcDatanewArr)
+          
+                let newSwitchState = {
+                    ...formData,
+                    "qlc_payload":{
+                        ...newqlcPayload
+                    },
+                };
+                console.log("test",newSwitchState)
+                setformData(newSwitchState) 
         }
        
         return setdropDownRenderList(newArr);
@@ -193,6 +228,18 @@ function ConfirmationDialogRaw(props) {
     const handleTypeRemoveDropDown = (idx)=>{
         const newArr = dropDownRenderList.slice();
         newArr.splice(idx, 1);
+        const newQlcData = qlcData.slice();
+        newQlcData.splice(idx+1, 1);
+        setqlcData(newQlcData);
+        let newqlcPayload = Object.assign({},...newQlcData)
+            let newSwitchState = {
+                    ...formData,
+                    "qlc_payload":{
+                        ...newqlcPayload
+                    },
+                };
+                console.log("test",newSwitchState)
+                setformData(newSwitchState)
         return setdropDownRenderList(newArr);     
     }
 
@@ -397,6 +444,8 @@ function ConfirmationDialogRaw(props) {
                     /*(form={
                         integrationTypes[integration] &&
                         integrationTypes[integration].schema.required
+
+                        Line 413 backup <Button onClick={console.log("QLCFormEventTest",formData)} color="primary">
                     })*/
                     model={model}
                     onModelChange={onModelChange}
@@ -406,7 +455,7 @@ function ConfirmationDialogRaw(props) {
                 <Button autoFocus onClick={handleCancel} color="primary">
                     Cancel
                 </Button>
-                <Button onClick={console.log("jyotirtest",formData)} color="primary">
+                <Button onClick={handleOk & console.log("QLCFormEventData",formData)} color="primary">
                     Ok
                 </Button>
             </DialogActions>

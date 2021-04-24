@@ -16,6 +16,7 @@ import DialogAddEventListener from 'components/IntegrationComponents/DialogAddEv
 import { getAsyncqlclisteners  } from 'modules/qlc'
 //import { Call } from '@material-ui/icons';
 
+
 const useStyles = makeStyles({
     integrationCard: {
         width: 300,
@@ -85,7 +86,7 @@ const IntegrationsCard = ({ int }) => {
                 {int.type === 'spotify' && int.active !== 'true' /* && !spotify.accessToken && !spotify.refreshToken */
                 ? 
                 // For Connect to Spotify button
-                <Button variant='contained' color="primary" > 
+                <Button variant='contained' color="primary" onClick={() => this.beginAuth()}> 
                     <Typography>Connect to Spotify</Typography>
                 </Button> 
                     : ''}
@@ -134,3 +135,5 @@ const IntegrationsCard = ({ int }) => {
 )(withStyles(styles)(SpotifyView));*/
 
 export default IntegrationsCard;
+
+                            

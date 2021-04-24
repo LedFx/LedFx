@@ -1,5 +1,5 @@
 import React from 'react';
-import { deleteAsyncIntegration } from 'modules/integrations';
+import { deleteQLCListener } from 'proxies/integrations';
 import EditIcon from '@material-ui/icons/Edit';
 import { Switch } from '@material-ui/core';
 import Button from '@material-ui/core/Button';
@@ -20,8 +20,11 @@ const DataRow = ({ id, name, type, data }) =>
                     <PopoverSure
                         variant="text"
                         onDeleteVitem={() =>
-                            deleteAsyncIntegration({
-                                id: id,
+                            deleteQLCListener(id,{
+                                "event_type": dr[0],
+                                "event_filter": {
+                                    //dr[0]: dr[1]&&dr[1].scene_name
+                                }
                             })
                         }
                     />
