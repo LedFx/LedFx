@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 """
 Entry point for the ledfx controller. To run this script for development
 purposes use:
@@ -133,7 +132,7 @@ def parse_args():
     parser.add_argument(
         "--version",
         action="version",
-        version="ledfx {ver}".format(ver=PROJECT_VERSION),
+        version=f"ledfx {PROJECT_VERSION}",
     )
     parser.add_argument(
         "-c",
@@ -229,7 +228,7 @@ def update_ledfx():
 
     # initialize & refresh in one update, check client
 
-    class ClientConfig(object):
+    class ClientConfig:
         PUBLIC_KEY = "Txce3TE9BUixsBtqzDba6V5vBYltt/0pw5oKL8ueCDg"
         APP_NAME = PROJECT_NAME
         COMPANY_NAME = "LedFx Developers"

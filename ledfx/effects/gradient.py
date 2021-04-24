@@ -134,9 +134,7 @@ class GradientEffect(Effect):
                     for i in range(n_colors - 1)
                 )
             )
-        _LOGGER.info(
-            ("Generating new gradient curve for {}".format(gradient_colors))
-        )
+        _LOGGER.info(f"Generating new gradient curve for {gradient_colors}")
         self._gradient_curve = np.hstack(gradient_split)
 
         # else:

@@ -65,7 +65,7 @@ class LogWebsocket:
             if self._socket.closed:
                 _LOGGER.info("Logging connection closed by client.")
             else:
-                _LOGGER.exception("Unexpected TypeError: {}".format(e))
+                _LOGGER.exception(f"Unexpected TypeError: {e}")
 
         except (asyncio.CancelledError, futures.CancelledError):
             _LOGGER.info("Logging connection cancelled")
@@ -108,7 +108,7 @@ class LogWebsocket:
             if socket.closed:
                 _LOGGER.info("Logging connection closed by client.")
             else:
-                _LOGGER.exception("Unexpected TypeError: {}".format(e))
+                _LOGGER.exception(f"Unexpected TypeError: {e}")
 
         except (asyncio.CancelledError, futures.CancelledError):
             _LOGGER.info("Logging connection cancelled")

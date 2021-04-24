@@ -315,7 +315,7 @@ class Devices(RegistryLoader):
 
     def create_from_config(self, config):
         for device in config:
-            _LOGGER.info("Loading device from config: {}".format(device))
+            _LOGGER.info(f"Loading device from config: {device}")
             self._ledfx.devices.create(
                 id=device["id"],
                 type=device["type"],

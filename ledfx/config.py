@@ -94,7 +94,7 @@ def create_default_config(config_dir: str) -> str:
             )
         return config_path
 
-    except IOError:
+    except OSError:
         print(f"Unable to create default configuration file {config_path}.")
 
         return None

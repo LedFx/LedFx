@@ -20,7 +20,7 @@ from ledfx.transitions import Transitions
 _LOGGER = logging.getLogger(__name__)
 
 
-class Display(object):
+class Display:
 
     CONFIG_SCHEMA = vol.Schema(
         {
@@ -502,7 +502,7 @@ class Display(object):
         """
         return list(
             self._ledfx.devices.get(device_id)
-            for device_id in set(segment[0] for segment in self._segments)
+            for device_id in {segment[0] for segment in self._segments}
         )
 
     @cached_property
@@ -557,7 +557,7 @@ class Display(object):
                 self._active_effect.activate(self.pixel_count)
 
 
-class Displays(object):
+class Displays:
     """Thin wrapper around the device registry that manages displays"""
 
     PACKAGE_NAME = "ledfx.displays"
@@ -609,7 +609,7 @@ class Displays(object):
         dupe_id = id
         dupe_index = 1
         while id in self._displays.keys():
-            id = "{}-{}".format(dupe_id, dupe_index)
+            id = f"{dupe_id}-{dupe_index}"
             dupe_index = dupe_index + 1
 
         # Create the new display and validate the schema.

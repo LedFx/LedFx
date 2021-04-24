@@ -53,7 +53,7 @@ class AudioDevicesEndpoint(RestEndpoint):
         if index not in range(0, info.get("deviceCount")):
             response = {
                 "status": "failed",
-                "reason": "Invalid device index [{}]".format(index),
+                "reason": f"Invalid device index [{index}]",
             }
             return web.json_response(data=response, status=500)
 

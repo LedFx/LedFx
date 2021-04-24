@@ -13,7 +13,7 @@ from ledfx.utils import BaseRegistry, RegistryLoader
 _LOGGER = logging.getLogger(__name__)
 
 
-class DummyEffect(object):
+class DummyEffect:
     def __init__(self, pixel_count):
         self._pixels = np.zeros((pixel_count, 3))
 

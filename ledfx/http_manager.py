@@ -18,7 +18,7 @@ except BaseException:
 _LOGGER = logging.getLogger(__name__)
 
 
-class HttpServer(object):
+class HttpServer:
     def __init__(self, ledfx, host, port):
         """Initialize the HTTP server"""
 
