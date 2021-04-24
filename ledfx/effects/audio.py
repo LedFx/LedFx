@@ -1,13 +1,12 @@
 import logging
 import time
-import warnings
 from collections import namedtuple
 from functools import lru_cache
 from math import log
 
 import aubio
 import numpy as np
-import pyaudio
+import sounddevice as sd
 import voluptuous as vol
 
 import ledfx.effects.math as math
@@ -18,18 +17,6 @@ from ledfx.events import GraphUpdateEvent
 
 _LOGGER = logging.getLogger(__name__)
 
-
-"""
-
-    ***THIS IS SUPER IMPORTANT***
-
-    PYAUDIO BINDINGS ARE APPROACHING END OF LIFE
-    FOR PYTHON 3.8/3.9 WE HAVE TO IGNORE ALL WARNINGS THROWN IN THIS FILE
-    OTHERWISE WE GET A DEPRECIATIONWARNING *EVERY AUDIO SAMPLE*
-
-
-"""
-warnings.filterwarnings("ignore")
 
 _LOGGER = logging.getLogger(__name__)
 FrequencyRange = namedtuple("FrequencyRange", "min,max")
@@ -94,11 +81,12 @@ class AudioInputSource(object):
 
         if self._audio is None:
             try:
-                self._audio = pyaudio.PyAudio()
+                self._audio = sd
             except OSError as Error:
                 _LOGGER.critical(f"Error: {Error}. Shutting down.")
                 self._ledfx.stop()
         # Setup a pre-emphasis filter to help balance the highs
+
         self.pre_emphasis = None
         if self._config["pre_emphasis"]:
             self.pre_emphasis = aubio.digital_filter(3)
@@ -129,47 +117,28 @@ class AudioInputSource(object):
             self._config["mic_rate"],
             (self._config["fft_size"] // 2) + 1,
         )
-
-        # Enumerate all of the input devices and find the one matching the
-        # configured device index
-        _LOGGER.info("Audio Input Devices:")
-        info = self._audio.get_host_api_info_by_index(0)
-        for i in range(0, info.get("deviceCount")):
-            if (
-                self._audio.get_device_info_by_host_api_device_index(0, i).get(
-                    "maxInputChannels"
-                )
-            ) > 0:
-                _LOGGER.info(
-                    "  [{}] {}".format(
-                        i,
-                        self._audio.get_device_info_by_host_api_device_index(
-                            0, i
-                        ).get("name"),
-                    )
-                )
-
         # Open the audio stream and start processing the input
         try:
-            self._stream = self._audio.open(
-                input_device_index=self._config["device_index"],
-                format=pyaudio.paFloat32,
+            self._stream = self._audio.InputStream(
+                samplerate=self._config["mic_rate"],
+                device=self._config["device_index"],
                 channels=1,
-                rate=self._config["mic_rate"],
-                input=True,
-                frames_per_buffer=self._config["mic_rate"]
+                callback=self._audio_sample_callback,
+                dtype=np.float32,
+                blocksize=self._config["mic_rate"]
                 // self._config["sample_rate"],
-                stream_callback=self._audio_sample_callback,
             )
-            self._stream.start_stream()
-        except OSError:
-            _LOGGER.critical("Unable to open Audio Device - please retry.")
+            self._stream.start()
+        except OSError as e:
+            _LOGGER.critical(
+                f"Unable to open Audio Device: {e} - please retry."
+            )
             self.deactivate()
         _LOGGER.info("Audio source opened.")
 
     def deactivate(self):
         if self._stream:
-            self._stream.stop_stream()
+            self._stream.stop()
             self._stream.close()
             self._stream = None
         self._rolling_window = None
@@ -198,7 +167,7 @@ class AudioInputSource(object):
         self._invalidate_caches()
         self._invoke_callbacks()
 
-        return (self._raw_audio_sample, pyaudio.paContinue)
+        return self._raw_audio_sample
 
     def _invoke_callbacks(self):
         """Notifies all clients of the new data"""
@@ -694,7 +663,7 @@ class MelbankInputSource(AudioInputSource):
 
     @lru_cache(maxsize=32)
     def midi_value(self):
-        # If pyaudio is returning null, then we just return 0 for midi_value and wait for the device starts sending audio.
+        # If our audio handler is returning null, then we just return 0 for midi_value and wait for the device starts sending audio.
         try:
             return self.pitch_o(self.audio_sample())[0]
         except ValueError:
