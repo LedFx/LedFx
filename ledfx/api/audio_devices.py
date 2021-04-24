@@ -23,7 +23,7 @@ class AudioDevicesEndpoint(RestEndpoint):
         if self._audio is None:
             self._audio = sd
         hostapis = self._audio.query_hostapis()
-        print(hostapis)
+
         devices = self._audio.query_devices()
         input_devices = []
         for device in devices:
@@ -33,7 +33,7 @@ class AudioDevicesEndpoint(RestEndpoint):
 
         audio_config = self._ledfx.config.get("audio", {"device_index": 0})
         input_device_count = len(input_devices)
-        print(input_devices)
+
         audio_devices = {}
         audio_devices["devices"] = {}
         audio_devices["active_device_index"] = audio_config["device_index"]
@@ -43,7 +43,6 @@ class AudioDevicesEndpoint(RestEndpoint):
                 + " using host API : "
                 + str(input_devices[i]["hostapi"])
             )
-            print()
         return web.json_response(data=audio_devices, status=200)
 
     async def put(self, request) -> web.Response:
