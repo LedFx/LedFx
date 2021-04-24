@@ -33,10 +33,10 @@ CONFIGURATION_VERSION = "{}.{}.{}".format(
 )
 
 if DEV > 0:
-    DEV_VERSION = "{}-dev{}".format(PROJECT_VERSION, DEV)
+    DEV_VERSION = f"{PROJECT_VERSION}-dev{DEV}"
 
 if POST > 0:
-    POST_VERSION = "{}-post{}".format(PROJECT_VERSION, POST)
+    POST_VERSION = f"{PROJECT_VERSION}-post{POST}"
 
 __version__ = PROJECT_VERSION
 

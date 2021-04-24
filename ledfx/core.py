@@ -24,7 +24,7 @@ if currently_frozen():
     warnings.filterwarnings("ignore")
 
 
-class LedFxCore(object):
+class LedFxCore:
     def __init__(self, config_dir, host=None, port=None, icon=None):
         self.icon = icon
         self.config_dir = config_dir

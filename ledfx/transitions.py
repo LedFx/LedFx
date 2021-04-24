@@ -3,8 +3,7 @@ import numpy as np
 
 class IterClass(type):
     def __iter__(cls):
-        for mode in getattr(cls, "NAMED_FUNCTIONS").keys():
-            yield mode
+        yield from getattr(cls, "NAMED_FUNCTIONS").keys()
 
 
 class Transitions(metaclass=IterClass):

@@ -21,7 +21,7 @@ class PresetsEndpoint(RestEndpoint):
         except BaseException:
             response = {
                 "status": "failed",
-                "reason": "effect {} does not exist".format(effect_id),
+                "reason": f"effect {effect_id} does not exist",
             }
             return web.json_response(data=response, status=500)
 
@@ -88,7 +88,7 @@ class PresetsEndpoint(RestEndpoint):
         except BaseException:
             response = {
                 "status": "failed",
-                "reason": "effect {} does not exist".format(effect_id),
+                "reason": f"effect {effect_id} does not exist",
             }
             return web.json_response(data=response, status=500)
 
@@ -159,7 +159,7 @@ class PresetsEndpoint(RestEndpoint):
         except BaseException:
             response = {
                 "status": "failed",
-                "reason": "effect {} does not exist".format(effect_id),
+                "reason": f"effect {effect_id} does not exist",
             }
             return web.json_response(data=response, status=500)
 

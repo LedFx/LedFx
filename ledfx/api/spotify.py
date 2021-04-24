@@ -62,7 +62,7 @@ class QLCEndpoint(RestEndpoint):
         if scene_id not in self._ledfx.config["scenes"].keys():
             response = {
                 "status": "failed",
-                "reason": "Scene {} does not exist".format(scene_id),
+                "reason": f"Scene {scene_id} does not exist",
             }
             return web.json_response(data=response, status=500)
 
