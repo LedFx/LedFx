@@ -1,4 +1,5 @@
 import logging
+from json import JSONDecodeError
 
 import pyaudio
 from aiohttp import web
@@ -39,7 +40,14 @@ class AudioDevicesEndpoint(RestEndpoint):
 
     async def put(self, request) -> web.Response:
         """Set audio device to use as input"""
-        data = await request.json()
+        try:
+            data = await request.json()
+        except JSONDecodeError:
+            response = {
+                "status": "failed",
+                "reason": "JSON Decoding failed",
+            }
+            return web.json_response(data=response, status=500)
         index = data.get("index")
 
         info = self._audio.get_host_api_info_by_index(0)

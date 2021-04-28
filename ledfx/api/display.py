@@ -1,4 +1,5 @@
 import logging
+from json import JSONDecodeError
 
 import voluptuous as vol
 from aiohttp import web
@@ -57,7 +58,14 @@ class DisplayEndpoint(RestEndpoint):
             }
             return web.json_response(data=response, status=404)
 
-        data = await request.json()
+        try:
+            data = await request.json()
+        except JSONDecodeError:
+            response = {
+                "status": "failed",
+                "reason": "JSON Decoding failed",
+            }
+            return web.json_response(data=response, status=500)
         active = data.get("active")
         if active is None:
             response = {
@@ -103,7 +111,14 @@ class DisplayEndpoint(RestEndpoint):
             }
             return web.json_response(data=response, status=404)
 
-        data = await request.json()
+        try:
+            data = await request.json()
+        except JSONDecodeError:
+            response = {
+                "status": "failed",
+                "reason": "JSON Decoding failed",
+            }
+            return web.json_response(data=response, status=500)
         display_segments = data.get("segments")
         if display_segments is None:
             response = {

@@ -1,5 +1,6 @@
 # from ledfx.events import Event
 import logging
+from json import JSONDecodeError
 
 from aiohttp import web
 
@@ -45,7 +46,14 @@ class QLCEndpoint(RestEndpoint):
             response = {"not found": 404}
             return web.json_response(data=response, status=404)
 
-        data = await request.json()
+        try:
+            data = await request.json()
+        except JSONDecodeError:
+            response = {
+                "status": "failed",
+                "reason": "JSON Decoding failed",
+            }
+            return web.json_response(data=response, status=500)
         scene_id = data.get("scene_id")
         song_id = data.get("song_id")
         song_name = data.get("song_name")
@@ -89,7 +97,14 @@ class QLCEndpoint(RestEndpoint):
             response = {"not found": 404}
             return web.json_response(data=response, status=404)
 
-        data = await request.json()
+        try:
+            data = await request.json()
+        except JSONDecodeError:
+            response = {
+                "status": "failed",
+                "reason": "JSON Decoding failed",
+            }
+            return web.json_response(data=response, status=500)
         trigger_id = data.get("trigger_id")
 
         if trigger_id is None:

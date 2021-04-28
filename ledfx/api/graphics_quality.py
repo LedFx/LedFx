@@ -1,4 +1,5 @@
 import logging
+from json import JSONDecodeError
 
 from aiohttp import web
 
@@ -23,7 +24,14 @@ class GraphicsQualityEndpoint(RestEndpoint):
 
     async def put(self, request) -> web.Response:
         """Set graphics quality setting"""
-        data = await request.json()
+        try:
+            data = await request.json()
+        except JSONDecodeError:
+            response = {
+                "status": "failed",
+                "reason": "JSON Decoding failed",
+            }
+            return web.json_response(data=response, status=500)
         graphics_quality = data.get("graphics_quality")
 
         if graphics_quality is None:

@@ -1,4 +1,5 @@
 import logging
+from json import JSONDecodeError
 
 from aiohttp import web
 
@@ -25,7 +26,14 @@ class ScenesEndpoint(RestEndpoint):
 
     async def delete(self, request) -> web.Response:
         """Delete a scene"""
-        data = await request.json()
+        try:
+            data = await request.json()
+        except JSONDecodeError:
+            response = {
+                "status": "failed",
+                "reason": "JSON Decoding failed",
+            }
+            return web.json_response(data=response, status=500)
 
         scene_id = data.get("id")
         if scene_id is None:
@@ -56,7 +64,14 @@ class ScenesEndpoint(RestEndpoint):
 
     async def put(self, request) -> web.Response:
         """Activate a scene"""
-        data = await request.json()
+        try:
+            data = await request.json()
+        except JSONDecodeError:
+            response = {
+                "status": "failed",
+                "reason": "JSON Decoding failed",
+            }
+            return web.json_response(data=response, status=500)
 
         action = data.get("action")
         if action is None:
@@ -150,7 +165,14 @@ class ScenesEndpoint(RestEndpoint):
 
     async def post(self, request) -> web.Response:
         """Save current effects of displays as a scene"""
-        data = await request.json()
+        try:
+            data = await request.json()
+        except JSONDecodeError:
+            response = {
+                "status": "failed",
+                "reason": "JSON Decoding failed",
+            }
+            return web.json_response(data=response, status=500)
 
         scene_name = data.get("name")
         if scene_name is None:

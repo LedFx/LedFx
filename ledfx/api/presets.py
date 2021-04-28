@@ -1,4 +1,5 @@
 import logging
+from json import JSONDecodeError
 
 from aiohttp import web
 
@@ -45,7 +46,14 @@ class PresetsEndpoint(RestEndpoint):
 
     async def put(self, effect_id, request) -> web.Response:
         """Rename a preset"""
-        data = await request.json()
+        try:
+            data = await request.json()
+        except JSONDecodeError:
+            response = {
+                "status": "failed",
+                "reason": "JSON Decoding failed",
+            }
+            return web.json_response(data=response, status=500)
 
         preset_id = data.get("preset_id")
         category = data.get("category")
@@ -127,7 +135,14 @@ class PresetsEndpoint(RestEndpoint):
 
     async def delete(self, effect_id, request) -> web.Response:
         """Delete a preset"""
-        data = await request.json()
+        try:
+            data = await request.json()
+        except JSONDecodeError:
+            response = {
+                "status": "failed",
+                "reason": "JSON Decoding failed",
+            }
+            return web.json_response(data=response, status=500)
         preset_id = data.get("preset_id")
         category = data.get("category")
 

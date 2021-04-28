@@ -1,4 +1,5 @@
 import logging
+from json import JSONDecodeError
 
 from aiohttp import web
 
@@ -60,7 +61,14 @@ class QLCEndpoint(RestEndpoint):
             response = {"not found": 404}
             return web.json_response(data=response, status=404)
 
-        data = await request.json()
+        try:
+            data = await request.json()
+        except JSONDecodeError:
+            response = {
+                "status": "failed",
+                "reason": "JSON Decoding failed",
+            }
+            return web.json_response(data=response, status=500)
         event_type = data.get("event_type")
         event_filter = data.get("event_filter")
 
@@ -113,7 +121,14 @@ class QLCEndpoint(RestEndpoint):
             response = {"not found": 404}
             return web.json_response(data=response, status=404)
 
-        data = await request.json()
+        try:
+            data = await request.json()
+        except JSONDecodeError:
+            response = {
+                "status": "failed",
+                "reason": "JSON Decoding failed",
+            }
+            return web.json_response(data=response, status=500)
         event_type = data.get("event_type")
         event_filter = data.get("event_filter")
         qlc_payload = data.get("qlc_payload")
@@ -169,7 +184,14 @@ class QLCEndpoint(RestEndpoint):
             response = {"not found": 404}
             return web.json_response(data=response, status=404)
 
-        data = await request.json()
+        try:
+            data = await request.json()
+        except JSONDecodeError:
+            response = {
+                "status": "failed",
+                "reason": "JSON Decoding failed",
+            }
+            return web.json_response(data=response, status=500)
         event_type = data.get("event_type")
         event_filter = data.get("event_filter")
 
