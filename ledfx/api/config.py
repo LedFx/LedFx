@@ -35,7 +35,7 @@ class ConfigEndpoint(RestEndpoint):
                 "status": "failed",
                 "reason": "JSON Decoding failed",
             }
-            return web.json_response(data=response, status=500)
+            return web.json_response(data=response, status=400)
 
         config = data.get("config")
         if config is None:
@@ -43,7 +43,7 @@ class ConfigEndpoint(RestEndpoint):
                 "status": "failed",
                 "reason": 'Required attribute "config" was not provided',
             }
-            return web.json_response(data=response, status=500)
+            return web.json_response(data=response, status=400)
 
         for key in config.keys():
             if key not in self.PERMITTED_KEYS:
@@ -51,7 +51,7 @@ class ConfigEndpoint(RestEndpoint):
                     "status": "failed",
                     "reason": f"Unknown/forbidden config key: '{key}'",
                 }
-                return web.json_response(data=response, status=500)
+                return web.json_response(data=response, status=400)
 
         try:
             validated_config = CORE_CONFIG_SCHEMA(config)

@@ -53,7 +53,7 @@ class QLCEndpoint(RestEndpoint):
                 "status": "failed",
                 "reason": "JSON Decoding failed",
             }
-            return web.json_response(data=response, status=500)
+            return web.json_response(data=response, status=400)
         scene_id = data.get("scene_id")
         song_id = data.get("song_id")
         song_name = data.get("song_name")
@@ -65,21 +65,21 @@ class QLCEndpoint(RestEndpoint):
                 "status": "failed",
                 "reason": 'Required attribute "scene_id" was not provided',
             }
-            return web.json_response(data=response, status=500)
+            return web.json_response(data=response, status=400)
 
         if scene_id not in self._ledfx.config["scenes"].keys():
             response = {
                 "status": "failed",
                 "reason": f"Scene {scene_id} does not exist",
             }
-            return web.json_response(data=response, status=500)
+            return web.json_response(data=response, status=400)
 
         if song_id is None:
             response = {
                 "status": "failed",
                 "reason": 'Required attribute "song_id" was not provided',
             }
-            return web.json_response(data=response, status=500)
+            return web.json_response(data=response, status=400)
 
         integration.add_trigger(scene_id, song_id, song_name, song_position)
 
@@ -104,7 +104,7 @@ class QLCEndpoint(RestEndpoint):
                 "status": "failed",
                 "reason": "JSON Decoding failed",
             }
-            return web.json_response(data=response, status=500)
+            return web.json_response(data=response, status=400)
         trigger_id = data.get("trigger_id")
 
         if trigger_id is None:
@@ -112,7 +112,7 @@ class QLCEndpoint(RestEndpoint):
                 "status": "failed",
                 "reason": 'Required attribute "trigger_id" was not provided',
             }
-            return web.json_response(data=response, status=500)
+            return web.json_response(data=response, status=400)
 
         integration.delete_trigger(trigger_id)
 

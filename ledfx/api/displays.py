@@ -50,7 +50,7 @@ class DisplaysEndpoint(RestEndpoint):
                 "status": "failed",
                 "reason": "JSON Decoding failed",
             }
-            return web.json_response(data=response, status=500)
+            return web.json_response(data=response, status=400)
 
         display_config = data.get("config")
         if display_config is None:
@@ -58,7 +58,7 @@ class DisplaysEndpoint(RestEndpoint):
                 "status": "failed",
                 "reason": 'Required attribute "config" was not provided',
             }
-            return web.json_response(data=response, status=500)
+            return web.json_response(data=response, status=400)
 
         display_id = data.get("id")
 
