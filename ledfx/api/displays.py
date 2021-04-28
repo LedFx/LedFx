@@ -1,4 +1,5 @@
 import logging
+from json import JSONDecodeError
 
 from aiohttp import web
 
@@ -42,7 +43,14 @@ class DisplaysEndpoint(RestEndpoint):
         """
         Create a new display or update config of an existing one
         """
-        data = await request.json()
+        try:
+            data = await request.json()
+        except JSONDecodeError:
+            response = {
+                "status": "failed",
+                "reason": "JSON Decoding failed",
+            }
+            return web.json_response(data=response, status=500)
 
         display_config = data.get("config")
         if display_config is None:

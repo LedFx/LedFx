@@ -1,4 +1,5 @@
 import logging
+from json import JSONDecodeError
 
 import voluptuous
 from aiohttp import web
@@ -29,7 +30,14 @@ class DeviceEndpoint(RestEndpoint):
             response = {"not found": 404}
             return web.json_response(data=response, status=404)
 
-        data = await request.json()
+        try:
+            data = await request.json()
+        except JSONDecodeError:
+            response = {
+                "status": "failed",
+                "reason": "JSON Decoding failed",
+            }
+            return web.json_response(data=response, status=500)
         device_config = data.get("config")
         if device_config is None:
             response = {

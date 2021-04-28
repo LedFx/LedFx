@@ -1,4 +1,5 @@
 import logging
+from json import JSONDecodeError
 
 from aiohttp import web
 
@@ -64,7 +65,14 @@ class DisplayPresetsEndpoint(RestEndpoint):
             }
             return web.json_response(data=response, status=404)
 
-        data = await request.json()
+        try:
+            data = await request.json()
+        except JSONDecodeError:
+            response = {
+                "status": "failed",
+                "reason": "JSON Decoding failed",
+            }
+            return web.json_response(data=response, status=500)
         category = data.get("category")
         effect_id = data.get("effect_id")
         preset_id = data.get("preset_id")
@@ -172,7 +180,14 @@ class DisplayPresetsEndpoint(RestEndpoint):
             }
             return web.json_response(data=response, status=404)
 
-        data = await request.json()
+        try:
+            data = await request.json()
+        except JSONDecodeError:
+            response = {
+                "status": "failed",
+                "reason": "JSON Decoding failed",
+            }
+            return web.json_response(data=response, status=500)
         preset_name = data.get("name")
         if preset_name is None:
             response = {

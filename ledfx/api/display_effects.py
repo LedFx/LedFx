@@ -1,5 +1,6 @@
 import logging
 import random
+from json import JSONDecodeError
 
 import voluptuous as vol
 from aiohttp import web
@@ -56,7 +57,14 @@ class EffectsEndpoint(RestEndpoint):
             }
             return web.json_response(data=response, status=500)
 
-        data = await request.json()
+        try:
+            data = await request.json()
+        except JSONDecodeError:
+            response = {
+                "status": "failed",
+                "reason": "JSON Decoding failed",
+            }
+            return web.json_response(data=response, status=500)
         effect_config = data.get("config")
         effect_type = data.get("type")
         if effect_config is None:
@@ -183,7 +191,14 @@ class EffectsEndpoint(RestEndpoint):
             }
             return web.json_response(data=response, status=404)
 
-        data = await request.json()
+        try:
+            data = await request.json()
+        except JSONDecodeError:
+            response = {
+                "status": "failed",
+                "reason": "JSON Decoding failed",
+            }
+            return web.json_response(data=response, status=500)
         effect_type = data.get("type")
         if effect_type is None:
             response = {
