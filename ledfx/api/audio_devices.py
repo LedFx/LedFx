@@ -55,7 +55,7 @@ class AudioDevicesEndpoint(RestEndpoint):
                 "status": "failed",
                 "reason": "JSON Decoding failed",
             }
-            return web.json_response(data=response, status=500)
+            return web.json_response(data=response, status=400)
         index = data.get("index")
 
         devices = self._audio.query_devices()
@@ -70,14 +70,14 @@ class AudioDevicesEndpoint(RestEndpoint):
                 "status": "failed",
                 "reason": 'Required attribute "index" was not provided',
             }
-            return web.json_response(data=response, status=500)
+            return web.json_response(data=response, status=400)
 
         if index not in range(0, len(input_devices)):
             response = {
                 "status": "failed",
                 "reason": f"Invalid device index [{index}]",
             }
-            return web.json_response(data=response, status=500)
+            return web.json_response(data=response, status=400)
 
         # Update and save config
         new_config = self._ledfx.config.get("audio", {})

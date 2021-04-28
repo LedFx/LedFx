@@ -24,7 +24,7 @@ class PresetsEndpoint(RestEndpoint):
                 "status": "failed",
                 "reason": f"effect {effect_id} does not exist",
             }
-            return web.json_response(data=response, status=500)
+            return web.json_response(data=response, status=400)
 
         if effect_id in self._ledfx.config["ledfx_presets"].keys():
             default = self._ledfx.config["ledfx_presets"][effect_id]
@@ -53,7 +53,7 @@ class PresetsEndpoint(RestEndpoint):
                 "status": "failed",
                 "reason": "JSON Decoding failed",
             }
-            return web.json_response(data=response, status=500)
+            return web.json_response(data=response, status=400)
 
         preset_id = data.get("preset_id")
         category = data.get("category")
@@ -64,7 +64,7 @@ class PresetsEndpoint(RestEndpoint):
                 "status": "failed",
                 "reason": 'Required attribute "category" was not provided',
             }
-            return web.json_response(data=response, status=500)
+            return web.json_response(data=response, status=400)
 
         if category not in ["ledfx_presets", "user_presets"]:
             response = {
@@ -73,14 +73,14 @@ class PresetsEndpoint(RestEndpoint):
                     category
                 ),
             }
-            return web.json_response(data=response, status=500)
+            return web.json_response(data=response, status=400)
 
         if effect_id is None:
             response = {
                 "status": "failed",
                 "reason": 'Required attribute "effect_id" was not provided',
             }
-            return web.json_response(data=response, status=500)
+            return web.json_response(data=response, status=400)
 
         if effect_id not in self._ledfx.config[category].keys():
             response = {
@@ -89,7 +89,7 @@ class PresetsEndpoint(RestEndpoint):
                     effect_id, category
                 ),
             }
-            return web.json_response(data=response, status=500)
+            return web.json_response(data=response, status=400)
 
         try:
             self._ledfx.effects.get_class(effect_id)
@@ -98,14 +98,14 @@ class PresetsEndpoint(RestEndpoint):
                 "status": "failed",
                 "reason": f"effect {effect_id} does not exist",
             }
-            return web.json_response(data=response, status=500)
+            return web.json_response(data=response, status=400)
 
         if preset_id is None:
             response = {
                 "status": "failed",
                 "reason": 'Required attribute "preset_id" was not provided',
             }
-            return web.json_response(data=response, status=500)
+            return web.json_response(data=response, status=400)
 
         if preset_id not in self._ledfx.config[category][effect_id].keys():
             response = {
@@ -114,14 +114,14 @@ class PresetsEndpoint(RestEndpoint):
                     preset_id, effect_id, category
                 ),
             }
-            return web.json_response(data=response, status=500)
+            return web.json_response(data=response, status=400)
 
         if name is None:
             response = {
                 "status": "failed",
                 "reason": 'Required attribute "name" was not provided',
             }
-            return web.json_response(data=response, status=500)
+            return web.json_response(data=response, status=400)
 
         # Update and save config
         self._ledfx.config[category][effect_id][preset_id]["name"] = name
@@ -142,7 +142,7 @@ class PresetsEndpoint(RestEndpoint):
                 "status": "failed",
                 "reason": "JSON Decoding failed",
             }
-            return web.json_response(data=response, status=500)
+            return web.json_response(data=response, status=400)
         preset_id = data.get("preset_id")
         category = data.get("category")
 
@@ -151,7 +151,7 @@ class PresetsEndpoint(RestEndpoint):
                 "status": "failed",
                 "reason": 'Required attribute "category" was not provided',
             }
-            return web.json_response(data=response, status=500)
+            return web.json_response(data=response, status=400)
 
         if category not in ["ledfx_presets", "user_presets"]:
             response = {
@@ -160,14 +160,14 @@ class PresetsEndpoint(RestEndpoint):
                     category
                 ),
             }
-            return web.json_response(data=response, status=500)
+            return web.json_response(data=response, status=400)
 
         if effect_id is None:
             response = {
                 "status": "failed",
                 "reason": 'Required attribute "effect_id" was not provided',
             }
-            return web.json_response(data=response, status=500)
+            return web.json_response(data=response, status=400)
 
         try:
             self._ledfx.effects.get_class(effect_id)
@@ -176,7 +176,7 @@ class PresetsEndpoint(RestEndpoint):
                 "status": "failed",
                 "reason": f"effect {effect_id} does not exist",
             }
-            return web.json_response(data=response, status=500)
+            return web.json_response(data=response, status=400)
 
         if effect_id not in self._ledfx.config[category].keys():
             response = {
@@ -185,14 +185,14 @@ class PresetsEndpoint(RestEndpoint):
                     effect_id, category
                 ),
             }
-            return web.json_response(data=response, status=500)
+            return web.json_response(data=response, status=400)
 
         if preset_id is None:
             response = {
                 "status": "failed",
                 "reason": 'Required attribute "preset_id" was not provided',
             }
-            return web.json_response(data=response, status=500)
+            return web.json_response(data=response, status=400)
 
         if preset_id not in self._ledfx.config[category][effect_id].keys():
             response = {
@@ -201,7 +201,7 @@ class PresetsEndpoint(RestEndpoint):
                     preset_id, effect_id, category
                 ),
             }
-            return web.json_response(data=response, status=500)
+            return web.json_response(data=response, status=400)
 
         # Delete the preset from configuration
         del self._ledfx.config[category][effect_id][preset_id]

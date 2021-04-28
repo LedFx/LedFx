@@ -31,7 +31,7 @@ class VirtualsEndpoint(RestEndpoint):
                 "status": "failed",
                 "reason": "JSON Decoding failed",
             }
-            return web.json_response(data=response, status=500)
+            return web.json_response(data=response, status=400)
 
         virtuals = data.get("virtuals")
         if virtuals is None:
@@ -39,7 +39,7 @@ class VirtualsEndpoint(RestEndpoint):
                 "status": "failed",
                 "reason": 'Required attribute "virtuals" was not provided',
             }
-            return web.json_response(data=response, status=500)
+            return web.json_response(data=response, status=400)
 
         virtuals_list = virtuals["list"]
 
