@@ -26,7 +26,7 @@ configuration based on your firmware:
         - Enter the name for your device and IP address
         - Enter 21324 for the port
         - Enter the total number of pixels
-        - Click "Show More" and enter 02 for "Data Prefix
+        - Click "Show More" and enter 0201 for "Data Prefix"
         - Click Submit
     - Add WLED as E1.31 device
         - Enable E1.31 support from the 'Sync Settings' page on the WLED web-interface and reboot WLED
