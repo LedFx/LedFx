@@ -1,6 +1,6 @@
 import { createAction, handleActions } from 'redux-actions';
 import * as deviceProxies from 'proxies/device';
-// import * as displayModules from 'modules/displays';
+import * as displayModules from 'modules/displays';
 import { updateDevices } from './settings';
 import { showdynSnackbar } from './ui';
 // Actions
@@ -100,18 +100,19 @@ const sleep = ms => {
     return new Promise(resolve => setTimeout(resolve, ms));
 };
 
-export function findWLEDDevices({ resolve, reject }) {
+export function findWLEDDevices({ resolve, reject, time = 10 }) {
     return async dispatch => {
         try {
             const response = await deviceProxies.scanForDevices();
             if (response.statusText === 'OK') {
-                for (let sec = 1; sec <= 10; sec++) {
+                for (let sec = 1; sec <= time; sec++) {
                     await sleep(1000).then(() => {
                         dispatch(fetchDeviceList());
-                        // dispatch(displayModules.fetchDiplayList());
+                        dispatch(displayModules.fetchDisplayList());
                         dispatch(scanProgressUpdated(sec));
                     });
                 }
+                console.log('YZ1');
                 resolve();
                 dispatch(scanProgressUpdated(0));
             }
