@@ -104,21 +104,27 @@ const DisplayCardItemPortrait = ({
             <div
                 className={classes.displayCardContainer}
             >
-                <Icon
+                <NavLink
+                    to={'/displays/' + display.id}
+                    className={classes.displayLink}
                     color={display.effect && display.effect.active === true ? 'primary' : 'inherit'}
-                    className={classes.displayIcon}
+                    key={display.id}
                 >
-                    {display.config.icon_name && display.config.icon_name.startsWith('wled') ? (
-                        <Wled />
-                    ) : display.config.icon_name.startsWith('mdi:') ? (
-                        <span
-                            className={`mdi mdi-${display.config.icon_name.split('mdi:')[1]}`}
-                        ></span>
-                    ) : (
-                                camelToSnake(display.config.icon_name || 'SettingsInputComponent')
-                            )}
-                </Icon>
-
+                    <Icon
+                        color={display.effect && display.effect.active === true ? 'primary' : 'inherit'}
+                        className={classes.displayIcon}
+                    >
+                        {display.config.icon_name && display.config.icon_name.startsWith('wled') ? (
+                            <Wled />
+                        ) : display.config.icon_name.startsWith('mdi:') ? (
+                            <span
+                                className={`mdi mdi-${display.config.icon_name.split('mdi:')[1]}`}
+                            ></span>
+                        ) : (
+                            camelToSnake(display.config.icon_name || 'SettingsInputComponent')
+                        )}
+                    </Icon>
+                </NavLink>
                 <NavLink
                     to={'/displays/' + display.id}
                     className={classes.displayLink}
@@ -162,14 +168,14 @@ const DisplayCardItemPortrait = ({
                             <BuildIcon />
                         </Button>
                     ) : (
-                            <DisplaySegmentsDialog
-                                variant={variant}
-                                color={color}
-                                display={display}
-                                className={classes.editButton}
-                                icon={<TuneIcon />}
-                            />
-                        )}
+                        <DisplaySegmentsDialog
+                            variant={variant}
+                            color={color}
+                            display={display}
+                            className={classes.editButton}
+                            icon={<TuneIcon />}
+                        />
+                    )}
                     <Button
                         variant={variant}
                         size="small"
