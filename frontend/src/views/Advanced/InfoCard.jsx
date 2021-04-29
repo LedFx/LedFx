@@ -16,7 +16,6 @@ const useStyles = makeStyles({
 const InfoCard = () => {
     const classes = useStyles();
     const settings = useSelector(state => state.settings)
-    const version = useSelector(state => state.settings.version);
     return <Card>
         <CardHeader title="Info" subheader="View detailed informations" />
         <CardContent className={classes.content}>
@@ -29,7 +28,7 @@ const InfoCard = () => {
                 defaultValue={settings.devMode}
             />
 
-            <TextField disabled label="LedFx-Version" id="backend-version" defaultValue={version} />
+            <TextField disabled label="LedFx-Version" id="backend-version" defaultValue={settings.version} />
             <TextField disabled label="Frontend-Version-label" id="frontend-version" value={process.env.REACT_APP_VERSION} />
             <TextField disabled label="Built-commit" id="commit" value={settings.git_build_commit} />
 
