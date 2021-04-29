@@ -93,18 +93,19 @@ const Header = props => {
                             color="primary"
                             size="small"
                             onDoubleClick={() => {
-                                if (name === 'Settings') {
+                                console.log(name)
+                                if ((name === 'Settings') && window.localStorage.getItem('BladeMod') < 1) {
                                     window.localStorage.setItem('BladeMod', 1);
                                     window.location.pathname = '/settings';
                                     return;
                                 }
                                 if (
-                                    name === 'Advanced' &&
+                                    name === 'Settings' &&
                                     window.localStorage.getItem('BladeMod') === '1' &&
                                     window.localStorage.getItem('blade') === '3'
                                 ) {
                                     window.localStorage.setItem('BladeMod', 2);
-                                    window.location.pathname = '/advanced';
+                                    window.location.pathname = '/settings';
                                     return;
                                 }
                                 window.localStorage.setItem('BladeMod', 0);
