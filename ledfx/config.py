@@ -24,9 +24,8 @@ CORE_CONFIG_SCHEMA = vol.Schema(
         vol.Optional("user_presets", default={}): dict,
         vol.Optional("scenes", default={}): dict,
         vol.Optional("integrations", default=[]): list,
-        vol.Optional("virtuals", default=[]): list,
         vol.Optional("wled_preferred_mode", default=""): str,
-        vol.Optional("scan_on_startup", default=True): bool,
+        vol.Optional("scan_on_startup", default=False): bool,
         vol.Optional(
             "configuration_version", default=CONFIGURATION_VERSION
         ): str,
