@@ -47,6 +47,11 @@ class E131Device(Device):
                 description="Channel offset within the DMX universe",
                 default=0,
             ): vol.All(vol.Coerce(int), vol.Range(min=0)),
+            vol.Optional(
+                "e131_Packet_Priority",
+                description="Priority given to the sACN packets for this device",
+                default=100,
+            ): vol.All(vol.Coerce(int), vol.Range(min=0, max=200)),
         }
     )
 
@@ -100,12 +105,15 @@ class E131Device(Device):
         # Configure sACN and start the dedicated thread to flush the buffer
         # Some variables are immutable and must be called here
         self._sacn = sacn.sACNsender(source_name=self.name)
+
         for universe in range(
             self._config["universe"], self._config["universe_end"] + 1
         ):
             _LOGGER.info(f"sACN activating universe {universe}")
             self._sacn.activate_output(universe)
-
+            self._sacn[universe].priority = self._config[
+                "e131_Packet_Priority"
+            ]
             if self._config["ip_address"] == "multicast":
                 self._sacn[universe].multicast = True
             else:
