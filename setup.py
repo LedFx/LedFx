@@ -25,7 +25,7 @@ INSTALL_REQUIRES = [
     "numpy>=1.20.2",
     "voluptuous>=0.12.0",
     "pyaudio>=0.2.11",
-    "sacn>=1.6.3",
+    "sacn==1.5.0",
     "aiohttp~=3.7.4.post0",
     "multidict>=5.0.0",
     "aiohttp_jinja2>=1.4.0",
