@@ -1,6 +1,11 @@
 =========
 Changelog
 =========
+Version 0.10.5
+==============
+- Addition of sACN (e131 device) packet priority.
+- Some dependencies now require specific versions due to buggy dependency releases.
+- Various documentation changes.
 
 Version 0.10.4
 ==============
