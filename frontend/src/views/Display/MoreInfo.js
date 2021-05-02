@@ -7,17 +7,26 @@ import { Button, CircularProgress, Popover } from '@material-ui/core';
 import NetworkCheckIcon from '@material-ui/icons/NetworkCheck';
 import { makeStyles } from '@material-ui/core/styles';
 import * as displayProxies from 'proxies/display';
+import { getDevice } from 'proxies/device';
+
 const useStyles = makeStyles(theme => ({
     title: {
         color: theme.palette.text.secondary,
     },
 }));
 
-const MoreInfo = ({ display }) => {
+const MoreInfo =  ({ display }) => {
     console.log(display);
     const classes = useStyles();
     const [anchorEl, setAnchorEl] = React.useState();
     const [pingData, setPingData] = React.useState();
+    const [wled, setWLEDData] = React.useState({});
+
+    React.useEffect(() => {
+        console.log("component mounted")
+        getdeviceIP()
+        .then(res => setWLEDData(res))
+    }, []);
 
     const handleClick = event => {
         console.log('YZ1', pingData);
@@ -40,6 +49,36 @@ const MoreInfo = ({ display }) => {
         }
     };
     console.log('YZ0', pingData);
+
+    const getdeviceIP = async () => {
+        try {
+            const response = await getDevice(display.id);
+            if (response.config.type === 'wled') {
+                const ip = response.config.ip_address
+                const res = await fetch(`http://${ip}/json/info`);
+                let wledResponse = await res.json();
+                console.log('Testing123',wledResponse);
+                return wledResponse;
+            }
+        } catch (error) {
+            console.log('Error getting WLED info from device', error.message);
+        }
+    };
+    let wledData = {brand:'Not getting here2'};
+    if (display.config[display.id].config.icon_name === "wled" && display.config[display.id].active === true) {
+        // wledData has the value stored but since its an object it can not be rendered as React child
+        // Either fetch from object what we need to display
+        // or convert object into array and render all components
+        //or JSON stringify the rendered value : done
+        if(Object.keys(wled).length>0){
+            console.log("jyotir",wled)
+            wledData = wled;
+        }    
+    }
+        
+
+
+    
     return (
         <>
             <Grid item xs={6} lg={6}>
@@ -178,19 +217,24 @@ const MoreInfo = ({ display }) => {
                             Total Pixels: {display.config[display.id].pixel_count}
                         </Typography>
                         <br />
-                        <Typography variant="caption">
-                            Active: {JSON.stringify(display.config[display.id].active)}
-                            <br />
-                            Center Offset: {display.config[display.id].config.center_offset}
-                            <br />
-                            Crossfade: {JSON.stringify(display.config[display.id].config.crossfade)}
-                            <br />
-                            Max Brightness:{' '}
-                            {display.config[display.id].config.max_brightness * 100 + '%'}
-                            <br />
-                            Preview only:{' '}
-                            {JSON.stringify(display.config[display.id].config.preview_only)}
-                        </Typography>
+                            <Typography variant="caption">
+                                Active: {JSON.stringify(display.config[display.id].active)}
+                                <br />
+                                Type:{' '}
+                                {JSON.stringify(display.config[display.id].config.icon_name)}
+                                <br />
+                                Center Offset: {display.config[display.id].config.center_offset}
+                                <br />
+                                Crossfade: {JSON.stringify(display.config[display.id].config.crossfade)}
+                                <br />
+                                Max Brightness:{' '}
+                                {display.config[display.id].config.max_brightness * 100 + '%'}
+                                <br />
+                                Preview only:{' '}
+                                {JSON.stringify(display.config[display.id].config.preview_only)}
+                                <br />
+                                {JSON.stringify(wledData.brand)}
+                                </Typography>
                     </CardContent>
                 </Card>
             </Grid>

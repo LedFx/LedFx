@@ -53,6 +53,7 @@ export default function ThisDropDown(props) {
                     min={0}
                     max={255}
                     defaultValue={1}
+                    onChange={(event)=>props.handleDropTypeChange(event,props.idx)}
                 />}
             </div> 
         </>

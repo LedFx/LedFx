@@ -85,6 +85,7 @@ function ConfirmationDialogRaw(props) {
 
     //const [f, setAge] = React.useState('');
     const handleEventChange = (event) => {
+        console.log("typetest",event.target.type)
         let value = event.target.value;
         if(event.target.type === "checkbox"){
             event.target.checked? value=255 : value=0;
@@ -350,9 +351,7 @@ function ConfirmationDialogRaw(props) {
                     Else hide below buttons.
                 */}
                 </FormControl>
-             
-            
-                
+                         
                     {/*    For delete button using delete icon.
                     <Button aria-describedby={id} variant="contained" color="primary" onClick={() => { onDeleteVitem(listItem) }}>
                         <DeleteIcon />
@@ -416,23 +415,7 @@ function ConfirmationDialogRaw(props) {
                 >
                     ADD additional 'then do this'
                 </Button>
-                {/*
-                On Button 'OK', check both dropdowns are defined: 'If this' & 'Then do this' and
-                create JSON for qlc.js module: addqlclistener. If not defined, give error message.
-                We will also need to create addqlclistener function.
                 
-                JSON:
-                {"event_type": "scene_set", "event_filter": {"scene_name": "test1"},"qlc_payload": {[qlcID]:255,[qlcID]:255}}
-
-                Example JSON:
-                {"event_type": "scene_set", "event_filter": {"scene_name": "test2"},"qlc_payload": {"53":255,"3":255}}
-                
-                Show API response on frontend.
-
-                Will also need to populate this form on edit button.
-
-
-                */}
                 <SchemaForm
                     // className={classes.schemaForm}
                     schema={{
