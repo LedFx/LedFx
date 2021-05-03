@@ -10,7 +10,7 @@
             "request": "launch",
             "program": "${workspaceFolder}\\ledfx\\__main__.py",
             "console": "integratedTerminal",
-            "justMyCode": true
+            "justMyCode": false
         },
         {
             "name": "Python: LedFx Verbose Logging",
@@ -19,7 +19,7 @@
             "program": "${workspaceFolder}\\ledfx\\__main__.py",
             "args": ["-vv"],
             "console": "integratedTerminal",
-            "justMyCode": true
+            "justMyCode": false
         },
         {
             "name": "Python: Current File",
@@ -27,7 +27,7 @@
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
-            "justMyCode": true
+            "justMyCode": false
         }
 
     ]
