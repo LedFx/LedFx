@@ -24,7 +24,7 @@ if currently_frozen():
     warnings.filterwarnings("ignore")
 
 
-class LedFxCore(object):
+class LedFxCore:
     def __init__(self, config_dir, host=None, port=None, icon=None):
         self.icon = icon
         self.config_dir = config_dir
@@ -113,7 +113,7 @@ class LedFxCore(object):
             import win32api
 
             def handle_win32_interrupt(sig, func=None):
-                self.stop()
+                self.stop(exit_code=1)
                 return True
 
             win32api.SetConsoleCtrlHandler(handle_win32_interrupt, 1)
@@ -122,7 +122,7 @@ class LedFxCore(object):
             self.loop.run_forever()
         except KeyboardInterrupt:
             self.loop.call_soon_threadsafe(
-                self.loop.create_task, self.async_stop()
+                self.loop.create_task, self.async_stop(exit_code=1)
             )
             self.loop.run_forever()
         except BaseException:
@@ -136,7 +136,7 @@ class LedFxCore(object):
         return self.exit_code
 
     async def async_start(self, open_ui=False):
-        _LOGGER.info("Starting ledfx")
+        _LOGGER.info("Starting LedFx")
         await self.http.start()
         if self.icon is not None:
             if self.icon.HAS_NOTIFICATION:
@@ -171,17 +171,26 @@ class LedFxCore(object):
 
         await self.flush_loop()
 
-    def stop(self, exit_code=0):
+    def stop(self, exit_code):
         async_fire_and_forget(self.async_stop(exit_code), self.loop)
 
-    async def async_stop(self, exit_code=0):
+    async def async_stop(self, exit_code):
         if not self.loop:
             return
 
         print("Stopping LedFx.")
 
+        # -1 = Error
+        # 1 = Direct User Input
+        # 2 = API Request
+
+        if exit_code == -1:
+            _LOGGER.info("LedFx encountered an error. Shutting Down.")
+        if exit_code == 1:
+            _LOGGER.info("LedFx Keyboard Interrupt. Shutting Down.")
+        if exit_code == 2:
+            _LOGGER.info("LedFx Shutdown Request via API. Shutting Down.")
         # Fire a shutdown event and flush the loop
-        _LOGGER.info("Firing LedFxShutdownEvent...")
         self.events.fire_event(LedFxShutdownEvent())
         await asyncio.sleep(0, loop=self.loop)
 

@@ -20,7 +20,7 @@ import DisplayView from '../views/Display';
 import VirtualsView from '../views/Virtuals';
 import IntegrationsView from '../views/Integrations';
 import AdvancedView from '../views/Advanced';
-import SettingsView from '../views/Settings';
+// import SettingsView from '../views/Settings';
 import DeveloperView from '../views/Developer';
 import SpotifyView from "../views/Spotify"
 
@@ -89,21 +89,21 @@ const integrations =
             icon: PowerIcon,
             component: IntegrationsView,
         };
-const advanced =
-    parseInt(window.localStorage.getItem('BladeMod')) > 1
-        ? {
-            path: '/advanced',
-            sidebarName: 'Advanced',
-            navbarName: 'Advanced',
-            icon: LockOpenIcon,
-            component: AdvancedView,
-        }
-        : {
-            path: '/advanced',
-            navbarName: 'Advanced',
-            icon: LockOpenIcon,
-            component: AdvancedView,
-        };
+// const advanced =
+//     parseInt(window.localStorage.getItem('BladeMod')) > 1
+//         ? {
+//             path: '/advanced',
+//             sidebarName: 'Advanced',
+//             navbarName: 'Advanced',
+//             icon: LockOpenIcon,
+//             component: AdvancedView,
+//         }
+//         : {
+//             path: '/advanced',
+//             navbarName: 'Advanced',
+//             icon: LockOpenIcon,
+//             component: AdvancedView,
+//         };
 const viewRoutes = [
     dashboard,
     {
@@ -149,6 +149,12 @@ const viewRoutes = [
         navbarName: 'Developer',
         component: DeveloperView,
     },
+    // advanced,
+    // {
+    //     path: '/developer/:graphString',
+    //     navbarName: 'Developer',
+    //     component: DeveloperView,
+    // },
     {
         path: '/developer/melbank',
         sidebarName: 'Developer',

@@ -45,5 +45,5 @@ class RestApi(RegistryLoader):
                 "*",
                 endpoint.ENDPOINT_PATH,
                 endpoint.handler,
-                name="api_{}".format(endpoint_type),
+                name=f"api_{endpoint_type}",
             )

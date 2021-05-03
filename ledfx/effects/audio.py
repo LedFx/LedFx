@@ -55,7 +55,7 @@ MIN_MIDI = 21
 MAX_MIDI = 108
 
 
-class AudioInputSource(object):
+class AudioInputSource:
 
     _is_activated = False
     _audio = None

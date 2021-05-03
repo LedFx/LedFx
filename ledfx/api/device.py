@@ -1,5 +1,7 @@
 import logging
+from json import JSONDecodeError
 
+import voluptuous
 from aiohttp import web
 
 from ledfx.api import RestEndpoint
@@ -28,14 +30,21 @@ class DeviceEndpoint(RestEndpoint):
             response = {"not found": 404}
             return web.json_response(data=response, status=404)
 
-        data = await request.json()
+        try:
+            data = await request.json()
+        except JSONDecodeError:
+            response = {
+                "status": "failed",
+                "reason": "JSON Decoding failed",
+            }
+            return web.json_response(data=response, status=400)
         device_config = data.get("config")
         if device_config is None:
             response = {
                 "status": "failed",
                 "reason": 'Required attribute "config" was not provided',
             }
-            return web.json_response(data=response, status=500)
+            return web.json_response(data=response, status=400)
 
         _LOGGER.info(
             ("Updating device {} with config {}").format(
@@ -47,12 +56,14 @@ class DeviceEndpoint(RestEndpoint):
             device.update_config(device_config)
             response = {"status": "success"}
             status = 200
-        except ValueError as msg:
+        except (voluptuous.Error, ValueError) as msg:
             response = {
                 "status": "failed",
                 "payload": {"type": "warning", "reason": str(msg)},
             }
             status = 202
+            # If there's an error updating config, don't write that config, just return an error
+            return web.json_response(data=response, status=status)
 
         # Update and save the configuration
         for device in self._ledfx.config["devices"]:

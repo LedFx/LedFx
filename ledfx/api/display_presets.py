@@ -1,4 +1,5 @@
 import logging
+from json import JSONDecodeError
 
 from aiohttp import web
 
@@ -30,7 +31,7 @@ class DisplayPresetsEndpoint(RestEndpoint):
                 "status": "failed",
                 "reason": f"Display {display_id} has no active effect",
             }
-            return web.json_response(data=response, status=500)
+            return web.json_response(data=response, status=400)
 
         effect_id = display.active_effect.type
 
@@ -64,7 +65,14 @@ class DisplayPresetsEndpoint(RestEndpoint):
             }
             return web.json_response(data=response, status=404)
 
-        data = await request.json()
+        try:
+            data = await request.json()
+        except JSONDecodeError:
+            response = {
+                "status": "failed",
+                "reason": "JSON Decoding failed",
+            }
+            return web.json_response(data=response, status=400)
         category = data.get("category")
         effect_id = data.get("effect_id")
         preset_id = data.get("preset_id")
@@ -74,14 +82,14 @@ class DisplayPresetsEndpoint(RestEndpoint):
                 "status": "failed",
                 "reason": 'Required attribute "category" was not provided',
             }
-            return web.json_response(data=response, status=500)
+            return web.json_response(data=response, status=400)
 
         if category not in ["default_presets", "custom_presets"]:
             response = {
                 "status": "failed",
                 "reason": f'Category {category} is not "ledfx_presets" or "user_presets"',
             }
-            return web.json_response(data=response, status=500)
+            return web.json_response(data=response, status=400)
 
         if category == "default_presets":
             category = "ledfx_presets"
@@ -93,21 +101,21 @@ class DisplayPresetsEndpoint(RestEndpoint):
                 "status": "failed",
                 "reason": 'Required attribute "effect_id" was not provided',
             }
-            return web.json_response(data=response, status=500)
+            return web.json_response(data=response, status=400)
 
         if effect_id not in self._ledfx.config[category].keys():
             response = {
                 "status": "failed",
                 "reason": f"Effect {effect_id} does not exist in category {category}",
             }
-            return web.json_response(data=response, status=500)
+            return web.json_response(data=response, status=400)
 
         if preset_id is None:
             response = {
                 "status": "failed",
                 "reason": 'Required attribute "preset_id" was not provided',
             }
-            return web.json_response(data=response, status=500)
+            return web.json_response(data=response, status=400)
 
         if preset_id not in self._ledfx.config[category][effect_id].keys():
             response = {
@@ -116,7 +124,7 @@ class DisplayPresetsEndpoint(RestEndpoint):
                     preset_id, effect_id, category
                 ),
             }
-            return web.json_response(data=response, status=500)
+            return web.json_response(data=response, status=400)
 
         # Create the effect and add it to the display
         effect_config = self._ledfx.config[category][effect_id][preset_id][
@@ -172,14 +180,21 @@ class DisplayPresetsEndpoint(RestEndpoint):
             }
             return web.json_response(data=response, status=404)
 
-        data = await request.json()
+        try:
+            data = await request.json()
+        except JSONDecodeError:
+            response = {
+                "status": "failed",
+                "reason": "JSON Decoding failed",
+            }
+            return web.json_response(data=response, status=400)
         preset_name = data.get("name")
         if preset_name is None:
             response = {
                 "status": "failed",
                 "reason": 'Required attribute "preset_name" was not provided',
             }
-            return web.json_response(data=response, status=500)
+            return web.json_response(data=response, status=400)
 
         preset_id = generate_id(preset_name)
         effect_id = display.active_effect.type

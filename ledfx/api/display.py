@@ -1,4 +1,5 @@
 import logging
+from json import JSONDecodeError
 
 import voluptuous as vol
 from aiohttp import web
@@ -57,14 +58,21 @@ class DisplayEndpoint(RestEndpoint):
             }
             return web.json_response(data=response, status=404)
 
-        data = await request.json()
+        try:
+            data = await request.json()
+        except JSONDecodeError:
+            response = {
+                "status": "failed",
+                "reason": "JSON Decoding failed",
+            }
+            return web.json_response(data=response, status=400)
         active = data.get("active")
         if active is None:
             response = {
                 "status": "failed",
                 "reason": 'Required attribute "active" was not provided',
             }
-            return web.json_response(data=response, status=500)
+            return web.json_response(data=response, status=400)
 
         # Update the display's configuration
         try:
@@ -103,14 +111,21 @@ class DisplayEndpoint(RestEndpoint):
             }
             return web.json_response(data=response, status=404)
 
-        data = await request.json()
+        try:
+            data = await request.json()
+        except JSONDecodeError:
+            response = {
+                "status": "failed",
+                "reason": "JSON Decoding failed",
+            }
+            return web.json_response(data=response, status=400)
         display_segments = data.get("segments")
         if display_segments is None:
             response = {
                 "status": "failed",
                 "reason": 'Required attribute "segments" was not provided',
             }
-            return web.json_response(data=response, status=500)
+            return web.json_response(data=response, status=400)
 
         # Update the display's configuration
         old_segments = display.segments

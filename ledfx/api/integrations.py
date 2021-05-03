@@ -1,5 +1,6 @@
 import json
 import logging
+from json import JSONDecodeError
 
 from aiohttp import web
 
@@ -31,7 +32,14 @@ class IntegrationsEndpoint(RestEndpoint):
             }
 
         if request.body_exists:
-            data = await request.json()
+            try:
+                data = await request.json()
+            except JSONDecodeError:
+                response = {
+                    "status": "failed",
+                    "reason": "JSON Decoding failed",
+                }
+                return web.json_response(data=response, status=400)
             info = data.get("info")
             for integration in self._ledfx.integrations.values():
                 if info not in response["integrations"][integration.id].keys():
@@ -48,14 +56,21 @@ class IntegrationsEndpoint(RestEndpoint):
 
     async def put(self, request) -> web.Response:
         """Toggle an integration on or off"""
-        data = await request.json()
+        try:
+            data = await request.json()
+        except JSONDecodeError:
+            response = {
+                "status": "failed",
+                "reason": "JSON Decoding failed",
+            }
+            return web.json_response(data=response, status=400)
         integration_id = data.get("id")
         if integration_id is None:
             response = {
                 "status": "failed",
                 "reason": 'Required attribute "id" was not provided',
             }
-            return web.json_response(data=response, status=500)
+            return web.json_response(data=response, status=400)
 
         integration = self._ledfx.integrations.get(integration_id)
         if integration is None:
@@ -87,14 +102,21 @@ class IntegrationsEndpoint(RestEndpoint):
         """Delete an integration, erasing all its configuration
         NOTE: THIS DOES NOT TURN OFF THE INTEGRATION, IT DELETES IT!
         USE PUT TO TOGGLE!"""
-        data = await request.json()
+        try:
+            data = await request.json()
+        except JSONDecodeError:
+            response = {
+                "status": "failed",
+                "reason": "JSON Decoding failed",
+            }
+            return web.json_response(data=response, status=400)
         integration_id = data.get("id")
         if integration_id is None:
             response = {
                 "status": "failed",
                 "reason": 'Required attribute "id" was not provided',
             }
-            return web.json_response(data=response, status=500)
+            return web.json_response(data=response, status=400)
 
         integration = self._ledfx.integrations.get(integration_id)
         if integration is None:
@@ -119,7 +141,14 @@ class IntegrationsEndpoint(RestEndpoint):
 
     async def post(self, request) -> web.Response:
         """Create a new integration, or update an existing one"""
-        data = await request.json()
+        try:
+            data = await request.json()
+        except JSONDecodeError:
+            response = {
+                "status": "failed",
+                "reason": "JSON Decoding failed",
+            }
+            return web.json_response(data=response, status=400)
 
         integration_config = data.get("config")
         if integration_config is None:
@@ -127,7 +156,7 @@ class IntegrationsEndpoint(RestEndpoint):
                 "status": "failed",
                 "reason": 'Required attribute "config" was not provided',
             }
-            return web.json_response(data=response, status=500)
+            return web.json_response(data=response, status=400)
 
         integration_type = data.get("type")
         if integration_type is None:
@@ -135,7 +164,7 @@ class IntegrationsEndpoint(RestEndpoint):
                 "status": "failed",
                 "reason": 'Required attribute "type" was not provided',
             }
-            return web.json_response(data=response, status=500)
+            return web.json_response(data=response, status=400)
 
         integration_id = data.get("id")
         new = not bool(integration_id)
@@ -156,7 +185,7 @@ class IntegrationsEndpoint(RestEndpoint):
                     "status": "failed",
                     "reason": f"Integration with id {integration_id} not found",
                 }
-                return web.json_response(data=response, status=500)
+                return web.json_response(data=response, status=400)
 
             _LOGGER.info(
                 ("Updating {} integration '{}' with config {}").format(

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Configuration file for the Sphinx documentation builder.
 #
@@ -31,7 +30,7 @@ from ledfx.consts import (
 
 PROJECT_PACKAGE_NAME = PROJECT_NAME
 PROJECT_AUTHOR = const.__author__
-PROJECT_COPYRIGHT = " 2018-2021, {}".format(PROJECT_AUTHOR)
+PROJECT_COPYRIGHT = f" 2018-2021, {PROJECT_AUTHOR}"
 PROJECT_SHORT_DESCRIPTION = "LedFx is an open-source effect controller"
 PROJECT_LONG_DESCRIPTION = (
     "LedFx is an open-source effect controller "
@@ -44,11 +43,11 @@ PROJECT_GITHUB_BRANCH = "dev"
 PROJECT_GITHUB_PATH = "{}/{}".format(
     PROJECT_GITHUB_USERNAME, PROJECT_GITHUB_REPOSITORY
 )
-PROJECT_GITHUB_URL = "https://github.com/{}".format(PROJECT_GITHUB_PATH)
+PROJECT_GITHUB_URL = f"https://github.com/{PROJECT_GITHUB_PATH}"
 
-project = "{}".format(PROJECT_NAME)
-author = "{}".format(PROJECT_AUTHOR)
-copyright = "{}".format(PROJECT_COPYRIGHT) + " & contributors"
+project = f"{PROJECT_NAME}"
+author = f"{PROJECT_AUTHOR}"
+copyright = f"{PROJECT_COPYRIGHT}" + " & contributors"
 release = PROJECT_VERSION
 version = PROJECT_VERSION
 
@@ -126,7 +125,7 @@ html_context = {
     "display_github": True,
     "github_user": PROJECT_GITHUB_USERNAME,
     "github_repo": PROJECT_GITHUB_REPOSITORY,
-    "github_version": "{}/docs/".format(PROJECT_GITHUB_BRANCH),
+    "github_version": f"{PROJECT_GITHUB_BRANCH}/docs/",
     "conf_py_path": "docs",
     "source_suffix": ".rst",
 }
@@ -165,7 +164,7 @@ html_show_sourcelink = False
 # -- Options for HTMLHelp output ---------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = "{}doc".format(PROJECT_PACKAGE_NAME)
+htmlhelp_basename = f"{PROJECT_PACKAGE_NAME}doc"
 
 
 # -- Options for LaTeX output ------------------------------------------------
@@ -191,8 +190,8 @@ latex_elements = {
 latex_documents = [
     (
         master_doc,
-        "{}.tex".format(PROJECT_PACKAGE_NAME),
-        "{} Documentation".format(PROJECT_NAME),
+        f"{PROJECT_PACKAGE_NAME}.tex",
+        f"{PROJECT_NAME} Documentation",
         PROJECT_AUTHOR,
         "manual",
     ),
@@ -207,7 +206,7 @@ man_pages = [
     (
         master_doc,
         PROJECT_PACKAGE_NAME.lower(),
-        "{} Documentation".format(PROJECT_NAME),
+        f"{PROJECT_NAME} Documentation",
         [PROJECT_AUTHOR],
         1,
     )
@@ -223,7 +222,7 @@ texinfo_documents = [
     (
         master_doc,
         PROJECT_PACKAGE_NAME,
-        "{} Documentation".format(PROJECT_NAME),
+        f"{PROJECT_NAME} Documentation",
         PROJECT_AUTHOR,
         PROJECT_NAME,
         PROJECT_SHORT_DESCRIPTION,

@@ -1,4 +1,5 @@
 import logging
+from json import JSONDecodeError
 
 import pyaudio
 from aiohttp import web
@@ -39,7 +40,14 @@ class AudioDevicesEndpoint(RestEndpoint):
 
     async def put(self, request) -> web.Response:
         """Set audio device to use as input"""
-        data = await request.json()
+        try:
+            data = await request.json()
+        except JSONDecodeError:
+            response = {
+                "status": "failed",
+                "reason": "JSON Decoding failed",
+            }
+            return web.json_response(data=response, status=400)
         index = data.get("index")
 
         info = self._audio.get_host_api_info_by_index(0)
@@ -48,14 +56,14 @@ class AudioDevicesEndpoint(RestEndpoint):
                 "status": "failed",
                 "reason": 'Required attribute "index" was not provided',
             }
-            return web.json_response(data=response, status=500)
+            return web.json_response(data=response, status=400)
 
         if index not in range(0, info.get("deviceCount")):
             response = {
                 "status": "failed",
-                "reason": "Invalid device index [{}]".format(index),
+                "reason": f"Invalid device index [{index}]",
             }
-            return web.json_response(data=response, status=500)
+            return web.json_response(data=response, status=400)
 
         # Update and save config
         new_config = self._ledfx.config.get("audio", {})

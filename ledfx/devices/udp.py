@@ -31,7 +31,7 @@ class UDPDevice(NetworkedDevice):
             ): bool,
             vol.Optional(
                 "data_prefix",
-                description="Data to be prepended in hex format",
+                description="Data to be prepended in hex format. Use 0201 for WLED devices",
             ): str,
             vol.Optional(
                 "data_postfix",
@@ -81,6 +81,7 @@ class UDPDevice(NetworkedDevice):
         if prefix:
             try:
                 udpData.extend(bytes.fromhex(prefix))
+
             except ValueError:
                 _LOGGER.warning(f"Cannot convert prefix {prefix} to hex value")
 

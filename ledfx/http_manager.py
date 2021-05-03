@@ -18,7 +18,7 @@ except BaseException:
 _LOGGER = logging.getLogger(__name__)
 
 
-class HttpServer(object):
+class HttpServer:
     def __init__(self, ledfx, host, port):
         """Initialize the HTTP server"""
 
@@ -72,6 +72,7 @@ class HttpServer(object):
             site = web.TCPSite(self.runner, self.host, self.port)
             await site.start()
             self.base_url = ("http://{}:{}").format(self.host, self.port)
+            if self.host=="0.0.0.0": self.base_url = ("http://localhost:{}").format(self.port)
             print(("Started webinterface at {}").format(self.base_url))
         except OSError as error:
             _LOGGER.error(

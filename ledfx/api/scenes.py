@@ -1,4 +1,5 @@
 import logging
+from json import JSONDecodeError
 
 from aiohttp import web
 
@@ -25,7 +26,14 @@ class ScenesEndpoint(RestEndpoint):
 
     async def delete(self, request) -> web.Response:
         """Delete a scene"""
-        data = await request.json()
+        try:
+            data = await request.json()
+        except JSONDecodeError:
+            response = {
+                "status": "failed",
+                "reason": "JSON Decoding failed",
+            }
+            return web.json_response(data=response, status=400)
 
         scene_id = data.get("id")
         if scene_id is None:
@@ -33,14 +41,14 @@ class ScenesEndpoint(RestEndpoint):
                 "status": "failed",
                 "reason": 'Required attribute "scene_id" was not provided',
             }
-            return web.json_response(data=response, status=500)
+            return web.json_response(data=response, status=400)
 
         if scene_id not in self._ledfx.config["scenes"].keys():
             response = {
                 "status": "failed",
-                "reason": "Scene {} does not exist".format(scene_id),
+                "reason": f"Scene {scene_id} does not exist",
             }
-            return web.json_response(data=response, status=500)
+            return web.json_response(data=response, status=400)
 
         # Delete the scene from configuration
         del self._ledfx.config["scenes"][scene_id]
@@ -56,7 +64,14 @@ class ScenesEndpoint(RestEndpoint):
 
     async def put(self, request) -> web.Response:
         """Activate a scene"""
-        data = await request.json()
+        try:
+            data = await request.json()
+        except JSONDecodeError:
+            response = {
+                "status": "failed",
+                "reason": "JSON Decoding failed",
+            }
+            return web.json_response(data=response, status=400)
 
         action = data.get("action")
         if action is None:
@@ -64,14 +79,14 @@ class ScenesEndpoint(RestEndpoint):
                 "status": "failed",
                 "reason": 'Required attribute "action" was not provided',
             }
-            return web.json_response(data=response, status=500)
+            return web.json_response(data=response, status=400)
 
         if action not in ["activate", "rename"]:
             response = {
                 "status": "failed",
-                "reason": 'Invalid action "{}"'.format(action),
+                "reason": f'Invalid action "{action}"',
             }
-            return web.json_response(data=response, status=500)
+            return web.json_response(data=response, status=400)
 
         scene_id = data.get("id")
         if scene_id is None:
@@ -79,14 +94,14 @@ class ScenesEndpoint(RestEndpoint):
                 "status": "failed",
                 "reason": 'Required attribute "scene_id" was not provided',
             }
-            return web.json_response(data=response, status=500)
+            return web.json_response(data=response, status=400)
 
         if scene_id not in self._ledfx.config["scenes"].keys():
             response = {
                 "status": "failed",
-                "reason": 'Scene "{}" does not exist'.format(scene_id),
+                "reason": f'Scene "{scene_id}" does not exist',
             }
-            return web.json_response(data=response, status=500)
+            return web.json_response(data=response, status=400)
 
         scene = self._ledfx.config["scenes"][scene_id]
 
@@ -130,7 +145,7 @@ class ScenesEndpoint(RestEndpoint):
                     "status": "failed",
                     "reason": 'Required attribute "name" was not provided',
                 }
-                return web.json_response(data=response, status=500)
+                return web.json_response(data=response, status=400)
 
             # Update and save config
             self._ledfx.config["scenes"][scene_id]["name"] = name
@@ -150,7 +165,14 @@ class ScenesEndpoint(RestEndpoint):
 
     async def post(self, request) -> web.Response:
         """Save current effects of displays as a scene"""
-        data = await request.json()
+        try:
+            data = await request.json()
+        except JSONDecodeError:
+            response = {
+                "status": "failed",
+                "reason": "JSON Decoding failed",
+            }
+            return web.json_response(data=response, status=400)
 
         scene_name = data.get("name")
         if scene_name is None:
@@ -158,7 +180,7 @@ class ScenesEndpoint(RestEndpoint):
                 "status": "failed",
                 "reason": 'Required attribute "scene_name" was not provided',
             }
-            return web.json_response(data=response, status=500)
+            return web.json_response(data=response, status=400)
 
         scene_id = generate_id(scene_name)
 

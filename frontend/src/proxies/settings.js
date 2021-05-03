@@ -1,10 +1,14 @@
 import { api } from 'utils/api';
 
+export function shutdown() {
+    return api.put('/shutdown', {
+        timeout: 0,
+    });
+}
 export function getSystemConfig() {
     return api.get('/config');
 }
 export function setSystemConfig(config) {
-    console.log('YZ!!!', config);
     return api.post('/config', config);
 }
 

@@ -13,13 +13,13 @@ def write_version(major, minor, micro):
         content = fil.read()
 
     content = re.sub(
-        "MAJOR_VERSION = .*\n", "MAJOR_VERSION = {}\n".format(major), content
+        "MAJOR_VERSION = .*\n", f"MAJOR_VERSION = {major}\n", content
     )
     content = re.sub(
-        "MINOR_VERSION = .*\n", "MINOR_VERSION = {}\n".format(minor), content
+        "MINOR_VERSION = .*\n", f"MINOR_VERSION = {minor}\n", content
     )
     content = re.sub(
-        "MICRO_VERSION = .*\n", "MICRO_VERSION = {}\n".format(micro), content
+        "MICRO_VERSION = .*\n", f"MICRO_VERSION = {micro}\n", content
     )
 
     with open("ledfx/consts.py", "wt") as fil:

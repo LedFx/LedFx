@@ -3,8 +3,7 @@ import numpy as np
 
 class IterClass(type):
     def __iter__(cls):
-        for mode in getattr(cls, "NAMED_FUNCTIONS").keys():
-            yield mode
+        yield from getattr(cls, "NAMED_FUNCTIONS").keys()
 
 
 class Transitions(metaclass=IterClass):
@@ -14,7 +13,11 @@ class Transitions(metaclass=IterClass):
         self.min_brightness = min_brightness
         self.dissolve_array = np.random.rand(pixel_count)
         i = np.linspace(1, 0, pixel_count)
-        self.iris_array = np.concatenate([i[::2], i[-1::-2]])
+        # This monstrosity fixes the creation of an array of i+1 length for uneven arrays,
+        # breaking transitions on unevenly sized arrays
+        # [-1::-2] or [-2::-2]
+        # https://discord.com/channels/469985374052286474/785654790247546941/835507683129032725
+        self.iris_array = np.concatenate([i[::2], i[-1 + len(i) % -2 :: -2]])
 
     def __getitem__(cls, mode):
         return getattr(cls, "NAMED_FUNCTIONS")[mode]
@@ -91,4 +94,5 @@ class Transitions(metaclass=IterClass):
         "Iris": iris,
         "Through White": throughWhite,
         "Through Black": throughBlack,
+        "None": "None",
     }

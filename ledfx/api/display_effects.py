@@ -1,5 +1,6 @@
 import logging
 import random
+from json import JSONDecodeError
 
 import voluptuous as vol
 from aiohttp import web
@@ -54,9 +55,16 @@ class EffectsEndpoint(RestEndpoint):
                 "status": "failed",
                 "reason": f"Display {display_id} has no active effect",
             }
-            return web.json_response(data=response, status=500)
+            return web.json_response(data=response, status=400)
 
-        data = await request.json()
+        try:
+            data = await request.json()
+        except JSONDecodeError:
+            response = {
+                "status": "failed",
+                "reason": "JSON Decoding failed",
+            }
+            return web.json_response(data=response, status=400)
         effect_config = data.get("config")
         effect_type = data.get("type")
         if effect_config is None:
@@ -183,14 +191,21 @@ class EffectsEndpoint(RestEndpoint):
             }
             return web.json_response(data=response, status=404)
 
-        data = await request.json()
+        try:
+            data = await request.json()
+        except JSONDecodeError:
+            response = {
+                "status": "failed",
+                "reason": "JSON Decoding failed",
+            }
+            return web.json_response(data=response, status=400)
         effect_type = data.get("type")
         if effect_type is None:
             response = {
                 "status": "failed",
                 "reason": 'Required attribute "type" was not provided',
             }
-            return web.json_response(data=response, status=500)
+            return web.json_response(data=response, status=400)
 
         effect_config = data.get("config")
         if effect_config is None:

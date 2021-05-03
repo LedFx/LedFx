@@ -1,4 +1,5 @@
 import logging
+from json import JSONDecodeError
 
 from aiohttp import web
 
@@ -23,7 +24,14 @@ class GraphicsQualityEndpoint(RestEndpoint):
 
     async def put(self, request) -> web.Response:
         """Set graphics quality setting"""
-        data = await request.json()
+        try:
+            data = await request.json()
+        except JSONDecodeError:
+            response = {
+                "status": "failed",
+                "reason": "JSON Decoding failed",
+            }
+            return web.json_response(data=response, status=400)
         graphics_quality = data.get("graphics_quality")
 
         if graphics_quality is None:
@@ -31,7 +39,7 @@ class GraphicsQualityEndpoint(RestEndpoint):
                 "status": "failed",
                 "reason": 'Required attribute "graphics_quality" was not provided',
             }
-            return web.json_response(data=response, status=500)
+            return web.json_response(data=response, status=400)
 
         if graphics_quality not in ["low", "medium", "high", "ultra"]:
             response = {
@@ -40,7 +48,7 @@ class GraphicsQualityEndpoint(RestEndpoint):
                     graphics_quality
                 ),
             }
-            return web.json_response(data=response, status=500)
+            return web.json_response(data=response, status=400)
 
         # Update and save config
         self._ledfx.config["graphics_quality"] = graphics_quality

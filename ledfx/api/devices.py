@@ -1,4 +1,5 @@
 import logging
+from json import JSONDecodeError
 
 from aiohttp import web
 
@@ -26,7 +27,14 @@ class DevicesEndpoint(RestEndpoint):
         return web.json_response(data=response, status=200)
 
     async def post(self, request) -> web.Response:
-        data = await request.json()
+        try:
+            data = await request.json()
+        except JSONDecodeError:
+            response = {
+                "status": "failed",
+                "reason": "JSON Decoding failed",
+            }
+            return web.json_response(data=response, status=400)
 
         device_config = data.get("config")
         if device_config is None:
@@ -34,7 +42,7 @@ class DevicesEndpoint(RestEndpoint):
                 "status": "failed",
                 "reason": 'Required attribute "config" was not provided',
             }
-            return web.json_response(data=response, status=500)
+            return web.json_response(data=response, status=400)
 
         device_type = data.get("type")
         if device_type is None:
@@ -42,7 +50,7 @@ class DevicesEndpoint(RestEndpoint):
                 "status": "failed",
                 "reason": 'Required attribute "type" was not provided',
             }
-            return web.json_response(data=response, status=500)
+            return web.json_response(data=response, status=400)
 
         try:
             device = await self._ledfx.devices.add_new_device(
