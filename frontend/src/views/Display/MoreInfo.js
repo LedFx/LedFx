@@ -15,6 +15,18 @@ const useStyles = makeStyles(theme => ({
     },
 }));
 
+function numberWithCommas(x) {
+    return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
+function secondsToString(seconds)
+{
+var numdays = Math.floor(seconds / 86400);
+var numhours = Math.floor((seconds % 86400) / 3600);
+var numminutes = Math.floor(((seconds % 86400) % 3600) / 60);
+var numseconds = ((seconds % 86400) % 3600) % 60;
+return numdays + " days, " + numhours + " hours, " + numminutes + " minutes, " + numseconds + " seconds";
+}
+
 const MoreInfo =  ({ display }) => {
     console.log(display);
     const classes = useStyles();
@@ -71,14 +83,12 @@ const MoreInfo =  ({ display }) => {
         // or convert object into array and render all components
         //or JSON stringify the rendered value : done
         if(Object.keys(wled).length>0){
-            console.log("jyotir",wled)
+            console.log("wled",wled)
             wledData = wled;
         }    
     }
+    JSON.stringify(wledData)
         
-
-
-    
     return (
         <>
             <Grid item xs={6} lg={6}>
@@ -233,8 +243,49 @@ const MoreInfo =  ({ display }) => {
                                 Preview only:{' '}
                                 {JSON.stringify(display.config[display.id].config.preview_only)}
                                 <br />
-                                {JSON.stringify(wledData.brand)}
+                                <br />
                                 </Typography>
+                                {JSON.stringify(wledData.brand) === '"WLED"'
+                                ?
+                                <Typography className={classes.title} variant="subtitle1">
+                                WLED Device Info:
+                                </Typography>
+                                : ''}
+                                {JSON.stringify(wledData.brand) === '"WLED"'
+                                ? 
+                                <Typography variant="caption">
+                                    Name: {JSON.stringify(wledData.name)}
+                                    <br />
+                                    Uptime: {secondsToString (JSON.stringify(wledData.uptime))}
+                                    <br />
+                                    WLED Version: {JSON.stringify(wledData.ver)},
+                                    Chip: {JSON.stringify(wledData.arch)}
+                                    <br />
+                                    LED Count: {numberWithCommas (JSON.stringify(wledData.leds.count))},
+                                    RGBW? {JSON.stringify(wledData.leds.rgbw)}
+                                    <br />
+                                    Estimated current: {numberWithCommas (JSON.stringify(wledData.leds.pwr))} mA,
+                                    Max power (milliamps): {numberWithCommas (JSON.stringify(wledData.leds.maxpwr))}
+                                    <br />
+                                    Live Mode: {JSON.stringify(wledData.live)} ,
+                                    Live Mode Source: {JSON.stringify(wledData.lip)}, {JSON.stringify(wledData.lm)} ,
+                                    UDP Port: {JSON.stringify(wledData.udpport)}
+                                    <br />
+                                    WiFi Signal strength: {JSON.stringify(wledData.wifi.signal)}% ,
+                                    WiFi Channel: {JSON.stringify(wledData.wifi.channel)},
+                                    MAC: {JSON.stringify(wledData.mac)}
+                                    {JSON.stringify(wledData.freeheap) > 10000
+                                    ?
+                                    <Typography variant="caption">
+                                        RAM available: {numberWithCommas (JSON.stringify(wledData.freeheap))} - Good
+                                    </Typography>
+                                    : <Typography className={classes.title} variant="subtitle1">
+                                        RAM available: {JSON.stringify(wledData.freeheap)} (This is Problematic, as less than 10k)
+                                    </Typography>}
+                                    </Typography>
+                                    : ''}
+                                    <br />
+                                    
                     </CardContent>
                 </Card>
             </Grid>
