@@ -188,7 +188,9 @@ class AudioInputSource:
 
         # Calculate the current volume for silence detection
         self._volume = aubio.db_spl(self._raw_audio_sample)
-        if np.isinf(self._volume):
+        # Setting volume to 0 if volume <= 90 seems to work.
+        # Might need to do some fiddling with different noise floors if there's any future issues
+        if np.isinf(self._volume) or self._volume <= -90:
             self._volume = 0.0
         self._volume_filter.update(self._volume)
 
