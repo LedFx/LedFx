@@ -7,8 +7,7 @@ import SaveAltIcon from '@material-ui/icons/SaveAlt';
 import BuildIcon from '@material-ui/icons/Build';
 import DeviceHubIcon from '@material-ui/icons/DeviceHub';
 import PowerIcon from '@material-ui/icons/Power';
-import LockOpenIcon from '@material-ui/icons/LockOpen';
-import LibraryMusicIcon from '@material-ui/icons/LibraryMusic';
+// import LockOpenIcon from '@material-ui/icons/LockOpen';
 
 // Components and Views
 // import DashboardView from '../views/Dashboard';
@@ -22,7 +21,6 @@ import IntegrationsView from '../views/Integrations';
 import AdvancedView from '../views/Advanced';
 // import SettingsView from '../views/Settings';
 import DeveloperView from '../views/Developer';
-import SpotifyView from "../views/Spotify"
 
 // const dashboard =
 //     parseInt(window.localStorage.getItem('BladeMod')) > 2
@@ -134,20 +132,7 @@ const viewRoutes = [
         sidebarName: 'Settings',
         navbarName: 'Settings',
         icon: BuildIcon,
-        component: SettingsView,
-    },
-    {
-        path: "/spotify",
-        // sidebarName: "Spotify",
-        navbarName: "Spotify",
-        icon: LibraryMusicIcon,
-        component: SpotifyView
-      },
-    advanced,
-    {
-        path: '/developer/:graphString',
-        navbarName: 'Developer',
-        component: DeveloperView,
+        component: AdvancedView,
     },
     // advanced,
     // {
