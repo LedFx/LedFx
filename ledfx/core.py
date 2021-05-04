@@ -152,7 +152,7 @@ class LedFxCore:
         self.devices.create_from_config(self.config["devices"])
         await self.devices.async_initialize_devices()
 
-        sync_mode = self.config["wled_preferred_mode"]
+        sync_mode = self.config["wled_preferences"]["wled_preferred_mode"]
         if sync_mode:
             await self.devices.set_wleds_sync_mode(sync_mode)
 
