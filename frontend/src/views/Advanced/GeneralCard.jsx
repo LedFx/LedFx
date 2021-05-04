@@ -78,12 +78,12 @@ const GeneralCard = () => {
         window.localStorage.setItem('blade', event.target.value);
         window.location = window.location.href;
     };
-    const onChangePreferredMode = (value) => {
-        dispatch(setConfig({ config: { wled_preferred_mode: value } }))
-    }
-    const onChangeStartupScan = (value) => {
-        dispatch(setConfig({ config: { scan_on_startup: value } }))
-    }
+    const onChangePreferredMode = value => {
+        dispatch(setConfig({ config: { wled_preferences: {wled_preferred_mode:{preferred_mode: value, user_enabled: true }} }}));
+    };
+    const onChangeStartupScan = value => {
+        dispatch(setConfig({ config: { scan_on_startup: value } }));
+    };
 
     useEffect(() => {
         dispatch(getAudioInputs())

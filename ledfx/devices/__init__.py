@@ -442,7 +442,9 @@ class Devices(RegistryLoader):
             # ARTNET can do one
             sync_mode = "UDP"
             if wled_count > 480:
-                preferred_mode = self._ledfx.config["wled_preferred_mode"]
+                preferred_mode = self._ledfx.config["wled_preferences"][
+                    "wled_preferred_mode"
+                ]
                 if preferred_mode:
                     sync_mode = preferred_mode
                 else:

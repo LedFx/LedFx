@@ -24,8 +24,40 @@ CORE_CONFIG_SCHEMA = vol.Schema(
         vol.Optional("user_presets", default={}): dict,
         vol.Optional("scenes", default={}): dict,
         vol.Optional("integrations", default=[]): list,
-        vol.Optional("wled_preferred_mode", default=""): str,
         vol.Optional("scan_on_startup", default=False): bool,
+        vol.Optional(
+            "wled_preferences",
+            default={
+                "wled_preferred_mode": {
+                    "preferred_mode": "",
+                    "user_enabled": False,
+                },
+                "realtime_gamma": {
+                    "rt_gamma_enabled": False,
+                    "user_enabled": False,
+                },
+                "force_max_brightness": {
+                    "forced_bright": False,
+                    "user_enabled": False,
+                },
+                "dmx_mode": {
+                    "set_dmx_mode": "MultiRGB",
+                    "user_enabled": False,
+                },
+                "universe_settings": {
+                    "start_universe": 1,
+                    "user_enabled": False,
+                },
+                "dmx_address_settings": {
+                    "start_address": 1,
+                    "user_enabled": False,
+                },
+                "inactivity_timeout": {
+                    "timeout_setting": 1,
+                    "user_enabled": False,
+                },
+            },
+        ): dict,
         vol.Optional(
             "configuration_version", default=CONFIGURATION_VERSION
         ): str,

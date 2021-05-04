@@ -107,7 +107,7 @@ const DashboardView = () => {
         });
     };
     const onChangePreferredMode = value => {
-        dispatch(setConfig({ config: { wled_preferred_mode: value } }));
+        dispatch(setConfig({ config: { wled_preferences: {wled_preferred_mode:{preferred_mode: value, user_enabled: true }} }}));
     };
     const onChangeStartupScan = value => {
         dispatch(setConfig({ config: { scan_on_startup: value } }));
