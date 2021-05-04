@@ -70,7 +70,9 @@ class ConfigEndpoint(RestEndpoint):
         # should restart ledfx at this point or smth
 
         if "wled_preferred_mode" in new_valid_config.keys():
-            mode = new_valid_config["wled_preferences"]["wled_preferred_mode"]
+            mode = new_valid_config["wled_preferences"]["wled_preferred_mode"][
+                "setting"
+            ]
             if mode:
                 await self._ledfx.devices.set_wleds_sync_mode(mode)
 

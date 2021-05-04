@@ -29,31 +29,31 @@ CORE_CONFIG_SCHEMA = vol.Schema(
             "wled_preferences",
             default={
                 "wled_preferred_mode": {
-                    "preferred_mode": "",
+                    "setting": "",
                     "user_enabled": False,
                 },
-                "realtime_gamma": {
-                    "rt_gamma_enabled": False,
+                "realtime_gamma_enabled": {
+                    "setting": False,
                     "user_enabled": False,
                 },
                 "force_max_brightness": {
-                    "forced_bright": False,
+                    "setting": False,
                     "user_enabled": False,
                 },
-                "dmx_mode": {
-                    "set_dmx_mode": "MultiRGB",
+                "realtime_dmx_mode": {
+                    "setting": "MultiRGB",
                     "user_enabled": False,
                 },
-                "universe_settings": {
-                    "start_universe": 1,
+                "start_universe_setting": {
+                    "setting": 1,
                     "user_enabled": False,
                 },
-                "dmx_address_settings": {
-                    "start_address": 1,
+                "dmx_address_start": {
+                    "setting": 1,
                     "user_enabled": False,
                 },
                 "inactivity_timeout": {
-                    "timeout_setting": 1,
+                    "setting": 1,
                     "user_enabled": False,
                 },
             },
