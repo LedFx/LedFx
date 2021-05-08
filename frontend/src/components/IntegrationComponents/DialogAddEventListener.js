@@ -29,6 +29,7 @@ function ConfirmationDialogRaw(props) {
     const [dropDownRenderCount, setdropDownRenderCount] = React.useState(1);
     const [dropDownRenderList, setdropDownRenderList] = React.useState([]);
     const [switchValue, setSwitchValue] = React.useState(false);
+    const [sliderValue, setSliderValue] = React.useState(0);
     const [formData, setformData] = React.useState({
         "event_type": null,
         "event_filter":{"scene_name":null},
@@ -84,8 +85,8 @@ function ConfirmationDialogRaw(props) {
     };
 
     //const [f, setAge] = React.useState('');
-    const handleEventChange = (event) => {
-        console.log("typetest",event.target.type)
+    const handleEventChange = (event,val) => {
+        console.log("typetest",event.target);
         let value = event.target.value;
         if(event.target.type === "checkbox"){
             event.target.checked? value=255 : value=0;
@@ -133,6 +134,20 @@ function ConfirmationDialogRaw(props) {
                 "event_type":value["event_type"]
             };
             setformData(newFormState);   
+        }else{
+            // console.log("typetest",val);
+            // console.log("typevalue",checkID);
+            const qlcDatanewArr = qlcData.slice();
+            qlcDatanewArr[0][checkID] = val;
+            let newqlcPayload = Object.assign({},...qlcDatanewArr)
+            let newSliderState = {
+                ...formData,
+                "qlc_payload":{
+                    ...newqlcPayload
+                },
+            };
+            setSliderValue(val);
+            setformData(newSliderState); 
         }
         
         
@@ -149,22 +164,20 @@ function ConfirmationDialogRaw(props) {
     };
 
     //work here next time to eliminate reference cloning probably make different handleswitchchange
-    const handleDropTypeChange = (event, index) => {
-        console.log("testing1",event.target.value);
-        console.log("testing",dropDownRenderList)
+    const handleDropTypeChange = (event, index, val,name) => {
+        // console.log("testing1",event.target.value);
+        // console.log("testing",dropDownRenderList)
         const newArr = dropDownRenderList.slice();
-        if(event.target.value.includes("Button")){
+        if(event.target.name === 'qlc_payload' && event.target.value.includes("Button")){
             newArr[index].showSwitch = true;
             newArr[index].showSlider = false;
-        }else if(event.target.value.includes("Slider")){
+        }else if(event.target.name === 'qlc_payload' && event.target.value.includes("Slider")){
             newArr[index].showSlider = true;
             newArr[index].showSwitch = false;
         }
-        if(event.target.type !== "checkbox"){
-        newArr[index]["value"] = event.target.value[0];
-        }
-        console.log("testnew",newArr)
-        // handleEventCha,nge(event);
+        // if(event.target.name === "qlc_payload"){
+            
+        // }
         let value = event.target.value;
         if(event.target.type === "checkbox"){
             newArr[index].switchValue = event.target.checked;
@@ -182,6 +195,8 @@ function ConfirmationDialogRaw(props) {
             setqlcData(qlcDatanewArr);
             setformData(newSwitchState);  
         }else if(event.target.name === 'qlc_payload'){
+            newArr[index]["value"] = event.target.value[0];
+            console.log("test13",newArr);
             const qlcDatanewArr = qlcData.slice();
             let qlcDataObj = {
                 [event.target.value[0]]: 0,
@@ -206,6 +221,19 @@ function ConfirmationDialogRaw(props) {
                 };
                 console.log("test",newSwitchState)
                 setformData(newSwitchState) 
+        }else{
+            const qlcDatanewArr = qlcData.slice();
+            qlcDatanewArr[index+1][name] = val;
+            let newqlcPayload = Object.assign({},...qlcDatanewArr)
+            let newSliderState = {
+                ...formData,
+                "qlc_payload":{
+                    ...newqlcPayload
+                },
+            };
+            
+            setqlcData(qlcDatanewArr);
+            setformData(newSliderState);
         }
        
         return setdropDownRenderList(newArr);
@@ -382,6 +410,8 @@ function ConfirmationDialogRaw(props) {
                             min={0}
                             max={255}
                             defaultValue={1}
+                            value={sliderValue}
+                            onChange={handleEventChange} 
                         />
                     }
                 </div> 

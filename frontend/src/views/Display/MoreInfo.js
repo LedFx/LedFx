@@ -35,10 +35,27 @@ const MoreInfo =  ({ display }) => {
     const [wled, setWLEDData] = React.useState({});
 
     React.useEffect(() => {
-        console.log("component mounted")
-        getdeviceIP()
-        .then(res => setWLEDData(res))
-    }, []);
+        console.log("component mounted");
+        const getdeviceIP = async () => {
+            try {
+                const response = await getDevice(display.id);
+                if (response.config.type === 'wled') {
+                    const ip = response.config.ip_address
+                    const res = await fetch(`http://${ip}/json/info`)
+                    .then(res=> res.json())
+                    .then(res=> setWLEDData(res))
+                    .catch(err => console.error(err));
+                    // let wledResponse = await res.json();
+                    // console.log('Testing123',wledResponse);
+                    return res;
+                }
+            } catch (error) {
+                console.log('Error getting WLED info from device', error.message);
+            }
+        };
+        getdeviceIP();
+        // console.error(getdeviceIP)
+    }, [display.id]);
 
     const handleClick = event => {
         console.log('YZ1', pingData);
@@ -62,27 +79,14 @@ const MoreInfo =  ({ display }) => {
     };
     console.log('YZ0', pingData);
 
-    const getdeviceIP = async () => {
-        try {
-            const response = await getDevice(display.id);
-            if (response.config.type === 'wled') {
-                const ip = response.config.ip_address
-                const res = await fetch(`http://${ip}/json/info`);
-                let wledResponse = await res.json();
-                console.log('Testing123',wledResponse);
-                return wledResponse;
-            }
-        } catch (error) {
-            console.log('Error getting WLED info from device', error.message);
-        }
-    };
+    
     let wledData = {brand:'Not getting here2'};
     if (display.config[display.id].config.icon_name === "wled" && display.config[display.id].active === true) {
         // wledData has the value stored but since its an object it can not be rendered as React child
         // Either fetch from object what we need to display
         // or convert object into array and render all components
         //or JSON stringify the rendered value : done
-        if(Object.keys(wled).length>0){
+        if(wled && Object.keys(wled).length>0){
             console.log("wled",wled)
             wledData = wled;
         }    
@@ -243,12 +247,12 @@ const MoreInfo =  ({ display }) => {
                                 Preview only:{' '}
                                 {JSON.stringify(display.config[display.id].config.preview_only)}
                                 <br />
-                                <br />
                                 </Typography>
                                 {JSON.stringify(wledData.brand) === '"WLED"'
                                 ?
                                 <Typography className={classes.title} variant="subtitle1">
-                                WLED Device Info:
+                                    <br />
+                                    WLED Device Info:
                                 </Typography>
                                 : ''}
                                 {JSON.stringify(wledData.brand) === '"WLED"'
@@ -265,15 +269,18 @@ const MoreInfo =  ({ display }) => {
                                     RGBW? {JSON.stringify(wledData.leds.rgbw)}
                                     <br />
                                     Estimated current: {numberWithCommas (JSON.stringify(wledData.leds.pwr))} mA,
-                                    Max power (milliamps): {numberWithCommas (JSON.stringify(wledData.leds.maxpwr))}
+                                    Max power: {numberWithCommas (JSON.stringify(wledData.leds.maxpwr))} mA
+                                    <br />
+                                    Frames Per Second: {numberWithCommas (JSON.stringify(wledData.leds.fps))} fps
                                     <br />
                                     Live Mode: {JSON.stringify(wledData.live)} ,
                                     Live Mode Source: {JSON.stringify(wledData.lip)}, {JSON.stringify(wledData.lm)} ,
                                     UDP Port: {JSON.stringify(wledData.udpport)}
                                     <br />
-                                    WiFi Signal strength: {JSON.stringify(wledData.wifi.signal)}% ,
+                                    WiFi Signal strength: {JSON.stringify(wledData.wifi.signal)}%,
                                     WiFi Channel: {JSON.stringify(wledData.wifi.channel)},
                                     MAC: {JSON.stringify(wledData.mac)}
+                                    <br />
                                     {JSON.stringify(wledData.freeheap) > 10000
                                     ?
                                     <Typography variant="caption">
@@ -284,8 +291,6 @@ const MoreInfo =  ({ display }) => {
                                     </Typography>}
                                     </Typography>
                                     : ''}
-                                    <br />
-                                    
                     </CardContent>
                 </Card>
             </Grid>
