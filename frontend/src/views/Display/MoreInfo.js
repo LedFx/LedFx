@@ -39,6 +39,7 @@ const MoreInfo =  ({ display }) => {
         const getdeviceIP = async () => {
             try {
                 const response = await getDevice(display.id);
+                const ip = response.config.ip_address
                     const res = await fetch(`http://${ip}/json/info`)
                     .then(res=> res.json())
                     .then(res=> setWLEDData(res))
