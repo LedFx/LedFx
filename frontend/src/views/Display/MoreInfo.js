@@ -7,17 +7,53 @@ import { Button, CircularProgress, Popover } from '@material-ui/core';
 import NetworkCheckIcon from '@material-ui/icons/NetworkCheck';
 import { makeStyles } from '@material-ui/core/styles';
 import * as displayProxies from 'proxies/display';
+import { getDevice } from 'proxies/device';
+
 const useStyles = makeStyles(theme => ({
     title: {
         color: theme.palette.text.secondary,
     },
 }));
 
-const MoreInfo = ({ display }) => {
+function numberWithCommas(x) {
+    return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
+function secondsToString(seconds)
+{
+var numdays = Math.floor(seconds / 86400);
+var numhours = Math.floor((seconds % 86400) / 3600);
+var numminutes = Math.floor(((seconds % 86400) % 3600) / 60);
+var numseconds = ((seconds % 86400) % 3600) % 60;
+return numdays + " days, " + numhours + " hours, " + numminutes + " minutes, " + numseconds + " seconds";
+}
+
+const MoreInfo =  ({ display }) => {
     console.log(display);
     const classes = useStyles();
     const [anchorEl, setAnchorEl] = React.useState();
     const [pingData, setPingData] = React.useState();
+    const [wled, setWLEDData] = React.useState({});
+
+    React.useEffect(() => {
+        console.log("component mounted");
+        const getdeviceIP = async () => {
+            try {
+                const response = await getDevice(display.id);
+                const ip = response.config.ip_address
+                    const res = await fetch(`http://${ip}/json/info`)
+                    .then(res=> res.json())
+                    .then(res=> setWLEDData(res))
+                    .catch(err => console.error(err));
+                    // let wledResponse = await res.json();
+                    // console.log('Testing123',wledResponse);
+                    return res;
+            } catch (error) {
+                console.log('Error getting WLED info from device', error.message);
+            }
+        };
+        getdeviceIP();
+        // console.error(getdeviceIP)
+    }, [display.id]);
 
     const handleClick = event => {
         console.log('YZ1', pingData);
@@ -40,6 +76,21 @@ const MoreInfo = ({ display }) => {
         }
     };
     console.log('YZ0', pingData);
+
+    
+    let wledData = {brand:'Not getting here2'};
+    if (display.config[display.id].config.icon_name === "wled" && display.config[display.id].active === true) {
+        // wledData has the value stored but since its an object it can not be rendered as React child
+        // Either fetch from object what we need to display
+        // or convert object into array and render all components
+        //or JSON stringify the rendered value : done
+        if(wled && Object.keys(wled).length>0){
+            console.log("wled",wled)
+            wledData = wled;
+        }    
+    }
+    JSON.stringify(wledData)
+        
     return (
         <>
             <Grid item xs={6} lg={6}>
@@ -178,19 +229,70 @@ const MoreInfo = ({ display }) => {
                             Total Pixels: {display.config[display.id].pixel_count}
                         </Typography>
                         <br />
-                        <Typography variant="caption">
-                            Active: {JSON.stringify(display.config[display.id].active)}
-                            <br />
-                            Center Offset: {display.config[display.id].config.center_offset}
-                            <br />
-                            Crossfade: {JSON.stringify(display.config[display.id].config.crossfade)}
-                            <br />
-                            Max Brightness:{' '}
-                            {display.config[display.id].config.max_brightness * 100 + '%'}
-                            <br />
-                            Preview only:{' '}
-                            {JSON.stringify(display.config[display.id].config.preview_only)}
-                        </Typography>
+                            <Typography variant="caption">
+                                Active: {JSON.stringify(display.config[display.id].active)}
+                                <br />
+                                Type:{' '}
+                                {JSON.stringify(display.config[display.id].config.icon_name)}
+                                <br />
+                                Center Offset: {display.config[display.id].config.center_offset}
+                                <br />
+                                Crossfade: {JSON.stringify(display.config[display.id].config.crossfade)}
+                                <br />
+                                Max Brightness:{' '}
+                                {display.config[display.id].config.max_brightness * 100 + '%'}
+                                <br />
+                                Preview only:{' '}
+                                {JSON.stringify(display.config[display.id].config.preview_only)}
+                                <br />
+                                </Typography>
+                                {JSON.stringify(wledData.brand) === '"WLED"'
+                                ?
+                                <Typography className={classes.title} variant="subtitle1">
+                                    <br />
+                                    WLED Device Info:
+                                </Typography>
+                                : ''}
+                                {JSON.stringify(wledData.brand) === '"WLED"'
+                                ? 
+                                <Typography variant="caption">
+                                    Name: {JSON.stringify(wledData.name)}
+                                    <br />
+                                    Uptime: {secondsToString (JSON.stringify(wledData.uptime))}
+                                    <br />
+                                    WLED Version: {JSON.stringify(wledData.ver)},
+                                    Chip: {JSON.stringify(wledData.arch)}
+                                    <br />
+                                    LED Count: {numberWithCommas (JSON.stringify(wledData.leds.count))},
+                                    RGBW? {JSON.stringify(wledData.leds.rgbw)}
+                                    <br />
+                                    Estimated current: {numberWithCommas (JSON.stringify(wledData.leds.pwr))} mA,
+                                    Max power: {numberWithCommas (JSON.stringify(wledData.leds.maxpwr))} mA
+                                    <br />
+                                    Live Mode: {JSON.stringify(wledData.live)} ,
+                                    Live Mode Source: {JSON.stringify(wledData.lip)}, {JSON.stringify(wledData.lm)} ,
+                                    UDP Port: {JSON.stringify(wledData.udpport)}
+                                    <br />
+                                    WiFi Signal strength: {JSON.stringify(wledData.wifi.signal)}%,
+                                    WiFi Channel: {JSON.stringify(wledData.wifi.channel)},
+                                    MAC: {JSON.stringify(wledData.mac)}
+                                    <br />
+                                    {JSON.stringify(wledData.leds.fps) > 0
+                                    ? <Typography variant="caption">
+                                        Frames Per Second: {numberWithCommas (JSON.stringify(wledData.leds.fps))} fps
+                                    <br />
+                                    </Typography>
+                                    : ''}
+                                    {JSON.stringify(wledData.freeheap) > 10000
+                                    ?
+                                    <Typography variant="caption">
+                                        RAM available: {numberWithCommas (JSON.stringify(wledData.freeheap))} - Good
+                                    </Typography>
+                                    : <Typography className={classes.title} variant="subtitle1">
+                                        RAM available: {JSON.stringify(wledData.freeheap)} (This is Problematic, as less than 10k)
+                                    </Typography>}
+                                    </Typography>
+                                    : ''}
                     </CardContent>
                 </Card>
             </Grid>
