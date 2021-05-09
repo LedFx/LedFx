@@ -271,8 +271,6 @@ const MoreInfo =  ({ display }) => {
                                     Estimated current: {numberWithCommas (JSON.stringify(wledData.leds.pwr))} mA,
                                     Max power: {numberWithCommas (JSON.stringify(wledData.leds.maxpwr))} mA
                                     <br />
-                                    Frames Per Second: {numberWithCommas (JSON.stringify(wledData.leds.fps))} fps
-                                    <br />
                                     Live Mode: {JSON.stringify(wledData.live)} ,
                                     Live Mode Source: {JSON.stringify(wledData.lip)}, {JSON.stringify(wledData.lm)} ,
                                     UDP Port: {JSON.stringify(wledData.udpport)}
@@ -281,6 +279,12 @@ const MoreInfo =  ({ display }) => {
                                     WiFi Channel: {JSON.stringify(wledData.wifi.channel)},
                                     MAC: {JSON.stringify(wledData.mac)}
                                     <br />
+                                    {JSON.stringify(wledData.leds.fps) > 0
+                                    ? <Typography variant="caption">
+                                        Frames Per Second: {numberWithCommas (JSON.stringify(wledData.leds.fps))} fps
+                                    <br />
+                                    </Typography>
+                                    : ''}
                                     {JSON.stringify(wledData.freeheap) > 10000
                                     ?
                                     <Typography variant="caption">
