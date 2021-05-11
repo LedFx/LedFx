@@ -73,6 +73,26 @@ const GeneralCard = () => {
             )
         }
     }
+    const configDelete = async () => {
+        try {
+            const response = await settingProxies.deleteSystemConfig();
+            if (response.statusText !== 'OK') {
+                dispatch(
+                    showdynSnackbar({ message: 'Error while downloading config.json', type: 'error' })
+                )
+                throw new Error('Error fetching system config');
+            }
+            // download(response.data.config, 'config.json', 'application/json');
+            // dispatch(
+            //     showdynSnackbar({ message: 'downloading config.json', type: 'info' })
+            // )
+        } catch (error) {
+            console.log(error)
+            dispatch(
+                showdynSnackbar({ message: 'Error while downloading config.json', type: 'error' })
+            )
+        }
+    }
     const changeTheme = event => {
         setTheme(event.target.value);
         window.localStorage.setItem('blade', event.target.value);
@@ -161,6 +181,16 @@ const GeneralCard = () => {
                 >
                     Export Config
                 </Button>
+                <Button
+                    size="small"
+                    startIcon={<Delete />}
+                    variant="outlined"
+                    style={{ marginTop: '0.5rem' }}
+                    onClick={configDelete}
+
+                >
+                    Reset Config
+                </Button>
 
                 {parseInt(window.localStorage.getItem('BladeMod')) > 1 && (
                     <>
@@ -169,18 +199,13 @@ const GeneralCard = () => {
                             startIcon={<CloudDownloadIcon />}
                             variant="outlined"
                             style={{ marginTop: '0.5rem' }}
-                            disabled
+
                         >
                             Import Config
-                        </Button>
-                        <Button
-                            size="small"
-                            startIcon={<Delete />}
-                            variant="outlined"
-                            style={{ marginTop: '0.5rem' }}
-                            disabled
-                        >
-                            Reset Config
+                            <input
+                                type="file"
+                                hidden
+                            />
                         </Button>
                         <Button
                             size="small"

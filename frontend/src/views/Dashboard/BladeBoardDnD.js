@@ -11,9 +11,6 @@ import { addScene, getScenes } from 'modules/scenes';
 import { fetchDeviceList } from 'modules/devices';
 import { fetchDisplayList } from 'modules/displays';
 import { findWLEDDevices } from 'modules/devices';
-import { setConfig } from 'modules/settings';
-
-import Wled from 'components/CustomIcons/Wled';
 import PixelColorGraph from 'components/PixelColorGraph';
 import AddSceneCard from 'components/AddSceneCard';
 import DisplayPixelColorGraph from 'components/PixelColorGraph/DisplayPixelColorGraph';
@@ -24,16 +21,11 @@ import {
     Card,
     CardContent,
     CircularProgress,
-    Divider,
     Fab,
-    FormControl,
     Grid,
     Icon,
-    InputLabel,
     Link,
     makeStyles,
-    MenuItem,
-    Select,
 } from '@material-ui/core';
 import WledCard from 'views/Advanced/WledCard';
 
@@ -94,7 +86,6 @@ const DashboardView = () => {
     const devices = useSelector(state => state.devices);
     const displays = useSelector(state => state.displays);
     const scenes = useSelector(state => state.scenes);
-    const settings = useSelector(state => state.settings);
     const classes = useStyles();
     const dispatch = useDispatch();
     const [layouts, setLayouts] = useState({});
@@ -107,20 +98,7 @@ const DashboardView = () => {
             setSearchDevicesLoading(false);
         });
     };
-    const onChangePreferredMode = value => {
-        dispatch(
-            setConfig({
-                config: {
-                    wled_preferences: {
-                        wled_preferred_mode: { preferred_mode: value, user_enabled: true },
-                    },
-                },
-            })
-        );
-    };
-    const onChangeStartupScan = value => {
-        dispatch(setConfig({ config: { scan_on_startup: value } }));
-    };
+
     const getFromLS = layoutName => {
         if (window.localStorage) {
             let savedLayout = window.localStorage.getItem(layoutName);
@@ -190,55 +168,6 @@ const DashboardView = () => {
                                     </p>
                                 </div>
                             </div>
-                            {/*
-                            <Divider />
-                             <div className={classes.section}>
-                                <Icon
-                                    style={{
-                                        margin: '0.5rem',
-                                        marginTop: '1rem',
-                                        marginRight: '1rem',
-                                    }}
-                                >
-                                    <Wled />
-                                </Icon>
-                            </div> */}
-                            {/* <div
-                                style={{
-                                    marginLeft: '2.5rem',
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                }}
-                            > */}
-                            {/* <FormControl>
-                                    <InputLabel id="wled-scan-selector">
-                                        Scan for WLED on startup
-                                    </InputLabel>
-                                    <Select
-                                        labelId="wled-scan-selector"
-                                        id="wled-scan-select"
-                                        value={settings.scan_on_startup}
-                                        onChange={e => onChangeStartupScan(e.target.value)}
-                                    >
-                                        <MenuItem value={true}>Yes</MenuItem>
-                                        <MenuItem value={false}>No</MenuItem>
-                                    </Select>
-                                </FormControl>
-                                <FormControl>
-                                    <InputLabel id="wled-mode-selector">
-                                        Preferred WLED mode
-                                    </InputLabel>
-                                    <Select
-                                        labelId="wled-mode-selector"
-                                        id="wled-mode-select"
-                                        value={settings.wled_preferred_mode}
-                                        onChange={e => onChangePreferredMode(e.target.value)}
-                                    >
-                                        <MenuItem value={'unset'}>Unset</MenuItem>
-                                        <MenuItem value={'E131'}>E131</MenuItem>
-                                        <MenuItem value={'DDP'}>DDP</MenuItem>
-                                    </Select>
-                                </FormControl> */}
                             <WledCard />
                             <div
                                 style={{

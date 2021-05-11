@@ -138,7 +138,7 @@ const WledCard = () => {
                                         id="wled-mode-select"
                                         value={settings.wled_preferences.wled_preferred_mode.setting}
                                         onChange={(e) => onChangeSetting("wled_preferred_mode", e.target.value)}
-                                        disabled={settings.wled_preferences.wled_preferred_mode.user_enabled}
+                                        disabled={!settings.wled_preferences.wled_preferred_mode.user_enabled}
                                     >
                                         <MenuItem value={"unset"}>Unset</MenuItem>
                                         <MenuItem value={"E131"}>E131</MenuItem>
@@ -162,7 +162,7 @@ const WledCard = () => {
                                         id="wled-gamma-select"
                                         value={settings.wled_preferences.realtime_gamma_enabled.setting}
                                         onChange={(e) => onChangeSetting("realtime_gamma_enabled", e.target.value)}
-                                        disabled={settings.wled_preferences.realtime_gamma_enabled.user_enabled}
+                                        disabled={!settings.wled_preferences.realtime_gamma_enabled.user_enabled}
                                     >
                                         <MenuItem value={true}>Enable</MenuItem>
                                         <MenuItem value={false}>Disable</MenuItem>
@@ -184,7 +184,7 @@ const WledCard = () => {
                                         id="wled-brightness-select"
                                         value={settings.wled_preferences.force_max_brightness.setting}
                                         onChange={(e) => onChangeSetting("force_max_brightness", e.target.value)}
-                                        disabled={settings.wled_preferences.force_max_brightness.user_enabled}
+                                        disabled={!settings.wled_preferences.force_max_brightness.user_enabled}
                                     >
                                         <MenuItem value={true}>Enable</MenuItem>
                                         <MenuItem value={false}>Disable</MenuItem>
@@ -206,7 +206,7 @@ const WledCard = () => {
                                         id="wled-dmx-select"
                                         value={settings.wled_preferences.realtime_dmx_mode.setting}
                                         onChange={(e) => onChangeSetting("realtime_dmx_mode", e.target.value)}
-                                        disabled={settings.wled_preferences.realtime_dmx_mode.user_enabled}
+                                        disabled={!settings.wled_preferences.realtime_dmx_mode.user_enabled}
                                     >
                                         <MenuItem value={"MultiRGB"}>Disabled</MenuItem>
                                         <MenuItem value={"MultiRGB"}>Single RGB</MenuItem>
@@ -232,7 +232,7 @@ const WledCard = () => {
                                         id="wled-universe-select"
                                         value={settings.wled_preferences.start_universe_setting.setting}
                                         onChange={(e) => onChangeSetting("start_universe_setting", e.target.value)}
-                                        disabled={settings.wled_preferences.start_universe_setting.user_enabled}
+                                        disabled={!settings.wled_preferences.start_universe_setting.user_enabled}
                                     >
                                         <MenuItem value={settings.wled_preferences.start_universe_setting.setting}>{settings.wled_preferences.start_universe_setting.setting}</MenuItem>
                                     </Select>
@@ -253,7 +253,7 @@ const WledCard = () => {
                                         id="wled-dmx-start-select"
                                         value={settings.wled_preferences.dmx_address_start.setting}
                                         onChange={(e) => onChangeSetting("dmx_address_start", e.target.value)}
-                                        disabled={settings.wled_preferences.dmx_address_start.user_enabled}
+                                        disabled={!settings.wled_preferences.dmx_address_start.user_enabled}
                                     >
                                         <MenuItem value={1}>1</MenuItem>
                                     </Select>
@@ -274,7 +274,7 @@ const WledCard = () => {
                                         id="wled-inactivity-select"
                                         value={settings.wled_preferences.inactivity_timeout.setting}
                                         onChange={(e) => onChangeSetting("inactivity_timeout", e.target.value)}
-                                        disabled={settings.wled_preferences.inactivity_timeout.user_enabled}
+                                        disabled={!settings.wled_preferences.inactivity_timeout.user_enabled}
                                     >
                                         <MenuItem value={1000}>1000</MenuItem>
                                     </Select>
