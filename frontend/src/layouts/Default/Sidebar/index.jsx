@@ -94,22 +94,22 @@ const Links = ({ classes, devMode, effectLinks, isViewActive }) => {
                                                                 display.config.icon_name.startsWith(
                                                                     'wled'
                                                                 ) ? (
-                                                                    <Wled />
-                                                                ) : display.config.icon_name.startsWith(
-                                                                    'mdi:'
-                                                                ) ? (
-                                                                        <span
-                                                                            className={`mdi mdi-${display.config.icon_name.split(
-                                                                                'mdi:'
-                                                                            )[1]
-                                                                                }`}
-                                                                        ></span>
-                                                                    ) : (
-                                                                        camelToSnake(
-                                                                            display.config.icon_name ||
-                                                                            'SettingsInputComponent'
-                                                                        )
-                                                                    )}
+                                                                <Wled />
+                                                            ) : display.config.icon_name.startsWith(
+                                                                'mdi:'
+                                                            ) ? (
+                                                                <span
+                                                                    className={`mdi mdi-${display.config.icon_name.split(
+                                                                        'mdi:'
+                                                                    )[1]
+                                                                        }`}
+                                                                ></span>
+                                                            ) : (
+                                                                camelToSnake(
+                                                                    display.config.icon_name ||
+                                                                    'SettingsInputComponent'
+                                                                )
+                                                            )}
                                                         </Icon>
                                                     </ListItemIcon>
                                                     <ListItemText
@@ -142,7 +142,27 @@ const Links = ({ classes, devMode, effectLinks, isViewActive }) => {
                         </ListItem>
                     );
                 }
-
+                if (prop.sidebarName === 'Developer' && devMode) {
+                    return (
+                        <NavLink
+                            to={'/developer/melbank'}
+                            className={classes.item}
+                            activeClassName="active"
+                            key={key}
+                        >
+                            <ListItem button className={listItemClass}>
+                                <ListItemIcon className={classes.itemIcon}>
+                                    <prop.icon />
+                                </ListItemIcon>
+                                <ListItemText
+                                    primary={prop.sidebarName}
+                                    className={classes.itemText}
+                                    disableTypography={true}
+                                />
+                            </ListItem>
+                        </NavLink>
+                    )
+                }
                 return (
                     <NavLink
                         to={prop.path}

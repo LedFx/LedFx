@@ -8,8 +8,14 @@ export function shutdown() {
 export function getSystemConfig() {
     return api.get('/config');
 }
-export function setSystemConfig(config) {
+export function deleteSystemConfig() {
+    return api.delete('/config');
+}
+export function importSystemConfig(config) {
     return api.post('/config', config);
+}
+export function setSystemConfig(config) {
+    return api.put('/config', config);
 }
 
 export function getSystemInfo() {

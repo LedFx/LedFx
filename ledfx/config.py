@@ -13,6 +13,48 @@ CONFIG_DIRECTORY = ".ledfx"
 CONFIG_FILE_NAME = "config.json"
 PRESETS_FILE_NAME = "presets.json"
 
+_default_wled_settings = {
+    "wled_preferred_mode": "UDP",
+    "realtime_gamma_enabled": False,
+    "force_max_brightness": False,
+    "realtime_dmx_mode": "MultiRGB",
+    "start_universe_setting": 1,
+    "dmx_address_start": 1,
+    "inactivity_timeout": 1,
+}
+
+
+# adds the {setting: ..., user: ...} thing to the defaults dict
+def parse_default_wled_setting(setting):
+    key, value = setting
+    return (key, {"setting": value, "user_enabled": False})
+
+
+# creates validators for the different wled preferences
+def wled_validator_generator(data_type):
+    return vol.Schema({"setting": data_type, "user_enabled": bool})
+
+
+# creates the vol.optionals using the above two functions
+def wled_optional_generator(setting):
+    key, default = setting
+    return (
+        vol.Optional(key, default=default),
+        wled_validator_generator(type(default["setting"])),
+    )
+
+
+# generate the default settings with the setting, user enabled dict thing
+_default_wled_settings = dict(
+    map(parse_default_wled_setting, _default_wled_settings.items())
+)
+
+# generate the config schema to validate changes
+WLED_CONFIG_SCHEMA = vol.Schema(
+    dict(map(wled_optional_generator, _default_wled_settings.items())),
+    required=True,
+)
+
 CORE_CONFIG_SCHEMA = vol.Schema(
     {
         vol.Optional("host", default="0.0.0.0"): str,
@@ -26,38 +68,8 @@ CORE_CONFIG_SCHEMA = vol.Schema(
         vol.Optional("integrations", default=[]): list,
         vol.Optional("scan_on_startup", default=False): bool,
         vol.Optional(
-            "wled_preferences",
-            default={
-                "wled_preferred_mode": {
-                    "setting": "",
-                    "user_enabled": False,
-                },
-                "realtime_gamma_enabled": {
-                    "setting": False,
-                    "user_enabled": False,
-                },
-                "force_max_brightness": {
-                    "setting": False,
-                    "user_enabled": False,
-                },
-                "realtime_dmx_mode": {
-                    "setting": "MultiRGB",
-                    "user_enabled": False,
-                },
-                "start_universe_setting": {
-                    "setting": 1,
-                    "user_enabled": False,
-                },
-                "dmx_address_start": {
-                    "setting": 1,
-                    "user_enabled": False,
-                },
-                "inactivity_timeout": {
-                    "setting": 1,
-                    "user_enabled": False,
-                },
-            },
-        ): dict,
+            "wled_preferences", default=_default_wled_settings
+        ): WLED_CONFIG_SCHEMA,
         vol.Optional(
             "configuration_version", default=CONFIGURATION_VERSION
         ): str,

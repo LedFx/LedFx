@@ -141,7 +141,7 @@ const viewRoutes = [
     //     component: DeveloperView,
     // },
     {
-        path: '/developer/melbank',
+        path: '/developer/:graphString',
         sidebarName: 'Developer',
         navbarName: 'Developer',
         icon: Tune,

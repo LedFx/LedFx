@@ -27,7 +27,53 @@ class ConfigEndpoint(RestEndpoint):
 
         return web.json_response(data=response, status=200)
 
+    async def delete(self) -> web.Response:
+        self._ledfx.config = CORE_CONFIG_SCHEMA({})
+
+        save_config(
+            config=self._ledfx.config,
+            config_dir=self._ledfx.config_dir,
+        )
+
+        response = {
+            "status": "success",
+            "payload": {
+                "type": "success",
+                "reason": "Config reset to default values",
+            },
+        }
+
+        return web.json_response(data=response, status=200)
+
     async def post(self, request) -> web.Response:
+        try:
+            data = await request.json()
+        except JSONDecodeError:
+            response = {
+                "status": "failed",
+                "reason": "JSON Decoding failed",
+            }
+            return web.json_response(data=response, status=400)
+
+        try:
+            validated_config = CORE_CONFIG_SCHEMA(data)
+        except vol.MultipleInvalid as msg:
+            response = {
+                "status": "failed",
+                "payload": {"type": "warning", "reason": str(msg)},
+            }
+            return web.json_response(data=response, status=202)
+
+        self._ledfx.config = validated_config
+
+        save_config(
+            config=self._ledfx.config,
+            config_dir=self._ledfx.config_dir,
+        )
+
+        return web.json_response(data={"status": "success"}, status=200)
+
+    async def put(self, request) -> web.Response:
         try:
             data = await request.json()
         except JSONDecodeError:
@@ -65,6 +111,13 @@ class ConfigEndpoint(RestEndpoint):
         new_valid_config = {
             key: validated_config[key] for key in config.keys()
         }
+
+        # handle special validation for wled_preferences
+        if "wled_preferences" in new_valid_config:
+            for key, value in new_valid_config["wled_preferences"].items():
+                self._ledfx.config["wled_preferences"][key] |= value
+            del new_valid_config["wled_preferences"]
+
         self._ledfx.config |= new_valid_config
 
         # should restart ledfx at this point or smth

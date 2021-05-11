@@ -6,6 +6,7 @@ import GeneralCard from './GeneralCard';
 import InfoCard from './InfoCard';
 import { fetchDisplayList } from 'modules/displays';
 import DevCard from './DevCard';
+import WledCard from './WledCard';
 
 const AdvancedView = () => {
     const dispatch = useDispatch();
@@ -20,6 +21,7 @@ const AdvancedView = () => {
             <Grid container item xs={12} sm={12} md={12} lg={4} xl={3} spacing={3}>
                 <Grid item xs={12} sm={6} md={6} lg={12} >
                     <GeneralCard />
+                    <WledCard />
                 </Grid>
                 <Grid item xs={12} sm={6} md={6} lg={12}>
                     <InfoCard />

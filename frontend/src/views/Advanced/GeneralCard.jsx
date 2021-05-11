@@ -12,7 +12,7 @@ import CloudUploadIcon from '@material-ui/icons/CloudUpload';
 import CloudDownloadIcon from '@material-ui/icons/CloudDownload';
 import PowerSettingsNewIcon from '@material-ui/icons/PowerSettingsNew';
 import AudioInputCard from './AudioInput'
-import { getAudioInputs, setAudioInput, setConfig } from 'modules/settings';
+import { getAudioInputs, setAudioInput } from 'modules/settings';
 import { Delete, Refresh } from '@material-ui/icons';
 import * as settingProxies from 'proxies/settings';
 import { showdynSnackbar } from 'modules/ui';
@@ -73,17 +73,64 @@ const GeneralCard = () => {
             )
         }
     }
+    const fileChanged = (e) => {
+        const fileReader = new FileReader();
+        fileReader.readAsText(e.target.files[0], "UTF-8");
+        fileReader.onload = async (e) => {
+            console.log("e.target.result", e.target.result);
+            try {
+                const response = await settingProxies.importSystemConfig(e.target.result);
+                if (response.statusText !== 'OK') {
+                    dispatch(
+                        showdynSnackbar({ message: 'Error while importing config.json', type: 'error' })
+                    )
+                    throw new Error('Error importing system config');
+                }
+
+                // dispatch(
+                //     showdynSnackbar({ message: 'downloading config.json', type: 'info' })
+                // )
+            } catch (error) {
+                console.log(error)
+                dispatch(
+                    showdynSnackbar({ message: 'Error while importing config.json', type: 'error' })
+                )
+            }
+        };
+    }
+    const configDelete = async () => {
+        try {
+            const response = await settingProxies.deleteSystemConfig();
+            if (response.statusText !== 'OK') {
+                dispatch(
+                    showdynSnackbar({ message: 'Error while downloading config.json', type: 'error' })
+                )
+                throw new Error('Error fetching system config');
+            }
+            console.log(response)
+            if (response.statusText === 'OK') {
+                dispatch(
+                    showdynSnackbar({ message: response.data.payload.reason, type: response.data.payload.type })
+                )
+            }
+        } catch (error) {
+            console.log(error)
+            dispatch(
+                showdynSnackbar({ message: 'Error while downloading config.json', type: 'error' })
+            )
+        }
+    }
     const changeTheme = event => {
         setTheme(event.target.value);
         window.localStorage.setItem('blade', event.target.value);
         window.location = window.location.href;
     };
-    const onChangePreferredMode = value => {
-        dispatch(setConfig({ config: { wled_preferences: {wled_preferred_mode:{preferred_mode: value, user_enabled: true }} }}));
-    };
-    const onChangeStartupScan = value => {
-        dispatch(setConfig({ config: { scan_on_startup: value } }));
-    };
+    // const onChangePreferredMode = value => {
+    //     dispatch(setConfig({ config: { wled_preferences: { wled_preferred_mode: { preferred_mode: value, user_enabled: true } } } }));
+    // };
+    // const onChangeStartupScan = value => {
+    //     dispatch(setConfig({ config: { scan_on_startup: value } }));
+    // };
 
     useEffect(() => {
         dispatch(getAudioInputs())
@@ -107,7 +154,7 @@ const GeneralCard = () => {
                     labelPlacement="end"
                 /> */}
                 <AudioInputCard raw {...audioInputs} onChange={(e) => dispatch(setAudioInput(e))} />
-                <FormControl>
+                {/* <FormControl>
                     <InputLabel id="wled-scan-selector">Scan for WLED on startup</InputLabel>
                     <Select
                         labelId="wled-scan-selector"
@@ -132,7 +179,7 @@ const GeneralCard = () => {
                         <MenuItem value={"E131"}>E131</MenuItem>
                         <MenuItem value={"DDP"}>DDP</MenuItem>
                     </Select>
-                </FormControl>
+                </FormControl> */}
                 <FormControl>
                     <InputLabel id="theme-selector">Theme</InputLabel>
                     <Select
@@ -161,27 +208,47 @@ const GeneralCard = () => {
                 >
                     Export Config
                 </Button>
+                <Button
+                    size="small"
+                    startIcon={<Delete />}
+                    variant="outlined"
+                    style={{ marginTop: '0.5rem' }}
+                    onClick={configDelete}
 
+                >
+                    Reset Config
+                </Button>
+                <input
+                    hidden
+                    accept="application/json"
+                    id="contained-button-file"
+                    type="file"
+                    onChange={(e) => fileChanged(e)}
+                />
+                <label htmlFor="contained-button-file">
+                    <Button
+                        component="span"
+                        size="small"
+                        startIcon={<CloudDownloadIcon />}
+                        variant="outlined"
+                        style={{ marginTop: '0.5rem', width: '100%' }}
+
+                    >
+                        Import Config
+                        </Button>
+                </label>
+                <Button
+                    size="small"
+                    startIcon={<Refresh />}
+                    variant="outlined"
+                    style={{ marginTop: '0.5rem' }}
+
+                >
+                    Restart LedFx
+                        </Button>
                 {parseInt(window.localStorage.getItem('BladeMod')) > 1 && (
                     <>
-                        <Button
-                            size="small"
-                            startIcon={<CloudDownloadIcon />}
-                            variant="outlined"
-                            style={{ marginTop: '0.5rem' }}
-                            disabled
-                        >
-                            Import Config
-                        </Button>
-                        <Button
-                            size="small"
-                            startIcon={<Delete />}
-                            variant="outlined"
-                            style={{ marginTop: '0.5rem' }}
-                            disabled
-                        >
-                            Reset Config
-                        </Button>
+
                         <Button
                             size="small"
                             startIcon={<Refresh />}
