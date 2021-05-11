@@ -50,6 +50,34 @@ class ConfigEndpoint(RestEndpoint):
             }
             return web.json_response(data=response, status=400)
 
+        try:
+            validated_config = CORE_CONFIG_SCHEMA(data)
+        except vol.MultipleInvalid as msg:
+            response = {
+                "status": "failed",
+                "payload": {"type": "warning", "reason": str(msg)},
+            }
+            return web.json_response(data=response, status=202)
+
+        self._ledfx.config = validated_config
+
+        save_config(
+            config=self._ledfx.config,
+            config_dir=self._ledfx.config_dir,
+        )
+
+        return web.json_response(data={"status": "success"}, status=200)
+
+    async def put(self, request) -> web.Response:
+        try:
+            data = await request.json()
+        except JSONDecodeError:
+            response = {
+                "status": "failed",
+                "reason": "JSON Decoding failed",
+            }
+            return web.json_response(data=response, status=400)
+
         config = data.get("config")
         if config is None:
             response = {
