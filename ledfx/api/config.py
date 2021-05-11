@@ -30,6 +30,11 @@ class ConfigEndpoint(RestEndpoint):
     async def delete(self) -> web.Response:
         self._ledfx.config = CORE_CONFIG_SCHEMA({})
 
+        save_config(
+            config=self._ledfx.config,
+            config_dir=self._ledfx.config_dir,
+        )
+
         response = {
             "status": "success",
             "payload": {
