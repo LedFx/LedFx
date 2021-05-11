@@ -35,6 +35,7 @@ import {
     MenuItem,
     Select,
 } from '@material-ui/core';
+import WledCard from 'views/Advanced/WledCard';
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
 const useStyles = makeStyles(theme => ({
@@ -107,7 +108,15 @@ const DashboardView = () => {
         });
     };
     const onChangePreferredMode = value => {
-        dispatch(setConfig({ config: { wled_preferences: {wled_preferred_mode:{preferred_mode: value, user_enabled: true }} }}));
+        dispatch(
+            setConfig({
+                config: {
+                    wled_preferences: {
+                        wled_preferred_mode: { preferred_mode: value, user_enabled: true },
+                    },
+                },
+            })
+        );
     };
     const onChangeStartupScan = value => {
         dispatch(setConfig({ config: { scan_on_startup: value } }));
@@ -181,9 +190,9 @@ const DashboardView = () => {
                                     </p>
                                 </div>
                             </div>
-
+                            {/*
                             <Divider />
-                            <div className={classes.section}>
+                             <div className={classes.section}>
                                 <Icon
                                     style={{
                                         margin: '0.5rem',
@@ -193,16 +202,15 @@ const DashboardView = () => {
                                 >
                                     <Wled />
                                 </Icon>
-                                <h2>WLED-Integration</h2>
-                            </div>
-                            <div
+                            </div> */}
+                            {/* <div
                                 style={{
                                     marginLeft: '2.5rem',
                                     display: 'flex',
                                     flexDirection: 'column',
                                 }}
-                            >
-                                <FormControl>
+                            > */}
+                            {/* <FormControl>
                                     <InputLabel id="wled-scan-selector">
                                         Scan for WLED on startup
                                     </InputLabel>
@@ -230,40 +238,41 @@ const DashboardView = () => {
                                         <MenuItem value={'E131'}>E131</MenuItem>
                                         <MenuItem value={'DDP'}>DDP</MenuItem>
                                     </Select>
-                                </FormControl>
-                                <div
-                                    style={{
-                                        marginTop: '2rem',
-                                        textAlign: 'right',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'flex-end',
-                                    }}
-                                >
-                                    <div style={{ display: 'flex', alignItems: 'center' }}>
-                                        {searchDevicesLoading && (
-                                            <CircularProgress
-                                                variant="determinate"
-                                                value={(devices.scanProgress / 30) * 100}
-                                                size={35}
-                                                style={{ marginRight: '0.5rem' }}
-                                            />
-                                        )}
-                                        <Button
-                                            variant={'outlined'}
-                                            aria-label="Scan"
-                                            disabled={searchDevicesLoading}
-                                            onClick={handleFindDevices}
-                                            endIcon={<WifiTethering />}
-                                        >
-                                            Find WLEDs
-                                        </Button>
-                                    </div>
-                                    <Link href={`/devices`} style={{ marginLeft: '.5rem' }}>
-                                        <Button variant={'outlined'}>Device Management</Button>
-                                    </Link>
+                                </FormControl> */}
+                            <WledCard />
+                            <div
+                                style={{
+                                    marginTop: '2rem',
+                                    textAlign: 'right',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'flex-end',
+                                }}
+                            >
+                                <div style={{ display: 'flex', alignItems: 'center' }}>
+                                    {searchDevicesLoading && (
+                                        <CircularProgress
+                                            variant="determinate"
+                                            value={(devices.scanProgress / 30) * 100}
+                                            size={35}
+                                            style={{ marginRight: '0.5rem' }}
+                                        />
+                                    )}
+                                    <Button
+                                        variant={'outlined'}
+                                        aria-label="Scan"
+                                        disabled={searchDevicesLoading}
+                                        onClick={handleFindDevices}
+                                        endIcon={<WifiTethering />}
+                                    >
+                                        Find WLEDs
+                                    </Button>
                                 </div>
+                                <Link href={`/devices`} style={{ marginLeft: '.5rem' }}>
+                                    <Button variant={'outlined'}>Device Management</Button>
+                                </Link>
                             </div>
+                            {/* </div> */}
                         </CardContent>
                     </Card>
                 </Grid>

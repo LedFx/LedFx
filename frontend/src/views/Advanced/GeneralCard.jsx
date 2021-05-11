@@ -12,7 +12,7 @@ import CloudUploadIcon from '@material-ui/icons/CloudUpload';
 import CloudDownloadIcon from '@material-ui/icons/CloudDownload';
 import PowerSettingsNewIcon from '@material-ui/icons/PowerSettingsNew';
 import AudioInputCard from './AudioInput'
-import { getAudioInputs, setAudioInput, setConfig } from 'modules/settings';
+import { getAudioInputs, setAudioInput } from 'modules/settings';
 import { Delete, Refresh } from '@material-ui/icons';
 import * as settingProxies from 'proxies/settings';
 import { showdynSnackbar } from 'modules/ui';
@@ -78,12 +78,12 @@ const GeneralCard = () => {
         window.localStorage.setItem('blade', event.target.value);
         window.location = window.location.href;
     };
-    const onChangePreferredMode = value => {
-        dispatch(setConfig({ config: { wled_preferences: {wled_preferred_mode:{preferred_mode: value, user_enabled: true }} }}));
-    };
-    const onChangeStartupScan = value => {
-        dispatch(setConfig({ config: { scan_on_startup: value } }));
-    };
+    // const onChangePreferredMode = value => {
+    //     dispatch(setConfig({ config: { wled_preferences: { wled_preferred_mode: { preferred_mode: value, user_enabled: true } } } }));
+    // };
+    // const onChangeStartupScan = value => {
+    //     dispatch(setConfig({ config: { scan_on_startup: value } }));
+    // };
 
     useEffect(() => {
         dispatch(getAudioInputs())
@@ -107,7 +107,7 @@ const GeneralCard = () => {
                     labelPlacement="end"
                 /> */}
                 <AudioInputCard raw {...audioInputs} onChange={(e) => dispatch(setAudioInput(e))} />
-                <FormControl>
+                {/* <FormControl>
                     <InputLabel id="wled-scan-selector">Scan for WLED on startup</InputLabel>
                     <Select
                         labelId="wled-scan-selector"
@@ -132,7 +132,7 @@ const GeneralCard = () => {
                         <MenuItem value={"E131"}>E131</MenuItem>
                         <MenuItem value={"DDP"}>DDP</MenuItem>
                     </Select>
-                </FormControl>
+                </FormControl> */}
                 <FormControl>
                     <InputLabel id="theme-selector">Theme</InputLabel>
                     <Select

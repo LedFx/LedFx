@@ -31,8 +31,38 @@ const INITIAL_STATE = {
     error: '',
     version: '',
     git_build_commit: '',
+    wled_preferences: {
+        wled_preferred_mode: {
+            setting: '',
+            user_enabled: false,
+        },
+        realtime_gamma_enabled: {
+            setting: false,
+            user_enabled: false,
+        },
+        force_max_brightness: {
+            setting: false,
+            user_enabled: false,
+        },
+        realtime_dmx_mode: {
+            setting: 'MultiRGB',
+            user_enabled: false,
+        },
+        start_universe_setting: {
+            setting: 1,
+            user_enabled: false,
+        },
+        dmx_address_start: {
+            setting: 1,
+            user_enabled: false,
+        },
+        inactivity_timeout: {
+            setting: 1,
+            user_enabled: false,
+        },
+    },
     wled_preferred_mode: '',
-    scan_on_startup: true,
+    scan_on_startup: false,
 };
 
 export default handleActions(
@@ -172,9 +202,11 @@ export function getConfig() {
                 host,
                 devices,
                 wled_preferred_mode,
+                wled_preferences,
                 scan_on_startup,
             } = response.data.config;
             const { version, git_build_commit } = responseInfo.data;
+            console.log('HERE', wled_preferences);
             dispatch(
                 configFetched({
                     devMode,
@@ -185,6 +217,7 @@ export function getConfig() {
                     git_build_commit,
                     wled_preferred_mode,
                     scan_on_startup,
+                    wled_preferences,
                 })
             );
         } catch (error) {
