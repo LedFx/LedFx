@@ -65,6 +65,13 @@ class ConfigEndpoint(RestEndpoint):
         new_valid_config = {
             key: validated_config[key] for key in config.keys()
         }
+
+        # handle special validation for wled_preferences
+        if "wled_preferences" in new_valid_config:
+            for key, value in new_valid_config["wled_preferences"].items():
+                self._ledfx.config["wled_preferences"][key] |= value
+            del new_valid_config["wled_preferences"]
+
         self._ledfx.config |= new_valid_config
 
         # should restart ledfx at this point or smth
