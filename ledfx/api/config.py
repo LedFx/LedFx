@@ -27,6 +27,19 @@ class ConfigEndpoint(RestEndpoint):
 
         return web.json_response(data=response, status=200)
 
+    async def delete(self) -> web.Response:
+        self._ledfx.config = CORE_CONFIG_SCHEMA({})
+
+        response = {
+            "status": "success",
+            "payload": {
+                "type": "success",
+                "reason": "Config reset to default values",
+            },
+        }
+
+        return web.json_response(data=response, status=200)
+
     async def post(self, request) -> web.Response:
         try:
             data = await request.json()
