@@ -73,6 +73,31 @@ const GeneralCard = () => {
             )
         }
     }
+    const fileChanged = (e) => {
+        const fileReader = new FileReader();
+        fileReader.readAsText(e.target.files[0], "UTF-8");
+        fileReader.onload = async (e) => {
+            console.log("e.target.result", e.target.result);
+            try {
+                const response = await settingProxies.importSystemConfig(e.target.result);
+                if (response.statusText !== 'OK') {
+                    dispatch(
+                        showdynSnackbar({ message: 'Error while importing config.json', type: 'error' })
+                    )
+                    throw new Error('Error importing system config');
+                }
+
+                // dispatch(
+                //     showdynSnackbar({ message: 'downloading config.json', type: 'info' })
+                // )
+            } catch (error) {
+                console.log(error)
+                dispatch(
+                    showdynSnackbar({ message: 'Error while importing config.json', type: 'error' })
+                )
+            }
+        };
+    }
     const configDelete = async () => {
         try {
             const response = await settingProxies.deleteSystemConfig();
@@ -82,10 +107,12 @@ const GeneralCard = () => {
                 )
                 throw new Error('Error fetching system config');
             }
-            // download(response.data.config, 'config.json', 'application/json');
-            // dispatch(
-            //     showdynSnackbar({ message: 'downloading config.json', type: 'info' })
-            // )
+            console.log(response)
+            if (response.statusText === 'OK') {
+                dispatch(
+                    showdynSnackbar({ message: response.data.payload.reason, type: response.data.payload.type })
+                )
+            }
         } catch (error) {
             console.log(error)
             dispatch(
@@ -191,22 +218,37 @@ const GeneralCard = () => {
                 >
                     Reset Config
                 </Button>
+                <input
+                    hidden
+                    accept="application/json"
+                    id="contained-button-file"
+                    type="file"
+                    onChange={(e) => fileChanged(e)}
+                />
+                <label htmlFor="contained-button-file">
+                    <Button
+                        component="span"
+                        size="small"
+                        startIcon={<CloudDownloadIcon />}
+                        variant="outlined"
+                        style={{ marginTop: '0.5rem', width: '100%' }}
 
+                    >
+                        Import Config
+                        </Button>
+                </label>
+                <Button
+                    size="small"
+                    startIcon={<Refresh />}
+                    variant="outlined"
+                    style={{ marginTop: '0.5rem' }}
+
+                >
+                    Restart LedFx
+                        </Button>
                 {parseInt(window.localStorage.getItem('BladeMod')) > 1 && (
                     <>
-                        <Button
-                            size="small"
-                            startIcon={<CloudDownloadIcon />}
-                            variant="outlined"
-                            style={{ marginTop: '0.5rem' }}
 
-                        >
-                            Import Config
-                            <input
-                                type="file"
-                                hidden
-                            />
-                        </Button>
                         <Button
                             size="small"
                             startIcon={<Refresh />}
