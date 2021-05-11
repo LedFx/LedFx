@@ -75,7 +75,7 @@ function ConfirmationDialogRaw(props) {
 
     const handleOk = () => {
         onClose(value);
-        console.log("QLCFormEventTest",formData)
+        console.log("QLCFormEventTest1",formData)
         integrationsProxies.createQLCListener(props.integration.id, formData);
         window.location = window.location.href;
     };
@@ -295,7 +295,7 @@ function ConfirmationDialogRaw(props) {
             <DialogContent dividers>
                 <DialogContentText>
                     To add a Event Listener to LedFx, please first select the type of event trigger (If This),
-                    and then provide the expected output (Then That).
+                    and then provide the expected output (Then Do This). 
                 </DialogContentText>
                 <FormControl>
                     <InputLabel htmlFor="grouped-select">Event Trigger (If This)</InputLabel>
@@ -322,7 +322,7 @@ function ConfirmationDialogRaw(props) {
                                     </option>
                                 </MenuItem>)
                             }
-                        
+                        {/* We may want this at a later time.
                         <ListSubheader color="primary">
                             Effect Set
                         </ListSubheader>
@@ -337,13 +337,14 @@ function ConfirmationDialogRaw(props) {
                                     </option>
                                 </MenuItem>)
                             }
-                        {/* We may want this at a later time.
+                        
                         <ListSubheader color="primary">
                             Effect Cleared
                         </ListSubheader>
                         <MenuItem><option>effect_cleared, effect_name: Effect Cleared</option></MenuItem>*/}
                     </Select>
                 </FormControl>
+                <FormHelperText> If you select an existing event trigger, then this will update/replace the existing `Then Do This`.</FormHelperText>
                 <FormControl>
                     <InputLabel htmlFor="grouped-select">Then Do This</InputLabel>
                     <Select
@@ -368,7 +369,6 @@ function ConfirmationDialogRaw(props) {
                             </MenuItem>)
                         }
                     </Select>
-                    <FormHelperText>Some important helper text</FormHelperText>
                 
                 {/*
                 If {qlcType}  === 'Button' or 'Audio Triggers'
@@ -468,7 +468,7 @@ function ConfirmationDialogRaw(props) {
                 <Button autoFocus onClick={handleCancel} color="primary">
                     Cancel
                 </Button>
-                <Button onClick={handleOk & console.log("QLCFormEventData",formData)} color="primary">
+                <Button onClick={handleOk} color="primary">
                     Ok
                 </Button>
             </DialogActions>

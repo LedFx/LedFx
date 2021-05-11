@@ -20,12 +20,12 @@ const DataRow = ({ id, name, type, data }) =>
                     <PopoverSure
                         variant="text"
                         onDeleteVitem={() =>
-                            deleteQLCListener(id,{
-                                "event_type": dr[0],
-                                "event_filter": {
-                                    //dr[0]: dr[1]&&dr[1].scene_name
-                                }
-                            })
+                            deleteQLCListener(
+                                id, ({
+                                    "event_type": dr[0],
+                                    "event_filter": {"scene_name": dr[1].scene_name}
+                                })
+                            )
                         }
                     />
                     <Button
