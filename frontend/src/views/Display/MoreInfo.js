@@ -597,6 +597,8 @@ const MoreInfo = ({ display }) => {
                         <Typography variant="caption">
                             Active: {JSON.stringify(display.config[display.id].active)}
                             <br />
+                            Type: {JSON.stringify(display.config[display.id].config.icon_name)}
+                            <br />
                             Center Offset: {display.config[display.id].config.center_offset}
                             <br />
                             Crossfade: {JSON.stringify(display.config[display.id].config.crossfade)}
@@ -606,7 +608,55 @@ const MoreInfo = ({ display }) => {
                             <br />
                             Preview only:{' '}
                             {JSON.stringify(display.config[display.id].config.preview_only)}
+                            <br />
                         </Typography>
+                        {/* {JSON.stringify(wledData.brand) === '"WLED"'
+                                ?
+                                <Typography className={classes.title} variant="subtitle1">
+                                    <br />
+                                    WLED Device Info:
+                                </Typography>
+                                : ''}
+                                {JSON.stringify(wledData.brand) === '"WLED"'
+                                ? 
+                                <Typography variant="caption">
+                                    Name: {JSON.stringify(wledData.name)}
+                                    <br />
+                                    Uptime: {secondsToString (JSON.stringify(wledData.uptime))}
+                                    <br />
+                                    WLED Version: {JSON.stringify(wledData.ver)},
+                                    Chip: {JSON.stringify(wledData.arch)}
+                                    <br />
+                                    LED Count: {numberWithCommas (JSON.stringify(wledData.leds.count))},
+                                    RGBW? {JSON.stringify(wledData.leds.rgbw)}
+                                    <br />
+                                    Estimated current: {numberWithCommas (JSON.stringify(wledData.leds.pwr))} mA,
+                                    Max power: {numberWithCommas (JSON.stringify(wledData.leds.maxpwr))} mA
+                                    <br />
+                                    Live Mode: {JSON.stringify(wledData.live)} ,
+                                    Live Mode Source: {JSON.stringify(wledData.lip)}, {JSON.stringify(wledData.lm)} ,
+                                    UDP Port: {JSON.stringify(wledData.udpport)}
+                                    <br />
+                                    WiFi Signal strength: {JSON.stringify(wledData.wifi.signal)}%,
+                                    WiFi Channel: {JSON.stringify(wledData.wifi.channel)},
+                                    MAC: {JSON.stringify(wledData.mac)}
+                                    <br />
+                                    {JSON.stringify(wledData.leds.fps) > 0
+                                    ? <Typography variant="caption">
+                                        Frames Per Second: {numberWithCommas (JSON.stringify(wledData.leds.fps))} fps
+                                    <br />
+                                    </Typography>
+                                    : ''}
+                                    {JSON.stringify(wledData.freeheap) > 10000
+                                    ?
+                                    <Typography variant="caption">
+                                        RAM available: {numberWithCommas (JSON.stringify(wledData.freeheap))} - Good
+                                    </Typography>
+                                    : <Typography className={classes.title} variant="subtitle1">
+                                        RAM available: {JSON.stringify(wledData.freeheap)} (This is Problematic, as less than 10k)
+                                    </Typography>}
+                                    </Typography>
+                                    : ''} */}
                     </CardContent>
                 </Card>
             </Grid>

@@ -1,4 +1,5 @@
 import logging
+from distutils.version import StrictVersion
 
 import voluptuous as vol
 
@@ -109,6 +110,7 @@ class WLEDDevice(NetworkedDevice):
         wled_name = wled_config["name"]
         wled_count = led_info["count"]
         wled_rgbmode = led_info["rgbw"]
+        wled_version = wled_config["ver"]
 
         wled_config = {
             "name": wled_name,
@@ -120,13 +122,16 @@ class WLEDDevice(NetworkedDevice):
         self._config |= wled_config
         self.setup_subdevice()
 
-        # These use unofficial WLED API calls that are broken regularly
-        # They need replacing with proper HTTP/JSON API calls
-
-        # self.wled.enable_realtime_gamma()
-        # self.wled.set_inactivity_timeout(self._config["timeout"])
-        # self.wled.first_universe()
-        # self.wled.first_dmx_address()
-        # self.wled.multirgb_dmx_mode()
+        # Currently *assuming* that this PR gets released in 0.13
+        # https://github.com/Aircoookie/WLED/pull/1944
+        if StrictVersion(wled_version) >= StrictVersion("0.13.0"):
+            _LOGGER.info(
+                f"WLED Version Supports Sync Setting API: {wled_version}"
+            )
+            # self.wled.enable_realtime_gamma()
+            # self.wled.set_inactivity_timeout(self._config["timeout"])
+            # self.wled.first_universe()
+            # self.wled.first_dmx_address()
+            # self.wled.multirgb_dmx_mode()
 
         await self.wled.flush_sync_settings()
