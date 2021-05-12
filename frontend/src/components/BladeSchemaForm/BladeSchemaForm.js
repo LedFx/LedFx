@@ -5,6 +5,7 @@ import BladeColorDropDown from './BladeColorDropDown';
 import BladeBoolean from './BladeBoolean';
 import BladeSelect from './BladeSelect';
 import BladeSlider from './BladeSlider';
+
 import { setDisplayEffect } from 'modules/selectedDisplay';
 import {
     Fab,
@@ -114,20 +115,27 @@ const BladeSchemaForm = props => {
                             />
                         );
                     case 'string':
-                        return (
-                            schema.properties[s].enum &&
+                        return schema.properties[s].enum && pickerKeys.indexOf(s) === -1 ? (
+                            <BladeSelect
+                                model={model}
+                                variant={_selectVariant}
+                                schema={schema.properties[s]}
+                                model_id={s}
+                                key={i}
+                                onChange={(model_id, value) => {
+                                    const c = {};
+                                    c[model_id] = value;
+                                    return handleEffectConfig(display_id, c);
+                                }}
+                            />
+                        ) : (
                             pickerKeys.indexOf(s) === -1 && (
-                                <BladeSelect
+                                <BladeColorDropDown
+                                    selectedType={selectedType}
                                     model={model}
-                                    variant={_selectVariant}
-                                    schema={schema.properties[s]}
-                                    model_id={s}
+                                    type={'colorNew'}
+                                    clr={'blade_color'}
                                     key={i}
-                                    onChange={(model_id, value) => {
-                                        const c = {};
-                                        c[model_id] = value;
-                                        return handleEffectConfig(display_id, c);
-                                    }}
                                 />
                             )
                         );
