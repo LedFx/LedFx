@@ -62,7 +62,8 @@ const GeneralCard = () => {
                 )
                 throw new Error('Error fetching system config');
             }
-            download(response.data.config, 'config.json', 'application/json');
+
+            download({ ...response.data.config, ...{ ledfx_presets: undefined } }, 'config.json', 'application/json');
             dispatch(
                 showdynSnackbar({ message: 'downloading config.json', type: 'info' })
             )
