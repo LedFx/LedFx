@@ -85,25 +85,65 @@ class AudioInputSource:
             except OSError as Error:
                 _LOGGER.critical(f"Error: {Error}. Shutting down.")
                 self._ledfx.stop()
+
         # Setup a pre-emphasis filter to help balance the highs
+        # Enumerate all of the input devices and find the one matching the
+        # configured device index
+        hostapis = self._audio.query_hostapis()
+        default_api = self._audio.default.hostapi
+        devices = self._audio.query_devices()
+        default_device = self._audio.default.device[0]
 
-        self.pre_emphasis = None
-        if self._config["pre_emphasis"]:
-            self.pre_emphasis = aubio.digital_filter(3)
-            #
-            # old, do not use
-            # self.pre_emphasis.set_biquad(1., -self._config['pre_emphasis'], 0, 0, 0)
-
-            # USE THESE FOR SCOTT_MEL OR OTHERS
-            # self.pre_emphasis.set_biquad(1.3662, -1.9256, 0.5621, -1.9256, 0.9283)
-
-            # USE THESE FOR MATT_MEl
-            # weaker bass, good for vocals, highs
-            # self.pre_emphasis.set_biquad(0.87492, -1.74984, 0.87492, -1.74799, 0.75169)
-            # bass heavier overall more balanced
-            self.pre_emphasis.set_biquad(
-                0.85870, -1.71740, 0.85870, -1.71605, 0.71874
+        # Show device and api info in logger
+        _LOGGER.info("Audio Input Devices:")
+        for api_idx, api in enumerate(hostapis):
+            _LOGGER.info(
+                "Host API: {} {}".format(
+                    api["name"],
+                    "[DEFAULT] [SELECTED]" if api_idx == default_api else "",
+                )
             )
+            for device_idx in api["devices"]:
+                device = devices[device_idx]
+                if device["max_input_channels"] > 0:
+                    _LOGGER.info(
+                        "    [{}] {} ({} Hz) {} {}".format(
+                            device_idx,
+                            device["name"],
+                            device["default_samplerate"],
+                            "[DEFAULT]"
+                            if device_idx == default_device
+                            else "",
+                            "[SELECTED]"
+                            if device_idx == self._config["device_index"]
+                            else "",
+                        )
+                    )
+                    # automatically configure sample rate
+                    if device_idx == self._config["device_index"]:
+                        self._config["mic_rate"] = int(
+                            device["default_samplerate"]
+                        )
+
+        # old, do not use
+        # self.pre_emphasis.set_biquad(1., -self._config['pre_emphasis'], 0, 0, 0)
+
+        # USE THESE FOR SCOTT_MEL OR OTHERS
+        # self.pre_emphasis.set_biquad(1.3662, -1.9256, 0.5621, -1.9256, 0.9283)
+
+        # USE THESE FOR MATT_MEl
+        # weaker bass, good for vocals, highs
+        # self.pre_emphasis.set_biquad(0.87492, -1.74984, 0.87492, -1.74799, 0.75169)
+        # bass heavier overall more balanced
+        # self.pre_emphasis.set_biquad(
+        #     0.85870, -1.71740, 0.85870, -1.71605, 0.71874
+        # )
+
+        # Setup a pre-emphasis filter to balance the input volume of lows to highs
+        self.pre_emphasis = aubio.digital_filter(3)
+        self.pre_emphasis.set_biquad(0.8485, -1.6971, 0.8485, -1.6966, 0.6977)
+
+        freq_domain_length = (self._config["fft_size"] // 2) + 1
 
         # Setup the phase vocoder to perform a windowed FFT
         self._phase_vocoder = aubio.pvoc(
@@ -115,8 +155,53 @@ class AudioInputSource:
         self._frequency_domain_x = np.linspace(
             0,
             self._config["mic_rate"],
-            (self._config["fft_size"] // 2) + 1,
+            freq_domain_length,
         )
+
+        # # MFCC experiments #################
+
+        # _vocal_low, _vocal_high = vocal_range
+        # self._vocal_low_index = int(
+        #     freq_domain_length * _vocal_low / self._config["mic_rate"]
+        # )
+        # self._vocal_high_index = int(
+        #     freq_domain_length * _vocal_high / self._config["mic_rate"]
+        # )
+        # _vocal_domain_index = self._vocal_high_index - self._vocal_low_index
+        # self._vocal_frequency_domain = aubio.cvec(_vocal_domain_index * 2 - 1)
+
+        # # configure mfcc for science and harmonics
+        # _mfcc_coeffs = 13
+        # self._mfcc = aubio.mfcc(
+        #     buf_size=_vocal_domain_index * 2 - 1,
+        #     n_filters=100,
+        #     n_coeffs=_mfcc_coeffs,
+        #     samplerate=self._config["mic_rate"],
+        # )
+        # self._mfcc_x = np.arange(_mfcc_coeffs)
+        # self._mfcc_smoothing = ExpFilter(
+        #     np.tile(1e-1, _mfcc_coeffs - 2),
+        #     alpha_decay=0.2,
+        #     alpha_rise=0.4,
+        # )
+
+        # # Pitch Experiments ###################
+        # self._pitch = aubio.pitch(
+        #     "schmitt",
+        #     self._config["fft_size"],
+        #     self._config["mic_rate"] // self._config["sample_rate"],
+        #     self._config["mic_rate"],
+        # )
+        # self._pitch.set_unit("midi")
+
+        # self._pitch_rolling = np.zeros(60, dtype=float)
+        # self._pitch_x = np.arange(60)
+
+        # self._pitch_smoothing = ExpFilter(
+        #     0,
+        #     alpha_decay=0.3,
+        #     alpha_rise=0.3,
+        # )
         # Open the audio stream and start processing the input
         try:
             self._stream = self._audio.InputStream(
@@ -259,30 +344,30 @@ class MelbankInputSource(AudioInputSource):
         super().__init__(ledfx, config)
 
         self._initialize_melbank()
-        self._initialize_pitch()
-        self._initialize_tempo()
-        self._initialize_onset()
-        self._initialize_oscillator()
+        # self._initialize_pitch()
+        # self._initialize_tempo()
+        # self._initialize_onset()
+        # self._initialize_oscillator()
 
     def update_config(self, config):
         validated_config = self.CONFIG_SCHEMA(config)
         super().update_config(validated_config)
 
         self._initialize_melbank()
-        self._initialize_pitch()
-        self._initialize_tempo()
-        self._initialize_onset()
-        self._initialize_oscillator()
+        # self._initialize_pitch()
+        # self._initialize_tempo()
+        # self._initialize_onset()
+        # self._initialize_oscillator()
 
     def _invalidate_caches(self):
         """Invalidates the cache for all melbank related data"""
         super()._invalidate_caches()
-        self.onset.cache_clear()
-        self.oscillator.cache_clear()
+        # self.onset.cache_clear()
+        # self.oscillator.cache_clear()
         self.melbank.cache_clear()
         self.melbank_filtered.cache_clear()
         self.interpolated_melbank.cache_clear()
-        self.midi_value.cache_clear()
+        # self.midi_value.cache_clear()
 
     def _initialize_pitch(self):
         self.pitch_o = aubio.pitch(
