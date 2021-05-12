@@ -26,7 +26,6 @@ from logging.handlers import RotatingFileHandler
 from pyupdater.client import Client
 
 import ledfx.config as config_helpers
-import ledfx.sentry_config  # noqa: F401
 from ledfx.consts import (
     PROJECT_NAME,
     PROJECT_VERSION,
@@ -285,6 +284,8 @@ def main():
         _LOGGER.warning(
             "Offline Mode Enabled - Please check for updates regularly."
         )
+    if args.offline_mode is False:
+        import ledfx.sentry_config  # noqa: F401
 
     if not currently_frozen() and installed_via_pip():
         warnings.filterwarnings("ignore", category=DeprecationWarning)
