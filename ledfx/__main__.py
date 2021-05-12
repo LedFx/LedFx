@@ -325,26 +325,31 @@ def entry_point(icon=None):
     # have to re-parse args here :/ no way to pass them through pysicon's setup
     args = parse_args()
 
-    _LOGGER.info("LedFx Core is initializing")
-    ledfx = LedFxCore(
-        config_dir=args.config, host=args.host, port=args.port, icon=icon
-    )
-
-    if args.performance:
-        print("Collecting performance data...")
-        profiler = cProfile.Profile()
-        profiler.enable()
-        ledfx.start(open_ui=args.open_ui)
-        profiler.disable()
-        print("Finished collecting performance data")
-        filename = config_helpers.get_profile_dump_location()
-        profiler.dump_stats(filename)
-        print(f"Saved performance data to config directory      : {filename}")
-        print(
-            "Please send the performance data to a developer : https://ledfx.app/contact/"
+    exit_code = 4
+    while exit_code == 4:
+        _LOGGER.info("LedFx Core is initializing")
+        ledfx = LedFxCore(
+            config_dir=args.config, host=args.host, port=args.port, icon=icon
         )
-    else:
-        ledfx.start(open_ui=args.open_ui)
+
+        if args.performance:
+            print("Collecting performance data...")
+            profiler = cProfile.Profile()
+            profiler.enable()
+            _exit_code = ledfx.start(open_ui=args.open_ui)
+            profiler.disable()
+            print("Finished collecting performance data")
+            filename = config_helpers.get_profile_dump_location()
+            profiler.dump_stats(filename)
+            print(
+                f"Saved performance data to config directory      : {filename}"
+            )
+            print(
+                "Please send the performance data to a developer : https://ledfx.app/contact/"
+            )
+            exit_code = _exit_code
+        else:
+            exit_code = ledfx.start(open_ui=args.open_ui)
 
     if icon:
         icon.stop()
