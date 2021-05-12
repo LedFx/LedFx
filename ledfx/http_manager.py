@@ -87,7 +87,7 @@ class HttpServer:
                         f"Failed to start: something is running on port {self.port}\nIs LedFx already running?"
                     )
             time.sleep(2)
-            self._ledfx.stop()
+            self._ledfx.stop(1)
 
     async def stop(self):
         await self.app.shutdown()

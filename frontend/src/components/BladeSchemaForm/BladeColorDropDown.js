@@ -6,6 +6,7 @@ import Select from '@material-ui/core/Select';
 import { setDisplayEffect } from 'modules/selectedDisplay';
 import { makeStyles } from '@material-ui/core/styles';
 import BladeColorPicker from './BladeColorPicker';
+import BladeColorNewPicker from './BladeColorNewPicker';
 
 const useStyles = makeStyles(theme => ({
     FormRow: {
@@ -106,6 +107,16 @@ const BladeColorDropDown = ({ clr = 'color', type = 'both', selectedType, model 
                     model={model}
                 />
             )}
+            {type === 'colorNew' &&
+                (console.log('DAMN', clr, model, selectedType) || (
+                    <BladeColorNewPicker
+                        col={model[clr]}
+                        clr={clr}
+                        sendColor={sendColor}
+                        selectedType={selectedType}
+                        model={model}
+                    />
+                ))}
         </div>
     );
 };

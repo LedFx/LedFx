@@ -36,6 +36,9 @@ class BladePowerAudioEffect(AudioReactiveEffect):
                 "color", description="Color of bar", default="brown"
             ): vol.In(list(COLORS.keys())),
             vol.Optional(
+                "blade_color", description="NEW Color", default="hsl(0, 100%, 25%)"
+            ): str,
+            vol.Optional(
                 "frequency_range",
                 description="Frequency range for the beat detection",
                 default="Bass (60-250Hz)",
