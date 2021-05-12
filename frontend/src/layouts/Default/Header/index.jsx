@@ -14,7 +14,8 @@ import DevIcon from '@material-ui/icons/DeveloperMode';
 import viewRoutes from 'routes/views.jsx';
 import { drawerWidth } from 'utils/style';
 import Fab from '@material-ui/core/Fab';
-
+import { Pause, PlayArrow } from '@material-ui/icons';
+import * as settingProxies from 'proxies/settings';
 const styles = theme => ({
     appBar: {
         backgroundColor: theme.palette.background.default,
@@ -68,7 +69,7 @@ const Header = props => {
         return name;
     };
     const [easterEgg, setEasterEgg] = useState(false);
-
+    const [pause, setPause] = useState(false)
     const { classes } = props;
     const name = getPageName();
     return (
@@ -91,7 +92,7 @@ const Header = props => {
                         <Fab
                             variant="round"
                             color="primary"
-                            size="small"
+                            size="medium"
                             onDoubleClick={() => {
                                 console.log(name)
                                 if ((name === 'Settings') && window.localStorage.getItem('BladeMod') < 1) {
@@ -121,6 +122,23 @@ const Header = props => {
                             ) : (<RedeemIcon />)}
                         </Fab>
                     )}
+                    <Fab
+                        variant="round"
+                        color="primary"
+                        size="medium"
+                        onClick={async () => {
+                            const response = await settingProxies.togglePause();
+                            if (response.statusText !== 'OK') {
+                                console.log(response)
+                            }
+                            if (response.statusText === 'OK') {
+                                setPause(!pause)
+                            }
+                        }}
+                        style={{ margin: '0 1rem' }}
+                    >
+                        {pause ? <PlayArrow /> : <Pause />}
+                    </Fab>
                     <Hidden mdUp>
                         <IconButton aria-label="open drawer" onClick={props.handleDrawerToggle}>
                             <Menu />

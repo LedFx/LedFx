@@ -11,7 +11,7 @@ _LOGGER = logging.getLogger(__name__)
 
 class InfoEndpoint(RestEndpoint):
 
-    ENDPOINT_PATH = "/api/shutdown"
+    ENDPOINT_PATH = "/api/power"
 
     exit_codes = {"shutdown": 3, "restart": 4}
 

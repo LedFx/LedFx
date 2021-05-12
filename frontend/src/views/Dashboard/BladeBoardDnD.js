@@ -215,7 +215,7 @@ const DashboardView = () => {
                 color="primary"
                 size="small"
                 onClick={() => saveLayoutToLS('layouts', layouts)}
-                style={{ position: 'fixed', right: '6rem', top: '0.8rem', zIndex: 1100 }}
+                style={{ position: 'fixed', marginLeft: '7rem', top: '0.7rem', zIndex: 1100 }}
             >
                 <Save />
             </Fab>
