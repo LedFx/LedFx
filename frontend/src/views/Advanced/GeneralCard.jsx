@@ -87,14 +87,15 @@ const GeneralCard = () => {
                     throw new Error('Error importing system config');
                 }
 
-                // dispatch(
-                //     showdynSnackbar({ message: 'downloading config.json', type: 'info' })
-                // )
+                dispatch(
+                    showdynSnackbar({ message: 'uploading config.json', type: 'info' })
+                )
+                window.location = window.location.href
             } catch (error) {
                 console.log(error)
-                dispatch(
-                    showdynSnackbar({ message: 'Error while importing config.json', type: 'error' })
-                )
+                // dispatch(
+                //     showdynSnackbar({ message: 'Error while importing config.json', type: 'error' })
+                // )
             }
         };
     }
@@ -103,20 +104,21 @@ const GeneralCard = () => {
             const response = await settingProxies.deleteSystemConfig();
             if (response.statusText !== 'OK') {
                 dispatch(
-                    showdynSnackbar({ message: 'Error while downloading config.json', type: 'error' })
+                    showdynSnackbar({ message: 'Error while resetting config.json', type: 'error' })
                 )
                 throw new Error('Error fetching system config');
             }
-            console.log(response)
+            // console.log(response)
             if (response.statusText === 'OK') {
-                dispatch(
-                    showdynSnackbar({ message: response.data.payload.reason, type: response.data.payload.type })
-                )
+                // dispatch(
+                //     showdynSnackbar({ message: response.data.payload.reason, type: response.data.payload.type })
+                // )
+                window.location = window.location.href
             }
         } catch (error) {
             console.log(error)
             dispatch(
-                showdynSnackbar({ message: 'Error while downloading config.json', type: 'error' })
+                showdynSnackbar({ message: 'Error while resetting config.json', type: 'error' })
             )
         }
     }
@@ -124,6 +126,28 @@ const GeneralCard = () => {
         setTheme(event.target.value);
         window.localStorage.setItem('blade', event.target.value);
         window.location = window.location.href;
+    };
+    const handleRestart = async (e) => {
+        try {
+            const response = await settingProxies.restart();
+            if (response.statusText !== 'OK') {
+                dispatch(
+                    showdynSnackbar({ message: 'Error while restarting', type: 'error' })
+                )
+                throw new Error('Error fetching system config');
+            }
+            console.log(response)
+            if (response.statusText === 'OK' && response.data.payload) {
+                dispatch(
+                    showdynSnackbar({ message: response.data.payload.reason, type: response.data.payload.type })
+                )
+            }
+        } catch (error) {
+            console.log(error)
+            // dispatch(
+            //     showdynSnackbar({ message: 'Error while downloading config.json', type: 'error' })
+            // )
+        }
     };
     // const onChangePreferredMode = value => {
     //     dispatch(setConfig({ config: { wled_preferences: { wled_preferred_mode: { preferred_mode: value, user_enabled: true } } } }));
@@ -242,6 +266,7 @@ const GeneralCard = () => {
                     startIcon={<Refresh />}
                     variant="outlined"
                     style={{ marginTop: '0.5rem' }}
+                    onClick={handleRestart}
 
                 >
                     Restart LedFx

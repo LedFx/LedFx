@@ -9,7 +9,9 @@ import InputLabel from "@material-ui/core/InputLabel";
 import MenuItem from "@material-ui/core/MenuItem";
 import FormControl from "@material-ui/core/FormControl";
 import Select from "@material-ui/core/Select";
-const ReactCSSTransitionGroup = "react.addons.CSSTransitionGroup";
+import { TransitionGroup } from 'react-transition-group';
+
+// const ReactCSSTransitionGroup = "react.addons.CSSTransitionGroup";
 
 const useStyles = makeStyles({
   root: {
@@ -235,7 +237,7 @@ export default function TransitionCard() {
             <Play />
           </IconButton>
         </div>
-        <ReactCSSTransitionGroup
+        <TransitionGroup
           className={classes.transitionWrapper}
           transitionName="slide-up"
           transitionAppear={true}
@@ -253,7 +255,7 @@ export default function TransitionCard() {
               key={i}
             />
           ))}
-        </ReactCSSTransitionGroup>
+        </TransitionGroup>
       </div>
     </div>
   );

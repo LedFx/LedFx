@@ -6,7 +6,7 @@ import CardHeader from '@material-ui/core/CardHeader';
 import CardContent from '@material-ui/core/CardContent';
 import InputLabel from '@material-ui/core/InputLabel';
 import MenuItem from '@material-ui/core/MenuItem';
-import { FormControl, Checkbox, Icon } from '@material-ui/core';
+import { FormControl, Checkbox, Icon, TextField } from '@material-ui/core';
 import Select from '@material-ui/core/Select';
 import { setConfig } from 'modules/settings';
 import Accordion from '@material-ui/core/Accordion';
@@ -15,6 +15,7 @@ import AccordionSummary from '@material-ui/core/AccordionSummary';
 import Typography from '@material-ui/core/Typography';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import Wled from 'components/CustomIcons/Wled';
+
 const useStyles = makeStyles({
     content: {
         display: 'flex',
@@ -50,7 +51,7 @@ const WledCard = () => {
     const dispatch = useDispatch();
     const classes = useStyles();
     const settings = useSelector(state => state.settings);
-    console.log(settings)
+    // console.log(settings)
     const toggleSetting = (setting, value) => {
         console.log(setting)
         dispatch(setConfig({ config: { wled_preferences: { [setting]: { user_enabled: value } } } }));
@@ -75,10 +76,6 @@ const WledCard = () => {
                     <Wled />
                 </Icon>} />
             <CardContent className={classes.content}>
-
-                {/* <div className={classes.rowB}> */}
-
-
                 <FormControl>
                     <InputLabel id="wled-scan-selector">Scan for WLED on startup</InputLabel>
                     <Select
@@ -91,23 +88,6 @@ const WledCard = () => {
                         <MenuItem value={false}>No</MenuItem>
                     </Select>
                 </FormControl>
-
-                {/* </div> */}
-                {/* <FormControl>
-                    <InputLabel id="wled-mode-selector">Preferred WLED mode</InputLabel>
-                    <Select
-                        labelId="wled-mode-selector"
-                        id="wled-mode-select"
-                        value={settings.wled_preferences.wled_preferred_mode ? settings.wled_preferences.wled_preferred_mode.setting : "unset"}
-                        onChange={(e) => onChangeSetting("wled_preferred_mode", e.target.value)}
-                    >
-                        <MenuItem value={"unset"}>Unset</MenuItem>
-                        <MenuItem value={"E131"}>E131</MenuItem>
-                        <MenuItem value={"DDP"}>DDP</MenuItem>
-                        <MenuItem value={"UDP"}>UDP</MenuItem>
-                    </Select>
-                </FormControl> */}
-
                 <Accordion style={{ marginTop: '2rem' }}>
                     <AccordionSummary
                         expandIcon={<ExpandMoreIcon />}
@@ -117,11 +97,10 @@ const WledCard = () => {
                         <Typography className={classes.heading}>WLED Sync-Settings</Typography>
                     </AccordionSummary>
                     <AccordionDetails className={classes.content}>
-                        <p style={{ margin: '0 0 2rem 0' }}>There are several settings inside WLED to finetune the sync.
-                        LedFx is able to do this for you.<br /><br />
+                        <p style={{ margin: '0 0 2rem 0' }}>LedFx can configure WLED's sync settings to recommended values.<br /><br />
                             WARNING: <br />
-                        If you are already using your strips with other controllers, the functionality might break!<br /><br />
-                        Tick the checkboxes next to the settings to control which setting to sync.</p>
+                            If you are using your strips with other controllers, changes to these settings might impact their functionality!<br /><br />
+                            LedFx will only change settings that you select with the checkbox</p>
                         <div className={classes.rowContainer}>
                             <div className={classes.row}>
 
@@ -225,18 +204,14 @@ const WledCard = () => {
                                     onChange={() => toggleSetting("start_universe_setting", !settings.wled_preferences.start_universe_setting.user_enabled)}
                                     inputProps={{ 'aria-label': 'primary checkbox' }}
                                 />
-                                <FormControl>
-                                    <InputLabel id="wled-universe">Start universe</InputLabel>
-                                    <Select
-                                        labelId="wled-universe"
-                                        id="wled-universe-select"
-                                        value={settings.wled_preferences.start_universe_setting.setting}
-                                        onChange={(e) => onChangeSetting("start_universe_setting", e.target.value)}
-                                        disabled={!settings.wled_preferences.start_universe_setting.user_enabled}
-                                    >
-                                        <MenuItem value={settings.wled_preferences.start_universe_setting.setting}>{settings.wled_preferences.start_universe_setting.setting}</MenuItem>
-                                    </Select>
-                                </FormControl>
+                                <TextField
+                                    type="number"
+                                    label="Start universe"
+                                    id="wled-universe-select"
+                                    value={settings.wled_preferences.start_universe_setting.setting}
+                                    onChange={(e) => onChangeSetting("start_universe_setting", e.target.value)}
+                                    disabled={!settings.wled_preferences.start_universe_setting.user_enabled} />
+
                             </div>
                             <div className={classes.row}>
 
@@ -246,18 +221,15 @@ const WledCard = () => {
                                     onChange={() => toggleSetting("dmx_address_start", !settings.wled_preferences.dmx_address_start.user_enabled)}
                                     inputProps={{ 'aria-label': 'primary checkbox' }}
                                 />
-                                <FormControl>
-                                    <InputLabel id="wled-dmx-start">DMX start address</InputLabel>
-                                    <Select
-                                        labelId="wled-dmx-start"
-                                        id="wled-dmx-start-select"
-                                        value={settings.wled_preferences.dmx_address_start.setting}
-                                        onChange={(e) => onChangeSetting("dmx_address_start", e.target.value)}
-                                        disabled={!settings.wled_preferences.dmx_address_start.user_enabled}
-                                    >
-                                        <MenuItem value={1}>1</MenuItem>
-                                    </Select>
-                                </FormControl>
+                                <TextField
+                                    type="number"
+                                    label="DMX start address"
+                                    id="wled-dmx-start-select"
+                                    value={settings.wled_preferences.dmx_address_start.setting}
+                                    onChange={(e) => onChangeSetting("dmx_address_start", e.target.value)}
+                                    disabled={!settings.wled_preferences.dmx_address_start.user_enabled}
+                                />
+
                             </div>
                             <div className={classes.row}>
 
@@ -267,25 +239,18 @@ const WledCard = () => {
                                     onChange={() => toggleSetting("inactivity_timeout", !settings.wled_preferences.inactivity_timeout.user_enabled)}
                                     inputProps={{ 'aria-label': 'primary checkbox' }}
                                 />
-                                <FormControl>
-                                    <InputLabel id="wled-inactivity">Inactivity Timeout</InputLabel>
-                                    <Select
-                                        labelId="wled-inactivity"
-                                        id="wled-inactivity-select"
-                                        value={settings.wled_preferences.inactivity_timeout.setting}
-                                        onChange={(e) => onChangeSetting("inactivity_timeout", e.target.value)}
-                                        disabled={!settings.wled_preferences.inactivity_timeout.user_enabled}
-                                    >
-                                        <MenuItem value={1000}>1000</MenuItem>
-                                    </Select>
-                                </FormControl>
+                                <TextField
+                                    type="number"
+                                    label="Inactivity Timeout"
+                                    id="wled-inactivity-select"
+                                    value={settings.wled_preferences.inactivity_timeout.setting}
+                                    onChange={(e) => onChangeSetting("inactivity_timeout", e.target.value)}
+                                    disabled={!settings.wled_preferences.inactivity_timeout.user_enabled}
+                                />
                             </div>
                         </div>
                     </AccordionDetails>
                 </Accordion >
-
-
-
             </CardContent >
         </Card >
     );
