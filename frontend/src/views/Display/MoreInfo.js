@@ -618,7 +618,7 @@ const MoreInfo = ({ display }) => {
                                 </Typography>
                                 : ''}
                                 {JSON.stringify(wledData.brand) === '"WLED"'
-                                ? 
+                                ?
                                 <Typography variant="caption">
                                     Name: {JSON.stringify(wledData.name)}
                                     <br />
