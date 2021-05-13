@@ -82,6 +82,7 @@ class Display:
     #     default=False,
     # ): bool,
 
+    _paused = False
     _active = False
     _output_thread = None
     _active_effect = None
@@ -291,15 +292,18 @@ class Display:
         # Assemble the frame if necessary, if nothing changed just sleep
         self.assembled_frame = self.assemble_frame()
         if self.assembled_frame is not None:
-            if not self._config["preview_only"]:
-                self.flush(self.assembled_frame)
+            if not self._paused:
+                if not self._config["preview_only"]:
+                    self.flush(self.assembled_frame)
 
-            def trigger_display_update_event():
-                self._ledfx.events.fire_event(
-                    DisplayUpdateEvent(self.id, self.assembled_frame)
+                def trigger_display_update_event():
+                    self._ledfx.events.fire_event(
+                        DisplayUpdateEvent(self.id, self.assembled_frame)
+                    )
+
+                self._ledfx.loop.call_soon_threadsafe(
+                    trigger_display_update_event
                 )
-
-            self._ledfx.loop.call_soon_threadsafe(trigger_display_update_event)
 
     def thread_function(self):
         # TODO: Evaluate switching # over to asyncio with UV loop optimization
@@ -645,6 +649,10 @@ class Displays:
     def clear_all_effects(self):
         for display in self.values():
             display.clear_frame()
+
+    def pause_all(self):
+        for display in self.values():
+            display._paused = not display._paused
 
     def get(self, display_id):
         for id, display in self._displays.items():

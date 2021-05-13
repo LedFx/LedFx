@@ -39,6 +39,14 @@ class DisplaysEndpoint(RestEndpoint):
 
         return web.json_response(data=response, status=200)
 
+    async def put(self) -> web.Response:
+        """
+        Toggle "paused" state of all displays
+        """
+        self._ledfx.displays.pause_all()
+
+        return web.json_response(data={"status": "success"}, status=200)
+
     async def post(self, request) -> web.Response:
         """
         Create a new display or update config of an existing one
