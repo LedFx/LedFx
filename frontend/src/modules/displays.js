@@ -12,6 +12,7 @@ export const deleteSegment = createAction(`${ACTION_ROOT}/DISPLAY_DELETE_SEGMENT
 export const handleSegmentChange = createAction(`${ACTION_ROOT}/DISPLAY_HANDLE_SEGMENTS`);
 export const orderSegmentChange = createAction(`${ACTION_ROOT}/DISPLAY_ORDER_SEGMENTS`);
 export const displaysReceived = createAction(`${ACTION_ROOT}/DISPLAYS_RECEIVED`);
+export const displaysPauseReceived = createAction(`${ACTION_ROOT}/DISPLAYS_PAUSE_RECEIVED`);
 export const displayUpdated = createAction(`${ACTION_ROOT}/DISPLAY_UPDATED`);
 export const displayToggled = createAction(`${ACTION_ROOT}/DISPLAY_TOGGLED`);
 export const scanProgressUpdated = createAction(`${ACTION_ROOT}/DISPLAY_SCAN_PROGRESS_UPDATED`);
@@ -98,9 +99,16 @@ export default handleActions(
         }),
         [displaysReceived]: (state, { payload, error }) => ({
             ...state,
-            list: error ? state.list : convertDisplaysDictionaryToList(payload),
-            dictionary: error ? state.dictionary : payload,
+            list: error ? state.list : convertDisplaysDictionaryToList(payload.displays),
+            dictionary: error ? state.dictionary : payload.displays,
             isLoading: false,
+            paused: error ? false : payload.paused,
+            error: error ? payload.message : '',
+        }),
+        [displaysPauseReceived]: (state, { payload, error }) => ({
+            ...state,
+            isLoading: false,
+            paused: error ? false : payload,
             error: error ? payload.message : '',
         }),
         [displayUpdated]: (state, { payload, payload: { id, ...data }, error }) => {
@@ -128,12 +136,12 @@ export function fetchDisplayList() {
         try {
             const response = await displayProxies.getDisplays();
             if (response.statusText === 'OK') {
-                const { displays } = response.data;
+                const { displays, paused } = response.data;
                 Object.keys(displays).forEach(key => {
                     const data = displays[key];
                     data.effect.active = !!data.effect.name;
                 });
-                dispatch(displaysReceived(displays));
+                dispatch(displaysReceived({ displays, paused }));
                 // dispatch(updateDisplays(convertDisplaysDictionaryToList(displays)));
             }
         } catch (error) {

@@ -12,13 +12,6 @@ export function restart() {
         action: 'restart',
     });
 }
-
-export function togglePause() {
-    return api.post('/power', {
-        timeout: 0,
-        action: 'pause',
-    });
-}
 export function getSystemConfig() {
     return api.get('/config');
 }

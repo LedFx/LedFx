@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useSelector, useDispatch } from 'react-redux'
 import PropTypes from 'prop-types';
 import withStyles from '@material-ui/core/styles/withStyles';
 import AppBar from '@material-ui/core/AppBar';
@@ -15,7 +16,9 @@ import viewRoutes from 'routes/views.jsx';
 import { drawerWidth } from 'utils/style';
 import Fab from '@material-ui/core/Fab';
 import { Pause, PlayArrow } from '@material-ui/icons';
-import * as settingProxies from 'proxies/settings';
+import { displaysPauseReceived } from 'modules/displays';
+import { togglePause } from 'proxies/display';
+
 const styles = theme => ({
     appBar: {
         backgroundColor: theme.palette.background.default,
@@ -69,9 +72,10 @@ const Header = props => {
         return name;
     };
     const [easterEgg, setEasterEgg] = useState(false);
-    const [pause, setPause] = useState(false)
     const { classes } = props;
     const name = getPageName();
+    const paused = useSelector(state => state.displays.paused)
+    const dispatch = useDispatch()
     return (
         <AppBar className={classes.appBar}>
             <Toolbar className={classes.toolBar}>
@@ -127,17 +131,18 @@ const Header = props => {
                         color="primary"
                         size="medium"
                         onClick={async () => {
-                            const response = await settingProxies.togglePause();
-                            if (response.statusText !== 'OK') {
-                                console.log(response)
-                            }
-                            if (response.statusText === 'OK') {
-                                setPause(!pause)
+                            try {
+                                const response = await togglePause();
+                                if (response.statusText === 'OK') {
+                                    dispatch(displaysPauseReceived(response.data.paused));
+                                }
+                            } catch (error) {
+                                console.log('Error toggeling pause', error.message);
                             }
                         }}
                         style={{ margin: '0 1rem' }}
                     >
-                        {pause ? <PlayArrow /> : <Pause />}
+                        {!paused ? <Pause /> : <PlayArrow />}
                     </Fab>
                     <Hidden mdUp>
                         <IconButton aria-label="open drawer" onClick={props.handleDrawerToggle}>
