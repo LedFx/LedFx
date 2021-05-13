@@ -20,6 +20,7 @@ class DisplaysEndpoint(RestEndpoint):
         Get info of all displays
         """
         response = {"status": "success", "displays": {}}
+        response["paused"] = self._ledfx.displays._paused
         for display in self._ledfx.displays.values():
             response["displays"][display.id] = {
                 "config": display.config,
@@ -45,7 +46,12 @@ class DisplaysEndpoint(RestEndpoint):
         """
         self._ledfx.displays.pause_all()
 
-        return web.json_response(data={"status": "success"}, status=200)
+        response = {
+            "status": "success",
+            "paused": self._ledfx.displays._paused,
+        }
+
+        return web.json_response(data=response, status=200)
 
     async def post(self, request) -> web.Response:
         """

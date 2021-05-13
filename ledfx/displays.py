@@ -565,6 +565,7 @@ class Displays:
     """Thin wrapper around the device registry that manages displays"""
 
     PACKAGE_NAME = "ledfx.displays"
+    _paused = False
 
     def __init__(self, ledfx):
         # super().__init__(ledfx, Display, self.PACKAGE_NAME)
@@ -651,8 +652,9 @@ class Displays:
             display.clear_frame()
 
     def pause_all(self):
+        self._paused = not self._paused
         for display in self.values():
-            display._paused = not display._paused
+            display._paused = self._paused
 
     def get(self, display_id):
         for id, display in self._displays.items():
