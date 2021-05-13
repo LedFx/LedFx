@@ -64,6 +64,9 @@ class AudioInputSource:
     _audioWindowSize = 4
     _processed_audio_sample = None
     _volume = -90
+    _silent = True
+    _silent_start_time = time.time()
+    _silent_timer = 0.0
     _volume_filter = ExpFilter(-90, alpha_decay=0.99, alpha_rise=0.99)
 
     AUDIO_CONFIG_SCHEMA = vol.Schema(
@@ -228,6 +231,9 @@ class AudioInputSource:
         # Calculate the frequency domain from the filtered data and
         # force all zeros when below the volume threshold
         if self._volume_filter.value > self._config["min_volume"]:
+            # update silent flag
+            self._silent = False
+
             self._processed_audio_sample = self._raw_audio_sample
 
             # Perform a pre-emphasis to balance the highs and lows
@@ -241,6 +247,12 @@ class AudioInputSource:
                 self._processed_audio_sample
             )
         else:
+            # Update silent flag if it's the first frame of silence
+            if not self._silent:
+                self._silent = True
+                self._silent_start_time = time.time()
+            self._silent_timer = time.time() - self._silent_start_time
+
             self._frequency_domain = self._frequency_domain_null
 
         # Light up some notifications for developer mode
