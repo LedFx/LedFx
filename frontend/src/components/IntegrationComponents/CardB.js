@@ -14,8 +14,6 @@ import { toggleAsyncIntegration } from 'modules/integrations';
 import { Switch, Chip } from '@material-ui/core';
 import DialogAddEventListener from 'components/IntegrationComponents/DialogAddEventListener';
 import { getAsyncqlclisteners  } from 'modules/qlc'
-//import { Call } from '@material-ui/icons';
-
 
 const useStyles = makeStyles({
     integrationCard: {
@@ -26,6 +24,16 @@ const useStyles = makeStyles({
         flexDirection: 'column',
     },
 });
+
+const handleEditIntegration = () => {
+    //onEditIntegration(int.id);
+};
+
+//Notes from how Edit Device is done. 
+//From: LedFx\frontend\src\components\DisplaysTable\DisplayCardItem.jsx
+    //const handleEditDevice = () => {
+    //    onEditDevice(deviceList.find(d => d.id === display.is_device));
+    //};
 
 const IntegrationsCard = ({ int }) => {
     const classes = useStyles();
@@ -103,9 +111,7 @@ const IntegrationsCard = ({ int }) => {
                 <Button
                     variant="text"
                     color="secondary"
-                    onClick={() => {
-                         console.log('edit');
-                    }}
+                    onClick={handleEditIntegration}
                     //Need to do, onClick edit Integration.
                 >
                     <EditIcon />

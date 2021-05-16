@@ -18,6 +18,7 @@ import Select from '@material-ui/core/Select';
 import { Slider, Switch } from '@material-ui/core';
 import FormHelperText from '@material-ui/core/FormHelperText';
 import ThisDropDown from './DialogAddEventListnerDropDown';
+import {createQlcListener} from 'modules/qlc';
 import * as integrationsProxies from 'proxies/integrations';
 
 function ConfirmationDialogRaw(props) {
@@ -41,7 +42,7 @@ function ConfirmationDialogRaw(props) {
 
     const dispatch = useDispatch();
     const qlcInfo = useSelector(state=>state.qlc.payload);
-    console.log("qlcInfo - Response: ", qlcInfo);
+    // console.log("qlcInfo - Response: ", qlcInfo);
     const effectNames = qlcInfo && qlcInfo.event_types && qlcInfo.event_types.effect_set.event_filters.effect_name
     //const effectCleared = qlcInfo && qlcInfo.event_types && qlcInfo.event_types.effect_cleared.event_name
     const SceneSet = qlcInfo && qlcInfo.event_types && qlcInfo.event_types.scene_set.event_filters.scene_name
@@ -75,9 +76,13 @@ function ConfirmationDialogRaw(props) {
 
     const handleOk = () => {
         onClose(value);
-        console.log("QLCFormEventTest1",formData)
-        integrationsProxies.createQLCListener(props.integration.id, formData);
-        window.location = window.location.href;
+        console.log("QLCFormEventTest1",formData);
+        const data = JSON.stringify(formData);
+        console.log("QLCFormEventTest1",data);
+        dispatch(createQlcListener(props.integration.id,formData));
+        // props.createQlcListener(props.integration.id,formData);
+        
+        // window.location = window.location.href;
     };
     
     const onModelChange = (key, val) => {
@@ -537,6 +542,7 @@ export default function ConfirmationDialog({ deviceList, config, integration }) 
                     value={integration}
                     deviceList={deviceList}
                     integration={integration}
+                    createQlcListener={createQlcListener}
                 />
             </>
         </div>

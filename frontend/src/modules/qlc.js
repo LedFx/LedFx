@@ -37,4 +37,19 @@ export function getAsyncqlclisteners(data) {
     };
 }
 
+export function createQlcListener(id,formdata) {
+    console.log("id",id);
+    console.log("name",formdata);
+    return async dispatch => {
+        try {
+            const { data, statusText } = await integrationsProxies.createQLCListener(id,formdata);
+            if (statusText === 'OK') {
+                console.log(data);
+            }
+        } catch (error) {
+            console.log(error);
+        }
+    };
+}
+
 //Need to do: create addqlclistener function
