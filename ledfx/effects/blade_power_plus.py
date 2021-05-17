@@ -3,8 +3,8 @@ import voluptuous as vol
 
 from ledfx.color import COLORS
 from ledfx.effects.audio import FREQUENCY_RANGES, AudioReactiveEffect
-from ledfx.effects.hsv_effect import HSVEffect
 from ledfx.effects.gradient import GradientEffect
+from ledfx.effects.hsv_effect import HSVEffect
 
 
 class BladePowerPlus(AudioReactiveEffect, HSVEffect, GradientEffect):
@@ -57,7 +57,7 @@ class BladePowerPlus(AudioReactiveEffect, HSVEffect, GradientEffect):
 
     def activate(self, pixel_count):
         super().activate(pixel_count)
-        
+
         #   HSV array is in vertical orientation:
         #   Pixel 1: [ H, S, V ]
         #   Pixel 2: [ H, S, V ]
@@ -66,16 +66,17 @@ class BladePowerPlus(AudioReactiveEffect, HSVEffect, GradientEffect):
         self.hsv = np.zeros((pixel_count, 3))
         self._bar = 0
         self._roll_count = 0
-        
+
         rgb_gradient = self.apply_gradient(1)
         self.hsv = self.rgb_to_hsv(rgb_gradient)
-        
+
         if self.config["solid_color"] is True:
-            hsv_color = self.rgb_to_hsv(np.array(COLORS[self._config["color"]]))
+            hsv_color = self.rgb_to_hsv(
+                np.array(COLORS[self._config["color"]])
+            )
             self.hsv[:, 0] = hsv_color[0]
             self.hsv[:, 1] = hsv_color[1]
             self.hsv[:, 2] = hsv_color[2]
-
 
     def config_updated(self, config):
         # Create the filters used for the effect
@@ -98,17 +99,27 @@ class BladePowerPlus(AudioReactiveEffect, HSVEffect, GradientEffect):
         # Must be zeroed every cycle to clear the previous frame
         self.out = np.zeros((self.pixel_count, 3))
         bar_idx = int(self._bar * self.pixel_count)
-        
+
         # Manually roll gradient because apply_gradient is only called once in activate instead of every render
         if self.config["gradient_roll"] != 0:
             # Hack to slow down roll since np.roll can only accept integers, 1 is a pretty fast minimum
-            self._roll_count += self.config["gradient_roll"] / 5 # Roll 1/5th as fast as the config
+            self._roll_count += (
+                self.config["gradient_roll"] / 5
+            )  # Roll 1/5th as fast as the config
             if self._roll_count >= 1:
                 self._roll_count = 0
                 if self.config["invert_roll"] is True:
-                    self.hsv = np.roll(self.hsv, -self._config["gradient_roll"], axis=0,)
+                    self.hsv = np.roll(
+                        self.hsv,
+                        -self._config["gradient_roll"],
+                        axis=0,
+                    )
                 else:
-                    self.hsv = np.roll(self.hsv, self._config["gradient_roll"], axis=0,)
+                    self.hsv = np.roll(
+                        self.hsv,
+                        self._config["gradient_roll"],
+                        axis=0,
+                    )
 
         # Construct hsv array
         self.out[:, 0] = self.hsv[:, 0]

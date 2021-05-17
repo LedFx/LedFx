@@ -41,7 +41,7 @@ const ConfigEditor = ({ raw = false }) => {
     port: 8888
     scenes: {}
     virtuals: []
-    
+
     `)
     const load = async () => {
         const response = await settingProxies.getSystemConfig();
