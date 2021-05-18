@@ -4,7 +4,6 @@ import selectedDevice from './selectedDevice';
 import schemas from './schemas';
 import scenes from './scenes';
 import settings from './settings';
-import virtuals from './virtuals';
 import integrations from './integrations';
 import ui from './ui';
 import displays from './displays';
@@ -17,10 +16,9 @@ const modules = {
     scenes,
     settings,
     selectedDevice,
-    virtuals,
     ui,
     displays,
     selectedDisplay,
 };
 
-export default modules
+export default modules;

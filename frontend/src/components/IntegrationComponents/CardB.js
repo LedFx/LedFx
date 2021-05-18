@@ -4,7 +4,7 @@ import CardActions from '@material-ui/core/CardActions';
 import CardContent from '@material-ui/core/CardContent';
 import { makeStyles } from '@material-ui/core/styles';
 import Typography from '@material-ui/core/Typography';
-import PopoverSure from 'components/VirtualComponents/PopoverSure';
+import PopoverSure from 'components/PopoverSure';
 import Button from '@material-ui/core/Button';
 import EditIcon from '@material-ui/icons/Edit';
 import { deleteAsyncIntegration } from 'modules/integrations';

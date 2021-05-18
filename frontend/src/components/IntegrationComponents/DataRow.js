@@ -5,7 +5,7 @@ import { Switch } from '@material-ui/core';
 import Button from '@material-ui/core/Button';
 import TableRow from '@material-ui/core/TableRow';
 import TableCell from '@material-ui/core/TableCell';
-import PopoverSure from 'components/VirtualComponents/PopoverSure';
+import PopoverSure from 'components/PopoverSure';
 
 const DataRow = ({ id, name, type, data }) =>
     data.map(dr => (
