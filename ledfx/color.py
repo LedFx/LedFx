@@ -24,7 +24,6 @@ COLORS = {
     "magenta": RGB(255, 0, 255),
     "black": RGB(0, 0, 0),
     "white": RGB(255, 255, 255),
-    "brown": RGB(139, 69, 19),
     "gold": RGB(255, 215, 0),
     "hotpink": RGB(255, 105, 180),
     "lightblue": RGB(173, 216, 230),

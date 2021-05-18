@@ -81,7 +81,7 @@ class ScenesEndpoint(RestEndpoint):
             }
             return web.json_response(data=response, status=400)
 
-        if action not in ["activate", "rename"]:
+        if action not in ["activate", "deactivate", "rename"]:
             response = {
                 "status": "failed",
                 "reason": f'Invalid action "{action}"',
@@ -135,6 +135,29 @@ class ScenesEndpoint(RestEndpoint):
                 "payload": {
                     "type": "info",
                     "message": f"Activated scene {scene['name']}",
+                },
+            }
+
+        elif action == "deactivate":
+            for display in self._ledfx.displays.values():
+                # Check display is in scene, make no changes if it isn't
+                if display.id not in scene["displays"].keys():
+                    _LOGGER.info(
+                        ("display with id {} has no data in scene {}").format(
+                            display.id, scene_id
+                        )
+                    )
+                    continue
+
+                # Clear the effect of display to that saved in the scene,
+                if scene["displays"][display.id]:
+                    display.clear_effect()
+
+            response = {
+                "status": "success",
+                "payload": {
+                    "type": "info",
+                    "message": f"Deactivated scene {scene['name']}",
                 },
             }
 

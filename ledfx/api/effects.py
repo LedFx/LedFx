@@ -1,4 +1,5 @@
 import logging
+from json import JSONDecodeError
 
 from aiohttp import web
 
@@ -12,11 +13,48 @@ class EffectsEndpoint(RestEndpoint):
     ENDPOINT_PATH = "/api/effects"
 
     async def get(self) -> web.Response:
-        response = {}
-        for device in self._ledfx.devices.values():
-            if device.active_effect:
-                response[
-                    device.active_effect.type
-                ] = device.active_effect.config
-
+        response = {"status": "success", "effects": {}}
+        for display in self._ledfx.displays.values():
+            if display.active_effect:
+                response["effects"][display.id] = {
+                    "effect_type": display.active_effect.type,
+                    "effec_config": display.active_effect.config,
+                }
         return web.json_response(data=response, status=200)
+
+    async def put(self, request) -> web.Response:
+        try:
+            data = await request.json()
+        except JSONDecodeError:
+            response = {
+                "status": "failed",
+                "reason": "JSON Decoding failed",
+            }
+            return web.json_response(data=response, status=400)
+
+        action = data.get("action")
+        if action is None:
+            response = {
+                "status": "failed",
+                "reason": 'Required attribute "action" was not provided',
+            }
+            return web.json_response(data=response, status=400)
+
+        if action not in ["clear_all_effects"]:
+            response = {
+                "status": "failed",
+                "reason": f'Invalid action "{action}"',
+            }
+            return web.json_response(data=response, status=400)
+
+        # Clear all effects on all devices
+        if action == "clear_all_effects":
+            self._ledfx.displays.clear_all_effects()
+            response = {
+                "status": "success",
+                "payload": {
+                    "type": "info",
+                    "message": "Cleared all effects on all devices",
+                },
+            }
+            return web.json_response(data=response, status=200)
