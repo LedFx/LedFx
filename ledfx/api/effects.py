@@ -17,9 +17,9 @@ class EffectsEndpoint(RestEndpoint):
         for display in self._ledfx.displays.values():
             if display.active_effect:
                 response["effects"][display.id] = {
-                "effect_type": display.active_effect.type,
-                "effec_config": display.active_effect.config,
-            }
+                    "effect_type": display.active_effect.type,
+                    "effec_config": display.active_effect.config,
+                }
         return web.json_response(data=response, status=200)
 
     async def put(self, request) -> web.Response:
@@ -46,7 +46,7 @@ class EffectsEndpoint(RestEndpoint):
                 "reason": f'Invalid action "{action}"',
             }
             return web.json_response(data=response, status=400)
-            
+
         # Clear all effects on all devices
         if action == "clear_all_effects":
             self._ledfx.displays.clear_all_effects()
@@ -54,8 +54,7 @@ class EffectsEndpoint(RestEndpoint):
                 "status": "success",
                 "payload": {
                     "type": "info",
-                    "message": f"Cleared all effects on all devices",
+                    "message": "Cleared all effects on all devices",
                 },
             }
             return web.json_response(data=response, status=200)
-            

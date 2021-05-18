@@ -61,7 +61,6 @@ const coloring = {
     magenta: 'rgb(255, 0, 255)',
     black: 'rgb(0, 0, 0)',
     white: 'rgb(255, 255, 255)',
-    brown: 'rgb(139, 69, 19)',
     gold: 'rgb(255, 215, 0)',
     hotpink: 'rgb(255, 105, 180)',
     lightblue: 'rgb(173, 216, 230)',
