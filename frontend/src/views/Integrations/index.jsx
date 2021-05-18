@@ -112,9 +112,11 @@ const IntegrationsView = () => {
                         ))}
                 </TableBody>
             </Table>
+            <Grid>
             <SpotifyView>
                 
             </SpotifyView>
+            </Grid>
             </>
     );
 };

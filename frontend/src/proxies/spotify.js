@@ -8,10 +8,10 @@ export function finishAuth() {
     const params = JSON.parse('{"' + decodeURI(search).replace(/"/g, '\\"').replace(/&/g, '","').replace(/=/g,'":"') + '"}')
     const cookies = new Cookies();
     const postData = {
-        client_id: '98c377701d74421abe1b466ecfada5fa',
+        client_id: '7658827aea6f47f98c8de593f1491da5',
         grant_type: 'authorization_code',
         code: params.code,
-        redirect_uri: 'http://localhost:3000/spotify/',
+        redirect_uri: 'http://localhost:3000/integrations/',
         code_verifier: cookies.get('verifier')
     }
     const config = {headers: {'Content-Type': 'application/x-www-form-urlencoded'}}
@@ -30,7 +30,7 @@ export function finishAuth() {
             cookies.set('refresh_token', res.data.refresh_token, {expires: refreshExpDate})
             tokens.refreshToken = res.data.refresh_token
             cookies.remove('verifier')
-            window.history.replaceState({}, document.title, `/spotify`)
+            window.history.replaceState({}, document.title, `/integrations`)
             return tokens
         }).catch(e => console.log(e))
 }
@@ -40,7 +40,7 @@ export function refreshAuth() {
     const cookies = new Cookies()
     const rT = cookies.get('refresh_token')
     const postData = {
-        client_id: '98c377701d74421abe1b466ecfada5fa',
+        client_id: '7658827aea6f47f98c8de593f1491da5',
         grant_type: 'refresh_token',
         refresh_token: rT
     }

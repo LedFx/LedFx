@@ -13,7 +13,9 @@ import { updatePlayerState  } from 'modules/spotify'
 //import CircularProgress from '@material-ui/core/CircularProgress';
 import InfoIcon from '@material-ui/icons/Info';
 import Link from '@material-ui/core/Link';
-//import { getScenes, activateScene } from 'modules/scenes';
+import { getScenes, activateScene } from 'modules/scenes';
+import Moment from 'react-moment';
+import moment from 'moment';
 //import uniqBy from 'lodash/uniqBy';
 
 const styles = theme => ({
@@ -52,6 +54,8 @@ const useStyles = makeStyles(theme => ({
         height: '100%',
     },
 }));
+
+//function getScenes();
 
 function msToTime(duration) {
     var milliseconds = parseInt((duration % 1000) / 100),
@@ -173,15 +177,38 @@ class SpotifyPlayer extends React.Component {
                                 </FormControl>
                             </Grid>
                             <Grid container item xs={6} justify='center'>
-                            <Typography align='center' variant='body1'>
-                                    Track Position: {msToTime(playerState.position)} 
+                            <Typography align='center' variant='body1'><div>
+                                    Track Position: 
+                                    {playerState.paused = true
+                                    ?
+                                    <Moment
+                                    interval={0}
+                                    format="hh:mm:ss"
+                                    durationFromNow
+                                    >
+                                        {moment().add(
+                                            playerState.position * -0.001,
+                                            's'
+                                            )}
+                                    </Moment>
+                                    : <Moment
+                                            interval={1000}
+                                            format="hh:mm:ss"
+                                            durationFromNow
+                                            >
+                                                {moment().add(
+                                                    playerState.position * -0.001,
+                                                    's'
+                                                    )}
+                                                    </Moment>}
+                                            </div>
                                     </Typography>
+                                <div>
                                 <FormControlLabel
                                     control={<Checkbox checked={this.state.includePosition} onChange={(e) => this.handleCheckChange(e)} name="includePosition" />}
                                     label="Include Track Position"
-                                />
+                                /></div>
                                 <Button variant='contained'>Add Trigger</Button>
-
                             </Grid>
                         </Grid>
                     </Grid>

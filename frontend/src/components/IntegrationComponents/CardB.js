@@ -14,6 +14,7 @@ import { toggleAsyncIntegration } from 'modules/integrations';
 import { Switch, Chip } from '@material-ui/core';
 import DialogAddEventListener from 'components/IntegrationComponents/DialogAddEventListener';
 import { getAsyncqlclisteners  } from 'modules/qlc'
+//import beginAuth from 'components/IntegrationComponents/Spotify';
 
 const useStyles = makeStyles({
     integrationCard: {
@@ -94,7 +95,7 @@ const IntegrationsCard = ({ int }) => {
                 {int.type === 'spotify' && int.active !== 'true' /* && !spotify.accessToken && !spotify.refreshToken */
                 ? 
                 // For Connect to Spotify button
-                <Button variant='contained' color="primary" onClick={() => this.beginAuth()}> 
+                <Button variant='contained' color="primary" onClick={() => this.beginAuth()}>
                     <Typography>Connect to Spotify</Typography>
                 </Button> 
                     : ''}
