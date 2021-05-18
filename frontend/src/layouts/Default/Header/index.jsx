@@ -14,10 +14,10 @@ import WarningIcon from '@material-ui/icons/Warning';
 import DevIcon from '@material-ui/icons/DeveloperMode';
 import viewRoutes from 'routes/views.jsx';
 import { drawerWidth } from 'utils/style';
-import Fab from '@material-ui/core/Fab';
 import { Pause, PlayArrow } from '@material-ui/icons';
 import { displaysPauseReceived } from 'modules/displays';
 import { togglePause } from 'proxies/display';
+import { Button } from '@material-ui/core';
 
 const styles = theme => ({
     appBar: {
@@ -93,8 +93,8 @@ const Header = props => {
                         {getPageName()}
                     </Typography>
                     {(easterEgg || parseInt(window.localStorage.getItem('BladeMod')) > 0) && (
-                        <Fab
-                            variant="round"
+                        <Button
+                            variant="contained"
                             color="primary"
                             size="medium"
                             onDoubleClick={() => {
@@ -124,10 +124,10 @@ const Header = props => {
                             ) : parseInt(window.localStorage.getItem('BladeMod')) > "2" ? (
                                 <WarningIcon />
                             ) : (<RedeemIcon />)}
-                        </Fab>
+                        </Button>
                     )}
-                    <Fab
-                        variant="round"
+                    <Button
+                        variant="contained"
                         color="primary"
                         size="medium"
                         onClick={async () => {
@@ -143,7 +143,7 @@ const Header = props => {
                         style={{ margin: '0 1rem' }}
                     >
                         {!paused ? <Pause /> : <PlayArrow />}
-                    </Fab>
+                    </Button>
                     <Hidden mdUp>
                         <IconButton aria-label="open drawer" onClick={props.handleDrawerToggle}>
                             <Menu />

@@ -23,7 +23,7 @@ const useStyles = makeStyles({
     },
     rowContainer: {
         border: '1px solid',
-        borderRadius: '10px'
+        borderRadius: '4px'
     },
     rowB: {
         display: 'flex',
