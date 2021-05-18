@@ -736,8 +736,14 @@ class MelbankInputSource(AudioInputSource):
         """
         # update tempo and oscillator
         is_beat = bool(self.tempo_o(self.audio_sample(raw=True))[0])
+        # We can use the confidence of the beat detector to smooth out things
+        # Here's the aubio reference - https://aubio.org/doc/latest/tempo_8h.html
+        self.beat_confidence = self.tempo_o.get_confidence()
+
         if is_beat:
+
             self.beat_period = self.tempo_o.get_period_s()
+
             self.beat_timestamp = time.time()
             oscillator = 0
         else:
@@ -748,6 +754,7 @@ class MelbankInputSource(AudioInputSource):
             # ensure it's between 0 and 1. useful when audio cuts
             oscillator = min(1, oscillator)
             oscillator = max(0, oscillator)
+
         return oscillator, is_beat
 
 
