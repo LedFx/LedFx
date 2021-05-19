@@ -13,11 +13,10 @@ class SpectrumAudioEffect(AudioReactiveEffect):
 
     _prev_y = None
 
-    def activate(self, pixel_count):
+    def on_activate(self, pixel_count):
         self.r = np.zeros(pixel_count)
         self.g = np.zeros(pixel_count)
         self.b = np.zeros(pixel_count)
-        super().activate(pixel_count)
 
     def config_updated(self, config):
 

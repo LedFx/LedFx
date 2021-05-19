@@ -54,8 +54,8 @@ class Strobe(AudioReactiveEffect, GradientEffect):
         }
     )
 
-    def activate(self, pixel_count):
-        super().activate(pixel_count)
+    def on_activate(self, pixel_count):
+
         self.strobe_overlay = np.zeros(np.shape(self.pixels))
         self.bass_strobe_overlay = np.zeros(np.shape(self.pixels))
         self.onsets_queue = queue.Queue()

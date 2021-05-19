@@ -20,9 +20,8 @@ class MagnitudeAudioEffect(AudioReactiveEffect, GradientEffect):
         }
     )
 
-    def activate(self, pixel_count):
+    def on_activate(self, pixel_count):
         self.magnitude = 0
-        super().activate(pixel_count)
 
     def config_updated(self, config):
         self._frequency_range = np.linspace(

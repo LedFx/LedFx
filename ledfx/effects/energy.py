@@ -55,14 +55,12 @@ class EnergyAudioEffect(AudioReactiveEffect):
         }
     )
 
-    def activate(self, pixel_count):
+    def on_activate(self, pixel_count):
         self.p = np.zeros((pixel_count, 3))
         self.beat_now = False
         self.lows_idx = 0
         self.mids_idx = 0
         self.highs_idx = 0
-
-        super().activate(pixel_count)
 
     def config_updated(self, config):
         # scale decay value between 0.1 and 0.2

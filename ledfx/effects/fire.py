@@ -32,8 +32,8 @@ class Fire(AudioReactiveEffect, HSVEffect):
         }
     )
 
-    def activate(self, pixel_count):
-        super().activate(pixel_count)
+    def on_activate(self, pixel_count):
+
         self.spark_pixels = np.zeros(self.pixel_count)
         self.h = np.zeros(self.pixel_count)
         self.s = np.zeros(self.pixel_count)

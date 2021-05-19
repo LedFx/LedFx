@@ -36,10 +36,9 @@ class BarAudioEffect(AudioReactiveEffect, GradientEffect):
         }
     )
 
-    def activate(self, pixel_count):
+    def on_activate(self, pixel_count):
         self.beat_oscillator = 0
         self.beat_now = 0
-        super().activate(pixel_count)
 
     def config_updated(self, config):
         self.phase = 0

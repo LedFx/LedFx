@@ -53,12 +53,11 @@ class ScrollAudioEffect(AudioReactiveEffect):
         }
     )
 
-    def activate(self, pixel_count):
+    def on_activate(self, pixel_count):
         self.output = np.zeros((pixel_count, 3))
         self.lows_max = 0
         self.mids_max = 0
         self.highs_max = 0
-        super().activate(pixel_count)
 
     def config_updated(self, config):
 

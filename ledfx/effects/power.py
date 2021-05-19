@@ -31,12 +31,11 @@ class PowerAudioEffect(AudioReactiveEffect, GradientEffect):
         }
     )
 
-    def activate(self, pixel_count):
+    def on_activate(self, pixel_count):
         self.sparks_overlay = np.zeros((pixel_count, 3))
         self.out = np.zeros((pixel_count, 3))
         self.sparks_decay = 0.75
         self.onsets = {"lows": None, "mids": None, "high": None}
-        super().activate(pixel_count)
 
     def config_updated(self, config):
         # Create the filters used for the effect

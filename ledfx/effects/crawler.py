@@ -42,11 +42,11 @@ class Crawler(AudioReactiveEffect, HSVEffect):
         }
     )
 
-    def activate(self, pixel_count):
+    def on_activate(self, pixel_count):
         self.pc = pixel_count
         self.i = np.arange(pixel_count, dtype=np.float64)
         self.i1 = np.linspace(0, 1, pixel_count)
-        super().activate(pixel_count)
+
         self.timestep = 0
         self.last_time = time.time_ns()
         self.dt = 0

@@ -31,10 +31,9 @@ class Strobe(AudioReactiveEffect):
         }
     )
 
-    def activate(self, pixel_count):
+    def on_activate(self, pixel_count):
         self.output = np.zeros((pixel_count, 3))
         self.brightness = 0
-        super().activate(pixel_count)
 
     def config_updated(self, config):
         self.color = np.array(COLORS[self._config["color"]], dtype=float)

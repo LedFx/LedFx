@@ -27,13 +27,13 @@ class Glitch(AudioReactiveEffect, HSVEffect):
         }
     )
 
-    def activate(self, pixel_count):
+    def on_activate(self, pixel_count):
         self.i = np.arange(pixel_count, dtype=np.float64)
         self.i2 = np.linspace(0, 5, pixel_count)
         self.i3 = np.linspace(-1, 0, pixel_count)
         np.subtract(self.i, pixel_count / 2, out=self.i)
         np.divide(self.i, pixel_count, out=self.i)
-        super().activate(pixel_count)
+
         self.timestep = 0
         self.last_time = time.time_ns()
         self.dt = 0

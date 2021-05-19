@@ -36,9 +36,8 @@ class EQAudioEffect(AudioReactiveEffect, GradientEffect):
         }
     )
 
-    def activate(self, pixel_count):
+    def on_activate(self, pixel_count):
         self.r = np.zeros(pixel_count)
-        super().activate(pixel_count)
 
     def config_updated(self, config):
         # Create the filters used for the effect

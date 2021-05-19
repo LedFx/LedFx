@@ -1,7 +1,7 @@
 import logging
 import time
 from collections import namedtuple
-from functools import lru_cache
+from functools import cached_property, lru_cache
 from math import log
 
 import aubio
@@ -13,12 +13,11 @@ import ledfx.effects.math as math
 import ledfx.effects.mel as mel
 from ledfx.effects import Effect, smooth
 from ledfx.effects.math import ExpFilter
+from ledfx.effects.melbank import Melbanks
 from ledfx.events import GraphUpdateEvent
 
 _LOGGER = logging.getLogger(__name__)
 
-
-_LOGGER = logging.getLogger(__name__)
 FrequencyRange = namedtuple("FrequencyRange", "min,max")
 
 FREQUENCY_RANGES = {
@@ -56,11 +55,11 @@ class AudioInputSource:
     AUDIO_CONFIG_SCHEMA = vol.Schema(
         {
             vol.Optional("sample_rate", default=60): int,
-            vol.Optional("mic_rate", default=48000): int,
-            vol.Optional("fft_size", default=1024): int,
+            vol.Optional("mic_rate", default=20000): int,
+            vol.Optional("fft_size", default=2048): int,
             vol.Optional("device_index", default=0): int,
             vol.Optional("pre_emphasis", default=0.3): float,
-            vol.Optional("min_volume", default=-70.0): float,
+            vol.Optional("min_volume", default=-60.0): float,
         },
         extra=vol.ALLOW_EXTRA,
     )
@@ -207,7 +206,7 @@ class AudioInputSource:
             self._stream = self._audio.InputStream(
                 samplerate=self._config["mic_rate"],
                 device=self._config["device_index"],
-                channels=1,
+                channels=2,
                 callback=self._audio_sample_callback,
                 dtype=np.float32,
                 blocksize=self._config["mic_rate"]
@@ -327,9 +326,9 @@ class MelbankInputSource(AudioInputSource):
 
     CONFIG_SCHEMA = vol.Schema(
         {
-            vol.Optional("samples", default=48): int,
+            vol.Optional("samples", default=24): int,
             vol.Optional("min_frequency", default=20): int,
-            vol.Optional("max_frequency", default=18000): int,
+            vol.Optional("max_frequency", default=20000): int,
             vol.Optional("min_volume", default=-70.0): float,
             vol.Optional("pitch_tolerance", default=0.8): float,
             vol.Optional("min_volume_count", default=20): int,
@@ -342,6 +341,12 @@ class MelbankInputSource(AudioInputSource):
     def __init__(self, ledfx, config):
         config = self.CONFIG_SCHEMA(config)
         super().__init__(ledfx, config)
+
+        self.melbanks = Melbanks(
+            self._ledfx, self, self._ledfx.config.get("melbanks", {})
+        )
+
+        self.subscribe(self.melbanks)
 
         self._initialize_melbank()
         # self._initialize_pitch()
@@ -681,8 +686,8 @@ class MelbankInputSource(AudioInputSource):
         )
         self.mel_smoothing = ExpFilter(
             np.tile(1e-1, self._config["samples"]),
-            alpha_decay=0.2,
-            alpha_rise=0.99,
+            alpha_decay=0.4,
+            alpha_rise=0.9,
         )
         self.common_filter = ExpFilter(alpha_decay=0.99, alpha_rise=0.01)
 
@@ -837,3 +842,81 @@ class AudioReactiveEffect(Effect):
         be implemented by subclasses
         """
         pass
+
+    def clear_melbank_freq_props(self):
+        """
+        Clears the cached data for selecting and interpolating melbank.
+        Almost all the properties used to build the melbank are cached
+        to try and ease computational load.
+        """
+        for prop in [
+            "selected_melbank",
+            "melbank_min_idx",
+            "melbank_max_idx",
+            "target_mel_length",
+            "input_mel_length",
+            "melbank_interp_linspaces",
+        ]:
+            if hasattr(self, prop):
+                delattr(self, prop)
+
+    @cached_property
+    def selected_melbank(self):
+        return next(
+            i
+            for i, x in enumerate(
+                self.audio.MELBANKS._config["max_frequencies"]
+            )
+            if x >= self._display.frequency_range.max
+        )
+
+    @cached_property
+    def melbank_min_idx(self):
+        return next(
+            idx
+            for idx, freq in enumerate(
+                self.selected_melbank.melbank_frequencies
+            )
+            if freq >= self._display.frequency_range.min
+        )
+
+    @cached_property
+    def melbank_max_idx(self):
+        return next(
+            idx
+            for idx, freq in enumerate(
+                self.selected_melbank.melbank_frequencies
+            )
+            if freq >= self._display.frequency_range.max
+        )
+
+    # @cached_property
+    # def target_mel_length(self):
+    #     return len(self.audio.MELBANKS.data[self.selected_melbank])
+
+    @cached_property
+    def input_mel_length(self):
+        return len(self.melbank_max_idx - self.melbank_min_idx)
+
+    @lru_cache(maxsize=4)
+    def melbank_interp_linspaces(self, size):
+        old = np.linspace(0, 1, self.input_mel_length)
+        new = np.linspace(0, 1, size)
+        return (old, new)
+
+    @property
+    def melbank(self, size=0):
+        """
+        This little bit of code pulls together information from the effect's
+        display (which controls the audio frequency range), and uses that
+        to deliver the melbank, correctly selected and interpolated, to the effect
+
+        size, int : interpolate the melbank to the target size. value of 0 is no interpolation
+        """
+        melbank = self.audio.MELBANKS.data[self.selected_melbank][
+            self.melbank_min_idx : self.melbank_max_idx
+        ]
+        if size and (self.input_mel_length != size):
+            return np.interp(*self.melbank_interp_linspaces(size), melbank)
+        else:
+            return melbank

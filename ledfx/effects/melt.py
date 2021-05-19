@@ -27,10 +27,10 @@ class Melt(AudioReactiveEffect, HSVEffect):
         }
     )
 
-    def activate(self, pixel_count):
+    def on_activate(self, pixel_count):
         self.hl = pixel_count
         self.c1 = np.linspace(0, 1, pixel_count)
-        super().activate(pixel_count)
+
         self.timestep = 0
         self.last_time = time.time_ns()
         self.dt = 0

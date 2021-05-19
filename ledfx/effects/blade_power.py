@@ -36,7 +36,9 @@ class BladePowerAudioEffect(AudioReactiveEffect):
                 "color", description="Color of bar", default="brown"
             ): vol.In(list(COLORS.keys())),
             vol.Optional(
-                "blade_color", description="NEW Color", default="hsl(0, 100%, 25%)"
+                "blade_color",
+                description="NEW Color",
+                default="hsl(0, 100%, 25%)",
             ): str,
             vol.Optional(
                 "frequency_range",
@@ -46,9 +48,8 @@ class BladePowerAudioEffect(AudioReactiveEffect):
         }
     )
 
-    def activate(self, pixel_count):
+    def on_activate(self, pixel_count):
         self.bar = 0
-        super().activate(pixel_count)
 
     def config_updated(self, config):
 
