@@ -16,7 +16,8 @@ import { getAsyncIntegrations } from 'modules/integrations';
 import Card from '../../components/IntegrationComponents/Card';
 import CardB from '../../components/IntegrationComponents/CardB';
 import Row from '../../components/IntegrationComponents/Row';
-import SpotifyView from '../../components/IntegrationComponents/Spotify';
+// import SpotifyView from '../../components/IntegrationComponents/Spotify';
+import SpotifyView from '../../components/IntegrationComponents/SpotifyBlade';
 
 function Alert(props) {
     return <MuiAlert elevation={6} variant="filled" {...props} />;
@@ -113,9 +114,7 @@ const IntegrationsView = () => {
                 </TableBody>
             </Table>
             <Grid>
-            <SpotifyView>
-                
-            </SpotifyView>
+             <SpotifyView />
             </Grid>
             </>
     );

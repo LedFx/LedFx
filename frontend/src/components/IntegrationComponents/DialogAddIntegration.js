@@ -12,12 +12,12 @@ import { SchemaForm, utils } from 'react-schema-form';
 import * as integrationsProxies from 'proxies/integrations';
 
 function ConfirmationDialogRaw(props) {
-    const { onClose, value: valueProp, open, ...other } = props;
+    const { onClose, value: valueProp, open, model={}, ...other } = props;
     const [value, setValue] = React.useState(valueProp);
     const radioGroupRef = React.useRef(null);
     const integrationTypes = useSelector(state => state.schemas.integrationTypes || {});
     const integration = props.integration;
-    const [model] = React.useState({});
+  
 
     React.useEffect(() => {
         if (!open) {
@@ -50,7 +50,8 @@ function ConfirmationDialogRaw(props) {
         // setModel(val);
     };
     delete other.deviceList;
-    return (
+    
+    return integrationTypes[integration] ?  (
         <Dialog
             disableBackdropClick
             disableEscapeKeyDown
@@ -89,7 +90,7 @@ function ConfirmationDialogRaw(props) {
                 </Button>
             </DialogActions>
         </Dialog>
-    );
+    ) :  <></>;
 }
 
 ConfirmationDialogRaw.propTypes = {

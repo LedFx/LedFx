@@ -8,8 +8,8 @@ import TableCell from '@material-ui/core/TableCell';
 import PopoverSure from 'components/VirtualComponents/PopoverSure';
 
 const DataRow = ({ id, name, type, data }) =>
-    data.map(dr => (
-        <TableRow key={id}>
+    data.map((dr,i) => (
+        <TableRow key={i}>
             <TableCell>{name}</TableCell>
             <TableCell>{type}</TableCell>
             <TableCell>{dr[0]}</TableCell>

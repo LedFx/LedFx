@@ -13,6 +13,7 @@ import { deleteAsyncIntegration } from 'modules/integrations';
 import { toggleAsyncIntegration } from 'modules/integrations';
 import { Switch, Chip } from '@material-ui/core';
 import DialogAddEventListener from 'components/IntegrationComponents/DialogAddEventListener';
+import DialogAddIntegration from 'components/IntegrationComponents/DialogAddIntegration';
 import { getAsyncqlclisteners  } from 'modules/qlc'
 //import beginAuth from 'components/IntegrationComponents/Spotify';
 
@@ -41,7 +42,7 @@ const IntegrationsCard = ({ int }) => {
     const dispatch = useDispatch();
     const handleToggle = (props) => toggleAsyncIntegration(props);
     const preventDefault = (event) => event.preventDefault();
-
+    console.log("INT", int)
     useEffect(() => {     
         // EVERTHING HERE IS ONLY CALLED ONCE WHEN THIS COMPONENT IS RENDERED   
        dispatch(getAsyncqlclisteners(int.id))
@@ -109,6 +110,7 @@ const IntegrationsCard = ({ int }) => {
                         })
                     }
                 />
+                {/* <DialogAddIntegration integration={int.id} model={int} /> */}
                 <Button
                     variant="text"
                     color="secondary"

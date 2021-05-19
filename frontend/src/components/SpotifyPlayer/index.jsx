@@ -9,13 +9,18 @@ import Button from '@material-ui/core/Button';
 import { AppBar, Checkbox, FormControl, FormControlLabel, Grid, InputLabel, Select, Typography } from '@material-ui/core';
 import { updatePlayerState  } from 'modules/spotify'
 //import AddCircleIcon from '@material-ui/icons/AddCircle';
-//import PlayArrowIcon from '@material-ui/icons/PlayArrow';
+import PlayArrow from '@material-ui/icons/PlayArrow';
+import Pause from '@material-ui/icons/Pause';
+import Stop from '@material-ui/icons/Stop';
+import SkipNext from '@material-ui/icons/SkipNext';
+import SkipPrevious from '@material-ui/icons/SkipPrevious';
 //import CircularProgress from '@material-ui/core/CircularProgress';
 import InfoIcon from '@material-ui/icons/Info';
 import Link from '@material-ui/core/Link';
 import { getScenes, activateScene } from 'modules/scenes';
 import Moment from 'react-moment';
 import moment from 'moment';
+import Slider from "@material-ui/core/Slider"
 //import uniqBy from 'lodash/uniqBy';
 
 const styles = theme => ({
@@ -142,7 +147,8 @@ class SpotifyPlayer extends React.Component {
        //));
 
     render() {
-        const { playerState, classes } = this.props;
+        const { playerState, classes,scenes } = this.props;
+        
         return (
             Object.keys(playerState).length == 0 ?
                 <Link target="_blank" href="https://support.spotify.com/us/article/spotify-connect/" >
@@ -150,7 +156,7 @@ class SpotifyPlayer extends React.Component {
                 >Using Spotify Connect, select LedFX <InfoIcon></InfoIcon></Typography>
                 </Link>
                 :
-                <AppBar position='relative' className={classes.appBar}>
+                <AppBar color="default" position='relative' className={classes.appBar}>
                     <Grid container justify='space-around' alignItems='center' className={classes.container}>
                         <Grid container item xs={4}>
                         <img style={{alignItems: 'center'}} className={classes.albumImg} src={playerState.track_window.current_track.album.images[0].url} alt=""/>  
@@ -168,15 +174,27 @@ class SpotifyPlayer extends React.Component {
                                   <InputLabel id='select'>Scenes</InputLabel>
                                   <Select
                                     value={this.state.effects}
+                                    color="primary"
                                     onChange={(e) => this.handleSelectChange(e)}
                                     labelId='select'>
-                                        <option value={10}>Ten</option>
-                                        <option value={20}>Twenty</option>
-                                        <option value={30}>Thirty</option>
+                                        {scenes.length && scenes.map((s,i) => <option value={s.id} key={i}>{s.name}</option>)}                                       
+                                      
                                     </Select>
                                 </FormControl>
                             </Grid>
+                            <Grid item xs={6}>
+                            <div style={{flex: 1, width: '100%'}}> <Slider  aria-labelledby="continuous-slider" />
+                            <Button style={{marginRight: '.5rem'}} color="primary" variant="contained"><SkipPrevious /></Button> 
+                            <Button style={{marginRight: '.5rem'}} color="primary" variant="contained"><PlayArrow /></Button> 
+                            <Button style={{marginRight: '.5rem'}} color="primary" variant="contained"><Pause /></Button> 
+                            <Button style={{marginRight: '.5rem'}} color="primary" variant="contained"><Stop /></Button> 
+                            <Button style={{marginRight: '.5rem'}} color="primary" variant="contained"><SkipNext /></Button> 
+                            </div>
+                            </Grid>
+                            
                             <Grid container item xs={6} justify='center'>
+                                
+                            
                             <Typography align='center' variant='body1'><div>
                                     Track Position: 
                                     {playerState.paused = true
@@ -205,10 +223,10 @@ class SpotifyPlayer extends React.Component {
                                     </Typography>
                                 <div>
                                 <FormControlLabel
-                                    control={<Checkbox checked={this.state.includePosition} onChange={(e) => this.handleCheckChange(e)} name="includePosition" />}
+                                    control={<Checkbox color="primary" checked={this.state.includePosition} onChange={(e) => this.handleCheckChange(e)} name="includePosition" />}
                                     label="Include Track Position"
                                 /></div>
-                                <Button variant='contained'>Add Trigger</Button>
+                                <Button color="primary" variant='contained'>Add Trigger</Button>
                             </Grid>
                         </Grid>
                     </Grid>
@@ -237,7 +255,8 @@ SongControls.propTypes = {
 export default connect(
     state => ({
         playerState: state.spotify.playerState,
-        accessToken: state.spotify.accessToken
+        accessToken: state.spotify.accessToken,  
+        scenes: state.scenes.list,      
     }),
     { updatePlayerState }
 )(withStyles(styles)(SpotifyPlayer));

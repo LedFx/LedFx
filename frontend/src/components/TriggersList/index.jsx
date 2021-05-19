@@ -32,18 +32,15 @@ class TriggerList extends React.Component {
                                 <ListItemText primary='Song' secondary='Position' />
                                 <ListItemText primary='Scene Name' />
                             </ListItem>
-                            {triggers.map(trigger => {
-                                return (
-                                <div>
-                                <ListItem>
-                                    <ListItemText primary={trigger.songName} secondary={trigger.position}/>
-                                    <ListItemText primary={trigger.sceneName} />
-                                    <ListItemIcon><DeleteForeverIcon color='error' /></ListItemIcon>
-                                </ListItem>
-                                <Divider />
+                            {triggers.map((trigger,i) => <div key={i}>
+                                    <ListItem>
+                                        <ListItemText primary={trigger.songName} secondary={trigger.position}/>
+                                        <ListItemText primary={trigger.sceneName} />
+                                        <ListItemIcon><DeleteForeverIcon color='error' /></ListItemIcon>
+                                    </ListItem>
+                                    <Divider />
                                 </div>
-                                )
-                            })}
+                            )}
                         </List>
                     : <Typography>Add Some Triggers To View Them Here</Typography>
                     }
