@@ -125,6 +125,47 @@ const GeneralCard = () => {
         window.localStorage.setItem('blade', event.target.value);
         window.location = window.location.href;
     };
+    
+    //FOR MIDI DEVICES: 
+    const list = document.getElementById('midi-list');
+    const debugEl = document.getElementById('debug');
+    navigator.requestMIDIAccess()
+    .then(function(access) {
+    console.log('MIDI access', access);
+    replaceElements(Array.from(access.inputs.values()));
+    access.onstatechange = function(e) {
+        replaceElements(Array.from(this.inputs.values()));
+    }
+    })
+    function replaceElements(inputs) {
+        console.log('MIDI inputs', inputs);
+        while(list.firstChild) {
+            list.removeChild(list.firstChild)
+        }
+        const elements = inputs.map(e => {
+                console.log(e);
+                const el = document.createElement('li')
+                el.innerText = `Connection: ${e.connection} = ${e.name} (${e.manufacturer})`;
+                el.addEventListener('click', connectToDevice.bind(null, e));
+                return el;
+            });
+            elements.forEach(e => list.appendChild(e));
+        }
+    function connectToDevice(device) {
+    console.log('Connecting to device', device);
+    device.onmidimessage = function(m) {
+        console.log('testing',m.data)
+        const [command, key, velocity] = m.data;
+        if (velocity === 127) {
+        debugEl.innerText = 'KEY UP: ' + m.data;
+        } else if(velocity === 0) {
+        debugEl.innerText = 'KEY DOWN: '+ m.data;
+        }
+    }
+    }
+
+        //*/}
+
     // const onChangePreferredMode = value => {
     //     dispatch(setConfig({ config: { wled_preferences: { wled_preferred_mode: { preferred_mode: value, user_enabled: true } } } }));
     // };
@@ -198,6 +239,21 @@ const GeneralCard = () => {
                         <MenuItem value={7}>BlueDark</MenuItem>
                     </Select>
                 </FormControl>
+                <FormControl>
+                    <InputLabel id="MIDI-selector">MIDI Input Selector</InputLabel>
+                    <Select
+                        labelId="MIDI-selector"
+                        id="MIDI-select"
+                        //value={theme}
+                        //onChange={changeTheme}
+                    >
+                        <MenuItem  value="">None</MenuItem>
+                        <MenuItem value={1}>Testing MIDI Device</MenuItem>
+                    </Select>
+                    </FormControl>
+                    <ul id="midi-list">
+                    </ul>
+                    <div id="debug"></div>`
                 <Divider style={{ margin: '1rem 0' }} />
                 <Button
                     size="small"
