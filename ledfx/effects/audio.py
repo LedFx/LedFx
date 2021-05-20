@@ -322,7 +322,7 @@ class AudioInputSource:
         return self._volume
 
 
-class MelbankInputSource(AudioInputSource):
+class AudioAnalysisSource(AudioInputSource):
 
     CONFIG_SCHEMA = vol.Schema(
         {
@@ -341,80 +341,53 @@ class MelbankInputSource(AudioInputSource):
     def __init__(self, ledfx, config):
         config = self.CONFIG_SCHEMA(config)
         super().__init__(ledfx, config)
+        self.initialise_analysis()
 
+    def initialise_analysis(self):
+        fft_params = (
+            self._config["fft_size"],
+            self._config["mic_rate"] // self._config["sample_rate"],
+            self._config["mic_rate"],
+        )
+
+        # melbanks
         self.melbanks = Melbanks(
             self._ledfx, self, self._ledfx.config.get("melbanks", {})
         )
-
         self.subscribe(self.melbanks)
 
-        self._initialize_melbank()
-        # self._initialize_pitch()
-        # self._initialize_tempo()
-        # self._initialize_onset()
-        # self._initialize_oscillator()
+        # pitch
+        self._pitch = aubio.pitch("schmitt", *fft_params)
+        self._pitch.set_unit("midi")
+        self._pitch.set_tolerance(self._config["pitch_tolerance"])
+
+        # tempo
+        self._tempo = aubio.tempo("default", *fft_params)
+
+        # onset
+        self._onset = aubio.onset("specflux", *fft_params)
+
+        # oscillator
+        self.beat_timestamp = time.time()
+        self.beat_period = 2
 
     def update_config(self, config):
         validated_config = self.CONFIG_SCHEMA(config)
         super().update_config(validated_config)
-
-        self._initialize_melbank()
-        # self._initialize_pitch()
-        # self._initialize_tempo()
-        # self._initialize_onset()
-        # self._initialize_oscillator()
+        self.initialise_analysis()
 
     def _invalidate_caches(self):
         """Invalidates the cache for all melbank related data"""
         super()._invalidate_caches()
-        # self.onset.cache_clear()
-        # self.oscillator.cache_clear()
-        self.melbank.cache_clear()
-        self.melbank_filtered.cache_clear()
-        self.interpolated_melbank.cache_clear()
-        # self.midi_value.cache_clear()
 
-    def _initialize_pitch(self):
-        self.pitch_o = aubio.pitch(
-            "schmitt",
-            self._config["fft_size"],
-            self._config["mic_rate"] // self._config["sample_rate"],
-            self._config["mic_rate"],
-        )
-        self.pitch_o.set_unit("midi")
-        self.pitch_o.set_tolerance(self._config["pitch_tolerance"])
-
-    def _initialize_tempo(self):
-        self.tempo_o = aubio.tempo(
-            "default",
-            self._config["fft_size"],
-            self._config["mic_rate"] // self._config["sample_rate"],
-            self._config["mic_rate"],
-        )
-
-    def _initialize_onset(self):
-        self.onset_high = aubio.onset(
-            "specflux",
-            self._config["fft_size"],
-            self._config["mic_rate"] // self._config["sample_rate"],
-            self._config["mic_rate"],
-        )
-        self.onset_soft = aubio.onset(
-            "phase",
-            self._config["fft_size"],
-            self._config["mic_rate"] // self._config["sample_rate"],
-            self._config["mic_rate"],
-        )
-        self.onset_mids = aubio.onset(
-            "specdiff",
-            self._config["fft_size"],
-            self._config["mic_rate"] // self._config["sample_rate"],
-            self._config["mic_rate"],
-        )
-
-    def _initialize_oscillator(self):
-        self.beat_timestamp = time.time()
-        self.beat_period = 2
+        for prop in [
+            "pitch",
+            "onset",
+            "beat_now",
+            "oscillator",
+        ]:
+            if hasattr(self, prop):
+                delattr(self, prop)
 
     def _initialize_melbank(self):
         """Initialize all the melbank related variables"""
@@ -753,23 +726,29 @@ class MelbankInputSource(AudioInputSource):
 
         return math.interpolate(self.melbank(), size)
 
-    @lru_cache(maxsize=32)
-    def midi_value(self):
+    @cached_property
+    def pitch(self):
         # If our audio handler is returning null, then we just return 0 for midi_value and wait for the device starts sending audio.
         try:
-            return self.pitch_o(self.audio_sample())[0]
+            return self._pitch(self.audio_sample())[0]
         except ValueError:
             return 0
 
-    @lru_cache(maxsize=32)
+    @cached_property
     def onset(self):
-        return {
-            "mids": bool(self.onset_mids(self.audio_sample(raw=True))[0]),
-            "soft": bool(self.onset_soft(self.audio_sample(raw=True))[0]),
-            "high": bool(self.onset_high(self.audio_sample(raw=True))[0]),
-        }
+        try:
+            return (bool(self._onset(self.audio_sample(raw=True))[0]),)
+        except ValueError:
+            return 0
 
-    @lru_cache(maxsize=32)
+    @cached_property
+    def beat_now(self):
+        try:
+            return bool(self._tempo(self.audio_sample(raw=True))[0])
+        except ValueError:
+            return 0
+
+    @cached_property
     def oscillator(self):
         """
         returns a float (0<=x<1) corresponding to the current position of beat tracker.
@@ -782,8 +761,7 @@ class MelbankInputSource(AudioInputSource):
            oscillator
         """
         # update tempo and oscillator
-        is_beat = bool(self.tempo_o(self.audio_sample(raw=True))[0])
-        if is_beat:
+        if self.beat_now():
             self.beat_period = self.tempo_o.get_period_s()
             self.beat_timestamp = time.time()
             oscillator = 0
@@ -795,7 +773,7 @@ class MelbankInputSource(AudioInputSource):
             # ensure it's between 0 and 1. useful when audio cuts
             oscillator = min(1, oscillator)
             oscillator = max(0, oscillator)
-        return oscillator, is_beat
+        return oscillator
 
 
 @Effect.no_registration
@@ -810,10 +788,10 @@ class AudioReactiveEffect(Effect):
         _LOGGER.info("Activating AudioReactiveEffect.")
         super().activate(channel)
 
-        if not self._ledfx.audio or id(MelbankInputSource) != id(
+        if not self._ledfx.audio or id(AudioAnalysisSource) != id(
             self._ledfx.audio.__class__
         ):
-            self._ledfx.audio = MelbankInputSource(
+            self._ledfx.audio = AudioAnalysisSource(
                 self._ledfx, self._ledfx.config.get("audio", {})
             )
 
