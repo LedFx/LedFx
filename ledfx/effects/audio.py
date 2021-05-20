@@ -2,7 +2,6 @@ import logging
 import time
 from collections import namedtuple
 from functools import cached_property, lru_cache
-from math import log
 
 import aubio
 import numpy as np
@@ -10,7 +9,6 @@ import sounddevice as sd
 import voluptuous as vol
 
 import ledfx.effects.math as math
-import ledfx.effects.mel as mel
 from ledfx.effects import Effect, smooth
 from ledfx.effects.math import ExpFilter
 from ledfx.effects.melbank import Melbanks
@@ -326,14 +324,10 @@ class AudioAnalysisSource(AudioInputSource):
 
     CONFIG_SCHEMA = vol.Schema(
         {
-            vol.Optional("samples", default=24): int,
-            vol.Optional("min_frequency", default=20): int,
-            vol.Optional("max_frequency", default=20000): int,
-            vol.Optional("min_volume", default=-70.0): float,
+            vol.Optional("pitch_method", default="default"): str,
+            vol.Optional("tempo_method", default="default"): str,
+            vol.Optional("onset_method", default="hfc"): str,
             vol.Optional("pitch_tolerance", default=0.8): float,
-            vol.Optional("min_volume_count", default=20): int,
-            vol.Optional("power", default=1.0): float,
-            vol.Optional("coeffs_type", default="matt_mel"): str,
         },
         extra=vol.ALLOW_EXTRA,
     )
@@ -342,6 +336,13 @@ class AudioAnalysisSource(AudioInputSource):
         config = self.CONFIG_SCHEMA(config)
         super().__init__(ledfx, config)
         self.initialise_analysis()
+
+        # Subscribe functions to be run on every frame of audio
+        self.subscribe(self.melbanks)
+        self.subscribe(self.pitch)
+        self.subscribe(self.onset)
+        self.subscribe(self.oscillator)
+        self.subscribe(self.volume_beat_now)
 
     def initialise_analysis(self):
         fft_params = (
@@ -354,18 +355,13 @@ class AudioAnalysisSource(AudioInputSource):
         self.melbanks = Melbanks(
             self._ledfx, self, self._ledfx.config.get("melbanks", {})
         )
-        self.subscribe(self.melbanks)
 
-        # pitch
-        self._pitch = aubio.pitch("schmitt", *fft_params)
+        # pitch, tempo, onset
+        self._tempo = aubio.tempo(self._config["tempo_method"], *fft_params)
+        self._onset = aubio.onset(self._config["onset_method"], *fft_params)
+        self._pitch = aubio.pitch(self._config["pitch_method"], *fft_params)
         self._pitch.set_unit("midi")
         self._pitch.set_tolerance(self._config["pitch_tolerance"])
-
-        # tempo
-        self._tempo = aubio.tempo("default", *fft_params)
-
-        # onset
-        self._onset = aubio.onset("specflux", *fft_params)
 
         # oscillator
         self.beat_timestamp = time.time()
@@ -383,286 +379,12 @@ class AudioAnalysisSource(AudioInputSource):
         for prop in [
             "pitch",
             "onset",
-            "beat_now",
+            "bpm_beat_now",
+            "volume_beat_now",
             "oscillator",
         ]:
             if hasattr(self, prop):
                 delattr(self, prop)
-
-    def _initialize_melbank(self):
-        """Initialize all the melbank related variables"""
-
-        # Few difference coefficient types for experimentation
-        if self._config["coeffs_type"] == "triangle":
-            melbank_mel = np.linspace(
-                aubio.hztomel(self._config["min_frequency"]),
-                aubio.hztomel(self._config["max_frequency"]),
-                self._config["samples"] + 2,
-            )
-            self.melbank_frequencies = np.array(
-                [aubio.meltohz(mel) for mel in melbank_mel]
-            ).astype(np.float32)
-
-            self.filterbank = aubio.filterbank(
-                self._config["samples"], self._config["fft_size"]
-            )
-            self.filterbank.set_triangle_bands(
-                self.melbank_frequencies, self._config["mic_rate"]
-            )
-            self.melbank_frequencies = self.melbank_frequencies[1:-1]
-
-        if self._config["coeffs_type"] == "bark":
-            melbank_bark = np.linspace(
-                6.0 * np.arcsinh(self._config["min_frequency"] / 600.0),
-                6.0 * np.arcsinh(self._config["max_frequency"] / 600.0),
-                self._config["samples"] + 2,
-            )
-            self.melbank_frequencies = (
-                600.0 * np.sinh(melbank_bark / 6.0)
-            ).astype(np.float32)
-
-            self.filterbank = aubio.filterbank(
-                self._config["samples"], self._config["fft_size"]
-            )
-            self.filterbank.set_triangle_bands(
-                self.melbank_frequencies, self._config["mic_rate"]
-            )
-            self.melbank_frequencies = self.melbank_frequencies[1:-1]
-
-        # Slaney coefficients will always produce 40 samples spanning 133Hz to
-        # 6000Hz
-        if self._config["coeffs_type"] == "slaney":
-            self.filterbank = aubio.filterbank(40, self._config["fft_size"])
-            self.filterbank.set_mel_coeffs_slaney(self._config["mic_rate"])
-
-            # Sanley frequencies are linear-log spaced where 133Hz to 1000Hz is linear
-            # spaced and 1000Hz to 6000Hz is log spaced. It also produced a hardcoded
-            # 40 samples.
-            lowestFrequency = 133.3
-            linearSpacing = 66.6666666
-            logSpacing = 1.0711703
-            linearFilters = 13
-            logFilters = 27
-            linearSpacedFreqs = (
-                lowestFrequency + np.arange(0, linearFilters) * linearSpacing
-            )
-            logSpacedFreqs = linearSpacedFreqs[-1] * np.power(
-                logSpacing, np.arange(1, logFilters + 1)
-            )
-
-            self._config["samples"] = 40
-            self.melbank_frequencies = np.hstack(
-                (linearSpacedFreqs, logSpacedFreqs)
-            ).astype(np.float32)
-
-        # Standard mel coefficients
-        if self._config["coeffs_type"] == "mel":
-            self.filterbank = aubio.filterbank(
-                self._config["samples"], self._config["fft_size"]
-            )
-            self.filterbank.set_mel_coeffs(
-                self._config["mic_rate"],
-                self._config["min_frequency"],
-                self._config["max_frequency"],
-            )
-
-            # Frequencies wil be linearly spaced in the mel scale
-            melbank_mel = np.linspace(
-                aubio.hztomel(self._config["min_frequency"]),
-                aubio.hztomel(self._config["max_frequency"]),
-                self._config["samples"],
-            )
-            self.melbank_frequencies = np.array(
-                [aubio.meltohz(mel) for mel in melbank_mel]
-            )
-
-        # HTK mel coefficients
-        if self._config["coeffs_type"] == "htk":
-            self.filterbank = aubio.filterbank(
-                self._config["samples"], self._config["fft_size"]
-            )
-            self.filterbank.set_mel_coeffs_htk(
-                self._config["mic_rate"],
-                self._config["min_frequency"],
-                self._config["max_frequency"],
-            )
-
-            # Frequencies wil be linearly spaced in the mel scale
-            melbank_mel = np.linspace(
-                aubio.hztomel(self._config["min_frequency"]),
-                aubio.hztomel(self._config["max_frequency"]),
-                self._config["samples"],
-            )
-            self.melbank_frequencies = np.array(
-                [aubio.meltohz(mel) for mel in melbank_mel]
-            )
-
-        # Coefficients based on Scott's audio reactive led project
-        if self._config["coeffs_type"] == "scott":
-            (melmat, center_frequencies_hz, freqs,) = mel.compute_melmat(
-                num_mel_bands=self._config["samples"],
-                freq_min=self._config["min_frequency"],
-                freq_max=self._config["max_frequency"],
-                num_fft_bands=int(self._config["fft_size"] // 2) + 1,
-                sample_rate=self._config["mic_rate"],
-            )
-            self.filterbank = aubio.filterbank(
-                self._config["samples"], self._config["fft_size"]
-            )
-            self.filterbank.set_coeffs(melmat.astype(np.float32))
-            self.melbank_frequencies = center_frequencies_hz
-
-        # "Mel"-spacing based on Scott's audio reactive led project. This
-        # should in theory be the same as the above, but there seems to be
-        # slight differences. Leaving both for science!
-        if self._config["coeffs_type"] == "scott_mel":
-
-            def hertz_to_scott(freq):
-                return 3340.0 * log(1 + (freq / 250.0), 9)
-
-            def scott_to_hertz(scott):
-                return 250.0 * (9 ** (scott / 3340.0)) - 250.0
-
-            melbank_scott = np.linspace(
-                hertz_to_scott(self._config["min_frequency"]),
-                hertz_to_scott(self._config["max_frequency"]),
-                self._config["samples"] + 2,
-            )
-            self.melbank_frequencies = np.array(
-                [scott_to_hertz(scott) for scott in melbank_scott]
-            ).astype(np.float32)
-
-            self.filterbank = aubio.filterbank(
-                self._config["samples"], self._config["fft_size"]
-            )
-            self.filterbank.set_triangle_bands(
-                self.melbank_frequencies, self._config["mic_rate"]
-            )
-            self.melbank_frequencies = self.melbank_frequencies[1:-1]
-
-        # Modified scott_mel, spreads out the low range and compresses the
-        # highs
-        if self._config["coeffs_type"] == "matt_mel":
-
-            def hertz_to_matt(freq):
-                return 3700.0 * log(1 + (freq / 200.0), 13)
-
-            def matt_to_hertz(matt):
-                return 200.0 * (10 ** (matt / 3700.0)) - 200.0
-
-            melbank_matt = np.linspace(
-                hertz_to_matt(self._config["min_frequency"]),
-                hertz_to_matt(self._config["max_frequency"]),
-                self._config["samples"] + 2,
-            )
-            self.melbank_frequencies = np.array(
-                [matt_to_hertz(matt) for matt in melbank_matt]
-            ).astype(np.float32)
-
-            self.filterbank = aubio.filterbank(
-                self._config["samples"], self._config["fft_size"]
-            )
-            self.filterbank.set_triangle_bands(
-                self.melbank_frequencies, self._config["mic_rate"]
-            )
-            self.melbank_frequencies = self.melbank_frequencies[1:-1]
-
-        if self._config["coeffs_type"] == "fixed":
-            ranges = FREQUENCY_RANGES.values()
-            upper_edges_hz = np.zeros(len(ranges))
-            lower_edges_hz = np.zeros(len(ranges))
-            for idx, value in enumerate(ranges):
-                lower_edges_hz[idx] = value.min
-                upper_edges_hz[idx] = value.max
-
-            (
-                melmat,
-                center_frequencies_hz,
-                freqs,
-            ) = mel.compute_melmat_from_range(
-                lower_edges_hz=lower_edges_hz,
-                upper_edges_hz=upper_edges_hz,
-                num_fft_bands=int(self._config["fft_size"] // 2) + 1,
-                sample_rate=self._config["mic_rate"],
-            )
-
-            self._config["samples"] = len(center_frequencies_hz)
-            self.filterbank = aubio.filterbank(
-                self._config["samples"], self._config["fft_size"]
-            )
-            self.filterbank.set_coeffs(melmat.astype(np.float32))
-            self.melbank_frequencies = center_frequencies_hz
-
-        if self._config["coeffs_type"] == "fixed_simple":
-            ranges = FREQUENCY_RANGES_SIMPLE.values()
-            upper_edges_hz = np.zeros(len(ranges))
-            lower_edges_hz = np.zeros(len(ranges))
-            for idx, value in enumerate(ranges):
-                lower_edges_hz[idx] = value.min
-                upper_edges_hz[idx] = value.max
-
-            (
-                melmat,
-                center_frequencies_hz,
-                freqs,
-            ) = mel.compute_melmat_from_range(
-                lower_edges_hz=lower_edges_hz,
-                upper_edges_hz=upper_edges_hz,
-                num_fft_bands=int(self._config["fft_size"] // 2) + 1,
-                sample_rate=self._config["mic_rate"],
-            )
-
-            self._config["samples"] = len(center_frequencies_hz)
-            self.filterbank = aubio.filterbank(
-                self._config["samples"], self._config["fft_size"]
-            )
-            self.filterbank.set_coeffs(melmat.astype(np.float32))
-            self.melbank_frequencies = center_frequencies_hz
-
-        self.melbank_frequencies = self.melbank_frequencies.astype(int)
-
-        # Normalize the filterbank triangles to a consistent height, the
-        # default coeffs (for types other than legacy) will be normalized
-        # by the triangles area which results in an uneven melbank
-        if (
-            self._config["coeffs_type"] != "scott"
-            and self._config["coeffs_type"] == "scott_mel"
-        ):
-            coeffs = self.filterbank.get_coeffs()
-            coeffs /= np.max(coeffs, axis=-1)[:, None]
-            self.filterbank.set_coeffs(coeffs)
-
-        # Find the indexes for each of the frequency ranges
-        self.lows_index = self.mids_index = self.highs_index = 1
-        for i in range(0, len(self.melbank_frequencies)):
-            if (
-                self.melbank_frequencies[i]
-                < FREQUENCY_RANGES_SIMPLE["Low (1-250Hz)"].max
-            ):
-                self.lows_index = i + 1
-            elif (
-                self.melbank_frequencies[i]
-                < FREQUENCY_RANGES_SIMPLE["Mid (250Hz-4kHz)"].max
-            ):
-                self.mids_index = i + 1
-            elif (
-                self.melbank_frequencies[i]
-                < FREQUENCY_RANGES_SIMPLE["High (4kHz-24kHz)"].max
-            ):
-                self.highs_index = i + 1
-
-        # Build up some of the common filters
-        self.mel_gain = ExpFilter(
-            np.tile(1e-1, self._config["samples"]),
-            alpha_decay=0.01,
-            alpha_rise=0.99,
-        )
-        self.mel_smoothing = ExpFilter(
-            np.tile(1e-1, self._config["samples"]),
-            alpha_decay=0.4,
-            alpha_rise=0.9,
-        )
-        self.common_filter = ExpFilter(alpha_decay=0.99, alpha_rise=0.01)
 
     @lru_cache(maxsize=32)
     def melbank(self):
@@ -707,13 +429,6 @@ class AudioAnalysisSource(AudioInputSource):
     def melbank_highs(self):
         return self.melbank()[self.mids_index :]
 
-    @lru_cache(maxsize=32)
-    def melbank_filtered(self):
-        # TODO: Should probably account for the filtered melbank not being
-        # queried every frame which would result in a poor filter. Need a
-        # good balance between wasting compute resources and quality filters.
-        return self.common_filter.update(self.melbank())
-
     def sample_melbank(self, hz):
         """Samples the melbank curve at a given frequency"""
         return np.interp(hz, self.melbank_frequencies, self.melbank())
@@ -742,11 +457,21 @@ class AudioAnalysisSource(AudioInputSource):
             return 0
 
     @cached_property
-    def beat_now(self):
+    def bpm_beat_now(self):
+        """
+        Returns True if a beat is expected now based on BPM data
+        """
         try:
             return bool(self._tempo(self.audio_sample(raw=True))[0])
         except ValueError:
             return 0
+
+    @cached_property
+    def volume_beat_now(self):
+        """
+        Returns True if a beat is expected now based on volume of bass
+        """
+        pass  # TODO
 
     @cached_property
     def oscillator(self):
@@ -761,8 +486,8 @@ class AudioAnalysisSource(AudioInputSource):
            oscillator
         """
         # update tempo and oscillator
-        if self.beat_now():
-            self.beat_period = self.tempo_o.get_period_s()
+        if self.bpm_beat_now():
+            self.beat_period = self._tempo.get_period_s()
             self.beat_timestamp = time.time()
             oscillator = 0
         else:
@@ -828,18 +553,17 @@ class AudioReactiveEffect(Effect):
         to try and ease computational load.
         """
         for prop in [
-            "selected_melbank",
-            "melbank_min_idx",
-            "melbank_max_idx",
-            "target_mel_length",
-            "input_mel_length",
-            "melbank_interp_linspaces",
+            "_selected_melbank",
+            "_melbank_min_idx",
+            "_melbank_max_idx",
+            "_input_mel_length",
+            "_melbank_interp_linspaces",
         ]:
             if hasattr(self, prop):
                 delattr(self, prop)
 
     @cached_property
-    def selected_melbank(self):
+    def _selected_melbank(self):
         return next(
             i
             for i, x in enumerate(
@@ -849,52 +573,49 @@ class AudioReactiveEffect(Effect):
         )
 
     @cached_property
-    def melbank_min_idx(self):
+    def _melbank_min_idx(self):
         return next(
             idx
             for idx, freq in enumerate(
-                self.selected_melbank.melbank_frequencies
+                self._selected_melbank.melbank_frequencies
             )
             if freq >= self._display.frequency_range.min
         )
 
     @cached_property
-    def melbank_max_idx(self):
+    def _melbank_max_idx(self):
         return next(
             idx
             for idx, freq in enumerate(
-                self.selected_melbank.melbank_frequencies
+                self._selected_melbank.melbank_frequencies
             )
             if freq >= self._display.frequency_range.max
         )
 
-    # @cached_property
-    # def target_mel_length(self):
-    #     return len(self.audio.MELBANKS.data[self.selected_melbank])
-
     @cached_property
-    def input_mel_length(self):
-        return len(self.melbank_max_idx - self.melbank_min_idx)
+    def _input_mel_length(self):
+        return len(self._melbank_max_idx - self._melbank_min_idx)
 
-    @lru_cache(maxsize=4)
-    def melbank_interp_linspaces(self, size):
-        old = np.linspace(0, 1, self.input_mel_length)
+    @lru_cache(maxsize=16)
+    def _melbank_interp_linspaces(self, size):
+        old = np.linspace(0, 1, self._input_mel_length)
         new = np.linspace(0, 1, size)
         return (old, new)
 
     @property
-    def melbank(self, size=0):
+    def melbank(self, filtered=False, size=0):
         """
         This little bit of code pulls together information from the effect's
         display (which controls the audio frequency range), and uses that
         to deliver the melbank, correctly selected and interpolated, to the effect
 
-        size, int : interpolate the melbank to the target size. value of 0 is no interpolation
+        size, int      : interpolate the melbank to the target size. value of 0 is no interpolation
+        filtered, bool : melbank with smoothed attack and decay
         """
-        melbank = self.audio.MELBANKS.data[self.selected_melbank][
-            self.melbank_min_idx : self.melbank_max_idx
+        melbank = self.audio.MELBANKS.data[self._selected_melbank][
+            self._melbank_min_idx : self._melbank_max_idx
         ]
-        if size and (self.input_mel_length != size):
-            return np.interp(*self.melbank_interp_linspaces(size), melbank)
+        if size and (self._input_mel_length != size):
+            return np.interp(*self._melbank_interp_linspaces(size), melbank)
         else:
             return melbank

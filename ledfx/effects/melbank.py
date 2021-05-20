@@ -353,19 +353,12 @@ class Melbank:
                 self.highs_index = i + 1
 
         # Build up some of the common filters
-        self.mel_gain = ExpFilter(
-            np.tile(1e-1, self._config["samples"]),
-            alpha_decay=0.01,
-            alpha_rise=0.99,
-        )
-        self.mel_smoothing = ExpFilter(
-            np.tile(1e-1, self._config["samples"]),
-            alpha_decay=0.2,
-            alpha_rise=0.99,
-        )
+        self.mel_gain = ExpFilter(alpha_decay=0.01, alpha_rise=0.99)
+        self.mel_smoothing = ExpFilter(alpha_decay=0.5, alpha_rise=0.99)
         self.common_filter = ExpFilter(alpha_decay=0.99, alpha_rise=0.01)
+        self.diff_filter = ExpFilter(alpha_decay=0.02, alpha_rise=0.99)
 
-    def __call__(self, frequency_domain, filter_banks):
+    def __call__(self, frequency_domain, filter_banks, filter_banks_filtered):
         """
         computes the melbank curve for frequency domain .
         this function has been modified a bit to make sure all operations
@@ -375,20 +368,25 @@ class Melbank:
         # Compute the filterbank from the frequency information.
         filter_banks[:] = self.filterbank(frequency_domain)
         # adjustable power (peak isolation) based on parameter a (0-1)
-        # a=0    -> flat response (any filter bank value maps to 1)
-        # a=0.5  -> linear response (filter bank value maps to filter bank value)
-        # a=0.7  -> roughly equivalent to filter_banks ** 2.0
+        # a=0    -> linear response (filter bank value maps to itself)
+        # a=0.4  -> roughly equivalent to filter_banks ** 2.0
+        # a=0.6  -> roughly equivalent to filter_banks ** 3.0
         # a=1    -> no response (infinite power as filter bank value approaches 1)
-        # https://www.desmos.com/calculator/7mb0quhdht
+        # https://www.desmos.com/calculator/xxa2l9radu
         np.power(
             filter_banks,
-            np.tan(0.5 * np.pi * self._config["peak_isolation"]),
+            np.tan(0.5 * np.pi * (self._config["peak_isolation"] + 1) / 2),
             out=filter_banks,
         )
 
         self.mel_gain.update(np.max(smooth(filter_banks, sigma=1.0)))
         filter_banks /= self.mel_gain.value
         filter_banks[:] = self.mel_smoothing.update(filter_banks)
+
+        self.common_filter.update(filter_banks)
+        filter_banks_filtered[:] = self.diff_filter.update(
+            filter_banks - self.common_filter.value
+        )
 
 
 class Melbanks:
@@ -428,7 +426,7 @@ class Melbanks:
         # validate config
         self._config = self.CONFIG_SCHEMA(config)
         # set up the melbanks
-        self.melbanks = tuple(
+        self.melbank_processors = tuple(
             Melbank(
                 self._audio,
                 self.DEFAULT_MELBANK_CONFIG | {"max_frequency": freq},
@@ -441,7 +439,10 @@ class Melbanks:
         # set up melbank data buffers.
         # these are stored as numpy arrays in a tuple to allow direct access to the buffers
         # should be a bit faster than a list!
-        self.data = tuple(
+        self.melbanks = tuple(
+            np.zeros(self.mel_len) for _ in range(self.mel_count)
+        )
+        self.melbanks_filtered = tuple(
             np.zeros(self.mel_len) for _ in range(self.mel_count)
         )
 
@@ -454,13 +455,17 @@ class Melbanks:
         # if volume < 0: or whatever...
         frequency_domain = self._audio._frequency_domain
         for i in range(self.mel_count):
-            self.melbanks[i](frequency_domain, self.data[i])
+            self.melbank_processors[i](
+                frequency_domain, self.melbanks[i], self.melbanks_filtered[i]
+            )
 
             if self._ledfx.dev_enabled():
                 self._ledfx.events.fire_event(
                     GraphUpdateEvent(
                         f"melbank_{i}",
-                        self.data[i],
-                        np.array(self.melbanks[i].melbank_frequencies),
+                        self.melbanks[i],
+                        np.array(
+                            self.melbank_processors[i].melbank_frequencies
+                        ),
                     )
                 )
