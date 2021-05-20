@@ -47,7 +47,8 @@ class BarAudioEffect(AudioReactiveEffect, GradientEffect):
 
     def audio_data_updated(self, data):
         # Run linear beat oscillator through easing method
-        self.beat_oscillator, self.beat_now = data.oscillator()
+        self.beat_oscillator = data.oscillator
+        self.beat_now = data.bpm_beat_now
 
     def render(self):
         if self._config["ease_method"] == "ease_in_out":

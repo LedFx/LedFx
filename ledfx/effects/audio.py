@@ -567,7 +567,7 @@ class AudioReactiveEffect(Effect):
         return next(
             i
             for i, x in enumerate(
-                self.audio.MELBANKS._config["max_frequencies"]
+                self.audio.melbanks._config["max_frequencies"]
             )
             if x >= self._display.frequency_range.max
         )
@@ -602,7 +602,6 @@ class AudioReactiveEffect(Effect):
         new = np.linspace(0, 1, size)
         return (old, new)
 
-    @property
     def melbank(self, filtered=False, size=0):
         """
         This little bit of code pulls together information from the effect's
@@ -612,9 +611,14 @@ class AudioReactiveEffect(Effect):
         size, int      : interpolate the melbank to the target size. value of 0 is no interpolation
         filtered, bool : melbank with smoothed attack and decay
         """
-        melbank = self.audio.MELBANKS.data[self._selected_melbank][
-            self._melbank_min_idx : self._melbank_max_idx
-        ]
+        if filtered:
+            melbank = self.audio.melbanks.melbanks_filtered[
+                self._selected_melbank
+            ][self._melbank_min_idx : self._melbank_max_idx]
+        else:
+            melbank = self.audio.melbanks.melbanks[self._selected_melbank][
+                self._melbank_min_idx : self._melbank_max_idx
+            ]
         if size and (self._input_mel_length != size):
             return np.interp(*self._melbank_interp_linspaces(size), melbank)
         else:

@@ -39,7 +39,6 @@ class PowerAudioEffect(AudioReactiveEffect, GradientEffect):
 
     def config_updated(self, config):
         # Create the filters used for the effect
-        self._r_filter = self.create_filter(alpha_decay=0.2, alpha_rise=0.99)
         self._bass_filter = self.create_filter(
             alpha_decay=0.1, alpha_rise=0.99
         )
@@ -49,13 +48,8 @@ class PowerAudioEffect(AudioReactiveEffect, GradientEffect):
         # Get onset data
         self.onsets = data.onset()
 
-        # Grab the filtered and interpolated melbank data
-        y = data.interpolated_melbank(self.pixel_count, filtered=False)
-        filtered_y = data.interpolated_melbank(self.pixel_count, filtered=True)
-
-        # Grab the filtered difference between the filtered melbank and the
-        # raw melbank.
-        r = self._r_filter.update(y - filtered_y)
+        # Grab the filtered melbank
+        r = self.melbanks(filtered=True)
         # Apply the melbank data to the gradient curve
         self.out = self.apply_gradient(r)
 
