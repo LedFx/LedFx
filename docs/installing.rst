@@ -71,6 +71,32 @@ To install on macOS first ensure you have at least Python 3.8 installed.
 
     $ ledfx --open-ui
 
+macOS Installation @dev branch (Apple Silicon M1)
+--------------------
+
+To install on macOS (Apple Silicon M1) dev branch, first ensure you have at least Python 3.9 installed.
+
+**1.** Install LedFx and all the dependencies using `homebrew`_ in a `python virtualenv`_:
+
+.. code:: console
+
+    $ brew install python@3.9
+    $ brew install portaudio --HEAD
+    $ brew install virtualenv
+    $ virtualenv -p python3.9 ~/ledfx-venv
+    $ source ~/ledfx-venv/bin/activate
+    $ pip install -U pip setuptools wheel
+    $ pip install numpy --compile --pre
+    $ pip install --force-reinstall git+https://github.com/LedFx/LedFx@dev
+
+    ** --force-reinstall assures that you will be up to date whenever you run the command
+
+**2.** Launch LedFx with the ``open-ui`` option to launch the browser:
+
+.. code:: console
+
+    $ ledfx --open-ui    
+
 Raspberry Pi Installation
 ---------------------------
 
