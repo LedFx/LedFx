@@ -52,6 +52,13 @@ class RestApi(RegistryLoader):
         for endpoint_type in self.types():
             endpoint = self.create(type=endpoint_type, ledfx=self._ledfx)
             resource = cors.add(
-                app.router.add_resource(endpoint.ENDPOINT_PATH)
+                app.router.add_resource(
+                    endpoint.ENDPOINT_PATH, name=f"api_{endpoint_type}"
+                )
             )
-            cors.add(resource.add_route("*", endpoint.handler))
+            cors.add(
+                resource.add_route(
+                    "*",
+                    endpoint.handler,
+                )
+            )
