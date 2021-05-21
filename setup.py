@@ -41,6 +41,7 @@ INSTALL_REQUIRES = [
     "pyserial>=3.5",
     "pystray>=0.17",
     "tcp-latency>=0.0.10",
+    "aiohttp_cors>=0.7.0",
 ]
 
 setup(
