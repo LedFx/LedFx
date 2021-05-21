@@ -76,7 +76,7 @@ macOS Installation @dev branch (Apple Silicon M1)
 
 To install on macOS (Apple Silicon M1) dev branch, first ensure you have at least Python 3.9 installed.
 
-**1.** Install LedFx and all the dependencies using `homebrew`_ in a `python venv`_:
+**1.** Install LedFx and all the dependencies using `homebrew`_ in a `python virtualenv`_:
 
 .. code:: console
 
