@@ -1,13 +1,16 @@
 import logging
 from json import JSONDecodeError
 
-import pyaudio
+import sounddevice as sd
 from aiohttp import web
 
 from ledfx.api import RestEndpoint
 from ledfx.config import save_config
+from ledfx.effects.audio import AudioInputSource
 
 _LOGGER = logging.getLogger(__name__)
+
+""" Work In Progress """
 
 
 class AudioDevicesEndpoint(RestEndpoint):
@@ -17,26 +20,29 @@ class AudioDevicesEndpoint(RestEndpoint):
     _audio = None
 
     async def get(self) -> web.Response:
-        """Get list of audio devices and active audio device WIP"""
+        """Get list of audio devices using sound device"""
+        # Need to map out what host API actually means - however for now, just display it
 
-        if self._audio is None:
-            self._audio = pyaudio.PyAudio()
+        hostapis = sd.query_hostapis()
+        devices = sd.query_devices()
 
-        info = self._audio.get_host_api_info_by_index(0)
-        audio_config = self._ledfx.config.get("audio", {"device_index": 0})
+        input_devices = list(
+            f"{hostapis[device['hostapi']]['name']}: {device['name']}"
+            for idx, device in enumerate(devices)
+            if device["max_input_channels"] > 0
+        )
 
-        audio_devices = {}
-        audio_devices["devices"] = {}
-        audio_devices["active_device_index"] = audio_config["device_index"]
+        audio_config = self._ledfx.config.get(
+            "audio", {"device_index": sd.default.device[0]}
+        )
 
-        for i in range(0, info.get("deviceCount")):
-            device_info = self._audio.get_device_info_by_host_api_device_index(
-                0, i
-            )
-            if (device_info.get("maxInputChannels")) > 0:
-                audio_devices["devices"][i] = device_info.get("name")
+        response = {}
+        response["active_device_index"] = audio_config["device_index"]
+        response[
+            "devices"
+        ] = AudioInputSource.input_devices()  # dict(enumerate(input_devices))
 
-        return web.json_response(data=audio_devices, status=200)
+        return web.json_response(data=response, status=200)
 
     async def put(self, request) -> web.Response:
         """Set audio device to use as input"""
@@ -48,9 +54,8 @@ class AudioDevicesEndpoint(RestEndpoint):
                 "reason": "JSON Decoding failed",
             }
             return web.json_response(data=response, status=400)
-        index = data.get("index")
 
-        info = self._audio.get_host_api_info_by_index(0)
+        index = data.get("index")
         if index is None:
             response = {
                 "status": "failed",
@@ -58,7 +63,9 @@ class AudioDevicesEndpoint(RestEndpoint):
             }
             return web.json_response(data=response, status=400)
 
-        if index not in range(0, info.get("deviceCount")):
+        valid_indexes = AudioInputSource.valid_device_indexes()
+
+        if index not in valid_indexes:
             response = {
                 "status": "failed",
                 "reason": f"Invalid device index [{index}]",

@@ -1,12 +1,15 @@
 # import asyncio
 import logging
-from functools import cached_property, lru_cache
+import time
+from functools import cached_property
 
 import numpy as np
 import voluptuous as vol
 import zeroconf
 
 from ledfx.effects import DummyEffect
+from ledfx.effects.math import interpolate_pixels
+from ledfx.effects.melbank import FrequencyRange
 from ledfx.events import (
     DisplayUpdateEvent,
     EffectClearedEvent,
@@ -65,6 +68,26 @@ class Display:
                 description="Type of transition between effects",
                 default="Add",
             ): vol.In([mode for mode in Transitions]),
+            vol.Optional(
+                "frequency_min",
+                description="Lowest frequency for this display's audio reactive effects",
+                default=20,  # GET THIS FROM CORE AUDIO
+            ): vol.All(
+                vol.Coerce(int),
+                vol.Range(
+                    min=20, max=10000, min_included=True, max_included=True
+                ),
+            ),  # AND HERE TOO,
+            vol.Optional(
+                "frequency_max",
+                description="Highest frequency for this display's audio reactive effects",
+                default=10000,  # GET THIS FROM CORE AUDIO
+            ): vol.All(
+                vol.Coerce(int),
+                vol.Range(
+                    min=20, max=10000, min_included=True, max_included=True
+                ),
+            ),  # AND HERE TOO,
         }
     )
 
@@ -96,6 +119,10 @@ class Display:
         self.fade_timer = 0
         self._segments = []
 
+        self.frequency_range = FrequencyRange(
+            self._config["frequency_min"], self._config["frequency_max"]
+        )
+
         # list of devices in order of their mapping on the display
         # [[id, start, end, invert]...]
         # not a very good schema, but vol seems a bit handicapped in terms of lists.
@@ -104,7 +131,7 @@ class Display:
         self.SEGMENTS_SCHEMA = vol.Schema([self.validate_segment])
 
     def __del__(self):
-        self.deactivate()
+        self.active = False
 
     def _valid_id(self, id):
         device = self._ledfx.devices.get(id)
@@ -118,7 +145,10 @@ class Display:
     def activate_segments(self, segments):
         for device_id, start_pixel, end_pixel, invert in segments:
             device = self._ledfx.devices.get(device_id)
-            device.add_segment(self.id, start_pixel, end_pixel)
+            try:
+                device.add_segment(self.id, start_pixel, end_pixel, force=True)
+            except ValueError as e:  # TODO pass this up the chain
+                print(e)
             if not device.is_active():
                 device.activate()
 
@@ -201,7 +231,7 @@ class Display:
                 if self._active_effect is not None:
                     self._active_effect.deactivate()
                     if self.pixel_count > 0:
-                        self._active_effect.activate(self.pixel_count)
+                        self._active_effect.activate(self)
 
             mode = self._config["transition_mode"]
             self.frame_transitions = self.transitions[mode]
@@ -215,7 +245,7 @@ class Display:
         if self._active_effect is None:
             self._transition_effect = DummyEffect(self.pixel_count)
             self._active_effect = effect
-            self._active_effect.activate(self.pixel_count)
+            self._active_effect.activate(self)
             self._ledfx.loop.call_later(
                 self._config["transition_time"], self.clear_transition_effect
             )
@@ -226,7 +256,7 @@ class Display:
             self.clear_transition_effect()
             self._transition_effect = self._active_effect
             self._active_effect = effect
-            self._active_effect.activate(self.pixel_count)
+            self._active_effect.activate(self)
             self._ledfx.loop.call_later(
                 self._config["transition_time"], self.clear_transition_effect
             )
@@ -234,8 +264,7 @@ class Display:
                 EffectSetEvent(self._active_effect.name)
             )
 
-        if not self._active:
-            self.activate()
+        self.active = True
 
     def transition_to_active(self):
         self._active_effect = self._transition_effect
@@ -282,7 +311,7 @@ class Display:
                 DisplayUpdateEvent(self.id, self.assembled_frame)
             )
 
-            self.deactivate()
+            self._active = False
 
     @property
     def active_effect(self):
@@ -291,30 +320,27 @@ class Display:
     def process_active_effect(self):
         # Assemble the frame if necessary, if nothing changed just sleep
         self.assembled_frame = self.assemble_frame()
-        if self.assembled_frame is not None:
-            if not self._paused:
-                if not self._config["preview_only"]:
-                    self.flush(self.assembled_frame)
+        if self.assembled_frame is not None and not self._paused:
+            if not self._config["preview_only"]:
+                self.flush(self.assembled_frame)
 
-                def trigger_display_update_event():
-                    self._ledfx.events.fire_event(
-                        DisplayUpdateEvent(self.id, self.assembled_frame)
-                    )
-
-                self._ledfx.loop.call_soon_threadsafe(
-                    trigger_display_update_event
+            def trigger_display_update_event():
+                self._ledfx.events.fire_event(
+                    DisplayUpdateEvent(self.id, self.assembled_frame)
                 )
 
+            self._ledfx.loop.call_soon_threadsafe(trigger_display_update_event)
+
     def thread_function(self):
-        # TODO: Evaluate switching # over to asyncio with UV loop optimization
-        # instead of spinning a separate thread.
         if self._active:
-            sleep_interval = 1 / self.refresh_rate
-            self._thread_clock += sleep_interval
-
+            start_time = time.time()
             self.process_active_effect()
+            render_latency = time.time() - start_time
 
-            self._ledfx.loop.call_at(self._thread_clock, self.thread_function)
+            self._ledfx.loop.call_later(
+                1 / self.refresh_rate - render_latency, self.thread_function
+            )
+            # print(f"Display processing latency: {render_latency}")
 
     def assemble_frame(self):
         """
@@ -374,36 +400,35 @@ class Display:
 
         _LOGGER.info(f"Activating display {self.id}")
         if not self._active:
+            self._active = True
             self.activate_segments(self._segments)
-        self._active = True
 
-        self._thread_clock = self._ledfx.loop.time() + 1
         self.thread_function()
 
     def deactivate(self):
         self._active = False
         self.deactivate_segments()
 
-    @lru_cache(maxsize=32)
-    def _normalized_linspace(self, size):
-        return np.linspace(0, 1, size)
+    # @lru_cache(maxsize=32)
+    # def _normalized_linspace(self, size):
+    #     return np.linspace(0, 1, size)
 
-    def interp_channel(self, channel, x_new, x_old):
-        return np.interp(x_new, x_old, channel)
+    # def interp_channel(self, channel, x_new, x_old):
+    #     return np.interp(x_new, x_old, channel)
 
-    # TODO cache this!
-    # need to be able to access pixels but not through args
-    # @lru_cache(maxsize=8)
-    def interpolate(self, pixels, new_length):
-        """Resizes the array by linearly interpolating the values"""
-        if len(pixels) == new_length:
-            return pixels
+    # # TODO cache this!
+    # # need to be able to access pixels but not through args
+    # # @lru_cache(maxsize=8)
+    # def interpolate(self, pixels, new_length):
+    #     """Resizes the array by linearly interpolating the values"""
+    #     if len(pixels) == new_length:
+    #         return pixels
 
-        x_old = self._normalized_linspace(len(pixels))
-        x_new = self._normalized_linspace(new_length)
+    #     x_old = self._normalized_linspace(len(pixels))
+    #     x_new = self._normalized_linspace(new_length)
 
-        z = np.apply_along_axis(self.interp_channel, 0, pixels, x_new, x_old)
-        return z
+    #     z = np.apply_along_axis(self.interp_channel, 0, pixels, x_new, x_old)
+    #     return z
 
     def flush(self, pixels):
         """
@@ -426,7 +451,7 @@ class Display:
                     target_len = device_end - device_start + 1
                     data.append(
                         (
-                            self.interpolate(pixels, target_len)[::step],
+                            interpolate_pixels(pixels, target_len)[::step],
                             device_start,
                             device_end,
                         )
@@ -452,12 +477,13 @@ class Display:
         return self._active
 
     @active.setter
-    def active(self, _active):
-        _active = bool(_active)
-        if _active:
+    def active(self, active):
+        active = bool(active)
+        if active and not self._active:
             self.activate()
-        else:
+        if not active and self._active:
             self.deactivate()
+        self._active = active
 
     @property
     def id(self) -> str:
@@ -545,6 +571,7 @@ class Display:
             _config = new_config
 
         _config = self.CONFIG_SCHEMA(_config)
+        _only_frequencies_updated = False
 
         if hasattr(self, "_config"):
             if _config["mapping"] != self._config["mapping"]:
@@ -552,13 +579,33 @@ class Display:
             if _config["transition_mode"] != self._config["transition_mode"]:
                 mode = _config["transition_mode"]
                 self.frame_transitions = self.transitions[mode]
+            # special case, where we do not want to reactive effect just
+            # because the frequency range has changed. bit sloppy but
+            # does the trick!
+            # if the only key in new config is "frequency_range":...
+            # changed_configs = set(a.items()) ^ set(b.items())
+            if all(
+                key in ["frequency_min", "frequency_max"]
+                for key in _config.keys()
+            ) and (
+                _config["frequency_min"] != self._config["frequency_min"]
+                or _config["frequency_max"] != self._config["frequency_max"]
+            ):
+                _only_frequencies_updated = True
 
         setattr(self, "_config", _config)
 
+        self.frequency_range = FrequencyRange(
+            self._config["frequency_min"], self._config["frequency_max"]
+        )
+
         if self._active_effect is not None:
-            self._active_effect.deactivate()
-            if self.pixel_count > 0:
-                self._active_effect.activate(self.pixel_count)
+            if _only_frequencies_updated:
+                self._active_effect.clear_melbank_freq_props()
+            else:
+                self._active_effect.deactivate()
+                if self.pixel_count > 0:
+                    self._active_effect.activate(self)
 
 
 class Displays:
