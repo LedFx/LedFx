@@ -41,6 +41,8 @@ INSTALL_REQUIRES = [
     "pyserial>=3.5",
     "pystray>=0.17",
     "tcp-latency>=0.0.10",
+    "mido>=1.2.10",
+    "python-rtmidi>=1.4.9",
 ]
 
 setup(
