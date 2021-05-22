@@ -63,6 +63,49 @@ def list_midi_devices():
     return input_devices if input_devices else ["No devices..."]
 
 
+MIDO_INPUT_SUFFIX = " 0"
+MIDO_OUTPUT_SUFFIX = " 1"
+
+MIDO_MESSAGE_TYPES = mido.messages.messages.SPEC_BY_TYPE.keys()
+
+mido.messages.checks._CHECKS
+mido.messages.specs.SPECS
+
+validate_byte = vol.All(int, vol.Range(0, 127))
+validators = {
+    "type": vol.In(MIDO_MESSAGE_TYPES),
+    "data": [validate_byte],
+    "channel": vol.All(int, vol.Range(0, 15)),
+    "control": validate_byte,
+    "frame_type": vol.All(int, vol.Range(0, 7)),
+    "frame_value": vol.All(int, vol.Range(0, 15)),
+    "note": validate_byte,
+    "pitch": vol.All(int, vol.Range(-8192, 8191)),
+    "pos": vol.All(int, vol.Range(0, 16383)),
+    "program": validate_byte,
+    "song": validate_byte,
+    "value": validate_byte,
+    "velocity": validate_byte,
+    "time": vol.Coerce(float),
+}
+
+
+def create_midimsg_schema(msgtype):
+    value_names = next(
+        spec["value_names"]
+        for spec in mido.messages.specs.SPECS
+        if spec["type"] == msgtype
+    )
+    schema = vol.Schema(
+        {value_name: validators[value_name] for value_name in value_names}
+    )
+
+
+def list_midi_devices():
+    input_devices = mido.get_input_names()
+    return input_devices if input_devices else ["No devices..."]
+
+
 class MIDI(Integration):
     """MIDI Integration"""
 

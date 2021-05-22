@@ -24,7 +24,7 @@ class Spotify(Integration):
     """Spotify Integration"""
 
     NAME = "Spotify"
-    DESCRIPTION = "Activate scenes with Spotify Connect [BETA]. Need Spotify Premium."
+    DESCRIPTION = "Activate scenes with Spotify Connect [BETA]."
 
     CONFIG_SCHEMA = vol.Schema(
         {
