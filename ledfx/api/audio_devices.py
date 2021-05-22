@@ -6,6 +6,7 @@ from aiohttp import web
 
 from ledfx.api import RestEndpoint
 from ledfx.config import save_config
+from ledfx.effects.audio import AudioInputSource
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -31,11 +32,15 @@ class AudioDevicesEndpoint(RestEndpoint):
             if device["max_input_channels"] > 0
         )
 
-        audio_config = self._ledfx.config.get("audio", {"device_index": 0})
+        audio_config = self._ledfx.config.get(
+            "audio", {"device_index": sd.default.device[0]}
+        )
 
         response = {}
         response["active_device_index"] = audio_config["device_index"]
-        response["devices"] = dict(enumerate(input_devices))
+        response[
+            "devices"
+        ] = AudioInputSource.input_devices()  # dict(enumerate(input_devices))
 
         return web.json_response(data=response, status=200)
 
@@ -58,12 +63,7 @@ class AudioDevicesEndpoint(RestEndpoint):
             }
             return web.json_response(data=response, status=400)
 
-        valid_indexes = range(
-            sum(
-                device["max_input_channels"] > 0
-                for device in sd.query_devices()
-            )
-        )
+        valid_indexes = AudioInputSource.valid_device_indexes()
 
         if index not in valid_indexes:
             response = {

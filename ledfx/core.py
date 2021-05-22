@@ -10,6 +10,7 @@ from ledfx.config import load_config, save_config
 from ledfx.devices import Devices
 from ledfx.displays import Displays
 from ledfx.effects import Effects
+from ledfx.effects.math import interpolate_pixels
 from ledfx.events import (
     Event,
     Events,
@@ -124,8 +125,13 @@ class LedFxCore:
 
             time_since_last[vis_id] = time_now
 
+            pixels = event.pixels
+
+            if len(pixels) > self.config["visualisation_maxlen"]:
+                pixels = interpolate_pixels(pixels)
+
             self.events.fire_event(
-                VisualisationUpdateEvent(is_device, vis_id, event.pixels)
+                VisualisationUpdateEvent(is_device, vis_id, pixels)
             )
 
         self.events.add_listener(
@@ -160,7 +166,7 @@ class LedFxCore:
             import win32api
 
             def handle_win32_interrupt(sig, func=None):
-                self.stop(exit_code=1)
+                self.stop(exit_code=2)
                 return True
 
             win32api.SetConsoleCtrlHandler(handle_win32_interrupt, 1)

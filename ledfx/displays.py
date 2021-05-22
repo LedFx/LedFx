@@ -1,13 +1,14 @@
 # import asyncio
 import logging
 import time
-from functools import cached_property, lru_cache
+from functools import cached_property
 
 import numpy as np
 import voluptuous as vol
 import zeroconf
 
 from ledfx.effects import DummyEffect
+from ledfx.effects.math import interpolate_pixels
 from ledfx.effects.melbank import FrequencyRange
 from ledfx.events import (
     DisplayUpdateEvent,
@@ -408,26 +409,26 @@ class Display:
         self._active = False
         self.deactivate_segments()
 
-    @lru_cache(maxsize=32)
-    def _normalized_linspace(self, size):
-        return np.linspace(0, 1, size)
+    # @lru_cache(maxsize=32)
+    # def _normalized_linspace(self, size):
+    #     return np.linspace(0, 1, size)
 
-    def interp_channel(self, channel, x_new, x_old):
-        return np.interp(x_new, x_old, channel)
+    # def interp_channel(self, channel, x_new, x_old):
+    #     return np.interp(x_new, x_old, channel)
 
-    # TODO cache this!
-    # need to be able to access pixels but not through args
-    # @lru_cache(maxsize=8)
-    def interpolate(self, pixels, new_length):
-        """Resizes the array by linearly interpolating the values"""
-        if len(pixels) == new_length:
-            return pixels
+    # # TODO cache this!
+    # # need to be able to access pixels but not through args
+    # # @lru_cache(maxsize=8)
+    # def interpolate(self, pixels, new_length):
+    #     """Resizes the array by linearly interpolating the values"""
+    #     if len(pixels) == new_length:
+    #         return pixels
 
-        x_old = self._normalized_linspace(len(pixels))
-        x_new = self._normalized_linspace(new_length)
+    #     x_old = self._normalized_linspace(len(pixels))
+    #     x_new = self._normalized_linspace(new_length)
 
-        z = np.apply_along_axis(self.interp_channel, 0, pixels, x_new, x_old)
-        return z
+    #     z = np.apply_along_axis(self.interp_channel, 0, pixels, x_new, x_old)
+    #     return z
 
     def flush(self, pixels):
         """
@@ -450,7 +451,7 @@ class Display:
                     target_len = device_end - device_start + 1
                     data.append(
                         (
-                            self.interpolate(pixels, target_len)[::step],
+                            interpolate_pixels(pixels, target_len)[::step],
                             device_start,
                             device_end,
                         )

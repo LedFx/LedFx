@@ -16,9 +16,14 @@ def interpolate(y, new_length):
 
     x_old = _normalized_linspace(len(y))
     x_new = _normalized_linspace(new_length)
-    z = np.interp(x_new, x_old, y)
 
-    return z
+    return np.interp(x_new, x_old, y)
+
+
+def interpolate_pixels(pixels, new_length):
+    """Resizes a pixel array by linearly interpolating the values"""
+
+    return np.apply_along_axis(interpolate, 0, pixels, new_length)
 
 
 class ExpFilter:

@@ -634,7 +634,10 @@ class BaseRegistry(ABC):
         for c in classes:
             c_schema = getattr_explicit(c, self._schema_attr, None)
             if c_schema is not None:
-                schema = schema.extend(c_schema.schema)
+                if type(c_schema) is property:
+                    schema = schema.extend(c_schema.fget().schema)
+                else:
+                    schema = schema.extend(c_schema.schema)
 
         return schema
 

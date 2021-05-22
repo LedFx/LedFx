@@ -66,8 +66,11 @@ CORE_CONFIG_SCHEMA = vol.Schema(
         vol.Optional("user_presets", default={}): dict,
         vol.Optional("scenes", default={}): dict,
         vol.Optional("integrations", default=[]): list,
-        vol.Optional("frontend_fps", default=30): vol.All(
+        vol.Optional("visualisation_fps", default=30): vol.All(
             int, vol.Range(1, 60)
+        ),
+        vol.Optional("visualisation_maxlen", default=50): vol.All(
+            int, vol.Range(5, 300)
         ),
         vol.Optional("scan_on_startup", default=False): bool,
         vol.Optional(

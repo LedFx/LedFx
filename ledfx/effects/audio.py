@@ -30,17 +30,44 @@ class AudioInputSource:
     _volume = -90
     _volume_filter = ExpFilter(-90, alpha_decay=0.99, alpha_rise=0.99)
 
-    AUDIO_CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Optional("sample_rate", default=60): int,
-            vol.Optional("mic_rate", default=MIC_RATE): int,
-            vol.Optional("fft_size", default=FFT_SIZE): int,
-            # vol.Optional("hostapi_idx", default=0): int
-            vol.Optional("device_index", default=-1): int,
-            vol.Optional("min_volume", default=0.2): float,
-        },
-        extra=vol.ALLOW_EXTRA,
-    )
+    @staticmethod
+    def valid_device_indexes():
+        return list(AudioInputSource.input_devices().keys())
+
+    @staticmethod
+    def default_device_index():
+        return sd.default.device[0]
+
+    @staticmethod
+    def input_devices():
+        hostapis = sd.query_hostapis()
+        devices = sd.query_devices()
+
+        return {
+            idx: f"{hostapis[device['hostapi']]['name']}: {device['name']}"
+            for idx, device in enumerate(devices)
+            if device["max_input_channels"] > 0
+        }
+
+    @staticmethod
+    @property
+    def AUDIO_CONFIG_SCHEMA():
+        default_device_index = AudioInputSource.default_device_index()
+        valid_device_indexes = AudioInputSource.valid_device_indexes()
+
+        return vol.Schema(
+            {
+                vol.Optional("sample_rate", default=60): int,
+                vol.Optional("mic_rate", default=MIC_RATE): int,
+                vol.Optional("fft_size", default=FFT_SIZE): int,
+                # vol.Optional("hostapi_idx", default=0): int
+                vol.Optional("min_volume", default=0.2): float,
+                vol.Optional(
+                    "device_index", default=default_device_index
+                ): vol.In(valid_device_indexes),
+            },
+            extra=vol.ALLOW_EXTRA,
+        )
 
     def __init__(self, ledfx, config):
         self._ledfx = ledfx
@@ -50,7 +77,7 @@ class AudioInputSource:
         """Deactivate the audio, update the config, the reactivate"""
 
         self.deactivate()
-        self._config = self.AUDIO_CONFIG_SCHEMA(config)
+        self._config = self.AUDIO_CONFIG_SCHEMA.fget()(config)
         if len(self._callbacks) != 0:
             self.activate()
 
@@ -67,21 +94,18 @@ class AudioInputSource:
         # configured host api and device name
         hostapis = self._audio.query_hostapis()
         devices = self._audio.query_devices()
+        default_device = self.default_device_index()
+        valid_device_indexes = self.valid_device_indexes()
         default_api = self._audio.default.hostapi
-        default_device = hostapis[default_api]["default_input_device"]
         device_idx = self._config["device_index"]
 
-        if device_idx < 0:
-            # _LOGGER.warning(f"Audio device not set. Reverting to default input device.")
-            device_idx = default_device
-
-        if device_idx >= len(devices):
+        if device_idx > max(valid_device_indexes):
             _LOGGER.warning(
                 f"Invalid audio device index: {device_idx}. Reverting to default input device."
             )
             device_idx = default_device
 
-        if devices[device_idx]["max_input_channels"] == 0:
+        elif device_idx not in valid_device_indexes:
             _LOGGER.warning(
                 f"Audio device {devices[device_idx]['name']} has no input channels. Reverting to default input device."
             )
@@ -142,7 +166,7 @@ class AudioInputSource:
             freq_domain_length,
         )
 
-        try:
+        def open_audio_stream(device_idx):
             self._stream = self._audio.InputStream(
                 samplerate=self._config["mic_rate"],
                 device=device_idx,
@@ -154,12 +178,18 @@ class AudioInputSource:
                 // self._config["sample_rate"],
             )
             self._stream.start()
+            _LOGGER.info("Audio source opened.")
+
+        try:
+            open_audio_stream(device_idx)
         except OSError as e:
             _LOGGER.critical(
                 f"Unable to open Audio Device: {e} - please retry."
             )
             self.deactivate()
-        _LOGGER.info("Audio source opened.")
+        except sd.PortAudioError as e:
+            _LOGGER.error(f"{e}, Reverting to default input device")
+            open_audio_stream(default_device)
 
     def deactivate(self):
         if self._stream:
