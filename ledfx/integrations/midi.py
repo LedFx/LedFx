@@ -112,8 +112,10 @@ class MIDI(Integration):
     NAME = "MIDI"
     DESCRIPTION = "Control LedFx with a MIDI device"
 
+    @staticmethod
     @property
-    def CONFIG_SCHEMA(self):
+    def CONFIG_SCHEMA():
+        """dynamic config schema"""
         return vol.Schema(
             {
                 vol.Required(
