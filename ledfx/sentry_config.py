@@ -1,5 +1,4 @@
 import sentry_sdk
-from sentry_sdk.integrations.aiohttp import AioHttpIntegration
 
 from ledfx.consts import PROJECT_VERSION
 
@@ -14,7 +13,6 @@ if (
 ):
     sentry_sdk.init(
         sentry_dsn,
-        traces_sample_rate=1,
-        integrations=[AioHttpIntegration()],
+        traces_sample_rate=0.2,
         release=f"ledfx@{PROJECT_VERSION}",
     )
