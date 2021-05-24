@@ -95,7 +95,7 @@ To install on macOS (Apple Silicon M1) dev branch, first ensure you have at leas
 
 .. code:: console
 
-    $ ledfx --open-ui    
+    $ ledfx --open-ui
 
 Raspberry Pi Installation
 ---------------------------
