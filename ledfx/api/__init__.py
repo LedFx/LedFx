@@ -38,6 +38,7 @@ class RestApi(RegistryLoader):
         self._ledfx = ledfx
 
     def register_routes(self, app):
+        methods = ["GET", "PUT", "POST", "DELETE"]
         cors = aiohttp_cors.setup(
             app,
             defaults={
@@ -45,6 +46,7 @@ class RestApi(RegistryLoader):
                     allow_credentials=True,
                     expose_headers="*",
                     allow_headers="*",
+                    allow_methods=methods,
                 )
             },
         )
@@ -62,7 +64,5 @@ class RestApi(RegistryLoader):
             #         endpoint.handler,
             #     )
             # )
-            cors.add(resource.add_route("GET", endpoint.handler))
-            cors.add(resource.add_route("PUT", endpoint.handler))
-            cors.add(resource.add_route("POST", endpoint.handler))
-            cors.add(resource.add_route("DELETE", endpoint.handler))
+            for method in methods:
+                cors.add(resource.add_route(method, endpoint.handler))
