@@ -56,9 +56,13 @@ class RestApi(RegistryLoader):
                     endpoint.ENDPOINT_PATH, name=f"api_{endpoint_type}"
                 )
             )
-            cors.add(
-                resource.add_route(
-                    "*",
-                    endpoint.handler,
-                )
-            )
+            # cors.add(
+            #     resource.add_route(
+            #         "*",
+            #         endpoint.handler,
+            #     )
+            # )
+            cors.add(resource.add_route("GET", endpoint.handler))
+            cors.add(resource.add_route("PUT", endpoint.handler))
+            cors.add(resource.add_route("POST", endpoint.handler))
+            cors.add(resource.add_route("DELETE", endpoint.handler))
