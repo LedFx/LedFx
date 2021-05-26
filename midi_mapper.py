@@ -628,7 +628,7 @@ except rtmidi._rtmidi.SystemError:
 ########
 
 mapping = Mapping()
-json_name = f"LedFxMidiMap {device_name}.json"
+json_name = f"{device_name}.json"
 json_path = os.path.join(os.path.expanduser("~"), json_name)
 
 # load existing mapping if it's there
@@ -646,10 +646,13 @@ if os.path.exists(json_path):
 
 print("How it works:")
 print(
-    "1. You will define REGIONS of your midi device, eg. A ROW of SLIDERS, a MATRIX of BUTTONS (note - regions must have homogenous input types)"
+    "You will define REGIONS of your midi device, eg. A ROW of SLIDERS, a MATRIX of BUTTONS (note - regions must have homogenous input types)"
 )
 print(
-    "2. You will also define an LED PROTOCOL for each region (so LedFx can turn your device lights on and off)"
+    "You will also define an LED PROTOCOL for each region (so LedFx can turn your device lights on and off)"
+)
+print(
+    "Finally, you will create an image of the midi device, showing the regions you created."
 )
 continue_input()
 
