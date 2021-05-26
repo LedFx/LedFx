@@ -684,7 +684,7 @@ if "image" not in mapping.keys():
     continue_input()
     while True:
         print("Drag and drop the image file to this console. If that doesn't work, type the path to the image manually.")
-        image_path = input(" > ")
+        image_path = input(" > ").rstrip()
         if os.path.getsize(image_path) > 1e6:
             print(f"Your image is too big: {size/1e6:.2f} MB")
             print(f"Please increase compression or scale it down. JPG is recommended.")
