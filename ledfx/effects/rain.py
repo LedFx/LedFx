@@ -1,4 +1,4 @@
-import os.path
+import os
 from random import randint
 
 import numpy as np

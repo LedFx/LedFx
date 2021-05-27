@@ -628,7 +628,7 @@ except rtmidi._rtmidi.SystemError:
 ########
 
 mapping = Mapping()
-json_name = f"{device_name}.json"
+json_name = f"LedFxMidiMap {device_name}.json"
 json_path = os.path.join(os.path.expanduser("~"), json_name)
 
 # load existing mapping if it's there
