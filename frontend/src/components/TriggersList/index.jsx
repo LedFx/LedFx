@@ -9,7 +9,7 @@ const styles = theme => ({
 });
 
 const triggers = [
-    {songId: 123, songName: 'song', position: 11111, sceneId: 123, sceneName: 'scene'},
+    {songId: '62WEkOD8TUO7wzkolOQW9v', songName: 'Losing It - FISHER', position: 230660, sceneId: 123, sceneName: 'SceneTest1'},
     {songId: 123, songName: 'song', position: 11111, sceneId: 123, sceneName: 'scene'},
     {songId: 123, songName: 'song', position: null, sceneId: 123, sceneName: 'scene'},
     {songId: 123, songName: 'song', position: null, sceneId: 123, sceneName: 'scene'},

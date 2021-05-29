@@ -169,21 +169,21 @@ class SpotifyPlayer extends React.Component {
                                 </FormControl>
                             </Grid>
                             <Grid item xs={6} justify="center">
-                            <div style={{flex: 1, width: '100%'}}> <Slider  aria-labelledby="continuous-slider" />
-                            <Button style={{marginRight: '.5rem'}} color="primary" variant="contained"><SkipPrevious /></Button>
+                            <div style={{flex: 1, width: '100%'}}> <Slider  aria-labelledby="continuous-slider" value={playerState.position/playerState.duration*100} />
+                            <Button style={{marginRight: '1.8rem'}} color="primary" variant="contained"><SkipPrevious /></Button>
                             {playerState.paused === true
                             ?
-                            <Button style={{marginRight: '.5rem'}} color="primary" variant="contained"><PlayArrow /></Button>
+                            <Button style={{marginRight: '1.8rem'}} color="primary" variant="contained"><PlayArrow /></Button>
                             :
-                            <Button style={{marginRight: '.5rem'}} color="primary" variant="contained"><Pause /></Button> } 
-                            <Button style={{marginRight: '.5rem'}} color="primary" variant="contained"><SkipNext /></Button> 
+                            <Button style={{marginRight: '1.8rem'}} color="primary" variant="contained"><Pause /></Button> } 
+                            <Button style={{marginRight: '1.8rem'}} color="primary" variant="contained"><SkipNext /></Button> 
                             </div>
                             </Grid>
                             
                             <Grid container item xs={6} justify='center'>
                                 
                             <Typography align='center' variant='body1'><div>
-                                    Track Position: 
+                                    Track Position: .
                                     {playerState.paused === false
                                     ?
                                     <Moment
@@ -218,23 +218,6 @@ class SpotifyPlayer extends React.Component {
         );
     }
 }
-
-/*
-SongControls.propTypes = {
-    timeElapsed: PropTypes.number,
-    songPlaying: PropTypes.bool,
-    songPaused: PropTypes.bool,
-    songName: PropTypes.string,
-    artistName: PropTypes.string,
-    stopSong: PropTypes.func,
-    resumeSong: PropTypes.func,
-    increaseSongTime: PropTypes.func,
-    pauseSong: PropTypes.func,
-    songs: PropTypes.array,
-    songDetails: PropTypes.object,
-    audioControl: PropTypes.func
-  };
-  */
 
 export default connect(
     state => ({
