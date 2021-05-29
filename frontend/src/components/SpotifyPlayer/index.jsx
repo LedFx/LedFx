@@ -11,7 +11,6 @@ import { updatePlayerState  } from 'modules/spotify'
 //import AddCircleIcon from '@material-ui/icons/AddCircle';
 import PlayArrow from '@material-ui/icons/PlayArrow';
 import Pause from '@material-ui/icons/Pause';
-import Stop from '@material-ui/icons/Stop';
 import SkipNext from '@material-ui/icons/SkipNext';
 import SkipPrevious from '@material-ui/icons/SkipPrevious';
 //import CircularProgress from '@material-ui/core/CircularProgress';
@@ -60,21 +59,8 @@ const useStyles = makeStyles(theme => ({
     },
 }));
 
+//Need to do this. Currently scenes only is in dropdown if prev visited scenes management.
 //function getScenes();
-
-function msToTime(duration) {
-    var milliseconds = parseInt((duration % 1000) / 100),
-      seconds = Math.floor((duration / 1000) % 60),
-      minutes = Math.floor((duration / (1000 * 60)) % 60),
-      hours = Math.floor((duration / (1000 * 60 * 60)) % 24);
-  
-    hours = (hours < 10) ? "0" + hours : hours;
-    minutes = (minutes < 10) ? "0" + minutes : minutes;
-    seconds = (seconds < 10) ? "0" + seconds : seconds;
-  
-    return minutes + ":" + seconds + "." + milliseconds;
-  }
-  //console.log(msToTime(300000))
 
 
 class SpotifyPlayer extends React.Component {
@@ -182,26 +168,27 @@ class SpotifyPlayer extends React.Component {
                                     </Select>
                                 </FormControl>
                             </Grid>
-                            <Grid item xs={6}>
+                            <Grid item xs={6} justify="center">
                             <div style={{flex: 1, width: '100%'}}> <Slider  aria-labelledby="continuous-slider" />
-                            <Button style={{marginRight: '.5rem'}} color="primary" variant="contained"><SkipPrevious /></Button> 
-                            <Button style={{marginRight: '.5rem'}} color="primary" variant="contained"><PlayArrow /></Button> 
-                            <Button style={{marginRight: '.5rem'}} color="primary" variant="contained"><Pause /></Button> 
-                            <Button style={{marginRight: '.5rem'}} color="primary" variant="contained"><Stop /></Button> 
+                            <Button style={{marginRight: '.5rem'}} color="primary" variant="contained"><SkipPrevious /></Button>
+                            {playerState.paused === true
+                            ?
+                            <Button style={{marginRight: '.5rem'}} color="primary" variant="contained"><PlayArrow /></Button>
+                            :
+                            <Button style={{marginRight: '.5rem'}} color="primary" variant="contained"><Pause /></Button> } 
                             <Button style={{marginRight: '.5rem'}} color="primary" variant="contained"><SkipNext /></Button> 
                             </div>
                             </Grid>
                             
                             <Grid container item xs={6} justify='center'>
                                 
-                            
                             <Typography align='center' variant='body1'><div>
                                     Track Position: 
-                                    {playerState.paused = true
+                                    {playerState.paused === false
                                     ?
                                     <Moment
-                                    interval={0}
-                                    format="hh:mm:ss"
+                                    interval={1000}
+                                    format="mm:ss"
                                     durationFromNow
                                     >
                                         {moment().add(
@@ -210,14 +197,11 @@ class SpotifyPlayer extends React.Component {
                                             )}
                                     </Moment>
                                     : <Moment
-                                            interval={1000}
-                                            format="hh:mm:ss"
+                                            interval={0}
+                                            format="mm:ss"
                                             durationFromNow
                                             >
-                                                {moment().add(
-                                                    playerState.position * -0.001,
-                                                    's'
-                                                    )}
+                                                {moment().add(playerState.position * -0.001,'s')}
                                                     </Moment>}
                                             </div>
                                     </Typography>
