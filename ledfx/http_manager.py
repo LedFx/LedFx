@@ -29,9 +29,6 @@ class HttpServer:
         self.host = host
         self.port = port
 
-    async def index(self, request):
-        return {}
-
     def register_routes(self):
         self.api.register_routes(self.app)
 
