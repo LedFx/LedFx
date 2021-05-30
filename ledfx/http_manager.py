@@ -34,6 +34,7 @@ class HttpServer:
 
         self.api.register_routes(self.app)
         self.app.router.add_route("get", "/v2/", self.v2)
+        self.app.router.add_route("get", "/v2", self.v2)
         self.app.router.add_route("get", "/favicon.ico", self.favicon)
         self.app.router.add_route("get", "/manifest.json", self.manifest)
         self.app.router.add_static(
