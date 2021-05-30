@@ -3,8 +3,6 @@ import os
 import sys
 import time
 
-import aiohttp_jinja2
-import jinja2
 from aiohttp import web
 
 import ledfx_frontend
@@ -24,24 +22,20 @@ class HttpServer:
 
         self.app = web.Application()
         self.api = RestApi(ledfx)
-        templates_path = os.path.abspath(
-            os.path.dirname(ledfx_frontend.__file__)
-        )
-        aiohttp_jinja2.setup(
-            self.app, loader=jinja2.FileSystemLoader(templates_path)
-        )
+
         self.register_routes()
 
         self._ledfx = ledfx
         self.host = host
         self.port = port
 
-    @aiohttp_jinja2.template("index.html")
     async def index(self, request):
         return {}
 
     def register_routes(self):
         self.api.register_routes(self.app)
+
+        self.app.router.add_route("get", "/", self.index)
         self.app.router.add_route("get", "/favicon.ico", self.favicon)
         self.app.router.add_route("get", "/manifest.json", self.manifest)
         self.app.router.add_static(
@@ -52,6 +46,12 @@ class HttpServer:
 
         self.app.router.add_route("get", "/", self.index)
         self.app.router.add_route("get", "/{extra:.+}", self.index)
+
+    async def index(self, response):
+
+        return web.FileResponse(
+            path=ledfx_frontend.where() + "/index.html", status=200
+        )
 
     async def favicon(self, response):
 
