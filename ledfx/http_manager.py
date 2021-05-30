@@ -6,6 +6,7 @@ import time
 from aiohttp import web
 
 import ledfx_frontend
+import ledfx_frontend_v2
 from ledfx.api import RestApi
 
 try:
@@ -32,6 +33,7 @@ class HttpServer:
     def register_routes(self):
 
         self.api.register_routes(self.app)
+        self.app.router.add_route("get", "/v2/", self.v2)
         self.app.router.add_route("get", "/favicon.ico", self.favicon)
         self.app.router.add_route("get", "/manifest.json", self.manifest)
         self.app.router.add_static(
@@ -39,9 +41,18 @@ class HttpServer:
             path=ledfx_frontend.where() + "/static",
             name="static",
         )
-
+        self.app.router.add_static(
+            "/v2/static",
+            path=ledfx_frontend_v2.where() + "/static",
+            name="static_v2",
+        )
         self.app.router.add_route("get", "/", self.index)
         self.app.router.add_route("get", "/{extra:.+}", self.index)
+
+    async def v2(self, response):
+        return web.FileResponse(
+            path=ledfx_frontend_v2.where() + "/index.html", status=200
+        )
 
     async def index(self, response):
 

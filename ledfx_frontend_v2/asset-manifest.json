@@ -1,0 +1,25 @@
+{
+  "files": {
+    "main.css": "/v2/static/css/main.64d1dd09.chunk.css",
+    "main.js": "/v2/static/js/main.4b7d0529.chunk.js",
+    "main.js.map": "/v2/static/js/main.4b7d0529.chunk.js.map",
+    "runtime-main.js": "/v2/static/js/runtime-main.128ec2fe.js",
+    "runtime-main.js.map": "/v2/static/js/runtime-main.128ec2fe.js.map",
+    "static/js/2.42459440.chunk.js": "/v2/static/js/2.42459440.chunk.js",
+    "static/js/2.42459440.chunk.js.map": "/v2/static/js/2.42459440.chunk.js.map",
+    "static/js/3.9e1f6a96.chunk.js": "/v2/static/js/3.9e1f6a96.chunk.js",
+    "static/js/3.9e1f6a96.chunk.js.map": "/v2/static/js/3.9e1f6a96.chunk.js.map",
+    "index.html": "/v2/index.html",
+    "static/css/main.64d1dd09.chunk.css.map": "/v2/static/css/main.64d1dd09.chunk.css.map",
+    "static/js/2.42459440.chunk.js.LICENSE.txt": "/v2/static/js/2.42459440.chunk.js.LICENSE.txt",
+    "static/media/index.css": "/v2/static/media/materialdesignicons-webfont.e9db4005.woff2",
+    "static/media/blademod.04a8d38d.svg": "/v2/static/media/blademod.04a8d38d.svg",
+    "static/media/ring.1faea45b.png": "/v2/static/media/ring.1faea45b.png"
+  },
+  "entrypoints": [
+    "static/js/runtime-main.128ec2fe.js",
+    "static/js/2.42459440.chunk.js",
+    "static/css/main.64d1dd09.chunk.css",
+    "static/js/main.4b7d0529.chunk.js"
+  ]
+}
