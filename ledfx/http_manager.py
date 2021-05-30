@@ -30,9 +30,8 @@ class HttpServer:
         self.port = port
 
     def register_routes(self):
-        self.api.register_routes(self.app)
 
-        self.app.router.add_route("get", "/", self.index)
+        self.api.register_routes(self.app)
         self.app.router.add_route("get", "/favicon.ico", self.favicon)
         self.app.router.add_route("get", "/manifest.json", self.manifest)
         self.app.router.add_static(
@@ -77,6 +76,9 @@ class HttpServer:
                 "Shutting down - Failed to create HTTP server at port %d: %s.",
                 self.port,
                 error,
+            )
+            _LOGGER.error(
+                "Is LedFx Already Running? If not, try a different port."
             )
             if self._ledfx.icon is not None:
                 if self._ledfx.icon.HAS_NOTIFICATION:
