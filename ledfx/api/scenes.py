@@ -198,6 +198,9 @@ class ScenesEndpoint(RestEndpoint):
             return web.json_response(data=response, status=400)
 
         scene_name = data.get("name")
+        scene_image = data.get("scene_image")
+        if scene_image is None:
+            scene_image = "Wallpaper"
         if scene_name is None:
             response = {
                 "status": "failed",
@@ -210,6 +213,7 @@ class ScenesEndpoint(RestEndpoint):
         scene_config = {}
         scene_config["name"] = scene_name
         scene_config["displays"] = {}
+        scene_config["scene_image"] = scene_image
         for display in self._ledfx.displays.values():
             effect = {}
             if display.active_effect:
