@@ -276,7 +276,7 @@ def get_input_msg_format(input_type: int):
     for _ in port.iter_pending():
         pass
     if input_type == 0:  # button
-        print("Press a single button in the region at least 5 times.")
+        print("Press a SINGLE BUTTON in the region at least 5 times. Just one button!")
         msgs = record_continuous_input(
             prompt="Stop when you've pressed it at least 5 times."
         )
