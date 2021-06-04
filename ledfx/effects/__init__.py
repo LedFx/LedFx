@@ -14,6 +14,9 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class DummyEffect:
+
+    CONFIG_SCHEMA = vol.Schema({})
+
     def __init__(self, pixel_count):
         self._pixels = np.zeros((pixel_count, 3))
 
