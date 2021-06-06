@@ -90,7 +90,10 @@ const IntegrationsCard = ({ int }) => {
                 {int.status === 1 & int.type === 'qlc'
                 ? <DialogAddEventListener integration={int} />
                 : int.status !== 1 & int.type === 'qlc'
-                ? 'Must be in connected status, to add new event listener. Guide: shorturl.at/uMSV7'
+                ? 
+                <Link target="_blank" href="https://www.qlcplus.org/docs/html_en_EN/webinterface.html" >
+                    Must be in connected status, to add new event listener. Click here for setup guide.
+                </Link>
                 : ''}
                 
                 {int.type === 'spotify' && int.active !== 'true' /* && !spotify.accessToken && !spotify.refreshToken */
