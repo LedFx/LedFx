@@ -9,6 +9,15 @@ documentation follow the steps outlined below:
 .. note:: Alternatively, you may run ``make livehtml`` in place of ``make html`` to open a browser and view your changes in
           realtime.
 
+          
+Windows 
+-------
+
+.. code:: console
+
+    $ cd ~/ledfx/docs
+    $ pip install -r requirements-docs.txt
+    $ make html
 
 Linux
 -------
