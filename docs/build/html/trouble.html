@@ -1,0 +1,358 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  <meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Troubleshooting &mdash; LedFx 0.10.5 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/css/custom.css" type="text/css" />
+
+  
+  
+    <link rel="shortcut icon" href="_static/favicon.ico"/>
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="REST API" href="api.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html">
+          
+
+          
+            
+            <img src="_static/small_white_alpha.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.10.5
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p><span class="caption-text">Installation &amp; Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="installing.html">Installation and Setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="developer.html">Development Setup</a></li>
+</ul>
+<p><span class="caption-text">Configuration</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="configuring.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="directing_audio.html">Directing Audio</a></li>
+</ul>
+<p><span class="caption-text">LedFx API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="api.html">REST API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html#websocket-api">WebSocket API</a></li>
+</ul>
+<p><span class="caption-text">Help</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Troubleshooting</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#firmware-issues">Firmware Issues</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#wled">WLED</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#espixelstick">ESPixelStick</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#ledfx-configuration-file">LedFx Configuration File</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#speaker-sound">Speaker Sound</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#mac-os-x">Mac OS X:</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#audio-errors">Audio Errors</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#windows">Windows:</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#squeezebox-server-logitech">Squeezebox Server - Logitech</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#vban-audio-sync">VBAN audio sync</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#networking-improvements">Networking Improvements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id3">Protocol Choice</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#need-more-help">Need more help?</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">LedFx</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>Troubleshooting</li>
+    
+    
+
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <section id="troubleshooting">
+<h1>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permalink to this headline">¶</a></h1>
+<section id="firmware-issues">
+<h2>Firmware Issues<a class="headerlink" href="#firmware-issues" title="Permalink to this headline">¶</a></h2>
+<section id="wled">
+<h3>WLED<a class="headerlink" href="#wled" title="Permalink to this headline">¶</a></h3>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>LedFx dev branch has a WLED device troubleshooting tool.</p>
+<ul class="simple">
+<li><p>Sending data, WLED going into E1.31 mode but lights aren’t working?</p>
+<ul>
+<li><p>Try turning off multicast and setting the start universe to 1.</p></li>
+</ul>
+</li>
+<li><p>As long as the universe size is set to 510 LedFx should output to all pixels. Maybe something in the code is not working past 1 universe as 1 universe is 170 LEDs</p></li>
+<li><p>Make sure “disable WiFi sleep” is ticked in WiFi Settings on the WLED web interface.</p></li>
+<li><p>How many devices do you have?</p>
+<ul>
+<li><p>Try 1 WLED device to start and work your way up to see where the problem lies, whilst monitoring your computer performance usage.</p></li>
+</ul>
+</li>
+<li><p>Determine if it’s a networking problem:
+Try pinging the device - any large variances in ping will cause issues - LedFx is extremely latency sensitive.
+Command prompt ping the IP address of the WLED device. For example: ping 192.168.1.101</p></li>
+</ul>
+</div>
+</section>
+<section id="espixelstick">
+<h3>ESPixelStick<a class="headerlink" href="#espixelstick" title="Permalink to this headline">¶</a></h3>
+<p>The ESPixelStick firmware is extremely streamlined and by far the lowest latency option.</p>
+<p>ESPixelStick will drive all LEDs via the RX pin (like any real pixel pusher FW should do) and will let you have
+thousands of LEDs in any pixel order you want. The problem with the code is, it can’t handle more than a single
+universe, which limits you to 170 pixels. More advanced FW will consume input spanning multiple universes.</p>
+</section>
+</section>
+<section id="ledfx-configuration-file">
+<h2>LedFx Configuration File<a class="headerlink" href="#ledfx-configuration-file" title="Permalink to this headline">¶</a></h2>
+<p>By default the configuration file is located in %appdata%/.ledfx on Windows and ~/.ledfx on <a href="#id1"><span class="problematic" id="id2">*</span></a>nix.
+It is called config.json - you can view it manually if required, and if there are any issues you can delete
+it - LedFx will start with a fresh configuration. You will of course lose any devices and custom presets/scenes.</p>
+</section>
+<section id="speaker-sound">
+<h2>Speaker Sound<a class="headerlink" href="#speaker-sound" title="Permalink to this headline">¶</a></h2>
+<p>My solution to this exact problem is ChromeCast audios, I have two in a group and ChromeCast to the group.
+One of them is connected to my DAC that is then connected to my amplifiers, and another is connected to a line
+in on my computer in a separate room that LedFx is running on.</p>
+<p>They’re perfectly synchronized, but if you need to, you can do a delay on any of the ChromeCasts within the group
+to adjust sync.</p>
+<section id="mac-os-x">
+<h3>Mac OS X:<a class="headerlink" href="#mac-os-x" title="Permalink to this headline">¶</a></h3>
+</section>
+</section>
+<section id="audio-errors">
+<h2>Audio Errors<a class="headerlink" href="#audio-errors" title="Permalink to this headline">¶</a></h2>
+<p>In newer version of Mac OS X you will be prompted to allow microphone permissions on first launch - you must allow
+this otherwise LedFx won’t be allowed access to audio. Please see
+<a class="reference external" href="https://stackoverflow.com/questions/57940639/cannot-access-microphone-on-mac-mojave-using-pyaudio">this page</a> for more information.</p>
+<section id="windows">
+<h3>Windows:<a class="headerlink" href="#windows" title="Permalink to this headline">¶</a></h3>
+<p><a class="reference external" href="https://thegeekpage.com/stereo-mix/">https://thegeekpage.com/stereo-mix/</a></p>
+</section>
+<section id="squeezebox-server-logitech">
+<h3>Squeezebox Server - Logitech<a class="headerlink" href="#squeezebox-server-logitech" title="Permalink to this headline">¶</a></h3>
+<p>MultiRoom: <a class="reference external" href="https://www.picoreplayer.org/">https://www.picoreplayer.org/</a></p>
+</section>
+<section id="vban-audio-sync">
+<h3>VBAN audio sync<a class="headerlink" href="#vban-audio-sync" title="Permalink to this headline">¶</a></h3>
+<p>Using Voicemeeter use VBAN, also allows mobile phone app to play your audio. Needs a little tinkering between multi
+speaker devices for ms delay. Make sure you have static IP addresses for your device and it does support up to 4
+outgoing devices streams.</p>
+<p>Alternatively:
+<a class="reference external" href="https://www.audioanimals.co.uk/news/reviews/v-player-2-review-free-standalone-vst-host">https://www.audioanimals.co.uk/news/reviews/v-player-2-review-free-standalone-vst-host</a></p>
+</section>
+</section>
+<section id="networking-improvements">
+<h2>Networking Improvements<a class="headerlink" href="#networking-improvements" title="Permalink to this headline">¶</a></h2>
+<p><strong>Latency</strong></p>
+<p>LedFx is <em>extremely</em> latency sensitive and will expose inherit weaknesses in WiFi.
+To minimize this, we recommend:</p>
+<ol class="arabic simple">
+<li><p>Disabling WiFi Sleep Mode on WLED.</p></li>
+<li><p>Minimize WiFi activity on your network - using ethernet where possible.</p></li>
+<li><p>Ensure router appropriate for number of devices and amount of traffic.</p></li>
+<li><p>Attempting to ensure your WiFi access point is located in an appropriate area, and is using an appropriate WiFi channel.</p></li>
+</ol>
+<p><strong>Access via LAN</strong></p>
+<p>All current builds should be able to be accessed from LAN - please ensure that you allow traffic from port 8888 from the host machine.</p>
+</section>
+<section id="id3">
+<h2>Protocol Choice<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><p>Broadly speaking, UDP is the fastest protocol due to a lack of overheads - however it is limited to 480 LEDs. DDP as implemented in WLED is very close in performance with no pixel limits, and following that is E1.31 with similarly unrestricted pixel limits.
+In general, you should only really notice the difference on low power devices such as Raspberry Pi’s and the like, however if you are having issues it is worth changing modes.</p>
+</div></blockquote>
+</section>
+<section id="need-more-help">
+<h2>Need more help?<a class="headerlink" href="#need-more-help" title="Permalink to this headline">¶</a></h2>
+<p>Reach out to the LedFx team through Discord. Preferably copy and paste with your answers below</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>New build/recent upgrades?</p></li>
+<li><p>python version?</p></li>
+<li><p>LedFx version you are using?</p></li>
+<li><p>restarted your PC and issue continues?</p></li>
+<li><p>any changes/deleted your LedFx config file?</p></li>
+<li><p>Problem:</p></li>
+</ul>
+</div></blockquote>
+</section>
+</section>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+      
+        <a href="api.html" class="btn btn-neutral float-left" title="REST API" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright  2018-2021, Austin Hodges &amp; contributors
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

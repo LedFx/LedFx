@@ -1,0 +1,526 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  <meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>REST API &mdash; LedFx 0.10.5 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/css/custom.css" type="text/css" />
+
+  
+  
+    <link rel="shortcut icon" href="_static/favicon.ico"/>
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Troubleshooting" href="trouble.html" />
+    <link rel="prev" title="Directing Audio" href="directing_audio.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html">
+          
+
+          
+            
+            <img src="_static/small_white_alpha.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.10.5
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p><span class="caption-text">Installation &amp; Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="installing.html">Installation and Setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="developer.html">Development Setup</a></li>
+</ul>
+<p><span class="caption-text">Configuration</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="configuring.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="directing_audio.html">Directing Audio</a></li>
+</ul>
+<p><span class="caption-text">LedFx API</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">REST API</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#api-info">/api/info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#api-config">/api/config</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#api-log-upcoming">/api/log (upcoming)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#api-schema">/api/schema/</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#api-schema-schema-type">/api/schema/&lt;schema_type&gt;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#api-devices">/api/devices</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#api-devices-device-id">/api/devices/&lt;device_id&gt;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#api-effects">/api/effects</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#api-effects-effect-id">/api/effects/&lt;effect_id&gt;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#api-devices-device-id-effects">/api/devices/{device_id}/effects</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#api-devices-device-id-presets">/api/devices/&lt;device_id&gt;/presets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#api-effects-effect-id-presets">/api/effects/&lt;effect_id&gt;/presets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#api-scenes">/api/scenes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#api-integrations">/api/integrations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#api-integrations-qlc-integration-id">/api/integrations/qlc/&lt;integration_id&gt;</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#api-integrations-spotify-integration-id">/api/integrations/spotify/&lt;integration_id&gt;</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="#websocket-api">WebSocket API</a></li>
+</ul>
+<p><span class="caption-text">Help</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="trouble.html">Troubleshooting</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">LedFx</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>REST API</li>
+    
+    
+
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <section id="rest-api">
+<h1>REST API<a class="headerlink" href="#rest-api" title="Permalink to this headline">¶</a></h1>
+<p>API Postman documentation: <a class="reference external" href="https://documenter.getpostman.com/view/5403870/TVzNHyyw">https://documenter.getpostman.com/view/5403870/TVzNHyyw</a></p>
+<p>If you wish to test out the LedFx API in your postman software, click top right button ‘Run in Postman’.
+You can also view <cite>Example Request</cite> and <cite>Example Response</cite> found on the righthand side on a maximised  browser window.</p>
+<p>The REST APIs are undergoing active development, so some of the below APIs may change in time.
+APIs marked as (upcoming) are yet to be added.</p>
+<section id="api-info">
+<h2>/api/info<a class="headerlink" href="#api-info" title="Permalink to this headline">¶</a></h2>
+<p>Information about LedFx</p>
+<p class="rubric">GET</p>
+<p>Returns basic information about the LedFx instance as JSON</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="nt">&quot;url&quot;</span><span class="p">:</span> <span class="s2">&quot;http://127.0.0.1:8888&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;LedFx&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;version&quot;</span><span class="p">:</span> <span class="s2">&quot;0.3.0&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="api-config">
+<h2>/api/config<a class="headerlink" href="#api-config" title="Permalink to this headline">¶</a></h2>
+<p>LedFx Configuration</p>
+<p class="rubric">GET</p>
+<p>Returns the current configuration for LedFx as JSON</p>
+</section>
+<section id="api-log-upcoming">
+<h2>/api/log (upcoming)<a class="headerlink" href="#api-log-upcoming" title="Permalink to this headline">¶</a></h2>
+<p>LedFx Logging</p>
+<p class="rubric">GET</p>
+<p>Returns the error logs for the currently active LedFx session</p>
+</section>
+<section id="api-schema">
+<h2>/api/schema/<a class="headerlink" href="#api-schema" title="Permalink to this headline">¶</a></h2>
+<p>LedFx Schema Api</p>
+<p class="rubric">GET /api/schema/</p>
+<p>Returns all LedFx schemas for devices, effects, and integrations as JSON</p>
+</section>
+<section id="api-schema-schema-type">
+<h2>/api/schema/&lt;schema_type&gt;<a class="headerlink" href="#api-schema-schema-type" title="Permalink to this headline">¶</a></h2>
+<p>Query a specific LedFx schema with the matching <em>schema_type</em> as JSON</p>
+<p class="rubric">GET /api/schema/&lt;schema_type&gt;</p>
+<p>Returns the LedFx schema with the matching <em>schema_type</em> as JSON</p>
+<ul class="simple">
+<li><p><em>devices</em>: Returns all the devices registered with LedFx</p></li>
+<li><p><em>effects</em>: Returns all the valid schemas for an LedFx effect</p></li>
+<li><p><em>integrations</em>: Returns all the integrations registered with LedFx</p></li>
+</ul>
+</section>
+<section id="api-devices">
+<h2>/api/devices<a class="headerlink" href="#api-devices" title="Permalink to this headline">¶</a></h2>
+<p>Query and manage devices connected to LedFx</p>
+<p class="rubric">GET</p>
+<p>Get configuration of all devices</p>
+<p class="rubric">POST</p>
+<p>Adds a new device to LedFx based on the provided JSON configuration</p>
+</section>
+<section id="api-devices-device-id">
+<h2>/api/devices/&lt;device_id&gt;<a class="headerlink" href="#api-devices-device-id" title="Permalink to this headline">¶</a></h2>
+<p>Query and manage a specific device with the matching <em>device_id</em> as JSON</p>
+<p class="rubric">GET</p>
+<p>Returns information about the device</p>
+<p class="rubric">PUT</p>
+<p>Modifies the information pertaining to the device and returns the new device as JSON</p>
+<p class="rubric">DELETE</p>
+<p>Deletes a device with the matching <em>device_id</em></p>
+</section>
+<section id="api-effects">
+<h2>/api/effects<a class="headerlink" href="#api-effects" title="Permalink to this headline">¶</a></h2>
+<p>Query and manage all effects</p>
+<p class="rubric">GET</p>
+<p>Returns all the effects currently created in LedFx as JSON</p>
+<p class="rubric">POST (upcoming)</p>
+<p>Create a new Effect based on the provided JSON configuration</p>
+</section>
+<section id="api-effects-effect-id">
+<h2>/api/effects/&lt;effect_id&gt;<a class="headerlink" href="#api-effects-effect-id" title="Permalink to this headline">¶</a></h2>
+<p>Query and manage a specific effect with the matching <em>effect_id</em> as JSON</p>
+<p class="rubric">GET</p>
+<p>Returns information about the effect</p>
+<p class="rubric">PUT (upcoming)</p>
+<p>Modifies the configuration of the effect and returns the new configuration as JSON</p>
+<p class="rubric">DELETE (upcoming)</p>
+<p>Deletes the effect with the matching <em>effect_id</em>.</p>
+</section>
+<section id="api-devices-device-id-effects">
+<h2>/api/devices/{device_id}/effects<a class="headerlink" href="#api-devices-device-id-effects" title="Permalink to this headline">¶</a></h2>
+<p>Endpoint linking devices to effects with the matching <em>device_id</em> as JSON</p>
+<p class="rubric">GET</p>
+<p>Returns the active effect config of a device</p>
+<p class="rubric">PUT</p>
+<p>Update the active effect config of a device based on the provided JSON configuration
+If config given is “RANDOMIZE”, the active effect config will be automatically generated to random values</p>
+<p class="rubric">POST</p>
+<p>Set the device to a new effect based on the provided JSON configuration</p>
+<p class="rubric">DELETE</p>
+<p>Clear the active effect of a device</p>
+</section>
+<section id="api-devices-device-id-presets">
+<h2>/api/devices/&lt;device_id&gt;/presets<a class="headerlink" href="#api-devices-device-id-presets" title="Permalink to this headline">¶</a></h2>
+<p>Endpoint linking devices to effect presets (pre-configured effect configs) with the matching <em>device_id</em> as JSON</p>
+<p class="rubric">GET</p>
+<p>Get preset effect configs for active effect of a device</p>
+<p class="rubric">PUT</p>
+<p>Set active effect config of device to a preset</p>
+<p class="rubric">POST</p>
+<p>Save configuration of device’s active effect as a custom preset for that effect</p>
+<p class="rubric">DELETE</p>
+<p>Clear effect of a device</p>
+</section>
+<section id="api-effects-effect-id-presets">
+<h2>/api/effects/&lt;effect_id&gt;/presets<a class="headerlink" href="#api-effects-effect-id-presets" title="Permalink to this headline">¶</a></h2>
+<p>Endpoint for querying and managing presets (pre-configured effect configs) for each effect with the matching <em>effect_id</em> as JSON</p>
+<p class="rubric">GET</p>
+<p>Get all presets for an effect</p>
+<p class="rubric">GET</p>
+<p>Rename a preset</p>
+<p class="rubric">DELETE</p>
+<p>Delete a preset</p>
+</section>
+<section id="api-scenes">
+<h2>/api/scenes<a class="headerlink" href="#api-scenes" title="Permalink to this headline">¶</a></h2>
+<p>Endpoint for managing scenes. Active effects and configs of all devices can be saved as a “scene”.</p>
+<p class="rubric">GET</p>
+<p>Get all saved scenes</p>
+<p class="rubric">PUT</p>
+<p>Set effects and configs of all devices to those specified in a scene</p>
+<p class="rubric">POST</p>
+<p>Save effect configuration of devices as a scene</p>
+<p class="rubric">DELETE</p>
+<p>Delete a scene</p>
+</section>
+<section id="api-integrations">
+<h2>/api/integrations<a class="headerlink" href="#api-integrations" title="Permalink to this headline">¶</a></h2>
+<p>Endpoint for managing integrations. Integrations are written to allow ledfx to communicate with other software, and
+vice versa.</p>
+<p class="rubric">GET</p>
+<p>Get info of all integrations
+Optional, send request body to get specific info of integrations
+Any of: [“id”, “type”, “active”, “status”, “data”, “config”]</p>
+<p>example:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="nt">&quot;info&quot;</span><span class="p">:</span><span class="s2">&quot;status&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>STATUS REFERENCE
+0: disconnected
+1: connected
+2: disconnecting
+3: connecting</p>
+<p class="rubric">PUT</p>
+<p>Toggle an integration on or off</p>
+<p>example:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;myqlc&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p class="rubric">POST</p>
+<p>Create a new integration, or update an existing one</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;qlc&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;config&quot;</span><span class="p">:</span> <span class="p">{</span>
+      <span class="nt">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;QLC Test&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;ip_address&quot;</span><span class="p">:</span> <span class="s2">&quot;127.0.0.1&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;myQLC+&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;port&quot;</span><span class="p">:</span> <span class="mi">9999</span>
+      <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;spotify&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;config&quot;</span><span class="p">:</span> <span class="p">{</span>
+      <span class="nt">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;Spotify triggers for party&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Party Spotify&quot;</span>
+      <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p class="rubric">DELETE</p>
+<p>Delete an integration, erasing all its configuration and data.</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;myqlc&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>NOTE: This does not turn off the integration, it deletes it entirely! (though it will first turn off..)</p>
+</section>
+<section id="api-integrations-qlc-integration-id">
+<h2>/api/integrations/qlc/&lt;integration_id&gt;<a class="headerlink" href="#api-integrations-qlc-integration-id" title="Permalink to this headline">¶</a></h2>
+<p>Endpoint for querying and managing a QLC integration.</p>
+<p class="rubric">GET</p>
+<p>Returns info from the QLC+ integration.</p>
+<p>Specify “info”, one of: <code class="docutils literal notranslate"><span class="pre">[&quot;event_types&quot;,</span> <span class="pre">&quot;qlc_widgets&quot;,</span> <span class="pre">&quot;qlc_listeners&quot;]</span></code></p>
+<p><em>event_types</em>: retrieves a list of all the types of events and associated filters a qlc listener can subscribe to</p>
+<p><em>qlc_widgets</em>: retrieves a list of all the widgets that can be modified, formatted as [(ID, Type, Name),…] for “type”:</p>
+<ul class="simple">
+<li><p>“Buttons” can be set to either off (0) or on (255)</p></li>
+<li><p>“Audio Triggers” are either off (0) or on (255)</p></li>
+<li><p>“Sliders” can be anywhere between 0 and 255</p></li>
+</ul>
+<p><em>qlc_listeners</em>: retrieves a list of all of the events that QLC is listening to, and their associated widget value payloads</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="nt">&quot;info&quot;</span><span class="p">:</span> <span class="s2">&quot;qlc_listeners&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p class="rubric">PUT</p>
+<p>Toggle a QLC+ event listener on or off, so that it will or will not send its payload to set QLC+ widgets</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="nt">&quot;event_type&quot;</span><span class="p">:</span> <span class="s2">&quot;scene_set&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;event_filter&quot;</span><span class="p">:</span> <span class="p">{</span>
+      <span class="nt">&quot;scene_name&quot;</span><span class="p">:</span> <span class="s2">&quot;My Scene&quot;</span>
+      <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p class="rubric">POST</p>
+<p>Add a new QLC event listener and QLC+ payload or update an existing one if it exists with same event_type and event_filter
+The “qlc_payload” is a dict of {“widget_id”: value} that will be sent to QLC+</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="nt">&quot;event_type&quot;</span><span class="p">:</span> <span class="s2">&quot;scene_set&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;event_filter&quot;</span><span class="p">:</span> <span class="p">{</span>
+      <span class="nt">&quot;scene_name&quot;</span><span class="p">:</span> <span class="s2">&quot;My Scene&quot;</span>
+      <span class="p">},</span>
+  <span class="nt">&quot;qlc_payload&quot;</span><span class="p">:</span> <span class="p">{</span>
+      <span class="nt">&quot;0&quot;</span><span class="p">:</span><span class="mi">255</span><span class="p">,</span>
+      <span class="nt">&quot;1&quot;</span><span class="p">:</span><span class="mi">255</span><span class="p">,</span>
+      <span class="nt">&quot;2&quot;</span><span class="p">:</span><span class="mi">169</span>
+      <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p class="rubric">DELETE</p>
+<p>Delete a QLC event listener, and associated payload data.</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="nt">&quot;event_type&quot;</span><span class="p">:</span> <span class="s2">&quot;scene_set&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;event_filter&quot;</span><span class="p">:</span> <span class="p">{</span>
+      <span class="nt">&quot;scene_name&quot;</span><span class="p">:</span> <span class="s2">&quot;My Scene&quot;</span>
+      <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>NOTE: This does not turn off the integration, it deletes it entirely! (though it will first turn off..)</p>
+</section>
+<section id="api-integrations-spotify-integration-id">
+<h2>/api/integrations/spotify/&lt;integration_id&gt;<a class="headerlink" href="#api-integrations-spotify-integration-id" title="Permalink to this headline">¶</a></h2>
+<p>Endpoint for querying and managing a Spotify integration.</p>
+<p class="rubric">GET</p>
+<p>Get all the song triggers</p>
+<p class="rubric">PUT</p>
+<p>Update a song trigger
+[TODO]</p>
+<p class="rubric">POST</p>
+<p>Create a new song trigger</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="nt">&quot;scene_id&quot;</span><span class="p">:</span> <span class="s2">&quot;my_scene&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;song_id&quot;</span><span class="p">:</span> <span class="s2">&quot;347956287364597&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;song_name&quot;</span><span class="p">:</span> <span class="s2">&quot;Really Cool Song&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;song_position&quot;</span><span class="p">:</span> <span class="s2">&quot;43764&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p class="rubric">DELETE</p>
+<p>Delete a song trigger</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="nt">&quot;trigger_id&quot;</span><span class="p">:</span> <span class="s2">&quot;Really Cool Song - 43764&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="websocket-api">
+<h1>WebSocket API<a class="headerlink" href="#websocket-api" title="Permalink to this headline">¶</a></h1>
+<p>In addition to the REST APIs LedFx has a WebSocket API for streaming realtime data. The primary use for this is for things like effect visualizations in the frontend.</p>
+<p>Will document this further once it is more well defined. The general structure will be event registration based.</p>
+</section>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="trouble.html" class="btn btn-neutral float-right" title="Troubleshooting" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="directing_audio.html" class="btn btn-neutral float-left" title="Directing Audio" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        &copy; Copyright  2018-2021, Austin Hodges &amp; contributors
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
