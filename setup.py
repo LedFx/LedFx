@@ -29,7 +29,6 @@ INSTALL_REQUIRES = [
     "sacn>=1.6.3",
     "aiohttp~=3.7.4.post0",
     "multidict>=5.0.0",
-    "aiohttp_jinja2>=1.4.0",
     "requests>=2.24.0",
     "aubio>=0.4.9",
     "zeroconf==0.30.0",
@@ -43,6 +42,7 @@ INSTALL_REQUIRES = [
     "tcp-latency>=0.0.10",
     "mido>=1.2.10",
     "python-rtmidi>=1.4.9",
+    "aiohttp_cors>=0.7.0",
 ]
 
 setup(

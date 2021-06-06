@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useSelector, useDispatch } from 'react-redux'
 import PropTypes from 'prop-types';
 import withStyles from '@material-ui/core/styles/withStyles';
 import AppBar from '@material-ui/core/AppBar';
@@ -13,7 +14,10 @@ import WarningIcon from '@material-ui/icons/Warning';
 import DevIcon from '@material-ui/icons/DeveloperMode';
 import viewRoutes from 'routes/views.jsx';
 import { drawerWidth } from 'utils/style';
-import Fab from '@material-ui/core/Fab';
+import { Pause, PlayArrow } from '@material-ui/icons';
+import { displaysPauseReceived } from 'modules/displays';
+import { togglePause } from 'proxies/display';
+import { Button } from '@material-ui/core';
 
 const styles = theme => ({
     appBar: {
@@ -68,9 +72,10 @@ const Header = props => {
         return name;
     };
     const [easterEgg, setEasterEgg] = useState(false);
-
     const { classes } = props;
     const name = getPageName();
+    const paused = useSelector(state => state.displays.paused)
+    const dispatch = useDispatch()
     return (
         <AppBar className={classes.appBar}>
             <Toolbar className={classes.toolBar}>
@@ -88,10 +93,10 @@ const Header = props => {
                         {getPageName()}
                     </Typography>
                     {(easterEgg || parseInt(window.localStorage.getItem('BladeMod')) > 0) && (
-                        <Fab
-                            variant="round"
+                        <Button
+                            variant="contained"
                             color="primary"
-                            size="small"
+                            size="medium"
                             onDoubleClick={() => {
                                 console.log(name)
                                 if ((name === 'Settings') && window.localStorage.getItem('BladeMod') < 1) {
@@ -119,8 +124,26 @@ const Header = props => {
                             ) : parseInt(window.localStorage.getItem('BladeMod')) > "2" ? (
                                 <WarningIcon />
                             ) : (<RedeemIcon />)}
-                        </Fab>
+                        </Button>
                     )}
+                    <Button
+                        variant="contained"
+                        color="primary"
+                        size="medium"
+                        onClick={async () => {
+                            try {
+                                const response = await togglePause();
+                                if (response.statusText === 'OK') {
+                                    dispatch(displaysPauseReceived(response.data.paused));
+                                }
+                            } catch (error) {
+                                console.log('Error toggeling pause', error.message);
+                            }
+                        }}
+                        style={{ margin: '0 1rem' }}
+                    >
+                        {!paused ? <Pause /> : <PlayArrow />}
+                    </Button>
                     <Hidden mdUp>
                         <IconButton aria-label="open drawer" onClick={props.handleDrawerToggle}>
                             <Menu />

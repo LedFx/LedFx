@@ -206,7 +206,7 @@ export function getConfig() {
                 scan_on_startup,
             } = response.data.config;
             const { version, git_build_commit } = responseInfo.data;
-            console.log('HERE', wled_preferences);
+
             dispatch(
                 configFetched({
                     devMode,

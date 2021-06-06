@@ -20,9 +20,11 @@ export default function PopoverSure({
     label,
     text = 'Are you sure?',
     direction = 'left',
+    vertical = 'center',
     size = 'small',
     icon = <DeleteIcon />,
     className,
+    startIcon,
     style = {},
 }) {
     const classes = useStyles();
@@ -46,9 +48,10 @@ export default function PopoverSure({
                 size={size}
                 className={className}
                 style={style}
+                startIcon={startIcon}
             >
                 {label}
-                {icon}
+                {!startIcon && icon}
             </Button>
             <Popover
                 id={id}
@@ -56,12 +59,12 @@ export default function PopoverSure({
                 anchorEl={anchorEl}
                 onClose={handleClose}
                 anchorOrigin={{
-                    vertical: 'center',
+                    vertical: vertical,
                     horizontal: direction,
                 }}
                 transformOrigin={{
-                    vertical: 'center',
-                    horizontal: 'right',
+                    vertical: vertical,
+                    horizontal: direction === 'center' ? 'center' : 'right',
                 }}
             >
                 {' '}

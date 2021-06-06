@@ -100,10 +100,8 @@ const DisplayCardItemPortrait = ({
         onEditDevice(deviceList.find(d => d.id === display.is_device));
     };
     return (
-        <Card className={classes.displayCardPortrait}>
-            <div
-                className={classes.displayCardContainer}
-            >
+        <Card className={classes.displayCardPortrait} >
+            <div className={classes.displayCardContainer} key={display.id}>
                 <NavLink
                     to={'/displays/' + display.id}
                     className={classes.displayLink}

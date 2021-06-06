@@ -16,12 +16,18 @@ import { getAudioInputs, setAudioInput } from 'modules/settings';
 import { Delete, Refresh } from '@material-ui/icons';
 import * as settingProxies from 'proxies/settings';
 import { showdynSnackbar } from 'modules/ui';
-const useStyles = makeStyles({
+import PopoverSure from 'components/PopoverSure';
+const useStyles = makeStyles(theme => ({
     content: {
         display: 'flex',
         flexDirection: 'column',
     },
-});
+    actionButton: {
+        marginTop: '0.5rem',
+        width: '100%',
+        borderColor: theme.palette.grey[400]
+    }
+}));
 
 const GeneralCard = () => {
 
@@ -62,7 +68,8 @@ const GeneralCard = () => {
                 )
                 throw new Error('Error fetching system config');
             }
-            download(response.data.config, 'config.json', 'application/json');
+
+            download({ ...response.data.config, ...{ ledfx_presets: undefined } }, 'config.json', 'application/json');
             dispatch(
                 showdynSnackbar({ message: 'downloading config.json', type: 'info' })
             )
@@ -87,14 +94,15 @@ const GeneralCard = () => {
                     throw new Error('Error importing system config');
                 }
 
-                // dispatch(
-                //     showdynSnackbar({ message: 'downloading config.json', type: 'info' })
-                // )
+                dispatch(
+                    showdynSnackbar({ message: 'uploading config.json', type: 'info' })
+                )
+                window.location = window.location.href
             } catch (error) {
                 console.log(error)
-                dispatch(
-                    showdynSnackbar({ message: 'Error while importing config.json', type: 'error' })
-                )
+                // dispatch(
+                //     showdynSnackbar({ message: 'Error while importing config.json', type: 'error' })
+                // )
             }
         };
     }
@@ -103,20 +111,21 @@ const GeneralCard = () => {
             const response = await settingProxies.deleteSystemConfig();
             if (response.statusText !== 'OK') {
                 dispatch(
-                    showdynSnackbar({ message: 'Error while downloading config.json', type: 'error' })
+                    showdynSnackbar({ message: 'Error while resetting config.json', type: 'error' })
                 )
                 throw new Error('Error fetching system config');
             }
-            console.log(response)
+            // console.log(response)
             if (response.statusText === 'OK') {
-                dispatch(
-                    showdynSnackbar({ message: response.data.payload.reason, type: response.data.payload.type })
-                )
+                // dispatch(
+                //     showdynSnackbar({ message: response.data.payload.reason, type: response.data.payload.type })
+                // )
+                window.location = window.location.href
             }
         } catch (error) {
             console.log(error)
             dispatch(
-                showdynSnackbar({ message: 'Error while downloading config.json', type: 'error' })
+                showdynSnackbar({ message: 'Error while resetting config.json', type: 'error' })
             )
         }
     }
@@ -125,7 +134,28 @@ const GeneralCard = () => {
         window.localStorage.setItem('blade', event.target.value);
         window.location = window.location.href;
     };
-    
+    const handleRestart = async (e) => {
+        try {
+            const response = await settingProxies.restart();
+            if (response.statusText !== 'OK') {
+                dispatch(
+                    showdynSnackbar({ message: 'Error while restarting', type: 'error' })
+                )
+                throw new Error('Error fetching system config');
+            }
+            console.log(response)
+            if (response.statusText === 'OK' && response.data.payload) {
+                dispatch(
+                    showdynSnackbar({ message: response.data.payload.reason, type: response.data.payload.type })
+                )
+            }
+        } catch (error) {
+            console.log(error)
+            // dispatch(
+            //     showdynSnackbar({ message: 'Error while downloading config.json', type: 'error' })
+            // )
+        }
+    };
     // const onChangePreferredMode = value => {
     //     dispatch(setConfig({ config: { wled_preferences: { wled_preferred_mode: { preferred_mode: value, user_enabled: true } } } }));
     // };
@@ -140,47 +170,7 @@ const GeneralCard = () => {
         <Card style={{ marginBottom: '2rem' }}>
             <CardHeader title="General" subheader="Configure LedFx-Settings" />
             <CardContent className={classes.content}>
-                {/* <FormControlLabel
-                    control={
-                        <Checkbox
-                            name="scanAtStartup"
-                        />
-                    }
-                    label="Scan for WLED on startup"
-                />
-                <FormControlLabel
-                    value="scan"
-                    control={<Switch color="primary" />}
-                    label="Scan for WLED on startup"
-                    labelPlacement="end"
-                /> */}
                 <AudioInputCard raw {...audioInputs} onChange={(e) => dispatch(setAudioInput(e))} />
-                {/* <FormControl>
-                    <InputLabel id="wled-scan-selector">Scan for WLED on startup</InputLabel>
-                    <Select
-                        labelId="wled-scan-selector"
-                        id="wled-scan-select"
-                        value={settings.scan_on_startup}
-                        onChange={(e) => onChangeStartupScan(e.target.value)}
-                    >
-                        <MenuItem value={true}>Yes</MenuItem>
-                        <MenuItem value={false}>No</MenuItem>
-                    </Select>
-
-                </FormControl>
-                <FormControl>
-                    <InputLabel id="wled-mode-selector">Preferred WLED mode</InputLabel>
-                    <Select
-                        labelId="wled-mode-selector"
-                        id="wled-mode-select"
-                        value={settings.wled_preferred_mode}
-                        onChange={(e) => onChangePreferredMode(e.target.value)}
-                    >
-                        <MenuItem value={"unset"}>Unset</MenuItem>
-                        <MenuItem value={"E131"}>E131</MenuItem>
-                        <MenuItem value={"DDP"}>DDP</MenuItem>
-                    </Select>
-                </FormControl> */}
                 <FormControl>
                     <InputLabel id="theme-selector">Theme</InputLabel>
                     <Select
@@ -204,21 +194,23 @@ const GeneralCard = () => {
                     size="small"
                     startIcon={<CloudUploadIcon />}
                     variant="outlined"
+                    className={classes.actionButton}
                     style={{ marginTop: '1.5rem' }}
                     onClick={configDownload}
                 >
                     Export Config
                 </Button>
-                <Button
-                    size="small"
+                <PopoverSure
                     startIcon={<Delete />}
+                    label="Reset Config"
+                    size="small"
                     variant="outlined"
-                    style={{ marginTop: '0.5rem' }}
-                    onClick={configDelete}
-
-                >
-                    Reset Config
-                </Button>
+                    color="inherit"
+                    className={classes.actionButton}
+                    onConfirm={configDelete}
+                    direction="center"
+                    vertical="top"
+                />
                 <input
                     hidden
                     accept="application/json"
@@ -232,7 +224,7 @@ const GeneralCard = () => {
                         size="small"
                         startIcon={<CloudDownloadIcon />}
                         variant="outlined"
-                        style={{ marginTop: '0.5rem', width: '100%' }}
+                        className={classes.actionButton}
 
                     >
                         Import Config
@@ -242,7 +234,8 @@ const GeneralCard = () => {
                     size="small"
                     startIcon={<Refresh />}
                     variant="outlined"
-                    style={{ marginTop: '0.5rem' }}
+                    className={classes.actionButton}
+                    onClick={handleRestart}
 
                 >
                     Restart LedFx
@@ -254,7 +247,7 @@ const GeneralCard = () => {
                             size="small"
                             startIcon={<Refresh />}
                             variant="outlined"
-                            style={{ marginTop: '0.5rem' }}
+                            className={classes.actionButton}
                             disabled
                         >
                             Check Updates
@@ -265,7 +258,7 @@ const GeneralCard = () => {
                     size="small"
                     startIcon={<PowerSettingsNewIcon />}
                     variant="outlined"
-                    style={{ marginTop: '0.5rem' }}
+                    className={classes.actionButton}
                     onClick={shutdown}
                 >
                     Shutdown

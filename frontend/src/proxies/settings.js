@@ -1,8 +1,15 @@
 import { api } from 'utils/api';
 
 export function shutdown() {
-    return api.put('/shutdown', {
+    return api.post('/power', {
         timeout: 0,
+        action: 'shutdown',
+    });
+}
+export function restart() {
+    return api.post('/power', {
+        timeout: 0,
+        action: 'restart',
     });
 }
 export function getSystemConfig() {

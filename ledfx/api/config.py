@@ -43,7 +43,12 @@ class ConfigEndpoint(RestEndpoint):
             },
         }
 
-        return web.json_response(data=response, status=200)
+        # This is an ugly hack.
+        # We probably should have a better way of doing this but o well.
+        try:
+            return web.json_response(data={"status": "success"}, status=200)
+        finally:
+            self._ledfx.stop(4)
 
     async def post(self, request) -> web.Response:
         try:
@@ -71,7 +76,12 @@ class ConfigEndpoint(RestEndpoint):
             config_dir=self._ledfx.config_dir,
         )
 
-        return web.json_response(data={"status": "success"}, status=200)
+        # This is an ugly hack.
+        # We probably should have a better way of doing this but o well.
+        try:
+            return web.json_response(data={"status": "success"}, status=200)
+        finally:
+            self._ledfx.stop(4)
 
     async def put(self, request) -> web.Response:
         try:

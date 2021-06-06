@@ -1,5 +1,6 @@
 import inspect
 
+import aiohttp_cors
 from aiohttp import web
 
 from ledfx.utils import BaseRegistry, RegistryLoader
@@ -37,13 +38,31 @@ class RestApi(RegistryLoader):
         self._ledfx = ledfx
 
     def register_routes(self, app):
-
+        methods = ["GET", "PUT", "POST", "DELETE"]
+        cors = aiohttp_cors.setup(
+            app,
+            defaults={
+                "*": aiohttp_cors.ResourceOptions(
+                    allow_credentials=True,
+                    expose_headers="*",
+                    allow_headers="*",
+                    allow_methods=methods,
+                )
+            },
+        )
         # Create the endpoints and register their routes
         for endpoint_type in self.types():
             endpoint = self.create(type=endpoint_type, ledfx=self._ledfx)
-            app.router.add_route(
-                "*",
-                endpoint.ENDPOINT_PATH,
-                endpoint.handler,
-                name=f"api_{endpoint_type}",
+            resource = cors.add(
+                app.router.add_resource(
+                    endpoint.ENDPOINT_PATH, name=f"api_{endpoint_type}"
+                )
             )
+            # cors.add(
+            #     resource.add_route(
+            #         "*",
+            #         endpoint.handler,
+            #     )
+            # )
+            for method in methods:
+                cors.add(resource.add_route(method, endpoint.handler))

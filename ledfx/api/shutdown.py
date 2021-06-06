@@ -5,24 +5,17 @@ from json import JSONDecodeError
 from aiohttp import web
 
 from ledfx.api import RestEndpoint
-from ledfx.utils import async_fire_and_forget
 
 _LOGGER = logging.getLogger(__name__)
 
 
 class InfoEndpoint(RestEndpoint):
 
-    ENDPOINT_PATH = "/api/shutdown"
-    PERMITTED_KEYS = ["timeout"]
+    ENDPOINT_PATH = "/api/power"
 
-    async def get(self) -> web.Response:
-        response = {
-            "statusText ": "GET not allowed - only PUT",
-        }
+    exit_codes = {"shutdown": 3, "restart": 4}
 
-        return web.json_response(data=response, status=200)
-
-    async def put(self, request) -> web.Response:
+    async def post(self, request) -> web.Response:
         try:
             data = await request.json()
         except JSONDecodeError:
@@ -31,27 +24,33 @@ class InfoEndpoint(RestEndpoint):
                 "reason": "JSON Decoding failed",
             }
             return web.json_response(data=response, status=400)
-        if data is None or data.get("timeout") is None:
+
+        action = data.get("action")
+        timeout = data.get("timeout")
+
+        if action is None:
+            action = "shutdown"
+        if timeout is None:
+            timeout = 0
+
+        if action not in self.exit_codes.keys():
             response = {
                 "status": "failed",
-                "reason": 'Required attribute "timeout" was not provided',
+                "reason": f"Action {action} not in {list(self.exit_codes.keys())}",
             }
             return web.json_response(data=response, status=400)
 
-        for key in data.keys():
-            if key not in self.PERMITTED_KEYS:
-                response = {
-                    "status": "failed",
-                    "reason": f"Unknown/forbidden key: '{key}'",
-                }
-                return web.json_response(data=response, status=400)
-
-        delay_time = int(data.get("timeout"))
+        if timeout < 0:
+            response = {
+                "status": "failed",
+                "reason": f"Invalid timeout: {timeout}. Timeout is integer?",
+            }
+            return web.json_response(data=response, status=400)
 
         # This is an ugly hack.
         # We probably should have a better way of doing this but o well.
         try:
             return web.json_response(data={"status": "success"}, status=200)
         finally:
-            await asyncio.sleep(delay_time)
-            async_fire_and_forget(self._ledfx.async_stop(2), self._ledfx.loop)
+            await asyncio.sleep(timeout)
+            self._ledfx.stop(self.exit_codes[action])

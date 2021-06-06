@@ -45,6 +45,10 @@ export function toggleDisplay(displayId, data) {
     return api.put(`/displays/${displayId}`, data);
 }
 
+export function togglePause() {
+    return api.put('/displays', {});
+}
+
 // Update a display's segments
 export function updateDisplaySegments(displayId, data) {
     return api.post(`/displays/${displayId}`, data);

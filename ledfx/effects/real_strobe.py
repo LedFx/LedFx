@@ -7,6 +7,7 @@ import voluptuous as vol
 from ledfx.color import COLORS, GRADIENTS
 from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.gradient import GradientEffect
+from ledfx.utils import empty_queue
 
 
 class Strobe(AudioReactiveEffect, GradientEffect):
@@ -60,6 +61,12 @@ class Strobe(AudioReactiveEffect, GradientEffect):
         self.bass_strobe_overlay = np.zeros(np.shape(self.pixels))
         self.onsets_queue = queue.Queue()
 
+    def deactivate(self):
+
+        empty_queue(self.onsets_queue)
+        self.onsets_queue = None
+        return super().deactivate()
+
     def config_updated(self, config):
         self.bass_threshold = self._config["bass_threshold"]
         self.color_shift_step = self._config["color_step"]
@@ -84,6 +91,10 @@ class Strobe(AudioReactiveEffect, GradientEffect):
 
     def render(self):
         pixels = np.copy(self.bass_strobe_overlay)
+
+        # Sometimes we lose the queue? No idea why. This should ensure it doesn't happen
+        if self.onsets_queue is None:
+            self.onsets_queue = queue.Queue()
 
         if not self.onsets_queue.empty():
             self.onsets_queue.get()

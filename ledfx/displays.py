@@ -82,6 +82,7 @@ class Display:
     #     default=False,
     # ): bool,
 
+    _paused = False
     _active = False
     _output_thread = None
     _active_effect = None
@@ -117,7 +118,10 @@ class Display:
     def activate_segments(self, segments):
         for device_id, start_pixel, end_pixel, invert in segments:
             device = self._ledfx.devices.get(device_id)
-            device.add_segment(self.id, start_pixel, end_pixel)
+            try:
+                device.add_segment(self.id, start_pixel, end_pixel, force=True)
+            except ValueError as e:  # TODO pass this up the chain
+                print(e)
             if not device.is_active():
                 device.activate()
 
@@ -291,15 +295,18 @@ class Display:
         # Assemble the frame if necessary, if nothing changed just sleep
         self.assembled_frame = self.assemble_frame()
         if self.assembled_frame is not None:
-            if not self._config["preview_only"]:
-                self.flush(self.assembled_frame)
+            if not self._paused:
+                if not self._config["preview_only"]:
+                    self.flush(self.assembled_frame)
 
-            def trigger_display_update_event():
-                self._ledfx.events.fire_event(
-                    DisplayUpdateEvent(self.id, self.assembled_frame)
+                def trigger_display_update_event():
+                    self._ledfx.events.fire_event(
+                        DisplayUpdateEvent(self.id, self.assembled_frame)
+                    )
+
+                self._ledfx.loop.call_soon_threadsafe(
+                    trigger_display_update_event
                 )
-
-            self._ledfx.loop.call_soon_threadsafe(trigger_display_update_event)
 
     def thread_function(self):
         # TODO: Evaluate switching # over to asyncio with UV loop optimization
@@ -561,6 +568,7 @@ class Displays:
     """Thin wrapper around the device registry that manages displays"""
 
     PACKAGE_NAME = "ledfx.displays"
+    _paused = False
 
     def __init__(self, ledfx):
         # super().__init__(ledfx, Display, self.PACKAGE_NAME)
@@ -645,6 +653,11 @@ class Displays:
     def clear_all_effects(self):
         for display in self.values():
             display.clear_frame()
+
+    def pause_all(self):
+        self._paused = not self._paused
+        for display in self.values():
+            display._paused = self._paused
 
     def get(self, display_id):
         for id, display in self._displays.items():

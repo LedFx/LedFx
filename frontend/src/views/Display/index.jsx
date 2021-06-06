@@ -16,6 +16,7 @@ import TransitionCard from 'components/TransitionCard';
 import { fetchDisplayList } from 'modules/displays';
 import { fetchDeviceList } from 'modules/devices';
 import MoreInfo from './MoreInfo';
+import MelbankSelector from './MelbankSelector';
 
 const DisplayView = ({
     match: {
@@ -111,6 +112,7 @@ const DisplayView = ({
                     <TransitionCard
                         display={display}
                     />
+                    <MelbankSelector />
                     {/* )} */}
                 </Grid>
                 {parseInt(window.localStorage.getItem('BladeMod')) > 1 && (

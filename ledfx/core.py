@@ -129,10 +129,11 @@ class LedFxCore:
             # Catch all other exceptions and terminate the application. The loop
             # exception handler will take care of logging the actual error and
             # LedFx will cleanly shutdown.
-            self.loop.run_until_complete(self.async_stop(exit_code=-1))
+            self.loop.run_until_complete(self.async_stop(exit_code=1))
             pass
         finally:
             self.loop.stop()
+
         return self.exit_code
 
     async def async_start(self, open_ui=False):
@@ -180,16 +181,20 @@ class LedFxCore:
 
         print("Stopping LedFx.")
 
-        # -1 = Error
-        # 1 = Direct User Input
-        # 2 = API Request
+        # 1 = Error
+        # 2 = Direct User Input
+        # 3 = API Request (shutdown)
+        # 4 = Restart (stop then restart ledfx core)
 
-        if exit_code == -1:
-            _LOGGER.info("LedFx encountered an error. Shutting Down.")
         if exit_code == 1:
-            _LOGGER.info("LedFx Keyboard Interrupt. Shutting Down.")
+            _LOGGER.info("LedFx encountered an error. Shutting Down.")
         if exit_code == 2:
+            _LOGGER.info("LedFx Keyboard Interrupt. Shutting Down.")
+        if exit_code == 3:
             _LOGGER.info("LedFx Shutdown Request via API. Shutting Down.")
+        if exit_code == 4:
+            _LOGGER.info("LedFx is restarting.")
+
         # Fire a shutdown event and flush the loop
         self.events.fire_event(LedFxShutdownEvent())
         await asyncio.sleep(0, loop=self.loop)
@@ -214,3 +219,4 @@ class LedFxCore:
         self.executor.shutdown()
         self.exit_code = exit_code
         self.loop.stop()
+        return exit_code

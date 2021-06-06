@@ -21,7 +21,6 @@ import {
     Card,
     CardContent,
     CircularProgress,
-    Fab,
     Grid,
     Icon,
     Link,
@@ -211,14 +210,14 @@ const DashboardView = () => {
 
     return (
         <div>
-            <Fab
-                color="primary"
-                size="small"
+            <Button
+                variant="outlined"
+                size="medium"
                 onClick={() => saveLayoutToLS('layouts', layouts)}
-                style={{ position: 'fixed', right: '6rem', top: '0.8rem', zIndex: 1100 }}
+                style={{ position: 'fixed', marginLeft: '7rem', top: '0.7rem', zIndex: 1100 }}
             >
                 <Save />
-            </Fab>
+            </Button>
             <div style={{ position: 'relative' }}>
                 {displays && (
                     <ResponsiveGridLayout
