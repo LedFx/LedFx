@@ -2,7 +2,7 @@ import numpy as np
 import voluptuous as vol
 
 from ledfx.color import COLORS
-from ledfx.effects.audio import FREQUENCY_RANGES, AudioReactiveEffect
+from ledfx.effects.audio import AudioReactiveEffect
 
 
 class BladePowerAudioEffect(AudioReactiveEffect):
@@ -40,11 +40,6 @@ class BladePowerAudioEffect(AudioReactiveEffect):
                 description="NEW Color",
                 default="hsl(0, 100%, 25%)",
             ): str,
-            vol.Optional(
-                "frequency_range",
-                description="Frequency range for the beat detection",
-                default="Bass (60-250Hz)",
-            ): vol.In(list(FREQUENCY_RANGES.keys())),
         }
     )
 
@@ -54,22 +49,11 @@ class BladePowerAudioEffect(AudioReactiveEffect):
     def config_updated(self, config):
 
         # Create the filters used for the effect
-        self._bar_filter = self.create_filter(alpha_decay=0.1, alpha_rise=0.99)
         self.bar_color = np.array(COLORS[self._config["color"]], dtype=float)
-        self._frequency_range = np.linspace(
-            FREQUENCY_RANGES[self.config["frequency_range"]].min,
-            FREQUENCY_RANGES[self.config["frequency_range"]].max,
-            20,
-        )
 
     def audio_data_updated(self, data):
-        # Get frequency range power through filter
-
-        self.bar = (
-            np.max(data.sample_melbank(list(self._frequency_range)))
-            * self.config["multiplier"]
-        )
-        self.bar = self._bar_filter.update(self.bar)
+        # Get filtered bass power
+        self.bar = data.bass_power(filtered=True) * self.config["multiplier"]
 
     def render(self):
         self.out = np.zeros((self.pixel_count, 3))
