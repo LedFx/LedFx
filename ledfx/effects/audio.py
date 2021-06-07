@@ -393,6 +393,9 @@ class AudioAnalysisSource(AudioInputSource):
             for _ in range(self.beat_max_mel_index)
         )
 
+        # bass power
+        self.bass_power_filter = ExpFilter(0, alpha_decay=0.2, alpha_rise=0.95)
+
     def update_config(self, config):
         validated_config = self.CONFIG_SCHEMA(config)
         super().update_config(validated_config)
@@ -407,6 +410,7 @@ class AudioAnalysisSource(AudioInputSource):
         self.bpm_beat_now.cache_clear()
         self.volume_beat_now.cache_clear()
         self.oscillator.cache_clear()
+        self.bass_power.cache_clear()
 
     # @lru_cache(maxsize=32)
     # def melbank(self):
@@ -514,6 +518,22 @@ class AudioAnalysisSource(AudioInputSource):
             return False
 
     @cache
+    def bass_power(self, filtered=True):
+        """
+        Returns a float (0<=x<=1) corresponding to the bass power
+        """
+        bass_power = np.average(
+            self.melbanks.melbanks[0][: self.beat_max_mel_index]
+        )
+        bass_power = min(bass_power, 1)
+        self.bass_power_filter.update(bass_power)
+
+        if filtered:
+            return self.bass_power_filter.value
+        else:
+            return bass_power
+
+    @cache
     def oscillator(self):
         """
         returns a float (0<=x<1) corresponding to the current position of beat tracker.
@@ -592,6 +612,8 @@ class AudioReactiveEffect(Effect):
         Almost all the properties used to build the melbank are cached
         to try and ease computational load.
         """
+        self.melbank.cache_clear()
+
         for prop in [
             "_selected_melbank",
             "_melbank_min_idx",
@@ -601,7 +623,6 @@ class AudioReactiveEffect(Effect):
         ]:
             if hasattr(self, prop):
                 delattr(self, prop)
-        self.melbank.cache_clear()
 
     @cached_property
     def _selected_melbank(self):
