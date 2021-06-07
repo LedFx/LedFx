@@ -1,5 +1,5 @@
 import React, {useEffect} from 'react';
-import {connect, useDispatch} from 'react-redux';
+import {useDispatch} from 'react-redux';
 import Card from '@material-ui/core/Card';
 import CardActions from '@material-ui/core/CardActions';
 import CardContent from '@material-ui/core/CardContent';
@@ -13,9 +13,10 @@ import { deleteAsyncIntegration } from 'modules/integrations';
 import { toggleAsyncIntegration } from 'modules/integrations';
 import { Switch, Chip } from '@material-ui/core';
 import DialogAddEventListener from 'components/IntegrationComponents/DialogAddEventListener';
-import DialogAddIntegration from 'components/IntegrationComponents/DialogAddIntegration';
 import { getAsyncqlclisteners  } from 'modules/qlc'
-//import beginAuth from 'components/IntegrationComponents/Spotify';
+import SpotifyView from '../../components/IntegrationComponents/SpotifyBlade';
+import DialogAddIntegration from 'components/IntegrationComponents/DialogAddIntegration';
+import { getScenes, activateScene } from 'modules/scenes';
 
 const useStyles = makeStyles({
     integrationCard: {
@@ -27,25 +28,23 @@ const useStyles = makeStyles({
     },
 });
 
-const handleEditIntegration = () => {
-    //onEditIntegration(int.id);
-};
-
-//Notes from how Edit Device is done. 
-//From: LedFx\frontend\src\components\DisplaysTable\DisplayCardItem.jsx
-    //const handleEditDevice = () => {
-    //    onEditDevice(deviceList.find(d => d.id === display.is_device));
-    //};
-
 const IntegrationsCard = ({ int }) => {
     const classes = useStyles();
     const dispatch = useDispatch();
+    const handleEditIntegration = () => {
+        console.log('Integration ID:', int, int.type, int.id)
+        DialogAddIntegration(['integration'])
+        //DialogAddIntegration(int.type)
+        //<DialogAddIntegration integration={intTypes[int].id} />
+        //<DialogAddIntegration integration={int.id} model={int} />
+        //DialogAddIntegration (integration={intTypes[int].id})
+    };
     const handleToggle = (props) => toggleAsyncIntegration(props);
-    const preventDefault = (event) => event.preventDefault();
-    console.log("INT", int)
-    useEffect(() => {     
-        // EVERTHING HERE IS ONLY CALLED ONCE WHEN THIS COMPONENT IS RENDERED   
-       dispatch(getAsyncqlclisteners(int.id))
+    //const preventDefault = (event) => event.preventDefault();
+    
+    useEffect(() => {
+        // EVERTHING HERE IS ONLY CALLED ONCE WHEN THIS COMPONENT IS RENDERED, Only call if {int.type === 'qlc'}
+        if(int.status === 1 & int.type === 'qlc') dispatch(getAsyncqlclisteners(int.id))
     }, [dispatch, int.id])
     return (
         <Card className={classes.integrationCard} variant="outlined">
@@ -96,12 +95,9 @@ const IntegrationsCard = ({ int }) => {
                 </Link>
                 : ''}
                 
-                {int.type === 'spotify' && int.active !== 'true' /* && !spotify.accessToken && !spotify.refreshToken */
+                {int.type === 'spotify' && int.active 
                 ? 
-                // For Connect to Spotify button
-                <Button variant='contained' color="primary" onClick={() => this.beginAuth()}>
-                    <Typography>Connect to Spotify</Typography>
-                </Button> 
+                <SpotifyView />
                     : ''}
             </CardActions>
             <CardActions>
@@ -137,15 +133,5 @@ const IntegrationsCard = ({ int }) => {
     );
 };
 
-
-
-/*export default connect(
-    state => ({
-        spotify: state.spotify
-    }),
-    { checkCookiesForTokens, finishAuth, refreshAuth }
-)(withStyles(styles)(SpotifyView));*/
-
 export default IntegrationsCard;
-
-                            
+                       

@@ -3,13 +3,13 @@ import Button from '@material-ui/core/Button';
 import pkceChallenge from 'pkce-challenge';
 import Cookies from 'universal-cookie/es6';
 import { Grid, Typography } from '@material-ui/core';
-import { checkCookiesForTokens, finishAuth, refreshAuth  } from 'modules/spotify'
+import { checkCookiesForTokens, finishAuth, refreshAuth} from 'modules/spotify'
 import SpotifyPlayer from 'components/SpotifyPlayer';
 import TriggersList from 'components/TriggersList';
+import { useEffect } from 'react';
 
 const SpotifyView = (props)=> {
-    
-    const { spotify, refreshAuth } = props;
+    //const { spotify, refreshAuth } = this.props;
     const spotify = useSelector(state => state.spotify);
     
     const beginAuth = () => {
@@ -30,7 +30,9 @@ const SpotifyView = (props)=> {
     }
 
     useEffect(() => {
+        console.log('Got to useEffect:', window.location.search);
         if (window.location.search) {
+            console.log('Got to here')
             finishAuth()
         }
         checkCookiesForTokens()     
