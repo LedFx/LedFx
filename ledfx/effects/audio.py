@@ -55,8 +55,7 @@ class AudioInputSource:
             vol.Optional("mic_rate", default=20000): int,
             vol.Optional("fft_size", default=2048): int,
             vol.Optional("device_index", default=0): int,
-            vol.Optional("pre_emphasis", default=0.3): float,
-            vol.Optional("min_volume", default=-20.0): float,
+            vol.Optional("min_volume", default=0.2): float,
         },
         extra=vol.ALLOW_EXTRA,
     )
@@ -269,16 +268,16 @@ class AudioInputSource:
         """
 
         # Calculate the current volume for silence detection
-        self._volume = aubio.db_spl(self._raw_audio_sample)
+        self._volume = 1 + aubio.db_spl(self._raw_audio_sample) / 100
+        self._volume = max(0, min(1, self._volume))
+        print(self._volume)
         # Setting volume to 0 if volume <= 90 seems to work.
         # Might need to do some fiddling with different noise floors if there's any future issues
-        if np.isinf(self._volume) or self._volume <= -90:
-            self._volume = 0.0
         self._volume_filter.update(self._volume)
 
         # Calculate the frequency domain from the filtered data and
         # force all zeros when below the volume threshold
-        if self._volume_filter.value < self._config["min_volume"]:
+        if self._volume_filter.value > self._config["min_volume"]:
             self._processed_audio_sample = self._raw_audio_sample
 
             # Perform a pre-emphasis to balance the highs and lows

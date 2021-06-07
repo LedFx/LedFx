@@ -361,7 +361,9 @@ class Melbank:
 
         # the simplest pre emphasis. clean and fast.
         self.pre_emphasis = np.arange(fft_size // 2 + 1) + 1
-        self.pre_emphasis = np.log(self.pre_emphasis) / np.log(1.1)
+        self.pre_emphasis = np.log(self.pre_emphasis) / np.log(
+            self._config["pre_emphasis"]
+        )
 
     def __call__(self, frequency_domain, filter_banks, filter_banks_filtered):
         """
@@ -422,7 +424,7 @@ class Melbanks:
     )
 
     DEFAULT_MELBANK_CONFIG = Melbank.MELBANK_CONFIG_SCHEMA({})
-    MELBANK_PRE_EMPHASIS = (1.1, 1.5, 2.0)
+    MELBANK_PRE_EMPHASIS = (1.1, 1.9, 2.0)
 
     def __init__(self, ledfx, audio, config):
         self._ledfx = ledfx
@@ -465,7 +467,7 @@ class Melbanks:
         frequency_domain = self._audio._frequency_domain
         volume = (
             self._audio.volume(filtered=True)
-            < self._audio._config["min_volume"]
+            > self._audio._config["min_volume"]
         )
 
         for i in range(self.mel_count):
@@ -484,8 +486,6 @@ class Melbanks:
                     GraphUpdateEvent(
                         f"melbank_{i}",
                         self.melbanks[i],
-                        np.array(
-                            self.melbank_processors[i].melbank_frequencies
-                        ),
+                        self.melbank_processors[i].melbank_frequencies,
                     )
                 )
