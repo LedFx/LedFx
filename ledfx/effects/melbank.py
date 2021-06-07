@@ -57,7 +57,7 @@ MELBANK_COEFFS_TYPES = (
 # I've forced fft to use mic rate of 20000Hz even if mic is actually ~40000Hz.
 # This increases frequency resolution massively, especially noticable for bass
 # where frequency differs by only 10s of Hz
-MAX_FREQ = 20000
+MAX_FREQ = 10000
 MIN_FREQ = 20
 
 
@@ -71,16 +71,17 @@ class Melbank:
                 vol.Coerce(int), vol.Range(0, 100)
             ),
             vol.Optional("min_frequency", default=MIN_FREQ): vol.All(
-                vol.Coerce(int), vol.Range(0, MAX_FREQ)
+                vol.Coerce(int), vol.Range(MIN_FREQ, MAX_FREQ)
             ),
             vol.Optional("max_frequency", default=MAX_FREQ): vol.All(
-                vol.Coerce(int), vol.Range(0, MAX_FREQ)
+                vol.Coerce(int), vol.Range(MIN_FREQ, MAX_FREQ)
             ),
             vol.Optional("min_volume", default=-70.0): float,
-            vol.Optional("peak_isolation", default=0.7): float,
-            vol.Optional("coeffs_type", default="scott_mel"): vol.In(
+            vol.Optional("peak_isolation", default=0.4): float,
+            vol.Optional("coeffs_type", default="matt_mel"): vol.In(
                 MELBANK_COEFFS_TYPES
             ),
+            vol.Optional("pre_emphasis", default=1.5): float,
         },
         extra=vol.ALLOW_EXTRA,
     )
@@ -88,10 +89,10 @@ class Melbank:
     def __init__(self, audio, config):
         """Initialize all the melbank related variables"""
         self._audio = audio
+        self._config = self.MELBANK_CONFIG_SCHEMA(config)
+
         fft_size = self._audio._config["fft_size"]
         mic_rate = self._audio._config["mic_rate"]
-
-        self._config = self.MELBANK_CONFIG_SCHEMA(config)
 
         # Few difference coefficient types for experimentation
         if self._config["coeffs_type"] == "triangle":
@@ -249,7 +250,7 @@ class Melbank:
                 return 3700.0 * log(1 + (freq / 200.0), 13)
 
             def matt_to_hertz(matt):
-                return 200.0 * (10 ** (matt / 3700.0)) - 200.0
+                return 200.0 * (13 ** (matt / 3700.0)) - 200.0
 
             melbank_matt = np.linspace(
                 hertz_to_matt(self._config["min_frequency"]),
@@ -353,10 +354,14 @@ class Melbank:
                 self.highs_index = i + 1
 
         # Build up some of the common filters
-        self.mel_gain = ExpFilter(alpha_decay=0.01, alpha_rise=0.99)
+        self.mel_gain = ExpFilter(alpha_decay=0.05, alpha_rise=0.99)
         self.mel_smoothing = ExpFilter(alpha_decay=0.5, alpha_rise=0.99)
         self.common_filter = ExpFilter(alpha_decay=0.99, alpha_rise=0.01)
         self.diff_filter = ExpFilter(alpha_decay=0.02, alpha_rise=0.99)
+
+        # the simplest pre emphasis. clean and fast.
+        self.pre_emphasis = np.arange(fft_size // 2 + 1) + 1
+        self.pre_emphasis = np.log(self.pre_emphasis) / np.log(1.1)
 
     def __call__(self, frequency_domain, filter_banks, filter_banks_filtered):
         """
@@ -366,6 +371,7 @@ class Melbank:
         """
 
         # Compute the filterbank from the frequency information.
+        frequency_domain.norm *= self.pre_emphasis
         filter_banks[:] = self.filterbank(frequency_domain)
         # adjustable power (peak isolation) based on parameter a (0-1)
         # a=0    -> linear response (filter bank value maps to itself)
@@ -405,8 +411,8 @@ class Melbanks:
             # melbank 1: [--------------]
             # melbank 2: [------------------------------]
             # melbank 3: [-------------------------------------------------]
-            vol.Optional("max_frequencies", default=[450, 5000, MAX_FREQ]): [
-                vol.All(vol.Coerce(int), vol.Range(0, MAX_FREQ))
+            vol.Optional("max_frequencies", default=[350, 2000, 10000]): [
+                vol.All(vol.Coerce(int), vol.Range(0, 10000))
             ],
             vol.Optional("min_frequency", default=MIN_FREQ): vol.All(
                 vol.Coerce(int), vol.Range(0, MAX_FREQ)
@@ -416,6 +422,7 @@ class Melbanks:
     )
 
     DEFAULT_MELBANK_CONFIG = Melbank.MELBANK_CONFIG_SCHEMA({})
+    MELBANK_PRE_EMPHASIS = (1.1, 1.5, 2.0)
 
     def __init__(self, ledfx, audio, config):
         self._ledfx = ledfx
@@ -429,9 +436,13 @@ class Melbanks:
         self.melbank_processors = tuple(
             Melbank(
                 self._audio,
-                self.DEFAULT_MELBANK_CONFIG | {"max_frequency": freq},
+                self.DEFAULT_MELBANK_CONFIG
+                | {
+                    "max_frequency": freq,
+                    "pre_emphasis": self.MELBANK_PRE_EMPHASIS[i],
+                },
             )
-            for freq in self._config["max_frequencies"]
+            for i, freq in enumerate(self._config["max_frequencies"])
         )
         # some useful info that will be accessed faster as variables
         self.mel_count = len(self._config["max_frequencies"])
@@ -451,13 +462,22 @@ class Melbanks:
         # melbank function is directly referenced by the self.melbanks tuple.
         # melbank function is given the data buffer to operate directly on
         # rather than returning and assigning the data.
-
-        # if volume < 0: or whatever...
         frequency_domain = self._audio._frequency_domain
+        volume = (
+            self._audio.volume(filtered=True)
+            < self._audio._config["min_volume"]
+        )
+
         for i in range(self.mel_count):
-            self.melbank_processors[i](
-                frequency_domain, self.melbanks[i], self.melbanks_filtered[i]
-            )
+            if volume:
+                self.melbank_processors[i](
+                    frequency_domain,
+                    self.melbanks[i],
+                    self.melbanks_filtered[i],
+                )
+            else:
+                self.melbanks[i][:] = 0
+                self.melbanks_filtered[i][:] = 0
 
             if self._ledfx.dev_enabled():
                 self._ledfx.events.fire_event(

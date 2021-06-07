@@ -116,6 +116,10 @@ class Display:
         self.fade_timer = 0
         self._segments = []
 
+        self.frequency_range = FrequencyRange(
+            self._config["frequency_min"], self._config["frequency_max"]
+        )
+
         # list of devices in order of their mapping on the display
         # [[id, start, end, invert]...]
         # not a very good schema, but vol seems a bit handicapped in terms of lists.
