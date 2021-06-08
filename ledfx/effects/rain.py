@@ -62,6 +62,10 @@ class RainAudioEffect(AudioReactiveEffect):
         }
     )
 
+    def on_activate(self, pixel_count):
+        self.drop_frames = np.zeros(self.pixel_count, dtype=int)
+        self.drop_colours = np.zeros((3, self.pixel_count))
+
     def config_updated(self, config):
         # this could be cleaner but it's temporary, until an effectlet class is
         # made to handle this stuff
@@ -81,8 +85,6 @@ class RainAudioEffect(AudioReactiveEffect):
         )
         self.filtered_intensities = np.zeros(3)
 
-        self.first_call = True
-
     def new_drop(self, location, colour):
         """
         Add a new drop animation
@@ -93,13 +95,6 @@ class RainAudioEffect(AudioReactiveEffect):
         self.drop_colours[:, location] = colour
 
     def update_drop_frames(self):
-        # TODO these should be made in config_updated or __init__ when pixel
-        # count is available there
-        if self.first_call:
-            self.drop_frames = np.zeros(self.pixel_count, dtype=int)
-            self.drop_colours = np.zeros((3, self.pixel_count))
-            self.first_call = False
-
         # Set any drops at final frame back to 0 and remove colour data
         finished_drops = self.drop_frames >= self.n_frames - 1
         self.drop_frames[finished_drops] = 0
@@ -107,7 +102,7 @@ class RainAudioEffect(AudioReactiveEffect):
         # Add one to any running frames
         self.drop_frames[self.drop_frames > 0] += 1
 
-    def get_drops(self):
+    def render(self):
         """
         Get coloured pixel data of all drops overlaid
         """
@@ -137,13 +132,7 @@ class RainAudioEffect(AudioReactiveEffect):
 
         # Calculate the low, mids, and high indexes scaling based on the pixel
         # count
-        intensities = np.array(
-            [
-                np.mean(data.melbank_lows()),
-                np.mean(data.melbank_mids()),
-                np.mean(data.melbank_highs()),
-            ]
-        )
+        intensities = np.max(self.melbank_thirds(), axis=1)
 
         self.update_drop_frames()
 
@@ -173,5 +162,3 @@ class RainAudioEffect(AudioReactiveEffect):
             )
 
         self.filtered_intensities = self.intensity_filter.update(intensities)
-
-        self.pixels = self.get_drops()
