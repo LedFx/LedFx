@@ -593,9 +593,7 @@ class Display:
         )
 
         if self._active_effect is not None:
-            if _only_frequencies_updated and hasattr(
-                self._active_effect, "clear_melbank_freq_props"
-            ):
+            if _only_frequencies_updated:
                 self._active_effect.clear_melbank_freq_props()
             else:
                 self._active_effect.deactivate()

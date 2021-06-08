@@ -114,11 +114,11 @@ class AudioInputSource:
                             else "",
                         )
                     )
-                    # automatically configure sample rate
-                    if device_idx == self._config["device_index"]:
-                        self._config["mic_rate"] = int(
-                            device["default_samplerate"]
-                        )
+                    # # automatically configure sample rate
+                    # if device_idx == self._config["device_index"]:
+                    #     self._config["mic_rate"] = int(
+                    #         device["default_samplerate"]
+                    #     )
 
         # old, do not use
         # self.pre_emphasis.set_biquad(1., -self._config['pre_emphasis'], 0, 0, 0)
@@ -154,51 +154,6 @@ class AudioInputSource:
             freq_domain_length,
         )
 
-        # # MFCC experiments #################
-
-        # _vocal_low, _vocal_high = vocal_range
-        # self._vocal_low_index = int(
-        #     freq_domain_length * _vocal_low / self._config["mic_rate"]
-        # )
-        # self._vocal_high_index = int(
-        #     freq_domain_length * _vocal_high / self._config["mic_rate"]
-        # )
-        # _vocal_domain_index = self._vocal_high_index - self._vocal_low_index
-        # self._vocal_frequency_domain = aubio.cvec(_vocal_domain_index * 2 - 1)
-
-        # # configure mfcc for science and harmonics
-        # _mfcc_coeffs = 13
-        # self._mfcc = aubio.mfcc(
-        #     buf_size=_vocal_domain_index * 2 - 1,
-        #     n_filters=100,
-        #     n_coeffs=_mfcc_coeffs,
-        #     samplerate=self._config["mic_rate"],
-        # )
-        # self._mfcc_x = np.arange(_mfcc_coeffs)
-        # self._mfcing = ExpFilter(
-        #     np.tile(1e-1, _mfcc_coeffs - 2),
-        #     alpha_decay=0.2,
-        #     alpha_rise=0.4,
-        # )
-
-        # # Pitch Experiments ###################
-        # self._pitch = aubio.pitch(
-        #     "schmitt",
-        #     self._config["fft_size"],
-        #     self._config["mic_rate"] // self._config["sample_rate"],
-        #     self._config["mic_rate"],
-        # )
-        # self._pitch.set_unit("midi")
-
-        # self._pitch_rolling = np.zeros(60, dtype=float)
-        # self._pitch_x = np.arange(60)
-
-        # self._pitcing = ExpFilter(
-        #     0,
-        #     alpha_decay=0.3,
-        #     alpha_rise=0.3,
-        # )
-        # Open the audio stream and start processing the input
         try:
             self._stream = self._audio.InputStream(
                 samplerate=self._config["mic_rate"],
@@ -270,7 +225,6 @@ class AudioInputSource:
         # Calculate the current volume for silence detection
         self._volume = 1 + aubio.db_spl(self._raw_audio_sample) / 100
         self._volume = max(0, min(1, self._volume))
-        print(self._volume)
         # Setting volume to 0 if volume <= 90 seems to work.
         # Might need to do some fiddling with different noise floors if there's any future issues
         self._volume_filter.update(self._volume)
@@ -331,12 +285,14 @@ class AudioAnalysisSource(AudioInputSource):
         extra=vol.ALLOW_EXTRA,
     )
 
-    # volume based beat detection constants
-    beat_max_freq = 50
-    beat_min_percent_diff = 0.7
-    beat_min_detect_amplitude = 0.7
-    beat_min_time_since = 0.2
-    beat_channel_maxlen = 40
+    # some frequency constants
+    # beat, bass, mids, high
+    freq_max_mels = [
+        100,
+        250,
+        3000,
+        10000,
+    ]
 
     def __init__(self, ledfx, config):
         config = self.CONFIG_SCHEMA(config)
@@ -349,8 +305,10 @@ class AudioAnalysisSource(AudioInputSource):
         self.subscribe(self.onset)
         self.subscribe(self.oscillator)
         self.subscribe(self.volume_beat_now)
+        self.subscribe(self.freq_power)
 
     def initialise_analysis(self):
+
         fft_params = (
             self._config["fft_size"],
             self._config["mic_rate"] // self._config["sample_rate"],
@@ -373,27 +331,49 @@ class AudioAnalysisSource(AudioInputSource):
         self.beat_timestamp = time.time()
         self.beat_period = 2
 
-        # volume based beat detection
-        assert (
-            self.melbanks._config["max_frequencies"][0] >= self.beat_max_freq
+        # freq power
+        self.freq_power_raw = np.zeros(len(self.freq_max_mels))
+        self.freq_power_filter = ExpFilter(
+            np.zeros(len(self.freq_max_mels)), alpha_decay=0.2, alpha_rise=0.97
         )
+        self.freq_mel_indexes = []
 
-        self.beat_prev_time = time.time()
+        for freq in self.freq_max_mels:
+            assert self.melbanks._config["max_frequencies"][2] >= freq
+
+            self.freq_mel_indexes.append(
+                next(
+                    (
+                        i - 1
+                        for i, f in enumerate(
+                            self.melbanks.melbank_processors[
+                                2
+                            ].melbank_frequencies
+                        )
+                        if f > freq
+                    ),
+                    len(
+                        self.melbanks.melbank_processors[2].melbank_frequencies
+                    ),
+                )
+            )
+
+        # volume based beat detection
         self.beat_max_mel_index = next(
             i - 1
             for i, f in enumerate(
                 self.melbanks.melbank_processors[0].melbank_frequencies
             )
-            if f > self.beat_max_freq
+            if f > self.freq_max_mels[0]
         )
 
-        self.beat_bass_channels = tuple(
-            deque(maxlen=self.beat_channel_maxlen)
-            for _ in range(self.beat_max_mel_index)
-        )
+        self.beat_min_percent_diff = 0.7
+        self.beat_min_time_since = 0.1
+        self.beat_min_amplitude = 0.6
+        self.beat_power_history_len = int(self._config["sample_rate"] * 0.2)
 
-        # bass power
-        self.bass_power_filter = ExpFilter(0, alpha_decay=0.2, alpha_rise=0.95)
+        self.beat_prev_time = time.time()
+        self.beat_power_history = deque(maxlen=self.beat_power_history_len)
 
     def update_config(self, config):
         validated_config = self.CONFIG_SCHEMA(config)
@@ -409,7 +389,6 @@ class AudioAnalysisSource(AudioInputSource):
         self.bpm_beat_now.cache_clear()
         self.volume_beat_now.cache_clear()
         self.oscillator.cache_clear()
-        self.bass_power.cache_clear()
 
     # @lru_cache(maxsize=32)
     # def melbank(self):
@@ -462,15 +441,17 @@ class AudioAnalysisSource(AudioInputSource):
     def pitch(self):
         # If our audio handler is returning null, then we just return 0 for midi_value and wait for the device starts sending audio.
         try:
-            return self._pitch(self.audio_sample())[0]
-        except ValueError:
+            return self._pitch(self.audio_sample(raw=True))[0]
+        except ValueError as e:
+            print(e)
             return 0
 
     @cache
     def onset(self):
         try:
             return bool(self._onset(self.audio_sample(raw=True))[0])
-        except ValueError:
+        except ValueError as e:
+            print(e)
             return 0
 
     @cache
@@ -480,57 +461,106 @@ class AudioAnalysisSource(AudioInputSource):
         """
         try:
             return bool(self._tempo(self.audio_sample(raw=True))[0])
-        except ValueError:
+        except ValueError as e:
+            print(e)
             return 0
 
     @cache
     def volume_beat_now(self):
         """
-        Returns True if a beat is expected now based on volume of bass
+        Returns True if a beat is expected now based on volume of the beat freq region
         This algorithm is a bit weird, but works quite nicely.
         I've tried my best to optimise it from the original
         implementation in systematic_leds
         """
 
         time_now = time.time()
+        melbank = self.melbanks.melbanks[0][: self.beat_max_mel_index]
+        beat_power = np.sum(melbank)
+        melbank_max = np.max(melbank)
 
-        for i in range(self.beat_max_mel_index):
-            self.beat_bass_channels[i].appendleft(self.melbanks.melbanks[0][i])
-
-            # calculates the % difference of the first value of the channel to the average for the channel
+        # calculates the % difference of the first value of the channel to the average for the channel
+        if sum(self.beat_power_history) > 0:
             difference = (
-                self.beat_bass_channels[i][0]
-                * self.beat_channel_maxlen
-                / sum(self.beat_bass_channels[i])
+                beat_power
+                * self.beat_power_history_len
+                / sum(self.beat_power_history)
                 - 1
             )
+        else:
+            difference = 0
 
-            if (
-                difference >= self.beat_min_percent_diff
-                and self.beat_bass_channels[i][0]
-                >= self.beat_min_detect_amplitude
-                and time_now - self.beat_prev_time > self.beat_min_time_since
-            ):
-                self.beat_prev_time = time_now
-                return True
+        self.beat_power_history.appendleft(beat_power)
+
+        if (
+            difference >= self.beat_min_percent_diff
+            and melbank_max >= self.beat_min_amplitude
+            and time_now - self.beat_prev_time > self.beat_min_time_since
+        ):
+            self.beat_prev_time = time_now
+            return True
         else:
             return False
 
-    @cache
+    def freq_power(self):
+        # hard coded this bc i'm tired and it'll run faster
+
+        melbank = self.melbanks.melbanks[2]
+
+        self.freq_power_raw[0] = np.average(
+            melbank[: self.freq_mel_indexes[0]]
+        )
+        self.freq_power_raw[1] = np.average(
+            melbank[self.freq_mel_indexes[0] : self.freq_mel_indexes[1]]
+        )
+        self.freq_power_raw[2] = np.average(
+            melbank[self.freq_mel_indexes[1] : self.freq_mel_indexes[2]]
+        )
+        self.freq_power_raw[3] = np.average(
+            melbank[self.freq_mel_indexes[2] : self.freq_mel_indexes[3]]
+        )
+        np.minimum(self.freq_power_raw, 1, out=self.freq_power_raw)
+
+        self.freq_power_filter.update(self.freq_power_raw)
+
+    def get_freq_power(self, i, filtered=True):
+        if filtered:
+            return self.freq_power_filter.value[i]
+        else:
+            return self.freq_power_raw[i]
+
+    def beat_power(self, filtered=True):
+        """
+        Returns a float (0<=x<=1) corresponding to the beat power
+        """
+        return self.get_freq_power(0, filtered)
+
     def bass_power(self, filtered=True):
         """
         Returns a float (0<=x<=1) corresponding to the bass power
         """
-        bass_power = np.average(
-            self.melbanks.melbanks[0][: self.beat_max_mel_index]
-        )
-        bass_power = min(bass_power, 1)
-        self.bass_power_filter.update(bass_power)
+        return self.get_freq_power(1, filtered)
 
-        if filtered:
-            return self.bass_power_filter.value
-        else:
-            return bass_power
+    def lows_power(self, filtered=True):
+        """
+        Returns a float (0<=x<=1) corresponding to the lows power.
+        this is just the sum of bass and beat power.
+        """
+        return (
+            self.get_freq_power(0, filtered) + self.get_freq_power(1, filtered)
+        ) * 0.5
+
+    def mids_power(self, filtered=True):
+        """
+        Returns a float (0<=x<=1) corresponding to the mids power
+        """
+        return self.get_freq_power(2, filtered)
+
+    def high_power(self, filtered=True):
+        """
+        Returns a float (0<=x<=1) corresponding to the highs power
+        """
+        return self.get_freq_power(3, filtered)
 
     @cache
     def oscillator(self):
@@ -595,6 +625,7 @@ class AudioReactiveEffect(Effect):
         return ExpFilter(alpha_decay=alpha_decay, alpha_rise=alpha_rise)
 
     def _audio_data_updated(self):
+        self.melbank.cache_clear()
         if self.is_active:
             self.audio_data_updated(self.audio)
 
@@ -611,7 +642,6 @@ class AudioReactiveEffect(Effect):
         Almost all the properties used to build the melbank are cached
         to try and ease computational load.
         """
-        self.melbank.cache_clear()
 
         for prop in [
             "_selected_melbank",
@@ -692,8 +722,16 @@ class AudioReactiveEffect(Effect):
             melbank = self.audio.melbanks.melbanks[self._selected_melbank][
                 self._melbank_min_idx : self._melbank_max_idx
             ]
-        # print(melbank)
+
         if size and (self._input_mel_length != size):
             return np.interp(*self._melbank_interp_linspaces(size), melbank)
         else:
             return melbank
+
+    def melbank_thirds(self, **kwargs):
+        """
+        Returns the melbank split into thirds.
+        Useful for effects that use lows, mids, and highs
+        """
+
+        return np.array_split(self.melbank(**kwargs), 3)

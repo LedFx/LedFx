@@ -354,10 +354,10 @@ class Melbank:
                 self.highs_index = i + 1
 
         # Build up some of the common filters
-        self.mel_gain = ExpFilter(alpha_decay=0.05, alpha_rise=0.99)
+        self.mel_gain = ExpFilter(alpha_decay=0.01, alpha_rise=0.99)
         self.mel_smoothing = ExpFilter(alpha_decay=0.5, alpha_rise=0.99)
         self.common_filter = ExpFilter(alpha_decay=0.99, alpha_rise=0.01)
-        self.diff_filter = ExpFilter(alpha_decay=0.02, alpha_rise=0.99)
+        self.diff_filter = ExpFilter(alpha_decay=0.15, alpha_rise=0.99)
 
         # the simplest pre emphasis. clean and fast.
         self.pre_emphasis = np.arange(fft_size // 2 + 1) + 1
@@ -485,7 +485,7 @@ class Melbanks:
                 self._ledfx.events.fire_event(
                     GraphUpdateEvent(
                         f"melbank_{i}",
-                        self.melbanks[i],
+                        self.melbanks_filtered[i],
                         self.melbank_processors[i].melbank_frequencies,
                     )
                 )
