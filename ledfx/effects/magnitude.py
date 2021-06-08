@@ -1,7 +1,6 @@
-import numpy as np
 import voluptuous as vol
 
-from ledfx.effects.audio import FREQUENCY_RANGES, AudioReactiveEffect
+from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.gradient import GradientEffect
 
 
@@ -10,13 +9,21 @@ class MagnitudeAudioEffect(AudioReactiveEffect, GradientEffect):
     NAME = "Magnitude"
     CATEGORY = "1.0"
 
+    _power_funcs = {
+        "Beat": "beat_power",
+        "Bass": "bass_power",
+        "Lows (beat+bass)": "lows_power",
+        "Mids": "mids_power",
+        "High": "high_power",
+    }
+
     CONFIG_SCHEMA = vol.Schema(
         {
             vol.Optional(
                 "frequency_range",
                 description="Frequency range for the beat detection",
-                default="Bass (60-250Hz)",
-            ): vol.In(list(FREQUENCY_RANGES.keys())),
+                default="Lows (beat+bass)",
+            ): vol.In(list(_power_funcs.keys())),
         }
     )
 
@@ -24,18 +31,10 @@ class MagnitudeAudioEffect(AudioReactiveEffect, GradientEffect):
         self.magnitude = 0
 
     def config_updated(self, config):
-        self._frequency_range = np.linspace(
-            FREQUENCY_RANGES[self.config["frequency_range"]].min,
-            FREQUENCY_RANGES[self.config["frequency_range"]].max,
-            20,
-        )
+        self.power_func = self._power_funcs[self._config["frequency_range"]]
 
     def audio_data_updated(self, data):
-        self.magnitude = np.max(
-            data.sample_melbank(list(self._frequency_range))
-        )
-        if self.magnitude > 1.0:
-            self.magnitude = 1.0
+        self.magnitude = getattr(data, self.power_func)()
 
     def render(self):
         # Grab the filtered and interpolated melbank data

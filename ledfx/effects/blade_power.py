@@ -53,7 +53,7 @@ class BladePowerAudioEffect(AudioReactiveEffect):
 
     def audio_data_updated(self, data):
         # Get filtered bass power
-        self.bar = data.bass_power(filtered=True) * self.config["multiplier"]
+        self.bar = data.lows_power(filtered=True) * self.config["multiplier"]
 
     def render(self):
         self.out = np.zeros((self.pixel_count, 3))

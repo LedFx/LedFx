@@ -27,7 +27,7 @@ class WavelengthAudioEffect(AudioReactiveEffect, GradientEffect):
 
     def audio_data_updated(self, data):
         # Grab the filtered melbank
-        self.r = self.melbanks(filtered=True)
+        self.r = self.melbank(filtered=True, size=self.pixel_count)
 
     def render(self):
         # Apply the melbank data to the gradient curve and update the pixels

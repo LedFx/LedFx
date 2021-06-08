@@ -85,10 +85,15 @@ class EnergyAudioEffect(AudioReactiveEffect):
     def audio_data_updated(self, data):
         # Calculate the low, mids, and high indexes scaling based on the pixel
         # count
-        self.lows_idx = int(np.mean(self.pixel_count * data.melbank_lows()))
-        self.mids_idx = int(np.mean(self.pixel_count * data.melbank_mids()))
-        self.highs_idx = int(np.mean(self.pixel_count * data.melbank_highs()))
-        _, self.beat_now = data.oscillator()
+
+        self.lows_idx, self.mids_idx, self.highs_idx = (
+            int(self.pixel_count * np.mean(i)) for i in self.melbank_thirds()
+        )
+
+        # self.lows_idx = int(self.pixel_count * (data.bass_power() + data.beat_power()))
+        # self.mids_idx = int(self.pixel_count * data.mids_power())
+        # self.highs_idx = int(self.pixel_count * data.high_power())
+        self.beat_now = data.volume_beat_now()
 
     def render(self):
         if self._config["color_cycler"]:

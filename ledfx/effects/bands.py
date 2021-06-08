@@ -42,7 +42,7 @@ class BandsAudioEffect(AudioReactiveEffect, GradientEffect):
 
     def audio_data_updated(self, data):
         # Grab the filtered melbank
-        self.r = self.melbanks(filtered=True)
+        self.r = self.melbank(filtered=True, size=self.pixel_count)
 
     def render(self):
         out = np.tile(self.r, (3, 1)).T

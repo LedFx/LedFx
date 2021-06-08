@@ -77,7 +77,7 @@ class Strobe(AudioReactiveEffect, GradientEffect):
         self.strobe_decay_rate = 1 - self._config["strobe_decay_rate"]
 
         self.last_bass_strobe_time = 0
-        self.bass_strobe_wait_time = 0
+        self.bass_strobe_wait_time = 0.2
         self.bass_strobe_decay_rate = (
             1 - self._config["bass_strobe_decay_rate"]
         )
@@ -118,9 +118,8 @@ class Strobe(AudioReactiveEffect, GradientEffect):
             self.bass_strobe_color = self.get_gradient_color(self.color_idx)
             self.last_color_shift_time = currentTime
 
-        lows_intensity = np.mean(data.melbank_lows())
         if (
-            lows_intensity > self.bass_threshold
+            data.volume_beat_now()
             and currentTime - self.last_bass_strobe_time
             > self.bass_strobe_wait_time
         ):
@@ -129,9 +128,8 @@ class Strobe(AudioReactiveEffect, GradientEffect):
             )
             self.last_bass_strobe_time = currentTime
 
-        onsets = data.onset()
         if (
-            onsets["high"]
+            data.onset()
             and currentTime - self.last_strobe_time > self.strobe_wait_time
         ):
             self.onsets_queue.put(True)

@@ -27,10 +27,10 @@ class SpectrumAudioEffect(AudioReactiveEffect):
 
         # Grab the filtered and interpolated melbank data
         # Grab the filtered melbank
-        y = self.melbanks(filtered=False)
+        y = self.melbank(filtered=False, size=self.pixel_count)
         if self._prev_y is None:
             self._prev_y = y
-        self.r = self.melbanks(filtered=True)
+        self.r = self.melbank(filtered=True, size=self.pixel_count)
         self.g = np.abs(y - self._prev_y)
         self.b = self._b_filter.update(y)
 
