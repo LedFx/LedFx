@@ -443,7 +443,7 @@ class AudioAnalysisSource(AudioInputSource):
         try:
             return self._pitch(self.audio_sample(raw=True))[0]
         except ValueError as e:
-            print(e)
+            _LOGGER.warning(e)
             return 0
 
     @cache
@@ -451,7 +451,7 @@ class AudioAnalysisSource(AudioInputSource):
         try:
             return bool(self._onset(self.audio_sample(raw=True))[0])
         except ValueError as e:
-            print(e)
+            _LOGGER.warning(e)
             return 0
 
     @cache
@@ -462,8 +462,8 @@ class AudioAnalysisSource(AudioInputSource):
         try:
             return bool(self._tempo(self.audio_sample(raw=True))[0])
         except ValueError as e:
-            print(e)
-            return 0
+            _LOGGER.warning(e)
+            return False
 
     @cache
     def volume_beat_now(self):
@@ -575,7 +575,7 @@ class AudioAnalysisSource(AudioInputSource):
            oscillator
         """
         # update tempo and oscillator
-        if self.bpm_beat_now:
+        if self.bpm_beat_now():
             self.beat_period = self._tempo.get_period_s()
             self.beat_timestamp = time.time()
             oscillator = 0
