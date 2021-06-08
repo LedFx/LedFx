@@ -22,24 +22,12 @@ class WavelengthAudioEffect(AudioReactiveEffect, GradientEffect):
         }
     )
 
-    def activate(self, pixel_count):
+    def on_activate(self, pixel_count):
         self.r = np.zeros(pixel_count)
-        super().activate(pixel_count)
-
-    def config_updated(self, config):
-
-        # Create the filters used for the effect
-        self._r_filter = self.create_filter(alpha_decay=0.2, alpha_rise=0.99)
 
     def audio_data_updated(self, data):
-
-        # Grab the filtered and interpolated melbank data
-        y = data.interpolated_melbank(self.pixel_count, filtered=False)
-        filtered_y = data.interpolated_melbank(self.pixel_count, filtered=True)
-
-        # Grab the filtered difference between the filtered melbank and the
-        # raw melbank.
-        self.r = self._r_filter.update(y - filtered_y)
+        # Grab the filtered melbank
+        self.r = self.melbank(filtered=True, size=self.pixel_count)
 
     def render(self):
         # Apply the melbank data to the gradient curve and update the pixels

@@ -7,6 +7,7 @@ import voluptuous as vol
 import zeroconf
 
 from ledfx.effects import DummyEffect
+from ledfx.effects.audio import FrequencyRange
 from ledfx.events import (
     DisplayUpdateEvent,
     EffectClearedEvent,
@@ -65,6 +66,26 @@ class Display:
                 description="Type of transition between effects",
                 default="Add",
             ): vol.In([mode for mode in Transitions]),
+            vol.Optional(
+                "frequency_min",
+                description="Lowest frequency for this display's audio reactive effects",
+                default=20,  # GET THIS FROM CORE AUDIO
+            ): vol.All(
+                vol.Coerce(int),
+                vol.Range(
+                    min=20, max=20000, min_included=True, max_included=True
+                ),
+            ),  # AND HERE TOO,
+            vol.Optional(
+                "frequency_max",
+                description="Highest frequency for this display's audio reactive effects",
+                default=20000,  # GET THIS FROM CORE AUDIO
+            ): vol.All(
+                vol.Coerce(int),
+                vol.Range(
+                    min=20, max=20000, min_included=True, max_included=True
+                ),
+            ),  # AND HERE TOO,
         }
     )
 
@@ -95,6 +116,10 @@ class Display:
         # in, +ve mean fading out
         self.fade_timer = 0
         self._segments = []
+
+        self.frequency_range = FrequencyRange(
+            self._config["frequency_min"], self._config["frequency_max"]
+        )
 
         # list of devices in order of their mapping on the display
         # [[id, start, end, invert]...]
@@ -204,7 +229,7 @@ class Display:
                 if self._active_effect is not None:
                     self._active_effect.deactivate()
                     if self.pixel_count > 0:
-                        self._active_effect.activate(self.pixel_count)
+                        self._active_effect.activate(self)
 
             mode = self._config["transition_mode"]
             self.frame_transitions = self.transitions[mode]
@@ -218,7 +243,7 @@ class Display:
         if self._active_effect is None:
             self._transition_effect = DummyEffect(self.pixel_count)
             self._active_effect = effect
-            self._active_effect.activate(self.pixel_count)
+            self._active_effect.activate(self)
             self._ledfx.loop.call_later(
                 self._config["transition_time"], self.clear_transition_effect
             )
@@ -229,7 +254,7 @@ class Display:
             self.clear_transition_effect()
             self._transition_effect = self._active_effect
             self._active_effect = effect
-            self._active_effect.activate(self.pixel_count)
+            self._active_effect.activate(self)
             self._ledfx.loop.call_later(
                 self._config["transition_time"], self.clear_transition_effect
             )
@@ -309,8 +334,6 @@ class Display:
                 )
 
     def thread_function(self):
-        # TODO: Evaluate switching # over to asyncio with UV loop optimization
-        # instead of spinning a separate thread.
         if self._active:
             sleep_interval = 1 / self.refresh_rate
             self._thread_clock += sleep_interval
@@ -548,6 +571,7 @@ class Display:
             _config = new_config
 
         _config = self.CONFIG_SCHEMA(_config)
+        _only_frequencies_updated = False
 
         if hasattr(self, "_config"):
             if _config["mapping"] != self._config["mapping"]:
@@ -555,13 +579,33 @@ class Display:
             if _config["transition_mode"] != self._config["transition_mode"]:
                 mode = _config["transition_mode"]
                 self.frame_transitions = self.transitions[mode]
+            # special case, where we do not want to reactive effect just
+            # because the frequency range has changed. bit sloppy but
+            # does the trick!
+            # if the only key in new config is "frequency_range":...
+            # changed_configs = set(a.items()) ^ set(b.items())
+            if all(
+                key in ["frequency_min", "frequency_max"]
+                for key in _config.keys()
+            ) and (
+                _config["frequency_min"] != self._config["frequency_min"]
+                or _config["frequency_max"] != self._config["frequency_max"]
+            ):
+                _only_frequencies_updated = True
 
         setattr(self, "_config", _config)
 
+        self.frequency_range = FrequencyRange(
+            self._config["frequency_min"], self._config["frequency_max"]
+        )
+
         if self._active_effect is not None:
-            self._active_effect.deactivate()
-            if self.pixel_count > 0:
-                self._active_effect.activate(self.pixel_count)
+            if _only_frequencies_updated:
+                self._active_effect.clear_melbank_freq_props()
+            else:
+                self._active_effect.deactivate()
+                if self.pixel_count > 0:
+                    self._active_effect.activate(self)
 
 
 class Displays:

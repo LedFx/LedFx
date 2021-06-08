@@ -85,6 +85,7 @@ const DashboardView = () => {
     const devices = useSelector(state => state.devices);
     const displays = useSelector(state => state.displays);
     const scenes = useSelector(state => state.scenes);
+    const settings = useSelector(state => state.settings);
     const classes = useStyles();
     const dispatch = useDispatch();
     const [layouts, setLayouts] = useState({});

@@ -27,23 +27,22 @@ class Glitch(AudioReactiveEffect, HSVEffect):
         }
     )
 
-    def activate(self, pixel_count):
+    def on_activate(self, pixel_count):
         self.i = np.arange(pixel_count, dtype=np.float64)
         self.i2 = np.linspace(0, 5, pixel_count)
         self.i3 = np.linspace(-1, 0, pixel_count)
         np.subtract(self.i, pixel_count / 2, out=self.i)
         np.divide(self.i, pixel_count, out=self.i)
-        super().activate(pixel_count)
+
         self.timestep = 0
         self.last_time = time.time_ns()
         self.dt = 0
 
     def config_updated(self, config):
         self._lows_power = 0
-        self._lows_filter = self.create_filter(alpha_decay=0.1, alpha_rise=0.1)
 
     def audio_data_updated(self, data):
-        self._lows_power = self._lows_filter.update(data.melbank_lows().max())
+        self._lows_power = data.lows_power()
 
     def render_hsv(self):
         self.dt = time.time_ns() - self.last_time
@@ -52,7 +51,7 @@ class Glitch(AudioReactiveEffect, HSVEffect):
             self._lows_power
             * self._config["reactivity"]
             / self._config["speed"]
-            * 1000.0
+            * 1e9
         )
         self.last_time = time.time_ns()
 

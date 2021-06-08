@@ -42,11 +42,11 @@ class Crawler(AudioReactiveEffect, HSVEffect):
         }
     )
 
-    def activate(self, pixel_count):
+    def on_activate(self, pixel_count):
         self.pc = pixel_count
         self.i = np.arange(pixel_count, dtype=np.float64)
         self.i1 = np.linspace(0, 1, pixel_count)
-        super().activate(pixel_count)
+
         self.timestep = 0
         self.last_time = time.time_ns()
         self.dt = 0
@@ -56,7 +56,9 @@ class Crawler(AudioReactiveEffect, HSVEffect):
         self._lows_filter = self.create_filter(alpha_decay=0.1, alpha_rise=0.1)
 
     def audio_data_updated(self, data):
-        self._lows_power = self._lows_filter.update(data.melbank_lows().max())
+        self._lows_power = self._lows_filter.update(
+            data.lows_power(filtered=False)
+        )
 
     def render_hsv(self):
         self.dt = time.time_ns() - self.last_time
