@@ -108,7 +108,6 @@ class ConfigEndpoint(RestEndpoint):
                     "reason": f"Unknown/forbidden config key: '{key}'",
                 }
                 return web.json_response(data=response, status=400)
-
         try:
             validated_config = CORE_CONFIG_SCHEMA(config)
         except vol.MultipleInvalid as msg:
@@ -123,8 +122,12 @@ class ConfigEndpoint(RestEndpoint):
         }
 
         # handle special validation for wled_preferences
-        if "wled_preferences" in new_valid_config:
-            for key, value in new_valid_config["wled_preferences"].items():
+        if "wled_preferences" in config.keys():
+            new_valid_wled_config = {
+                key: validated_config["wled_preferences"][key]
+                for key in config["wled_preferences"].keys()
+            }
+            for key, value in new_valid_wled_config.items():
                 self._ledfx.config["wled_preferences"][key] |= value
             del new_valid_config["wled_preferences"]
 
