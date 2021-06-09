@@ -36,8 +36,6 @@ FREQUENCY_RANGES_SIMPLE = {
     "High (4kHz-24kHz)": FrequencyRange(4000, 24000),
 }
 
-#
-
 _LOGGER = logging.getLogger(__name__)
 
 MELBANK_COEFFS_TYPES = (
@@ -53,11 +51,16 @@ MELBANK_COEFFS_TYPES = (
     "fixed_simple",
 )
 
-# this is really determined by the mic rate.
+# Since fft size and mic rate are tightly linked to melbank resolution,
+# they're defined here and imported into ledfx.audio
+# good to have it all in one place (and avoids circular imports)
 # I've forced fft to use mic rate of 20000Hz even if mic is actually ~40000Hz.
 # This increases frequency resolution massively, especially noticable for bass
 # where frequency differs by only 10s of Hz
-MAX_FREQ = 10000
+
+FFT_SIZE = 2048
+MIC_RATE = 20000
+MAX_FREQ = MIC_RATE // 2
 MIN_FREQ = 20
 
 
@@ -91,9 +94,6 @@ class Melbank:
         self._audio = audio
         self._config = self.MELBANK_CONFIG_SCHEMA(config)
 
-        fft_size = self._audio._config["fft_size"]
-        mic_rate = self._audio._config["mic_rate"]
-
         # Few difference coefficient types for experimentation
         if self._config["coeffs_type"] == "triangle":
             melbank_mel = np.linspace(
@@ -106,10 +106,10 @@ class Melbank:
             ).astype(np.float32)
 
             self.filterbank = aubio.filterbank(
-                self._config["samples"], fft_size
+                self._config["samples"], FFT_SIZE
             )
             self.filterbank.set_triangle_bands(
-                self.melbank_frequencies, mic_rate
+                self.melbank_frequencies, MIC_RATE
             )
             self.melbank_frequencies = self.melbank_frequencies[1:-1]
 
@@ -124,18 +124,18 @@ class Melbank:
             ).astype(np.float32)
 
             self.filterbank = aubio.filterbank(
-                self._config["samples"], fft_size
+                self._config["samples"], FFT_SIZE
             )
             self.filterbank.set_triangle_bands(
-                self.melbank_frequencies, mic_rate
+                self.melbank_frequencies, MIC_RATE
             )
             self.melbank_frequencies = self.melbank_frequencies[1:-1]
 
         # Slaney coefficients will always produce 40 samples spanning 133Hz to
         # 6000Hz
         if self._config["coeffs_type"] == "slaney":
-            self.filterbank = aubio.filterbank(40, fft_size)
-            self.filterbank.set_mel_coeffs_slaney(mic_rate)
+            self.filterbank = aubio.filterbank(40, FFT_SIZE)
+            self.filterbank.set_mel_coeffs_slaney(MIC_RATE)
 
             # Sanley frequencies are linear-log spaced where 133Hz to 1000Hz is linear
             # spaced and 1000Hz to 6000Hz is log spaced. It also produced a hardcoded
@@ -160,10 +160,10 @@ class Melbank:
         # Standard mel coefficients
         if self._config["coeffs_type"] == "mel":
             self.filterbank = aubio.filterbank(
-                self._config["samples"], fft_size
+                self._config["samples"], FFT_SIZE
             )
             self.filterbank.set_mel_coeffs(
-                mic_rate,
+                MIC_RATE,
                 self._config["min_frequency"],
                 self._config["max_frequency"],
             )
@@ -181,10 +181,10 @@ class Melbank:
         # HTK mel coefficients
         if self._config["coeffs_type"] == "htk":
             self.filterbank = aubio.filterbank(
-                self._config["samples"], fft_size
+                self._config["samples"], FFT_SIZE
             )
             self.filterbank.set_mel_coeffs_htk(
-                mic_rate,
+                MIC_RATE,
                 self._config["min_frequency"],
                 self._config["max_frequency"],
             )
@@ -205,11 +205,11 @@ class Melbank:
                 num_mel_bands=self._config["samples"],
                 freq_min=self._config["min_frequency"],
                 freq_max=self._config["max_frequency"],
-                num_fft_bands=int(fft_size // 2) + 1,
-                sample_rate=mic_rate,
+                num_fft_bands=int(FFT_SIZE // 2) + 1,
+                sample_rate=MIC_RATE,
             )
             self.filterbank = aubio.filterbank(
-                self._config["samples"], fft_size
+                self._config["samples"], FFT_SIZE
             )
             self.filterbank.set_coeffs(melmat.astype(np.float32))
             self.melbank_frequencies = center_frequencies_hz
@@ -235,10 +235,10 @@ class Melbank:
             ).astype(np.float32)
 
             self.filterbank = aubio.filterbank(
-                self._config["samples"], fft_size
+                self._config["samples"], FFT_SIZE
             )
             self.filterbank.set_triangle_bands(
-                self.melbank_frequencies, mic_rate
+                self.melbank_frequencies, MIC_RATE
             )
             self.melbank_frequencies = self.melbank_frequencies[1:-1]
 
@@ -262,10 +262,10 @@ class Melbank:
             ).astype(np.float32)
 
             self.filterbank = aubio.filterbank(
-                self._config["samples"], fft_size
+                self._config["samples"], FFT_SIZE
             )
             self.filterbank.set_triangle_bands(
-                self.melbank_frequencies, mic_rate
+                self.melbank_frequencies, MIC_RATE
             )
             self.melbank_frequencies = self.melbank_frequencies[1:-1]
 
@@ -284,13 +284,13 @@ class Melbank:
             ) = mel.compute_melmat_from_range(
                 lower_edges_hz=lower_edges_hz,
                 upper_edges_hz=upper_edges_hz,
-                num_fft_bands=int(fft_size // 2) + 1,
-                sample_rate=mic_rate,
+                num_fft_bands=int(FFT_SIZE // 2) + 1,
+                sample_rate=MIC_RATE,
             )
 
             self._config["samples"] = len(center_frequencies_hz)
             self.filterbank = aubio.filterbank(
-                self._config["samples"], fft_size
+                self._config["samples"], FFT_SIZE
             )
             self.filterbank.set_coeffs(melmat.astype(np.float32))
             self.melbank_frequencies = center_frequencies_hz
@@ -310,13 +310,13 @@ class Melbank:
             ) = mel.compute_melmat_from_range(
                 lower_edges_hz=lower_edges_hz,
                 upper_edges_hz=upper_edges_hz,
-                num_fft_bands=int(fft_size // 2) + 1,
-                sample_rate=mic_rate,
+                num_fft_bands=int(FFT_SIZE // 2) + 1,
+                sample_rate=MIC_RATE,
             )
 
             self._config["samples"] = len(center_frequencies_hz)
             self.filterbank = aubio.filterbank(
-                self._config["samples"], fft_size
+                self._config["samples"], FFT_SIZE
             )
             self.filterbank.set_coeffs(melmat.astype(np.float32))
             self.melbank_frequencies = center_frequencies_hz
@@ -360,7 +360,7 @@ class Melbank:
         self.diff_filter = ExpFilter(alpha_decay=0.15, alpha_rise=0.99)
 
         # the simplest pre emphasis. clean and fast.
-        self.pre_emphasis = np.arange(fft_size // 2 + 1) + 1
+        self.pre_emphasis = np.arange(FFT_SIZE // 2 + 1) + 1
         self.pre_emphasis = np.log(self.pre_emphasis) / np.log(
             self._config["pre_emphasis"]
         )

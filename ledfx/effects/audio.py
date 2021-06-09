@@ -10,7 +10,7 @@ import voluptuous as vol
 
 from ledfx.effects import Effect
 from ledfx.effects.math import ExpFilter
-from ledfx.effects.melbank import Melbanks
+from ledfx.effects.melbank import FFT_SIZE, MIC_RATE, Melbanks
 from ledfx.events import GraphUpdateEvent
 
 _LOGGER = logging.getLogger(__name__)
@@ -52,8 +52,8 @@ class AudioInputSource:
     AUDIO_CONFIG_SCHEMA = vol.Schema(
         {
             vol.Optional("sample_rate", default=60): int,
-            vol.Optional("mic_rate", default=20000): int,
-            vol.Optional("fft_size", default=2048): int,
+            vol.Optional("mic_rate", default=MIC_RATE): int,
+            vol.Optional("fft_size", default=FFT_SIZE): int,
             vol.Optional("device_index", default=0): int,
             vol.Optional("min_volume", default=0.2): float,
         },
@@ -656,11 +656,14 @@ class AudioReactiveEffect(Effect):
     @cached_property
     def _selected_melbank(self):
         return next(
-            i
-            for i, x in enumerate(
-                self.audio.melbanks._config["max_frequencies"]
-            )
-            if x >= self._display.frequency_range.max
+            (
+                i
+                for i, x in enumerate(
+                    self.audio.melbanks._config["max_frequencies"]
+                )
+                if x >= self._display.frequency_range.max
+            ),
+            len(self.audio.melbanks),
         )
 
     @cached_property

@@ -73,17 +73,17 @@ class Display:
             ): vol.All(
                 vol.Coerce(int),
                 vol.Range(
-                    min=20, max=20000, min_included=True, max_included=True
+                    min=20, max=10000, min_included=True, max_included=True
                 ),
             ),  # AND HERE TOO,
             vol.Optional(
                 "frequency_max",
                 description="Highest frequency for this display's audio reactive effects",
-                default=20000,  # GET THIS FROM CORE AUDIO
+                default=10000,  # GET THIS FROM CORE AUDIO
             ): vol.All(
                 vol.Coerce(int),
                 vol.Range(
-                    min=20, max=20000, min_included=True, max_included=True
+                    min=20, max=10000, min_included=True, max_included=True
                 ),
             ),  # AND HERE TOO,
         }
