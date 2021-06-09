@@ -15,7 +15,18 @@ from ledfx.effects import smooth
 from ledfx.effects.math import ExpFilter
 from ledfx.events import GraphUpdateEvent
 
-# GET RID OF THIS STUFF IT ISNT REALLY NECESSARY HERE
+# Since fft size and mic rate are tightly linked to melbank resolution,
+# they're defined here and imported into ledfx.audio
+# good to have it all in one place (and avoids circular imports)
+# I've forced fft to use mic rate of 30000Hz even if mic is actually ~40000Hz.
+# This increases frequency resolution massively, especially noticable for bass
+# where frequency differs by only 10s of Hz
+
+FFT_SIZE = 2048
+MIC_RATE = 30000
+MAX_FREQ = MIC_RATE // 2
+MIN_FREQ = 20
+MEL_MAX_FREQS = [350, 2000, MAX_FREQ]
 
 FrequencyRange = namedtuple("FrequencyRange", "min,max")
 
@@ -30,10 +41,14 @@ FREQUENCY_RANGES = {
     "High Frequency (6kHz-24kHz)": FrequencyRange(6000, 24000),
 }
 
+LOWS_RANGE = f"Low ({MIN_FREQ}Hz-{MEL_MAX_FREQS[0]}Hz)"
+MIDS_RANGE = f"Mid ({MEL_MAX_FREQS[0]}Hz-{MEL_MAX_FREQS[1]}Hz)"
+HIGH_RANGE = f"High ({MEL_MAX_FREQS[1]}Hz-{MEL_MAX_FREQS[2]}Hz)"
+
 FREQUENCY_RANGES_SIMPLE = {
-    "Low (1-250Hz)": FrequencyRange(1, 250),
-    "Mid (250Hz-4kHz)": FrequencyRange(250, 4000),
-    "High (4kHz-24kHz)": FrequencyRange(4000, 24000),
+    LOWS_RANGE: FrequencyRange(MIN_FREQ, MEL_MAX_FREQS[0]),
+    MIDS_RANGE: FrequencyRange(MEL_MAX_FREQS[0], MEL_MAX_FREQS[1]),
+    HIGH_RANGE: FrequencyRange(MEL_MAX_FREQS[1], MEL_MAX_FREQS[2]),
 }
 
 _LOGGER = logging.getLogger(__name__)
@@ -50,18 +65,6 @@ MELBANK_COEFFS_TYPES = (
     "fixed",
     "fixed_simple",
 )
-
-# Since fft size and mic rate are tightly linked to melbank resolution,
-# they're defined here and imported into ledfx.audio
-# good to have it all in one place (and avoids circular imports)
-# I've forced fft to use mic rate of 20000Hz even if mic is actually ~40000Hz.
-# This increases frequency resolution massively, especially noticable for bass
-# where frequency differs by only 10s of Hz
-
-FFT_SIZE = 2048
-MIC_RATE = 20000
-MAX_FREQ = MIC_RATE // 2
-MIN_FREQ = 20
 
 
 class Melbank:
@@ -80,8 +83,8 @@ class Melbank:
                 vol.Coerce(int), vol.Range(MIN_FREQ, MAX_FREQ)
             ),
             vol.Optional("min_volume", default=-70.0): float,
-            vol.Optional("peak_isolation", default=0.4): float,
-            vol.Optional("coeffs_type", default="matt_mel"): vol.In(
+            vol.Optional("peak_isolation", default=0.5): float,
+            vol.Optional("coeffs_type", default="scott_mel"): vol.In(
                 MELBANK_COEFFS_TYPES
             ),
             vol.Optional("pre_emphasis", default=1.5): float,
@@ -247,10 +250,10 @@ class Melbank:
         if self._config["coeffs_type"] == "matt_mel":
 
             def hertz_to_matt(freq):
-                return 3700.0 * log(1 + (freq / 200.0), 13)
+                return 3700.0 * log(1 + (freq / 230.0), 12)
 
             def matt_to_hertz(matt):
-                return 200.0 * (13 ** (matt / 3700.0)) - 200.0
+                return 230.0 * (12 ** (matt / 3700.0)) - 230.0
 
             melbank_matt = np.linspace(
                 hertz_to_matt(self._config["min_frequency"]),
@@ -326,9 +329,10 @@ class Melbank:
         # Normalize the filterbank triangles to a consistent height, the
         # default coeffs (for types other than legacy) will be normalized
         # by the triangles area which results in an uneven melbank
-        if (
-            self._config["coeffs_type"] != "scott"
-            and self._config["coeffs_type"] == "scott_mel"
+        if self._config["coeffs_type"] not in (
+            "scott",
+            "scott_mel",
+            "matt_mel",
         ):
             coeffs = self.filterbank.get_coeffs()
             coeffs /= np.max(coeffs, axis=-1)[:, None]
@@ -339,17 +343,17 @@ class Melbank:
         for i in range(0, len(self.melbank_frequencies)):
             if (
                 self.melbank_frequencies[i]
-                < FREQUENCY_RANGES_SIMPLE["Low (1-250Hz)"].max
+                < FREQUENCY_RANGES_SIMPLE[LOWS_RANGE].max
             ):
                 self.lows_index = i + 1
             elif (
                 self.melbank_frequencies[i]
-                < FREQUENCY_RANGES_SIMPLE["Mid (250Hz-4kHz)"].max
+                < FREQUENCY_RANGES_SIMPLE[MIDS_RANGE].max
             ):
                 self.mids_index = i + 1
             elif (
                 self.melbank_frequencies[i]
-                < FREQUENCY_RANGES_SIMPLE["High (4kHz-24kHz)"].max
+                < FREQUENCY_RANGES_SIMPLE[HIGH_RANGE].max
             ):
                 self.highs_index = i + 1
 
@@ -373,7 +377,7 @@ class Melbank:
         """
 
         # Compute the filterbank from the frequency information.
-        frequency_domain.norm *= self.pre_emphasis
+        # frequency_domain.norm *= self.pre_emphasis
         filter_banks[:] = self.filterbank(frequency_domain)
         # adjustable power (peak isolation) based on parameter a (0-1)
         # a=0    -> linear response (filter bank value maps to itself)
@@ -413,8 +417,8 @@ class Melbanks:
             # melbank 1: [--------------]
             # melbank 2: [------------------------------]
             # melbank 3: [-------------------------------------------------]
-            vol.Optional("max_frequencies", default=[350, 2000, 10000]): [
-                vol.All(vol.Coerce(int), vol.Range(0, 10000))
+            vol.Optional("max_frequencies", default=MEL_MAX_FREQS): [
+                vol.All(vol.Coerce(int), vol.Range(0, MAX_FREQ))
             ],
             vol.Optional("min_frequency", default=MIN_FREQ): vol.All(
                 vol.Coerce(int), vol.Range(0, MAX_FREQ)

@@ -1,6 +1,6 @@
 import logging
 import time
-from collections import deque, namedtuple
+from collections import deque
 from functools import cache, cached_property, lru_cache
 
 import aubio
@@ -14,25 +14,6 @@ from ledfx.effects.melbank import FFT_SIZE, MIC_RATE, Melbanks
 from ledfx.events import GraphUpdateEvent
 
 _LOGGER = logging.getLogger(__name__)
-
-FrequencyRange = namedtuple("FrequencyRange", "min,max")
-
-FREQUENCY_RANGES = {
-    "Ultra Low (1-20Hz)": FrequencyRange(1, 20),
-    "Sub Bass (20-60Hz)": FrequencyRange(20, 60),
-    "Bass (60-250Hz)": FrequencyRange(60, 250),
-    "Low Midrange (250-500Hz)": FrequencyRange(250, 500),
-    "Midrange (500Hz-2kHz)": FrequencyRange(500, 2000),
-    "Upper Midrange (2Khz-4kHz)": FrequencyRange(2000, 4000),
-    "High Midrange (4kHz-6kHz)": FrequencyRange(4000, 6000),
-    "High Frequency (6kHz-24kHz)": FrequencyRange(6000, 24000),
-}
-
-FREQUENCY_RANGES_SIMPLE = {
-    "Low (1-250Hz)": FrequencyRange(1, 250),
-    "Mid (250Hz-4kHz)": FrequencyRange(250, 4000),
-    "High (4kHz-24kHz)": FrequencyRange(4000, 24000),
-}
 
 MIN_MIDI = 21
 MAX_MIDI = 108
@@ -135,9 +116,10 @@ class AudioInputSource:
         # )
 
         # Setup a pre-emphasis filter to balance the input volume of lows to highs
-        # self.pre_emphasis = aubio.digital_filter(3)
-        # self.pre_emphasis.set_biquad(0.8485, -1.6971, 0.8485, -1.6966, 0.6977)
-        self.pre_emphasis = None
+        self.pre_emphasis = aubio.digital_filter(3)
+        self.pre_emphasis.set_biquad(0.8485, -1.6971, 0.8485, -1.6966, 0.6977)
+        self.pre_emphasis.set_biquad(0.4947, -0.9895, 0.4947, -0.9894, -0.0103)
+        # self.pre_emphasis = None
 
         freq_domain_length = (self._config["fft_size"] // 2) + 1
 
@@ -663,7 +645,7 @@ class AudioReactiveEffect(Effect):
                 )
                 if x >= self._display.frequency_range.max
             ),
-            len(self.audio.melbanks),
+            len(self.audio.melbanks._config["max_frequencies"]),
         )
 
     @cached_property

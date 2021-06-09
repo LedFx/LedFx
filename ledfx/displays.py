@@ -7,7 +7,7 @@ import voluptuous as vol
 import zeroconf
 
 from ledfx.effects import DummyEffect
-from ledfx.effects.audio import FrequencyRange
+from ledfx.effects.melbank import FrequencyRange
 from ledfx.events import (
     DisplayUpdateEvent,
     EffectClearedEvent,
