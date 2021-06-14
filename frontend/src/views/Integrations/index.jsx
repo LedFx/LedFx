@@ -18,6 +18,7 @@ import CardB from '../../components/IntegrationComponents/CardB';
 import Row from '../../components/IntegrationComponents/Row';
 import SpotifyView from '../../components/IntegrationComponents/Spotify';
 //import SpotifyView from '../../components/IntegrationComponents/SpotifyBlade';
+import { getScenes, activateScene } from 'modules/scenes';
 
 function Alert(props) {
     return <MuiAlert elevation={6} variant="filled" {...props} />;
@@ -37,6 +38,10 @@ const IntegrationsView = () => {
         dispatch(getAsyncIntegrations());
     }, [dispatch]);
 
+    useEffect(() => {
+        dispatch(getScenes());
+    }, [dispatch]);
+    
     return (
         <><Grid container spacing={2}>
             <Grid item xs={12} md={12}>

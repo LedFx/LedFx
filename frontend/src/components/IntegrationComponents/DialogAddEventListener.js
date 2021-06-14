@@ -19,13 +19,6 @@ import { Slider, Switch } from '@material-ui/core';
 import FormHelperText from '@material-ui/core/FormHelperText';
 import ThisDropDown from './DialogAddEventListnerDropDown';
 import {createQlcListener} from 'modules/qlc';
-import { getScenes, activateScene } from 'modules/scenes';
-//import * as integrationsProxies from 'proxies/integrations';
-
-//To Do: 
-        //useEffect(() => {
-        //getScenes();
-        //}, []);
         
 function ConfirmationDialogRaw(props) {
     const { onClose, value: valueProp, open, ...other } = props;

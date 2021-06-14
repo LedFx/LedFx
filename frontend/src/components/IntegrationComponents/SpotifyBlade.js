@@ -1,11 +1,11 @@
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import Button from '@material-ui/core/Button';
 import pkceChallenge from 'pkce-challenge';
 import Cookies from 'universal-cookie/es6';
 import { Grid, Typography } from '@material-ui/core';
 import { checkCookiesForTokens, finishAuth, refreshAuth} from 'modules/spotify'
-import SpotifyPlayer from 'components/SpotifyPlayer';
-import TriggersList from 'components/TriggersList';
+//import SpotifyPlayer from 'components/SpotifyPlayer';
+//import TriggersList from 'components/TriggersList';
 import { useEffect } from 'react';
 
 const SpotifyView = (props)=> {
@@ -36,13 +36,13 @@ const SpotifyView = (props)=> {
             finishAuth()
         }
         checkCookiesForTokens()     
-    }, [])    
+    }, []) 
     
     return (
         <Grid container justify='center' alignContent='center' style={{height: '10%'}}>
             {!spotify.accessToken && !spotify.refreshToken ? 
             <Button variant='contained' color="primary" onClick={() => beginAuth()}>
-                <Typography>1Connect to Spotify</Typography>
+                <Typography>Connect to Spotify</Typography>
             </Button> 
             : 
                 !spotify.accessToken && spotify.refreshToken ? 
@@ -50,10 +50,7 @@ const SpotifyView = (props)=> {
                     <Typography>Reconnect to Spotify</Typography>
                 </Button>
                 : 
-                <div style={{width: '100%'}}>
-                    <SpotifyPlayer />
-                    <TriggersList />
-                </div>
+                ''
             }
         </Grid>
     );
