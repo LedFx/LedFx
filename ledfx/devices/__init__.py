@@ -113,34 +113,6 @@ class Device(BaseRegistry):
             )
             return
 
-        # # This looks horrid but it seems to work.
-        # if (
-        #     self._ledfx.audio is not None
-        #     and self._ledfx.audio._volume == 0
-        #     and self._silence_start is None
-        # ):
-        #     self._silence_start = time.time()
-        #     self._silence_timeout = self._silence_start + float(
-        #         self._config["silence_timeout"]
-        #     )
-        # elif self._ledfx.audio is not None and self._ledfx.audio._volume != 0:
-        #     self._silence_start = None
-        # if (
-        #     self._silence_start is not None
-        #     and self._config["silence_timeout"] > 0
-        # ):
-        #     if time.time() >= self._silence_timeout:
-        #         _LOGGER.info(
-        #             f"Inactivity Timeout Reached. Deactivating {self._config['name']}"
-        #         )
-        #         for display in self._displays_objs:
-        #             display.clear_effect()
-        #             display.deactivate_segments()
-        #         self.deactivate()
-        #         self._silence_start = None
-        #         self._silence_timeout = None
-        #         return
-
         for pixels, start, end in data:
             self._pixels[start : end + 1] = pixels
 

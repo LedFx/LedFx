@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import sys
+import time
 import warnings
 import webbrowser
 from concurrent.futures import ThreadPoolExecutor
@@ -9,7 +10,12 @@ from ledfx.config import load_config, save_config
 from ledfx.devices import Devices
 from ledfx.displays import Displays
 from ledfx.effects import Effects
-from ledfx.events import Events, LedFxShutdownEvent
+from ledfx.events import (
+    Event,
+    Events,
+    LedFxShutdownEvent,
+    VisualisationUpdateEvent,
+)
 from ledfx.http_manager import HttpServer
 from ledfx.integrations import Integrations
 from ledfx.presets import ledfx_presets
@@ -48,6 +54,7 @@ class LedFxCore:
 
         self.setup_logqueue()
         self.events = Events(self)
+        self.setup_visualisation_events()
         self.http = HttpServer(ledfx=self, host=host, port=port)
         self.exit_code = None
 
@@ -89,6 +96,46 @@ class LedFxCore:
         self.icon.menu = pystray.Menu(
             pystray.MenuItem("Open", self.open_ui, default=True),
             pystray.MenuItem("Quit Ledfx", self.stop),
+        )
+
+    def setup_visualisation_events(self):
+        """
+        creates event listeners to fire visualisation events at
+        a given rate
+        """
+        min_time_since = 1 / self.config["frontend_fps"]
+        time_since_last = {}
+
+        def handle_visualisation_update(event):
+            is_device = event.event_type == Event.DEVICE_UPDATE
+            time_now = time.time()
+
+            if is_device:
+                vis_id = getattr(event, "device_id")
+            else:
+                vis_id = getattr(event, "display_id")
+
+            try:
+                time_since = time_now - time_since_last[vis_id]
+                if time_since < min_time_since:
+                    return
+            except KeyError:
+                pass
+
+            time_since_last[vis_id] = time_now
+
+            self.events.fire_event(
+                VisualisationUpdateEvent(is_device, vis_id, event.pixels)
+            )
+
+        self.events.add_listener(
+            handle_visualisation_update,
+            Event.DISPLAY_UPDATE,
+        )
+
+        self.events.add_listener(
+            handle_visualisation_update,
+            Event.DEVICE_UPDATE,
         )
 
     def setup_logqueue(self):

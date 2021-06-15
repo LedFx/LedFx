@@ -12,6 +12,7 @@ class Event:
     LEDFX_SHUTDOWN = "shutdown"
     DEVICE_UPDATE = "device_update"
     DISPLAY_UPDATE = "display_update"
+    VISUALISATION_UPDATE = "visualisation_update"
     GRAPH_UPDATE = "graph_update"
     EFFECT_SET = "effect_set"
     EFFECT_CLEARED = "effect_cleared"
@@ -55,6 +56,22 @@ class GraphUpdateEvent(Event):
         self.graph_id = graph_id
         self.melbank = melbank.tolist()
         self.frequencies = frequencies.tolist()
+
+
+class VisualisationUpdateEvent(Event):
+    """Event that encompasses DeviceUpdateEvent and DisplayUpdateEvent
+    used to send pixel data to frontend at a constant rate"""
+
+    def __init__(
+        self,
+        is_device: bool,  # true if device, false if display
+        vis_id: str,  # id of device/display
+        pixels: np.ndarray,
+    ):
+        super().__init__(Event.VISUALISATION_UPDATE)
+        self.is_device = is_device
+        self.vis_id = vis_id
+        self.pixels = pixels
 
 
 class EffectSetEvent(Event):
