@@ -209,7 +209,7 @@ class WebsocketConnection:
     @websocket_handler("unsubscribe_event")
     def unsubscribe_event_handler(self, message):
 
-        subscription_id = message["subscription_id"]
+        subscription_id = message["id"]
 
         _LOGGER.info(
             "Websocket unsubscribing from event {}".format(
