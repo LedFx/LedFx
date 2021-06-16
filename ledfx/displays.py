@@ -1,5 +1,6 @@
 # import asyncio
 import logging
+import time
 from functools import cached_property, lru_cache
 
 import numpy as np
@@ -129,7 +130,7 @@ class Display:
         self.SEGMENTS_SCHEMA = vol.Schema([self.validate_segment])
 
     def __del__(self):
-        self.deactivate()
+        self.active = False
 
     def _valid_id(self, id):
         device = self._ledfx.devices.get(id)
@@ -262,8 +263,7 @@ class Display:
                 EffectSetEvent(self._active_effect.name)
             )
 
-        if not self._active:
-            self.activate()
+        self.active = True
 
     def transition_to_active(self):
         self._active_effect = self._transition_effect
@@ -310,7 +310,7 @@ class Display:
                 DisplayUpdateEvent(self.id, self.assembled_frame)
             )
 
-            self.deactivate()
+            self._active = False
 
     @property
     def active_effect(self):
@@ -319,28 +319,27 @@ class Display:
     def process_active_effect(self):
         # Assemble the frame if necessary, if nothing changed just sleep
         self.assembled_frame = self.assemble_frame()
-        if self.assembled_frame is not None:
-            if not self._paused:
-                if not self._config["preview_only"]:
-                    self.flush(self.assembled_frame)
+        if self.assembled_frame is not None and not self._paused:
+            if not self._config["preview_only"]:
+                self.flush(self.assembled_frame)
 
-                def trigger_display_update_event():
-                    self._ledfx.events.fire_event(
-                        DisplayUpdateEvent(self.id, self.assembled_frame)
-                    )
-
-                self._ledfx.loop.call_soon_threadsafe(
-                    trigger_display_update_event
+            def trigger_display_update_event():
+                self._ledfx.events.fire_event(
+                    DisplayUpdateEvent(self.id, self.assembled_frame)
                 )
+
+            self._ledfx.loop.call_soon_threadsafe(trigger_display_update_event)
 
     def thread_function(self):
         if self._active:
-            sleep_interval = 1 / self.refresh_rate
-            self._thread_clock += sleep_interval
-
+            start_time = time.time()
             self.process_active_effect()
+            render_latency = time.time() - start_time
 
-            self._ledfx.loop.call_at(self._thread_clock, self.thread_function)
+            self._ledfx.loop.call_later(
+                1 / self.refresh_rate - render_latency, self.thread_function
+            )
+            # print(f"Display processing latency: {render_latency}")
 
     def assemble_frame(self):
         """
@@ -400,10 +399,9 @@ class Display:
 
         _LOGGER.info(f"Activating display {self.id}")
         if not self._active:
+            self._active = True
             self.activate_segments(self._segments)
-        self._active = True
 
-        self._thread_clock = self._ledfx.loop.time() + 1
         self.thread_function()
 
     def deactivate(self):
@@ -478,12 +476,13 @@ class Display:
         return self._active
 
     @active.setter
-    def active(self, _active):
-        _active = bool(_active)
-        if _active:
+    def active(self, active):
+        active = bool(active)
+        if active and not self._active:
             self.activate()
-        else:
+        if not active and self._active:
             self.deactivate()
+        self._active = active
 
     @property
     def id(self) -> str:
