@@ -35,7 +35,8 @@ class AudioInputSource:
             vol.Optional("sample_rate", default=60): int,
             vol.Optional("mic_rate", default=MIC_RATE): int,
             vol.Optional("fft_size", default=FFT_SIZE): int,
-            vol.Optional("device_index", default=0): int,
+            # vol.Optional("hostapi_idx", default=0): int
+            vol.Optional("device_index", default=-1): int,
             vol.Optional("min_volume", default=0.2): float,
         },
         extra=vol.ALLOW_EXTRA,
@@ -62,13 +63,29 @@ class AudioInputSource:
                 _LOGGER.critical(f"Error: {Error}. Shutting down.")
                 self._ledfx.stop()
 
-        # Setup a pre-emphasis filter to help balance the highs
         # Enumerate all of the input devices and find the one matching the
-        # configured device index
+        # configured host api and device name
         hostapis = self._audio.query_hostapis()
-        default_api = self._audio.default.hostapi
         devices = self._audio.query_devices()
-        default_device = self._audio.default.device[0]
+        default_api = self._audio.default.hostapi
+        default_device = hostapis[default_api]["default_input_device"]
+        device_idx = self._config["device_index"]
+
+        if device_idx < 0:
+            # _LOGGER.warning(f"Audio device not set. Reverting to default input device.")
+            device_idx = default_device
+
+        if device_idx >= len(devices):
+            _LOGGER.warning(
+                f"Invalid audio device index: {device_idx}. Reverting to default input device."
+            )
+            device_idx = default_device
+
+        if devices[device_idx]["max_input_channels"] == 0:
+            _LOGGER.warning(
+                f"Audio device {devices[device_idx]['name']} has no input channels. Reverting to default input device."
+            )
+            device_idx = default_device
 
         # Show device and api info in logger
         _LOGGER.info("Audio Input Devices:")
@@ -76,30 +93,20 @@ class AudioInputSource:
             _LOGGER.info(
                 "Host API: {} {}".format(
                     api["name"],
-                    "[DEFAULT] [SELECTED]" if api_idx == default_api else "",
+                    "[DEFAULT]" if api_idx == default_api else "",
                 )
             )
-            for device_idx in api["devices"]:
-                device = devices[device_idx]
+            for idx in api["devices"]:
+                device = devices[idx]
                 if device["max_input_channels"] > 0:
                     _LOGGER.info(
-                        "    [{}] {} ({} Hz) {} {}".format(
-                            device_idx,
+                        "    [{}] {} {} {}".format(
+                            idx,
                             device["name"],
-                            device["default_samplerate"],
-                            "[DEFAULT]"
-                            if device_idx == default_device
-                            else "",
-                            "[SELECTED]"
-                            if device_idx == self._config["device_index"]
-                            else "",
+                            "[DEFAULT]" if idx == default_device else "",
+                            "[SELECTED]" if idx == device_idx else "",
                         )
                     )
-                    # # automatically configure sample rate
-                    # if device_idx == self._config["device_index"]:
-                    #     self._config["mic_rate"] = int(
-                    #         device["default_samplerate"]
-                    #     )
 
         # old, do not use
         # self.pre_emphasis.set_biquad(1., -self._config['pre_emphasis'], 0, 0, 0)
@@ -117,10 +124,9 @@ class AudioInputSource:
 
         # Setup a pre-emphasis filter to balance the input volume of lows to highs
         self.pre_emphasis = aubio.digital_filter(3)
-        self.pre_emphasis.set_biquad(0.8485, -1.6971, 0.8485, -1.6966, 0.6977)
-        self.pre_emphasis.set_biquad(0.4947, -0.9895, 0.4947, -0.9894, -0.0103)
-        # self.pre_emphasis = None
-
+        # self.pre_emphasis.set_biquad(0.4947, -0.9895, 0.4947, -0.9894, -0.0103)
+        self.pre_emphasis.set_biquad(0.6986, -1.3973, 0.6986, -1.3873, 0.4074)
+        # self.pre_emphasis = None,
         freq_domain_length = (self._config["fft_size"] // 2) + 1
 
         # Setup the phase vocoder to perform a windowed FFT
@@ -139,10 +145,11 @@ class AudioInputSource:
         try:
             self._stream = self._audio.InputStream(
                 samplerate=self._config["mic_rate"],
-                device=self._config["device_index"],
+                device=device_idx,
                 channels=1,
                 callback=self._audio_sample_callback,
                 dtype=np.float32,
+                latency="low",
                 blocksize=self._config["mic_rate"]
                 // self._config["sample_rate"],
             )
@@ -179,13 +186,15 @@ class AudioInputSource:
 
     def _audio_sample_callback(self, in_data, frame_count, time_info, status):
         """Callback for when a new audio sample is acquired"""
+        time_start = time.time()
+
         self._raw_audio_sample = np.frombuffer(in_data, dtype=np.float32)
 
         self.pre_process_audio()
         self._invalidate_caches()
         self._invoke_callbacks()
-
-        return self._raw_audio_sample
+        # print(f"Core Audio Processing Latency in {time.time()-time_start}")
+        # return self._raw_audio_sample
 
     def _invoke_callbacks(self):
         """Notifies all clients of the new data"""
@@ -203,12 +212,14 @@ class AudioInputSource:
         should be done here. Everything else should be deferred until
         queried by an effect.
         """
+        # clean up nans that have been mysteriously appearing..
+        np.nan_to_num(
+            self._raw_audio_sample, copy=False, nan=0.0, posinf=0.0, neginf=0.0
+        )
 
         # Calculate the current volume for silence detection
         self._volume = 1 + aubio.db_spl(self._raw_audio_sample) / 100
         self._volume = max(0, min(1, self._volume))
-        # Setting volume to 0 if volume <= 90 seems to work.
-        # Might need to do some fiddling with different noise floors if there's any future issues
         self._volume_filter.update(self._volume)
 
         # Calculate the frequency domain from the filtered data and
@@ -707,7 +718,6 @@ class AudioReactiveEffect(Effect):
             melbank = self.audio.melbanks.melbanks[self._selected_melbank][
                 self._melbank_min_idx : self._melbank_max_idx
             ]
-
         if size and (self._input_mel_length != size):
             return np.interp(*self._melbank_interp_linspaces(size), melbank)
         else:
