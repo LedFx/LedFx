@@ -229,8 +229,11 @@ def update_ledfx():
     def log_status_info(info):
         total = info.get("total")
         downloaded = info.get("downloaded")
-        status = info.get("status")
-        _LOGGER.info(f"{downloaded}, {total}, {status}")
+        percent_complete = info.get("percent_complete")
+        time = info.get("time")
+        _LOGGER.info(
+            f"{downloaded} of {total} [{percent_complete} complete, {time} remaining]"
+        )
 
     class ClientConfig:
         PUBLIC_KEY = "Txce3TE9BUixsBtqzDba6V5vBYltt/0pw5oKL8ueCDg"
