@@ -223,16 +223,23 @@ def installed_via_pip():
         return False
 
 
-def update_ledfx():
+def update_ledfx(icon=None):
     # initialize & refresh in one update, check client
+
+    def notify(msg):
+        if icon and icon.HAS_NOTIFICATION:
+            icon.remove_notification()
+            icon.notify(msg)
+        _LOGGER.log(PYUPDATERLOGLEVEL, msg)
 
     def log_status_info(info):
         total = info.get("total")
         downloaded = info.get("downloaded")
         percent_complete = info.get("percent_complete")
         time = info.get("time")
-        _LOGGER.info(
-            f"{downloaded} of {total} [{percent_complete} complete, {time} remaining]"
+        _LOGGER.log(
+            PYUPDATERLOGLEVEL,
+            f"{downloaded} of {total} [{percent_complete} complete, {time} remaining]",
         )
 
     class ClientConfig:
@@ -254,17 +261,16 @@ def update_ledfx():
     if ledfx_update is not None:
         client.add_progress_hook(log_status_info)
         _LOGGER.log(PYUPDATERLOGLEVEL, "Update found!")
-        _LOGGER.log(PYUPDATERLOGLEVEL, "Downloading update, please wait...")
+        notify(
+            "Downloading update, please wait... LedFx will restart when complete."
+        )
         ledfx_update.download()
         # Install and restart
         if ledfx_update.is_downloaded():
-            _LOGGER.log(
-                PYUPDATERLOGLEVEL,
-                "Update downloaded, extracting and restarting...",
-            )
+            notify("Download complete. Restarting LedFx...")
             ledfx_update.extract_restart()
         else:
-            _LOGGER.error("Unable to download update.")
+            notify("Unable to download update.")
     else:
         # No Updates, into main we go
         _LOGGER.log(
@@ -285,20 +291,15 @@ def main():
         _LOGGER.warning("Steering LedFx into a brick wall")
         div_by_zero = 1 / 0
 
-    if args.offline_mode is False and currently_frozen():
-
+    if currently_frozen() or installed_via_pip():
         warnings.filterwarnings("ignore", category=DeprecationWarning)
-        update_ledfx()
 
     if args.offline_mode:
         _LOGGER.warning(
             "Offline Mode Enabled - Please check for updates regularly."
         )
-    if args.offline_mode is False:
+    else:
         import ledfx.sentry_config  # noqa: F401
-
-    if not currently_frozen() and installed_via_pip():
-        warnings.filterwarnings("ignore", category=DeprecationWarning)
 
     if args.tray or currently_frozen():
         import os
@@ -307,9 +308,9 @@ def main():
         try:
             import pystray
         except Exception as Error:
-            _LOGGER.critical(
-                f"Error: Unable to display tray icon. Shutting down. Error: {Error}"
-            )
+            msg = f"Error: Unable to display tray icon. Shutting down. Error: {Error}"
+            _LOGGER.critical(msg)
+            raise Exception(msg)
             sys.exit(0)
 
         from PIL import Image
@@ -326,6 +327,13 @@ def main():
             "LedFx", icon=Image.open(icon_location), title="LedFx"
         )
         icon.visible = True
+    else:
+        icon = None
+
+    if not args.offline_mode and currently_frozen():
+        update_ledfx(icon)
+
+    if icon:
         icon.run(setup=entry_point)
     else:
         entry_point()
