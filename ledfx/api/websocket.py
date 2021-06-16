@@ -211,10 +211,6 @@ class WebsocketConnection:
 
         subscription_id = message["id"]
 
-        _LOGGER.info(
-            "Websocket unsubscribing from event {}".format(
-                message.get("event_type")
-            )
-        )
+        _LOGGER.info(f"Websocket unsubscribing event id {subscription_id}")
         if subscription_id in self._listeners:
             self._listeners.pop(subscription_id)()
