@@ -224,8 +224,13 @@ def installed_via_pip():
 
 
 def update_ledfx():
-
     # initialize & refresh in one update, check client
+
+    def log_status_info(info):
+        total = info.get("total")
+        downloaded = info.get("downloaded")
+        status = info.get("status")
+        _LOGGER.info(f"{downloaded}, {total}, {status}")
 
     class ClientConfig:
         PUBLIC_KEY = "Txce3TE9BUixsBtqzDba6V5vBYltt/0pw5oKL8ueCDg"
@@ -241,8 +246,10 @@ def update_ledfx():
     # If an update is found, an update object will be returned
     # If no updates are available, None will be returned
     ledfx_update = client.update_check(PROJECT_NAME, PROJECT_VERSION)
+
     # Download the update
     if ledfx_update is not None:
+        client.add_progress_hook(log_status_info)
         _LOGGER.log(PYUPDATERLOGLEVEL, "Update found!")
         _LOGGER.log(PYUPDATERLOGLEVEL, "Downloading update, please wait...")
         ledfx_update.download()
@@ -300,7 +307,7 @@ def main():
             _LOGGER.critical(
                 f"Error: Unable to display tray icon. Shutting down. Error: {Error}"
             )
-            sys.exit(main())
+            sys.exit(0)
 
         from PIL import Image
 
