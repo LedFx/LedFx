@@ -19,10 +19,10 @@ from ledfx.events import GraphUpdateEvent
 # they're defined here and imported into ledfx.audio
 # good to have it all in one place (and avoids circular imports)
 # I've forced fft to use mic rate of 30000Hz even if mic is actually ~40000Hz.
-# This increases frequency resolution massively, especially noticable for bass
-# where frequency differs by only 10s of Hz
+# This increases frequency resolution a lot and reduces latency a bit,
+# improved resolution is noticable for bass, where frequency differs by only 10s of Hz
 
-FFT_SIZE = 2048
+FFT_SIZE = 4096
 MIC_RATE = 30000
 MAX_FREQ = MIC_RATE // 2
 MIN_FREQ = 20
@@ -83,8 +83,8 @@ class Melbank:
                 vol.Coerce(int), vol.Range(MIN_FREQ, MAX_FREQ)
             ),
             vol.Optional("min_volume", default=-70.0): float,
-            vol.Optional("peak_isolation", default=0.5): float,
-            vol.Optional("coeffs_type", default="scott_mel"): vol.In(
+            vol.Optional("peak_isolation", default=0.6): float,
+            vol.Optional("coeffs_type", default="matt_mel"): vol.In(
                 MELBANK_COEFFS_TYPES
             ),
             vol.Optional("pre_emphasis", default=1.5): float,
@@ -359,15 +359,22 @@ class Melbank:
 
         # Build up some of the common filters
         self.mel_gain = ExpFilter(alpha_decay=0.01, alpha_rise=0.99)
-        self.mel_smoothing = ExpFilter(alpha_decay=0.5, alpha_rise=0.99)
+        self.mel_smoothing = ExpFilter(alpha_decay=0.7, alpha_rise=0.99)
         self.common_filter = ExpFilter(alpha_decay=0.99, alpha_rise=0.01)
         self.diff_filter = ExpFilter(alpha_decay=0.15, alpha_rise=0.99)
 
         # the simplest pre emphasis. clean and fast.
-        self.pre_emphasis = np.arange(FFT_SIZE // 2 + 1) + 1
-        self.pre_emphasis = np.log(self.pre_emphasis) / np.log(
-            self._config["pre_emphasis"]
-        )
+        if self._config["pre_emphasis"] != 0:
+            self.pre_emphasis = np.arange(self._config["samples"])
+            self.pre_emphasis = np.divide(
+                self.pre_emphasis, self._config["max_frequency"]
+            )
+            self.pre_emphasis += 1
+            self.pre_emphasis = np.log(self.pre_emphasis) / np.log(
+                self._config["pre_emphasis"]
+            )
+        else:
+            self.pre_emphasis = np.ones(self._config["samples"])
 
     def __call__(self, frequency_domain, filter_banks, filter_banks_filtered):
         """
@@ -377,7 +384,6 @@ class Melbank:
         """
 
         # Compute the filterbank from the frequency information.
-        # frequency_domain.norm *= self.pre_emphasis
         filter_banks[:] = self.filterbank(frequency_domain)
         # adjustable power (peak isolation) based on parameter a (0-1)
         # a=0    -> linear response (filter bank value maps to itself)
@@ -385,11 +391,13 @@ class Melbank:
         # a=0.6  -> roughly equivalent to filter_banks ** 3.0
         # a=1    -> no response (infinite power as filter bank value approaches 1)
         # https://www.desmos.com/calculator/xxa2l9radu
+
         np.power(
             filter_banks,
             np.tan(0.5 * np.pi * (self._config["peak_isolation"] + 1) / 2),
             out=filter_banks,
         )
+        filter_banks[:] *= self.pre_emphasis
 
         self.mel_gain.update(np.max(smooth(filter_banks, sigma=1.0)))
         filter_banks /= self.mel_gain.value
@@ -428,7 +436,7 @@ class Melbanks:
     )
 
     DEFAULT_MELBANK_CONFIG = Melbank.MELBANK_CONFIG_SCHEMA({})
-    MELBANK_PRE_EMPHASIS = (1.1, 1.9, 2.0)
+    MELBANK_PRE_EMPHASIS = (0.0, 0.0, 0.0)  # 1.2, 2.0)
 
     def __init__(self, ledfx, audio, config):
         self._ledfx = ledfx
