@@ -63,6 +63,7 @@ CORE_CONFIG_SCHEMA = vol.Schema(
         vol.Optional("devices", default=[]): list,
         vol.Optional("displays", default=[]): list,
         vol.Optional("audio", default={}): dict,
+        vol.Optional("melbanks", default={}): dict,
         vol.Optional("ledfx_presets", default={}): dict,
         vol.Optional("user_presets", default={}): dict,
         vol.Optional("scenes", default={}): dict,
