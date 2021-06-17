@@ -367,7 +367,7 @@ class AudioAnalysisSource(AudioInputSource):
             self.freq_mel_indexes.append(
                 next(
                     (
-                        i - 1
+                        i
                         for i, f in enumerate(
                             self.melbanks.melbank_processors[
                                 2
@@ -543,7 +543,6 @@ class AudioAnalysisSource(AudioInputSource):
             melbank[self.freq_mel_indexes[2] : self.freq_mel_indexes[3]]
         )
         np.minimum(self.freq_power_raw, 1, out=self.freq_power_raw)
-
         self.freq_power_filter.update(self.freq_power_raw)
 
     def get_freq_power(self, i, filtered=True):
