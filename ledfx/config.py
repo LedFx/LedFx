@@ -32,7 +32,12 @@ def parse_default_wled_setting(setting):
 
 # creates validators for the different wled preferences
 def wled_validator_generator(data_type):
-    return vol.Schema({"setting": data_type, "user_enabled": bool})
+    return vol.Schema(
+        {
+            vol.Optional("setting"): data_type,
+            vol.Optional("user_enabled"): bool,
+        }
+    )
 
 
 # creates the vol.optionals using the above two functions
@@ -51,8 +56,7 @@ _default_wled_settings = dict(
 
 # generate the config schema to validate changes
 WLED_CONFIG_SCHEMA = vol.Schema(
-    dict(map(wled_optional_generator, _default_wled_settings.items())),
-    required=True,
+    dict(map(wled_optional_generator, _default_wled_settings.items()))
 )
 
 CORE_CONFIG_SCHEMA = vol.Schema(
