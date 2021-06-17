@@ -20,7 +20,8 @@ class MelbanksConfigEndpoint(RestEndpoint):
 
     async def get(self) -> web.Response:
         response = {
-            "config": convertToJsonSchema(Melbanks.CONFIG_SCHEMA),
+            "config": self._ledfx.config.get("melbanks", {}),
+            "schema": convertToJsonSchema(Melbanks.CONFIG_SCHEMA),
             "permitted_keys": self.PERMITTED_KEYS,
         }
 
