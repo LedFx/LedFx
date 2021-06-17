@@ -383,11 +383,14 @@ class AudioAnalysisSource(AudioInputSource):
 
         # volume based beat detection
         self.beat_max_mel_index = next(
-            i - 1
-            for i, f in enumerate(
-                self.melbanks.melbank_processors[0].melbank_frequencies
-            )
-            if f > self.freq_max_mels[0]
+            (
+                i - 1
+                for i, f in enumerate(
+                    self.melbanks.melbank_processors[0].melbank_frequencies
+                )
+                if f > self.freq_max_mels[0]
+            ),
+            self.melbanks.melbank_processors[0].melbank_frequencies[-1],
         )
 
         self.beat_min_percent_diff = 0.7
