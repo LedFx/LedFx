@@ -15,8 +15,10 @@ export function restart() {
 export function getSystemConfig() {
     return api.get('/config');
 }
+
 export function deleteSystemConfig() {
     return api.delete('/config');
+
 }
 export function importSystemConfig(config) {
     return api.post('/config', config);

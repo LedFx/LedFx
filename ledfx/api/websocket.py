@@ -56,9 +56,7 @@ class WebsocketConnection:
         self._listeners = {}
         self._receiver_task = None
         self._sender_task = None
-        self._sender_queue = asyncio.Queue(
-            maxsize=MAX_PENDING_MESSAGES, loop=ledfx.loop
-        )
+        self._sender_queue = asyncio.Queue(maxsize=MAX_PENDING_MESSAGES)
 
     def close(self):
         """Closes the websocket connection"""

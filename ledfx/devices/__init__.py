@@ -210,7 +210,7 @@ class Device(BaseRegistry):
     def displays(self):
         return list(segment[0] for segment in self._segments)
 
-    def add_segment(self, display_id, start_pixel, end_pixel):
+    def add_segment(self, display_id, start_pixel, end_pixel, force=False):
         # make sure this segment doesn't overlap with any others
         for _display_id, segment_start, segment_end in self._segments:
             if display_id == _display_id:
@@ -222,12 +222,13 @@ class Device(BaseRegistry):
             )
             if overlap > 0:
                 display_name = self._ledfx.displays.get(display_id).name
-                blocking_display_name = self._ledfx.displays.get(
-                    _display_id
-                ).name
-                msg = f"Failed to activate effect! '{display_name}' overlaps with active device '{blocking_display_name}'"
-                _LOGGER.warning(msg)
-                raise ValueError(msg)
+                blocking_display = self._ledfx.displays.get(_display_id)
+                if force:
+                    blocking_display.deactivate()
+                else:
+                    msg = f"Failed to activate effect! '{display_name}' overlaps with active display '{blocking_display.name}'"
+                    _LOGGER.warning(msg)
+                    raise ValueError(msg)
 
         # if the segment is from a new device, we need to recheck our priority display
         if display_id not in (segment[0] for segment in self._segments):

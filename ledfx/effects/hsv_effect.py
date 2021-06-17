@@ -67,9 +67,8 @@ class HSVEffect(Effect):
         self._dt = 0
         self.hsv_array = None
 
-    def activate(self, pixel_count):
+    def on_activate(self, pixel_count):
         self.hsv_array = np.zeros((pixel_count, 3))
-        super().activate(pixel_count)
 
     def render(self):
         # update the timestep, converting ns to s

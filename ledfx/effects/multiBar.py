@@ -36,18 +36,25 @@ class MultiBarAudioEffect(AudioReactiveEffect, GradientEffect):
         }
     )
 
-    def activate(self, pixel_count):
+    def on_activate(self, pixel_count):
         self.beat_oscillator = 0
         self.beat_now = 0
-        super().activate(pixel_count)
-
-    def config_updated(self, config):
         self.phase = 0
         self.color_idx = 0
 
     def audio_data_updated(self, data):
         # Run linear beat oscillator through easing method
-        self.beat_oscillator, self.beat_now = data.oscillator()
+        self.beat_oscillator, self.beat_now = (
+            data.oscillator(),
+            data.bpm_beat_now(),
+        )
+
+        # Colour change and phase
+        if self.beat_now:
+            self.phase = 1 - self.phase  # flip flop 0->1, 1->0
+            # 8 colours, 4 beats to a bar
+            self.color_idx += self._config["color_step"]
+            self.color_idx = self.color_idx % 1  # loop back to zero
 
     def render(self):
         # Run linear beat oscillator through easing method
@@ -59,13 +66,6 @@ class MultiBarAudioEffect(AudioReactiveEffect, GradientEffect):
             x = -((self.beat_oscillator - 1) ** 2) + 1
         elif self._config["ease_method"] == "linear":
             x = self.beat_oscillator
-
-        # Colour change and phase
-        if self.beat_now:
-            self.phase = 1 - self.phase  # flip flop 0->1, 1->0
-            # 8 colours, 4 beats to a bar
-            self.color_idx += self._config["color_step"]
-            self.color_idx = self.color_idx % 1  # loop back to zero
 
         color_fg = self.get_gradient_color(self.color_idx)
         color_bkg = self.get_gradient_color(

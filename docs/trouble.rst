@@ -30,7 +30,6 @@ Developer Setup Installation - Python venv
     $ .\Scripts\activate.bat
     $ pip install pipwin
     $ pipwin refresh
-    $ pipwin install pyaudio
     $ pipwin install pywin32
     $ python .\Scripts\pywin32_postinstall.py -install
     $ pip install numpy

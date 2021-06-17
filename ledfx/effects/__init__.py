@@ -15,7 +15,7 @@ _LOGGER = logging.getLogger(__name__)
 
 class DummyEffect:
 
-    CONFIG_SCHEMA = vol.Schema({})
+    config = vol.Schema({})
 
     def __init__(self, pixel_count):
         self._pixels = np.zeros((pixel_count, 3))
@@ -192,6 +192,7 @@ class Effect(BaseRegistry):
     _pixels = None
     _config = None
     _active = False
+    _display = None
 
     # Basic effect properties that can be applied to all effects
     CONFIG_SCHEMA = vol.Schema(
@@ -236,10 +237,19 @@ class Effect(BaseRegistry):
         if self._active:
             self.deactivate()
 
-    def activate(self, pixel_count):
+    def activate(self, display):
         """Attaches an output channel to the effect"""
-        self._pixels = np.zeros((pixel_count, 3))
+        self._display = display
+        self._pixels = np.zeros((display.pixel_count, 3))
         self._active = True
+
+        # Iterate all the base classes and check to see if the base
+        # class has an on_activate method. If so, call it
+        valid_classes = list(type(self).__bases__)
+        valid_classes.append(type(self))
+        for base in valid_classes:
+            if hasattr(base, "on_activate"):
+                base.on_activate(self, display.pixel_count)
 
         _LOGGER.info(f"Effect {self.NAME} activated.")
 

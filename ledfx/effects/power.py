@@ -31,16 +31,14 @@ class PowerAudioEffect(AudioReactiveEffect, GradientEffect):
         }
     )
 
-    def activate(self, pixel_count):
+    def on_activate(self, pixel_count):
         self.sparks_overlay = np.zeros((pixel_count, 3))
         self.out = np.zeros((pixel_count, 3))
         self.sparks_decay = 0.75
-        self.onsets = {"lows": None, "mids": None, "high": None}
-        super().activate(pixel_count)
+        self.onset = False
 
     def config_updated(self, config):
         # Create the filters used for the effect
-        self._r_filter = self.create_filter(alpha_decay=0.2, alpha_rise=0.99)
         self._bass_filter = self.create_filter(
             alpha_decay=0.1, alpha_rise=0.99
         )
@@ -48,20 +46,15 @@ class PowerAudioEffect(AudioReactiveEffect, GradientEffect):
 
     def audio_data_updated(self, data):
         # Get onset data
-        self.onsets = data.onset()
+        self.onset = data.onset()
 
-        # Grab the filtered and interpolated melbank data
-        y = data.interpolated_melbank(self.pixel_count, filtered=False)
-        filtered_y = data.interpolated_melbank(self.pixel_count, filtered=True)
-
-        # Grab the filtered difference between the filtered melbank and the
-        # raw melbank.
-        r = self._r_filter.update(y - filtered_y)
+        # Grab the filtered melbank
+        r = self.melbank(filtered=True, size=self.pixel_count)
         # Apply the melbank data to the gradient curve
         self.out = self.apply_gradient(r)
 
         # Get bass power through filter
-        bass = np.max(data.melbank_lows()) * (1 / 5)
+        bass = np.max(data.lows_power(filtered=False))
         bass = self._bass_filter.update(bass)
         # Grab corresponding color
         color = self.get_gradient_color(bass)
@@ -74,16 +67,11 @@ class PowerAudioEffect(AudioReactiveEffect, GradientEffect):
             # Fade existing sparks a little
             self.sparks_overlay *= self.sparks_decay
             # Apply new sparks
-            if self.onsets["high"]:
+            if self.onset:
                 sparks = np.random.choice(
                     self.pixel_count, self.pixel_count // 50
                 )
                 self.sparks_overlay[sparks] = self.sparks_color
-            if self.onsets["mids"]:
-                sparks = np.random.choice(
-                    self.pixel_count, self.pixel_count // 10
-                )
-                self.sparks_overlay[sparks] = self.sparks_color * 1
             # Apply sparks over pixels
             self.out += self.sparks_overlay
 
