@@ -41,6 +41,7 @@ class WebsocketEndpoint(RestEndpoint):
     ENDPOINT_PATH = "/api/websocket"
 
     async def get(self, request) -> web.Response:
+        print(request)
         try:
             return await WebsocketConnection(self._ledfx).handle(request)
         except ConnectionResetError:
@@ -126,8 +127,15 @@ class WebsocketConnection:
     async def handle(self, request):
         """Handle the websocket connection"""
 
-        socket = self._socket = web.WebSocketResponse()
+        socket = self._socket = web.WebSocketResponse(
+            protocols=("http", "https")
+        )
+        print(request.scheme)
+        print(request.protocol)
+        print(socket.can_prepare(request))
         await socket.prepare(request)
+        print(socket.ws_protocol)
+
         _LOGGER.info("Websocket connected.")
 
         self._receiver_task = asyncio.current_task(loop=self._ledfx.loop)
