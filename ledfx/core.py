@@ -6,7 +6,7 @@ import warnings
 import webbrowser
 from concurrent.futures import ThreadPoolExecutor
 
-from ledfx.config import load_config, save_config
+from ledfx.config import get_ssl_certs, load_config, save_config
 from ledfx.devices import Devices
 from ledfx.displays import Displays
 from ledfx.effects import Effects
@@ -32,13 +32,16 @@ if currently_frozen():
 
 
 class LedFxCore:
-    def __init__(self, config_dir, host=None, port=None, icon=None):
+    def __init__(
+        self, config_dir, host=None, port=None, port_s=None, icon=None
+    ):
         self.icon = icon
         self.config_dir = config_dir
         self.config = load_config(config_dir)
         self.config["ledfx_presets"] = ledfx_presets
         host = host if host else self.config["host"]
         port = port if port else self.config["port"]
+        port_s = port_s if port_s else self.config["port_s"]
 
         if sys.platform == "win32":
             self.loop = asyncio.ProactorEventLoop()
@@ -56,7 +59,7 @@ class LedFxCore:
         self.setup_logqueue()
         self.events = Events(self)
         self.setup_visualisation_events()
-        self.http = HttpServer(ledfx=self, host=host, port=port)
+        self.http = HttpServer(ledfx=self, host=host, port=port, port_s=port_s)
         self.exit_code = None
 
     def dev_enabled(self):
@@ -80,7 +83,7 @@ class LedFxCore:
     def open_ui(self):
         # Check if we're binding to all adaptors
         if str(self.config["host"]) == "0.0.0.0":
-            url = f"http://127.0.0.1:{str(self.config['port'])}"
+            url = f"http://127.0.0.1:{str(self.port)}"
         else:
             # If the user has specified an adaptor, launch its address
             url = self.http.base_url
@@ -191,7 +194,7 @@ class LedFxCore:
 
     async def async_start(self, open_ui=False):
         _LOGGER.info("Starting LedFx")
-        await self.http.start()
+        await self.http.start(get_ssl_certs())
         if self.icon is not None:
             if self.icon.HAS_NOTIFICATION:
                 self.icon.notify(

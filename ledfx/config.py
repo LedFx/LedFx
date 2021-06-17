@@ -65,7 +65,8 @@ WLED_CONFIG_SCHEMA = vol.Schema(
 CORE_CONFIG_SCHEMA = vol.Schema(
     {
         vol.Optional("host", default="0.0.0.0"): str,
-        vol.Optional("port", default=8888): int,
+        vol.Optional("port", default=8080): int,
+        vol.Optional("port_s", default=8443): int,
         vol.Optional("dev_mode", default=False): bool,
         vol.Optional("devices", default=[]): list,
         vol.Optional("displays", default=[]): list,
@@ -142,7 +143,7 @@ def get_ssl_certs() -> tuple:
     ssl_dir = os.path.join(get_default_config_directory(), "ssl")
 
     if not os.path.exists(ssl_dir):
-        os.mkdir(ssl_dir)
+        return None
 
     key_path = os.path.join(ssl_dir, PRIVATE_KEY_FILE)
     chain_path = os.path.join(ssl_dir, CHAIN_KEY_FILE)

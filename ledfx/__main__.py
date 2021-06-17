@@ -167,7 +167,15 @@ def parse_args():
         "-p",
         "--port",
         dest="port",
-        help="Web interface port",
+        help="Web interface port (HTTP)",
+        default=None,
+        type=int,
+    )
+    parser.add_argument(
+        "-p_s",
+        "--port_secure",
+        dest="port_s",
+        help="Web interface port (HTTPS)",
         default=None,
         type=int,
     )
@@ -347,7 +355,11 @@ def entry_point(icon=None):
     while exit_code == 4:
         _LOGGER.info("LedFx Core is initializing")
         ledfx = LedFxCore(
-            config_dir=args.config, host=args.host, port=args.port, icon=icon
+            config_dir=args.config,
+            host=args.host,
+            port=args.port,
+            port_s=args.port_s,
+            icon=icon,
         )
 
         if args.performance:

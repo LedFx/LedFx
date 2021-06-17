@@ -9,7 +9,6 @@ from aiohttp import web
 import ledfx_frontend
 import ledfx_frontend_v2
 from ledfx.api import RestApi
-from ledfx.config import get_ssl_certs
 
 try:
     base_path = sys._MEIPASS
@@ -20,7 +19,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class HttpServer:
-    def __init__(self, ledfx, host, port):
+    def __init__(self, ledfx, host, port, port_s):
         """Initialize the HTTP server"""
 
         self.app = web.Application()
@@ -31,6 +30,7 @@ class HttpServer:
         self._ledfx = ledfx
         self.host = host
         self.port = port
+        self.port_s = port_s
 
     def register_routes(self):
 
@@ -85,39 +85,52 @@ class HttpServer:
             path=ledfx_frontend_v2.where() + "/manifest.json", status=200
         )
 
-    async def start(self):
+    async def start(self, ssl_certs=None):
         self.runner = web.AppRunner(self.app)
         await self.runner.setup()
 
-        ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
-        ssl_context.load_cert_chain(*get_ssl_certs())
-
         try:
-            site = web.TCPSite(
-                self.runner, self.host, self.port, ssl_context=ssl_context
-            )
-            await site.start()
-            self.base_url = ("http://{}:{}").format(self.host, self.port)
-            if self.host == "0.0.0.0":
-                self.base_url = ("http://localhost:{}").format(self.port)
-            # web.run_app(self.app, host="localhost", port=8080)
-            print(("Started webinterface at {}").format(self.base_url))
+            await self.start_tcpsite()
+            if ssl_certs:
+                ssl_context = ssl.create_default_context(
+                    ssl.Purpose.CLIENT_AUTH
+                )
+                ssl_context.load_cert_chain(*ssl_certs)
+                await self.start_tcpsite(ssl_context)
         except OSError as error:
-            _LOGGER.error(
-                "Shutting down - Failed to create HTTP server at port %d: %s.",
-                self.port,
-                error,
+            self.handle_start_error(error)
+
+    async def start_tcpsite(self, ssl_context=None):
+        port = self.port_s if ssl_context else self.port
+        site = web.TCPSite(
+            self.runner, self.host, port, ssl_context=ssl_context
+        )
+        await site.start()
+        self.base_url = ("http{}://{}:{}").format(
+            "s" if ssl_context else "", self.host, port
+        )
+        if self.host == "0.0.0.0":
+            self.base_url = ("http{}://localhost:{}").format(
+                "s" if ssl_context else "", port
             )
-            _LOGGER.error(
-                "Is LedFx Already Running? If not, try a different port."
-            )
-            if self._ledfx.icon is not None:
-                if self._ledfx.icon.HAS_NOTIFICATION:
-                    self._ledfx.icon.notify(
-                        f"Failed to start: something is running on port {self.port}\nIs LedFx already running?"
-                    )
-            time.sleep(2)
-            self._ledfx.stop(1)
+        print(("Started webinterface at {}").format(self.base_url))
+
+    def handle_start_error(self, error):
+        _LOGGER.error(
+            "Shutting down - Failed to create HTTP server at port %d: %s.",
+            self.port,
+            error,
+        )
+        _LOGGER.error(
+            "Is LedFx Already Running? If not, try a different port."
+        )
+        if self._ledfx.icon is not None:
+            if self._ledfx.icon.HAS_NOTIFICATION:
+                self._ledfx.icon.notify(
+                    f"Failed to start: something is running on port {self.port}\nIs LedFx already running?"
+                )
+        time.sleep(2)
+        self._ledfx.stop(1)
 
     async def stop(self):
         await self.app.shutdown()
