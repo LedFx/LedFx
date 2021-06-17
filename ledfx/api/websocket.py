@@ -41,7 +41,6 @@ class WebsocketEndpoint(RestEndpoint):
     ENDPOINT_PATH = "/api/websocket"
 
     async def get(self, request) -> web.Response:
-        print(request)
         try:
             return await WebsocketConnection(self._ledfx).handle(request)
         except ConnectionResetError:
@@ -128,13 +127,40 @@ class WebsocketConnection:
         """Handle the websocket connection"""
 
         socket = self._socket = web.WebSocketResponse(
-            protocols=("http", "https")
+            protocols=("http", "https", "ws", "wss")
         )
-        print(request.scheme)
-        print(request.protocol)
-        print(socket.can_prepare(request))
+
+        # print(request.protocol)
+        # print(socket._protocols)
+        # headers = request.headers
+        # from aiohttp import hdrs
+        # protocol = None
+        # print(headers)
+        # print("SEC_WEBSOCKET_PROTOCOL", hdrs.SEC_WEBSOCKET_PROTOCOL)
+        # print(hdrs.SEC_WEBSOCKET_PROTOCOL in headers)
+        # if hdrs.SEC_WEBSOCKET_PROTOCOL in headers:
+        #     req_protocols = [
+        #         str(proto.strip())
+        #         for proto in headers[hdrs.SEC_WEBSOCKET_PROTOCOL].split(",")
+        #     ]
+        #     print("req",req_protocols)
+        #     for proto in req_protocols:
+        #         if proto in socket._protocols:
+        #             protocol = proto
+        #             break
+        #     else:
+        #         # No overlap found: Return no protocol as per spec
+        #         _LOGGER.warning(
+        #             "Client protocols %r don’t overlap server-known ones %r",
+        #             req_protocols,
+        #             socket._protocols,
+        #         )
+        # print(protocol)
+        # print(socket.can_prepare(request))
+        # print(socket._protocols)
+        # print(socket.ws_protocol)
+
         await socket.prepare(request)
-        print(socket.ws_protocol)
 
         _LOGGER.info("Websocket connected.")
 
