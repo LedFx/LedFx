@@ -13,6 +13,9 @@ CONFIG_DIRECTORY = ".ledfx"
 CONFIG_FILE_NAME = "config.json"
 PRESETS_FILE_NAME = "presets.json"
 
+PRIVATE_KEY_FILE = "privkey.pem"
+CHAIN_KEY_FILE = "fullchain.pem"
+
 _default_wled_settings = {
     "wled_preferred_mode": "UDP",
     "realtime_gamma_enabled": False,
@@ -132,6 +135,21 @@ def get_log_file_location():
     config_dir = get_default_config_directory()
     log_file_path = os.path.abspath(os.path.join(config_dir, "LedFx.log"))
     return log_file_path
+
+
+def get_ssl_certs() -> tuple:
+    """Finds ssl certificate files in config dir"""
+    ssl_dir = os.path.join(get_default_config_directory(), "ssl")
+
+    if not os.path.exists(ssl_dir):
+        os.mkdir(ssl_dir)
+
+    key_path = os.path.join(ssl_dir, PRIVATE_KEY_FILE)
+    chain_path = os.path.join(ssl_dir, CHAIN_KEY_FILE)
+
+    if os.path.isfile(key_path) and os.path.isfile(key_path):
+        return (chain_path, key_path)
+    return None
 
 
 def create_default_config(config_dir: str) -> str:

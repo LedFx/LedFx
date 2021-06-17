@@ -1,5 +1,6 @@
 import logging
 import os
+import ssl
 import sys
 import time
 
@@ -8,6 +9,7 @@ from aiohttp import web
 import ledfx_frontend
 import ledfx_frontend_v2
 from ledfx.api import RestApi
+from ledfx.config import get_ssl_certs
 
 try:
     base_path = sys._MEIPASS
@@ -77,6 +79,7 @@ class HttpServer:
         return web.FileResponse(
             path=ledfx_frontend.where() + "/manifest.json", status=200
         )
+
     async def manifest_v2(self, response):
         return web.FileResponse(
             path=ledfx_frontend_v2.where() + "/manifest.json", status=200
@@ -86,12 +89,18 @@ class HttpServer:
         self.runner = web.AppRunner(self.app)
         await self.runner.setup()
 
+        ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+        ssl_context.load_cert_chain(*get_ssl_certs())
+
         try:
-            site = web.TCPSite(self.runner, self.host, self.port)
+            site = web.TCPSite(
+                self.runner, self.host, self.port, ssl_context=ssl_context
+            )
             await site.start()
             self.base_url = ("http://{}:{}").format(self.host, self.port)
             if self.host == "0.0.0.0":
                 self.base_url = ("http://localhost:{}").format(self.port)
+            # web.run_app(self.app, host="localhost", port=8080)
             print(("Started webinterface at {}").format(self.base_url))
         except OSError as error:
             _LOGGER.error(
