@@ -6,7 +6,12 @@ import warnings
 import webbrowser
 from concurrent.futures import ThreadPoolExecutor
 
-from ledfx.config import get_ssl_certs, load_config, save_config
+from ledfx.config import (
+    WLED_CONFIG_SCHEMA,
+    get_ssl_certs,
+    load_config,
+    save_config,
+)
 from ledfx.devices import Devices
 from ledfx.displays import Displays
 from ledfx.effects import Effects
@@ -107,7 +112,7 @@ class LedFxCore:
         creates event listeners to fire visualisation events at
         a given rate
         """
-        min_time_since = 1 / self.config["frontend_fps"]
+        min_time_since = 1 / self.config["visualisation_fps"]
         time_since_last = {}
 
         def handle_visualisation_update(event):
@@ -209,7 +214,9 @@ class LedFxCore:
         self.devices.create_from_config(self.config["devices"])
         await self.devices.async_initialize_devices()
 
-        sync_mode = self.config["wled_preferences"]["wled_preferred_mode"]
+        sync_mode = WLED_CONFIG_SCHEMA(self.config["wled_preferences"])[
+            "wled_preferred_mode"
+        ]
         if sync_mode:
             await self.devices.set_wleds_sync_mode(sync_mode)
 

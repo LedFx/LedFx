@@ -23,7 +23,8 @@ class AudioConfigEndpoint(RestEndpoint):
 
     async def get(self) -> web.Response:
         response = {
-            "config": convertToJsonSchema(
+            "config": self._ledfx.config.get("audio", {}),
+            "schema": convertToJsonSchema(
                 AudioInputSource.AUDIO_CONFIG_SCHEMA.fget()
             ),
             "permitted_keys": self.PERMITTED_KEYS,

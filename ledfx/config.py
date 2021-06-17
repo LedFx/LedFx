@@ -83,9 +83,7 @@ CORE_CONFIG_SCHEMA = vol.Schema(
             int, vol.Range(5, 300)
         ),
         vol.Optional("scan_on_startup", default=False): bool,
-        vol.Optional(
-            "wled_preferences", default=_default_wled_settings
-        ): WLED_CONFIG_SCHEMA,
+        vol.Optional("wled_preferences", default={}): dict,
         vol.Optional(
             "configuration_version", default=CONFIGURATION_VERSION
         ): str,

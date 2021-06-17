@@ -23,7 +23,8 @@ class WLEDConfigEndpoint(RestEndpoint):
 
     async def get(self) -> web.Response:
         response = {
-            "config": convertToJsonSchema(WLED_CONFIG_SCHEMA),
+            "config": self._ledfx.config.get("wled_preferences", {}),
+            "schema": convertToJsonSchema(WLED_CONFIG_SCHEMA),
             "permitted_keys": self.PERMITTED_KEYS,
         }
 

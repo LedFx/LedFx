@@ -5,6 +5,7 @@ import voluptuous as vol
 from aiohttp import web
 
 from ledfx.api import RestEndpoint
+from ledfx.api.utils import convertToJsonSchema
 from ledfx.config import CORE_CONFIG_SCHEMA, save_config
 
 _LOGGER = logging.getLogger(__name__)
@@ -25,7 +26,11 @@ class ConfigEndpoint(RestEndpoint):
     ]
 
     async def get(self) -> web.Response:
-        response = {"config": self._ledfx.config}
+        response = {
+            "config": self._ledfx.config,
+            "schema": convertToJsonSchema(CORE_CONFIG_SCHEMA),
+            "permitted_keys": self.PERMITTED_KEYS,
+        }
 
         return web.json_response(data=response, status=200)
 
