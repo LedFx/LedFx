@@ -1,8 +1,8 @@
 {
   "files": {
     "main.css": "/v2/static/css/main.f2082bba.chunk.css",
-    "main.js": "/v2/static/js/main.abb8485c.chunk.js",
-    "main.js.map": "/v2/static/js/main.abb8485c.chunk.js.map",
+    "main.js": "/v2/static/js/main.c7450970.chunk.js",
+    "main.js.map": "/v2/static/js/main.c7450970.chunk.js.map",
     "runtime-main.js": "/v2/static/js/runtime-main.2d838530.js",
     "runtime-main.js.map": "/v2/static/js/runtime-main.2d838530.js.map",
     "static/js/2.405c319b.chunk.js": "/v2/static/js/2.405c319b.chunk.js",
@@ -20,6 +20,6 @@
     "static/js/runtime-main.2d838530.js",
     "static/js/2.405c319b.chunk.js",
     "static/css/main.f2082bba.chunk.css",
-    "static/js/main.abb8485c.chunk.js"
+    "static/js/main.c7450970.chunk.js"
   ]
 }
