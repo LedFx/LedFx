@@ -11,6 +11,7 @@ TYPES_MAP = {
     float: "number",
     bool: "boolean",
     list: "array",
+    dict: "dict",
 }
 
 
