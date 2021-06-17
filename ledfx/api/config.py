@@ -20,6 +20,7 @@ class ConfigEndpoint(RestEndpoint):
         "dev_mode",
         "wled_preferences",
         "scan_on_startup",
+        "frontend_fps",
     ]
 
     async def get(self) -> web.Response:
