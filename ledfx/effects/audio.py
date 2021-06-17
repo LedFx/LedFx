@@ -148,8 +148,8 @@ class AudioInputSource:
 
         # Setup a pre-emphasis filter to balance the input volume of lows to highs
         self.pre_emphasis = aubio.digital_filter(3)
-        # self.pre_emphasis.set_biquad(0.4947, -0.9895, 0.4947, -0.9894, -0.0103)
-        self.pre_emphasis.set_biquad(0.6986, -1.3973, 0.6986, -1.3873, 0.4074)
+        self.pre_emphasis.set_biquad(0.8268, -1.6536, 0.8268, -1.6536, 0.6536)
+
         # self.pre_emphasis = None,
         freq_domain_length = (self._config["fft_size"] // 2) + 1
 
