@@ -114,6 +114,15 @@ def convertToJsonSchema(schema):
     elif isinstance(schema, vol.Coerce):
         schema = schema.type
 
+    elif isinstance(schema, list):
+        val = {
+            "type": "list",
+            "validators": list(
+                convertToJsonSchema(validator) for validator in schema
+            ),
+        }
+        return val
+
     if schema in TYPES_MAP:
         return {"type": TYPES_MAP[schema]}
 
