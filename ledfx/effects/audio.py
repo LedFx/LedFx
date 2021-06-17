@@ -54,17 +54,17 @@ class AudioInputSource:
     def AUDIO_CONFIG_SCHEMA():
         default_device_index = AudioInputSource.default_device_index()
         valid_device_indexes = AudioInputSource.valid_device_indexes()
+        input_devices = AudioInputSource.input_devices()
 
         return vol.Schema(
             {
                 vol.Optional("sample_rate", default=60): int,
                 vol.Optional("mic_rate", default=MIC_RATE): int,
                 vol.Optional("fft_size", default=FFT_SIZE): int,
-                # vol.Optional("hostapi_idx", default=0): int
                 vol.Optional("min_volume", default=0.2): float,
                 vol.Optional(
                     "device_index", default=default_device_index
-                ): vol.In(valid_device_indexes),
+                ): vol.In(input_devices),
             },
             extra=vol.ALLOW_EXTRA,
         )
