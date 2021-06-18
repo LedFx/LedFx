@@ -106,7 +106,10 @@ def convertToJsonSchema(schema):
         }
 
     elif isinstance(schema, vol.In):
-        return {"type": "string", "enum": list(schema.container)}
+        if isinstance(schema.container, dict):
+            return {"type": "string", "enum": dict(schema.container)}
+        else:
+            return {"type": "string", "enum": list(schema.container)}
         # val = {'type': 'string', 'enum': dict()}
         # for item in schema.container:
         #     val['enum'][item] = item
