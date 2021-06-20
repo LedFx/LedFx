@@ -17,6 +17,47 @@ import voluptuous as vol
 from ledfx.config import get_default_config_directory
 from ledfx.integrations import Integration
 
+# some thoughts
+
+# some desired functionality examples
+# - apply one effect to all displays
+# - choose from effect presets (tied to displays)
+# - choose from scenes (not tied to anything) [1d input type 0]
+# - blur all displays on a single slider
+# - blackout button
+
+# 2D layouts (choice/choice)
+# 1D layouts (choice or options)
+# 0D layouts (option)
+
+# choices:
+# options:
+
+# EFFECTS
+# input type:
+# 0: flip, mirror
+# 1: blur, brightness, (bkg_brightness?), gradient, colour (lot of variation)
+# 2: colour?
+# -: SPECIFIC EFFECT PARAMETERS
+# -: strobe decay would be example param to adjust
+
+# DISPLAYS
+# input type:
+# 0: preview_only
+# 1: transition_time
+
+
+# DIMENSIONALITY 1:
+# input type
+#
+
+# DIMENSIONALITY 0:
+# input type
+# 0: queue_hold (IMPORTANT!)
+# 0: blackout
+# 1: global brightness/blur/(any input type 1) (global can be applied to all?)
+
+
 _LOGGER = logging.getLogger(__name__)
 
 MIDO_MESSAGE_TYPES = mido.messages.messages.SPEC_BY_TYPE.keys()
