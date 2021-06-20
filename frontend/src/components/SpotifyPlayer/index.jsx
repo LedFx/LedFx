@@ -59,10 +59,6 @@ const useStyles = makeStyles(theme => ({
     },
 }));
 
-//Need to do this. Currently scenes only is in dropdown if prev visited scenes management.
-//function getScenes();
-
-
 class SpotifyPlayer extends React.Component {
     constructor(props) {
         super(props);
@@ -128,10 +124,6 @@ class SpotifyPlayer extends React.Component {
         }
     }
 
-     //componentGetScenes(() => {  
-       //dispatch(getScenes()}
-       //));
-
     render() {
         const { playerState, classes,scenes } = this.props;
         
@@ -169,13 +161,16 @@ class SpotifyPlayer extends React.Component {
                                 </FormControl>
                             </Grid>
                             <Grid item xs={6} justify="center">
-                            <div style={{flex: 1, width: '100%'}}> <Slider  aria-labelledby="continuous-slider" value={playerState.position/playerState.duration*100} />
+                            <div style={{flex: 1, width: '100%'}}> <Slider  aria-labelledby="continuous-slider" value={
+                                playerState.position/playerState.duration*100
+                                } />
                             <Button style={{marginRight: '1.8rem'}} color="primary" variant="contained"><SkipPrevious /></Button>
                             {playerState.paused === true
                             ?
                             <Button style={{marginRight: '1.8rem'}} color="primary" variant="contained"><PlayArrow /></Button>
                             :
                             <Button style={{marginRight: '1.8rem'}} color="primary" variant="contained"><Pause /></Button> } 
+                            
                             <Button style={{marginRight: '1.8rem'}} color="primary" variant="contained"><SkipNext /></Button> 
                             </div>
                             </Grid>
@@ -204,6 +199,22 @@ class SpotifyPlayer extends React.Component {
                                                 {moment().add(playerState.position * -0.001,'s')}
                                                     </Moment>}
                                             </div>
+                                    </Typography>
+                                    <Typography align='center' variant='body1'><div>
+                                    Testing: 
+                                    {playerState.paused === false
+                                    ?
+                                    <Moment
+                                            interval={1000}
+                                            format="ms"
+                                            durationFromNow
+                                            >
+                                                {moment().add(playerState.position * -1,'ms')}
+                                                    </Moment>
+                                    //moment().add(playerState.position* -0.001, 's')/playerState.duration*100
+                                    : 
+                                    (playerState.position/playerState.duration*100)
+                                        } </div>
                                     </Typography>
                                 <div>
                                 <FormControlLabel

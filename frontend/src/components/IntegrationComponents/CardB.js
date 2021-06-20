@@ -16,7 +16,6 @@ import DialogAddEventListener from 'components/IntegrationComponents/DialogAddEv
 import { getAsyncqlclisteners  } from 'modules/qlc'
 import SpotifyView from '../../components/IntegrationComponents/SpotifyBlade';
 import DialogAddIntegration from 'components/IntegrationComponents/DialogAddIntegration';
-import { getScenes, activateScene } from 'modules/scenes';
 
 const useStyles = makeStyles({
     integrationCard: {
