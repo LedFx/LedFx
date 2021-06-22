@@ -3,6 +3,7 @@ import collections
 
 import voluptuous as vol
 
+from ledfx.config import _default_wled_settings
 from ledfx.utils import generate_title
 
 TYPES_MAP = {
@@ -12,6 +13,27 @@ TYPES_MAP = {
     bool: "boolean",
     list: "array",
     dict: "dict",
+}
+
+PERMITTED_KEYS = {
+    "audio": (
+        "min_volume",
+        "device_index",
+    ),
+    "melbanks": (
+        "max_frequencies",
+        "min_frequency",
+    ),
+    "wled_preferences": tuple(_default_wled_settings.keys()),
+    "core": (
+        "host",
+        "port",
+        "port_s",
+        "dev_mode",
+        "scan_on_startup",
+        "visualisation_fps",
+        "visualisation_maxlen",
+    ),
 }
 
 
