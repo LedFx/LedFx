@@ -20,7 +20,7 @@ class SchemaEndpoint(RestEndpoint):
         "devices",
         "effects",
         "integrations",
-        "displays",
+        "virtuals",
         "audio",
         "melbanks",
         "wled_preferences",
@@ -99,11 +99,11 @@ class SchemaEndpoint(RestEndpoint):
                         "description": integration.DESCRIPTION,
                     }
 
-            elif schema == "displays":
-                # Get displays schema
-                response["displays"] = {
+            elif schema == "virtuals":
+                # Get virtuals schema
+                response["virtuals"] = {
                     "schema": convertToJsonSchema(
-                        self._ledfx.displays.schema()
+                        self._ledfx.virtuals.schema()
                     ),
                 }
 

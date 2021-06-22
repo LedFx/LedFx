@@ -15,7 +15,7 @@ class DDPDevice(NetworkedDevice):
 
     PORT = 4048
     HEADER_LEN = 0x0A
-    # DDP_ID_DISPLAY     = 1
+    # DDP_ID_VIRTUAL     = 1
     # DDP_ID_CONFIG      = 250
     # DDP_ID_STATUS      = 251
 

@@ -11,7 +11,7 @@ class Event:
 
     LEDFX_SHUTDOWN = "shutdown"
     DEVICE_UPDATE = "device_update"
-    DISPLAY_UPDATE = "display_update"
+    VIRTUAL_UPDATE = "virtual_update"
     VISUALISATION_UPDATE = "visualisation_update"
     GRAPH_UPDATE = "graph_update"
     EFFECT_SET = "effect_set"
@@ -34,12 +34,12 @@ class DeviceUpdateEvent(Event):
         self.pixels = pixels.astype(np.uint8).T.tolist()
 
 
-class DisplayUpdateEvent(Event):
-    """Event emitted when a display's pixels are updated"""
+class VirtualUpdateEvent(Event):
+    """Event emitted when a virtual's pixels are updated"""
 
-    def __init__(self, display_id: str, pixels: np.ndarray):
-        super().__init__(Event.DISPLAY_UPDATE)
-        self.display_id = display_id
+    def __init__(self, virtual_id: str, pixels: np.ndarray):
+        super().__init__(Event.VIRTUAL_UPDATE)
+        self.virtual_id = virtual_id
         self.pixels = pixels.astype(np.uint8).T.tolist()
 
 
@@ -59,13 +59,13 @@ class GraphUpdateEvent(Event):
 
 
 class VisualisationUpdateEvent(Event):
-    """Event that encompasses DeviceUpdateEvent and DisplayUpdateEvent
+    """Event that encompasses DeviceUpdateEvent and VirtualUpdateEvent
     used to send pixel data to frontend at a constant rate"""
 
     def __init__(
         self,
-        is_device: bool,  # true if device, false if display
-        vis_id: str,  # id of device/display
+        is_device: bool,  # true if device, false if virtual
+        vis_id: str,  # id of device/virtual
         pixels: np.ndarray,
     ):
         super().__init__(Event.VISUALISATION_UPDATE)

@@ -412,8 +412,8 @@ class Melbanks:
     """
     Creates a set of filterbanks to process FFT at different resolutions.
     A constant amount are used to ensure consistent performance.
-    If each display had its own melbank, you could run into performance issues
-    with a high number of displays.
+    If each virtual had its own melbank, you could run into performance issues
+    with a high number of virtuals.
     """
 
     CONFIG_SCHEMA = vol.Schema(

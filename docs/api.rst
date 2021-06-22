@@ -46,7 +46,7 @@ You may instead ask for any number of the config keys:
 - *melbanks*
 - *wled_preferences*
 - *devices*
-- *displays*
+- *virtuals*
 - *integrations*
 - *scenes*
 - *user_presets*
@@ -118,7 +118,7 @@ LedFx uses schemas to validate the following:
 - *devices*
 - *effects*
 - *integrations*
-- *displays*
+- *virtuals*
 - *audio*
 - *melbanks*
 - *wled_preferences*
@@ -213,31 +213,31 @@ Modifies the configuration of the effect and returns the new configuration as JS
 
 Deletes the effect with the matching *effect_id*.
 
-/api/displays
+/api/virtuals
 =========================
 
-Query and manage displays connected to LedFx
+Query and manage virtuals connected to LedFx
 
 .. rubric:: GET
 
-Get configuration of all displays
+Get configuration of all virtuals
 
 .. rubric:: POST
 
-Adds a new display to LedFx based on the provided JSON configuration
+Adds a new virtual to LedFx based on the provided JSON configuration
 
-/api/displays/<display_id>
+/api/virtuals/<virtual_id>
 ==========================
 
-Query and manage a specific display with the matching *display_id* as JSON
+Query and manage a specific virtual with the matching *virtual_id* as JSON
 
 .. rubric:: GET
 
-Returns information about the display
+Returns information about the virtual
 
 .. rubric:: PUT
 
-Set a display to active or inactive. Must evaluate to True or False with python's bool() (eg, true, 1, ..)
+Set a virtual to active or inactive. Must evaluate to True or False with python's bool() (eg, true, 1, ..)
 
 example:
 
@@ -249,7 +249,7 @@ example:
 
 .. rubric:: POST
 
-Update a display's segments configuration. Format is a list of lists in segment order.
+Update a virtual's segments configuration. Format is a list of lists in segment order.
 
 [[id, start, end, invert], ...]
 
@@ -270,7 +270,7 @@ example:
       ]
     }
 
-This would end up with a display appearing on the devices as so:
+This would end up with a virtual appearing on the devices as so:
 
 .. code-block::
 
@@ -289,7 +289,7 @@ another example:
       ]
     }
 
-This would end up with a display appearing on the devices as so:
+This would end up with a virtual appearing on the devices as so:
 
 .. code-block::
 
@@ -298,42 +298,42 @@ This would end up with a display appearing on the devices as so:
 
 .. rubric:: DELETE
 
-Deletes a display with the matching *display_id*
+Deletes a virtual with the matching *virtual_id*
 
-/api/displays/{display_id}/effects
+/api/virtuals/{virtual_id}/effects
 ==================================
 
-Endpoint linking displays to effects with the matching *display_id* as JSON
+Endpoint linking virtuals to effects with the matching *virtual_id* as JSON
 
 .. rubric:: GET
 
-Returns the active effect config of a display
+Returns the active effect config of a virtual
 
 .. rubric:: PUT
 
-Update the active effect config of a display based on the provided JSON configuration
+Update the active effect config of a virtual based on the provided JSON configuration
 If config given is "RANDOMIZE", the active effect config will be automatically generated to random values
 
 .. rubric:: POST
 
-Set the display to a new effect based on the provided JSON configuration
+Set the virtual to a new effect based on the provided JSON configuration
 
 .. rubric:: DELETE
 
-Clear the active effect of a display
+Clear the active effect of a virtual
 
-/api/displays/<display_id>/presets
+/api/virtuals/<virtual_id>/presets
 ====================================
 
-Endpoint linking displays to effect presets (pre-configured effect configs) with the matching *display_id* as JSON
+Endpoint linking virtuals to effect presets (pre-configured effect configs) with the matching *virtual_id* as JSON
 
 .. rubric:: GET
 
-Get preset effect configs for active effect of a display
+Get preset effect configs for active effect of a virtual
 
 .. rubric:: PUT
 
-Set active effect config of display to a preset
+Set active effect config of virtual to a preset
 
 .. code-block:: json
 
@@ -345,11 +345,11 @@ Set active effect config of display to a preset
 
 .. rubric:: POST
 
-Save configuration of display's active effect as a custom preset for that effect
+Save configuration of virtual's active effect as a custom preset for that effect
 
 .. rubric:: DELETE
 
-Clear effect of a display
+Clear effect of a virtual
 
 /api/effects/<effect_id>/presets
 ===================================

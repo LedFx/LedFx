@@ -13,47 +13,47 @@ _LOGGER = logging.getLogger(__name__)
 
 class EffectsEndpoint(RestEndpoint):
 
-    ENDPOINT_PATH = "/api/displays/{display_id}/effects"
+    ENDPOINT_PATH = "/api/virtuals/{virtual_id}/effects"
 
-    async def get(self, display_id) -> web.Response:
+    async def get(self, virtual_id) -> web.Response:
         """
-        Get active effect configuration for a display
+        Get active effect configuration for a virtual
         """
-        display = self._ledfx.displays.get(display_id)
-        if display is None:
+        virtual = self._ledfx.virtuals.get(virtual_id)
+        if virtual is None:
             response = {
                 "status": "failed",
-                "reason": f"Display with ID {display_id} not found",
+                "reason": f"Virtual with ID {virtual_id} not found",
             }
             return web.json_response(data=response, status=404)
 
         # Get the active effect
         response = {"effect": {}}
-        if display.active_effect:
+        if virtual.active_effect:
             effect_response = {}
-            effect_response["config"] = display.active_effect.config
-            effect_response["name"] = display.active_effect.name
-            effect_response["type"] = display.active_effect.type
+            effect_response["config"] = virtual.active_effect.config
+            effect_response["name"] = virtual.active_effect.name
+            effect_response["type"] = virtual.active_effect.type
             response = {"effect": effect_response}
 
         return web.json_response(data=response, status=200)
 
-    async def put(self, display_id, request) -> web.Response:
+    async def put(self, virtual_id, request) -> web.Response:
         """
-        Update the config of the active effect of a display
+        Update the config of the active effect of a virtual
         """
-        display = self._ledfx.displays.get(display_id)
-        if display is None:
+        virtual = self._ledfx.virtuals.get(virtual_id)
+        if virtual is None:
             response = {
                 "status": "failed",
-                "reason": f"Display with ID {display_id} not found",
+                "reason": f"Virtual with ID {virtual_id} not found",
             }
             return web.json_response(data=response, status=404)
 
-        if not display.active_effect:
+        if not virtual.active_effect:
             response = {
                 "status": "failed",
-                "reason": f"Display {display_id} has no active effect",
+                "reason": f"Virtual {virtual_id} has no active effect",
             }
             return web.json_response(data=response, status=400)
 
@@ -74,7 +74,7 @@ class EffectsEndpoint(RestEndpoint):
             # acceptable random values
             ignore_settings = ["brightness"]
             effect_config = {}
-            effect_type = display.active_effect.type
+            effect_type = virtual.active_effect.type
             effect = self._ledfx.effects.get_class(effect_type)
             schema = effect.schema().schema
             for setting in schema.keys():
@@ -104,9 +104,9 @@ class EffectsEndpoint(RestEndpoint):
                         val = random.randint(lower, upper)
                 effect_config[setting.schema] = val
 
-        # See if display's active effect type matches this effect type,
+        # See if virtual's active effect type matches this effect type,
         # if so update the effect config
-        # otherwise, create a new effect and add it to the display
+        # otherwise, create a new effect and add it to the virtual
 
         # DO NOT DELETE THIS
         # this is nice code to UPDATE the effect config of an active effect
@@ -119,8 +119,8 @@ class EffectsEndpoint(RestEndpoint):
         try:
             # handling an effect update. nested if else and repeated code bleh. ain't a looker ;)
             if (
-                display.active_effect
-                and display.active_effect.type == effect_type
+                virtual.active_effect
+                and virtual.active_effect.type == effect_type
             ):
                 # substring search to match any key containing "color" or "colour"
                 # this handles special cases where we want to update an effect and also trigger
@@ -136,19 +136,19 @@ class EffectsEndpoint(RestEndpoint):
                     effect = self._ledfx.effects.create(
                         ledfx=self._ledfx,
                         type=effect_type,
-                        config=display.active_effect.config | effect_config,
+                        config=virtual.active_effect.config | effect_config,
                     )
-                    display.set_effect(effect)
+                    virtual.set_effect(effect)
                 else:
-                    effect = display.active_effect
-                    display.active_effect.update_config(effect_config)
+                    effect = virtual.active_effect
+                    virtual.active_effect.update_config(effect_config)
 
             # handling a new effect
             else:
                 effect = self._ledfx.effects.create(
                     ledfx=self._ledfx, type=effect_type, config=effect_config
                 )
-                display.set_effect(effect)
+                virtual.set_effect(effect)
 
         except (ValueError, RuntimeError) as msg:
             response = {
@@ -158,12 +158,12 @@ class EffectsEndpoint(RestEndpoint):
             return web.json_response(data=response, status=202)
 
         # Update and save the configuration
-        for display in self._ledfx.config["displays"]:
-            if display["id"] == display_id:
-                if not ("effect" in display):
-                    display["effect"] = {}
-                    display["effect"]["type"] = effect.type
-                    display["effect"]["config"] = effect.config
+        for virtual in self._ledfx.config["virtuals"]:
+            if virtual["id"] == virtual_id:
+                if not ("effect" in virtual):
+                    virtual["effect"] = {}
+                    virtual["effect"]["type"] = effect.type
+                    virtual["effect"]["config"] = effect.config
                     break
 
         save_config(
@@ -179,15 +179,15 @@ class EffectsEndpoint(RestEndpoint):
         response = {"status": "success", "effect": effect_response}
         return web.json_response(data=response, status=200)
 
-    async def post(self, display_id, request) -> web.Response:
+    async def post(self, virtual_id, request) -> web.Response:
         """
-        Set the active effect of a display
+        Set the active effect of a virtual
         """
-        display = self._ledfx.displays.get(display_id)
-        if display is None:
+        virtual = self._ledfx.virtuals.get(virtual_id)
+        if virtual is None:
             response = {
                 "status": "failed",
-                "reason": f"Display with ID {display_id} not found",
+                "reason": f"Virtual with ID {virtual_id} not found",
             }
             return web.json_response(data=response, status=404)
 
@@ -211,12 +211,12 @@ class EffectsEndpoint(RestEndpoint):
         if effect_config is None:
             effect_config = {}
 
-        # Create the effect and add it to the display
+        # Create the effect and add it to the virtual
         effect = self._ledfx.effects.create(
             ledfx=self._ledfx, type=effect_type, config=effect_config
         )
         try:
-            display.set_effect(effect)
+            virtual.set_effect(effect)
         except (ValueError, RuntimeError) as msg:
             response = {
                 "status": "failed",
@@ -225,12 +225,12 @@ class EffectsEndpoint(RestEndpoint):
             return web.json_response(data=response, status=202)
 
         # Update and save the configuration
-        for display in self._ledfx.config["displays"]:
-            if display["id"] == display_id:
-                # if not ('effect' in display):
-                display["effect"] = {}
-                display["effect"]["type"] = effect_type
-                display["effect"]["config"] = effect_config
+        for virtual in self._ledfx.config["virtuals"]:
+            if virtual["id"] == virtual_id:
+                # if not ('effect' in virtual):
+                virtual["effect"] = {}
+                virtual["effect"]["type"] = effect_type
+                virtual["effect"]["config"] = effect_config
                 break
         save_config(
             config=self._ledfx.config,
@@ -245,22 +245,22 @@ class EffectsEndpoint(RestEndpoint):
         response = {"status": "success", "effect": effect_response}
         return web.json_response(data=response, status=200)
 
-    async def delete(self, display_id) -> web.Response:
-        display = self._ledfx.displays.get(display_id)
-        if display is None:
+    async def delete(self, virtual_id) -> web.Response:
+        virtual = self._ledfx.virtuals.get(virtual_id)
+        if virtual is None:
             response = {
                 "status": "failed",
-                "reason": f"Display with ID {display_id} not found",
+                "reason": f"Virtual with ID {virtual_id} not found",
             }
             return web.json_response(data=response, status=404)
 
         # Clear the effect
-        display.clear_effect()
+        virtual.clear_effect()
 
-        for display in self._ledfx.config["displays"]:
-            if display["id"] == display_id:
-                if "effect" in display:
-                    del display["effect"]
+        for virtual in self._ledfx.config["virtuals"]:
+            if virtual["id"] == virtual_id:
+                if "effect" in virtual:
+                    del virtual["effect"]
                     break
         save_config(
             config=self._ledfx.config,

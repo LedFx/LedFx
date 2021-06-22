@@ -13,7 +13,6 @@ from ledfx.config import (
     save_config,
 )
 from ledfx.devices import Devices
-from ledfx.displays import Displays
 from ledfx.effects import Effects
 from ledfx.effects.math import interpolate_pixels
 from ledfx.events import (
@@ -30,6 +29,7 @@ from ledfx.utils import (
     async_fire_and_forget,
     currently_frozen,
 )
+from ledfx.virtuals import Virtuals
 
 _LOGGER = logging.getLogger(__name__)
 if currently_frozen():
@@ -122,7 +122,7 @@ class LedFxCore:
             if is_device:
                 vis_id = getattr(event, "device_id")
             else:
-                vis_id = getattr(event, "display_id")
+                vis_id = getattr(event, "virtual_id")
 
             try:
                 time_since = time_now - time_since_last[vis_id]
@@ -144,7 +144,7 @@ class LedFxCore:
 
         self.events.add_listener(
             handle_visualisation_update,
-            Event.DISPLAY_UPDATE,
+            Event.VIRTUAL_UPDATE,
         )
 
         self.events.add_listener(
@@ -207,7 +207,7 @@ class LedFxCore:
                 )
         self.devices = Devices(self)
         self.effects = Effects(self)
-        self.displays = Displays(self)
+        self.virtuals = Virtuals(self)
         self.integrations = Integrations(self)
 
         # TODO: Deferr
@@ -220,7 +220,7 @@ class LedFxCore:
         if sync_mode:
             await self.devices.set_wleds_sync_mode(sync_mode)
 
-        self.displays.create_from_config(self.config["displays"])
+        self.virtuals.create_from_config(self.config["virtuals"])
         self.integrations.create_from_config(self.config["integrations"])
 
         if self.config["scan_on_startup"]:

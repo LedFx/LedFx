@@ -429,7 +429,7 @@ class WLED:
 
     def set_inactivity_timeout(self, timeout=2.5):
         """
-        Updates internal sync settings to set timeout for wled effect display after ledfx streaming finishes
+        Updates internal sync settings to set timeout for wled effect virtual after ledfx streaming finishes
 
         Args:
             timeout: int/float, seconds

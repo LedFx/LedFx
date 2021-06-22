@@ -106,28 +106,28 @@ class ScenesEndpoint(RestEndpoint):
         scene = self._ledfx.config["scenes"][scene_id]
 
         if action == "activate":
-            for display in self._ledfx.displays.values():
-                # Check display is in scene, make no changes if it isn't
-                if display.id not in scene["displays"].keys():
+            for virtual in self._ledfx.virtuals.values():
+                # Check virtual is in scene, make no changes if it isn't
+                if virtual.id not in scene["virtuals"].keys():
                     _LOGGER.info(
-                        ("display with id {} has no data in scene {}").format(
-                            display.id, scene_id
+                        ("virtual with id {} has no data in scene {}").format(
+                            virtual.id, scene_id
                         )
                     )
                     continue
 
-                # Set effect of display to that saved in the scene,
-                # clear active effect of display if no effect in scene
-                if scene["displays"][display.id]:
-                    # Create the effect and add it to the display
+                # Set effect of virtual to that saved in the scene,
+                # clear active effect of virtual if no effect in scene
+                if scene["virtuals"][virtual.id]:
+                    # Create the effect and add it to the virtual
                     effect = self._ledfx.effects.create(
                         ledfx=self._ledfx,
-                        type=scene["displays"][display.id]["type"],
-                        config=scene["displays"][display.id]["config"],
+                        type=scene["virtuals"][virtual.id]["type"],
+                        config=scene["virtuals"][virtual.id]["config"],
                     )
-                    display.set_effect(effect)
+                    virtual.set_effect(effect)
                 else:
-                    display.clear_effect()
+                    virtual.clear_effect()
 
             self._ledfx.events.fire_event(SceneSetEvent(scene["name"]))
             response = {
@@ -139,19 +139,19 @@ class ScenesEndpoint(RestEndpoint):
             }
 
         elif action == "deactivate":
-            for display in self._ledfx.displays.values():
-                # Check display is in scene, make no changes if it isn't
-                if display.id not in scene["displays"].keys():
+            for virtual in self._ledfx.virtuals.values():
+                # Check virtual is in scene, make no changes if it isn't
+                if virtual.id not in scene["virtuals"].keys():
                     _LOGGER.info(
-                        ("display with id {} has no data in scene {}").format(
-                            display.id, scene_id
+                        ("virtual with id {} has no data in scene {}").format(
+                            virtual.id, scene_id
                         )
                     )
                     continue
 
-                # Clear the effect of display to that saved in the scene,
-                if scene["displays"][display.id]:
-                    display.clear_effect()
+                # Clear the effect of virtual to that saved in the scene,
+                if scene["virtuals"][virtual.id]:
+                    virtual.clear_effect()
 
             response = {
                 "status": "success",
@@ -187,7 +187,7 @@ class ScenesEndpoint(RestEndpoint):
         return web.json_response(data=response, status=200)
 
     async def post(self, request) -> web.Response:
-        """Save current effects of displays as a scene"""
+        """Save current effects of virtuals as a scene"""
         try:
             data = await request.json()
         except JSONDecodeError:
@@ -212,15 +212,15 @@ class ScenesEndpoint(RestEndpoint):
 
         scene_config = {}
         scene_config["name"] = scene_name
-        scene_config["displays"] = {}
+        scene_config["virtuals"] = {}
         scene_config["scene_image"] = scene_image
-        for display in self._ledfx.displays.values():
+        for virtual in self._ledfx.virtuals.values():
             effect = {}
-            if display.active_effect:
-                effect["type"] = display.active_effect.type
-                effect["config"] = display.active_effect.config
-                # effect['name'] = display.active_effect.name
-            scene_config["displays"][display.id] = effect
+            if virtual.active_effect:
+                effect["type"] = virtual.active_effect.type
+                effect["config"] = virtual.active_effect.config
+                # effect['name'] = virtual.active_effect.name
+            scene_config["virtuals"][virtual.id] = effect
 
         # Update the scene if it already exists, else create it
         self._ledfx.config["scenes"][scene_id] = scene_config

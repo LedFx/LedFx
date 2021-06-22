@@ -10,51 +10,51 @@ from ledfx.config import save_config
 _LOGGER = logging.getLogger(__name__)
 
 
-class DisplayEndpoint(RestEndpoint):
-    """REST end-point for querying and managing displays"""
+class VirtualEndpoint(RestEndpoint):
+    """REST end-point for querying and managing virtuals"""
 
-    ENDPOINT_PATH = "/api/displays/{display_id}"
+    ENDPOINT_PATH = "/api/virtuals/{virtual_id}"
 
-    async def get(self, display_id) -> web.Response:
+    async def get(self, virtual_id) -> web.Response:
         """
-        Get a display's full config
+        Get a virtual's full config
         """
-        display = self._ledfx.displays.get(display_id)
-        if display is None:
+        virtual = self._ledfx.virtuals.get(virtual_id)
+        if virtual is None:
             response = {
                 "status": "failed",
-                "reason": f"Display with ID {display_id} not found",
+                "reason": f"Virtual with ID {virtual_id} not found",
             }
             return web.json_response(data=response, status=404)
 
         response = {"status": "success"}
-        response[display.id] = {
-            "config": display.config,
-            "id": display.id,
-            "is_device": display.is_device,
-            "segments": display.segments,
-            "pixel_count": display.pixel_count,
-            "active": display.active,
+        response[virtual.id] = {
+            "config": virtual.config,
+            "id": virtual.id,
+            "is_device": virtual.is_device,
+            "segments": virtual.segments,
+            "pixel_count": virtual.pixel_count,
+            "active": virtual.active,
             "effect": {},
         }
-        if display.active_effect:
+        if virtual.active_effect:
             effect_response = {}
-            effect_response["config"] = display.active_effect.config
-            effect_response["name"] = display.active_effect.name
-            effect_response["type"] = display.active_effect.type
-            response[display.id]["effect"] = effect_response
+            effect_response["config"] = virtual.active_effect.config
+            effect_response["name"] = virtual.active_effect.name
+            effect_response["type"] = virtual.active_effect.type
+            response[virtual.id]["effect"] = effect_response
 
         return web.json_response(data=response, status=200)
 
-    async def put(self, display_id, request) -> web.Response:
+    async def put(self, virtual_id, request) -> web.Response:
         """
-        Set a display to active or inactive
+        Set a virtual to active or inactive
         """
-        display = self._ledfx.displays.get(display_id)
-        if display is None:
+        virtual = self._ledfx.virtuals.get(virtual_id)
+        if virtual is None:
             response = {
                 "status": "failed",
-                "reason": f"Display with ID {display_id} not found",
+                "reason": f"Virtual with ID {virtual_id} not found",
             }
             return web.json_response(data=response, status=404)
 
@@ -74,9 +74,9 @@ class DisplayEndpoint(RestEndpoint):
             }
             return web.json_response(data=response, status=400)
 
-        # Update the display's configuration
+        # Update the virtual's configuration
         try:
-            display.active = active
+            virtual.active = active
         except ValueError as msg:
             response = {
                 "status": "failed",
@@ -85,10 +85,10 @@ class DisplayEndpoint(RestEndpoint):
             return web.json_response(data=response, status=202)
 
         # Update ledfx's config
-        for idx, item in enumerate(self._ledfx.config["displays"]):
-            if item["id"] == display.id:
-                item["active"] = display.active
-                self._ledfx.config["displays"][idx] = item
+        for idx, item in enumerate(self._ledfx.config["virtuals"]):
+            if item["id"] == virtual.id:
+                item["active"] = virtual.active
+                self._ledfx.config["virtuals"][idx] = item
                 break
 
         save_config(
@@ -96,18 +96,18 @@ class DisplayEndpoint(RestEndpoint):
             config_dir=self._ledfx.config_dir,
         )
 
-        response = {"status": "success", "active": display.active}
+        response = {"status": "success", "active": virtual.active}
         return web.json_response(data=response, status=200)
 
-    async def post(self, display_id, request) -> web.Response:
+    async def post(self, virtual_id, request) -> web.Response:
         """
-        Update a display's segments configuration
+        Update a virtual's segments configuration
         """
-        display = self._ledfx.displays.get(display_id)
-        if display is None:
+        virtual = self._ledfx.virtuals.get(virtual_id)
+        if virtual is None:
             response = {
                 "status": "failed",
-                "reason": f"Display with ID {display_id} not found",
+                "reason": f"Virtual with ID {virtual_id} not found",
             }
             return web.json_response(data=response, status=404)
 
@@ -119,31 +119,31 @@ class DisplayEndpoint(RestEndpoint):
                 "reason": "JSON Decoding failed",
             }
             return web.json_response(data=response, status=400)
-        display_segments = data.get("segments")
-        if display_segments is None:
+        virtual_segments = data.get("segments")
+        if virtual_segments is None:
             response = {
                 "status": "failed",
                 "reason": 'Required attribute "segments" was not provided',
             }
             return web.json_response(data=response, status=400)
 
-        # Update the display's configuration
-        old_segments = display.segments
+        # Update the virtual's configuration
+        old_segments = virtual.segments
         try:
-            display.update_segments(display_segments)
+            virtual.update_segments(virtual_segments)
         except (ValueError, vol.MultipleInvalid, vol.Invalid) as msg:
             response = {
                 "status": "failed",
                 "payload": {"type": "error", "message": str(msg)},
             }
-            display.update_segments(old_segments)
+            virtual.update_segments(old_segments)
             return web.json_response(data=response, status=202)
 
         # Update ledfx's config
-        for idx, item in enumerate(self._ledfx.config["displays"]):
-            if item["id"] == display.id:
-                item["segments"] = display.segments
-                self._ledfx.config["displays"][idx] = item
+        for idx, item in enumerate(self._ledfx.config["virtuals"]):
+            if item["id"] == virtual.id:
+                item["segments"] = virtual.segments
+                self._ledfx.config["virtuals"][idx] = item
                 break
 
         save_config(
@@ -151,23 +151,23 @@ class DisplayEndpoint(RestEndpoint):
             config_dir=self._ledfx.config_dir,
         )
 
-        response = {"status": "success", "segments": display.segments}
+        response = {"status": "success", "segments": virtual.segments}
         return web.json_response(data=response, status=200)
 
-    async def delete(self, display_id) -> web.Response:
+    async def delete(self, virtual_id) -> web.Response:
         """
-        Remove a display with this display id
+        Remove a virtual with this virtual id
         """
-        display = self._ledfx.displays.get(display_id)
-        if display is None:
+        virtual = self._ledfx.virtuals.get(virtual_id)
+        if virtual is None:
             response = {
                 "status": "failed",
-                "reason": f"Display with ID {display_id} not found",
+                "reason": f"Virtual with ID {virtual_id} not found",
             }
             return web.json_response(data=response, status=404)
 
-        display.clear_effect()
-        device_id = display.is_device
+        virtual.clear_effect()
+        device_id = virtual.is_device
         if self._ledfx.devices.get(device_id) is not None:
             self._ledfx.devices.destroy(device_id)
 
@@ -178,13 +178,13 @@ class DisplayEndpoint(RestEndpoint):
                 if device["id"] != device_id
             ]
 
-        self._ledfx.displays.destroy(display_id)
+        self._ledfx.virtuals.destroy(virtual_id)
 
         # Update and save the configuration
-        self._ledfx.config["displays"] = [
-            display
-            for display in self._ledfx.config["displays"]
-            if display["id"] != display_id
+        self._ledfx.config["virtuals"] = [
+            virtual
+            for virtual in self._ledfx.config["virtuals"]
+            if virtual["id"] != virtual_id
         ]
         save_config(
             config=self._ledfx.config,

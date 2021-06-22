@@ -23,7 +23,7 @@ class GradientEffect(Effect):
         {
             vol.Optional(
                 "gradient_name",
-                description="Color gradient to display",
+                description="Color gradient to virtual",
                 default="Rainbow",
             ): vol.In(list(GRADIENTS.keys())),
             vol.Optional(

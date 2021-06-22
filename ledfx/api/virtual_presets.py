@@ -10,30 +10,30 @@ from ledfx.utils import generate_id
 _LOGGER = logging.getLogger(__name__)
 
 
-class DisplayPresetsEndpoint(RestEndpoint):
+class VirtualPresetsEndpoint(RestEndpoint):
 
-    ENDPOINT_PATH = "/api/displays/{display_id}/presets"
+    ENDPOINT_PATH = "/api/virtuals/{virtual_id}/presets"
 
-    async def get(self, display_id) -> web.Response:
+    async def get(self, virtual_id) -> web.Response:
         """
-        Get presets for active effect of a display
+        Get presets for active effect of a virtual
         """
-        display = self._ledfx.displays.get(display_id)
-        if display is None:
+        virtual = self._ledfx.virtuals.get(virtual_id)
+        if virtual is None:
             response = {
                 "status": "failed",
-                "reason": f"Display with ID {display_id} not found",
+                "reason": f"Virtual with ID {virtual_id} not found",
             }
             return web.json_response(data=response, status=404)
 
-        if not display.active_effect:
+        if not virtual.active_effect:
             response = {
                 "status": "failed",
-                "reason": f"Display {display_id} has no active effect",
+                "reason": f"Virtual {virtual_id} has no active effect",
             }
             return web.json_response(data=response, status=400)
 
-        effect_id = display.active_effect.type
+        effect_id = virtual.active_effect.type
 
         if effect_id in self._ledfx.config["ledfx_presets"].keys():
             default = self._ledfx.config["ledfx_presets"][effect_id]
@@ -47,7 +47,7 @@ class DisplayPresetsEndpoint(RestEndpoint):
 
         response = {
             "status": "success",
-            "display": display_id,
+            "virtual": virtual_id,
             "effect": effect_id,
             "default_presets": default,
             "custom_presets": custom,
@@ -55,13 +55,13 @@ class DisplayPresetsEndpoint(RestEndpoint):
 
         return web.json_response(data=response, status=200)
 
-    async def put(self, display_id, request) -> web.Response:
-        """Set active effect of display to a preset"""
-        display = self._ledfx.displays.get(display_id)
-        if display is None:
+    async def put(self, virtual_id, request) -> web.Response:
+        """Set active effect of virtual to a preset"""
+        virtual = self._ledfx.virtuals.get(virtual_id)
+        if virtual is None:
             response = {
                 "status": "failed",
-                "reason": f"Display with ID {display_id} not found",
+                "reason": f"Virtual with ID {virtual_id} not found",
             }
             return web.json_response(data=response, status=404)
 
@@ -126,7 +126,7 @@ class DisplayPresetsEndpoint(RestEndpoint):
             }
             return web.json_response(data=response, status=400)
 
-        # Create the effect and add it to the display
+        # Create the effect and add it to the virtual
         effect_config = self._ledfx.config[category][effect_id][preset_id][
             "config"
         ]
@@ -134,7 +134,7 @@ class DisplayPresetsEndpoint(RestEndpoint):
             ledfx=self._ledfx, type=effect_id, config=effect_config
         )
         try:
-            display.set_effect(effect)
+            virtual.set_effect(effect)
         except (ValueError, RuntimeError) as msg:
             response = {
                 "status": "failed",
@@ -143,12 +143,12 @@ class DisplayPresetsEndpoint(RestEndpoint):
             return web.json_response(data=response, status=202)
 
         # Update and save the configuration
-        for display in self._ledfx.config["displays"]:
-            if display["id"] == display_id:
-                # if not ('effect' in display):
-                display["effect"] = {}
-                display["effect"]["type"] = effect_id
-                display["effect"]["config"] = effect_config
+        for virtual in self._ledfx.config["virtuals"]:
+            if virtual["id"] == virtual_id:
+                # if not ('effect' in virtual):
+                virtual["effect"] = {}
+                virtual["effect"]["type"] = effect_id
+                virtual["effect"]["config"] = effect_config
                 break
         save_config(
             config=self._ledfx.config,
@@ -163,20 +163,20 @@ class DisplayPresetsEndpoint(RestEndpoint):
         response = {"status": "success", "effect": effect_response}
         return web.json_response(data=response, status=200)
 
-    async def post(self, display_id, request) -> web.Response:
-        """save configuration of active display effect as a custom preset"""
-        display = self._ledfx.displays.get(display_id)
-        if display is None:
+    async def post(self, virtual_id, request) -> web.Response:
+        """save configuration of active virtual effect as a custom preset"""
+        virtual = self._ledfx.virtuals.get(virtual_id)
+        if virtual is None:
             response = {
                 "status": "failed",
-                "reason": f"Display with ID {display_id} not found",
+                "reason": f"Virtual with ID {virtual_id} not found",
             }
             return web.json_response(data=response, status=404)
 
-        if not display.active_effect:
+        if not virtual.active_effect:
             response = {
                 "status": "failed",
-                "reason": f"Display {display_id} has no active effect",
+                "reason": f"Virtual {virtual_id} has no active effect",
             }
             return web.json_response(data=response, status=404)
 
@@ -197,7 +197,7 @@ class DisplayPresetsEndpoint(RestEndpoint):
             return web.json_response(data=response, status=400)
 
         preset_id = generate_id(preset_name)
-        effect_id = display.active_effect.type
+        effect_id = virtual.active_effect.type
 
         # If no presets for the effect, create a dict to store them
         if effect_id not in self._ledfx.config["user_presets"].keys():
@@ -210,7 +210,7 @@ class DisplayPresetsEndpoint(RestEndpoint):
         ] = preset_name
         self._ledfx.config["user_presets"][effect_id][preset_id][
             "config"
-        ] = display.active_effect.config
+        ] = virtual.active_effect.config
 
         save_config(
             config=self._ledfx.config,
@@ -222,28 +222,28 @@ class DisplayPresetsEndpoint(RestEndpoint):
             "preset": {
                 "id": preset_id,
                 "name": preset_name,
-                "config": display.active_effect.config,
+                "config": virtual.active_effect.config,
             },
         }
         return web.json_response(data=response, status=200)
 
-    async def delete(self, display_id) -> web.Response:
-        """clear effect of a display"""
-        display = self._ledfx.displays.get(display_id)
-        if display is None:
+    async def delete(self, virtual_id) -> web.Response:
+        """clear effect of a virtual"""
+        virtual = self._ledfx.virtuals.get(virtual_id)
+        if virtual is None:
             response = {
                 "status": "failed",
-                "reason": f"Display with ID {display_id} not found",
+                "reason": f"Virtual with ID {virtual_id} not found",
             }
             return web.json_response(data=response, status=404)
 
         # Clear the effect
-        display.clear_effect()
+        virtual.clear_effect()
 
-        for display in self._ledfx.config["displays"]:
-            if display["id"] == display_id:
-                if "effect" in display:
-                    del display["effect"]
+        for virtual in self._ledfx.config["virtuals"]:
+            if virtual["id"] == virtual_id:
+                if "effect" in virtual:
+                    del virtual["effect"]
                     break
         save_config(
             config=self._ledfx.config,

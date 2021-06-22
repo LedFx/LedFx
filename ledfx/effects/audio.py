@@ -686,7 +686,7 @@ class AudioReactiveEffect(Effect):
                 for i, x in enumerate(
                     self.audio.melbanks._config["max_frequencies"]
                 )
-                if x >= self._display.frequency_range.max
+                if x >= self._virtual.frequency_range.max
             ),
             len(self.audio.melbanks._config["max_frequencies"]),
         )
@@ -700,7 +700,7 @@ class AudioReactiveEffect(Effect):
                     self._selected_melbank
                 ].melbank_frequencies
             )
-            if freq >= self._display.frequency_range.min
+            if freq >= self._virtual.frequency_range.min
         )
 
     @cached_property
@@ -713,7 +713,7 @@ class AudioReactiveEffect(Effect):
                         self._selected_melbank
                     ].melbank_frequencies
                 )
-                if freq >= self._display.frequency_range.max
+                if freq >= self._virtual.frequency_range.max
             ),
             len(
                 self.audio.melbanks.melbank_processors[
@@ -736,7 +736,7 @@ class AudioReactiveEffect(Effect):
     def melbank(self, filtered=False, size=0):
         """
         This little bit of code pulls together information from the effect's
-        display (which controls the audio frequency range), and uses that
+        virtual (which controls the audio frequency range), and uses that
         to deliver the melbank, correctly selected and interpolated, to the effect
 
         size, int      : interpolate the melbank to the target size. value of 0 is no interpolation

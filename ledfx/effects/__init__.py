@@ -192,7 +192,7 @@ class Effect(BaseRegistry):
     _pixels = None
     _config = None
     _active = False
-    _display = None
+    _virtual = None
 
     # Basic effect properties that can be applied to all effects
     CONFIG_SCHEMA = vol.Schema(
@@ -237,10 +237,10 @@ class Effect(BaseRegistry):
         if self._active:
             self.deactivate()
 
-    def activate(self, display):
+    def activate(self, virtual):
         """Attaches an output channel to the effect"""
-        self._display = display
-        self._pixels = np.zeros((display.pixel_count, 3))
+        self._virtual = virtual
+        self._pixels = np.zeros((virtual.pixel_count, 3))
         self._active = True
 
         # Iterate all the base classes and check to see if the base
@@ -249,7 +249,7 @@ class Effect(BaseRegistry):
         valid_classes.append(type(self))
         for base in valid_classes:
             if hasattr(base, "on_activate"):
-                base.on_activate(self, display.pixel_count)
+                base.on_activate(self, virtual.pixel_count)
 
         _LOGGER.info(f"Effect {self.NAME} activated.")
 

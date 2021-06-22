@@ -23,7 +23,7 @@ class BandsAudioEffect(AudioReactiveEffect, GradientEffect):
             ): vol.In(list(["left", "right", "invert", "center"])),
             vol.Optional(
                 "gradient_name",
-                description="Color gradient to display",
+                description="Color gradient to virtual",
                 default="Rainbow",
             ): vol.In(list(GRADIENTS.keys())),
             vol.Optional(

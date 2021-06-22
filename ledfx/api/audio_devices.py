@@ -21,7 +21,7 @@ class AudioDevicesEndpoint(RestEndpoint):
 
     async def get(self) -> web.Response:
         """Get list of audio devices using sound device"""
-        # Need to map out what host API actually means - however for now, just display it
+        # Need to map out what host API actually means - however for now, just virtual it
 
         hostapis = sd.query_hostapis()
         devices = sd.query_devices()

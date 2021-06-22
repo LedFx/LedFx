@@ -18,7 +18,7 @@ class BandsMatrixAudioEffect(AudioReactiveEffect, GradientEffect):
             ): vol.All(vol.Coerce(int), vol.Range(min=1, max=16)),
             vol.Optional(
                 "gradient_name",
-                description="Color gradient to display",
+                description="Color gradient to virtual",
                 default="Rainbow",
             ): vol.In(list(GRADIENTS.keys())),
             vol.Optional(

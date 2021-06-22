@@ -11,10 +11,10 @@ from ledfx.effects import DummyEffect
 from ledfx.effects.math import interpolate_pixels
 from ledfx.effects.melbank import FrequencyRange
 from ledfx.events import (
-    DisplayUpdateEvent,
     EffectClearedEvent,
     EffectSetEvent,
     Event,
+    VirtualUpdateEvent,
 )
 
 # from ledfx.config import save_config
@@ -23,7 +23,7 @@ from ledfx.transitions import Transitions
 _LOGGER = logging.getLogger(__name__)
 
 
-class Display:
+class Virtual:
 
     CONFIG_SCHEMA = vol.Schema(
         {
@@ -70,7 +70,7 @@ class Display:
             ): vol.In([mode for mode in Transitions]),
             vol.Optional(
                 "frequency_min",
-                description="Lowest frequency for this display's audio reactive effects",
+                description="Lowest frequency for this virtual's audio reactive effects",
                 default=20,  # GET THIS FROM CORE AUDIO
             ): vol.All(
                 vol.Coerce(int),
@@ -80,7 +80,7 @@ class Display:
             ),  # AND HERE TOO,
             vol.Optional(
                 "frequency_max",
-                description="Highest frequency for this display's audio reactive effects",
+                description="Highest frequency for this virtual's audio reactive effects",
                 default=10000,  # GET THIS FROM CORE AUDIO
             ): vol.All(
                 vol.Coerce(int),
@@ -93,15 +93,15 @@ class Display:
 
     # vol.Required(
     #     "start_pixel",
-    #     description="First pixel the display will map onto device (inclusive)",
+    #     description="First pixel the virtual will map onto device (inclusive)",
     # ): int,
     # vol.Required(
     #     "end_pixel",
-    #     description="Last pixel the display will map onto device (inclusive)",
+    #     description="Last pixel the virtual will map onto device (inclusive)",
     # ): int,
     # vol.Optional(
     #     "invert",
-    #     description="Reverse the display mapping onto this device",
+    #     description="Reverse the virtual mapping onto this device",
     #     default=False,
     # ): bool,
 
@@ -123,7 +123,7 @@ class Display:
             self._config["frequency_min"], self._config["frequency_max"]
         )
 
-        # list of devices in order of their mapping on the display
+        # list of devices in order of their mapping on the virtual
         # [[id, start, end, invert]...]
         # not a very good schema, but vol seems a bit handicapped in terms of lists.
         # this won't necessarily ensure perfectly validated segments, but it at
@@ -154,7 +154,7 @@ class Display:
 
     def deactivate_segments(self):
         for device in self._devices:
-            device.clear_display_segments(self.id)
+            device.clear_virtual_segments(self.id)
 
     def validate_segment(self, segment):
         valid = True
@@ -220,7 +220,7 @@ class Display:
             self.invalidate_cached_props()
 
             _LOGGER.info(
-                f"Updated display {self.name} with {len(self._segments)} segments, totalling {self.pixel_count} pixels"
+                f"Updated virtual {self.name} with {len(self._segments)} segments, totalling {self.pixel_count} pixels"
             )
 
             # Restart active effect if total pixel count has changed
@@ -308,7 +308,7 @@ class Display:
             self.assembled_frame = np.zeros((self.pixel_count, 3))
             self.flush(self.assembled_frame)
             self._ledfx.events.fire_event(
-                DisplayUpdateEvent(self.id, self.assembled_frame)
+                VirtualUpdateEvent(self.id, self.assembled_frame)
             )
 
             self._active = False
@@ -324,12 +324,12 @@ class Display:
             if not self._config["preview_only"]:
                 self.flush(self.assembled_frame)
 
-            def trigger_display_update_event():
+            def trigger_virtual_update_event():
                 self._ledfx.events.fire_event(
-                    DisplayUpdateEvent(self.id, self.assembled_frame)
+                    VirtualUpdateEvent(self.id, self.assembled_frame)
                 )
 
-            self._ledfx.loop.call_soon_threadsafe(trigger_display_update_event)
+            self._ledfx.loop.call_soon_threadsafe(trigger_virtual_update_event)
 
     def thread_function(self):
         if self._active:
@@ -340,7 +340,7 @@ class Display:
             self._ledfx.loop.call_later(
                 1 / self.refresh_rate - render_latency, self.thread_function
             )
-            # print(f"Display processing latency: {render_latency}")
+            # print(f"Virtual processing latency: {render_latency}")
 
     def assemble_frame(self):
         """
@@ -390,15 +390,15 @@ class Display:
 
     def activate(self):
         if not self._devices:
-            error = f"Cannot activate display {self.id}, it has no configured device segments"
+            error = f"Cannot activate virtual {self.id}, it has no configured device segments"
             _LOGGER.warning(error)
             raise RuntimeError(error)
         if not self._active_effect:
-            error = f"Cannot activate display {self.id}, it has no configured effect"
+            error = f"Cannot activate virtual {self.id}, it has no configured effect"
             _LOGGER.warning(error)
             raise RuntimeError(error)
 
-        _LOGGER.info(f"Activating display {self.id}")
+        _LOGGER.info(f"Activating virtual {self.id}")
         if not self._active:
             self._active = True
             self.activate_segments(self._segments)
@@ -487,7 +487,7 @@ class Display:
 
     @property
     def id(self) -> str:
-        """Returns the id for the display"""
+        """Returns the id for the virtual"""
         return getattr(self, "_id", None)
 
     @property
@@ -528,7 +528,7 @@ class Display:
     @cached_property
     def _devices(self):
         """
-        Return an iterable of the device object of each segment of the display
+        Return an iterable of the device object of each segment of the virtual
         """
         return list(
             self._ledfx.devices.get(device_id)
@@ -608,14 +608,14 @@ class Display:
                     self._active_effect.activate(self)
 
 
-class Displays:
-    """Thin wrapper around the device registry that manages displays"""
+class Virtuals:
+    """Thin wrapper around the device registry that manages virtuals"""
 
-    PACKAGE_NAME = "ledfx.displays"
+    PACKAGE_NAME = "ledfx.virtuals"
     _paused = False
 
     def __init__(self, ledfx):
-        # super().__init__(ledfx, Display, self.PACKAGE_NAME)
+        # super().__init__(ledfx, Virtual, self.PACKAGE_NAME)
 
         def cleanup_effects(e):
             self.clear_all_effects()
@@ -623,88 +623,88 @@ class Displays:
         self._ledfx = ledfx
         self._ledfx.events.add_listener(cleanup_effects, Event.LEDFX_SHUTDOWN)
         self._zeroconf = zeroconf.Zeroconf()
-        self._displays = {}
+        self._virtuals = {}
 
     def create_from_config(self, config):
-        for display in config:
-            _LOGGER.info(f"Loading display from config: {display}")
-            self._ledfx.displays.create(
-                id=display["id"],
-                config=display["config"],
-                is_device=display["is_device"],
+        for virtual in config:
+            _LOGGER.info(f"Loading virtual from config: {virtual}")
+            self._ledfx.virtuals.create(
+                id=virtual["id"],
+                config=virtual["config"],
+                is_device=virtual["is_device"],
                 ledfx=self._ledfx,
             )
-            if "segments" in display:
-                self._ledfx.displays.get(display["id"]).update_segments(
-                    display["segments"]
+            if "segments" in virtual:
+                self._ledfx.virtuals.get(virtual["id"]).update_segments(
+                    virtual["segments"]
                 )
-            if "effect" in display:
+            if "effect" in virtual:
                 try:
                     effect = self._ledfx.effects.create(
                         ledfx=self._ledfx,
-                        type=display["effect"]["type"],
-                        config=display["effect"]["config"],
+                        type=virtual["effect"]["type"],
+                        config=virtual["effect"]["config"],
                     )
-                    self._ledfx.displays.get(display["id"]).set_effect(effect)
+                    self._ledfx.virtuals.get(virtual["id"]).set_effect(effect)
                 except vol.MultipleInvalid:
                     _LOGGER.warning(
                         "Effect schema changed. Not restoring effect"
                     )
 
     def schema(self):
-        return Display.CONFIG_SCHEMA
+        return Virtual.CONFIG_SCHEMA
 
     def create(self, id=None, *args, **kwargs):
-        """Creates a display"""
+        """Creates a virtual"""
 
         # Find the first valid id based on what is already in the registry
         dupe_id = id
         dupe_index = 1
-        while id in self._displays.keys():
+        while id in self._virtuals.keys():
             id = f"{dupe_id}-{dupe_index}"
             dupe_index = dupe_index + 1
 
-        # Create the new display and validate the schema.
+        # Create the new virtual and validate the schema.
         _config = kwargs.pop("config", None)
         _is_device = kwargs.pop("is_device", False)
         if _config is not None:
-            _config = Display.CONFIG_SCHEMA(_config)
-            obj = Display(config=_config, *args, **kwargs)
+            _config = Virtual.CONFIG_SCHEMA(_config)
+            obj = Virtual(config=_config, *args, **kwargs)
         else:
-            obj = Display(*args, **kwargs)
+            obj = Virtual(*args, **kwargs)
 
         # Attach some common properties
         setattr(obj, "_id", id)
         setattr(obj, "is_device", _is_device)
 
         # Store the object into the internal list and return it
-        self._displays[id] = obj
+        self._virtuals[id] = obj
         return obj
 
     def destroy(self, id):
-        if id not in self._displays:
+        if id not in self._virtuals:
             raise AttributeError(
                 ("Object with id '{}' does not exist.").format(id)
             )
-        del self._displays[id]
+        del self._virtuals[id]
 
     def __iter__(self):
-        return iter(self._displays)
+        return iter(self._virtuals)
 
     def values(self):
-        return self._displays.values()
+        return self._virtuals.values()
 
     def clear_all_effects(self):
-        for display in self.values():
-            display.clear_frame()
+        for virtual in self.values():
+            virtual.clear_frame()
 
     def pause_all(self):
         self._paused = not self._paused
-        for display in self.values():
-            display._paused = self._paused
+        for virtual in self.values():
+            virtual._paused = self._paused
 
-    def get(self, display_id):
-        for id, display in self._displays.items():
-            if display_id == id:
-                return display
+    def get(self, virtual_id):
+        for id, virtual in self._virtuals.items():
+            if virtual_id == id:
+                return virtual
         return None

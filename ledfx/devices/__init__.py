@@ -88,9 +88,9 @@ class Device(BaseRegistry):
             f"Device {self.name} config updated to {validated_config}."
         )
 
-        for display in self._displays_objs:
-            display.deactivate_segments()
-            display.activate_segments(display._segments)
+        for virtual in self._virtuals_objs:
+            virtual.deactivate_segments()
+            virtual.activate_segments(virtual._segments)
 
     def config_updated(self, config):
         """
@@ -105,8 +105,8 @@ class Device(BaseRegistry):
     def is_active(self):
         return self._active
 
-    def update_pixels(self, display_id, data):
-        # update each segment from this display
+    def update_pixels(self, virtual_id, data):
+        # update each segment from this virtual
         if not self._active:
             _LOGGER.warning(
                 f"Cannot update pixels of inactive device {self.name}"
@@ -116,10 +116,10 @@ class Device(BaseRegistry):
         for pixels, start, end in data:
             self._pixels[start : end + 1] = pixels
 
-        if display_id == self.priority_display.id:
+        if virtual_id == self.priority_virtual.id:
             frame = self.assemble_frame()
             self.flush(frame)
-            # _LOGGER.debug(f"Device {self.id} flushed by Display {display_id}")
+            # _LOGGER.debug(f"Device {self.id} flushed by Virtual {virtual_id}")
 
             def trigger_device_update_event():
                 self._ledfx.events.fire_event(
@@ -166,54 +166,54 @@ class Device(BaseRegistry):
 
     @property
     def refresh_rate(self):
-        return self.priority_display.refresh_rate
+        return self.priority_virtual.refresh_rate
 
     @cached_property
-    def priority_display(self):
+    def priority_virtual(self):
         """
-        Returns the first display that has the highest refresh rate of all displays
+        Returns the first virtual that has the highest refresh rate of all virtuals
         associated with this device
         """
-        if not any(display.active for display in self._displays_objs):
+        if not any(virtual.active for virtual in self._virtuals_objs):
             return None
 
         refresh_rate = max(
-            display.refresh_rate
-            for display in self._displays_objs
-            if display.active
+            virtual.refresh_rate
+            for virtual in self._virtuals_objs
+            if virtual.active
         )
         return next(
-            display
-            for display in self._displays_objs
-            if display.refresh_rate == refresh_rate
+            virtual
+            for virtual in self._virtuals_objs
+            if virtual.refresh_rate == refresh_rate
         )
 
     @cached_property
-    def _displays_objs(self):
+    def _virtuals_objs(self):
         return list(
-            self._ledfx.displays.get(display_id)
-            for display_id in self.displays
+            self._ledfx.virtuals.get(virtual_id)
+            for virtual_id in self.virtuals
         )
 
     @property
-    def active_displays(self):
+    def active_virtuals(self):
         """
-        list of id of the displays active on this device.
-        it's a list bc there can be more than one display streaming
+        list of id of the virtuals active on this device.
+        it's a list bc there can be more than one virtual streaming
         to a device.
         """
         return list(
-            display.id for display in self._displays_objs if display.active
+            virtual.id for virtual in self._virtuals_objs if virtual.active
         )
 
     @cached_property
-    def displays(self):
+    def virtuals(self):
         return list(segment[0] for segment in self._segments)
 
-    def add_segment(self, display_id, start_pixel, end_pixel, force=False):
+    def add_segment(self, virtual_id, start_pixel, end_pixel, force=False):
         # make sure this segment doesn't overlap with any others
-        for _display_id, segment_start, segment_end in self._segments:
-            if display_id == _display_id:
+        for _virtual_id, segment_start, segment_end in self._segments:
+            if virtual_id == _virtual_id:
                 continue
             overlap = (
                 min(segment_end, end_pixel)
@@ -221,25 +221,25 @@ class Device(BaseRegistry):
                 + 1
             )
             if overlap > 0:
-                display_name = self._ledfx.displays.get(display_id).name
-                blocking_display = self._ledfx.displays.get(_display_id)
+                virtual_name = self._ledfx.virtuals.get(virtual_id).name
+                blocking_virtual = self._ledfx.virtuals.get(_virtual_id)
                 if force:
-                    blocking_display.deactivate()
+                    blocking_virtual.deactivate()
                 else:
-                    msg = f"Failed to activate effect! '{display_name}' overlaps with active display '{blocking_display.name}'"
+                    msg = f"Failed to activate effect! '{virtual_name}' overlaps with active virtual '{blocking_virtual.name}'"
                     _LOGGER.warning(msg)
                     raise ValueError(msg)
 
-        # if the segment is from a new device, we need to recheck our priority display
-        if display_id not in (segment[0] for segment in self._segments):
+        # if the segment is from a new device, we need to recheck our priority virtual
+        if virtual_id not in (segment[0] for segment in self._segments):
             self.invalidate_cached_props()
-        self._segments.append((display_id, start_pixel, end_pixel))
+        self._segments.append((virtual_id, start_pixel, end_pixel))
 
-    def clear_display_segments(self, display_id):
+    def clear_virtual_segments(self, virtual_id):
         self._segments = [
-            segment for segment in self._segments if segment[0] != display_id
+            segment for segment in self._segments if segment[0] != virtual_id
         ]
-        if display_id == self.priority_display:
+        if virtual_id == self.priority_virtual:
             self.invalidate_cached_props()
 
     def clear_segments(self):
@@ -247,7 +247,7 @@ class Device(BaseRegistry):
 
     def invalidate_cached_props(self):
         # invalidate cached properties
-        for prop in ["priority_display", "_displays_objs", "displays"]:
+        for prop in ["priority_virtual", "_virtuals_objs", "virtuals"]:
             if hasattr(self, prop):
                 delattr(self, prop)
 
@@ -455,32 +455,32 @@ class Devices(RegistryLoader):
             }
         )
 
-        # Generate display configuration for the device
-        _LOGGER.info(f"Creating a display for device {device.name}")
-        display_id = generate_id(device.name)
-        display_config = {
+        # Generate virtual configuration for the device
+        _LOGGER.info(f"Creating a virtual for device {device.name}")
+        virtual_id = generate_id(device.name)
+        virtual_config = {
             "name": device.name,
             "icon_name": device_config["icon_name"],
         }
         segments = [[device.id, 0, device_config["pixel_count"] - 1, False]]
 
-        # Create the display
-        display = self._ledfx.displays.create(
-            id=display_id,
-            config=display_config,
+        # Create the virtual
+        virtual = self._ledfx.virtuals.create(
+            id=virtual_id,
+            config=virtual_config,
             ledfx=self._ledfx,
             is_device=device.id,
         )
 
-        # Create the device as a single segment on the display
-        display.update_segments(segments)
+        # Create the device as a single segment on the virtual
+        virtual.update_segments(segments)
 
         # Update the configuration
-        self._ledfx.config["displays"].append(
+        self._ledfx.config["virtuals"].append(
             {
-                "id": display.id,
-                "config": display.config,
-                "segments": display.segments,
+                "id": virtual.id,
+                "config": virtual.config,
+                "segments": virtual.segments,
                 "is_device": device.id,
             }
         )

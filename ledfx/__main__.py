@@ -71,7 +71,7 @@ def reset_logging():
 
 
 def setup_logging(loglevel):
-    # Create a custom logging level to display pyupdater progress
+    # Create a custom logging level to virtual pyupdater progress
     reset_logging()
 
     console_loglevel = loglevel or logging.WARNING
@@ -312,11 +312,11 @@ def main():
     if args.tray or currently_frozen():
         import os
 
-        # If pystray is imported on a device that can't display it, it explodes. Catch it
+        # If pystray is imported on a device that can't virtual it, it explodes. Catch it
         try:
             import pystray
         except Exception as Error:
-            msg = f"Error: Unable to display tray icon. Shutting down. Error: {Error}"
+            msg = f"Error: Unable to virtual tray icon. Shutting down. Error: {Error}"
             _LOGGER.critical(msg)
             raise Exception(msg)
             sys.exit(0)

@@ -69,7 +69,7 @@ CORE_CONFIG_SCHEMA = vol.Schema(
         vol.Optional("port_s", default=8443): int,
         vol.Optional("dev_mode", default=False): bool,
         vol.Optional("devices", default=[]): list,
-        vol.Optional("displays", default=[]): list,
+        vol.Optional("virtuals", default=[]): list,
         vol.Optional("audio", default={}): dict,
         vol.Optional("melbanks", default={}): dict,
         vol.Optional("ledfx_presets", default={}): dict,
@@ -232,7 +232,7 @@ def load_config(config_dir: str) -> dict:
             config_json = json.load(file)
             try:
                 # If there's no config version in the config, it's pre-1.0.0 and won't work
-                # Probably scope to iterate through it and create a display for every device, but that's beyond me
+                # Probably scope to iterate through it and create a virtual for every device, but that's beyond me
                 _LOGGER.info(
                     f"LedFx Configuration Version: {config_json['configuration_version']}"
                 )
