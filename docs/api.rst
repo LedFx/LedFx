@@ -25,20 +25,84 @@ Returns basic information about the LedFx instance as JSON
 /api/config
 ===============
 
-LedFx Configuration
+Endpoint for managing LedFx Configuration
 
 .. rubric:: GET
 
 Returns the current configuration for LedFx as JSON
+A GET with no request body will return LedFx's full configuration.
 
-/api/log (upcoming)
+You may instead ask for any number of the config keys:
+
+- *host*
+- *port*
+- *port_s*
+- *dev_mode*
+- *configuration_version*
+- *scan_on_startup*
+- *visualisation_fps*
+- *visualisation_maxlen*
+- *audio*
+- *melbanks*
+- *wled_preferences*
+- *devices*
+- *displays*
+- *integrations*
+- *scenes*
+- *user_presets*
+- *ledfx_presets*
+
+example: Get LedFx audio configuration
+
+.. code-block:: json
+
+    "audio"
+
+example: Get LedFx audio, devices, and scenes configuration
+
+.. code-block:: json
+
+    ["audio", "devices", "scenes"]
+
+.. rubric:: PUT
+
+Updates LedFx configuration with any permitted keys.
+LedFx will handle the update and restart if necessary.
+Generally, updating any core config key will trigger a restart.
+
+example:
+
+.. code-block:: json
+
+    {
+      "audio": {
+        "min_volume": 0.3
+      }
+      "dev_mode": true
+      "visualisation_fps": 50
+      "port": 8080
+    }
+
+.. rubric:: POST
+
+Set full LedFx config. You must provide a full, valid config.
+LedFx will restart to apply the config.
+To simply update a part of the config, use PUT
+
+.. rubric:: DELETE
+
+Resets LedFx's config to default values and restarts.
+
+*Warning* This will irreversibly delete all your devices, settings, etc.
+
+/api/log
 =========================
 
 LedFx Logging
 
 .. rubric:: GET
 
-Returns the error logs for the currently active LedFx session
+Opens a websocket connection through which realtime LedFx logging info will be sent.
 
 /api/schema/
 =========================
@@ -47,7 +111,32 @@ LedFx Schema Api
 
 .. rubric:: GET /api/schema/
 
-Returns all LedFx schemas for devices, effects, and integrations as JSON
+Get JSON schemas specifically defining the kind of data LedFx's API expects.
+A GET with no request body will return all of LedFx's schemas
+LedFx uses schemas to validate the following:
+
+- *devices*
+- *effects*
+- *integrations*
+- *displays*
+- *audio*
+- *melbanks*
+- *wled_preferences*
+- *core*
+
+Like with the /api/config endpoint, you may instead ask for spefific schemas
+
+example: Get LedFx audio schema
+
+.. code-block:: json
+
+    "audio"
+
+example: Get LedFx devices and effects schema
+
+.. code-block:: json
+
+    ["devices", "effects"]
 
 /api/schema/<schema_type>
 ============================
@@ -148,7 +237,7 @@ Returns information about the display
 
 .. rubric:: PUT
 
-Set a display to active or inactive. Must evaluate to True or False with python's bool() (eg, True, 1, ..)
+Set a display to active or inactive. Must evaluate to True or False with python's bool() (eg, true, 1, ..)
 
 example:
 
