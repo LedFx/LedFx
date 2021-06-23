@@ -22,7 +22,7 @@ class AudioDevicesEndpoint(RestEndpoint):
         """Get list of audio devices using sound device"""
 
         if hasattr(self._ledfx, "audio"):
-            device_index = self._ledfx.audio.config.get("device_index")
+            device_index = self._ledfx.audio._config.get("device_index")
         else:
             device_index = self._ledfx.config.get("audio", {}).get(
                 "device_index", AudioInputSource.default_device_index()
