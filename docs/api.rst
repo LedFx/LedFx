@@ -77,9 +77,9 @@ example:
     {
       "audio": {
         "min_volume": 0.3
-      }
-      "dev_mode": true
-      "visualisation_fps": 50
+      },
+      "dev_mode": true,
+      "visualisation_fps": 50,
       "port": 8080
     }
 
