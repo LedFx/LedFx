@@ -1,7 +1,6 @@
 import logging
 from json import JSONDecodeError
 
-import sounddevice as sd
 from aiohttp import web
 
 from ledfx.api import RestEndpoint
@@ -21,23 +20,16 @@ class AudioDevicesEndpoint(RestEndpoint):
 
     async def get(self) -> web.Response:
         """Get list of audio devices using sound device"""
-        # Need to map out what host API actually means - however for now, just virtual it
 
-        hostapis = sd.query_hostapis()
-        devices = sd.query_devices()
-
-        input_devices = list(
-            f"{hostapis[device['hostapi']]['name']}: {device['name']}"
-            for idx, device in enumerate(devices)
-            if device["max_input_channels"] > 0
-        )
-
-        audio_config = self._ledfx.config.get(
-            "audio", {"device_index": sd.default.device[0]}
-        )
+        if hasattr(self._ledfx, "audio"):
+            device_index = self._ledfx.audio.config.get("device_index")
+        else:
+            device_index = self._ledfx.config.get("audio", {}).get(
+                "device_index", AudioInputSource.default_device_index()
+            )
 
         response = {}
-        response["active_device_index"] = audio_config["device_index"]
+        response["active_device_index"] = device_index
         response[
             "devices"
         ] = AudioInputSource.input_devices()  # dict(enumerate(input_devices))
