@@ -132,7 +132,9 @@ class RainAudioEffect(AudioReactiveEffect):
 
         # Calculate the low, mids, and high indexes scaling based on the pixel
         # count
-        intensities = tuple(i.max() for i in self.melbank_thirds())
+        intensities = np.fromiter(
+            (i.max() for i in self.melbank_thirds()), np.float
+        )
 
         self.update_drop_frames()
 
