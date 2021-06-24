@@ -1,5 +1,4 @@
 import logging
-from distutils.version import StrictVersion
 
 import voluptuous as vol
 
@@ -124,14 +123,14 @@ class WLEDDevice(NetworkedDevice):
 
         # Currently *assuming* that this PR gets released in 0.13
         # https://github.com/Aircoookie/WLED/pull/1944
-        if StrictVersion(wled_version) >= StrictVersion("0.13.0"):
-            _LOGGER.info(
-                f"WLED Version Supports Sync Setting API: {wled_version}"
-            )
-            # self.wled.enable_realtime_gamma()
-            # self.wled.set_inactivity_timeout(self._config["timeout"])
-            # self.wled.first_universe()
-            # self.wled.first_dmx_address()
-            # self.wled.multirgb_dmx_mode()
+        # if StrictVersion(wled_version) >= StrictVersion("0.13.0"):
+        #     _LOGGER.info(
+        #         f"WLED Version Supports Sync Setting API: {wled_version}"
+        #     )
+        # self.wled.enable_realtime_gamma()
+        # self.wled.set_inactivity_timeout(self._config["timeout"])
+        # self.wled.first_universe()
+        # self.wled.first_dmx_address()
+        # self.wled.multirgb_dmx_mode()
 
         await self.wled.flush_sync_settings()
