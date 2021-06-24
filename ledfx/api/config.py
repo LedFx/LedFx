@@ -38,7 +38,6 @@ class ConfigEndpoint(RestEndpoint):
         eg. ["audio", "melbanks"] will return audio and melbanks config
         """
         keys = set()
-        response = {}
 
         if request.can_read_body:
             try:
@@ -61,7 +60,18 @@ class ConfigEndpoint(RestEndpoint):
         if not keys:
             keys = CORE_CONFIG_KEYS
 
-        response = {key: self._ledfx.config.get(key) for key in keys}
+        response = {}
+        for key in keys:
+            config = self._ledfx.config.get(key)
+
+            if key == "audio":
+                config = AudioInputSource.AUDIO_CONFIG_SCHEMA.fget()(config)
+            elif key == "melbanks":
+                config = Melbanks.CONFIG_SCHEMA(config)
+            elif key == "wled_preferences":
+                config = WLED_CONFIG_SCHEMA(config)
+
+            response[key] = config
 
         return web.json_response(data=response, status=200)
 
