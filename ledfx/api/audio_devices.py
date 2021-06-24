@@ -21,15 +21,12 @@ class AudioDevicesEndpoint(RestEndpoint):
     async def get(self) -> web.Response:
         """Get list of audio devices using sound device"""
 
-        if hasattr(self._ledfx, "audio"):
-            device_index = self._ledfx.audio._config.get("device_index")
-        else:
-            device_index = self._ledfx.config.get("audio", {}).get(
-                "device_index", AudioInputSource.default_device_index()
-            )
+        audio_config = AudioInputSource.AUDIO_CONFIG_SCHEMA.fget()(
+            self._ledfx.config.get("audio", {})
+        )
 
         response = {}
-        response["active_device_index"] = device_index
+        response["active_device_index"] = audio_config["device_index"]
         response[
             "devices"
         ] = AudioInputSource.input_devices()  # dict(enumerate(input_devices))
