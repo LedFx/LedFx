@@ -10,7 +10,7 @@ import json
 import ast
 from ledfx.config import save_config
 from ledfx.color import COLORS
-
+from ledfx.transitions import Transitions
 _LOGGER = logging.getLogger(__name__)
 
 class MQTTHASS(Integration):
@@ -65,9 +65,10 @@ class MQTTHASS(Integration):
 
     def on_connect(self, client, userdata, flags, rc):
         client.subscribe(f"{self._config['topic']}/light/ledfxscene/set")
+        client.subscribe(f"{self._config['topic']}/light/ledfxtransition/set")
         client.publish(f"{self._config['topic']}/light/ledfxscene/config", json.dumps({
             "~": f"{self._config['topic']}/light/ledfxscene",
-            "name": "LedFx Scene-Selector",
+            "name": "LedFx Scene",
             "unique_id": "ledfxscene",
             "cmd_t": "~/set",
             "stat_t": "~/state",
@@ -87,9 +88,38 @@ class MQTTHASS(Integration):
                 "sw_version": "0.9.0"
             }
         }))
-        
+        client.publish(f"{self._config['topic']}/light/ledfxtransition/config", json.dumps({
+            "~": f"{self._config['topic']}/light/ledfxtransition",
+            "name": "LedFx Transition",
+            "unique_id": "ledfxtransition",
+            "cmd_t": "~/set",
+            "stat_t": "~/state",
+            "schema": "json",
+            "brightness": True,
+            "brightness_scale": 1000,
+            "icon":  "mdi:image-outline",
+            "effect": True,
+            "effect_list": list([
+                "Add",
+                "Dissolve",
+                "Push",
+                "Slide",
+                "Iris",
+                "Through White",
+                "Through Black",
+                "None",
+            ]),
+            "device": {
+                "identifiers": [
+                    "yzlights"
+                ],
+                "name": "LedFx",
+                "model": "BladeMOD",
+                "manufacturer": "Yeon",
+                "sw_version": "0.9.0"
+            }
+        }))
         for virtual in self._ledfx.virtuals.values():
-            # _LOGGER.info(f"COLORS: {list(COLORS.keys())}")
             if virtual.config["icon_name"].startswith("mdi:"):
                 icon=virtual.config["icon_name"]
             else:
@@ -121,11 +151,20 @@ class MQTTHASS(Integration):
 
 
     def on_message(self, client, userdata, msg):
-        #_LOGGER.info(msg.topic+" "+str(msg.payload))
-
         if msg.topic.endswith("/set"):
             segs=msg.topic.split("/")
             virtualid=segs[2]
+            if virtualid == "ledfxtransition":
+                _LOGGER.info("Transitions: " + str(msg.payload))
+                mydict = ast.literal_eval(msg.payload.decode('utf-8'))
+                if "effect" in mydict:
+                    _LOGGER.info("Change Transition Effect: " + mydict["effect"])
+                    ### Todo: set Global Transition Effect to mydict["effect"]
+                if "brightness" in mydict:
+                    _LOGGER.info("Change Transition Time to " + str(mydict["brightness"]*10) + "ms")
+                    ### Todo: set Global Transition Time to mydict["brightness"]*10 ms
+                client.publish(f"{self._config['topic']}/light/{virtualid}/state", msg.payload)
+                return
             if virtualid == "ledfxscene":
                 mydict = ast.literal_eval(msg.payload.decode('utf-8'))
                 _LOGGER.info("BOOOM 2"+str(mydict))
@@ -176,14 +215,10 @@ class MQTTHASS(Integration):
             for virtual in self._ledfx.virtuals.values():
 
                 if virtual.id == virtualid:
-                    mydict = ast.literal_eval(msg.payload.decode('utf-8'))
-                    _LOGGER.info("BOOOM 4: "+ virtualid + "---" + mydict["state"])
-                    
-                    ### not_matt: if virtual has no active effect, set effect to: {type: "singleColor", config: {color: "orange"}}
+                    mydict = ast.literal_eval(msg.payload.decode('utf-8'))      
                     virt = self._ledfx.virtuals.get(virtualid)
-                    if "effect" in mydict:
-                        _LOGGER.info("BOOOM 5: "+mydict["effect"])
-                        
+                    ### SET VIRTUAL COLOR ###
+                    if "effect" in mydict:                        
                         effect = self._ledfx.effects.create(
                             ledfx=self._ledfx, type="singleColor", config={"color":  mydict["effect"]}
                         )
@@ -195,8 +230,6 @@ class MQTTHASS(Integration):
                                 "payload": {"type": "warning", "reason": str(msg)},
                             }
                             return _LOGGER.info(response)
-
-                        # Update and save the configuration
                         for virt in self._ledfx.config["virtuals"]:
                             if virt["id"] == virtualid:
                                 virt["effect"] = {}
@@ -221,9 +254,7 @@ class MQTTHASS(Integration):
                                 "status": "failed",
                                 "payload": {"type": "warning", "reason": str(msg)},
                             }
-                            return _LOGGER.info(response)
-
-                        # Update and save the configuration
+                            return _LOGGER.warning(response)
                         for virt in self._ledfx.config["virtuals"]:
                             if virt["id"] == virtualid:
                                 virt["effect"] = {}
@@ -236,12 +267,12 @@ class MQTTHASS(Integration):
                         )
                         client.publish(f"{self._config['topic']}/light/{virtualid}/state", msg.payload)
                         return
+                    ### SET VIRTUAL ACTIVE ###
                     if mydict["state"] == "ON":
                         active = True
                     else:
                         active = False
-                    virtual = self._ledfx.virtuals.get(virtualid)
-                    
+                    virtual = self._ledfx.virtuals.get(virtualid)                   
                     
                     try:
                         virtual.active = active
@@ -250,8 +281,7 @@ class MQTTHASS(Integration):
                             "status": "failed",
                             "payload": {"type": "warning", "reason": str(msg)},
                         }
-                        return _LOGGER.info(response)
-
+                        return _LOGGER.warning(response)
                     for idx, item in enumerate(self._ledfx.config["virtuals"]):
                         if item["id"] == virtual.id:
                             item["active"] = virtual.active
@@ -261,9 +291,7 @@ class MQTTHASS(Integration):
                     save_config(
                         config=self._ledfx.config,
                         config_dir=self._ledfx.config_dir,
-                    )
-
-            # LATER: Set effect_list, color
+                    )     
 
             client.publish(f"{self._config['topic']}/light/{virtualid}/state", msg.payload)
 
