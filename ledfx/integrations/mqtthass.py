@@ -1,0 +1,283 @@
+import asyncio
+import logging
+import aiohttp
+import voluptuous as vol
+# from ledfx.events import Event
+from ledfx.integrations import Integration
+import paho.mqtt.client as mqtt
+from ledfx.events import SceneSetEvent
+import json
+import ast
+from ledfx.config import save_config
+from ledfx.color import COLORS
+
+_LOGGER = logging.getLogger(__name__)
+
+class MQTTHASS(Integration):
+    """MQTT HomeAssistant Integration"""
+    
+    NAME = "Home Assistant MQTT"
+    DESCRIPTION = "MQTT Integration for Home Assistant"
+
+    CONFIG_SCHEMA = vol.Schema(
+        {
+            vol.Required(
+                "name",
+                description="Name of this HomeAssistant instance",
+                default="Home Assistant",
+            ): str,
+            vol.Required(
+                "topic",
+                description="HomeAssistant's discovery prefix",
+                default="homeassistant",
+            ): str,
+            vol.Required(
+                "ip_address",
+                description="MQTT ip address",
+                default="127.0.0.1",
+            ): str,
+            vol.Required(
+                "port", description="MQTT port", default=1883
+            ): vol.All(vol.Coerce(int), vol.Range(min=1, max=65535)),
+            vol.Optional(
+                "username",
+                description="MQTT username",
+                default="blade",
+            ): str,
+            vol.Optional(
+                "password",
+                description="MQTT password",
+                default="",
+            ): str,
+
+        }
+    )
+
+    def __init__(self, ledfx, config, active, data):
+        super().__init__(ledfx, config, active, data)
+
+        self._ledfx = ledfx
+        self._config = config
+        self._client = None
+        self._data = []
+        self._listeners = []
+        _LOGGER.info(f"CONFIG: {self._config}")
+
+    def on_connect(self, client, userdata, flags, rc):
+        client.subscribe(f"{self._config['topic']}/light/ledfxscene/set")
+        client.publish(f"{self._config['topic']}/light/ledfxscene/config", json.dumps({
+            "~": f"{self._config['topic']}/light/ledfxscene",
+            "name": "LedFx Scene-Selector",
+            "unique_id": "ledfxscene",
+            "cmd_t": "~/set",
+            "stat_t": "~/state",
+            "schema": "json",
+            "brightness": False,
+            "brightness_scale": 1000,
+            "icon":  "mdi:image-outline",
+            "effect": True,
+            "effect_list": list(self._ledfx.config["scenes"].keys()),
+            "device": {
+                "identifiers": [
+                    "yzlights"
+                ],
+                "name": "LedFx",
+                "model": "BladeMOD",
+                "manufacturer": "Yeon",
+                "sw_version": "0.9.0"
+            }
+        }))
+        
+        for virtual in self._ledfx.virtuals.values():
+            # _LOGGER.info(f"COLORS: {list(COLORS.keys())}")
+            if virtual.config["icon_name"].startswith("mdi:"):
+                icon=virtual.config["icon_name"]
+            else:
+                icon="mdi:led-strip"
+            client.publish(f"{self._config['topic']}/light/{virtual.id}/config", json.dumps({
+                "~": f"{self._config['topic']}/light/{virtual.id}",
+                "name": "⮑ " + virtual.config["name"],
+                "unique_id": virtual.id,
+                "cmd_t": "~/set",
+                "stat_t": "~/state",
+                "schema": "json",
+                "brightness": False,
+                "icon": icon,
+                #"color_mode": True,                    ### LATER: WAIT FOR COLOR TO BECOME UNIVERSAL
+                #"supported_color_modes": ["rgb"],
+                "effect": True,
+                "effect_list": list(COLORS.keys()),
+                "device": {
+                    "identifiers": [
+                        "yzlights"
+                    ],
+                    "name": "LedFx",
+                    "model": "BladeMOD",
+                    "manufacturer": "Yeon",
+                    "sw_version": "0.9.0"
+                }
+            }))
+            client.subscribe(f"{self._config['topic']}/light/{virtual.id}/set")
+
+
+    def on_message(self, client, userdata, msg):
+        #_LOGGER.info(msg.topic+" "+str(msg.payload))
+
+        if msg.topic.endswith("/set"):
+            segs=msg.topic.split("/")
+            virtualid=segs[2]
+            if virtualid == "ledfxscene":
+                mydict = ast.literal_eval(msg.payload.decode('utf-8'))
+                _LOGGER.info("BOOOM 2"+str(mydict))
+                if "effect" in mydict:
+                    _LOGGER.info("BOOOM 3: "+mydict["effect"])
+                    scene_id = mydict["effect"]
+                    ### SET SCENE ###
+                    if scene_id is None:
+                        response = {
+                            "status": "failed",
+                            "reason": 'Required attribute "scene_id" was not provided',
+                        }
+                        return _LOGGER.warning(response)
+                    _LOGGER.warning(str(self._ledfx.config["scenes"].keys()))
+                    if scene_id not in self._ledfx.config["scenes"].keys():
+                        response = {
+                            "status": "failed",
+                            "reason": f'Scene "{scene_id}" does not exist',
+                        }
+                        return _LOGGER.warning(response)
+
+                    scene = self._ledfx.config["scenes"][scene_id]
+
+                    for virtual in self._ledfx.virtuals.values():
+                        if virtual.id not in scene["virtuals"].keys():
+                            _LOGGER.info(
+                                ("virtual with id {} has no data in scene {}").format(
+                                    virtual.id, scene_id
+                                )
+                            )
+                            continue
+
+                        if scene["virtuals"][virtual.id]:
+                            effect = self._ledfx.effects.create(
+                                ledfx=self._ledfx,
+                                type=scene["virtuals"][virtual.id]["type"],
+                                config=scene["virtuals"][virtual.id]["config"],
+                            )
+                            virtual.set_effect(effect)
+                        else:
+                            virtual.clear_effect()
+
+                    self._ledfx.events.fire_event(SceneSetEvent(scene["name"]))
+                    ### SET SCENE END ###
+            
+            
+            
+            for virtual in self._ledfx.virtuals.values():
+
+                if virtual.id == virtualid:
+                    mydict = ast.literal_eval(msg.payload.decode('utf-8'))
+                    _LOGGER.info("BOOOM 4: "+ virtualid + "---" + mydict["state"])
+                    
+                    ### not_matt: if virtual has no active effect, set effect to: {type: "singleColor", config: {color: "orange"}}
+                    virt = self._ledfx.virtuals.get(virtualid)
+                    if "effect" in mydict:
+                        _LOGGER.info("BOOOM 5: "+mydict["effect"])
+                        
+                        effect = self._ledfx.effects.create(
+                            ledfx=self._ledfx, type="singleColor", config={"color":  mydict["effect"]}
+                        )
+                        try:
+                            virt.set_effect(effect)
+                        except (ValueError, RuntimeError) as msg:
+                            response = {
+                                "status": "failed",
+                                "payload": {"type": "warning", "reason": str(msg)},
+                            }
+                            return _LOGGER.info(response)
+
+                        # Update and save the configuration
+                        for virt in self._ledfx.config["virtuals"]:
+                            if virt["id"] == virtualid:
+                                virt["effect"] = {}
+                                virt["effect"]["type"] = "singleColor"
+                                virt["effect"]["config"] = {"color":  mydict["effect"]}
+                                break
+                        save_config(
+                            config=self._ledfx.config,
+                            config_dir=self._ledfx.config_dir,
+                        )
+                        client.publish(f"{self._config['topic']}/light/{virtualid}/state", msg.payload)
+                        return
+
+                    if not virt.active_effect:                        
+                        effect = self._ledfx.effects.create(
+                            ledfx=self._ledfx, type="singleColor", config={"color":  "orange"}
+                        )
+                        try:
+                            virt.set_effect(effect)
+                        except (ValueError, RuntimeError) as msg:
+                            response = {
+                                "status": "failed",
+                                "payload": {"type": "warning", "reason": str(msg)},
+                            }
+                            return _LOGGER.info(response)
+
+                        # Update and save the configuration
+                        for virt in self._ledfx.config["virtuals"]:
+                            if virt["id"] == virtualid:
+                                virt["effect"] = {}
+                                virt["effect"]["type"] = "singleColor"
+                                virt["effect"]["config"] = {"color":  "orange"}
+                                break
+                        save_config(
+                            config=self._ledfx.config,
+                            config_dir=self._ledfx.config_dir,
+                        )
+                        client.publish(f"{self._config['topic']}/light/{virtualid}/state", msg.payload)
+                        return
+                    if mydict["state"] == "ON":
+                        active = True
+                    else:
+                        active = False
+                    virtual = self._ledfx.virtuals.get(virtualid)
+                    
+                    
+                    try:
+                        virtual.active = active
+                    except ValueError as msg:
+                        response = {
+                            "status": "failed",
+                            "payload": {"type": "warning", "reason": str(msg)},
+                        }
+                        return _LOGGER.info(response)
+
+                    for idx, item in enumerate(self._ledfx.config["virtuals"]):
+                        if item["id"] == virtual.id:
+                            item["active"] = virtual.active
+                            self._ledfx.config["virtuals"][idx] = item
+                            break
+
+                    save_config(
+                        config=self._ledfx.config,
+                        config_dir=self._ledfx.config_dir,
+                    )
+
+            # LATER: Set effect_list, color
+
+            client.publish(f"{self._config['topic']}/light/{virtualid}/state", msg.payload)
+
+
+    async def connect(self):
+        _LOGGER.info("Connecting1")
+        client = mqtt.Client()
+        client.on_connect = self.on_connect
+        client.on_message = self.on_message
+        if self._config["username"] is not None:
+            client.username_pw_set(self._config["username"], password=self._config["password"])
+        client.connect_async(self._config["ip_address"], self._config['port'], 60)
+        client.loop_start()
+        _LOGGER.info(client)
+
+
+
