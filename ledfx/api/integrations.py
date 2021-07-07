@@ -123,6 +123,9 @@ class IntegrationsEndpoint(RestEndpoint):
             response = {"not found": 404}
             return web.Response(text=json.dumps(response), status=404)
 
+        if hasattr(integration, 'on_delete'):
+            await integration.on_delete()
+
         self._ledfx.integrations.destroy(integration_id)
 
         self._ledfx.config["integrations"] = [
@@ -198,7 +201,7 @@ class IntegrationsEndpoint(RestEndpoint):
         integration = self._ledfx.integrations.create(
             id=integration_id,
             type=integration_type,
-            active=True,
+            active=False,
             config=integration_config,
             data=None,
             ledfx=self._ledfx,

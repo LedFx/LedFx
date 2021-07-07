@@ -13,7 +13,7 @@ from ledfx.color import COLORS
 from ledfx.transitions import Transitions
 _LOGGER = logging.getLogger(__name__)
 
-class MQTTHASS(Integration):
+class MQTT_HASS(Integration):
     """MQTT HomeAssistant Integration"""
     
     NAME = "Home Assistant MQTT"
@@ -49,6 +49,11 @@ class MQTTHASS(Integration):
                 description="MQTT password",
                 default="",
             ): str,
+            vol.Optional(
+                "description",
+                description="Internal Description",
+                default="MQTT Integration with auto-discovery",
+            ): str,
 
         }
     )
@@ -61,9 +66,9 @@ class MQTTHASS(Integration):
         self._client = None
         self._data = []
         self._listeners = []
-        _LOGGER.info(f"CONFIG: {self._config}")
 
     def on_connect(self, client, userdata, flags, rc):
+        ### Create Scene-Selector and Transition-Config as Light in HomeAssistant
         client.subscribe(f"{self._config['topic']}/light/ledfxscene/set")
         client.subscribe(f"{self._config['topic']}/light/ledfxtransition/set")
         client.publish(f"{self._config['topic']}/light/ledfxscene/config", json.dumps({
@@ -85,7 +90,7 @@ class MQTTHASS(Integration):
                 "name": "LedFx",
                 "model": "BladeMOD",
                 "manufacturer": "Yeon",
-                "sw_version": "0.9.0"
+                "sw_version": self._ledfx.config['configuration_version']
             }
         }))
         client.publish(f"{self._config['topic']}/light/ledfxtransition/config", json.dumps({
@@ -119,6 +124,8 @@ class MQTTHASS(Integration):
                 "sw_version": "0.9.0"
             }
         }))
+
+        ### Create Virtuals as Light in HomeAssistant
         for virtual in self._ledfx.virtuals.values():
             if virtual.config["icon_name"].startswith("mdi:"):
                 icon=virtual.config["icon_name"]
@@ -151,9 +158,12 @@ class MQTTHASS(Integration):
 
 
     def on_message(self, client, userdata, msg):
+        ### React to SET commands
         if msg.topic.endswith("/set"):
             segs=msg.topic.split("/")
             virtualid=segs[2]
+
+            ### React to Transition-Config
             if virtualid == "ledfxtransition":
                 _LOGGER.info("Transitions: " + str(msg.payload))
                 mydict = ast.literal_eval(msg.payload.decode('utf-8'))
@@ -165,11 +175,11 @@ class MQTTHASS(Integration):
                     ### Todo: set Global Transition Time to mydict["brightness"]*10 ms
                 client.publish(f"{self._config['topic']}/light/{virtualid}/state", msg.payload)
                 return
+
+            ### React to Scene-Selector
             if virtualid == "ledfxscene":
-                mydict = ast.literal_eval(msg.payload.decode('utf-8'))
-                _LOGGER.info("BOOOM 2"+str(mydict))
+                mydict = ast.literal_eval(msg.payload.decode('utf-8'))                
                 if "effect" in mydict:
-                    _LOGGER.info("BOOOM 3: "+mydict["effect"])
                     scene_id = mydict["effect"]
                     ### SET SCENE ###
                     if scene_id is None:
@@ -190,7 +200,7 @@ class MQTTHASS(Integration):
 
                     for virtual in self._ledfx.virtuals.values():
                         if virtual.id not in scene["virtuals"].keys():
-                            _LOGGER.info(
+                            _LOGGER.warning(
                                 ("virtual with id {} has no data in scene {}").format(
                                     virtual.id, scene_id
                                 )
@@ -211,7 +221,7 @@ class MQTTHASS(Integration):
                     ### SET SCENE END ###
             
             
-            
+            ### React to Virtuals
             for virtual in self._ledfx.virtuals.values():
 
                 if virtual.id == virtualid:
@@ -229,7 +239,7 @@ class MQTTHASS(Integration):
                                 "status": "failed",
                                 "payload": {"type": "warning", "reason": str(msg)},
                             }
-                            return _LOGGER.info(response)
+                            return _LOGGER.warning(response)
                         for virt in self._ledfx.config["virtuals"]:
                             if virt["id"] == virtualid:
                                 virt["effect"] = {}
@@ -242,7 +252,7 @@ class MQTTHASS(Integration):
                         )
                         client.publish(f"{self._config['topic']}/light/{virtualid}/state", msg.payload)
                         return
-
+                    ### Fallback if no active effect 
                     if not virt.active_effect:                        
                         effect = self._ledfx.effects.create(
                             ledfx=self._ledfx, type="singleColor", config={"color":  "orange"}
@@ -296,16 +306,22 @@ class MQTTHASS(Integration):
             client.publish(f"{self._config['topic']}/light/{virtualid}/state", msg.payload)
 
 
+    ### Clean up HomeAssistant
+    async def on_delete(self):
+        self._client.publish(f"{self._config['topic']}/light/ledfxscene/config", json.dumps({}))
+        self._client.publish(f"{self._config['topic']}/light/ledfxtransition/config", json.dumps({}))
+        for virtual in self._ledfx.virtuals.values():
+            self._client.publish(f"{self._config['topic']}/light/{virtual.id}/config", json.dumps({}))
+
     async def connect(self):
-        _LOGGER.info("Connecting1")
         client = mqtt.Client()
         client.on_connect = self.on_connect
         client.on_message = self.on_message
+        self._client = client
         if self._config["username"] is not None:
             client.username_pw_set(self._config["username"], password=self._config["password"])
         client.connect_async(self._config["ip_address"], self._config['port'], 60)
         client.loop_start()
-        _LOGGER.info(client)
 
 
 
