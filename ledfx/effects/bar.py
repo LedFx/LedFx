@@ -45,7 +45,7 @@ class BarAudioEffect(AudioReactiveEffect, GradientEffect):
 
     def audio_data_updated(self, data):
         # Run linear beat oscillator through easing method
-        self.beat_oscillator = data.oscillator()
+        self.beat_oscillator = data.beat_oscillator()
         self.beat_now = data.bpm_beat_now()
 
         # Colour change and phase

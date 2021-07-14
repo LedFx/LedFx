@@ -326,7 +326,7 @@ class AudioAnalysisSource(AudioInputSource):
         self.subscribe(self.melbanks)
         self.subscribe(self.pitch)
         self.subscribe(self.onset)
-        self.subscribe(self.oscillator)
+        self.subscribe(self.bar_oscillator)
         self.subscribe(self.volume_beat_now)
         self.subscribe(self.freq_power)
 
@@ -350,7 +350,7 @@ class AudioAnalysisSource(AudioInputSource):
         self._pitch.set_unit("midi")
         self._pitch.set_tolerance(self._config["pitch_tolerance"])
 
-        # oscillator
+        # beat oscillator
         self.beat_timestamp = time.time()
         self.beat_period = 2
 
@@ -414,7 +414,7 @@ class AudioAnalysisSource(AudioInputSource):
         self.onset.cache_clear()
         self.bpm_beat_now.cache_clear()
         self.volume_beat_now.cache_clear()
-        self.oscillator.cache_clear()
+        self.bar_oscillator.cache_clear()
 
     # @lru_cache(maxsize=32)
     # def melbank(self):
@@ -588,20 +588,25 @@ class AudioAnalysisSource(AudioInputSource):
         return self.get_freq_power(3, filtered)
 
     @cache
-    def oscillator(self):
+    def bar_oscillator(self):
         """
-        returns a float (0<=x<1) corresponding to the current position of beat tracker.
-        this is synced and quantized to the bpm of whatever is playing.
+        Returns a float (0<=x<4) corresponding to the position of the beat
+        tracker in the musical bar (4 beats)
+        This is synced and quantized to the bpm of whatever is playing.
+        While the beat number might not necessarily be accurate, the
+        relative position of the tracker between beats will be quite accurate.
 
-        0                0.5                 <1
-        {----------time for one beat---------}
+        0           1           2           3
+        {----------time for one bar---------}
                ^    -->      -->      -->
             value of
-           oscillator
+        beat grid pointer
         """
         # update tempo and oscillator
+        # print(self._tempo.get_delay_s())
         if self.bpm_beat_now():
             self.beat_period = self._tempo.get_period_s()
+            # print("beat at:", self._tempo.get_delay_s())
             self.beat_timestamp = time.time()
             oscillator = 0
         else:
@@ -613,6 +618,19 @@ class AudioAnalysisSource(AudioInputSource):
             oscillator = min(1, oscillator)
             oscillator = max(0, oscillator)
         return oscillator
+
+    def beat_oscillator(self):
+        """
+        returns a float (0<=x<1) corresponding to the relative position of the
+        bar oscillator in the current beat.
+
+        0                0.5                 <1
+        {----------time for one beat---------}
+               ^    -->      -->      -->
+            value of
+           oscillator
+        """
+        return self.bar_oscillator() % 1
 
 
 @Effect.no_registration
