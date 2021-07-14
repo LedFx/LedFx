@@ -44,9 +44,9 @@ class LedFxCore:
         self.config_dir = config_dir
         self.config = load_config(config_dir)
         self.config["ledfx_presets"] = ledfx_presets
-        host = host if host else self.config["host"]
-        port = port if port else self.config["port"]
-        port_s = port_s if port_s else self.config["port_s"]
+        self.host = host if host else self.config["host"]
+        self.port = port if port else self.config["port"]
+        self.port_s = port_s if port_s else self.config["port_s"]
 
         if sys.platform == "win32":
             self.loop = asyncio.ProactorEventLoop()
@@ -64,7 +64,9 @@ class LedFxCore:
         self.setup_logqueue()
         self.events = Events(self)
         self.setup_visualisation_events()
-        self.http = HttpServer(ledfx=self, host=host, port=port, port_s=port_s)
+        self.http = HttpServer(
+            ledfx=self, host=self.host, port=self.port, port_s=self.port_s
+        )
         self.exit_code = None
 
     def dev_enabled(self):
