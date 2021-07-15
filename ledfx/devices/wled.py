@@ -116,7 +116,6 @@ class WLEDDevice(NetworkedDevice):
             "pixel_count": wled_count,
             "rgbw_led": wled_rgbmode,
         }
-        # that's a nice operation u got there python
 
         self._config |= wled_config
         self.setup_subdevice()
@@ -133,4 +132,4 @@ class WLEDDevice(NetworkedDevice):
         # self.wled.first_dmx_address()
         # self.wled.multirgb_dmx_mode()
 
-        await self.wled.flush_sync_settings()
+        # await self.wled.flush_sync_settings()
