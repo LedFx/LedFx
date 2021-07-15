@@ -6,12 +6,7 @@ import warnings
 import webbrowser
 from concurrent.futures import ThreadPoolExecutor
 
-from ledfx.config import (
-    WLED_CONFIG_SCHEMA,
-    get_ssl_certs,
-    load_config,
-    save_config,
-)
+from ledfx.config import get_ssl_certs, load_config, save_config
 from ledfx.devices import Devices
 from ledfx.effects import Effects
 from ledfx.effects.math import interpolate_pixels
@@ -216,11 +211,11 @@ class LedFxCore:
         self.devices.create_from_config(self.config["devices"])
         await self.devices.async_initialize_devices()
 
-        sync_mode = WLED_CONFIG_SCHEMA(self.config["wled_preferences"])[
-            "wled_preferred_mode"
-        ]
-        if sync_mode:
-            await self.devices.set_wleds_sync_mode(sync_mode)
+        # sync_mode = WLED_CONFIG_SCHEMA(self.config["wled_preferences"])[
+        #     "wled_preferred_mode"
+        # ]
+        # if sync_mode:
+        #     await self.devices.set_wleds_sync_mode(sync_mode)
 
         self.virtuals.create_from_config(self.config["virtuals"])
         self.integrations.create_from_config(self.config["integrations"])
