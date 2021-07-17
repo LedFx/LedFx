@@ -37,7 +37,7 @@ class E131Device(NetworkedDevice):
                 default=0,
             ): vol.All(vol.Coerce(int), vol.Range(min=0)),
             vol.Optional(
-                "e131_Packet_Priority",
+                "packet_priority",
                 description="Priority given to the sACN packets for this device",
                 default=100,
             ): vol.All(vol.Coerce(int), vol.Range(min=0, max=200)),
@@ -92,7 +92,7 @@ class E131Device(NetworkedDevice):
             _LOGGER.info(f"sACN activating universe {universe}")
             self._sacn.activate_output(universe)
             self._sacn[universe].priority = self._config[
-                "e131_Packet_Priority"
+                "packet_priority"
             ]
             self._sacn[universe].multicast = multicast
             if not multicast:
