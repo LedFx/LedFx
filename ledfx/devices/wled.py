@@ -56,6 +56,7 @@ class WLEDDevice(NetworkedDevice):
             "universe": 1,
             "universe_size": 510,
             "channel_offset": 0,
+            "packet_priority": 100,
         },
     }
 
