@@ -45,7 +45,7 @@ class MultiBarAudioEffect(AudioReactiveEffect, GradientEffect):
     def audio_data_updated(self, data):
         # Run linear beat oscillator through easing method
         self.beat_oscillator, self.beat_now = (
-            data.oscillator(),
+            data.beat_oscillator(),
             data.bpm_beat_now(),
         )
 

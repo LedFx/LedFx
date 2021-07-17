@@ -16,8 +16,6 @@ CORE_CONFIG_KEYS = set(map(str, CORE_CONFIG_SCHEMA.schema.keys()))
 
 
 def validate_and_trim_config(config, schema, node):
-    print(config)
-    print(PERMITTED_KEYS[node])
     for key in config.keys():
         if key not in PERMITTED_KEYS[node]:
             raise KeyError(f"Unknown/forbidden {node} config key: '{key}'")
@@ -169,9 +167,19 @@ class ConfigEndpoint(RestEndpoint):
             )
 
             self._ledfx.config["audio"] |= audio_config
-            self._ledfx.config["wled_preferences"] |= wled_config
             self._ledfx.config["melbanks"] |= melbanks_config
             self._ledfx.config |= core_config
+
+            # handle special case wled_preferences nested dict
+            for key in wled_config:
+                if key in self._ledfx.config["wled_preferences"]:
+                    self._ledfx.config["wled_preferences"][key] |= wled_config[
+                        key
+                    ]
+                else:
+                    self._ledfx.config["wled_preferences"][key] = wled_config[
+                        key
+                    ]
 
             # TODO
             # Do something if wled preferences config is updated

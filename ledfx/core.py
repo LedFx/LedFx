@@ -6,12 +6,7 @@ import warnings
 import webbrowser
 from concurrent.futures import ThreadPoolExecutor
 
-from ledfx.config import (
-    WLED_CONFIG_SCHEMA,
-    get_ssl_certs,
-    load_config,
-    save_config,
-)
+from ledfx.config import get_ssl_certs, load_config, save_config
 from ledfx.devices import Devices
 from ledfx.effects import Effects
 from ledfx.effects.math import interpolate_pixels
@@ -44,9 +39,9 @@ class LedFxCore:
         self.config_dir = config_dir
         self.config = load_config(config_dir)
         self.config["ledfx_presets"] = ledfx_presets
-        host = host if host else self.config["host"]
-        port = port if port else self.config["port"]
-        port_s = port_s if port_s else self.config["port_s"]
+        self.host = host if host else self.config["host"]
+        self.port = port if port else self.config["port"]
+        self.port_s = port_s if port_s else self.config["port_s"]
 
         if sys.platform == "win32":
             self.loop = asyncio.ProactorEventLoop()
@@ -64,7 +59,9 @@ class LedFxCore:
         self.setup_logqueue()
         self.events = Events(self)
         self.setup_visualisation_events()
-        self.http = HttpServer(ledfx=self, host=host, port=port, port_s=port_s)
+        self.http = HttpServer(
+            ledfx=self, host=self.host, port=self.port, port_s=self.port_s
+        )
         self.exit_code = None
 
     def dev_enabled(self):
@@ -214,11 +211,11 @@ class LedFxCore:
         self.devices.create_from_config(self.config["devices"])
         await self.devices.async_initialize_devices()
 
-        sync_mode = WLED_CONFIG_SCHEMA(self.config["wled_preferences"])[
-            "wled_preferred_mode"
-        ]
-        if sync_mode:
-            await self.devices.set_wleds_sync_mode(sync_mode)
+        # sync_mode = WLED_CONFIG_SCHEMA(self.config["wled_preferences"])[
+        #     "wled_preferred_mode"
+        # ]
+        # if sync_mode:
+        #     await self.devices.set_wleds_sync_mode(sync_mode)
 
         self.virtuals.create_from_config(self.config["virtuals"])
         self.integrations.create_from_config(self.config["integrations"])

@@ -157,6 +157,8 @@ class VirtualEndpoint(RestEndpoint):
     async def delete(self, virtual_id) -> web.Response:
         """
         Remove a virtual with this virtual id
+        Handles deleting the device if the virtual is dedicated to a device
+        Removes references to this virtual in any scenes
         """
         virtual = self._ledfx.virtuals.get(virtual_id)
         if virtual is None:
@@ -168,7 +170,9 @@ class VirtualEndpoint(RestEndpoint):
 
         virtual.clear_effect()
         device_id = virtual.is_device
-        if self._ledfx.devices.get(device_id) is not None:
+        device = self._ledfx.devices.get(device_id)
+        if device is not None:
+            device.remove_from_virtuals()
             self._ledfx.devices.destroy(device_id)
 
             # Update and save the configuration
@@ -177,6 +181,15 @@ class VirtualEndpoint(RestEndpoint):
                 for device in self._ledfx.config["devices"]
                 if device["id"] != device_id
             ]
+
+        # cleanup this virtual from any scenes
+        ledfx_scenes = self._ledfx.config["scenes"].copy()
+        for scene_id, scene_config in ledfx_scenes.items():
+            self._ledfx.config["scenes"][scene_id]["virtuals"] = {
+                _virtual_id: effect
+                for _virtual_id, effect in scene_config["virtuals"].items()
+                if _virtual_id != virtual_id
+            }
 
         self._ledfx.virtuals.destroy(virtual_id)
 

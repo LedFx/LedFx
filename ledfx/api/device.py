@@ -84,6 +84,7 @@ class DeviceEndpoint(RestEndpoint):
             return web.json_response(data=response, status=404)
 
         device.clear_effect()
+        device.remove_from_virtuals()
         self._ledfx.devices.destroy(device_id)
 
         # Update and save the configuration

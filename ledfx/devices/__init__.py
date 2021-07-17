@@ -251,6 +251,27 @@ class Device(BaseRegistry):
             if hasattr(self, prop):
                 delattr(self, prop)
 
+    def remove_from_virtuals(self):
+        # delete segments for this device in any virtuals
+
+        for virtual in self._ledfx.virtuals.values():
+            print(virtual.id, virtual.segments)
+            if not any(segment[0] == self.id for segment in virtual._segments):
+                print("clean, skipping")
+                continue
+
+            active = virtual.active
+            if active:
+                virtual.deactivate()
+            virtual._segments = list(
+                segment
+                for segment in virtual._segments
+                if segment[0] != self.id
+            )
+            print("new segments:", virtual._segments)
+            if active:
+                virtual.activate()
+
 
 @BaseRegistry.no_registration
 class NetworkedDevice(Device):
@@ -409,16 +430,21 @@ class Devices(RegistryLoader):
             # UDP < 480
             # DDP or E131 depending on: ledfx's configured preferred mode first, else the device's mode
             # ARTNET can do one
-            sync_mode = "UDP"
+
             if wled_count > 480:
-                preferred_mode = self._ledfx.config["wled_preferences"][
-                    "wled_preferred_mode"
-                ]
-                if preferred_mode:
-                    sync_mode = preferred_mode
-                else:
-                    await wled.get_sync_settings()
-                    sync_mode = wled.get_sync_mode()
+                await wled.get_sync_settings()
+                sync_mode = wled.get_sync_mode()
+            else:
+                sync_mode = "UDP"
+
+                # preferred_mode = self._ledfx.config["wled_preferences"][
+                #     "wled_preferred_mode"
+                # ]
+                # if preferred_mode:
+                #     sync_mode = preferred_mode
+                # else:
+                #     await wled.get_sync_settings()
+                #     sync_mode = wled.get_sync_mode()
 
             if sync_mode == "ARTNET":
                 msg = f"Cannot add WLED device at {resolved_dest}. Unsupported mode: 'ARTNET', and too many pixels for UDP sync (>480)"
