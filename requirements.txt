@@ -21,3 +21,4 @@
     pyserial>=3.5
     pystray>=0.17
     tcp-latency>=0.0.10
+    paho-mqtt>=1.5.1
