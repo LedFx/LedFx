@@ -58,7 +58,7 @@ class Virtual:
             vol.Optional(
                 "transition_time",
                 description="Length of transition between effects",
-                default=1,
+                default=0.4,
             ): vol.All(
                 vol.Coerce(float),
                 vol.Range(min=0, max=5, min_included=True, max_included=True),
