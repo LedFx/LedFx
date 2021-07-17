@@ -70,7 +70,26 @@ class MQTT_HASS(Integration):
     def on_connect(self, client, userdata, flags, rc):
         ### Create Scene-Selector and Transition-Config as Light in HomeAssistant
         client.subscribe(f"{self._config['topic']}/light/ledfxscene/set")
+        client.subscribe(f"{self._config['topic']}/select/ledfxsceneselect/set")
         client.subscribe(f"{self._config['topic']}/light/ledfxtransition/set")
+        client.publish(f"{self._config['topic']}/select/ledfxsceneselect/config", json.dumps({
+            "~": f"{self._config['topic']}/select/ledfxsceneselect",
+            "name": "LedFx Scene Selector",
+            "unique_id": "ledfxsceneselect",
+            "cmd_t": "~/set",
+            "stat_t": "~/state",
+            "icon":  "mdi:image-outline",
+            "options": list(self._ledfx.config["scenes"].keys()),
+            "device": {
+                "identifiers": [
+                    "yzlights"
+                ],
+                "name": "LedFx",
+                "model": "BladeMOD",
+                "manufacturer": "Yeon",
+                "sw_version": self._ledfx.config['configuration_version']
+            }
+        }))
         client.publish(f"{self._config['topic']}/light/ledfxscene/config", json.dumps({
             "~": f"{self._config['topic']}/light/ledfxscene",
             "name": "LedFx Scene",
@@ -162,6 +181,7 @@ class MQTT_HASS(Integration):
         if msg.topic.endswith("/set"):
             segs=msg.topic.split("/")
             virtualid=segs[2]
+            _LOGGER.warning(f"YZ{virtualid}")
 
             ### React to Transition-Config
             if virtualid == "ledfxtransition":
@@ -219,7 +239,41 @@ class MQTT_HASS(Integration):
 
                     self._ledfx.events.fire_event(SceneSetEvent(scene["name"]))
                     ### SET SCENE END ###
-            
+
+
+            ### React to Scene-Selector-v2
+            if virtualid == "ledfxsceneselect":
+                scene_id = msg.payload.decode('utf-8')            
+                _LOGGER.warning(f"YZ{scene_id}")
+                if scene_id not in self._ledfx.config["scenes"].keys():
+                    response = {
+                        "status": "failed",
+                        "reason": f'Scene "{scene_id}" does not exist',
+                    }
+                    return _LOGGER.warning(response)
+
+                scene = self._ledfx.config["scenes"][scene_id]
+
+                for virtual in self._ledfx.virtuals.values():
+                    if virtual.id not in scene["virtuals"].keys():
+                        _LOGGER.warning(
+                            ("virtual with id {} has no data in scene {}").format(
+                                virtual.id, scene_id
+                            )
+                        )
+                        continue
+
+                    if scene["virtuals"][virtual.id]:
+                        effect = self._ledfx.effects.create(
+                            ledfx=self._ledfx,
+                            type=scene["virtuals"][virtual.id]["type"],
+                            config=scene["virtuals"][virtual.id]["config"],
+                        )
+                        virtual.set_effect(effect)
+                    else:
+                        virtual.clear_effect()
+
+                self._ledfx.events.fire_event(SceneSetEvent(scene["name"]))
             
             ### React to Virtuals
             for virtual in self._ledfx.virtuals.values():
@@ -310,6 +364,7 @@ class MQTT_HASS(Integration):
     async def on_delete(self):
         self._client.publish(f"{self._config['topic']}/light/ledfxscene/config", json.dumps({}))
         self._client.publish(f"{self._config['topic']}/light/ledfxtransition/config", json.dumps({}))
+        self._client.publish(f"{self._config['topic']}/select/ledfxsceneselect/config", json.dumps({}))        
         for virtual in self._ledfx.virtuals.values():
             self._client.publish(f"{self._config['topic']}/light/{virtual.id}/config", json.dumps({}))
 
