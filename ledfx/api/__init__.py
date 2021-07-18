@@ -5,6 +5,7 @@ from aiohttp import web
 
 from ledfx.utils import BaseRegistry, RegistryLoader
 
+_LOGGER = logging.getLogger(__name__)
 
 @BaseRegistry.no_registration
 class RestEndpoint(BaseRegistry):
@@ -23,10 +24,21 @@ class RestEndpoint(BaseRegistry):
         unsatisfied_args = set(wanted_args) - set(available_args.keys())
         if unsatisfied_args:
             raise web.HttpBadRequest("")
-
-        return await method(
-            **{arg_name: available_args[arg_name] for arg_name in wanted_args}
-        )
+        
+        try:
+            return await method(
+                **{arg_name: available_args[arg_name] for arg_name in wanted_args}
+            )
+        except Exception as e:
+            _LOGGER.error(repr(e))
+            response = {
+                "status": "failed",
+                "payload": {
+                    "type": "error", 
+                    "reason": getattr(e, 'message', repr(e))
+                }
+            }
+            return web.json_response(data=response, status=500)
 
 
 class RestApi(RegistryLoader):
