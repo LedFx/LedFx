@@ -1,5 +1,5 @@
 import inspect
-
+import logging
 import aiohttp_cors
 from aiohttp import web
 
@@ -38,7 +38,7 @@ class RestEndpoint(BaseRegistry):
                     "reason": getattr(e, 'message', repr(e))
                 }
             }
-            return web.json_response(data=response, status=500)
+            return web.json_response(data=response, status=202)
 
 
 class RestApi(RegistryLoader):
