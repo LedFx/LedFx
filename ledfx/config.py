@@ -4,6 +4,7 @@ import logging
 import os
 import shutil
 import sys
+from distutils.version import StrictVersion
 
 import voluptuous as vol
 
@@ -236,8 +237,11 @@ def load_config(config_dir: str) -> dict:
                 _LOGGER.info(
                     f"LedFx Configuration Version: {config_json['configuration_version']}"
                 )
+                assert StrictVersion(
+                    config_json["configuration_version"]
+                ) == StrictVersion(CONFIGURATION_VERSION)
                 return CORE_CONFIG_SCHEMA(config_json)
-            except KeyError:
+            except (KeyError, AssertionError):
                 create_backup(config_dir, config_file, "VERSION")
                 return CORE_CONFIG_SCHEMA({})
     except json.JSONDecodeError:
