@@ -216,7 +216,7 @@ class AudioInputSource:
 
     def _audio_sample_callback(self, in_data, frame_count, time_info, status):
         """Callback for when a new audio sample is acquired"""
-        time_start = time.time()
+        # time_start = time.time()
 
         self._raw_audio_sample = np.frombuffer(in_data, dtype=np.float32)
 
@@ -302,7 +302,7 @@ class AudioAnalysisSource(AudioInputSource):
         {
             vol.Optional("pitch_method", default="default"): str,
             vol.Optional("tempo_method", default="default"): str,
-            vol.Optional("onset_method", default="hfc"): str,
+            vol.Optional("onset_method", default="default"): str,
             vol.Optional("pitch_tolerance", default=0.8): float,
         },
         extra=vol.ALLOW_EXTRA,
@@ -393,9 +393,9 @@ class AudioAnalysisSource(AudioInputSource):
             self.melbanks.melbank_processors[0].melbank_frequencies[-1],
         )
 
-        self.beat_min_percent_diff = 0.7
+        self.beat_min_percent_diff = 0.5
         self.beat_min_time_since = 0.1
-        self.beat_min_amplitude = 0.6
+        self.beat_min_amplitude = 0.5
         self.beat_power_history_len = int(self._config["sample_rate"] * 0.2)
 
         self.beat_prev_time = time.time()
