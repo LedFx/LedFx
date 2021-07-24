@@ -9,7 +9,7 @@ import zeroconf
 
 from ledfx.effects import DummyEffect
 from ledfx.effects.math import interpolate_pixels
-from ledfx.effects.melbank import FrequencyRange
+from ledfx.effects.melbank import MAX_FREQ, MIN_FREQ, FrequencyRange
 from ledfx.events import (
     EffectClearedEvent,
     EffectSetEvent,
@@ -71,21 +71,27 @@ class Virtual:
             vol.Optional(
                 "frequency_min",
                 description="Lowest frequency for this virtual's audio reactive effects",
-                default=20,  # GET THIS FROM CORE AUDIO
+                default=MIN_FREQ,  # GET THIS FROM CORE AUDIO
             ): vol.All(
                 vol.Coerce(int),
                 vol.Range(
-                    min=20, max=10000, min_included=True, max_included=True
+                    min=MIN_FREQ,
+                    max=MAX_FREQ,
+                    min_included=True,
+                    max_included=True,
                 ),
             ),  # AND HERE TOO,
             vol.Optional(
                 "frequency_max",
                 description="Highest frequency for this virtual's audio reactive effects",
-                default=10000,  # GET THIS FROM CORE AUDIO
+                default=MAX_FREQ,  # GET THIS FROM CORE AUDIO
             ): vol.All(
                 vol.Coerce(int),
                 vol.Range(
-                    min=20, max=10000, min_included=True, max_included=True
+                    min=MIN_FREQ,
+                    max=MAX_FREQ,
+                    min_included=True,
+                    max_included=True,
                 ),
             ),  # AND HERE TOO,
         }
