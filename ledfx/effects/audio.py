@@ -691,10 +691,11 @@ class AudioReactiveEffect(Effect):
             "_melbank_min_idx",
             "_melbank_max_idx",
             "_input_mel_length",
-            "_melbank_interp_linspaces",
         ]:
             if hasattr(self, prop):
                 delattr(self, prop)
+
+        self._melbank_interp_linspaces.cache_clear()
 
     @cached_property
     def _selected_melbank(self):
