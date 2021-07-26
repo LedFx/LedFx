@@ -1,25 +1,25 @@
 {
   "files": {
-    "main.css": "/v2/static/css/main.0b1ad7d5.chunk.css",
-    "main.js": "/v2/static/js/main.5c95b31b.chunk.js",
-    "main.js.map": "/v2/static/js/main.5c95b31b.chunk.js.map",
-    "runtime-main.js": "/v2/static/js/runtime-main.f8ded446.js",
-    "runtime-main.js.map": "/v2/static/js/runtime-main.f8ded446.js.map",
-    "static/js/2.8ec0cb37.chunk.js": "/v2/static/js/2.8ec0cb37.chunk.js",
-    "static/js/2.8ec0cb37.chunk.js.map": "/v2/static/js/2.8ec0cb37.chunk.js.map",
-    "static/js/3.8b0f3a92.chunk.js": "/v2/static/js/3.8b0f3a92.chunk.js",
-    "static/js/3.8b0f3a92.chunk.js.map": "/v2/static/js/3.8b0f3a92.chunk.js.map",
-    "index.html": "/v2/index.html",
-    "static/css/main.0b1ad7d5.chunk.css.map": "/v2/static/css/main.0b1ad7d5.chunk.css.map",
-    "static/js/2.8ec0cb37.chunk.js.LICENSE.txt": "/v2/static/js/2.8ec0cb37.chunk.js.LICENSE.txt",
-    "static/media/index.css": "/v2/static/media/materialdesignicons-webfont.e9db4005.woff2",
-    "static/media/blademod.04a8d38d.svg": "/v2/static/media/blademod.04a8d38d.svg",
-    "static/media/ring.1faea45b.png": "/v2/static/media/ring.1faea45b.png"
+    "main.css": "/static/css/main.da2dc776.chunk.css",
+    "main.js": "/static/js/main.b499368f.chunk.js",
+    "main.js.map": "/static/js/main.b499368f.chunk.js.map",
+    "runtime-main.js": "/static/js/runtime-main.801bd165.js",
+    "runtime-main.js.map": "/static/js/runtime-main.801bd165.js.map",
+    "static/js/2.29425ec5.chunk.js": "/static/js/2.29425ec5.chunk.js",
+    "static/js/2.29425ec5.chunk.js.map": "/static/js/2.29425ec5.chunk.js.map",
+    "static/js/3.821b6703.chunk.js": "/static/js/3.821b6703.chunk.js",
+    "static/js/3.821b6703.chunk.js.map": "/static/js/3.821b6703.chunk.js.map",
+    "index.html": "/index.html",
+    "static/css/main.da2dc776.chunk.css.map": "/static/css/main.da2dc776.chunk.css.map",
+    "static/js/2.29425ec5.chunk.js.LICENSE.txt": "/static/js/2.29425ec5.chunk.js.LICENSE.txt",
+    "static/media/index.css": "/static/media/materialdesignicons-webfont.e9db4005.woff2",
+    "static/media/blademod.04a8d38d.svg": "/static/media/blademod.04a8d38d.svg",
+    "static/media/ring.1faea45b.png": "/static/media/ring.1faea45b.png"
   },
   "entrypoints": [
-    "static/js/runtime-main.f8ded446.js",
-    "static/js/2.8ec0cb37.chunk.js",
-    "static/css/main.0b1ad7d5.chunk.css",
-    "static/js/main.5c95b31b.chunk.js"
+    "static/js/runtime-main.801bd165.js",
+    "static/js/2.29425ec5.chunk.js",
+    "static/css/main.da2dc776.chunk.css",
+    "static/js/main.b499368f.chunk.js"
   ]
 }
