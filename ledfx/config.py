@@ -4,6 +4,7 @@ import logging
 import os
 import shutil
 import sys
+from distutils.version import StrictVersion
 
 import voluptuous as vol
 
@@ -12,6 +13,9 @@ from ledfx.consts import CONFIGURATION_VERSION
 CONFIG_DIRECTORY = ".ledfx"
 CONFIG_FILE_NAME = "config.json"
 PRESETS_FILE_NAME = "presets.json"
+
+PRIVATE_KEY_FILE = "privkey.pem"
+CHAIN_KEY_FILE = "fullchain.pem"
 
 _default_wled_settings = {
     "wled_preferred_mode": "UDP",
@@ -32,7 +36,12 @@ def parse_default_wled_setting(setting):
 
 # creates validators for the different wled preferences
 def wled_validator_generator(data_type):
-    return vol.Schema({"setting": data_type, "user_enabled": bool})
+    return vol.Schema(
+        {
+            vol.Optional("setting"): data_type,
+            vol.Optional("user_enabled"): bool,
+        }
+    )
 
 
 # creates the vol.optionals using the above two functions
@@ -51,25 +60,31 @@ _default_wled_settings = dict(
 
 # generate the config schema to validate changes
 WLED_CONFIG_SCHEMA = vol.Schema(
-    dict(map(wled_optional_generator, _default_wled_settings.items())),
-    required=True,
+    dict(map(wled_optional_generator, _default_wled_settings.items()))
 )
 
 CORE_CONFIG_SCHEMA = vol.Schema(
     {
         vol.Optional("host", default="0.0.0.0"): str,
         vol.Optional("port", default=8888): int,
+        vol.Optional("port_s", default=8443): int,
         vol.Optional("dev_mode", default=False): bool,
         vol.Optional("devices", default=[]): list,
-        vol.Optional("displays", default=[]): list,
+        vol.Optional("virtuals", default=[]): list,
+        vol.Optional("audio", default={}): dict,
+        vol.Optional("melbanks", default={}): dict,
         vol.Optional("ledfx_presets", default={}): dict,
         vol.Optional("user_presets", default={}): dict,
         vol.Optional("scenes", default={}): dict,
         vol.Optional("integrations", default=[]): list,
+        vol.Optional("visualisation_fps", default=30): vol.All(
+            int, vol.Range(1, 60)
+        ),
+        vol.Optional("visualisation_maxlen", default=50): vol.All(
+            int, vol.Range(5, 300)
+        ),
         vol.Optional("scan_on_startup", default=False): bool,
-        vol.Optional(
-            "wled_preferences", default=_default_wled_settings
-        ): WLED_CONFIG_SCHEMA,
+        vol.Optional("wled_preferences", default={}): dict,
         vol.Optional(
             "configuration_version", default=CONFIGURATION_VERSION
         ): str,
@@ -120,6 +135,21 @@ def get_log_file_location():
     config_dir = get_default_config_directory()
     log_file_path = os.path.abspath(os.path.join(config_dir, "LedFx.log"))
     return log_file_path
+
+
+def get_ssl_certs() -> tuple:
+    """Finds ssl certificate files in config dir"""
+    ssl_dir = os.path.join(get_default_config_directory(), "ssl")
+
+    if not os.path.exists(ssl_dir):
+        return None
+
+    key_path = os.path.join(ssl_dir, PRIVATE_KEY_FILE)
+    chain_path = os.path.join(ssl_dir, CHAIN_KEY_FILE)
+
+    if os.path.isfile(key_path) and os.path.isfile(key_path):
+        return (chain_path, key_path)
+    return None
 
 
 def create_default_config(config_dir: str) -> str:
@@ -203,12 +233,15 @@ def load_config(config_dir: str) -> dict:
             config_json = json.load(file)
             try:
                 # If there's no config version in the config, it's pre-1.0.0 and won't work
-                # Probably scope to iterate through it and create a display for every device, but that's beyond me
+                # Probably scope to iterate through it and create a virtual for every device, but that's beyond me
                 _LOGGER.info(
                     f"LedFx Configuration Version: {config_json['configuration_version']}"
                 )
+                assert StrictVersion(
+                    config_json["configuration_version"]
+                ) == StrictVersion(CONFIGURATION_VERSION)
                 return CORE_CONFIG_SCHEMA(config_json)
-            except KeyError:
+            except (KeyError, AssertionError):
                 create_backup(config_dir, config_file, "VERSION")
                 return CORE_CONFIG_SCHEMA({})
     except json.JSONDecodeError:

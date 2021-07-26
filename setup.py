@@ -25,7 +25,7 @@ SETUP_REQUIRES = [
 INSTALL_REQUIRES = [
     "numpy>=1.20.2",
     "voluptuous>=0.12.0",
-    "pyaudio>=0.2.11",
+    "sounddevice>=0.4.1",
     "sacn>=1.6.3",
     "aiohttp~=3.7.4.post0",
     "multidict>=5.0.0",
@@ -43,6 +43,7 @@ INSTALL_REQUIRES = [
     "mido>=1.2.10",
     "python-rtmidi>=1.4.9",
     "aiohttp_cors>=0.7.0",
+    "paho-mqtt>=1.5.1",
 ]
 
 setup(

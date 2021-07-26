@@ -1,9 +1,12 @@
 import inspect
+import logging
 
 import aiohttp_cors
 from aiohttp import web
 
 from ledfx.utils import BaseRegistry, RegistryLoader
+
+_LOGGER = logging.getLogger(__name__)
 
 
 @BaseRegistry.no_registration
@@ -24,9 +27,27 @@ class RestEndpoint(BaseRegistry):
         if unsatisfied_args:
             raise web.HttpBadRequest("")
 
-        return await method(
-            **{arg_name: available_args[arg_name] for arg_name in wanted_args}
-        )
+        try:
+            return await method(
+                **{
+                    arg_name: available_args[arg_name]
+                    for arg_name in wanted_args
+                }
+            )
+        except Exception as e:
+            _LOGGER.error(repr(e))
+            response = {
+                "status": "failed",
+                "payload": {
+                    "type": "error",
+                    "reason": getattr(e, "message", repr(e)),
+                },
+            }
+            try:
+                return web.json_response(data=response, status=202)
+            finally:
+                if self._ledfx.dev_enabled():
+                    raise
 
 
 class RestApi(RegistryLoader):

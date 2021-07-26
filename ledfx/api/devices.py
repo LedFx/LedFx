@@ -20,8 +20,8 @@ class DevicesEndpoint(RestEndpoint):
                 "config": device.config,
                 "id": device.id,
                 "type": device.type,
-                "displays": device.displays,
-                "active_displays": device.active_displays,
+                "virtuals": device.virtuals,
+                "active_virtuals": device.active_virtuals,
             }
 
         return web.json_response(data=response, status=200)
@@ -73,7 +73,7 @@ class DevicesEndpoint(RestEndpoint):
                 "type": device.type,
                 "config": device.config,
                 "id": device.id,
-                "displays": device.displays,
+                "virtuals": device.virtuals,
             },
         }
         return web.json_response(data=response, status=200)

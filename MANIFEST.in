@@ -5,6 +5,7 @@ include LICENSE.txt
 include requirements.txt
 recursive-include ledfx *.npy
 recursive-include ledfx_frontend *
+recursive-include ledfx_frontend_v2 *
 include ledfx/default_presets.json
 include ledfx/frontend/components/SceneCard/*
 global-exclude *.pyc

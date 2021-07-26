@@ -1,4 +1,4 @@
-"""ledfx_frontend"""
+"""ledfx_frontend_v2"""
 import os
 
 

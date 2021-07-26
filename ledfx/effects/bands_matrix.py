@@ -18,7 +18,7 @@ class BandsMatrixAudioEffect(AudioReactiveEffect, GradientEffect):
             ): vol.All(vol.Coerce(int), vol.Range(min=1, max=16)),
             vol.Optional(
                 "gradient_name",
-                description="Color gradient to display",
+                description="Color gradient to virtual",
                 default="Rainbow",
             ): vol.In(list(GRADIENTS.keys())),
             vol.Optional(
@@ -34,24 +34,17 @@ class BandsMatrixAudioEffect(AudioReactiveEffect, GradientEffect):
         }
     )
 
-    def activate(self, pixel_count):
+    def on_activate(self, pixel_count):
         self.r = np.zeros(pixel_count)
-        super().activate(pixel_count)
 
     def config_updated(self, config):
         # Create the filters used for the effect
-        self._r_filter = self.create_filter(alpha_decay=0.05, alpha_rise=0.999)
         self.bkg_color = np.array(COLORS["black"], dtype=float)
         self.flip_gradient = config["flip_gradient"]
 
     def audio_data_updated(self, data):
-        # Grab the filtered and interpolated melbank data
-        y = data.interpolated_melbank(self.pixel_count, filtered=False)
-        filtered_y = data.interpolated_melbank(self.pixel_count, filtered=True)
-
-        # Grab the filtered difference between the filtered melbank and the
-        # raw melbank.
-        self.r = self._r_filter.update(y - filtered_y)
+        # Grab the filtered melbank
+        self.r = self.melbank(filtered=True, size=self.pixel_count)
 
     def render(self):
         out = np.tile(self.r, (3, 1)).T

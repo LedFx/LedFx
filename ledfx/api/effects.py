@@ -14,11 +14,11 @@ class EffectsEndpoint(RestEndpoint):
 
     async def get(self) -> web.Response:
         response = {"status": "success", "effects": {}}
-        for display in self._ledfx.displays.values():
-            if display.active_effect:
-                response["effects"][display.id] = {
-                    "effect_type": display.active_effect.type,
-                    "effec_config": display.active_effect.config,
+        for virtual in self._ledfx.virtuals.values():
+            if virtual.active_effect:
+                response["effects"][virtual.id] = {
+                    "effect_type": virtual.active_effect.type,
+                    "effec_config": virtual.active_effect.config,
                 }
         return web.json_response(data=response, status=200)
 
@@ -49,7 +49,7 @@ class EffectsEndpoint(RestEndpoint):
 
         # Clear all effects on all devices
         if action == "clear_all_effects":
-            self._ledfx.displays.clear_all_effects()
+            self._ledfx.virtuals.clear_all_effects()
             response = {
                 "status": "success",
                 "payload": {

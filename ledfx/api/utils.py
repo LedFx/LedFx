@@ -3,6 +3,7 @@ import collections
 
 import voluptuous as vol
 
+from ledfx.config import _default_wled_settings
 from ledfx.utils import generate_title
 
 TYPES_MAP = {
@@ -11,6 +12,28 @@ TYPES_MAP = {
     float: "number",
     bool: "boolean",
     list: "array",
+    dict: "dict",
+}
+
+PERMITTED_KEYS = {
+    "audio": (
+        "min_volume",
+        "device_index",
+    ),
+    "melbanks": (
+        "max_frequencies",
+        "min_frequency",
+    ),
+    "wled_preferences": tuple(_default_wled_settings.keys()),
+    "core": (
+        "host",
+        "port",
+        "port_s",
+        "dev_mode",
+        "scan_on_startup",
+        "visualisation_fps",
+        "visualisation_maxlen",
+    ),
 }
 
 
@@ -105,7 +128,10 @@ def convertToJsonSchema(schema):
         }
 
     elif isinstance(schema, vol.In):
-        return {"type": "string", "enum": list(schema.container)}
+        if isinstance(schema.container, dict):
+            return {"type": "string", "enum": dict(schema.container)}
+        else:
+            return {"type": "string", "enum": list(schema.container)}
         # val = {'type': 'string', 'enum': dict()}
         # for item in schema.container:
         #     val['enum'][item] = item
@@ -113,6 +139,15 @@ def convertToJsonSchema(schema):
 
     elif isinstance(schema, vol.Coerce):
         schema = schema.type
+
+    elif isinstance(schema, list):
+        val = {
+            "type": "list",
+            "validators": list(
+                convertToJsonSchema(validator) for validator in schema
+            ),
+        }
+        return val
 
     if schema in TYPES_MAP:
         return {"type": TYPES_MAP[schema]}

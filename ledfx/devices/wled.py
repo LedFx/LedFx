@@ -1,5 +1,4 @@
 import logging
-from distutils.version import StrictVersion
 
 import voluptuous as vol
 
@@ -57,6 +56,7 @@ class WLEDDevice(NetworkedDevice):
             "universe": 1,
             "universe_size": 510,
             "channel_offset": 0,
+            "packet_priority": 100,
         },
     }
 
@@ -117,21 +117,20 @@ class WLEDDevice(NetworkedDevice):
             "pixel_count": wled_count,
             "rgbw_led": wled_rgbmode,
         }
-        # that's a nice operation u got there python
 
         self._config |= wled_config
         self.setup_subdevice()
 
         # Currently *assuming* that this PR gets released in 0.13
         # https://github.com/Aircoookie/WLED/pull/1944
-        if StrictVersion(wled_version) >= StrictVersion("0.13.0"):
-            _LOGGER.info(
-                f"WLED Version Supports Sync Setting API: {wled_version}"
-            )
-            # self.wled.enable_realtime_gamma()
-            # self.wled.set_inactivity_timeout(self._config["timeout"])
-            # self.wled.first_universe()
-            # self.wled.first_dmx_address()
-            # self.wled.multirgb_dmx_mode()
+        # if StrictVersion(wled_version) >= StrictVersion("0.13.0"):
+        #     _LOGGER.info(
+        #         f"WLED Version Supports Sync Setting API: {wled_version}"
+        #     )
+        # self.wled.enable_realtime_gamma()
+        # self.wled.set_inactivity_timeout(self._config["timeout"])
+        # self.wled.first_universe()
+        # self.wled.first_dmx_address()
+        # self.wled.multirgb_dmx_mode()
 
-        await self.wled.flush_sync_settings()
+        # await self.wled.flush_sync_settings()

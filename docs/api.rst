@@ -25,20 +25,84 @@ Returns basic information about the LedFx instance as JSON
 /api/config
 ===============
 
-LedFx Configuration
+Endpoint for managing LedFx Configuration
 
 .. rubric:: GET
 
 Returns the current configuration for LedFx as JSON
+A GET with no request body will return LedFx's full configuration.
 
-/api/log (upcoming)
+You may instead ask for any number of the config keys:
+
+- *host*
+- *port*
+- *port_s*
+- *dev_mode*
+- *configuration_version*
+- *scan_on_startup*
+- *visualisation_fps*
+- *visualisation_maxlen*
+- *audio*
+- *melbanks*
+- *wled_preferences*
+- *devices*
+- *virtuals*
+- *integrations*
+- *scenes*
+- *user_presets*
+- *ledfx_presets*
+
+example: Get LedFx audio configuration
+
+.. code-block:: json
+
+    "audio"
+
+example: Get LedFx audio, devices, and scenes configuration
+
+.. code-block:: json
+
+    ["audio", "devices", "scenes"]
+
+.. rubric:: PUT
+
+Updates LedFx configuration with any permitted keys.
+LedFx will handle the update and restart if necessary.
+Generally, updating any core config key will trigger a restart.
+
+example:
+
+.. code-block:: json
+
+    {
+      "audio": {
+        "min_volume": 0.3
+      },
+      "dev_mode": true,
+      "visualisation_fps": 50,
+      "port": 8080
+    }
+
+.. rubric:: POST
+
+Set full LedFx config. You must provide a full, valid config.
+LedFx will restart to apply the config.
+To simply update a part of the config, use PUT
+
+.. rubric:: DELETE
+
+Resets LedFx's config to default values and restarts.
+
+*Warning* This will irreversibly delete all your devices, settings, etc.
+
+/api/log
 =========================
 
 LedFx Logging
 
 .. rubric:: GET
 
-Returns the error logs for the currently active LedFx session
+Opens a websocket connection through which realtime LedFx logging info will be sent.
 
 /api/schema/
 =========================
@@ -47,7 +111,32 @@ LedFx Schema Api
 
 .. rubric:: GET /api/schema/
 
-Returns all LedFx schemas for devices, effects, and integrations as JSON
+Get JSON schemas specifically defining the kind of data LedFx's API expects.
+A GET with no request body will return all of LedFx's schemas
+LedFx uses schemas to validate the following:
+
+- *devices*
+- *effects*
+- *integrations*
+- *virtuals*
+- *audio*
+- *melbanks*
+- *wled_preferences*
+- *core*
+
+Like with the /api/config endpoint, you may instead ask for spefific schemas
+
+example: Get LedFx audio schema
+
+.. code-block:: json
+
+    "audio"
+
+example: Get LedFx devices and effects schema
+
+.. code-block:: json
+
+    ["devices", "effects"]
 
 /api/schema/<schema_type>
 ============================
@@ -124,31 +213,31 @@ Modifies the configuration of the effect and returns the new configuration as JS
 
 Deletes the effect with the matching *effect_id*.
 
-/api/displays
+/api/virtuals
 =========================
 
-Query and manage displays connected to LedFx
+Query and manage virtuals connected to LedFx
 
 .. rubric:: GET
 
-Get configuration of all displays
+Get configuration of all virtuals
 
 .. rubric:: POST
 
-Adds a new display to LedFx based on the provided JSON configuration
+Adds a new virtual to LedFx based on the provided JSON configuration
 
-/api/displays/<display_id>
+/api/virtuals/<virtual_id>
 ==========================
 
-Query and manage a specific display with the matching *display_id* as JSON
+Query and manage a specific virtual with the matching *virtual_id* as JSON
 
 .. rubric:: GET
 
-Returns information about the display
+Returns information about the virtual
 
 .. rubric:: PUT
 
-Set a display to active or inactive. Must evaluate to True or False with python's bool() (eg, True, 1, ..)
+Set a virtual to active or inactive. Must evaluate to True or False with python's bool() (eg, true, 1, ..)
 
 example:
 
@@ -160,7 +249,7 @@ example:
 
 .. rubric:: POST
 
-Update a display's segments configuration. Format is a list of lists in segment order.
+Update a virtual's segments configuration. Format is a list of lists in segment order.
 
 [[id, start, end, invert], ...]
 
@@ -181,7 +270,7 @@ example:
       ]
     }
 
-This would end up with a display appearing on the devices as so:
+This would end up with a virtual appearing on the devices as so:
 
 .. code-block::
 
@@ -200,7 +289,7 @@ another example:
       ]
     }
 
-This would end up with a display appearing on the devices as so:
+This would end up with a virtual appearing on the devices as so:
 
 .. code-block::
 
@@ -209,42 +298,42 @@ This would end up with a display appearing on the devices as so:
 
 .. rubric:: DELETE
 
-Deletes a display with the matching *display_id*
+Deletes a virtual with the matching *virtual_id*
 
-/api/displays/{display_id}/effects
+/api/virtuals/{virtual_id}/effects
 ==================================
 
-Endpoint linking displays to effects with the matching *display_id* as JSON
+Endpoint linking virtuals to effects with the matching *virtual_id* as JSON
 
 .. rubric:: GET
 
-Returns the active effect config of a display
+Returns the active effect config of a virtual
 
 .. rubric:: PUT
 
-Update the active effect config of a display based on the provided JSON configuration
+Update the active effect config of a virtual based on the provided JSON configuration
 If config given is "RANDOMIZE", the active effect config will be automatically generated to random values
 
 .. rubric:: POST
 
-Set the display to a new effect based on the provided JSON configuration
+Set the virtual to a new effect based on the provided JSON configuration
 
 .. rubric:: DELETE
 
-Clear the active effect of a display
+Clear the active effect of a virtual
 
-/api/displays/<display_id>/presets
+/api/virtuals/<virtual_id>/presets
 ====================================
 
-Endpoint linking displays to effect presets (pre-configured effect configs) with the matching *display_id* as JSON
+Endpoint linking virtuals to effect presets (pre-configured effect configs) with the matching *virtual_id* as JSON
 
 .. rubric:: GET
 
-Get preset effect configs for active effect of a display
+Get preset effect configs for active effect of a virtual
 
 .. rubric:: PUT
 
-Set active effect config of display to a preset
+Set active effect config of virtual to a preset
 
 .. code-block:: json
 
@@ -256,11 +345,11 @@ Set active effect config of display to a preset
 
 .. rubric:: POST
 
-Save configuration of display's active effect as a custom preset for that effect
+Save configuration of virtual's active effect as a custom preset for that effect
 
 .. rubric:: DELETE
 
-Clear effect of a display
+Clear effect of a virtual
 
 /api/effects/<effect_id>/presets
 ===================================

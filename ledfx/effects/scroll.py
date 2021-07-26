@@ -53,12 +53,9 @@ class ScrollAudioEffect(AudioReactiveEffect):
         }
     )
 
-    def activate(self, pixel_count):
+    def on_activate(self, pixel_count):
         self.output = np.zeros((pixel_count, 3))
-        self.lows_max = 0
-        self.mids_max = 0
-        self.highs_max = 0
-        super().activate(pixel_count)
+        self.intensities = np.zeros(3)
 
     def config_updated(self, config):
 
@@ -83,21 +80,17 @@ class ScrollAudioEffect(AudioReactiveEffect):
 
     def audio_data_updated(self, data):
         # Divide the melbank into lows, mids and highs
-        self.lows_max = np.clip(np.max(data.melbank_lows() ** 2), 0, 1)
-        self.mids_max = np.clip(np.max(data.melbank_mids() ** 2), 0, 1)
-        self.highs_max = np.clip(np.max(data.melbank_highs() ** 2), 0, 1)
+        self.intensities = np.fromiter(
+            (i.max() ** 2 for i in self.melbank_thirds()), float
+        )
+        np.clip(self.intensities, 0, 1, out=self.intensities)
 
-        if self.lows_max < self.lows_cutoff:
-            self.lows_max = 0
-        if self.mids_max < self.mids_cutoff:
-            self.mids_max = 0
-        if self.highs_max < self.high_cutoff:
-            self.highs_max = 0
-
-        # Compute the value for each range based on the max
-        # lows_val = (np.array((255,0,0)) * self.lows_max)
-        # mids_val = (np.array((0,255,0)) * self.mids_max)
-        # high_val = (np.array((0,0,255)) * self.highs_max)
+        if self.intensities[0] < self.lows_cutoff:
+            self.intensities[0] = 0
+        if self.intensities[1] < self.mids_cutoff:
+            self.intensities[1] = 0
+        if self.intensities[2] < self.high_cutoff:
+            self.intensities[2] = 0
 
     def render(self):
         # Roll the effect and apply the decay
@@ -105,14 +98,9 @@ class ScrollAudioEffect(AudioReactiveEffect):
         self.output[speed:, :] = self.output[:-speed, :]
         self.output = self.output * self.config["decay"]
 
-        # Add in the new color from the signal maxes
-        # self.output[:speed, 0] = lows_val[0] + mids_val[0] + high_val[0]
-        # self.output[:speed, 1] = lows_val[1] + mids_val[1] + high_val[1]
-        # self.output[:speed, 2] = lows_val[2] + mids_val[2] + high_val[2]
-
-        self.output[:speed] = self.lows_colour * self.lows_max
-        self.output[:speed] += self.mids_colour * self.mids_max
-        self.output[:speed] += self.high_colour * self.highs_max
+        self.output[:speed] = self.lows_colour * self.intensities[0]
+        self.output[:speed] += self.mids_colour * self.intensities[1]
+        self.output[:speed] += self.high_colour * self.intensities[2]
 
         # Set the pixels
         return self.output

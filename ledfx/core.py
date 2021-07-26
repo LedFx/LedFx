@@ -1,15 +1,21 @@
 import asyncio
 import logging
 import sys
+import time
 import warnings
 import webbrowser
 from concurrent.futures import ThreadPoolExecutor
 
-from ledfx.config import load_config, save_config
+from ledfx.config import get_ssl_certs, load_config, save_config
 from ledfx.devices import Devices
-from ledfx.displays import Displays
 from ledfx.effects import Effects
-from ledfx.events import Events, LedFxShutdownEvent
+from ledfx.effects.math import interpolate_pixels
+from ledfx.events import (
+    Event,
+    Events,
+    LedFxShutdownEvent,
+    VisualisationUpdateEvent,
+)
 from ledfx.http_manager import HttpServer
 from ledfx.integrations import Integrations
 from ledfx.presets import ledfx_presets
@@ -18,6 +24,7 @@ from ledfx.utils import (
     async_fire_and_forget,
     currently_frozen,
 )
+from ledfx.virtuals import Virtuals
 
 _LOGGER = logging.getLogger(__name__)
 if currently_frozen():
@@ -25,13 +32,16 @@ if currently_frozen():
 
 
 class LedFxCore:
-    def __init__(self, config_dir, host=None, port=None, icon=None):
+    def __init__(
+        self, config_dir, host=None, port=None, port_s=None, icon=None
+    ):
         self.icon = icon
         self.config_dir = config_dir
         self.config = load_config(config_dir)
         self.config["ledfx_presets"] = ledfx_presets
-        host = host if host else self.config["host"]
-        port = port if port else self.config["port"]
+        self.host = host if host else self.config["host"]
+        self.port = port if port else self.config["port"]
+        self.port_s = port_s if port_s else self.config["port_s"]
 
         if sys.platform == "win32":
             self.loop = asyncio.ProactorEventLoop()
@@ -48,7 +58,10 @@ class LedFxCore:
 
         self.setup_logqueue()
         self.events = Events(self)
-        self.http = HttpServer(ledfx=self, host=host, port=port)
+        self.setup_visualisation_events()
+        self.http = HttpServer(
+            ledfx=self, host=self.host, port=self.port, port_s=self.port_s
+        )
         self.exit_code = None
 
     def dev_enabled(self):
@@ -72,7 +85,7 @@ class LedFxCore:
     def open_ui(self):
         # Check if we're binding to all adaptors
         if str(self.config["host"]) == "0.0.0.0":
-            url = f"http://127.0.0.1:{str(self.config['port'])}"
+            url = f"http://127.0.0.1:{str(self.port)}"
         else:
             # If the user has specified an adaptor, launch its address
             url = self.http.base_url
@@ -89,6 +102,51 @@ class LedFxCore:
         self.icon.menu = pystray.Menu(
             pystray.MenuItem("Open", self.open_ui, default=True),
             pystray.MenuItem("Quit Ledfx", self.stop),
+        )
+
+    def setup_visualisation_events(self):
+        """
+        creates event listeners to fire visualisation events at
+        a given rate
+        """
+        min_time_since = 1 / self.config["visualisation_fps"]
+        time_since_last = {}
+
+        def handle_visualisation_update(event):
+            is_device = event.event_type == Event.DEVICE_UPDATE
+            time_now = time.time()
+
+            if is_device:
+                vis_id = getattr(event, "device_id")
+            else:
+                vis_id = getattr(event, "virtual_id")
+
+            try:
+                time_since = time_now - time_since_last[vis_id]
+                if time_since < min_time_since:
+                    return
+            except KeyError:
+                pass
+
+            time_since_last[vis_id] = time_now
+
+            pixels = event.pixels
+
+            if len(pixels) > self.config["visualisation_maxlen"]:
+                pixels = interpolate_pixels(pixels)
+
+            self.events.fire_event(
+                VisualisationUpdateEvent(is_device, vis_id, pixels)
+            )
+
+        self.events.add_listener(
+            handle_visualisation_update,
+            Event.VIRTUAL_UPDATE,
+        )
+
+        self.events.add_listener(
+            handle_visualisation_update,
+            Event.DEVICE_UPDATE,
         )
 
     def setup_logqueue(self):
@@ -113,7 +171,7 @@ class LedFxCore:
             import win32api
 
             def handle_win32_interrupt(sig, func=None):
-                self.stop(exit_code=1)
+                self.stop(exit_code=2)
                 return True
 
             win32api.SetConsoleCtrlHandler(handle_win32_interrupt, 1)
@@ -138,7 +196,7 @@ class LedFxCore:
 
     async def async_start(self, open_ui=False):
         _LOGGER.info("Starting LedFx")
-        await self.http.start()
+        await self.http.start(get_ssl_certs())
         if self.icon is not None:
             if self.icon.HAS_NOTIFICATION:
                 self.icon.notify(
@@ -146,18 +204,20 @@ class LedFxCore:
                 )
         self.devices = Devices(self)
         self.effects = Effects(self)
-        self.displays = Displays(self)
+        self.virtuals = Virtuals(self)
         self.integrations = Integrations(self)
 
         # TODO: Deferr
         self.devices.create_from_config(self.config["devices"])
         await self.devices.async_initialize_devices()
 
-        sync_mode = self.config["wled_preferences"]["wled_preferred_mode"]
-        if sync_mode:
-            await self.devices.set_wleds_sync_mode(sync_mode)
+        # sync_mode = WLED_CONFIG_SCHEMA(self.config["wled_preferences"])[
+        #     "wled_preferred_mode"
+        # ]
+        # if sync_mode:
+        #     await self.devices.set_wleds_sync_mode(sync_mode)
 
-        self.displays.create_from_config(self.config["displays"])
+        self.virtuals.create_from_config(self.config["virtuals"])
         self.integrations.create_from_config(self.config["integrations"])
 
         if self.config["scan_on_startup"]:

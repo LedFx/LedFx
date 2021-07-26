@@ -56,9 +56,7 @@ class WebsocketConnection:
         self._listeners = {}
         self._receiver_task = None
         self._sender_task = None
-        self._sender_queue = asyncio.Queue(
-            maxsize=MAX_PENDING_MESSAGES, loop=ledfx.loop
-        )
+        self._sender_queue = asyncio.Queue(maxsize=MAX_PENDING_MESSAGES)
 
     def close(self):
         """Closes the websocket connection"""
@@ -128,8 +126,42 @@ class WebsocketConnection:
     async def handle(self, request):
         """Handle the websocket connection"""
 
-        socket = self._socket = web.WebSocketResponse()
+        socket = self._socket = web.WebSocketResponse(
+            protocols=("http", "https", "ws", "wss")
+        )
+
+        # print(request.protocol)
+        # print(socket._protocols)
+        # headers = request.headers
+        # from aiohttp import hdrs
+        # protocol = None
+        # print(headers)
+        # print("SEC_WEBSOCKET_PROTOCOL", hdrs.SEC_WEBSOCKET_PROTOCOL)
+        # print(hdrs.SEC_WEBSOCKET_PROTOCOL in headers)
+        # if hdrs.SEC_WEBSOCKET_PROTOCOL in headers:
+        #     req_protocols = [
+        #         str(proto.strip())
+        #         for proto in headers[hdrs.SEC_WEBSOCKET_PROTOCOL].split(",")
+        #     ]
+        #     print("req",req_protocols)
+        #     for proto in req_protocols:
+        #         if proto in socket._protocols:
+        #             protocol = proto
+        #             break
+        #     else:
+        #         # No overlap found: Return no protocol as per spec
+        #         _LOGGER.warning(
+        #             "Client protocols %r don’t overlap server-known ones %r",
+        #             req_protocols,
+        #             socket._protocols,
+        #         )
+        # print(protocol)
+        # print(socket.can_prepare(request))
+        # print(socket._protocols)
+        # print(socket.ws_protocol)
+
         await socket.prepare(request)
+
         _LOGGER.info("Websocket connected.")
 
         self._receiver_task = asyncio.current_task(loop=self._ledfx.loop)
@@ -209,12 +241,8 @@ class WebsocketConnection:
     @websocket_handler("unsubscribe_event")
     def unsubscribe_event_handler(self, message):
 
-        subscription_id = message["subscription_id"]
+        subscription_id = message["id"]
 
-        _LOGGER.info(
-            "Websocket unsubscribing from event {}".format(
-                message.get("event_type")
-            )
-        )
+        _LOGGER.info(f"Websocket unsubscribing event id {subscription_id}")
         if subscription_id in self._listeners:
             self._listeners.pop(subscription_id)()

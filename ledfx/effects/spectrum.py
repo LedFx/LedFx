@@ -13,28 +13,24 @@ class SpectrumAudioEffect(AudioReactiveEffect):
 
     _prev_y = None
 
-    def activate(self, pixel_count):
+    def on_activate(self, pixel_count):
         self.r = np.zeros(pixel_count)
         self.g = np.zeros(pixel_count)
         self.b = np.zeros(pixel_count)
-        super().activate(pixel_count)
 
     def config_updated(self, config):
 
         # Create all the filters used for the effect
-        self._r_filter = self.create_filter(alpha_decay=0.2, alpha_rise=0.99)
         self._b_filter = self.create_filter(alpha_decay=0.1, alpha_rise=0.5)
 
     def audio_data_updated(self, data):
 
         # Grab the filtered and interpolated melbank data
-        y = data.interpolated_melbank(self.pixel_count, filtered=False)
-        filtered_y = data.interpolated_melbank(self.pixel_count, filtered=True)
+        # Grab the filtered melbank
+        y = self.melbank(filtered=False, size=self.pixel_count)
         if self._prev_y is None:
             self._prev_y = y
-
-        # Update all the filters and build up the RGB values
-        self.r = self._r_filter.update(y - filtered_y)
+        self.r = self.melbank(filtered=True, size=self.pixel_count)
         self.g = np.abs(y - self._prev_y)
         self.b = self._b_filter.update(y)
 

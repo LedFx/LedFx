@@ -36,19 +36,25 @@ class BarAudioEffect(AudioReactiveEffect, GradientEffect):
         }
     )
 
-    def activate(self, pixel_count):
+    def on_activate(self, pixel_count):
         self.beat_oscillator = 0
-        self.beat_now = 0
-        super().activate(pixel_count)
-
-    def config_updated(self, config):
+        self.beat_now = False
         self.phase = 0
         self.color_idx = 0
         self.bar_len = 0.3
 
     def audio_data_updated(self, data):
         # Run linear beat oscillator through easing method
-        self.beat_oscillator, self.beat_now = data.oscillator()
+        self.beat_oscillator = data.beat_oscillator()
+        self.beat_now = data.bpm_beat_now()
+
+        # Colour change and phase
+        if self.beat_now:
+            self.phase = 1 - self.phase  # flip flop 0->1, 1->0
+            if self.phase == 0:
+                # 8 colours, 4 beats to a bar
+                self.color_idx += self._config["color_step"]
+                self.color_idx = self.color_idx % 1  # loop back to zero
 
     def render(self):
         if self._config["ease_method"] == "ease_in_out":
@@ -59,14 +65,6 @@ class BarAudioEffect(AudioReactiveEffect, GradientEffect):
             x = -((self.beat_oscillator - 1) ** 2) + 1
         elif self._config["ease_method"] == "linear":
             x = self.beat_oscillator
-
-        # Colour change and phase
-        if self.beat_now:
-            self.phase = 1 - self.phase  # flip flop 0->1, 1->0
-            if self.phase == 0:
-                # 8 colours, 4 beats to a bar
-                self.color_idx += self._config["color_step"]
-                self.color_idx = self.color_idx % 1  # loop back to zero
 
         # Compute position of bar start and stop
         if self._config["mode"] == "wipe":

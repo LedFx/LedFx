@@ -2,7 +2,7 @@ import numpy as np
 import voluptuous as vol
 
 from ledfx.color import COLORS
-from ledfx.effects.audio import FREQUENCY_RANGES, AudioReactiveEffect
+from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.gradient import GradientEffect
 from ledfx.effects.hsv_effect import HSVEffect
 
@@ -11,6 +11,14 @@ class BladePowerPlus(AudioReactiveEffect, HSVEffect, GradientEffect):
 
     NAME = "Blade Power+"
     CATEGORY = "2.0"
+
+    _power_funcs = {
+        "Beat": "beat_power",
+        "Bass": "bass_power",
+        "Lows (beat+bass)": "lows_power",
+        "Mids": "mids_power",
+        "High": "high_power",
+    }
 
     CONFIG_SCHEMA = vol.Schema(
         {
@@ -40,11 +48,11 @@ class BladePowerPlus(AudioReactiveEffect, HSVEffect, GradientEffect):
             vol.Optional(
                 "frequency_range",
                 description="Frequency range for the beat detection",
-                default="Bass (60-250Hz)",
-            ): vol.In(list(FREQUENCY_RANGES.keys())),
+                default="Lows (beat+bass)",
+            ): vol.In(list(_power_funcs.keys())),
             vol.Optional(
                 "solid_color",
-                description="Display a solid color bar",
+                description="Virtual a solid color bar",
                 default=False,
             ): bool,
             vol.Optional(
@@ -52,11 +60,15 @@ class BladePowerPlus(AudioReactiveEffect, HSVEffect, GradientEffect):
                 description="Invert the direction of the gradient roll",
                 default=False,
             ): bool,
+            #vol.Optional(
+            #    "blade_color",
+            #    description="NEW Color",
+            #    default="hsl(0, 100%, 25%)",
+            #): str,
         }
     )
 
-    def activate(self, pixel_count):
-        super().activate(pixel_count)
+    def on_activate(self, pixel_count):
 
         #   HSV array is in vertical orientation:
         #   Pixel 1: [ H, S, V ]
@@ -64,7 +76,7 @@ class BladePowerPlus(AudioReactiveEffect, HSVEffect, GradientEffect):
         #   Pixel 3: [ H, S, V ] and so on...
 
         self.hsv = np.zeros((pixel_count, 3))
-        self._bar = 0
+        self.bar = 0
         self._roll_count = 0
 
         rgb_gradient = self.apply_gradient(1)
@@ -79,26 +91,18 @@ class BladePowerPlus(AudioReactiveEffect, HSVEffect, GradientEffect):
             self.hsv[:, 2] = hsv_color[2]
 
     def config_updated(self, config):
-        # Create the filters used for the effect
-        self._bar_filter = self.create_filter(alpha_decay=0.1, alpha_rise=0.99)
-        self._frequency_range = np.linspace(
-            FREQUENCY_RANGES[self.config["frequency_range"]].min,
-            FREQUENCY_RANGES[self.config["frequency_range"]].max,
-            20,
-        )
+        self.power_func = self._power_funcs[self._config["frequency_range"]]
 
     def audio_data_updated(self, data):
-        # Get frequency range power and apply filter
-        self._bar = (
-            np.max(data.sample_melbank(list(self._frequency_range)))
-            * self.config["multiplier"]
+        # Get filtered bar power
+        self.bar = (
+            getattr(data, self.power_func)() * self.config["multiplier"] * 2
         )
-        self._bar = self._bar_filter.update(self._bar)
 
     def render_hsv(self):
         # Must be zeroed every cycle to clear the previous frame
         self.out = np.zeros((self.pixel_count, 3))
-        bar_idx = int(self._bar * self.pixel_count)
+        bar_idx = int(self.bar * self.pixel_count)
 
         # Manually roll gradient because apply_gradient is only called once in activate instead of every render
         if self.config["gradient_roll"] != 0:
