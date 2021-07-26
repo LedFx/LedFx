@@ -252,9 +252,9 @@ class Virtual:
             self._transition_effect = DummyEffect(self.pixel_count)
             self._active_effect = effect
             self._active_effect.activate(self)
-            self._ledfx.loop.call_later(
-                self._config["transition_time"], self.clear_transition_effect
-            )
+            # self._ledfx.loop.call_later(
+            #     self._config["transition_time"], self.clear_transition_effect
+            # )
             self._ledfx.events.fire_event(
                 EffectSetEvent(self._active_effect.name)
             )
@@ -263,9 +263,9 @@ class Virtual:
             self._transition_effect = self._active_effect
             self._active_effect = effect
             self._active_effect.activate(self)
-            self._ledfx.loop.call_later(
-                self._config["transition_time"], self.clear_transition_effect
-            )
+            # self._ledfx.loop.call_later(
+            #     self._config["transition_time"], self.clear_transition_effect
+            # )
             self._ledfx.events.fire_event(
                 EffectSetEvent(self._active_effect.name)
             )
@@ -389,6 +389,8 @@ class Virtual:
             self.frame_transitions(
                 self.transitions, frame, transition_frame, weight
             )
+            if self.transition_frame_counter == self.transition_frame_total:
+                self.clear_transition_effect()
 
         np.multiply(frame, self._config["max_brightness"], frame)
 
