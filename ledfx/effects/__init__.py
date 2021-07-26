@@ -17,6 +17,8 @@ class DummyEffect:
 
     config = vol.Schema({})
 
+    NAME = ""
+
     def __init__(self, pixel_count):
         self._pixels = np.zeros((pixel_count, 3))
 
