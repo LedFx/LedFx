@@ -590,9 +590,9 @@ class Virtual:
             # does the trick!
             # if the only key in new config is "frequency_range":...
             # changed_configs = set(a.items()) ^ set(b.items())
-            if all(
-                key in ["frequency_min", "frequency_max"]
-                for key in _config.keys()
+            if (
+                "frequency_min" in _config.keys()
+                or "frequency_max" in _config.keys()
             ) and (
                 _config["frequency_min"] != self._config["frequency_min"]
                 or _config["frequency_max"] != self._config["frequency_max"]

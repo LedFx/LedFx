@@ -81,7 +81,7 @@ class ScrollAudioEffect(AudioReactiveEffect):
     def audio_data_updated(self, data):
         # Divide the melbank into lows, mids and highs
         self.intensities = np.fromiter(
-            (i.max() ** 2 for i in self.melbank_thirds()), np.float
+            (i.max() ** 2 for i in self.melbank_thirds()), float
         )
         np.clip(self.intensities, 0, 1, out=self.intensities)
 
