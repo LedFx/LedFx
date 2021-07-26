@@ -1,21 +1,20 @@
-# from ledfx.utils import RegistryLoader, async_fire_and_forget, async_fire_and_return, async_callback
 # from ledfx.events import Event
 # import importlib
 # import pkgutil
+import asyncio
 import json
 import logging
 import os
+from itertools import zip_longest
 
 import mido
 import mido.frozen as frozen
 import rtmidi
-
-# import aiohttp
-# import asyncio
 import voluptuous as vol
 
 from ledfx.config import get_default_config_directory
 from ledfx.integrations import Integration
+from ledfx.utils import async_fire_and_forget
 
 # some thoughts
 
@@ -385,7 +384,27 @@ class MIDI(Integration):
                 f"Invalid MIDI device: {midi_device}. Valid devices: {list_midi_devices()}"
             )
             return
+        async_fire_and_forget(self.connect_animation(), self._ledfx.loop)
         await super().connect(f"Opened MIDI port on {midi_device}")
+
+    async def connect_animation(self):
+        animation_regions = tuple(
+            region
+            for region in self.mapping.regions
+            if region.dimensionality > 0 and region.has_leds
+        )
+        # muahahaha somebody stop me
+        led_groups = tuple(
+            zip_longest(*map(lambda r: range(len(r)), animation_regions))
+        )
+        for state in (1, 2, 0):
+            for led_group in led_groups:
+                for reg_idx, led in enumerate(led_group):
+                    if led is not None:
+                        msg = animation_regions[reg_idx].set_led(state, led)
+                        self._port.send(msg)
+                await asyncio.sleep(0.02)
+            await asyncio.sleep(0.5)
 
     async def disconnect(self):
         self._port.reset()
@@ -401,6 +420,7 @@ class Mapping:
         self.led_config = mapping["led_config"]
         self.regions = tuple(
             Region(
+                self,
                 region["NAME"],
                 region["DIMENSIONALITY"],
                 region["INPUT_TYPE"],
@@ -430,14 +450,15 @@ class Region:
 
     def __init__(
         self,
+        mapping,
         name: str,
-        dimensionality: str,
-        input_type,
+        dimensionality: int,
+        input_type: int,
         midi_input: dict,
-        led_colour_range: str,
-        led_state_mappings: range,
+        led_colour_range: list,
+        led_state_mappings: list,
     ):
-
+        self.mapping = mapping
         self.name = name
         self.dimensionality = dimensionality
         self.input_type = input_type
@@ -480,8 +501,39 @@ class Region:
             )
         }
 
+    @property
+    def has_leds(self):
+        return bool(self.led_state_mappings)
+
+    def set_led(
+        self,
+        state: int,  # colour state, defined in mapping [0 off, 1,2 for each state]
+        index: int,  # index of led
+    ):
+        """
+        returns a message that when sent will set the led to the appropriate colour
+        """
+        if not self.has_leds:
+            _LOGGER.warning(
+                f"Cannot set LED colour on MIDI region '{self.name}'"
+            )
+            return
+        msg = self._input_positions[index]
+        if state == 0:
+            msg_type = self.mapping.led_config["led_off"]["msg_type"]
+            msg_colour = self.mapping.led_config["led_off"]["colour_data"]
+        else:
+            msg_type = self.mapping.led_config["led_on"]["msg_type"]
+            msg_colour = self.led_state_mappings[state]
+        return mido.Message(
+            msg_type, channel=msg.channel, note=msg.note, velocity=msg_colour
+        )
+
     def __repr__(self):
         return f"'{self.name}'"
+
+    def __len__(self):
+        return len(self._input_positions)
 
     def __iter__(self) -> mido.Message:
         """
