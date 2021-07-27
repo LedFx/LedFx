@@ -5,6 +5,7 @@ import asyncio
 import json
 import logging
 import os
+from functools import partial
 from itertools import zip_longest
 
 import mido
@@ -290,6 +291,10 @@ class MIDI(Integration):
             if trigger_id in self._data[scene_id].keys():
                 del self._data[scene_id][trigger_id]
 
+    def set_led(self, region, index, state):
+        msg = region.set_led(state, index)
+        self._port.send(msg)
+
     def handle_message(self, message):
         message = frozen.freeze_message(message)
         try:
@@ -298,8 +303,8 @@ class MIDI(Integration):
             )
             _LOGGER.info(f"Received input to region: {region}: {message}")
         except StopIteration:
-            return
             # _LOGGER.info(f"Received input to unmapped region: {message}")
+            return
 
         # special case, handle holding the queue
         # if region.function == "queue hold": or whatever, future me will figure that one out
@@ -341,6 +346,14 @@ class MIDI(Integration):
             # who knows what this even means
             # wheels are pretty undefined rn
             self.message_queue.add(message)
+
+        input_position = region.where(message)
+        if region.has_leds:
+            self.set_led(region, input_position, 2)
+            if not self.hold_queue_flag:
+                self._ledfx.loop.call_later(
+                    0.3, partial(self.set_led, region, input_position, 0)
+                )
 
         self.process_message_queue()
 
@@ -418,22 +431,20 @@ class MIDI(Integration):
             )
         )
 
-        for state in (1, 2, 0):
+        for state in (1, 2, 3, 0):
             for led_group in led_groups:
                 for reg_idx, led_idx in enumerate(led_group):
                     if isinstance(led_idx, int):
-                        msg = animation_regions[reg_idx].set_led(
-                            state, led_idx
+                        self.set_led(
+                            animation_regions[reg_idx], led_idx, state
                         )
-                        self._port.send(msg)
                     elif isinstance(led_idx, np.ndarray):
                         for led in led_idx:
-                            msg = animation_regions[reg_idx].set_led(
-                                state, led
+                            self.set_led(
+                                animation_regions[reg_idx], led, state
                             )
-                            self._port.send(msg)
-                await asyncio.sleep(0.05)
-            await asyncio.sleep(0.6)
+                await asyncio.sleep(0.04)
+            await asyncio.sleep(0.4)
 
     async def disconnect(self):
         self._port.reset()
@@ -558,6 +569,16 @@ class Region:
             msg_colour = self.led_state_mappings[state]
         return mido.Message(
             msg_type, channel=msg.channel, note=msg.note, velocity=msg_colour
+        )
+
+    def where(self, msg):
+        """
+        Find the index of an input to the region
+        """
+        return next(
+            x
+            for x, i in enumerate(self._input_positions)
+            if msg.copy(**self._default_motion) == i
         )
 
     def __repr__(self):

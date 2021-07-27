@@ -52,9 +52,10 @@ INPUT_TYPES = [
 ]
 
 INPUT_VISUAL_STATES = [
-    "Unassigned         [input has no function]",
-    "Assigned, inactive [input has function, but not doing it]",
-    "Assigned, active   [input is doing its function]",
+    "Unassigned           [input has no function (cannot be pressed)]",
+    "Assigned, inactive   [input has function, but not doing it (button can be pressed)]",
+    "Assigned, activating [input has function, and is going to do it (button is being pressed)]",
+    "Assigned, active     [input is doing its function (button has been pressed)]",
 ]
 
 INPUT_RECORDING_TIMEOUT = 3
