@@ -9,6 +9,7 @@ from itertools import zip_longest
 
 import mido
 import mido.frozen as frozen
+import numpy as np
 import rtmidi
 import voluptuous as vol
 
@@ -302,6 +303,7 @@ class MIDI(Integration):
 
         # special case, handle holding the queue
         # if region.function == "queue hold": or whatever, future me will figure that one out
+        # DONT FORGET ME!
         if message == mido.Message(
             "note_on", channel=0, note=98, velocity=127
         ):
@@ -393,18 +395,45 @@ class MIDI(Integration):
             for region in self.mapping.regions
             if region.dimensionality > 0 and region.has_leds
         )
+
+        def iter_triangle(region):
+            # creates a nice triangle animation on a 2d region
+            x = -np.arange(region.width)
+            a = np.array([x - i for i in range(region.height)]).flatten()
+            for i in range(region.width + region.height - 1):
+                yield np.where(a == 0)[0]
+                a += 1
+
         # muahahaha somebody stop me
         led_groups = tuple(
-            zip_longest(*map(lambda r: range(len(r)), animation_regions))
+            zip_longest(
+                *map(
+                    lambda r: (
+                        range(len(r))
+                        if r.dimensionality == 1
+                        else iter_triangle(r)
+                    ),
+                    animation_regions,
+                )
+            )
         )
+
         for state in (1, 2, 0):
             for led_group in led_groups:
-                for reg_idx, led in enumerate(led_group):
-                    if led is not None:
-                        msg = animation_regions[reg_idx].set_led(state, led)
+                for reg_idx, led_idx in enumerate(led_group):
+                    if isinstance(led_idx, int):
+                        msg = animation_regions[reg_idx].set_led(
+                            state, led_idx
+                        )
                         self._port.send(msg)
-                await asyncio.sleep(0.02)
-            await asyncio.sleep(0.5)
+                    elif isinstance(led_idx, np.ndarray):
+                        for led in led_idx:
+                            msg = animation_regions[reg_idx].set_led(
+                                state, led
+                            )
+                            self._port.send(msg)
+                await asyncio.sleep(0.05)
+            await asyncio.sleep(0.6)
 
     async def disconnect(self):
         self._port.reset()
@@ -471,6 +500,8 @@ class Region:
         if self.dimensionality == 2:
             origin, x_steps, y_steps = self.midi_input["POSITION_DATA"]
             POSITION_DATA = []
+            self.width = len(x_steps)
+            self.height = len(y_steps)
             for x in x_steps:
                 for y in y_steps:
                     POSITION_DATA.append(origin + x + y)
