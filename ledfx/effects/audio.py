@@ -63,7 +63,7 @@ class AudioInputSource:
                 vol.Optional("fft_size", default=FFT_SIZE): int,
                 vol.Optional("min_volume", default=0.2): float,
                 vol.Optional(
-                    "device_index", default=default_device_index
+                    "audio_device", default=default_device_index
                 ): vol.In(input_devices),
             },
             extra=vol.ALLOW_EXTRA,
@@ -97,7 +97,7 @@ class AudioInputSource:
         default_device = self.default_device_index()
         valid_device_indexes = self.valid_device_indexes()
         default_api = self._audio.default.hostapi
-        device_idx = self._config["device_index"]
+        device_idx = self._config["audio_device"]
 
         if device_idx > max(valid_device_indexes):
             _LOGGER.warning(
