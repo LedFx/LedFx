@@ -45,12 +45,12 @@ class EnergyAudioEffect(AudioReactiveEffect):
             vol.Optional(
                 "sensitivity",
                 description="Responsiveness to changes in sound",
-                default=0.85,
+                default=0.6,
             ): vol.All(vol.Coerce(float), vol.Range(min=0.3, max=0.99)),
             vol.Optional(
                 "mixing_mode",
                 description="Mode of combining each frequencies' colours",
-                default="overlap",
+                default="additive",
             ): vol.In(["additive", "overlap"]),
         }
     )
@@ -64,7 +64,7 @@ class EnergyAudioEffect(AudioReactiveEffect):
 
     def config_updated(self, config):
         # scale decay value between 0.1 and 0.2
-        decay_sensitivity = (self._config["sensitivity"] - 0.2) * 0.25
+        decay_sensitivity = (self._config["sensitivity"] - 0.1) * 0.7
         self._p_filter = self.create_filter(
             alpha_decay=decay_sensitivity,
             alpha_rise=self._config["sensitivity"],
@@ -87,7 +87,8 @@ class EnergyAudioEffect(AudioReactiveEffect):
         # count
 
         self.lows_idx, self.mids_idx, self.highs_idx = (
-            int(self.pixel_count * np.mean(i)) for i in self.melbank_thirds()
+            int(1.25 * self.pixel_count * np.mean(i))
+            for i in self.melbank_thirds(filtered=False)
         )
 
         # self.lows_idx = int(self.pixel_count * (data.bass_power() + data.beat_power()))

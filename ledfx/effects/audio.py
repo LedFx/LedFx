@@ -776,8 +776,11 @@ class AudioReactiveEffect(Effect):
 
     def melbank_thirds(self, **kwargs):
         """
-        Returns the melbank split into thirds.
+        Returns the melbank split into three sections (unequal length)
         Useful for effects that use lows, mids, and highs
         """
+        melbank = self.melbank(**kwargs)
+        mel_length = len(melbank)
+        splits = tuple(map(lambda i: int(i * mel_length), [0.2, 0.5]))
 
-        return np.array_split(self.melbank(**kwargs), 3)
+        return np.split(melbank, splits)
