@@ -1,20 +1,19 @@
-import asyncio
 import logging
-import aiohttp
+
+import paho.mqtt.client as mqtt
 import voluptuous as vol
+
+from ledfx.events import SceneSetEvent
+
 # from ledfx.events import Event
 from ledfx.integrations import Integration
-import paho.mqtt.client as mqtt
-from ledfx.events import SceneSetEvent
-import json
-import ast
-from ledfx.config import save_config
 
 _LOGGER = logging.getLogger(__name__)
 
+
 class MQTT(Integration):
     """MQTT Integration"""
-    
+
     NAME = "MQTT"
     DESCRIPTION = "MQTT Integration"
 
@@ -28,7 +27,7 @@ class MQTT(Integration):
             vol.Required(
                 "topic",
                 description="Description of this integration",
-                default="blade",
+                default="",
             ): str,
             vol.Required(
                 "ip_address",
@@ -41,14 +40,13 @@ class MQTT(Integration):
             vol.Optional(
                 "username",
                 description="MQTT username",
-                default="blade",
+                default="",
             ): str,
             vol.Optional(
                 "password",
                 description="MQTT password",
-                default="test",
+                default="",
             ): str,
-
         }
     )
 
@@ -64,23 +62,27 @@ class MQTT(Integration):
 
     def on_connect(self, client, userdata, flags, rc):
         _LOGGER.info("Connecting2")
-        _LOGGER.info("Connected with result code "+str(rc))
-        
-        client.subscribe(f"{self._config['topic']}/#")
-        #client.publish(self._config['topic'], "connected")
-        client.publish(f"{self._config['topic']}/STAT", "online")
-        client.publish(f"{self._config['topic']}/SCENES", str(self._ledfx.config["scenes"]))
-        client.publish(f"{self._config['topic']}/DEVICES", str(self._ledfx.config["virtuals"]))
+        _LOGGER.info("Connected with result code " + str(rc))
 
+        client.subscribe(f"{self._config['topic']}/#")
+        # client.publish(self._config['topic'], "connected")
+        client.publish(f"{self._config['topic']}/STAT", "online")
+        client.publish(
+            f"{self._config['topic']}/SCENES",
+            str(self._ledfx.config["scenes"]),
+        )
+        client.publish(
+            f"{self._config['topic']}/DEVICES",
+            str(self._ledfx.config["virtuals"]),
+        )
 
     def on_message(self, client, userdata, msg):
-        _LOGGER.info(msg.topic+" "+str(msg.payload))
-
+        _LOGGER.info(msg.topic + " " + str(msg.payload))
 
         if msg.topic == f"{self._config['topic']}/SCENE":
-        
+
             scene_id = msg.payload.decode("utf8")
-            ## SET SCENE not_matt plz do a callable function like set_scene(scene_id) ###
+            # SET SCENE not_matt plz do a callable function like set_scene(scene_id)
             if scene_id is None:
                 response = {
                     "status": "failed",
@@ -121,8 +123,7 @@ class MQTT(Integration):
                     virtual.clear_effect()
 
             self._ledfx.events.fire_event(SceneSetEvent(scene["name"]))
-            ## SET SCENE END ###
-
+            # SET SCENE END
 
     async def connect(self):
         _LOGGER.info("Connecting1")
@@ -130,10 +131,11 @@ class MQTT(Integration):
         client.on_connect = self.on_connect
         client.on_message = self.on_message
         if self._config["username"] is not None:
-            client.username_pw_set(self._config["username"], password=self._config["password"])
-        client.connect_async(self._config["ip_address"], self._config['port'], 60)
+            client.username_pw_set(
+                self._config["username"], password=self._config["password"]
+            )
+        client.connect_async(
+            self._config["ip_address"], self._config["port"], 60
+        )
         client.loop_start()
         _LOGGER.info(client)
-
-
-
