@@ -31,7 +31,7 @@ class Integration(BaseRegistry):
 
     def __del__(self):
         if self._active:
-            self.deactivate()
+            async_fire_and_forget(self.deactivate(), self._ledfx.loop)
 
     async def activate(self):
         _LOGGER.info(
@@ -127,14 +127,17 @@ class Integrations(RegistryLoader):
     def create_from_config(self, config):
         for integration in config:
             _LOGGER.info(f"Loading integration from config: {integration}")
-            self._ledfx.integrations.create(
-                id=integration["id"],
-                type=integration["type"],
-                active=integration["active"],
-                config=integration["config"],
-                data=integration["data"],
-                ledfx=self._ledfx,
-            )
+            try:
+                self._ledfx.integrations.create(
+                    id=integration["id"],
+                    type=integration["type"],
+                    active=integration["active"],
+                    config=integration["config"],
+                    data=integration["data"],
+                    ledfx=self._ledfx,
+                )
+            except Exception as e:
+                _LOGGER.warning(f"Failed to load MIDI integration: {e}")
 
     async def close_all_connections(self):
         for integration in self.values():

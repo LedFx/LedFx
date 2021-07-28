@@ -157,15 +157,16 @@ class MIDI(Integration):
 
         if not midi_devices:
             # raise Exception("No MIDI devices are connected.")
-            return vol.Schema({})
+            return vol.Schema({}, extra=vol.ALLOW_EXTRA)
         if not midi_mappings:
             # raise Exception("No MIDI mappings in config.")
-            return vol.Schema({})
+            return vol.Schema({}, extra=vol.ALLOW_EXTRA)
         try:
             midi_mapping_guess = next(
                 i
                 for i, x in enumerate(midi_mappings)
-                if x.lstrip("LedFxMidiMap ").rstrip(".json") in midi_devices[0]
+                if x.lstrip("LedFxMidiMap ").rstrip(".json").lower()
+                in midi_devices[0]
             )
         except StopIteration:
             midi_mapping_guess = midi_mappings[0]
@@ -227,9 +228,10 @@ class MIDI(Integration):
         super().__init__(ledfx, config, active, data)
 
         self._ledfx = ledfx
+        self._port = None
         self._config = self.CONFIG_SCHEMA.fget()(config)
-
         self.restore_from_data(data)
+
         mapping_dict = self.load_mapping()
         if not mapping_dict:
             return
@@ -238,6 +240,7 @@ class MIDI(Integration):
         self.mapping = Mapping(mapping_dict)
         self.message_queue = set()
         self.hold_queue_flag = False
+        self.disconnected_task = None
 
     def restore_from_data(self, data):
         """ Might be used in future """
@@ -293,7 +296,7 @@ class MIDI(Integration):
 
     def set_led(self, region, index, state):
         msg = region.set_led(state, index)
-        self._port.send(msg)
+        self.send_msg(msg)
 
     def handle_message(self, message):
         message = frozen.freeze_message(message)
@@ -357,6 +360,14 @@ class MIDI(Integration):
 
         self.process_message_queue()
 
+    def send_msg(self, msg):
+        try:
+            self._port.send(msg)
+        except rtmidi._rtmidi.SystemError:
+            _LOGGER.warning(
+                f"Unable to send message to {self._config['midi_device']}"
+            )
+
     def process_message_queue(self):
         """
         this is the big cheese function, all the action.
@@ -367,8 +378,44 @@ class MIDI(Integration):
                 message = self.message_queue.pop()
                 print(f"handling message: {message}")
 
+    async def poll_midi_closed(self):
+        """
+        Occasionally checks if the midi device is still there
+        """
+        midi_device = self._config["midi_device"]
+
+        while True:
+            if not next(
+                (
+                    port
+                    for port in mido.get_input_names()
+                    if midi_device in port
+                ),
+                None,
+            ):
+                await super().disconnect(
+                    f"{self._config['midi_device']} disconnected"
+                )
+                break
+            else:
+                await asyncio.sleep(1)
+
     async def connect(self):
         midi_device = self._config["midi_device"]
+
+        _LOGGER.info(f"Waiting for {midi_device} connection...")
+        while True:
+            if next(
+                (
+                    port
+                    for port in mido.get_input_names()
+                    if midi_device in port
+                ),
+                None,
+            ):
+                break
+            else:
+                await asyncio.sleep(1)
 
         in_port = next(
             (port for port in mido.get_input_names() if midi_device in port),
@@ -378,6 +425,7 @@ class MIDI(Integration):
             (port for port in mido.get_output_names() if midi_device in port),
             None,
         )
+
         if not all((in_port, out_port)):
             _LOGGER.error(
                 f"Failed to open a two way port on {midi_device}. Does this midi device support two way communication?"
@@ -399,6 +447,9 @@ class MIDI(Integration):
                 f"Invalid MIDI device: {midi_device}. Valid devices: {list_midi_devices()}"
             )
             return
+        self.disconnected_task = self._ledfx.loop.create_task(
+            self.poll_midi_closed()
+        )
         async_fire_and_forget(self.connect_animation(), self._ledfx.loop)
         await super().connect(f"Opened MIDI port on {midi_device}")
 
@@ -447,8 +498,12 @@ class MIDI(Integration):
             await asyncio.sleep(0.4)
 
     async def disconnect(self):
-        self._port.reset()
-        self._port.close()
+        if self._port is not None:
+            try:
+                self._port.reset()
+            except rtmidi._rtmidi.SystemError:
+                pass
+            self._port.close()
         await super().disconnect(
             f"Closed MIDI port on {self._config['midi_device']}"
         )
