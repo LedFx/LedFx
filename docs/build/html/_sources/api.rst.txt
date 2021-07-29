@@ -2,7 +2,7 @@
    REST API
 ==============
 
-API Postman documentation: https://documenter.getpostman.com/view/5403870/TVzNHyyw 
+API Postman documentation: https://documenter.getpostman.com/view/5403870/TVzNHyyw
 
 If you wish to test out the LedFx API in your postman software, click top right button 'Run in Postman'.
 You can also view `Example Request` and `Example Response` found on the righthand side on a maximised  browser window.

@@ -82,7 +82,7 @@ Linux
 .. code:: console
 
     $ sudo apt install python-dev \
-        libatlas3-base \      
+        libatlas3-base \
         libavformat58 \
         portaudio19-dev \
         pulseaudio
@@ -145,7 +145,7 @@ uses yarn as the core package management.
 
 .. _windows-frontend:
 
-Windows 
+Windows
 --------
 .. note:: The following instructions assume you have already followed the steps above to :ref:`install the LedFx dev environment <win-dev>`
 
@@ -166,7 +166,7 @@ To get started, first install yarn and all the requirements:
     $ cd LedFx
     $ ledfx
 
-**3.**  While Ledfx is running in the background (Step 2), open a new command prompt and run the following: 
+**3.**  While Ledfx is running in the background (Step 2), open a new command prompt and run the following:
 
 .. code:: console
 
@@ -251,7 +251,7 @@ This project was bootstrapped with Create React App.
 Available Frontend Scripts
 ----------------------------
 
-In the project directory, you can run: 
+In the project directory, you can run:
 ``yarn start``
 Runs the app in the development mode.
 Open http://localhost:3000 to view it in the browser.
@@ -272,7 +272,7 @@ See the section about deployment for more information.
 **Learn More**
 
 You can learn more in the Create React App documentation: https://create-react-app.dev/docs/getting-started/
-To learn React, check out the React documentation: https://reactjs.org/ 
+To learn React, check out the React documentation: https://reactjs.org/
 
 **Code Splitting**
 This section has moved here: https://facebook.github.io/create-react-app/docs/code-splitting

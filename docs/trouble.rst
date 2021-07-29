@@ -8,7 +8,7 @@ Firmware Issues
 WLED
 ++++
 
-.. note:: LedFx dev branch has a WLED device troubleshooting tool. 
+.. note:: LedFx dev branch has a WLED device troubleshooting tool.
 
   - Sending data, WLED going into E1.31 mode but lights aren't working?
 
