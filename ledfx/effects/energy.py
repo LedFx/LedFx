@@ -82,12 +82,14 @@ class EnergyAudioEffect(AudioReactiveEffect):
             COLORS[self._config["color_high"]], dtype=float
         )
 
+        self._multiplier = 1.6 - self._config["blur"] / 17
+
     def audio_data_updated(self, data):
         # Calculate the low, mids, and high indexes scaling based on the pixel
         # count
 
         self.lows_idx, self.mids_idx, self.highs_idx = (
-            int(1.25 * self.pixel_count * np.mean(i))
+            int(self._multiplier * self.pixel_count * np.mean(i))
             for i in self.melbank_thirds(filtered=False)
         )
 

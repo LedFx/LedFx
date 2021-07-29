@@ -153,6 +153,11 @@ class AudioInputSource:
         # self.pre_emphasis = None,
         freq_domain_length = (self._config["fft_size"] // 2) + 1
 
+        self._raw_audio_sample = np.zeros(
+            self._config["mic_rate"] // self._config["sample_rate"],
+            dtype=np.float32,
+        )
+
         # Setup the phase vocoder to perform a windowed FFT
         self._phase_vocoder = aubio.pvoc(
             self._config["fft_size"],
@@ -217,7 +222,6 @@ class AudioInputSource:
     def _audio_sample_callback(self, in_data, frame_count, time_info, status):
         """Callback for when a new audio sample is acquired"""
         # time_start = time.time()
-
         self._raw_audio_sample = np.frombuffer(in_data, dtype=np.float32)
 
         self.pre_process_audio()
