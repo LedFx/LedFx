@@ -50,7 +50,6 @@ jobs:
       - name: Run yarn install and build
         run: |
           cd frontend
-          npx browserslist@latest --update-db
           yarn
           yarn build
         env:
