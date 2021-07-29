@@ -19,7 +19,7 @@ jobs:
       - name: Check out code from GitHub
         uses: actions/checkout@v2
         with:
-          repository: https://github.com/YeonV/LedFx-Frontend-v2
+          repository: YeonV/LedFx-Frontend-v2
           ref: main
           # path: ledfx-frontend-v2
       - name: Use Node.js ${{ matrix.node-version }}
