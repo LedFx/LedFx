@@ -51,21 +51,21 @@ class Spotify(Integration):
         self.restore_from_data(data)
 
     def restore_from_data(self, data):
-        """ Might be used in future """
+        """Might be used in future"""
         self._data = data
 
     def get_triggers(self):
         return self._data
 
     def add_trigger(self, scene_id, song_id, song_name, song_position):
-        """ Add a trigger to saved triggers"""
+        """Add a trigger to saved triggers"""
         trigger_id = f"{song_id}-{str(song_position)}"
         if scene_id not in self._data.keys():
             self._data[scene_id] = {}
         self._data[scene_id][trigger_id] = [song_id, song_name, song_position]
 
     def delete_trigger(self, trigger_id):
-        """ Delete a trigger from saved triggers"""
+        """Delete a trigger from saved triggers"""
         for scene_id in self._data.keys():
             if trigger_id in self._data[scene_id].keys():
                 del self._data[scene_id][trigger_id]

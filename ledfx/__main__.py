@@ -259,7 +259,7 @@ def main():
     config_helpers.load_logger()
 
     if args.sentry_test:
-        """ This will crash LedFx and submit a Sentry error if Sentry is configured """
+        """This will crash LedFx and submit a Sentry error if Sentry is configured"""
         _LOGGER.warning("Steering LedFx into a brick wall")
         div_by_zero = 1 / 0
 

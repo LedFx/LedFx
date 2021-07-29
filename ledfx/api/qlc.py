@@ -71,7 +71,7 @@ class QLCEndpoint(RestEndpoint):
         return web.json_response(data=response, status=200)
 
     async def put(self, integration_id, request) -> web.Response:
-        """ Toggle a QLC event listener """
+        """Toggle a QLC event listener"""
         integration = self._ledfx.integrations.get(integration_id)
         if (integration is None) or (integration.type != "qlc"):
             response = {"not found": 404}
@@ -124,7 +124,7 @@ class QLCEndpoint(RestEndpoint):
         return web.json_response(data=response, status=200)
 
     async def post(self, integration_id, request) -> web.Response:
-        """ Add a new QLC event listener or update an existing one """
+        """Add a new QLC event listener or update an existing one"""
         integration = self._ledfx.integrations.get(integration_id)
         if (integration is None) or (integration.type != "qlc"):
             response = {"not found": 404}
@@ -180,7 +180,7 @@ class QLCEndpoint(RestEndpoint):
         return web.json_response(data=response, status=200)
 
     async def delete(self, integration_id, request) -> web.Response:
-        """ Delete a QLC event listener """
+        """Delete a QLC event listener"""
         integration = self._ledfx.integrations.get(integration_id)
         if (integration is None) or (integration.type != "qlc"):
             response = {"not found": 404}

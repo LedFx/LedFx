@@ -14,7 +14,7 @@ class FindDevicesEndpoint(RestEndpoint):
     ENDPOINT_PATH = "/api/find_devices"
 
     async def post(self) -> web.Response:
-        """ Find and add all WLED devices on the LAN """
+        """Find and add all WLED devices on the LAN"""
         async_fire_and_forget(
             self._ledfx.devices.find_wled_devices(), self._ledfx.loop
         )
