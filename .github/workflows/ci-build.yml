@@ -45,7 +45,9 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
       - name: Install yarn
-        run: npm install -g yarn
+        run: |
+          npm install -g yarn
+          npx browserslist@latest --update-db
       - name: Run yarn install and build
         run: |
           cd frontend
