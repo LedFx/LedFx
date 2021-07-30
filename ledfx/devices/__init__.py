@@ -255,9 +255,7 @@ class Device(BaseRegistry):
         # delete segments for this device in any virtuals
 
         for virtual in self._ledfx.virtuals.values():
-            print(virtual.id, virtual.segments)
             if not any(segment[0] == self.id for segment in virtual._segments):
-                print("clean, skipping")
                 continue
 
             active = virtual.active
@@ -268,7 +266,6 @@ class Device(BaseRegistry):
                 for segment in virtual._segments
                 if segment[0] != self.id
             )
-            print("new segments:", virtual._segments)
             if active:
                 virtual.activate()
 
