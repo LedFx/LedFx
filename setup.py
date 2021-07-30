@@ -32,7 +32,7 @@ INSTALL_REQUIRES = [
     "requests~=2.24.0",
     "aubio~=0.4.9",
     "zeroconf==0.30.0",
-    'pywin32~=300; platform_system == "Windows"',
+    'pywin32>=300; platform_system == "Windows"',
     "cython~=0.29.21",
     "pyupdater~=3.1.0",
     "sentry-sdk==1.3.1",
