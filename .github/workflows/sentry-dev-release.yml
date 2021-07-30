@@ -3,7 +3,7 @@ name: Create Sentry Dev Release
 on:
   push:
     branches:
-      - dev
+      - frontend_beta
 
 jobs:
   sentry-release:
@@ -17,7 +17,7 @@ jobs:
         env:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           SENTRY_ORG: ledfx-org
-          SENTRY_PROJECT: ledfx-betas
+          SENTRY_PROJECT: ledfx-betas-v2
         with:
           environment: development
           finalize: false
