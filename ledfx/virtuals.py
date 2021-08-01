@@ -355,7 +355,6 @@ class Virtual:
 
         # Get and process active effect frame
         frame = self._active_effect.get_pixels()
-        np.clip(frame, 0, 255, frame)
         frame[frame > 255] = 255
         frame[frame < 0] = 0
         # np.clip(frame, 0, 255, frame)
@@ -371,7 +370,7 @@ class Virtual:
         ):
             # Get and process transition effect frame
             transition_frame = self._transition_effect.get_pixels()
-            np.clip(transition_frame, 0, 255, transition_frame)
+            # np.clip(transition_frame, 0, 255, transition_frame)
             transition_frame[frame > 255] = 255
             transition_frame[frame < 0] = 0
 
