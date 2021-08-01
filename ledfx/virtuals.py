@@ -1,4 +1,3 @@
-# import asyncio
 import logging
 import time
 from functools import cached_property
@@ -19,6 +18,7 @@ from ledfx.events import (
 
 # from ledfx.config import save_config
 from ledfx.transitions import Transitions
+from ledfx.utils import fps_to_sleep_interval
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -323,36 +323,34 @@ class Virtual:
     def active_effect(self):
         return self._active_effect
 
-    def process_active_effect(self):
-        # Assemble the frame if necessary, if nothing changed just sleep
-        self.assembled_frame = self.assemble_frame()
-        if self.assembled_frame is not None and not self._paused:
-            if not self._config["preview_only"]:
-                self.flush(self.assembled_frame)
-
-            def trigger_virtual_update_event():
-                self._ledfx.events.fire_event(
-                    VirtualUpdateEvent(self.id, self.assembled_frame)
+    async def thread_function(self):
+        while True:
+            if self._active:
+                self.assembled_frame = await self._ledfx.loop.run_in_executor(
+                    self._ledfx.thread_executor, self.assemble_frame
                 )
+                if self.assembled_frame is not None and not self._paused:
+                    if not self._config["preview_only"]:
+                        await self._ledfx.loop.run_in_executor(
+                            self._ledfx.thread_executor, self.flush
+                        )
 
-            self._ledfx.loop.call_soon(trigger_virtual_update_event)
+                    def trigger_virtual_update_event():
+                        self._ledfx.events.fire_event(
+                            VirtualUpdateEvent(self.id, self.assembled_frame)
+                        )
 
-    def thread_function(self):
-        if self._active:
-            start_time = time.time()
-            self.process_active_effect()
-            render_latency = time.time() - start_time
-
-            self._ledfx.loop.call_later(
-                1 / self.refresh_rate - render_latency, self.thread_function
+                    self._ledfx.loop.call_soon(trigger_virtual_update_event)
+            await self._ledfx.loop.run_in_executor(
+                self._ledfx.thread_executor,
+                time.sleep,
+                fps_to_sleep_interval(self.refresh_rate),
             )
-            # print(f"Virtual processing latency: {render_latency}")
 
     def assemble_frame(self):
         """
         Assembles the frame to be flushed.
         """
-
         # Get and process active effect frame
         frame = self._active_effect.get_pixels()
         frame[frame > 255] = 255
@@ -415,10 +413,13 @@ class Virtual:
             self._active = True
             self.activate_segments(self._segments)
 
-        self.thread_function()
+        self._task = self._ledfx.loop.create_task(self.thread_function())
+        self._task.add_done_callback(lambda task: task.result())
 
     def deactivate(self):
         self._active = False
+        if hasattr(self, "_task"):
+            self._task.cancel()
         self.deactivate_segments()
 
     # @lru_cache(maxsize=32)
@@ -442,10 +443,12 @@ class Virtual:
     #     z = np.apply_along_axis(self.interp_channel, 0, pixels, x_new, x_old)
     #     return z
 
-    def flush(self, pixels):
+    def flush(self, pixels=None):
         """
         Flushes the provided data to the devices.
         """
+        if pixels is None:
+            pixels = self.assembled_frame
         for device_id, segments in self._segments_by_device.items():
             data = []
             for (

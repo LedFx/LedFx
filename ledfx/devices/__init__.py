@@ -10,6 +10,7 @@ import zeroconf
 from ledfx.config import save_config
 from ledfx.events import DeviceUpdateEvent, Event
 from ledfx.utils import (
+    AVAILABLE_FPS,
     WLED,
     BaseRegistry,
     RegistryLoader,
@@ -19,6 +20,15 @@ from ledfx.utils import (
 )
 
 _LOGGER = logging.getLogger(__name__)
+
+
+def fps_validator(value):
+    if not isinstance(value, int):
+        raise ValueError("fps must be an integer")
+    return next(
+        (f for f in AVAILABLE_FPS.keys() if f >= value),
+        list(AVAILABLE_FPS.keys())[-1],
+    )
 
 
 @BaseRegistry.no_registration
@@ -43,9 +53,9 @@ class Device(BaseRegistry):
             ): int,
             vol.Optional(
                 "refresh_rate",
-                description="Maximum rate that pixels are sent to the device",
+                description="Target rate that pixels are sent to the device",
                 default=60,
-            ): int,
+            ): fps_validator,
             # vol.Optional(
             #     "silence_timeout",
             #     description="How many seconds of silence until we deactivate the device. 0 = Disabled.",
@@ -126,7 +136,7 @@ class Device(BaseRegistry):
                     DeviceUpdateEvent(self.id, frame)
                 )
 
-            self._ledfx.loop.call_soon(trigger_device_update_event)
+            self._ledfx.loop.call_soon_threadsafe(trigger_device_update_event)
 
     def assemble_frame(self):
         """

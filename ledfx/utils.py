@@ -10,15 +10,45 @@ import re
 import socket
 import subprocess
 import sys
+import time
 from abc import ABC
+from functools import lru_cache
 
 # from asyncio import coroutines, ensure_future
 from subprocess import PIPE, Popen
 
+import numpy as np
 import requests
 import voluptuous as vol
 
 _LOGGER = logging.getLogger(__name__)
+
+
+def calc_available_fps():
+    monotonic_res = time.get_clock_info("monotonic").resolution
+
+    max_fps_target = 120
+    min_fps_target = 10
+
+    max_fps_ticks = np.ceil((1 / max_fps_target) / monotonic_res).astype(int)
+    min_fps_ticks = np.ceil((1 / min_fps_target) / monotonic_res).astype(int)
+
+    tick_range = reversed(range(max_fps_ticks, min_fps_ticks))
+
+    return {int(1 / (monotonic_res * i)): i for i in tick_range}
+
+
+AVAILABLE_FPS = calc_available_fps()
+
+
+@lru_cache(maxsize=8)
+def fps_to_sleep_interval(fps):
+    monotonic_res = time.get_clock_info("monotonic").resolution
+    monotonic_ticks = next(
+        (t for f, t in AVAILABLE_FPS.items() if f >= fps),
+        list(AVAILABLE_FPS.values())[-1],
+    )
+    return max(0.001, monotonic_res * (monotonic_ticks - 1))
 
 
 def install_package(package):
@@ -70,7 +100,7 @@ def async_fire_and_forget(coro, loop, exc_handler=None):
         if exc_handler is not None:
             task.add_done_callback(exc_handler)
 
-    loop.call_soon(callback)
+    loop.call_soon_threadsafe(callback)
     return
 
 

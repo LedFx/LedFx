@@ -131,7 +131,7 @@ class Events:
 
         for listener in listeners:
             if not listener.filter_event(event):
-                self._ledfx.loop.call_soon(listener.callback, event)
+                self._ledfx.loop.call_soon_threadsafe(listener.callback, event)
 
     def add_listener(
         self,

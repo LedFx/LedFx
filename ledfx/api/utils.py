@@ -4,7 +4,7 @@ import collections
 import voluptuous as vol
 
 from ledfx.config import _default_wled_settings
-from ledfx.utils import generate_title
+from ledfx.utils import AVAILABLE_FPS, generate_title
 
 TYPES_MAP = {
     int: "integer",
@@ -148,6 +148,9 @@ def convertToJsonSchema(schema):
             ),
         }
         return val
+
+    elif callable(schema) and schema.__name__ == "fps_validator":
+        return {"type": "int", "enum": list(AVAILABLE_FPS)}
 
     if schema in TYPES_MAP:
         return {"type": TYPES_MAP[schema]}
