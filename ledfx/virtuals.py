@@ -335,7 +335,7 @@ class Virtual:
                     VirtualUpdateEvent(self.id, self.assembled_frame)
                 )
 
-            self._ledfx.loop.call_soon_threadsafe(trigger_virtual_update_event)
+            self._ledfx.loop.call_soon(trigger_virtual_update_event)
 
     def thread_function(self):
         if self._active:

@@ -70,7 +70,7 @@ def async_fire_and_forget(coro, loop, exc_handler=None):
         if exc_handler is not None:
             task.add_done_callback(exc_handler)
 
-    loop.call_soon_threadsafe(callback)
+    loop.call_soon(callback)
     return
 
 
@@ -110,7 +110,7 @@ def async_callback(loop, callback, *args):
             else:
                 _LOGGER.warning("Exception on lost future: ", exc_info=True)
 
-    loop.call_soon_threadsafe(run_callback)
+    loop.call_soon(run_callback)
     return future
 
 

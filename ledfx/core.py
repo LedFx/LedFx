@@ -179,7 +179,7 @@ class LedFxCore:
         try:
             self.loop.run_forever()
         except KeyboardInterrupt:
-            self.loop.call_soon_threadsafe(
+            self.loop.call_soon(
                 self.loop.create_task, self.async_stop(exit_code=1)
             )
             self.loop.run_forever()

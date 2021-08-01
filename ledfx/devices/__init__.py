@@ -126,7 +126,7 @@ class Device(BaseRegistry):
                     DeviceUpdateEvent(self.id, frame)
                 )
 
-            self._ledfx.loop.call_soon_threadsafe(trigger_device_update_event)
+            self._ledfx.loop.call_soon(trigger_device_update_event)
 
     def assemble_frame(self):
         """
