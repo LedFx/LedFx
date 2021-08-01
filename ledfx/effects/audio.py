@@ -227,7 +227,7 @@ class AudioInputSource:
         self.pre_process_audio()
         self._invalidate_caches()
         self._invoke_callbacks()
-        # print(f"Core Audio Processing Latency in {time.time()-time_start}")
+        # print(f"Core Audio Processing Latency {round(time.time()-time_start, 3)} s")
         # return self._raw_audio_sample
 
     def _invoke_callbacks(self):
