@@ -326,14 +326,16 @@ class Virtual:
     async def thread_function(self):
         while True:
             if self._active:
-                self.assembled_frame = await self._ledfx.loop.run_in_executor(
-                    self._ledfx.thread_executor, self.assemble_frame
-                )
+                # self.assembled_frame = await self._ledfx.loop.run_in_executor(
+                #     self._ledfx.thread_executor, self.assemble_frame
+                # )
+                self.assembled_frame = self.assemble_frame()
                 if self.assembled_frame is not None and not self._paused:
                     if not self._config["preview_only"]:
-                        await self._ledfx.loop.run_in_executor(
-                            self._ledfx.thread_executor, self.flush
-                        )
+                        # await self._ledfx.loop.run_in_executor(
+                        #     self._ledfx.thread_executor, self.flush
+                        # )
+                        self.flush()
 
                     def trigger_virtual_update_event():
                         self._ledfx.events.fire_event(
