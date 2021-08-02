@@ -27,7 +27,7 @@ _LOGGER = logging.getLogger(__name__)
 def calc_available_fps():
     monotonic_res = time.get_clock_info("monotonic").resolution
 
-    max_fps_target = 120
+    max_fps_target = 121
     min_fps_target = 10
 
     max_fps_ticks = np.ceil((1 / max_fps_target) / monotonic_res).astype(int)
