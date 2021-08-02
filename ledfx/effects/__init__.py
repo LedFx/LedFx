@@ -136,6 +136,21 @@ def _gaussian_kernel1d(sigma, order, radius):
     return phi_x
 
 
+def fast_blur_pixels(pixels, sigma):
+    if len(pixels) == 0:
+        raise ValueError("Cannot smooth an empty array")
+
+    # Choose a radius for the filter kernel large enough to include all significant elements. Using
+    # a radius of 4 standard deviations (rounded to int) will only truncate tail values that are of
+    # the order of 1e-5 or smaller. For very small sigma values, just use a minimal radius.
+    kernel_radius = max(1, int(round(4.0 * sigma)))
+    kernel = _gaussian_kernel1d(sigma, 0, kernel_radius)
+
+    return np.apply_along_axis(
+        lambda x: np.convolve(x, kernel, mode="same"), 0, pixels
+    )
+
+
 def smooth(x, sigma):
     """
     Smooths a 1D array via a Gaussian filter.
@@ -347,7 +362,9 @@ class Effect(BaseRegistry):
                 pixels = brightness_pixels(pixels, self._config["brightness"])
             # If the configured blur is greater than 0 we need to blur it
             if self.configured_blur != 0.0:
-                pixels = blur_pixels(pixels=pixels, sigma=self.configured_blur)
+                pixels = fast_blur_pixels(
+                    pixels=pixels, sigma=self.configured_blur
+                )
             self._pixels = np.copy(pixels)
         else:
             raise TypeError()
