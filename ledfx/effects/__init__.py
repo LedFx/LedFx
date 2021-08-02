@@ -69,18 +69,14 @@ def mirror_pixels(pixels):
     # TODO: Figure out some better logic here. Needs to reduce the signal
     # and reflect across the middle. The prior logic was broken for
     # non-uniform effects.
-    mirror_shape = (np.shape(pixels)[0], 2, np.shape(pixels)[1])
-    return (
-        np.append(pixels[::-1], pixels, axis=0)
-        .reshape(mirror_shape)
-        .mean(axis=1)
-    )
-    # pixels = pixels.T
-    # l = len(pixels[0])
-    # pixels[0] = np.concatenate([pixels[0, -1 + l % -2 :: -2], pixels[0, ::2]])
-    # pixels[1] = np.concatenate([pixels[1, -1 + l % -2 :: -2], pixels[1, ::2]])
-    # pixels[2] = np.concatenate([pixels[2, -1 + l % -2 :: -2], pixels[2, ::2]])
-    # return pixels.T
+    # mirror_shape = (np.shape(pixels)[0], 2, np.shape(pixels)[1])
+    # return (
+    #     np.append(pixels[::-1], pixels, axis=0)
+    #     .reshape(mirror_shape)
+    #     .mean(axis=1)
+    # )
+    pixels = np.concatenate([pixels[-1 + len(pixels) % -2 :: -2], pixels[::2]])
+    return pixels
 
 
 def flip_pixels(pixels):
@@ -151,9 +147,6 @@ def fast_blur_pixels(pixels, sigma):
     pixels[:, 2] = np.convolve(pixels[:, 2], kernel, mode="same")
 
     return pixels
-    # return np.apply_along_axis(
-    #     lambda x: np.convolve(x, kernel, mode="same"), 0, pixels
-    # )
 
 
 def smooth(x, sigma):
