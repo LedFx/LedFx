@@ -146,9 +146,14 @@ def fast_blur_pixels(pixels, sigma):
     kernel_radius = max(1, int(round(4.0 * sigma)))
     kernel = _gaussian_kernel1d(sigma, 0, kernel_radius)
 
-    return np.apply_along_axis(
-        lambda x: np.convolve(x, kernel, mode="same"), 0, pixels
-    )
+    pixels[:, 0] = np.convolve(pixels[:, 0], kernel, mode="same")
+    pixels[:, 1] = np.convolve(pixels[:, 1], kernel, mode="same")
+    pixels[:, 2] = np.convolve(pixels[:, 2], kernel, mode="same")
+
+    return pixels
+    # return np.apply_along_axis(
+    #     lambda x: np.convolve(x, kernel, mode="same"), 0, pixels
+    # )
 
 
 def smooth(x, sigma):
