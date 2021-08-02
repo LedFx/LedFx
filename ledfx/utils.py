@@ -27,15 +27,19 @@ _LOGGER = logging.getLogger(__name__)
 def calc_available_fps():
     monotonic_res = time.get_clock_info("monotonic").resolution
 
+    if monotonic_res < 0.001:
+        mult = int(0.001 / monotonic_res)
+    else:
+        mult = 1
+
     max_fps_target = 121
     min_fps_target = 10
 
-    max_fps_ticks = np.ceil((1 / max_fps_target) / monotonic_res).astype(int)
-    min_fps_ticks = np.ceil((1 / min_fps_target) / monotonic_res).astype(int)
+    max_fps_ticks = np.ceil((1 / max_fps_target) / (monotonic_res * mult)).astype(int)
+    min_fps_ticks = np.ceil((1 / min_fps_target) / (monotonic_res * mult)).astype(int)
+    tick_range = reversed(range(max_fps_ticks, min_fps_ticks, mult))
 
-    tick_range = reversed(range(max_fps_ticks, min_fps_ticks))
-
-    return {int(1 / (monotonic_res * i)): i for i in tick_range}
+    return {int(1 / (monotonic_res * mult * i)): i for i in tick_range}
 
 
 AVAILABLE_FPS = calc_available_fps()

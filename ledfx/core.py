@@ -4,7 +4,7 @@ import sys
 import time
 import warnings
 import webbrowser
-from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor
 
 from ledfx.config import get_ssl_certs, load_config, save_config
 from ledfx.devices import Devices
@@ -51,7 +51,6 @@ class LedFxCore:
 
         # self.loop.set_debug(True)
 
-        self.process_executor = ProcessPoolExecutor()
         self.thread_executor = ThreadPoolExecutor()
         self.loop.set_default_executor(self.thread_executor)
         self.loop.set_exception_handler(self.loop_exception_handler)
@@ -279,7 +278,6 @@ class LedFxCore:
 
         _LOGGER.info("Flushing loop...")
         await self.flush_loop()
-        self.process_executor.shutdown()
         self.thread_executor.shutdown()
         self.exit_code = exit_code
         self.loop.stop()
