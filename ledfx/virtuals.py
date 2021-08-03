@@ -124,6 +124,7 @@ class Virtual:
         # in, +ve mean fading out
         self.fade_timer = 0
         self._segments = []
+        self.assembled_frame = None
 
         self.frequency_range = FrequencyRange(
             self._config["frequency_min"], self._config["frequency_max"]
@@ -324,29 +325,31 @@ class Virtual:
         return self._active_effect
 
     async def thread_function(self):
+        def flush_sleep(to_flush):
+            if to_flush:
+                self.flush()
+                fire_event(VirtualUpdateEvent(self.id, self.assembled_frame))
+            time.sleep(fps_to_sleep_interval(self.refresh_rate))
+
+        fire_event = self._ledfx.events.fire_event
+
         while True:
             if self._active:
                 # self.assembled_frame = await self._ledfx.loop.run_in_executor(
                 #     self._ledfx.thread_executor, self.assemble_frame
                 # )
                 self.assembled_frame = self.assemble_frame()
-                if self.assembled_frame is not None and not self._paused:
-                    if not self._config["preview_only"]:
-                        await self._ledfx.loop.run_in_executor(
-                            self._ledfx.thread_executor, self.flush
-                        )
-                        # self.flush()
 
-                    def trigger_virtual_update_event():
-                        self._ledfx.events.fire_event(
-                            VirtualUpdateEvent(self.id, self.assembled_frame)
-                        )
+            to_flush = (
+                self._active and
+                self.assembled_frame is not None and
+                not self._paused
+            )
 
-                    self._ledfx.loop.call_soon(trigger_virtual_update_event)
             await self._ledfx.loop.run_in_executor(
                 self._ledfx.thread_executor,
-                time.sleep,
-                fps_to_sleep_interval(self.refresh_rate),
+                flush_sleep,
+                to_flush
             )
 
     def assemble_frame(self):
