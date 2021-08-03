@@ -32,18 +32,15 @@ def calc_available_fps():
     else:
         mult = 1
 
-    max_fps_target = 121
+    max_fps_target = 126
     min_fps_target = 10
 
     max_fps_ticks = np.ceil((1 / max_fps_target) / (monotonic_res * mult)).astype(int)
     min_fps_ticks = np.ceil((1 / min_fps_target) / (monotonic_res * mult)).astype(int)
-    tick_range = reversed(range(max_fps_ticks, min_fps_ticks, mult))
-
+    tick_range = reversed(range(max_fps_ticks, min_fps_ticks))
     return {int(1 / (monotonic_res * mult * i)): i for i in tick_range}
 
-
 AVAILABLE_FPS = calc_available_fps()
-
 
 @lru_cache(maxsize=8)
 def fps_to_sleep_interval(fps):
