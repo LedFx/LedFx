@@ -1,6 +1,7 @@
 import logging
 import time
 from functools import cached_property
+from asyncio.exceptions import CancelledError
 
 import numpy as np
 import voluptuous as vol
@@ -328,7 +329,6 @@ class Virtual:
         def flush_sleep(to_flush):
             if to_flush:
                 self.flush()
-                fire_event(VirtualUpdateEvent(self.id, self.assembled_frame))
             time.sleep(fps_to_sleep_interval(self.refresh_rate))
 
         fire_event = self._ledfx.events.fire_event
@@ -346,11 +346,20 @@ class Virtual:
                 not self._paused
             )
 
-            await self._ledfx.loop.run_in_executor(
-                self._ledfx.thread_executor,
-                flush_sleep,
-                to_flush
-            )
+            if to_flush:
+                self._ledfx.loop.call_soon(
+                    fire_event,
+                    VirtualUpdateEvent(self.id, self.assembled_frame)
+                )
+
+            try:
+                await self._ledfx.loop.run_in_executor(
+                    self._ledfx.thread_executor,
+                    flush_sleep,
+                    to_flush
+                )
+            except CancelledError:
+                break
 
     def assemble_frame(self):
         """
