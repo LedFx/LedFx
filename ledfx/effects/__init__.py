@@ -139,7 +139,9 @@ def fast_blur_pixels(pixels, sigma):
     # Choose a radius for the filter kernel large enough to include all significant elements. Using
     # a radius of 4 standard deviations (rounded to int) will only truncate tail values that are of
     # the order of 1e-5 or smaller. For very small sigma values, just use a minimal radius.
-    kernel_radius = max(1, int(round(4.0 * sigma)))
+    kernel_radius = min(
+        int((len(pixels) - 1) / 2), max(1, int(round(4.0 * sigma)))
+    )
     kernel = _gaussian_kernel1d(sigma, 0, kernel_radius)
 
     pixels[:, 0] = np.convolve(pixels[:, 0], kernel, mode="same")
