@@ -11,7 +11,7 @@ import voluptuous as vol
 from ledfx.effects import Effect
 from ledfx.effects.math import ExpFilter
 from ledfx.effects.melbank import FFT_SIZE, MIC_RATE, Melbanks
-from ledfx.events import GraphUpdateEvent
+from ledfx.events import Event, GraphUpdateEvent
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -72,6 +72,11 @@ class AudioInputSource:
     def __init__(self, ledfx, config):
         self._ledfx = ledfx
         self.update_config(config)
+
+        def deactivate(e):
+            self.deactivate()
+
+        self._ledfx.events.add_listener(deactivate, Event.LEDFX_SHUTDOWN)
 
     def update_config(self, config):
         """Deactivate the audio, update the config, the reactivate"""
@@ -201,7 +206,6 @@ class AudioInputSource:
             self._stream.stop()
             self._stream.close()
             self._stream = None
-        self._rolling_window = None
         _LOGGER.info("Audio source closed.")
 
     def subscribe(self, callback):
@@ -335,16 +339,16 @@ class AudioAnalysisSource(AudioInputSource):
         self.subscribe(self.freq_power)
 
     def initialise_analysis(self):
+        # melbanks
+        if not hasattr(self, "melbanks"):
+            self.melbanks = Melbanks(
+                self._ledfx, self, self._ledfx.config.get("melbanks", {})
+            )
 
         fft_params = (
             self._config["fft_size"],
             self._config["mic_rate"] // self._config["sample_rate"],
             self._config["mic_rate"],
-        )
-
-        # melbanks
-        self.melbanks = Melbanks(
-            self._ledfx, self, self._ledfx.config.get("melbanks", {})
         )
 
         # pitch, tempo, onset
