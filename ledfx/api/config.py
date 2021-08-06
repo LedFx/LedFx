@@ -184,7 +184,11 @@ class ConfigEndpoint(RestEndpoint):
             # TODO
             # Do something if wled preferences config is updated
 
-            if hasattr(self._ledfx, "audio") and audio_config:
+            if (
+                hasattr(self._ledfx, "audio")
+                and self._ledfx.audio is not None
+                and audio_config
+            ):
                 self._ledfx.audio.update_config(self._ledfx.config["audio"])
 
             if hasattr(self._ledfx, "audio") and melbanks_config:
