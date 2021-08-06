@@ -113,6 +113,7 @@ class LedFxCore:
         """
         min_time_since = 1 / self.config["visualisation_fps"]
         time_since_last = {}
+        max_len = self.config["visualisation_maxlen"]
 
         def handle_visualisation_update(event):
             is_device = event.event_type == Event.DEVICE_UPDATE
@@ -134,8 +135,8 @@ class LedFxCore:
 
             pixels = event.pixels
 
-            if len(pixels) > self.config["visualisation_maxlen"]:
-                pixels = interpolate_pixels(pixels)
+            if len(pixels) > max_len:
+                pixels = interpolate_pixels(pixels, max_len)
 
             self.events.fire_event(
                 VisualisationUpdateEvent(is_device, vis_id, pixels)
