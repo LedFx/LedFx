@@ -104,6 +104,8 @@ class EffectsEndpoint(RestEndpoint):
                         val = random.randint(lower, upper)
                 effect_config[setting.schema] = val
 
+        print(effect_config)
+
         # See if virtual's active effect type matches this effect type,
         # if so update the effect config
         # otherwise, create a new effect and add it to the virtual
@@ -210,6 +212,40 @@ class EffectsEndpoint(RestEndpoint):
         effect_config = data.get("config")
         if effect_config is None:
             effect_config = {}
+        elif effect_config == "RANDOMIZE":
+            # Parse and break down schema for effect, in order to generate
+            # acceptable random values
+            ignore_settings = ["brightness"]
+            effect_config = {}
+            effect_type = virtual.active_effect.type
+            effect = self._ledfx.effects.get_class(effect_type)
+            schema = effect.schema().schema
+            for setting in schema.keys():
+                if setting in ignore_settings:
+                    continue
+                # Booleans
+                if schema[setting] is bool:
+                    val = random.choice([True, False])
+                # Lists
+                elif isinstance(schema[setting], vol.validators.In):
+                    val = random.choice(schema[setting].container)
+                # All (assuming coerce(float/int), range(min,max))
+                # NOTE: vol.coerce(float/int) does not give enough info for a random value to be generated!
+                # *** All effects should give a range! ***
+                # This is also important for when sliders will be added, slider
+                # needs a start and stop
+                elif isinstance(schema[setting], vol.validators.All):
+                    for validator in schema[setting].validators:
+                        if isinstance(validator, vol.validators.Coerce):
+                            coerce_type = validator.type
+                        elif isinstance(validator, vol.validators.Range):
+                            lower = validator.min
+                            upper = validator.max
+                    if coerce_type is float:
+                        val = random.uniform(lower, upper)
+                    elif coerce_type is int:
+                        val = random.randint(lower, upper)
+                effect_config[setting.schema] = val
 
         # Create the effect and add it to the virtual
         effect = self._ledfx.effects.create(
