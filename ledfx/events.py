@@ -31,7 +31,8 @@ class DeviceUpdateEvent(Event):
     def __init__(self, device_id: str, pixels: np.ndarray):
         super().__init__(Event.DEVICE_UPDATE)
         self.device_id = device_id
-        self.pixels = pixels.astype(np.uint8).T.tolist()
+        # self.pixels = pixels.astype(np.uint8).T.tolist()
+        self.pixels = pixels
 
 
 class VirtualUpdateEvent(Event):
@@ -40,7 +41,8 @@ class VirtualUpdateEvent(Event):
     def __init__(self, virtual_id: str, pixels: np.ndarray):
         super().__init__(Event.VIRTUAL_UPDATE)
         self.virtual_id = virtual_id
-        self.pixels = pixels.astype(np.uint8).T.tolist()
+        # self.pixels = pixels.astype(np.uint8).T.tolist()
+        self.pixels = pixels
 
 
 class GraphUpdateEvent(Event):
@@ -71,7 +73,7 @@ class VisualisationUpdateEvent(Event):
         super().__init__(Event.VISUALISATION_UPDATE)
         self.is_device = is_device
         self.vis_id = vis_id
-        self.pixels = pixels
+        self.pixels = pixels.astype(np.uint8).T.tolist()
 
 
 class EffectSetEvent(Event):
