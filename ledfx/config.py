@@ -243,7 +243,13 @@ def load_config(config_dir: str) -> dict:
                 return CORE_CONFIG_SCHEMA(config_json)
             except (KeyError, AssertionError):
                 create_backup(config_dir, config_file, "VERSION")
-                config = migrate_config(config_json)
+                try:
+                    config = migrate_config(config_json)
+                except Exception as e:
+                    _LOGGER.error(
+                        f"Failed to migrate your config to the new standard :( Your old config is backed up safely. Please let a developer know what happened: {e}"
+                    )
+                    config = {}
                 return CORE_CONFIG_SCHEMA(config)
     except json.JSONDecodeError:
         create_backup(config_dir, config_file, "DECODE")
