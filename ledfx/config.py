@@ -243,13 +243,170 @@ def load_config(config_dir: str) -> dict:
                 return CORE_CONFIG_SCHEMA(config_json)
             except (KeyError, AssertionError):
                 create_backup(config_dir, config_file, "VERSION")
-                return CORE_CONFIG_SCHEMA({})
+                config = migrate_config(config_json)
+                return CORE_CONFIG_SCHEMA(config)
     except json.JSONDecodeError:
         create_backup(config_dir, config_file, "DECODE")
         return CORE_CONFIG_SCHEMA({})
     except OSError:
         create_backup(config_dir, config_file, "OSERROR")
         return CORE_CONFIG_SCHEMA({})
+
+
+def migrate_config(old_config):
+    """
+    attempts to update an old config to a working state
+    """
+    _LOGGER.warning("Attempting to migrate old config to new version...")
+
+    import copy
+
+    new_config = copy.deepcopy(old_config)
+
+    # if not using new config "audio_device", delete audio config
+    if not old_config.get("audio", {}).get("audio_device", None):
+        new_config.pop("audio", None)
+
+    # remove old transition things
+    new_config.pop("crossfade", None)
+    new_config.pop("fade", None)
+
+    # update devices
+    new_config["devices"] = []
+    for device in old_config.get("devices", ()):
+        if device["type"].lower() == "fxmatrix":
+            _LOGGER.warning(
+                "FXMatrix devices are no longer supported. Add it as plain UDP or WLED."
+            )
+            continue
+        device.pop("effect", None)
+        new_config["devices"].append(device)
+
+    # if no virtuals saved, create virtuals for all the devices
+    from ledfx.utils import generate_id
+
+    if not new_config.get("virtuals", None):
+        new_config["virtuals"] = []
+        for device in new_config["devices"]:
+            # Generate virtual configuration for the device
+            name = device["config"]["name"]
+            _LOGGER.info(f"Creating a virtual for device {name}")
+
+            virtual_config = {
+                "name": name,
+                # "icon_name": device_config["icon_name"],
+            }
+            segments = [
+                [device["id"], 0, device["config"]["pixel_count"] - 1, False]
+            ]
+
+            new_config["virtuals"].append(
+                {
+                    "id": generate_id(name),
+                    "is_device": device["id"],
+                    "config": virtual_config,
+                    "segments": segments,
+                }
+            )
+
+    # initialise some things that will help us match up old effect info to new effect info
+    def get_matching_effect_id(effect_id):
+        def clean_effect_id(effect_id):
+            return effect_id.lower().replace("(reactive)", "").replace("_", "")
+
+        effect_id = clean_effect_id(effect_id)
+        for effect_type in effects:
+            if effect_type == effect_id:
+                return effect_type
+        else:
+            return None
+
+    def sanitise_effect_config(effect_type, old_config):
+        # checks each config key against the current schema, discarding any values that dont match
+        schema = effects[effect_type].schema().schema
+        new_config = {}
+        for key in old_config:
+            if key in schema:
+                try:
+                    schema[key](old_config[key])
+                    new_config[key] = old_config[key]
+                except vol.MultipleInvalid:
+                    _LOGGER.warning(
+                        f"Preset for {effect_type} with config item {key} : {old_config[key]} is invalid. Discarding."
+                    )
+                    continue
+            else:
+                _LOGGER.warning(
+                    f"Preset for {effect_type} no longer has config item {key}. Discarding."
+                )
+                continue
+        return new_config
+
+    class DummyLedfx:
+        def dev_enabled(_):
+            return False
+
+    import voluptuous as vol
+
+    from ledfx.effects import Effects
+
+    effects = Effects(DummyLedfx()).classes()
+
+    # clean up user presets. effect names have changed, we'll try to clean them up here
+    user_presets = new_config.pop(
+        "custom_presets", new_config.pop("user_presets", ())
+    )
+    new_config["user_presets"] = {}
+    for effect_id in user_presets:
+        new_effect_id = get_matching_effect_id(effect_id)
+        if not new_effect_id:
+            _LOGGER.warning(
+                f"Could not match effect id {effect_id} to any current effects. Discarding presets for this effect."
+            )
+            continue
+        new_config["user_presets"][new_effect_id] = {}
+        for preset_id in user_presets[effect_id]:
+            new_config["user_presets"][new_effect_id][preset_id] = {
+                "name": user_presets[effect_id][preset_id]["name"],
+                "config": sanitise_effect_config(
+                    new_effect_id, user_presets[effect_id][preset_id]["config"]
+                ),
+            }
+
+    # clean up scenes
+    scenes = new_config.pop("scenes", ())
+    new_config["scenes"] = {}
+    for scene in scenes:
+        devices = scenes[scene].pop("devices", ())
+        virtuals = {}
+        for device in devices:
+            corresponding_virtual = next(
+                (virtual["id"] for virtual in new_config["virtuals"]), None
+            )
+            if not corresponding_virtual:
+                _LOGGER.warning(
+                    f"Could not match device id {device} to any virtuals. Discarding this device from scene {scene}."
+                )
+                continue
+            effect_id, effect_config = (
+                devices[device]["type"],
+                devices[device]["config"],
+            )
+            new_effect_id = get_matching_effect_id(effect_id)
+            if not new_effect_id:
+                _LOGGER.warning(
+                    f"Could not match effect id {effect_id} to any current effects. Discarding this effect from scene {scene}."
+                )
+                continue
+            virtuals[corresponding_virtual] = {
+                "config": effect_config,
+                "type": new_effect_id,
+            }
+        scene_config = {"virtuals": virtuals, "name": scenes[scene]["name"]}
+        new_config["scenes"][scene] = scene_config
+
+    _LOGGER.info("Finished migrating config.")
+    return new_config
 
 
 def create_backup(config_dir, config_file, errortype):
@@ -262,7 +419,7 @@ def create_backup(config_dir, config_file, errortype):
     """
 
     date = datetime.datetime.now().strftime("%d-%m-%y_%H-%M-%S")
-    backup_location = os.path.join(config_dir, f"config.json.backup.{date}")
+    backup_location = os.path.join(config_dir, f"config_backup_{date}.json")
     try:
         os.rename(config_file, backup_location)
     except OSError:
@@ -274,9 +431,7 @@ def create_backup(config_dir, config_file, errortype):
         )
 
     if errortype == "VERSION":
-        _LOGGER.warning(
-            "Incompatible Configuration Detected. Backup Created, empty configuration used."
-        )
+        _LOGGER.warning("Incompatible Configuration Detected. Backup Created.")
 
     if errortype == "OSERROR":
         _LOGGER.warning(
