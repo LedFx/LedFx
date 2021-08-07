@@ -104,8 +104,6 @@ class EffectsEndpoint(RestEndpoint):
                         val = random.randint(lower, upper)
                 effect_config[setting.schema] = val
 
-        print(effect_config)
-
         # See if virtual's active effect type matches this effect type,
         # if so update the effect config
         # otherwise, create a new effect and add it to the virtual
