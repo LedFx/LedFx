@@ -82,7 +82,7 @@ class Melbank:
             vol.Optional("max_frequency", default=MAX_FREQ): vol.All(
                 vol.Coerce(int), vol.Range(MIN_FREQ, MAX_FREQ)
             ),
-            vol.Optional("peak_isolation", default=0.6): float,
+            vol.Optional("peak_isolation", default=0.4): float,
             vol.Optional("coeffs_type", default="matt_mel"): vol.In(
                 MELBANK_COEFFS_TYPES
             ),

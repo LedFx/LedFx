@@ -23,14 +23,14 @@ SETUP_REQUIRES = [
 ]
 
 INSTALL_REQUIRES = [
-    "numpy>=1.20.2",
-    "voluptuous>=0.12.0",
-    "sounddevice>=0.4.1",
-    "sacn>=1.6.3",
+    "numpy~=1.20.2",
+    "voluptuous~=0.12.1",
+    "sounddevice~=0.4.2",
+    "sacn~=1.6.3",
     "aiohttp~=3.7.4.post0",
-    "multidict>=5.0.0",
-    "requests>=2.24.0",
-    "aubio>=0.4.9",
+    "multidict~=5.0.0",
+    "requests~=2.24.0",
+    "aubio~=0.4.9",
     "zeroconf==0.30.0",
     'pywin32>=300; platform_system == "Windows"',
     "cython>=0.29.21",

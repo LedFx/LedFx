@@ -294,20 +294,21 @@ def main():
     setup_logging(args.loglevel)
     config_helpers.load_logger()
 
+    if not (currently_frozen() or installed_via_pip()):
+        if args.offline_mode:
+            _LOGGER.warning(
+                "Offline Mode Enabled - Please check for updates regularly."
+            )
+        else:
+            import ledfx.sentry_config  # noqa: F401
+
     if args.sentry_test:
-        """ This will crash LedFx and submit a Sentry error if Sentry is configured """
+        """This will crash LedFx and submit a Sentry error if Sentry is configured"""
         _LOGGER.warning("Steering LedFx into a brick wall")
         div_by_zero = 1 / 0
 
     if currently_frozen() or installed_via_pip():
         warnings.filterwarnings("ignore", category=DeprecationWarning)
-
-    if args.offline_mode:
-        _LOGGER.warning(
-            "Offline Mode Enabled - Please check for updates regularly."
-        )
-    else:
-        import ledfx.sentry_config  # noqa: F401
 
     if args.tray or currently_frozen():
         import os

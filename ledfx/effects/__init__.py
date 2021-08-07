@@ -69,12 +69,14 @@ def mirror_pixels(pixels):
     # TODO: Figure out some better logic here. Needs to reduce the signal
     # and reflect across the middle. The prior logic was broken for
     # non-uniform effects.
-    mirror_shape = (np.shape(pixels)[0], 2, np.shape(pixels)[1])
-    return (
-        np.append(pixels[::-1], pixels, axis=0)
-        .reshape(mirror_shape)
-        .mean(axis=1)
-    )
+    # mirror_shape = (np.shape(pixels)[0], 2, np.shape(pixels)[1])
+    # return (
+    #     np.append(pixels[::-1], pixels, axis=0)
+    #     .reshape(mirror_shape)
+    #     .mean(axis=1)
+    # )
+    pixels = np.concatenate([pixels[-1 + len(pixels) % -2 :: -2], pixels[::2]])
+    return pixels
 
 
 def flip_pixels(pixels):
@@ -128,6 +130,25 @@ def _gaussian_kernel1d(sigma, order, radius):
         phi_x *= q(x)
 
     return phi_x
+
+
+def fast_blur_pixels(pixels, sigma):
+    if len(pixels) == 0:
+        raise ValueError("Cannot smooth an empty array")
+
+    # Choose a radius for the filter kernel large enough to include all significant elements. Using
+    # a radius of 4 standard deviations (rounded to int) will only truncate tail values that are of
+    # the order of 1e-5 or smaller. For very small sigma values, just use a minimal radius.
+    kernel_radius = min(
+        int((len(pixels) - 1) / 2), max(1, int(round(4.0 * sigma)))
+    )
+    kernel = _gaussian_kernel1d(sigma, 0, kernel_radius)
+
+    pixels[:, 0] = np.convolve(pixels[:, 0], kernel, mode="same")
+    pixels[:, 1] = np.convolve(pixels[:, 1], kernel, mode="same")
+    pixels[:, 2] = np.convolve(pixels[:, 2], kernel, mode="same")
+
+    return pixels
 
 
 def smooth(x, sigma):
@@ -244,6 +265,9 @@ class Effect(BaseRegistry):
         self._virtual = virtual
         self._pixels = np.zeros((virtual.pixel_count, 3))
         self._active = True
+        self._bg_color_array = np.tile(
+            self._bg_color, (virtual.pixel_count, 1)
+        )
 
         # Iterate all the base classes and check to see if the base
         # class has an on_activate method. If so, call it
@@ -331,13 +355,16 @@ class Effect(BaseRegistry):
             if self._config["background_color"]:
                 # TODO: colours in future should have an alpha value, which would work nicely to apply to dim the background colour
                 # for now, just set it a bit less bright.
-                _bg_color_array = np.tile(self._bg_color, (len(pixels), 1))
-                pixels += np.multiply(_bg_color_array.T, self._bg_brightness).T
+                pixels += np.multiply(
+                    self._bg_color_array.T, self._bg_brightness
+                ).T
             if self._config["brightness"] is not None:
                 pixels = brightness_pixels(pixels, self._config["brightness"])
             # If the configured blur is greater than 0 we need to blur it
             if self.configured_blur != 0.0:
-                pixels = blur_pixels(pixels=pixels, sigma=self.configured_blur)
+                pixels = fast_blur_pixels(
+                    pixels=pixels, sigma=self.configured_blur
+                )
             self._pixels = np.copy(pixels)
         else:
             raise TypeError()

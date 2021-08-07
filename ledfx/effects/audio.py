@@ -11,7 +11,7 @@ import voluptuous as vol
 from ledfx.effects import Effect
 from ledfx.effects.math import ExpFilter
 from ledfx.effects.melbank import FFT_SIZE, MIC_RATE, Melbanks
-from ledfx.events import GraphUpdateEvent
+from ledfx.events import Event, GraphUpdateEvent
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -63,7 +63,7 @@ class AudioInputSource:
                 vol.Optional("fft_size", default=FFT_SIZE): int,
                 vol.Optional("min_volume", default=0.2): float,
                 vol.Optional(
-                    "device_index", default=default_device_index
+                    "audio_device", default=default_device_index
                 ): vol.In(input_devices),
             },
             extra=vol.ALLOW_EXTRA,
@@ -72,6 +72,11 @@ class AudioInputSource:
     def __init__(self, ledfx, config):
         self._ledfx = ledfx
         self.update_config(config)
+
+        def deactivate(e):
+            self.deactivate()
+
+        self._ledfx.events.add_listener(deactivate, Event.LEDFX_SHUTDOWN)
 
     def update_config(self, config):
         """Deactivate the audio, update the config, the reactivate"""
@@ -97,7 +102,7 @@ class AudioInputSource:
         default_device = self.default_device_index()
         valid_device_indexes = self.valid_device_indexes()
         default_api = self._audio.default.hostapi
-        device_idx = self._config["device_index"]
+        device_idx = self._config["audio_device"]
 
         if device_idx > max(valid_device_indexes):
             _LOGGER.warning(
@@ -153,6 +158,11 @@ class AudioInputSource:
         # self.pre_emphasis = None,
         freq_domain_length = (self._config["fft_size"] // 2) + 1
 
+        self._raw_audio_sample = np.zeros(
+            self._config["mic_rate"] // self._config["sample_rate"],
+            dtype=np.float32,
+        )
+
         # Setup the phase vocoder to perform a windowed FFT
         self._phase_vocoder = aubio.pvoc(
             self._config["fft_size"],
@@ -196,7 +206,6 @@ class AudioInputSource:
             self._stream.stop()
             self._stream.close()
             self._stream = None
-        self._rolling_window = None
         _LOGGER.info("Audio source closed.")
 
     def subscribe(self, callback):
@@ -217,13 +226,12 @@ class AudioInputSource:
     def _audio_sample_callback(self, in_data, frame_count, time_info, status):
         """Callback for when a new audio sample is acquired"""
         # time_start = time.time()
-
         self._raw_audio_sample = np.frombuffer(in_data, dtype=np.float32)
 
         self.pre_process_audio()
         self._invalidate_caches()
         self._invoke_callbacks()
-        # print(f"Core Audio Processing Latency in {time.time()-time_start}")
+        # print(f"Core Audio Processing Latency {round(time.time()-time_start, 3)} s")
         # return self._raw_audio_sample
 
     def _invoke_callbacks(self):
@@ -331,16 +339,16 @@ class AudioAnalysisSource(AudioInputSource):
         self.subscribe(self.freq_power)
 
     def initialise_analysis(self):
+        # melbanks
+        if not hasattr(self, "melbanks"):
+            self.melbanks = Melbanks(
+                self._ledfx, self, self._ledfx.config.get("melbanks", {})
+            )
 
         fft_params = (
             self._config["fft_size"],
             self._config["mic_rate"] // self._config["sample_rate"],
             self._config["mic_rate"],
-        )
-
-        # melbanks
-        self.melbanks = Melbanks(
-            self._ledfx, self, self._ledfx.config.get("melbanks", {})
         )
 
         # pitch, tempo, onset
@@ -776,8 +784,11 @@ class AudioReactiveEffect(Effect):
 
     def melbank_thirds(self, **kwargs):
         """
-        Returns the melbank split into thirds.
+        Returns the melbank split into three sections (unequal length)
         Useful for effects that use lows, mids, and highs
         """
+        melbank = self.melbank(**kwargs)
+        mel_length = len(melbank)
+        splits = tuple(map(lambda i: int(i * mel_length), [0.2, 0.5]))
 
-        return np.array_split(self.melbank(**kwargs), 3)
+        return np.split(melbank, splits)

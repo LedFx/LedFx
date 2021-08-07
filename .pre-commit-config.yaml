@@ -6,26 +6,26 @@ default_language_version:
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v3.4.0
+    rev: v4.0.1
     hooks:
     - id: check-yaml
     - id: check-ast
     - id: trailing-whitespace
     - id: check-toml
   - repo: https://github.com/PyCQA/isort
-    rev: 5.8.0
+    rev: 5.9.3
     hooks:
       - id: isort
   - repo: https://gitlab.com/pycqa/flake8
-    rev: 3.9.1
+    rev: 3.9.2
     hooks:
       - id: flake8
   - repo: https://github.com/psf/black
-    rev: 20.8b1 # Replace by any tag/version: https://github.com/psf/black/tags
+    rev: 21.7b0 # Replace by any tag/version: https://github.com/psf/black/tags
     hooks:
       - id: black
-  -   repo: https://github.com/asottile/pyupgrade
-      rev: v2.13.0
-      hooks:
-      -   id: pyupgrade
-          args: [--py310-plus]
+  - repo: https://github.com/asottile/pyupgrade
+    rev: v2.13.0
+    hooks:
+      - id: pyupgrade
+        args: [--py310-plus]

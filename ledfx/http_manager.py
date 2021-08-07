@@ -34,10 +34,13 @@ class HttpServer:
     def register_routes(self):
 
         self.api.register_routes(self.app)
-        self.app.router.add_route("get", "/favicon.ico", self.favicon)
+        self.app.router.add_static(
+            "/favicon",
+            path=ledfx_frontend.where() + "/favicon",
+            name="favicon",
+        )
         self.app.router.add_route("get", "/manifest.json", self.manifest)
         self.app.router.add_route("get", "/", self.index)
-        self.app.router.add_route("get", "/{extra:.+}", self.index)
 
         self.app.router.add_static(
             "/static",
@@ -49,12 +52,6 @@ class HttpServer:
 
         return web.FileResponse(
             path=ledfx_frontend.where() + "/index.html", status=200
-        )
-
-    async def favicon(self, response):
-
-        return web.FileResponse(
-            path=ledfx_frontend.where() + "/favicon.ico", status=200
         )
 
     async def manifest(self, response):

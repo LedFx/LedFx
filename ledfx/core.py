@@ -49,8 +49,10 @@ class LedFxCore:
             self.loop = asyncio.get_event_loop()
         asyncio.set_event_loop(self.loop)
 
-        self.executor = ThreadPoolExecutor()
-        self.loop.set_default_executor(self.executor)
+        # self.loop.set_debug(True)
+
+        self.thread_executor = ThreadPoolExecutor()
+        self.loop.set_default_executor(self.thread_executor)
         self.loop.set_exception_handler(self.loop_exception_handler)
 
         if self.icon:
@@ -111,6 +113,7 @@ class LedFxCore:
         """
         min_time_since = 1 / self.config["visualisation_fps"]
         time_since_last = {}
+        max_len = self.config["visualisation_maxlen"]
 
         def handle_visualisation_update(event):
             is_device = event.event_type == Event.DEVICE_UPDATE
@@ -132,8 +135,8 @@ class LedFxCore:
 
             pixels = event.pixels
 
-            if len(pixels) > self.config["visualisation_maxlen"]:
-                pixels = interpolate_pixels(pixels)
+            if len(pixels) > max_len:
+                pixels = interpolate_pixels(pixels, max_len)
 
             self.events.fire_event(
                 VisualisationUpdateEvent(is_device, vis_id, pixels)
@@ -179,7 +182,7 @@ class LedFxCore:
         try:
             self.loop.run_forever()
         except KeyboardInterrupt:
-            self.loop.call_soon_threadsafe(
+            self.loop.call_soon(
                 self.loop.create_task, self.async_stop(exit_code=1)
             )
             self.loop.run_forever()
@@ -276,7 +279,7 @@ class LedFxCore:
 
         _LOGGER.info("Flushing loop...")
         await self.flush_loop()
-        self.executor.shutdown()
+        self.thread_executor.shutdown()
         self.exit_code = exit_code
         self.loop.stop()
         return exit_code
