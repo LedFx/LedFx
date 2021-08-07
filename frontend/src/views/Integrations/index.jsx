@@ -16,6 +16,9 @@ import { getAsyncIntegrations } from 'modules/integrations';
 import Card from '../../components/IntegrationComponents/Card';
 import CardB from '../../components/IntegrationComponents/CardB';
 import Row from '../../components/IntegrationComponents/Row';
+import SpotifyView from '../../components/IntegrationComponents/Spotify';
+//import SpotifyView from '../../components/IntegrationComponents/SpotifyBlade';
+import { getScenes, activateScene } from 'modules/scenes';
 
 function Alert(props) {
     return <MuiAlert elevation={6} variant="filled" {...props} />;
@@ -35,6 +38,10 @@ const IntegrationsView = () => {
         dispatch(getAsyncIntegrations());
     }, [dispatch]);
 
+    useEffect(() => {
+        dispatch(getScenes());
+    }, [dispatch]);
+    
     return (
         <><Grid container spacing={2}>
             <Grid item xs={12} md={12}>
@@ -95,8 +102,8 @@ const IntegrationsView = () => {
                         <TableCell>Name</TableCell>
                         <TableCell>Type</TableCell>
                         <TableCell>Event Type</TableCell>
-                        <TableCell>Event Trigger</TableCell>
-                        <TableCell>Payload</TableCell>
+                        <TableCell>Event Trigger (If This)</TableCell>
+                        <TableCell>Payload (Do This)</TableCell>
                         <TableCell>Actions</TableCell>
                     </TableRow>
                 </TableHead>
@@ -110,7 +117,11 @@ const IntegrationsView = () => {
                                 installedIntegration={instInt} />
                         ))}
                 </TableBody>
-            </Table></>
+            </Table>
+            <Grid>
+             <SpotifyView />
+            </Grid>
+            </>
     );
 };
 

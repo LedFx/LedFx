@@ -5,18 +5,22 @@ import schemas from './schemas';
 import scenes from './scenes';
 import settings from './settings';
 import integrations from './integrations';
+import qlc from './qlc';
 import ui from './ui';
+import spotify from './spotify'
 import displays from './displays';
 import selectedDisplay from './selectedDisplay';
 const modules = {
     devices,
     integrations,
+    qlc,
     presets,
     schemas,
     scenes,
     settings,
     selectedDevice,
     ui,
+    spotify,
     displays,
     selectedDisplay,
 };

@@ -117,6 +117,11 @@ Other News
 ----------------------------------------------
 
 
+Version 0.11.0
+=============
+ 
+- If device is WLED & active effect, than display WLED info
+
 Version 0.9.2
 =============
 

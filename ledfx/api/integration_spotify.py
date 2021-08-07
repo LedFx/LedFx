@@ -59,7 +59,6 @@ class QLCEndpoint(RestEndpoint):
         song_name = data.get("song_name")
         song_position = data.get("song_position")
 
-        scene_id = data.get("id")
         if scene_id is None:
             response = {
                 "status": "failed",

@@ -59,7 +59,7 @@ class SpotifyBar extends Component {
 
     spotifyLogin() {
         let scopes = encodeURIComponent('streaming user-read-email user-read-private');
-        let client_id = 'a4d6df0f4b0047c2b23216c46bfc0f27'
+        let client_id = '7658827aea6f47f98c8de593f1491da5'
         let redirect_uri = 'http://127.0.0.1:8888/dashboard/'
 
         window.location = [

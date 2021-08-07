@@ -1,5 +1,5 @@
 import React from 'react';
-import { deleteAsyncIntegration } from 'modules/integrations';
+import { deleteQLCListener } from 'proxies/integrations';
 import EditIcon from '@material-ui/icons/Edit';
 import { Switch } from '@material-ui/core';
 import Button from '@material-ui/core/Button';
@@ -8,8 +8,8 @@ import TableCell from '@material-ui/core/TableCell';
 import PopoverSure from 'components/PopoverSure';
 
 const DataRow = ({ id, name, type, data }) =>
-    data.map(dr => (
-        <TableRow key={id}>
+    data.map((dr,i) => (
+        <TableRow key={i}>
             <TableCell>{name}</TableCell>
             <TableCell>{type}</TableCell>
             <TableCell>{dr[0]}</TableCell>
@@ -20,9 +20,12 @@ const DataRow = ({ id, name, type, data }) =>
                     <PopoverSure
                         variant="text"
                         onDeleteVitem={() =>
-                            deleteAsyncIntegration({
-                                id: id,
-                            })
+                            deleteQLCListener(
+                                id, ({
+                                    "event_type": dr[0],
+                                    "event_filter": {"scene_name": dr[1].scene_name}
+                                })
+                            )
                         }
                     />
                     <Button
@@ -31,6 +34,7 @@ const DataRow = ({ id, name, type, data }) =>
                         onClick={() => {
                             // console.log('edit');
                         }}
+                        //Need to do, onClick edit DialogAddEventListener.
                     >
                         <EditIcon />
                     </Button>

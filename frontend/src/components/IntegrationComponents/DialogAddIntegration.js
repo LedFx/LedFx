@@ -37,8 +37,8 @@ function ConfirmationDialogRaw(props) {
 
     const handleOk = () => {
         onClose(value);
-        integrationsProxies.createIntegration({ config: model, type: 'qlc' });
-        window.location = window.location.href;
+        integrationsProxies.createIntegration({ config: model, type: integrationTypes[integration].id });
+                window.location = window.location.href;
     };
 
     // const handleChange = event => {
@@ -50,7 +50,8 @@ function ConfirmationDialogRaw(props) {
         // setModel(val);
     };
     delete other.deviceList;
-    return (
+    
+    return integrationTypes[integration] ?  (
         <Dialog
             disableBackdropClick
             disableEscapeKeyDown
@@ -89,7 +90,7 @@ function ConfirmationDialogRaw(props) {
                 </Button>
             </DialogActions>
         </Dialog>
-    );
+    ) :  <></>;
 }
 
 ConfirmationDialogRaw.propTypes = {

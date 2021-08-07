@@ -23,8 +23,8 @@ export function deleteIntegration(data) {
 
 // QLC+ Proxies
 
-export function getQLCInfo(integrationId, data) {
-    return api.get(`/integrations/qlc/${integrationId}`, data);
+export function getQLCInfo(integrationId) {
+    return api.get(`/integrations/qlc/${integrationId}`);
 }
 
 export function toggleQLCListener(integrationId, data) {
@@ -36,6 +36,7 @@ export function createQLCListener(integrationId, data) {
 }
 
 export function deleteQLCListener(integrationId, data) {
+    console.log('DeleteQLClistener', data);
     return api.delete(`/integrations/qlc/${integrationId}`, data);
 }
 

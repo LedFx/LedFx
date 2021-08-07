@@ -4,6 +4,7 @@ import * as integrationsProxies from 'proxies/integrations';
 const ACTION_ROOT = 'integrations';
 
 export const addIntegration = createAction(`${ACTION_ROOT}/INTEGRATION_ADD`);
+// export const getIntegrations = createAction(`${ACTION_ROOT}/INTEGRATIONS_GET`);
 export const setIntegration = createAction(`${ACTION_ROOT}/INTEGRATION_SET`);
 export const deleteIntegration = createAction(`${ACTION_ROOT}/INTEGRATION_DELETE`);
 
@@ -38,6 +39,7 @@ export default handleActions(
 );
 
 export function getAsyncIntegrations() {
+    console.log("YZ02")
     return async dispatch => {
         try {
             const response = await integrationsProxies.getIntegrations();
@@ -50,16 +52,14 @@ export function getAsyncIntegrations() {
     };
 }
 
-export async function deleteAsyncIntegration(data) {
-    console.log('damn', data);
-    const response = await integrationsProxies.deleteIntegration({ data });
-    console.log('damn', response);
+export async function deleteAsyncIntegration(data) {    
+    const response = await integrationsProxies.deleteIntegration({ data });    
     window.location = window.location.href;
     // integrationsProxies.deleteIntegration(data);
     return async dispatch => {
-        try {
-            console.log('damn', data);
-            const response = await integrationsProxies.deleteIntegration(data);
+        try {            
+            //const response = 
+            await integrationsProxies.deleteIntegration(data);
             if (response.statusText === 'OK') {
                 console.log('OMG', response.data);
                 // dispatch(deleteIntegration(response.data.integrations));
@@ -71,17 +71,24 @@ export async function deleteAsyncIntegration(data) {
 }
 
 export async function toggleAsyncIntegration(data) {
-    console.log('damn', data);
-    const response = await integrationsProxies.toggleIntegration(data);
-    console.log('damn', response);
-    // window.location = window.location.href;
-    // integrationsProxies.deleteIntegration(data);
+    console.log('toggleAsyncIntegration: ', data);
+    // 1) You would want to do a try catch around this. but its ok for dev
+    //const response = 
+    await integrationsProxies.toggleIntegration({id: data});    
+
+    // 2) you dont want to do the reload here 
+    //    delete this after you have dispatched the new data to the store
+    window.location = window.location.href;
+    
     return async dispatch => {
         try {
             console.log('damn', data);
-            const response = await integrationsProxies.toggleIntegration(data);
+            const response = await integrationsProxies.toggleIntegration({id: data});
             if (response.statusText === 'OK') {
                 console.log('OMG', response.data);
+                // Here is were you normally want to dispatch the action 
+                // you defined at the top of this file line 16-36: 
+                // like storing new state to store
                 // dispatch(deleteIntegration(response.data.integrations));
             }
         } catch (error) {
