@@ -1,25 +1,25 @@
 {
   "files": {
     "main.css": "/static/css/main.787f6f79.chunk.css",
-    "main.js": "/static/js/main.e09a7d6b.chunk.js",
-    "main.js.map": "/static/js/main.e09a7d6b.chunk.js.map",
-    "runtime-main.js": "/static/js/runtime-main.e9600707.js",
-    "runtime-main.js.map": "/static/js/runtime-main.e9600707.js.map",
-    "static/js/2.23d617a8.chunk.js": "/static/js/2.23d617a8.chunk.js",
-    "static/js/2.23d617a8.chunk.js.map": "/static/js/2.23d617a8.chunk.js.map",
-    "static/js/3.8775deaa.chunk.js": "/static/js/3.8775deaa.chunk.js",
-    "static/js/3.8775deaa.chunk.js.map": "/static/js/3.8775deaa.chunk.js.map",
+    "main.js": "/static/js/main.d880eada.chunk.js",
+    "main.js.map": "/static/js/main.d880eada.chunk.js.map",
+    "runtime-main.js": "/static/js/runtime-main.abd39efc.js",
+    "runtime-main.js.map": "/static/js/runtime-main.abd39efc.js.map",
+    "static/js/2.54215eac.chunk.js": "/static/js/2.54215eac.chunk.js",
+    "static/js/2.54215eac.chunk.js.map": "/static/js/2.54215eac.chunk.js.map",
+    "static/js/3.d4d9bf3f.chunk.js": "/static/js/3.d4d9bf3f.chunk.js",
+    "static/js/3.d4d9bf3f.chunk.js.map": "/static/js/3.d4d9bf3f.chunk.js.map",
     "index.html": "/index.html",
     "static/css/main.787f6f79.chunk.css.map": "/static/css/main.787f6f79.chunk.css.map",
-    "static/js/2.23d617a8.chunk.js.LICENSE.txt": "/static/js/2.23d617a8.chunk.js.LICENSE.txt",
+    "static/js/2.54215eac.chunk.js.LICENSE.txt": "/static/js/2.54215eac.chunk.js.LICENSE.txt",
     "static/media/index.css": "/static/media/materialdesignicons-webfont.e9db4005.woff2",
     "static/media/blademod.04a8d38d.svg": "/static/media/blademod.04a8d38d.svg",
     "static/media/ring.1faea45b.png": "/static/media/ring.1faea45b.png"
   },
   "entrypoints": [
-    "static/js/runtime-main.e9600707.js",
-    "static/js/2.23d617a8.chunk.js",
+    "static/js/runtime-main.abd39efc.js",
+    "static/js/2.54215eac.chunk.js",
     "static/css/main.787f6f79.chunk.css",
-    "static/js/main.e09a7d6b.chunk.js"
+    "static/js/main.d880eada.chunk.js"
   ]
 }
