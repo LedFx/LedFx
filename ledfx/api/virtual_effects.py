@@ -213,7 +213,11 @@ class EffectsEndpoint(RestEndpoint):
         elif effect_config == "RANDOMIZE":
             # Parse and break down schema for effect, in order to generate
             # acceptable random values
-            ignore_settings = ["brightness"]
+            ignore_settings = [
+                "brightness",
+                "background_color",
+                "background_brightness",
+            ]
             effect_config = {}
             effect_type = virtual.active_effect.type
             effect = self._ledfx.effects.get_class(effect_type)
