@@ -545,7 +545,7 @@ class Devices(RegistryLoader):
         # Service Discovery Library
         _LOGGER.info("Scanning for WLED devices...")
         wled_listener = WLEDListener(self._ledfx)
-        await self._zeroconf.async_add_service_listener(
+        wledbrowser = await self._zeroconf.async_add_service_listener(
             "_wled._tcp.local.", wled_listener
         )
         try:
@@ -566,7 +566,7 @@ class WLEDListener(AsyncServiceBrowser):
         pass
 
     def add_service(self, zeroconf_obj, type, name):
-        info = zeroconf_obj.get_service_info(type, name)
+        info = zeroconf_obj.async_get_service_info(type, name)
 
         if info:
             hostname = str(info.server)
