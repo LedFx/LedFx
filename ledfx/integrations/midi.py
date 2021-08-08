@@ -239,11 +239,12 @@ class MIDI(Integration):
 
         self.mapping = Mapping(mapping_dict)
         self.message_queue = set()
+        self.led_queue = set()
         self.hold_queue_flag = False
         self.disconnected_task = None
 
     def restore_from_data(self, data):
-        """ Might be used in future """
+        """Might be used in future"""
         self._data = data
 
     def load_mapping(self):
@@ -263,14 +264,13 @@ class MIDI(Integration):
         try:
             with open(mapping_path, encoding="utf-8") as file:
                 mapping_json = json.load(file)
-                try:
-                    validated_mapping = self.MAPPING_SCHEMA(mapping_json)
-                    _LOGGER.info(f"Loaded MIDI mapping file: {mapping_path}")
-                    return validated_mapping
-                except KeyError:
-                    _LOGGER.error(
-                        f"Mapping file {self._config['midi_mapping']} is incomplete."
-                    )
+                validated_mapping = self.MAPPING_SCHEMA(mapping_json)
+                _LOGGER.info(f"Loaded MIDI mapping file: {mapping_path}")
+                return validated_mapping
+        except KeyError:
+            _LOGGER.error(
+                f"Mapping file {self._config['midi_mapping']} is incomplete."
+            )
         except json.JSONDecodeError:
             _LOGGER.error(
                 f"Mapping file {self._config['midi_mapping']} is not json readable."
@@ -282,14 +282,14 @@ class MIDI(Integration):
         return self._data
 
     def add_trigger(self, scene_id, song_id, song_name, song_position):
-        """ Add a trigger to saved triggers"""
+        """Add a trigger to saved triggers"""
         trigger_id = f"{song_id}-{str(song_position)}"
         if scene_id not in self._data.keys():
             self._data[scene_id] = {}
         self._data[scene_id][trigger_id] = [song_id, song_name, song_position]
 
     def delete_trigger(self, trigger_id):
-        """ Delete a trigger from saved triggers"""
+        """Delete a trigger from saved triggers"""
         for scene_id in self._data.keys():
             if trigger_id in self._data[scene_id].keys():
                 del self._data[scene_id][trigger_id]
@@ -306,7 +306,7 @@ class MIDI(Integration):
             )
             _LOGGER.info(f"Received input to region: {region}: {message}")
         except StopIteration:
-            # _LOGGER.info(f"Received input to unmapped region: {message}")
+            _LOGGER.info(f"Received input to unmapped region: {message}")
             return
 
         # special case, handle holding the queue
