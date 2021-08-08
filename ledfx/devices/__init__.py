@@ -5,7 +5,7 @@ from functools import cached_property
 
 import numpy as np
 import voluptuous as vol
-from zeroconf.asyncio import AsyncServiceBrowser, AsyncZeroconf
+import zeroconf
 
 from ledfx.config import save_config
 from ledfx.events import DeviceUpdateEvent, Event
@@ -342,14 +342,11 @@ class Devices(RegistryLoader):
         super().__init__(ledfx, Device, self.PACKAGE_NAME)
 
         def on_shutdown(e):
-            # todo - make this async? (async_close)
-            async_fire_and_forget(
-                self._zeroconf.async_close(), loop=self._ledfx.loop
-            )
+            self._zeroconf.close()
             self.deactivate_devices()
 
         self._ledfx.events.add_listener(on_shutdown, Event.LEDFX_SHUTDOWN)
-        self._zeroconf = AsyncZeroconf()
+        self._zeroconf = zeroconf.Zeroconf()
 
     def create_from_config(self, config):
         for device in config:
@@ -545,28 +542,25 @@ class Devices(RegistryLoader):
         # Service Discovery Library
         _LOGGER.info("Scanning for WLED devices...")
         wled_listener = WLEDListener(self._ledfx)
-        wledbrowser = await self._zeroconf.async_add_service_listener(
+        wledbrowser = self._zeroconf.add_service_listener(
             "_wled._tcp.local.", wled_listener
         )
         try:
             await asyncio.sleep(30)
         finally:
             _LOGGER.info("Scan Finished")
-            await self._zeroconf.async_remove_service_listener(wled_listener)
+            self._zeroconf.remove_service_listener(wled_listener)
 
 
-class WLEDListener(AsyncServiceBrowser):
+class WLEDListener(zeroconf.ServiceBrowser):
     def __init__(self, _ledfx):
         self._ledfx = _ledfx
 
     def remove_service(self, zeroconf_obj, type, name):
         _LOGGER.info(f"Service {name} removed")
 
-    def update_service(self, *args):
-        pass
-
     def add_service(self, zeroconf_obj, type, name):
-        info = zeroconf_obj.async_get_service_info(type, name)
+        info = zeroconf_obj.get_service_info(type, name)
 
         if info:
             hostname = str(info.server)
@@ -578,7 +572,6 @@ class WLEDListener(AsyncServiceBrowser):
             def handle_exception(future):
                 # Ignore exceptions, these will be raised when a device is found that already exists
                 exc = future.exception()
-                _LOGGER.info(exc)
 
             async_fire_and_forget(
                 self._ledfx.devices.add_new_device(device_type, device_config),

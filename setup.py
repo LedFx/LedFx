@@ -31,7 +31,7 @@ INSTALL_REQUIRES = [
     "multidict~=5.0.0",
     "requests>=2.24.0",
     "aubio~=0.4.9",
-    "zeroconf~=0.33.4",
+    "zeroconf==0.30.0",
     'pywin32>=300; platform_system == "Windows"',
     "cython>=0.29.21",
     "pyupdater>=3.1.0",
