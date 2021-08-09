@@ -248,6 +248,7 @@ def load_config(config_dir: str) -> dict:
                 )
                 try:
                     config = migrate_config(config_json)
+                    save_config(config, config_dir)
                 except Exception as e:
                     _LOGGER.exception(
                         f"Failed to migrate your config to the new standard :( Your old config is backed up safely. Please let a developer know what happened: {e}"
@@ -268,7 +269,67 @@ def migrate_config(old_config):
     """
     _LOGGER.warning("Attempting to migrate old config to new version...")
 
+    # most invalid keys were from invalid frequency ranges.
+    # this replacement dict should fix that
+    replacement_frequency_ranges = {
+        "Ultra Low (1-20Hz)": "Beat",
+        "Sub Bass (20-60Hz)": "Lows (beat+bass)",
+        "Bass (60-250Hz)": "Lows (beat+bass)",
+        "Low Midrange (250-500Hz)": "Lows (beat+bass)",
+        "Midrange (500Hz-2kHz)": "Mids",
+        "Upper Midrange (2Khz-4kHz)": "Mids",
+        "High Midrange (4kHz-6kHz)": "High",
+        "High Frequency (6kHz-24kHz)": "High",
+    }
+
+    class DummyLedfx:
+        def dev_enabled(_):
+            return False
+
     import copy
+
+    import voluptuous as vol
+
+    from ledfx.effects import Effects
+
+    effects = Effects(DummyLedfx()).classes()
+
+    # initialise some things that will help us match up old effect info to new effect info
+    def get_matching_effect_id(dirty_effect_id):
+        def clean_effect_id(effect_id):
+            return effect_id.lower().replace("(reactive)", "").replace("_", "")
+
+        candidate_effect_id = clean_effect_id(dirty_effect_id)
+        for effect_id in effects:
+            if clean_effect_id(effect_id) == candidate_effect_id:
+                return effect_id
+        else:
+            return None
+
+    def sanitise_effect_config(effect_type, old_config):
+        # checks each config key against the current schema, discarding any values that dont match
+        schema = effects[effect_type].schema().schema
+        new_config = {}
+        for key in old_config:
+            if key in schema:
+                try:
+                    if key == "frequency_range":
+                        old_config[key] = replacement_frequency_ranges[
+                            old_config.get(key)
+                        ]
+                    schema[key](old_config[key])
+                    new_config[key] = old_config[key]
+                except (vol.MultipleInvalid, vol.InInvalid, Exception):
+                    _LOGGER.warning(
+                        f"Preset for {effect_type} with config item {key} : {old_config[key]} is invalid. Discarding."
+                    )
+                    continue
+            else:
+                _LOGGER.warning(
+                    f"Preset for {effect_type} no longer has config item {key}. Discarding."
+                )
+                continue
+        return new_config
 
     new_config = copy.deepcopy(old_config)
 
@@ -298,7 +359,26 @@ def migrate_config(old_config):
     )
     if virtuals:
         for virtual in virtuals:
-            virtual.pop("effect", None)
+            effect = virtual.get("effect", None)
+            if effect:
+                effect_id, effect_config = (
+                    effect.get("type", None),
+                    effect.get("config", None),
+                )
+                if effect_id:
+                    new_effect_id = get_matching_effect_id(effect_id)
+                    if not new_effect_id:
+                        _LOGGER.warning(
+                            f"Could not match effect id {effect_id} to any current effects. Discarding this effect from virtual {virtual['id']}."
+                        )
+                        continue
+                    new_effect_config = sanitise_effect_config(
+                        new_effect_id, effect_config
+                    )
+                virtual["effect"] = {
+                    "config": new_effect_config,
+                    "type": new_effect_id,
+                }
         new_config["virtuals"] = virtuals
     else:  # time to make some virtuals
         from ledfx.utils import generate_id
@@ -325,66 +405,6 @@ def migrate_config(old_config):
                     "segments": segments,
                 }
             )
-
-    # initialise some things that will help us match up old effect info to new effect info
-    def get_matching_effect_id(dirty_effect_id):
-        def clean_effect_id(effect_id):
-            return effect_id.lower().replace("(reactive)", "").replace("_", "")
-
-        candidate_effect_id = clean_effect_id(dirty_effect_id)
-        for effect_id in effects:
-            if clean_effect_id(effect_id) == candidate_effect_id:
-                return effect_id
-        else:
-            return None
-
-    # most invalid keys were from invalid frequency ranges.
-    # this replacement dict should fix that
-    replacement_frequency_ranges = {
-        "Ultra Low (1-20Hz)": "Beat",
-        "Sub Bass (20-60Hz)": "Lows (beat+bass)",
-        "Bass (60-250Hz)": "Lows (beat+bass)",
-        "Low Midrange (250-500Hz)": "Lows (beat+bass)",
-        "Midrange (500Hz-2kHz)": "Mids",
-        "Upper Midrange (2Khz-4kHz)": "Mids",
-        "High Midrange (4kHz-6kHz)": "High",
-        "High Frequency (6kHz-24kHz)": "High",
-    }
-
-    def sanitise_effect_config(effect_type, old_config):
-        # checks each config key against the current schema, discarding any values that dont match
-        schema = effects[effect_type].schema().schema
-        new_config = {}
-        for key in old_config:
-            if key in schema:
-                try:
-                    if key == "frequency_range":
-                        old_config[key] = replacement_frequency_ranges[
-                            old_config.get(key)
-                        ]
-                    schema[key](old_config[key])
-                    new_config[key] = old_config[key]
-                except (vol.MultipleInvalid, vol.InInvalid, Exception):
-                    _LOGGER.warning(
-                        f"Preset for {effect_type} with config item {key} : {old_config[key]} is invalid. Discarding."
-                    )
-                    continue
-            else:
-                _LOGGER.warning(
-                    f"Preset for {effect_type} no longer has config item {key}. Discarding."
-                )
-                continue
-        return new_config
-
-    class DummyLedfx:
-        def dev_enabled(_):
-            return False
-
-    import voluptuous as vol
-
-    from ledfx.effects import Effects
-
-    effects = Effects(DummyLedfx()).classes()
 
     # clean up user presets. effect names have changed, we'll try to clean them up here
     user_presets = new_config.pop("custom_presets", ()) or new_config.pop(
