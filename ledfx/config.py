@@ -246,7 +246,7 @@ def load_config(config_dir: str) -> dict:
                 try:
                     config = migrate_config(config_json)
                 except Exception as e:
-                    _LOGGER.error(
+                    _LOGGER.exception(
                         f"Failed to migrate your config to the new standard :( Your old config is backed up safely. Please let a developer know what happened: {e}"
                     )
                     config = {}
@@ -288,10 +288,17 @@ def migrate_config(old_config):
         device.pop("effect", None)
         new_config["devices"].append(device)
 
-    # if no virtuals saved, create virtuals for all the devices
-    from ledfx.utils import generate_id
+    # if displays are present, remove their effects and rename to virtuals
+    # else if no virtuals saved, create virtuals for all the devices
 
-    if not new_config.get("virtuals", None):
+    if new_config.get("displays", None):
+        displays = new_config.pop("displays")
+        for display in displays:
+            display.pop("effect", None)
+        new_config["virtuals"] = displays
+    elif not new_config.get("virtuals", None):
+        from ledfx.utils import generate_id
+
         new_config["virtuals"] = []
         for device in new_config["devices"]:
             # Generate virtual configuration for the device
@@ -316,16 +323,29 @@ def migrate_config(old_config):
             )
 
     # initialise some things that will help us match up old effect info to new effect info
-    def get_matching_effect_id(effect_id):
+    def get_matching_effect_id(dirty_effect_id):
         def clean_effect_id(effect_id):
             return effect_id.lower().replace("(reactive)", "").replace("_", "")
 
-        effect_id = clean_effect_id(effect_id)
-        for effect_type in effects:
-            if effect_type == effect_id:
-                return effect_type
+        candidate_effect_id = clean_effect_id(dirty_effect_id)
+        for effect_id in effects:
+            if clean_effect_id(effect_id) == candidate_effect_id:
+                return effect_id
         else:
             return None
+
+    # most invalid keys were from invalid frequency ranges.
+    # this replacement dict should fix that
+    replacement_frequency_ranges = {
+        "Ultra Low (1-20Hz)": "Beat",
+        "Sub Bass (20-60Hz)": "Lows (beat+bass)",
+        "Bass (60-250Hz)": "Lows (beat+bass)",
+        "Low Midrange (250-500Hz)": "Lows (beat+bass)",
+        "Midrange (500Hz-2kHz)": "Mids",
+        "Upper Midrange (2Khz-4kHz)": "Mids",
+        "High Midrange (4kHz-6kHz)": "High",
+        "High Frequency (6kHz-24kHz)": "High",
+    }
 
     def sanitise_effect_config(effect_type, old_config):
         # checks each config key against the current schema, discarding any values that dont match
@@ -334,9 +354,13 @@ def migrate_config(old_config):
         for key in old_config:
             if key in schema:
                 try:
+                    if key == "frequency_range":
+                        old_config[key] = replacement_frequency_ranges[
+                            old_config.get(key)
+                        ]
                     schema[key](old_config[key])
                     new_config[key] = old_config[key]
-                except vol.MultipleInvalid:
+                except (vol.MultipleInvalid, vol.InInvalid, Exception):
                     _LOGGER.warning(
                         f"Preset for {effect_type} with config item {key} : {old_config[key]} is invalid. Discarding."
                     )
@@ -379,37 +403,65 @@ def migrate_config(old_config):
                 ),
             }
 
-    # clean up scenes
+    # clean up scenes. if you are reading this, sorry for the confusing variable naming. i've tried my best :D
     scenes = new_config.pop("scenes", ())
     new_config["scenes"] = {}
-    for scene in scenes:
-        devices = scenes[scene].pop("devices", ())
-        virtuals = {}
-        for device in devices:
-            corresponding_virtual = next(
-                (virtual["id"] for virtual in new_config["virtuals"]), None
-            )
-            if not corresponding_virtual:
-                _LOGGER.warning(
-                    f"Could not match device id {device} to any virtuals. Discarding this device from scene {scene}."
+    if scenes:
+        scenes_mode = next(
+            mode
+            for mode in scenes[next(iter(scenes))]
+            if mode in ("devices", "displays", "virtuals")
+        )
+    for scene_id in scenes:
+        virtuals_ish = scenes[scene_id].pop(scenes_mode, ())
+        new_virtuals = {}
+        for virtual_ish in virtuals_ish:
+            # if scenes are populated by devices, then we should by now have virtuals made for each device.
+            # we need to find the corresponding virtual for the device
+            if scenes_mode == "devices":
+                corresponding_virtual = next(
+                    (
+                        real_virtual["id"]
+                        for real_virtual in new_config["virtuals"]
+                        if real_virtual.get("is_device", None) == virtual_ish
+                    ),
+                    None,
                 )
-                continue
+                if not corresponding_virtual:
+                    _LOGGER.warning(
+                        f"Could not match device id {device} to any virtuals. Discarding this device from scene {scene_id}."
+                    )
+                    continue
+                actual_virtual = corresponding_virtual
+            else:
+                # if it's displays or virtuals, these should already exist in the user's config
+                actual_virtual = virtual_ish
+            # with the virtuals_ish now sanitised to an actual virtual, we need to clean up the effect type and config
             effect_id, effect_config = (
-                devices[device]["type"],
-                devices[device]["config"],
+                virtuals_ish[virtual_ish].get("type", None),
+                virtuals_ish[virtual_ish].get("config", None),
             )
-            new_effect_id = get_matching_effect_id(effect_id)
-            if not new_effect_id:
-                _LOGGER.warning(
-                    f"Could not match effect id {effect_id} to any current effects. Discarding this effect from scene {scene}."
+            if effect_id and effect_config:
+                new_effect_id = get_matching_effect_id(effect_id)
+                if not new_effect_id:
+                    _LOGGER.warning(
+                        f"Could not match effect id {effect_id} to any current effects. Discarding this effect from scene {scene_id}."
+                    )
+                    continue
+                new_effect_config = sanitise_effect_config(
+                    new_effect_id, effect_config
                 )
-                continue
-            virtuals[corresponding_virtual] = {
-                "config": effect_config,
-                "type": new_effect_id,
-            }
-        scene_config = {"virtuals": virtuals, "name": scenes[scene]["name"]}
-        new_config["scenes"][scene] = scene_config
+                new_virtuals[actual_virtual] = {
+                    "config": new_effect_config,
+                    "type": new_effect_id,
+                }
+            else:
+                new_virtuals[actual_virtual] = {}
+
+        new_config["scenes"][scene_id] = {
+            "virtuals": new_virtuals,
+            "name": scenes[scene_id]["name"],
+        }
 
     _LOGGER.info("Finished migrating config.")
     return new_config
