@@ -243,6 +243,9 @@ def load_config(config_dir: str) -> dict:
                 return CORE_CONFIG_SCHEMA(config_json)
             except (KeyError, AssertionError):
                 create_backup(config_dir, config_file, "VERSION")
+                _LOGGER.warning(
+                    f"LedFx config version: {CONFIGURATION_VERSION}, your config version: {config_json['configuration_version']}"
+                )
                 try:
                     config = migrate_config(config_json)
                 except Exception as e:
@@ -288,15 +291,16 @@ def migrate_config(old_config):
         device.pop("effect", None)
         new_config["devices"].append(device)
 
-    # if displays are present, remove their effects and rename to virtuals
+    # if displays/virtuals are present, remove their effects and rename to virtuals
     # else if no virtuals saved, create virtuals for all the devices
-
-    if new_config.get("displays", None):
-        displays = new_config.pop("displays")
-        for display in displays:
-            display.pop("effect", None)
-        new_config["virtuals"] = displays
-    elif not new_config.get("virtuals", None):
+    virtuals = new_config.pop("displays", None) or new_config.pop(
+        "virtuals", None
+    )
+    if virtuals:
+        for virtual in virtuals:
+            virtual.pop("effect", None)
+        new_config["virtuals"] = virtuals
+    else:  # time to make some virtuals
         from ledfx.utils import generate_id
 
         new_config["virtuals"] = []
@@ -383,8 +387,8 @@ def migrate_config(old_config):
     effects = Effects(DummyLedfx()).classes()
 
     # clean up user presets. effect names have changed, we'll try to clean them up here
-    user_presets = new_config.pop(
-        "custom_presets", new_config.pop("user_presets", ())
+    user_presets = new_config.pop("custom_presets", ()) or new_config.pop(
+        "user_presets", ()
     )
     new_config["user_presets"] = {}
     for effect_id in user_presets:
@@ -463,7 +467,7 @@ def migrate_config(old_config):
             "name": scenes[scene_id]["name"],
         }
 
-    _LOGGER.info("Finished migrating config.")
+    _LOGGER.warning("Finished migrating config.")
     return new_config
 
 

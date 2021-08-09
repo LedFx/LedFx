@@ -28,28 +28,23 @@ class Strobe(AudioReactiveEffect, GradientEffect):
                 default=0.0625,
             ): vol.All(vol.Coerce(float), vol.Range(min=0, max=0.25)),
             vol.Optional(
-                "bass_threshold",
-                description="Cutoff for quiet sounds. Higher -> only loud sounds are detected",
-                default=0.4,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0, max=1)),
-            vol.Optional(
                 "bass_strobe_decay_rate",
                 description="Bass strobe decay rate. Higher -> decays faster.",
                 default=0.5,
             ): vol.All(vol.Coerce(float), vol.Range(min=0, max=1)),
             vol.Optional(
                 "strobe_color",
-                description="Colour for note strobes",
+                description="Colour for percussive strobes",
                 default="white",
             ): vol.In(list(COLORS.keys())),
             vol.Optional(
                 "strobe_width",
-                description="Note strobe width, in pixels",
+                description="Percussive strobe width, in pixels",
                 default=10,
             ): vol.All(vol.Coerce(int), vol.Range(min=0, max=1000)),
             vol.Optional(
                 "strobe_decay_rate",
-                description="Note strobe decay rate. Higher -> decays faster.",
+                description="Percussive strobe decay rate. Higher -> decays faster.",
                 default=0.5,
             ): vol.All(vol.Coerce(float), vol.Range(min=0, max=1)),
         }
@@ -68,7 +63,6 @@ class Strobe(AudioReactiveEffect, GradientEffect):
         return super().deactivate()
 
     def config_updated(self, config):
-        self.bass_threshold = self._config["bass_threshold"]
         self.color_shift_step = self._config["color_step"]
 
         self.strobe_color = np.array(
@@ -133,6 +127,7 @@ class Strobe(AudioReactiveEffect, GradientEffect):
             data.volume_beat_now()
             and currentTime - self.last_bass_strobe_time
             > self.bass_strobe_wait_time
+            and self.bass_strobe_decay_rate
         ):
             self.bass_strobe_overlay = np.tile(
                 self.bass_strobe_color, (self.pixel_count, 1)
