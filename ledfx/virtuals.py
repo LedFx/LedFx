@@ -226,7 +226,7 @@ class Virtual:
 
             self.invalidate_cached_props()
 
-            _LOGGER.info(
+            _LOGGER.debug(
                 f"Updated virtual {self.name} with {len(self._segments)} segments, totalling {self.pixel_count} pixels"
             )
 
@@ -652,7 +652,7 @@ class Virtuals:
 
     def create_from_config(self, config):
         for virtual in config:
-            _LOGGER.info(f"Loading virtual from config: {virtual}")
+            _LOGGER.debug(f"Loading virtual from config: {virtual}")
             self._ledfx.virtuals.create(
                 id=virtual["id"],
                 config=virtual["config"],
