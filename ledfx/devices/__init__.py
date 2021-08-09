@@ -98,6 +98,12 @@ class Device(BaseRegistry):
             f"Device {self.name} config updated to {validated_config}."
         )
 
+        for virtual_id in self._ledfx.virtuals:
+            virtual = self._ledfx.virtuals.get(virtual_id)
+            if virtual.is_device == self.id:
+                segments = [[self.id, 0, self.pixel_count - 1, False]]
+                virtual.update_segments(segments)
+
         for virtual in self._virtuals_objs:
             virtual.deactivate_segments()
             virtual.activate_segments(virtual._segments)
