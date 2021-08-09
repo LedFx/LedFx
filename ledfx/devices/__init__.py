@@ -357,12 +357,15 @@ class Devices(RegistryLoader):
     def create_from_config(self, config):
         for device in config:
             _LOGGER.info(f"Loading device from config: {device}")
-            self._ledfx.devices.create(
-                id=device["id"],
-                type=device["type"],
-                config=device["config"],
-                ledfx=self._ledfx,
-            )
+            try:
+                self._ledfx.devices.create(
+                    id=device["id"],
+                    type=device["type"],
+                    config=device["config"],
+                    ledfx=self._ledfx,
+                )
+            except vol.MultipleInvalid as e:
+                _LOGGER.exception(e)
 
     def deactivate_devices(self):
         for device in self.values():

@@ -42,27 +42,30 @@ class AvailableCOMPorts:
 class AdalightDevice(Device):
     """Adalight device support"""
 
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Required(
-                "name", description="Friendly name for the device"
-            ): str,
-            vol.Required(
-                "com_port",
-                description="COM port for Adalight compatible device",
-            ): vol.In(list(AvailableCOMPorts.available_ports)),
-            vol.Required(
-                "baudrate", description="baudrate", default=500000
-            ): vol.All(vol.Coerce(int), vol.Range(min=115200)),
-            vol.Required(
-                "pixel_count",
-                description="Number of individual pixels",
-            ): vol.All(vol.Coerce(int), vol.Range(min=1)),
-            vol.Required(
-                "color_order", description="Color order", default="RGB"
-            ): vol.In(list(COLOR_ORDERS.keys())),
-        }
-    )
+    @staticmethod
+    @property
+    def CONFIG_SCHEMA():
+        return vol.Schema(
+            {
+                vol.Required(
+                    "name", description="Friendly name for the device"
+                ): str,
+                vol.Required(
+                    "com_port",
+                    description="COM port for Adalight compatible device",
+                ): vol.In(list(AvailableCOMPorts.available_ports)),
+                vol.Required(
+                    "baudrate", description="baudrate", default=500000
+                ): vol.All(vol.Coerce(int), vol.Range(min=115200)),
+                vol.Required(
+                    "pixel_count",
+                    description="Number of individual pixels",
+                ): vol.All(vol.Coerce(int), vol.Range(min=1)),
+                vol.Required(
+                    "color_order", description="Color order", default="RGB"
+                ): vol.In(list(COLOR_ORDERS.keys())),
+            }
+        )
 
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
