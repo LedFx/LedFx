@@ -42,7 +42,7 @@ def calc_available_fps():
         (1 / min_fps_target) / (monotonic_res * mult)
     ).astype(int)
     tick_range = reversed(range(max_fps_ticks, min_fps_ticks))
-    return {int(1 / (monotonic_res * mult * i)): i for i in tick_range}
+    return {int(1 / (monotonic_res * i)): i for i in tick_range}
 
 
 AVAILABLE_FPS = calc_available_fps()
