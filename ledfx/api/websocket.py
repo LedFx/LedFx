@@ -227,7 +227,7 @@ class WebsocketConnection:
         def notify_websocket(event):
             self.send_event(message["id"], event)
 
-        _LOGGER.info(
+        _LOGGER.debug(
             "Websocket subscribing to event {} with filter {}".format(
                 message.get("event_type"), message.get("event_filter")
             )
@@ -243,7 +243,7 @@ class WebsocketConnection:
 
         subscription_id = message["id"]
 
-        _LOGGER.info(f"Websocket unsubscribing event id {subscription_id}")
+        _LOGGER.debug(f"Websocket unsubscribing event id {subscription_id}")
         if subscription_id in self._listeners:
             self._listeners.pop(subscription_id)()
 

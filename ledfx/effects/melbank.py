@@ -22,6 +22,8 @@ from ledfx.events import GraphUpdateEvent
 # This increases frequency resolution a lot and reduces latency a bit,
 # improved resolution is noticable for bass, where frequency differs by only 10s of Hz
 
+# these parameters are hard coded and will break configs if changed
+
 FFT_SIZE = 4096
 MIC_RATE = 30000
 MAX_FREQ = MIC_RATE // 2

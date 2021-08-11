@@ -109,11 +109,11 @@ class ScenesEndpoint(RestEndpoint):
             for virtual in self._ledfx.virtuals.values():
                 # Check virtual is in scene, make no changes if it isn't
                 if virtual.id not in scene["virtuals"].keys():
-                    _LOGGER.info(
-                        ("virtual with id {} has no data in scene {}").format(
-                            virtual.id, scene_id
-                        )
-                    )
+                    # _LOGGER.info(
+                    #     ("virtual with id {} has no data in scene {}").format(
+                    #         virtual.id, scene_id
+                    #     )
+                    # )
                     continue
 
                 # Set effect of virtual to that saved in the scene,

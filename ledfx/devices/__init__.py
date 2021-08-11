@@ -98,6 +98,12 @@ class Device(BaseRegistry):
             f"Device {self.name} config updated to {validated_config}."
         )
 
+        for virtual_id in self._ledfx.virtuals:
+            virtual = self._ledfx.virtuals.get(virtual_id)
+            if virtual.is_device == self.id:
+                segments = [[self.id, 0, self.pixel_count - 1, False]]
+                virtual.update_segments(segments)
+
         for virtual in self._virtuals_objs:
             virtual.deactivate_segments()
             virtual.activate_segments(virtual._segments)
@@ -351,12 +357,15 @@ class Devices(RegistryLoader):
     def create_from_config(self, config):
         for device in config:
             _LOGGER.info(f"Loading device from config: {device}")
-            self._ledfx.devices.create(
-                id=device["id"],
-                type=device["type"],
-                config=device["config"],
-                ledfx=self._ledfx,
-            )
+            try:
+                self._ledfx.devices.create(
+                    id=device["id"],
+                    type=device["type"],
+                    config=device["config"],
+                    ledfx=self._ledfx,
+                )
+            except vol.MultipleInvalid as e:
+                _LOGGER.exception(e)
 
     def deactivate_devices(self):
         for device in self.values():

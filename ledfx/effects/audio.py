@@ -81,7 +81,8 @@ class AudioInputSource:
     def update_config(self, config):
         """Deactivate the audio, update the config, the reactivate"""
 
-        self.deactivate()
+        if self._is_activated:
+            self.deactivate()
         self._config = self.AUDIO_CONFIG_SCHEMA.fget()(config)
         if len(self._callbacks) != 0:
             self.activate()
@@ -117,9 +118,9 @@ class AudioInputSource:
             device_idx = default_device
 
         # Show device and api info in logger
-        _LOGGER.info("Audio Input Devices:")
+        _LOGGER.debug("Audio Input Devices:")
         for api_idx, api in enumerate(hostapis):
-            _LOGGER.info(
+            _LOGGER.debug(
                 "Host API: {} {}".format(
                     api["name"],
                     "[DEFAULT]" if api_idx == default_api else "",
@@ -128,7 +129,7 @@ class AudioInputSource:
             for idx in api["devices"]:
                 device = devices[idx]
                 if device["max_input_channels"] > 0:
-                    _LOGGER.info(
+                    _LOGGER.debug(
                         "    [{}] {} {} {}".format(
                             idx,
                             device["name"],
@@ -192,6 +193,7 @@ class AudioInputSource:
 
         try:
             open_audio_stream(device_idx)
+            self._is_activated = True
         except OSError as e:
             _LOGGER.critical(
                 f"Unable to open Audio Device: {e} - please retry."
@@ -206,6 +208,7 @@ class AudioInputSource:
             self._stream.stop()
             self._stream.close()
             self._stream = None
+        self._is_activated = False
         _LOGGER.info("Audio source closed.")
 
     def subscribe(self, callback):

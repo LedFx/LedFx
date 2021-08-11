@@ -35,12 +35,18 @@ def calc_available_fps():
     max_fps_target = 126
     min_fps_target = 10
 
-    max_fps_ticks = np.ceil((1 / max_fps_target) / (monotonic_res * mult)).astype(int)
-    min_fps_ticks = np.ceil((1 / min_fps_target) / (monotonic_res * mult)).astype(int)
+    max_fps_ticks = np.ceil(
+        (1 / max_fps_target) / (monotonic_res * mult)
+    ).astype(int)
+    min_fps_ticks = np.ceil(
+        (1 / min_fps_target) / (monotonic_res * mult)
+    ).astype(int)
     tick_range = reversed(range(max_fps_ticks, min_fps_ticks))
     return {int(1 / (monotonic_res * mult * i)): i for i in tick_range}
 
+
 AVAILABLE_FPS = calc_available_fps()
+
 
 @lru_cache(maxsize=8)
 def fps_to_sleep_interval(fps):
@@ -53,7 +59,7 @@ def fps_to_sleep_interval(fps):
 
 
 def install_package(package):
-    _LOGGER.info(f"Installed package: {package}")
+    _LOGGER.debug(f"Installed package: {package}")
     env = os.environ.copy()
     args = [
         sys.executable,
@@ -77,7 +83,7 @@ def install_package(package):
 
 def import_or_install(package):
     try:
-        _LOGGER.info(f"Imported package: {package}")
+        _LOGGER.debug(f"Imported package: {package}")
         return importlib.import_module(package)
 
     except ImportError:
@@ -749,7 +755,7 @@ class RegistryLoader:
         """
 
         found = self.discover_modules(package)
-        _LOGGER.info(f"Importing {found} from {package}")
+        _LOGGER.debug(f"Importing {found} from {package}")
         for name in found:
             importlib.import_module(name)
 
@@ -798,7 +804,7 @@ class RegistryLoader:
     def reload(self, force=False):
         """Reloads the registry"""
         found = self.discover_modules(self._package)
-        _LOGGER.info(f"Reloading {found} from {self._package}")
+        _LOGGER.debug(f"Reloading {found} from {self._package}")
         for name in found:
             self.reload_module(name)
 
