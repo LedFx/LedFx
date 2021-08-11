@@ -112,7 +112,15 @@ class SchemaEndpoint(RestEndpoint):
                 response["audio"] = {
                     "schema": convertToJsonSchema(
                         AudioInputSource.AUDIO_CONFIG_SCHEMA.fget(),                       
-                    ) | { "permitted_keys": PERMITTED_KEYS["audio"] },
+                    ) | { "permitted_keys": PERMITTED_KEYS["audio"] } 
+                    # | { "properties": {
+                    #     "audio_device": {
+                    #         "enum": {
+                    #             "1337": "Blade-WebAudio"
+                    #         }
+                    #     }
+                    # } }
+                    ,
                 }
 
             elif schema == "melbanks":

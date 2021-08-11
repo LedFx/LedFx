@@ -246,3 +246,21 @@ class WebsocketConnection:
         _LOGGER.info(f"Websocket unsubscribing event id {subscription_id}")
         if subscription_id in self._listeners:
             self._listeners.pop(subscription_id)()
+
+    @websocket_handler("audio_data")
+    def subscribe_event_handler(self, message):
+
+        _LOGGER.info(
+            "Websocket Audio-Data incoming! {}".format(
+                message.get("event_type")
+                # message.get("data") HERE IT IS BROOOO
+            )
+        )
+        # ToDo: 
+        # Remove the log on each message, and just log once
+        #
+        # if audio_input_device is not "Blade-WebAudio":
+        # return
+        # 
+        # else:
+        # process audio data with message.get("data")
