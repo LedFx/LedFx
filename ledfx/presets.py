@@ -1045,9 +1045,51 @@ ledfx_presets = {
             "name": "Glitter",
         },
     },
+    "blade_power_plus": {
+        "reset": {"config": {}, "name": "Reset"},
+        "hi-hat": {
+            "config": {
+                "background_brightness": 0.3,
+                "background_color": "orange",
+                "blur": 2,
+                "brightness": 1,
+                "color": "cyan",
+                "color_correction": True,
+                "flip": False,
+                "frequency_range": "High",
+                "gradient_name": "Rainbow",
+                "gradient_repeat": 1,
+                "gradient_roll": 0,
+                "invert_roll": False,
+                "mirror": True,
+                "multiplier": 1,
+                "solid_color": False
+            },
+            "name": "Hi Hat"
+        },
+        "ocean": {
+            "config": {
+                "background_brightness": 0.44,
+                "background_color": "blue",
+                "blur": 2,
+                "brightness": 1,
+                "color": "cyan",
+                "color_correction": True,
+                "flip": False,
+                "frequency_range": "Lows (beat+bass)",
+                "gradient_name": "Ocean",
+                "gradient_repeat": 1,
+                "gradient_roll": 0,
+                "invert_roll": False,
+                "mirror": False,
+                "multiplier": 0.5,
+                "solid_color": False
+            },
+            "name": "Ocean"
+        }
+    },
     "bands": {"reset": {"config": {}, "name": "Reset"}},
     "bands_matrix": {"reset": {"config": {}, "name": "Reset"}},
-    "blade_power": {"reset": {"config": {}, "name": "Reset"}},
     "block_reflections": {"reset": {"config": {}, "name": "Reset"}},
     "blocks": {"reset": {"config": {}, "name": "Reset"}},
     "energy2": {"reset": {"config": {}, "name": "Reset"}},
