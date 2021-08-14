@@ -54,7 +54,7 @@ class Device(BaseRegistry):
             vol.Optional(
                 "refresh_rate",
                 description="Target rate that pixels are sent to the device",
-                default=60,
+                default=64,
             ): fps_validator,
             # vol.Optional(
             #     "silence_timeout",
