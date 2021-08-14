@@ -18,11 +18,14 @@ class UDPDevice(NetworkedDevice):
                 "name", description="Friendly name for the device"
             ): str,
             vol.Required(
-                "port", description="Port for the UDP device"
+                "port",
+                description="Port for the UDP device",
+                default=21324,
             ): vol.All(vol.Coerce(int), vol.Range(min=1, max=65535)),
             vol.Required(
                 "pixel_count",
                 description="Number of individual pixels",
+                default=1,
             ): vol.All(vol.Coerce(int), vol.Range(min=1)),
             vol.Optional(
                 "include_indexes",
