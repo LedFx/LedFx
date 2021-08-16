@@ -46,7 +46,10 @@ class AudioInputSource:
         return {
             idx: f"{hostapis[device['hostapi']]['name']}: {device['name']}"
             for idx, device in enumerate(devices)
-            if device["max_input_channels"] > 0
+            if (
+                device["max_input_channels"] > 0
+                and "asio" not in device["name"].lower()
+            )
         }
 
     @staticmethod
