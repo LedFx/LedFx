@@ -130,26 +130,38 @@ class AudioInputSource(object):
         # Enumerate all of the input devices and find the one matching the
         # configured device index
         _LOGGER.info("Audio Input Devices:")
-        info = self._audio.get_host_api_info_by_index(0)
-        for i in range(0, info.get("deviceCount")):
-            if (
-                self._audio.get_device_info_by_host_api_device_index(0, i).get(
-                    "maxInputChannels"
-                )
-            ) > 0:
-                _LOGGER.info(
-                    "  [{}] {}".format(
-                        i,
-                        self._audio.get_device_info_by_host_api_device_index(
-                            0, i
-                        ).get("name"),
+        currentIndex = self._config.get("device_index", -1)
+        for apiIndex in range(self._audio.get_host_api_count()):
+            info = self._audio.get_host_api_info_by_index(apiIndex)
+            for i in range(0, info.get("deviceCount")):
+
+                deviceInfo = (
+                    self._audio.get_device_info_by_host_api_device_index(
+                        apiIndex, i
                     )
                 )
+                if deviceInfo.get("maxInputChannels") > 0:
+                    _LOGGER.info("  [{}] {}".format(i, deviceInfo.get("name")))
+                    if (
+                        self._config.get("device_name", "")
+                        == deviceInfo.get("name")
+                        and int(self._config.get("host_api", 0)) == apiIndex
+                    ):
+                        currentIndex = deviceInfo["index"]
+                        _LOGGER.info(
+                            "Found audio device under index: %s", currentIndex
+                        )
 
+        # we need to check if the index is valid to avoid a crash
+        try:
+            self._audio.get_device_info_by_index(currentIndex)
+        except OSError:
+            _LOGGER.warn("Could not open audio device, fall back to default")
+            currentIndex = 0
         # Open the audio stream and start processing the input
         try:
             self._stream = self._audio.open(
-                input_device_index=self._config["device_index"],
+                input_device_index=currentIndex,
                 format=pyaudio.paFloat32,
                 channels=1,
                 rate=self._config["mic_rate"],
