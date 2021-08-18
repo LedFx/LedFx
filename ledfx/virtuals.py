@@ -591,7 +591,7 @@ class Virtual:
     def config(self, new_config):
         """Updates the config for an object"""
         if self._config is not None:
-            _config = self._config | new_config
+            _config = {**self._config, **new_config}
         else:
             _config = new_config
 

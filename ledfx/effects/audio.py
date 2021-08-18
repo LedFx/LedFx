@@ -1,7 +1,7 @@
 import logging
 import time
 from collections import deque
-from functools import cache, cached_property, lru_cache
+from functools import cached_property, lru_cache
 
 import aubio
 import numpy as np
@@ -474,7 +474,7 @@ class AudioAnalysisSource(AudioInputSource):
     #     """Samples the melbank curve at a given frequency"""
     #     return np.interp(hz, self.melbank_frequencies, self.melbank())
 
-    @cache
+    @lru_cache(maxsize=None)
     def pitch(self):
         # If our audio handler is returning null, then we just return 0 for midi_value and wait for the device starts sending audio.
         try:
@@ -483,7 +483,7 @@ class AudioAnalysisSource(AudioInputSource):
             _LOGGER.warning(e)
             return 0
 
-    @cache
+    @lru_cache(maxsize=None)
     def onset(self):
         try:
             return bool(self._onset(self.audio_sample(raw=True))[0])
@@ -491,7 +491,7 @@ class AudioAnalysisSource(AudioInputSource):
             _LOGGER.warning(e)
             return 0
 
-    @cache
+    @lru_cache(maxsize=None)
     def bpm_beat_now(self):
         """
         Returns True if a beat is expected now based on BPM data
@@ -502,7 +502,7 @@ class AudioAnalysisSource(AudioInputSource):
             _LOGGER.warning(e)
             return False
 
-    @cache
+    @lru_cache(maxsize=None)
     def volume_beat_now(self):
         """
         Returns True if a beat is expected now based on volume of the beat freq region
@@ -598,7 +598,7 @@ class AudioAnalysisSource(AudioInputSource):
         """
         return self.get_freq_power(3, filtered)
 
-    @cache
+    @lru_cache(maxsize=None)
     def bar_oscillator(self):
         """
         Returns a float (0<=x<4) corresponding to the position of the beat
@@ -762,7 +762,7 @@ class AudioReactiveEffect(Effect):
         new = np.linspace(0, 1, size)
         return (new, old)
 
-    @cache
+    @lru_cache(maxsize=None)
     def melbank(self, filtered=False, size=0):
         """
         This little bit of code pulls together information from the effect's
