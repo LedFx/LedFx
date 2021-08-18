@@ -636,7 +636,7 @@ json_path = os.path.join(os.path.expanduser("~"), json_name)
 if os.path.exists(json_path):
     with open(json_path, encoding="utf-8") as json_file:
         try:
-            mapping |= json.load(json_file)
+            mapping.update(json.load(json_file))
         except io.UnsupportedOperation as e:
             print(f"Error loading mapping: {e}")
         except json.decoder.JSONDecodeError:

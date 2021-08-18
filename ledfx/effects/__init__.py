@@ -294,7 +294,7 @@ class Effect(BaseRegistry):
 
         if self._config != {}:
 
-            self._config = prior_config | config
+            self._config = {**prior_config, **config}
         else:
             self._config = validated_config
         self.configured_blur = self._config["blur"]

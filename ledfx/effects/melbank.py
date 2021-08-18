@@ -451,11 +451,10 @@ class Melbanks:
         self.melbank_processors = tuple(
             Melbank(
                 self._audio,
-                self.DEFAULT_MELBANK_CONFIG
-                | {
+                {**self.DEFAULT_MELBANK_CONFIG, **{
                     "max_frequency": freq,
                     # "pre_emphasis": self.MELBANK_PRE_EMPHASIS[i],
-                },
+                }},
             )
             for i, freq in enumerate(self._config["max_frequencies"])
         )
