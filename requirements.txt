@@ -15,7 +15,7 @@
     requests>=2.24.0
     pyyaml>=5.3.1
     aubio>=0.4.9
-    zeroconf<=0.28.8
+    zeroconf<=0.28.8||>=0.30.0
     cython==0.29.21
     pyupdater>=4.0.0
     sentry-sdk==1.0.0

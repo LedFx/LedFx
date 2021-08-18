@@ -34,7 +34,7 @@ INSTALL_REQUIRES = [
     "aubio>=0.4.9",
     # Zeroconf Bug introduced in 0.29
     # https://github.com/jstasiak/python-zeroconf/issues/337
-    "zeroconf<=0.28.8",
+    "zeroconf<=0.28.8||>=0.30.0",
     'pywin32>=300; platform_system == "Windows"',
     "cython>=0.29.21",
     "pyupdater>=4.0.0",
