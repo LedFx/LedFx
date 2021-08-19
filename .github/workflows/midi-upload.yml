@@ -1,7 +1,7 @@
 name: Upload MIDI Map
 on:
   issues:
-      types: [labeled]
+    types: [labeled]
 
 jobs:
   get-attachment:
