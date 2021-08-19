@@ -1,0 +1,35 @@
+name: Upload MIDI Map
+on:
+  issues:
+      types: [labeled]
+
+jobs:
+  get-attachment:
+    if: ${{ github.event.label.name == 'Upload to MIDI Collection' }}
+
+    runs-on: ubuntu-latest
+    steps:
+    - name: Dump GitHub context
+    - uses: actions/checkout@v2
+      env:
+        GITHUB_CONTEXT: ${{ toJson(github) }}
+      run: echo "$GITHUB_CONTEXT"
+    - name: Get MIDI Map File
+      run:  |
+        attachments=($(echo $url | awk -v RS=[\(] -v FS=[\)] 'NR>1{print $1}' ))
+        echo ${attachments[1]}
+        for i in "${attachments[@]}"
+        do
+          :
+          echo $i
+          curl -O $i
+        done
+        ls
+      env:
+        url: ${{github.event.issue.body}}
+    - name: 📂 Sync files
+      uses: SamKirkland/FTP-Deploy-Action@4.1.0
+      with:
+        server: midimap.ledfx.app
+        username: ${{ secrets.MIDIMAP_UPLOAD_USERNAME }}
+        password: ${{ secrets.MIDIMAP_UPLOAD_PASSWORD }}
