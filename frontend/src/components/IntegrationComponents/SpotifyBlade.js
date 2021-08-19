@@ -11,12 +11,12 @@ import { useEffect } from 'react';
 const SpotifyView = (props)=> {
     //const { spotify, refreshAuth } = this.props;
     const spotify = useSelector(state => state.spotify);
-    
+
     const beginAuth = () => {
         const codes = pkceChallenge();
         const cookies = new Cookies();
         cookies.set('verifier', codes.code_verifier)
-        let authURL = 
+        let authURL =
             `https://accounts.spotify.com/authorize/`
             + "?response_type=code"
             + "&client_id="+encodeURIComponent('7658827aea6f47f98c8de593f1491da5')
@@ -26,7 +26,7 @@ const SpotifyView = (props)=> {
             + "&code_challenge_method=S256"
             ;
         console.log(authURL)
-        window.location.href = authURL 
+        window.location.href = authURL
     }
 
     useEffect(() => {
@@ -35,26 +35,26 @@ const SpotifyView = (props)=> {
             console.log('Got to here')
             finishAuth()
         }
-        checkCookiesForTokens()     
-    }, []) 
-    
+        checkCookiesForTokens()
+    }, [])
+
     return (
         <Grid container justify='center' alignContent='center' style={{height: '10%'}}>
-            {!spotify.accessToken && !spotify.refreshToken ? 
+            {!spotify.accessToken && !spotify.refreshToken ?
             <Button variant='contained' color="primary" onClick={() => beginAuth()}>
                 <Typography>Connect to Spotify</Typography>
-            </Button> 
-            : 
-                !spotify.accessToken && spotify.refreshToken ? 
+            </Button>
+            :
+                !spotify.accessToken && spotify.refreshToken ?
                 <Button variant='contained' color="primary" onClick={() => refreshAuth()}>
                     <Typography>Reconnect to Spotify</Typography>
                 </Button>
-                : 
+                :
                 ''
             }
         </Grid>
     );
-    
+
 }
 
 export default SpotifyView;

@@ -52,13 +52,13 @@ export function getAsyncIntegrations() {
     };
 }
 
-export async function deleteAsyncIntegration(data) {    
-    const response = await integrationsProxies.deleteIntegration({ data });    
+export async function deleteAsyncIntegration(data) {
+    const response = await integrationsProxies.deleteIntegration({ data });
     window.location = window.location.href;
     // integrationsProxies.deleteIntegration(data);
     return async dispatch => {
-        try {            
-            //const response = 
+        try {
+            //const response =
             await integrationsProxies.deleteIntegration(data);
             if (response.statusText === 'OK') {
                 console.log('OMG', response.data);
@@ -73,21 +73,21 @@ export async function deleteAsyncIntegration(data) {
 export async function toggleAsyncIntegration(data) {
     console.log('toggleAsyncIntegration: ', data);
     // 1) You would want to do a try catch around this. but its ok for dev
-    //const response = 
-    await integrationsProxies.toggleIntegration({id: data});    
+    //const response =
+    await integrationsProxies.toggleIntegration({id: data});
 
-    // 2) you dont want to do the reload here 
+    // 2) you dont want to do the reload here
     //    delete this after you have dispatched the new data to the store
     window.location = window.location.href;
-    
+
     return async dispatch => {
         try {
             console.log('damn', data);
             const response = await integrationsProxies.toggleIntegration({id: data});
             if (response.statusText === 'OK') {
                 console.log('OMG', response.data);
-                // Here is were you normally want to dispatch the action 
-                // you defined at the top of this file line 16-36: 
+                // Here is were you normally want to dispatch the action
+                // you defined at the top of this file line 16-36:
                 // like storing new state to store
                 // dispatch(deleteIntegration(response.data.integrations));
             }

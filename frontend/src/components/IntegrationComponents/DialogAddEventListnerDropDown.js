@@ -35,8 +35,8 @@ export default function ThisDropDown(props) {
             <button variant="contained" color="primary" onClick={()=>props.handleTypeRemoveDropDown(props.idx)}><DeleteIcon/></button>
             <div style={{ minWidth: '150px' }}></div>
             {props.showSwitch && <label>QLC+ widget selected above (On/Off) </label>}
-            {props.showSwitch && 
-            <Switch 
+            {props.showSwitch &&
+            <Switch
                 color="primary"
                 name={props.value}
                 checked={props.switchValue}
@@ -55,7 +55,7 @@ export default function ThisDropDown(props) {
                     defaultValue={1}
                     onChange={(event,value)=>props.handleDropTypeChange(event,props.idx,value,props.value)}
                 />}
-            </div> 
+            </div>
         </>
     );
   }

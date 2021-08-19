@@ -257,14 +257,13 @@ class WebsocketConnection:
                 # message.get("data") HERE IT IS BROOOO
             )
         )
-        # ToDo: 
+        # ToDo:
         # Remove the log on each message, and just log once
-                
+
         #   # create virtual audio device with:
         #   name = f"WEB: {message.get("client")}"
         #   data = message.get("data")
-        
-        
+
     @websocket_handler("audio_data_end")
     def unsubscribe_event_handler(self, message):
 

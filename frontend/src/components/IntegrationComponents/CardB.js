@@ -40,7 +40,7 @@ const IntegrationsCard = ({ int }) => {
     };
     const handleToggle = (props) => toggleAsyncIntegration(props);
     //const preventDefault = (event) => event.preventDefault();
-    
+
     useEffect(() => {
         // EVERTHING HERE IS ONLY CALLED ONCE WHEN THIS COMPONENT IS RENDERED, Only call if {int.type === 'qlc'}
         if(int.status === 1 & int.type === 'qlc') dispatch(getAsyncqlclisteners(int.id))
@@ -74,7 +74,7 @@ const IntegrationsCard = ({ int }) => {
                         : 'Unknown'}
                 </Typography>
                 <Typography color="textSecondary" gutterBottom>
-                <Link target="_blank" href="http://127.0.0.1:9999" >   
+                <Link target="_blank" href="http://127.0.0.1:9999" >
                     {int.type === 'qlc'
                     ? `QLC+ API: http://${int.config.ip_address}:${int.config.port}`
                     : ''}
@@ -88,14 +88,14 @@ const IntegrationsCard = ({ int }) => {
                 {int.status === 1 & int.type === 'qlc'
                 ? <DialogAddEventListener integration={int} />
                 : int.status !== 1 & int.type === 'qlc'
-                ? 
+                ?
                 <Link target="_blank" href="https://www.qlcplus.org/docs/html_en_EN/webinterface.html" >
                     Must be in connected status, to add new event listener. Click here for setup guide.
                 </Link>
                 : ''}
-                
-                {int.type === 'spotify' && int.active 
-                ? 
+
+                {int.type === 'spotify' && int.active
+                ?
                 <SpotifyView />
                     : ''}
             </CardActions>
@@ -125,12 +125,12 @@ const IntegrationsCard = ({ int }) => {
                     //onClick={handleClickListItem}
                     //Need to do, onClick: Re-render switch and integrations Redux.
                 />
-                
+
             </CardActions>
         </Card>
-        
+
     );
 };
 
 export default IntegrationsCard;
-                       
+

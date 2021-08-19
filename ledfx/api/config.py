@@ -173,9 +173,9 @@ class ConfigEndpoint(RestEndpoint):
             # handle special case wled_preferences nested dict
             for key in wled_config:
                 if key in self._ledfx.config["wled_preferences"]:
-                    self._ledfx.config["wled_preferences"][key].update(wled_config[
-                        key
-                    ])
+                    self._ledfx.config["wled_preferences"][key].update(
+                        wled_config[key]
+                    )
                 else:
                     self._ledfx.config["wled_preferences"][key] = wled_config[
                         key

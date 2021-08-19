@@ -1063,9 +1063,9 @@ ledfx_presets = {
                 "invert_roll": False,
                 "mirror": True,
                 "multiplier": 1,
-                "solid_color": False
+                "solid_color": False,
             },
-            "name": "Hi Hat"
+            "name": "Hi Hat",
         },
         "ocean": {
             "config": {
@@ -1083,10 +1083,10 @@ ledfx_presets = {
                 "invert_roll": False,
                 "mirror": False,
                 "multiplier": 0.5,
-                "solid_color": False
+                "solid_color": False,
             },
-            "name": "Ocean"
-        }
+            "name": "Ocean",
+        },
     },
     "bands": {"reset": {"config": {}, "name": "Reset"}},
     "bands_matrix": {"reset": {"config": {}, "name": "Reset"}},
