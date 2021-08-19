@@ -9,11 +9,6 @@ jobs:
 
     runs-on: ubuntu-latest
     steps:
-    - name: Dump GitHub context
-      uses: actions/checkout@v2
-      env:
-        GITHUB_CONTEXT: ${{ toJson(github) }}
-      run: echo "$GITHUB_CONTEXT"
     - name: Get MIDI Map File
       run:  |
         attachments=($(echo $url | awk -v RS=[\(] -v FS=[\)] 'NR>1{print $1}' ))
@@ -28,7 +23,7 @@ jobs:
         ls
       env:
         url: ${{github.event.issue.body}}
-    - name: 📂 Sync files
+    - name: Upload MIDI Map File
       uses: SamKirkland/FTP-Deploy-Action@4.1.0
       with:
         server: midimap.ledfx.app
