@@ -23,6 +23,8 @@ jobs:
           :
           echo $i
           curl -O $i
+          gzip -d $i
+          rm $i
         done
         ls
       env:
