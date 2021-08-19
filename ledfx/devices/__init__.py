@@ -468,7 +468,7 @@ class Devices(RegistryLoader):
                 raise ValueError(msg)
 
             wled_config["sync_mode"] = sync_mode
-            device_config |= wled_config
+            device_config.update(wled_config)
 
         device_id = generate_id(device_config["name"])
 
