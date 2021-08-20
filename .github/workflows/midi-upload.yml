@@ -4,15 +4,11 @@ on:
     types: [labeled]
 
 jobs:
-  get-attachment:
+  Upload Attachment:
     if: ${{ github.event.label.name == 'Upload to MIDI Collection' }}
 
     runs-on: ubuntu-latest
     steps:
-    - name: View the GitHub context for debugging
-      run: echo "$GITHUB_CONTEXT"
-      env:
-        GITHUB_CONTEXT: ${{ toJson(github) }}
     - name: Get MIDI Map File
       run:  |
         attachments=($(echo $url | awk -v RS=[\(] -v FS=[\)] 'NR>1{print $1}' ))
