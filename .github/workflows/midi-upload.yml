@@ -14,7 +14,8 @@ jobs:
         attachments=($(echo $url | awk -v RS=[\(] -v FS=[\)] 'NR>1{print $1}' ))
         echo ${attachments[1]}
         for i in "${attachments[@]}"
-        do:
+        do
+          :
           echo $i
           curl -O $i
           gzip -d $i
