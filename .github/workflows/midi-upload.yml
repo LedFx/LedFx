@@ -4,7 +4,7 @@ on:
     types: [labeled]
 
 jobs:
-  Upload Attachment:
+  Upload-Attachment:
     if: ${{ github.event.label.name == 'Upload to MIDI Collection' }}
 
     runs-on: ubuntu-latest
