@@ -55,7 +55,7 @@ jobs:
 
   build-ledfx-osx:
     name: Build LedFx (OS X)
-    runs-on: osx-latest
+    runs-on: macos-latest
     strategy:
       matrix:
         python: [3.8,3.9]
