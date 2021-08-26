@@ -33,36 +33,31 @@ def fps_validator(value):
 
 @BaseRegistry.no_registration
 class Device(BaseRegistry):
-
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            # vol.Optional(
-            #     "rgbw_led",
-            #     description="RGBW LEDs",
-            #     default=False,
-            # ): bool,
-            vol.Optional(
-                "icon_name",
-                description="https://material-ui.com/components/material-icons/",
-                default="mdi:led-strip",
-            ): str,
-            vol.Optional(
-                "center_offset",
-                description="Number of pixels from the perceived center of the device",
-                default=0,
-            ): int,
-            vol.Optional(
-                "refresh_rate",
-                description="Target rate that pixels are sent to the device",
-                default=64,
-            ): fps_validator,
-            # vol.Optional(
-            #     "silence_timeout",
-            #     description="How many seconds of silence until we deactivate the device. 0 = Disabled.",
-            #     default=0,
-            # ): int,
-        }
-    )
+    @staticmethod
+    @property
+    def CONFIG_SCHEMA():
+        return vol.Schema(
+            {
+                vol.Optional(
+                    "icon_name",
+                    description="https://material-ui.com/components/material-icons/",
+                    default="mdi:led-strip",
+                ): str,
+                vol.Optional(
+                    "center_offset",
+                    description="Number of pixels from the perceived center of the device",
+                    default=0,
+                ): int,
+                vol.Optional(
+                    "refresh_rate",
+                    description="Target rate that pixels are sent to the device",
+                    default=next(
+                        (f for f in AVAILABLE_FPS if f >= 60),
+                        list(AVAILABLE_FPS)[-1],
+                    ),
+                ): fps_validator,
+            }
+        )
 
     _active = False
 
