@@ -3,7 +3,7 @@ import logging
 import paho.mqtt.client as mqtt
 import voluptuous as vol
 
-from ledfx.events import SceneSetEvent
+from ledfx.events import SceneActivatedEvent
 
 # from ledfx.events import Event
 from ledfx.integrations import Integration
@@ -122,7 +122,7 @@ class MQTT(Integration):
                 else:
                     virtual.clear_effect()
 
-            self._ledfx.events.fire_event(SceneSetEvent(scene["name"]))
+            self._ledfx.events.fire_event(SceneActivatedEvent(scene["name"]))
             # SET SCENE END
 
     async def connect(self):
