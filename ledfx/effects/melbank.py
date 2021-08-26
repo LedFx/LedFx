@@ -28,6 +28,7 @@ FFT_SIZE = 4096
 MIC_RATE = 30000
 MAX_FREQ = MIC_RATE // 2
 MIN_FREQ = 20
+MIN_FREQ_DIFFERENCE = 50
 MEL_MAX_FREQS = [350, 2000, MAX_FREQ]
 
 FrequencyRange = namedtuple("FrequencyRange", "min,max")
