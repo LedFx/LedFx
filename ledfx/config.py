@@ -131,8 +131,7 @@ def get_profile_dump_location() -> str:
     return os.path.join(config_dir, f"LedFx_{date_time}.profile")
 
 
-def get_log_file_location():
-    config_dir = get_default_config_directory()
+def get_log_file_location(config_dir):
     log_file_path = os.path.abspath(os.path.join(config_dir, "LedFx.log"))
     return log_file_path
 

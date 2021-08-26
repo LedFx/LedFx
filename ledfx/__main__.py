@@ -70,7 +70,7 @@ def reset_logging():
                 logger.removeHandler(handler)
 
 
-def setup_logging(loglevel):
+def setup_logging(loglevel, config_dir):
     # Create a custom logging level to virtual pyupdater progress
     reset_logging()
 
@@ -83,7 +83,7 @@ def setup_logging(loglevel):
     root_logger = logging.getLogger()
 
     file_handler = RotatingFileHandler(
-        config_helpers.get_log_file_location(),
+        config_helpers.get_log_file_location(config_dir),
         mode="a",  # append
         maxBytes=0.5 * 1000 * 1000,  # 512kB
         encoding="utf8",
@@ -291,7 +291,7 @@ def main():
     """Main entry point allowing external calls"""
     args = parse_args()
     config_helpers.ensure_config_directory(args.config)
-    setup_logging(args.loglevel)
+    setup_logging(args.loglevel, config_dir=args.config)
     config_helpers.load_logger()
 
     if not (currently_frozen() or installed_via_pip()):
