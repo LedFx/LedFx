@@ -151,9 +151,7 @@ class MIDI(Integration):
     @staticmethod
     @property
     def CONFIG_SCHEMA():
-        """dynamic config schema"""
-        midi_devices = list_midi_devices()
-        midi_mappings = list_midi_mappings()
+        # dynamic config schema
         try:
             midi_devices = list_midi_devices()
             midi_mappings = list_midi_mappings()
