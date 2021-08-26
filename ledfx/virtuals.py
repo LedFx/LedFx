@@ -266,6 +266,12 @@ class Virtual:
         )
         self.transition_frame_counter = 0
 
+        try:
+            self.active = True
+        except RuntimeError:
+            self.active = False
+            return
+
         if self._active_effect is None:
             self._transition_effect = DummyEffect(self.pixel_count)
             self._active_effect = effect
@@ -287,8 +293,6 @@ class Virtual:
             self._ledfx.events.fire_event(
                 EffectSetEvent(self._active_effect.name)
             )
-
-        self.active = True
 
     def transition_to_active(self):
         self._active_effect = self._transition_effect

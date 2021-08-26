@@ -282,6 +282,14 @@ class Device(BaseRegistry):
                 for segment in virtual._segments
                 if segment[0] != self.id
             )
+
+            # Update ledfx's config
+            for idx, item in enumerate(self._ledfx.config["virtuals"]):
+                if item["id"] == virtual.id:
+                    item["segments"] = virtual.segments
+                    self._ledfx.config["virtuals"][idx] = item
+                    break
+
             if active:
                 virtual.activate()
 
