@@ -62,7 +62,7 @@ const useStyles = makeStyles(theme => ({
 class SpotifyPlayer extends React.Component {
     constructor(props) {
         super(props);
-        this.state = { 
+        this.state = {
             sliderPositon: 0,
             includePosition: 'false',
             effects: ''
@@ -79,9 +79,9 @@ class SpotifyPlayer extends React.Component {
             player.addListener('authentication_error', ({ message }) => { console.error(message); });
             player.addListener('account_error', ({ message }) => { console.error(message); });
             player.addListener('playback_error', ({ message }) => { console.error(message); });
-            player.addListener('player_state_changed', state => { 
+            player.addListener('player_state_changed', state => {
                 if (state.position < 5 || state.position > 500) {
-                    this.props.updatePlayerState(state); 
+                    this.props.updatePlayerState(state);
                 }
             });
             player.addListener('ready', ({ device_id }) => {
@@ -126,7 +126,7 @@ class SpotifyPlayer extends React.Component {
 
     render() {
         const { playerState, classes,scenes } = this.props;
-        
+
         return (
             Object.keys(playerState).length == 0 ?
                 <Link target="_blank" href="https://support.spotify.com/us/article/spotify-connect/" >
@@ -137,14 +137,14 @@ class SpotifyPlayer extends React.Component {
                 <AppBar color="default" position='relative' className={classes.appBar}>
                     <Grid container justify='space-around' alignItems='center' className={classes.container}>
                         <Grid container item xs={4}>
-                        <img style={{alignItems: 'center'}} className={classes.albumImg} src={playerState.track_window.current_track.album.images[0].url} alt=""/>  
+                        <img style={{alignItems: 'center'}} className={classes.albumImg} src={playerState.track_window.current_track.album.images[0].url} alt=""/>
                             <div style={{width: '200px', marginLeft: '2vw', display: 'flex', alignItems: 'center'}}>
                                 <Typography align='center' variant='body1'>
-                                    Song: {playerState.track_window.current_track.name} 
+                                    Song: {playerState.track_window.current_track.name}
                                     <div>Artist: {playerState.track_window.current_track.artists[0].name}</div>
                                 </Typography>
                             </div>
-                            
+
                         </Grid>
                         <Grid item container xs={7}>
                             <Grid item xs={6}>
@@ -155,8 +155,8 @@ class SpotifyPlayer extends React.Component {
                                     color="primary"
                                     onChange={(e) => this.handleSelectChange(e)}
                                     labelId='select'>
-                                        {scenes.length && scenes.map((s,i) => <option value={s.id} key={i}>{s.name}</option>)}                                       
-                                      
+                                        {scenes.length && scenes.map((s,i) => <option value={s.id} key={i}>{s.name}</option>)}
+
                                     </Select>
                                 </FormControl>
                             </Grid>
@@ -169,14 +169,14 @@ class SpotifyPlayer extends React.Component {
                             ?
                             <Button style={{marginRight: '1.8rem'}} color="primary" variant="contained"><PlayArrow /></Button>
                             :
-                            <Button style={{marginRight: '1.8rem'}} color="primary" variant="contained"><Pause /></Button> } 
-                            
-                            <Button style={{marginRight: '1.8rem'}} color="primary" variant="contained"><SkipNext /></Button> 
+                            <Button style={{marginRight: '1.8rem'}} color="primary" variant="contained"><Pause /></Button> }
+
+                            <Button style={{marginRight: '1.8rem'}} color="primary" variant="contained"><SkipNext /></Button>
                             </div>
                             </Grid>
-                            
+
                             <Grid container item xs={6} justify='center'>
-                                
+
                             <Typography align='center' variant='body1'><div>
                                     Track Position: .
                                     {playerState.paused === false
@@ -201,7 +201,7 @@ class SpotifyPlayer extends React.Component {
                                             </div>
                                     </Typography>
                                     <Typography align='center' variant='body1'><div>
-                                    Testing: 
+                                    Testing:
                                     {playerState.paused === false
                                     ?
                                     <Moment
@@ -212,7 +212,7 @@ class SpotifyPlayer extends React.Component {
                                                 {moment().add(playerState.position * -1,'ms')}
                                                     </Moment>
                                     //moment().add(playerState.position* -0.001, 's')/playerState.duration*100
-                                    : 
+                                    :
                                     (playerState.position/playerState.duration*100)
                                         } </div>
                                     </Typography>
@@ -233,8 +233,8 @@ class SpotifyPlayer extends React.Component {
 export default connect(
     state => ({
         playerState: state.spotify.playerState,
-        accessToken: state.spotify.accessToken,  
-        scenes: state.scenes.list,      
+        accessToken: state.spotify.accessToken,
+        scenes: state.scenes.list,
     }),
     { updatePlayerState }
 )(withStyles(styles)(SpotifyPlayer));

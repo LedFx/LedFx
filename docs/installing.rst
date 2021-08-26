@@ -10,13 +10,13 @@ UDP protocol. See below for a list of tested ESP8266 firmware that can be used w
 
 Here is everything you need to get started with LedFx:
 
-    #. A Computer (or Raspberry Pi) with Python >= 3.9
+    #. A Computer (or Raspberry Pi) with Python >= 3.8
     #. An E1.31 capable device with addressable LEDs connected
 
         - Commercial grade DMX controllers
         - ESP8266 modules can be purchased for as little as $2 USD from AliExpress
 
-.. warning:: Anaconda is no longer recommended for installing LedFx. We have removed all references to Anaconda. If you are coming from an old install, we reccomend removing Anaconda completely.
+.. warning:: Anaconda is no longer recommended for installing LedFx. We have removed all references to Anaconda. If you are coming from an old install, we recommend removing Anaconda completely.
 
 Here is a list of tested ESP8266 firmware that works with LedFx:
 
@@ -34,7 +34,7 @@ To get started on Windows please use our `LedFx Windows Installer`_.
 Linux Installation
 --------------------
 
-To install on Linux first ensure you have at least Python 3.9 installed.
+To install on Linux first ensure you have at least Python 3.8 installed.
 
 **1.** Install LedFx and all the dependencies using our `LedFx Bash Install Script`_:
 
@@ -47,7 +47,7 @@ To install on Linux first ensure you have at least Python 3.9 installed.
 macOS Installation
 --------------------
 
-To install on macOS first ensure you have at least Python 3.9 installed.
+To install on macOS first ensure you have at least Python 3.8 installed.
 
 **1.** Install LedFx and all the dependencies using `homebrew`_ and pip:
 
@@ -80,7 +80,7 @@ Raspberry Pi Installation
 .. note::
   To use LedFx on a pi you will need a USB audio card.
 
-Verify you have Python 3.9 or greater by running ``python3 --version``
+Verify you have Python 3.8 or greater by running ``python3 --version``
 
 **1.** Modify /usr/share/alsa/alsa.conf:
 

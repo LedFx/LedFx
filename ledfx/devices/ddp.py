@@ -40,7 +40,7 @@ class DDPDevice(NetworkedDevice):
             ): str,
             vol.Required(
                 "pixel_count",
-                description="Number of individual pixels",                
+                description="Number of individual pixels",
                 default=1,
             ): int,
         }

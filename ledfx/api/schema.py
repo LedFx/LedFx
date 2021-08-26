@@ -110,9 +110,12 @@ class SchemaEndpoint(RestEndpoint):
             elif schema == "audio":
                 # Get audio schema
                 response["audio"] = {
-                    "schema": convertToJsonSchema(
-                        AudioInputSource.AUDIO_CONFIG_SCHEMA.fget(),                       
-                    ) | { "permitted_keys": PERMITTED_KEYS["audio"] } 
+                    "schema": {
+                        **convertToJsonSchema(
+                            AudioInputSource.AUDIO_CONFIG_SCHEMA.fget(),
+                        ),
+                        **{"permitted_keys": PERMITTED_KEYS["audio"]},
+                    }
                     # | { "properties": {
                     #     "audio_device": {
                     #         "enum": {
@@ -126,25 +129,36 @@ class SchemaEndpoint(RestEndpoint):
             elif schema == "melbanks":
                 # Get melbanks schema
                 response["melbanks"] = {
-                    "schema": convertToJsonSchema(
-                        Melbanks.CONFIG_SCHEMA,
-                        ) | {  "permitted_keys": PERMITTED_KEYS["melbanks"] },
+                    "schema": {
+                        **convertToJsonSchema(
+                            Melbanks.CONFIG_SCHEMA,
+                        ),
+                        **{"permitted_keys": PERMITTED_KEYS["melbanks"]},
+                    },
                 }
 
             elif schema == "wled_preferences":
                 # Get wled schema
                 response["wled_preferences"] = {
-                    "schema": convertToJsonSchema(
-                        WLED_CONFIG_SCHEMA,
-                        ) | { "permitted_keys": PERMITTED_KEYS["wled_preferences"] },
+                    "schema": {
+                        **convertToJsonSchema(
+                            WLED_CONFIG_SCHEMA,
+                        ),
+                        **{
+                            "permitted_keys": PERMITTED_KEYS[
+                                "wled_preferences"
+                            ]
+                        },
+                    },
                 }
 
             elif schema == "core":
                 # Get core config schema
                 response["core"] = {
-                    "schema": convertToJsonSchema(
-                        CORE_CONFIG_SCHEMA
-                        ) | { "permitted_keys": PERMITTED_KEYS["core"] },
+                    "schema": {
+                        **convertToJsonSchema(CORE_CONFIG_SCHEMA),
+                        **{"permitted_keys": PERMITTED_KEYS["core"]},
+                    },
                 }
 
         return web.json_response(data=response, status=200)

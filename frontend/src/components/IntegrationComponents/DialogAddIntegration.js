@@ -50,7 +50,7 @@ function ConfirmationDialogRaw(props) {
         // setModel(val);
     };
     delete other.deviceList;
-    
+
     return integrationTypes[integration] ?  (
         <Dialog
             disableBackdropClick

@@ -136,7 +136,10 @@ class EffectsEndpoint(RestEndpoint):
                     effect = self._ledfx.effects.create(
                         ledfx=self._ledfx,
                         type=effect_type,
-                        config=virtual.active_effect.config | effect_config,
+                        config={
+                            **virtual.active_effect.config,
+                            **effect_config,
+                        },
                     )
                     virtual.set_effect(effect)
                 else:

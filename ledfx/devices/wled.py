@@ -118,7 +118,7 @@ class WLEDDevice(NetworkedDevice):
             "rgbw_led": wled_rgbmode,
         }
 
-        self._config |= wled_config
+        self._config.update(wled_config)
         self.setup_subdevice()
 
         # Currently *assuming* that this PR gets released in 0.13

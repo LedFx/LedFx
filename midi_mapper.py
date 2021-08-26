@@ -4,7 +4,9 @@ import json
 import os
 import sys
 import time
+import zipfile
 from functools import cached_property
+from urllib.parse import urlencode
 
 import mido
 import mido.frozen as frozen
@@ -47,8 +49,8 @@ REGION_DIMENSIONS = [
 
 INPUT_TYPES = [
     "On/Off (button, pressable knob)",
-    "Continous with hard start+stop (fader, slider, knob with limits)",
-    "Continous with no start or end (wheel, knob, continuous rotation)",
+    "Continuous with hard start+stop (fader, slider, knob with limits)",
+    "Continuous with no start or end (wheel, knob, continuous rotation)",
 ]
 
 INPUT_VISUAL_STATES = [
@@ -226,7 +228,7 @@ def int_input(between=None, msg=None):
 
 
 def find_changing_value_between_messages(
-    msgs, input_change_str="desired input interaction?"
+    msgs, input_change_str="Desired input interaction?"
 ):
     msg_types = {msg.type for msg in msgs}
     if len(msg_types) != 1:
@@ -578,6 +580,19 @@ def save_json():
         json.dump(mapping, json_file, ensure_ascii=False, sort_keys=True, indent=4)
         print(f"Your mapping has been saved to {json_path}")
 
+def save_zip():
+    if os.path.exists(zip_path):
+        try:
+            os.remove(zip_path)
+        except OSError:
+            print(f"Could not remove {zip_path}")
+            return
+    uri_safe_midi_name = urlencode(f"{device_name} MIDI Map")
+    with zipfile.ZipFile(json_path, "w", zipfile.ZIP_DEFLATED) as zip_file:
+        zip_file.write(zip_path)
+        print(f"Your mapping has also been saved as a zip file to {zip_path}")
+        print(f"You can upload this via GitHub to share with the community - https://github.com/LedFx/LedFx/issues/new?assignees=&labels=&template=midi_upload.md&title={uri_safe_midi_name}")
+
 
 ########
 # Device selection and port
@@ -630,13 +645,15 @@ except rtmidi._rtmidi.SystemError:
 
 mapping = Mapping()
 json_name = f"LedFxMidiMap {device_name}.json"
+zip_name = f"{json_name}.zip"
+zip_path = os.path.join(os.path.expanduser("~"), zip_name)
 json_path = os.path.join(os.path.expanduser("~"), json_name)
 
 # load existing mapping if it's there
 if os.path.exists(json_path):
     with open(json_path, encoding="utf-8") as json_file:
         try:
-            mapping |= json.load(json_file)
+            mapping.update(json.load(json_file))
         except io.UnsupportedOperation as e:
             print(f"Error loading mapping: {e}")
         except json.decoder.JSONDecodeError:
@@ -675,6 +692,7 @@ while True:
     print(region)
     mapping["regions"].append(region.as_dict())
     save_json()
+    save_zip()
     print(mapping)
 
 if "image" not in mapping.keys():
@@ -704,9 +722,10 @@ if "image" not in mapping.keys():
     print("Done, thank you!")
     continue_input()
     save_json()
+    save_zip()
 
 print()
 print(f"You can add more regions by running this script again.")
-print(f"Feel free to ammend the mapping json if you made a mistake - nobody's perfect! :P")
+print(f"Feel free to amend the mapping json if you made a mistake - nobody's perfect! :P")
 
 # fmt: on

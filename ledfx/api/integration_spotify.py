@@ -16,7 +16,7 @@ class QLCEndpoint(RestEndpoint):
     ENDPOINT_PATH = "/api/integrations/spotify/{integration_id}"
 
     async def get(self, integration_id) -> web.Response:
-        """ Get all song triggers """
+        """Get all song triggers"""
         integration = self._ledfx.integrations.get(integration_id)
         if (integration is None) or (integration.type != "spotify"):
             response = {"not found": 404}
@@ -27,7 +27,7 @@ class QLCEndpoint(RestEndpoint):
         return web.json_response(data=response, status=200)
 
     async def put(self, integration_id, request) -> web.Response:
-        """ Update a Spotify song trigger """
+        """Update a Spotify song trigger"""
         integration = self._ledfx.integrations.get(integration_id)
         if (integration is None) or (integration.type != "spotify"):
             response = {"not found": 404}
@@ -40,7 +40,7 @@ class QLCEndpoint(RestEndpoint):
         return web.json_response(data=response, status=200)
 
     async def post(self, integration_id, request) -> web.Response:
-        """ Add Spotify song trigger """
+        """Add Spotify song trigger"""
         integration = self._ledfx.integrations.get(integration_id)
         if (integration is None) or (integration.type != "spotify"):
             response = {"not found": 404}
@@ -90,7 +90,7 @@ class QLCEndpoint(RestEndpoint):
         return web.json_response(data=response, status=200)
 
     async def delete(self, integration_id, request) -> web.Response:
-        """ Delete a Spotify song trigger """
+        """Delete a Spotify song trigger"""
         integration = self._ledfx.integrations.get(integration_id)
         if (integration is None) or (integration.type != "spotify"):
             response = {"not found": 404}

@@ -80,7 +80,7 @@ class Device(BaseRegistry):
     def update_config(self, config):
         # TODO: Sync locks to ensure everything is thread safe
         if self._config is not None:
-            config = self._config | config
+            config = {**self._config, **config}
 
         validated_config = type(self).schema()(config)
         self._config = validated_config
@@ -468,7 +468,7 @@ class Devices(RegistryLoader):
                 raise ValueError(msg)
 
             wled_config["sync_mode"] = sync_mode
-            device_config |= wled_config
+            device_config.update(wled_config)
 
         device_id = generate_id(device_config["name"])
 

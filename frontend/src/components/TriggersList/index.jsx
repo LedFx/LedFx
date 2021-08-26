@@ -20,13 +20,13 @@ class TriggerList extends React.Component {
         super(props);
         this.state = { }
     };
-    
+
     render() {
         const {  } = this.props;
         return (
             <Card>
                 <CardContent>
-                    {triggers.length > 0 ? 
+                    {triggers.length > 0 ?
                         <List>
                             <ListItem>
                                 <ListItemText primary='Song' secondary='Position' />

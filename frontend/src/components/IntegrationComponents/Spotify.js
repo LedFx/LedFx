@@ -24,7 +24,7 @@ class SpotifyView extends React.Component {
         const codes = pkceChallenge();
         const cookies = new Cookies();
         cookies.set('verifier', codes.code_verifier)
-        let authURL = 
+        let authURL =
             `https://accounts.spotify.com/authorize/`
             + "?response_type=code"
             + "&client_id="+encodeURIComponent('7658827aea6f47f98c8de593f1491da5')
@@ -34,7 +34,7 @@ class SpotifyView extends React.Component {
             + "&code_challenge_method=S256"
             ;
         console.log(authURL)
-        window.location.href = authURL 
+        window.location.href = authURL
     }
 
     componentDidMount() {
@@ -43,17 +43,17 @@ class SpotifyView extends React.Component {
         }
         this.props.checkCookiesForTokens()
     }
-    
+
     render() {
         const { spotify, refreshAuth } = this.props;
         return (
             <Grid container justify='center' alignContent='center' style={{height: '10%'}}>
-                {!spotify.accessToken && !spotify.refreshToken ? 
+                {!spotify.accessToken && !spotify.refreshToken ?
                 ''
-                : 
-                    !spotify.accessToken && spotify.refreshToken ? 
+                :
+                    !spotify.accessToken && spotify.refreshToken ?
                     ''
-                    : 
+                    :
                     <div style={{width: '100%'}}>
                         <SpotifyPlayer />
                         <TriggersList />
