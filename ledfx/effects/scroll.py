@@ -74,9 +74,9 @@ class ScrollAudioEffect(AudioReactiveEffect):
             COLORS[self._config["color_high"]], dtype=float
         )
 
-        self.lows_cutoff = self._config["threshold"]
+        self.lows_cutoff = self._config["threshold"] / 8
         self.mids_cutoff = self._config["threshold"] / 4
-        self.high_cutoff = self._config["threshold"] / 7
+        self.high_cutoff = self._config["threshold"] / 3
 
     def audio_data_updated(self, data):
         # Divide the melbank into lows, mids and highs
