@@ -266,10 +266,9 @@ class Virtual:
         )
         self.transition_frame_counter = 0
 
-        try:
-            self.active = True
-        except RuntimeError:
-            self.active = False
+        if not self._devices:
+            error = f"Cannot activate virtual {self.id}, it has no configured device segments"
+            _LOGGER.warning(error)
             return
 
         if self._active_effect is None:
@@ -293,6 +292,12 @@ class Virtual:
             self._ledfx.events.fire_event(
                 EffectSetEvent(self._active_effect.name)
             )
+
+        try:
+            self.active = True
+        except RuntimeError:
+            self.active = False
+            return
 
     def transition_to_active(self):
         self._active_effect = self._transition_effect
