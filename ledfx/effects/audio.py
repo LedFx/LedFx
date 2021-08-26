@@ -364,6 +364,9 @@ class AudioAnalysisSource(AudioInputSource):
         self._pitch.set_unit("midi")
         self._pitch.set_tolerance(self._config["pitch_tolerance"])
 
+        # bar oscillator
+        self.beat_counter = 0
+
         # beat oscillator
         self.beat_timestamp = time.time()
         self.beat_period = 2
@@ -610,6 +613,11 @@ class AudioAnalysisSource(AudioInputSource):
         While the beat number might not necessarily be accurate, the
         relative position of the tracker between beats will be quite accurate.
 
+        NOTE: currently this makes no attempt to guess which beat is the first
+        in the bar. It simple counts to four with each beat that is detected.
+        The actual value of the current beat in the bar is completely arbitrary,
+        but in time with each beat.
+
         0           1           2           3
         {----------time for one bar---------}
                ^    -->      -->      -->
@@ -619,17 +627,18 @@ class AudioAnalysisSource(AudioInputSource):
         # update tempo and oscillator
         # print(self._tempo.get_delay_s())
         if self.bpm_beat_now():
+            self.beat_counter = (self.beat_counter + 1) % 4
             self.beat_period = self._tempo.get_period_s()
             # print("beat at:", self._tempo.get_delay_s())
             self.beat_timestamp = time.time()
-            oscillator = 0
+            oscillator = self.beat_counter
         else:
             time_since_beat = time.time() - self.beat_timestamp
             oscillator = (
                 1 - (self.beat_period - time_since_beat) / self.beat_period
-            )
+            ) + self.beat_counter
             # ensure it's between 0 and 1. useful when audio cuts
-            oscillator = min(1, oscillator)
+            oscillator = min(4, oscillator)
             oscillator = max(0, oscillator)
         return oscillator
 
