@@ -56,7 +56,7 @@ INPUT_TYPES = [
 INPUT_VISUAL_STATES = [
     "Unassigned           [input has no function (cannot be pressed)]",
     "Assigned, inactive   [input has function, but not doing it (button can be pressed)]",
-    "Assigned, activating [input has function, and is going to do it (button is being pressed)]",
+    "Assigned, activating [input has function, and is going to do it (button press in queue)]",
     "Assigned, active     [input is doing its function (button has been pressed)]",
 ]
 
