@@ -264,7 +264,6 @@ class Effect(BaseRegistry):
         """Attaches an output channel to the effect"""
         self._virtual = virtual
         self._pixels = np.zeros((virtual.pixel_count, 3))
-        self._active = True
         self._bg_color_array = np.tile(
             self._bg_color, (virtual.pixel_count, 1)
         )
@@ -277,6 +276,7 @@ class Effect(BaseRegistry):
             if hasattr(base, "on_activate"):
                 base.on_activate(self, virtual.pixel_count)
 
+        self._active = True
         _LOGGER.info(f"Effect {self.NAME} activated.")
 
     def deactivate(self):
@@ -316,7 +316,7 @@ class Effect(BaseRegistry):
             if base.config_updated != super(base, base).config_updated:
                 base.config_updated(self, self._config)
 
-        _LOGGER.info(
+        _LOGGER.debug(
             f"Effect {self.NAME} config updated to {validated_config}."
         )
 
@@ -374,10 +374,10 @@ class Effect(BaseRegistry):
     @property
     def pixels(self):
         """Returns the pixels for the channel"""
-        if not self._active:
-            raise Exception(
-                "Attempting to access pixels before effect is active"
-            )
+        # if not self._active:
+        #     raise Exception(
+        #         "Attempting to access pixels before effect is active"
+        #     )
 
         return np.copy(self._pixels)
 
