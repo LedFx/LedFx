@@ -16,7 +16,7 @@ _LOGGER = logging.getLogger(__name__)
 class DummyEffect:
 
     config = vol.Schema({})
-
+    _active = True
     NAME = ""
 
     def __init__(self, pixel_count):

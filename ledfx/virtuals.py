@@ -1,6 +1,5 @@
 import logging
 import time
-from asyncio import CancelledError
 from functools import cached_property
 
 import numpy as np
@@ -351,37 +350,30 @@ class Virtual:
         return self._active_effect
 
     async def thread_function(self):
-        try:
-            while True:
-                if self._active and self._active_effect._active:
-                    # self.assembled_frame = await self._ledfx.loop.run_in_executor(
-                    #     self._ledfx.thread_executor, self.assemble_frame
-                    # )
-                    self.assembled_frame = self.assemble_frame()
-                    if self.assembled_frame is not None and not self._paused:
-                        if not self._config["preview_only"]:
-                            await self._ledfx.loop.run_in_executor(
-                                self._ledfx.thread_executor, self.flush
-                            )
-                            # self.flush()
-
-                        def trigger_virtual_update_event():
-                            self._ledfx.events.fire_event(
-                                VirtualUpdateEvent(
-                                    self.id, self.assembled_frame
-                                )
-                            )
-
-                        self._ledfx.loop.call_soon(
-                            trigger_virtual_update_event
+        while True:
+            if self._active and self._active_effect._active:
+                # self.assembled_frame = await self._ledfx.loop.run_in_executor(
+                #     self._ledfx.thread_executor, self.assemble_frame
+                # )
+                self.assembled_frame = self.assemble_frame()
+                if self.assembled_frame is not None and not self._paused:
+                    if not self._config["preview_only"]:
+                        await self._ledfx.loop.run_in_executor(
+                            self._ledfx.thread_executor, self.flush
                         )
-                await self._ledfx.loop.run_in_executor(
-                    self._ledfx.thread_executor,
-                    time.sleep,
-                    fps_to_sleep_interval(self.refresh_rate),
-                )
-        except CancelledError:
-            return
+                        # self.flush()
+
+                    def trigger_virtual_update_event():
+                        self._ledfx.events.fire_event(
+                            VirtualUpdateEvent(self.id, self.assembled_frame)
+                        )
+
+                    self._ledfx.loop.call_soon(trigger_virtual_update_event)
+            await self._ledfx.loop.run_in_executor(
+                self._ledfx.thread_executor,
+                time.sleep,
+                fps_to_sleep_interval(self.refresh_rate),
+            )
 
     def assemble_frame(self):
         """
@@ -450,7 +442,7 @@ class Virtual:
             self.activate_segments(self._segments)
 
         self._task = self._ledfx.loop.create_task(self.thread_function())
-        self._task.add_done_callback(lambda task: task.result())
+        # self._task.add_done_callback(lambda task: task.result())
 
     def deactivate(self):
         self._active = False
