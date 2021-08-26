@@ -52,7 +52,7 @@ class BladePowerPlus(AudioReactiveEffect, HSVEffect, GradientEffect):
             ): vol.In(list(_power_funcs.keys())),
             vol.Optional(
                 "solid_color",
-                description="Virtual a solid color bar",
+                description="Display a solid color bar",
                 default=False,
             ): bool,
             vol.Optional(
