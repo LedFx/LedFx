@@ -154,6 +154,12 @@ class MIDI(Integration):
         """dynamic config schema"""
         midi_devices = list_midi_devices()
         midi_mappings = list_midi_mappings()
+        try:
+            midi_devices = list_midi_devices()
+            midi_mappings = list_midi_mappings()
+        except rtmidi._rtmidi.SystemError as e:
+            _LOGGER.error(f"Unable to enumerate midi devices: {e}")
+            return vol.Schema({})
 
         if not midi_devices:
             # raise Exception("No MIDI devices are connected.")
