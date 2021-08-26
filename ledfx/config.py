@@ -244,7 +244,7 @@ def load_config(config_dir: str) -> dict:
             except (KeyError, AssertionError):
                 create_backup(config_dir, config_file, "VERSION")
                 _LOGGER.warning(
-                    f"LedFx config version: {CONFIGURATION_VERSION}, your config version: {config_json['configuration_version']}"
+                    f"LedFx config version: {CONFIGURATION_VERSION}, your config version: {config_json.get('configuration_version', 'UNDEFINED (old!)')}"
                 )
                 try:
                     config = migrate_config(config_json)
