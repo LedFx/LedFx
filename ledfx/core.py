@@ -19,6 +19,7 @@ from ledfx.events import (
 from ledfx.http_manager import HttpServer
 from ledfx.integrations import Integrations
 from ledfx.presets import ledfx_presets
+from ledfx.scenes import Scenes
 from ledfx.utils import (
     RollingQueueHandler,
     async_fire_and_forget,
@@ -209,6 +210,7 @@ class LedFxCore:
         self.effects = Effects(self)
         self.virtuals = Virtuals(self)
         self.integrations = Integrations(self)
+        self.scenes = Scenes(self)
 
         # TODO: Deferr
         self.devices.create_from_config(self.config["devices"])
