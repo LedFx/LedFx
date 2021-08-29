@@ -126,9 +126,13 @@ def list_midi_mappings():
     # This doesn't respect the -c parameter and I don't know how to fix it.
     try:
         config_dir = get_default_config_directory()
-    except OSError:
+    except OSError as error:
+        _LOGGER.warning("Error attempting to list MIDI Mappings: {error}")
+        return None
+    # This is a hacky way of bypassing the -c parameter and just returning none
+    if not os.path.exists(config_dir):
         _LOGGER.warning(
-            "Attempting to use -c with MIDI is currently broken. We're working on it!"
+            "Currently using -c and MIDI isn't supported. We're working on it!"
         )
         return None
     return [
