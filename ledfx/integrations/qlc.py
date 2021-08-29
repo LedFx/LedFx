@@ -232,7 +232,7 @@ class QLC(Integration):
             self._connect_task = None
 
 
-class QLCWebsocketClient(aiohttp.ClientSession):
+class QLCWebsocketClient:
     def __init__(self, url, domain):
         super().__init__()
         self.websocket = None
