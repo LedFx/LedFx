@@ -124,7 +124,13 @@ def create_midimsg_schema(msgtype):
 
 def list_midi_mappings():
     # This doesn't respect the -c parameter and I don't know how to fix it.
-    config_dir = get_default_config_directory()
+    try:
+        config_dir = get_default_config_directory()
+    except OSError:
+        _LOGGER.warning(
+            "Attempting to use -c with MIDI is currently broken. We're working on it!"
+        )
+        return None
     return [
         f
         for f in os.listdir(config_dir)
