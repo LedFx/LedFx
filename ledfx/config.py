@@ -215,7 +215,7 @@ def load_config(config_dir: str) -> dict:
 
     config_file = ensure_config_file(config_dir)
     print(
-        f"Loading configuration file: {os.path.join(config_dir, CONFIG_FILE_NAME)}"
+        f"Loading configuration file: {os.path.join(os.path.abspath(config_dir), CONFIG_FILE_NAME)}"
     )
     try:
 
