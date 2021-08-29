@@ -125,8 +125,7 @@ def get_preset_file(config_dir: str) -> str:
     return json_path  # Return the JSON file if we find one.
 
 
-def get_profile_dump_location() -> str:
-    config_dir = get_default_config_directory()
+def get_profile_dump_location(config_dir) -> str:
     date_time = datetime.datetime.now().strftime("%d-%m-%y_%H-%M-%S")
     return os.path.join(config_dir, f"LedFx_{date_time}.profile")
 
@@ -136,9 +135,9 @@ def get_log_file_location(config_dir):
     return log_file_path
 
 
-def get_ssl_certs() -> tuple:
+def get_ssl_certs(config_dir) -> tuple:
     """Finds ssl certificate files in config dir"""
-    ssl_dir = os.path.join(get_default_config_directory(), "ssl")
+    ssl_dir = os.path.join(config_dir, "ssl")
 
     if not os.path.exists(ssl_dir):
         return None
@@ -200,14 +199,6 @@ def ensure_config_directory(config_dir: str) -> None:
     # if it doesn't. Otherwise, if we have the default directory attempt to
     # create the file
     if not os.path.isdir(config_dir):
-        if config_dir != get_default_config_directory():
-            print(
-                ("Error: Invalid configuration directory {}").format(
-                    config_dir
-                )
-            )
-            sys.exit(1)
-
         try:
             os.mkdir(config_dir)
         except OSError:

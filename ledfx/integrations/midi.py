@@ -71,8 +71,8 @@ REGION_DIMENSIONS = [
 
 INPUT_TYPES = [
     "On/Off (button, pressable knob)",
-    "Continous with hard start+stop (fader, slider, knob with limits)",
-    "Continous with no start or end (wheel, knob, continuous rotation)",
+    "Continuous with hard start+stop (fader, slider, knob with limits)",
+    "Continuous with no start or end (wheel, knob, continuous rotation)",
 ]
 
 INPUT_VISUAL_STATES = [
@@ -123,6 +123,7 @@ def create_midimsg_schema(msgtype):
 
 
 def list_midi_mappings():
+    # This doesn't respect the -c parameter and I don't know how to fix it.
     config_dir = get_default_config_directory()
     return [
         f
@@ -256,7 +257,7 @@ class MIDI(Integration):
         Load an LedFx MIDI mapping
         """
         mapping_path = os.path.join(
-            get_default_config_directory(), self._config["midi_mapping"]
+            self._ledfx.config_dir, self._config["midi_mapping"]
         )
 
         if not os.path.exists(mapping_path):

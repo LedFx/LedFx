@@ -370,7 +370,9 @@ def entry_point(icon=None):
             _exit_code = ledfx.start(open_ui=args.open_ui)
             profiler.disable()
             print("Finished collecting performance data")
-            filename = config_helpers.get_profile_dump_location()
+            filename = config_helpers.get_profile_dump_location(
+                config_dir=args.config
+            )
             profiler.dump_stats(filename)
             print(
                 f"Saved performance data to config directory      : {filename}"
