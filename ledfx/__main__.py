@@ -20,7 +20,6 @@ import cProfile
 import logging
 import subprocess
 import sys
-import warnings
 from logging.handlers import RotatingFileHandler
 
 from pyupdater.client import Client
@@ -306,9 +305,6 @@ def main():
         """This will crash LedFx and submit a Sentry error if Sentry is configured"""
         _LOGGER.warning("Steering LedFx into a brick wall")
         div_by_zero = 1 / 0
-
-    if currently_frozen() or installed_via_pip():
-        warnings.filterwarnings("ignore", category=DeprecationWarning)
 
     if args.tray or currently_frozen():
         import os
