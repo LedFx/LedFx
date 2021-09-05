@@ -1,8 +1,36 @@
 #!/usr/bin/env python3
 
+import platform
+
 from setuptools import setup
 
 import ledfx.consts as const
+
+"""
+Currently numba has wheels for:
+Windows x86
+Windows x64
+Linux x64
+Linux x86
+OS X x64
+
+Hopefully checking for 64bit or Windows will capture
+"""
+min_numba_version = "numba>=0.54"
+
+# We should work on all 64 bit devices except for M1 OS X devices, and all windows devices
+# Currently we check for x86_64 in machine info to determine if we're on an x64 Mac
+
+proc_64bit = "64" in platform.machine()
+windows = "windows" in platform.system().lower()
+osx_x86_64bit = (
+    "darwin" in platform.system().lower() and "x86_64" in platform.machine()
+)
+if proc_64bit or windows or osx_x86_64bit:
+    numba = min_numba_version
+else:
+    numba = ""
+
 
 PROJECT_DOCS = "https://ledfx.readthedocs.io"
 PROJECT_PACKAGE_NAME = "ledfx"
@@ -32,7 +60,6 @@ INSTALL_REQUIRES = [
     "requests>=2.24.0",
     "aubio~=0.4.9",
     "zeroconf==0.30.0",
-    'pywin32>=300; platform_system == "Windows"',
     "cython>=0.29.21",
     "pyupdater>=3.1.0",
     "sentry-sdk~=1.0.0",
@@ -44,6 +71,11 @@ INSTALL_REQUIRES = [
     "python-rtmidi>=1.4.9",
     "aiohttp_cors>=0.7.0",
     "paho-mqtt>=1.5.1",
+    # Conditional Requirements
+    # We need pywin32 for Windows
+    'pywin32>=300; platform_system == "Windows"',
+    # We want numba if there are wheels for it
+    numba,
 ]
 
 setup(
