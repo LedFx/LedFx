@@ -23,10 +23,10 @@ min_numba_version = "numba>=0.54"
 
 proc_64bit = "64" in platform.machine()
 windows = "windows" in platform.system().lower()
-osx_x86_64bit = (
-    "darwin" in platform.system().lower() and "x86_64" in platform.machine()
+osx_arm_64bit = (
+    "darwin" in platform.system().lower() and "arm64" in platform.machine()
 )
-if proc_64bit or windows or osx_x86_64bit:
+if proc_64bit or windows and not osx_arm_64bit:
     numba = min_numba_version
 else:
     numba = ""
