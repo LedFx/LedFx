@@ -18,10 +18,12 @@ For non-development purposes run:
 import argparse
 import cProfile
 import logging
+import os
 import subprocess
 import sys
 from logging.handlers import RotatingFileHandler
 
+import psutil
 from pyupdater.client import Client
 
 import ledfx.config as config_helpers
@@ -293,6 +295,18 @@ def main():
     setup_logging(args.loglevel, config_dir=args.config)
     config_helpers.load_logger()
 
+    # Set some process priority optimisations
+    p = psutil.Process(os.getpid())
+
+    if psutil.WINDOWS:
+        p.nice(psutil.HIGH_PRIORITY_CLASS)
+        # p.ionice(psutil.IOPRIO_HIGH)
+    elif psutil.LINUX:
+        p.nice(15)
+        p.ionice(psutil.IOPRIO_CLASS_RT, value=7)
+    else:
+        p.nice(15)
+
     if not (currently_frozen() or installed_via_pip()):
         if args.offline_mode:
             _LOGGER.warning(
@@ -307,9 +321,7 @@ def main():
         div_by_zero = 1 / 0
 
     if args.tray or currently_frozen():
-        import os
-
-        # If pystray is imported on a device that can't virtual it, it explodes. Catch it
+        # If pystray is imported on a device that can't display it, it explodes. Catch it
         try:
             import pystray
         except Exception as Error:
@@ -360,6 +372,29 @@ def entry_point(icon=None):
         )
 
         if args.performance:
+            # # YAPPI CODE
+            # print("Collecting performance data...")
+            # yappi.start()
+            # _exit_code = ledfx.start(open_ui=args.open_ui)
+            # yappi.stop()
+            # print("Finished collecting performance data")
+            # filename = config_helpers.get_profile_dump_location(
+            #     config_dir=args.config
+            # )
+            # stats = yappi.get_func_stats()
+            # thread_stats = yappi.get_thread_stats()
+            # print(dir(thread_stats))
+            # thread_stats.print_all()
+            # stats.save(filename, type="pstat")
+            # print(
+            #     f"Saved performance data to config directory      : {filename}"
+            # )
+            # print(
+            #     "Please send the performance data to a developer : https://ledfx.app/contact/"
+            # )
+            # exit_code = _exit_code
+
+            # CPROFILE CODE
             print("Collecting performance data...")
             profiler = cProfile.Profile()
             profiler.enable()

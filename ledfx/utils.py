@@ -23,6 +23,39 @@ import voluptuous as vol
 
 _LOGGER = logging.getLogger(__name__)
 
+try:
+    from numba import jit
+except ImportError:
+    _LOGGER.warning(
+        "Failed to import Numba. LedFx uses Numba to run more quickly, but will work without it."
+    )
+    _LOGGER.warning(
+        "It is strongly recommended you install Numba if you can. https://numba.pydata.org/numba-doc/latest/user/installing.html"
+    )
+    NUMBA_AVAILABLE = False
+else:
+    NUMBA_AVAILABLE = True
+
+JIT_OPTIONS = {
+    "nopython": True,
+    "nogil": True,
+    "cache": True,
+    "fastmath": True,
+    "parallel": True,
+}
+
+
+def maybe_jit(**kwargs):
+    jit_options = JIT_OPTIONS | kwargs
+
+    def wrapper(func):
+        if NUMBA_AVAILABLE:
+            return jit(**jit_options)(func)
+        else:
+            return func
+
+    return wrapper
+
 
 def calc_available_fps():
     monotonic_res = time.get_clock_info("monotonic").resolution

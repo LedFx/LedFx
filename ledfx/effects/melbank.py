@@ -467,7 +467,6 @@ class Melbanks:
         self.mel_len = self.DEFAULT_MELBANK_CONFIG["samples"]
         # set up melbank data buffers.
         # these are stored as numpy arrays in a tuple to allow direct access to the buffers
-        # should be a bit faster than a list!
         self.melbanks = tuple(
             np.zeros(self.mel_len) for _ in range(self.mel_count)
         )

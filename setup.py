@@ -1,35 +1,39 @@
 #!/usr/bin/env python3
 
-import platform
+# import platform
+import subprocess
+import sys
 
 from setuptools import setup
+from setuptools.command.develop import develop
+from setuptools.command.install import install
 
 import ledfx.consts as const
 
-"""
-Currently numba has wheels for:
-Windows x86
-Windows x64
-Linux x64
-Linux x86
-OS X x64
+# """
+# Currently numba has wheels for:
+# Windows x86
+# Windows x64
+# Linux x64
+# Linux x86
+# OS X x64
 
-Hopefully checking for 64bit or Windows will capture
-"""
-min_numba_version = "numba>=0.54"
+# Hopefully checking for 64bit or Windows will capture
+# """
+# min_numba_version = "numba>=0.54"
 
-# We should work on all 64 bit devices except for M1 OS X devices, and all windows devices
-# Currently we check for x86_64 in machine info to determine if we're on an x64 Mac
+# # We should work on all 64 bit devices except for M1 OS X devices, and all windows devices
+# # Currently we check for x86_64 in machine info to determine if we're on an x64 Mac
 
-proc_64bit = "64" in platform.machine()
-windows = "windows" in platform.system().lower()
-osx_arm_64bit = (
-    "darwin" in platform.system().lower() and "arm64" in platform.machine()
-)
-if proc_64bit or windows and not osx_arm_64bit:
-    numba = min_numba_version
-else:
-    numba = ""
+# proc_64bit = "64" in platform.machine()
+# windows = "windows" in platform.system().lower()
+# osx_arm_64bit = (
+#     "darwin" in platform.system().lower() and "arm64" in platform.machine()
+# )
+# if proc_64bit or windows and not osx_arm_64bit:
+#     numba = min_numba_version
+# else:
+#     numba = ""
 
 
 PROJECT_DOCS = "https://ledfx.readthedocs.io"
@@ -75,8 +79,44 @@ INSTALL_REQUIRES = [
     # We need pywin32 for Windows
     'pywin32>=300; platform_system == "Windows"',
     # We want numba if there are wheels for it
-    numba,
+    # numba,
 ]
+
+
+def try_get_numba(command_subclass):
+    """
+    A decorator for classes subclassing one of the setuptools commands.
+    Attempts to install the Numba package using only an available binary.
+    """
+    orig_run = command_subclass.run
+
+    def modified_run(self):
+        subprocess.call(
+            [
+                sys.executable,
+                "-m",
+                "pip",
+                "install",
+                "--only-binary",
+                "numba",
+                "numba",
+            ]
+        )
+        orig_run(self)
+
+    command_subclass.run = modified_run
+    return command_subclass
+
+
+@try_get_numba
+class CustomDevelopCommand(develop):
+    pass
+
+
+@try_get_numba
+class CustomInstallCommand(install):
+    pass
+
 
 setup(
     name=PROJECT_PACKAGE_NAME,
@@ -92,6 +132,10 @@ setup(
         "Website": PROJECT_WEBSITE,
         "Source": PROJECT_URL,
         "Discord": "https://discord.gg/PqXMuthSNx",
+    },
+    cmdclass={
+        "install": CustomInstallCommand,
+        "develop": CustomDevelopCommand,
     },
     install_requires=INSTALL_REQUIRES,
     setup_requires=SETUP_REQUIRES,

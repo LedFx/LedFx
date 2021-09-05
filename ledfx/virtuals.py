@@ -358,9 +358,10 @@ class Virtual:
                 self.assembled_frame = self.assemble_frame()
                 if self.assembled_frame is not None and not self._paused:
                     if not self._config["preview_only"]:
-                        await self._ledfx.loop.run_in_executor(
-                            self._ledfx.thread_executor, self.flush
-                        )
+                        self._ledfx.thread_executor.submit(self.flush)
+                        # await self._ledfx.loop.run_in_executor(
+                        #     self._ledfx.thread_executor, self.flush
+                        # )
                         # self.flush()
 
                     def trigger_virtual_update_event():
@@ -369,6 +370,7 @@ class Virtual:
                         )
 
                     self._ledfx.loop.call_soon(trigger_virtual_update_event)
+
             await self._ledfx.loop.run_in_executor(
                 self._ledfx.thread_executor,
                 time.sleep,
@@ -441,6 +443,7 @@ class Virtual:
             self._active = True
             self.activate_segments(self._segments)
 
+        # self.thread_function()
         self._task = self._ledfx.loop.create_task(self.thread_function())
         # self._task.add_done_callback(lambda task: task.result())
 

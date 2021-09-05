@@ -132,12 +132,7 @@ class Device(BaseRegistry):
             self.flush(frame)
             # _LOGGER.debug(f"Device {self.id} flushed by Virtual {virtual_id}")
 
-            def trigger_device_update_event():
-                self._ledfx.events.fire_event(
-                    DeviceUpdateEvent(self.id, frame)
-                )
-
-            self._ledfx.loop.call_soon_threadsafe(trigger_device_update_event)
+            self._ledfx.events.fire_event(DeviceUpdateEvent(self.id, frame))
 
     def assemble_frame(self):
         """

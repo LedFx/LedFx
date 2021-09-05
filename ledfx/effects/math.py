@@ -2,28 +2,32 @@ from functools import lru_cache
 
 import numpy as np
 
+from ledfx.utils import maybe_jit
+
 
 @lru_cache(maxsize=32)
 def _normalized_linspace(size):
     return np.linspace(0, 1, size)
 
 
-def interpolate(y, new_length):
+@maybe_jit()
+def interpolate(pixels, x_new, x_old):
     """Resizes the array by linearly interpolating the values"""
-
-    if len(y) == new_length:
-        return y
-
-    x_old = _normalized_linspace(len(y))
-    x_new = _normalized_linspace(new_length)
-
-    return np.interp(x_new, x_old, y)
+    new_pixels = np.zeros((len(x_new), pixels.shape[1]))
+    for i in range(3):
+        new_pixels[:, i] = np.interp(x_new, x_old, pixels[:, i])
+    return new_pixels
 
 
 def interpolate_pixels(pixels, new_length):
     """Resizes a pixel array by linearly interpolating the values"""
+    if len(pixels) == new_length:
+        return pixels
 
-    return np.apply_along_axis(interpolate, 0, pixels, new_length)
+    x_old = _normalized_linspace(len(pixels))
+    x_new = _normalized_linspace(new_length)
+
+    return interpolate(pixels, x_new, x_old)
 
 
 class ExpFilter:
@@ -49,6 +53,7 @@ class ExpFilter:
             alpha[alpha <= 0.0] = self.alpha_decay
         else:
             alpha = self.alpha_rise if value > self.value else self.alpha_decay
+
         self.value = alpha * value + (1.0 - alpha) * self.value
 
         return self.value

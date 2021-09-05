@@ -4,6 +4,7 @@ import numpy as np
 import voluptuous as vol
 
 from ledfx.effects import Effect
+from ledfx.utils import maybe_jit
 
 """
 # Example plots of the wavefunctions
@@ -24,6 +25,46 @@ plt.plot(_sin)
 plt.plot(_square)
 plt.plot(_triangle)
 """
+
+
+@maybe_jit()
+def hsv_to_rgb(hsv):
+    """
+    Convert pixel array of type np.array([[h,s,v], ...])
+                             to np.array([[r,g,b], ...])
+
+    algorithm from https://en.wikipedia.org/wiki/HSL_and_HSV#HSV_to_RGB
+    """
+    h, s, v = hsv[:, 0], hsv[:, 1], hsv[:, 2]
+    c = v * s
+    h *= 6
+    x = c * (1 - np.abs(h % 2 - 1))
+    rgb = np.zeros(hsv.shape)
+    mask = (0 <= h) & (h <= 1)
+    rgb[mask, 0] = c[mask]
+    rgb[mask, 1] = x[mask]
+    mask = (1 < h) & (h <= 2)
+    rgb[mask, 0] = x[mask]
+    rgb[mask, 1] = c[mask]
+    mask = (2 < h) & (h <= 3)
+    rgb[mask, 1] = c[mask]
+    rgb[mask, 2] = x[mask]
+    mask = (3 < h) & (h <= 4)
+    rgb[mask, 1] = x[mask]
+    rgb[mask, 2] = c[mask]
+    mask = (4 < h) & (h <= 5)
+    rgb[mask, 0] = x[mask]
+    rgb[mask, 2] = c[mask]
+    mask = (5 < h) & (h <= 6)
+    rgb[mask, 0] = c[mask]
+    rgb[mask, 2] = x[mask]
+    m = v - c
+
+    rgb[:, 0] += m
+    rgb[:, 1] += m
+    rgb[:, 2] += m
+
+    return rgb * 255
 
 
 @Effect.no_registration
@@ -77,7 +118,7 @@ class HSVEffect(Effect):
         self.render_hsv()
         if self._config["color_correction"]:
             self.fix_hue_fast(self.hsv_array[:, 0])
-        return self.hsv_to_rgb(self.hsv_array)
+        return hsv_to_rgb(self.hsv_array)
 
     def render_hsv(self):
         """
@@ -246,44 +287,6 @@ class HSVEffect(Effect):
         rgb[s <= 0.0] = np.hstack([v, v, v])[s <= 0.0]
 
         return rgb.reshape(input_shape)
-
-    def hsv_to_rgb(self, hsv):
-        """
-        Convert pixel array of type np.array([[h,s,v], ...])
-                                 to np.array([[r,g,b], ...])
-
-        algorithm from https://en.wikipedia.org/wiki/HSL_and_HSV#HSV_to_RGB
-        """
-        h, s, v = hsv[:, 0], hsv[:, 1], hsv[:, 2]
-        c = v * s
-        h *= 6
-        x = c * (1 - np.abs(h % 2 - 1))
-        rgb = np.zeros(hsv.shape)
-        mask = (0 <= h) & (h <= 1)
-        rgb[mask, 0] = c[mask]
-        rgb[mask, 1] = x[mask]
-        mask = (1 < h) & (h <= 2)
-        rgb[mask, 0] = x[mask]
-        rgb[mask, 1] = c[mask]
-        mask = (2 < h) & (h <= 3)
-        rgb[mask, 1] = c[mask]
-        rgb[mask, 2] = x[mask]
-        mask = (3 < h) & (h <= 4)
-        rgb[mask, 1] = x[mask]
-        rgb[mask, 2] = c[mask]
-        mask = (4 < h) & (h <= 5)
-        rgb[mask, 0] = x[mask]
-        rgb[mask, 2] = c[mask]
-        mask = (5 < h) & (h <= 6)
-        rgb[mask, 0] = c[mask]
-        rgb[mask, 2] = x[mask]
-        m = v - c
-
-        rgb[:, 0] += m
-        rgb[:, 1] += m
-        rgb[:, 2] += m
-
-        return rgb * 255
 
     def rgb_to_hsv(self, rgb):
         """
