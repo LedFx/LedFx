@@ -11,7 +11,7 @@ import numpy as np
 import voluptuous as vol
 
 import ledfx.effects.mel as mel
-from ledfx.effects import smooth
+from ledfx.effects import fast_blur_array
 from ledfx.effects.math import ExpFilter
 from ledfx.events import GraphUpdateEvent
 
@@ -98,6 +98,16 @@ class Melbank:
         """Initialize all the melbank related variables"""
         self._audio = audio
         self._config = self.MELBANK_CONFIG_SCHEMA(config)
+
+        # adjustable power (peak isolation) based on parameter a (0-1)
+        # a=0    -> linear response (filter bank value maps to itself)
+        # a=0.4  -> roughly equivalent to filter_banks ** 2.0
+        # a=0.6  -> roughly equivalent to filter_banks ** 3.0
+        # a=1    -> no response (infinite power as filter bank value approaches 1)
+        # https://www.desmos.com/calculator/xxa2l9radu
+        self.power_factor = np.tan(
+            0.5 * np.pi * (self._config["peak_isolation"] + 1) / 2
+        )
 
         # Few difference coefficient types for experimentation
         if self._config["coeffs_type"] == "triangle":
@@ -387,21 +397,14 @@ class Melbank:
 
         # Compute the filterbank from the frequency information.
         filter_banks[:] = self.filterbank(frequency_domain)
-        # adjustable power (peak isolation) based on parameter a (0-1)
-        # a=0    -> linear response (filter bank value maps to itself)
-        # a=0.4  -> roughly equivalent to filter_banks ** 2.0
-        # a=0.6  -> roughly equivalent to filter_banks ** 3.0
-        # a=1    -> no response (infinite power as filter bank value approaches 1)
-        # https://www.desmos.com/calculator/xxa2l9radu
 
         np.power(
             filter_banks,
-            np.tan(0.5 * np.pi * (self._config["peak_isolation"] + 1) / 2),
+            self.power_factor,
             out=filter_banks,
         )
-        # filter_banks[:] *= self.pre_emphasis
 
-        self.mel_gain.update(np.max(smooth(filter_banks, sigma=1.0)))
+        self.mel_gain.update(np.max(fast_blur_array(filter_banks, sigma=1.0)))
         filter_banks /= self.mel_gain.value
         filter_banks[:] = self.mel_smoothing.update(filter_banks)
 

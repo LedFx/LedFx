@@ -11,7 +11,7 @@ import voluptuous as vol
 from ledfx.effects import Effect
 from ledfx.effects.math import ExpFilter
 from ledfx.effects.melbank import FFT_SIZE, MIC_RATE, Melbanks
-from ledfx.events import Event, GraphUpdateEvent
+from ledfx.events import Event
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -180,12 +180,22 @@ class AudioInputSource:
             freq_domain_length,
         )
 
+        if self._ledfx.profiler:
+
+            def callback(*args):
+                self._ledfx.profiler.runctx(
+                    "self._audio_sample_callback(*args)", globals(), locals()
+                )
+
+        else:
+            callback = self._audio_sample_callback
+
         def open_audio_stream(device_idx):
             self._stream = self._audio.InputStream(
                 samplerate=self._config["mic_rate"],
                 device=device_idx,
                 channels=1,
-                callback=self._audio_sample_callback,
+                callback=callback,
                 dtype=np.float32,
                 latency="low",
                 blocksize=self._config["mic_rate"]
@@ -257,9 +267,7 @@ class AudioInputSource:
         queried by an effect.
         """
         # clean up nans that have been mysteriously appearing..
-        np.nan_to_num(
-            self._raw_audio_sample, copy=False, nan=0.0, posinf=0.0, neginf=0.0
-        )
+        self._raw_audio_sample[np.isnan(self._raw_audio_sample)] = 0
 
         # Calculate the current volume for silence detection
         self._volume = 1 + aubio.db_spl(self._raw_audio_sample) / 100
@@ -283,16 +291,6 @@ class AudioInputSource:
             )
         else:
             self._frequency_domain = self._frequency_domain_null
-
-        # Light up some notifications for developer mode
-        if self._ledfx.dev_enabled():
-            self._ledfx.events.fire_event(
-                GraphUpdateEvent(
-                    "fft",
-                    self._frequency_domain.norm,
-                    self._frequency_domain_x,
-                )
-            )
 
     def audio_sample(self, raw=False):
         """Returns the raw audio sample"""
@@ -432,53 +430,6 @@ class AudioAnalysisSource(AudioInputSource):
         self.bpm_beat_now.cache_clear()
         self.volume_beat_now.cache_clear()
         self.bar_oscillator.cache_clear()
-
-    # @lru_cache(maxsize=32)
-    # def melbank(self):
-    #     """Returns the raw melbank curve"""
-
-    #     if self.volume() > self._config["min_volume"]:
-    #         # Compute the filterbank from the frequency information
-    #         raw_filter_banks = self.filterbank(self.frequency_domain())
-    #         raw_filter_banks = raw_filter_banks ** 2.0
-
-    #         self.mel_gain.update(np.ma(raw_filter_banks, sigma=1.0)))
-    #         filter_banks = raw_filter_banks / self.mel_gain.value
-    #         filter_banks = self.mel_smoothing.update(filter_banks)
-
-    #     else:
-    #         raw_filter_banks = np.zeros(self._config["samples"])
-    #         filter_banks = raw_filter_banks
-
-    #     if self._ledfx.dev_enabled():
-    #         self._ledfx.events.fire_event(
-    #             GraphUpdateEvent(
-    #                 "raw",
-    #                 raw_filter_banks,
-    #                 np.array(self.melbank_frequencies),
-    #             )
-    #         )
-    #         self._ledfx.events.fire_event(
-    #             GraphUpdateEvent(
-    #                 "melbank",
-    #                 filter_banks,
-    #                 np.array(self.melbank_frequencies),
-    #             )
-    #         )
-    #     return filter_banks
-
-    # def melbank_lows(self):
-    #     return self.melbank()[: self.lows_index]
-
-    # def melbank_mids(self):
-    #     return self.melbank()[self.lows_index : self.mids_index]
-
-    # def melbank_highs(self):
-    #     return self.melbank()[self.mids_index :]
-
-    # def sample_melbank(self, hz):
-    #     """Samples the melbank curve at a given frequency"""
-    #     return np.interp(hz, self.melbank_frequencies, self.melbank())
 
     @lru_cache(maxsize=None)
     def pitch(self):

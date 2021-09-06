@@ -363,43 +363,25 @@ def entry_point(icon=None):
     exit_code = 4
     while exit_code == 4:
         _LOGGER.info("LedFx Core is initializing")
+
+        if args.performance:
+            print("Collecting performance data...")
+            profiler = cProfile.Profile()
+        else:
+            profiler = None
+
         ledfx = LedFxCore(
             config_dir=args.config,
             host=args.host,
             port=args.port,
             port_s=args.port_s,
             icon=icon,
+            profiler=profiler,
         )
 
-        if args.performance:
-            # # YAPPI CODE
-            # print("Collecting performance data...")
-            # yappi.start()
-            # _exit_code = ledfx.start(open_ui=args.open_ui)
-            # yappi.stop()
-            # print("Finished collecting performance data")
-            # filename = config_helpers.get_profile_dump_location(
-            #     config_dir=args.config
-            # )
-            # stats = yappi.get_func_stats()
-            # thread_stats = yappi.get_thread_stats()
-            # print(dir(thread_stats))
-            # thread_stats.print_all()
-            # stats.save(filename, type="pstat")
-            # print(
-            #     f"Saved performance data to config directory      : {filename}"
-            # )
-            # print(
-            #     "Please send the performance data to a developer : https://ledfx.app/contact/"
-            # )
-            # exit_code = _exit_code
+        exit_code = ledfx.start(open_ui=args.open_ui)
 
-            # CPROFILE CODE
-            print("Collecting performance data...")
-            profiler = cProfile.Profile()
-            profiler.enable()
-            _exit_code = ledfx.start(open_ui=args.open_ui)
-            profiler.disable()
+        if args.performance:
             print("Finished collecting performance data")
             filename = config_helpers.get_profile_dump_location(
                 config_dir=args.config
@@ -411,9 +393,6 @@ def entry_point(icon=None):
             print(
                 "Please send the performance data to a developer : https://ledfx.app/contact/"
             )
-            exit_code = _exit_code
-        else:
-            exit_code = ledfx.start(open_ui=args.open_ui)
 
     if icon:
         icon.stop()

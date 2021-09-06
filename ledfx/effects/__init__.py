@@ -139,22 +139,32 @@ def _gaussian_kernel1d(sigma, order, pixels_len):
 
 
 @maybe_jit(parallel=False)
-def convolve_nb_same(pixels, kernel):
+def convolve_nb_same_1d(x, kernel):
+    radius = len(kernel) // 2 - 1
+    x = np.convolve(x, kernel)[radius + 1 : -1 - radius]
+    return x
+
+
+@maybe_jit(parallel=False)
+def convolve_nb_same_2d(x, kernel):
     radius = len(kernel) // 2 - 1
     for i in range(3):
-        pixels[:, i] = np.convolve(pixels[:, i], kernel)[
-            radius + 1 : -1 - radius
-        ]
-    return pixels
+        x[:, i] = np.convolve(x[:, i], kernel)[radius + 1 : -1 - radius]
+    return x
 
 
 def fast_blur_pixels(pixels, sigma):
     if len(pixels) == 0:
         raise ValueError("Cannot smooth an empty array")
-
     kernel = _gaussian_kernel1d(sigma, 0, len(pixels))
+    return convolve_nb_same_2d(pixels, kernel)
 
-    return convolve_nb_same(pixels, kernel)
+
+def fast_blur_array(array, sigma):
+    if len(array) == 0:
+        raise ValueError("Cannot smooth an empty array")
+    kernel = _gaussian_kernel1d(sigma, 0, len(array))
+    return convolve_nb_same_1d(array, kernel)
 
 
 def smooth(x, sigma):

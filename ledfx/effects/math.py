@@ -2,7 +2,7 @@ from functools import lru_cache
 
 import numpy as np
 
-from ledfx.utils import maybe_jit
+from ledfx.utils import NUMBA_AVAILABLE, maybe_jit
 
 
 @lru_cache(maxsize=32)
@@ -12,7 +12,7 @@ def _normalized_linspace(size):
 
 @maybe_jit()
 def interpolate(pixels, x_new, x_old):
-    """Resizes the array by linearly interpolating the values"""
+    """Resizes pixels array by linearly interpolating the values"""
     new_pixels = np.zeros((len(x_new), pixels.shape[1]))
     for i in range(3):
         new_pixels[:, i] = np.interp(x_new, x_old, pixels[:, i])
@@ -28,6 +28,19 @@ def interpolate_pixels(pixels, new_length):
     x_new = _normalized_linspace(new_length)
 
     return interpolate(pixels, x_new, x_old)
+
+
+@maybe_jit()
+def update_array_nb(value_new, value_old, alpha_rise, alpha_decay):
+    alpha = value_new - value_old
+    shape = alpha.shape
+    alpha = alpha.flatten()
+    for i in range(len(alpha)):
+        alpha[i] = alpha_rise if i > 0 else alpha_decay
+    alpha = alpha.reshape(shape)
+    value_new *= alpha
+    value_new += (1.0 - alpha) * value_old
+    return value_new
 
 
 class ExpFilter:
@@ -48,12 +61,17 @@ class ExpFilter:
             return self.value
 
         if isinstance(self.value, (list, np.ndarray, tuple)):
-            alpha = value - self.value
-            alpha[alpha > 0.0] = self.alpha_rise
-            alpha[alpha <= 0.0] = self.alpha_decay
+            if NUMBA_AVAILABLE:
+                self.value = update_array_nb(
+                    value, self.value, self.alpha_rise, self.alpha_decay
+                )
+            else:
+                alpha = value - self.value
+                alpha[alpha > 0.0] = self.alpha_rise
+                alpha[alpha <= 0.0] = self.alpha_decay
+                self.value = alpha * value + (1.0 - alpha) * self.value
         else:
             alpha = self.alpha_rise if value > self.value else self.alpha_decay
-
-        self.value = alpha * value + (1.0 - alpha) * self.value
+            self.value = alpha * value + (1.0 - alpha) * self.value
 
         return self.value
