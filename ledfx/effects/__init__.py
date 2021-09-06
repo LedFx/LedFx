@@ -8,7 +8,7 @@ import numpy as np
 import voluptuous as vol
 
 from ledfx.color import COLORS
-from ledfx.utils import BaseRegistry, RegistryLoader, maybe_jit
+from ledfx.utils import BaseRegistry, RegistryLoader
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -65,17 +65,7 @@ def fill_rainbow(pixels, initial_hue, delta_hue):
     return pixels
 
 
-@maybe_jit(parallel=False)
 def mirror_pixels(pixels):
-    # TODO: Figure out some better logic here. Needs to reduce the signal
-    # and reflect across the middle. The prior logic was broken for
-    # non-uniform effects.
-    # mirror_shape = (np.shape(pixels)[0], 2, np.shape(pixels)[1])
-    # return (
-    #     np.append(pixels[::-1], pixels, axis=0)
-    #     .reshape(mirror_shape)
-    #     .mean(axis=1)
-    # )
     return np.concatenate((pixels[-1 + len(pixels) % -2 :: -2], pixels[::2]))
 
 
@@ -97,7 +87,7 @@ def brightness_pixels(pixels, brightness):
 
 
 @lru_cache(maxsize=32)
-def _gaussian_kernel1d(sigma, order, pixels_len):
+def _gaussian_kernel1d(sigma, order, array_len):
     """
     Produces a 1D Gaussian or Gaussian-derivative filter kernel as a numpy array.
 
@@ -113,7 +103,7 @@ def _gaussian_kernel1d(sigma, order, pixels_len):
     # Choose a radius for the filter kernel large enough to include all significant elements. Using
     # a radius of 4 standard deviations (rounded to int) will only truncate tail values that are of
     # the order of 1e-5 or smaller. For very small sigma values, just use a minimal radius.
-    radius = min(int((pixels_len - 1) / 2), max(1, int(round(4.0 * sigma))))
+    radius = min(int((array_len - 1) / 2), max(1, int(round(4.0 * sigma))))
 
     if order < 0:
         raise ValueError("Order must non-negative")
@@ -138,33 +128,21 @@ def _gaussian_kernel1d(sigma, order, pixels_len):
     return phi_x
 
 
-@maybe_jit(parallel=False)
-def convolve_nb_same_1d(x, kernel):
-    radius = len(kernel) // 2 - 1
-    x = np.convolve(x, kernel)[radius + 1 : -1 - radius]
-    return x
-
-
-@maybe_jit(parallel=False)
-def convolve_nb_same_2d(x, kernel):
-    radius = len(kernel) // 2 - 1
-    for i in range(3):
-        x[:, i] = np.convolve(x[:, i], kernel)[radius + 1 : -1 - radius]
-    return x
-
-
 def fast_blur_pixels(pixels, sigma):
     if len(pixels) == 0:
         raise ValueError("Cannot smooth an empty array")
     kernel = _gaussian_kernel1d(sigma, 0, len(pixels))
-    return convolve_nb_same_2d(pixels, kernel)
+    pixels[:, 0] = np.convolve(pixels[:, 0], kernel, mode="same")
+    pixels[:, 1] = np.convolve(pixels[:, 1], kernel, mode="same")
+    pixels[:, 2] = np.convolve(pixels[:, 2], kernel, mode="same")
+    return pixels
 
 
 def fast_blur_array(array, sigma):
     if len(array) == 0:
         raise ValueError("Cannot smooth an empty array")
     kernel = _gaussian_kernel1d(sigma, 0, len(array))
-    return convolve_nb_same_1d(array, kernel)
+    return np.convolve(array, kernel, mode="same")
 
 
 def smooth(x, sigma):

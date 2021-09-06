@@ -4,7 +4,6 @@ import numpy as np
 import voluptuous as vol
 
 from ledfx.effects import Effect
-from ledfx.utils import maybe_jit
 
 """
 # Example plots of the wavefunctions
@@ -27,7 +26,6 @@ plt.plot(_triangle)
 """
 
 
-@maybe_jit()
 def hsv_to_rgb(hsv):
     """
     Convert pixel array of type np.array([[h,s,v], ...])
