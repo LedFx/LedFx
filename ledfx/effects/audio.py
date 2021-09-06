@@ -180,22 +180,12 @@ class AudioInputSource:
             freq_domain_length,
         )
 
-        if self._ledfx.profiler:
-
-            def callback(*args):
-                self._ledfx.profiler.runctx(
-                    "self._audio_sample_callback(*args)", globals(), locals()
-                )
-
-        else:
-            callback = self._audio_sample_callback
-
         def open_audio_stream(device_idx):
             self._stream = self._audio.InputStream(
                 samplerate=self._config["mic_rate"],
                 device=device_idx,
                 channels=1,
-                callback=callback,
+                callback=self._audio_sample_callback,
                 dtype=np.float32,
                 latency="low",
                 blocksize=self._config["mic_rate"]

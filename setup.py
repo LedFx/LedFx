@@ -43,6 +43,7 @@ INSTALL_REQUIRES = [
     "python-rtmidi>=1.4.9",
     "aiohttp_cors>=0.7.0",
     "paho-mqtt>=1.5.1",
+    "yappi",
     # Conditional Requirements
     # We need pywin32 for Windows
     'pywin32>=300; platform_system == "Windows"',

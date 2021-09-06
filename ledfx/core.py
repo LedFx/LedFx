@@ -40,11 +40,7 @@ class LedFxCore:
         port=None,
         port_s=None,
         icon=None,
-        profiler=None,
     ):
-        self.profiler = profiler
-        if self.profiler:
-            self.profiler.enable()
         self.icon = icon
         self.config_dir = config_dir
         self.config = load_config(config_dir)
@@ -246,8 +242,6 @@ class LedFxCore:
         await self.flush_loop()
 
     def stop(self, exit_code):
-        if self.profiler:
-            self.profiler.disable()
         async_fire_and_forget(self.async_stop(exit_code), self.loop)
 
     async def async_stop(self, exit_code):

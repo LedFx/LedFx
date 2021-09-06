@@ -1,4 +1,5 @@
 import logging
+import threading
 import time
 from functools import cached_property
 
@@ -349,20 +350,22 @@ class Virtual:
     def active_effect(self):
         return self._active_effect
 
-    async def thread_function(self):
+    def thread_function(self):
         while True:
-            if self._active and self._active_effect._active:
+            if not self._active:
+                break
+            if self._active_effect._active:
                 # self.assembled_frame = await self._ledfx.loop.run_in_executor(
                 #     self._ledfx.thread_executor, self.assemble_frame
                 # )
                 self.assembled_frame = self.assemble_frame()
                 if self.assembled_frame is not None and not self._paused:
                     if not self._config["preview_only"]:
-                        self._ledfx.thread_executor.submit(self.flush)
+                        # self._ledfx.thread_executor.submit(self.flush)
                         # await self._ledfx.loop.run_in_executor(
                         #     self._ledfx.thread_executor, self.flush
                         # )
-                        # self.flush()
+                        self.flush()
 
                     def trigger_virtual_update_event():
                         self._ledfx.events.fire_event(
@@ -371,11 +374,7 @@ class Virtual:
 
                     self._ledfx.loop.call_soon(trigger_virtual_update_event)
 
-            await self._ledfx.loop.run_in_executor(
-                self._ledfx.thread_executor,
-                time.sleep,
-                fps_to_sleep_interval(self.refresh_rate),
-            )
+            time.sleep(fps_to_sleep_interval(self.refresh_rate))
 
     def assemble_frame(self):
         """
@@ -438,19 +437,25 @@ class Virtual:
             _LOGGER.warning(error)
             raise RuntimeError(error)
 
+        if hasattr(self, "_thread"):
+            self._thread.join()
+
         _LOGGER.info(f"Activating virtual {self.id}")
         if not self._active:
             self._active = True
             self.activate_segments(self._segments)
 
         # self.thread_function()
-        self._task = self._ledfx.loop.create_task(self.thread_function())
+
+        self._thread = threading.Thread(target=self.thread_function)
+        self._thread.start()
+        # self._task = self._ledfx.loop.create_task(self.thread_function())
         # self._task.add_done_callback(lambda task: task.result())
 
     def deactivate(self):
         self._active = False
-        if hasattr(self, "_task"):
-            self._task.cancel()
+        if hasattr(self, "_thread"):
+            self._thread.join()
         self.deactivate_segments()
 
     # @lru_cache(maxsize=32)

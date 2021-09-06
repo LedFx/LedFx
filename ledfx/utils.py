@@ -48,7 +48,7 @@ def calc_available_fps():
 AVAILABLE_FPS = calc_available_fps()
 
 
-@lru_cache(maxsize=8)
+@lru_cache(maxsize=32)
 def fps_to_sleep_interval(fps):
     monotonic_res = time.get_clock_info("monotonic").resolution
     monotonic_ticks = next(

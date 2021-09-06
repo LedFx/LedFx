@@ -16,7 +16,6 @@ For non-development purposes run:
 """
 
 import argparse
-import cProfile
 import logging
 import os
 import subprocess
@@ -24,6 +23,7 @@ import sys
 from logging.handlers import RotatingFileHandler
 
 import psutil
+import yappi
 from pyupdater.client import Client
 
 import ledfx.config as config_helpers
@@ -366,9 +366,7 @@ def entry_point(icon=None):
 
         if args.performance:
             print("Collecting performance data...")
-            profiler = cProfile.Profile()
-        else:
-            profiler = None
+            yappi.start()
 
         ledfx = LedFxCore(
             config_dir=args.config,
@@ -376,7 +374,6 @@ def entry_point(icon=None):
             port=args.port,
             port_s=args.port_s,
             icon=icon,
-            profiler=profiler,
         )
 
         exit_code = ledfx.start(open_ui=args.open_ui)
@@ -386,7 +383,10 @@ def entry_point(icon=None):
             filename = config_helpers.get_profile_dump_location(
                 config_dir=args.config
             )
-            profiler.dump_stats(filename)
+            yappi.stop()
+            stats = yappi.get_func_stats()
+            yappi.get_thread_stats().print_all()
+            stats.save(filename, type="pstat")
             print(
                 f"Saved performance data to config directory      : {filename}"
             )
