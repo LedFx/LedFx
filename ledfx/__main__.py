@@ -299,11 +299,21 @@ def main():
     p = psutil.Process(os.getpid())
 
     if psutil.WINDOWS:
-        p.nice(psutil.HIGH_PRIORITY_CLASS)
+        try:
+            p.nice(psutil.HIGH_PRIORITY_CLASS)
+        except psutil.PermissionError:
+            _LOGGER.warning(
+                "Unable to set priority, please run as Administrator if you are experiencing frame rate issues"
+            )
         # p.ionice(psutil.IOPRIO_HIGH)
     elif psutil.LINUX:
-        p.nice(15)
-        p.ionice(psutil.IOPRIO_CLASS_RT, value=7)
+        try:
+            p.nice(15)
+            p.ionice(psutil.IOPRIO_CLASS_RT, value=7)
+        except psutil.PermissionError:
+            _LOGGER.warning(
+                "Unable to set priority, please run as root or sudo if you are experiencing frame rate issues",
+            )
     else:
         p.nice(15)
 
