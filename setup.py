@@ -23,7 +23,6 @@ SETUP_REQUIRES = [
 ]
 
 INSTALL_REQUIRES = [
-    "numpy~=1.20.2",
     "voluptuous~=0.12.1",
     "sounddevice~=0.4.2",
     "sacn~=1.6.3",
@@ -44,7 +43,8 @@ INSTALL_REQUIRES = [
     "aiohttp_cors>=0.7.0",
     "paho-mqtt>=1.5.1",
     "yappi",
-    # Conditional Requirements
+    "psutil>=5.8.0",
+    # Conditional Requirement
     # We need pywin32 for Windows
     'pywin32>=300; platform_system == "Windows"',
 ]
