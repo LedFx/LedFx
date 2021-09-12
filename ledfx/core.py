@@ -52,7 +52,13 @@ class LedFxCore:
         if sys.platform == "win32":
             self.loop = asyncio.ProactorEventLoop()
         else:
-            self.loop = asyncio.get_event_loop()
+            try:
+                import uvloop
+
+                self.loop = uvloop.new_event_loop()
+            except ImportError as error:
+                _LOGGER.info("Reverting to asyncio loop.")
+                self.loop = asyncio.get_event_loop()
         asyncio.set_event_loop(self.loop)
 
         # self.loop.set_debug(True)

@@ -47,6 +47,8 @@ INSTALL_REQUIRES = [
     # Conditional Requirement
     # We need pywin32 for Windows
     'pywin32>=300; platform_system == "Windows"',
+    # uvloop doesn't work on Windows yet, but should be a good speedup for low power linux devices
+    'uvloop>=0.16.0; platform_system != "Windows"',
 ]
 
 
