@@ -2,6 +2,7 @@ import asyncio
 import json
 import logging
 from concurrent import futures
+
 import numpy as np
 import voluptuous as vol
 from aiohttp import web
@@ -255,12 +256,12 @@ class WebsocketConnection:
                 message.get("event_type"),
                 message.get("client"),
                 type(message.get("data"))
-                #message.get("data") #HERE IT IS BROOOO
+                # message.get("data") #HERE IT IS BROOOO
             )
         )
         # ToDo:
         # Remove the log on each message, and just log once
-        
+
         data = np.fromiter(message.get("data").values(), dtype=np.float32)
         # print(data)
 

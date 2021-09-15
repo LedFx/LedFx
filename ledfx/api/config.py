@@ -92,7 +92,7 @@ class ConfigEndpoint(RestEndpoint):
             },
         }
 
-        self._ledfx.loop.call_soon(self._ledfx.stop, 4)
+        self._ledfx.loop.call_soon_threadsafe(self._ledfx.stop, 4)
 
         return web.json_response(data=response, status=200)
 
@@ -125,7 +125,7 @@ class ConfigEndpoint(RestEndpoint):
                 config_dir=self._ledfx.config_dir,
             )
 
-            self._ledfx.loop.call_soon(self._ledfx.stop, 4)
+            self._ledfx.loop.call_soon_threadsafe(self._ledfx.stop, 4)
 
             return web.json_response(data={"status": "success"}, status=200)
 
@@ -197,7 +197,7 @@ class ConfigEndpoint(RestEndpoint):
                 )
 
             if core_config:
-                self._ledfx.loop.call_soon(self._ledfx.stop, 4)
+                self._ledfx.loop.call_soon_threadsafe(self._ledfx.stop, 4)
 
             save_config(
                 config=self._ledfx.config,
