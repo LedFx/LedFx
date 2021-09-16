@@ -4,6 +4,7 @@ import collections
 import voluptuous as vol
 
 from ledfx.config import _default_wled_settings
+from ledfx.effects.audio import AudioInputSource
 from ledfx.utils import AVAILABLE_FPS, generate_title
 
 TYPES_MAP = {
@@ -99,7 +100,19 @@ def convertToJsonSchema(schema):
 
         return val
 
-    if isinstance(schema, vol.All):
+    if (
+        callable(schema)
+        and getattr(schema, "__name__", None) == "fps_validator"
+    ):
+        return {"type": "int", "enum": list(AVAILABLE_FPS)}
+
+    elif (
+        callable(schema)
+        and getattr(schema, "__name__", None) == "device_index_validator"
+    ):
+        return {"type": "string", "enum": AudioInputSource.input_devices()}
+
+    elif isinstance(schema, vol.All):
         val = {}
         for validator in schema.validators:
             val.update(convertToJsonSchema(validator))
@@ -148,9 +161,6 @@ def convertToJsonSchema(schema):
             ),
         }
         return val
-
-    elif callable(schema) and schema.__name__ == "fps_validator":
-        return {"type": "int", "enum": list(AVAILABLE_FPS)}
 
     if schema in TYPES_MAP:
         return {"type": TYPES_MAP[schema]}

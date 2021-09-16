@@ -33,6 +33,16 @@ class AudioInputSource:
     _volume_filter = ExpFilter(-90, alpha_decay=0.99, alpha_rise=0.99)
 
     @staticmethod
+    def device_index_validator(val):
+        """
+        Validates device index in case the saved setting is no longer valid
+        """
+        if val in AudioInputSource.valid_device_indexes():
+            return val
+        else:
+            return AudioInputSource.default_device_index()
+
+    @staticmethod
     def valid_device_indexes():
         """
         A list of integers corresponding to valid input devices
@@ -46,7 +56,7 @@ class AudioInputSource:
     @staticmethod
     def query_hostapis():
         return sd.query_hostapis() + (
-            {"name": "[EXPERIMENTAL] LedFx Frontend Audio"},
+            {"name": "[EXPERIMENTAL]: LedFx Frontend Audio"},
         )
 
     @staticmethod
@@ -89,7 +99,7 @@ class AudioInputSource:
                 vol.Optional("min_volume", default=0.2): float,
                 vol.Optional(
                     "audio_device", default=default_device_index
-                ): vol.In(input_devices),
+                ): AudioInputSource.device_index_validator,
             },
             extra=vol.ALLOW_EXTRA,
         )
