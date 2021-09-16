@@ -8,6 +8,8 @@ import numpy as np
 import sounddevice as sd
 import voluptuous as vol
 
+from ledfx.api.websocket import ACTIVE_AUDIO_STREAM  # noqa: F401
+from ledfx.api.websocket import WEB_AUDIO_CLIENTS, WebAudioStream
 from ledfx.effects import Effect
 from ledfx.effects.math import ExpFilter
 from ledfx.effects.melbank import FFT_SIZE, MIC_RATE, Melbanks
@@ -32,7 +34,10 @@ class AudioInputSource:
 
     @staticmethod
     def valid_device_indexes():
-        return list(AudioInputSource.input_devices().keys())
+        """
+        A list of integers corresponding to valid input devices
+        """
+        return tuple(AudioInputSource.input_devices().keys())
 
     @staticmethod
     def default_device_index():
@@ -42,6 +47,22 @@ class AudioInputSource:
     def input_devices():
         hostapis = sd.query_hostapis()
         devices = sd.query_devices()
+        hostapis = hostapis + (
+            {
+                "ledfx_frontend_audio": {
+                    "name": "[EXPERIMENTAL] LedFx Frontend Audio"
+                }
+            },
+        )
+        devices = devices + tuple(
+            {
+                "hostapi": "ledfx_frontend_audio",
+                "name": f"{client} Audio",
+                "max_input_channels": 1,
+                "client": client,
+            }
+            for client in WEB_AUDIO_CLIENTS
+        )
 
         return {
             idx: f"{hostapis[device['hostapi']]['name']}: {device['name']}"
@@ -101,11 +122,9 @@ class AudioInputSource:
 
         # Enumerate all of the input devices and find the one matching the
         # configured host api and device name
-        hostapis = self._audio.query_hostapis()
-        devices = self._audio.query_devices()
+        input_devices = self.input_devices()
         default_device = self.default_device_index()
         valid_device_indexes = self.valid_device_indexes()
-        default_api = self._audio.default.hostapi
         device_idx = self._config["audio_device"]
 
         if device_idx > max(valid_device_indexes):
@@ -116,30 +135,34 @@ class AudioInputSource:
 
         elif device_idx not in valid_device_indexes:
             _LOGGER.warning(
-                f"Audio device {devices[device_idx]['name']} has no input channels. Reverting to default input device."
+                f"Audio device {input_devices[device_idx]['name']} has no input channels. Reverting to default input device."
             )
             device_idx = default_device
 
+        # hostapis = self._audio.query_hostapis()
+        # devices = self._audio.query_devices()
+        # default_api = self._audio.default.hostapi
+
         # Show device and api info in logger
-        _LOGGER.debug("Audio Input Devices:")
-        for api_idx, api in enumerate(hostapis):
-            _LOGGER.debug(
-                "Host API: {} {}".format(
-                    api["name"],
-                    "[DEFAULT]" if api_idx == default_api else "",
-                )
-            )
-            for idx in api["devices"]:
-                device = devices[idx]
-                if device["max_input_channels"] > 0:
-                    _LOGGER.debug(
-                        "    [{}] {} {} {}".format(
-                            idx,
-                            device["name"],
-                            "[DEFAULT]" if idx == default_device else "",
-                            "[SELECTED]" if idx == device_idx else "",
-                        )
-                    )
+        # _LOGGER.debug("Audio Input Devices:")
+        # for api_idx, api in enumerate(hostapis):
+        #     _LOGGER.debug(
+        #         "Host API: {} {}".format(
+        #             api["name"],
+        #             "[DEFAULT]" if api_idx == default_api else "",
+        #         )
+        #     )
+        #     for idx in api["devices"]:
+        #         device = devices[idx]
+        #         if device["max_input_channels"] > 0:
+        #             _LOGGER.debug(
+        #                 "    [{}] {} {} {}".format(
+        #                     idx,
+        #                     device["name"],
+        #                     "[DEFAULT]" if idx == default_device else "",
+        #                     "[SELECTED]" if idx == device_idx else "",
+        #                 )
+        #             )
 
         # old, do not use
         # self.pre_emphasis.set_biquad(1., -self._config['pre_emphasis'], 0, 0, 0)
@@ -181,16 +204,24 @@ class AudioInputSource:
         )
 
         def open_audio_stream(device_idx):
-            self._stream = self._audio.InputStream(
-                samplerate=self._config["mic_rate"],
-                device=device_idx,
-                channels=1,
-                callback=self._audio_sample_callback,
-                dtype=np.float32,
-                latency="low",
-                blocksize=self._config["mic_rate"]
-                // self._config["sample_rate"],
-            )
+            input_device = input_devices[device_idx]
+
+            if input_device["hostapi"] == "ledfx_frontend_audio":
+                ACTIVE_AUDIO_STREAM = self._stream = WebAudioStream(
+                    input_device["client"], self._audio_sample_callback
+                )
+            else:
+                self._stream = self._audio.InputStream(
+                    samplerate=self._config["mic_rate"],
+                    device=device_idx,
+                    channels=1,
+                    callback=self._audio_sample_callback,
+                    dtype=np.float32,
+                    latency="low",
+                    blocksize=self._config["mic_rate"]
+                    // self._config["sample_rate"],
+                )
+
             self._stream.start()
             _LOGGER.info("Audio source opened.")
 
