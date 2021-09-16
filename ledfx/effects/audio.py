@@ -124,6 +124,7 @@ class AudioInputSource:
         # Enumerate all of the input devices and find the one matching the
         # configured host api and device name
         input_devices = self.query_devices()
+        hostapis = self.query_hostapis()
         default_device = self.default_device_index()
         valid_device_indexes = self.valid_device_indexes()
         device_idx = self._config["audio_device"]
@@ -206,7 +207,10 @@ class AudioInputSource:
 
         def open_audio_stream(device_idx):
             input_device = input_devices[device_idx]
-            if input_device["hostapi"] == "ledfx_frontend_audio":
+            if (
+                hostapis[input_device["hostapi"]]["name"]
+                == "[EXPERIMENTAL] LedFx Frontend Audio"
+            ):
                 ACTIVE_AUDIO_STREAM = self._stream = WebAudioStream(
                     input_device["client"], self._audio_sample_callback
                 )
