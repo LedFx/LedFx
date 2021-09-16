@@ -287,7 +287,6 @@ class WebsocketConnection:
 
         if ACTIVE_AUDIO_STREAM.client != client:
             return
-
         ACTIVE_AUDIO_STREAM.data = np.fromiter(
             message.get("data").values(), dtype=np.float32
         )
@@ -317,4 +316,7 @@ class WebAudioStream:
     def data(self, x):
         self._data = x
         if self._active:
-            self.callback(self._data, None, None, None)
+            try:
+                self.callback(self._data, None, None, None)
+            except Exception as e:
+                _LOGGER.error(e)
