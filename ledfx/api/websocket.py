@@ -272,13 +272,13 @@ class WebsocketConnection:
     @websocket_handler("audio_stream_data")
     def audio_stream_data_handler(self, message):
 
-        _LOGGER.info(
-            "Websocket: {} incoming from {} with type {}".format(
-                message.get("event_type"),
-                message.get("client"),
-                type(message.get("data")),
-            )
-        )
+        # _LOGGER.info(
+        #     "Websocket: {} incoming from {} with type {}".format(
+        #         message.get("event_type"),
+        #         message.get("client"),
+        #         type(message.get("data")),
+        #     )
+        # )
 
         if not ACTIVE_AUDIO_STREAM:
             return

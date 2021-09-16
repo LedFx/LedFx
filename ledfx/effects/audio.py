@@ -44,26 +44,27 @@ class AudioInputSource:
         return sd.default.device[0]
 
     @staticmethod
-    def input_devices():
-        hostapis = sd.query_hostapis()
-        devices = sd.query_devices()
-        hostapis = hostapis + (
-            {
-                "ledfx_frontend_audio": {
-                    "name": "[EXPERIMENTAL] LedFx Frontend Audio"
-                }
-            },
+    def query_hostapis():
+        return sd.query_hostapis() + (
+            {"name": "[EXPERIMENTAL] LedFx Frontend Audio"},
         )
-        devices = devices + tuple(
+
+    @staticmethod
+    def query_devices():
+        return sd.query_devices() + tuple(
             {
-                "hostapi": "ledfx_frontend_audio",
-                "name": f"{client} Audio",
+                "hostapi": len(AudioInputSource.query_hostapis()) - 1,
+                "name": f"{client} Frontend Audio Capture",
                 "max_input_channels": 1,
                 "client": client,
             }
             for client in WEB_AUDIO_CLIENTS
         )
 
+    @staticmethod
+    def input_devices():
+        hostapis = AudioInputSource.query_hostapis()
+        devices = AudioInputSource.query_devices()
         return {
             idx: f"{hostapis[device['hostapi']]['name']}: {device['name']}"
             for idx, device in enumerate(devices)
@@ -122,7 +123,7 @@ class AudioInputSource:
 
         # Enumerate all of the input devices and find the one matching the
         # configured host api and device name
-        input_devices = self.input_devices()
+        input_devices = self.query_devices()
         default_device = self.default_device_index()
         valid_device_indexes = self.valid_device_indexes()
         device_idx = self._config["audio_device"]
@@ -205,7 +206,6 @@ class AudioInputSource:
 
         def open_audio_stream(device_idx):
             input_device = input_devices[device_idx]
-
             if input_device["hostapi"] == "ledfx_frontend_audio":
                 ACTIVE_AUDIO_STREAM = self._stream = WebAudioStream(
                     input_device["client"], self._audio_sample_callback
