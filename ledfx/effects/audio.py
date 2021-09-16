@@ -224,7 +224,9 @@ class AudioInputSource:
                 ACTIVE_AUDIO_STREAM = self._stream = WebAudioStream(
                     input_device["client"], self._audio_sample_callback
                 )
-                _LOGGER.info("Opened Web Audio Stream")
+                _LOGGER.info(
+                    f"Opened Web Audio Stream: {input_device['client']}"
+                )
             else:
                 self._stream = self._audio.InputStream(
                     samplerate=self._config["mic_rate"],
