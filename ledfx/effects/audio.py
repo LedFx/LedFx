@@ -55,16 +55,14 @@ class AudioInputSource:
 
     @staticmethod
     def query_hostapis():
-        return sd.query_hostapis() + (
-            {"name": "[EXPERIMENTAL]: LedFx Frontend Audio"},
-        )
+        return sd.query_hostapis() + ({"name": "WEB AUDIO"},)
 
     @staticmethod
     def query_devices():
         return sd.query_devices() + tuple(
             {
                 "hostapi": len(AudioInputSource.query_hostapis()) - 1,
-                "name": f"{client} Frontend Audio Capture",
+                "name": f"{client}",
                 "max_input_channels": 1,
                 "client": client,
             }
@@ -216,16 +214,10 @@ class AudioInputSource:
         )
 
         def open_audio_stream(device_idx):
-            input_device = input_devices[device_idx]
-            if (
-                hostapis[input_device["hostapi"]]["name"]
-                == "[EXPERIMENTAL] LedFx Frontend Audio"
-            ):
+            device = input_devices[device_idx]
+            if hostapis[device["hostapi"]]["name"] == "WEB AUDIO":
                 ACTIVE_AUDIO_STREAM = self._stream = WebAudioStream(
-                    input_device["client"], self._audio_sample_callback
-                )
-                _LOGGER.info(
-                    f"Opened Web Audio Stream: {input_device['client']}"
+                    device["client"], self._audio_sample_callback
                 )
             else:
                 self._stream = self._audio.InputStream(
@@ -239,8 +231,11 @@ class AudioInputSource:
                     // self._config["sample_rate"],
                 )
 
+            _LOGGER.info(
+                f"Audio source opened: {hostapis[device['hostapi']]['name']}: {device.get('name', device.get('client'))}"
+            )
+
             self._stream.start()
-            _LOGGER.info("Audio source opened.")
 
         try:
             open_audio_stream(device_idx)
