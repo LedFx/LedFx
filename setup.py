@@ -49,6 +49,8 @@ INSTALL_REQUIRES = [
     'pywin32>=300; platform_system == "Windows"',
     # uvloop doesn't work on Windows yet, but should be a good speedup for low power linux devices
     'uvloop>=0.16.0; platform_system != "Windows"',
+    # We can install this on all linux devices, it just won't work for anything other than a Pi
+    'rpi-ws281x>=4.3.0; platform_system == "Linux"',
 ]
 
 
