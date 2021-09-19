@@ -117,7 +117,10 @@ class RPI_WS281X(Device):
                 self.swap(self.buffer, i, i + 2)
             for led in len(self.pixel_count):
                 self.strip.setPixelColor(
-                    led, self.buffer[i], self.buffer[i + 1], self.buffer[i + 2]
+                    led,
+                    self.buffer[led],
+                    self.buffer[led + 1],
+                    self.buffer[led + 2],
                 )
             self.strip.show()
 
