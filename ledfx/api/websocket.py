@@ -269,6 +269,15 @@ class WebsocketConnection:
         _LOGGER.info(f"Web audio stream closed by client {client}")
         WEB_AUDIO_CLIENTS.discard(client)
 
+    @websocket_handler("audio_stream_config")
+    def audio_stream_config_handler(self, message):
+        _LOGGER.info(
+                "WebAudioConfig from {}: {}".format(
+                    message.get("client"),
+                    message.get("data"),
+                )
+            )
+
     @websocket_handler("audio_stream_data")
     def audio_stream_data_handler(self, message):
 
