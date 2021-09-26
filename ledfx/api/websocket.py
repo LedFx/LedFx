@@ -3,6 +3,7 @@ import json
 import logging
 from concurrent import futures
 
+import numpy as np
 import voluptuous as vol
 from aiohttp import web
 
@@ -34,6 +35,10 @@ def websocket_handler(type):
         return func
 
     return function
+
+
+WEB_AUDIO_CLIENTS = set()
+ACTIVE_AUDIO_STREAM = None
 
 
 class WebsocketEndpoint(RestEndpoint):
@@ -227,7 +232,7 @@ class WebsocketConnection:
         def notify_websocket(event):
             self.send_event(message["id"], event)
 
-        _LOGGER.info(
+        _LOGGER.debug(
             "Websocket subscribing to event {} with filter {}".format(
                 message.get("event_type"), message.get("event_filter")
             )
@@ -243,6 +248,84 @@ class WebsocketConnection:
 
         subscription_id = message["id"]
 
-        _LOGGER.info(f"Websocket unsubscribing event id {subscription_id}")
+        _LOGGER.debug(f"Websocket unsubscribing event id {subscription_id}")
         if subscription_id in self._listeners:
             self._listeners.pop(subscription_id)()
+
+    @websocket_handler("audio_stream_start")
+    def audio_stream_start_handler(self, message):
+        client = message.get("client")
+
+        if client in WEB_AUDIO_CLIENTS:
+            _LOGGER.warning(f"Web audio client {client} already exists")
+            return
+
+        _LOGGER.info(f"Web audio stream opened by client {client}")
+        WEB_AUDIO_CLIENTS.add(client)
+
+    @websocket_handler("audio_stream_stop")
+    def audio_stream_stop_handler(self, message):
+        client = message.get("client")
+        _LOGGER.info(f"Web audio stream closed by client {client}")
+        WEB_AUDIO_CLIENTS.discard(client)
+
+    @websocket_handler("audio_stream_config")
+    def audio_stream_config_handler(self, message):
+        _LOGGER.info(
+                "WebAudioConfig from {}: {}".format(
+                    message.get("client"),
+                    message.get("data"),
+                )
+            )
+
+    @websocket_handler("audio_stream_data")
+    def audio_stream_data_handler(self, message):
+
+        # _LOGGER.info(
+        #     "Websocket: {} incoming from {} with type {}".format(
+        #         message.get("event_type"),
+        #         message.get("client"),
+        #         type(message.get("data")),
+        #     )
+        # )
+
+        if not ACTIVE_AUDIO_STREAM:
+            return
+
+        client = message.get("client")
+
+        if ACTIVE_AUDIO_STREAM.client != client:
+            return
+        ACTIVE_AUDIO_STREAM.data = np.fromiter(
+            message.get("data").values(), dtype=np.float32
+        )
+
+
+class WebAudioStream:
+    def __init__(self, client: str, callback: callable):
+        self.client = client
+        self.callback = callback
+        self._data = None
+        self._active = False
+
+    def start(self):
+        self._active = True
+
+    def stop(self):
+        self._active = False
+
+    def close(self):
+        self._active = False
+
+    @property
+    def data(self, x):
+        return self._data
+
+    @data.setter
+    def data(self, x):
+        self._data = x
+        if self._active:
+            try:
+                self.callback(self._data, None, None, None)
+            except Exception as e:
+                _LOGGER.error(e)

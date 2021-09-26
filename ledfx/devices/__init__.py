@@ -33,36 +33,31 @@ def fps_validator(value):
 
 @BaseRegistry.no_registration
 class Device(BaseRegistry):
-
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            # vol.Optional(
-            #     "rgbw_led",
-            #     description="RGBW LEDs",
-            #     default=False,
-            # ): bool,
-            vol.Optional(
-                "icon_name",
-                description="https://material-ui.com/components/material-icons/",
-                default="mdi:led-strip",
-            ): str,
-            vol.Optional(
-                "center_offset",
-                description="Number of pixels from the perceived center of the device",
-                default=0,
-            ): int,
-            vol.Optional(
-                "refresh_rate",
-                description="Target rate that pixels are sent to the device",
-                default=60,
-            ): fps_validator,
-            # vol.Optional(
-            #     "silence_timeout",
-            #     description="How many seconds of silence until we deactivate the device. 0 = Disabled.",
-            #     default=0,
-            # ): int,
-        }
-    )
+    @staticmethod
+    @property
+    def CONFIG_SCHEMA():
+        return vol.Schema(
+            {
+                vol.Optional(
+                    "icon_name",
+                    description="https://material-ui.com/components/material-icons/",
+                    default="mdi:led-strip",
+                ): str,
+                vol.Optional(
+                    "center_offset",
+                    description="Number of pixels from the perceived center of the device",
+                    default=0,
+                ): int,
+                vol.Optional(
+                    "refresh_rate",
+                    description="Target rate that pixels are sent to the device",
+                    default=next(
+                        (f for f in AVAILABLE_FPS if f >= 60),
+                        list(AVAILABLE_FPS)[-1],
+                    ),
+                ): fps_validator,
+            }
+        )
 
     _active = False
 
@@ -80,7 +75,7 @@ class Device(BaseRegistry):
     def update_config(self, config):
         # TODO: Sync locks to ensure everything is thread safe
         if self._config is not None:
-            config = self._config | config
+            config = {**self._config, **config}
 
         validated_config = type(self).schema()(config)
         self._config = validated_config
@@ -97,6 +92,12 @@ class Device(BaseRegistry):
         _LOGGER.info(
             f"Device {self.name} config updated to {validated_config}."
         )
+
+        for virtual_id in self._ledfx.virtuals:
+            virtual = self._ledfx.virtuals.get(virtual_id)
+            if virtual.is_device == self.id:
+                segments = [[self.id, 0, self.pixel_count - 1, False]]
+                virtual.update_segments(segments)
 
         for virtual in self._virtuals_objs:
             virtual.deactivate_segments()
@@ -131,12 +132,7 @@ class Device(BaseRegistry):
             self.flush(frame)
             # _LOGGER.debug(f"Device {self.id} flushed by Virtual {virtual_id}")
 
-            def trigger_device_update_event():
-                self._ledfx.events.fire_event(
-                    DeviceUpdateEvent(self.id, frame)
-                )
-
-            self._ledfx.loop.call_soon_threadsafe(trigger_device_update_event)
+            self._ledfx.events.fire_event(DeviceUpdateEvent(self.id, frame))
 
     def assemble_frame(self):
         """
@@ -276,6 +272,14 @@ class Device(BaseRegistry):
                 for segment in virtual._segments
                 if segment[0] != self.id
             )
+
+            # Update ledfx's config
+            for idx, item in enumerate(self._ledfx.config["virtuals"]):
+                if item["id"] == virtual.id:
+                    item["segments"] = virtual.segments
+                    self._ledfx.config["virtuals"][idx] = item
+                    break
+
             if active:
                 virtual.activate()
 
@@ -351,12 +355,15 @@ class Devices(RegistryLoader):
     def create_from_config(self, config):
         for device in config:
             _LOGGER.info(f"Loading device from config: {device}")
-            self._ledfx.devices.create(
-                id=device["id"],
-                type=device["type"],
-                config=device["config"],
-                ledfx=self._ledfx,
-            )
+            try:
+                self._ledfx.devices.create(
+                    id=device["id"],
+                    type=device["type"],
+                    config=device["config"],
+                    ledfx=self._ledfx,
+                )
+            except vol.MultipleInvalid as e:
+                _LOGGER.exception(e)
 
     def deactivate_devices(self):
         for device in self.values():
@@ -459,7 +466,7 @@ class Devices(RegistryLoader):
                 raise ValueError(msg)
 
             wled_config["sync_mode"] = sync_mode
-            device_config |= wled_config
+            device_config.update(wled_config)
 
         device_id = generate_id(device_config["name"])
 

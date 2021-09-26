@@ -20,6 +20,7 @@ class E131Device(NetworkedDevice):
             vol.Required(
                 "pixel_count",
                 description="Number of individual pixels",
+                default=1,
             ): vol.All(vol.Coerce(int), vol.Range(min=1)),
             vol.Optional(
                 "universe",
@@ -91,9 +92,7 @@ class E131Device(NetworkedDevice):
         ):
             _LOGGER.info(f"sACN activating universe {universe}")
             self._sacn.activate_output(universe)
-            self._sacn[universe].priority = self._config[
-                "packet_priority"
-            ]
+            self._sacn[universe].priority = self._config["packet_priority"]
             self._sacn[universe].multicast = multicast
             if not multicast:
                 self._sacn[universe].destination = self.destination

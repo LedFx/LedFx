@@ -52,7 +52,7 @@ class BladePowerPlus(AudioReactiveEffect, HSVEffect, GradientEffect):
             ): vol.In(list(_power_funcs.keys())),
             vol.Optional(
                 "solid_color",
-                description="Virtual a solid color bar",
+                description="Display a solid color bar",
                 default=False,
             ): bool,
             vol.Optional(
@@ -60,11 +60,11 @@ class BladePowerPlus(AudioReactiveEffect, HSVEffect, GradientEffect):
                 description="Invert the direction of the gradient roll",
                 default=False,
             ): bool,
-            #vol.Optional(
+            # vol.Optional(
             #    "blade_color",
             #    description="NEW Color",
             #    default="hsl(0, 100%, 25%)",
-            #): str,
+            # ): str,
         }
     )
 

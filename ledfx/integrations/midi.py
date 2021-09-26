@@ -71,8 +71,8 @@ REGION_DIMENSIONS = [
 
 INPUT_TYPES = [
     "On/Off (button, pressable knob)",
-    "Continous with hard start+stop (fader, slider, knob with limits)",
-    "Continous with no start or end (wheel, knob, continuous rotation)",
+    "Continuous with hard start+stop (fader, slider, knob with limits)",
+    "Continuous with no start or end (wheel, knob, continuous rotation)",
 ]
 
 INPUT_VISUAL_STATES = [
@@ -123,7 +123,18 @@ def create_midimsg_schema(msgtype):
 
 
 def list_midi_mappings():
-    config_dir = get_default_config_directory()
+    # This doesn't respect the -c parameter and I don't know how to fix it.
+    try:
+        config_dir = get_default_config_directory()
+    except OSError as error:
+        _LOGGER.warning("Error attempting to list MIDI Mappings: {error}")
+        return None
+    # This is a hacky way of bypassing the -c parameter and just returning none
+    if not os.path.exists(config_dir):
+        _LOGGER.warning(
+            "Currently using -c and MIDI isn't supported. We're working on it!"
+        )
+        return None
     return [
         f
         for f in os.listdir(config_dir)
@@ -151,9 +162,13 @@ class MIDI(Integration):
     @staticmethod
     @property
     def CONFIG_SCHEMA():
-        """dynamic config schema"""
-        midi_devices = list_midi_devices()
-        midi_mappings = list_midi_mappings()
+        # dynamic config schema
+        try:
+            midi_devices = list_midi_devices()
+            midi_mappings = list_midi_mappings()
+        except rtmidi._rtmidi.SystemError as e:
+            _LOGGER.error(f"Unable to enumerate midi devices: {e}")
+            return vol.Schema({})
 
         if not midi_devices:
             # raise Exception("No MIDI devices are connected.")
@@ -239,11 +254,12 @@ class MIDI(Integration):
 
         self.mapping = Mapping(mapping_dict)
         self.message_queue = set()
+        self.led_queue = set()
         self.hold_queue_flag = False
         self.disconnected_task = None
 
     def restore_from_data(self, data):
-        """ Might be used in future """
+        """Might be used in future"""
         self._data = data
 
     def load_mapping(self):
@@ -251,7 +267,7 @@ class MIDI(Integration):
         Load an LedFx MIDI mapping
         """
         mapping_path = os.path.join(
-            get_default_config_directory(), self._config["midi_mapping"]
+            self._ledfx.config_dir, self._config["midi_mapping"]
         )
 
         if not os.path.exists(mapping_path):
@@ -263,14 +279,13 @@ class MIDI(Integration):
         try:
             with open(mapping_path, encoding="utf-8") as file:
                 mapping_json = json.load(file)
-                try:
-                    validated_mapping = self.MAPPING_SCHEMA(mapping_json)
-                    _LOGGER.info(f"Loaded MIDI mapping file: {mapping_path}")
-                    return validated_mapping
-                except KeyError:
-                    _LOGGER.error(
-                        f"Mapping file {self._config['midi_mapping']} is incomplete."
-                    )
+                validated_mapping = self.MAPPING_SCHEMA(mapping_json)
+                _LOGGER.info(f"Loaded MIDI mapping file: {mapping_path}")
+                return validated_mapping
+        except KeyError:
+            _LOGGER.error(
+                f"Mapping file {self._config['midi_mapping']} is incomplete."
+            )
         except json.JSONDecodeError:
             _LOGGER.error(
                 f"Mapping file {self._config['midi_mapping']} is not json readable."
@@ -282,14 +297,14 @@ class MIDI(Integration):
         return self._data
 
     def add_trigger(self, scene_id, song_id, song_name, song_position):
-        """ Add a trigger to saved triggers"""
+        """Add a trigger to saved triggers"""
         trigger_id = f"{song_id}-{str(song_position)}"
         if scene_id not in self._data.keys():
             self._data[scene_id] = {}
         self._data[scene_id][trigger_id] = [song_id, song_name, song_position]
 
     def delete_trigger(self, trigger_id):
-        """ Delete a trigger from saved triggers"""
+        """Delete a trigger from saved triggers"""
         for scene_id in self._data.keys():
             if trigger_id in self._data[scene_id].keys():
                 del self._data[scene_id][trigger_id]
@@ -306,7 +321,7 @@ class MIDI(Integration):
             )
             _LOGGER.info(f"Received input to region: {region}: {message}")
         except StopIteration:
-            # _LOGGER.info(f"Received input to unmapped region: {message}")
+            _LOGGER.info(f"Received input to unmapped region: {message}")
             return
 
         # special case, handle holding the queue

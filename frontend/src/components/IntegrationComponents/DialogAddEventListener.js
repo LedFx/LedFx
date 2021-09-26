@@ -21,11 +21,11 @@ import ThisDropDown from './DialogAddEventListnerDropDown';
 import {createQlcListener} from 'modules/qlc';
 //import * as integrationsProxies from 'proxies/integrations';
 
-//To Do: 
+//To Do:
         //useEffect(() => {
         //getScenes();
         //}, []);
-        
+
 function ConfirmationDialogRaw(props) {
     const { onClose, value: valueProp, open, ...other } = props;
     const [value, setValue] = React.useState(valueProp);
@@ -57,12 +57,12 @@ function ConfirmationDialogRaw(props) {
     const qlcStuff = []
     const qlcID = {}
     //const qlcType = {}
-        qlcInfo && qlcInfo.qlc_widgets && qlcInfo.qlc_widgets.map((a) => {        
+        qlcInfo && qlcInfo.qlc_widgets && qlcInfo.qlc_widgets.map((a) => {
         qlcStuff[a[0]] = {id: a[0], Type: a[1], Name: a[2]}
         qlcID[a[0]] = (a[1]);
         //qlcType[a[0]] = (a[1]);
     });
-    
+
     React.useEffect(() => {
         if (!open) {
             setValue(valueProp);
@@ -86,10 +86,10 @@ function ConfirmationDialogRaw(props) {
         console.log("QLCFormEventTest1",data);
         dispatch(createQlcListener(props.integration.id,formData));
         // props.createQlcListener(props.integration.id,formData);
-        
+
         // window.location = window.location.href;
     };
-    
+
     const onModelChange = (key, val) => {
         utils.selectOrSet(key, model, val);
     };
@@ -112,7 +112,7 @@ function ConfirmationDialogRaw(props) {
             setSwitchValue(event.target.checked);
             setqlcData(qlcDatanewArr);
             console.log("test",newSwitchState)
-            setformData(newSwitchState);  
+            setformData(newSwitchState);
         }else if(event.target.name === 'qlc_payload'){
             const qlcDatanewArr = qlcData.slice();
             let qlcDataObj = {
@@ -122,8 +122,8 @@ function ConfirmationDialogRaw(props) {
             setSwitchValue(false);
             setqlcData(qlcDatanewArr);
             let newqlcPayload = Object.assign({},...qlcDatanewArr);
-           
-           
+
+
                 let newSwitchState = {
                     ...formData,
                     "qlc_payload":{
@@ -132,7 +132,7 @@ function ConfirmationDialogRaw(props) {
                 };
                 console.log("test",newSwitchState)
                 setformData(newSwitchState)
-            
+
         }else if(event.target.name === 'scene_name'){
             value = JSON.parse(value);
             let newFormState = {
@@ -143,7 +143,7 @@ function ConfirmationDialogRaw(props) {
                 },
                 "event_type":value["event_type"]
             };
-            setformData(newFormState);   
+            setformData(newFormState);
         }else{
             // console.log("typetest",val);
             // console.log("typevalue",checkID);
@@ -157,14 +157,14 @@ function ConfirmationDialogRaw(props) {
                 },
             };
             setSliderValue(val);
-            setformData(newSliderState); 
+            setformData(newSliderState);
         }
-        
-        
+
+
         // setformData(inputs => ({...inputs, [event.target.name]: event.target.value}));
     };
-    
-    
+
+
     const handleTypeChange = (event) => {
         event.target.value.includes("Button")?setButtonType(true):setButtonType(false);
         event.target.value.includes("Slider")?setSliderType(true):setSliderType(false);
@@ -186,7 +186,7 @@ function ConfirmationDialogRaw(props) {
             newArr[index].showSwitch = false;
         }
         // if(event.target.name === "qlc_payload"){
-            
+
         // }
         let value = event.target.value;
         if(event.target.type === "checkbox"){
@@ -201,9 +201,9 @@ function ConfirmationDialogRaw(props) {
                     ...newqlcPayload
                 },
             };
-            
+
             setqlcData(qlcDatanewArr);
-            setformData(newSwitchState);  
+            setformData(newSwitchState);
         }else if(event.target.name === 'qlc_payload'){
             newArr[index]["value"] = event.target.value[0];
             console.log("test13",newArr);
@@ -218,11 +218,11 @@ function ConfirmationDialogRaw(props) {
                 newArr[index].switchValue = false;
                 qlcDatanewArr[index+1] = qlcDataObj;
             }
-            
+
             setqlcData(qlcDatanewArr);
-            
+
             let newqlcPayload = Object.assign({},...qlcDatanewArr)
-          
+
                 let newSwitchState = {
                     ...formData,
                     "qlc_payload":{
@@ -230,7 +230,7 @@ function ConfirmationDialogRaw(props) {
                     },
                 };
                 console.log("test",newSwitchState)
-                setformData(newSwitchState) 
+                setformData(newSwitchState)
         }else{
             const qlcDatanewArr = qlcData.slice();
             qlcDatanewArr[index+1][name] = val;
@@ -241,13 +241,13 @@ function ConfirmationDialogRaw(props) {
                     ...newqlcPayload
                 },
             };
-            
+
             setqlcData(qlcDatanewArr);
             setformData(newSliderState);
         }
-       
+
         return setdropDownRenderList(newArr);
-        
+
       };
 
     const handleTypeAddDropDown = (event) => {
@@ -279,7 +279,7 @@ function ConfirmationDialogRaw(props) {
                 };
                 console.log("test",newSwitchState)
                 setformData(newSwitchState)
-        return setdropDownRenderList(newArr);     
+        return setdropDownRenderList(newArr);
     }
 
     const marks = [
@@ -288,7 +288,7 @@ function ConfirmationDialogRaw(props) {
       ];
 
     delete other.deviceList;
-    
+
     return (
         <Dialog
             disableBackdropClick
@@ -305,12 +305,12 @@ function ConfirmationDialogRaw(props) {
             <DialogContent dividers>
                 <DialogContentText>
                     To add a Event Listener to LedFx, please first select the type of event trigger (If This),
-                    and then provide the expected output (Then Do This). 
+                    and then provide the expected output (Then Do This).
                 </DialogContentText>
                 <FormControl>
                     <InputLabel htmlFor="grouped-select">Event Trigger (If This)</InputLabel>
-                    <Select 
-                        id="grouped-select" 
+                    <Select
+                        id="grouped-select"
                         defaultValue ={formData["event_filter"]["scene_name"]}
                         name="scene_name"
                         onChange={handleEventChange}
@@ -322,8 +322,8 @@ function ConfirmationDialogRaw(props) {
                             Scene Set
                         </ListSubheader>
                             {SceneSet && SceneSet.length > 0 && SceneSet.map((val,idx)=>
-                                <MenuItem 
-                                    key={idx} 
+                                <MenuItem
+                                    key={idx}
                                     value={JSON.stringify({"event_type":"scene_set","event_name":val})}
                                     name={val}
                                 >
@@ -337,8 +337,8 @@ function ConfirmationDialogRaw(props) {
                             Effect Set
                         </ListSubheader>
                             {effectNames && effectNames.length > 1 && effectNames.map((val,idx)=>
-                                <MenuItem 
-                                    key={idx} 
+                                <MenuItem
+                                    key={idx}
                                     value={JSON.stringify({"event_type":"effect_set","event_name":val})}
                                     name={val}
                                 >
@@ -347,7 +347,7 @@ function ConfirmationDialogRaw(props) {
                                     </option>
                                 </MenuItem>)
                             }
-                        
+
                         <ListSubheader color="primary">
                             Effect Cleared
                         </ListSubheader>
@@ -366,8 +366,8 @@ function ConfirmationDialogRaw(props) {
                     >
                         <MenuItem value=""></MenuItem>
                         {QLCWidgets && QLCWidgets.length > 0 && QLCWidgets.map((e,f)=>
-                            <MenuItem 
-                                key={f} 
+                            <MenuItem
+                                key={f}
                                 value={e}
                                 name={e[0]}>
                                     <option>
@@ -379,7 +379,7 @@ function ConfirmationDialogRaw(props) {
                             </MenuItem>)
                         }
                     </Select>
-                
+
                 {/*
                 If {qlcType}  === 'Button' or 'Audio Triggers'
                 return switch off (Value: 0) or on (Value: 255)
@@ -389,23 +389,23 @@ function ConfirmationDialogRaw(props) {
                     Else hide below buttons.
                 */}
                 </FormControl>
-                         
+
                     {/*    For delete button using delete icon.
                     <Button aria-describedby={id} variant="contained" color="primary" onClick={() => { onDeleteVitem(listItem) }}>
                         <DeleteIcon />
                     </Button>
                     */}
-                
+
                     {/* <div style={{ minWidth: '150px' }}></div> */}
                     <div>
                 {checkButtonType && <label>QLC+ widget selected above (On/Off) </label>}
-                {checkButtonType && 
-                    <Switch 
+                {checkButtonType &&
+                    <Switch
                         color="primary"
                         // value={!formData.switch_value?255:0}
                         checked={switchValue}
                         name={checkID}
-                        onChange={handleEventChange} 
+                        onChange={handleEventChange}
                     />
                 }</div>
 
@@ -421,10 +421,10 @@ function ConfirmationDialogRaw(props) {
                             max={255}
                             defaultValue={1}
                             value={sliderValue}
-                            onChange={handleEventChange} 
+                            onChange={handleEventChange}
                         />
                     }
-                </div> 
+                </div>
                 {dropDownRenderList.map((item,idx) => (
                         <ThisDropDown
                             key={idx}
@@ -455,7 +455,7 @@ function ConfirmationDialogRaw(props) {
                 >
                     ADD additional 'then do this'
                 </Button>
-                
+
                 <SchemaForm
                     // className={classes.schemaForm}
                     schema={{
@@ -510,7 +510,7 @@ export default function ConfirmationDialog({ deviceList, config, integration }) 
     const [open, setOpen] = React.useState(false);
     const dispatch = useDispatch();
     //console.log("YZ03:", event_types)
-    
+
     const handleClickListItem = ()=> {
         setOpen(true);
     };
@@ -532,7 +532,7 @@ export default function ConfirmationDialog({ deviceList, config, integration }) 
                     onClick={handleClickListItem}
                     role="listitem"
                 >
-                    ADD EVENT LISTENER 
+                    ADD EVENT LISTENER
                 </Button>
 
                 <ConfirmationDialogRaw

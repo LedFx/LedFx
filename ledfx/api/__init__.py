@@ -35,7 +35,7 @@ class RestEndpoint(BaseRegistry):
                 }
             )
         except Exception as e:
-            _LOGGER.error(repr(e))
+            _LOGGER.exception(e)
             response = {
                 "status": "failed",
                 "payload": {

@@ -16,13 +16,14 @@ For non-development purposes run:
 """
 
 import argparse
-import cProfile
 import logging
+import os
 import subprocess
 import sys
-import warnings
 from logging.handlers import RotatingFileHandler
 
+import psutil
+import yappi
 from pyupdater.client import Client
 
 import ledfx.config as config_helpers
@@ -70,7 +71,7 @@ def reset_logging():
                 logger.removeHandler(handler)
 
 
-def setup_logging(loglevel):
+def setup_logging(loglevel, config_dir):
     # Create a custom logging level to virtual pyupdater progress
     reset_logging()
 
@@ -83,7 +84,7 @@ def setup_logging(loglevel):
     root_logger = logging.getLogger()
 
     file_handler = RotatingFileHandler(
-        config_helpers.get_log_file_location(),
+        config_helpers.get_log_file_location(config_dir),
         mode="a",  # append
         maxBytes=0.5 * 1000 * 1000,  # 512kB
         encoding="utf8",
@@ -291,8 +292,30 @@ def main():
     """Main entry point allowing external calls"""
     args = parse_args()
     config_helpers.ensure_config_directory(args.config)
-    setup_logging(args.loglevel)
+    setup_logging(args.loglevel, config_dir=args.config)
     config_helpers.load_logger()
+
+    # Set some process priority optimisations
+    p = psutil.Process(os.getpid())
+
+    if psutil.WINDOWS:
+        try:
+            p.nice(psutil.HIGH_PRIORITY_CLASS)
+        except psutil.Error:
+            _LOGGER.warning(
+                "Unable to set priority, please run as Administrator if you are experiencing frame rate issues"
+            )
+        # p.ionice(psutil.IOPRIO_HIGH)
+    elif psutil.LINUX:
+        try:
+            p.nice(15)
+            p.ionice(psutil.IOPRIO_CLASS_RT, value=7)
+        except psutil.Error:
+            _LOGGER.warning(
+                "Unable to set priority, please run as root or sudo if you are experiencing frame rate issues",
+            )
+    else:
+        p.nice(15)
 
     if not (currently_frozen() or installed_via_pip()):
         if args.offline_mode:
@@ -307,13 +330,8 @@ def main():
         _LOGGER.warning("Steering LedFx into a brick wall")
         div_by_zero = 1 / 0
 
-    if currently_frozen() or installed_via_pip():
-        warnings.filterwarnings("ignore", category=DeprecationWarning)
-
     if args.tray or currently_frozen():
-        import os
-
-        # If pystray is imported on a device that can't virtual it, it explodes. Catch it
+        # If pystray is imported on a device that can't display it, it explodes. Catch it
         try:
             import pystray
         except Exception as Error:
@@ -355,6 +373,11 @@ def entry_point(icon=None):
     exit_code = 4
     while exit_code == 4:
         _LOGGER.info("LedFx Core is initializing")
+
+        if args.performance:
+            print("Collecting performance data...")
+            yappi.start()
+
         ledfx = LedFxCore(
             config_dir=args.config,
             host=args.host,
@@ -363,24 +386,23 @@ def entry_point(icon=None):
             icon=icon,
         )
 
+        exit_code = ledfx.start(open_ui=args.open_ui)
+
         if args.performance:
-            print("Collecting performance data...")
-            profiler = cProfile.Profile()
-            profiler.enable()
-            _exit_code = ledfx.start(open_ui=args.open_ui)
-            profiler.disable()
             print("Finished collecting performance data")
-            filename = config_helpers.get_profile_dump_location()
-            profiler.dump_stats(filename)
+            filename = config_helpers.get_profile_dump_location(
+                config_dir=args.config
+            )
+            yappi.stop()
+            stats = yappi.get_func_stats()
+            yappi.get_thread_stats().print_all()
+            stats.save(filename, type="pstat")
             print(
                 f"Saved performance data to config directory      : {filename}"
             )
             print(
                 "Please send the performance data to a developer : https://ledfx.app/contact/"
             )
-            exit_code = _exit_code
-        else:
-            exit_code = ledfx.start(open_ui=args.open_ui)
 
     if icon:
         icon.stop()

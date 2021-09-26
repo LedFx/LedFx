@@ -11,7 +11,7 @@ import numpy as np
 import voluptuous as vol
 
 import ledfx.effects.mel as mel
-from ledfx.effects import smooth
+from ledfx.effects import fast_blur_array
 from ledfx.effects.math import ExpFilter
 from ledfx.events import GraphUpdateEvent
 
@@ -22,10 +22,13 @@ from ledfx.events import GraphUpdateEvent
 # This increases frequency resolution a lot and reduces latency a bit,
 # improved resolution is noticable for bass, where frequency differs by only 10s of Hz
 
+# these parameters are hard coded and will break configs if changed
+
 FFT_SIZE = 4096
 MIC_RATE = 30000
 MAX_FREQ = MIC_RATE // 2
 MIN_FREQ = 20
+MIN_FREQ_DIFFERENCE = 50
 MEL_MAX_FREQS = [350, 2000, MAX_FREQ]
 
 FrequencyRange = namedtuple("FrequencyRange", "min,max")
@@ -95,6 +98,16 @@ class Melbank:
         """Initialize all the melbank related variables"""
         self._audio = audio
         self._config = self.MELBANK_CONFIG_SCHEMA(config)
+
+        # adjustable power (peak isolation) based on parameter a (0-1)
+        # a=0    -> linear response (filter bank value maps to itself)
+        # a=0.4  -> roughly equivalent to filter_banks ** 2.0
+        # a=0.6  -> roughly equivalent to filter_banks ** 3.0
+        # a=1    -> no response (infinite power as filter bank value approaches 1)
+        # https://www.desmos.com/calculator/xxa2l9radu
+        self.power_factor = np.tan(
+            0.5 * np.pi * (self._config["peak_isolation"] + 1) / 2
+        )
 
         # Few difference coefficient types for experimentation
         if self._config["coeffs_type"] == "triangle":
@@ -384,21 +397,14 @@ class Melbank:
 
         # Compute the filterbank from the frequency information.
         filter_banks[:] = self.filterbank(frequency_domain)
-        # adjustable power (peak isolation) based on parameter a (0-1)
-        # a=0    -> linear response (filter bank value maps to itself)
-        # a=0.4  -> roughly equivalent to filter_banks ** 2.0
-        # a=0.6  -> roughly equivalent to filter_banks ** 3.0
-        # a=1    -> no response (infinite power as filter bank value approaches 1)
-        # https://www.desmos.com/calculator/xxa2l9radu
 
         np.power(
             filter_banks,
-            np.tan(0.5 * np.pi * (self._config["peak_isolation"] + 1) / 2),
+            self.power_factor,
             out=filter_banks,
         )
-        # filter_banks[:] *= self.pre_emphasis
 
-        self.mel_gain.update(np.max(smooth(filter_banks, sigma=1.0)))
+        self.mel_gain.update(np.max(fast_blur_array(filter_banks, sigma=1.0)))
         filter_banks /= self.mel_gain.value
         filter_banks[:] = self.mel_smoothing.update(filter_banks)
 
@@ -449,10 +455,12 @@ class Melbanks:
         self.melbank_processors = tuple(
             Melbank(
                 self._audio,
-                self.DEFAULT_MELBANK_CONFIG
-                | {
-                    "max_frequency": freq,
-                    # "pre_emphasis": self.MELBANK_PRE_EMPHASIS[i],
+                {
+                    **self.DEFAULT_MELBANK_CONFIG,
+                    **{
+                        "max_frequency": freq,
+                        # "pre_emphasis": self.MELBANK_PRE_EMPHASIS[i],
+                    },
                 },
             )
             for i, freq in enumerate(self._config["max_frequencies"])
@@ -462,7 +470,6 @@ class Melbanks:
         self.mel_len = self.DEFAULT_MELBANK_CONFIG["samples"]
         # set up melbank data buffers.
         # these are stored as numpy arrays in a tuple to allow direct access to the buffers
-        # should be a bit faster than a list!
         self.melbanks = tuple(
             np.zeros(self.mel_len) for _ in range(self.mel_count)
         )

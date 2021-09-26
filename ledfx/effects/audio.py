@@ -1,17 +1,19 @@
 import logging
 import time
 from collections import deque
-from functools import cache, cached_property, lru_cache
+from functools import cached_property, lru_cache
 
 import aubio
 import numpy as np
 import sounddevice as sd
 import voluptuous as vol
 
+import ledfx.api.websocket
+from ledfx.api.websocket import WEB_AUDIO_CLIENTS, WebAudioStream
 from ledfx.effects import Effect
 from ledfx.effects.math import ExpFilter
 from ledfx.effects.melbank import FFT_SIZE, MIC_RATE, Melbanks
-from ledfx.events import Event, GraphUpdateEvent
+from ledfx.events import Event
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -31,22 +33,53 @@ class AudioInputSource:
     _volume_filter = ExpFilter(-90, alpha_decay=0.99, alpha_rise=0.99)
 
     @staticmethod
+    def device_index_validator(val):
+        """
+        Validates device index in case the saved setting is no longer valid
+        """
+        if val in AudioInputSource.valid_device_indexes():
+            return val
+        else:
+            return AudioInputSource.default_device_index()
+
+    @staticmethod
     def valid_device_indexes():
-        return list(AudioInputSource.input_devices().keys())
+        """
+        A list of integers corresponding to valid input devices
+        """
+        return tuple(AudioInputSource.input_devices().keys())
 
     @staticmethod
     def default_device_index():
         return sd.default.device[0]
 
     @staticmethod
-    def input_devices():
-        hostapis = sd.query_hostapis()
-        devices = sd.query_devices()
+    def query_hostapis():
+        return sd.query_hostapis() + ({"name": "WEB AUDIO"},)
 
+    @staticmethod
+    def query_devices():
+        return sd.query_devices() + tuple(
+            {
+                "hostapi": len(AudioInputSource.query_hostapis()) - 1,
+                "name": f"{client}",
+                "max_input_channels": 1,
+                "client": client,
+            }
+            for client in WEB_AUDIO_CLIENTS
+        )
+
+    @staticmethod
+    def input_devices():
+        hostapis = AudioInputSource.query_hostapis()
+        devices = AudioInputSource.query_devices()
         return {
             idx: f"{hostapis[device['hostapi']]['name']}: {device['name']}"
             for idx, device in enumerate(devices)
-            if device["max_input_channels"] > 0
+            if (
+                device["max_input_channels"] > 0
+                and "asio" not in device["name"].lower()
+            )
         }
 
     @staticmethod
@@ -64,7 +97,7 @@ class AudioInputSource:
                 vol.Optional("min_volume", default=0.2): float,
                 vol.Optional(
                     "audio_device", default=default_device_index
-                ): vol.In(input_devices),
+                ): AudioInputSource.device_index_validator,
             },
             extra=vol.ALLOW_EXTRA,
         )
@@ -81,7 +114,8 @@ class AudioInputSource:
     def update_config(self, config):
         """Deactivate the audio, update the config, the reactivate"""
 
-        self.deactivate()
+        if self._is_activated:
+            self.deactivate()
         self._config = self.AUDIO_CONFIG_SCHEMA.fget()(config)
         if len(self._callbacks) != 0:
             self.activate()
@@ -97,11 +131,10 @@ class AudioInputSource:
 
         # Enumerate all of the input devices and find the one matching the
         # configured host api and device name
-        hostapis = self._audio.query_hostapis()
-        devices = self._audio.query_devices()
+        input_devices = self.query_devices()
+        hostapis = self.query_hostapis()
         default_device = self.default_device_index()
         valid_device_indexes = self.valid_device_indexes()
-        default_api = self._audio.default.hostapi
         device_idx = self._config["audio_device"]
 
         if device_idx > max(valid_device_indexes):
@@ -112,30 +145,34 @@ class AudioInputSource:
 
         elif device_idx not in valid_device_indexes:
             _LOGGER.warning(
-                f"Audio device {devices[device_idx]['name']} has no input channels. Reverting to default input device."
+                f"Audio device {input_devices[device_idx]['name']} has no input channels. Reverting to default input device."
             )
             device_idx = default_device
 
+        # hostapis = self._audio.query_hostapis()
+        # devices = self._audio.query_devices()
+        # default_api = self._audio.default.hostapi
+
         # Show device and api info in logger
-        _LOGGER.info("Audio Input Devices:")
-        for api_idx, api in enumerate(hostapis):
-            _LOGGER.info(
-                "Host API: {} {}".format(
-                    api["name"],
-                    "[DEFAULT]" if api_idx == default_api else "",
-                )
-            )
-            for idx in api["devices"]:
-                device = devices[idx]
-                if device["max_input_channels"] > 0:
-                    _LOGGER.info(
-                        "    [{}] {} {} {}".format(
-                            idx,
-                            device["name"],
-                            "[DEFAULT]" if idx == default_device else "",
-                            "[SELECTED]" if idx == device_idx else "",
-                        )
-                    )
+        # _LOGGER.debug("Audio Input Devices:")
+        # for api_idx, api in enumerate(hostapis):
+        #     _LOGGER.debug(
+        #         "Host API: {} {}".format(
+        #             api["name"],
+        #             "[DEFAULT]" if api_idx == default_api else "",
+        #         )
+        #     )
+        #     for idx in api["devices"]:
+        #         device = devices[idx]
+        #         if device["max_input_channels"] > 0:
+        #             _LOGGER.debug(
+        #                 "    [{}] {} {} {}".format(
+        #                     idx,
+        #                     device["name"],
+        #                     "[DEFAULT]" if idx == default_device else "",
+        #                     "[SELECTED]" if idx == device_idx else "",
+        #                 )
+        #             )
 
         # old, do not use
         # self.pre_emphasis.set_biquad(1., -self._config['pre_emphasis'], 0, 0, 0)
@@ -177,21 +214,34 @@ class AudioInputSource:
         )
 
         def open_audio_stream(device_idx):
-            self._stream = self._audio.InputStream(
-                samplerate=self._config["mic_rate"],
-                device=device_idx,
-                channels=1,
-                callback=self._audio_sample_callback,
-                dtype=np.float32,
-                latency="low",
-                blocksize=self._config["mic_rate"]
-                // self._config["sample_rate"],
+            device = input_devices[device_idx]
+            if hostapis[device["hostapi"]]["name"] == "WEB AUDIO":
+                ledfx.api.websocket.ACTIVE_AUDIO_STREAM = (
+                    self._stream
+                ) = WebAudioStream(
+                    device["client"], self._audio_sample_callback
+                )
+            else:
+                self._stream = self._audio.InputStream(
+                    samplerate=self._config["mic_rate"],
+                    device=device_idx,
+                    channels=1,
+                    callback=self._audio_sample_callback,
+                    dtype=np.float32,
+                    latency="low",
+                    blocksize=self._config["mic_rate"]
+                    // self._config["sample_rate"],
+                )
+
+            _LOGGER.info(
+                f"Audio source opened: {hostapis[device['hostapi']]['name']}: {device.get('name', device.get('client'))}"
             )
+
             self._stream.start()
-            _LOGGER.info("Audio source opened.")
 
         try:
             open_audio_stream(device_idx)
+            self._is_activated = True
         except OSError as e:
             _LOGGER.critical(
                 f"Unable to open Audio Device: {e} - please retry."
@@ -206,6 +256,7 @@ class AudioInputSource:
             self._stream.stop()
             self._stream.close()
             self._stream = None
+        self._is_activated = False
         _LOGGER.info("Audio source closed.")
 
     def subscribe(self, callback):
@@ -251,9 +302,7 @@ class AudioInputSource:
         queried by an effect.
         """
         # clean up nans that have been mysteriously appearing..
-        np.nan_to_num(
-            self._raw_audio_sample, copy=False, nan=0.0, posinf=0.0, neginf=0.0
-        )
+        self._raw_audio_sample[np.isnan(self._raw_audio_sample)] = 0
 
         # Calculate the current volume for silence detection
         self._volume = 1 + aubio.db_spl(self._raw_audio_sample) / 100
@@ -277,16 +326,6 @@ class AudioInputSource:
             )
         else:
             self._frequency_domain = self._frequency_domain_null
-
-        # Light up some notifications for developer mode
-        if self._ledfx.dev_enabled():
-            self._ledfx.events.fire_event(
-                GraphUpdateEvent(
-                    "fft",
-                    self._frequency_domain.norm,
-                    self._frequency_domain_x,
-                )
-            )
 
     def audio_sample(self, raw=False):
         """Returns the raw audio sample"""
@@ -358,6 +397,9 @@ class AudioAnalysisSource(AudioInputSource):
         self._pitch.set_unit("midi")
         self._pitch.set_tolerance(self._config["pitch_tolerance"])
 
+        # bar oscillator
+        self.beat_counter = 0
+
         # beat oscillator
         self.beat_timestamp = time.time()
         self.beat_period = 2
@@ -424,54 +466,7 @@ class AudioAnalysisSource(AudioInputSource):
         self.volume_beat_now.cache_clear()
         self.bar_oscillator.cache_clear()
 
-    # @lru_cache(maxsize=32)
-    # def melbank(self):
-    #     """Returns the raw melbank curve"""
-
-    #     if self.volume() > self._config["min_volume"]:
-    #         # Compute the filterbank from the frequency information
-    #         raw_filter_banks = self.filterbank(self.frequency_domain())
-    #         raw_filter_banks = raw_filter_banks ** 2.0
-
-    #         self.mel_gain.update(np.ma(raw_filter_banks, sigma=1.0)))
-    #         filter_banks = raw_filter_banks / self.mel_gain.value
-    #         filter_banks = self.mel_smoothing.update(filter_banks)
-
-    #     else:
-    #         raw_filter_banks = np.zeros(self._config["samples"])
-    #         filter_banks = raw_filter_banks
-
-    #     if self._ledfx.dev_enabled():
-    #         self._ledfx.events.fire_event(
-    #             GraphUpdateEvent(
-    #                 "raw",
-    #                 raw_filter_banks,
-    #                 np.array(self.melbank_frequencies),
-    #             )
-    #         )
-    #         self._ledfx.events.fire_event(
-    #             GraphUpdateEvent(
-    #                 "melbank",
-    #                 filter_banks,
-    #                 np.array(self.melbank_frequencies),
-    #             )
-    #         )
-    #     return filter_banks
-
-    # def melbank_lows(self):
-    #     return self.melbank()[: self.lows_index]
-
-    # def melbank_mids(self):
-    #     return self.melbank()[self.lows_index : self.mids_index]
-
-    # def melbank_highs(self):
-    #     return self.melbank()[self.mids_index :]
-
-    # def sample_melbank(self, hz):
-    #     """Samples the melbank curve at a given frequency"""
-    #     return np.interp(hz, self.melbank_frequencies, self.melbank())
-
-    @cache
+    @lru_cache(maxsize=None)
     def pitch(self):
         # If our audio handler is returning null, then we just return 0 for midi_value and wait for the device starts sending audio.
         try:
@@ -480,7 +475,7 @@ class AudioAnalysisSource(AudioInputSource):
             _LOGGER.warning(e)
             return 0
 
-    @cache
+    @lru_cache(maxsize=None)
     def onset(self):
         try:
             return bool(self._onset(self.audio_sample(raw=True))[0])
@@ -488,7 +483,7 @@ class AudioAnalysisSource(AudioInputSource):
             _LOGGER.warning(e)
             return 0
 
-    @cache
+    @lru_cache(maxsize=None)
     def bpm_beat_now(self):
         """
         Returns True if a beat is expected now based on BPM data
@@ -499,7 +494,7 @@ class AudioAnalysisSource(AudioInputSource):
             _LOGGER.warning(e)
             return False
 
-    @cache
+    @lru_cache(maxsize=None)
     def volume_beat_now(self):
         """
         Returns True if a beat is expected now based on volume of the beat freq region
@@ -595,7 +590,7 @@ class AudioAnalysisSource(AudioInputSource):
         """
         return self.get_freq_power(3, filtered)
 
-    @cache
+    @lru_cache(maxsize=None)
     def bar_oscillator(self):
         """
         Returns a float (0<=x<4) corresponding to the position of the beat
@@ -603,6 +598,11 @@ class AudioAnalysisSource(AudioInputSource):
         This is synced and quantized to the bpm of whatever is playing.
         While the beat number might not necessarily be accurate, the
         relative position of the tracker between beats will be quite accurate.
+
+        NOTE: currently this makes no attempt to guess which beat is the first
+        in the bar. It simple counts to four with each beat that is detected.
+        The actual value of the current beat in the bar is completely arbitrary,
+        but in time with each beat.
 
         0           1           2           3
         {----------time for one bar---------}
@@ -613,17 +613,18 @@ class AudioAnalysisSource(AudioInputSource):
         # update tempo and oscillator
         # print(self._tempo.get_delay_s())
         if self.bpm_beat_now():
+            self.beat_counter = (self.beat_counter + 1) % 4
             self.beat_period = self._tempo.get_period_s()
             # print("beat at:", self._tempo.get_delay_s())
             self.beat_timestamp = time.time()
-            oscillator = 0
+            oscillator = self.beat_counter
         else:
             time_since_beat = time.time() - self.beat_timestamp
             oscillator = (
                 1 - (self.beat_period - time_since_beat) / self.beat_period
-            )
+            ) + self.beat_counter
             # ensure it's between 0 and 1. useful when audio cuts
-            oscillator = min(1, oscillator)
+            oscillator = min(4, oscillator)
             oscillator = max(0, oscillator)
         return oscillator
 
@@ -665,7 +666,8 @@ class AudioReactiveEffect(Effect):
 
     def deactivate(self):
         _LOGGER.info("Deactivating AudioReactiveEffect.")
-        self.audio.unsubscribe(self._audio_data_updated)
+        if self.audio:
+            self.audio.unsubscribe(self._audio_data_updated)
         super().deactivate()
 
     def create_filter(self, alpha_decay, alpha_rise):
@@ -759,7 +761,7 @@ class AudioReactiveEffect(Effect):
         new = np.linspace(0, 1, size)
         return (new, old)
 
-    @cache
+    @lru_cache(maxsize=None)
     def melbank(self, filtered=False, size=0):
         """
         This little bit of code pulls together information from the effect's

@@ -46,7 +46,7 @@ class DeviceEndpoint(RestEndpoint):
             }
             return web.json_response(data=response, status=400)
 
-        _LOGGER.info(
+        _LOGGER.debug(
             ("Updating device {} with config {}").format(
                 device_id, device_config
             )

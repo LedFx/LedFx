@@ -5,7 +5,7 @@ from aiohttp import web
 
 from ledfx.api import RestEndpoint
 from ledfx.config import save_config
-from ledfx.events import SceneSetEvent
+from ledfx.events import SceneActivatedEvent
 from ledfx.utils import generate_id
 
 _LOGGER = logging.getLogger(__name__)
@@ -109,11 +109,11 @@ class ScenesEndpoint(RestEndpoint):
             for virtual in self._ledfx.virtuals.values():
                 # Check virtual is in scene, make no changes if it isn't
                 if virtual.id not in scene["virtuals"].keys():
-                    _LOGGER.info(
-                        ("virtual with id {} has no data in scene {}").format(
-                            virtual.id, scene_id
-                        )
-                    )
+                    # _LOGGER.info(
+                    #     ("virtual with id {} has no data in scene {}").format(
+                    #         virtual.id, scene_id
+                    #     )
+                    # )
                     continue
 
                 # Set effect of virtual to that saved in the scene,
@@ -129,7 +129,7 @@ class ScenesEndpoint(RestEndpoint):
                 else:
                     virtual.clear_effect()
 
-            self._ledfx.events.fire_event(SceneSetEvent(scene["name"]))
+            self._ledfx.events.fire_event(SceneActivatedEvent(scene_id))
             response = {
                 "status": "success",
                 "payload": {
@@ -149,7 +149,7 @@ class ScenesEndpoint(RestEndpoint):
                     )
                     continue
 
-                # Clear the effect of virtual to that saved in the scene,
+                # Clear the effect of virtual,
                 if scene["virtuals"][virtual.id]:
                     virtual.clear_effect()
 

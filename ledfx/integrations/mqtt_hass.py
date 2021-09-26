@@ -7,7 +7,7 @@ import voluptuous as vol
 
 from ledfx.color import COLORS
 from ledfx.config import save_config
-from ledfx.events import SceneSetEvent
+from ledfx.events import SceneActivatedEvent
 from ledfx.integrations import Integration
 
 _LOGGER = logging.getLogger(__name__)
@@ -296,7 +296,9 @@ class MQTT_HASS(Integration):
                     else:
                         virtual.clear_effect()
 
-                self._ledfx.events.fire_event(SceneSetEvent(scene["name"]))
+                self._ledfx.events.fire_event(
+                    SceneActivatedEvent(scene["name"])
+                )
 
             # React to Virtuals
             for virtual in self._ledfx.virtuals.values():

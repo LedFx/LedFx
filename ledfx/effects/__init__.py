@@ -16,7 +16,7 @@ _LOGGER = logging.getLogger(__name__)
 class DummyEffect:
 
     config = vol.Schema({})
-
+    _active = True
     NAME = ""
 
     def __init__(self, pixel_count):
@@ -66,17 +66,7 @@ def fill_rainbow(pixels, initial_hue, delta_hue):
 
 
 def mirror_pixels(pixels):
-    # TODO: Figure out some better logic here. Needs to reduce the signal
-    # and reflect across the middle. The prior logic was broken for
-    # non-uniform effects.
-    # mirror_shape = (np.shape(pixels)[0], 2, np.shape(pixels)[1])
-    # return (
-    #     np.append(pixels[::-1], pixels, axis=0)
-    #     .reshape(mirror_shape)
-    #     .mean(axis=1)
-    # )
-    pixels = np.concatenate([pixels[-1 + len(pixels) % -2 :: -2], pixels[::2]])
-    return pixels
+    return np.concatenate((pixels[-1 + len(pixels) % -2 :: -2], pixels[::2]))
 
 
 def flip_pixels(pixels):
@@ -97,7 +87,7 @@ def brightness_pixels(pixels, brightness):
 
 
 @lru_cache(maxsize=32)
-def _gaussian_kernel1d(sigma, order, radius):
+def _gaussian_kernel1d(sigma, order, array_len):
     """
     Produces a 1D Gaussian or Gaussian-derivative filter kernel as a numpy array.
 
@@ -109,6 +99,12 @@ def _gaussian_kernel1d(sigma, order, radius):
     Returns:
         Array of length (2*radius+1) containing the filter kernel.
     """
+
+    # Choose a radius for the filter kernel large enough to include all significant elements. Using
+    # a radius of 4 standard deviations (rounded to int) will only truncate tail values that are of
+    # the order of 1e-5 or smaller. For very small sigma values, just use a minimal radius.
+    radius = min(int((array_len - 1) / 2), max(1, int(round(4.0 * sigma))))
+
     if order < 0:
         raise ValueError("Order must non-negative")
     if not (isinstance(radius, int) or radius.is_integer()) or radius <= 0:
@@ -135,20 +131,18 @@ def _gaussian_kernel1d(sigma, order, radius):
 def fast_blur_pixels(pixels, sigma):
     if len(pixels) == 0:
         raise ValueError("Cannot smooth an empty array")
-
-    # Choose a radius for the filter kernel large enough to include all significant elements. Using
-    # a radius of 4 standard deviations (rounded to int) will only truncate tail values that are of
-    # the order of 1e-5 or smaller. For very small sigma values, just use a minimal radius.
-    kernel_radius = min(
-        int((len(pixels) - 1) / 2), max(1, int(round(4.0 * sigma)))
-    )
-    kernel = _gaussian_kernel1d(sigma, 0, kernel_radius)
-
+    kernel = _gaussian_kernel1d(sigma, 0, len(pixels))
     pixels[:, 0] = np.convolve(pixels[:, 0], kernel, mode="same")
     pixels[:, 1] = np.convolve(pixels[:, 1], kernel, mode="same")
     pixels[:, 2] = np.convolve(pixels[:, 2], kernel, mode="same")
-
     return pixels
+
+
+def fast_blur_array(array, sigma):
+    if len(array) == 0:
+        raise ValueError("Cannot smooth an empty array")
+    kernel = _gaussian_kernel1d(sigma, 0, len(array))
+    return np.convolve(array, kernel, mode="same")
 
 
 def smooth(x, sigma):
@@ -264,7 +258,6 @@ class Effect(BaseRegistry):
         """Attaches an output channel to the effect"""
         self._virtual = virtual
         self._pixels = np.zeros((virtual.pixel_count, 3))
-        self._active = True
         self._bg_color_array = np.tile(
             self._bg_color, (virtual.pixel_count, 1)
         )
@@ -277,6 +270,7 @@ class Effect(BaseRegistry):
             if hasattr(base, "on_activate"):
                 base.on_activate(self, virtual.pixel_count)
 
+        self._active = True
         _LOGGER.info(f"Effect {self.NAME} activated.")
 
     def deactivate(self):
@@ -294,7 +288,7 @@ class Effect(BaseRegistry):
 
         if self._config != {}:
 
-            self._config = prior_config | config
+            self._config = {**prior_config, **config}
         else:
             self._config = validated_config
         self.configured_blur = self._config["blur"]
@@ -316,7 +310,7 @@ class Effect(BaseRegistry):
             if base.config_updated != super(base, base).config_updated:
                 base.config_updated(self, self._config)
 
-        _LOGGER.info(
+        _LOGGER.debug(
             f"Effect {self.NAME} config updated to {validated_config}."
         )
 
@@ -374,10 +368,10 @@ class Effect(BaseRegistry):
     @property
     def pixels(self):
         """Returns the pixels for the channel"""
-        if not self._active:
-            raise Exception(
-                "Attempting to access pixels before effect is active"
-            )
+        # if not self._active:
+        #     raise Exception(
+        #         "Attempting to access pixels before effect is active"
+        #     )
 
         return np.copy(self._pixels)
 

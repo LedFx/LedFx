@@ -3,27 +3,25 @@ from functools import lru_cache
 import numpy as np
 
 
-@lru_cache(maxsize=32)
+@lru_cache(maxsize=64)
 def _normalized_linspace(size):
     return np.linspace(0, 1, size)
 
 
-def interpolate(y, new_length):
-    """Resizes the array by linearly interpolating the values"""
-
-    if len(y) == new_length:
-        return y
-
-    x_old = _normalized_linspace(len(y))
-    x_new = _normalized_linspace(new_length)
-
-    return np.interp(x_new, x_old, y)
-
-
 def interpolate_pixels(pixels, new_length):
     """Resizes a pixel array by linearly interpolating the values"""
+    if len(pixels) == new_length:
+        return pixels
 
-    return np.apply_along_axis(interpolate, 0, pixels, new_length)
+    x_old = _normalized_linspace(len(pixels))
+    x_new = _normalized_linspace(new_length)
+    new_pixels = np.zeros((len(x_new), pixels.shape[1]))
+
+    new_pixels[:, 0] = np.interp(x_new, x_old, pixels[:, 0])
+    new_pixels[:, 1] = np.interp(x_new, x_old, pixels[:, 1])
+    new_pixels[:, 2] = np.interp(x_new, x_old, pixels[:, 2])
+
+    return new_pixels
 
 
 class ExpFilter:
@@ -49,6 +47,7 @@ class ExpFilter:
             alpha[alpha <= 0.0] = self.alpha_decay
         else:
             alpha = self.alpha_rise if value > self.value else self.alpha_decay
+
         self.value = alpha * value + (1.0 - alpha) * self.value
 
         return self.value

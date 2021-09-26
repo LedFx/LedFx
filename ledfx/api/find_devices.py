@@ -14,7 +14,7 @@ class FindDevicesEndpoint(RestEndpoint):
     ENDPOINT_PATH = "/api/find_devices"
 
     async def post(self) -> web.Response:
-        """ Find and add all WLED devices on the LAN """
+        """Find and add all WLED devices on the LAN"""
 
         def handle_exception(future):
             # Ignore exceptions, these will be raised when a device is found that already exists

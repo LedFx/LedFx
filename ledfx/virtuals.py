@@ -1,4 +1,5 @@
 import logging
+import threading
 import time
 from functools import cached_property
 
@@ -8,7 +9,12 @@ import zeroconf
 
 from ledfx.effects import DummyEffect
 from ledfx.effects.math import interpolate_pixels
-from ledfx.effects.melbank import MAX_FREQ, MIN_FREQ, FrequencyRange
+from ledfx.effects.melbank import (
+    MAX_FREQ,
+    MIN_FREQ,
+    MIN_FREQ_DIFFERENCE,
+    FrequencyRange,
+)
 from ledfx.events import (
     EffectClearedEvent,
     EffectSetEvent,
@@ -77,8 +83,6 @@ class Virtual:
                 vol.Range(
                     min=MIN_FREQ,
                     max=MAX_FREQ,
-                    min_included=True,
-                    max_included=True,
                 ),
             ),  # AND HERE TOO,
             vol.Optional(
@@ -90,8 +94,6 @@ class Virtual:
                 vol.Range(
                     min=MIN_FREQ,
                     max=MAX_FREQ,
-                    min_included=True,
-                    max_included=True,
                 ),
             ),  # AND HERE TOO,
         }
@@ -225,7 +227,7 @@ class Virtual:
 
             self.invalidate_cached_props()
 
-            _LOGGER.info(
+            _LOGGER.debug(
                 f"Updated virtual {self.name} with {len(self._segments)} segments, totalling {self.pixel_count} pixels"
             )
 
@@ -242,11 +244,32 @@ class Virtual:
             mode = self._config["transition_mode"]
             self.frame_transitions = self.transitions[mode]
 
+    def set_preset(self, preset_info):
+        category, effect_id, preset_id = preset_info
+
+        # Create the effect and add it to the virtual
+        try:
+            effect_config = self._ledfx.config[category][effect_id][preset_id][
+                "config"
+            ]
+        except KeyError:
+            _LOGGER.error(f"Cannot find preset: {preset_info}")
+            return
+        effect = self._ledfx.effects.create(
+            ledfx=self._ledfx, type=effect_id, config=effect_config
+        )
+        self.set_effect(effect)
+
     def set_effect(self, effect):
         self.transition_frame_total = (
             self.refresh_rate * self._config["transition_time"]
         )
         self.transition_frame_counter = 0
+
+        if not self._devices:
+            error = f"Cannot activate virtual {self.id}, it has no configured device segments"
+            _LOGGER.warning(error)
+            return
 
         if self._active_effect is None:
             self._transition_effect = DummyEffect(self.pixel_count)
@@ -270,7 +293,11 @@ class Virtual:
                 EffectSetEvent(self._active_effect.name)
             )
 
-        self.active = True
+        try:
+            self.active = True
+        except RuntimeError:
+            self.active = False
+            return
 
     def transition_to_active(self):
         self._active_effect = self._transition_effect
@@ -323,31 +350,33 @@ class Virtual:
     def active_effect(self):
         return self._active_effect
 
-    async def thread_function(self):
+    def thread_function(self):
         while True:
-            if self._active:
+            if not self._active:
+                break
+            if self._active_effect._active:
                 # self.assembled_frame = await self._ledfx.loop.run_in_executor(
                 #     self._ledfx.thread_executor, self.assemble_frame
                 # )
                 self.assembled_frame = self.assemble_frame()
                 if self.assembled_frame is not None and not self._paused:
                     if not self._config["preview_only"]:
-                        await self._ledfx.loop.run_in_executor(
-                            self._ledfx.thread_executor, self.flush
-                        )
-                        # self.flush()
+                        # self._ledfx.thread_executor.submit(self.flush)
+                        # await self._ledfx.loop.run_in_executor(
+                        #     self._ledfx.thread_executor, self.flush
+                        # )
+                        self.flush()
 
                     def trigger_virtual_update_event():
                         self._ledfx.events.fire_event(
                             VirtualUpdateEvent(self.id, self.assembled_frame)
                         )
 
-                    self._ledfx.loop.call_soon(trigger_virtual_update_event)
-            await self._ledfx.loop.run_in_executor(
-                self._ledfx.thread_executor,
-                time.sleep,
-                fps_to_sleep_interval(self.refresh_rate),
-            )
+                    self._ledfx.loop.call_soon_threadsafe(
+                        trigger_virtual_update_event
+                    )
+
+            time.sleep(fps_to_sleep_interval(self.refresh_rate))
 
     def assemble_frame(self):
         """
@@ -410,18 +439,25 @@ class Virtual:
             _LOGGER.warning(error)
             raise RuntimeError(error)
 
+        if hasattr(self, "_thread"):
+            self._thread.join()
+
         _LOGGER.info(f"Activating virtual {self.id}")
         if not self._active:
             self._active = True
             self.activate_segments(self._segments)
 
-        self._task = self._ledfx.loop.create_task(self.thread_function())
-        self._task.add_done_callback(lambda task: task.result())
+        # self.thread_function()
+
+        self._thread = threading.Thread(target=self.thread_function)
+        self._thread.start()
+        # self._task = self._ledfx.loop.create_task(self.thread_function())
+        # self._task.add_done_callback(lambda task: task.result())
 
     def deactivate(self):
         self._active = False
-        if hasattr(self, "_task"):
-            self._task.cancel()
+        if hasattr(self, "_thread"):
+            self._thread.join()
         self.deactivate_segments()
 
     # @lru_cache(maxsize=32)
@@ -574,21 +610,28 @@ class Virtual:
             else:
                 return 0
 
+    @staticmethod
+    def schema() -> vol.Schema:
+        """returns the schema for the object"""
+        return Virtual.CONFIG_SCHEMA
+
     @property
     def config(self) -> dict:
         """Returns the config for the object"""
         return getattr(self, "_config", None)
 
+    def update_config(self, config):
+        self.config = config
+
     @config.setter
     def config(self, new_config):
         """Updates the config for an object"""
         if self._config is not None:
-            _config = self._config | new_config
+            _config = {**self._config, **new_config}
         else:
             _config = new_config
 
         _config = self.CONFIG_SCHEMA(_config)
-        _only_frequencies_updated = False
 
         if hasattr(self, "_config"):
             if _config["mapping"] != self._config["mapping"]:
@@ -596,33 +639,49 @@ class Virtual:
             if _config["transition_mode"] != self._config["transition_mode"]:
                 mode = _config["transition_mode"]
                 self.frame_transitions = self.transitions[mode]
-            # special case, where we do not want to reactive effect just
-            # because the frequency range has changed. bit sloppy but
-            # does the trick!
-            # if the only key in new config is "frequency_range":...
-            # changed_configs = set(a.items()) ^ set(b.items())
             if (
                 "frequency_min" in _config.keys()
                 or "frequency_max" in _config.keys()
-            ) and (
-                _config["frequency_min"] != self._config["frequency_min"]
-                or _config["frequency_max"] != self._config["frequency_max"]
             ):
-                _only_frequencies_updated = True
+                # if these are in config, manually sanitise them
+                _config["frequency_min"] = min(
+                    _config["frequency_min"], MAX_FREQ - MIN_FREQ_DIFFERENCE
+                )
+                _config["frequency_min"] = min(
+                    _config["frequency_min"], MIN_FREQ
+                )
+                _config["frequency_max"] = max(
+                    _config["frequency_max"], MIN_FREQ + MIN_FREQ_DIFFERENCE
+                )
+                _config["frequency_max"] = min(
+                    _config["frequency_max"], MAX_FREQ
+                )
+                diff = abs(_config["frequency_max"] - _config["frequency_min"])
+                if diff < MIN_FREQ_DIFFERENCE:
+                    _config["frequency_max"] += diff
+                # if they're changed, clear some cached properties
+                # so the changes take effect
+                if (
+                    (
+                        _config["frequency_min"]
+                        != self._config["frequency_min"]
+                        or _config["frequency_max"]
+                        != self._config["frequency_max"]
+                    )
+                    and (self._active_effect is not None)
+                    and (
+                        hasattr(
+                            self._active_effect, "clear_melbank_freq_props"
+                        )
+                    )
+                ):
+                    self._active_effect.clear_melbank_freq_props()
 
         setattr(self, "_config", _config)
 
         self.frequency_range = FrequencyRange(
             self._config["frequency_min"], self._config["frequency_max"]
         )
-
-        if self._active_effect is not None:
-            if _only_frequencies_updated:
-                self._active_effect.clear_melbank_freq_props()
-            else:
-                self._active_effect.deactivate()
-                if self.pixel_count > 0:
-                    self._active_effect.activate(self)
 
 
 class Virtuals:
@@ -644,7 +703,7 @@ class Virtuals:
 
     def create_from_config(self, config):
         for virtual in config:
-            _LOGGER.info(f"Loading virtual from config: {virtual}")
+            _LOGGER.debug(f"Loading virtual from config: {virtual}")
             self._ledfx.virtuals.create(
                 id=virtual["id"],
                 config=virtual["config"],

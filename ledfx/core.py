@@ -19,6 +19,7 @@ from ledfx.events import (
 from ledfx.http_manager import HttpServer
 from ledfx.integrations import Integrations
 from ledfx.presets import ledfx_presets
+from ledfx.scenes import Scenes
 from ledfx.utils import (
     RollingQueueHandler,
     async_fire_and_forget,
@@ -33,7 +34,12 @@ if currently_frozen():
 
 class LedFxCore:
     def __init__(
-        self, config_dir, host=None, port=None, port_s=None, icon=None
+        self,
+        config_dir,
+        host=None,
+        port=None,
+        port_s=None,
+        icon=None,
     ):
         self.icon = icon
         self.config_dir = config_dir
@@ -46,7 +52,13 @@ class LedFxCore:
         if sys.platform == "win32":
             self.loop = asyncio.ProactorEventLoop()
         else:
-            self.loop = asyncio.get_event_loop()
+            try:
+                import uvloop
+
+                self.loop = uvloop.new_event_loop()
+            except ImportError as error:
+                _LOGGER.info("Reverting to asyncio loop.")
+                self.loop = asyncio.get_event_loop()
         asyncio.set_event_loop(self.loop)
 
         # self.loop.set_debug(True)
@@ -199,16 +211,16 @@ class LedFxCore:
 
     async def async_start(self, open_ui=False):
         _LOGGER.info("Starting LedFx")
-        await self.http.start(get_ssl_certs())
-        if self.icon is not None:
-            if self.icon.HAS_NOTIFICATION:
-                self.icon.notify(
-                    "Starting in background.\nUse the tray icon to open."
-                )
+        await self.http.start(get_ssl_certs(config_dir=self.config_dir))
+        if self.icon is not None and self.icon.HAS_NOTIFICATION:
+            self.icon.notify(
+                "Started in background.\nUse the tray icon to open."
+            )
         self.devices = Devices(self)
         self.effects = Effects(self)
         self.virtuals = Virtuals(self)
         self.integrations = Integrations(self)
+        self.scenes = Scenes(self)
 
         # TODO: Deferr
         self.devices.create_from_config(self.config["devices"])

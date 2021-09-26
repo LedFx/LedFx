@@ -104,8 +104,6 @@ class EffectsEndpoint(RestEndpoint):
                         val = random.randint(lower, upper)
                 effect_config[setting.schema] = val
 
-        print(effect_config)
-
         # See if virtual's active effect type matches this effect type,
         # if so update the effect config
         # otherwise, create a new effect and add it to the virtual
@@ -138,7 +136,10 @@ class EffectsEndpoint(RestEndpoint):
                     effect = self._ledfx.effects.create(
                         ledfx=self._ledfx,
                         type=effect_type,
-                        config=virtual.active_effect.config | effect_config,
+                        config={
+                            **virtual.active_effect.config,
+                            **effect_config,
+                        },
                     )
                     virtual.set_effect(effect)
                 else:
@@ -215,7 +216,11 @@ class EffectsEndpoint(RestEndpoint):
         elif effect_config == "RANDOMIZE":
             # Parse and break down schema for effect, in order to generate
             # acceptable random values
-            ignore_settings = ["brightness"]
+            ignore_settings = [
+                "brightness",
+                "background_color",
+                "background_brightness",
+            ]
             effect_config = {}
             effect_type = virtual.active_effect.type
             effect = self._ledfx.effects.get_class(effect_type)

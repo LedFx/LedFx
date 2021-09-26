@@ -23,16 +23,22 @@ SETUP_REQUIRES = [
 ]
 
 INSTALL_REQUIRES = [
+<<<<<<< HEAD
     "numpy~=1.20.2",
+=======
+>>>>>>> frontend_beta
     "voluptuous~=0.12.1",
     "sounddevice~=0.4.2",
     "sacn~=1.6.3",
     "aiohttp~=3.7.4.post0",
     "multidict~=5.0.0",
+<<<<<<< HEAD
     "requests~=2.24.0",
+=======
+    "requests>=2.24.0",
+>>>>>>> frontend_beta
     "aubio~=0.4.9",
     "zeroconf==0.30.0",
-    'pywin32>=300; platform_system == "Windows"',
     "cython>=0.29.21",
     "pyupdater>=3.1.0",
     "sentry-sdk~=1.0.0",
@@ -44,7 +50,17 @@ INSTALL_REQUIRES = [
     "python-rtmidi>=1.4.9",
     "aiohttp_cors>=0.7.0",
     "paho-mqtt>=1.5.1",
+    "yappi",
+    "psutil>=5.8.0",
+    # Conditional Requirement
+    # We need pywin32 for Windows
+    'pywin32>=300; platform_system == "Windows"',
+    # uvloop doesn't work on Windows yet, but should be a good speedup for low power linux devices
+    'uvloop>=0.16.0; platform_system != "Windows"',
+    # We can install this on all linux devices, it just won't work for anything other than a Pi
+    'rpi-ws281x>=4.3.0; platform_system == "Linux"',
 ]
+
 
 setup(
     name=PROJECT_PACKAGE_NAME,

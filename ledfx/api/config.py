@@ -92,7 +92,7 @@ class ConfigEndpoint(RestEndpoint):
             },
         }
 
-        self._ledfx.loop.call_soon(self._ledfx.stop, 4)
+        self._ledfx.loop.call_soon_threadsafe(self._ledfx.stop, 4)
 
         return web.json_response(data=response, status=200)
 
@@ -125,7 +125,7 @@ class ConfigEndpoint(RestEndpoint):
                 config_dir=self._ledfx.config_dir,
             )
 
-            self._ledfx.loop.call_soon(self._ledfx.stop, 4)
+            self._ledfx.loop.call_soon_threadsafe(self._ledfx.stop, 4)
 
             return web.json_response(data={"status": "success"}, status=200)
 
@@ -166,16 +166,16 @@ class ConfigEndpoint(RestEndpoint):
                 config, CORE_CONFIG_SCHEMA, "core"
             )
 
-            self._ledfx.config["audio"] |= audio_config
-            self._ledfx.config["melbanks"] |= melbanks_config
-            self._ledfx.config |= core_config
+            self._ledfx.config["audio"].update(audio_config)
+            self._ledfx.config["melbanks"].update(melbanks_config)
+            self._ledfx.config.update(core_config)
 
             # handle special case wled_preferences nested dict
             for key in wled_config:
                 if key in self._ledfx.config["wled_preferences"]:
-                    self._ledfx.config["wled_preferences"][key] |= wled_config[
-                        key
-                    ]
+                    self._ledfx.config["wled_preferences"][key].update(
+                        wled_config[key]
+                    )
                 else:
                     self._ledfx.config["wled_preferences"][key] = wled_config[
                         key
@@ -197,7 +197,7 @@ class ConfigEndpoint(RestEndpoint):
                 )
 
             if core_config:
-                self._ledfx.loop.call_soon(self._ledfx.stop, 4)
+                self._ledfx.loop.call_soon_threadsafe(self._ledfx.stop, 4)
 
             save_config(
                 config=self._ledfx.config,

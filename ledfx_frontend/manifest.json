@@ -1,6 +1,12 @@
 {
-  "short_name": "LedFx BladeMOD",
+  "short_name": "LedFx",
   "name": "LedFx Client by Blade",
+  "description": "Connect to any LedFx-Instance",
+  "author": "Yeon (Blade)",
+  "developer": {
+    "name": "Yeon",
+    "url": "https://github.com/YeonV"
+  },
   "icons": [
     {
       "src": "favicon/android-icon-36x36.png",
@@ -41,6 +47,6 @@
   ],
   "start_url": ".",
   "display": "standalone",
-  "theme_color": "#0dbedc",
+  "theme_color": "#800000",
   "background_color": "#030303"
 }

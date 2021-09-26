@@ -16,7 +16,10 @@ class Event:
     GRAPH_UPDATE = "graph_update"
     EFFECT_SET = "effect_set"
     EFFECT_CLEARED = "effect_cleared"
-    SCENE_SET = "scene_set"
+    SCENE_ACTIVATED = "scene_activated"
+    SCENE_DELETED = "scene_deleted"
+    PRESET_ACTIVATED = "preset_activated"
+    VIRTUAL_CONFIG_UPDATE = "virtual_config_update"
 
     def __init__(self, type: str):
         self.event_type = type
@@ -91,12 +94,29 @@ class EffectClearedEvent(Event):
         super().__init__(Event.EFFECT_CLEARED)
 
 
-class SceneSetEvent(Event):
+class SceneActivatedEvent(Event):
     """Event emitted when a scene is set"""
 
-    def __init__(self, scene_name):
-        super().__init__(Event.SCENE_SET)
-        self.scene_name = scene_name
+    def __init__(self, scene_id):
+        super().__init__(Event.SCENE_ACTIVATED)
+        self.scene_id = scene_id
+
+
+class SceneDeletedEvent(Event):
+    """Event emitted when a scene is set"""
+
+    def __init__(self, scene_id):
+        super().__init__(Event.SCENE_DELETED)
+        self.scene_id = scene_id
+
+
+class VirtualConfigUpdatedEvent(Event):
+    """Event emitted when a scene is set"""
+
+    def __init__(self, virtual_id, config):
+        super().__init__(Event.VIRTUAL_CONFIG_UPDATED)
+        self.virtual_id = virtual_id
+        self.config = config
 
 
 class LedFxShutdownEvent(Event):

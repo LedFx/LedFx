@@ -177,9 +177,9 @@ class VirtualEndpoint(RestEndpoint):
 
             # Update and save the configuration
             self._ledfx.config["devices"] = [
-                device
-                for device in self._ledfx.config["devices"]
-                if device["id"] != device_id
+                _device
+                for _device in self._ledfx.config["devices"]
+                if _device["id"] != device_id
             ]
 
         # cleanup this virtual from any scenes
