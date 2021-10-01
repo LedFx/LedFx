@@ -233,89 +233,24 @@ class WLED:
 
     @staticmethod
     async def _get_sync_settings(ip_address):
-        """
-        when doing posts to settings/sync we need to include the values of
-        all the existing checkboxes on that page, otherwise they get set to "off"!
-        Would be ideal to have an api exposed for the functions we're doing here,
-        but for now we'll just send these sensitive values with our posts
-        """
+
         response = await WLED._wled_request(
-            requests.get, ip_address, "settings/sync"
+            requests.get, ip_address, "json/cfg"
         )
-        response_text = response.text
-
-        try:
-            # find start of "GetV()"" function that defines all the settings' values on the page
-            getV_index = response_text.find("function GetV()")
-            # find indexes of {}
-            sync_settings_start = response_text.find("{", getV_index)
-            sync_settings_end = response_text.find("}", sync_settings_start)
-            # get the settings contained in the {}
-            sync_settings = response_text[
-                sync_settings_start + 1 : sync_settings_end
-            ]
-            # clean and split into individual setting strings eg: d.Sf.BT.checked=1
-            sync_settings = sync_settings.lstrip().split(";")
-            # split each string by key and value
-            sync_settings = [
-                setting.split("=") for setting in sync_settings if setting
-            ]
-            # break down key by "." to parse
-            sync_settings = [
-                (setting[0].split("."), setting[1])
-                for setting in sync_settings
-            ]
-            # only keep the settings that have keys "checked" / "EP" / "ET" / "RG"
-            sync_settings = [
-                setting
-                for setting in sync_settings
-                if any(
-                    i in ["checked", "EP", "ET", "RG", "DM", "EU", "DA"]
-                    for i in setting[0]
-                )
-            ]
-            # Discard any unchecked checkboxes
-            sync_settings = [
-                setting
-                for setting in sync_settings
-                if not ((setting[0][3] == "checked") and (setting[1] == "0"))
-            ]
-            # remove empty string "value" keys and extract the setting
-            # identifier and value eg: d.Sf.BT.checked=1 => BT, 1
-            sync_settings = [
-                (
-                    [
-                        i
-                        for i in setting[0]
-                        if i not in ["d", "sF", "checked", "value"]
-                    ][-1],
-                    int(setting[1]),
-                )
-                for setting in sync_settings
-            ]
-        except Exception as e:
-            _LOGGER.critical(
-                f"!! IF YOU SEE THIS ERROR !! - Please let an LedFx developer know that wled sync settings have changed format. Thank you <3. {e}"
-            )
-
-        # we now have a list of tuples for the value of each checkbox eg: [("BT", 1), ("HL", 0), ...]
-        # and we'll give it as a nice dict
-        return dict(sync_settings)
+        return response.json
 
     async def flush_sync_settings(self):
         """
-        HTTP POST to flush wled sync settings to the device. Will reboot if required.
+        JSON API call to flush wled sync settings to the device. Will reboot if required.
         """
+        if self.reboot_flag:
+            self.sync_settings["rb"] = True
         await WLED._wled_request(
             requests.post,
             self.ip_address,
-            "settings/sync",
+            "json/cfg",
             data=self.sync_settings,
         )
-
-        if self.reboot_flag:
-            await self.reboot()
-
         self.reboot_flag = False
 
     async def get_config(self):

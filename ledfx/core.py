@@ -175,7 +175,7 @@ class LedFxCore:
         root_logger.addHandler(logqueue_handler)
 
     async def flush_loop(self):
-        await asyncio.sleep(0, loop=self.loop)
+        await asyncio.sleep(0)
 
     def start(self, open_ui=False):
         async_fire_and_forget(self.async_start(open_ui=open_ui), self.loop)
@@ -272,7 +272,7 @@ class LedFxCore:
 
         # Fire a shutdown event and flush the loop
         self.events.fire_event(LedFxShutdownEvent())
-        await asyncio.sleep(0, loop=self.loop)
+        await asyncio.sleep(0)
 
         _LOGGER.info("Stopping HttpServer...")
         await self.http.stop()
