@@ -16,7 +16,7 @@ ledfx_presets = {
         },
         "passing-by": {
             "config": {
-                "blur": 2.839485681326729,
+                "blur": 2.8,
                 "color_step": 0.3,
                 "ease_method": "linear",
                 "flip": True,
@@ -42,8 +42,8 @@ ledfx_presets = {
         },
         "smooth-bounce": {
             "config": {
-                "blur": 7.887483619649835,
-                "color_step": 0.17968481885863682,
+                "blur": 7.9,
+                "color_step": 0.18,
                 "ease_method": "ease_in_out",
                 "flip": True,
                 "gradient_name": "Dancefloor",
@@ -84,7 +84,7 @@ ledfx_presets = {
         },
         "smooth-plasma": {
             "config": {
-                "blur": 8.272401272970361,
+                "blur": 8.3,
                 "color_high": "red",
                 "color_lows": "blue",
                 "color_mids": "pink",
@@ -98,11 +98,11 @@ ledfx_presets = {
         "smooth-rainbow": {
             "config": {
                 "block_count": 4,
-                "blur": 7.887483619649835,
+                "blur": 7.9,
                 "color_high": "blue",
                 "color_lows": "red",
                 "color_mids": "green",
-                "color_step": 0.17968481885863682,
+                "color_step": 0.18,
                 "ease_method": "ease_in_out",
                 "flip": False,
                 "gradient_name": "Dancefloor",
@@ -116,14 +116,14 @@ ledfx_presets = {
         },
         "snappy-blues": {
             "config": {
-                "blur": 1.2106147823794156,
+                "blur": 1.2,
                 "color_high": "green",
                 "color_lows": "blue",
                 "color_mids": "blue-aqua",
                 "flip": True,
                 "mirror": True,
                 "mixing_mode": "additive",
-                "sensitivity": 0.9341200404219574,
+                "sensitivity": 0.9,
             },
             "name": "Snappy Blues",
         },
@@ -132,7 +132,7 @@ ledfx_presets = {
         "reset": {"config": {}, "name": "Reset"},
         "blues": {
             "config": {
-                "blur": 4.555260047376609,
+                "blur": 4.5,
                 "flip": True,
                 "gradient_name": "Ocean",
                 "gradient_roll": 1,
@@ -143,7 +143,7 @@ ledfx_presets = {
         },
         "calm-reds": {
             "config": {
-                "blur": 4.555260047376609,
+                "blur": 4.5,
                 "flip": True,
                 "gradient_name": "Rust",
                 "gradient_roll": 1,
@@ -154,7 +154,7 @@ ledfx_presets = {
         },
         "rainbow-cycle": {
             "config": {
-                "blur": 4.555260047376609,
+                "blur": 4.5,
                 "flip": True,
                 "gradient_name": "Rainbow",
                 "gradient_roll": 1,
@@ -165,18 +165,18 @@ ledfx_presets = {
         },
         "red-to-blue": {
             "config": {
-                "blur": 4.555260047376609,
+                "blur": 4.5,
                 "flip": True,
                 "gradient_name": "Dancefloor",
                 "gradient_roll": 1,
                 "mirror": False,
-                "speed": 4.947172298543705,
+                "speed": 4.9,
             },
             "name": "Red to Blue",
         },
         "sunset": {
             "config": {
-                "blur": 4.555260047376609,
+                "blur": 4.5,
                 "flip": True,
                 "gradient_name": "Sunset",
                 "gradient_roll": 1,
@@ -190,35 +190,35 @@ ledfx_presets = {
         "reset": {"config": {}, "name": "Reset"},
         "breathing": {
             "config": {
-                "blur": 0.4148550128345929,
+                "blur": 0.41,
                 "flip": False,
                 "gradient_name": "Viridis",
                 "gradient_roll": 6,
                 "mirror": True,
                 "modulate": True,
                 "modulation_effect": "breath",
-                "modulation_speed": 0.5869113302419875,
-                "speed": 0.4156627763155395,
+                "modulation_speed": 0.59,
+                "speed": 0.41,
             },
             "name": "Breathing",
         },
         "falling-blues": {
             "config": {
-                "blur": 4.009287732631032,
+                "blur": 4,
                 "flip": True,
                 "gradient_name": "Ocean",
                 "gradient_roll": 4,
                 "mirror": True,
                 "modulate": False,
                 "modulation_effect": "breath",
-                "modulation_speed": 0.11693932144812554,
-                "speed": 2.8306554810607767,
+                "modulation_speed": 0.12,
+                "speed": 2.8,
             },
             "name": "Falling Blues",
         },
         "rolling-sunset": {
             "config": {
-                "blur": 8.587469069357562,
+                "blur": 8.6,
                 "flip": True,
                 "gradient_name": "Sunset",
                 "gradient_roll": 4,
@@ -232,57 +232,57 @@ ledfx_presets = {
         },
         "Rainbow-roll": {
             "config": {
-                "blur": 0.24438981530504167,
+                "blur": 0.24,
                 "flip": False,
                 "gradient_name": "Rainbow",
                 "gradient_roll": 1,
                 "mirror": True,
                 "modulate": True,
                 "modulation_effect": "sine",
-                "modulation_speed": 0.9690619871670397,
-                "speed": 5.608624445883839,
+                "modulation_speed": 0.97,
+                "speed": 5.6,
             },
             "name": "Rainbow Roll",
         },
         "spectrum": {
             "config": {
-                "blur": 0.24438981530504167,
+                "blur": 0.24,
                 "flip": False,
                 "gradient_name": "Rainbow",
                 "gradient_roll": 0,
                 "mirror": False,
                 "modulate": False,
                 "modulation_effect": "sine",
-                "modulation_speed": 0.9690619871670397,
-                "speed": 5.608624445883839,
+                "modulation_speed": 0.97,
+                "speed": 5.6,
             },
             "name": "Spectrum",
         },
         "twister": {
             "config": {
-                "blur": 9.302811759842648,
+                "blur": 9.3,
                 "flip": False,
                 "gradient_name": "Viridis",
                 "gradient_roll": 7,
                 "mirror": False,
                 "modulate": True,
                 "modulation_effect": "breath",
-                "modulation_speed": 0.34110727149960707,
-                "speed": 6.7198130241977845,
+                "modulation_speed": 0.34,
+                "speed": 6.7,
             },
             "name": "Twister",
         },
         "waves": {
             "config": {
-                "blur": 6.170079760529817,
+                "blur": 6.2,
                 "flip": False,
                 "gradient_name": "Spring",
                 "gradient_roll": 3,
                 "mirror": True,
                 "modulate": True,
                 "modulation_effect": "sine",
-                "modulation_speed": 0.5210822547308631,
-                "speed": 6.433979311861081,
+                "modulation_speed": 0.52,
+                "speed": 6.4,
             },
             "name": "Waves",
         },
@@ -291,7 +291,7 @@ ledfx_presets = {
         "reset": {"config": {}, "name": "Reset"},
         "cold-fire": {
             "config": {
-                "blur": 1.3037737000651894,
+                "blur": 1.3,
                 "flip": False,
                 "frequency_range": "Bass (60-250Hz)",
                 "gradient_name": "Frost",
@@ -302,7 +302,7 @@ ledfx_presets = {
         },
         "jungle-cascade": {
             "config": {
-                "blur": 8.38330900342954,
+                "blur": 8.4,
                 "flip": True,
                 "frequency_range": "Bass (60-250Hz)",
                 "gradient_name": "Jungle",
@@ -313,7 +313,7 @@ ledfx_presets = {
         },
         "lively": {
             "config": {
-                "blur": 2.3114887329706866,
+                "blur": 2.3,
                 "flip": True,
                 "frequency_range": "Bass (60-250Hz)",
                 "gradient_name": "Viridis",
@@ -324,7 +324,7 @@ ledfx_presets = {
         },
         "rolling-rainbow": {
             "config": {
-                "blur": 5.378434095736014,
+                "blur": 5.4,
                 "flip": False,
                 "frequency_range": "Bass (60-250Hz)",
                 "gradient_name": "Borealis",
@@ -335,7 +335,7 @@ ledfx_presets = {
         },
         "warm-bass": {
             "config": {
-                "blur": 8.464669855377387,
+                "blur": 8.5,
                 "flip": False,
                 "frequency_range": "Sub Bass (20-60Hz)",
                 "gradient_name": "Christmas",
@@ -349,8 +349,8 @@ ledfx_presets = {
         "reset": {"config": {}, "name": "Reset"},
         "bright-cascade": {
             "config": {
-                "blur": 3.761401491539508,
-                "color_step": 0.40995121399889745,
+                "blur": 3.8,
+                "color_step": 0.41,
                 "ease_method": "linear",
                 "flip": True,
                 "gradient_name": "Borealis",
@@ -362,7 +362,7 @@ ledfx_presets = {
         },
         "falling-blues": {
             "config": {
-                "blur": 9.090235261100872,
+                "blur": 9.1,
                 "color_step": 0.2,
                 "ease_method": "ease_in",
                 "flip": False,
@@ -375,8 +375,8 @@ ledfx_presets = {
         },
         "red-blue-expanse": {
             "config": {
-                "blur": 3.761401491539508,
-                "color_step": 0.40995121399889745,
+                "blur": 3.8,
+                "color_step": 0.41,
                 "ease_method": "ease_out",
                 "flip": False,
                 "gradient_name": "Dancefloor",
@@ -419,7 +419,7 @@ ledfx_presets = {
         },
         "meteor-shower": {
             "config": {
-                "blur": 2.3348743111776225,
+                "blur": 2.3,
                 "flip": False,
                 "high_colour": "yellow",
                 "high_sensitivity": 0.1,
@@ -434,7 +434,7 @@ ledfx_presets = {
         },
         "prismatic": {
             "config": {
-                "blur": 4.864718590808794,
+                "blur": 4.9,
                 "flip": False,
                 "high_colour": "pink",
                 "high_sensitivity": 0.1,
@@ -449,7 +449,7 @@ ledfx_presets = {
         },
         "ripples": {
             "config": {
-                "blur": 0.7900862850493173,
+                "blur": 0.8,
                 "flip": False,
                 "high_colour": "cyan",
                 "high_sensitivity": 0.1,
@@ -464,8 +464,8 @@ ledfx_presets = {
         },
         "smooth-rwb": {
             "config": {
-                "blur": 9.802290441262594,
-                "fade_rate": 0.6995150854402795,
+                "blur": 9.8,
+                "fade_rate": 0.7,
                 "flip": False,
                 "gradient_name": "Dancefloor",
                 "gradient_roll": 8,
@@ -477,7 +477,7 @@ ledfx_presets = {
                 "mids_sensitivity": 0.05,
                 "mirror": False,
                 "raindrop_animation": "droplet_0.npy",
-                "responsiveness": 0.8805526178803261,
+                "responsiveness": 0.88,
             },
             "name": "Smooth RWB",
         },
@@ -486,9 +486,9 @@ ledfx_presets = {
         "reset": {"config": {}, "name": "Reset"},
         "cascade": {
             "config": {
-                "blur": 7.723939087082861,
+                "blur": 7.7,
                 "flip": False,
-                "frequency": 0.32010374421218135,
+                "frequency": 0.32,
                 "mirror": True,
                 "speed": 0.3,
             },
@@ -496,31 +496,31 @@ ledfx_presets = {
         },
         "crawl": {
             "config": {
-                "blur": 2.264493237992604,
+                "blur": 2.3,
                 "flip": True,
-                "frequency": 3.59395180415761,
+                "frequency": 3.6,
                 "mirror": False,
-                "speed": 3.5219725685240606,
+                "speed": 3.5,
             },
             "name": "Crawl",
         },
         "faded": {
             "config": {
-                "blur": 6.446696350342175,
+                "blur": 6.4,
                 "flip": True,
-                "frequency": 5.9182720067675705,
+                "frequency": 5.9,
                 "mirror": False,
-                "speed": 9.726277976438702,
+                "speed": 9.7,
             },
             "name": "Faded",
         },
         "gentle": {
             "config": {
-                "blur": 7.722362005672311,
+                "blur": 7.7,
                 "flip": True,
-                "frequency": 1.8998083313002854,
+                "frequency": 1.9,
                 "mirror": True,
-                "speed": 3.3340652233785817,
+                "speed": 3.3,
             },
             "name": "Gentle",
         },
@@ -528,9 +528,9 @@ ledfx_presets = {
             "config": {
                 "blur": 0,
                 "flip": True,
-                "frequency": 4.442061196764945,
+                "frequency": 4.4,
                 "mirror": True,
-                "speed": 1.1239404505421837,
+                "speed": 1.1,
             },
             "name": "Slow Roll",
         },
@@ -567,15 +567,15 @@ ledfx_presets = {
         },
         "fast-hits": {
             "config": {
-                "blur": 0.20444417171673668,
+                "blur": 0.2,
                 "color_high": "orange",
                 "color_lows": "green-spring",
                 "color_mids": "plum",
-                "decay": 0.907001664505631,
+                "decay": 0.9,
                 "flip": False,
                 "mirror": True,
                 "speed": 6,
-                "threshold": 0.590340110398889,
+                "threshold": 0.6,
             },
             "name": "Fast Hits",
         },
@@ -587,7 +587,7 @@ ledfx_presets = {
                 "color_mids": "green",
                 "decay": 0.97,
                 "flip": False,
-                "frequency": 1.8998083313002854,
+                "frequency": 1.9,
                 "mirror": True,
                 "speed": 3,
                 "threshold": 0,
@@ -600,11 +600,11 @@ ledfx_presets = {
                 "color_high": "green-coral",
                 "color_lows": "lightblue",
                 "color_mids": "cyan",
-                "decay": 0.9743899623617388,
+                "decay": 0.97,
                 "flip": True,
                 "mirror": False,
                 "speed": 2,
-                "threshold": 0.021527497964141662,
+                "threshold": 0.0215,
             },
             "name": "Icicles",
         },
@@ -624,7 +624,7 @@ ledfx_presets = {
         },
         "warmth": {
             "config": {
-                "blur": 8.121234386391503,
+                "blur": 8.1,
                 "color_high": "green-coral",
                 "color_lows": "red",
                 "color_mids": "orange",
@@ -632,7 +632,7 @@ ledfx_presets = {
                 "flip": False,
                 "mirror": True,
                 "speed": 8,
-                "threshold": 0.5466364412932588,
+                "threshold": 0.55,
             },
             "name": "Warmth",
         },
@@ -767,40 +767,40 @@ ledfx_presets = {
         },
         "red-waves": {
             "config": {
-                "blur": 6.176594831274896,
+                "blur": 6.2,
                 "color": "red",
                 "flip": False,
                 "mirror": True,
                 "modulate": True,
                 "modulation_effect": "sine",
-                "modulation_speed": 0.7573696862826024,
-                "speed": 0.6209270937076822,
+                "modulation_speed": 0.76,
+                "speed": 0.62,
             },
             "name": "Red Waves",
         },
         "steel-pulse": {
             "config": {
-                "blur": 6.176594831274896,
+                "blur": 6.2,
                 "color": "steelblue",
                 "flip": False,
                 "mirror": True,
                 "modulate": True,
                 "modulation_effect": "breath",
-                "modulation_speed": 0.7573696862826024,
-                "speed": 0.6209270937076822,
+                "modulation_speed": 0.75,
+                "speed": 0.62,
             },
             "name": "Steel Pulse",
         },
         "turquoise-roll": {
             "config": {
-                "blur": 6.176594831274896,
+                "blur": 6.2,
                 "color": "green-turquoise",
                 "flip": False,
                 "mirror": False,
                 "modulate": True,
                 "modulation_effect": "sine",
-                "modulation_speed": 0.7573696862826024,
-                "speed": 0.6209270937076822,
+                "modulation_speed": 0.76,
+                "speed": 0.62,
             },
             "name": "Turquoise Roll",
         },
@@ -827,35 +827,35 @@ ledfx_presets = {
         "reset": {"config": {}, "name": "Reset"},
         "aggro-red": {
             "config": {
-                "blur": 6.176594831274896,
+                "blur": 6.2,
                 "color": "red",
                 "flip": False,
                 "frequency": "1/4 (.o. )",
                 "mirror": False,
                 "modulate": True,
                 "modulation_effect": "sine",
-                "modulation_speed": 0.7573696862826024,
-                "speed": 0.6209270937076822,
+                "modulation_speed": 0.76,
+                "speed": 0.62,
             },
             "name": "Aggro Red",
         },
         "blues-on-the-beat": {
             "config": {
-                "blur": 6.176594831274896,
+                "blur": 6.2,
                 "color": "blue",
                 "flip": False,
                 "frequency": "1/2 (.-. )",
                 "mirror": False,
                 "modulate": True,
                 "modulation_effect": "sine",
-                "modulation_speed": 0.7573696862826024,
-                "speed": 0.6209270937076822,
+                "modulation_speed": 0.76,
+                "speed": 0.62,
             },
             "name": "Blues on the Beat",
         },
         "fast-strobe": {
             "config": {
-                "blur": 2.6503112162794054,
+                "blur": 2.6,
                 "color": "white",
                 "flip": True,
                 "frequency": "1/4 (.o. )",
@@ -865,7 +865,7 @@ ledfx_presets = {
         },
         "faster-strobe": {
             "config": {
-                "blur": 2.6503112162794054,
+                "blur": 2.6,
                 "color": "white",
                 "flip": True,
                 "frequency": "1/16 (◉﹏◉ )",
@@ -875,7 +875,7 @@ ledfx_presets = {
         },
         "painful": {
             "config": {
-                "blur": 2.6503112162794054,
+                "blur": 2.6,
                 "color": "white",
                 "flip": True,
                 "frequency": "1/32 (⊙▃⊙ )",
@@ -898,7 +898,7 @@ ledfx_presets = {
         },
         "greens": {
             "config": {
-                "blur": 5.143255366747034,
+                "blur": 5.1,
                 "flip": False,
                 "gradient_name": "Winter",
                 "gradient_roll": 1,
@@ -908,7 +908,7 @@ ledfx_presets = {
         },
         "icy": {
             "config": {
-                "blur": 5.650204358080329,
+                "blur": 5.7,
                 "flip": False,
                 "gradient_name": "Frost",
                 "gradient_roll": 1,
@@ -918,7 +918,7 @@ ledfx_presets = {
         },
         "plasma": {
             "config": {
-                "blur": 1.7617836591953162,
+                "blur": 1.8,
                 "flip": False,
                 "gradient_name": "Plasma",
                 "gradient_roll": 6,
@@ -928,7 +928,7 @@ ledfx_presets = {
         },
         "rolling-blues": {
             "config": {
-                "blur": 1.001320116516412,
+                "blur": 1,
                 "flip": False,
                 "gradient_name": "Dancefloor",
                 "gradient_roll": 3,
@@ -938,7 +938,7 @@ ledfx_presets = {
         },
         "rolling-warmth": {
             "config": {
-                "blur": 5.941265629676581,
+                "blur": 5.9,
                 "flip": False,
                 "gradient_name": "Sunset",
                 "gradient_roll": 7,
@@ -948,7 +948,7 @@ ledfx_presets = {
         },
         "sunset-sweep": {
             "config": {
-                "blur": 8.587469069357562,
+                "blur": 8.6,
                 "flip": True,
                 "gradient_name": "Sunset",
                 "gradient_roll": 4,
