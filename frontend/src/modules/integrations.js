@@ -1,5 +1,6 @@
 import { createAction, handleActions } from 'redux-actions';
 import * as integrationsProxies from 'proxies/integrations';
+import Cookies from 'universal-cookie/es6';
 
 const ACTION_ROOT = 'integrations';
 
@@ -7,6 +8,7 @@ export const addIntegration = createAction(`${ACTION_ROOT}/INTEGRATION_ADD`);
 // export const getIntegrations = createAction(`${ACTION_ROOT}/INTEGRATIONS_GET`);
 export const setIntegration = createAction(`${ACTION_ROOT}/INTEGRATION_SET`);
 export const deleteIntegration = createAction(`${ACTION_ROOT}/INTEGRATION_DELETE`);
+export const editIntegration = createAction(`${ACTION_ROOT}/INTEGRATION_EDIT`);
 
 const INITIAL_STATE = {
     list: [],
@@ -34,12 +36,21 @@ export default handleActions(
         [deleteIntegration]: (state, { payload }) => {
             return { ...state, list: state.list.filter(v => v.id !== payload.id) };
         },
+        [editIntegration]: (state, { payload }) => {
+            const newList = state;
+            newList.list[payload.id].status = payload.status;
+            console.log(state);
+            console.log(newList);
+            return {
+                ...newList,
+            };
+        },
     },
     INITIAL_STATE
 );
 
 export function getAsyncIntegrations() {
-    console.log("YZ02")
+    console.log('YZ02');
     return async dispatch => {
         try {
             const response = await integrationsProxies.getIntegrations();
@@ -74,7 +85,7 @@ export async function toggleAsyncIntegration(data) {
     console.log('toggleAsyncIntegration: ', data);
     // 1) You would want to do a try catch around this. but its ok for dev
     //const response =
-    await integrationsProxies.toggleIntegration({id: data});
+    await integrationsProxies.toggleIntegration({ id: data });
 
     // 2) you dont want to do the reload here
     //    delete this after you have dispatched the new data to the store
@@ -83,7 +94,7 @@ export async function toggleAsyncIntegration(data) {
     return async dispatch => {
         try {
             console.log('damn', data);
-            const response = await integrationsProxies.toggleIntegration({id: data});
+            const response = await integrationsProxies.toggleIntegration({ id: data });
             if (response.statusText === 'OK') {
                 console.log('OMG', response.data);
                 // Here is were you normally want to dispatch the action
@@ -93,6 +104,19 @@ export async function toggleAsyncIntegration(data) {
             }
         } catch (error) {
             console.log(error);
+        }
+    };
+}
+
+export function editAsyncIntegration() {
+    return async dispatch => {
+        const cookie = new Cookies();
+        const logoutCheck = cookie.get('logout');
+        if (logoutCheck == 'false' || !logoutCheck) {
+            dispatch(editIntegration({ status: 1, id: 'spotify' }));
+        }
+        if (logoutCheck == 'true') {
+            dispatch(editIntegration({ status: 0, id: 'spotify' }));
         }
     };
 }

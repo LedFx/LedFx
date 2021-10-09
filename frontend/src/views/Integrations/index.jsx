@@ -27,6 +27,7 @@ function Alert(props) {
 const IntegrationsView = () => {
     const intTypes = useSelector(state => state.schemas.integrationTypes || {});
     const instInts = useSelector(state => state.integrations.list || []);
+    const integrations = useSelector(state => state.integrations);
     const dispatch = useDispatch();
     const [snackbarState, setSnackbarState] = useState({ open: false, message: '', type: 'error' });
 
@@ -42,58 +43,62 @@ const IntegrationsView = () => {
         dispatch(getScenes());
     }, [dispatch]);
 
+    useEffect(() => {}, [integrations]);
+
     return (
-        <><Grid container spacing={2}>
-            <Grid item xs={12} md={12}>
-                <Typography
-                    variant="h6"
-                    component="h2"
-                    color="textPrimary"
-                    style={{ marginBottom: '1em' }}
-                >
-                    Available Integrations
-                </Typography>
-                <Grid container justify="flex-start" spacing={5}>
-                    {intTypes &&
-                        intTypes !== {} &&
-                        Object.keys(intTypes).map((int, i) => (
-                            <Grid key={i} item>
-                                <Card intTypes={intTypes} int={int} />
-                            </Grid>
-                        ))}
+        <>
+            <Grid container spacing={2}>
+                <Grid item xs={12} md={12}>
+                    <Typography
+                        variant="h6"
+                        component="h2"
+                        color="textPrimary"
+                        style={{ marginBottom: '1em' }}
+                    >
+                        Available Integrations
+                    </Typography>
+                    <Grid container justify="flex-start" spacing={5}>
+                        {intTypes &&
+                            intTypes !== {} &&
+                            Object.keys(intTypes).map((int, i) => (
+                                <Grid key={i} item>
+                                    <Card intTypes={intTypes} int={int} />
+                                </Grid>
+                            ))}
+                    </Grid>
+                    <Typography
+                        variant="h6"
+                        component="h2"
+                        color="textPrimary"
+                        style={{ marginBottom: '1em', marginTop: '3em' }}
+                    >
+                        Installed Integrations
+                    </Typography>
+                    <Grid container justify="flex-start" spacing={5}>
+                        {instInts &&
+                            Object.keys(instInts).map((instInt, i) => (
+                                <Grid key={instInts[instInt].id} item>
+                                    <CardB int={instInts[instInt]} />
+                                </Grid>
+                            ))}
+                    </Grid>
                 </Grid>
-                <Typography
-                    variant="h6"
-                    component="h2"
-                    color="textPrimary"
-                    style={{ marginBottom: '1em', marginTop: '3em' }}
+                <Snackbar
+                    anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+                    autoHideDuration={1000 + snackbarState.message.length * 60}
+                    open={snackbarState.open}
+                    onClose={handleClose}
+                    key={'bottomcenter'}
                 >
-                    Installed Integrations
-                </Typography>
-                <Grid container justify="flex-start" spacing={5}>
-                    {instInts &&
-                        Object.keys(instInts).map((instInt, i) => (
-                            <Grid key={instInts[instInt].id} item>
-                                <CardB int={instInts[instInt]} />
-                            </Grid>
-                        ))}
-                </Grid>
+                    <Alert severity={snackbarState.type}>{snackbarState.message}</Alert>
+                </Snackbar>
             </Grid>
-            <Snackbar
-                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-                autoHideDuration={1000 + snackbarState.message.length * 60}
-                open={snackbarState.open}
-                onClose={handleClose}
-                key={'bottomcenter'}
+            <Typography
+                variant="h6"
+                component="h2"
+                color="textPrimary"
+                style={{ marginBottom: '1em', marginTop: '3em' }}
             >
-                <Alert severity={snackbarState.type}>{snackbarState.message}</Alert>
-            </Snackbar>
-        </Grid><Typography
-            variant="h6"
-            component="h2"
-            color="textPrimary"
-            style={{ marginBottom: '1em', marginTop: '3em' }}
-        >
                 Integration Event Listeners
             </Typography>
             <Table>
@@ -114,14 +119,15 @@ const IntegrationsView = () => {
                             <Row
                                 key={instInts[instInt].id}
                                 installedIntegrations={instInts}
-                                installedIntegration={instInt} />
+                                installedIntegration={instInt}
+                            />
                         ))}
                 </TableBody>
             </Table>
             <Grid>
-             <SpotifyView />
+                <SpotifyView />
             </Grid>
-            </>
+        </>
     );
 };
 

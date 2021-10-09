@@ -1,5 +1,5 @@
-import React, {useEffect} from 'react';
-import {useDispatch} from 'react-redux';
+import React, { useEffect } from 'react';
+import { useDispatch } from 'react-redux';
 import Card from '@material-ui/core/Card';
 import CardActions from '@material-ui/core/CardActions';
 import CardContent from '@material-ui/core/CardContent';
@@ -13,7 +13,7 @@ import { deleteAsyncIntegration } from 'modules/integrations';
 import { toggleAsyncIntegration } from 'modules/integrations';
 import { Switch, Chip } from '@material-ui/core';
 import DialogAddEventListener from 'components/IntegrationComponents/DialogAddEventListener';
-import { getAsyncqlclisteners  } from 'modules/qlc'
+import { getAsyncqlclisteners } from 'modules/qlc';
 import SpotifyView from '../../components/IntegrationComponents/SpotifyBlade';
 import DialogAddIntegration from 'components/IntegrationComponents/DialogAddIntegration';
 
@@ -31,20 +31,20 @@ const IntegrationsCard = ({ int }) => {
     const classes = useStyles();
     const dispatch = useDispatch();
     const handleEditIntegration = () => {
-        console.log('Integration ID:', int, int.type, int.id)
-        DialogAddIntegration(['integration'])
+        console.log('Integration ID:', int, int.type, int.id);
+        DialogAddIntegration(['integration']);
         //DialogAddIntegration(int.type)
         //<DialogAddIntegration integration={intTypes[int].id} />
         //<DialogAddIntegration integration={int.id} model={int} />
         //DialogAddIntegration (integration={intTypes[int].id})
     };
-    const handleToggle = (props) => toggleAsyncIntegration(props);
+    const handleToggle = props => toggleAsyncIntegration(props);
     //const preventDefault = (event) => event.preventDefault();
 
     useEffect(() => {
         // EVERTHING HERE IS ONLY CALLED ONCE WHEN THIS COMPONENT IS RENDERED, Only call if {int.type === 'qlc'}
-        if(int.status === 1 & int.type === 'qlc') dispatch(getAsyncqlclisteners(int.id))
-    }, [dispatch, int.id])
+        if ((int.status === 1) & (int.type === 'qlc')) dispatch(getAsyncqlclisteners(int.id));
+    }, [dispatch, int.id]);
     return (
         <Card className={classes.integrationCard} variant="outlined">
             <CardContent style={{ paddingBottom: 0 }}>
@@ -74,10 +74,10 @@ const IntegrationsCard = ({ int }) => {
                         : 'Unknown'}
                 </Typography>
                 <Typography color="textSecondary" gutterBottom>
-                <Link target="_blank" href="http://127.0.0.1:9999" >
-                    {int.type === 'qlc'
-                    ? `QLC+ API: http://${int.config.ip_address}:${int.config.port}`
-                    : ''}
+                    <Link target="_blank" href="http://127.0.0.1:9999">
+                        {int.type === 'qlc'
+                            ? `QLC+ API: http://${int.config.ip_address}:${int.config.port}`
+                            : ''}
                     </Link>
                 </Typography>
                 <Typography style={{ fontSize: '14px' }} color="textSecondary" gutterBottom>
@@ -85,19 +85,21 @@ const IntegrationsCard = ({ int }) => {
                 </Typography>
             </CardContent>
             <CardActions>
-                {int.status === 1 & int.type === 'qlc'
-                ? <DialogAddEventListener integration={int} />
-                : int.status !== 1 & int.type === 'qlc'
-                ?
-                <Link target="_blank" href="https://www.qlcplus.org/docs/html_en_EN/webinterface.html" >
-                    Must be in connected status, to add new event listener. Click here for setup guide.
-                </Link>
-                : ''}
+                {(int.status === 1) & (int.type === 'qlc') ? (
+                    <DialogAddEventListener integration={int} />
+                ) : (int.status !== 1) & (int.type === 'qlc') ? (
+                    <Link
+                        target="_blank"
+                        href="https://www.qlcplus.org/docs/html_en_EN/webinterface.html"
+                    >
+                        Must be in connected status, to add new event listener. Click here for setup
+                        guide.
+                    </Link>
+                ) : (
+                    ''
+                )}
 
-                {int.type === 'spotify' && int.active
-                ?
-                <SpotifyView />
-                    : ''}
+                {int.type === 'spotify' && int.active ? <SpotifyView /> : ''}
             </CardActions>
             <CardActions>
                 <PopoverSure
@@ -125,12 +127,9 @@ const IntegrationsCard = ({ int }) => {
                     //onClick={handleClickListItem}
                     //Need to do, onClick: Re-render switch and integrations Redux.
                 />
-
             </CardActions>
         </Card>
-
     );
 };
 
 export default IntegrationsCard;
-
