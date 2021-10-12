@@ -293,7 +293,7 @@ ledfx_presets = {
             "config": {
                 "blur": 1.3,
                 "flip": False,
-                "frequency_range": "Bass (60-250Hz)",
+                "frequency_range": "Bass",
                 "gradient_name": "Frost",
                 "gradient_roll": 5,
                 "mirror": True,
@@ -304,7 +304,7 @@ ledfx_presets = {
             "config": {
                 "blur": 8.4,
                 "flip": True,
-                "frequency_range": "Bass (60-250Hz)",
+                "frequency_range": "Bass",
                 "gradient_name": "Jungle",
                 "gradient_roll": 4,
                 "mirror": True,
@@ -315,7 +315,7 @@ ledfx_presets = {
             "config": {
                 "blur": 2.3,
                 "flip": True,
-                "frequency_range": "Bass (60-250Hz)",
+                "frequency_range": "Bass",
                 "gradient_name": "Viridis",
                 "gradient_roll": 7,
                 "mirror": True,
@@ -326,7 +326,7 @@ ledfx_presets = {
             "config": {
                 "blur": 5.4,
                 "flip": False,
-                "frequency_range": "Bass (60-250Hz)",
+                "frequency_range": "Bass",
                 "gradient_name": "Borealis",
                 "gradient_roll": 5,
                 "mirror": False,
@@ -337,7 +337,7 @@ ledfx_presets = {
             "config": {
                 "blur": 8.5,
                 "flip": False,
-                "frequency_range": "Sub Bass (20-60Hz)",
+                "frequency_range": "Bass",
                 "gradient_name": "Christmas",
                 "gradient_roll": 1,
                 "mirror": False,
