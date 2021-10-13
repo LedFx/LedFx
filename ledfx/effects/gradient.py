@@ -163,11 +163,17 @@ class GradientEffect(Effect):
         if self._config["gradient_roll"] == 0:
             return
 
-        self._gradient_curve = np.roll(
-            self._gradient_curve,
-            self._config["gradient_roll"],
-            axis=1,
-        )
+        self._gradient_roll_counter += self._config["gradient_roll"]
+
+        if self._gradient_roll_counter >= 1.0:
+            pixels_to_roll = np.floor(self._gradient_roll_counter)
+            self._gradient_roll_counter -= pixels_to_roll
+
+            self._gradient_curve = np.roll(
+                self._gradient_curve,
+                int(pixels_to_roll),
+                axis=1,
+            )
 
     def get_gradient_color(self, point):
         self._validate_gradient()
