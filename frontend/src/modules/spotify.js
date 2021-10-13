@@ -52,7 +52,6 @@ export default handleActions(
             state,
             { payload, payload: { logout, accessToken, refreshToken } }
         ) => {
-            console.log(payload);
             return {
                 ...state,
                 accessToken: accessToken,

@@ -41,8 +41,7 @@ const SpotifyView = props => {
         const cookies = new Cookies();
         const accessTest = cookies.get('logout');
         const accessTest1 = cookies.get('access_token');
-        if (accessTest == 'false' && !accessTest1) {
-            console.log('Working');
+        if ((accessTest == 'false' || !accessTest) && !accessTest1) {
             dispatch(refreshAuth());
             cookies.set('logout', false);
         }

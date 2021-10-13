@@ -39,8 +39,7 @@ export default handleActions(
         [editIntegration]: (state, { payload }) => {
             const newList = state;
             newList.list[payload.id].status = payload.status;
-            console.log(state);
-            console.log(newList);
+
             return {
                 ...newList,
             };
