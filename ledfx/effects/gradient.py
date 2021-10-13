@@ -43,6 +43,7 @@ class GradientEffect(Effect):
     )
 
     _gradient_curve = None
+    _gradient_roll_counter = 0
 
     def _comb(self, N, k):
         N = int(N)
