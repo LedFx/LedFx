@@ -30,7 +30,7 @@ class GradientEffect(Effect):
                 "gradient_roll",
                 description="Amount to shift the gradient",
                 default=0,
-            ): vol.All(vol.Coerce(int), vol.Range(min=0, max=10)),
+            ): vol.All(vol.Coerce(float), vol.Range(min=0, max=10)),
             vol.Optional(
                 "gradient_repeat",
                 description="Repeat the gradient into segments",
