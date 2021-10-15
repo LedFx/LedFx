@@ -111,6 +111,28 @@ def async_fire_and_forget(coro, loop, exc_handler=None):
     return
 
 
+def get_local_ip():
+    """Uses a socket to find the first non-loopback ip address
+
+    Returns:
+        string: Either the first non-loopback ip address or hostname, or localhost
+    """
+    try:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+        # Use Google Public DNS server to determine own IP
+        sock.connect(("8.8.8.8", 80))
+
+        return sock.getsockname()[0]
+    except OSError:
+        try:
+            return socket.gethostbyname(socket.gethostname())
+        except socket.gaierror:
+            return "127.0.0.1"
+    finally:
+        sock.close()
+
+
 def async_fire_and_return(coro, callback, timeout=10):
     """Run some async code in the core event loop with a callback to handle result"""
 
