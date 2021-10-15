@@ -190,7 +190,7 @@ class SpotifyPlayer extends React.Component {
                 color="default"
                 position="relative"
                 className={classes.appBar}
-                style={{ height: '28vh' }}
+                style={{ height: 'auto', paddingBottom: '10px' }}
             >
                 <Grid
                     container
@@ -198,7 +198,7 @@ class SpotifyPlayer extends React.Component {
                     alignItems="center"
                     className={classes.container}
                 >
-                    <Grid container item xs={4}>
+                    <Grid container item xs={12} sm={12} md={12} lg={4}>
                         <img
                             style={{ alignItems: 'center' }}
                             className={classes.albumImg}
@@ -207,22 +207,117 @@ class SpotifyPlayer extends React.Component {
                         />
                         <div
                             style={{
-                                width: '200px',
+                                width: '260px',
                                 marginLeft: '2vw',
                                 display: 'flex',
                                 alignItems: 'center',
                             }}
                         >
                             <Typography align="center" variant="body1">
-                                Song: {playerState.track_window.current_track.name}
-                                <div>
-                                    Artist: {playerState.track_window.current_track.artists[0].name}
+                                <div style={{ fontWeight: 'bold' }}>
+                                    {playerState.track_window.current_track.name}
+                                </div>
+                                <div style={{ fontSize: '14px', color: '#4c4c4c' }}>
+                                    {playerState.track_window.current_track.artists.length > 1
+                                        ? playerState.track_window.current_track.artists.map(
+                                              (artist, index) => {
+                                                  if (index == 0) return artist.name + ', ';
+                                                  else if (index == 1) {
+                                                      return artist.name;
+                                                  } else {
+                                                      return ', ' + artist.name;
+                                                  }
+                                              }
+                                          )
+                                        : playerState.track_window.current_track.artists[0].name}
                                 </div>
                             </Typography>
                         </div>
                     </Grid>
-                    <Grid item container xs={7}>
-                        <Grid item xs={6}>
+                    <Grid
+                        item
+                        xs={10}
+                        sm={10}
+                        md={10}
+                        lg={4}
+                        justify="center"
+                        style={{ paddingTop: '10px' }}
+                    >
+                        <div style={{ flex: 1, width: '100%' }}>
+                            <div
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                }}
+                            >
+                                {playerState.paused === false ? (
+                                    <Moment interval={1000} format="mm:ss" durationFromNow>
+                                        {moment().add(playerState.position * -0.001, 's')}
+                                    </Moment>
+                                ) : (
+                                    this.getTime(playerState.position)
+                                )}
+
+                                <Slider
+                                    style={{ width: '70%' }}
+                                    aria-labelledby="continuous-slider"
+                                    value={this.state.sliderPositon}
+                                    onChange={this.handleSliderChange.bind(this)}
+                                    min={1}
+                                    max={100}
+                                />
+                                {this.getTime(playerState.duration)}
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-evenly' }}>
+                                <Button
+                                    style={{ marginRight: '1.8rem' }}
+                                    color="primary"
+                                    variant="contained"
+                                    onClick={() => {
+                                        this.state.player.previousTrack();
+                                    }}
+                                >
+                                    <SkipPrevious />
+                                </Button>
+                                {playerState.paused === true ? (
+                                    <Button
+                                        style={{ marginRight: '1.8rem' }}
+                                        color="primary"
+                                        variant="contained"
+                                        onClick={() => {
+                                            this.state.player.togglePlay();
+                                        }}
+                                    >
+                                        <PlayArrow />
+                                    </Button>
+                                ) : (
+                                    <Button
+                                        style={{ marginRight: '1.8rem' }}
+                                        color="primary"
+                                        variant="contained"
+                                        onClick={() => {
+                                            this.state.player.togglePlay();
+                                        }}
+                                    >
+                                        <Pause />
+                                    </Button>
+                                )}
+                                <Button
+                                    style={{ marginRight: '1.8rem' }}
+                                    color="primary"
+                                    variant="contained"
+                                    onClick={() => {
+                                        this.state.player.nextTrack();
+                                    }}
+                                >
+                                    <SkipNext />
+                                </Button>
+                            </div>
+                        </div>
+                    </Grid>
+                    <Grid item container xs={12} sm={12} md={12} lg={4} justify="center">
+                        <Grid item xs={6} justify="center" align="center">
                             <FormControl className={classes.formControl}>
                                 <InputLabel id="select">Scenes</InputLabel>
                                 <Select
@@ -240,97 +335,8 @@ class SpotifyPlayer extends React.Component {
                                 </Select>
                             </FormControl>
                         </Grid>
-                        <Grid item xs={6} justify="center">
-                            <div style={{ flex: 1, width: '100%' }}>
-                                <div
-                                    style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'space-between',
-                                    }}
-                                >
-                                    {playerState.paused === false ? (
-                                        <Moment interval={1000} format="mm:ss" durationFromNow>
-                                            {moment().add(playerState.position * -0.001, 's')}
-                                        </Moment>
-                                    ) : (
-                                        this.getTime(playerState.position)
-                                    )}
-
-                                    <Slider
-                                        style={{ width: '70%' }}
-                                        aria-labelledby="continuous-slider"
-                                        value={this.state.sliderPositon}
-                                        onChange={this.handleSliderChange.bind(this)}
-                                        min={1}
-                                        max={100}
-                                    />
-                                    {this.getTime(playerState.duration)}
-                                </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-evenly' }}>
-                                    <Button
-                                        style={{ marginRight: '1.8rem' }}
-                                        color="primary"
-                                        variant="contained"
-                                        onClick={() => {
-                                            this.state.player.previousTrack();
-                                        }}
-                                    >
-                                        <SkipPrevious />
-                                    </Button>
-                                    {playerState.paused === true ? (
-                                        <Button
-                                            style={{ marginRight: '1.8rem' }}
-                                            color="primary"
-                                            variant="contained"
-                                            onClick={() => {
-                                                this.state.player.togglePlay();
-                                            }}
-                                        >
-                                            <PlayArrow />
-                                        </Button>
-                                    ) : (
-                                        <Button
-                                            style={{ marginRight: '1.8rem' }}
-                                            color="primary"
-                                            variant="contained"
-                                            onClick={() => {
-                                                this.state.player.togglePlay();
-                                            }}
-                                        >
-                                            <Pause />
-                                        </Button>
-                                    )}
-                                    <Button
-                                        style={{ marginRight: '1.8rem' }}
-                                        color="primary"
-                                        variant="contained"
-                                        onClick={() => {
-                                            this.state.player.nextTrack();
-                                        }}
-                                    >
-                                        <SkipNext />
-                                    </Button>
-                                </div>
-                            </div>
-                        </Grid>
-
-                        <Grid container item xs={6} justify="center">
-                            <Typography align="center" variant="body1">
-                                <div>
-                                    Track Position: .
-                                    {playerState.paused === false ? (
-                                        <Moment interval={1000} format="mm:ss" durationFromNow>
-                                            {moment().add(playerState.position * -0.001, 's')}
-                                        </Moment>
-                                    ) : (
-                                        <Moment interval={0} format="mm:ss" durationFromNow>
-                                            {moment().add(playerState.position * -0.001, 's')}
-                                        </Moment>
-                                    )}
-                                </div>
-                            </Typography>
-                            <div>
+                        <Grid container item xs={12} justify="center" align="center">
+                            <div style={{ display: 'flex', alignItems: 'center' }}>
                                 <FormControlLabel
                                     control={
                                         <Checkbox
@@ -342,10 +348,31 @@ class SpotifyPlayer extends React.Component {
                                     }
                                     label="Include Track Position"
                                 />
+                                {playerState.paused === false ? (
+                                    <Moment
+                                        interval={1000}
+                                        format="mm:ss"
+                                        durationFromNow
+                                        style={{ fontSize: '15px' }}
+                                    >
+                                        {moment().add(playerState.position * -0.001, 's')}
+                                    </Moment>
+                                ) : (
+                                    <Moment
+                                        interval={0}
+                                        format="mm:ss"
+                                        durationFromNow
+                                        style={{ fontSize: '15px' }}
+                                    >
+                                        {moment().add(playerState.position * -0.001, 's')}
+                                    </Moment>
+                                )}
                             </div>
-                            <Button color="primary" variant="contained">
-                                Add Trigger
-                            </Button>
+                            <Grid container item xs={12} justify="center">
+                                <Button color="primary" variant="contained">
+                                    Add Trigger
+                                </Button>
+                            </Grid>
                         </Grid>
                     </Grid>
                 </Grid>
