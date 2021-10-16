@@ -81,7 +81,7 @@ class BladePowerPlus(AudioReactiveEffect, HSVEffect, GradientEffect):
         rgb_gradient = self.apply_gradient(1)
         self.hsv = self.rgb_to_hsv(rgb_gradient)
 
-        if self.config["solid_color"] is True:
+        if self._config["solid_color"] is True:
             hsv_color = self.rgb_to_hsv(
                 np.array(COLORS[self._config["color"]])
             )
@@ -95,7 +95,7 @@ class BladePowerPlus(AudioReactiveEffect, HSVEffect, GradientEffect):
     def audio_data_updated(self, data):
         # Get filtered bar power
         self.bar = (
-            getattr(data, self.power_func)() * self.config["multiplier"] * 2
+            getattr(data, self.power_func)() * self._config["multiplier"] * 2
         )
 
     def render_hsv(self):
@@ -109,6 +109,6 @@ class BladePowerPlus(AudioReactiveEffect, HSVEffect, GradientEffect):
         # Construct hsv array
         self.out[:, 0] = self.hsv[:, 0]
         self.out[:, 1] = self.hsv[:, 1]
-        self.out[:bar_idx, 2] = self.config["brightness"]
+        self.out[:bar_idx, 2] = self._config["brightness"]
 
         self.hsv_array = self.out
