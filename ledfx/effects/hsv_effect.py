@@ -346,8 +346,8 @@ class HSVEffect(Effect):
             pixels_to_roll = np.floor(self._hsv_roll_counter)
             self._hsv_roll_counter -= pixels_to_roll
 
-            if "invert_roll" in self.config:
-                if self.config["invert_roll"]:
+            if "invert_roll" in self._config:
+                if self._config["invert_roll"]:
                     pixels_to_roll *= -1
 
             self.hsv = np.roll(
