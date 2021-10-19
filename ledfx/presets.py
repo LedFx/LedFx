@@ -246,9 +246,13 @@ ledfx_presets = {
         "reset": {"config": {}, "name": "Reset"},
         "breathing": {
             "config": {
+                "background_brightness": 1,
+                "background_color": "black",
                 "blur": 0.41,
+                "brightness": 1,
                 "flip": False,
                 "gradient_name": "Viridis",
+                "gradient_repeat": 1,
                 "gradient_roll": 6,
                 "mirror": True,
                 "modulate": True,
@@ -260,9 +264,13 @@ ledfx_presets = {
         },
         "falling-blues": {
             "config": {
+                "background_brightness": 1,
+                "background_color": "black",
                 "blur": 4,
+                "brightness": 1,
                 "flip": True,
                 "gradient_name": "Ocean",
+                "gradient_repeat": 1,
                 "gradient_roll": 4,
                 "mirror": True,
                 "modulate": False,
@@ -274,9 +282,13 @@ ledfx_presets = {
         },
         "rolling-sunset": {
             "config": {
+                "background_brightness": 1,
+                "background_color": "black",
                 "blur": 8.6,
+                "brightness": 1,
                 "flip": True,
                 "gradient_name": "Sunset",
+                "gradient_repeat": 1,
                 "gradient_roll": 4,
                 "mirror": False,
                 "modulate": False,
@@ -288,9 +300,13 @@ ledfx_presets = {
         },
         "Rainbow-roll": {
             "config": {
+                "background_brightness": 1,
+                "background_color": "black",
                 "blur": 0.24,
+                "brightness": 1,
                 "flip": False,
                 "gradient_name": "Rainbow",
+                "gradient_repeat": 1,
                 "gradient_roll": 1,
                 "mirror": True,
                 "modulate": True,
@@ -302,9 +318,13 @@ ledfx_presets = {
         },
         "spectrum": {
             "config": {
+                "background_brightness": 1,
+                "background_color": "black",
                 "blur": 0.24,
+                "brightness": 1,
                 "flip": False,
                 "gradient_name": "Rainbow",
+                "gradient_repeat": 1,
                 "gradient_roll": 0,
                 "mirror": False,
                 "modulate": False,
@@ -316,9 +336,13 @@ ledfx_presets = {
         },
         "twister": {
             "config": {
+                "background_brightness": 1,
+                "background_color": "black",
                 "blur": 9.3,
+                "brightness": 1,
                 "flip": False,
                 "gradient_name": "Viridis",
+                "gradient_repeat": 1,
                 "gradient_roll": 7,
                 "mirror": False,
                 "modulate": True,
@@ -330,9 +354,13 @@ ledfx_presets = {
         },
         "waves": {
             "config": {
+                "background_brightness": 1,
+                "background_color": "black",
                 "blur": 6.2,
+                "brightness": 1,
                 "flip": False,
                 "gradient_name": "Spring",
+                "gradient_repeat": 1,
                 "gradient_roll": 3,
                 "mirror": True,
                 "modulate": True,
