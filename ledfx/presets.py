@@ -1121,9 +1121,13 @@ ledfx_presets = {
         "reset": {"config": {}, "name": "Reset"},
         "classic": {
             "config": {
+                "background_brightness": 1,
+                "background_color": "black",
                 "blur": 3,
+                "brightness": 1,
                 "flip": False,
                 "gradient_name": "Rainbow",
+                "gradient_repeat": 1,
                 "gradient_roll": 0,
                 "mirror": False,
             },
@@ -1131,9 +1135,13 @@ ledfx_presets = {
         },
         "greens": {
             "config": {
+                "background_brightness": 1,
+                "background_color": "black",
                 "blur": 5.1,
+                "brightness": 1,
                 "flip": False,
                 "gradient_name": "Winter",
+                "gradient_repeat": 1,
                 "gradient_roll": 1,
                 "mirror": True,
             },
@@ -1141,9 +1149,13 @@ ledfx_presets = {
         },
         "icy": {
             "config": {
+                "background_brightness": 1,
+                "background_color": "black",
                 "blur": 5.7,
+                "brightness": 1,
                 "flip": False,
                 "gradient_name": "Frost",
+                "gradient_repeat": 1,
                 "gradient_roll": 1,
                 "mirror": False,
             },
@@ -1151,9 +1163,13 @@ ledfx_presets = {
         },
         "plasma": {
             "config": {
+                "background_brightness": 1,
+                "background_color": "black",
                 "blur": 1.8,
+                "brightness": 1,
                 "flip": False,
                 "gradient_name": "Plasma",
+                "gradient_repeat": 1,
                 "gradient_roll": 6,
                 "mirror": True,
             },
@@ -1161,9 +1177,13 @@ ledfx_presets = {
         },
         "rolling-blues": {
             "config": {
+                "background_brightness": 1,
+                "background_color": "black",
                 "blur": 1,
+                "brightness": 1,
                 "flip": False,
                 "gradient_name": "Dancefloor",
+                "gradient_repeat": 1,
                 "gradient_roll": 3,
                 "mirror": True,
             },
@@ -1171,9 +1191,13 @@ ledfx_presets = {
         },
         "rolling-warmth": {
             "config": {
+                "background_brightness": 1,
+                "background_color": "black",
                 "blur": 5.9,
+                "brightness": 1,
                 "flip": False,
                 "gradient_name": "Sunset",
+                "gradient_repeat": 1,
                 "gradient_roll": 7,
                 "mirror": True,
             },
@@ -1181,9 +1205,13 @@ ledfx_presets = {
         },
         "sunset-sweep": {
             "config": {
+                "background_brightness": 1,
+                "background_color": "black",
                 "blur": 8.6,
+                "brightness": 1,
                 "flip": True,
                 "gradient_name": "Sunset",
+                "gradient_repeat": 1,
                 "gradient_roll": 4,
                 "mirror": False,
             },
