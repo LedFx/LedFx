@@ -403,8 +403,11 @@ ledfx_presets = {
     "rain": {
         "reset": {"config": {}, "name": "Reset"},
         "cold-drops": {
-            "config": {
-                "blur": 1,
+            "config": {                
+                "background_brightness": 1.0,
+                "background_color": "black",
+                "blur": 1.0,
+                "brightness": 1.0,
                 "flip": False,
                 "high_colour": "pink",
                 "high_sensitivity": 0.1,
@@ -413,7 +416,7 @@ ledfx_presets = {
                 "mids_colour": "cyan",
                 "mids_sensitivity": 0.05,
                 "mirror": True,
-                "raindrop_animation": "droplet_1.npy",
+                "raindrop_animation": "droplet_1.npy"
             },
             "name": "Cold Drops",
         },
@@ -1091,13 +1094,16 @@ ledfx_presets = {
     "bands": {"reset": {"config": {}, "name": "Reset"}},
     "bands_matrix": {"reset": {"config": {}, "name": "Reset"}},
     "block_reflections": {"reset": {"config": {}, "name": "Reset"}},
+    "crawler": {"reset": {"config": {}, "name": "Reset"}},
     "blocks": {"reset": {"config": {}, "name": "Reset"}},
     "energy2": {"reset": {"config": {}, "name": "Reset"}},
     "equalizer": {"reset": {"config": {}, "name": "Reset"}},
     "fire": {"reset": {"config": {}, "name": "Reset"}},
+    "glitch": {"reset": {"config": {}, "name": "Reset"}},
     "hue_fix_demo": {"reset": {"config": {}, "name": "Reset"}},
     "lava_lamp": {"reset": {"config": {}, "name": "Reset"}},
     "marching": {"reset": {"config": {}, "name": "Reset"}},
+    "melt": {"reset": {"config": {}, "name": "Reset"}},
     "pitchSpectrum": {"reset": {"config": {}, "name": "Reset"}},
     "power": {"reset": {"config": {}, "name": "Reset"}},
     "spectrum": {"reset": {"config": {}, "name": "Reset"}},
