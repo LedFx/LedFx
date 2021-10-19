@@ -1222,9 +1222,12 @@ ledfx_presets = {
         "reset": {"config": {}, "name": "Reset"},
         "dancefloor": {
             "config": {
+                "background_brightness": 1,
+                "background_color": "black",
                 "bass_strobe_decay_rate": 0.7,
                 "bass_threshold": 0.4,
                 "blur": 0,
+                "brightness": 1,
                 "color_step": 0.0625,
                 "flip": False,
                 "gradient_name": "Dancefloor",
@@ -1239,9 +1242,12 @@ ledfx_presets = {
         },
         "strobe_only": {
             "config": {
+                "background_brightness": 1,
+                "background_color": "black",
                 "bass_strobe_decay_rate": 0.7,
                 "bass_threshold": 1,
                 "blur": 0,
+                "brightness": 1,
                 "color_step": 0.0625,
                 "flip": False,
                 "gradient_name": "Dancefloor",
@@ -1256,9 +1262,12 @@ ledfx_presets = {
         },
         "bass_only": {
             "config": {
+                "background_brightness": 1,
+                "background_color": "black",
                 "bass_strobe_decay_rate": 0.7,
                 "bass_threshold": 0.4,
                 "blur": 0,
+                "brightness": 1,
                 "color_step": 0.0625,
                 "flip": False,
                 "gradient_name": "Dancefloor",
@@ -1273,9 +1282,12 @@ ledfx_presets = {
         },
         "extreme": {
             "config": {
+                "background_brightness": 1,
+                "background_color": "black",
                 "bass_strobe_decay_rate": 1,
                 "bass_threshold": 0.45,
                 "blur": 0,
+                "brightness": 1,
                 "color_step": 0.0625,
                 "flip": False,
                 "gradient_name": "Dancefloor",
@@ -1290,9 +1302,12 @@ ledfx_presets = {
         },
         "glitter": {
             "config": {
+                "background_brightness": 1,
+                "background_color": "black",
                 "bass_strobe_decay_rate": 0.01,
                 "bass_threshold": 0,
                 "blur": 0,
+                "brightness": 1,
                 "color_step": 0.015,
                 "flip": False,
                 "gradient_name": "Dancefloor",
