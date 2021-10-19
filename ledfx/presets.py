@@ -382,7 +382,7 @@ ledfx_presets = {
                 "flip": False,
                 "frequency_range": "Bass",
                 "gradient_name": "Frost",
-                "gradient-repeat": 1,
+                "gradient_repeat": 1,
                 "gradient_roll": 5,
                 "mirror": True,
             },
@@ -397,7 +397,7 @@ ledfx_presets = {
                 "flip": True,
                 "frequency_range": "Bass",
                 "gradient_name": "Jungle",
-                "gradient-repeat": 1,
+                "gradient_repeat": 1,
                 "gradient_roll": 4,
                 "mirror": True,
             },
@@ -412,7 +412,7 @@ ledfx_presets = {
                 "flip": True,
                 "frequency_range": "Bass",
                 "gradient_name": "Viridis",
-                "gradient-repeat": 1,
+                "gradient_repeat": 1,
                 "gradient_roll": 7,
                 "mirror": True,
             },
@@ -427,7 +427,7 @@ ledfx_presets = {
                 "flip": False,
                 "frequency_range": "Bass",
                 "gradient_name": "Borealis",
-                "gradient-repeat": 1,
+                "gradient_repeat": 1,
                 "gradient_roll": 5,
                 "mirror": False,
             },
@@ -442,7 +442,7 @@ ledfx_presets = {
                 "flip": False,
                 "frequency_range": "Bass",
                 "gradient_name": "Christmas",
-                "gradient-repeat": 1,
+                "gradient_repeat": 1,
                 "gradient_roll": 1,
                 "mirror": False,
             },
@@ -523,7 +523,7 @@ ledfx_presets = {
     "rain": {
         "reset": {"config": {}, "name": "Reset"},
         "cold-drops": {
-            "config": {                
+            "config": {
                 "background_brightness": 1.0,
                 "background_color": "black",
                 "blur": 1.0,
@@ -542,7 +542,10 @@ ledfx_presets = {
         },
         "meteor-shower": {
             "config": {
+                "background_brightness": 1.0,
+                "background_color": "black",
                 "blur": 2.3,
+                "brightness": 1,
                 "flip": False,
                 "high_colour": "yellow",
                 "high_sensitivity": 0.1,
@@ -557,7 +560,10 @@ ledfx_presets = {
         },
         "prismatic": {
             "config": {
+                "background_brightness": 1.0,
+                "background_color": "black",
                 "blur": 4.9,
+                "brightness": 1,
                 "flip": False,
                 "high_colour": "pink",
                 "high_sensitivity": 0.1,
@@ -572,7 +578,10 @@ ledfx_presets = {
         },
         "ripples": {
             "config": {
+                "background_brightness": 1.0,
+                "background_color": "black",
                 "blur": 0.8,
+                "brightness": 1,
                 "flip": False,
                 "high_colour": "cyan",
                 "high_sensitivity": 0.1,
@@ -587,7 +596,10 @@ ledfx_presets = {
         },
         "smooth-rwb": {
             "config": {
+                "background_brightness": 1.0,
+                "background_color": "black",
                 "blur": 9.8,
+                "brightness": 1,
                 "fade_rate": 0.7,
                 "flip": False,
                 "gradient_name": "Dancefloor",
