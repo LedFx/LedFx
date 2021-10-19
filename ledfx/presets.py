@@ -168,9 +168,13 @@ ledfx_presets = {
         "reset": {"config": {}, "name": "Reset"},
         "blues": {
             "config": {
+                "background_brightness": 1,
+                "background_color": "black",
                 "blur": 4.5,
+                "brightness": 1,
                 "flip": True,
                 "gradient_name": "Ocean",
+                "gradient_repeat": 1,
                 "gradient_roll": 1,
                 "mirror": False,
                 "speed": 5,
@@ -179,9 +183,13 @@ ledfx_presets = {
         },
         "calm-reds": {
             "config": {
+                "background_brightness": 1,
+                "background_color": "black",
                 "blur": 4.5,
+                "brightness": 1,
                 "flip": True,
                 "gradient_name": "Rust",
+                "gradient_repeat": 1,
                 "gradient_roll": 1,
                 "mirror": False,
                 "speed": 5,
@@ -190,9 +198,13 @@ ledfx_presets = {
         },
         "rainbow-cycle": {
             "config": {
+                "background_brightness": 1,
+                "background_color": "black",
                 "blur": 4.5,
+                "brightness": 1,
                 "flip": True,
                 "gradient_name": "Rainbow",
+                "gradient_repeat": 1,
                 "gradient_roll": 1,
                 "mirror": False,
                 "speed": 5,
@@ -201,9 +213,13 @@ ledfx_presets = {
         },
         "red-to-blue": {
             "config": {
+                "background_brightness": 1,
+                "background_color": "black",
                 "blur": 4.5,
+                "brightness": 1,
                 "flip": True,
                 "gradient_name": "Dancefloor",
+                "gradient_repeat": 1,
                 "gradient_roll": 1,
                 "mirror": False,
                 "speed": 4.9,
@@ -212,9 +228,13 @@ ledfx_presets = {
         },
         "sunset": {
             "config": {
+                "background_brightness": 1,
+                "background_color": "black",
                 "blur": 4.5,
+                "brightness": 1,
                 "flip": True,
                 "gradient_name": "Sunset",
+                "gradient_repeat": 1,
                 "gradient_roll": 1,
                 "mirror": False,
                 "speed": 5,
