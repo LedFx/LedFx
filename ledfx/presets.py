@@ -453,11 +453,15 @@ ledfx_presets = {
         "reset": {"config": {}, "name": "Reset"},
         "bright-cascade": {
             "config": {
+                "background_brightness": 1,
+                "background_color": "black",
                 "blur": 3.8,
+                "brightness": 1,
                 "color_step": 0.41,
                 "ease_method": "linear",
                 "flip": True,
                 "gradient_name": "Borealis",
+                "gradient_repeat": 1,
                 "gradient_roll": 7,
                 "mirror": True,
                 "mode": "cascade",
@@ -466,11 +470,15 @@ ledfx_presets = {
         },
         "falling-blues": {
             "config": {
+                "background_brightness": 1,
+                "background_color": "black",
                 "blur": 9.1,
+                "brightness": 1,
                 "color_step": 0.2,
                 "ease_method": "ease_in",
                 "flip": False,
                 "gradient_name": "Ocean",
+                "gradient_repeat": 1,
                 "gradient_roll": 0,
                 "mirror": False,
                 "mode": "cascade",
@@ -479,11 +487,15 @@ ledfx_presets = {
         },
         "red-blue-expanse": {
             "config": {
+                "background_brightness": 1,
+                "background_color": "black",
                 "blur": 3.8,
+                "brightness": 1,
                 "color_step": 0.41,
                 "ease_method": "ease_out",
                 "flip": False,
                 "gradient_name": "Dancefloor",
+                "gradient_repeat": 1,
                 "gradient_roll": 7,
                 "mirror": True,
                 "mode": "cascade",
@@ -492,11 +504,15 @@ ledfx_presets = {
         },
         "Rainbow-oscillation": {
             "config": {
+                "background_brightness": 1,
+                "background_color": "black",
                 "blur": 0,
+                "brightness": 1,
                 "color_step": 0.125,
                 "ease_method": "ease_in_out",
                 "flip": False,
                 "gradient_name": "Rainbow",
+                "gradient_repeat": 1,
                 "gradient_roll": 0,
                 "mirror": False,
                 "mode": "wipe",
