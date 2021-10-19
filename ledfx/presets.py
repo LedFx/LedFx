@@ -91,7 +91,11 @@ ledfx_presets = {
         "reset": {"config": {}, "name": "Reset"},
         "clear-sky": {
             "config": {
+                "background_brightness": 1,
+                "background_color": "black",
                 "blur": 0.5,
+                "brightness": 1,
+                "color_cycler": False,
                 "color_high": "cyan",
                 "color_lows": "yellow",
                 "color_mids": "green",
@@ -104,7 +108,11 @@ ledfx_presets = {
         },
         "smooth-plasma": {
             "config": {
+                "background_brightness": 1,
+                "background_color": "black",
                 "blur": 8.3,
+                "brightness": 1,
+                "color_cycler": False,
                 "color_high": "red",
                 "color_lows": "blue",
                 "color_mids": "pink",
@@ -117,8 +125,12 @@ ledfx_presets = {
         },
         "smooth-rainbow": {
             "config": {
+                "background_brightness": 1,
+                "background_color": "black",
                 "block_count": 4,
                 "blur": 7.9,
+                "brightness": 1,
+                "color_cycler": False,
                 "color_high": "blue",
                 "color_lows": "red",
                 "color_mids": "green",
@@ -136,7 +148,11 @@ ledfx_presets = {
         },
         "snappy-blues": {
             "config": {
+                "background_brightness": 1,
+                "background_color": "black",
                 "blur": 1.2,
+                "brightness": 1,
+                "color_cycler": False,
                 "color_high": "green",
                 "color_lows": "blue",
                 "color_mids": "blue-aqua",
