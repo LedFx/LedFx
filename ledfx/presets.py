@@ -55,11 +55,15 @@ ledfx_presets = {
         },
         "Rainbow-lr": {
             "config": {
+                "background_brightness": 1,
+                "background_color": "black",
                 "blur": 0,
+                "brightness": 1,
                 "color_step": 0.125,
                 "ease_method": "ease_out",
                 "flip": False,
-                "gradient_name": "Rainbow",
+                "gradient_name": "Rainbow",                
+                "gradient_repeat": 1,
                 "gradient_roll": 0,
                 "mirror": False,
                 "mode": "wipe",
