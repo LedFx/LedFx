@@ -621,7 +621,10 @@ ledfx_presets = {
         "reset": {"config": {}, "name": "Reset"},
         "cascade": {
             "config": {
+                "background_brightness": 1.0,
+                "background_color": "black",
                 "blur": 7.7,
+                "brightness": 1,
                 "flip": False,
                 "frequency": 0.32,
                 "mirror": True,
@@ -631,7 +634,10 @@ ledfx_presets = {
         },
         "crawl": {
             "config": {
+                "background_brightness": 1.0,
+                "background_color": "black",
                 "blur": 2.3,
+                "brightness": 1,
                 "flip": True,
                 "frequency": 3.6,
                 "mirror": False,
@@ -641,7 +647,10 @@ ledfx_presets = {
         },
         "faded": {
             "config": {
+                "background_brightness": 1.0,
+                "background_color": "black",
                 "blur": 6.4,
+                "brightness": 1,
                 "flip": True,
                 "frequency": 5.9,
                 "mirror": False,
@@ -651,7 +660,10 @@ ledfx_presets = {
         },
         "gentle": {
             "config": {
+                "background_brightness": 1.0,
+                "background_color": "black",
                 "blur": 7.7,
+                "brightness": 1,
                 "flip": True,
                 "frequency": 1.9,
                 "mirror": True,
@@ -661,7 +673,10 @@ ledfx_presets = {
         },
         "slow-roll": {
             "config": {
+                "background_brightness": 1.0,
+                "background_color": "black",
                 "blur": 0,
+                "brightness": 1,
                 "flip": True,
                 "frequency": 4.4,
                 "mirror": True,
