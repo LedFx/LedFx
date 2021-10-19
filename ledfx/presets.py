@@ -375,10 +375,14 @@ ledfx_presets = {
         "reset": {"config": {}, "name": "Reset"},
         "cold-fire": {
             "config": {
+                "background_brightness": 1,
+                "background_color": "black",
                 "blur": 1.3,
+                "brightness": 1,
                 "flip": False,
                 "frequency_range": "Bass",
                 "gradient_name": "Frost",
+                "gradient-repeat": 1,
                 "gradient_roll": 5,
                 "mirror": True,
             },
@@ -386,10 +390,14 @@ ledfx_presets = {
         },
         "jungle-cascade": {
             "config": {
+                "background_brightness": 1,
+                "background_color": "black",
                 "blur": 8.4,
+                "brightness": 1,
                 "flip": True,
                 "frequency_range": "Bass",
                 "gradient_name": "Jungle",
+                "gradient-repeat": 1,
                 "gradient_roll": 4,
                 "mirror": True,
             },
@@ -397,10 +405,14 @@ ledfx_presets = {
         },
         "lively": {
             "config": {
+                "background_brightness": 1,
+                "background_color": "black",
                 "blur": 2.3,
+                "brightness": 1,
                 "flip": True,
                 "frequency_range": "Bass",
                 "gradient_name": "Viridis",
+                "gradient-repeat": 1,
                 "gradient_roll": 7,
                 "mirror": True,
             },
@@ -408,10 +420,14 @@ ledfx_presets = {
         },
         "rolling-rainbow": {
             "config": {
+                "background_brightness": 1,
+                "background_color": "black",
                 "blur": 5.4,
+                "brightness": 1,
                 "flip": False,
                 "frequency_range": "Bass",
                 "gradient_name": "Borealis",
+                "gradient-repeat": 1,
                 "gradient_roll": 5,
                 "mirror": False,
             },
@@ -419,10 +435,14 @@ ledfx_presets = {
         },
         "warm-bass": {
             "config": {
+                "background_brightness": 1,
+                "background_color": "black",
                 "blur": 8.5,
+                "brightness": 1,
                 "flip": False,
                 "frequency_range": "Bass",
                 "gradient_name": "Christmas",
+                "gradient-repeat": 1,
                 "gradient_roll": 1,
                 "mirror": False,
             },
