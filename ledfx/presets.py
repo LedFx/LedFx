@@ -689,7 +689,10 @@ ledfx_presets = {
         "reset": {"config": {}, "name": "Reset"},
         "cold-crawl": {
             "config": {
+                "background_brightness": 1.0,
+                "background_color": "black",
                 "blur": 1,
+                "brightness": 1,
                 "color_high": "cyan",
                 "color_lows": "pink",
                 "color_mids": "lightpink",
@@ -703,7 +706,10 @@ ledfx_presets = {
         },
         "dynamic-rgb": {
             "config": {
+                "background_brightness": 1.0,
+                "background_color": "black",
                 "blur": 3,
+                "brightness": 1,
                 "color_high": "blue",
                 "color_lows": "red",
                 "color_mids": "green",
@@ -717,7 +723,10 @@ ledfx_presets = {
         },
         "fast-hits": {
             "config": {
+                "background_brightness": 1.0,
+                "background_color": "black",
                 "blur": 0.2,
+                "brightness": 1,
                 "color_high": "orange",
                 "color_lows": "green-spring",
                 "color_mids": "plum",
@@ -731,7 +740,10 @@ ledfx_presets = {
         },
         "gentle-rgb": {
             "config": {
+                "background_brightness": 1.0,
+                "background_color": "black",
                 "blur": 7,
+                "brightness": 1,
                 "color_high": "blue",
                 "color_lows": "red",
                 "color_mids": "green",
@@ -746,7 +758,10 @@ ledfx_presets = {
         },
         "icicles": {
             "config": {
+                "background_brightness": 1.0,
+                "background_color": "black",
                 "blur": 1,
+                "brightness": 1,
                 "color_high": "green-coral",
                 "color_lows": "lightblue",
                 "color_mids": "cyan",
@@ -760,7 +775,10 @@ ledfx_presets = {
         },
         "rays": {
             "config": {
+                "background_brightness": 1.0,
+                "background_color": "black",
                 "blur": 0,
+                "brightness": 1,
                 "color_high": "cyan",
                 "color_lows": "orange-deep",
                 "color_mids": "yellow",
@@ -774,7 +792,10 @@ ledfx_presets = {
         },
         "warmth": {
             "config": {
+                "background_brightness": 1.0,
+                "background_color": "black",
                 "blur": 8.1,
+                "brightness": 1,
                 "color_high": "green-coral",
                 "color_lows": "red",
                 "color_mids": "orange",
