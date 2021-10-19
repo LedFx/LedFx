@@ -1323,7 +1323,7 @@ ledfx_presets = {
     },
     "blade_power_plus": {
         "reset": {"config": {}, "name": "Reset"},
-        "hi-hat": {
+        "orange-hi-hat": {
             "config": {
                 "background_brightness": 0.3,
                 "background_color": "orange",
@@ -1341,9 +1341,9 @@ ledfx_presets = {
                 "multiplier": 1,
                 "solid_color": False,
             },
-            "name": "Hi Hat",
+            "name": "Orange HiHat",
         },
-        "ocean": {
+        "ocean-bass": {
             "config": {
                 "background_brightness": 0.44,
                 "background_color": "blue",
@@ -1361,7 +1361,7 @@ ledfx_presets = {
                 "multiplier": 0.5,
                 "solid_color": False,
             },
-            "name": "Ocean",
+            "name": "Ocean Bass",
         },
     },
     "bands": {"reset": {"config": {}, "name": "Reset"}},
