@@ -812,11 +812,11 @@ ledfx_presets = {
         "reset": {"config": {}, "name": "Reset"},
         "blue": {
             "config": {
+                "background_brightness": 1.0,
+                "background_color": "black",
                 "blur": 0,
+                "brightness": 1,
                 "color": "blue",
-                "color_high": "cyan",
-                "color_lows": "orange-deep",
-                "color_mids": "yellow",
                 "decay": 1,
                 "flip": False,
                 "mirror": True,
@@ -830,11 +830,11 @@ ledfx_presets = {
         },
         "cyan": {
             "config": {
+                "background_brightness": 1.0,
+                "background_color": "black",
                 "blur": 0,
+                "brightness": 1,
                 "color": "cyan",
-                "color_high": "cyan",
-                "color_lows": "orange-deep",
-                "color_mids": "yellow",
                 "decay": 1,
                 "flip": False,
                 "mirror": True,
@@ -848,11 +848,11 @@ ledfx_presets = {
         },
         "green": {
             "config": {
+                "background_brightness": 1.0,
+                "background_color": "black",
                 "blur": 0,
+                "brightness": 1,
                 "color": "green",
-                "color_high": "cyan",
-                "color_lows": "orange-deep",
-                "color_mids": "yellow",
                 "decay": 1,
                 "flip": False,
                 "mirror": True,
@@ -866,11 +866,11 @@ ledfx_presets = {
         },
         "magenta": {
             "config": {
+                "background_brightness": 1.0,
+                "background_color": "black",
                 "blur": 0,
+                "brightness": 1,
                 "color": "magenta",
-                "color_high": "cyan",
-                "color_lows": "orange-deep",
-                "color_mids": "yellow",
                 "decay": 1,
                 "flip": False,
                 "mirror": True,
@@ -884,11 +884,11 @@ ledfx_presets = {
         },
         "orange": {
             "config": {
+                "background_brightness": 1.0,
+                "background_color": "black",
                 "blur": 0,
+                "brightness": 1,
                 "color": "orange-deep",
-                "color_high": "cyan",
-                "color_lows": "orange-deep",
-                "color_mids": "yellow",
                 "decay": 1,
                 "flip": False,
                 "mirror": True,
@@ -902,11 +902,11 @@ ledfx_presets = {
         },
         "pink": {
             "config": {
+                "background_brightness": 1.0,
+                "background_color": "black",
                 "blur": 0,
+                "brightness": 1,
                 "color": "pink",
-                "color_high": "cyan",
-                "color_lows": "orange-deep",
-                "color_mids": "yellow",
                 "decay": 1,
                 "flip": False,
                 "mirror": True,
@@ -920,11 +920,11 @@ ledfx_presets = {
         },
         "red": {
             "config": {
+                "background_brightness": 1.0,
+                "background_color": "black",
                 "blur": 0,
+                "brightness": 1,
                 "color": "red",
-                "color_high": "cyan",
-                "color_lows": "orange-deep",
-                "color_mids": "yellow",
                 "decay": 1,
                 "flip": False,
                 "mirror": True,
@@ -938,7 +938,10 @@ ledfx_presets = {
         },
         "red-waves": {
             "config": {
+                "background_brightness": 1.0,
+                "background_color": "black",
                 "blur": 6.2,
+                "brightness": 1,
                 "color": "red",
                 "flip": False,
                 "mirror": True,
@@ -951,7 +954,10 @@ ledfx_presets = {
         },
         "steel-pulse": {
             "config": {
+                "background_brightness": 1.0,
+                "background_color": "black",
                 "blur": 6.2,
+                "brightness": 1,
                 "color": "steelblue",
                 "flip": False,
                 "mirror": True,
@@ -964,7 +970,10 @@ ledfx_presets = {
         },
         "turquoise-roll": {
             "config": {
+                "background_brightness": 1.0,
+                "background_color": "black",
                 "blur": 6.2,
+                "brightness": 1,
                 "color": "green-turquoise",
                 "flip": False,
                 "mirror": False,
@@ -977,11 +986,11 @@ ledfx_presets = {
         },
         "yellow": {
             "config": {
+                "background_brightness": 1.0,
+                "background_color": "black",
                 "blur": 0,
+                "brightness": 1,
                 "color": "yellow",
-                "color_high": "cyan",
-                "color_lows": "orange-deep",
-                "color_mids": "yellow",
                 "decay": 1,
                 "flip": False,
                 "mirror": True,
