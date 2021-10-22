@@ -1,6 +1,6 @@
 const path = require('path');
 
-const { app,  Menu, Tray, nativeImage, Notification, nativeTheme, BrowserWindow } = require('electron');
+const { app, Menu, Tray, nativeImage, Notification, nativeTheme, BrowserWindow } = require('electron');
 const isDev = require('electron-is-dev');
 
 // Conditionally include the dev tools installer to load React Dev Tools
