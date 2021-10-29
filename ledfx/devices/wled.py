@@ -80,9 +80,6 @@ class WLEDDevice(NetworkedDevice):
         config["ip_address"] = self._config["ip_address"]
         config["pixel_count"] = self._config["pixel_count"]
 
-        if self._config["sync_mode"] == "UDP":
-            config["data_prefix"] = "02%02X" % self._config["timeout"]
-
         self.subdevice = device(self._ledfx, config)
         self.subdevice._destination = self._destination
 
