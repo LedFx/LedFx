@@ -25,7 +25,7 @@ class WLEDDevice(NetworkedDevice):
                 "timeout",
                 description="Time between LedFx effect off and WLED effect activate",
                 default=1,
-            ): vol.All(vol.Coerce(int), vol.Range(0, 10)),
+            ): vol.All(vol.Coerce(int), vol.Range(0, 255)),
         }
     )
 
@@ -41,8 +41,7 @@ class WLEDDevice(NetworkedDevice):
             "ip_address": None,
             "pixel_count": None,
             "port": 21324,
-            "include_indexes": False,
-            "data_prefix": None,
+            "udp_packet_type": "DNRGB"
         },
         "DDP": {
             "name": None,
