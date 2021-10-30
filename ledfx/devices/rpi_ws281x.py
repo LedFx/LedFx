@@ -1,5 +1,4 @@
 import logging
-from enum import Enum
 
 import numpy as np
 import voluptuous as vol
@@ -9,23 +8,14 @@ from ledfx.devices import Device
 _LOGGER = logging.getLogger(__name__)
 
 
-class ColorOrder(Enum):
-    RGB = 1
-    RBG = 2
-    GRB = 3
-    BRG = 4
-    GBR = 5
-    BGR = 6
-
-
-COLOR_ORDERS = {
-    "RGB": ColorOrder.RGB,
-    "RBG": ColorOrder.RBG,
-    "GRB": ColorOrder.GRB,
-    "BRG": ColorOrder.BRG,
-    "GBR": ColorOrder.GBR,
-    "BGR": ColorOrder.BGR,
-}
+COLOR_ORDERS = [
+    "RGB",
+    "RBG",
+    "GRB",
+    "BRG",
+    "GBR",
+    "BGR",
+]
 
 
 class RPI_WS281X(Device):
@@ -50,7 +40,7 @@ class RPI_WS281X(Device):
                 ): vol.All(vol.Coerce(int), vol.Range(min=1)),
                 vol.Required(
                     "color_order", description="Color order", default="RGB"
-                ): vol.In(list(COLOR_ORDERS.keys())),
+                ): vol.In(list(COLOR_ORDERS)),
             }
         )
 
@@ -61,7 +51,7 @@ class RPI_WS281X(Device):
         self.LED_BRIGHTNESS = 255
         self.LED_INVERT = False
         self.LED_CHANNEL = 0
-        self.color_order = COLOR_ORDERS[self._config["color_order"]]
+        self.color_order = self._config["color_order"]
 
     def activate(self):
 
@@ -89,40 +79,22 @@ class RPI_WS281X(Device):
 
     def flush(self, data):
         """Flush LED data to the strip"""
-        byteData = data.astype(np.dtype("B"))
+        combined_rgb = np.zeros((len(data),1), dtype=np.int32)
 
-        i = 3
-        for rgb in byteData:
-            i += 3
-            rgb_bytes = rgb.tobytes()
-            self.buffer[i], self.buffer[i + 1], self.buffer[i + 2] = (
-                rgb_bytes[0],
-                rgb_bytes[1],
-                rgb_bytes[2],
-            )
-
-            if self.color_order == ColorOrder.RGB:
-                continue
-            elif self.color_order == ColorOrder.GRB:
-                self.swap(self.buffer, i, i + 1)
-            elif self.color_order == ColorOrder.BGR:
-                self.swap(self.buffer, i, i + 2)
-            elif self.color_order == ColorOrder.RBG:
-                self.swap(self.buffer, i + 1, i + 2)
-            elif self.color_order == ColorOrder.BRG:
-                self.swap(self.buffer, i, i + 1)
-                self.swap(self.buffer, i + 1, i + 2)
-            elif self.color_order == ColorOrder.GBR:
-                self.swap(self.buffer, i, i + 1)
-                self.swap(self.buffer, i, i + 2)
-            for led in len(self.pixel_count):
-                self.strip.setPixelColor(
-                    led,
-                    self.buffer[led],
-                    self.buffer[led + 1],
-                    self.buffer[led + 2],
-                )
-            self.strip.show()
-
-    def swap(self, array, pos1, pos2):
-        array[pos1], array[pos2] = array[pos2], array[pos1]
+        if self.color_order == "RGB":
+            combined_rgb[:,0] = (data[:,0] << 16) | (data[:,1] << 8) | data[:,2]
+        elif self.color_order == "GRB":
+            combined_rgb[:,0] = (data[:,1] << 16) | (data[:,0] << 8) | data[:,2]
+        elif self.color_order == "BGR":
+            combined_rgb[:,0] = (data[:,2] << 16) | (data[:,1] << 8) | data[:,0]
+        elif self.color_order == "RBG":
+            combined_rgb[:,0] = (data[:,0] << 16) | (data[:,2] << 8) | data[:,1]
+        elif self.color_order == "BRG":
+            combined_rgb[:,0] = (data[:,2] << 16) | (data[:,0] << 8) | data[:,1]
+        elif self.color_order == "GBR":
+            combined_rgb[:,0] = (data[:,1] << 16) | (data[:,2] << 8) | data[:,0]
+        
+        out_lights = combined_rgb.tolist()
+        strip_range = slice(0,len(data))
+        self.strip._led_data.__setitem__(strip_range, out_lights)
+        self.strip.show()
