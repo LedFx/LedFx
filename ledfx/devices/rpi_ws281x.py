@@ -81,6 +81,10 @@ class RPI_WS281X(Device):
         """Flush LED data to the strip"""
         combined_rgb = np.zeros((len(data),1), dtype=np.int32)
 
+        # # alternative way to rearrange RGB
+        # order = list(self.color_order.replace("R","0").replace("G","1").replace("B","2"))
+        # combined_rgb[:,0] = (data[:,int(order[0])] << 16) | (data[:,int(order[1])] << 8) | data[:,int(order[2])]
+
         if self.color_order == "RGB":
             combined_rgb[:,0] = (data[:,0] << 16) | (data[:,1] << 8) | data[:,2]
         elif self.color_order == "GRB":
