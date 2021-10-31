@@ -10,7 +10,7 @@ UDP protocol. See below for a list of tested ESP8266 firmware that can be used w
 
 Here is everything you need to get started with LedFx:
 
-    #. A Computer (or Raspberry Pi) with Python >= 3.7
+    #. A Computer (or Raspberry Pi) with Python >= 3.8
     #. An E1.31 capable device with addressable LEDs connected
 
         - Commercial grade DMX controllers
