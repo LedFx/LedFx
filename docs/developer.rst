@@ -6,7 +6,7 @@ The development workflow is still being worked on, but this page covers the curr
 
 You will see ``pip install -e .`` frequently in the documentation. Please see the `pip documentation`_ for an explanation on what this does.
 
-.. note:: All current development versions of LedFx now require Python >=3.9
+.. note:: All current development versions of LedFx now require Python >=3.8
 
 ------------------------------
 
@@ -19,7 +19,7 @@ You will see ``pip install -e .`` frequently in the documentation. Please see th
 Windows
 -------
 
-*  Install Python 3.9
+*  Install Python 3.8 or above.
 *  Install Git.
 *  Using "Build Tools for Visual Studio 2019" installer:
 
@@ -45,7 +45,7 @@ Windows
     $ pipwin install pyaudio
     $ pip install pywin32
     $ python .\Scripts\pywin32_postinstall.py -install
-    $ git clone -b dev https://github.com/LedFx/LedFx .\ledfx-git
+    $ git clone -b frontend_beta https://github.com/LedFx/LedFx .\ledfx-git
     $ cd .\ledfx-git
     $ python setup.py develop
     $ ledfx --open-ui
@@ -74,7 +74,7 @@ Linux
 
 .. code:: console
 
-    $ git clone https://github.com/LedFx/LedFx.git -b dev
+    $ git clone https://github.com/LedFx/LedFx.git -b frontend_beta
     $ cd LedFx
 
 **2.** Install system dependencies via ``apt install``:
@@ -108,7 +108,7 @@ macOS
 
 .. code:: console
 
-    $ git clone https://github.com/LedFx/LedFx.git -b dev
+    $ git clone https://github.com/LedFx/LedFx.git -b frontend_beta
     $ cd ./LedFx
 
 **2.** Create a python venv for LedFx with python>=3.9 and install dependencies:

@@ -74,7 +74,7 @@ To install on macOS first ensure you have at least Python 3.8 installed.
 macOS Installation @dev branch (Apple Silicon M1)
 -------------------------------------------------------
 
-To install on macOS (Apple Silicon M1) dev branch, first ensure you have at least Python 3.9 installed.
+To install on macOS (Apple Silicon M1) dev branch, first ensure you have at least Python 3.8 installed.
 
 **1.** Install LedFx and all the dependencies using `homebrew`_ in a `python virtualenv`_:
 
@@ -87,7 +87,7 @@ To install on macOS (Apple Silicon M1) dev branch, first ensure you have at leas
     $ source ~/ledfx-venv/bin/activate
     $ pip install -U pip setuptools wheel
     $ pip install numpy --compile --pre
-    $ pip install --force-reinstall git+https://github.com/LedFx/LedFx@dev
+    $ pip install --force-reinstall git+https://github.com/LedFx/LedFx@frontend_beta
 
     ** --force-reinstall assures that you will be up to date whenever you run the command
 
