@@ -17,7 +17,7 @@ body:
     validations:
       required: true
   - type: dropdown
-    id: version
+    id: install_method
     attributes:
       label: Install Method
       description: How did you install LedFx?
@@ -33,7 +33,7 @@ body:
     attributes:
       label: What version of LedFx?
       description: You can find this by running ledfx --version
-      value: ""
+      value: "Version: "
     validations:
       required: true
   - type: dropdown
@@ -54,15 +54,6 @@ body:
       label: Relevant log/trace output
       description: Please copy and paste any relevant log output. This will be automatically formatted into code, so no need for backticks.
       render: shell
-  - type: textarea
-    attributes:
-    label: Anything else?
-    description: |
-        Links? References? Anything that will give us more context about the issue you are encountering!
-
-        Tip: You can attach images or log files by clicking this area to highlight it and then dragging files in.
-    validations:
-    required: false
   - type: textarea
     attributes:
       label: Anything else?
