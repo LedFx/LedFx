@@ -37,17 +37,9 @@ class RPI_WS281X(Device):
         return vol.Schema(
             {
                 vol.Required(
-                    "name", description="Friendly name for the device"
-                ): str,
-                vol.Required(
                     "gpio_pin",
                     description="Raspberry Pi GPIO pin your LEDs are connected to",
                 ): vol.In(list([21, 31])),
-                vol.Required(
-                    "pixel_count",
-                    description="Number of individual pixels",
-                    default=1,
-                ): vol.All(vol.Coerce(int), vol.Range(min=1)),
                 vol.Required(
                     "color_order", description="Color order", default="RGB"
                 ): vol.In(list(COLOR_ORDERS.keys())),
