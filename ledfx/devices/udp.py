@@ -1,10 +1,9 @@
 import logging
-import socket
 
 import numpy as np
 import voluptuous as vol
 
-from ledfx.devices import NetworkedDevice, packets
+from ledfx.devices import UDPDevice, packets
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -16,24 +15,16 @@ SUPPORTED_PACKETS = [
     "adaptive_smallest"
 ]
 
-class UDPDevice(NetworkedDevice):
-    """Generic UDP device support"""
+class UDPRealtimeDevice(UDPDevice):
+    """Generic WLED UDP Realtime device support"""
 
     CONFIG_SCHEMA = vol.Schema(
         {
-            vol.Required(
-                "name", description="Friendly name for the device"
-            ): str,
             vol.Required(
                 "port",
                 description="Port for the UDP device",
                 default=21324,
             ): vol.All(vol.Coerce(int), vol.Range(min=1, max=65535)),
-            vol.Required(
-                "pixel_count",
-                description="Number of individual pixels",
-                default=1,
-            ): vol.All(vol.Coerce(int), vol.Range(min=1)),
             vol.Required(
                 "udp_packet_type",
                 description="RGB packet encoding",
@@ -47,21 +38,14 @@ class UDPDevice(NetworkedDevice):
         }
     )
 
-    def activate(self):
-        self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        _LOGGER.info(f"UDP sender for {self.config['name']} started.")
-        super().activate()
-
-    def deactivate(self):
-        super().deactivate()
-        _LOGGER.info(f"UDP sender for {self.config['name']} stopped.")
-        self._sock = None
-
-    last_frame = None
+    def __init__(self, ledfx, config):
+        super().__init__(ledfx, config)
+        self._device_type = "UDP Realtime"
+        self.last_frame = None
 
     def flush(self, data):
         try:
-            UDPDevice.send_out(
+            UDPRealtimeDevice.send_out(
                 self._sock,
                 self.destination,
                 self._config["port"],
