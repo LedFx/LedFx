@@ -6,7 +6,7 @@ import voluptuous as vol
 from ledfx.devices import NetworkedDevice
 from ledfx.devices.ddp import DDPDevice
 from ledfx.devices.e131 import E131Device
-from ledfx.devices.udp import UDPDevice
+from ledfx.devices.udp import UDPRealtimeDevice
 from ledfx.utils import WLED
 
 _LOGGER = logging.getLogger(__name__)
@@ -31,7 +31,7 @@ class WLEDDevice(NetworkedDevice):
     )
 
     SYNC_MODES = {
-        "UDP": UDPDevice,
+        "UDP": UDPRealtimeDevice,
         "DDP": DDPDevice,
         "E131": E131Device,
     }
