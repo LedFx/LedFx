@@ -91,3 +91,12 @@ export function logoutAuth() {
     cookies.set('logout', true);
     return true;
 }
+
+export async function addTrigger(trigger) {
+    const res = await axios.post('http://localhost:8888/api/integrations/spotify/spotify', trigger);
+    if (res.status == 200) {
+        return 'Success';
+    } else {
+        return 'Error';
+    }
+}

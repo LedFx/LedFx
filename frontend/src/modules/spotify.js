@@ -42,7 +42,6 @@ export default handleActions(
             };
         },
         [playerStateUpdated]: (state, { payload, payload: { playerState } }) => {
-            console.log(payload);
             return {
                 ...state,
                 playerState: payload,

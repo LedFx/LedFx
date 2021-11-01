@@ -17,6 +17,7 @@ import {
     Typography,
 } from '@material-ui/core';
 import { updatePlayerState } from 'modules/spotify';
+import { getAsyncIntegrations } from 'modules/integrations';
 //import AddCircleIcon from '@material-ui/icons/AddCircle';
 import PlayArrow from '@material-ui/icons/PlayArrow';
 import Pause from '@material-ui/icons/Pause';
@@ -26,10 +27,12 @@ import SkipPrevious from '@material-ui/icons/SkipPrevious';
 import InfoIcon from '@material-ui/icons/Info';
 import Link from '@material-ui/core/Link';
 import { getScenes, activateScene } from 'modules/scenes';
+import { addTrigger } from 'proxies/spotify';
 import Moment from 'react-moment';
 import moment from 'moment';
 import Slider from '@material-ui/core/Slider';
-import SpotifyWebPlayer from 'react-spotify-web-playback/lib';
+import { ToastContainer, toast } from 'react-toastify';
+
 //import uniqBy from 'lodash/uniqBy';
 
 const styles = theme => ({
@@ -139,13 +142,23 @@ class SpotifyPlayer extends React.Component {
         this.setState({ ...this.state, effects: event.target.value });
     };
 
-    playMusic() {
-        console.log('Working');
-    }
+    handleAddTrigger = async event => {
+        let trigger = {
+            scene_id: this.state.effects,
+            song_id: this.props.playerState.track_window.current_track.id,
+            song_name: this.props.playerState.track_window.current_track.name,
+            song_position: Math.round(this.props.playerState.position / 1000),
+        };
+        if (await addTrigger(trigger)) {
+            toast.success('Trigger added');
+            this.props.getAsyncIntegrations();
+        } else {
+            toast.error('Failed to add trigger');
+        }
+    };
 
     getTime(duration) {
-        var milliseconds = Math.floor((duration % 1000) / 100),
-            seconds = Math.floor((duration / 1000) % 60),
+        var seconds = Math.floor((duration / 1000) % 60),
             minutes = Math.floor((duration / (1000 * 60)) % 60),
             hours = Math.floor((duration / (1000 * 60 * 60)) % 24);
 
@@ -171,6 +184,9 @@ class SpotifyPlayer extends React.Component {
             this.setState({
                 sliderPositon:
                     (this.props.playerState.position / this.props.playerState.duration) * 100,
+            });
+            this.state.player.getCurrentState().then(state => {
+                this.props.updatePlayerState(state);
             });
         }
     }
@@ -369,13 +385,18 @@ class SpotifyPlayer extends React.Component {
                                 )}
                             </div>
                             <Grid container item xs={12} justify="center">
-                                <Button color="primary" variant="contained">
+                                <Button
+                                    color="primary"
+                                    variant="contained"
+                                    onClick={e => this.handleAddTrigger(e)}
+                                >
                                     Add Trigger
                                 </Button>
                             </Grid>
                         </Grid>
                     </Grid>
                 </Grid>
+                <ToastContainer />
             </AppBar>
         );
     }
@@ -387,5 +408,5 @@ export default connect(
         accessToken: state.spotify.accessToken,
         scenes: state.scenes.list,
     }),
-    { updatePlayerState }
+    { updatePlayerState, getAsyncIntegrations }
 )(withStyles(styles)(SpotifyPlayer));

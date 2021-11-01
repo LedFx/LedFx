@@ -42,6 +42,7 @@
         "react-router-dom": "^5.2.0",
         "react-schema-form": "^0.9.10",
         "react-spotify-web-playback": "^0.8.2",
+        "react-toastify": "^8.0.3",
         "redux": "^4.0.5",
         "redux-actions": "^2.6.5",
         "redux-thunk": "^2.3.0",
