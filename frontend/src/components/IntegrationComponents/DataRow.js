@@ -1,5 +1,5 @@
 import React from 'react';
-import { deleteQLCListener } from 'proxies/integrations';
+import { deleteQLCListener, getIntegrations} from 'proxies/integrations';
 import EditIcon from '@material-ui/icons/Edit';
 import { Switch } from '@material-ui/core';
 import Button from '@material-ui/core/Button';
@@ -21,11 +21,12 @@ const DataRow = ({ id, name, type, data }) =>
                         variant="text"
                         onConfirm={() =>
                             deleteQLCListener(
-                                id, ({
+                                id, ({data:{
                                     "event_type": dr[0],
                                     "event_filter": {"scene_name": dr[1].scene_name}
-                                })
-                            )
+                                }})                       
+                                ).then(()=>DataRow())
+                            
                         }
                     />
                     <Button

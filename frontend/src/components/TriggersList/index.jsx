@@ -28,11 +28,8 @@ class TriggerList extends React.Component {
         };
     }
 
-    deleteTest = event => {
-        console.log(event.target);
-    };
-
     componentDidMount() {
+        console.log("Get Here", triggersNew);
         console.log(this.props.spotify);
         this.props.spotify.map(scene => {
             let sceneName = scene.name;
@@ -103,10 +100,12 @@ class TriggerList extends React.Component {
                                         <ListItemIcon>
                                             <DeleteForeverIcon
                                                 color="error"
-                                                onClick={
-                                                    () => deleteSpotifyTrigger(
-                                                        "spotify", 
-                                                        {trigger_id: trigger.trigger_id})
+                                                onClick={() => 
+                                                    deleteSpotifyTrigger(
+                                                        "spotify", ({data:{
+                                                            "trigger_id": trigger.trigger_id}
+                                                        })
+                                                        )
                                                     }
                                                 style={{ cursor: 'pointer' }}
                                             />
