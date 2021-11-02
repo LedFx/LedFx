@@ -104,7 +104,7 @@ const IntegrationsCard = ({ int }) => {
             <CardActions>
                 <PopoverSure
                     variant="text"
-                    onDeleteVitem={() =>
+                    onConfirm={() =>
                         deleteAsyncIntegration({
                             id: int.id,
                         })

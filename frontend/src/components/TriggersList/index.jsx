@@ -12,8 +12,8 @@ import {
     Typography,
 } from '@material-ui/core';
 import DeleteForeverIcon from '@material-ui/icons/DeleteForever';
+import { deleteSpotifyTrigger } from 'proxies/integrations';
 import { getScenes } from 'modules/scenes';
-
 import { useEffect } from 'react';
 
 const styles = theme => ({});
@@ -41,6 +41,7 @@ class TriggerList extends React.Component {
                 if (scene[key].constructor === Array) {
                     // console.log(scene[key]);
                     triggersNew.push({
+                        trigger_id: scene[key][0]+"-"+scene[key][2],
                         songId: scene[key][0],
                         songName: scene[key][1],
                         position: scene[key][2],
@@ -102,7 +103,11 @@ class TriggerList extends React.Component {
                                         <ListItemIcon>
                                             <DeleteForeverIcon
                                                 color="error"
-                                                onClick={this.deleteTest}
+                                                onClick={
+                                                    () => deleteSpotifyTrigger(
+                                                        "spotify", 
+                                                        {trigger_id: trigger.trigger_id})
+                                                    }
                                                 style={{ cursor: 'pointer' }}
                                             />
                                         </ListItemIcon>

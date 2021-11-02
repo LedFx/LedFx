@@ -19,7 +19,7 @@ const DataRow = ({ id, name, type, data }) =>
                 <div style={{ display: 'flex' }}>
                     <PopoverSure
                         variant="text"
-                        onDeleteVitem={() =>
+                        onConfirm={() =>
                             deleteQLCListener(
                                 id, ({
                                     "event_type": dr[0],
