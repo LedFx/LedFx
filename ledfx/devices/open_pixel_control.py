@@ -15,6 +15,11 @@ class OpenPixelControl(NetworkedDevice):
     CONFIG_SCHEMA = vol.Schema(
         {
             vol.Required(
+                "pixel_count",
+                description="Number of individual pixels",
+                default=1,
+            ): vol.All(vol.Coerce(int), vol.Range(min=1)),
+            vol.Required(
                 "channel",
                 description="Channel to send pixel data",
                 default=0,
