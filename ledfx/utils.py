@@ -634,6 +634,14 @@ class BaseRegistry(ABC):
         del cls._registry[name]
         return cls
 
+    # currently this permanently overwrites Device.CONFIG_SCHEMA instead of just for a wrapper device
+    # @classmethod
+    # def designate_wrapper_device(self, cls):
+    #     """Designate Wrapper device to ignore pixel_count in schema"""
+    #     # replace base Device classes schema with Wrapper devices schema
+    #     setattr(inspect.getmro(cls)[2], self._schema_attr, getattr_explicit(inspect.getmro(cls)[0], self._schema_attr, None))
+    #     return cls
+
     @classmethod
     def schema(self, extended=True, extra=vol.ALLOW_EXTRA):
         """Returns the extended schema of the class"""

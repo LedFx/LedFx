@@ -21,6 +21,11 @@ class UDPRealtimeDevice(UDPDevice):
     CONFIG_SCHEMA = vol.Schema(
         {
             vol.Required(
+                "pixel_count",
+                description="Number of individual pixels",
+                default=1,
+            ): vol.All(vol.Coerce(int), vol.Range(min=1)),
+            vol.Required(
                 "port",
                 description="Port for the UDP device",
                 default=21324,
