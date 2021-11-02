@@ -302,7 +302,7 @@ def main():
         try:
             p.nice(psutil.HIGH_PRIORITY_CLASS)
         except psutil.Error:
-            _LOGGER.warning(
+            _LOGGER.info(
                 "Unable to set priority, please run as Administrator if you are experiencing frame rate issues"
             )
         # p.ionice(psutil.IOPRIO_HIGH)
@@ -311,7 +311,7 @@ def main():
             p.nice(15)
             p.ionice(psutil.IOPRIO_CLASS_RT, value=7)
         except psutil.Error:
-            _LOGGER.warning(
+            _LOGGER.info(
                 "Unable to set priority, please run as root or sudo if you are experiencing frame rate issues",
             )
     else:

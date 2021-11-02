@@ -111,6 +111,28 @@ def async_fire_and_forget(coro, loop, exc_handler=None):
     return
 
 
+def get_local_ip():
+    """Uses a socket to find the first non-loopback ip address
+
+    Returns:
+        string: Either the first non-loopback ip address or hostname, or localhost
+    """
+    try:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+        # Use Google Public DNS server to determine own IP
+        sock.connect(("8.8.8.8", 80))
+
+        return sock.getsockname()[0]
+    except OSError:
+        try:
+            return socket.gethostbyname(socket.gethostname())
+        except socket.gaierror:
+            return "127.0.0.1"
+    finally:
+        sock.close()
+
+
 def async_fire_and_return(coro, callback, timeout=10):
     """Run some async code in the core event loop with a callback to handle result"""
 
@@ -233,89 +255,25 @@ class WLED:
 
     @staticmethod
     async def _get_sync_settings(ip_address):
-        """
-        when doing posts to settings/sync we need to include the values of
-        all the existing checkboxes on that page, otherwise they get set to "off"!
-        Would be ideal to have an api exposed for the functions we're doing here,
-        but for now we'll just send these sensitive values with our posts
-        """
+
         response = await WLED._wled_request(
-            requests.get, ip_address, "settings/sync"
+            requests.get, ip_address, "json/cfg"
         )
-        response_text = response.text
-
-        try:
-            # find start of "GetV()"" function that defines all the settings' values on the page
-            getV_index = response_text.find("function GetV()")
-            # find indexes of {}
-            sync_settings_start = response_text.find("{", getV_index)
-            sync_settings_end = response_text.find("}", sync_settings_start)
-            # get the settings contained in the {}
-            sync_settings = response_text[
-                sync_settings_start + 1 : sync_settings_end
-            ]
-            # clean and split into individual setting strings eg: d.Sf.BT.checked=1
-            sync_settings = sync_settings.lstrip().split(";")
-            # split each string by key and value
-            sync_settings = [
-                setting.split("=") for setting in sync_settings if setting
-            ]
-            # break down key by "." to parse
-            sync_settings = [
-                (setting[0].split("."), setting[1])
-                for setting in sync_settings
-            ]
-            # only keep the settings that have keys "checked" / "EP" / "ET" / "RG"
-            sync_settings = [
-                setting
-                for setting in sync_settings
-                if any(
-                    i in ["checked", "EP", "ET", "RG", "DM", "EU", "DA"]
-                    for i in setting[0]
-                )
-            ]
-            # Discard any unchecked checkboxes
-            sync_settings = [
-                setting
-                for setting in sync_settings
-                if not ((setting[0][3] == "checked") and (setting[1] == "0"))
-            ]
-            # remove empty string "value" keys and extract the setting
-            # identifier and value eg: d.Sf.BT.checked=1 => BT, 1
-            sync_settings = [
-                (
-                    [
-                        i
-                        for i in setting[0]
-                        if i not in ["d", "sF", "checked", "value"]
-                    ][-1],
-                    int(setting[1]),
-                )
-                for setting in sync_settings
-            ]
-        except Exception as e:
-            _LOGGER.critical(
-                f"!! IF YOU SEE THIS ERROR !! - Please let an LedFx developer know that wled sync settings have changed format. Thank you <3. {e}"
-            )
-
-        # we now have a list of tuples for the value of each checkbox eg: [("BT", 1), ("HL", 0), ...]
-        # and we'll give it as a nice dict
-        return dict(sync_settings)
+        return response.json()
 
     async def flush_sync_settings(self):
         """
-        HTTP POST to flush wled sync settings to the device. Will reboot if required.
+        JSON API call to flush wled sync settings to the device. Will reboot if required.
         """
+        # {'rb': True} must be sent to the '/state' endpoint
+        # if self.reboot_flag:
+        #     self.sync_settings["rb"] = True
         await WLED._wled_request(
             requests.post,
             self.ip_address,
-            "settings/sync",
+            "json/cfg",
             data=self.sync_settings,
         )
-
-        if self.reboot_flag:
-            await self.reboot()
-
         self.reboot_flag = False
 
     async def get_config(self):
@@ -381,13 +339,14 @@ class WLED:
 
     async def set_power_state(self, state):
         """
-            Uses a HTTP post call to set the power of a WLED compatible device on/off
+            Uses a JSON API post call to set the power of a WLED compatible device on/off
 
         Args:
             state (bool): on/off
         """
+        power = {"on": True if state else False}
         await WLED._wled_request(
-            requests.post, self.ip_address, f"win&T={'1' if state else '0'}"
+            requests.post, self.ip_address, "/json/state", data=power
         )
 
         _LOGGER.info(
@@ -396,7 +355,7 @@ class WLED:
 
     async def set_brightness(self, brightness):
         """
-            Uses a HTTP post call to adjust a WLED compatible device's
+            Uses a JSON API post call to adjust a WLED compatible device's
             brightness
 
         Args:
@@ -404,9 +363,10 @@ class WLED:
         """
         # cast to int and clamp to range
         brightness = max(0, max(int(brightness), 255))
+        bri = {"bri": brightness}
 
         await WLED._wled_request(
-            requests.post, self.ip_address, f"win&A={brightness}"
+            requests.post, self.ip_address, "/json/state", data=bri
         )
 
         _LOGGER.info(
@@ -416,11 +376,11 @@ class WLED:
     def enable_realtime_gamma(self):
         """
         Updates internal sync settings to enable realtime gamma
-        """
-        if "RG" not in self.sync_settings.keys():
-            return
 
-        del self.sync_settings["RG"]
+        {"if": {"live": {"no-gc": True|False}}}
+        """
+
+        self.sync_settings["if"]["live"]["no-gc"] = False
 
         _LOGGER.info(
             f"WLED {self.ip_address}: Enabled realtime gamma correction"
@@ -429,40 +389,50 @@ class WLED:
     def force_max_brightness(self):
         """
         Updates internal sync settings to enable "Force Max Brightness"
+
+        {"if": {"live": {"maxbri": True|False}}}
         """
-        self.sync_settings |= ({"FB": "on"},)
+        self.sync_settings["if"]["live"]["maxbri"] = True
 
         _LOGGER.info(f"WLED {self.ip_address}: Enabled force max brightness")
 
     def multirgb_dmx_mode(self):
         """
         Updates DMX mode to "Multi RGB"
+
+        {"if": {"live": {"dmx": {"mode": 0-6}}}}
         """
-        self.sync_settings |= {"DM": "4"}
+        self.sync_settings["if"]["live"]["dmx"]["mode"] = 4
 
         _LOGGER.info(f"WLED {self.ip_address}: Enabled Multi RGB")
 
     def first_universe(self):
         """
         Updates first universe to "1"
+
+        {"if": {"live": {"dmx": {"uni": 1}}}}
         """
-        self.sync_settings |= {"EU": "1"}
+        self.sync_settings["if"]["live"]["dmx"]["uni"] = 1
 
         _LOGGER.info(f"WLED {self.ip_address}: Set first Universe = 1")
 
     def first_dmx_address(self):
         """
         Updates first dmx address to "1"
+
+        {"if": {"live": {"dmx": {"addr": 1}}}}
         """
-        self.sync_settings |= {"DA": "1"}
+        self.sync_settings["if"]["live"]["dmx"]["addr"] = 1
 
         _LOGGER.info(f"WLED {self.ip_address}: Set first DMX address = 1")
 
     def get_inactivity_timeout(self):
         """
         Get inactivity timeout from internal sync settings
+
+        {"if": {"live": {"timeout": 25(2.5s)}}}
         """
-        return self.sync_settings["ET"]
+        return self.sync_settings["if"]["live"]["timeout"]
 
     def set_inactivity_timeout(self, timeout=2.5):
         """
@@ -471,10 +441,11 @@ class WLED:
         Args:
             timeout: int/float, seconds
         """
-        if self.sync_settings["ET"] / 1000 == timeout:
+        tout = self.sync_settings["if"]["live"]["timeout"]
+        if tout * 10 == timeout:
             return
 
-        self.sync_settings |= {"ET": timeout * 1000}
+        self.sync_settings["if"]["live"]["timeout"] = timeout * 10
 
         _LOGGER.info(
             f"Set WLED device at {self.ip_address} timeout to {timeout}s"
@@ -493,10 +464,10 @@ class WLED:
 
         if mode == "udp":
             # if realtime udp is already enabled, we're good to go
-            if "RD" in self.sync_settings.keys():
+            if self.sync_settings["if"]["live"]["en"]:
                 return
             else:
-                data = {"RD": "on"}
+                self.sync_settings["if"]["live"]["en"] = True
 
         else:
             # make sure the mode isn't already set, if so no need to go on.
@@ -504,9 +475,8 @@ class WLED:
             if mode == self.get_sync_mode():
                 return
             port = WLED.SYNC_MODES[mode]
-            data = {"DI": port, "EP": port}
+            self.sync_settings["if"]["live"]["port"] = port
 
-        self.sync_settings |= data
         self.reboot_flag = True
 
         _LOGGER.info(
@@ -516,8 +486,10 @@ class WLED:
     def get_sync_mode(self):
         """
         Reverse dict lookup of current sync mode by port
+
+        {"if": {"live": {"port": 5568|6454|4048}}}
         """
-        sync_port = self.sync_settings["EP"]
+        sync_port = self.sync_settings["if"]["live"]["port"]
 
         return next(
             key for key, value in WLED.SYNC_MODES.items() if value == sync_port
@@ -525,10 +497,15 @@ class WLED:
 
     async def reboot(self):
         """
-        HTTP Post to reboot wled device
+        JSON API Post to reboot wled device
         """
+        reboot = {"rb": True}
         await WLED._wled_request(
-            requests.post, self.ip_address, "win&RB", timeout=3
+            requests.post,
+            self.ip_address,
+            "/json/state",
+            timeout=3,
+            data=reboot,
         )
 
 

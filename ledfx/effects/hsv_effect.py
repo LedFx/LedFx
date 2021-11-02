@@ -99,6 +99,7 @@ class HSVEffect(Effect):
     _start_time = time.time_ns()
     # 65.536 s expressed in ns
     _conversion_factor = 65.536 * 1000000000.0
+    _hsv_roll_counter = 0
 
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
@@ -334,3 +335,23 @@ class HSVEffect(Effect):
         h = (h / 6.0) % 1.0
         res = np.dstack([h, s, v])
         return res.reshape(input_shape)
+
+    def _roll_hsv(self):
+        if self._config["gradient_roll"] == 0:
+            return
+
+        self._hsv_roll_counter += self._config["gradient_roll"]
+
+        if self._hsv_roll_counter >= 1.0:
+            pixels_to_roll = np.floor(self._hsv_roll_counter)
+            self._hsv_roll_counter -= pixels_to_roll
+
+            if "invert_roll" in self._config:
+                if self._config["invert_roll"]:
+                    pixels_to_roll *= -1
+
+            self.hsv = np.roll(
+                self.hsv,
+                int(pixels_to_roll),
+                axis=0,
+            )

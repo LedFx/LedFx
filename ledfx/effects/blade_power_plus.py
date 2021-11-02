@@ -77,12 +77,11 @@ class BladePowerPlus(AudioReactiveEffect, HSVEffect, GradientEffect):
 
         self.hsv = np.zeros((pixel_count, 3))
         self.bar = 0
-        self._roll_count = 0
 
         rgb_gradient = self.apply_gradient(1)
         self.hsv = self.rgb_to_hsv(rgb_gradient)
 
-        if self.config["solid_color"] is True:
+        if self._config["solid_color"] is True:
             hsv_color = self.rgb_to_hsv(
                 np.array(COLORS[self._config["color"]])
             )
@@ -96,7 +95,7 @@ class BladePowerPlus(AudioReactiveEffect, HSVEffect, GradientEffect):
     def audio_data_updated(self, data):
         # Get filtered bar power
         self.bar = (
-            getattr(data, self.power_func)() * self.config["multiplier"] * 2
+            getattr(data, self.power_func)() * self._config["multiplier"] * 2
         )
 
     def render_hsv(self):
@@ -105,29 +104,11 @@ class BladePowerPlus(AudioReactiveEffect, HSVEffect, GradientEffect):
         bar_idx = int(self.bar * self.pixel_count)
 
         # Manually roll gradient because apply_gradient is only called once in activate instead of every render
-        if self.config["gradient_roll"] != 0:
-            # Hack to slow down roll since np.roll can only accept integers, 1 is a pretty fast minimum
-            self._roll_count += (
-                self.config["gradient_roll"] / 5
-            )  # Roll 1/5th as fast as the config
-            if self._roll_count >= 1:
-                self._roll_count = 0
-                if self.config["invert_roll"] is True:
-                    self.hsv = np.roll(
-                        self.hsv,
-                        -self._config["gradient_roll"],
-                        axis=0,
-                    )
-                else:
-                    self.hsv = np.roll(
-                        self.hsv,
-                        self._config["gradient_roll"],
-                        axis=0,
-                    )
+        self._roll_hsv()
 
         # Construct hsv array
         self.out[:, 0] = self.hsv[:, 0]
         self.out[:, 1] = self.hsv[:, 1]
-        self.out[:bar_idx, 2] = self.config["brightness"]
+        self.out[:bar_idx, 2] = self._config["brightness"]
 
         self.hsv_array = self.out

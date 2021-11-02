@@ -8,18 +8,24 @@
             "name": "Python: LedFx",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}\\ledfx\\__main__.py",
+            "program": "${workspaceFolder}/ledfx/__main__.py",
             "console": "integratedTerminal",
-            "justMyCode": false
+            "justMyCode": false,
+            "windows": {
+                "program": "${workspaceFolder}\\ledfx\\__main__.py"
+            }
         },
         {
             "name": "Python: LedFx Verbose Logging",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}\\ledfx\\__main__.py",
+            "program": "${workspaceFolder}/ledfx/__main__.py",
             "args": ["-vv"],
             "console": "integratedTerminal",
-            "justMyCode": false
+            "justMyCode": false,
+            "windows": {
+                "program": "${workspaceFolder}\\ledfx\\__main__.py"
+            }
         },
         {
             "name": "Python: Current File",

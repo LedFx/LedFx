@@ -368,21 +368,11 @@ class Effect(BaseRegistry):
     @property
     def pixels(self):
         """Returns the pixels for the channel"""
-        # if not self._active:
-        #     raise Exception(
-        #         "Attempting to access pixels before effect is active"
-        #     )
-
         return np.copy(self._pixels)
 
     @pixels.setter
     def pixels(self, pixels):
         """Sets the pixels for the channel"""
-        if not self._active:
-            _LOGGER.warning(
-                "Attempting to set pixels before effect is active. Dropping."
-            )
-            return
 
         if isinstance(pixels, tuple):
             self._pixels = np.copy(pixels)

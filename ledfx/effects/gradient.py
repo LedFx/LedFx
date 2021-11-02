@@ -30,7 +30,7 @@ class GradientEffect(Effect):
                 "gradient_roll",
                 description="Amount to shift the gradient",
                 default=0,
-            ): vol.All(vol.Coerce(int), vol.Range(min=0, max=10)),
+            ): vol.All(vol.Coerce(float), vol.Range(min=0, max=10)),
             vol.Optional(
                 "gradient_repeat",
                 description="Repeat the gradient into segments",
@@ -43,6 +43,7 @@ class GradientEffect(Effect):
     )
 
     _gradient_curve = None
+    _gradient_roll_counter = 0
 
     def _comb(self, N, k):
         N = int(N)
@@ -163,11 +164,17 @@ class GradientEffect(Effect):
         if self._config["gradient_roll"] == 0:
             return
 
-        self._gradient_curve = np.roll(
-            self._gradient_curve,
-            self._config["gradient_roll"],
-            axis=1,
-        )
+        self._gradient_roll_counter += self._config["gradient_roll"]
+
+        if self._gradient_roll_counter >= 1.0:
+            pixels_to_roll = np.floor(self._gradient_roll_counter)
+            self._gradient_roll_counter -= pixels_to_roll
+
+            self._gradient_curve = np.roll(
+                self._gradient_curve,
+                int(pixels_to_roll),
+                axis=1,
+            )
 
     def get_gradient_color(self, point):
         self._validate_gradient()

@@ -1,4 +1,5 @@
 import logging
+from distutils.version import LooseVersion
 
 import voluptuous as vol
 
@@ -25,7 +26,7 @@ class WLEDDevice(NetworkedDevice):
                 "timeout",
                 description="Time between LedFx effect off and WLED effect activate",
                 default=1,
-            ): vol.All(vol.Coerce(int), vol.Range(0, 10)),
+            ): vol.All(vol.Coerce(int), vol.Range(0, 255)),
         }
     )
 
@@ -41,8 +42,7 @@ class WLEDDevice(NetworkedDevice):
             "ip_address": None,
             "pixel_count": None,
             "port": 21324,
-            "include_indexes": False,
-            "data_prefix": None,
+            "udp_packet_type": "DNRGB"
         },
         "DDP": {
             "name": None,
@@ -80,9 +80,6 @@ class WLEDDevice(NetworkedDevice):
         config["ip_address"] = self._config["ip_address"]
         config["pixel_count"] = self._config["pixel_count"]
 
-        if self._config["sync_mode"] == "UDP":
-            config["data_prefix"] = "02%02X" % self._config["timeout"]
-
         self.subdevice = device(self._ledfx, config)
         self.subdevice._destination = self._destination
 
@@ -104,7 +101,6 @@ class WLEDDevice(NetworkedDevice):
         await super().async_initialize()
         self.wled = WLED(self.destination)
         wled_config = await self.wled.get_config()
-        await self.wled.get_sync_settings()
 
         led_info = wled_config["leds"]
         wled_name = wled_config["name"]
@@ -123,10 +119,11 @@ class WLEDDevice(NetworkedDevice):
 
         # Currently *assuming* that this PR gets released in 0.13
         # https://github.com/Aircoookie/WLED/pull/1944
-        # if StrictVersion(wled_version) >= StrictVersion("0.13.0"):
-        #     _LOGGER.info(
-        #         f"WLED Version Supports Sync Setting API: {wled_version}"
-        #     )
+        if LooseVersion(wled_version) >= LooseVersion("0.13.0"):
+            _LOGGER.info(
+                f"WLED Version Supports Sync Setting API: {wled_version}"
+            )
+            wled_sync_settings = await self.wled.get_sync_settings()
         # self.wled.enable_realtime_gamma()
         # self.wled.set_inactivity_timeout(self._config["timeout"])
         # self.wled.first_universe()
