@@ -40,7 +40,7 @@ class RPI_WS281X(Device):
                     "pixel_count",
                     description="Number of individual pixels",
                     default=1,
-                ): vol.All(vol.Coerce(int), vol.Range(min=1)),
+                ): vol.All(int, vol.Range(min=1)),
                 vol.Required(
                     "gpio_pin",
                     description="Raspberry Pi GPIO pin your LEDs are connected to",

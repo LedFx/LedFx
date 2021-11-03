@@ -38,12 +38,12 @@ class DDPDevice(UDPDevice):
                 "pixel_count",
                 description="Number of individual pixels",
                 default=1,
-            ): vol.All(vol.Coerce(int), vol.Range(min=1)),
+            ): vol.All(int, vol.Range(min=1)),
             vol.Required(
                 "port",
                 description="Port for the UDP device",
                 default=4048,
-            ): vol.All(vol.Coerce(int), vol.Range(min=1, max=65535)),
+            ): vol.All(int, vol.Range(min=1, max=65535)),
         }
     )
 

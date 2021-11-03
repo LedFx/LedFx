@@ -49,7 +49,7 @@ class Device(BaseRegistry):
                 #     "pixel_count",
                 #     description="Number of individual pixels",
                 #     default=1,
-                # ): vol.All(vol.Coerce(int), vol.Range(min=1)),
+                # ): vol.All(int, vol.Range(min=1)),
                 vol.Optional(
                     "icon_name",
                     description="https://material-ui.com/components/material-icons/",
@@ -358,7 +358,7 @@ class UDPDevice(NetworkedDevice):
             vol.Required(
                 "port",
                 description="Port for the UDP device",
-            ): vol.All(vol.Coerce(int), vol.Range(min=1, max=65535)),
+            ): vol.All(int, vol.Range(min=1, max=65535)),
         }
     )
 
@@ -392,7 +392,7 @@ class SerialDevice(Device):
             ): vol.In(list(AvailableCOMPorts.available_ports)),
             vol.Required(
                 "baudrate", description="baudrate", default=500000
-            ): vol.All(vol.Coerce(int), vol.Range(min=115200)),
+            ): vol.All(int, vol.Range(min=115200)),
         }
     )
 

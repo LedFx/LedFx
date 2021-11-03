@@ -26,7 +26,7 @@ class WLEDDevice(NetworkedDevice):
                 "timeout",
                 description="Time between LedFx effect off and WLED effect activate",
                 default=1,
-            ): vol.All(vol.Coerce(int), vol.Range(0, 255)),
+            ): vol.All(int, vol.Range(0, 255)),
         }
     )
 
