@@ -33,7 +33,7 @@ body:
     attributes:
       label: What version of LedFx?
       description: You can find this by running ledfx --version
-      value: "Version: "
+      placeholder: e.g 0.10.5
     validations:
       required: true
   - type: dropdown
