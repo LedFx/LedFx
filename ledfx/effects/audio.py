@@ -94,7 +94,9 @@ class AudioInputSource:
                 vol.Optional("sample_rate", default=60): int,
                 vol.Optional("mic_rate", default=MIC_RATE): int,
                 vol.Optional("fft_size", default=FFT_SIZE): int,
-                vol.Optional("min_volume", default=0.2): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=10.0)),
+                vol.Optional("min_volume", default=0.2): vol.All(
+                    vol.Coerce(float), vol.Range(min=0.0, max=10.0)
+                ),
                 vol.Optional(
                     "audio_device", default=default_device_index
                 ): AudioInputSource.device_index_validator,

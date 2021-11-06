@@ -536,7 +536,7 @@ ledfx_presets = {
                 "mids_colour": "cyan",
                 "mids_sensitivity": 0.05,
                 "mirror": True,
-                "raindrop_animation": "droplet_1.npy"
+                "raindrop_animation": "droplet_1.npy",
             },
             "name": "Cold Drops",
         },
@@ -1033,7 +1033,7 @@ ledfx_presets = {
             "config": {
                 "background_brightness": 1,
                 "background_color": "black",
-                "beat_decay": 2,                
+                "beat_decay": 2,
                 "blur": 6.2,
                 "brightness": 1,
                 "color": "blue",
@@ -1057,7 +1057,7 @@ ledfx_presets = {
             "config": {
                 "background_brightness": 1,
                 "background_color": "black",
-                "beat_decay": 2,                
+                "beat_decay": 2,
                 "blur": 2.6,
                 "brightness": 1,
                 "color": "white",
@@ -1080,7 +1080,7 @@ ledfx_presets = {
             "config": {
                 "background_brightness": 1,
                 "background_color": "black",
-                "beat_decay": 2,                
+                "beat_decay": 2,
                 "blur": 2.6,
                 "brightness": 1,
                 "color": "white",
@@ -1100,7 +1100,7 @@ ledfx_presets = {
             "config": {
                 "background_brightness": 1,
                 "background_color": "black",
-                "beat_decay": 2,                
+                "beat_decay": 2,
                 "blur": 2.6,
                 "brightness": 1,
                 "color": "white",
