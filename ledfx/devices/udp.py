@@ -20,12 +20,12 @@ class UDPRealtimeDevice(UDPDevice):
                 "pixel_count",
                 description="Number of individual pixels",
                 default=1,
-            ): vol.All(vol.Coerce(int), vol.Range(min=1)),
+            ): vol.All(int, vol.Range(min=1)),
             vol.Required(
                 "port",
                 description="Port for the UDP device",
                 default=21324,
-            ): vol.All(vol.Coerce(int), vol.Range(min=1, max=65535)),
+            ): vol.All(int, vol.Range(min=1, max=65535)),
             vol.Required(
                 "udp_packet_type",
                 description="RGB packet encoding",
@@ -35,7 +35,7 @@ class UDPRealtimeDevice(UDPDevice):
                 "timeout",
                 description="Seconds to wait after the last received packet to yield device control",
                 default=1,
-            ): vol.All(vol.Coerce(int), vol.Range(min=1, max=255)),
+            ): vol.All(int, vol.Range(min=1, max=255)),
             vol.Optional(
                 "minimise_traffic",
                 description="Won't send updates if nothing has changed on the LED device",

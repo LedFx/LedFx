@@ -29,7 +29,7 @@ class AdalightDevice(SerialDevice):
                     "pixel_count",
                     description="Number of individual pixels",
                     default=1,
-                ): vol.All(vol.Coerce(int), vol.Range(min=1)),
+                ): vol.All(int, vol.Range(min=1)),
                 vol.Required(
                     "color_order", description="Color order", default="RGB"
                 ): vol.In(list(COLOR_ORDERS)),
