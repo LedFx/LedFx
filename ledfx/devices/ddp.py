@@ -56,7 +56,11 @@ class DDPDevice(UDPDevice):
         self.frame_count += 1
         try:
             DDPDevice.send_out(
-                self._sock, self.destination, self._config["port"], data, self.frame_count
+                self._sock,
+                self.destination,
+                self._config["port"],
+                data,
+                self.frame_count,
             )
         except AttributeError:
             self.activate()

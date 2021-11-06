@@ -42,7 +42,7 @@ class WLEDDevice(NetworkedDevice):
             "ip_address": None,
             "pixel_count": None,
             "port": 21324,
-            "udp_packet_type": "DNRGB"
+            "udp_packet_type": "DNRGB",
         },
         "DDP": {
             "name": None,

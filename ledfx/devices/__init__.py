@@ -1,15 +1,14 @@
 import asyncio
 import logging
+import socket
 from abc import abstractmethod
 from functools import cached_property
 
 import numpy as np
-import voluptuous as vol
-import zeroconf
-
-import socket
 import serial
 import serial.tools.list_ports
+import voluptuous as vol
+import zeroconf
 
 from ledfx.config import save_config
 from ledfx.events import DeviceUpdateEvent, Event
@@ -364,12 +363,16 @@ class UDPDevice(NetworkedDevice):
 
     def activate(self):
         self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        _LOGGER.info(f"{self._device_type} sender for {self.config['name']} started.")
+        _LOGGER.info(
+            f"{self._device_type} sender for {self.config['name']} started."
+        )
         super().activate()
 
     def deactivate(self):
         super().deactivate()
-        _LOGGER.info(f"{self._device_type} sender for {self.config['name']} stopped.")
+        _LOGGER.info(
+            f"{self._device_type} sender for {self.config['name']} stopped."
+        )
         self._sock = None
 
 
@@ -380,6 +383,7 @@ class AvailableCOMPorts:
 
     for p in ports:
         available_ports.append(p.device)
+
 
 @BaseRegistry.no_registration
 class SerialDevice(Device):
