@@ -52,7 +52,7 @@ class UDPRealtimeDevice(UDPDevice):
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
         self._device_type = "UDP Realtime"
-        self.last_frame = None
+        self.last_frame = np.full((config['pixel_count'], 3), -1)
         self.last_frame_sent_time = 0
 
     def flush(self, data):
@@ -90,18 +90,17 @@ class UDPRealtimeDevice(UDPDevice):
                 self.transmit_packet(udpData, np.array_equal(data[start_index:end_index], self.last_frame[start_index:end_index]))
 
         elif self._config["udp_packet_type"] == "adaptive_smallest" and frame_size <= 255:
-            if self.last_frame is not None:
-                # compare potential size of WARLS packet to DRGB packet
-                if np.count_nonzero(np.any(data!=self.last_frame, axis=1)) * 4 < len(data) * 3:
-                    udpData = packets.build_warls_packet(data, timeout, self.last_frame)
-                    self.transmit_packet(udpData, np.array_equal(data, self.last_frame))
-                    return
-            udpData = packets.build_drgb_packet(data, timeout)
-            self.transmit_packet(udpData, np.array_equal(data, self.last_frame))
+            # compare potential size of WARLS packet to DRGB packet
+            if np.count_nonzero(np.any(data!=self.last_frame, axis=1)) * 4 < len(data) * 3:
+                udpData = packets.build_warls_packet(data, timeout, self.last_frame)
+                self.transmit_packet(udpData, np.array_equal(data, self.last_frame))
+            else:
+                udpData = packets.build_drgb_packet(data, timeout)
+                self.transmit_packet(udpData, np.array_equal(data, self.last_frame))
 
-        else:
+        else:   # fallback
             _LOGGER.warning(
-                "UDP packet is configured incorrectly (check the pixel count vs the max size): https://kno.wled.ge/interfaces/udp-realtime/"
+                f"UDP packet is configured incorrectly (please choose a packet that supports {self._config['pixel_count']} LEDs): https://kno.wled.ge/interfaces/udp-realtime/#udp-realtime \n Falling back to supported udp packet."
             )
             if frame_size <= 490: # DRGB
                 udpData = packets.build_drgb_packet(data, timeout)
