@@ -7,6 +7,7 @@ const ACTION_ROOT = 'spotify';
 export const authFinished = createAction(`${ACTION_ROOT}/AUTH_FINISHED`);
 export const authRefreshed = createAction(`${ACTION_ROOT}/AUTH_REFRESHED`);
 export const playerStateUpdated = createAction(`${ACTION_ROOT}/PLAYER_STATE_UPDATED`);
+export const audioFeaturesStateUpdated = createAction(`${ACTION_ROOT}/PLAYER_AUDIOFEATURES_UPDATED`);
 export const cookiesChecked = createAction(`${ACTION_ROOT}/COOKIES_CHECKED`);
 export const logoutAuthUpdated = createAction(`${ACTION_ROOT}/LOGOUT_UPDATED`);
 
@@ -15,6 +16,7 @@ const INITIAL_STATE = {
     accessToken: '',
     refreshToken: '',
     logout: true,
+    audioFeatures: {},
     playerState: {},
 };
 
@@ -41,7 +43,13 @@ export default handleActions(
                 refreshToken: refreshToken,
             };
         },
-        [playerStateUpdated]: (state, { payload, payload: { playerState } }) => {
+        [audioFeaturesStateUpdated]: (state, { payload, payload: { audioFeatures} }) => {
+            return {
+                ...state,
+                audioFeatures: payload,
+            };
+        },
+        [playerStateUpdated]: (state, { payload, payload: { playerState} }) => {
             return {
                 ...state,
                 playerState: payload,
@@ -115,6 +123,17 @@ export function updatePlayerState(playerState) {
     return dispatch => {
         try {
             dispatch(playerStateUpdated(playerState));
+            console.log("ID for audiofeatures", playerState.track_window.current_track.id);
+        } catch (error) {
+            console.log(error);
+        }
+    };
+}
+
+export function updateAudioFeatures(audioFeatures) {
+    return dispatch => {
+        try {
+            dispatch(audioFeaturesStateUpdated(audioFeatures));console.log("Audiofeatures", audioFeatures);
         } catch (error) {
             console.log(error);
         }

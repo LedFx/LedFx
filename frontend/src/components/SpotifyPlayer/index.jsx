@@ -18,12 +18,10 @@ import {
 } from '@material-ui/core';
 import { updatePlayerState } from 'modules/spotify';
 import { getAsyncIntegrations } from 'modules/integrations';
-//import AddCircleIcon from '@material-ui/icons/AddCircle';
 import PlayArrow from '@material-ui/icons/PlayArrow';
 import Pause from '@material-ui/icons/Pause';
 import SkipNext from '@material-ui/icons/SkipNext';
 import SkipPrevious from '@material-ui/icons/SkipPrevious';
-//import CircularProgress from '@material-ui/core/CircularProgress';
 import InfoIcon from '@material-ui/icons/Info';
 import Link from '@material-ui/core/Link';
 import { getScenes, activateScene } from 'modules/scenes';
@@ -32,6 +30,7 @@ import Moment from 'react-moment';
 import moment from 'moment';
 import Slider from '@material-ui/core/Slider';
 import { ToastContainer, toast } from 'react-toastify';
+import RadarChart from 'components/SpotifyPlayer/RadarChart';
 
 //import uniqBy from 'lodash/uniqBy';
 
@@ -353,6 +352,13 @@ class SpotifyPlayer extends React.Component {
                         </Grid>
                         <Grid container item xs={12} justify="center" align="center">
                             <div style={{ display: 'flex', alignItems: 'center' }}>
+                            
+                            {/*
+                            RadarChart
+                            chartValues={playerState.chartValues}
+                            chartData={playerState.chartData}
+                            />
+                            */}
                                 <FormControlLabel
                                     control={
                                         <Checkbox
