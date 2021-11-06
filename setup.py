@@ -30,6 +30,7 @@ INSTALL_REQUIRES = [
     "certifi>=2020.12.5",
     "mido>=1.2.10",
     "multidict~=5.0.0",
+    "openrgb-python~=0.2.10",
     "paho-mqtt>=1.5.1",
     "psutil>=5.8.0",
     "pyserial>=3.5",
