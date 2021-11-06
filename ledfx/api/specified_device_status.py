@@ -15,7 +15,6 @@ class SpecifiedDeviceStatusEndpoint(RestEndpoint):
     async def get(self, virtual_id) -> web.Response:
         virtual = self._ledfx.virtuals.get(virtual_id)
         if virtual is None:
-            response = {"not found": 404}
             return web.json_response(data={"not found": 404}, status=404)
         response = {"active": virtual.active_effect}
         return web.json_response(data=response, status=200)
