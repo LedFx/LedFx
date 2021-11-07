@@ -472,7 +472,14 @@ class Devices(RegistryLoader):
             for device in self.values()
             if hasattr(device, "async_initialize")
         ]
-        results = await asyncio.gather(*tasks, return_exceptions=True)
+
+        results = list(
+            map(
+                lambda task: asyncio.gather(task, return_exceptions=True),
+                tasks,
+            )
+        )
+
         for result in results:
             if type(result) is ValueError:
                 _LOGGER.warning(result)
