@@ -8,8 +8,8 @@ Our pip package will be rebuilt automatically when new releases are pushed - we 
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 0.10.2   | :white_check_mark: |
-| <0.10.2  | :x:                |
+| 0.10.5   | :white_check_mark: |
+| <0.10.5  | :x:                |
 
 
 ## Reporting a Vulnerability
