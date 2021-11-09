@@ -4,8 +4,9 @@ import logging
 import os
 import shutil
 import sys
-from pkg_resources import parse_version
+
 import voluptuous as vol
+from pkg_resources import parse_version
 
 from ledfx.consts import CONFIGURATION_VERSION
 

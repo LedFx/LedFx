@@ -473,12 +473,7 @@ class Devices(RegistryLoader):
             if hasattr(device, "async_initialize")
         ]
 
-        results = list(
-            map(
-                lambda task: asyncio.gather(task, return_exceptions=True),
-                tasks,
-            )
-        )
+        results = await asyncio.gather(*tasks, return_exceptions=True)
 
         for result in results:
             if type(result) is ValueError:
