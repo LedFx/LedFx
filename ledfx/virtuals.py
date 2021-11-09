@@ -367,13 +367,8 @@ class Virtual:
                         # )
                         self.flush()
 
-                    def trigger_virtual_update_event():
-                        self._ledfx.events.fire_event(
-                            VirtualUpdateEvent(self.id, self.assembled_frame)
-                        )
-
-                    self._ledfx.loop.call_soon_threadsafe(
-                        trigger_virtual_update_event
+                    self._ledfx.events.fire_event(
+                        VirtualUpdateEvent(self.id, self.assembled_frame)
                     )
 
             time.sleep(fps_to_sleep_interval(self.refresh_rate))
