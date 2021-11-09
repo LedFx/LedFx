@@ -5,8 +5,8 @@ import asyncio
 import json
 import logging
 import os
-from functools import partial
 from itertools import zip_longest
+from math import log
 
 import mido
 import mido.frozen as frozen
@@ -15,49 +15,46 @@ import rtmidi
 import voluptuous as vol
 
 from ledfx.config import get_default_config_directory
+from ledfx.effects import Effect
+from ledfx.events import Event
 from ledfx.integrations import Integration
 from ledfx.utils import async_fire_and_forget
+from ledfx.virtuals import Virtual
 
 # some thoughts
 
-# some desired functionality examples
-# - apply one effect to all displays
-# - choose from effect presets (tied to displays)
-# - choose from scenes (not tied to anything) [1d input type 0]
-# - blur all displays on a single slider
-# - blackout button
+# Virtuals are ordered [0-len(virtuals)] (modifiable order, drag and drop) for automatic consistency across all regions
 
-# 2D layouts (choice/choice)
-# 1D layouts (choice or options)
-# 0D layouts (option)
+# A REGION has a DRIVER. A DRIVER controls the action of a region's INPUT.
+# A DRIVER has an ENDPOINT - "effect", "virtual_config", "virtual_preset", or "scene". This is the component of LedFx that the driver interacts with
 
-# choices:
-# options:
+# DRIVERS:
 
-# EFFECTS
-# input type:
-# 0: flip, mirror
-# 1: blur, brightness, (bkg_brightness?), gradient, colour (lot of variation)
-# 2: colour?
-# -: SPECIFIC EFFECT PARAMETERS
-# -: strobe decay would be example param to adjust
-
-# DISPLAYS
-# input type:
-# 0: preview_only
-# 1: transition_time
-
+# DIMENSIONALITY 2:
+# input type
+# 0: [virtuals] set effect preset (configurable list of effect presets eg. select effect -> select preset)
+# 1: [effects common] blur, brightness, (bkg_brightness?), gradient, colour
+# 1: [effects specific] {TODO} any ranged value, ordered. difficult to show user what each knob does, maybe omit: each knob would control something different for each effect!
 
 # DIMENSIONALITY 1:
 # input type
-#
+# 0: [scenes] apply scene
+# 0: [virtuals] preview_only
+# 1: [virtuals] transition time, min/max frequency range, max brightness
+# 0: [effects common] flip, mirror
+# 1: [effects common] blur, brightness, (bkg_brightness?), gradient, colour
+# 2: [effects common] gradient, colour (???)
+# 0: [effects specific] {TODO} any bool value, ordered
+# 1: [effects specific] {TODO} any ranged value, ordered
 
 # DIMENSIONALITY 0:
 # input type
-# 0: queue_hold (IMPORTANT!)
-# 0: blackout
-# 1: global brightness/blur/(any input type 1) (global can be applied to all?)
-
+# 0: queue_hold (IMPORTANT! Maybe pre-defined in mapping?)
+# 0: [global, virtuals] preview_only (blackout)
+# 1: [global, virtuals] transition time, min/max frequency range, max brightness
+# 0: [global, effects common] flip, mirror
+# 1: [global, effects common] blur, brightness, (bkg_brightness?), gradient, colour
+# 2: [global, effects common] gradient, colour (???)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -76,10 +73,12 @@ INPUT_TYPES = [
 ]
 
 INPUT_VISUAL_STATES = [
-    "Unassigned         [input has no function]",
-    "Assigned, inactive [input has function, but not doing it]",
-    "Assigned, active   [input is doing its function]",
+    "Unassigned           [input has no function (cannot be pressed)]",
+    "Assigned, inactive   [input has function, but not doing it (button can be pressed)]",
+    "Assigned, activating [input has function, and is going to do it (button press in queue)]",
+    "Assigned, active     [input is doing its function (button has been pressed)]",
 ]
+
 
 validate_byte = vol.All(int, vol.Range(0, 127))
 VALIDATORS = {
@@ -98,6 +97,13 @@ VALIDATORS = {
     "velocity": validate_byte,
     "time": vol.Coerce(float),
 }
+
+
+class VisualStates:
+    UNASSIGNED = 0
+    INACTIVE = 1
+    ACTIVATING = 2
+    ACTIVE = 3
 
 
 def create_midimsg_schema(msgtype):
@@ -258,6 +264,141 @@ class MIDI(Integration):
         self.hold_queue_flag = False
         self.disconnected_task = None
 
+        # TODO: This should be configurable by user by API
+        # this is just an example to show functionality.
+        _virtual_ids = ["outer", "inner", "all"]
+        self.virtual_targets = tuple(
+            self._ledfx.virtuals.get(i) for i in _virtual_ids
+        )
+
+        # This efficiently describes the attributes of different
+        # endpoints so they can be generated as needed.
+
+        # "input_options":  the things that this endpoint can act on for a given midi input type
+        #        - 0: boolean values, single button press
+        #        - 1: ranged values, sliders/faders/knobs
+        #        - 2: lists, "choose from" type things. Stepped fully rotating knobs, jogwheels
+
+        # "apply":          a simple function that will apply an option to the endpoint
+        #   args - "option": the option to modify (from input_options)
+        #        - "input_position": the endpoint will choose a target based on the input's position
+        #        - "value": the value to set
+
+        # "target":         the endpoint's target, some part of ledfx
+        #   args - "input_position": if applicable, to choose a target based on the input position
+
+        # "target_count":   the number of possible targets this endpoint has
+        #
+        self.endpoint_factory = {
+            "effect": {
+                "input_options": {
+                    0: ("flip", "mirror"),
+                    1: ("blur", "brightness", "background_brightness"),
+                    2: ("background_color"),
+                },
+                "apply": lambda self, option, target, value: (
+                    target.update_config(
+                        {option: not target._config.get(option)}
+                    )
+                    if self.input_type == 0
+                    else target.update_config({option: value})
+                ),
+                "schema": Effect.schema().schema,
+                "refresh_event_listener": Event.EFFECT_SET,
+                "target": lambda self, input_position: self.virtual_targets[
+                    input_position
+                ].active_effect,
+                "target_count": lambda self: len(self.virtual_targets),
+            },
+            "virtual_config": {
+                "input_options": {
+                    0: ("preview_only"),
+                    1: (
+                        "max_brightness",
+                        "transition_time",
+                        "frequency_min",
+                        "frequency_max",
+                    ),
+                    2: ("mapping", "transition_mode"),
+                },
+                "apply": lambda self, option, target, value: (
+                    target.update_config(
+                        {option: not target._config.get(option)}
+                    )
+                    if self.input_type == 0
+                    else target.update_config({option: value})
+                ),
+                "schema": Virtual.schema().schema,
+                "refresh_event_listener": Event.VIRTUAL_CONFIG_UPDATE,
+                "target": lambda self, input_position: self.virtual_targets[
+                    input_position
+                ],
+                "target_count": lambda self: len(self.virtual_targets),
+            },
+            "virtual_preset": {
+                "input_options": {
+                    0: ("preset",),
+                },
+                "apply": lambda self, option, target, value: (
+                    target.set_preset(value)
+                ),
+                "refresh_event_listener": Event.PRESET_ACTIVATED,
+                "target": lambda self, input_position: self.virtual_targets[
+                    input_position
+                ],
+                "target_count": lambda self: len(self.virtual_targets),
+            },
+            "scene": {
+                "input_options": {0: ("scene",)},
+                "apply": lambda self, option, target, value: (
+                    target.activate(value)
+                ),
+                "refresh_event_listener": Event.SCENE_ACTIVATED,
+                "target": lambda self, _: self._ledfx.scenes,
+                "target_count": lambda self: 1,
+            },
+        }
+
+        for region in self.mapping.regions:
+            if region.name == "Button Matrix":
+                self.create_driver(region, "virtual_preset")
+                options = (
+                    ("preset", "user_presets", "energy", "gentle"),
+                    ("preset", "user_presets", "energy", "intense"),
+                    ("preset", "user_presets", "scroll", "gentle"),
+                    ("preset", "user_presets", "scroll", "intense"),
+                    ("preset", "user_presets", "strobe", "default"),
+                    ("preset", "user_presets", "strobe", "intense"),
+                    ("preset", "user_presets", "real_strobe", "gentle"),
+                    ("preset", "ledfx_presets", "pitchSpectrum", "reset"),
+                )
+                region.driver.set_options(options)
+            elif region.name == "Faders":
+                self.create_driver(region, "virtual_config")
+                options = (("frequency_max",),) * 8
+                region.driver.set_options(options)
+            elif region.name == "Solo Fader":
+                self.create_driver(region, "virtual_config")
+                options = (("max_brightness",),)
+                region.driver.set_options(options)
+            elif region.name == "Button Row":
+                self.create_driver(region, "effect")
+                options = (("mirror",),) * 8
+                region.driver.set_options(options)
+            elif region.name == "Button Column":
+                self.create_driver(region, "scene")
+                options = (
+                    ("scene", "test"),
+                    ("scene", "test3"),
+                    (None,),
+                    (None,),
+                    (None,),
+                    (None,),
+                    (None,),
+                    (None,),
+                )
+                region.driver.set_options(options)
+
     def restore_from_data(self, data):
         """Might be used in future"""
         self._data = data
@@ -293,22 +434,6 @@ class MIDI(Integration):
         except OSError as e:
             _LOGGER.error(f"Error loading {self._config['midi_mapping']}. {e}")
 
-    def get_triggers(self):
-        return self._data
-
-    def add_trigger(self, scene_id, song_id, song_name, song_position):
-        """Add a trigger to saved triggers"""
-        trigger_id = f"{song_id}-{str(song_position)}"
-        if scene_id not in self._data.keys():
-            self._data[scene_id] = {}
-        self._data[scene_id][trigger_id] = [song_id, song_name, song_position]
-
-    def delete_trigger(self, trigger_id):
-        """Delete a trigger from saved triggers"""
-        for scene_id in self._data.keys():
-            if trigger_id in self._data[scene_id].keys():
-                del self._data[scene_id][trigger_id]
-
     def set_led(self, region, index, state):
         msg = region.set_led(state, index)
         self.send_msg(msg)
@@ -319,10 +444,12 @@ class MIDI(Integration):
             region = next(
                 region for region in self.mapping.regions if message in region
             )
-            _LOGGER.info(f"Received input to region: {region}: {message}")
+            _LOGGER.debug(f"Received input to region: {region}: {message}")
         except StopIteration:
-            _LOGGER.info(f"Received input to unmapped region: {message}")
+            _LOGGER.debug(f"Received input to unmapped region: {message}")
             return
+
+        input_position = region.where(message)
 
         # special case, handle holding the queue
         # if region.function == "queue hold": or whatever, future me will figure that one out
@@ -341,8 +468,14 @@ class MIDI(Integration):
             # else if button press in queue, remove it (ie cancel the action if queue is held)
             try:
                 self.message_queue.remove(message)
+                if region.has_leds:
+                    self.set_led(region, input_position, VisualStates.INACTIVE)
             except KeyError:
                 self.message_queue.add(message)
+                if region.has_leds:
+                    self.set_led(
+                        region, input_position, VisualStates.ACTIVATING
+                    )
         elif region.input_type == 1:
             # if message with same type, position, const in queue, remove it
             # before adding the new one.
@@ -365,14 +498,6 @@ class MIDI(Integration):
             # wheels are pretty undefined rn
             self.message_queue.add(message)
 
-        input_position = region.where(message)
-        if region.has_leds:
-            self.set_led(region, input_position, 2)
-            if not self.hold_queue_flag:
-                self._ledfx.loop.call_later(
-                    0.3, partial(self.set_led, region, input_position, 0)
-                )
-
         self.process_message_queue()
 
     def send_msg(self, msg):
@@ -391,7 +516,12 @@ class MIDI(Integration):
         if not self.hold_queue_flag:
             for _ in range(len(self.message_queue)):
                 message = self.message_queue.pop()
-                print(f"handling message: {message}")
+                region = next(
+                    region
+                    for region in self.mapping.regions
+                    if message in region
+                )
+                region.driver.handle_message(message)
 
     async def poll_midi_closed(self):
         """
@@ -523,6 +653,193 @@ class MIDI(Integration):
             f"Closed MIDI port on {self._config['midi_device']}"
         )
 
+    def create_driver(self, region, endpoint_type):
+        """
+        Creates a driver for a region.
+        This connects the regions inputs to a ledfx "endpoint" (some module of ledfx)
+        """
+        input_type = region.input_type
+        dimensionality = region.dimensionality
+
+        assert endpoint_type in self.endpoint_factory
+        endpoint_config = self.endpoint_factory.get(endpoint_type)
+        assert input_type in endpoint_config.get("input_options")
+
+        # dynamically build an endpoint class for this driver
+        # using the endpoint factory
+        endpoint_class = type(
+            f"{endpoint_type.title()}_Endpoint",
+            (object,),
+            {
+                "_ledfx": self._ledfx,
+                "endpoint_type": endpoint_type,
+                "input_type": input_type,
+                "options": endpoint_config.get("input_options").get(
+                    input_type
+                ),
+                "virtual_targets": self.virtual_targets,
+                "apply": endpoint_config.get("apply"),
+                "target": endpoint_config.get("target"),
+                "target_count": endpoint_config.get("target_count"),
+                "schema": endpoint_config.get("schema", None),
+            },
+        )
+
+        region.driver = type(
+            f"D{dimensionality}I{input_type}_{endpoint_type.title()}Driver",
+            (Driver,),
+            {
+                "region": region,
+                "endpoint": endpoint_class(),
+                "options": (),
+                "virtual_targets": self.virtual_targets,
+            },
+        )()
+
+
+class Driver:
+    def set_options(self, options):
+        """
+        options is a tuple of tuples, each containing an option key and any associated settings
+        input_type 0 generic  : just the option key
+                                eg. ("flip",)
+        input_type 0 "preset" : option key and preset info
+                                eg. ("preset", "ledfx", "energy", "fast_rgb")
+        input type 0 "scene"  : option key and scene id
+                                eg. ("scene", "my_cool_scene")
+        input type 1 generic  : option key and a lambda to scale midi input to endpoint range
+                                eg. ("blur", <lambda>)
+        input type 2 generic  : option key and available choices
+                                eg. ("bg_colour", "red", "green", "purple", ... )
+
+
+        """
+        if not options:
+            self.options = ()
+            return
+
+        assert all(
+            option[0] is None or option[0] in self.endpoint.options
+            for option in options
+        )
+
+        if self.region.dimensionality == 0:
+            assert len(options) == 1
+        elif self.region.dimensionality == 1:
+            assert len(options) == len(self.region)
+        elif self.region.dimensionality == 2:
+            assert len(options) == self.region.height
+
+        def range_scaler(a, b, c, d):
+            # scales x between range(a,b) to range (c,d)
+            return lambda x: ((x - a) / (b - a)) * (d - c) + c
+
+        logit = lambda x: 3700.0 * log(1 + x / 200.0, 13)  # noqa: E731
+        hzit = lambda x: 200.0 * 13 ** (x / 3700.0) - 200.0  # noqa: E731
+
+        def frequency_range_scaler(a, b, c, d):
+            # scales frequency x between range(a,b) to range (c,d)
+            # using a logarithmic conversion for "linear" feel
+            c = logit(c)
+            d = logit(d)
+            return lambda x: hzit(((x - a) / (b - a)) * (d - c) + c)
+
+        if self.region.input_type == 0:
+            for option in options:
+                key, *settings = option
+                if key == "preset":
+                    assert len(settings) == 3
+                    assert all(
+                        isinstance(setting, str) for setting in settings
+                    )
+                    self.options += ((key, *settings),)
+                elif key == "scene":
+                    assert len(settings) == 1
+                    assert isinstance(settings[0], str)
+                    self.options += ((key, settings[0]),)
+                else:
+                    self.options += ((key,),)
+
+        elif self.region.input_type == 1:
+            for option in options:
+                key, *settings = option
+                validators = self.endpoint.schema.get(key).validators
+                range_val = next(
+                    val for val in validators if isinstance(val, vol.Range)
+                )
+                scaler_func = (
+                    frequency_range_scaler
+                    if "frequency" in key
+                    else range_scaler
+                )
+                self.options += (
+                    (
+                        key,
+                        scaler_func(
+                            *self.region.midi_input["MOTION_DATA"],
+                            range_val.min,
+                            range_val.max,
+                        ),
+                    ),
+                )
+
+        elif self.region.input_type == 2:
+            for option in options:
+                key, *settings = option
+                validator = self.endpoint.schema.get(key)
+                self.options += ((key, *validator.container),)
+
+    def midi_to_endpoint_value(self, midi_value, input_position):
+        """
+        Uses self.options to convert the motion value of a midi input
+        to the corresponding value expected by the endpoint
+        """
+        assert input_position in range(len(self.options))
+
+        if self.region.input_type == 0:
+            return self.options[input_position][1:]
+        elif self.region.input_type == 1:
+            return self.options[input_position][1](midi_value)
+        elif self.region.input_type == 2:
+            return None
+            # TODO
+            # - get current index in list from active effect
+            # - change by delta
+            # - return the item of the new index
+            delta = midi_value - self.region.midi_input["MOTION_DATA"][0]
+
+    def handle_message(self, msg):
+        if not self.options:
+            return
+
+        if self.region.dimensionality == 0:
+            input_position = options_position = 0
+        elif self.region.dimensionality == 1:
+            input_position = options_position = self.region.where(msg)
+        elif self.region.dimensionality == 2:
+            input_position, options_position = self.region.where_2d(msg)
+
+        option = self.options[options_position][0]
+
+        if option is None:
+            return
+
+        value = self.midi_to_endpoint_value(
+            getattr(msg, self.region.midi_input["MOTION_VALUE"]),
+            options_position,
+        )
+
+        # if 0d, apply the option to all targets
+        # otherwise, apply to specific target
+        if self.region.dimensionality == 0:
+            for i in range(self.endpoint.target_count()):
+                target = self.endpoint.target(i)
+                self.endpoint.apply(option, target, value)
+        else:
+            self.endpoint.apply(
+                option, self.endpoint.target(input_position), value
+            )
+
 
 class Mapping:
     def __init__(self, mapping: dict):
@@ -543,21 +860,6 @@ class Mapping:
 
 
 class Region:
-    # name = None
-    # dimensionality = None
-    # input_type = None
-    # midi_input = {
-    #     "MSG_TYPE" : None, # str
-    #     "MOTION_VALUE": None, # str
-    #     "MOTION_DATA": None, # list, contents depending on input_type
-    #     "POSITION_VALUE": None, # str
-    #     "POSITION_DATA": None, # list, contents depending on dimension
-    #     "CONST_VALUE": None, # optional, str
-    #     "CONST_DATA": None # optional, int
-    # }
-    # led_colour_range = None # range(min, max)
-    # led_state_mappings = None
-
     def __init__(
         self,
         mapping,
@@ -568,6 +870,10 @@ class Region:
         led_colour_range: list,
         led_state_mappings: list,
     ):
+        """
+        Handles a region; a defined set of midi messages of homogenous input type.
+        eg. check if a message falls in this region, set leds for the region.
+        """
         self.mapping = mapping
         self.name = name
         self.dimensionality = dimensionality
@@ -575,6 +881,7 @@ class Region:
         self.midi_input = midi_input
         self.led_colour_range = led_colour_range
         self.led_state_mappings = led_state_mappings
+        self.has_leds = bool(self.led_state_mappings)
 
         # what we're doing is making a collection of messages that will be
         # matched against input messages.
@@ -613,13 +920,14 @@ class Region:
             )
         }
 
-    @property
-    def has_leds(self):
-        return bool(self.led_state_mappings)
+        if self.has_leds:
+            self.led_states = list(
+                0 for _ in range(len(self._input_positions))
+            )
 
     def set_led(
         self,
-        state: int,  # colour state, defined in mapping [0 off, 1,2 for each state]
+        state: int,  # colour state, defined in mapping [0 off, 1,2,3 for each state]
         index: int,  # index of led
     ):
         """
@@ -637,6 +945,10 @@ class Region:
         else:
             msg_type = self.mapping.led_config["led_on"]["msg_type"]
             msg_colour = self.led_state_mappings[state]
+
+        if self.has_leds:
+            self.led_states[index] = state
+
         return mido.Message(
             msg_type, channel=msg.channel, note=msg.note, velocity=msg_colour
         )
@@ -650,6 +962,11 @@ class Region:
             for x, i in enumerate(self._input_positions)
             if msg.copy(**self._default_motion) == i
         )
+
+    def where_2d(self, msg):
+        if self.dimensionality != 2:
+            _LOGGER.error(f"where_2d called on a {self.dimensionality} region")
+        return divmod(self.where(msg), self.height)
 
     def __repr__(self):
         return f"'{self.name}'"
