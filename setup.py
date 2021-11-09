@@ -44,9 +44,10 @@ INSTALL_REQUIRES = [
     "voluptuous~=0.12.1",
     "yappi~=1.3.3",
     "zeroconf==0.30.0",
+    "pillow>=8.4.0",
     # Conditional Requirement
     # We need pywin32 for Windows
-    'pywin32>=300; platform_system == "Windows"',
+    'pywin32>=302; platform_system == "Windows"',
     # uvloop doesn't work on Windows yet, but should be a good speedup for low power linux devices
     'uvloop>=0.16.0; platform_system != "Windows"',
     # We can install this on all linux devices, it just won't work for anything other than a Pi

@@ -1,5 +1,5 @@
 import logging
-from distutils.version import LooseVersion
+from pkg_resources import parse_version
 
 import voluptuous as vol
 
@@ -119,7 +119,7 @@ class WLEDDevice(NetworkedDevice):
 
         # Currently *assuming* that this PR gets released in 0.13
         # https://github.com/Aircoookie/WLED/pull/1944
-        if LooseVersion(wled_version) >= LooseVersion("0.13.0"):
+        if parse_version(wled_version) >= parse_version("0.13.0"):
             _LOGGER.info(
                 f"WLED Version Supports Sync Setting API: {wled_version}"
             )
