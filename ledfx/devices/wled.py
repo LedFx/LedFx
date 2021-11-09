@@ -1,7 +1,7 @@
 import logging
-from pkg_resources import parse_version
 
 import voluptuous as vol
+from pkg_resources import parse_version
 
 from ledfx.devices import NetworkedDevice
 from ledfx.devices.ddp import DDPDevice
@@ -43,6 +43,8 @@ class WLEDDevice(NetworkedDevice):
             "pixel_count": None,
             "port": 21324,
             "udp_packet_type": "DNRGB",
+            "timeout": 1,
+            "minimise_traffic": True,
         },
         "DDP": {
             "name": None,
@@ -79,6 +81,7 @@ class WLEDDevice(NetworkedDevice):
         config["name"] = self._config["name"]
         config["ip_address"] = self._config["ip_address"]
         config["pixel_count"] = self._config["pixel_count"]
+        config["refresh_rate"] = self._config["refresh_rate"]
 
         self.subdevice = device(self._ledfx, config)
         self.subdevice._destination = self._destination
