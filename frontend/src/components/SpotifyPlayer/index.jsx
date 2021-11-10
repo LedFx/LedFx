@@ -142,17 +142,23 @@ class SpotifyPlayer extends React.Component {
     };
 
     handleAddTrigger = async event => {
-        let trigger = {
-            scene_id: this.state.effects,
-            song_id: this.props.playerState.track_window.current_track.id,
-            song_name: this.props.playerState.track_window.current_track.name,
-            song_position: Math.round(this.props.playerState.position / 1000),
-        };
-        if (await addTrigger(trigger)) {
-            toast.success('Trigger added');
-            this.props.getAsyncIntegrations();
+        if (this.state.effects !== '') {
+            let trigger = {
+                scene_id: this.state.effects,
+                song_id: this.props.playerState.track_window.current_track.id,
+                song_name: this.props.playerState.track_window.current_track.name,
+                song_position: this.state.includePosition
+                    ? Math.round(this.props.playerState.position / 1000)
+                    : 0,
+            };
+            if (await addTrigger(trigger)) {
+                toast.success('Trigger added');
+                this.props.getAsyncIntegrations();
+            } else {
+                toast.error('Failed to add trigger');
+            }
         } else {
-            toast.error('Failed to add trigger');
+            toast.error('Please select a trigger');
         }
     };
 
@@ -175,6 +181,7 @@ class SpotifyPlayer extends React.Component {
         ) {
             console.log('creating player');
             this.createWebPlayer(this.props.accessToken);
+            console.log(this.props.integrations);
         }
     }
 
@@ -185,6 +192,8 @@ class SpotifyPlayer extends React.Component {
                     (this.props.playerState.position / this.props.playerState.duration) * 100,
             });
             this.state.player.getCurrentState().then(state => {
+                console.log(parseInt(this.props.playerState.position / 1000));
+
                 this.props.updatePlayerState(state);
             });
         }
@@ -193,7 +202,6 @@ class SpotifyPlayer extends React.Component {
     render() {
         const { playerState, classes, scenes } = this.props;
 
-        console.log(this.state.player);
         return Object.keys(playerState).length == 0 ? (
             <Link target="_blank" href="https://support.spotify.com/us/article/spotify-connect/">
                 <Typography color="textPrimary">
@@ -352,8 +360,7 @@ class SpotifyPlayer extends React.Component {
                         </Grid>
                         <Grid container item xs={12} justify="center" align="center">
                             <div style={{ display: 'flex', alignItems: 'center' }}>
-                            
-                            {/*
+                                {/*
                             RadarChart
                             chartValues={playerState.chartValues}
                             chartData={playerState.chartData}
@@ -413,6 +420,7 @@ export default connect(
         playerState: state.spotify.playerState,
         accessToken: state.spotify.accessToken,
         scenes: state.scenes.list,
+        integrations: state.integrations.list.spotify,
     }),
     { updatePlayerState, getAsyncIntegrations }
 )(withStyles(styles)(SpotifyPlayer));
