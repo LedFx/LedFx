@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import random
 import socket
 from abc import abstractmethod
 from functools import cached_property
@@ -19,7 +20,6 @@ from ledfx.utils import (
     RegistryLoader,
     async_fire_and_forget,
     generate_id,
-    resolve_destination,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -312,41 +312,15 @@ class NetworkedDevice(Device):
     )
 
     async def async_initialize(self):
-        self._destination = None
-        await self.resolve_address()
-
-    async def resolve_address(self):
-        try:
-            self._destination = await resolve_destination(
-                self._ledfx.loop, self._config["ip_address"]
-            )
-        except ValueError as msg:
-            _LOGGER.warning(f"Device {self.name}: {msg}")
+        self._destination = self._config["ip_address"]
 
     def activate(self, *args, **kwargs):
-        if self._destination is None:
-            _LOGGER.warning(
-                f"Device {self.name}: Cannot activate, destination {self._config['ip_address']} is not yet resolved"
-            )
-            async_fire_and_forget(
-                self.resolve_address(), loop=self._ledfx.loop
-            )
-            return
-        else:
-            super().activate(*args, **kwargs)
+        super().activate(*args, **kwargs)
 
     @property
     def destination(self):
-        if self._destination is None:
-            _LOGGER.warning(
-                f"Device {self.name}: Destination {self._config['ip_address']} is not yet resolved"
-            )
-            async_fire_and_forget(
-                self.resolve_address(), loop=self._ledfx.loop
-            )
-            return
-        else:
-            return self._destination
+
+        return self._destination
 
 
 @BaseRegistry.no_registration
@@ -485,21 +459,9 @@ class Devices(RegistryLoader):
         """
         # First, we try to make sure this device doesn't share a destination with any existing device
         if "ip_address" in device_config.keys():
-            device_ip = device_config["ip_address"].rstrip(".")
-            device_config["ip_address"] = device_ip
-            try:
-                resolved_dest = await resolve_destination(
-                    self._ledfx.loop, device_ip
-                )
-            except ValueError:
-                _LOGGER.error(f"Failed to resolve address {device_ip}")
-                return
 
             for existing_device in self._ledfx.devices.values():
-                if "ip_address" in existing_device.config.keys() and (
-                    existing_device.config["ip_address"] == device_ip
-                    or existing_device.config["ip_address"] == resolved_dest
-                ):
+                if "ip_address" in existing_device.config.keys():
                     if device_type == "e131":
                         # check the universes for e131, it might still be okay at a shared ip_address
                         # eg. for multi output controllers
@@ -507,22 +469,30 @@ class Devices(RegistryLoader):
                             device_config["universe"]
                             == existing_device.config["universe"]
                         ):
-                            msg = f"Ignoring {device_ip}: Shares IP and starting universe with existing device {existing_device.name}"
+                            msg = f"Ignoring {device_config['name']}: Shares IP and starting universe with existing device {existing_device.name}"
                             _LOGGER.info(msg)
                             raise ValueError(msg)
                     else:
-                        msg = f"Ignoring {device_ip}: Shares destination with existing device {existing_device.name}"
+                        msg = f"Ignoring {device_config['name']}: Shares destination with existing device {existing_device.name}"
                         _LOGGER.info(msg)
                         raise ValueError(msg)
 
         # If WLED device, get all the necessary config from the device itself
         if device_type == "wled":
-            wled = WLED(resolved_dest)
+            wled = WLED(device_config["ip_address"])
+
             wled_config = await wled.get_config()
 
             led_info = wled_config["leds"]
-            wled_name = wled_config["name"]
-
+            # If we've found the device via WLED scan, it won't have a custom name from the frontend
+            # However if it's "WLED" (i.e, Default) then we will just add a random number after it to make it unique
+            if device_config["name"] is None:
+                if wled_config["name"] == "WLED":
+                    wled_name = (
+                        f"{wled_config['name']} {random.randint(0, 100)}"
+                    )
+            else:
+                wled_name = device_config["name"]
             wled_count = led_info["count"]
             wled_rgbmode = led_info["rgbw"]
 
@@ -554,7 +524,7 @@ class Devices(RegistryLoader):
                 #     sync_mode = wled.get_sync_mode()
 
             if sync_mode == "ARTNET":
-                msg = f"Cannot add WLED device at {resolved_dest}. Unsupported mode: 'ARTNET', and too many pixels for UDP sync (>480)"
+                msg = f"Cannot add WLED device at {self._config['ip_address']}. Unsupported mode: 'ARTNET', and too many pixels for UDP sync (>480)"
                 _LOGGER.warning(msg)
                 raise ValueError(msg)
 
@@ -663,7 +633,7 @@ class WLEDListener(zeroconf.ServiceBrowser):
         info = zeroconf_obj.get_service_info(type, name)
 
         if info:
-            hostname = str(info.server)
+            hostname = str(info.server.rstrip("."))
             _LOGGER.info(f"Found device: {hostname}")
 
             device_type = "wled"

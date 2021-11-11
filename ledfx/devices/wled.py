@@ -106,7 +106,7 @@ class WLEDDevice(NetworkedDevice):
         wled_config = await self.wled.get_config()
 
         led_info = wled_config["leds"]
-        wled_name = wled_config["name"]
+        wled_name = self._config["name"]
         wled_count = led_info["count"]
         wled_rgbmode = led_info["rgbw"]
         wled_version = wled_config["ver"]

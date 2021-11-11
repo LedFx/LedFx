@@ -2,7 +2,6 @@ import asyncio
 import concurrent.futures
 import importlib
 import inspect
-import ipaddress
 import logging
 import os
 import pkgutil
@@ -518,30 +517,6 @@ def empty_queue(queue: asyncio.Queue):
     for _ in range(queue.qsize()):
         queue.get_nowait()
         queue.task_done()
-
-
-async def resolve_destination(loop, destination, port=7777, timeout=3):
-    """Uses asyncio's non blocking DNS funcs to attempt domain lookup
-
-    Args:
-        destination (string): The domain name to be resolved.
-        timeout, optional (int/float): timeout for the operation
-
-    Returns:
-        On success: string containing the resolved IP address.
-        On failure: boolean false.
-    """
-    try:
-        ipaddress.ip_address(destination)
-        return destination
-
-    except ValueError:
-        cleaned_dest = destination.rstrip(".")
-        try:
-            dest = await loop.getaddrinfo(cleaned_dest, port)
-            return dest[0][4][0]
-        except socket.gaierror:
-            raise ValueError(f"Failed to resolve destination {cleaned_dest}")
 
 
 def currently_frozen():

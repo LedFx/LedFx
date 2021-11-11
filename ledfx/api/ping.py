@@ -5,7 +5,6 @@ from aiohttp import web
 from tcp_latency import measure_latency
 
 from ledfx.api import RestEndpoint
-from ledfx.utils import resolve_destination
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -22,9 +21,7 @@ class InfoEndpoint(RestEndpoint):
             response = {f"{device_id} not found": 404}
             return web.json_response(data=response, status=404)
 
-        ping_target = await resolve_destination(
-            self._ledfx.loop, destination=device.config["ip_address"]
-        )
+        ping_target = device.config["ip_address"]
 
         output = measure_latency(
             host=ping_target,
