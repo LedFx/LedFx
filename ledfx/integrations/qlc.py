@@ -243,7 +243,7 @@ class QLCWebsocketClient:
         """Connect to the WebSocket."""
         while True:
             try:
-                self.websocket = await aiohttp.ClientSession.ws_connect(url=self.url)
+                self.websocket = await aiohttp.ClientSession.ws_connect(self.domain)
                 return True
             except aiohttp.client_exceptions.ClientConnectorError:
                 _LOGGER.info(
