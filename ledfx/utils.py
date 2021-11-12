@@ -20,6 +20,8 @@ import numpy as np
 import requests
 import voluptuous as vol
 
+from ledfx.consts import SOCKET_TIMEOUT
+
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -118,7 +120,7 @@ def get_local_ip():
     """
     try:
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-
+        sock.settimeout(SOCKET_TIMEOUT)
         # Use Google Public DNS server to determine own IP
         sock.connect(("8.8.8.8", 80))
 
@@ -235,7 +237,7 @@ class WLED:
 
     @staticmethod
     async def _wled_request(
-        method, ip_address, endpoint, timeout=0.5, **kwargs
+        method, ip_address, endpoint, timeout=SOCKET_TIMEOUT, **kwargs
     ):
         url = f"http://{ip_address}/{endpoint}"
 
