@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import random
 import socket
 from abc import abstractmethod
 from functools import cached_property
@@ -486,11 +485,12 @@ class Devices(RegistryLoader):
             led_info = wled_config["leds"]
             # If we've found the device via WLED scan, it won't have a custom name from the frontend
             # However if it's "WLED" (i.e, Default) then we will just add a random number after it to make it unique
-            if device_config["name"] is None:
+            if (
+                "name" not in device_config.keys()
+                or device_config["name"] is None
+            ):
                 if wled_config["name"] == "WLED":
-                    wled_name = (
-                        f"{wled_config['name']} {random.randint(0, 100)}"
-                    )
+                    wled_name = f"{wled_config['name']}-{wled_config['mac'][6:]}".upper()
             else:
                 wled_name = device_config["name"]
             wled_count = led_info["count"]
