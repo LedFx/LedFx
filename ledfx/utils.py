@@ -120,7 +120,7 @@ def get_local_ip():
     """
     try:
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        sock.settimeout(SOCKET_TIMEOUT)
+        sock.setblocking(True)
         # Use Google Public DNS server to determine own IP
         sock.connect(("8.8.8.8", 80))
 

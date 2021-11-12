@@ -12,7 +12,6 @@ import voluptuous as vol
 import zeroconf
 
 from ledfx.config import save_config
-from ledfx.consts import SOCKET_TIMEOUT
 from ledfx.events import DeviceUpdateEvent, Event
 from ledfx.utils import (
     AVAILABLE_FPS,
@@ -338,7 +337,7 @@ class UDPDevice(NetworkedDevice):
 
     def activate(self):
         self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self._sock.settimeout(SOCKET_TIMEOUT)
+        self._sock.setblocking(True)
         _LOGGER.info(
             f"{self._device_type} sender for {self.config['name']} started."
         )
@@ -450,7 +449,9 @@ class Devices(RegistryLoader):
         ]
         startup = time.time()
         results = await asyncio.gather(*tasks, return_exceptions=True)
-        print(f"initialization took {time.time() - startup} seconds")
+        _LOGGER.info(
+            f"Device initialization took {time.time() - startup} seconds"
+        )
         for result in results:
             if type(result) is ValueError:
                 _LOGGER.warning(result)

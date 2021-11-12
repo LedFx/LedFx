@@ -4,7 +4,6 @@ import struct
 
 import voluptuous as vol
 
-from ledfx.consts import SOCKET_TIMEOUT
 from ledfx.devices import NetworkedDevice
 
 _LOGGER = logging.getLogger(__name__)
@@ -30,7 +29,7 @@ class OpenPixelControl(NetworkedDevice):
 
     def activate(self):
         self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self._sock.settimeout(SOCKET_TIMEOUT)
+        self._sock.setblocking(True)
         _LOGGER.info(
             f"Open Pixel Control sender for {self.config['name']} started."
         )
