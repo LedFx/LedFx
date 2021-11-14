@@ -62,7 +62,7 @@ class QLC(Integration):
         self.restore_from_data(data)
 
     def restore_from_data(self, data):
-        """Creates the event listeners from saved data"""
+        """ Creates the event listeners from saved data """
         if data is not None:
             try:
                 for entry in data:
@@ -84,7 +84,7 @@ class QLC(Integration):
         return self._data
 
     def create_event(self, event_type, event_filter, active, qlc_payload):
-        """Create or update event listener that sends a qlc payload on a specific event"""
+        """ Create or update event listener that sends a qlc payload on a specific event """
         # If it exists, remove the existing listener and update data
         for idx, entry in enumerate(self._data):
             _event_type, _event_filter, _active, _qlc_payload = entry
@@ -110,7 +110,7 @@ class QLC(Integration):
         )
 
     def delete_event(self, event_type, event_filter):
-        """Completely delete event listener and saved payload from data"""
+        """ Completely delete event listener and saved payload from data """
         # remove listener if it exists
         self._remove_listener(event_type, event_filter)
         # remove event and payload from data
@@ -123,7 +123,7 @@ class QLC(Integration):
         )
 
     def toggle_event(self, event_type, event_filter):
-        """Toggle a payload linked to event on or off"""
+        """ Toggle a payload linked to event on or off """
         # Update "active" flag in data
         for idx, entry in enumerate(self._data):
             _event_type, _event_filter, _active, _qlc_payload = entry
@@ -149,7 +149,7 @@ class QLC(Integration):
         return False  # failed to find event_type with this event_filter
 
     def _remove_listener(self, event_type, event_filter):
-        """Internal function to remove ledfx events listener if it exists"""
+        """ Internal function to remove ledfx events listener if it exists """
         for idx, entry in enumerate(self._listeners):
             _event_type, _event_filter, listener = entry
             if (_event_type == event_type) and (_event_filter == event_filter):
@@ -159,7 +159,7 @@ class QLC(Integration):
                 break
 
     def _add_listener(self, event_type, event_filter, qlc_payload):
-        """Internal function that links payload to send on the specified event"""
+        """ Internal function that links payload to send on the specified event """
 
         def make_callback(qlc_payload):
             def callback(_):
@@ -180,7 +180,7 @@ class QLC(Integration):
         self._listeners.append((event_type, event_filter, listener))
 
     async def get_widgets(self):
-        """Returns a list of widgets as tuples: [(ID, Type, Name),...]"""
+        """ Returns a list of widgets as tuples: [(ID, Type, Name),...] """
         # First get list of widgets (ID, Name)
         widgets = []
         message = "QLC+API|getWidgetsList"
@@ -198,7 +198,7 @@ class QLC(Integration):
         return widgets
 
     async def _send_payload(self, qlc_payload):
-        """Sends payload of {id:value, ...} pairs to QLC"""
+        """ Sends payload of {id:value, ...} pairs to QLC"""
         for widget_id, value in qlc_payload.items():
             await self._client.send(f"{int(widget_id)}|{value}")
 
@@ -238,12 +238,14 @@ class QLCWebsocketClient:
         self.websocket = None
         self.url = url
         self.domain = domain
+        self.session = aiohttp.ClientSession()
 
     async def connect(self):
         """Connect to the WebSocket."""
         while True:
             try:
-                self.websocket = await aiohttp.ClientSession.ws_connect(self.domain)
+                self.websocket = await self.session.ws_connect(self.url) 
+                #self.websocket = await self.ws_connect(self.url)
                 return True
             except aiohttp.client_exceptions.ClientConnectorError:
                 _LOGGER.info(
@@ -276,7 +278,7 @@ class QLCWebsocketClient:
 
         await self.websocket.send_str(message)
         # Every call to the logger is a performance hit
-        # _LOGGER.debug(f"Sent message {message} to {self.domain}")
+        _LOGGER.debug(f"Sent message {message} to {self.domain}")
 
     async def receive(self):
         """Receive one message from the WebSocket."""
