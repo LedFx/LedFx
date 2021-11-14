@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python: [3.8,3.9]
+        python: [3.8,3.9,3.10]
     steps:
       - name: Check out code from GitHub
         uses: actions/checkout@v2
@@ -36,7 +36,7 @@ jobs:
     runs-on: windows-latest
     strategy:
       matrix:
-        python: [3.8,3.9]
+        python: [3.8,3.9,3.10]
     steps:
       - name: Check out code from GitHub
         uses: actions/checkout@v2
@@ -58,7 +58,7 @@ jobs:
     runs-on: macos-latest
     strategy:
       matrix:
-        python: [3.8,3.9]
+        python: [3.8,3.9,3.10]
     steps:
       - name: Check out code from GitHub
         uses: actions/checkout@v2
