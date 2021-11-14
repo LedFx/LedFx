@@ -78,28 +78,28 @@ jobs:
       - name: Install LedFx
         run: |
           pip install --pre --find-links=dist .
-  build-ledfx-frontend:
-    name: Build LedFx Frontend
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [10, 12, 14]
-    steps:
-      - name: Check out code from GitHub
-        uses: actions/checkout@v2
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v2
-        with:
-          node-version: ${{ matrix.node-version }}
-      - name: Install yarn
-        run: |
-          npm install -g yarn
-      - name: Run yarn install and build
-        run: |
-          cd frontend
-          yarn
-          yarn build
-        env:
-          CI: true
+#   build-ledfx-frontend:
+#     name: Build LedFx Frontend
+#     runs-on: ubuntu-latest
+#     strategy:
+#       matrix:
+#         node-version: [10, 12, 14]
+#     steps:
+#       - name: Check out code from GitHub
+#         uses: actions/checkout@v2
+#       - name: Use Node.js ${{ matrix.node-version }}
+#         uses: actions/setup-node@v2
+#         with:
+#           node-version: ${{ matrix.node-version }}
+#       - name: Install yarn
+#         run: |
+#           npm install -g yarn
+#       - name: Run yarn install and build
+#         run: |
+#           cd frontend
+#           yarn
+#           yarn build
+#         env:
+#           CI: true
 
 
