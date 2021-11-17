@@ -351,7 +351,7 @@ class AudioAnalysisSource(AudioInputSource):
         {
             vol.Optional("pitch_method", default="default"): str,
             vol.Optional("tempo_method", default="default"): str,
-            vol.Optional("onset_method", default="default"): str,
+            vol.Optional("onset_method", default="specflux"): str,
             vol.Optional("pitch_tolerance", default=0.8): float,
         },
         extra=vol.ALLOW_EXTRA,
