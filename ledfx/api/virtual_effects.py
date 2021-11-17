@@ -108,14 +108,6 @@ class EffectsEndpoint(RestEndpoint):
         # if so update the effect config
         # otherwise, create a new effect and add it to the virtual
 
-        # DO NOT DELETE THIS
-        # this is nice code to UPDATE the effect config of an active effect
-        # this is commented out until frontend sends incremental effect updates
-        # so that transitions can now apply on any effect config change.
-        # with incremental updates, we can be smart and only apply transition
-        # on changes to keys like gradient or colour. but we're gonna wait until
-        # frontend incremental updates bc it would make that so much easier
-
         try:
             # handling an effect update. nested if else and repeated code bleh. ain't a looker ;)
             if (

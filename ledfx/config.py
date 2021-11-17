@@ -83,6 +83,11 @@ CORE_CONFIG_SCHEMA = vol.Schema(
         vol.Optional("visualisation_maxlen", default=50): vol.All(
             int, vol.Range(5, 300)
         ),
+        vol.Optional(
+            "global_transitions",
+            description="Changes to any virtual's transitions apply to all other virtuals",
+            default=True
+        ): bool,
         vol.Optional("scan_on_startup", default=False): bool,
         vol.Optional("wled_preferences", default={}): dict,
         vol.Optional(

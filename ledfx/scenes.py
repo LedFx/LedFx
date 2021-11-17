@@ -114,5 +114,5 @@ class Scenes:
     def values(self):
         return self._scenes.values()
 
-    def get(self, scene_id):
-        return self._scenes.get(scene_id, None)
+    def get(self, *args):
+        return self._scenes.get(*args)

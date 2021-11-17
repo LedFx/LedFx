@@ -80,11 +80,14 @@ class VisualisationUpdateEvent(Event):
 
 
 class EffectSetEvent(Event):
-    """Event emitted when an effect is set"""
+    """Event emitted when an effect is set or updated"""
 
-    def __init__(self, effect_name):
+    def __init__(self, effect_name, effect_id, effect_config, virtual_id):
         super().__init__(Event.EFFECT_SET)
         self.effect_name = effect_name
+        self.effect_id = effect_id
+        self.effect_config = effect_config
+        self.virtual_id = virtual_id
 
 
 class EffectClearedEvent(Event):
@@ -110,11 +113,11 @@ class SceneDeletedEvent(Event):
         self.scene_id = scene_id
 
 
-class VirtualConfigUpdatedEvent(Event):
-    """Event emitted when a scene is set"""
+class VirtualConfigUpdateEvent(Event):
+    """Event emitted when a virtual is updated, including effect changes"""
 
     def __init__(self, virtual_id, config):
-        super().__init__(Event.VIRTUAL_CONFIG_UPDATED)
+        super().__init__(Event.VIRTUAL_CONFIG_UPDATE)
         self.virtual_id = virtual_id
         self.config = config
 

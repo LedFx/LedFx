@@ -33,7 +33,7 @@ INSTALL_REQUIRES = [
     "paho-mqtt>=1.5.1",
     "psutil>=5.8.0",
     "pyserial>=3.5",
-    "pystray>=0.17",
+    "pystray==0.17",
     "python-rtmidi>=1.4.9",
     "pyupdater>=3.1.0",
     "requests>=2.24.0",

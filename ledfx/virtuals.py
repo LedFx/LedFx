@@ -18,6 +18,7 @@ from ledfx.effects.melbank import (
 from ledfx.events import (
     EffectClearedEvent,
     EffectSetEvent,
+    VirtualConfigUpdateEvent,
     Event,
     VirtualUpdateEvent,
 )
@@ -126,10 +127,6 @@ class Virtual:
         # in, +ve mean fading out
         self.fade_timer = 0
         self._segments = []
-
-        self.frequency_range = FrequencyRange(
-            self._config["frequency_min"], self._config["frequency_max"]
-        )
 
         # list of devices in order of their mapping on the virtual
         # [[id, start, end, invert]...]
@@ -273,25 +270,21 @@ class Virtual:
 
         if self._active_effect is None:
             self._transition_effect = DummyEffect(self.pixel_count)
-            self._active_effect = effect
-            self._active_effect.activate(self)
-            # self._ledfx.loop.call_later(
-            #     self._config["transition_time"], self.clear_transition_effect
-            # )
-            self._ledfx.events.fire_event(
-                EffectSetEvent(self._active_effect.name)
-            )
+
         else:
             self.clear_transition_effect()
             self._transition_effect = self._active_effect
-            self._active_effect = effect
-            self._active_effect.activate(self)
-            # self._ledfx.loop.call_later(
-            #     self._config["transition_time"], self.clear_transition_effect
-            # )
-            self._ledfx.events.fire_event(
-                EffectSetEvent(self._active_effect.name)
+
+        self._active_effect = effect
+        self._active_effect.activate(self)
+        self._ledfx.events.fire_event(
+            EffectSetEvent(
+                self._active_effect.name,
+                self._active_effect.id,
+                self.active_effect.config,
+                self.id
             )
+        )
 
         try:
             self.active = True
@@ -631,9 +624,20 @@ class Virtual:
         if hasattr(self, "_config"):
             if _config["mapping"] != self._config["mapping"]:
                 self.invalidate_cached_props()
-            if _config["transition_mode"] != self._config["transition_mode"]:
-                mode = _config["transition_mode"]
-                self.frame_transitions = self.transitions[mode]
+            if (
+                _config["transition_mode"] != self._config["transition_mode"]
+                or _config["transition_time"] != self._config["transition_time"]
+            ):
+                self.frame_transitions = self.transitions[_config["transition_mode"]]
+                if self._ledfx.config["global_transitions"]:
+                    for virtual_id in self._ledfx.virtuals:
+                        if virtual_id == self.id:
+                            continue
+                        virtual = self._ledfx.virtuals.get(virtual_id)
+                        virtual.frame_transitions = virtual.transitions[_config["transition_mode"]]
+                        virtual._config["transition_time"] = _config["transition_time"]
+                        virtual._config["transition_mode"] = _config["transition_mode"]
+
             if (
                 "frequency_min" in _config.keys()
                 or "frequency_max" in _config.keys()
@@ -676,6 +680,13 @@ class Virtual:
 
         self.frequency_range = FrequencyRange(
             self._config["frequency_min"], self._config["frequency_max"]
+        )
+
+        self._ledfx.events.fire_event(
+            VirtualConfigUpdateEvent(
+                self.id,
+                self._config
+            )
         )
 
 
@@ -721,6 +732,12 @@ class Virtuals:
                     _LOGGER.warning(
                         "Effect schema changed. Not restoring effect"
                     )
+            self._ledfx.events.fire_event(
+                VirtualConfigUpdateEvent(
+                    virtual["id"],
+                    virtual["config"]
+                )
+            )
 
     def schema(self):
         return Virtual.CONFIG_SCHEMA
@@ -774,8 +791,6 @@ class Virtuals:
         for virtual in self.values():
             virtual._paused = self._paused
 
-    def get(self, virtual_id):
-        for id, virtual in self._virtuals.items():
-            if virtual_id == id:
-                return virtual
-        return None
+    def get(self, *args):
+        return self._virtuals.get(*args)
+

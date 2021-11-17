@@ -838,5 +838,5 @@ class RegistryLoader:
             )
         del self._objects[id]
 
-    def get(self, id):
-        return self._objects.get(id)
+    def get(self, *args):
+        return self._objects.get(*args)
