@@ -38,6 +38,13 @@ class BarAudioEffect(AudioReactiveEffect, GradientEffect):
                 description="Skips odd or even beats",
                 default="none",
             ): vol.In(list(["none", "odds", "even"])),
+            vol.Optional(
+                "skip_every",
+                description="If skipping beats, skip every",
+                default=1,
+            ): vol.In(
+                list([1, 2])
+            ),  # if add 4, to skip every bar, a bit of extra work is required in audio.py
         }
     )
 
@@ -102,7 +109,11 @@ class BarAudioEffect(AudioReactiveEffect, GradientEffect):
         # Construct the bar
         color = self.get_gradient_color(self.color_idx)
         if self._config["beat_skip"] != "none" and (
-            (self.beat_count == 0 or self.beat_count == 1)
+            (
+                (self.beat_count == 0 or self.beat_count == 1)
+                if (self._config["skip_every"] == 2)
+                else not self.beat_count % 2
+            )
             == (self._config["beat_skip"] == "even")
         ):
             color = np.array([0, 0, 0])
