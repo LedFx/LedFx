@@ -70,45 +70,30 @@ class DDPDevice(UDPDevice):
         sequence = frame_count % 15 + 1
         byteData = data.astype(np.uint8).flatten().tobytes()
         packets, remainder = divmod(len(byteData), DDPDevice.MAX_DATALEN)
+        if remainder == 0:
+            packets -= 1  # divmod returns 1 when len(byteData) fits evenly in DDPDevice.MAX_DATALEN
 
-        for i in range(packets):
+        for i in range(packets + 1):
             data_start = i * DDPDevice.MAX_DATALEN
             data_end = data_start + DDPDevice.MAX_DATALEN
             DDPDevice.send_packet(
-                sock,
-                dest,
-                sequence,
-                i,
-                DDPDevice.MAX_DATALEN,
-                byteData[data_start:data_end],
+                sock, dest, port, sequence, i, byteData[data_start:data_end]
             )
 
-        data_start = packets * DDPDevice.MAX_DATALEN
-        data_end = data_start + remainder
-        DDPDevice.send_packet(
-            sock,
-            dest,
-            port,
-            sequence,
-            packets,
-            remainder,
-            byteData[data_start:data_end],
-            push=True,
-        )
-
     @staticmethod
-    def send_packet(
-        sock, dest, port, sequence, packet_count, data_len, data, push=False
-    ):
+    def send_packet(sock, dest, port, sequence, packet_count, data):
+        bytes_length = len(data)
         udpData = bytearray()
         header = struct.pack(
             "!BBBBLH",
-            DDPDevice.VER1 | DDPDevice.PUSH if push else DDPDevice.VER1,
+            DDPDevice.VER1 | DDPDevice.PUSH
+            if (bytes_length == DDPDevice.MAX_DATALEN)
+            else DDPDevice.VER1,
             sequence,
             DDPDevice.DATATYPE,
             DDPDevice.SOURCE,
             packet_count * DDPDevice.MAX_DATALEN,
-            data_len,
+            bytes_length,
         )
 
         udpData.extend(header)
