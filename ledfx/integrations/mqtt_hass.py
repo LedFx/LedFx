@@ -7,6 +7,23 @@
 #   - Hook to Events: pause/unpause global/per-virtual
 # - make Name&Description static and remove from schema
 
+
+# current state:
+# Scene-Selector [Done]
+# Global Transistion Type [Done]
+# Global Transistion Time [Done]
+
+# 1 Light per Virtual is created
+# Light can use Effect-List to set color (will be changed soon)
+# Light color and effect does react to ledfx color change
+## you can NOT set color from hass until ledfx supports freecolor
+
+# Global-Pause implemented and reacts to hass + missing Event-hook (onEvent->publishMqtt)
+# Virtual-Pause implemented and reacts to hass + missing Event-hook (onEvent->publishMqtt)
+# Audio-Selector implemented, NOT reacting to hass yet + missing Event-hook (onEvent->publishMqtt)
+
+
+# WTF is this error
 # # Exception in thread Thread-68 (thread_function):
 # # Traceback (most recent call last):
 # #   File "C:\Program Files\Python310\lib\threading.py", line 1009, in _bootstrap_inner
