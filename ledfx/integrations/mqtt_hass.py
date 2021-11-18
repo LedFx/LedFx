@@ -1,9 +1,10 @@
 # ToDo:
-# - handle per virtual Pause/Unpause (state: on/off) see error below
-# - handle global Pause/Unpause
+# - handle per virtual Pause/Unpause (state: on/off)
+# - handle global Pause/Unpause 
 # - enable free color mode
 # - effect-list: replace color-names with effect-names
-# - react to all accordingly
+# - react to all accordingly:
+#   - Hook to Events: pause/unpause global/per-virtual
 # - make Name&Description static and remove from schema
 
 # # Exception in thread Thread-68 (thread_function):
@@ -37,6 +38,7 @@ from ledfx.config import save_config
 from ledfx.events import SceneActivatedEvent
 from ledfx.integrations import Integration
 from ledfx.consts import ( PROJECT_VERSION )
+from ledfx.effects.audio import AudioInputSource
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -117,15 +119,15 @@ class MQTT_HASS(Integration):
             )
 
     def on_connect(self, client, userdata, flags, rc):
-
+        # Internal State-Handler
         client.subscribe("ledfx/state")
 
+        # Events
         def publish_scene_actived(event):
             client.publish(
                 f"{self._config['topic']}/select/ledfxsceneselect/state",
                 event.scene_id
             )
-
         def publish_single_colour_updated(event):
             color = COLORS[event.effect_config.get("color")]
             client.publish(
@@ -140,15 +142,12 @@ class MQTT_HASS(Integration):
                     "effect": event.effect_config.get("color")
                 })
             )
-            # publish_virtual_config(event.virtual_id)
-
         self._listeners.append(
             self._ledfx.events.add_listener(
                 publish_scene_actived,
                 Event.SCENE_ACTIVATED,
             )
         )
-
         self._listeners.append(
             self._ledfx.events.add_listener(
                 publish_single_colour_updated,
@@ -164,6 +163,7 @@ class MQTT_HASS(Integration):
             )
         )
 
+        # HomeAssistant Device Entity
         hass_device = {
             "identifiers": ["yzlights"],
             "configuration_url": f"http://{extract_ip()}:{self._ledfx.port}/#/Integrations",
@@ -194,9 +194,29 @@ class MQTT_HASS(Integration):
             ),
         )
 
+        # AUDIO SELECTOR
+        client.subscribe(
+            f"{self._config['topic']}/select/ledfxaudio/set"
+        )
+        client.publish(
+            f"{self._config['topic']}/select/ledfxaudio/config",
+            json.dumps(
+                {
+                    "~": f"{self._config['topic']}/select/ledfxaudio",
+                    "name": "Audio Selector",
+                    "unique_id": "ledfxaudio",
+                    "cmd_t": "~/set",
+                    "stat_t": "~/state",
+                    "icon": "mdi:volume-high",
+                    "entity_category": "diagnostic",
+                    "options": [*AudioInputSource.input_devices().values()],
+                    "entity_category": "config",
+                    "device": hass_device,
+                }
+            ),
+        )
         
-        # TRANSITION TYPE
-        
+        # TRANSITION TYPE        
         client.subscribe(
             f"{self._config['topic']}/select/ledfxtransitiontype/set"
         )
@@ -205,7 +225,7 @@ class MQTT_HASS(Integration):
             json.dumps(
                 {
                     "~": f"{self._config['topic']}/select/ledfxtransitiontype",
-                    "name": "Transition_Type",
+                    "name": "Transition Type",
                     "unique_id": "ledfxtransitiontype",
                     "cmd_t": "~/set",
                     "stat_t": "~/state",
@@ -228,7 +248,6 @@ class MQTT_HASS(Integration):
             ),
         )
         
-        
         # TRANSITION TIME
         client.subscribe(
             f"{self._config['topic']}/number/ledfxtransitiontime/set"
@@ -238,7 +257,7 @@ class MQTT_HASS(Integration):
             json.dumps(
                 {
                     "~": f"{self._config['topic']}/number/ledfxtransitiontime",
-                    "name": "Transition Time",
+                    "name": "Transition_Time",
                     "unique_id": "ledfxtransitiontime",
                     "cmd_t": "~/set",
                     "stat_t": "~/state",
@@ -251,8 +270,7 @@ class MQTT_HASS(Integration):
                     "device": hass_device,
                 }
             ),
-        )        
-    
+        )
         
         # SWITCH
         client.subscribe(f"{self._config['topic']}/switch/ledfxplay/set")
@@ -266,11 +284,10 @@ class MQTT_HASS(Integration):
                     "cmd_t": "~/set",
                     "stat_t": "~/state",
                     "icon": "mdi:play-pause",
-                    "entity_category": "diagnostic",
                     "device": hass_device,
                 }
             ),
-        )
+        )     
 
         # Create Virtuals as Light in HomeAssistant
         for virtual in self._ledfx.virtuals.values():
@@ -315,22 +332,25 @@ class MQTT_HASS(Integration):
                 ),
             )            
 
-            client.subscribe(f"{self._config['topic']}/light/{virtual.id}/set")
-        
+            client.subscribe(f"{self._config['topic']}/light/{virtual.id}/set")        
         client.publish("ledfx/state", "HomeAssistant initialized")
-       
+
 
     def on_message(self, client, userdata, msg):
-        _LOGGER.info("MSGS: " + str(msg.payload))
+        _LOGGER.info("MSGS: " + str(msg.payload) + msg.topic)
         segs = msg.topic.split("/")
         try:
             payload = json.loads(msg.payload)
         except json.decoder.JSONDecodeError:
             payload = msg.payload.decode("utf-8")
         
-        # React to LedFx State commands
+        paused_state = "OFF"
+        if (self._ledfx.virtuals._paused):
+            paused_state = "OFF"
+        else:
+            paused_state = "ON"
+        # React to Internal State-Handler
         if segs[0] == "ledfx":
-            _LOGGER.info("YOOOOOOO: " + str(msg.payload))
             if payload == "HomeAssistant initialized":
                 virtual = self._ledfx.virtuals.get(next(iter(self._ledfx.virtuals)))
                 client.publish(
@@ -340,6 +360,16 @@ class MQTT_HASS(Integration):
                 client.publish(
                     f"{self._config['topic']}/number/ledfxtransitiontime/state",
                     virtual.config["transition_time"]
+                )
+                # PausedState
+                client.publish(
+                    f"{self._config['topic']}/switch/ledfxplay/state",
+                    paused_state,
+                )
+                # AudioSelector
+                client.publish(
+                    f"{self._config['topic']}/select/ledfxaudio/state",
+                    AudioInputSource.input_devices()[self._ledfx.config.get("audio", {}).get("audio_device", {})]
                 )
                 # publish all virtual data on connect (meta)
                 for virtual in self._ledfx.virtuals.values():
@@ -351,6 +381,20 @@ class MQTT_HASS(Integration):
             return
         virtualid = segs[2]        
 
+        # React to Global-PlayPause
+        if virtualid == "ledfxplay":
+            _LOGGER.info("Paused: " + str(self._ledfx.virtuals._paused) + str(payload))
+            self._ledfx.virtuals.pause_all()            
+            paused_state = "OFF"
+            if (self._ledfx.virtuals._paused):
+                paused_state = "OFF"
+            else:
+                paused_state = "ON"
+            client.publish(
+                f"{self._config['topic']}/switch/{virtualid}/state",
+                paused_state,
+            )
+            return
         # React to Transition-Type
         if virtualid in self.TRANSITION_MAPPING.keys():
 
@@ -417,33 +461,15 @@ class MQTT_HASS(Integration):
 
     # Clean up HomeAssistant
     async def on_delete(self):
-        self._client.publish(
-            f"{self._config['topic']}/light/ledfxscene/config", json.dumps({})
-        )
-        self._client.publish(
-            f"{self._config['topic']}/light/ledfxtransition/config",
-            json.dumps({}),
-        )
-        self._client.publish(
-            f"{self._config['topic']}/select/ledfxsceneselect/config",
-            json.dumps({}),
-        )
-        self._client.publish(
-            f"{self._config['topic']}/select/ledfxtransitiontype/config",
-            json.dumps({}),
-        )
-        self._client.publish(
-            f"{self._config['topic']}/number/ledfxtransitiontime/config",
-            json.dumps({}),
-        )
-        self._client.publish(
-            f"{self._config['topic']}/switch/ledfxplay/config", json.dumps({})
-        )
+        self._client.publish(f"{self._config['topic']}/light/ledfxscene/config", json.dumps({}))
+        self._client.publish(f"{self._config['topic']}/light/ledfxtransition/config",json.dumps({}))
+        self._client.publish(f"{self._config['topic']}/select/ledfxaudio/config", json.dumps({}))
+        self._client.publish(f"{self._config['topic']}/select/ledfxsceneselect/config",json.dumps({}))
+        self._client.publish(f"{self._config['topic']}/select/ledfxtransitiontype/config",json.dumps({}))
+        self._client.publish(f"{self._config['topic']}/number/ledfxtransitiontime/config",json.dumps({}))
+        self._client.publish(f"{self._config['topic']}/switch/ledfxplay/config", json.dumps({}))
         for virtual in self._ledfx.virtuals.values():
-            self._client.publish(
-                f"{self._config['topic']}/light/{virtual.id}/config",
-                json.dumps({}),
-            )
+            self._client.publish(f"{self._config['topic']}/light/{virtual.id}/config",json.dumps({}))
     
     async def on_disconnect(self):
         for remove_listener in self._listeners:
