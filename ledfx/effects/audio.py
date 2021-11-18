@@ -717,7 +717,7 @@ class AudioReactiveEffect(Effect):
                 for i, x in enumerate(
                     self.audio.melbanks._config["max_frequencies"]
                 )
-                if x >= self._virtual.frequency_range.max
+                if hasattr(self._virtual, 'frequency_range') and (x >= self._virtual.frequency_range.max)
             ),
             len(self.audio.melbanks._config["max_frequencies"]),
         )
