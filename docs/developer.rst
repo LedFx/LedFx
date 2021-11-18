@@ -39,10 +39,7 @@ Windows
     $ python -m venv C:\ledfx
     $ cd C:\ledfx
     $ .\Scripts\activate.bat
-    $ pip install pipwin
     $ pip install wheel
-    $ pipwin refresh
-    $ pipwin install pyaudio
     $ pip install pywin32
     $ python .\Scripts\pywin32_postinstall.py -install
     $ git clone -b frontend_beta https://github.com/LedFx/LedFx .\ledfx-git
