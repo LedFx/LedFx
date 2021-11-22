@@ -281,6 +281,12 @@ class AudioInputSource:
         if len(self._callbacks) == 0:
             self.deactivate()
 
+    def get_device_index_by_name(self, device_name: str):
+        for key, value in self.input_devices().items():
+            if device_name == value:
+                return key
+        return -1
+
     def _audio_sample_callback(self, in_data, frame_count, time_info, status):
         """Callback for when a new audio sample is acquired"""
         # time_start = time.time()
