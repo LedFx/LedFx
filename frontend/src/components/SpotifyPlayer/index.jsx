@@ -142,23 +142,42 @@ class SpotifyPlayer extends React.Component {
     };
 
     handleAddTrigger = async event => {
-        if (this.state.effects !== '') {
-            let trigger = {
-                scene_id: this.state.effects,
-                song_id: this.props.playerState.track_window.current_track.id,
-                song_name: this.props.playerState.track_window.current_track.name,
-                song_position: this.state.includePosition
-                    ? Math.round(this.props.playerState.position / 1000)
-                    : 0,
-            };
-            if (await addTrigger(trigger)) {
-                toast.success('Trigger added');
-                this.props.getAsyncIntegrations();
+        let exist = false;
+        let temp = this.props.integrations ? this.props.integrations.data : {};
+        let currentTime = parseInt(this.props.playerState.position / 1000);
+        let currentSongName = this.props.playerState.track_window.current_track.name;
+        Object.keys(temp).map(function (key, index) {
+            let temp1 = temp[key];
+
+            Object.keys(temp1).map(function (key, index) {
+                if (temp1[key].constructor === Array) {
+                    if (currentTime === temp1[key][2] && currentSongName === temp1[key][1]) {
+                        exist = true;
+                    }
+                }
+            });
+        });
+        if (!exist) {
+            if (this.state.effects !== '') {
+                let trigger = {
+                    scene_id: this.state.effects,
+                    song_id: this.props.playerState.track_window.current_track.id,
+                    song_name: this.props.playerState.track_window.current_track.name,
+                    song_position: this.state.includePosition
+                        ? Math.round(this.props.playerState.position / 1000)
+                        : 0,
+                };
+                if (await addTrigger(trigger)) {
+                    toast.success('Trigger added');
+                    this.props.getAsyncIntegrations();
+                } else {
+                    toast.error('Failed to add trigger');
+                }
             } else {
-                toast.error('Failed to add trigger');
+                toast.error('Please select a trigger');
             }
         } else {
-            toast.error('Please select a trigger');
+            toast.error('Cannot add trigger to same position for one song');
         }
     };
 
@@ -173,6 +192,10 @@ class SpotifyPlayer extends React.Component {
 
         return minutes + ':' + seconds;
     }
+
+    activateSceneHandler = sceneId => {
+        this.props.activateScene(sceneId);
+    };
 
     componentDidMount() {
         if (
@@ -191,9 +214,34 @@ class SpotifyPlayer extends React.Component {
                 sliderPositon:
                     (this.props.playerState.position / this.props.playerState.duration) * 100,
             });
-            this.state.player.getCurrentState().then(state => {
-                console.log(parseInt(this.props.playerState.position / 1000));
 
+            this.state.player.getCurrentState().then(state => {
+                if (
+                    parseInt(prevProps.playerState.position / 1000) !==
+                    parseInt(this.props.playerState.position / 1000)
+                ) {
+                    let temp = this.props.integrations ? this.props.integrations.data : {};
+                    let currentTime = parseInt(this.props.playerState.position / 1000);
+                    let currentSongName = this.props.playerState.track_window.current_track.name;
+                    let activateSceneHandlerTemp = this.activateSceneHandler;
+                    Object.keys(temp).map(function (key, index) {
+                        let temp1 = temp[key];
+                        let sceneName = temp1.name;
+                        let sceneId = temp1.name;
+                        Object.keys(temp1).map(function (key, index) {
+                            if (temp1[key].constructor === Array) {
+                                if (
+                                    currentTime === temp1[key][2] &&
+                                    currentSongName === temp1[key][1]
+                                ) {
+                                    activateSceneHandlerTemp(sceneId);
+                                    console.log('Matched');
+                                }
+                            }
+                        });
+                    });
+                    console.log(currentTime);
+                }
                 this.props.updatePlayerState(state);
             });
         }
@@ -422,5 +470,5 @@ export default connect(
         scenes: state.scenes.list,
         integrations: state.integrations.list.spotify,
     }),
-    { updatePlayerState, getAsyncIntegrations }
+    { updatePlayerState, getAsyncIntegrations, activateScene }
 )(withStyles(styles)(SpotifyPlayer));

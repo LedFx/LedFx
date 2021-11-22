@@ -50,7 +50,7 @@ function ConfirmationDialogRaw(props) {
     // console.log("qlcInfo - Response: ", qlcInfo);
     const effectNames = qlcInfo && qlcInfo.event_types && qlcInfo.event_types.effect_set.event_filters.effect_name
     //const effectCleared = qlcInfo && qlcInfo.event_types && qlcInfo.event_types.effect_cleared.event_name
-    const SceneSet = qlcInfo && qlcInfo.event_types && qlcInfo.event_types.scene_activated.event_filters.scene_name
+    const SceneSet = qlcInfo && qlcInfo.event_types && qlcInfo.event_types.scene_set.event_filters.scene_name
     const QLCWidgets = qlcInfo && qlcInfo.qlc_widgets && qlcInfo.qlc_widgets.sort((a,b) => parseInt(a[0]) - parseInt(b[0]) )
     const EVENT_TYPES= qlcInfo && qlcInfo.event_types && qlcInfo.event_types
     // console.log("test3",EVENT_TYPES);

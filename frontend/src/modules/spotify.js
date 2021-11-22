@@ -123,7 +123,7 @@ export function updatePlayerState(playerState) {
     return dispatch => {
         try {
             dispatch(playerStateUpdated(playerState));
-            console.log("ID for audiofeatures", playerState.track_window.current_track.id);
+            //console.log("ID for audiofeatures", playerState.track_window.current_track.id);
         } catch (error) {
             console.log(error);
         }

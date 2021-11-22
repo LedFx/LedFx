@@ -96,22 +96,27 @@ export function deleteScene(id) {
 export function activateScene(id) {
     console.log('YZ1:', id);
     return async (dispatch, getState) => {
-        const sceneDisplays = getState().scenes.list.find(s => s.id === id).displays;
+        console.log('Here');
+        const sceneDisplays = getState().scenes.list.find(s => s.id === id)
+            ? getState().scenes.list.find(s => s.id === id).displays
+            : {};
         const res = await scenesProxies.activateScenes(id);
         if (res.status && res.status === 200) {
             if (res.data.payload) {
                 dispatch(uiProxies.showdynSnackbar(res.data.payload));
             }
 
-            Object.keys(sceneDisplays).map(d => {
-                dispatch(
-                    displayProxies.handleActiveDisplayEffect(
-                        d,
-                        sceneDisplays[d].hasOwnProperty('config')
-                    )
-                );
-                return false;
-            });
+            if (sceneDisplays) {
+                Object.keys(sceneDisplays).map(d => {
+                    dispatch(
+                        displayProxies.handleActiveDisplayEffect(
+                            d,
+                            sceneDisplays[d].hasOwnProperty('config')
+                        )
+                    );
+                    return false;
+                });
+            }
         } else {
             dispatch(uiProxies.showdynSnackbar(JSON.stringify(res)));
         }
