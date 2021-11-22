@@ -21,6 +21,8 @@ from ledfx.events import (
     VirtualConfigUpdateEvent,
     Event,
     VirtualUpdateEvent,
+    GlobalPauseEvent,
+    VirtualPauseEvent,
 )
 
 # from ledfx.config import save_config
@@ -436,9 +438,11 @@ class Virtual:
             self.activate_segments(self._segments)
 
         # self.thread_function()
-
+        
+        
         self._thread = threading.Thread(target=self.thread_function)
         self._thread.start()
+        self._ledfx.events.fire_event(VirtualPauseEvent(self.id))
         # self._task = self._ledfx.loop.create_task(self.thread_function())
         # self._task.add_done_callback(lambda task: task.result())
 
@@ -447,7 +451,7 @@ class Virtual:
         if hasattr(self, "_thread"):
             self._thread.join()
         self.deactivate_segments()
-
+        self._ledfx.events.fire_event(VirtualPauseEvent(self.id))
     # @lru_cache(maxsize=32)
     # def _normalized_linspace(self, size):
     #     return np.linspace(0, 1, size)
@@ -790,6 +794,7 @@ class Virtuals:
         self._paused = not self._paused
         for virtual in self.values():
             virtual._paused = self._paused
+        self._ledfx.events.fire_event(GlobalPauseEvent())
 
     def get(self, *args):
         return self._virtuals.get(*args)

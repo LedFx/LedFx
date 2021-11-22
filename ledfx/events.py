@@ -20,6 +20,9 @@ class Event:
     SCENE_DELETED = "scene_deleted"
     PRESET_ACTIVATED = "preset_activated"
     VIRTUAL_CONFIG_UPDATE = "virtual_config_update"
+    GLOBAL_PAUSE = "global_pause"
+    VIRTUAL_PAUSE = "virtual_pause"
+    AUDIO_INPUT_DEVICE_CHANGED = "audio_input_device_changed"
 
     def __init__(self, type: str):
         self.event_type = type
@@ -47,6 +50,25 @@ class VirtualUpdateEvent(Event):
         # self.pixels = pixels.astype(np.uint8).T.tolist()
         self.pixels = pixels
 
+class GlobalPauseEvent(Event):
+    """Event emitted when all virtuals are paused"""
+
+    def __init__(self):
+        super().__init__(Event.GLOBAL_PAUSE)
+
+class VirtualPauseEvent(Event):
+    """Event emitted when virtual updated paused"""
+
+    def __init__(self, virtual_id: str):
+        super().__init__(Event.VIRTUAL_PAUSE)
+        self.virtual_id = virtual_id
+
+class AudioDeviceChangeEvent(Event):
+    """Event emitted when the audio capture device is changed"""
+
+    def __init__(self, audio_input_device_name: str):
+        super().__init__(Event.AUDIO_INPUT_DEVICE_CHANGED)
+        self.audio_input_device_name = audio_input_device_name
 
 class GraphUpdateEvent(Event):
     """Event emitted when an audio graph is updated"""

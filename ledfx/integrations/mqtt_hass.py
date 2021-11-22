@@ -1,24 +1,23 @@
 # ToDo:
 # - handle per virtual Pause/Unpause (state: on/off)
-# - handle global Pause/Unpause 
 # - enable free color mode
 # - effect-list: replace color-names with effect-names
 # - react to all accordingly:
 #   - Hook to Events: pause/unpause global/per-virtual
-# - make Name&Description static and remove from schema
 
 
 # current state:
 # Scene-Selector [Done]
 # Global Transistion Type [Done]
 # Global Transistion Time [Done]
+# Global-Pause implemented and reacts to hass [Done]
 
 # 1 Light per Virtual is created
 # Light can use Effect-List to set color (will be changed soon)
 # Light color and effect does react to ledfx color change
 ## you can NOT set color from hass until ledfx supports freecolor
 
-# Global-Pause implemented and reacts to hass + missing Event-hook (onEvent->publishMqtt)
+
 # Virtual-Pause implemented and reacts to hass + missing Event-hook (onEvent->publishMqtt)
 # Audio-Selector implemented, NOT reacting to hass yet + missing Event-hook (onEvent->publishMqtt)
 
@@ -129,11 +128,20 @@ class MQTT_HASS(Integration):
         self._listeners = []
 
     def publish_virtual_config(self, virtual_id, client):
-            virtual = self._ledfx.virtuals.get(virtual_id)
-            client.publish(
-                f"{self._config['topic']}/light/{virtual_id}/meta",
-                json.dumps(virtual.config)
-            )
+        virtual = self._ledfx.virtuals.get(virtual_id)
+        _LOGGER.info("yes: " + str(virtual.active))
+        client.publish(
+            f"{self._config['topic']}/light/{virtual_id}/meta",
+            json.dumps(virtual.config)
+        )
+
+    def publish_virtual_paused(self, virtual_id, client):
+        client.publish(
+            f"{self._config['topic']}/light/{virtual_id}/state",
+            json.dumps({
+                "state": "on" # TODO Replace with real_paused_state ? "off" : "on"
+            })
+        )
 
     def on_connect(self, client, userdata, flags, rc):
         # Internal State-Handler
@@ -145,6 +153,25 @@ class MQTT_HASS(Integration):
                 f"{self._config['topic']}/select/ledfxsceneselect/state",
                 event.scene_id
             )
+
+        def publish_audio_input_changed(event):
+            _LOGGER.info("YOOOOO: " + str(event))
+            client.publish(
+                f"{self._config['topic']}/select/ledfxaudio/state",
+                AudioInputSource.input_devices()[self._ledfx.config.get("audio", {}).get("audio_device", {})]
+            )
+
+        def publish_global_paused_state(event):
+            paused_state = "OFF"
+            if (self._ledfx.virtuals._paused):
+                paused_state = "OFF"
+            else:
+                paused_state = "ON"
+            client.publish(
+                f"{self._config['topic']}/switch/ledfxplay/state",
+                paused_state,
+            )
+            
         def publish_single_colour_updated(event):
             color = COLORS[event.effect_config.get("color")]
             client.publish(
@@ -159,12 +186,27 @@ class MQTT_HASS(Integration):
                     "effect": event.effect_config.get("color")
                 })
             )
+
+        def publish_paused_state(event):
+            virtual = self._ledfx.virtuals.get(event.virtual_id)
+            _LOGGER.info("BOOOOM2: " + str(virtual.active))
+            paused_state = "OFF"
+            if virtual.active:
+                paused_state = "ON"
+            client.publish(
+                f"{self._config['topic']}/light/{event.virtual_id}/state",
+                json.dumps({
+                    "state": paused_state # TODO Replace with real_paused_state ? "off" : "on"
+                })
+            )
+
         self._listeners.append(
             self._ledfx.events.add_listener(
                 publish_scene_actived,
                 Event.SCENE_ACTIVATED,
             )
         )
+
         self._listeners.append(
             self._ledfx.events.add_listener(
                 publish_single_colour_updated,
@@ -177,6 +219,27 @@ class MQTT_HASS(Integration):
             self._ledfx.events.add_listener(
                 lambda event: self.publish_virtual_config(event.virtual_id, client),
                 Event.VIRTUAL_CONFIG_UPDATE
+            )
+        )
+
+        self._listeners.append(
+            self._ledfx.events.add_listener(
+                publish_global_paused_state,
+                Event.GLOBAL_PAUSE
+            )
+        )
+
+        self._listeners.append(
+            self._ledfx.events.add_listener(
+                publish_paused_state,
+                Event.VIRTUAL_PAUSE
+            )
+        )
+
+        self._listeners.append(
+            self._ledfx.events.add_listener(
+                publish_audio_input_changed,
+                Event.AUDIO_INPUT_DEVICE_CHANGED
             )
         )
 
@@ -391,6 +454,7 @@ class MQTT_HASS(Integration):
                 # publish all virtual data on connect (meta)
                 for virtual in self._ledfx.virtuals.values():
                     self.publish_virtual_config(virtual.id, client)
+                    self.publish_virtual_paused(virtual.id, client)
             return
         
         # React to SET commands

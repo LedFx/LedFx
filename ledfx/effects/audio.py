@@ -13,7 +13,7 @@ from ledfx.api.websocket import WEB_AUDIO_CLIENTS, WebAudioStream
 from ledfx.effects import Effect
 from ledfx.effects.math import ExpFilter
 from ledfx.effects.melbank import FFT_SIZE, MIC_RATE, Melbanks
-from ledfx.events import Event
+from ledfx.events import AudioDeviceChangeEvent, Event
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -115,12 +115,17 @@ class AudioInputSource:
 
     def update_config(self, config):
         """Deactivate the audio, update the config, the reactivate"""
+        old_input_device = False
+        if hasattr(self, "_config"):
+            old_input_device = self._config["audio_device"]
 
         if self._is_activated:
             self.deactivate()
         self._config = self.AUDIO_CONFIG_SCHEMA.fget()(config)
         if len(self._callbacks) != 0:
             self.activate()
+        if old_input_device and self._config["audio_device"] is not old_input_device:
+            self._ledfx.events.fire_event(AudioDeviceChangeEvent(self.input_devices()[self._config["audio_device"]]))
 
     def activate(self):
 
