@@ -1,16 +1,13 @@
 # ToDo:
-# - handle per virtual Pause/Unpause (state: on/off)
 # - enable free color mode
 # - effect-list: replace color-names with effect-names
-# - react to all accordingly:
-#   - Hook to Events: pause/unpause global/per-virtual
-
 
 # current state:
 # Scene-Selector [Done]
 # Global Transistion Type [Done]
 # Global Transistion Time [Done]
 # Global-Pause implemented and reacts to hass [Done]
+# Virtual-Pause implemented [Done]
 
 # 1 Light per Virtual is created
 # Light can use Effect-List to set color (will be changed soon)
@@ -18,7 +15,6 @@
 ## you can NOT set color from hass until ledfx supports freecolor
 
 
-# Virtual-Pause implemented and reacts to hass + missing Event-hook (onEvent->publishMqtt)
 # Audio-Selector implemented, NOT reacting to hass yet + missing Event-hook (onEvent->publishMqtt)
 
 
@@ -136,10 +132,14 @@ class MQTT_HASS(Integration):
         )
 
     def publish_virtual_paused(self, virtual_id, client):
+        virtual = self._ledfx.virtuals.get(virtual_id)
+        paused_state = "OFF"
+        if virtual.active:
+            paused_state = "ON"
         client.publish(
             f"{self._config['topic']}/light/{virtual_id}/state",
             json.dumps({
-                "state": "on" # TODO Replace with real_paused_state ? "off" : "on"
+                "state": paused_state
             })
         )
 
@@ -196,7 +196,7 @@ class MQTT_HASS(Integration):
             client.publish(
                 f"{self._config['topic']}/light/{event.virtual_id}/state",
                 json.dumps({
-                    "state": paused_state # TODO Replace with real_paused_state ? "off" : "on"
+                    "state": paused_state
                 })
             )
 
