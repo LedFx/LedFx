@@ -1,7 +1,6 @@
 import numpy as np
 import voluptuous as vol
 
-from ledfx.color import COLORS
 from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.gradient import GradientEffect
 
@@ -42,7 +41,7 @@ class PowerAudioEffect(AudioReactiveEffect, GradientEffect):
         self._bass_filter = self.create_filter(
             alpha_decay=0.1, alpha_rise=0.99
         )
-        self.sparks_color = np.array(COLORS["white"], dtype=float)
+        self.sparks_color = np.array((0,0,0), dtype=float)
 
     def audio_data_updated(self, data):
         # Get onset data

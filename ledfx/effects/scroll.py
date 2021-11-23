@@ -1,7 +1,7 @@
 import numpy as np
 import voluptuous as vol
 
-from ledfx.color import COLORS
+from ledfx.color import parse_color, validate_color
 from ledfx.effects.audio import AudioReactiveEffect
 
 
@@ -38,18 +38,18 @@ class ScrollAudioEffect(AudioReactiveEffect):
             vol.Optional(
                 "color_lows",
                 description="Color of low, bassy sounds",
-                default="red",
-            ): vol.In(list(COLORS.keys())),
+                default="#FF0000",
+            ): validate_color,
             vol.Optional(
                 "color_mids",
                 description="Color of midrange sounds",
-                default="green",
-            ): vol.In(list(COLORS.keys())),
+                default="#00FF00",
+            ): validate_color,
             vol.Optional(
                 "color_high",
                 description="Color of high sounds",
-                default="blue",
-            ): vol.In(list(COLORS.keys())),
+                default="#0000FF",
+            ): validate_color,
         }
     )
 
@@ -65,13 +65,13 @@ class ScrollAudioEffect(AudioReactiveEffect):
         # to move to a model where effects are created for a device and
         # must be destroyed and recreated to be moved to another device.
         self.lows_colour = np.array(
-            COLORS[self._config["color_lows"]], dtype=float
+            parse_color(self._config["color_lows"]), dtype=float
         )
         self.mids_colour = np.array(
-            COLORS[self._config["color_mids"]], dtype=float
+            parse_color(self._config["color_mids"]), dtype=float
         )
         self.high_colour = np.array(
-            COLORS[self._config["color_high"]], dtype=float
+            parse_color(self._config["color_high"]), dtype=float
         )
 
         self.lows_cutoff = self._config["threshold"] / 8

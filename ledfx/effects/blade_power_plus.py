@@ -1,10 +1,20 @@
 import numpy as np
 import voluptuous as vol
 
-from ledfx.color import COLORS
+import logging
+
+
+from ledfx.color import parse_color, validate_color
 from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.gradient import GradientEffect
 from ledfx.effects.hsv_effect import HSVEffect
+from collections import namedtuple
+
+
+RGB = namedtuple("RGB", "red, green, blue")
+hsv = namedtuple("hsv", "hue, saturation, value")
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class BladePowerPlus(AudioReactiveEffect, HSVEffect, GradientEffect):
@@ -40,11 +50,11 @@ class BladePowerPlus(AudioReactiveEffect, HSVEffect, GradientEffect):
             vol.Optional(
                 "background_color",
                 description="Color of Background",
-                default="black",
-            ): vol.In(list(COLORS.keys())),
+                default="#000000",
+            ): validate_color,
             vol.Optional(
                 "color", description="Color of bar", default="cyan"
-            ): vol.In(list(COLORS.keys())),
+            ): validate_color,
             vol.Optional(
                 "frequency_range",
                 description="Frequency range for the beat detection",
@@ -60,11 +70,6 @@ class BladePowerPlus(AudioReactiveEffect, HSVEffect, GradientEffect):
                 description="Invert the direction of the gradient roll",
                 default=False,
             ): bool,
-            # vol.Optional(
-            #    "blade_color",
-            #    description="NEW Color",
-            #    default="hsl(0, 100%, 25%)",
-            # ): str,
         }
     )
 
@@ -82,9 +87,8 @@ class BladePowerPlus(AudioReactiveEffect, HSVEffect, GradientEffect):
         self.hsv = self.rgb_to_hsv(rgb_gradient)
 
         if self._config["solid_color"] is True:
-            hsv_color = self.rgb_to_hsv(
-                np.array(COLORS[self._config["color"]])
-            )
+            hsv_color = self.rgb_to_hsv(np.array(parse_color(self._config["color"])))
+
             self.hsv[:, 0] = hsv_color[0]
             self.hsv[:, 1] = hsv_color[1]
             self.hsv[:, 2] = hsv_color[2]

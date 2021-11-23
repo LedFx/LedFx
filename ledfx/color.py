@@ -1,6 +1,26 @@
 from collections import namedtuple
+from PIL import ImageColor
+import logging
 
+_LOGGER = logging.getLogger(__name__)
 RGB = namedtuple("RGB", "red, green, blue")
+
+def parse_color(color: (str, list, tuple)) -> RGB:
+    try:
+        if isinstance(color, (list, tuple)):
+            assert len(color) == 3
+            return RGB(*color)
+        if isinstance(color, str):
+            return COLORS.get(
+                color.lower(), 
+                RGB(*ImageColor.getrgb(color))
+            )
+    except (ValueError, AssertionError):
+        _LOGGER.error(f"Invalid colour: {color}")
+        return RGB(0, 0, 0)
+
+def validate_color(color: str) -> str:
+    return "#%02x%02x%02x" % parse_color(color)
 
 COLORS = {
     "red": RGB(255, 0, 0),

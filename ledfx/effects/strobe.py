@@ -1,7 +1,7 @@
 import numpy as np
 import voluptuous as vol
 
-from ledfx.color import COLORS, GRADIENTS
+from ledfx.color import parse_color, validate_color, GRADIENTS
 from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.gradient import GradientEffect
 
@@ -25,8 +25,8 @@ class Strobe(AudioReactiveEffect, GradientEffect):
             vol.Optional(
                 "color",
                 description="Strobe colour (used if single_colour selected)",
-                default="white",
-            ): vol.In(list(COLORS.keys())),
+                default="#FFFFFF",
+            ): validate_color,
             vol.Optional(
                 "gradient_name",
                 description="Cycle through a gradient each beat",
@@ -62,7 +62,7 @@ class Strobe(AudioReactiveEffect, GradientEffect):
 
     def config_updated(self, config):
         self.single_color = np.array(
-            COLORS[self._config["color"]], dtype=float
+            parse_color(self._config["color"]), dtype=float
         )
         self.freq = self.MAPPINGS[self._config["strobe_frequency"]]
         self.strobe_decay = self._config["strobe_decay"]

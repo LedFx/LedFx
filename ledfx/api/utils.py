@@ -112,6 +112,12 @@ def convertToJsonSchema(schema):
     ):
         return {"type": "string", "enum": AudioInputSource.input_devices()}
 
+    elif (
+        callable(schema)
+        and getattr(schema, "__name__", None) == "validate_color"
+    ):
+        return {"type": "color"}
+
     elif isinstance(schema, vol.All):
         val = {}
         for validator in schema.validators:

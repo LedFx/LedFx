@@ -4,7 +4,7 @@ from random import randint
 import numpy as np
 import voluptuous as vol
 
-from ledfx.color import COLORS
+from ledfx.color import validate_color, parse_color
 from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.effectlets import EFFECTLET_LIST
 
@@ -28,17 +28,17 @@ class RainAudioEffect(AudioReactiveEffect):
                 "lows_colour",
                 description="Colour for low sounds, ie beats",
                 default="white",
-            ): vol.In(list(COLORS.keys())),
+            ): validate_color,
             vol.Optional(
                 "mids_colour",
                 description="Colour for mid sounds, ie vocals",
                 default="red",
-            ): vol.In(list(COLORS.keys())),
+            ): validate_color,
             vol.Optional(
                 "high_colour",
                 description="Colour for high sounds, ie hi hat",
                 default="blue",
-            ): vol.In(list(COLORS.keys())),
+            ): validate_color,
             vol.Optional(
                 "lows_sensitivity",
                 description="Sensitivity to low sounds",
@@ -144,7 +144,7 @@ class RainAudioEffect(AudioReactiveEffect):
         ):
             self.new_drop(
                 randint(0, self.pixel_count - 1),
-                COLORS.get(self._config["lows_colour"]),
+                parse_color(self._config["lows_colour"]),
             )
         if (
             intensities[1] - self.filtered_intensities[1]
@@ -152,7 +152,7 @@ class RainAudioEffect(AudioReactiveEffect):
         ):
             self.new_drop(
                 randint(0, self.pixel_count - 1),
-                COLORS.get(self._config["mids_colour"]),
+                parse_color(self._config["mids_colour"]),
             )
         if (
             intensities[2] - self.filtered_intensities[2]
@@ -160,7 +160,7 @@ class RainAudioEffect(AudioReactiveEffect):
         ):
             self.new_drop(
                 randint(0, self.pixel_count - 1),
-                COLORS.get(self._config["high_colour"]),
+                parse_color(self._config["high_colour"]),
             )
 
         self.filtered_intensities = self.intensity_filter.update(intensities)

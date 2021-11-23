@@ -1,7 +1,7 @@
 import numpy as np
 import voluptuous as vol
 
-from ledfx.color import COLORS, GRADIENTS
+from ledfx.color import GRADIENTS
 from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.gradient import GradientEffect
 
@@ -38,7 +38,7 @@ class BandsAudioEffect(AudioReactiveEffect, GradientEffect):
         self.r = np.zeros(pixel_count)
 
     def config_updated(self, config):
-        self.bkg_color = np.array(COLORS["black"], dtype=float)
+        self.bkg_color = np.array((0,0,0), dtype=float)
 
     def audio_data_updated(self, data):
         # Grab the filtered melbank

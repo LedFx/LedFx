@@ -1,7 +1,7 @@
 import numpy as np
 import voluptuous as vol
 
-from ledfx.color import COLORS
+from ledfx.color import COLORS, parse_color, validate_color
 from ledfx.effects.audio import AudioReactiveEffect
 
 
@@ -30,18 +30,18 @@ class EnergyAudioEffect(AudioReactiveEffect):
             vol.Optional(
                 "color_lows",
                 description="Color of low, bassy sounds",
-                default="red",
-            ): vol.In(list(COLORS.keys())),
+                default="#FF0000",
+            ): validate_color,
             vol.Optional(
                 "color_mids",
                 description="Color of midrange sounds",
-                default="green",
-            ): vol.In(list(COLORS.keys())),
+                default="#00FF00",
+            ): validate_color,
             vol.Optional(
                 "color_high",
                 description="Color of high sounds",
-                default="blue",
-            ): vol.In(list(COLORS.keys())),
+                default="#0000FF",
+            ): validate_color,
             vol.Optional(
                 "sensitivity",
                 description="Responsiveness to changes in sound",
@@ -73,13 +73,13 @@ class EnergyAudioEffect(AudioReactiveEffect):
         self.color_cycler = 0
 
         self.lows_colour = np.array(
-            COLORS[self._config["color_lows"]], dtype=float
+            parse_color(self._config["color_lows"]), dtype=float
         )
         self.mids_colour = np.array(
-            COLORS[self._config["color_mids"]], dtype=float
+            parse_color(self._config["color_mids"]), dtype=float
         )
         self.high_colour = np.array(
-            COLORS[self._config["color_high"]], dtype=float
+            parse_color(self._config["color_high"]), dtype=float
         )
 
         self._multiplier = 1.6 - self._config["blur"] / 17
@@ -104,14 +104,14 @@ class EnergyAudioEffect(AudioReactiveEffect):
             if self.beat_now:
                 # Cycle between 0,1,2 for lows, mids and highs
                 self.color_cycler = (self.color_cycler + 1) % 3
-                color = np.random.choice(list(COLORS.keys()))
+                color = np.random.choice(tuple(COLORS.keys()))
 
                 if self.color_cycler == 0:
-                    self.lows_colour = COLORS[color]
+                    self.lows_colour = parse_color(color)
                 elif self.color_cycler == 1:
-                    self.mids_colour = COLORS[color]
+                    self.mids_colour = parse_color(color)
                 elif self.color_cycler == 2:
-                    self.high_colour = COLORS[color]
+                    self.high_colour = parse_color(color)
 
         # Build the new energy profile based on the mids, highs and lows setting
         # the colors as red, green, and blue channel respectively

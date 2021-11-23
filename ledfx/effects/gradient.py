@@ -3,7 +3,7 @@ import logging
 import numpy as np
 import voluptuous as vol
 
-from ledfx.color import COLORS, GRADIENTS
+from ledfx.color import GRADIENTS, parse_color
 from ledfx.effects import Effect
 from ledfx.effects.modulate import ModulateEffect
 from ledfx.effects.temporal import TemporalEffect
@@ -101,7 +101,7 @@ class GradientEffect(Effect):
             gradient_colors = GRADIENTS.get("Rainbow")
 
         self.rgb_list = np.array(
-            [COLORS[color.lower()] for color in gradient_colors]
+            [parse_color(color) for color in gradient_colors]
         ).T
         n_colors = len(self.rgb_list[0])
 

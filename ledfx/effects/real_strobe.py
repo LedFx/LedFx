@@ -4,7 +4,7 @@ import time
 import numpy as np
 import voluptuous as vol
 
-from ledfx.color import COLORS, GRADIENTS
+from ledfx.color import parse_color, validate_color, GRADIENTS
 from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.gradient import GradientEffect
 from ledfx.utils import empty_queue
@@ -35,8 +35,8 @@ class Strobe(AudioReactiveEffect, GradientEffect):
             vol.Optional(
                 "strobe_color",
                 description="Colour for percussive strobes",
-                default="white",
-            ): vol.In(list(COLORS.keys())),
+                default="#FFFFFF",
+            ): validate_color,
             vol.Optional(
                 "strobe_width",
                 description="Percussive strobe width, in pixels",
@@ -66,7 +66,7 @@ class Strobe(AudioReactiveEffect, GradientEffect):
         self.color_shift_step = self._config["color_step"]
 
         self.strobe_color = np.array(
-            COLORS[self._config["strobe_color"]], dtype=float
+            parse_color(self._config["strobe_color"]), dtype=float
         )
         self.last_color_shift_time = 0
         self.strobe_width = self._config["strobe_width"]

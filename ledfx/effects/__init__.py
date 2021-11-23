@@ -7,7 +7,7 @@ from functools import lru_cache
 import numpy as np
 import voluptuous as vol
 
-from ledfx.color import COLORS
+from ledfx.color import parse_color, validate_color
 from ledfx.utils import BaseRegistry, RegistryLoader
 
 _LOGGER = logging.getLogger(__name__)
@@ -235,8 +235,8 @@ class Effect(BaseRegistry):
             vol.Optional(
                 "background_color",
                 description="Apply a background colour",
-                default="black",
-            ): vol.In(list(COLORS.keys())),
+                default="#000000",
+            ): validate_color,
             vol.Optional(
                 "background_brightness",
                 description="Brightness of the background colour",
@@ -294,7 +294,7 @@ class Effect(BaseRegistry):
         self.configured_blur = self._config["blur"]
         self._bg_brightness = self._config["background_brightness"]
         self._bg_color = np.array(
-            COLORS[self._config["background_color"]], dtype=float
+            parse_color(self._config["background_color"]), dtype=float
         )
 
         def inherited(cls, method):
