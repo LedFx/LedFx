@@ -7,7 +7,6 @@ const fs = require('fs')
 
 // Conditionally include the dev tools installer to load React Dev Tools
 let installExtension, REACT_DEVELOPER_TOOLS, REDUX_DEVTOOLS; // NEW!
-console.log("YZ ", app.getVersion().split('-')[1], process.env.INIT_CWD)
 if (isDev) {
     const devTools = require("electron-devtools-installer");
     installExtension = devTools.default;
@@ -75,18 +74,19 @@ var contextMenu = null
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
-
+var wind
 
 app.whenReady().then(async () => {
     nativeTheme.themeSource = 'dark';
     const thePath = process.env.PORTABLE_EXECUTABLE_DIR || path.resolve('.')
-    const ledfxCores = fs.readdirSync(thePath).filter(o => (o.length - o.indexOf('--win.exe') === 9) && o.indexOf('LedFx_core') === 0)
+    const ledfxCores = fs.readdirSync(thePath).filter(o => (o.length - o.indexOf('--win-portable.exe') === 18) && o.indexOf('LedFx_core') === 0)
     const ledfxCore = ledfxCores && ledfxCores.length && ledfxCores.length > 0 && ledfxCores[ledfxCores.length - 1]
+    const integratedCore = ledfxCore && fs.existsSync(`${thePath}/${ledfxCore}`)
 
-    if (ledfxCore && fs.existsSync(`${thePath}/${ledfxCore}`)) {
+    if (integratedCore) {
         subpy = require("child_process").spawn(`./${ledfxCore}`, ["-p", "8888"]);
     }
-    const wind = (ledfxCore && fs.existsSync(`${thePath}/${ledfxCore}`)) ? createWindow({additionalArguments: ["integratedCore"]}) : createWindow();
+    wind = (integratedCore) ? createWindow({additionalArguments: ["integratedCore"]}) : createWindow();
     // require('@treverix/remote/main').initialize()
     require("@electron/remote/main").enable(wind.webContents)
     if (isDev) {
@@ -95,11 +95,10 @@ app.whenReady().then(async () => {
             .catch(error => console.log(`An error occurred: , ${error}`));
     }
 
-
     const icon = path.join(__dirname, 'icon_16x16a.png')
     tray = new Tray(icon)
 
-    if (ledfxCore && fs.existsSync(`${thePath}/${ledfxCore}`)) {
+    if (integratedCore) {
         contextMenu = Menu.buildFromTemplate([
             { label: 'Show', click: () => wind.show() },
             { label: 'Minimize', click: () => wind.minimize() },
@@ -110,7 +109,7 @@ app.whenReady().then(async () => {
             { label: 'seperator', type: 'separator' },
             { label: 'Start core', click: () => subpy = require("child_process").spawn(`./${ledfxCore}`, []) },
             { label: 'Stop core', click: () => wind.webContents.send('fromMain', 'shutdown') },
-            { label: 'Download core', click: () =>  download(wind, `https://github.com/YeonV/LedFx-Frontend-v2/releases/latest/download/LedFx_core-${app.getVersion().split('-')[1]}--win.exe`, { directory: thePath, overwrite: true }).then((f) => { app.relaunch(); app.exit() }) },
+            { label: 'Download core', click: () =>  download(wind, `https://github.com/YeonV/LedFx-Frontend-v2/releases/latest/download/LedFx_core-${app.getVersion().split('-')[1]}--win-portable.exe`, { directory: thePath, overwrite: true }).then((f) => { app.relaunch(); app.exit() }) },
             { label: 'Restart Client', click: () => { app.relaunch(); app.exit() }},
             { label: 'Open folder', click: () => shell.openPath(thePath) },
             { label: 'seperator', type: 'separator' },
@@ -126,7 +125,7 @@ app.whenReady().then(async () => {
             { label: 'Dev', click: () => wind.webContents.openDevTools() },
             { label: 'seperator', type: 'separator' },
             { label: 'Stop core', click: () => wind.webContents.send('fromMain', 'shutdown') },
-            { label: 'Download core', click: () => download(wind, `https://github.com/YeonV/LedFx-Frontend-v2/releases/latest/download/LedFx_core-${app.getVersion().split('-')[1]}--win.exe`, { directory: thePath, overwrite: true, onProgress: (obj)=>{wind.webContents.send('fromMain', ['download-progress', obj])} }).then((f) => { wind.webContents.send('fromMain', 'clear-frontend'); app.relaunch(); app.exit() })},
+            { label: 'Download core', click: () => download(wind, `https://github.com/YeonV/LedFx-Frontend-v2/releases/latest/download/LedFx_core-${app.getVersion().split('-')[1]}--win-portable.exe`, { directory: thePath, overwrite: true, onProgress: (obj)=>{wind.webContents.send('fromMain', ['download-progress', obj])} }).then((f) => { wind.webContents.send('fromMain', 'clear-frontend'); app.relaunch(); app.exit() })},
             { label: 'Restart Client', click: () => {app.relaunch(); app.exit() }},
             { label: 'Open folder', click: () => shell.openPath(thePath) },
             { label: 'seperator', type: 'separator' },
@@ -142,7 +141,7 @@ app.whenReady().then(async () => {
         console.log(parameters)
         if (parameters === 'start-core') {
             console.log("Starting Core", ledfxCore)
-            if (ledfxCore && fs.existsSync(`${thePath}/${ledfxCore}`)) {
+            if (integratedCore) {
                 subpy = require("child_process").spawn(`./${ledfxCore}`, [])
             }
             return
@@ -158,22 +157,27 @@ app.whenReady().then(async () => {
             return
         }
         if (parameters === 'download-core') {
-            download(wind, `https://github.com/YeonV/LedFx-Frontend-v2/releases/latest/download/LedFx_core-${app.getVersion().split('-')[1]}--win.exe`, { directory: thePath, overwrite: true, onProgress: (obj)=>{wind.webContents.send('fromMain', ['download-progress', obj])} }).then((f) => { wind.webContents.send('fromMain', 'clear-frontend'); app.relaunch(); app.exit() })
+            download(wind, `https://github.com/YeonV/LedFx-Frontend-v2/releases/latest/download/LedFx_core-${app.getVersion().split('-')[1]}--win-portable.exe`, { directory: thePath, overwrite: true, onProgress: (obj)=>{wind.webContents.send('fromMain', ['download-progress', obj])} }).then((f) => { wind.webContents.send('fromMain', 'clear-frontend'); app.relaunch(); app.exit() })
             return
         }
     });
 
+    if (integratedCore) {
+        wind.on('close', ()=>{
+            wind.webContents.send('fromMain', 'shutdown')
+        })
+    }
 });
 
 // Quit when all windows are closed, except on macOS. There, it's common
 // for applications and their menu bar to stay active until the user quits
 // explicitly with Cmd + Q.
 app.on('window-all-closed', () => {
-    if (process.platform !== 'darwin') {
-        app.quit();
+    if (process.platform !== 'darwin') {        
         if (subpy !== null) {
             subpy.kill("SIGINT");
         }
+        app.quit();
     }
 });
 

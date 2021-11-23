@@ -1,42 +1,3 @@
-# ToDo:
-# - enable free color mode
-# - effect-list: replace color-names with effect-names
-
-# current state:
-# Scene-Selector [Done]
-# Global Transistion Type [Done]
-# Global Transistion Time [Done]
-# Global-Pause implemented and reacts to hass [Done]
-# Virtual-Pause implemented [Done]
-# Audio-Selector implemented [Done]
-
-# 1 Light per Virtual is created
-# Light can use Effect-List to set color (will be changed soon)
-# Light color and effect does react to ledfx color change
-## you can NOT set color from hass until ledfx supports freecolor
-
-
-
-
-
-# WTF is this error
-# # Exception in thread Thread-68 (thread_function):
-# # Traceback (most recent call last):
-# #   File "C:\Program Files\Python310\lib\threading.py", line 1009, in _bootstrap_inner
-# # [INFO    ] ledfx.effects                  : Effect Single Color activated.
-# #     self.run()
-# #   File "C:\Program Files\Python310\lib\threading.py", line 946, in run
-# #     self._target(*self._args, **self._kwargs)
-# #   File "c:\ledfx\ledfx-git\ledfx\virtuals.py", line 354, in thread_function
-# # [INFO    ] ledfx.config                   : Saving configuration file to C:\Users\Blade\AppData\Roaming\.ledfx
-# #     self.assembled_frame = self.assemble_frame()
-# #   File "c:\ledfx\ledfx-git\ledfx\virtuals.py", line 389, in assemble_frame
-# #     transition_frame = self._transition_effect.get_pixels()
-# #   File "c:\ledfx\ledfx-git\ledfx\effects\__init__.py", line 352, in get_pixels
-# #     pixels += np.multiply(
-# # ValueError: non-broadcastable output operand with shape () doesn't match the broadcast shape (292,3)
-
-
 import ast
 import json
 import logging
@@ -46,7 +7,7 @@ import paho.mqtt.client as mqtt
 import voluptuous as vol
 
 from ledfx.events import Event
-from ledfx.color import COLORS
+from ledfx.color import COLORS, parse_color
 from ledfx.config import save_config
 from ledfx.events import SceneActivatedEvent
 from ledfx.integrations import Integration
@@ -144,7 +105,6 @@ class MQTT_HASS(Integration):
         )
     def publish_audio_input_changed(self, event):
         print('test')
-        _LOGGER.info("test: " + str(event))
         self._client.publish(
             f"{self._config['topic']}/select/ledfxaudio/state",
             event.audio_input_device_name
@@ -174,7 +134,7 @@ class MQTT_HASS(Integration):
             )
             
         def publish_single_colour_updated(event):
-            color = COLORS[event.effect_config.get("color")]
+            color = parse_color(event.effect_config.get("color"))
             client.publish(
                 f"{self._config['topic']}/light/{event.virtual_id}/state",
                 json.dumps({
@@ -369,6 +329,17 @@ class MQTT_HASS(Integration):
             ),
         )     
 
+        command_template = """{
+    "state": "on"                        
+    {%- if red is defined and green is defined and blue is defined -%}
+    , "color": [{{ red }}, {{ green }}, {{ blue }}]
+    {%- endif -%}
+    {%- if effect is defined -%}
+    , "effect": "{{ effect }}"
+    {%- endif -%}
+}
+"""
+
         # Create Virtuals as Light in HomeAssistant
         for virtual in self._ledfx.virtuals.values():
             if virtual.config["icon_name"].startswith("mdi:"):
@@ -389,15 +360,7 @@ class MQTT_HASS(Integration):
                         "schema": "template",
                         "brightness": False,
                         "enabled_by_default": True,                       
-                        "command_on_template": """{
-    "state": "on"                        
-    {%- if red is defined and green is defined and blue is defined -%}
-    , "color": [{{ red }}, {{ green }}, {{ blue }}]
-    {%- endif -%}
-    {%- if effect is defined -%}
-    , "effect": "{{ effect }}"
-    {%- endif -%}
-}""",
+                        "command_on_template": command_template,
                         "command_off_template": "{\"state\": \"off\"}",
                         "red_template": "{{ value_json.color[0] }}",
                         "green_template": "{{ value_json.color[1] }}",
@@ -407,6 +370,7 @@ class MQTT_HASS(Integration):
                         "icon": icon,
                         "effect": True,
                         "effect_list": list(COLORS.keys()),
+                        #"effect_list": list(self._ledfx.effects.keys()),
                         "device": hass_device,
                     }
                 ),
@@ -417,7 +381,7 @@ class MQTT_HASS(Integration):
 
 
     def on_message(self, client, userdata, msg):
-        _LOGGER.info("MSGS: " + str(msg.payload) + msg.topic)
+        _LOGGER.info("MQTT-Message incoming: \n[MQTT    ] Topic: " + msg.topic + "\n[MQTT    ] Payload: " + str(msg.payload) )
         segs = msg.topic.split("/")
         try:
             payload = json.loads(msg.payload)
@@ -521,12 +485,20 @@ class MQTT_HASS(Integration):
             if virtual:
                 # SET VIRTUAL COLOR AND ACTIVE
                 colour = payload.get("effect", "orange")
-                
-                effect = self._ledfx.effects.create(
-                    ledfx=self._ledfx,
-                    type="singleColor",
-                    config={"color": colour},
-                )
+                color = payload.get("color", None)
+
+                if color is not None:                
+                    effect = self._ledfx.effects.create(
+                        ledfx=self._ledfx,
+                        type="singleColor",
+                        config={"color": color},
+                    )
+                else:
+                    effect = self._ledfx.effects.create(
+                        ledfx=self._ledfx,
+                        type="singleColor",
+                        config={"color": colour},
+                    )
                 try:
                     virtual.set_effect(effect)
                     virtual.active = payload["state"] == "on"
