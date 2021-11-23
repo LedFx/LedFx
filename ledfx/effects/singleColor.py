@@ -16,11 +16,6 @@ class SingleColorEffect(TemporalEffect, ModulateEffect):
             vol.Optional(
                 "color", description="Color of strip", default="#FF0000"
             ): validate_color,
-            vol.Optional(
-                "blade_color",
-                description="NEW Color",
-                default="#FF0000",
-            ): str
         },
     )
 
