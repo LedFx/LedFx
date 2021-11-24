@@ -55,6 +55,7 @@ class BarAudioEffect(AudioReactiveEffect, GradientEffect):
                 # 8 colours, 4 beats to a bar
                 self.color_idx += self._config["color_step"]
                 self.color_idx = self.color_idx % 1  # loop back to zero
+        super().gradient_magnitude_beat_power(data)
 
     def render(self):
         if self._config["ease_method"] == "ease_in_out":

@@ -1,7 +1,7 @@
 import numpy as np
 import voluptuous as vol
 
-from ledfx.color import parse_color, validate_color, GRADIENTS
+from ledfx.color import GRADIENTS, parse_color, validate_color
 from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.gradient import GradientEffect
 
@@ -75,6 +75,7 @@ class Strobe(AudioReactiveEffect, GradientEffect):
         self.brightness = (
             ((-o % (1 / self.freq)) * self.freq) ** self.strobe_decay
         ) * (1 - o) ** self.beat_decay
+        super().gradient_magnitude_beat_power(data)
 
     def render(self):
         self.output[:] = (

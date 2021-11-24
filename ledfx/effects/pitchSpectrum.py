@@ -45,7 +45,7 @@ class PitchSpectrumAudioEffect(AudioReactiveEffect, GradientEffect):
         midi_value = data.pitch()
         if midi_value is None:
             midi_value = 0
-        note_color = RGB(0,0,0)
+        note_color = RGB(0, 0, 0)
         if not self.avg_midi:
             self.avg_midi = midi_value
 
@@ -55,6 +55,7 @@ class PitchSpectrumAudioEffect(AudioReactiveEffect, GradientEffect):
                 self.avg_midi * (1.0 - self._config["responsiveness"])
                 + midi_value * self._config["responsiveness"]
             )
+        super().gradient_magnitude_beat_power(data)
 
         # Grab the note color based on where it falls in the midi range
         if self.avg_midi >= MIN_MIDI:
@@ -71,7 +72,7 @@ class PitchSpectrumAudioEffect(AudioReactiveEffect, GradientEffect):
             #
             new_color = mix_colors(self.pixels[index], note_color, y[index])
             new_color = mix_colors(
-                new_color, RGB(0,0,0), self._config["fade_rate"]
+                new_color, RGB(0, 0, 0), self._config["fade_rate"]
             )
             new_pixels[index] = new_color
 

@@ -39,12 +39,13 @@ class BandsMatrixAudioEffect(AudioReactiveEffect, GradientEffect):
 
     def config_updated(self, config):
         # Create the filters used for the effect
-        self.bkg_color = np.array((0,0,0), dtype=float)
+        self.bkg_color = np.array((0, 0, 0), dtype=float)
         self.flip_gradient = config["flip_gradient"]
 
     def audio_data_updated(self, data):
         # Grab the filtered melbank
         self.r = self.melbank(filtered=True, size=self.pixel_count)
+        super().gradient_magnitude_beat_power(data)
 
     def render(self):
         out = np.tile(self.r, (3, 1)).T

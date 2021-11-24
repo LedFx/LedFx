@@ -3,7 +3,7 @@ import logging
 import numpy as np
 import voluptuous as vol
 
-from ledfx.color import GRADIENTS, parse_color
+from ledfx.color import COLORS, GRADIENTS, parse_color
 from ledfx.effects import Effect
 from ledfx.effects.modulate import ModulateEffect
 from ledfx.effects.temporal import TemporalEffect
@@ -35,15 +35,21 @@ class GradientEffect(Effect):
                 "gradient_repeat",
                 description="Repeat the gradient into segments",
                 default=1,
-            ): vol.All(vol.Coerce(int), vol.Range(min=1, max=16))
+            ): vol.All(vol.Coerce(int), vol.Range(min=1, max=16)),
             # vol.Optional('gradient_method', description='Function used to
             # generate gradient', default = 'cubic_ease'): vol.In(["cubic_ease",
             # "bezier"]),
+            vol.Optional(
+                "beat_speed",
+                description="Gradient Roll speed is adjusted based on audio beat magnitude",
+                default=False,
+            ): bool,
         }
     )
 
     _gradient_curve = None
     _gradient_roll_counter = 0
+    _gradient_beat_power = 0
 
     def _comb(self, N, k):
         N = int(N)
@@ -164,7 +170,12 @@ class GradientEffect(Effect):
         if self._config["gradient_roll"] == 0:
             return
 
-        self._gradient_roll_counter += self._config["gradient_roll"]
+        self._gradient_roll_counter += (
+            self._config["gradient_roll"]
+            if not (self._config["beat_speed"])
+            else self._config["gradient_roll"]
+            * (1 + self._gradient_beat_power)
+        )
 
         if self._gradient_roll_counter >= 1.0:
             pixels_to_roll = np.floor(self._gradient_roll_counter)
@@ -188,6 +199,9 @@ class GradientEffect(Effect):
         return np.hstack(
             self._gradient_curve[:, int((self.pixel_count - 1) * point)]
         )
+
+    def gradient_magnitude_beat_power(self, data):
+        self._gradient_beat_power = getattr(data, "lows_power")()
 
     def config_updated(self, config):
         """Invalidate the gradient"""

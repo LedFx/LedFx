@@ -43,6 +43,7 @@ class EQAudioEffect(AudioReactiveEffect, GradientEffect):
         # Grab the filtered melbank
         self.r = self.melbank(filtered=True, size=self.pixel_count)
         np.clip(self.r, 0, 1, out=self.r)
+        super().gradient_magnitude_beat_power(data)
 
     def render(self):
         r_split = np.array_split(self.r, self._config["gradient_repeat"])

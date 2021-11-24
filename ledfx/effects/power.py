@@ -41,7 +41,7 @@ class PowerAudioEffect(AudioReactiveEffect, GradientEffect):
         self._bass_filter = self.create_filter(
             alpha_decay=0.1, alpha_rise=0.99
         )
-        self.sparks_color = np.array((0,0,0), dtype=float)
+        self.sparks_color = np.array((0, 0, 0), dtype=float)
 
     def audio_data_updated(self, data):
         # Get onset data
@@ -60,6 +60,7 @@ class PowerAudioEffect(AudioReactiveEffect, GradientEffect):
         # Map it to the length of the strip and apply it
         bass_idx = int(bass * self.pixel_count)
         self.out[:bass_idx] = color
+        super().gradient_magnitude_beat_power(data)
 
     def render(self):
         if self._config["sparks"]:

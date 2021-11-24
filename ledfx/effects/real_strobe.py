@@ -4,7 +4,7 @@ import time
 import numpy as np
 import voluptuous as vol
 
-from ledfx.color import parse_color, validate_color, GRADIENTS
+from ledfx.color import GRADIENTS, parse_color, validate_color
 from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.gradient import GradientEffect
 from ledfx.utils import empty_queue
@@ -140,3 +140,4 @@ class Strobe(AudioReactiveEffect, GradientEffect):
         ):
             self.onsets_queue.put(True)
             self.last_strobe_time = currentTime
+        super().gradient_magnitude_beat_power(data)

@@ -35,6 +35,7 @@ class MagnitudeAudioEffect(AudioReactiveEffect, GradientEffect):
 
     def audio_data_updated(self, data):
         self.magnitude = getattr(data, self.power_func)()
+        super().gradient_magnitude_beat_power(data)
 
     def render(self):
         # Grab the filtered and interpolated melbank data
