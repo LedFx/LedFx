@@ -34,6 +34,7 @@ PERMITTED_KEYS = {
         "scan_on_startup",
         "visualisation_fps",
         "visualisation_maxlen",
+        "global_transitions",
     ),
 }
 
