@@ -124,8 +124,15 @@ class AudioInputSource:
         self._config = self.AUDIO_CONFIG_SCHEMA.fget()(config)
         if len(self._callbacks) != 0:
             self.activate()
-        if old_input_device and self._config["audio_device"] is not old_input_device:
-            self._ledfx.events.fire_event(AudioDeviceChangeEvent(self.input_devices()[self._config["audio_device"]]))
+        if (
+            old_input_device
+            and self._config["audio_device"] is not old_input_device
+        ):
+            self._ledfx.events.fire_event(
+                AudioDeviceChangeEvent(
+                    self.input_devices()[self._config["audio_device"]]
+                )
+            )
 
     def activate(self):
 
@@ -728,7 +735,7 @@ class AudioReactiveEffect(Effect):
                 for i, x in enumerate(
                     self.audio.melbanks._config["max_frequencies"]
                 )
-                if hasattr(self._virtual, 'frequency_range') and (x >= self._virtual.frequency_range.max)
+                if x >= self._virtual.frequency_range.max
             ),
             len(self.audio.melbanks._config["max_frequencies"]),
         )

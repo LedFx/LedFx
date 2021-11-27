@@ -18,11 +18,11 @@ from ledfx.effects.melbank import (
 from ledfx.events import (
     EffectClearedEvent,
     EffectSetEvent,
-    VirtualConfigUpdateEvent,
     Event,
-    VirtualUpdateEvent,
     GlobalPauseEvent,
+    VirtualConfigUpdateEvent,
     VirtualPauseEvent,
+    VirtualUpdateEvent,
 )
 
 # from ledfx.config import save_config
@@ -129,6 +129,10 @@ class Virtual:
         # in, +ve mean fading out
         self.fade_timer = 0
         self._segments = []
+
+        self.frequency_range = FrequencyRange(
+            self._config["frequency_min"], self._config["frequency_max"]
+        )
 
         # list of devices in order of their mapping on the virtual
         # [[id, start, end, invert]...]
@@ -284,7 +288,7 @@ class Virtual:
                 self._active_effect.name,
                 self._active_effect.id,
                 self.active_effect.config,
-                self.id
+                self.id,
             )
         )
 
@@ -438,8 +442,7 @@ class Virtual:
             self.activate_segments(self._segments)
 
         # self.thread_function()
-        
-        
+
         self._thread = threading.Thread(target=self.thread_function)
         self._thread.start()
         self._ledfx.events.fire_event(VirtualPauseEvent(self.id))
@@ -452,6 +455,7 @@ class Virtual:
             self._thread.join()
         self.deactivate_segments()
         self._ledfx.events.fire_event(VirtualPauseEvent(self.id))
+
     # @lru_cache(maxsize=32)
     # def _normalized_linspace(self, size):
     #     return np.linspace(0, 1, size)
@@ -630,17 +634,26 @@ class Virtual:
                 self.invalidate_cached_props()
             if (
                 _config["transition_mode"] != self._config["transition_mode"]
-                or _config["transition_time"] != self._config["transition_time"]
+                or _config["transition_time"]
+                != self._config["transition_time"]
             ):
-                self.frame_transitions = self.transitions[_config["transition_mode"]]
+                self.frame_transitions = self.transitions[
+                    _config["transition_mode"]
+                ]
                 if self._ledfx.config["global_transitions"]:
                     for virtual_id in self._ledfx.virtuals:
                         if virtual_id == self.id:
                             continue
                         virtual = self._ledfx.virtuals.get(virtual_id)
-                        virtual.frame_transitions = virtual.transitions[_config["transition_mode"]]
-                        virtual._config["transition_time"] = _config["transition_time"]
-                        virtual._config["transition_mode"] = _config["transition_mode"]
+                        virtual.frame_transitions = virtual.transitions[
+                            _config["transition_mode"]
+                        ]
+                        virtual._config["transition_time"] = _config[
+                            "transition_time"
+                        ]
+                        virtual._config["transition_mode"] = _config[
+                            "transition_mode"
+                        ]
 
             if (
                 "frequency_min" in _config.keys()
@@ -687,10 +700,7 @@ class Virtual:
         )
 
         self._ledfx.events.fire_event(
-            VirtualConfigUpdateEvent(
-                self.id,
-                self._config
-            )
+            VirtualConfigUpdateEvent(self.id, self._config)
         )
 
 
@@ -737,10 +747,7 @@ class Virtuals:
                         "Effect schema changed. Not restoring effect"
                     )
             self._ledfx.events.fire_event(
-                VirtualConfigUpdateEvent(
-                    virtual["id"],
-                    virtual["config"]
-                )
+                VirtualConfigUpdateEvent(virtual["id"], virtual["config"])
             )
 
     def schema(self):
@@ -798,4 +805,3 @@ class Virtuals:
 
     def get(self, *args):
         return self._virtuals.get(*args)
-
