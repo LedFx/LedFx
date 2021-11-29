@@ -103,9 +103,8 @@ class MQTT_HASS(Integration):
                 "state": paused_state
             })
         )
-    def publish_audio_input_changed(self, event):
-        _LOGGER.info("AUUUUUUUUUUDIOOOOOOOOOO" + str(event) )
-        self._client.publish(
+    def publish_audio_input_changed(self, client, event):
+        client.publish(
             f"{self._config['topic']}/select/ledfxaudio/state",
             event.audio_input_device_name
         )
@@ -208,7 +207,7 @@ class MQTT_HASS(Integration):
 
         self._listeners.append(
             self._ledfx.events.add_listener(
-                lambda event: self.publish_audio_input_changed(event),
+                lambda event: self.publish_audio_input_changed(client, event),
                 Event.AUDIO_INPUT_DEVICE_CHANGED
             )
         )
