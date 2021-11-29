@@ -1,26 +1,80 @@
-from collections import namedtuple
-from PIL import ImageColor
 import logging
+from collections import namedtuple
+
+from PIL import ImageColor
 
 _LOGGER = logging.getLogger(__name__)
-RGB = namedtuple("RGB", "red, green, blue")
+RGB = namedtuple("RGB", ("red", "green", "blue", "alpha"), defaults=(255,))
+
+
+class Gradient:
+    __slots__ = "colors", "mode", "angle"
+
+    @classmethod
+    def from_string(cls, gradient_str: str):
+        """
+        Parses gradient from string of format eg.
+        "linear-gradient(90deg, #7873f5 0%, #800000 50%, #ec77ab 100%)"
+        "mode(angle, *colors)"
+        where each color is associated with a % value for its position in the gradient
+        """
+        # Get mode
+        mode, angle_colors = gradient_str.split("(")
+        mode.strip("-gradient")
+        # Get angle
+        angle, *colors = angle_colors.strip(")").split(",")
+        angle = int(angle.strip("deg"))
+        # Split each color/position string
+        colors = [color.strip(" ").split(" ") for color in colors]
+        # Parse color and position
+        colors = [
+            (parse_color(color), float(position.strip("%")) / 100.0)
+            for color, position in colors
+        ]
+        # Sort color list by position (0.0->1.0)
+        colors.sort(key=lambda tup: tup[1])
+
+        return cls(colors, mode, angle)
+
+    def __init__(self, colors, mode="linear", angle="90"):
+        self.colors = colors
+        self.mode = mode
+        self.angle = angle
+
 
 def parse_color(color: (str, list, tuple)) -> RGB:
     try:
+        # If it's a list/tuple, interpret it as RGB(A)
         if isinstance(color, (list, tuple)):
-            assert len(color) == 3
+            assert 3 <= len(color) <= 4
             return RGB(*color)
-        if isinstance(color, str):
-            return COLORS.get(
-                color.lower(), 
-                RGB(*ImageColor.getrgb(color))
-            )
+        # Otherwise, it needs to be a string to continue
+        if not isinstance(color, str):
+            raise ValueError
+        # Try to parse it as a HEX (with or without alpha)
+        if color.startswith("#"):
+            color = color.strip("#")
+            return RGB(*int(color, 16).to_bytes(len(color) // 2, "big"))
+        # Try to find the color in the pre-defined dict
+        if color in COLORS:
+            return COLORS[color]
+        # Failing that, try to parse it using ImageColor
+        return RGB(*ImageColor.getrgb(color))
     except (ValueError, AssertionError):
-        _LOGGER.error(f"Invalid colour: {color}")
-        return RGB(0, 0, 0)
+        msg = f"Invalid colour: {color}"
+        _LOGGER.error(msg)
+        raise ValueError(msg)
+
+
+# def parse_color_or_gradient(color_or_gradient: str):
+
 
 def validate_color(color: str) -> str:
-    return "#%02x%02x%02x" % parse_color(color)
+    try:
+        return "#%02x%02x%02x%02x" % parse_color(color)
+    except ValueError:
+        return "#00000000"
+
 
 COLORS = {
     "red": RGB(255, 0, 0),
