@@ -103,15 +103,24 @@ class MQTT_HASS(Integration):
                 "state": paused_state
             })
         )
-    def publish_audio_input_changed(self, event):
-        print('test')
-        self._client.publish(
+    def publish_audio_input_changed(self, client, event):
+        client.publish(
             f"{self._config['topic']}/select/ledfxaudio/state",
             event.audio_input_device_name
         )
 
 
     def on_connect(self, client, userdata, flags, rc):
+        total_pixels = 0
+        for device in self._ledfx.devices.values():            
+            total_pixels += device.pixel_count
+        active_pixels = 0
+        for virtual in self._ledfx.virtuals.values():
+            if virtual.active:
+                active_pixels += virtual.pixel_count
+        _LOGGER.info("active_pixels/total_pixels:" + str(active_pixels) + "/" + str(total_pixels) )
+        # ToDo create sensor with total_pixels
+
         # Internal State-Handler
         client.subscribe("ledfx/state")
 
@@ -121,7 +130,7 @@ class MQTT_HASS(Integration):
                 f"{self._config['topic']}/select/ledfxsceneselect/state",
                 event.scene_id
             )       
-
+        
         def publish_global_paused_state(event):
             paused_state = "OFF"
             if (self._ledfx.virtuals._paused):
@@ -198,7 +207,7 @@ class MQTT_HASS(Integration):
 
         self._listeners.append(
             self._ledfx.events.add_listener(
-                lambda event: self.publish_audio_input_changed(event),
+                lambda event: self.publish_audio_input_changed(client, event),
                 Event.AUDIO_INPUT_DEVICE_CHANGED
             )
         )
@@ -212,6 +221,26 @@ class MQTT_HASS(Integration):
             "manufacturer": "Yeon",
             "sw_version": f"{PROJECT_VERSION}",
         }
+
+        # SENSOR
+        client.subscribe(
+            f"{self._config['topic']}/sensor/ledfxpixelsensor/set"
+        )
+        client.publish(
+            f"{self._config['topic']}/sensor/ledfxpixelsensor/config",
+            json.dumps(
+                {
+                    "~": f"{self._config['topic']}/sensor/ledfxpixelsensor",
+                    "name": "Used Pixels",
+                    "unique_id": "ledfxpixelsensor",
+                    "entity_category": "diagnostic",
+                    "cmd_t": "~/set",
+                    "stat_t": "~/state",
+                    "icon": "mdi:led-variant-outline",
+                    "device": hass_device,
+                }
+            ),
+        )
 
         # SCENE SELECTOR
         client.subscribe(
@@ -393,7 +422,15 @@ class MQTT_HASS(Integration):
             paused_state = "OFF"
         else:
             paused_state = "ON"
+
         # React to Internal State-Handler
+        total_pixels = 0
+        for device in self._ledfx.devices.values():            
+            total_pixels += device.pixel_count
+        active_pixels = 0
+        for virtual in self._ledfx.virtuals.values():
+            if virtual.active:
+                active_pixels += virtual.pixel_count
         if segs[0] == "ledfx":
             if payload == "HomeAssistant initialized":
                 virtual = self._ledfx.virtuals.get(next(iter(self._ledfx.virtuals)))
@@ -414,6 +451,11 @@ class MQTT_HASS(Integration):
                 client.publish(
                     f"{self._config['topic']}/select/ledfxaudio/state",
                     AudioInputSource.input_devices()[self._ledfx.config.get("audio", {}).get("audio_device", {})]
+                )
+                # Pixel-Sensor
+                client.publish(
+                    f"{self._config['topic']}/sensor/ledfxpixelsensor/state",
+                    str(active_pixels) + " / " + str(total_pixels)
                 )
                 # publish all virtual data on connect (meta)
                 for virtual in self._ledfx.virtuals.values():
@@ -466,16 +508,24 @@ class MQTT_HASS(Integration):
 
         # React to Audio-Selector
         elif virtualid == "ledfxaudio":
-            index = self._ledfx.audio.get_device_index_by_name(payload)
-            # _LOGGER.info("AUDIO DEVICE BROOOO: " + str(payload) + " --- index: " + str(index))
-            new_config = self._ledfx.config.get("audio", {})
-            new_config["audio_device"] = int(index)
-            self._ledfx.config["audio"] = new_config
-            save_config(
-                config=self._ledfx.config,
-                config_dir=self._ledfx.config_dir,
-            )
-            if self._ledfx.audio:
+            _LOGGER.info("AUDIO DEVICE BROOOO: " + str(payload))
+            if (
+                hasattr(self._ledfx, "audio")
+                and self._ledfx.audio is not None
+            ):
+                # index = self._ledfx.audio.get_device_index_by_name(payload)
+                index = -1
+                for key, value in AudioInputSource.input_devices().items():
+                    if str(payload) == value:
+                        index = key
+                
+                new_config = self._ledfx.config.get("audio", {})
+                new_config["audio_device"] = int(index)
+                self._ledfx.config["audio"] = new_config
+                save_config(
+                    config=self._ledfx.config,
+                    config_dir=self._ledfx.config_dir,
+                )
                 self._ledfx.audio.update_config(new_config)
             return
 
@@ -535,6 +585,7 @@ class MQTT_HASS(Integration):
         self._client.publish(f"{self._config['topic']}/select/ledfxsceneselect/config",json.dumps({}))
         self._client.publish(f"{self._config['topic']}/select/ledfxtransitiontype/config",json.dumps({}))
         self._client.publish(f"{self._config['topic']}/number/ledfxtransitiontime/config",json.dumps({}))
+        self._client.publish(f"{self._config['topic']}/sensor/ledfxpixelsensor/config",json.dumps({}))
         self._client.publish(f"{self._config['topic']}/switch/ledfxplay/config", json.dumps({}))
         for virtual in self._ledfx.virtuals.values():
             self._client.publish(f"{self._config['topic']}/light/{virtual.id}/config",json.dumps({}))
