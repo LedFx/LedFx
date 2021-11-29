@@ -4,7 +4,8 @@ from collections import namedtuple
 from PIL import ImageColor
 
 _LOGGER = logging.getLogger(__name__)
-RGB = namedtuple("RGB", ("red", "green", "blue", "alpha"), defaults=(255,))
+RGBA = namedtuple("RGBA", ("red", "green", "blue", "alpha"), defaults=(255,))
+RGB = namedtuple("RGB", ("red", "green", "blue"))
 
 
 class Gradient:
@@ -44,9 +45,10 @@ class Gradient:
 
 def parse_color(color: (str, list, tuple)) -> RGB:
     try:
-        # If it's a list/tuple, interpret it as RGB(A)
+        # If it's a list/tuple, interpret it as RGB(A removed)
         if isinstance(color, (list, tuple)):
-            assert 3 <= len(color) <= 4
+            # assert 3 <= len(color) <= 4
+            assert len(color) == 3
             return RGB(*color)
         # Otherwise, it needs to be a string to continue
         if not isinstance(color, str):
@@ -54,7 +56,8 @@ def parse_color(color: (str, list, tuple)) -> RGB:
         # Try to parse it as a HEX (with or without alpha)
         if color.startswith("#"):
             color = color.strip("#")
-            return RGB(*int(color, 16).to_bytes(len(color) // 2, "big"))
+            # return RGB(*int(color, 16).to_bytes(len(color) // 2, "big"))
+            return RGB(*int(color, 16).to_bytes(3, "big"))
         # Try to find the color in the pre-defined dict
         if color in COLORS:
             return COLORS[color]
@@ -66,14 +69,11 @@ def parse_color(color: (str, list, tuple)) -> RGB:
         raise ValueError(msg)
 
 
-# def parse_color_or_gradient(color_or_gradient: str):
-
-
 def validate_color(color: str) -> str:
     try:
-        return "#%02x%02x%02x%02x" % parse_color(color)
+        return "#%02x%02x%02x" % parse_color(color)
     except ValueError:
-        return "#00000000"
+        return "#000000"
 
 
 COLORS = {
