@@ -70,10 +70,22 @@ def parse_color(color: (str, list, tuple)) -> RGB:
 
 
 def validate_color(color: str) -> str:
+    return "#%02x%02x%02x" % parse_color(color)
+
+
+def validate_gradient(gradient: str) -> str:
     try:
-        return "#%02x%02x%02x" % parse_color(color)
-    except ValueError:
-        return "#000000"
+        Gradient.from_string(gradient)
+        return gradient
+    except Exception:
+        raise ValueError
+
+
+def validate_color_or_gradient(color_or_gradient: str) -> str:
+    try:
+        return validate_gradient(color_or_gradient)
+    except Exception:
+        return validate_color(color_or_gradient)
 
 
 COLORS = {

@@ -1,15 +1,13 @@
+import logging
+from collections import namedtuple
+
 import numpy as np
 import voluptuous as vol
 
-import logging
-
-
-from ledfx.color import parse_color, validate_color
+from ledfx.color import parse_color, validate_color, validate_color_or_gradient
 from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.gradient import GradientEffect
 from ledfx.effects.hsv_effect import HSVEffect
-from collections import namedtuple
-
 
 RGB = namedtuple("RGB", "red, green, blue")
 hsv = namedtuple("hsv", "hue, saturation, value")
@@ -54,7 +52,7 @@ class BladePowerPlus(AudioReactiveEffect, HSVEffect, GradientEffect):
             ): validate_color,
             vol.Optional(
                 "color", description="Color of bar", default="cyan"
-            ): validate_color,
+            ): validate_color_or_gradient,
             vol.Optional(
                 "frequency_range",
                 description="Frequency range for the beat detection",
@@ -87,7 +85,9 @@ class BladePowerPlus(AudioReactiveEffect, HSVEffect, GradientEffect):
         self.hsv = self.rgb_to_hsv(rgb_gradient)
 
         if self._config["solid_color"] is True:
-            hsv_color = self.rgb_to_hsv(np.array(parse_color(self._config["color"])))
+            hsv_color = self.rgb_to_hsv(
+                np.array(parse_color(self._config["color"]))
+            )
 
             self.hsv[:, 0] = hsv_color[0]
             self.hsv[:, 1] = hsv_color[1]
