@@ -15,7 +15,7 @@ NAME = "my_cool_droplet"
 # and returns an array the same shape as x, with some maths done to it!
 # Each value of the frame corresponds to pixel brightness (0-1)
 # You should check these examples for how to write a function that does this.
-# Simple example: https://www.desmos.com/calculator/cy4ekajybl
+# Simple example: https://www.desmos.com/calculator/hg4uezvvuf
 # Hard example:   https://www.desmos.com/calculator/esmm3pfngm
 
 
