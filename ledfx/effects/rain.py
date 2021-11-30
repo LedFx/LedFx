@@ -1,12 +1,11 @@
-import os
 from random import randint
 
 import numpy as np
 import voluptuous as vol
 
-from ledfx.color import validate_color, parse_color
+from ledfx.color import parse_color, validate_color
 from ledfx.effects.audio import AudioReactiveEffect
-from ledfx.effects.effectlets import EFFECTLET_LIST
+from ledfx.effects.droplets import DROPLET_NAMES, load_droplet
 
 
 class RainAudioEffect(AudioReactiveEffect):
@@ -57,8 +56,8 @@ class RainAudioEffect(AudioReactiveEffect):
             vol.Optional(
                 "raindrop_animation",
                 description="Droplet animation style",
-                default=EFFECTLET_LIST[0],
-            ): vol.In(list(EFFECTLET_LIST)),
+                default=DROPLET_NAMES[0],
+            ): vol.In(DROPLET_NAMES),
         }
     )
 
@@ -67,14 +66,7 @@ class RainAudioEffect(AudioReactiveEffect):
         self.drop_colours = np.zeros((3, self.pixel_count))
 
     def config_updated(self, config):
-        # this could be cleaner but it's temporary, until an effectlet class is
-        # made to handle this stuff
-        self.drop_animation = np.load(
-            os.path.join(
-                os.path.dirname(__file__),
-                "effectlets/" + config["raindrop_animation"],
-            )
-        )
+        self.drop_animation = load_droplet(config["raindrop_animation"])
 
         self.n_frames, self.frame_width = np.shape(self.drop_animation)
         self.frame_centre_index = self.frame_width // 2
