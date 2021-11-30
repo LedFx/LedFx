@@ -258,10 +258,6 @@ class Effect(BaseRegistry):
         """Attaches an output channel to the effect"""
         self._virtual = virtual
         self._pixels = np.zeros((virtual.pixel_count, 3))
-        self._bg_color_array = np.tile(
-            self._bg_color, (virtual.pixel_count, 1)
-        )
-
         # Iterate all the base classes and check to see if the base
         # class has an on_activate method. If so, call it
         valid_classes = list(type(self).__bases__)
@@ -292,9 +288,10 @@ class Effect(BaseRegistry):
         else:
             self._config = validated_config
         self.configured_blur = self._config["blur"]
-        self._bg_brightness = self._config["background_brightness"]
-        self._bg_color = np.array(
-            parse_color(self._config["background_color"]), dtype=float
+
+        self._bg_color = (
+            np.array(parse_color(self._config["background_color"]))
+            * self._config["background_brightness"]
         )
 
         def inherited(cls, method):
@@ -349,9 +346,7 @@ class Effect(BaseRegistry):
             if self._config["background_color"]:
                 # TODO: colours in future should have an alpha value, which would work nicely to apply to dim the background colour
                 # for now, just set it a bit less bright.
-                pixels += np.multiply(
-                    self._bg_color_array.T, self._bg_brightness
-                ).T
+                pixels += self._bg_color
             if self._config["brightness"] is not None:
                 pixels = brightness_pixels(pixels, self._config["brightness"])
             # If the configured blur is greater than 0 we need to blur it
@@ -386,8 +381,7 @@ class Effect(BaseRegistry):
             if self._config["background_color"]:
                 # TODO: colours in future should have an alpha value, which would work nicely to apply to dim the background colour
                 # for now, just set it a bit less bright.
-                _bg_color_array = np.tile(self._bg_color, (len(pixels), 1))
-                pixels += np.multiply(_bg_color_array.T, self._bg_brightness).T
+                pixels += self._bg_color
             if self._config["brightness"] is not None:
                 pixels = brightness_pixels(pixels, self._config["brightness"])
             # If the configured blur is greater than 0 we need to blur it

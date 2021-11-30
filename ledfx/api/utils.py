@@ -117,19 +117,13 @@ def convertToJsonSchema(schema):
         callable(schema)
         and getattr(schema, "__name__", None) == "validate_color"
     ):
-        return {"type": "color", "color_type": "solid"}
+        return {"type": "color", "gradient": False}
 
     elif (
         callable(schema)
         and getattr(schema, "__name__", None) == "validate_gradient"
     ):
-        return {"type": "color", "color_type": "gradient"}
-
-    elif (
-        callable(schema)
-        and getattr(schema, "__name__", None) == "validate_color_or_gradient"
-    ):
-        return {"type": "color", "color_type": "either"}
+        return {"type": "color", "gradient": True}
 
     elif isinstance(schema, vol.All):
         val = {}

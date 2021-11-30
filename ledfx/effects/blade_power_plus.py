@@ -4,7 +4,7 @@ from collections import namedtuple
 import numpy as np
 import voluptuous as vol
 
-from ledfx.color import parse_color, validate_color, validate_color_or_gradient
+from ledfx.color import validate_color
 from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.gradient import GradientEffect
 from ledfx.effects.hsv_effect import HSVEffect
@@ -51,18 +51,10 @@ class BladePowerPlus(AudioReactiveEffect, HSVEffect, GradientEffect):
                 default="#000000",
             ): validate_color,
             vol.Optional(
-                "color", description="Color of bar", default="cyan"
-            ): validate_color_or_gradient,
-            vol.Optional(
                 "frequency_range",
                 description="Frequency range for the beat detection",
                 default="Lows (beat+bass)",
             ): vol.In(list(_power_funcs.keys())),
-            vol.Optional(
-                "solid_color",
-                description="Display a solid color bar",
-                default=False,
-            ): bool,
             vol.Optional(
                 "invert_roll",
                 description="Invert the direction of the gradient roll",
@@ -83,15 +75,6 @@ class BladePowerPlus(AudioReactiveEffect, HSVEffect, GradientEffect):
 
         rgb_gradient = self.apply_gradient(1)
         self.hsv = self.rgb_to_hsv(rgb_gradient)
-
-        if self._config["solid_color"] is True:
-            hsv_color = self.rgb_to_hsv(
-                np.array(parse_color(self._config["color"]))
-            )
-
-            self.hsv[:, 0] = hsv_color[0]
-            self.hsv[:, 1] = hsv_color[1]
-            self.hsv[:, 2] = hsv_color[2]
 
     def config_updated(self, config):
         self.power_func = self._power_funcs[self._config["frequency_range"]]
