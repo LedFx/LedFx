@@ -45,18 +45,5 @@ while os.path.exists(path):
     i += 1
     path = os.path.join(droplets_location, f"{NAME}_{i}.npy")
 
-number = (
-    max(
-        int(droplet.strip(".npy").split("_")[1])
-        for droplet in os.listdir(droplets_location)
-        if droplet.endswith(".npy")
-    )
-    + 1
-)
-
-
-assert not os.path.exists(path)
 np.save(path, droplet)
-print(
-    f"Done! Saved as droplet_{number}.npy - restart LedFx to see it in action."
-)
+print(f"Done! Saved as {NAME}_{i}.npy - restart LedFx to see it in action.")
