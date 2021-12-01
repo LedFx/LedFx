@@ -20,7 +20,7 @@ class Strobe(AudioReactiveEffect, GradientEffect):
             vol.Optional(
                 "gradient",
                 description="Color scheme for bass strobe to cycle through",
-                default="Dancefloor",
+                default="linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 0, 178) 50%, rgb(0, 0, 255) 100%)",
             ): validate_gradient,
             vol.Optional(
                 "color_step",
