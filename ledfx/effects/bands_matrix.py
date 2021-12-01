@@ -1,7 +1,6 @@
 import numpy as np
 import voluptuous as vol
 
-from ledfx.color import GRADIENTS
 from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.gradient import GradientEffect
 
@@ -16,11 +15,6 @@ class BandsMatrixAudioEffect(AudioReactiveEffect, GradientEffect):
             vol.Optional(
                 "band_count", description="Number of bands", default=6
             ): vol.All(vol.Coerce(int), vol.Range(min=1, max=16)),
-            vol.Optional(
-                "gradient_name",
-                description="Color gradient to virtual",
-                default="linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
-            ): vol.In(list(GRADIENTS.keys())),
             vol.Optional(
                 "mirror",
                 description="Mirror the effect",
@@ -39,7 +33,7 @@ class BandsMatrixAudioEffect(AudioReactiveEffect, GradientEffect):
 
     def config_updated(self, config):
         # Create the filters used for the effect
-        self.bkg_color = np.array((0,0,0), dtype=float)
+        self.bkg_color = np.array((0, 0, 0), dtype=float)
         self.flip_gradient = config["flip_gradient"]
 
     def audio_data_updated(self, data):

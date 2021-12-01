@@ -4,7 +4,7 @@ import time
 import numpy as np
 import voluptuous as vol
 
-from ledfx.color import parse_color, validate_color, GRADIENTS
+from ledfx.color import parse_color, validate_color, validate_gradient
 from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.gradient import GradientEffect
 from ledfx.utils import empty_queue
@@ -18,10 +18,10 @@ class Strobe(AudioReactiveEffect, GradientEffect):
     CONFIG_SCHEMA = vol.Schema(
         {
             vol.Optional(
-                "gradient_name",
+                "gradient",
                 description="Color scheme for bass strobe to cycle through",
                 default="Dancefloor",
-            ): vol.In(list(GRADIENTS.keys())),
+            ): validate_gradient,
             vol.Optional(
                 "color_step",
                 description="Amount of color change per bass strobe",
