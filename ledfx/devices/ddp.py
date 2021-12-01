@@ -86,9 +86,12 @@ class DDPDevice(UDPDevice):
         udpData = bytearray()
         header = struct.pack(
             "!BBBBLH",
-            DDPDevice.VER1 | DDPDevice.PUSH
-            if (bytes_length == DDPDevice.MAX_DATALEN)
-            else DDPDevice.VER1,
+            DDPDevice.VER1
+            | (
+                DDPDevice.VER1
+                if (bytes_length == DDPDevice.MAX_DATALEN)
+                else DDPDevice.PUSH
+            ),
             sequence,
             DDPDevice.DATATYPE,
             DDPDevice.SOURCE,
