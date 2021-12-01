@@ -24,7 +24,7 @@ class GradientEffect(Effect):
             vol.Optional(
                 "gradient",
                 description="Color gradient to display",
-                default="Rainbow",
+                default="linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
             ): validate_gradient,
             vol.Optional(
                 "gradient_roll",
