@@ -22,7 +22,11 @@ class DummyEffect:
     def __init__(self, pixel_count):
         self._pixels = np.zeros((pixel_count, 3))
 
-    def get_pixels(self):
+    def render(self):
+        pass
+
+    @property
+    def pixels(self):
         return self._pixels
 
     def activate(self):
@@ -330,35 +334,6 @@ class Effect(BaseRegistry):
 
     def render(self):
         return self.pixels
-
-    def get_pixels(self):
-        pixels = self.render()
-
-        if isinstance(pixels, tuple):
-            self._pixels = np.copy(pixels)
-        elif isinstance(pixels, np.ndarray):
-
-            # Apply some of the base output filters if necessary
-            if self._config["flip"]:
-                pixels = flip_pixels(pixels)
-            if self._config["mirror"]:
-                pixels = mirror_pixels(pixels)
-            if self._config["background_color"]:
-                # TODO: colours in future should have an alpha value, which would work nicely to apply to dim the background colour
-                # for now, just set it a bit less bright.
-                pixels += self._bg_color
-            if self._config["brightness"] is not None:
-                pixels = brightness_pixels(pixels, self._config["brightness"])
-            # If the configured blur is greater than 0 we need to blur it
-            if self.configured_blur != 0.0:
-                pixels = fast_blur_pixels(
-                    pixels=pixels, sigma=self.configured_blur
-                )
-            self._pixels = np.copy(pixels)
-        else:
-            raise TypeError()
-
-        return pixels
 
     @property
     def pixels(self):

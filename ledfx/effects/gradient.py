@@ -112,7 +112,7 @@ class GradientEffect(Effect):
             segment[:, 1] = self._ease(segment_len, color_1[1], color_2[1])
             segment[:, 2] = self._ease(segment_len, color_1[2], color_2[2])
 
-        self._gradient_curve = gradient.T
+        self._gradient_curve = gradient
 
     def _assert_gradient(self):
         if (
@@ -150,9 +150,7 @@ class GradientEffect(Effect):
         #        np.dot(self.rgb_list[1], polynomial_array),
         #        np.dot(self.rgb_list[2], polynomial_array))
 
-        return np.hstack(
-            self._gradient_curve[:, int((self.pixel_count - 1) * point)]
-        )
+        return self._gradient_curve[int((self.pixel_count - 1) * point)]
 
     def config_updated(self, config):
         """Invalidate the gradient"""
@@ -162,7 +160,7 @@ class GradientEffect(Effect):
         self._assert_gradient()
 
         # Apply and roll the gradient if necessary
-        output = (self._gradient_curve[:][::1] * y).T
+        output = self._gradient_curve * y
         self._roll_gradient()
 
         return output
