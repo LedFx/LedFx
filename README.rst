@@ -31,6 +31,8 @@ https://user-images.githubusercontent.com/32398028/144686069-0f818d56-df66-4846-
 
 https://user-images.githubusercontent.com/32398028/144686116-45b4b4f9-6f4d-4dd8-9caf-26e58fc2357a.mov
 
+https://user-images.githubusercontent.com/32398028/144686803-110c7124-782c-4f39-af90-68e1133309fa.mp4
+
 📑 Quick start guide and documentation📖
 ------------------------------------------
 Windows users can use the installer from the LedFx website: https://ledfx.app/download/
