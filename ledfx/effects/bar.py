@@ -27,6 +27,18 @@ class BarAudioEffect(AudioReactiveEffect, GradientEffect):
                 description="Amount of color change per beat",
                 default=0.125,
             ): vol.All(vol.Coerce(float), vol.Range(min=0.0625, max=0.5)),
+            vol.Optional(
+                "beat_skip",
+                description="Skips odd or even beats",
+                default="none",
+            ): vol.In(list(["none", "odds", "even"])),
+            vol.Optional(
+                "skip_every",
+                description="If skipping beats, skip every",
+                default=1,
+            ): vol.In(
+                list([1, 2])
+            ),  # if add 4, to skip every bar, a bit of extra work is required in audio.py
         }
     )
 
@@ -36,11 +48,13 @@ class BarAudioEffect(AudioReactiveEffect, GradientEffect):
         self.phase = 0
         self.color_idx = 0
         self.bar_len = 0.3
+        self.beat_count = 0
 
     def audio_data_updated(self, data):
         # Run linear beat oscillator through easing method
         self.beat_oscillator = data.beat_oscillator()
         self.beat_now = data.bpm_beat_now()
+        self.beat_count = data.beat_counter
 
         # Colour change and phase
         if self.beat_now:
@@ -88,6 +102,15 @@ class BarAudioEffect(AudioReactiveEffect, GradientEffect):
 
         # Construct the bar
         color = self.get_gradient_color(self.color_idx)
+        if self._config["beat_skip"] != "none" and (
+            (
+                (self.beat_count == 0 or self.beat_count == 1)
+                if (self._config["skip_every"] == 2)
+                else not self.beat_count % 2
+            )
+            == (self._config["beat_skip"] == "even")
+        ):
+            color = np.array([0, 0, 0])
         p = np.zeros(np.shape(self.pixels))
         p[
             int(self.pixel_count * bar_start) : int(
