@@ -93,9 +93,9 @@ class HSVEffect(GradientEffect):
         pixels = self.output
 
         # Convert hues to gradient indexes
-        h = (h * self.pixel_count).astype(int)
-        h[h >= self.pixel_count] = self.pixel_count - 1
-        h[h < 0] = 0
+        h %= 1
+        h *= self.pixel_count - 1
+        h = h.astype(int)
         # Grab the colors from the gradient
         pixels[:] = self._gradient_curve[h]
         # Apply saturation to colors
