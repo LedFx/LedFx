@@ -107,7 +107,9 @@ def _gaussian_kernel1d(sigma, order, array_len):
     # Choose a radius for the filter kernel large enough to include all significant elements. Using
     # a radius of 4 standard deviations (rounded to int) will only truncate tail values that are of
     # the order of 1e-5 or smaller. For very small sigma values, just use a minimal radius.
-    radius = min(int((array_len - 1) / 2), max(1, int(round(4.0 * sigma))))
+    radius = max(1, int(round(4.0 * sigma)))
+    radius = min(int((array_len - 1) / 2), radius)
+    radius = max(radius, 1)
 
     if order < 0:
         raise ValueError("Order must non-negative")
