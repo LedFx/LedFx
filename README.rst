@@ -1,20 +1,24 @@
 =====================================================
-   Welcome to LedFx ✨ *-Making music come alive!*
+   Welcome to LedFx ✨ *- Making music come alive!*
 =====================================================
 |Build Status| |License| |Build Status Docs| |Discord|
 |Contributor Covenant|
 
-.. image:: https://i.imgur.com/SFWfhFr.png
+.. image:: https://github.com/LedFx/LedFx/blob/b8e68beaa215d4308c74d0c7d657556ac894b707/icons/banner.png
 
 LedFx website: https://ledfx.app/
+----------------
 
 What is LedFx?
 ----------------
 
-What LedFx offers is the ability to take audio input, and instantaneously processes the audio into realtime light show to multiple LED strips/matrix.
-No need to spend hours on end to program one song to program your LEDs, as LedFx will do this all for you!
+**Music to Light!**
 
-LedFx real-time LED strip music visualization effect controller using is a network based devices (ESP8266/ESP32/Raspberry Pi 4) with support for advanced real-time audio effects! LedFx can control multiple devices and works great with cheap ESP8266/ESP32 nodes allowing for cost effective synchronized effects across your entire house!
+LedFx instantaneously transforms audio input into a realtime light show.
+No need to spend hours on syncing your LEDs to music - LedFx will do this all for you!
+
+LedFx is a real-time music visualization program that streams audio reactive effects to networked LED strips.
+LedFx can control multiple devices and works great with cheap ESP8266/ESP32 nodes, allowing for cost effective synchronized effects across your entire house!
 
 Demos
 -------
