@@ -23,9 +23,13 @@ LedFx can control multiple devices and works great with cheap ESP8266/ESP32 node
 Demos
 -------
 
-We are actively adding and perfecting the effects, but here is a quick demo of LedFx several effects synced across many ESP8266 devices:
+We are actively adding and perfecting the effects. Here are some of our favourites!
 
 https://user-images.githubusercontent.com/32398028/144685437-4d9224ef-3e5f-4bf4-a754-7aac6dbf1d25.mp4
+
+https://user-images.githubusercontent.com/32398028/144686069-0f818d56-df66-4846-a849-c2f046e83fcf.mp4
+
+https://user-images.githubusercontent.com/32398028/144686116-45b4b4f9-6f4d-4dd8-9caf-26e58fc2357a.mov
 
 📑 Quick start guide and documentation📖
 ------------------------------------------
