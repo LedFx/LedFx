@@ -7,7 +7,7 @@
 .. image:: https://github.com/LedFx/LedFx/blob/b8e68beaa215d4308c74d0c7d657556ac894b707/icons/banner.png
 
 LedFx website: https://ledfx.app/
-----------------
+----------------------------------
 
 What is LedFx?
 ----------------
