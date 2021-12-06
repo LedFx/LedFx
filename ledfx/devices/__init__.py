@@ -459,7 +459,11 @@ class Devices(RegistryLoader):
         if "ip_address" in device_config.keys():
 
             for existing_device in self._ledfx.devices.values():
-                if "ip_address" in existing_device.config.keys():
+                if (
+                    "ip_address" in existing_device.config.keys()
+                    and existing_device.config["ip_address"]
+                    == device_config["ip_address"]
+                ):
                     if device_type == "e131":
                         # check the universes for e131, it might still be okay at a shared ip_address
                         # eg. for multi output controllers
