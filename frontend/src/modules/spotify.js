@@ -7,7 +7,9 @@ const ACTION_ROOT = 'spotify';
 export const authFinished = createAction(`${ACTION_ROOT}/AUTH_FINISHED`);
 export const authRefreshed = createAction(`${ACTION_ROOT}/AUTH_REFRESHED`);
 export const playerStateUpdated = createAction(`${ACTION_ROOT}/PLAYER_STATE_UPDATED`);
-export const audioFeaturesStateUpdated = createAction(`${ACTION_ROOT}/PLAYER_AUDIOFEATURES_UPDATED`);
+export const audioFeaturesStateUpdated = createAction(
+    `${ACTION_ROOT}/PLAYER_AUDIOFEATURES_UPDATED`
+);
 export const cookiesChecked = createAction(`${ACTION_ROOT}/COOKIES_CHECKED`);
 export const logoutAuthUpdated = createAction(`${ACTION_ROOT}/LOGOUT_UPDATED`);
 
@@ -43,18 +45,19 @@ export default handleActions(
                 refreshToken: refreshToken,
             };
         },
-        [audioFeaturesStateUpdated]: (state, { payload, payload: { audioFeatures} }) => {
+        [audioFeaturesStateUpdated]: (state, { payload, payload: { audioFeatures } }) => {
             return {
                 ...state,
                 audioFeatures: payload,
             };
         },
-        [playerStateUpdated]: (state, { payload, payload: { playerState} }) => {
+        [playerStateUpdated]: (state, { payload, payload: { playerState } }) => {
             return {
                 ...state,
                 playerState: payload,
             };
         },
+
         [logoutAuthUpdated]: (
             state,
             { payload, payload: { logout, accessToken, refreshToken } }
@@ -120,10 +123,19 @@ export function logoutAuth() {
 }
 
 export function updatePlayerState(playerState) {
-    return dispatch => {
+    return async dispatch => {
         try {
+            const cookies = new Cookies();
+            const access_token = cookies.get('access_token');
+
+            const audioFeatures = await spotifyProxies.getTrackFeatures(
+                playerState.track_window.current_track.id,
+                access_token
+            );
+
             dispatch(playerStateUpdated(playerState));
-            //console.log("ID for audiofeatures", playerState.track_window.current_track.id);
+            dispatch(audioFeaturesStateUpdated(audioFeatures));
+            //console.log('ID for audiofeatures', playerState.track_window.current_track.id);
         } catch (error) {
             console.log(error);
         }
@@ -133,7 +145,8 @@ export function updatePlayerState(playerState) {
 export function updateAudioFeatures(audioFeatures) {
     return dispatch => {
         try {
-            dispatch(audioFeaturesStateUpdated(audioFeatures));console.log("Audiofeatures", audioFeatures);
+            dispatch(audioFeaturesStateUpdated(audioFeatures));
+            console.log('Audiofeatures', audioFeatures);
         } catch (error) {
             console.log(error);
         }

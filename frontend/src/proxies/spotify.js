@@ -100,3 +100,16 @@ export async function addTrigger(trigger) {
         return 'Error';
     }
 }
+
+export async function getTrackFeatures(id, token) {
+    const res = await axios.get(`https://api.spotify.com/v1/audio-features/${id}`, {
+        headers: {
+            Authorization: `Bearer ${token}`,
+        },
+    });
+    if (res.status == 200) {
+        return res.data;
+    } else {
+        return 'Error';
+    }
+}

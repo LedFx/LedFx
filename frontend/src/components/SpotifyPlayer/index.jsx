@@ -32,7 +32,32 @@ import Slider from '@material-ui/core/Slider';
 import { ToastContainer, toast } from 'react-toastify';
 import RadarChart from 'components/SpotifyPlayer/RadarChart';
 
-//import uniqBy from 'lodash/uniqBy';
+const data = {
+    datasets: [
+        {
+            label: 'First Dataset',
+            data: [65, 59, 90, 81, 56, 55, 40],
+            fill: true,
+            backgroundColor: 'rgba(255, 99, 132, 0.2)',
+            borderColor: 'rgb(255, 99, 132)',
+            pointBackgroundColor: 'rgb(255, 99, 132)',
+            pointBorderColor: '#fff',
+            pointHoverBackgroundColor: '#fff',
+            pointHoverBorderColor: 'rgb(255, 99, 132)',
+        },
+        {
+            label: 'Second Dataset',
+            data: [28, 48, 40, 19, 96, 27, 100],
+            fill: true,
+            backgroundColor: 'rgba(54, 162, 235, 0.2)',
+            borderColor: 'rgb(54, 162, 235)',
+            pointBackgroundColor: 'rgb(54, 162, 235)',
+            pointBorderColor: '#fff',
+            pointHoverBackgroundColor: '#fff',
+            pointHoverBorderColor: 'rgb(54, 162, 235)',
+        },
+    ],
+};
 
 const styles = theme => ({
     appBar: {
@@ -193,8 +218,8 @@ class SpotifyPlayer extends React.Component {
         return minutes + ':' + seconds;
     }
 
-    activateSceneHandler = sceneId => {
-        this.props.activateScene(sceneId);
+    activateSceneHandler = sceneName => {
+        this.props.activateScene(sceneName);
     };
 
     componentDidMount() {
@@ -234,7 +259,7 @@ class SpotifyPlayer extends React.Component {
                                     currentTime === temp1[key][2] &&
                                     currentSongName === temp1[key][1]
                                 ) {
-                                    activateSceneHandlerTemp(sceneId);
+                                    activateSceneHandlerTemp(sceneName);
                                     console.log('Matched');
                                 }
                             }
@@ -248,7 +273,7 @@ class SpotifyPlayer extends React.Component {
     }
 
     render() {
-        const { playerState, classes, scenes } = this.props;
+        const { playerState, classes, scenes, audioFeatures } = this.props;
 
         return Object.keys(playerState).length == 0 ? (
             <Link target="_blank" href="https://support.spotify.com/us/article/spotify-connect/">
@@ -408,12 +433,6 @@ class SpotifyPlayer extends React.Component {
                         </Grid>
                         <Grid container item xs={12} justify="center" align="center">
                             <div style={{ display: 'flex', alignItems: 'center' }}>
-                                {/*
-                            RadarChart
-                            chartValues={playerState.chartValues}
-                            chartData={playerState.chartData}
-                            />
-                            */}
                                 <FormControlLabel
                                     control={
                                         <Checkbox
@@ -456,6 +475,11 @@ class SpotifyPlayer extends React.Component {
                             </Grid>
                         </Grid>
                     </Grid>
+                    <RadarChart
+                        chartData={data}
+                        chartValues={audioFeatures}
+                        paused={playerState.paused}
+                    />
                 </Grid>
                 <ToastContainer />
             </AppBar>
@@ -466,6 +490,7 @@ class SpotifyPlayer extends React.Component {
 export default connect(
     state => ({
         playerState: state.spotify.playerState,
+        audioFeatures: state.spotify.audioFeatures,
         accessToken: state.spotify.accessToken,
         scenes: state.scenes.list,
         integrations: state.integrations.list.spotify,
