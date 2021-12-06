@@ -7,9 +7,7 @@ const ACTION_ROOT = 'spotify';
 export const authFinished = createAction(`${ACTION_ROOT}/AUTH_FINISHED`);
 export const authRefreshed = createAction(`${ACTION_ROOT}/AUTH_REFRESHED`);
 export const playerStateUpdated = createAction(`${ACTION_ROOT}/PLAYER_STATE_UPDATED`);
-export const audioFeaturesStateUpdated = createAction(
-    `${ACTION_ROOT}/PLAYER_AUDIOFEATURES_UPDATED`
-);
+export const audioFeaturesStateUpdated = createAction(`${ACTION_ROOT}/PLAYER_AUDIOFEATURES_UPDATED`);
 export const cookiesChecked = createAction(`${ACTION_ROOT}/COOKIES_CHECKED`);
 export const logoutAuthUpdated = createAction(`${ACTION_ROOT}/LOGOUT_UPDATED`);
 

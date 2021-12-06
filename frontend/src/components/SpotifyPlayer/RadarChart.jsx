@@ -38,7 +38,7 @@ export default function RadarChart(props) {
                 props.chartValues.danceability,
                 props.chartValues.valence,
                 props.chartValues.instrumentalness,
-                props.chartValues.loudness,
+                (props.chartValues.loudness*-1/11)
             ]);
         }
     }, [props]);
@@ -80,8 +80,8 @@ export default function RadarChart(props) {
                     return '';
                 },
                 backdropColor: 'rgba(0, 0, 0, 0)',
-                min: -10,
-                max: 10,
+                min: -.5,
+                max: 1,
             },
             pointLabels: {
                 fontColor: 'black',
