@@ -1,7 +1,6 @@
 import asyncio
 import logging
 import socket
-import time
 from abc import abstractmethod
 from functools import cached_property
 
@@ -447,11 +446,7 @@ class Devices(RegistryLoader):
             for device in self.values()
             if hasattr(device, "async_initialize")
         ]
-        startup = time.time()
         results = await asyncio.gather(*tasks, return_exceptions=True)
-        _LOGGER.info(
-            f"Device initialization took {time.time() - startup} seconds"
-        )
         for result in results:
             if type(result) is ValueError:
                 _LOGGER.warning(result)
@@ -488,7 +483,7 @@ class Devices(RegistryLoader):
 
             led_info = wled_config["leds"]
             # If we've found the device via WLED scan, it won't have a custom name from the frontend
-            # However if it's "WLED" (i.e, Default) then we will just add a random number after it to make it unique
+            # However if it's "WLED" (i.e, Default) then we will name the device exactly how WLED does, by using the second half of it's MAC address
             if (
                 "name" not in device_config.keys()
                 or device_config["name"] is None
