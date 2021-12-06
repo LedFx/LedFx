@@ -29,7 +29,7 @@ class OpenPixelControl(NetworkedDevice):
 
     def activate(self):
         self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self._sock.setblocking(True)
+        self._sock.setblocking(False)
         _LOGGER.info(
             f"Open Pixel Control sender for {self.config['name']} started."
         )
