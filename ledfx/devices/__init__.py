@@ -336,7 +336,7 @@ class UDPDevice(NetworkedDevice):
 
     def activate(self):
         self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self._sock.setblocking(True)
+        self._sock.setblocking(False)
         _LOGGER.info(
             f"{self._device_type} sender for {self.config['name']} started."
         )
