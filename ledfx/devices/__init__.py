@@ -521,8 +521,18 @@ class Devices(RegistryLoader):
             wled_config = await wled.get_config()
 
             led_info = wled_config["leds"]
-            wled_name = wled_config["name"]
-
+            # If we've found the device via WLED scan, it won't have a custom name from the frontend
+            # However if it's "WLED" (i.e, Default) then we will name the device exactly how WLED does, by using the second half of it's MAC address
+            # This allows us to respect the users choice of names if adding a WLED device via frontend
+            # I turned black off as this logic is clearer on one line
+            # fmt: off
+            if "name" in device_config.keys() and device_config["name"] is not None:
+                wled_name = device_config["name"]
+            elif wled_config["name"] == "WLED":
+                wled_name = f"{wled_config['name']}-{wled_config['mac'][6:]}".upper()
+            else:
+                wled_name = wled_config['name']
+            # fmt: on
             wled_count = led_info["count"]
             wled_rgbmode = led_info["rgbw"]
 
