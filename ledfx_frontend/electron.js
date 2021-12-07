@@ -152,7 +152,7 @@ app.whenReady().then(async () => {
             return
         }
         if (parameters === 'restart-client') {
-            app.relaunch(); 
+            app.relaunch();
             app.exit();
             return
         }
@@ -173,7 +173,7 @@ app.whenReady().then(async () => {
 // for applications and their menu bar to stay active until the user quits
 // explicitly with Cmd + Q.
 app.on('window-all-closed', () => {
-    if (process.platform !== 'darwin') {        
+    if (process.platform !== 'darwin') {
         if (subpy !== null) {
             subpy.kill("SIGINT");
         }
