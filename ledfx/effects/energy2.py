@@ -8,7 +8,7 @@ from ledfx.effects.hsv_effect import HSVEffect
 class Energy2(AudioReactiveEffect, HSVEffect):
 
     NAME = "Energy 2"
-    CATEGORY = "2.0"
+    CATEGORY = "Atmospheric"
 
     CONFIG_SCHEMA = vol.Schema(
         {

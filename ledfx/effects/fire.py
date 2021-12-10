@@ -10,7 +10,7 @@ from ledfx.effects.hsv_effect import HSVEffect
 class Fire(AudioReactiveEffect, HSVEffect):
 
     NAME = "Fire"
-    CATEGORY = "2.0"
+    CATEGORY = "Atmospheric"
 
     CONFIG_SCHEMA = vol.Schema(
         {

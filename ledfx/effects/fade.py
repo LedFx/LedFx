@@ -11,7 +11,7 @@ class FadeEffect(TemporalEffect, GradientEffect):
     """
 
     NAME = "Fade"
-    CATEGORY = "BASIC"
+    CATEGORY = "Non-Reactive"
 
     CONFIG_SCHEMA = vol.Schema(
         {

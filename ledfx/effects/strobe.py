@@ -15,8 +15,8 @@ class Strobe(AudioReactiveEffect, GradientEffect):
         "1/32 (⊙▃⊙ )": 32,
     }
 
-    NAME = "Strobe"
-    CATEGORY = "1.0"
+    NAME = "BPM Strobe"
+    CATEGORY = "BPM"
 
     CONFIG_SCHEMA = vol.Schema(
         {

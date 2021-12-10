@@ -8,7 +8,7 @@ from ledfx.effects.gradient import GradientEffect
 class BlocksAudioEffect(AudioReactiveEffect, GradientEffect):
 
     NAME = "Blocks"
-    CATEGORY = "1.0"
+    CATEGORY = "2D"
 
     CONFIG_SCHEMA = vol.Schema(
         {

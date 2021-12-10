@@ -17,6 +17,7 @@ class DummyEffect:
 
     config = vol.Schema({})
     _active = True
+    is_active = _active
     NAME = ""
 
     def __init__(self, pixel_count):

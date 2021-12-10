@@ -8,7 +8,7 @@ from ledfx.effects.hsv_effect import HSVEffect
 class BlockReflections(AudioReactiveEffect, HSVEffect):
 
     NAME = "Block Reflections"
-    CATEGORY = "2.0"
+    CATEGORY = "Atmospheric"
 
     CONFIG_SCHEMA = vol.Schema(
         {

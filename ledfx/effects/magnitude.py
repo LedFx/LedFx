@@ -7,7 +7,7 @@ from ledfx.effects.gradient import GradientEffect
 class MagnitudeAudioEffect(AudioReactiveEffect, GradientEffect):
 
     NAME = "Magnitude"
-    CATEGORY = "1.0"
+    CATEGORY = "Classic"
 
     _power_funcs = {
         "Beat": "beat_power",

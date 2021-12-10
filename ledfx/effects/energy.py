@@ -8,7 +8,7 @@ from ledfx.effects.audio import AudioReactiveEffect
 class EnergyAudioEffect(AudioReactiveEffect):
 
     NAME = "Energy"
-    CATEGORY = "1.0"
+    CATEGORY = "Classic"
 
     CONFIG_SCHEMA = vol.Schema(
         {

@@ -11,7 +11,7 @@ from ledfx.effects.droplets import DROPLET_NAMES, load_droplet
 class RainAudioEffect(AudioReactiveEffect):
 
     NAME = "Rain"
-    CATEGORY = "1.0"
+    CATEGORY = "Classic"
 
     CONFIG_SCHEMA = vol.Schema(
         {

@@ -12,8 +12,8 @@ from ledfx.utils import empty_queue
 
 class Strobe(AudioReactiveEffect, GradientEffect):
 
-    NAME = "Real Strobe"
-    CATEGORY = "1.0"
+    NAME = "Strobe"
+    CATEGORY = "Classic"
 
     CONFIG_SCHEMA = vol.Schema(
         {
@@ -108,7 +108,6 @@ class Strobe(AudioReactiveEffect, GradientEffect):
         self.strobe_overlay *= self.strobe_decay_rate
         self.bass_strobe_overlay *= self.bass_strobe_decay_rate
         self.pixels = pixels
-        return self.pixels
 
     def audio_data_updated(self, data):
 
