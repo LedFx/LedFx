@@ -74,9 +74,9 @@ class GradientEffect(Effect):
             gradient = RGB(0, 0, 0)
 
         if isinstance(gradient, RGB):
-            self._gradient_curve = (
-                np.tile(gradient, (gradient_length, 1)).astype(float).T
-            )
+            self._gradient_curve = np.tile(
+                gradient, (gradient_length, 1)
+            ).astype(float)
             return
 
         gradient_colors = gradient.colors
@@ -144,12 +144,6 @@ class GradientEffect(Effect):
     def get_gradient_color(self, point):
         self._assert_gradient()
 
-        # n_colors = len(self.rgb_list[0])
-        # polynomial_array = np.array([self._bernstein_poly(i, n_colors-1, point) for i in range(0, n_colors)])
-        # return (np.dot(self.rgb_list[0], polynomial_array),
-        #        np.dot(self.rgb_list[1], polynomial_array),
-        #        np.dot(self.rgb_list[2], polynomial_array))
-
         return self._gradient_curve[int((self.pixel_count - 1) * point)]
 
     def config_updated(self, config):
@@ -159,8 +153,12 @@ class GradientEffect(Effect):
     def apply_gradient(self, y):
         self._assert_gradient()
 
+        if isinstance(y, np.ndarray) and y.ndim == 1:
+            output = self._gradient_curve * y.reshape((-1, 1))
+        else:
+            output = self._gradient_curve * y
+
         # Apply and roll the gradient if necessary
-        output = self._gradient_curve * y
         self._roll_gradient()
 
         return output
