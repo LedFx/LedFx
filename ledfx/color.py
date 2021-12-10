@@ -60,14 +60,14 @@ def parse_color(color: (str, list, tuple)) -> RGB:
         # Otherwise, it needs to be a string to continue
         if not isinstance(color, str):
             raise ValueError
+        # Try to find the color in the pre-defined dict
+        if color in LEDFX_COLORS:
+            color = LEDFX_COLORS[color]
         # Try to parse it as a HEX (with or without alpha)
         if color.startswith("#"):
             color = color.strip("#")
             # return RGB(*int(color, 16).to_bytes(len(color) // 2, "big"))
             return RGB(*int(color, 16).to_bytes(3, "big"))
-        # Try to find the color in the pre-defined dict
-        if color in LEDFX_COLORS:
-            return LEDFX_COLORS[color]
         # Failing that, try to parse it using ImageColor
         return RGB(*ImageColor.getrgb(color))
     except (ValueError, AssertionError):
