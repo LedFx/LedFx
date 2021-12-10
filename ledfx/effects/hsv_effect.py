@@ -79,7 +79,7 @@ class HSVEffect(GradientEffect):
 
     def on_activate(self, pixel_count):
         self.hsv_array = np.zeros((pixel_count, 3))
-        self.output = np.zeros((pixel_count, 3))
+        # self.output = np.zeros((pixel_count, 3))
 
     def render(self):
         # update the timestep, converting ns to s
@@ -87,10 +87,12 @@ class HSVEffect(GradientEffect):
         self._assert_gradient()
         self.render_hsv()
 
-        h = self.hsv_array[:, 0]
-        s = self.hsv_array[:, 1].reshape(-1, 1)
-        v = self.hsv_array[:, 2].reshape(-1, 1)
-        pixels = self.output
+        hsv = np.copy(self.hsv_array)
+
+        h = hsv[:, 0]
+        s = hsv[:, 1].reshape(-1, 1)
+        v = hsv[:, 2].reshape(-1, 1)
+        pixels = self.pixels
 
         # Convert hues to gradient indexes
         h %= 1
@@ -102,7 +104,6 @@ class HSVEffect(GradientEffect):
         pixels += (np.max(pixels, axis=1).reshape(-1, 1) - pixels) * (1 - s)
         # Apply value (brightness) to colors
         pixels *= v
-        self.pixels = pixels
 
     def render_hsv(self):
         """
