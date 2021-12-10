@@ -478,7 +478,7 @@ class SpotifyPlayer extends React.Component {
                     <RadarChart
                         chartData={data}
                         chartValues={audioFeatures}
-                        paused={playerState.paused}
+                        loading={playerState.loading}
                     />
                 </Grid>
                 <ToastContainer />

@@ -31,14 +31,14 @@ export default function RadarChart(props) {
     const [chartData, setChartData] = useState(props.chartData || []);
 
     useEffect(() => {
-        if (props.paused) {
+        if (props.loading) {
             setChartData(props.chartData);
             setChartValues([
                 props.chartValues.energy,
                 props.chartValues.danceability,
                 props.chartValues.valence,
                 props.chartValues.instrumentalness,
-                (props.chartValues.loudness*-1/11)
+                (props.chartValues.loudness*-1/13)
             ]);
         }
     }, [props]);

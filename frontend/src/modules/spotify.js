@@ -132,10 +132,20 @@ export function updatePlayerState(playerState) {
             );
 
             dispatch(playerStateUpdated(playerState));
-            dispatch(audioFeaturesStateUpdated(audioFeatures));
             //console.log('ID for audiofeatures', playerState.track_window.current_track.id);
         } catch (error) {
             console.log(error);
+        }
+        if (playerState.loading) {
+            const cookies = new Cookies();
+            const access_token = cookies.get('access_token');
+
+            const audioFeatures = await spotifyProxies.getTrackFeatures(
+                playerState.track_window.current_track.id,
+                access_token
+            );
+            dispatch(audioFeaturesStateUpdated(audioFeatures));
+            console.log('loading');
         }
     };
 }
