@@ -5,7 +5,7 @@ import socket
 import paho.mqtt.client as mqtt
 import voluptuous as vol
 
-from ledfx.color import COLORS, parse_color
+from ledfx.color import parse_color
 from ledfx.config import save_config
 from ledfx.consts import PROJECT_VERSION
 from ledfx.effects.audio import AudioInputSource
@@ -395,7 +395,7 @@ class MQTT_HASS(Integration):
                         "json_attributes_topic": "~/meta",
                         "icon": icon,
                         "effect": True,
-                        "effect_list": list(COLORS.keys()),
+                        # "effect_list": list(COLORS.keys()),
                         # "effect_list": list(self._ledfx.effects.keys()),
                         "device": hass_device,
                     }
