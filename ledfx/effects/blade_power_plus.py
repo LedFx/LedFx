@@ -6,7 +6,6 @@ import voluptuous as vol
 
 from ledfx.color import validate_color
 from ledfx.effects.audio import AudioReactiveEffect
-from ledfx.effects.gradient import GradientEffect
 from ledfx.effects.hsv_effect import HSVEffect
 
 RGB = namedtuple("RGB", "red, green, blue")
@@ -15,7 +14,7 @@ hsv = namedtuple("hsv", "hue, saturation, value")
 _LOGGER = logging.getLogger(__name__)
 
 
-class BladePowerPlus(AudioReactiveEffect, HSVEffect, GradientEffect):
+class BladePowerPlus(AudioReactiveEffect, HSVEffect):
 
     NAME = "Blade Power+"
     CATEGORY = "2.0"

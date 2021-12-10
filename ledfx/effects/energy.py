@@ -1,7 +1,7 @@
 import numpy as np
 import voluptuous as vol
 
-from ledfx.color import COLORS, parse_color, validate_color
+from ledfx.color import parse_color, validate_color
 from ledfx.effects.audio import AudioReactiveEffect
 
 
@@ -104,14 +104,14 @@ class EnergyAudioEffect(AudioReactiveEffect):
             if self.beat_now:
                 # Cycle between 0,1,2 for lows, mids and highs
                 self.color_cycler = (self.color_cycler + 1) % 3
-                color = np.random.choice(tuple(COLORS.keys()))
+                color = np.random.choice(tuple(self._ledfx.colors.values()))
 
                 if self.color_cycler == 0:
-                    self.lows_colour = parse_color(color)
+                    self.lows_colour = color
                 elif self.color_cycler == 1:
-                    self.mids_colour = parse_color(color)
+                    self.mids_colour = color
                 elif self.color_cycler == 2:
-                    self.high_colour = parse_color(color)
+                    self.high_colour = color
 
         # Build the new energy profile based on the mids, highs and lows setting
         # the colors as red, green, and blue channel respectively

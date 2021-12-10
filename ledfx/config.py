@@ -88,6 +88,8 @@ CORE_CONFIG_SCHEMA = vol.Schema(
             description="Changes to any virtual's transitions apply to all other virtuals",
             default=True,
         ): bool,
+        vol.Optional("user_colors", default={}): dict,
+        vol.Optional("user_gradients", default={}): dict,
         vol.Optional("scan_on_startup", default=False): bool,
         vol.Optional("wled_preferences", default={}): dict,
         vol.Optional(
