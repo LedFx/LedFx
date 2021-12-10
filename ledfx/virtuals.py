@@ -353,7 +353,9 @@ class Virtual:
         while True:
             if not self._active:
                 break
-            if self._active_effect._active:
+            if self._active_effect.is_active and hasattr(
+                self._active_effect, "pixels"
+            ):
                 # self.assembled_frame = await self._ledfx.loop.run_in_executor(
                 #     self._ledfx.thread_executor, self.assemble_frame
                 # )
@@ -389,6 +391,8 @@ class Virtual:
         # This part handles blending two effects together
         if (
             self._transition_effect is not None
+            and self._transition_effect.is_active
+            and hasattr(self._transition_effect, "pixels")
             and self._config["transition_mode"] != "None"
             and self._config["transition_time"] > 0
         ):
