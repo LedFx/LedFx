@@ -30,12 +30,8 @@ class SpectrumAudioEffect(AudioReactiveEffect):
         y = self.melbank(filtered=False, size=self.pixel_count)
         if self._prev_y is None:
             self._prev_y = y
-        self.r = self.melbank(filtered=True, size=self.pixel_count)
-        self.g = np.abs(y - self._prev_y)
-        self.b = self._b_filter.update(y)
+        self.pixels[:, 0] = self.melbank(filtered=True, size=self.pixel_count)
+        self.pixels[:, 1] = np.abs(y - self._prev_y)
+        self.pixels[:, 2] = self._b_filter.update(y)
 
         self._prev_y = y
-
-    def render(self):
-        output = np.array([self.r, self.g, self.b]) * 255
-        return output.T

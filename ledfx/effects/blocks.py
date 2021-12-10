@@ -38,4 +38,4 @@ class BlocksAudioEffect(AudioReactiveEffect, GradientEffect):
                 out_split[i], (out_split[i].max() * color)
             )
 
-        return np.hstack(out_split).T
+        self.pixels = np.hstack(out_split).T

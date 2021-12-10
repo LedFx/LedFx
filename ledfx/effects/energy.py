@@ -92,10 +92,6 @@ class EnergyAudioEffect(AudioReactiveEffect):
             int(self._multiplier * self.pixel_count * np.mean(i))
             for i in self.melbank_thirds(filtered=False)
         )
-
-        # self.lows_idx = int(self.pixel_count * (data.bass_power() + data.beat_power()))
-        # self.mids_idx = int(self.pixel_count * data.mids_power())
-        # self.highs_idx = int(self.pixel_count * data.high_power())
         self.beat_now = data.volume_beat_now()
 
     def render(self):
@@ -126,4 +122,4 @@ class EnergyAudioEffect(AudioReactiveEffect):
             self.p[: self.highs_idx] = self.high_colour
 
         # Filter and update the pixel values
-        return self._p_filter.update(self.p)
+        self.pixels = self._p_filter.update(self.p)

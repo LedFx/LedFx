@@ -114,7 +114,7 @@ class RainAudioEffect(AudioReactiveEffect):
             ] += coloured_frame
 
         np.clip(overlaid_frames, 0, 255, out=overlaid_frames)
-        return overlaid_frames[
+        self.pixels = overlaid_frames[
             :,
             self.frame_side_lengths : self.frame_side_lengths
             + self.pixel_count,

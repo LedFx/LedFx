@@ -78,8 +78,5 @@ class MultiBarAudioEffect(AudioReactiveEffect, GradientEffect):
             idx = x
 
         # Construct the array
-        p = np.zeros(np.shape(self.pixels))
-        p[: int(self.pixel_count * idx), :] = color_bkg
-        p[int(self.pixel_count * idx) :, :] = color_fg
-        # Update the pixel values
-        return p
+        self.pixels[: int(self.pixel_count * idx), :] = color_bkg
+        self.pixels[int(self.pixel_count * idx) :, :] = color_fg

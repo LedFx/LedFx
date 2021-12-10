@@ -60,4 +60,4 @@ class BandsAudioEffect(AudioReactiveEffect, GradientEffect):
             elif self._config["align"] == "left":
                 pass
 
-        return np.vstack(out_split)
+        self.pixels = np.vstack(out_split)

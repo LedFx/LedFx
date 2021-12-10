@@ -58,4 +58,4 @@ class EQAudioEffect(AudioReactiveEffect, GradientEffect):
             elif self._config["align"] == "left":
                 pass
 
-        return self.apply_gradient(np.hstack(r_split))
+        self.pixels = self.apply_gradient(np.hstack(r_split))

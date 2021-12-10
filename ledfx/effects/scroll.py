@@ -23,7 +23,7 @@ class ScrollAudioEffect(AudioReactiveEffect):
                 default=True,
             ): bool,
             vol.Optional(
-                "speed", description="Speed of the effect", default=5
+                "speed", description="Speed of the effect", default=3
             ): vol.All(vol.Coerce(int), vol.Range(min=1, max=10)),
             vol.Optional(
                 "decay",
@@ -54,11 +54,9 @@ class ScrollAudioEffect(AudioReactiveEffect):
     )
 
     def on_activate(self, pixel_count):
-        self.output = np.zeros((pixel_count, 3))
         self.intensities = np.zeros(3)
 
     def config_updated(self, config):
-
         # TODO: Determine how buffers based on the pixels should be
         # allocated. Technically there is no guarantee that the effect
         # is bound to a device while the config gets updated. Might need
@@ -74,9 +72,9 @@ class ScrollAudioEffect(AudioReactiveEffect):
             parse_color(self._config["color_high"]), dtype=float
         )
 
-        self.lows_cutoff = self._config["threshold"] / 8
-        self.mids_cutoff = self._config["threshold"] / 4
-        self.high_cutoff = self._config["threshold"] / 3
+        self.lows_cutoff = self._config["threshold"] / 10
+        self.mids_cutoff = self._config["threshold"] / 8
+        self.high_cutoff = self._config["threshold"] / 7
 
     def audio_data_updated(self, data):
         # Divide the melbank into lows, mids and highs
@@ -95,12 +93,9 @@ class ScrollAudioEffect(AudioReactiveEffect):
     def render(self):
         # Roll the effect and apply the decay
         speed = self.config["speed"]
-        self.output[speed:, :] = self.output[:-speed, :]
-        self.output = self.output * self.config["decay"]
+        self.pixels[speed:, :] = self.pixels[:-speed, :]
+        self.pixels *= self.config["decay"]
 
-        self.output[:speed] = self.lows_colour * self.intensities[0]
-        self.output[:speed] += self.mids_colour * self.intensities[1]
-        self.output[:speed] += self.high_colour * self.intensities[2]
-
-        # Set the pixels
-        return self.output
+        self.pixels[:speed] = self.lows_colour * self.intensities[0]
+        self.pixels[:speed] += self.mids_colour * self.intensities[1]
+        self.pixels[:speed] += self.high_colour * self.intensities[2]
