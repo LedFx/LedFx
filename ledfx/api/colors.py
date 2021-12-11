@@ -37,8 +37,8 @@ class ColorEndpoint(RestEndpoint):
 
         data = await request.json()
 
-        colors = data.get("colors")
-        gradients = data.get("gradients")
+        colors = data.get("colors", {})
+        gradients = data.get("gradients", {})
 
         for key in colors:
             del self._ledfx.colors[key]
@@ -67,8 +67,8 @@ class ColorEndpoint(RestEndpoint):
 
         data = await request.json()
 
-        colors = data.get("colors")
-        gradients = data.get("gradients")
+        colors = data.get("colors", {})
+        gradients = data.get("gradients", {})
 
         for key, val in colors.items():
             self._ledfx.colors[key] = val
