@@ -311,7 +311,11 @@ def migrate_config(old_config):
             new_key = old_key.replace("colour", "color")
             if new_key in schema:
                 try:
-                    if old_key == "frequency_range":
+                    if (
+                        old_key == "frequency_range"
+                        and old_config.get(old_key)
+                        not in replacement_frequency_ranges.values()
+                    ):
                         old_config[old_key] = replacement_frequency_ranges[
                             old_config.get(old_key)
                         ]
@@ -324,7 +328,7 @@ def migrate_config(old_config):
                     continue
             else:
                 _LOGGER.warning(
-                    f"Preset for {effect_type} cannot match config item {old_key}. Discarding."
+                    f"Preset for {effect_type} cannot match config item {old_key}. Discarding item from preset."
                 )
                 continue
         return new_config
