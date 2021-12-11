@@ -307,24 +307,24 @@ def migrate_config(old_config):
         # checks each config key against the current schema, discarding any values that dont match
         schema = effects[effect_type].schema().schema
         new_config = {}
-        for key in old_config:
-            key = key.replace("colour", "color")
-            if key in schema:
+        for old_key in old_config:
+            new_key = old_key.replace("colour", "color")
+            if new_key in schema:
                 try:
-                    if key == "frequency_range":
-                        old_config[key] = replacement_frequency_ranges[
-                            old_config.get(key)
+                    if old_key == "frequency_range":
+                        old_config[old_key] = replacement_frequency_ranges[
+                            old_config.get(old_key)
                         ]
-                    schema[key](old_config[key])
-                    new_config[key] = old_config[key]
+                    schema[new_key](old_config[old_key])
+                    new_config[new_key] = old_config[old_key]
                 except (vol.MultipleInvalid, vol.InInvalid, Exception):
                     _LOGGER.warning(
-                        f"Preset for {effect_type} with config item {key} : {old_config[key]} is invalid. Discarding."
+                        f"Preset for {effect_type} with config item {old_key} : {old_config[old_key]} is invalid. Discarding."
                     )
                     continue
             else:
                 _LOGGER.warning(
-                    f"Preset for {effect_type} no longer has config item {key}. Discarding."
+                    f"Preset for {effect_type} cannot match config item {old_key}. Discarding."
                 )
                 continue
         return new_config
