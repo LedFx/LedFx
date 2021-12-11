@@ -308,6 +308,7 @@ def migrate_config(old_config):
         schema = effects[effect_type].schema().schema
         new_config = {}
         for key in old_config:
+            key = key.replace("colour", "color")
             if key in schema:
                 try:
                     if key == "frequency_range":
