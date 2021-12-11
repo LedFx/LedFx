@@ -7,7 +7,7 @@ from ledfx.effects.temporal import TemporalEffect
 
 class FadeEffect(TemporalEffect, GradientEffect):
     """
-    Fades through the colours of a gradient
+    Fades through the colors of a gradient
     """
 
     NAME = "Fade"

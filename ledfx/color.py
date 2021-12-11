@@ -71,7 +71,7 @@ def parse_color(color: (str, list, tuple)) -> RGB:
         # Failing that, try to parse it using ImageColor
         return RGB(*ImageColor.getrgb(color))
     except (ValueError, AssertionError):
-        msg = f"Invalid colour: {color}"
+        msg = f"Invalid color: {color}"
         _LOGGER.error(msg)
         raise ValueError(msg)
 

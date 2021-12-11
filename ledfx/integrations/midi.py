@@ -33,7 +33,7 @@ from ledfx.virtuals import Virtual
 # DIMENSIONALITY 2:
 # input type
 # 0: [virtuals] set effect preset (configurable list of effect presets eg. select effect -> select preset)
-# 1: [effects common] blur, brightness, (bkg_brightness?), gradient, colour
+# 1: [effects common] blur, brightness, (bkg_brightness?), gradient, color
 # 1: [effects specific] {TODO} any ranged value, ordered. difficult to show user what each knob does, maybe omit: each knob would control something different for each effect!
 
 # DIMENSIONALITY 1:
@@ -42,8 +42,8 @@ from ledfx.virtuals import Virtual
 # 0: [virtuals] preview_only
 # 1: [virtuals] transition time, min/max frequency range, max brightness
 # 0: [effects common] flip, mirror
-# 1: [effects common] blur, brightness, (bkg_brightness?), gradient, colour
-# 2: [effects common] gradient, colour (???)
+# 1: [effects common] blur, brightness, (bkg_brightness?), gradient, color
+# 2: [effects common] gradient, color (???)
 # 0: [effects specific] {TODO} any bool value, ordered
 # 1: [effects specific] {TODO} any ranged value, ordered
 
@@ -53,8 +53,8 @@ from ledfx.virtuals import Virtual
 # 0: [global, virtuals] preview_only (blackout)
 # 1: [global, virtuals] transition time, min/max frequency range, max brightness
 # 0: [global, effects common] flip, mirror
-# 1: [global, effects common] blur, brightness, (bkg_brightness?), gradient, colour
-# 2: [global, effects common] gradient, colour (???)
+# 1: [global, effects common] blur, brightness, (bkg_brightness?), gradient, color
+# 2: [global, effects common] gradient, color (???)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -710,7 +710,7 @@ class Driver:
         input type 1 generic  : option key and a lambda to scale midi input to endpoint range
                                 eg. ("blur", <lambda>)
         input type 2 generic  : option key and available choices
-                                eg. ("bg_colour", "red", "green", "purple", ... )
+                                eg. ("bg_color", "red", "green", "purple", ... )
 
 
         """
@@ -852,7 +852,7 @@ class Mapping:
                 region["DIMENSIONALITY"],
                 region["INPUT_TYPE"],
                 region["MIDI_INPUT"],
-                region["LED_COLOUR_RANGE"],
+                region["LED_COLOR_RANGE"],
                 region["LED_STATE_MAPPINGS"],
             )
             for region in mapping["regions"]
@@ -867,7 +867,7 @@ class Region:
         dimensionality: int,
         input_type: int,
         midi_input: dict,
-        led_colour_range: list,
+        led_color_range: list,
         led_state_mappings: list,
     ):
         """
@@ -879,7 +879,7 @@ class Region:
         self.dimensionality = dimensionality
         self.input_type = input_type
         self.midi_input = midi_input
-        self.led_colour_range = led_colour_range
+        self.led_color_range = led_color_range
         self.led_state_mappings = led_state_mappings
         self.has_leds = bool(self.led_state_mappings)
 
@@ -927,30 +927,30 @@ class Region:
 
     def set_led(
         self,
-        state: int,  # colour state, defined in mapping [0 off, 1,2,3 for each state]
+        state: int,  # color state, defined in mapping [0 off, 1,2,3 for each state]
         index: int,  # index of led
     ):
         """
-        returns a message that when sent will set the led to the appropriate colour
+        returns a message that when sent will set the led to the appropriate color
         """
         if not self.has_leds:
             _LOGGER.warning(
-                f"Cannot set LED colour on MIDI region '{self.name}'"
+                f"Cannot set LED color on MIDI region '{self.name}'"
             )
             return
         msg = self._input_positions[index]
         if state == 0:
             msg_type = self.mapping.led_config["led_off"]["msg_type"]
-            msg_colour = self.mapping.led_config["led_off"]["colour_data"]
+            msg_color = self.mapping.led_config["led_off"]["color_data"]
         else:
             msg_type = self.mapping.led_config["led_on"]["msg_type"]
-            msg_colour = self.led_state_mappings[state]
+            msg_color = self.led_state_mappings[state]
 
         if self.has_leds:
             self.led_states[index] = state
 
         return mido.Message(
-            msg_type, channel=msg.channel, note=msg.note, velocity=msg_colour
+            msg_type, channel=msg.channel, note=msg.note, velocity=msg_color
         )
 
     def where(self, msg):

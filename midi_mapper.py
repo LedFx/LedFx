@@ -80,7 +80,7 @@ class Region:
         "CONST_VALUE": None, # optional, str
         "CONST_DATA": None # optional, int
     }
-    LED_COLOUR_RANGE = None # range(min, max)
+    LED_COLOR_RANGE = None # range(min, max)
     LED_STATE_MAPPINGS = None
 
 
@@ -107,7 +107,7 @@ class Region:
             "DIMENSIONALITY" : self.DIMENSIONALITY,
             "INPUT_TYPE" : self.INPUT_TYPE,
             "MIDI_INPUT" : self.MIDI_INPUT,
-            "LED_COLOUR_RANGE" : self.LED_COLOUR_RANGE,
+            "LED_COLOR_RANGE" : self.LED_COLOR_RANGE,
             "LED_STATE_MAPPINGS" : self.LED_STATE_MAPPINGS
         }
 
@@ -463,7 +463,7 @@ def add_region():
         "CONST_VALUE": const_value, # optional, str
         "CONST_DATA": const_data # optional, int
     }
-    region.LED_COLOUR_RANGE = []
+    region.LED_COLOR_RANGE = []
     region.LED_STATE_MAPPINGS = []
 
 
@@ -478,19 +478,19 @@ def add_region():
         )
         continue_input()
         led_on_msg_type = mapping["led_config"]["led_on"]["msg_type"]
-        led_on_colour_value = mapping["led_config"]["led_on"]["colour_value"]
+        led_on_color_value = mapping["led_config"]["led_on"]["color_value"]
         led_off_msg_type = mapping["led_config"]["led_off"]["msg_type"]
-        led_off_colour_data = mapping["led_config"]["led_off"]["colour_data"]
+        led_off_color_data = mapping["led_config"]["led_off"]["color_data"]
         led_on_min_val = int_input(
-            between=PARAM_RANGES[led_on_colour_value],
-            msg=f"What is the {led_on_colour_value} for this region's first colour/state? NOT any number corresponding to LED OFF",
+            between=PARAM_RANGES[led_on_color_value],
+            msg=f"What is the {led_on_color_value} for this region's first color/state? NOT any number corresponding to LED OFF",
         )
         led_on_max_val = int_input(
-            between=PARAM_RANGES[led_on_colour_value],
-            msg=f"What is the {led_on_colour_value} for this region's last colour/state? If your buttons are full RGB, this could be as high as 127.",
+            between=PARAM_RANGES[led_on_color_value],
+            msg=f"What is the {led_on_color_value} for this region's last color/state? If your buttons are full RGB, this could be as high as 127.",
         )
-        led_colour_range = range(led_on_min_val, led_on_max_val)
-        region.LED_COLOUR_RANGE = [led_colour_range.start, led_colour_range.stop] # range(min, max)
+        led_color_range = range(led_on_min_val, led_on_max_val)
+        region.LED_color_RANGE = [led_color_range.start, led_color_range.stop] # range(min, max)
         region.LED_STATE_MAPPINGS = []
 
         print(
@@ -498,31 +498,31 @@ def add_region():
         )
         for i, x in enumerate(INPUT_VISUAL_STATES):
             print(f"{i}. {x}")
-        print(f"You will assign an LED colour (or off) to each.")
+        print(f"You will assign an LED color (or off) to each.")
         continue_input()
 
-        led_states = ["LED OFF", *(f"LED ON, colour # {v}" for v in range(led_on_min_val, led_on_max_val + 1))]
+        led_states = ["LED OFF", *(f"LED ON, color # {v}" for v in range(led_on_min_val, led_on_max_val + 1))]
 
 
         for i, x in enumerate(INPUT_VISUAL_STATES):
             while True:
-                colour = choose_from(
+                color = choose_from(
                     led_states,
                     return_idx=True,
-                    msg=f"Which colour will be used for this input state?\n{i}. {x}",
+                    msg=f"Which color will be used for this input state?\n{i}. {x}",
                 )
-                print(colour)
+                print(color)
                 for msg in region:
                     channel = msg.channel
                     position = getattr(msg, region.MIDI_INPUT["POSITION_VALUE"])
-                    if colour == 0:
-                        led_msg = mido.Message(led_off_msg_type, channel=channel, note=position, velocity=led_off_colour_data)
+                    if color == 0:
+                        led_msg = mido.Message(led_off_msg_type, channel=channel, note=position, velocity=led_off_color_data)
                     else:
-                        led_msg = mido.Message(led_on_msg_type, channel=channel, note=position, velocity=colour)
+                        led_msg = mido.Message(led_on_msg_type, channel=channel, note=position, velocity=color)
                     port.send(led_msg)
-                if yesno_input("Are you happy with this colour? To try a different colour, choose NO"):
+                if yesno_input("Are you happy with this color? To try a different color, choose NO"):
                     break
-            region.LED_STATE_MAPPINGS.append(colour)
+            region.LED_STATE_MAPPINGS.append(color)
     return region
 
 def configure_leds():
@@ -551,7 +551,7 @@ def configure_leds():
         )
         mapping["led_config"] = False
         return False
-    led_colour_value = "velocity"
+    led_color_value = "velocity"
     led_on_msg_type = "note_on"
     led_off_msg_type = choose_from(
         MIDO_MESSAGE_TYPES,
@@ -559,17 +559,17 @@ def configure_leds():
     )
     if led_off_msg_type == "note_on":
         led_off_velocity = int_input(
-            between=PARAM_RANGES[led_colour_value],
-            msg=f"What {led_colour_value} would turn off the LED?",
+            between=PARAM_RANGES[led_color_value],
+            msg=f"What {led_color_value} would turn off the LED?",
         )
     else:
         led_off_velocity = 0
     mapping["led_config"] = {
-        "led_on": {"msg_type": "note_on", "colour_value": led_colour_value},
+        "led_on": {"msg_type": "note_on", "color_value": led_color_value},
         "led_off": {
             "msg_type": led_off_msg_type,
-            "colour_value": led_colour_value,
-            "colour_data": led_off_velocity
+            "color_value": led_color_value,
+            "color_data": led_off_velocity
         },
     }
     return True

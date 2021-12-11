@@ -145,7 +145,7 @@ class MQTT_HASS(Integration):
                 paused_state,
             )
 
-        def publish_single_colour_updated(event):
+        def publish_single_color_updated(event):
             color = parse_color(event.effect_config.get("color"))
             client.publish(
                 f"{self._config['topic']}/light/{event.virtual_id}/state",
@@ -177,7 +177,7 @@ class MQTT_HASS(Integration):
 
         self._listeners.append(
             self._ledfx.events.add_listener(
-                publish_single_colour_updated,
+                publish_single_color_updated,
                 Event.EFFECT_SET,
                 event_filter={"effect_name": "Single Color"},
             )
@@ -540,7 +540,7 @@ class MQTT_HASS(Integration):
             virtual = self._ledfx.virtuals.get(virtualid, None)
             if virtual:
                 # SET VIRTUAL COLOR AND ACTIVE
-                colour = payload.get("effect", "orange")
+                color = payload.get("effect", "orange")
                 color = payload.get("color", None)
 
                 if color is not None:
@@ -553,7 +553,7 @@ class MQTT_HASS(Integration):
                     effect = self._ledfx.effects.create(
                         ledfx=self._ledfx,
                         type="singleColor",
-                        config={"color": colour},
+                        config={"color": color},
                     )
                 try:
                     virtual.set_effect(effect)
@@ -567,7 +567,7 @@ class MQTT_HASS(Integration):
                         item["active"] = virtual.active
                         item["effect"] = {}
                         item["effect"]["type"] = "singleColor"
-                        item["effect"]["config"] = {"color": colour}
+                        item["effect"]["config"] = {"color": color}
                         self._ledfx.config["virtuals"][idx] = item
                         break
 

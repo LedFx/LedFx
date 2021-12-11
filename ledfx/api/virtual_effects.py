@@ -114,14 +114,14 @@ class EffectsEndpoint(RestEndpoint):
                 virtual.active_effect
                 and virtual.active_effect.type == effect_type
             ):
-                # substring search to match any key containing "color" or "colour"
+                # substring search to match any key of color
                 # this handles special cases where we want to update an effect and also trigger
                 # a transition by creating a new effect.
                 if next(
                     (
                         key
                         for key in effect_config.keys()
-                        if "color" or "colour" in key
+                        if "color" in key
                     ),
                     None,
                 ):
