@@ -649,6 +649,9 @@ class UserDefaultCollection(MutableMapping):
             return
         if key in self._user_vals:
             del self._user_vals[key]
+        _LOGGER.info(
+            f"Deleted {self._collection_name.lower().rstrip('s')}: {key}"
+        )
         save_config(
             config=self._ledfx.config,
             config_dir=self._ledfx.config_dir,
@@ -661,6 +664,9 @@ class UserDefaultCollection(MutableMapping):
             )
             return
         self._user_vals[key] = self._validator(value)
+        _LOGGER.info(
+            f"Saved {self._collection_name.lower().rstrip('s')}: {key}"
+        )
         save_config(
             config=self._ledfx.config,
             config_dir=self._ledfx.config_dir,
