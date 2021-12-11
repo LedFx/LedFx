@@ -9,10 +9,8 @@
 LedFx website: https://ledfx.app/
 ----------------------------------
 
-What is LedFx?
-----------------
-
-**Music to Light!**
+✨ Music to Light!
+--------------------
 
 LedFx instantaneously transforms audio input into a realtime light show.
 No need to spend hours on syncing your LEDs to music - LedFx will do this all for you!
