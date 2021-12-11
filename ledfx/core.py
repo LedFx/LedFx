@@ -6,6 +6,14 @@ import warnings
 import webbrowser
 from concurrent.futures import ThreadPoolExecutor
 
+from ledfx.color import (
+    LEDFX_COLORS,
+    LEDFX_GRADIENTS,
+    parse_color,
+    parse_gradient,
+    validate_color,
+    validate_gradient,
+)
 from ledfx.config import get_ssl_certs, load_config, save_config
 from ledfx.devices import Devices
 from ledfx.effects import Effects
@@ -22,6 +30,7 @@ from ledfx.presets import ledfx_presets
 from ledfx.scenes import Scenes
 from ledfx.utils import (
     RollingQueueHandler,
+    UserDefaultCollection,
     async_fire_and_forget,
     currently_frozen,
 )
@@ -221,6 +230,22 @@ class LedFxCore:
         self.virtuals = Virtuals(self)
         self.integrations = Integrations(self)
         self.scenes = Scenes(self)
+        self.colors = UserDefaultCollection(
+            self,
+            "Colors",
+            LEDFX_COLORS,
+            "user_colors",
+            validate_color,
+            parse_color,
+        )
+        self.gradients = UserDefaultCollection(
+            self,
+            "Gradients",
+            LEDFX_GRADIENTS,
+            "user_gradients",
+            validate_gradient,
+            parse_gradient,
+        )
 
         # TODO: Deferr
         self.devices.create_from_config(self.config["devices"])

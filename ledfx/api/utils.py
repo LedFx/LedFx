@@ -34,6 +34,7 @@ PERMITTED_KEYS = {
         "scan_on_startup",
         "visualisation_fps",
         "visualisation_maxlen",
+        "global_transitions",
     ),
 }
 
@@ -111,6 +112,18 @@ def convertToJsonSchema(schema):
         and getattr(schema, "__name__", None) == "device_index_validator"
     ):
         return {"type": "string", "enum": AudioInputSource.input_devices()}
+
+    elif (
+        callable(schema)
+        and getattr(schema, "__name__", None) == "validate_color"
+    ):
+        return {"type": "color", "gradient": False}
+
+    elif (
+        callable(schema)
+        and getattr(schema, "__name__", None) == "validate_gradient"
+    ):
+        return {"type": "color", "gradient": True}
 
     elif isinstance(schema, vol.All):
         val = {}

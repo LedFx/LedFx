@@ -1,19 +1,18 @@
 import logging
-import socket
 import struct
 
 import numpy as np
 import voluptuous as vol
 
-from ledfx.devices import NetworkedDevice
+from ledfx.devices import UDPDevice
 
 _LOGGER = logging.getLogger(__name__)
 
 
-class DDPDevice(NetworkedDevice):
+class DDPDevice(UDPDevice):
     """DDP device support"""
 
-    PORT = 4048
+    # PORT = 4048
     HEADER_LEN = 0x0A
     # DDP_ID_VIRTUAL     = 1
     # DDP_ID_CONFIG      = 250
@@ -36,82 +35,68 @@ class DDPDevice(NetworkedDevice):
     CONFIG_SCHEMA = vol.Schema(
         {
             vol.Required(
-                "name", description="Friendly name for the device"
-            ): str,
-            vol.Required(
                 "pixel_count",
                 description="Number of individual pixels",
                 default=1,
-            ): int,
+            ): vol.All(int, vol.Range(min=1)),
+            vol.Required(
+                "port",
+                description="Port for the UDP device",
+                default=4048,
+            ): vol.All(int, vol.Range(min=1, max=65535)),
         }
     )
 
     def __init__(self, ledfx, config):
-        self.frame_count = 0
         super().__init__(ledfx, config)
-
-    def activate(self):
-        self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        _LOGGER.info(f"DDP sender for {self.config['name']} started.")
-        super().activate()
-
-    def deactivate(self):
-        _LOGGER.info(f"DDP sender for {self.config['name']} stopped.")
-        super().deactivate()
-        self._sock = None
+        self._device_type = "DDP"
+        self.frame_count = 0
 
     def flush(self, data):
         self.frame_count += 1
         try:
             DDPDevice.send_out(
-                self._sock, self.destination, data, self.frame_count
+                self._sock,
+                self.destination,
+                self._config["port"],
+                data,
+                self.frame_count,
             )
         except AttributeError:
             self.activate()
 
     @staticmethod
-    def send_out(sock, dest, data, frame_count):
+    def send_out(sock, dest, port, data, frame_count):
         sequence = frame_count % 15 + 1
         byteData = data.astype(np.uint8).flatten().tobytes()
         packets, remainder = divmod(len(byteData), DDPDevice.MAX_DATALEN)
+        if remainder == 0:
+            packets -= 1  # divmod returns 1 when len(byteData) fits evenly in DDPDevice.MAX_DATALEN
 
-        for i in range(packets):
+        for i in range(packets + 1):
             data_start = i * DDPDevice.MAX_DATALEN
             data_end = data_start + DDPDevice.MAX_DATALEN
             DDPDevice.send_packet(
-                sock,
-                dest,
-                sequence,
-                i,
-                DDPDevice.MAX_DATALEN,
-                byteData[data_start:data_end],
+                sock, dest, port, sequence, i, byteData[data_start:data_end]
             )
 
-        data_start = packets * DDPDevice.MAX_DATALEN
-        data_end = data_start + remainder
-        DDPDevice.send_packet(
-            sock,
-            dest,
-            sequence,
-            packets,
-            remainder,
-            byteData[data_start:data_end],
-            push=True,
-        )
-
     @staticmethod
-    def send_packet(
-        sock, dest, sequence, packet_count, data_len, data, push=False
-    ):
+    def send_packet(sock, dest, port, sequence, packet_count, data):
+        bytes_length = len(data)
         udpData = bytearray()
         header = struct.pack(
             "!BBBBLH",
-            DDPDevice.VER1 | DDPDevice.PUSH if push else DDPDevice.VER1,
+            DDPDevice.VER1
+            | (
+                DDPDevice.VER1
+                if (bytes_length == DDPDevice.MAX_DATALEN)
+                else DDPDevice.PUSH
+            ),
             sequence,
             DDPDevice.DATATYPE,
             DDPDevice.SOURCE,
             packet_count * DDPDevice.MAX_DATALEN,
-            data_len,
+            bytes_length,
         )
 
         udpData.extend(header)
@@ -119,5 +104,5 @@ class DDPDevice(NetworkedDevice):
 
         sock.sendto(
             bytes(udpData),
-            (dest, DDPDevice.PORT),
+            (dest, port),
         )

@@ -13,7 +13,7 @@ from ledfx.api.websocket import WEB_AUDIO_CLIENTS, WebAudioStream
 from ledfx.effects import Effect
 from ledfx.effects.math import ExpFilter
 from ledfx.effects.melbank import FFT_SIZE, MIC_RATE, Melbanks
-from ledfx.events import Event
+from ledfx.events import AudioDeviceChangeEvent, Event
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -94,7 +94,9 @@ class AudioInputSource:
                 vol.Optional("sample_rate", default=60): int,
                 vol.Optional("mic_rate", default=MIC_RATE): int,
                 vol.Optional("fft_size", default=FFT_SIZE): int,
-                vol.Optional("min_volume", default=0.2): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=10.0)),
+                vol.Optional("min_volume", default=0.2): vol.All(
+                    vol.Coerce(float), vol.Range(min=0.0, max=10.0)
+                ),
                 vol.Optional(
                     "audio_device", default=default_device_index
                 ): AudioInputSource.device_index_validator,
@@ -113,12 +115,24 @@ class AudioInputSource:
 
     def update_config(self, config):
         """Deactivate the audio, update the config, the reactivate"""
+        old_input_device = False
+        if hasattr(self, "_config"):
+            old_input_device = self._config["audio_device"]
 
         if self._is_activated:
             self.deactivate()
         self._config = self.AUDIO_CONFIG_SCHEMA.fget()(config)
         if len(self._callbacks) != 0:
             self.activate()
+        if (
+            old_input_device
+            and self._config["audio_device"] is not old_input_device
+        ):
+            self._ledfx.events.fire_event(
+                AudioDeviceChangeEvent(
+                    self.input_devices()[self._config["audio_device"]]
+                )
+            )
 
     def activate(self):
 
@@ -274,6 +288,12 @@ class AudioInputSource:
         if len(self._callbacks) == 0:
             self.deactivate()
 
+    def get_device_index_by_name(self, device_name: str):
+        for key, value in self.input_devices().items():
+            if device_name == value:
+                return key
+        return -1
+
     def _audio_sample_callback(self, in_data, frame_count, time_info, status):
         """Callback for when a new audio sample is acquired"""
         # time_start = time.time()
@@ -349,7 +369,7 @@ class AudioAnalysisSource(AudioInputSource):
         {
             vol.Optional("pitch_method", default="default"): str,
             vol.Optional("tempo_method", default="default"): str,
-            vol.Optional("onset_method", default="default"): str,
+            vol.Optional("onset_method", default="specflux"): str,
             vol.Optional("pitch_tolerance", default=0.8): float,
         },
         extra=vol.ALLOW_EXTRA,

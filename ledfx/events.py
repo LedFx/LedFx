@@ -20,6 +20,9 @@ class Event:
     SCENE_DELETED = "scene_deleted"
     PRESET_ACTIVATED = "preset_activated"
     VIRTUAL_CONFIG_UPDATE = "virtual_config_update"
+    GLOBAL_PAUSE = "global_pause"
+    VIRTUAL_PAUSE = "virtual_pause"
+    AUDIO_INPUT_DEVICE_CHANGED = "audio_input_device_changed"
 
     def __init__(self, type: str):
         self.event_type = type
@@ -46,6 +49,29 @@ class VirtualUpdateEvent(Event):
         self.virtual_id = virtual_id
         # self.pixels = pixels.astype(np.uint8).T.tolist()
         self.pixels = pixels
+
+
+class GlobalPauseEvent(Event):
+    """Event emitted when all virtuals are paused"""
+
+    def __init__(self):
+        super().__init__(Event.GLOBAL_PAUSE)
+
+
+class VirtualPauseEvent(Event):
+    """Event emitted when virtual updated paused"""
+
+    def __init__(self, virtual_id: str):
+        super().__init__(Event.VIRTUAL_PAUSE)
+        self.virtual_id = virtual_id
+
+
+class AudioDeviceChangeEvent(Event):
+    """Event emitted when the audio capture device is changed"""
+
+    def __init__(self, audio_input_device_name: str):
+        super().__init__(Event.AUDIO_INPUT_DEVICE_CHANGED)
+        self.audio_input_device_name = audio_input_device_name
 
 
 class GraphUpdateEvent(Event):
@@ -80,11 +106,14 @@ class VisualisationUpdateEvent(Event):
 
 
 class EffectSetEvent(Event):
-    """Event emitted when an effect is set"""
+    """Event emitted when an effect is set or updated"""
 
-    def __init__(self, effect_name):
+    def __init__(self, effect_name, effect_id, effect_config, virtual_id):
         super().__init__(Event.EFFECT_SET)
         self.effect_name = effect_name
+        self.effect_id = effect_id
+        self.effect_config = effect_config
+        self.virtual_id = virtual_id
 
 
 class EffectClearedEvent(Event):
@@ -110,11 +139,11 @@ class SceneDeletedEvent(Event):
         self.scene_id = scene_id
 
 
-class VirtualConfigUpdatedEvent(Event):
-    """Event emitted when a scene is set"""
+class VirtualConfigUpdateEvent(Event):
+    """Event emitted when a virtual is updated, including effect changes"""
 
     def __init__(self, virtual_id, config):
-        super().__init__(Event.VIRTUAL_CONFIG_UPDATED)
+        super().__init__(Event.VIRTUAL_CONFIG_UPDATE)
         self.virtual_id = virtual_id
         self.config = config
 

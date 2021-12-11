@@ -1,7 +1,6 @@
 import numpy as np
 import voluptuous as vol
 
-from ledfx.color import COLORS, GRADIENTS
 from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.gradient import GradientEffect
 
@@ -9,7 +8,7 @@ from ledfx.effects.gradient import GradientEffect
 class BandsAudioEffect(AudioReactiveEffect, GradientEffect):
 
     NAME = "Bands"
-    CATEGORY = "1.0"
+    CATEGORY = "2D"
 
     CONFIG_SCHEMA = vol.Schema(
         {
@@ -22,11 +21,6 @@ class BandsAudioEffect(AudioReactiveEffect, GradientEffect):
                 default="left",
             ): vol.In(list(["left", "right", "invert", "center"])),
             vol.Optional(
-                "gradient_name",
-                description="Color gradient to virtual",
-                default="Rainbow",
-            ): vol.In(list(GRADIENTS.keys())),
-            vol.Optional(
                 "mirror",
                 description="Mirror the effect",
                 default=False,
@@ -38,7 +32,7 @@ class BandsAudioEffect(AudioReactiveEffect, GradientEffect):
         self.r = np.zeros(pixel_count)
 
     def config_updated(self, config):
-        self.bkg_color = np.array(COLORS["black"], dtype=float)
+        self.bkg_color = np.array((0, 0, 0), dtype=float)
 
     def audio_data_updated(self, data):
         # Grab the filtered melbank
@@ -66,4 +60,4 @@ class BandsAudioEffect(AudioReactiveEffect, GradientEffect):
             elif self._config["align"] == "left":
                 pass
 
-        return np.vstack(out_split)
+        self.pixels = np.vstack(out_split)

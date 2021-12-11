@@ -1,7 +1,6 @@
 import numpy as np
 import voluptuous as vol
 
-from ledfx.color import GRADIENTS
 from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.gradient import GradientEffect
 
@@ -13,11 +12,6 @@ class MultiBarAudioEffect(AudioReactiveEffect, GradientEffect):
 
     CONFIG_SCHEMA = vol.Schema(
         {
-            vol.Optional(
-                "gradient_name",
-                description="Color scheme to cycle through",
-                default="Rainbow",
-            ): vol.In(list(GRADIENTS.keys())),
             vol.Optional(
                 "mode",
                 description="Choose from different animations",
@@ -49,10 +43,10 @@ class MultiBarAudioEffect(AudioReactiveEffect, GradientEffect):
             data.bpm_beat_now(),
         )
 
-        # Colour change and phase
+        # color change and phase
         if self.beat_now:
             self.phase = 1 - self.phase  # flip flop 0->1, 1->0
-            # 8 colours, 4 beats to a bar
+            # 8 colors, 4 beats to a bar
             self.color_idx += self._config["color_step"]
             self.color_idx = self.color_idx % 1  # loop back to zero
 
@@ -84,8 +78,5 @@ class MultiBarAudioEffect(AudioReactiveEffect, GradientEffect):
             idx = x
 
         # Construct the array
-        p = np.zeros(np.shape(self.pixels))
-        p[: int(self.pixel_count * idx), :] = color_bkg
-        p[int(self.pixel_count * idx) :, :] = color_fg
-        # Update the pixel values
-        return p
+        self.pixels[: int(self.pixel_count * idx), :] = color_bkg
+        self.pixels[int(self.pixel_count * idx) :, :] = color_fg

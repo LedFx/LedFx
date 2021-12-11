@@ -4,9 +4,9 @@ import logging
 import os
 import shutil
 import sys
-from distutils.version import StrictVersion
 
 import voluptuous as vol
+from pkg_resources import parse_version
 
 from ledfx.consts import CONFIGURATION_VERSION
 
@@ -83,6 +83,13 @@ CORE_CONFIG_SCHEMA = vol.Schema(
         vol.Optional("visualisation_maxlen", default=50): vol.All(
             int, vol.Range(5, 300)
         ),
+        vol.Optional(
+            "global_transitions",
+            description="Changes to any virtual's transitions apply to all other virtuals",
+            default=True,
+        ): bool,
+        vol.Optional("user_colors", default={}): dict,
+        vol.Optional("user_gradients", default={}): dict,
         vol.Optional("scan_on_startup", default=False): bool,
         vol.Optional("wled_preferences", default={}): dict,
         vol.Optional(
@@ -227,9 +234,9 @@ def load_config(config_dir: str) -> dict:
                 _LOGGER.info(
                     f"LedFx Configuration Version: {config_json['configuration_version']}"
                 )
-                assert StrictVersion(
+                assert parse_version(
                     config_json["configuration_version"]
-                ) == StrictVersion(CONFIGURATION_VERSION)
+                ) == parse_version(CONFIGURATION_VERSION)
                 return CORE_CONFIG_SCHEMA(config_json)
             except (KeyError, AssertionError):
                 create_backup(config_dir, config_file, "VERSION")
@@ -301,6 +308,7 @@ def migrate_config(old_config):
         schema = effects[effect_type].schema().schema
         new_config = {}
         for key in old_config:
+            key = key.replace("colour", "color")
             if key in schema:
                 try:
                     if key == "frequency_range":

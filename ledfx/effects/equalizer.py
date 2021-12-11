@@ -1,7 +1,6 @@
 import numpy as np
 import voluptuous as vol
 
-from ledfx.color import GRADIENTS
 from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.gradient import GradientEffect
 
@@ -18,11 +17,6 @@ class EQAudioEffect(AudioReactiveEffect, GradientEffect):
                 description="Alignment of bands",
                 default="left",
             ): vol.In(list(["left", "right", "invert", "center"])),
-            vol.Optional(
-                "gradient_name",
-                description="Color gradient to virtual",
-                default="Rainbow",
-            ): vol.In(list(GRADIENTS.keys())),
             vol.Optional(
                 "gradient_repeat",
                 description="Repeat the gradient into segments",
@@ -64,4 +58,4 @@ class EQAudioEffect(AudioReactiveEffect, GradientEffect):
             elif self._config["align"] == "left":
                 pass
 
-        return self.apply_gradient(np.hstack(r_split))
+        self.pixels = self.apply_gradient(np.hstack(r_split))

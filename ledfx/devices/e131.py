@@ -15,33 +15,30 @@ class E131Device(NetworkedDevice):
     CONFIG_SCHEMA = vol.Schema(
         {
             vol.Required(
-                "name", description="Friendly name for the device"
-            ): str,
-            vol.Required(
                 "pixel_count",
                 description="Number of individual pixels",
                 default=1,
-            ): vol.All(vol.Coerce(int), vol.Range(min=1)),
+            ): vol.All(int, vol.Range(min=1)),
             vol.Optional(
                 "universe",
                 description="DMX universe for the device",
                 default=1,
-            ): vol.All(vol.Coerce(int), vol.Range(min=1)),
+            ): vol.All(int, vol.Range(min=1)),
             vol.Optional(
                 "universe_size",
                 description="Size of each DMX universe",
                 default=510,
-            ): vol.All(vol.Coerce(int), vol.Range(min=1)),
+            ): vol.All(int, vol.Range(min=1)),
             vol.Optional(
                 "channel_offset",
                 description="Channel offset within the DMX universe",
                 default=0,
-            ): vol.All(vol.Coerce(int), vol.Range(min=0)),
+            ): vol.All(int, vol.Range(min=0)),
             vol.Optional(
                 "packet_priority",
                 description="Priority given to the sACN packets for this device",
                 default=100,
-            ): vol.All(vol.Coerce(int), vol.Range(min=0, max=200)),
+            ): vol.All(int, vol.Range(min=0, max=200)),
         }
     )
 

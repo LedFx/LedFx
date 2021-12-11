@@ -19,6 +19,9 @@ from ledfx.events import (
     EffectClearedEvent,
     EffectSetEvent,
     Event,
+    GlobalPauseEvent,
+    VirtualConfigUpdateEvent,
+    VirtualPauseEvent,
     VirtualUpdateEvent,
 )
 
@@ -273,25 +276,21 @@ class Virtual:
 
         if self._active_effect is None:
             self._transition_effect = DummyEffect(self.pixel_count)
-            self._active_effect = effect
-            self._active_effect.activate(self)
-            # self._ledfx.loop.call_later(
-            #     self._config["transition_time"], self.clear_transition_effect
-            # )
-            self._ledfx.events.fire_event(
-                EffectSetEvent(self._active_effect.name)
-            )
+
         else:
             self.clear_transition_effect()
             self._transition_effect = self._active_effect
-            self._active_effect = effect
-            self._active_effect.activate(self)
-            # self._ledfx.loop.call_later(
-            #     self._config["transition_time"], self.clear_transition_effect
-            # )
-            self._ledfx.events.fire_event(
-                EffectSetEvent(self._active_effect.name)
+
+        self._active_effect = effect
+        self._active_effect.activate(self)
+        self._ledfx.events.fire_event(
+            EffectSetEvent(
+                self._active_effect.name,
+                self._active_effect.id,
+                self.active_effect.config,
+                self.id,
             )
+        )
 
         try:
             self.active = True
@@ -354,7 +353,9 @@ class Virtual:
         while True:
             if not self._active:
                 break
-            if self._active_effect._active:
+            if self._active_effect.is_active and hasattr(
+                self._active_effect, "pixels"
+            ):
                 # self.assembled_frame = await self._ledfx.loop.run_in_executor(
                 #     self._ledfx.thread_executor, self.assemble_frame
                 # )
@@ -367,13 +368,8 @@ class Virtual:
                         # )
                         self.flush()
 
-                    def trigger_virtual_update_event():
-                        self._ledfx.events.fire_event(
-                            VirtualUpdateEvent(self.id, self.assembled_frame)
-                        )
-
-                    self._ledfx.loop.call_soon_threadsafe(
-                        trigger_virtual_update_event
+                    self._ledfx.events.fire_event(
+                        VirtualUpdateEvent(self.id, self.assembled_frame)
                     )
 
             time.sleep(fps_to_sleep_interval(self.refresh_rate))
@@ -383,6 +379,7 @@ class Virtual:
         Assembles the frame to be flushed.
         """
         # Get and process active effect frame
+        self._active_effect.render()
         frame = self._active_effect.get_pixels()
         frame[frame > 255] = 255
         frame[frame < 0] = 0
@@ -394,10 +391,13 @@ class Virtual:
         # This part handles blending two effects together
         if (
             self._transition_effect is not None
+            and self._transition_effect.is_active
+            and hasattr(self._transition_effect, "pixels")
             and self._config["transition_mode"] != "None"
             and self._config["transition_time"] > 0
         ):
             # Get and process transition effect frame
+            self._transition_effect.render()
             transition_frame = self._transition_effect.get_pixels()
             # np.clip(transition_frame, 0, 255, transition_frame)
             transition_frame[frame > 255] = 255
@@ -451,6 +451,7 @@ class Virtual:
 
         self._thread = threading.Thread(target=self.thread_function)
         self._thread.start()
+        self._ledfx.events.fire_event(VirtualPauseEvent(self.id))
         # self._task = self._ledfx.loop.create_task(self.thread_function())
         # self._task.add_done_callback(lambda task: task.result())
 
@@ -459,6 +460,7 @@ class Virtual:
         if hasattr(self, "_thread"):
             self._thread.join()
         self.deactivate_segments()
+        self._ledfx.events.fire_event(VirtualPauseEvent(self.id))
 
     # @lru_cache(maxsize=32)
     # def _normalized_linspace(self, size):
@@ -636,9 +638,29 @@ class Virtual:
         if hasattr(self, "_config"):
             if _config["mapping"] != self._config["mapping"]:
                 self.invalidate_cached_props()
-            if _config["transition_mode"] != self._config["transition_mode"]:
-                mode = _config["transition_mode"]
-                self.frame_transitions = self.transitions[mode]
+            if (
+                _config["transition_mode"] != self._config["transition_mode"]
+                or _config["transition_time"]
+                != self._config["transition_time"]
+            ):
+                self.frame_transitions = self.transitions[
+                    _config["transition_mode"]
+                ]
+                if self._ledfx.config["global_transitions"]:
+                    for virtual_id in self._ledfx.virtuals:
+                        if virtual_id == self.id:
+                            continue
+                        virtual = self._ledfx.virtuals.get(virtual_id)
+                        virtual.frame_transitions = virtual.transitions[
+                            _config["transition_mode"]
+                        ]
+                        virtual._config["transition_time"] = _config[
+                            "transition_time"
+                        ]
+                        virtual._config["transition_mode"] = _config[
+                            "transition_mode"
+                        ]
+
             if (
                 "frequency_min" in _config.keys()
                 or "frequency_max" in _config.keys()
@@ -681,6 +703,10 @@ class Virtual:
 
         self.frequency_range = FrequencyRange(
             self._config["frequency_min"], self._config["frequency_max"]
+        )
+
+        self._ledfx.events.fire_event(
+            VirtualConfigUpdateEvent(self.id, self._config)
         )
 
 
@@ -726,6 +752,9 @@ class Virtuals:
                     _LOGGER.warning(
                         "Effect schema changed. Not restoring effect"
                     )
+            self._ledfx.events.fire_event(
+                VirtualConfigUpdateEvent(virtual["id"], virtual["config"])
+            )
 
     def schema(self):
         return Virtual.CONFIG_SCHEMA
@@ -778,9 +807,7 @@ class Virtuals:
         self._paused = not self._paused
         for virtual in self.values():
             virtual._paused = self._paused
+        self._ledfx.events.fire_event(GlobalPauseEvent())
 
-    def get(self, virtual_id):
-        for id, virtual in self._virtuals.items():
-            if virtual_id == id:
-                return virtual
-        return None
+    def get(self, *args):
+        return self._virtuals.get(*args)

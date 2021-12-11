@@ -1,18 +1,17 @@
-import os
 from random import randint
 
 import numpy as np
 import voluptuous as vol
 
-from ledfx.color import COLORS
+from ledfx.color import parse_color, validate_color
 from ledfx.effects.audio import AudioReactiveEffect
-from ledfx.effects.effectlets import EFFECTLET_LIST
+from ledfx.effects.droplets import DROPLET_NAMES, load_droplet
 
 
 class RainAudioEffect(AudioReactiveEffect):
 
     NAME = "Rain"
-    CATEGORY = "1.0"
+    CATEGORY = "Classic"
 
     CONFIG_SCHEMA = vol.Schema(
         {
@@ -25,20 +24,20 @@ class RainAudioEffect(AudioReactiveEffect):
             # which will provide a list of available drop names rather than just
             # this static range
             vol.Optional(
-                "lows_colour",
-                description="Colour for low sounds, ie beats",
+                "lows_color",
+                description="color for low sounds, ie beats",
                 default="white",
-            ): vol.In(list(COLORS.keys())),
+            ): validate_color,
             vol.Optional(
-                "mids_colour",
-                description="Colour for mid sounds, ie vocals",
+                "mids_color",
+                description="color for mid sounds, ie vocals",
                 default="red",
-            ): vol.In(list(COLORS.keys())),
+            ): validate_color,
             vol.Optional(
-                "high_colour",
-                description="Colour for high sounds, ie hi hat",
+                "high_color",
+                description="color for high sounds, ie hi hat",
                 default="blue",
-            ): vol.In(list(COLORS.keys())),
+            ): validate_color,
             vol.Optional(
                 "lows_sensitivity",
                 description="Sensitivity to low sounds",
@@ -57,24 +56,17 @@ class RainAudioEffect(AudioReactiveEffect):
             vol.Optional(
                 "raindrop_animation",
                 description="Droplet animation style",
-                default=EFFECTLET_LIST[0],
-            ): vol.In(list(EFFECTLET_LIST)),
+                default=DROPLET_NAMES[0],
+            ): vol.In(DROPLET_NAMES),
         }
     )
 
     def on_activate(self, pixel_count):
         self.drop_frames = np.zeros(self.pixel_count, dtype=int)
-        self.drop_colours = np.zeros((3, self.pixel_count))
+        self.drop_colors = np.zeros((3, self.pixel_count))
 
     def config_updated(self, config):
-        # this could be cleaner but it's temporary, until an effectlet class is
-        # made to handle this stuff
-        self.drop_animation = np.load(
-            os.path.join(
-                os.path.dirname(__file__),
-                "effectlets/" + config["raindrop_animation"],
-            )
-        )
+        self.drop_animation = load_droplet(config["raindrop_animation"])
 
         self.n_frames, self.frame_width = np.shape(self.drop_animation)
         self.frame_centre_index = self.frame_width // 2
@@ -85,44 +77,44 @@ class RainAudioEffect(AudioReactiveEffect):
         )
         self.filtered_intensities = np.zeros(3)
 
-    def new_drop(self, location, colour):
+    def new_drop(self, location, color):
         """
         Add a new drop animation
         TODO (?) this method overwrites a running drop animation in the same location
         would need a significant restructure to fix
         """
         self.drop_frames[location] = 1
-        self.drop_colours[:, location] = colour
+        self.drop_colors[:, location] = color
 
     def update_drop_frames(self):
-        # Set any drops at final frame back to 0 and remove colour data
+        # Set any drops at final frame back to 0 and remove color data
         finished_drops = self.drop_frames >= self.n_frames - 1
         self.drop_frames[finished_drops] = 0
-        self.drop_colours[:, finished_drops] = 0
+        self.drop_colors[:, finished_drops] = 0
         # Add one to any running frames
         self.drop_frames[self.drop_frames > 0] += 1
 
     def render(self):
         """
-        Get coloured pixel data of all drops overlaid
+        Get colored pixel data of all drops overlaid
         """
-        # 2d array containing colour intensity data
+        # 2d array containing color intensity data
         overlaid_frames = np.zeros((3, self.pixel_count + self.frame_width))
         # Indexes of active drop animations
         drop_indices = np.flatnonzero(self.drop_frames)
         # TODO vectorize this to remove for loop
         for index in drop_indices:
-            coloured_frame = [
+            colored_frame = [
                 self.drop_animation[self.drop_frames[index]]
-                * self.drop_colours[colour, index]
-                for colour in range(3)
+                * self.drop_colors[color, index]
+                for color in range(3)
             ]
             overlaid_frames[
                 :, index : index + self.frame_width
-            ] += coloured_frame
+            ] += colored_frame
 
         np.clip(overlaid_frames, 0, 255, out=overlaid_frames)
-        return overlaid_frames[
+        self.pixels = overlaid_frames[
             :,
             self.frame_side_lengths : self.frame_side_lengths
             + self.pixel_count,
@@ -144,7 +136,7 @@ class RainAudioEffect(AudioReactiveEffect):
         ):
             self.new_drop(
                 randint(0, self.pixel_count - 1),
-                COLORS.get(self._config["lows_colour"]),
+                parse_color(self._config["lows_color"]),
             )
         if (
             intensities[1] - self.filtered_intensities[1]
@@ -152,7 +144,7 @@ class RainAudioEffect(AudioReactiveEffect):
         ):
             self.new_drop(
                 randint(0, self.pixel_count - 1),
-                COLORS.get(self._config["mids_colour"]),
+                parse_color(self._config["mids_color"]),
             )
         if (
             intensities[2] - self.filtered_intensities[2]
@@ -160,7 +152,7 @@ class RainAudioEffect(AudioReactiveEffect):
         ):
             self.new_drop(
                 randint(0, self.pixel_count - 1),
-                COLORS.get(self._config["high_colour"]),
+                parse_color(self._config["high_color"]),
             )
 
         self.filtered_intensities = self.intensity_filter.update(intensities)

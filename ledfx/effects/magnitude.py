@@ -7,7 +7,7 @@ from ledfx.effects.gradient import GradientEffect
 class MagnitudeAudioEffect(AudioReactiveEffect, GradientEffect):
 
     NAME = "Magnitude"
-    CATEGORY = "1.0"
+    CATEGORY = "Classic"
 
     _power_funcs = {
         "Beat": "beat_power",
@@ -37,5 +37,4 @@ class MagnitudeAudioEffect(AudioReactiveEffect, GradientEffect):
         self.magnitude = getattr(data, self.power_func)()
 
     def render(self):
-        # Grab the filtered and interpolated melbank data
-        return self.apply_gradient(self.magnitude)
+        self.pixels = self.apply_gradient(self.magnitude)

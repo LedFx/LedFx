@@ -1,9 +1,12 @@
 import asyncio
 import logging
+import socket
 from abc import abstractmethod
 from functools import cached_property
 
 import numpy as np
+import serial
+import serial.tools.list_ports
 import voluptuous as vol
 import zeroconf
 
@@ -38,6 +41,14 @@ class Device(BaseRegistry):
     def CONFIG_SCHEMA():
         return vol.Schema(
             {
+                vol.Required(
+                    "name", description="Friendly name for the device"
+                ): str,
+                # vol.Required(
+                #     "pixel_count",
+                #     description="Number of individual pixels",
+                #     default=1,
+                # ): vol.All(int, vol.Range(min=1)),
                 vol.Optional(
                     "icon_name",
                     description="https://material-ui.com/components/material-icons/",
@@ -67,6 +78,7 @@ class Device(BaseRegistry):
         self._segments = []
         self._pixels = None
         self._silence_start = None
+        self._device_type = ""
 
     def __del__(self):
         if self._active:
@@ -337,6 +349,85 @@ class NetworkedDevice(Device):
             return self._destination
 
 
+@BaseRegistry.no_registration
+class UDPDevice(NetworkedDevice):
+
+    CONFIG_SCHEMA = vol.Schema(
+        {
+            vol.Required(
+                "port",
+                description="Port for the UDP device",
+            ): vol.All(int, vol.Range(min=1, max=65535)),
+        }
+    )
+
+    def activate(self):
+        self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        _LOGGER.info(
+            f"{self._device_type} sender for {self.config['name']} started."
+        )
+        super().activate()
+
+    def deactivate(self):
+        super().deactivate()
+        _LOGGER.info(
+            f"{self._device_type} sender for {self.config['name']} stopped."
+        )
+        self._sock = None
+
+
+class AvailableCOMPorts:
+    ports = serial.tools.list_ports.comports()
+
+    available_ports = []
+
+    for p in ports:
+        available_ports.append(p.device)
+
+
+@BaseRegistry.no_registration
+class SerialDevice(Device):
+
+    CONFIG_SCHEMA = vol.Schema(
+        {
+            vol.Required(
+                "com_port",
+                description="COM port for Adalight compatible device",
+            ): vol.In(list(AvailableCOMPorts.available_ports)),
+            vol.Required(
+                "baudrate", description="baudrate", default=500000
+            ): vol.All(int, vol.Range(min=115200)),
+        }
+    )
+
+    def __init__(self, ledfx, config):
+        super().__init__(ledfx, config)
+        self.serial = None
+        self.baudrate = self._config["baudrate"]
+        self.com_port = self._config["com_port"]
+
+    def activate(self):
+        try:
+            if self.serial and self.serial.isOpen:
+                return
+
+            self.serial = serial.Serial(self.com_port, self.baudrate)
+            if self.serial.isOpen:
+                super().activate()
+
+        except serial.SerialException:
+            _LOGGER.critical(
+                "Serial Error: Please ensure your device is connected, functioning and the correct COM port is selected."
+            )
+            # Todo: Trigger the UI to refresh after the clear effect call. Currently it still shows as active.
+            self.deactivate()
+
+    def deactivate(self):
+        super().deactivate()
+        if self.serial:
+            self.serial.close()
+
+
 class Devices(RegistryLoader):
     """Thin wrapper around the device registry that manages devices"""
 
@@ -381,7 +472,9 @@ class Devices(RegistryLoader):
             for device in self.values()
             if hasattr(device, "async_initialize")
         ]
+
         results = await asyncio.gather(*tasks, return_exceptions=True)
+
         for result in results:
             if type(result) is ValueError:
                 _LOGGER.warning(result)
@@ -428,8 +521,18 @@ class Devices(RegistryLoader):
             wled_config = await wled.get_config()
 
             led_info = wled_config["leds"]
-            wled_name = wled_config["name"]
-
+            # If we've found the device via WLED scan, it won't have a custom name from the frontend
+            # However if it's "WLED" (i.e, Default) then we will name the device exactly how WLED does, by using the second half of it's MAC address
+            # This allows us to respect the users choice of names if adding a WLED device via frontend
+            # I turned black off as this logic is clearer on one line
+            # fmt: off
+            if "name" in device_config.keys() and device_config["name"] is not None:
+                wled_name = device_config["name"]
+            elif wled_config["name"] == "WLED":
+                wled_name = f"{wled_config['name']}-{wled_config['mac'][6:]}".upper()
+            else:
+                wled_name = wled_config['name']
+            # fmt: on
             wled_count = led_info["count"]
             wled_rgbmode = led_info["rgbw"]
 

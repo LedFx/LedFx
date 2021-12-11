@@ -1,12 +1,12 @@
 import logging
-from distutils.version import LooseVersion
 
 import voluptuous as vol
+from pkg_resources import parse_version
 
 from ledfx.devices import NetworkedDevice
 from ledfx.devices.ddp import DDPDevice
 from ledfx.devices.e131 import E131Device
-from ledfx.devices.udp import UDPDevice
+from ledfx.devices.udp import UDPRealtimeDevice
 from ledfx.utils import WLED
 
 _LOGGER = logging.getLogger(__name__)
@@ -26,12 +26,12 @@ class WLEDDevice(NetworkedDevice):
                 "timeout",
                 description="Time between LedFx effect off and WLED effect activate",
                 default=1,
-            ): vol.All(vol.Coerce(int), vol.Range(0, 255)),
+            ): vol.All(int, vol.Range(0, 255)),
         }
     )
 
     SYNC_MODES = {
-        "UDP": UDPDevice,
+        "UDP": UDPRealtimeDevice,
         "DDP": DDPDevice,
         "E131": E131Device,
     }
@@ -42,7 +42,9 @@ class WLEDDevice(NetworkedDevice):
             "ip_address": None,
             "pixel_count": None,
             "port": 21324,
-            "udp_packet_type": "DNRGB"
+            "udp_packet_type": "DNRGB",
+            "timeout": 1,
+            "minimise_traffic": True,
         },
         "DDP": {
             "name": None,
@@ -79,6 +81,7 @@ class WLEDDevice(NetworkedDevice):
         config["name"] = self._config["name"]
         config["ip_address"] = self._config["ip_address"]
         config["pixel_count"] = self._config["pixel_count"]
+        config["refresh_rate"] = self._config["refresh_rate"]
 
         self.subdevice = device(self._ledfx, config)
         self.subdevice._destination = self._destination
@@ -119,7 +122,7 @@ class WLEDDevice(NetworkedDevice):
 
         # Currently *assuming* that this PR gets released in 0.13
         # https://github.com/Aircoookie/WLED/pull/1944
-        if LooseVersion(wled_version) >= LooseVersion("0.13.0"):
+        if parse_version(wled_version) >= parse_version("0.13.0"):
             _LOGGER.info(
                 f"WLED Version Supports Sync Setting API: {wled_version}"
             )

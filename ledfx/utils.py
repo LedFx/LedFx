@@ -12,7 +12,9 @@ import subprocess
 import sys
 import time
 from abc import ABC
+from collections.abc import MutableMapping
 from functools import lru_cache
+from itertools import chain
 
 # from asyncio import coroutines, ensure_future
 from subprocess import PIPE, Popen
@@ -20,6 +22,8 @@ from subprocess import PIPE, Popen
 import numpy as np
 import requests
 import voluptuous as vol
+
+from ledfx.config import save_config
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -594,6 +598,81 @@ def getattr_explicit(cls, attr, *default):
     )
 
 
+class UserDefaultCollection(MutableMapping):
+    """
+    A collection of default values and user defined values.
+    User defined values are saved automatically in LedFx config.
+    Items can be retrieved by name as if user and default values are a single dictionary.
+    Validator is a callable that returns sanitised value or raises ValueError if there's a problem
+    Parser is a callable that translates config values into a valid form for ledfx to use
+    """
+
+    def __init__(
+        self,
+        ledfx,
+        collection_name: str,
+        defaults: dict,
+        user: str,
+        validator: callable = lambda x: x,
+        parser: callable = lambda x: x,
+    ):
+        """
+        collection_name: friendly description of the collection
+        defaults: dict of default values
+        user: ledfx config key for user values
+        """
+        self._ledfx = ledfx
+        self._collection_name = collection_name
+        self._default_vals = defaults
+        self._user_vals = self._ledfx.config[user]
+        self._validator = validator
+        self._parser = parser
+
+    def get_all(self, merged=False):
+        if merged:
+            return self._default_vals | self._user_vals
+        else:
+            return self._default_vals, self._user_vals
+
+    def __getitem__(self, key):
+        val = self._default_vals.get(key) or self._user_vals.get(key)
+        if val:
+            return self._parser(val)
+        raise KeyError(f"Unknown {self._collection_name}: {key}")
+        # _LOGGER.error(f"Unknown {self._collection_name}: {name}")
+
+    def __delitem__(self, key):
+        if key in self._default_vals:
+            _LOGGER.error(
+                f"Cannot delete LedFx {self._collection_name}: {key}"
+            )
+            return
+        if key in self._user_vals:
+            del self._user_vals[key]
+        save_config(
+            config=self._ledfx.config,
+            config_dir=self._ledfx.config_dir,
+        )
+
+    def __setitem__(self, key, value):
+        if key in self._default_vals:
+            _LOGGER.error(
+                f"Cannot overwrite LedFx {self._collection_name}: {key}"
+            )
+            return
+        self._user_vals[key] = self._validator(value)
+        save_config(
+            config=self._ledfx.config,
+            config_dir=self._ledfx.config_dir,
+        )
+
+    def __iter__(self):
+        return chain(self._default_vals, self._user_vals)
+
+    def __len__(self):
+        return len(self._default_vals) + len(self._user_vals)
+
+
 class RollingQueueHandler(logging.handlers.QueueHandler):
     def enqueue(self, record):
         try:
@@ -633,6 +712,14 @@ class BaseRegistry(ABC):
         name = cls.__module__.split(".")[-1]
         del cls._registry[name]
         return cls
+
+    # currently this permanently overwrites Device.CONFIG_SCHEMA instead of just for a wrapper device
+    # @classmethod
+    # def designate_wrapper_device(self, cls):
+    #     """Designate Wrapper device to ignore pixel_count in schema"""
+    #     # replace base Device classes schema with Wrapper devices schema
+    #     setattr(inspect.getmro(cls)[2], self._schema_attr, getattr_explicit(inspect.getmro(cls)[0], self._schema_attr, None))
+    #     return cls
 
     @classmethod
     def schema(self, extended=True, extra=vol.ALLOW_EXTRA):
@@ -830,5 +917,5 @@ class RegistryLoader:
             )
         del self._objects[id]
 
-    def get(self, id):
-        return self._objects.get(id)
+    def get(self, *args):
+        return self._objects.get(*args)

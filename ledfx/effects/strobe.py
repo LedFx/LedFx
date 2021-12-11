@@ -1,7 +1,5 @@
-import numpy as np
 import voluptuous as vol
 
-from ledfx.color import COLORS, GRADIENTS
 from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.gradient import GradientEffect
 
@@ -17,26 +15,11 @@ class Strobe(AudioReactiveEffect, GradientEffect):
         "1/32 (⊙▃⊙ )": 32,
     }
 
-    NAME = "Strobe"
-    CATEGORY = "1.0"
+    NAME = "BPM Strobe"
+    CATEGORY = "BPM"
 
     CONFIG_SCHEMA = vol.Schema(
         {
-            vol.Optional(
-                "color",
-                description="Strobe colour (used if single_colour selected)",
-                default="white",
-            ): vol.In(list(COLORS.keys())),
-            vol.Optional(
-                "gradient_name",
-                description="Cycle through a gradient each beat",
-                default="Rainbow",
-            ): vol.In(list(GRADIENTS.keys())),
-            vol.Optional(
-                "single_color",
-                description="Display a single colour strobe",
-                default=False,
-            ): bool,
             vol.Optional(
                 "strobe_frequency",
                 description="How many strobes per beat",
@@ -56,14 +39,10 @@ class Strobe(AudioReactiveEffect, GradientEffect):
     )
 
     def on_activate(self, pixel_count):
-        self.output = np.zeros((pixel_count, 3))
         self.color = self.get_gradient_color(0)
         self.brightness = 0
 
     def config_updated(self, config):
-        self.single_color = np.array(
-            COLORS[self._config["color"]], dtype=float
-        )
         self.freq = self.MAPPINGS[self._config["strobe_frequency"]]
         self.strobe_decay = self._config["strobe_decay"]
         self.beat_decay = self._config["beat_decay"]
@@ -77,7 +56,4 @@ class Strobe(AudioReactiveEffect, GradientEffect):
         ) * (1 - o) ** self.beat_decay
 
     def render(self):
-        self.output[:] = (
-            self.single_color if self._config["single_color"] else self.color
-        ) * self.brightness
-        return self.output
+        self.pixels[:] = self.color * self.brightness

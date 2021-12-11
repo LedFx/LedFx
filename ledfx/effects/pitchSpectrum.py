@@ -1,6 +1,6 @@
 import voluptuous as vol
 
-from ledfx.color import COLORS
+from ledfx.color import RGB
 from ledfx.effects import mix_colors
 from ledfx.effects.audio import MAX_MIDI, MIN_MIDI, AudioReactiveEffect
 from ledfx.effects.gradient import GradientEffect
@@ -8,8 +8,8 @@ from ledfx.effects.gradient import GradientEffect
 
 class PitchSpectrumAudioEffect(AudioReactiveEffect, GradientEffect):
 
-    NAME = "PitchSpectrum"
-    CATEGORY = "1.0"
+    NAME = "Pitch Spectrum"
+    CATEGORY = "Classic"
 
     CONFIG_SCHEMA = vol.Schema(
         {
@@ -45,7 +45,7 @@ class PitchSpectrumAudioEffect(AudioReactiveEffect, GradientEffect):
         midi_value = data.pitch()
         if midi_value is None:
             midi_value = 0
-        note_color = COLORS["black"]
+        note_color = RGB(0, 0, 0)
         if not self.avg_midi:
             self.avg_midi = midi_value
 
@@ -64,16 +64,12 @@ class PitchSpectrumAudioEffect(AudioReactiveEffect, GradientEffect):
 
         # Mix in the new color based on the filterbank information and fade out
         # the old colors
-        new_pixels = self.pixels
         for index in range(self.pixel_count):
             #
             # SLOW SLOW SLOW for loop
             #
             new_color = mix_colors(self.pixels[index], note_color, y[index])
             new_color = mix_colors(
-                new_color, COLORS["black"], self._config["fade_rate"]
+                new_color, RGB(0, 0, 0), self._config["fade_rate"]
             )
-            new_pixels[index] = new_color
-
-        # Set the pixels
-        self.pixels = new_pixels
+            self.pixels[index] = new_color

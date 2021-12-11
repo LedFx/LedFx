@@ -7,7 +7,7 @@ from functools import lru_cache
 import numpy as np
 import voluptuous as vol
 
-from ledfx.color import COLORS
+from ledfx.color import parse_color, validate_color
 from ledfx.utils import BaseRegistry, RegistryLoader
 
 _LOGGER = logging.getLogger(__name__)
@@ -17,13 +17,17 @@ class DummyEffect:
 
     config = vol.Schema({})
     _active = True
+    is_active = _active
     NAME = ""
 
     def __init__(self, pixel_count):
-        self._pixels = np.zeros((pixel_count, 3))
+        self.pixels = np.zeros((pixel_count, 3))
+
+    def render(self):
+        pass
 
     def get_pixels(self):
-        return self._pixels
+        return self.pixels
 
     def activate(self):
         pass
@@ -47,12 +51,6 @@ def mix_colors(color_1, color_2, ratio):
         )
 
 
-def fill_solid(pixels, color):
-    pixels[
-        :,
-    ] = color
-
-
 def fill_rainbow(pixels, initial_hue, delta_hue):
     hue = initial_hue
     sat = 0.95
@@ -65,25 +63,12 @@ def fill_rainbow(pixels, initial_hue, delta_hue):
     return pixels
 
 
-def mirror_pixels(pixels):
-    return np.concatenate((pixels[-1 + len(pixels) % -2 :: -2], pixels[::2]))
-
-
-def flip_pixels(pixels):
-    return np.flipud(pixels)
-
-
 def blur_pixels(pixels, sigma):
     rgb_array = pixels.T
     rgb_array[0] = smooth(rgb_array[0], sigma)
     rgb_array[1] = smooth(rgb_array[1], sigma)
     rgb_array[2] = smooth(rgb_array[2], sigma)
     return rgb_array.T
-
-
-def brightness_pixels(pixels, brightness):
-    pixels = np.multiply(pixels, brightness, out=pixels, casting="unsafe")
-    return pixels
 
 
 @lru_cache(maxsize=32)
@@ -103,7 +88,9 @@ def _gaussian_kernel1d(sigma, order, array_len):
     # Choose a radius for the filter kernel large enough to include all significant elements. Using
     # a radius of 4 standard deviations (rounded to int) will only truncate tail values that are of
     # the order of 1e-5 or smaller. For very small sigma values, just use a minimal radius.
-    radius = min(int((array_len - 1) / 2), max(1, int(round(4.0 * sigma))))
+    radius = max(1, int(round(4.0 * sigma)))
+    radius = min(int((array_len - 1) / 2), radius)
+    radius = max(radius, 1)
 
     if order < 0:
         raise ValueError("Order must non-negative")
@@ -206,7 +193,6 @@ class Effect(BaseRegistry):
     """
 
     NAME = ""
-    _pixels = None
     _config = None
     _active = False
     _virtual = None
@@ -234,12 +220,12 @@ class Effect(BaseRegistry):
             ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
             vol.Optional(
                 "background_color",
-                description="Apply a background colour",
-                default="black",
-            ): vol.In(list(COLORS.keys())),
+                description="Apply a background color",
+                default="#000000",
+            ): validate_color,
             vol.Optional(
                 "background_brightness",
-                description="Brightness of the background colour",
+                description="Brightness of the background color",
                 default=1.0,
             ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
         }
@@ -257,11 +243,7 @@ class Effect(BaseRegistry):
     def activate(self, virtual):
         """Attaches an output channel to the effect"""
         self._virtual = virtual
-        self._pixels = np.zeros((virtual.pixel_count, 3))
-        self._bg_color_array = np.tile(
-            self._bg_color, (virtual.pixel_count, 1)
-        )
-
+        self.pixels = np.zeros((virtual.pixel_count, 3))
         # Iterate all the base classes and check to see if the base
         # class has an on_activate method. If so, call it
         valid_classes = list(type(self).__bases__)
@@ -275,7 +257,7 @@ class Effect(BaseRegistry):
 
     def deactivate(self):
         """Detaches an output channel from the effect"""
-        self._pixels = None
+        self.pixels = None
         self._active = False
 
         _LOGGER.info(f"Effect {self.NAME} deactivated.")
@@ -292,9 +274,10 @@ class Effect(BaseRegistry):
         else:
             self._config = validated_config
         self.configured_blur = self._config["blur"]
-        self._bg_brightness = self._config["background_brightness"]
-        self._bg_color = np.array(
-            COLORS[self._config["background_color"]], dtype=float
+
+        self._bg_color = (
+            np.array(parse_color(self._config["background_color"]))
+            * self._config["background_brightness"]
         )
 
         def inherited(cls, method):
@@ -323,84 +306,55 @@ class Effect(BaseRegistry):
         complex properties off the configuration, otherwise the config
         should just be referenced in the effect's loop directly
         """
-
         pass
+
+    def render(self):
+        """
+        To be implemented by child effect
+        Must act on self.pixels, setting the values of it
+        The effect can use self.pixels to see the previous effect
+        frame if it wants to use it for something
+        """
+        pass
+
+    def get_pixels(self):
+        pixels = np.copy(self.pixels)
+        # Apply some of the base output filters if necessary
+        if self._config["flip"]:
+            pixels = np.flipud(pixels)
+        if self._config["mirror"]:
+            pixels = np.concatenate(
+                (pixels[-1 + len(pixels) % -2 :: -2], pixels[::2])
+            )
+        if self._config["background_color"]:
+            # TODO: colors in future should have an alpha value, which would work nicely to apply to dim the background color
+            # for now, just set it a bit less bright.
+            pass
+            # pixels += self._bg_color
+        if self._config["brightness"] is not None:
+            np.multiply(
+                pixels,
+                self._config["brightness"],
+                out=pixels,
+                casting="unsafe",
+            )
+        # If the configured blur is greater than 0 we need to blur it
+        if self.configured_blur != 0.0:
+            kernel = _gaussian_kernel1d(self.configured_blur, 0, len(pixels))
+            pixels[:, 0] = np.convolve(pixels[:, 0], kernel, mode="same")
+            pixels[:, 1] = np.convolve(pixels[:, 1], kernel, mode="same")
+            pixels[:, 2] = np.convolve(pixels[:, 2], kernel, mode="same")
+        return pixels
 
     @property
     def is_active(self):
         """Return if the effect is currently active"""
         return self._active
 
-    def render(self):
-        return self.pixels
-
-    def get_pixels(self):
-        pixels = self.render()
-
-        if isinstance(pixels, tuple):
-            self._pixels = np.copy(pixels)
-        elif isinstance(pixels, np.ndarray):
-
-            # Apply some of the base output filters if necessary
-            if self._config["flip"]:
-                pixels = flip_pixels(pixels)
-            if self._config["mirror"]:
-                pixels = mirror_pixels(pixels)
-            if self._config["background_color"]:
-                # TODO: colours in future should have an alpha value, which would work nicely to apply to dim the background colour
-                # for now, just set it a bit less bright.
-                pixels += np.multiply(
-                    self._bg_color_array.T, self._bg_brightness
-                ).T
-            if self._config["brightness"] is not None:
-                pixels = brightness_pixels(pixels, self._config["brightness"])
-            # If the configured blur is greater than 0 we need to blur it
-            if self.configured_blur != 0.0:
-                pixels = fast_blur_pixels(
-                    pixels=pixels, sigma=self.configured_blur
-                )
-            self._pixels = np.copy(pixels)
-        else:
-            raise TypeError()
-
-        return pixels
-
-    @property
-    def pixels(self):
-        """Returns the pixels for the channel"""
-        return np.copy(self._pixels)
-
-    @pixels.setter
-    def pixels(self, pixels):
-        """Sets the pixels for the channel"""
-
-        if isinstance(pixels, tuple):
-            self._pixels = np.copy(pixels)
-        elif isinstance(pixels, np.ndarray):
-
-            # Apply some of the base output filters if necessary
-            if self._config["flip"]:
-                pixels = flip_pixels(pixels)
-            if self._config["mirror"]:
-                pixels = mirror_pixels(pixels)
-            if self._config["background_color"]:
-                # TODO: colours in future should have an alpha value, which would work nicely to apply to dim the background colour
-                # for now, just set it a bit less bright.
-                _bg_color_array = np.tile(self._bg_color, (len(pixels), 1))
-                pixels += np.multiply(_bg_color_array.T, self._bg_brightness).T
-            if self._config["brightness"] is not None:
-                pixels = brightness_pixels(pixels, self._config["brightness"])
-            # If the configured blur is greater than 0 we need to blur it
-            if self.configured_blur != 0.0:
-                pixels = blur_pixels(pixels=pixels, sigma=self.configured_blur)
-            self._pixels = np.copy(pixels)
-        else:
-            raise TypeError()
-
     @property
     def pixel_count(self):
         """Returns the number of pixels for the channel"""
-        return len(self._pixels)
+        return len(self.pixels)
 
     @property
     def name(self):

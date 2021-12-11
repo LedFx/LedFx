@@ -25,15 +25,16 @@ SETUP_REQUIRES = [
 INSTALL_REQUIRES = [
     "aiohttp~=3.7.4.post0",
     "aiohttp_cors>=0.7.0",
-    "aubio~=0.4.9",
+    "aubio>=0.4.9",
     "cython>=0.29.21",
     "certifi>=2020.12.5",
     "mido>=1.2.10",
     "multidict~=5.0.0",
+    "openrgb-python~=0.2.10",
     "paho-mqtt>=1.5.1",
     "psutil>=5.8.0",
     "pyserial>=3.5",
-    "pystray>=0.17",
+    "pystray==0.17",
     "python-rtmidi>=1.4.9",
     "pyupdater>=3.1.0",
     "requests>=2.24.0",
@@ -44,9 +45,10 @@ INSTALL_REQUIRES = [
     "voluptuous~=0.12.1",
     "yappi~=1.3.3",
     "zeroconf==0.30.0",
+    "pillow>=8.4.0",
     # Conditional Requirement
     # We need pywin32 for Windows
-    'pywin32>=300; platform_system == "Windows"',
+    'pywin32>=302; platform_system == "Windows"',
     # uvloop doesn't work on Windows yet, but should be a good speedup for low power linux devices
     'uvloop>=0.16.0; platform_system != "Windows"',
     # We can install this on all linux devices, it just won't work for anything other than a Pi

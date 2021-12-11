@@ -18,7 +18,7 @@ class EffectsEndpoint(RestEndpoint):
             if virtual.active_effect:
                 response["effects"][virtual.id] = {
                     "effect_type": virtual.active_effect.type,
-                    "effec_config": virtual.active_effect.config,
+                    "effect_config": virtual.active_effect.config,
                 }
         return web.json_response(data=response, status=200)
 

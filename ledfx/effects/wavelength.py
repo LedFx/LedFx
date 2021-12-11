@@ -8,7 +8,7 @@ from ledfx.effects.gradient import GradientEffect
 class WavelengthAudioEffect(AudioReactiveEffect, GradientEffect):
 
     NAME = "Wavelength"
-    CATEGORY = "1.0"
+    CATEGORY = "Classic"
 
     # There is no additional configuration here, but override the blur
     # default to be 3.0 so blurring is enabled.
@@ -31,4 +31,4 @@ class WavelengthAudioEffect(AudioReactiveEffect, GradientEffect):
 
     def render(self):
         # Apply the melbank data to the gradient curve and update the pixels
-        return self.apply_gradient(self.r)
+        self.pixels = self.apply_gradient(self.r)

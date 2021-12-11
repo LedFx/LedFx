@@ -1,14 +1,14 @@
 import numpy as np
 import voluptuous as vol
 
-from ledfx.color import COLORS
+from ledfx.color import parse_color, validate_color
 from ledfx.effects.audio import AudioReactiveEffect
 
 
 class ScrollAudioEffect(AudioReactiveEffect):
 
     NAME = "Scroll"
-    CATEGORY = "1.0"
+    CATEGORY = "Classic"
 
     CONFIG_SCHEMA = vol.Schema(
         {
@@ -23,7 +23,7 @@ class ScrollAudioEffect(AudioReactiveEffect):
                 default=True,
             ): bool,
             vol.Optional(
-                "speed", description="Speed of the effect", default=5
+                "speed", description="Speed of the effect", default=3
             ): vol.All(vol.Coerce(int), vol.Range(min=1, max=10)),
             vol.Optional(
                 "decay",
@@ -38,45 +38,43 @@ class ScrollAudioEffect(AudioReactiveEffect):
             vol.Optional(
                 "color_lows",
                 description="Color of low, bassy sounds",
-                default="red",
-            ): vol.In(list(COLORS.keys())),
+                default="#FF0000",
+            ): validate_color,
             vol.Optional(
                 "color_mids",
                 description="Color of midrange sounds",
-                default="green",
-            ): vol.In(list(COLORS.keys())),
+                default="#00FF00",
+            ): validate_color,
             vol.Optional(
                 "color_high",
                 description="Color of high sounds",
-                default="blue",
-            ): vol.In(list(COLORS.keys())),
+                default="#0000FF",
+            ): validate_color,
         }
     )
 
     def on_activate(self, pixel_count):
-        self.output = np.zeros((pixel_count, 3))
         self.intensities = np.zeros(3)
 
     def config_updated(self, config):
-
         # TODO: Determine how buffers based on the pixels should be
         # allocated. Technically there is no guarantee that the effect
         # is bound to a device while the config gets updated. Might need
         # to move to a model where effects are created for a device and
         # must be destroyed and recreated to be moved to another device.
-        self.lows_colour = np.array(
-            COLORS[self._config["color_lows"]], dtype=float
+        self.lows_color = np.array(
+            parse_color(self._config["color_lows"]), dtype=float
         )
-        self.mids_colour = np.array(
-            COLORS[self._config["color_mids"]], dtype=float
+        self.mids_color = np.array(
+            parse_color(self._config["color_mids"]), dtype=float
         )
-        self.high_colour = np.array(
-            COLORS[self._config["color_high"]], dtype=float
+        self.high_color = np.array(
+            parse_color(self._config["color_high"]), dtype=float
         )
 
-        self.lows_cutoff = self._config["threshold"] / 8
-        self.mids_cutoff = self._config["threshold"] / 4
-        self.high_cutoff = self._config["threshold"] / 3
+        self.lows_cutoff = self._config["threshold"] / 10
+        self.mids_cutoff = self._config["threshold"] / 8
+        self.high_cutoff = self._config["threshold"] / 7
 
     def audio_data_updated(self, data):
         # Divide the melbank into lows, mids and highs
@@ -95,12 +93,9 @@ class ScrollAudioEffect(AudioReactiveEffect):
     def render(self):
         # Roll the effect and apply the decay
         speed = self.config["speed"]
-        self.output[speed:, :] = self.output[:-speed, :]
-        self.output = self.output * self.config["decay"]
+        self.pixels[speed:, :] = self.pixels[:-speed, :]
+        self.pixels *= self.config["decay"]
 
-        self.output[:speed] = self.lows_colour * self.intensities[0]
-        self.output[:speed] += self.mids_colour * self.intensities[1]
-        self.output[:speed] += self.high_colour * self.intensities[2]
-
-        # Set the pixels
-        return self.output
+        self.pixels[:speed] = self.lows_color * self.intensities[0]
+        self.pixels[:speed] += self.mids_color * self.intensities[1]
+        self.pixels[:speed] += self.high_color * self.intensities[2]
