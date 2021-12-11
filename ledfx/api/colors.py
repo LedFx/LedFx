@@ -3,6 +3,7 @@ import logging
 from aiohttp import web
 
 from ledfx.api import RestEndpoint
+from ledfx.color import validate_color
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -53,13 +54,17 @@ class ColorEndpoint(RestEndpoint):
         """
         Creates or updates existing colors or gradients.
         eg. {"my_red_color": "#ffffff"}
-        or  {"my_cool_gradient": "lin..."}        
+        or  {"my_cool_gradient": "lin..."}
         """
 
         data = await request.json()
 
         for key, val in data.items():
-            if val.startswith('#'):
+            try:
+                is_color = validate_color(val)
+            except ValueError:
+                is_color = False
+            if is_color:
                 self._ledfx.colors[key] = val
             else:
                 self._ledfx.gradients[key] = val
