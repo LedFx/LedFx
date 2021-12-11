@@ -62,13 +62,13 @@ class ScrollAudioEffect(AudioReactiveEffect):
         # is bound to a device while the config gets updated. Might need
         # to move to a model where effects are created for a device and
         # must be destroyed and recreated to be moved to another device.
-        self.lows_colour = np.array(
+        self.lows_color = np.array(
             parse_color(self._config["color_lows"]), dtype=float
         )
-        self.mids_colour = np.array(
+        self.mids_color = np.array(
             parse_color(self._config["color_mids"]), dtype=float
         )
-        self.high_colour = np.array(
+        self.high_color = np.array(
             parse_color(self._config["color_high"]), dtype=float
         )
 
@@ -96,6 +96,6 @@ class ScrollAudioEffect(AudioReactiveEffect):
         self.pixels[speed:, :] = self.pixels[:-speed, :]
         self.pixels *= self.config["decay"]
 
-        self.pixels[:speed] = self.lows_colour * self.intensities[0]
-        self.pixels[:speed] += self.mids_colour * self.intensities[1]
-        self.pixels[:speed] += self.high_colour * self.intensities[2]
+        self.pixels[:speed] = self.lows_color * self.intensities[0]
+        self.pixels[:speed] += self.mids_color * self.intensities[1]
+        self.pixels[:speed] += self.high_color * self.intensities[2]

@@ -81,7 +81,7 @@ class GradientEffect(Effect):
 
         gradient_colors = gradient.colors
 
-        # fill in start and end colours if not explicitly given
+        # fill in start and end colors if not explicitly given
         if gradient_colors[0][1] != 0.0:
             gradient_colors.insert(0, (gradient_colors[0][0], 0.0))
 

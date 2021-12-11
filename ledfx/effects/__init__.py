@@ -220,12 +220,12 @@ class Effect(BaseRegistry):
             ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
             vol.Optional(
                 "background_color",
-                description="Apply a background colour",
+                description="Apply a background color",
                 default="#000000",
             ): validate_color,
             vol.Optional(
                 "background_brightness",
-                description="Brightness of the background colour",
+                description="Brightness of the background color",
                 default=1.0,
             ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
         }
@@ -327,7 +327,7 @@ class Effect(BaseRegistry):
                 (pixels[-1 + len(pixels) % -2 :: -2], pixels[::2])
             )
         if self._config["background_color"]:
-            # TODO: colours in future should have an alpha value, which would work nicely to apply to dim the background colour
+            # TODO: colors in future should have an alpha value, which would work nicely to apply to dim the background color
             # for now, just set it a bit less bright.
             pass
             # pixels += self._bg_color

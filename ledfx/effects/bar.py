@@ -56,11 +56,11 @@ class BarAudioEffect(AudioReactiveEffect, GradientEffect):
         self.beat_now = data.bpm_beat_now()
         self.beat_count = data.beat_counter
 
-        # Colour change and phase
+        # color change and phase
         if self.beat_now:
             self.phase = 1 - self.phase  # flip flop 0->1, 1->0
             if self.phase == 0:
-                # 8 colours, 4 beats to a bar
+                # 8 colors, 4 beats to a bar
                 self.color_idx += self._config["color_step"]
                 self.color_idx = self.color_idx % 1  # loop back to zero
 

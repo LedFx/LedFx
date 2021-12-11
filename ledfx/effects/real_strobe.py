@@ -34,7 +34,7 @@ class Strobe(AudioReactiveEffect, GradientEffect):
             ): vol.All(vol.Coerce(float), vol.Range(min=0, max=1)),
             vol.Optional(
                 "strobe_color",
-                description="Colour for percussive strobes",
+                description="color for percussive strobes",
                 default="#FFFFFF",
             ): validate_color,
             vol.Optional(
@@ -57,7 +57,7 @@ class Strobe(AudioReactiveEffect, GradientEffect):
         self.onsets_queue = queue.Queue()
 
     def deactivate(self):
-
+        
         empty_queue(self.onsets_queue)
         self.onsets_queue = None
         return super().deactivate()
