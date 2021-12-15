@@ -2,7 +2,7 @@ import asyncio
 import logging
 import socket
 from abc import abstractmethod
-from functools import cached_property
+from functools import cached_property, partial
 
 import numpy as np
 import serial
@@ -44,11 +44,6 @@ class Device(BaseRegistry):
                 vol.Required(
                     "name", description="Friendly name for the device"
                 ): str,
-                # vol.Required(
-                #     "pixel_count",
-                #     description="Number of individual pixels",
-                #     default=1,
-                # ): vol.All(int, vol.Range(min=1)),
                 vol.Optional(
                     "icon_name",
                     description="https://material-ui.com/components/material-icons/",
@@ -252,6 +247,9 @@ class Device(BaseRegistry):
         if virtual_id not in (segment[0] for segment in self._segments):
             self.invalidate_cached_props()
         self._segments.append((virtual_id, start_pixel, end_pixel))
+        _LOGGER.debug(
+            f"Device {self.id}: Added segment {virtual_id, start_pixel, end_pixel}"
+        )
 
     def clear_virtual_segments(self, virtual_id):
         self._segments = [
@@ -315,23 +313,31 @@ class NetworkedDevice(Device):
         self._destination = None
         await self.resolve_address()
 
-    async def resolve_address(self):
+    async def resolve_address(self, success_callback=None):
         try:
             self._destination = await resolve_destination(
-                self._ledfx.loop, self._config["ip_address"]
+                self._ledfx.loop,
+                self._ledfx.thread_executor,
+                self._config["ip_address"],
             )
+            _LOGGER.info(
+                f"Device {self.name}: Resolved destination to {self._destination}"
+            )
+            if success_callback:
+                success_callback()
         except ValueError as msg:
             _LOGGER.warning(f"Device {self.name}: {msg}")
 
     def activate(self, *args, **kwargs):
         if self._destination is None:
-            _LOGGER.warning(
-                f"Device {self.name}: Cannot activate, destination {self._config['ip_address']} is not yet resolved"
-            )
+            msg = f"Device {self.name}: Failed to activate, is it online?"
+            _LOGGER.warning(msg)
+            callback = partial(self.activate, *args, **kwargs)
             async_fire_and_forget(
-                self.resolve_address(), loop=self._ledfx.loop
+                self.resolve_address(success_callback=callback),
+                loop=self._ledfx.loop,
             )
-            return
+            raise RuntimeError(msg)
         else:
             super().activate(*args, **kwargs)
 
@@ -339,7 +345,7 @@ class NetworkedDevice(Device):
     def destination(self):
         if self._destination is None:
             _LOGGER.warning(
-                f"Device {self.name}: Destination {self._config['ip_address']} is not yet resolved"
+                f"Device {self.name}: Searching for device... Is it online?"
             )
             async_fire_and_forget(
                 self.resolve_address(), loop=self._ledfx.loop
@@ -363,15 +369,15 @@ class UDPDevice(NetworkedDevice):
 
     def activate(self):
         self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        _LOGGER.info(
-            f"{self._device_type} sender for {self.config['name']} started."
+        _LOGGER.debug(
+            f"{self._device_type} sender for {self._config['name']} started."
         )
         super().activate()
 
     def deactivate(self):
         super().deactivate()
-        _LOGGER.info(
-            f"{self._device_type} sender for {self.config['name']} stopped."
+        _LOGGER.debug(
+            f"{self._device_type} sender for {self._config['name']} stopped."
         )
         self._sock = None
 
@@ -485,14 +491,13 @@ class Devices(RegistryLoader):
         """
         # First, we try to make sure this device doesn't share a destination with any existing device
         if "ip_address" in device_config.keys():
-            device_ip = device_config["ip_address"].rstrip(".")
-            device_config["ip_address"] = device_ip
+            device_ip = device_config["ip_address"]
             try:
                 resolved_dest = await resolve_destination(
-                    self._ledfx.loop, device_ip
+                    self._ledfx.loop, self._ledfx.thread_executor, device_ip
                 )
             except ValueError:
-                _LOGGER.error(f"Failed to resolve address {device_ip}")
+                _LOGGER.error(f"Discarding device {device_ip}")
                 return
 
             for existing_device in self._ledfx.devices.values():
@@ -673,7 +678,7 @@ class WLEDListener(zeroconf.ServiceBrowser):
         info = zeroconf_obj.get_service_info(type, name)
 
         if info:
-            hostname = str(info.server)
+            hostname = str(info.server).rstrip(".")
             _LOGGER.info(f"Found device: {hostname}")
 
             device_type = "wled"

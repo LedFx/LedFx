@@ -156,12 +156,9 @@ class Virtual:
     def activate_segments(self, segments):
         for device_id, start_pixel, end_pixel, invert in segments:
             device = self._ledfx.devices.get(device_id)
-            try:
-                device.add_segment(self.id, start_pixel, end_pixel, force=True)
-            except ValueError as e:  # TODO pass this up the chain
-                print(e)
             if not device.is_active():
                 device.activate()
+            device.add_segment(self.id, start_pixel, end_pixel, force=True)
 
     def deactivate_segments(self):
         for device in self._devices:
@@ -176,6 +173,7 @@ class Virtual:
             valid = False
 
         device_id, start_pixel, end_pixel, invert = segment
+
         device = self._ledfx.devices.get(device_id)
 
         if device is None:
@@ -231,7 +229,7 @@ class Virtual:
             self.invalidate_cached_props()
 
             _LOGGER.debug(
-                f"Updated virtual {self.name} with {len(self._segments)} segments, totalling {self.pixel_count} pixels"
+                f"Virtual {self.id}: updated with {len(self._segments)} segments, totalling {self.pixel_count} pixels"
             )
 
             # Restart active effect if total pixel count has changed
@@ -264,15 +262,15 @@ class Virtual:
         self.set_effect(effect)
 
     def set_effect(self, effect):
+        if not self._devices:
+            error = f"Virtual {self.id}: Cannot activate, no configured device segments"
+            _LOGGER.warning(error)
+            raise ValueError(error)
+
         self.transition_frame_total = (
             self.refresh_rate * self._config["transition_time"]
         )
         self.transition_frame_counter = 0
-
-        if not self._devices:
-            error = f"Cannot activate virtual {self.id}, it has no configured device segments"
-            _LOGGER.warning(error)
-            return
 
         if self._active_effect is None:
             self._transition_effect = DummyEffect(self.pixel_count)
@@ -296,7 +294,7 @@ class Virtual:
             self.active = True
         except RuntimeError:
             self.active = False
-            return
+            raise
 
     def transition_to_active(self):
         self._active_effect = self._transition_effect
@@ -353,8 +351,10 @@ class Virtual:
         while True:
             if not self._active:
                 break
-            if self._active_effect.is_active and hasattr(
-                self._active_effect, "pixels"
+            if (
+                self._active_effect
+                and self._active_effect.is_active
+                and hasattr(self._active_effect, "pixels")
             ):
                 # self.assembled_frame = await self._ledfx.loop.run_in_executor(
                 #     self._ledfx.thread_executor, self.assemble_frame
@@ -431,21 +431,26 @@ class Virtual:
 
     def activate(self):
         if not self._devices:
-            error = f"Cannot activate virtual {self.id}, it has no configured device segments"
+            error = f"Virtual {self.id}: Cannot activate, no configured device segments"
             _LOGGER.warning(error)
             raise RuntimeError(error)
         if not self._active_effect:
-            error = f"Cannot activate virtual {self.id}, it has no configured effect"
+            error = f"Virtual {self.id}: Cannot activate, no configured effect"
             _LOGGER.warning(error)
             raise RuntimeError(error)
 
         if hasattr(self, "_thread"):
             self._thread.join()
 
-        _LOGGER.info(f"Activating virtual {self.id}")
+        _LOGGER.debug(
+            f"Virtual {self.id}: Activating with segments {self._segments}"
+        )
         if not self._active:
+            try:
+                self.activate_segments(self._segments)
+            except ValueError as e:
+                _LOGGER.error(e)
             self._active = True
-            self.activate_segments(self._segments)
 
         # self.thread_function()
 
@@ -513,7 +518,9 @@ class Virtual:
                     )
             device = self._ledfx.devices.get(device_id)
             if device is None:
-                _LOGGER.warning("No active devices - Deactivating.")
+                _LOGGER.warning(
+                    f"Virtual {self.id}: No active devices - Deactivating."
+                )
                 self.deactivate()
             elif device.is_active():
                 device.update_pixels(self.id, data)
@@ -752,6 +759,8 @@ class Virtuals:
                     _LOGGER.warning(
                         "Effect schema changed. Not restoring effect"
                     )
+                except RuntimeError:
+                    pass
             self._ledfx.events.fire_event(
                 VirtualConfigUpdateEvent(virtual["id"], virtual["config"])
             )

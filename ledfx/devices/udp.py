@@ -12,7 +12,7 @@ SUPPORTED_PACKETS = ["DRGB", "WARLS", "DRGBW", "DNRGB", "adaptive_smallest"]
 
 
 class UDPRealtimeDevice(UDPDevice):
-    """Generic WLED UDP Realtime device support"""
+    """Generic UDP Realtime device support"""
 
     CONFIG_SCHEMA = vol.Schema(
         {

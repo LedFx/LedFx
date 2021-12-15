@@ -35,7 +35,7 @@ class RestEndpoint(BaseRegistry):
                 }
             )
         except Exception as e:
-            _LOGGER.exception(e)
+            # _LOGGER.exception(e)
             reason = getattr(e, "args", None)
             if reason:
                 reason = reason[0]
