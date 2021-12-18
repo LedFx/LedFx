@@ -113,3 +113,16 @@ export async function getTrackFeatures(id, token) {
         return 'Error';
     }
 }
+
+export async function getTrackAnalysis(id, token) {
+    const res = await axios.get(`https://api.spotify.com/v1/audio-analysis/${id}`, {
+        headers: {
+            Authorization: `Bearer ${token}`,
+        },
+    });
+    if (res.status == 200) {
+        return res.data;
+    } else {
+        return 'Error';
+    }
+}

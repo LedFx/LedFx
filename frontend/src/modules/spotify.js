@@ -8,6 +8,7 @@ export const authFinished = createAction(`${ACTION_ROOT}/AUTH_FINISHED`);
 export const authRefreshed = createAction(`${ACTION_ROOT}/AUTH_REFRESHED`);
 export const playerStateUpdated = createAction(`${ACTION_ROOT}/PLAYER_STATE_UPDATED`);
 export const audioFeaturesStateUpdated = createAction(`${ACTION_ROOT}/PLAYER_AUDIOFEATURES_UPDATED`);
+export const audioAnalysisStateUpdated = createAction(`${ACTION_ROOT}/PLAYER_AUDIOANALYSIS_UPDATED`);
 export const cookiesChecked = createAction(`${ACTION_ROOT}/COOKIES_CHECKED`);
 export const logoutAuthUpdated = createAction(`${ACTION_ROOT}/LOGOUT_UPDATED`);
 
@@ -44,6 +45,12 @@ export default handleActions(
             };
         },
         [audioFeaturesStateUpdated]: (state, { payload, payload: { audioFeatures } }) => {
+            return {
+                ...state,
+                audioFeatures: payload,
+            };
+        },
+        [audioAnalysisStateUpdated]: (state, { payload, payload: { audioAnalysis } }) => {
             return {
                 ...state,
                 audioFeatures: payload,
@@ -125,18 +132,12 @@ export function updatePlayerState(playerState) {
         try {
             const cookies = new Cookies();
             const access_token = cookies.get('access_token');
-
-            const audioFeatures = await spotifyProxies.getTrackFeatures(
-                playerState.track_window.current_track.id,
-                access_token
-            );
-
             dispatch(playerStateUpdated(playerState));
             //console.log('ID for audiofeatures', playerState.track_window.current_track.id);
         } catch (error) {
             console.log(error);
         }
-        if (playerState.loading) {
+        if (playerState.loading===true) {
             const cookies = new Cookies();
             const access_token = cookies.get('access_token');
 
@@ -144,7 +145,12 @@ export function updatePlayerState(playerState) {
                 playerState.track_window.current_track.id,
                 access_token
             );
+            const audioAnalysis = await spotifyProxies.getTrackAnalysis(
+                playerState.track_window.current_track.id,
+                access_token
+            );
             dispatch(audioFeaturesStateUpdated(audioFeatures));
+            dispatch(audioAnalysisStateUpdated(audioAnalysis));
             console.log('loading');
         }
     };
@@ -160,6 +166,18 @@ export function updateAudioFeatures(audioFeatures) {
         }
     };
 }
+
+export function updateAudioAnalysis(audioAnalysis) {
+    return dispatch => {
+        try {
+            dispatch(audioAnalysisStateUpdated(audioAnalysis));
+            console.log('Audio Analysis', audioAnalysis);
+        } catch (error) {
+            console.log(error);
+        }
+    };
+}
+
 
 export const increaseSongTime = time => {
     return {
