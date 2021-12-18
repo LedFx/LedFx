@@ -71,12 +71,12 @@ To install on macOS first ensure you have at least Python 3.8 installed.
 
     $ ledfx --open-ui
 
-macOS Installation @dev branch (Apple Silicon M1)
--------------------------------------------------------
+macOS Installation @frontend_beta branch (Apple Silicon)
+----------------------------------------------------------------
 
-To install on macOS (Apple Silicon M1) dev branch, first ensure you have at least Python 3.8 installed.
+To install on macOS (Apple Silicon) frontend_beta branch branch, first ensure you have at least Python 3.8 installed.
 
-**1.** Install LedFx and all the dependencies using `homebrew`_ in a `python virtualenv`_:
+**1.** Install LedFx and all the dependencies using `homebrew`_ in a `virtualenv`_:
 
 .. code:: console
 
@@ -85,13 +85,20 @@ To install on macOS (Apple Silicon M1) dev branch, first ensure you have at leas
     $ brew install virtualenv
     $ virtualenv -p python3.9 ~/ledfx-venv
     $ source ~/ledfx-venv/bin/activate
-    $ pip install -U pip setuptools wheel
-    $ pip install numpy --compile --pre
-    $ pip install --force-reinstall git+https://github.com/LedFx/LedFx@frontend_beta
+    $ pip install --force-reinstall git+https://github.com/LedFx/LedFx@frontend_beta   
 
     ** --force-reinstall assures that you will be up to date whenever you run the command
 
-**2.** Launch LedFx with the ``open-ui`` option to launch the browser:
+
+**2.**  If you get a numpy/aubio error please do the following:
+
+.. code:: console
+
+    $ pip uninstall numpy aubio
+    $ pip install numpy --no-cache-dir
+    $ pip install aubio --no-cache-dir
+
+**3.** Launch LedFx with the ``open-ui`` option to launch the browser:
 
 .. code:: console
 
@@ -171,6 +178,7 @@ Please visit one of the following links to obtain firmware for your ESP8266/ESP3
 .. _`LedFx Bash Install Script`: https://install.ledfx.app
 .. _`homebrew`: https://docs.brew.sh/Installation
 .. _`python venv`: https://docs.python.org/3/tutorial/venv.html
+.. _`virtualenv`: https://formulae.brew.sh/formula/virtualenv#default
 .. _`Scott's Audio Reactive Firmware`: https://github.com/scottlawsonbc/audio-reactive-led-strip
 .. _ESPixelStick: https://github.com/forkineye/ESPixelStick
 .. _WLED: https://github.com/Aircoookie/WLED
