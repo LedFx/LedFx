@@ -85,7 +85,7 @@ To install on macOS (Apple Silicon) frontend_beta branch branch, first ensure yo
     $ brew install virtualenv
     $ virtualenv -p python3.9 ~/ledfx-venv
     $ source ~/ledfx-venv/bin/activate
-    $ pip install --force-reinstall git+https://github.com/LedFx/LedFx@frontend_beta   
+    $ pip install --force-reinstall git+https://github.com/LedFx/LedFx@frontend_beta
 
     ** --force-reinstall assures that you will be up to date whenever you run the command
 
