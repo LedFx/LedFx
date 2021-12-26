@@ -1,5 +1,5 @@
 import React from 'react';
-import { deleteQLCListener, getIntegrations } from 'proxies/integrations';
+import { deleteQLCListener } from 'proxies/integrations';
 import { getAsyncIntegrations } from 'modules/integrations';
 import EditIcon from '@material-ui/icons/Edit';
 import { Switch } from '@material-ui/core';
@@ -15,6 +15,7 @@ const DataRow = ({ id, name, type, data }) => {
     const [test, setTest] = React.useState(false);
     React.useEffect(() => {
         dispatch(getAsyncIntegrations());
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [test]);
     const deleteQLC = async (id, dr) => {
         await deleteQLCListener(id, {
@@ -23,7 +24,7 @@ const DataRow = ({ id, name, type, data }) => {
                 event_filter: { scene_name: dr[1].scene_name },
             },
         });
-        let newData = data.filter(x => x[0] !== dr[0]);
+        //let newData = data.filter(x => x[0] !== dr[0]);
         setTest(!test);
     };
     return data

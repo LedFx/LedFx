@@ -15,8 +15,8 @@ import {
 import DeleteForeverIcon from '@material-ui/icons/DeleteForever';
 import { deleteSpotifyTrigger } from 'proxies/integrations';
 import { ToastContainer, toast } from 'react-toastify';
-import { getScenes } from 'modules/scenes';
-import { useEffect } from 'react';
+// import { getScenes } from 'modules/scenes';
+// import { useEffect } from 'react';
 
 const styles = theme => ({});
 
@@ -48,8 +48,10 @@ class TriggerList extends React.Component {
                         sceneName: sceneName,
                     });
                 }
+                return true;
             });
             this.setState({ triggers: triggersNew });
+            return true;
         });
         // console.log(triggers);
     }
@@ -78,14 +80,16 @@ class TriggerList extends React.Component {
                             sceneName: sceneName,
                         });
                     }
+                    return true;
                 });
+                return true;
             });
             this.setState({ triggers: triggersNew });
         }
     }
 
     render() {
-        const {} = this.props;
+        // const {} = this.props;
         return (
             <Card>
                 <ToastContainer />

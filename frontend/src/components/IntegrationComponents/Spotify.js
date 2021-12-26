@@ -1,10 +1,10 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import withStyles from '@material-ui/core/styles/withStyles';
-import Button from '@material-ui/core/Button';
+// import Button from '@material-ui/core/Button';
 import pkceChallenge from 'pkce-challenge';
 import Cookies from 'universal-cookie/es6';
-import { Grid, Typography } from '@material-ui/core';
+import { Grid } from '@material-ui/core';
 import { checkCookiesForTokens, finishAuth, refreshAuth } from 'modules/spotify';
 import SpotifyPlayer from 'components/SpotifyPlayer';
 import TriggersList from 'components/TriggersList';
@@ -47,7 +47,7 @@ class SpotifyView extends React.Component {
     }
 
     render() {
-        const { spotify, refreshAuth } = this.props;
+        const { spotify } = this.props;
         return (
             <Grid container justify="center" alignContent="center" style={{ height: '10%' }}>
                 {!spotify.accessToken && !spotify.refreshToken ? (

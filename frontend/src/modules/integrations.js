@@ -111,10 +111,10 @@ export function editAsyncIntegration() {
     return async dispatch => {
         const cookie = new Cookies();
         const logoutCheck = cookie.get('logout');
-        if (logoutCheck == 'false' || !logoutCheck) {
+        if (logoutCheck === 'false' || !logoutCheck) {
             dispatch(editIntegration({ status: 1, id: 'spotify' }));
         }
-        if (logoutCheck == 'true') {
+        if (logoutCheck === 'true') {
             dispatch(editIntegration({ status: 0, id: 'spotify' }));
         }
     };

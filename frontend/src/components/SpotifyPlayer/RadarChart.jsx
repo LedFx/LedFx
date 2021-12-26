@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { Radar } from 'react-chartjs-2';
 
@@ -31,17 +31,21 @@ export default function RadarChart(props) {
     const [chartData, setChartData] = useState(props.chartData || []);
 
     useEffect(() => {
-        if (props.loading) {
-            setChartData(props.chartData);
-            setChartValues([
-                props.chartValues.energy,
-                props.chartValues.danceability,
-                props.chartValues.valence,
-                props.chartValues.instrumentalness,
-                (props.chartValues.loudness*-1/13)
-            ]);
-        }
-    }, [props]);
+        // console.log(props.chartValues);
+        // if (props.loading) {
+        setChartData(props.chartData);
+        setChartValues([
+            props.chartValues.energy,
+            props.chartValues.danceability,
+            props.chartValues.valence,
+            props.chartValues.instrumentalness,
+            (props.chartValues.loudness * -1) / 13,
+        ]);
+        console.log('loading');
+        // }
+        // console.log(props);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [props.chartValues]);
 
     const chart = () => {
         setChartData({
@@ -80,7 +84,7 @@ export default function RadarChart(props) {
                     return '';
                 },
                 backdropColor: 'rgba(0, 0, 0, 0)',
-                min: -.5,
+                min: -0.5,
                 max: 1,
             },
             pointLabels: {
@@ -109,6 +113,7 @@ export default function RadarChart(props) {
             chartOptions.aspectRatio = 2;
         }
         chart();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [chartValues]);
 
     return (

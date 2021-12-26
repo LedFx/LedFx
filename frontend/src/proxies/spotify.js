@@ -94,7 +94,7 @@ export function logoutAuth() {
 
 export async function addTrigger(trigger) {
     const res = await axios.post('http://localhost:8888/api/integrations/spotify/spotify', trigger);
-    if (res.status == 200) {
+    if (res.status === 200) {
         return 'Success';
     } else {
         return 'Error';
@@ -107,7 +107,7 @@ export async function getTrackFeatures(id, token) {
             Authorization: `Bearer ${token}`,
         },
     });
-    if (res.status == 200) {
+    if (res.status === 200) {
         return res.data;
     } else {
         return 'Error';
@@ -120,7 +120,7 @@ export async function getTrackAnalysis(id, token) {
             Authorization: `Bearer ${token}`,
         },
     });
-    if (res.status == 200) {
+    if (res.status === 200) {
         return res.data;
     } else {
         return 'Error';

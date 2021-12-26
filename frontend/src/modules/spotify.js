@@ -7,8 +7,12 @@ const ACTION_ROOT = 'spotify';
 export const authFinished = createAction(`${ACTION_ROOT}/AUTH_FINISHED`);
 export const authRefreshed = createAction(`${ACTION_ROOT}/AUTH_REFRESHED`);
 export const playerStateUpdated = createAction(`${ACTION_ROOT}/PLAYER_STATE_UPDATED`);
-export const audioFeaturesStateUpdated = createAction(`${ACTION_ROOT}/PLAYER_AUDIOFEATURES_UPDATED`);
-export const audioAnalysisStateUpdated = createAction(`${ACTION_ROOT}/PLAYER_AUDIOANALYSIS_UPDATED`);
+export const audioFeaturesStateUpdated = createAction(
+    `${ACTION_ROOT}/PLAYER_AUDIOFEATURES_UPDATED`
+);
+export const audioAnalysisStateUpdated = createAction(
+    `${ACTION_ROOT}/PLAYER_AUDIOANALYSIS_UPDATED`
+);
 export const cookiesChecked = createAction(`${ACTION_ROOT}/COOKIES_CHECKED`);
 export const logoutAuthUpdated = createAction(`${ACTION_ROOT}/LOGOUT_UPDATED`);
 
@@ -18,6 +22,7 @@ const INITIAL_STATE = {
     refreshToken: '',
     logout: true,
     audioFeatures: {},
+    audioAnalysis: {},
     playerState: {},
 };
 
@@ -53,7 +58,7 @@ export default handleActions(
         [audioAnalysisStateUpdated]: (state, { payload, payload: { audioAnalysis } }) => {
             return {
                 ...state,
-                audioFeatures: payload,
+                audioAnalysis: payload,
             };
         },
         [playerStateUpdated]: (state, { payload, payload: { playerState } }) => {
@@ -127,17 +132,16 @@ export function logoutAuth() {
     };
 }
 
-export function updatePlayerState(playerState) {
+export function updatePlayerState(playerState, audioF) {
+    // console.log(audioF);
     return async dispatch => {
         try {
-            const cookies = new Cookies();
-            const access_token = cookies.get('access_token');
             dispatch(playerStateUpdated(playerState));
             //console.log('ID for audiofeatures', playerState.track_window.current_track.id);
         } catch (error) {
             console.log(error);
         }
-        if (playerState.loading===true) {
+        if (audioF === undefined && playerState.loading) {
             const cookies = new Cookies();
             const access_token = cookies.get('access_token');
 
@@ -177,7 +181,6 @@ export function updateAudioAnalysis(audioAnalysis) {
         }
     };
 }
-
 
 export const increaseSongTime = time => {
     return {

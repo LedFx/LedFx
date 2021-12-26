@@ -44,6 +44,7 @@ const IntegrationsCard = ({ int }) => {
     useEffect(() => {
         // EVERTHING HERE IS ONLY CALLED ONCE WHEN THIS COMPONENT IS RENDERED, Only call if {int.type === 'qlc'}
         if ((int.status === 1) & (int.type === 'qlc')) dispatch(getAsyncqlclisteners(int.id));
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [dispatch, int.id]);
     return (
         <Card className={classes.integrationCard} variant="outlined">

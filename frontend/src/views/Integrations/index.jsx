@@ -18,7 +18,7 @@ import CardB from '../../components/IntegrationComponents/CardB';
 import Row from '../../components/IntegrationComponents/Row';
 import SpotifyView from '../../components/IntegrationComponents/Spotify';
 //import SpotifyView from '../../components/IntegrationComponents/SpotifyBlade';
-import { getScenes, activateScene } from 'modules/scenes';
+import { getScenes } from 'modules/scenes';
 
 function Alert(props) {
     return <MuiAlert elevation={6} variant="filled" {...props} />;

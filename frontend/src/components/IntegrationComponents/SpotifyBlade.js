@@ -41,7 +41,7 @@ const SpotifyView = props => {
         const cookies = new Cookies();
         const accessTest = cookies.get('logout');
         const accessTest1 = cookies.get('access_token');
-        if ((accessTest == 'false' || !accessTest) && !accessTest1) {
+        if ((accessTest === 'false' || !accessTest) && !accessTest1) {
             dispatch(refreshAuth());
             cookies.set('logout', false);
         }
@@ -52,6 +52,7 @@ const SpotifyView = props => {
         }
         dispatch(editAsyncIntegration());
         dispatch(checkCookiesForTokens());
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const logoutClick = () => {
