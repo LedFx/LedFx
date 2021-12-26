@@ -1,12 +1,11 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import withStyles from '@material-ui/core/styles/withStyles';
-// import { makeStyles } from '@material-ui/core/styles';
-import Button from '@material-ui/core/Button';
-//import Card from '@material-ui/core/Card';
-//import CardHeader from '@material-ui/core/CardHeader';
-//import CardContent from '@material-ui/core/CardContent';
+import Moment from 'react-moment';
+import moment from 'moment';
+import { ToastContainer, toast } from 'react-toastify';
 import {
+    Button,
     AppBar,
     Checkbox,
     FormControl,
@@ -15,43 +14,33 @@ import {
     InputLabel,
     Select,
     Typography,
-} from '@material-ui/core';
+    Accordion,
+    AccordionSummary,
+    AccordionDetails,
+    Link,
+    Slider,
+    Table,
+    TableHead,
+    TableRow,
+    TableContainer,
+    TableBody,
+    TableCell,
+    Paper,
+    } from '@material-ui/core';
+import {
+    PlayArrow,
+    Pause,
+    SkipNext,
+    SkipPrevious,
+    ExpandMore,
+    Info,
+    } from '@material-ui/icons';
+
 import { updatePlayerState } from 'modules/spotify';
 import { getAsyncIntegrations } from 'modules/integrations';
-import PlayArrow from '@material-ui/icons/PlayArrow';
-import Pause from '@material-ui/icons/Pause';
-import SkipNext from '@material-ui/icons/SkipNext';
-import SkipPrevious from '@material-ui/icons/SkipPrevious';
-import InfoIcon from '@material-ui/icons/Info';
-import Link from '@material-ui/core/Link';
 import { activateScene } from 'modules/scenes';
 import { addTrigger } from 'proxies/spotify';
-import Moment from 'react-moment';
-import moment from 'moment';
-import Slider from '@material-ui/core/Slider';
-import { ToastContainer, toast } from 'react-toastify';
 import RadarChart from 'components/SpotifyPlayer/RadarChart';
-import Accordion from '@material-ui/core/Accordion';
-import AccordionSummary from '@material-ui/core/AccordionSummary';
-import AccordionDetails from '@material-ui/core/AccordionDetails';
-import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
-import Table from '@material-ui/core/Table';
-import TableBody from '@material-ui/core/TableBody';
-import TableCell from '@material-ui/core/TableCell';
-import TableContainer from '@material-ui/core/TableContainer';
-import TableHead from '@material-ui/core/TableHead';
-import TableRow from '@material-ui/core/TableRow';
-import Paper from '@material-ui/core/Paper';
-
-// const useStylesAccordin = makeStyles(theme => ({
-//     root: {
-//         width: '100%',
-//     },
-//     heading: {
-//         fontSize: theme.typography.pxToRem(15),
-//         fontWeight: theme.typography.fontWeightRegular,
-//     },
-// }));
 
 const data = {
     datasets: [
@@ -104,18 +93,6 @@ const styles = theme => ({
     },
 });
 
-// const useStyles = makeStyles(theme => ({
-//     sceneButton: {
-//         size: 'large',
-//         margin: theme.spacing(1),
-//     },
-//     submitControls: {
-//         display: 'flex',
-//         flexWrap: 'wrap',
-//         width: '100%',
-//         height: '100%',
-//     },
-// }));
 
 class SpotifyPlayer extends React.Component {
     constructor(props) {
@@ -233,9 +210,6 @@ class SpotifyPlayer extends React.Component {
     getTime(duration) {
         var seconds = Math.floor((duration / 1000) % 60),
             minutes = Math.floor((duration / (1000 * 60)) % 60);
-        // hours = Math.floor((duration / (1000 * 60 * 60)) % 24);
-
-        // hours = hours < 10 ? '0' + hours : hours;
         minutes = minutes < 10 ? '0' + minutes : minutes;
         seconds = seconds < 10 ? '0' + seconds : seconds;
 
@@ -324,7 +298,7 @@ class SpotifyPlayer extends React.Component {
         return Object.keys(playerState).length === 0 ? (
             <Link target="_blank" href="https://support.spotify.com/us/article/spotify-connect/">
                 <Typography color="textPrimary">
-                    Using Spotify Connect, select LedFX <InfoIcon></InfoIcon>
+                    Using Spotify Connect, select LedFX <Info></Info>
                 </Typography>
             </Link>
         ) : (
@@ -524,7 +498,7 @@ class SpotifyPlayer extends React.Component {
                     <Grid md={12} container item style={{ margin: '30px 20px' }}>
                         <Accordion style={{ width: '100%' }}>
                             <AccordionSummary
-                                expandIcon={<ExpandMoreIcon />}
+                                expandIcon={<ExpandMore />}
                                 aria-controls="panel1a-content"
                                 id="panel1a-header"
                                 style={{ width: '100%' }}
