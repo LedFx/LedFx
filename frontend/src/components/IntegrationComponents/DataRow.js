@@ -24,7 +24,7 @@ const DataRow = ({ id, name, type, data }) => {
                 event_filter: { scene_name: dr[1].scene_name },
             },
         });
-        //let newData = data.filter(x => x[0] !== dr[0]);
+
         setTest(!test);
     };
     return data
