@@ -510,6 +510,16 @@ class Devices(RegistryLoader):
                             msg = f"Ignoring {device_ip}: Shares IP and starting universe with existing device {existing_device.name}"
                             _LOGGER.info(msg)
                             raise ValueError(msg)
+                    elif device_type == "openrgb":
+                        # check the openrgb name for OpenRGB device, it might still be okay at a shared ip_address
+                        # eg. for multi OpenRGB devices
+                        if (
+                            device_config["openrgb_name"]
+                            == existing_device.config["openrgb_name"]
+                        ):
+                            msg = f"Ignoring {device_ip}: Shares IP and openrgb name with existing device {existing_device.name}"
+                            _LOGGER.info(msg)
+                            raise ValueError(msg)
                     else:
                         msg = f"Ignoring {device_ip}: Shares destination with existing device {existing_device.name}"
                         _LOGGER.info(msg)
