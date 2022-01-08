@@ -153,8 +153,11 @@ export function updatePlayerState(playerState, audioF) {
                 playerState.track_window.current_track.id,
                 access_token
             );
+
+            let new_analysis = spotifyProxies.fixAnalysis(audioAnalysis);
+
             dispatch(audioFeaturesStateUpdated(audioFeatures));
-            dispatch(audioAnalysisStateUpdated(audioAnalysis));
+            dispatch(audioAnalysisStateUpdated(new_analysis));
             console.log('loading');
         }
     };

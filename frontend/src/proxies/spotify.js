@@ -126,3 +126,30 @@ export async function getTrackAnalysis(id, token) {
         return 'Error';
     }
 }
+
+export function fixAnalysis(audioAnalysis) {
+    let new_analysis = { ...audioAnalysis };
+
+    new_analysis['segments'] = [];
+    if (audioAnalysis?.segments) {
+        audioAnalysis['segments'].forEach(segment => {
+            let new_segment = { ...segment };
+            new_segment['start'] = parseFloat(segment['start'].toFixed(2));
+            new_segment['pitches'] = [];
+            let pitchTotal = 0;
+            console.log(segment['pitches']);
+            segment['pitches'].forEach(pitch => {
+                console.log(pitch);
+                pitchTotal += pitch;
+            });
+            segment['pitches'].forEach(pitch => {
+                pitch = (pitch / pitchTotal) * 100;
+                new_segment['pitches'].push(pitch);
+            });
+
+            new_analysis['segments'].push(new_segment);
+        });
+    }
+
+    return new_analysis;
+}

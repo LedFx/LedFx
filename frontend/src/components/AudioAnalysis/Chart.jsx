@@ -79,7 +79,7 @@ export default class Chart extends PureComponent {
                     />
                     <YAxis
                         tickFormatter={value => `${value.toFixed(0)}%`}
-                        domain={[0, 15]}
+                        domain={[0, 100]}
                         allowDataOverflow="true"
                     />
                     <Tooltip
