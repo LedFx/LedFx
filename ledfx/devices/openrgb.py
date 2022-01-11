@@ -46,11 +46,17 @@ class OpenRGB(NetworkedDevice):
     def activate(self):
         try:
             from openrgb import OpenRGBClient
-
-            self.openrgb_device = OpenRGBClient(
-                self.ip_address, self.port, "LedFx", 2  # protocol_version
-            ).get_devices_by_name(f"{self.openrgb_device_name}")[0]
+            try:
+                self.openrgb_device = OpenRGBClient(
+                    self.ip_address, self.port, "LedFx", 2  # protocol_version
+                ).get_devices_by_name(f"{self.openrgb_device_name}")[0]
+            except (ConnectionRefusedError, TimeoutError):
+                _LOGGER.error(
+                    f"{self.openrgb_device_name} not reachable. Is the api server running?"
+                )
+                return
             # check for eedevice
+            
             device_supports_direct = False
             for mode in self.openrgb_device.modes:
                 if mode.name.lower() == "direct":
