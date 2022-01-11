@@ -329,8 +329,7 @@ class Effect(BaseRegistry):
         if self._config["background_color"]:
             # TODO: colors in future should have an alpha value, which would work nicely to apply to dim the background color
             # for now, just set it a bit less bright.
-            pass
-            # pixels += self._bg_color
+            pixels += self._bg_color
         if self._config["brightness"] is not None:
             np.multiply(
                 pixels,
