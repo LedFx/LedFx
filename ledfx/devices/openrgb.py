@@ -42,6 +42,7 @@ class OpenRGB(NetworkedDevice):
         self.ip_address = self._config["ip_address"]
         self.port = self._config["port"]
         self.openrgb_device_name = self._config["openrgb_name"]
+        self._online = True
 
     def activate(self):
         try:
@@ -50,10 +51,12 @@ class OpenRGB(NetworkedDevice):
                 self.openrgb_device = OpenRGBClient(
                     self.ip_address, self.port, "LedFx", 2  # protocol_version
                 ).get_devices_by_name(f"{self.openrgb_device_name}")[0]
+                self._online = True
             except (ConnectionRefusedError, TimeoutError):
-                _LOGGER.error(
+                _LOGGER.warning(
                     f"{self.openrgb_device_name} not reachable. Is the api server running?"
                 )
+                self._online = False
                 return
             # check for eedevice
             
@@ -70,6 +73,7 @@ class OpenRGB(NetworkedDevice):
             _LOGGER.critical(
                 f"Couldn't find openRGB device named: {self.openrgb_device_name}"
             )
+            self._online = False
             self.deactivate()
         except ValueError:
             _LOGGER.critical(
@@ -77,6 +81,7 @@ class OpenRGB(NetworkedDevice):
             )
             self.deactivate()
         else:
+            self._online = True
             super().activate()
 
     def deactivate(self):
@@ -91,7 +96,13 @@ class OpenRGB(NetworkedDevice):
                 self.openrgb_device.id,
             )
         except AttributeError:
-            self.activate()
+            self.activate()        
+        except ConnectionAbortedError:
+            _LOGGER.warning(
+                f"Device disconnected: {self.openrgb_device_name}"
+            )
+            self._online = False
+            self.deactivate()
 
     @staticmethod
     def send_out(sock: socket.socket, data: np.ndarray, device_id: int):
