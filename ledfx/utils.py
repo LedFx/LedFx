@@ -249,6 +249,7 @@ class WLED:
 
         except requests.exceptions.RequestException:
             msg = f"WLED {ip_address}: Failed to connect"
+            self._online = False
             raise ValueError(msg)
 
         if not response.ok:

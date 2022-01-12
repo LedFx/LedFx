@@ -74,7 +74,7 @@ class Device(BaseRegistry):
         self._pixels = None
         self._silence_start = None
         self._device_type = ""
-        self._online = True
+        self._online = False
 
     def __del__(self):
         if self._active:
@@ -341,9 +341,9 @@ class NetworkedDevice(Device):
         except ValueError as msg:
             _LOGGER.warning(f"Device {self.name}: {msg}")
 
-    def activate(self, *args, **kwargs):
+    def activate(self, *args, **kwargs):        
         if self._destination is None:
-            msg = f"Device {self.name}: Failed to activate, is it online?"
+            msg = f"Device {self.name}: Failed to activate, is it online?"            
             _LOGGER.warning(msg)
             callback = partial(self.activate, *args, **kwargs)
             async_fire_and_forget(
@@ -352,6 +352,7 @@ class NetworkedDevice(Device):
             )
             raise RuntimeError(msg)
         else:
+            self._online = True
             super().activate(*args, **kwargs)
 
     @property

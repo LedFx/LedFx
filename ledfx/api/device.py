@@ -6,6 +6,7 @@ from aiohttp import web
 
 from ledfx.api import RestEndpoint
 from ledfx.config import save_config
+import asyncio
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -84,7 +85,15 @@ class DeviceEndpoint(RestEndpoint):
             return web.json_response(data=response, status=404)      
 
         try:
-            device.activate()            
+            if device.type == 'wled':
+                await device.resolve_address()
+                # try:
+                #     await device.resolve_address(device.activate())
+                #     device.activate()
+                # except (voluptuous.Error, ValueError) as msg:
+                #     await device.resolve_address()
+                # finally:
+                #     device.activate()
             status = 200
 
             response = {"status": "success", "virtuals": {}}
@@ -113,9 +122,10 @@ class DeviceEndpoint(RestEndpoint):
                 "payload": {"type": "warning", "reason": str(msg)},
             }
             status = 202
-            # If there's an error updating config, don't write that config, just return an error
-            return web.json_response(data=response, status=status)       
-
+            # If there's an error updating config, don't write that config, just return an error            
+            return web.json_response(data=response, status=status)              
+       
+        device.activate()
         return web.json_response(data=response, status=status)
 
     async def delete(self, device_id) -> web.Response:

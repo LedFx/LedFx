@@ -11,7 +11,7 @@ class Event:
 
     LEDFX_SHUTDOWN = "shutdown"
     DEVICE_UPDATE = "device_update"
-    DEVICES_UPDATE = "devices_update"
+    DEVICES_UPDATED = "devices_updated"
     VIRTUAL_UPDATE = "virtual_update"
     VISUALISATION_UPDATE = "visualisation_update"
     GRAPH_UPDATE = "graph_update"
@@ -46,7 +46,7 @@ class DevicesUpdatedEvent(Event):
     """Weird event emitted when OpenRGB device fails to connect"""
 
     def __init__(self, device_id: str):
-        super().__init__(Event.DEVICES_UPDATE)
+        super().__init__(Event.DEVICES_UPDATED)
         self.device_id = device_id
 
 
