@@ -66,7 +66,7 @@ class Device(BaseRegistry):
         )
 
     _active = False
-
+    
     def __init__(self, ledfx, config):
         self._ledfx = ledfx
         self._config = config
@@ -74,6 +74,7 @@ class Device(BaseRegistry):
         self._pixels = None
         self._silence_start = None
         self._device_type = ""
+        self._online = True
 
     def __del__(self):
         if self._active:
@@ -122,6 +123,9 @@ class Device(BaseRegistry):
 
     def is_active(self):
         return self._active
+
+    def is_online(self):
+        return self._online
 
     def update_pixels(self, virtual_id, data):
         # update each segment from this virtual
@@ -218,6 +222,15 @@ class Device(BaseRegistry):
         return list(
             virtual.id for virtual in self._virtuals_objs if virtual.active
         )
+    
+    @property
+    def online(self):
+        """
+        list of id of the virtuals active on this device.
+        it's a list bc there can be more than one virtual streaming
+        to a device.
+        """
+        return self._online
 
     @cached_property
     def virtuals(self):

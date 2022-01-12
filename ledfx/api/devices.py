@@ -20,6 +20,7 @@ class DevicesEndpoint(RestEndpoint):
                 "config": device.config,
                 "id": device.id,
                 "type": device.type,
+                "online": device.online,
                 "virtuals": device.virtuals,
                 "active_virtuals": device.active_virtuals,
             }
