@@ -5,9 +5,9 @@ import numpy as np
 import voluptuous as vol
 
 from ledfx.devices import NetworkedDevice, packets
+from ledfx.events import DevicesUpdatedEvent
 
 _LOGGER = logging.getLogger(__name__)
-from ledfx.api.websocket import WebsocketConnection
 
 
 class OpenRGB(NetworkedDevice):
@@ -49,6 +49,7 @@ class OpenRGB(NetworkedDevice):
     def activate(self):
         try:
             from openrgb import OpenRGBClient
+
             try:
                 self.openrgb_device = OpenRGBClient(
                     self.ip_address, self.port, "LedFx", 2  # protocol_version
@@ -61,7 +62,7 @@ class OpenRGB(NetworkedDevice):
                 self._online = False
                 return
             # check for eedevice
-            
+
             device_supports_direct = False
             for mode in self.openrgb_device.modes:
                 if mode.name.lower() == "direct":
@@ -98,12 +99,10 @@ class OpenRGB(NetworkedDevice):
                 self.openrgb_device.id,
             )
         except AttributeError:
-            self.activate()        
+            self.activate()
         except ConnectionAbortedError:
-            _LOGGER.warning(
-                f"Device disconnected: {self.openrgb_device_name}"
-            )
-            # WebsocketConnection.send(self, "HII") # incorrect self HELP_BLADE
+            _LOGGER.warning(f"Device disconnected: {self.openrgb_device_name}")
+            self._ledfx.events.fire_event(DevicesUpdatedEvent(self.id))
             self._online = False
             self.deactivate()
 
