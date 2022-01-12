@@ -7,6 +7,7 @@ import voluptuous as vol
 from ledfx.devices import NetworkedDevice, packets
 
 _LOGGER = logging.getLogger(__name__)
+from ledfx.api.websocket import WebsocketConnection
 
 
 class OpenRGB(NetworkedDevice):
@@ -39,6 +40,7 @@ class OpenRGB(NetworkedDevice):
 
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
+        self._ledfx = ledfx
         self.ip_address = self._config["ip_address"]
         self.port = self._config["port"]
         self.openrgb_device_name = self._config["openrgb_name"]
@@ -101,6 +103,7 @@ class OpenRGB(NetworkedDevice):
             _LOGGER.warning(
                 f"Device disconnected: {self.openrgb_device_name}"
             )
+            # WebsocketConnection.send(self, "HII") # incorrect self HELP_BLADE
             self._online = False
             self.deactivate()
 
