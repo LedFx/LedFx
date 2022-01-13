@@ -87,13 +87,6 @@ class DeviceEndpoint(RestEndpoint):
         try:
             if device.type == 'wled':
                 await device.resolve_address()
-                # try:
-                #     await device.resolve_address(device.activate())
-                #     device.activate()
-                # except (voluptuous.Error, ValueError) as msg:
-                #     await device.resolve_address()
-                # finally:
-                #     device.activate()
             status = 200
 
             response = {"status": "success", "virtuals": {}}

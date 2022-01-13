@@ -341,7 +341,7 @@ class NetworkedDevice(Device):
         except ValueError as msg:
             _LOGGER.warning(f"Device {self.name}: {msg}")
 
-    def activate(self, *args, **kwargs):        
+    def activate(self, *args, **kwargs):
         if self._destination is None:
             msg = f"Device {self.name}: Failed to activate, is it online?"            
             _LOGGER.warning(msg)
@@ -350,7 +350,6 @@ class NetworkedDevice(Device):
                 self.resolve_address(success_callback=callback),
                 loop=self._ledfx.loop,
             )
-            raise RuntimeError(msg)
         else:
             self._online = True
             super().activate(*args, **kwargs)

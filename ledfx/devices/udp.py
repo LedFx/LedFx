@@ -137,12 +137,14 @@ class UDPRealtimeDevice(UDPDevice):
                 // 2
             ) / self._config["refresh_rate"]
             if timestamp > self.last_frame_sent_time + half_of_timeout:
+                if self._destination is not None:
+                    self._sock.sendto(
+                        bytes(packet), (self.destination, self._config["port"])
+                    )
+                    self.last_frame_sent_time = timestamp
+        else:
+            if self._destination is not None:
                 self._sock.sendto(
                     bytes(packet), (self.destination, self._config["port"])
                 )
                 self.last_frame_sent_time = timestamp
-        else:
-            self._sock.sendto(
-                bytes(packet), (self.destination, self._config["port"])
-            )
-            self.last_frame_sent_time = timestamp
