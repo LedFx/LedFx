@@ -3,8 +3,8 @@ import styled from 'styled-components';
 import { Radar } from 'react-chartjs-2';
 
 const RadarChartContainer = styled.div`
-    width: 500px;
-    height:'500px;
+    width: 550px;
+    height:'550px;
 
     h2 {
         margin-bottom: 40px;

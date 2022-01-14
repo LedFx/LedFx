@@ -569,23 +569,62 @@ class SpotifyPlayer extends React.Component {
                                                 </TableRow>
                                             </TableHead>
                                             <TableBody>
-                                                {rows.map(row => (
-                                                    <TableRow
-                                                        key={row.name}
-                                                        sx={{
-                                                            '&:last-child td, &:last-child th': {
-                                                                border: 0,
-                                                            },
-                                                        }}
-                                                    >
-                                                        <TableCell component="th" scope="row">
-                                                            {row.name}
-                                                        </TableCell>
-                                                        <TableCell align="right">
-                                                            {row.value}
-                                                        </TableCell>
-                                                    </TableRow>
-                                                ))}
+                                                <TableRow
+                                                    key={'tempo'}
+                                                    style={{ cursor: 'pointer' }}
+                                                >
+                                                    <TableCell component="th" scope="row">
+                                                    BPM (Tempo)
+                                                    </TableCell>
+                                                    <TableCell align="right">
+                                                        {audioFeatures.tempo}
+                                                    </TableCell>
+                                                </TableRow>
+                                                <TableRow
+                                                    key={'key'}
+                                                    style={{ cursor: 'pointer' }}
+                                                >
+                                                    <TableCell component="th" scope="row">
+                                                        Pitch class (Key)
+                                                    </TableCell>
+                                                    <TableCell align="right">
+                                                        {audioFeatures.key ? 
+                                                        audioFeatures.key===0? 'C' : 
+                                                        audioFeatures.key===1 ? 'C#' :
+                                                        audioFeatures.key===2 ? 'D' :
+                                                        audioFeatures.key===3 ? 'D#' : 
+                                                        audioFeatures.key===4 ? 'E' : 
+                                                        audioFeatures.key===5 ? 'F' : 
+                                                        audioFeatures.key===6 ? 'F#' : 
+                                                        audioFeatures.key===7 ? 'G' : 
+                                                        audioFeatures.key===8 ? 'G#' : 
+                                                        audioFeatures.key===9 ? 'A' : 
+                                                        audioFeatures.key===10 ? 'A#' : 
+                                                        audioFeatures.key===11 ? 'B' : 'N/A' : 'N/A'}
+                                                    </TableCell>
+                                                </TableRow>
+                                                <TableRow
+                                                    key={'mode'}
+                                                    style={{ cursor: 'pointer' }}
+                                                >
+                                                    <TableCell component="th" scope="row">
+                                                        Modality/Mode (Major/Minor)
+                                                    </TableCell>
+                                                    <TableCell align="right">
+                                                        {audioFeatures.mode === 0 ? 'Minor' : 'Major'}
+                                                    </TableCell>
+                                                </TableRow>
+                                                <TableRow
+                                                    key={'time_signature'}
+                                                    style={{ cursor: 'pointer' }}
+                                                >
+                                                    <TableCell component="th" scope="row">
+                                                        Time Signature (How many beats in each bar)
+                                                    </TableCell>
+                                                    <TableCell align="right">
+                                                        {audioFeatures.time_signature}
+                                                    </TableCell>
+                                                </TableRow>
                                             </TableBody>
                                         </Table>
                                     </TableContainer>
