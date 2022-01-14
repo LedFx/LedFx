@@ -3,6 +3,7 @@ import logging
 from aiohttp import web
 
 from ledfx.api import RestEndpoint
+from ledfx.color import validate_color
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -30,20 +31,13 @@ class ColorEndpoint(RestEndpoint):
         """
         Deletes a user defined color or gradient
         Request body is a string of the color key to delete
-        eg. {
-            "colors": ["my_red_color"],
-        }
+        eg. ["my_red_color"]
         """
 
         data = await request.json()
 
-        colors = data.get("colors", {})
-        gradients = data.get("gradients", {})
-
-        for key in colors:
+        for key in data:
             del self._ledfx.colors[key]
-
-        for key in gradients:
             del self._ledfx.gradients[key]
 
         response = {
@@ -59,22 +53,21 @@ class ColorEndpoint(RestEndpoint):
     async def post(self, request) -> web.Response:
         """
         Creates or updates existing colors or gradients.
-        eg. {
-            "colors: {"my_red_color": "#ffffff"},
-            "gradients": {"my_cool_gradient": "lin..."}
-        }
+        eg. {"my_red_color": "#ffffff"}
+        or  {"my_cool_gradient": "lin..."}
         """
 
         data = await request.json()
 
-        colors = data.get("colors", {})
-        gradients = data.get("gradients", {})
-
-        for key, val in colors.items():
-            self._ledfx.colors[key] = val
-
-        for key, val in gradients.items():
-            self._ledfx.gradients[key] = val
+        for key, val in data.items():
+            try:
+                is_color = validate_color(val)
+            except ValueError:
+                is_color = False
+            if is_color:
+                self._ledfx.colors[key] = val
+            else:
+                self._ledfx.gradients[key] = val
 
         response = {
             "status": "success",

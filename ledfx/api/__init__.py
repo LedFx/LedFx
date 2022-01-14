@@ -35,19 +35,23 @@ class RestEndpoint(BaseRegistry):
                 }
             )
         except Exception as e:
-            _LOGGER.exception(e)
+            # _LOGGER.exception(e)
+            reason = getattr(e, "args", None)
+            if reason:
+                reason = reason[0]
+            else:
+                reason = repr(e)
             response = {
                 "status": "failed",
                 "payload": {
                     "type": "error",
-                    "reason": getattr(e, "message", repr(e)),
+                    "reason": reason,
                 },
             }
-            try:
-                return web.json_response(data=response, status=202)
-            finally:
-                if self._ledfx.dev_enabled():
-                    raise
+            return web.json_response(data=response, status=202)
+            # finally:
+            #     if self._ledfx.dev_enabled():
+            #         raise
 
 
 class RestApi(RegistryLoader):

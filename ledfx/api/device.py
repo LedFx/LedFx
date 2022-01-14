@@ -6,6 +6,7 @@ from aiohttp import web
 
 from ledfx.api import RestEndpoint
 from ledfx.config import save_config
+import asyncio
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -75,6 +76,49 @@ class DeviceEndpoint(RestEndpoint):
             config_dir=self._ledfx.config_dir,
         )
 
+        return web.json_response(data=response, status=status)
+
+    async def post(self, device_id, request) -> web.Response:
+        device = self._ledfx.devices.get(device_id)
+        if device is None:
+            response = {"not found": 404}
+            return web.json_response(data=response, status=404)      
+
+        try:
+            if device.type == 'wled':
+                await device.resolve_address()
+            status = 200
+
+            response = {"status": "success", "virtuals": {}}
+            response["paused"] = self._ledfx.virtuals._paused
+            for virtual in self._ledfx.virtuals.values():
+                response["virtuals"][virtual.id] = {
+                    "config": virtual.config,
+                    "id": virtual.id,
+                    "is_device": virtual.is_device,
+                    "segments": virtual.segments,
+                    "pixel_count": virtual.pixel_count,
+                    "active": virtual.active,
+                    "effect": {},
+                }
+                if virtual.active_effect:
+                    effect_response = {}
+                    effect_response["config"] = virtual.active_effect.config
+                    effect_response["name"] = virtual.active_effect.name
+                    effect_response["type"] = virtual.active_effect.type
+                    response["virtuals"][virtual.id]["effect"] = effect_response
+
+            
+        except (voluptuous.Error, ValueError) as msg:
+            response = {
+                "status": "failed",
+                "payload": {"type": "warning", "reason": str(msg)},
+            }
+            status = 202
+            # If there's an error updating config, don't write that config, just return an error            
+            return web.json_response(data=response, status=status)              
+       
+        device.activate()
         return web.json_response(data=response, status=status)
 
     async def delete(self, device_id) -> web.Response:

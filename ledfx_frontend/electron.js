@@ -109,7 +109,7 @@ app.whenReady().then(async () => {
             { label: 'seperator', type: 'separator' },
             { label: 'Start core', click: () => subpy = require("child_process").spawn(`./${ledfxCore}`, []) },
             { label: 'Stop core', click: () => wind.webContents.send('fromMain', 'shutdown') },
-            { label: 'Download core', click: () =>  download(wind, `https://github.com/YeonV/LedFx-Frontend-v2/releases/latest/download/LedFx_core-${app.getVersion().split('-')[1]}--win-portable.exe`, { directory: thePath, overwrite: true }).then((f) => { app.relaunch(); app.exit() }) },
+            // { label: 'Download core', click: () =>  download(wind, `https://github.com/YeonV/LedFx-Frontend-v2/releases/latest/download/LedFx_core-${app.getVersion().split('-')[1]}--win-portable.exe`, { directory: thePath, overwrite: true }).then((f) => { app.relaunch(); app.exit() }) },
             { label: 'Restart Client', click: () => { app.relaunch(); app.exit() }},
             { label: 'Open folder', click: () => shell.openPath(thePath) },
             { label: 'seperator', type: 'separator' },
@@ -125,7 +125,7 @@ app.whenReady().then(async () => {
             { label: 'Dev', click: () => wind.webContents.openDevTools() },
             { label: 'seperator', type: 'separator' },
             { label: 'Stop core', click: () => wind.webContents.send('fromMain', 'shutdown') },
-            { label: 'Download core', click: () => download(wind, `https://github.com/YeonV/LedFx-Frontend-v2/releases/latest/download/LedFx_core-${app.getVersion().split('-')[1]}--win-portable.exe`, { directory: thePath, overwrite: true, onProgress: (obj)=>{wind.webContents.send('fromMain', ['download-progress', obj])} }).then((f) => { wind.webContents.send('fromMain', 'clear-frontend'); app.relaunch(); app.exit() })},
+            // { label: 'Download core', click: () => download(wind, `https://github.com/YeonV/LedFx-Frontend-v2/releases/latest/download/LedFx_core-${app.getVersion().split('-')[1]}--win-portable.exe`, { directory: thePath, overwrite: true, onProgress: (obj)=>{wind.webContents.send('fromMain', ['download-progress', obj])} }).then((f) => { wind.webContents.send('fromMain', 'clear-frontend'); app.relaunch(); app.exit() })},
             { label: 'Restart Client', click: () => {app.relaunch(); app.exit() }},
             { label: 'Open folder', click: () => shell.openPath(thePath) },
             { label: 'seperator', type: 'separator' },
@@ -152,7 +152,7 @@ app.whenReady().then(async () => {
             return
         }
         if (parameters === 'restart-client') {
-            app.relaunch();
+            app.relaunch(); 
             app.exit();
             return
         }
@@ -173,7 +173,7 @@ app.whenReady().then(async () => {
 // for applications and their menu bar to stay active until the user quits
 // explicitly with Cmd + Q.
 app.on('window-all-closed', () => {
-    if (process.platform !== 'darwin') {
+    if (process.platform !== 'darwin') {        
         if (subpy !== null) {
             subpy.kill("SIGINT");
         }

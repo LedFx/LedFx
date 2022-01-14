@@ -13,7 +13,11 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class WLEDDevice(NetworkedDevice):
-    """Dedicated WLED device support"""
+    """
+    Dedicated WLED device support
+    This class fetches its config (px count, etc) from the WLED device
+    at launch, and lets the user choose a sync mode to use.
+    """
 
     CONFIG_SCHEMA = vol.Schema(
         {
@@ -87,6 +91,7 @@ class WLEDDevice(NetworkedDevice):
         self.subdevice._destination = self._destination
 
     def activate(self):
+
         if self.subdevice is None:
             self.setup_subdevice()
         self.subdevice.activate()
@@ -102,7 +107,10 @@ class WLEDDevice(NetworkedDevice):
 
     async def async_initialize(self):
         await super().async_initialize()
-        self.wled = WLED(self.destination)
+        # if not self._destination:
+        #     self.setup_subdevice()
+        #     return
+        self.wled = WLED(self._destination)
         wled_config = await self.wled.get_config()
 
         led_info = wled_config["leds"]

@@ -5,6 +5,7 @@ import numpy as np
 import voluptuous as vol
 
 from ledfx.devices import NetworkedDevice, packets
+from ledfx.events import DevicesUpdatedEvent
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -39,18 +40,29 @@ class OpenRGB(NetworkedDevice):
 
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
+        self._ledfx = ledfx
         self.ip_address = self._config["ip_address"]
         self.port = self._config["port"]
         self.openrgb_device_name = self._config["openrgb_name"]
+        self._online = True
 
     def activate(self):
         try:
             from openrgb import OpenRGBClient
 
-            self.openrgb_device = OpenRGBClient(
-                self.ip_address, self.port, "LedFx", 2  # protocol_version
-            ).get_devices_by_name(f"{self.openrgb_device_name}")[0]
+            try:
+                self.openrgb_device = OpenRGBClient(
+                    self.ip_address, self.port, "LedFx", 2  # protocol_version
+                ).get_devices_by_name(f"{self.openrgb_device_name}")[0]
+                self._online = True
+            except (ConnectionRefusedError, TimeoutError):
+                _LOGGER.warning(
+                    f"{self.openrgb_device_name} not reachable. Is the api server running?"
+                )
+                self._online = False
+                return
             # check for eedevice
+
             device_supports_direct = False
             for mode in self.openrgb_device.modes:
                 if mode.name.lower() == "direct":
@@ -64,6 +76,7 @@ class OpenRGB(NetworkedDevice):
             _LOGGER.critical(
                 f"Couldn't find openRGB device named: {self.openrgb_device_name}"
             )
+            self._online = False
             self.deactivate()
         except ValueError:
             _LOGGER.critical(
@@ -71,6 +84,7 @@ class OpenRGB(NetworkedDevice):
             )
             self.deactivate()
         else:
+            self._online = True
             super().activate()
 
     def deactivate(self):
@@ -86,6 +100,11 @@ class OpenRGB(NetworkedDevice):
             )
         except AttributeError:
             self.activate()
+        except ConnectionAbortedError:
+            _LOGGER.warning(f"Device disconnected: {self.openrgb_device_name}")
+            self._ledfx.events.fire_event(DevicesUpdatedEvent(self.id))
+            self._online = False
+            self.deactivate()
 
     @staticmethod
     def send_out(sock: socket.socket, data: np.ndarray, device_id: int):

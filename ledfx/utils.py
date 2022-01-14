@@ -249,6 +249,7 @@ class WLED:
 
         except requests.exceptions.RequestException:
             msg = f"WLED {ip_address}: Failed to connect"
+            self._online = False
             raise ValueError(msg)
 
         if not response.ok:
@@ -524,10 +525,14 @@ def empty_queue(queue: asyncio.Queue):
         queue.task_done()
 
 
-async def resolve_destination(loop, destination, port=7777, timeout=3):
+async def resolve_destination(
+    loop, executor, destination, port=7777, timeout=3
+):
     """Uses asyncio's non blocking DNS funcs to attempt domain lookup
 
     Args:
+        loop: ledfx event loop (ledfx.loop)
+        executor: ledfx executor (ledfx.thread_executor)
         destination (string): The domain name to be resolved.
         timeout, optional (int/float): timeout for the operation
 
@@ -542,9 +547,14 @@ async def resolve_destination(loop, destination, port=7777, timeout=3):
     except ValueError:
         cleaned_dest = destination.rstrip(".")
         try:
-            dest = await loop.getaddrinfo(cleaned_dest, port)
-            return dest[0][4][0]
-        except socket.gaierror:
+            dest = await loop.run_in_executor(
+                executor, socket.gethostbyname, cleaned_dest
+            )
+            _LOGGER.debug(f"Resolved {cleaned_dest} to {dest}")
+            return dest
+            # dest = await loop.getaddrinfo(cleaned_dest, port)
+            # return dest[0][4][0]
+        except socket.gaierror as e:
             raise ValueError(f"Failed to resolve destination {cleaned_dest}")
 
 
@@ -649,6 +659,9 @@ class UserDefaultCollection(MutableMapping):
             return
         if key in self._user_vals:
             del self._user_vals[key]
+        _LOGGER.info(
+            f"Deleted {self._collection_name.lower().rstrip('s')}: {key}"
+        )
         save_config(
             config=self._ledfx.config,
             config_dir=self._ledfx.config_dir,
@@ -661,6 +674,9 @@ class UserDefaultCollection(MutableMapping):
             )
             return
         self._user_vals[key] = self._validator(value)
+        _LOGGER.info(
+            f"Saved {self._collection_name.lower().rstrip('s')}: {key}"
+        )
         save_config(
             config=self._ledfx.config,
             config_dir=self._ledfx.config_dir,

@@ -12,7 +12,7 @@ SUPPORTED_PACKETS = ["DRGB", "WARLS", "DRGBW", "DNRGB", "adaptive_smallest"]
 
 
 class UDPRealtimeDevice(UDPDevice):
-    """Generic WLED UDP Realtime device support"""
+    """Generic UDP Realtime device support"""
 
     CONFIG_SCHEMA = vol.Schema(
         {
@@ -67,25 +67,23 @@ class UDPRealtimeDevice(UDPDevice):
     ):
         frame_size = len(data)
 
+        frame_is_equal_to_last = self._config[
+            "minimise_traffic"
+        ] and np.array_equal(data, self.last_frame)
+
         if self._config["udp_packet_type"] == "DRGB" and frame_size <= 490:
             udpData = packets.build_drgb_packet(data, timeout)
-            self.transmit_packet(
-                udpData, np.array_equal(data, self.last_frame)
-            )
+            self.transmit_packet(udpData, frame_is_equal_to_last)
 
         elif self._config["udp_packet_type"] == "WARLS" and frame_size <= 255:
             udpData = packets.build_warls_packet(
                 data, timeout, self.last_frame
             )
-            self.transmit_packet(
-                udpData, np.array_equal(data, self.last_frame)
-            )
+            self.transmit_packet(udpData, frame_is_equal_to_last)
 
         elif self._config["udp_packet_type"] == "DRGBW" and frame_size <= 367:
             udpData = packets.build_drgbw_packet(data, timeout)
-            self.transmit_packet(
-                udpData, np.array_equal(data, self.last_frame)
-            )
+            self.transmit_packet(udpData, frame_is_equal_to_last)
 
         elif self._config["udp_packet_type"] == "DNRGB":
             number_of_packets = int(np.ceil(frame_size / 489))
@@ -95,13 +93,7 @@ class UDPRealtimeDevice(UDPDevice):
                 udpData = packets.build_dnrgb_packet(
                     data[start_index:end_index], timeout, start_index
                 )
-                self.transmit_packet(
-                    udpData,
-                    np.array_equal(
-                        data[start_index:end_index],
-                        self.last_frame[start_index:end_index],
-                    ),
-                )
+                self.transmit_packet(udpData, frame_is_equal_to_last)
 
         elif (
             self._config["udp_packet_type"] == "adaptive_smallest"
@@ -115,14 +107,10 @@ class UDPRealtimeDevice(UDPDevice):
                 udpData = packets.build_warls_packet(
                     data, timeout, self.last_frame
                 )
-                self.transmit_packet(
-                    udpData, np.array_equal(data, self.last_frame)
-                )
+                self.transmit_packet(udpData, frame_is_equal_to_last)
             else:
                 udpData = packets.build_drgb_packet(data, timeout)
-                self.transmit_packet(
-                    udpData, np.array_equal(data, self.last_frame)
-                )
+                self.transmit_packet(udpData, frame_is_equal_to_last)
 
         else:  # fallback
             _LOGGER.warning(
@@ -130,9 +118,7 @@ class UDPRealtimeDevice(UDPDevice):
             )
             if frame_size <= 490:  # DRGB
                 udpData = packets.build_drgb_packet(data, timeout)
-                self.transmit_packet(
-                    udpData, np.array_equal(data, self.last_frame)
-                )
+                self.transmit_packet(udpData, frame_is_equal_to_last)
             else:  # DNRGB
                 number_of_packets = int(np.ceil(frame_size / 489))
                 for i in range(number_of_packets):
@@ -141,28 +127,24 @@ class UDPRealtimeDevice(UDPDevice):
                     udpData = packets.build_dnrgb_packet(
                         data[start_index:end_index], timeout, start_index
                     )
-                    self.transmit_packet(
-                        udpData,
-                        np.array_equal(
-                            data[start_index:end_index],
-                            self.last_frame[start_index:end_index],
-                        ),
-                    )
+                    self.transmit_packet(udpData, frame_is_equal_to_last)
 
     def transmit_packet(self, packet, frame_is_equal_to_last: bool):
         timestamp = time.time()
-        if self._config["minimise_traffic"] and frame_is_equal_to_last:
+        if frame_is_equal_to_last:
             half_of_timeout = (
                 ((self._config["timeout"] * self._config["refresh_rate"]) - 1)
                 // 2
             ) / self._config["refresh_rate"]
             if timestamp > self.last_frame_sent_time + half_of_timeout:
+                if self._destination is not None:
+                    self._sock.sendto(
+                        bytes(packet), (self.destination, self._config["port"])
+                    )
+                    self.last_frame_sent_time = timestamp
+        else:
+            if self._destination is not None:
                 self._sock.sendto(
                     bytes(packet), (self.destination, self._config["port"])
                 )
                 self.last_frame_sent_time = timestamp
-        else:
-            self._sock.sendto(
-                bytes(packet), (self.destination, self._config["port"])
-            )
-            self.last_frame_sent_time = timestamp
