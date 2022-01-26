@@ -81,6 +81,10 @@ class HSVEffect(GradientEffect):
         self.hsv_array = np.zeros((pixel_count, 3))
         # self.output = np.zeros((pixel_count, 3))
 
+    def config_updated(self, config):
+        # forcibly invalidate the gradient
+        self._gradient_curve = None
+
     def render(self):
         # update the timestep, converting ns to s
         self._dt = time.time_ns() - self._start_time

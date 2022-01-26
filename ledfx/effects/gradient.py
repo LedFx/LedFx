@@ -66,7 +66,7 @@ class GradientEffect(Effect):
         return diff * pow_x / (pow_x + np.power(1 - x, slope)) + start_val
 
     def _generate_gradient_curve(self, gradient, gradient_length):
-        # _LOGGER.info(f"Generating new gradient curve for {gradient}")
+        _LOGGER.debug(f"Generating new gradient curve: {gradient}")
 
         try:
             gradient = parse_gradient(gradient)
@@ -74,9 +74,9 @@ class GradientEffect(Effect):
             gradient = RGB(0, 0, 0)
 
         if isinstance(gradient, RGB):
-            self._gradient_curve = np.tile(
-                gradient, (gradient_length, 1)
-            ).astype(float).T
+            self._gradient_curve = (
+                np.tile(gradient, (gradient_length, 1)).astype(float).T
+            )
             return
 
         gradient_colors = gradient.colors
@@ -152,12 +152,6 @@ class GradientEffect(Effect):
 
     def apply_gradient(self, y):
         self._assert_gradient()
-
-        # if isinstance(y, np.ndarray) and y.ndim == 1:
-        #     output = (self._gradient_curve.T * y).T
-        #     # output = self._gradient_curve * y.reshape((-1, 1))
-        # else:
-        #     output = self._gradient_curve * y
 
         output = self._gradient_curve * y
         # Apply and roll the gradient if necessary
