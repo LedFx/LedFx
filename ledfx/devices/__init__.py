@@ -412,6 +412,7 @@ class SerialDevice(Device):
             vol.Required(
                 "com_port",
                 description="COM port for Adalight compatible device",
+                default=AvailableCOMPorts.available_ports[0]
             ): vol.In(list(AvailableCOMPorts.available_ports)),
             vol.Required(
                 "baudrate", description="baudrate", default=500000
