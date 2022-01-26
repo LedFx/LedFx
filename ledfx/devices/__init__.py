@@ -66,7 +66,7 @@ class Device(BaseRegistry):
         )
 
     _active = False
-    
+
     def __init__(self, ledfx, config):
         self._ledfx = ledfx
         self._config = config
@@ -222,7 +222,7 @@ class Device(BaseRegistry):
         return list(
             virtual.id for virtual in self._virtuals_objs if virtual.active
         )
-    
+
     @property
     def online(self):
         """
@@ -343,7 +343,7 @@ class NetworkedDevice(Device):
 
     def activate(self, *args, **kwargs):
         if self._destination is None:
-            msg = f"Device {self.name}: Failed to activate, is it online?"            
+            msg = f"Device {self.name}: Failed to activate, is it online?"
             _LOGGER.warning(msg)
             callback = partial(self.activate, *args, **kwargs)
             async_fire_and_forget(
@@ -412,7 +412,7 @@ class SerialDevice(Device):
             vol.Required(
                 "com_port",
                 description="COM port for Adalight compatible device",
-                default=AvailableCOMPorts.available_ports[0]
+                default="",
             ): vol.In(list(AvailableCOMPorts.available_ports)),
             vol.Required(
                 "baudrate", description="baudrate", default=500000
