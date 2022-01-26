@@ -76,7 +76,7 @@ class GradientEffect(Effect):
         if isinstance(gradient, RGB):
             self._gradient_curve = np.tile(
                 gradient, (gradient_length, 1)
-            ).astype(float)
+            ).astype(float).T
             return
 
         gradient_colors = gradient.colors
@@ -112,7 +112,7 @@ class GradientEffect(Effect):
             segment[:, 1] = self._ease(segment_len, color_1[1], color_2[1])
             segment[:, 2] = self._ease(segment_len, color_1[2], color_2[2])
 
-        self._gradient_curve = gradient
+        self._gradient_curve = gradient.T
 
     def _assert_gradient(self):
         if (
@@ -138,13 +138,13 @@ class GradientEffect(Effect):
             self._gradient_curve = np.roll(
                 self._gradient_curve,
                 int(pixels_to_roll),
-                axis=1,
+                axis=0,
             )
 
     def get_gradient_color(self, point):
         self._assert_gradient()
 
-        return self._gradient_curve[int((self.pixel_count - 1) * point)]
+        return self._gradient_curve[:, int((self.pixel_count - 1) * point)]
 
     def config_updated(self, config):
         """Invalidate the gradient"""
@@ -153,15 +153,17 @@ class GradientEffect(Effect):
     def apply_gradient(self, y):
         self._assert_gradient()
 
-        if isinstance(y, np.ndarray) and y.ndim == 1:
-            output = self._gradient_curve * y.reshape((-1, 1))
-        else:
-            output = self._gradient_curve * y
+        # if isinstance(y, np.ndarray) and y.ndim == 1:
+        #     output = (self._gradient_curve.T * y).T
+        #     # output = self._gradient_curve * y.reshape((-1, 1))
+        # else:
+        #     output = self._gradient_curve * y
 
+        output = self._gradient_curve * y
         # Apply and roll the gradient if necessary
         self._roll_gradient()
 
-        return output
+        return output.T
 
 
 class TemporalGradientEffect(TemporalEffect, GradientEffect, ModulateEffect):
