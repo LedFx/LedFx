@@ -398,7 +398,7 @@ class UDPDevice(NetworkedDevice):
 class AvailableCOMPorts:
     ports = serial.tools.list_ports.comports()
 
-    available_ports = []
+    available_ports = [""]
 
     for p in ports:
         available_ports.append(p.device)
@@ -413,7 +413,7 @@ class SerialDevice(Device):
                 "com_port",
                 description="COM port for Adalight compatible device",
                 default="",
-            ): vol.In(list(AvailableCOMPorts.available_ports.append(""))),
+            ): vol.In(list(AvailableCOMPorts.available_ports)),
             vol.Required(
                 "baudrate", description="baudrate", default=500000
             ): vol.All(int, vol.Range(min=115200)),
