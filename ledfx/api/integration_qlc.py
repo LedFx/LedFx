@@ -49,8 +49,8 @@ class QLCEndpoint(RestEndpoint):
                     "event_name": "Effect Cleared",
                     "event_filters": {},
                 },
-                Event.SCENE_SET: {
-                    "event_name": "Scene Set",
+                Event.SCENE_ACTIVATED: {
+                    "event_name": "Scene Activated",
                     "event_filters": {"scene_name": scene_names},
                 },
             }
