@@ -66,7 +66,7 @@ class GradientEffect(Effect):
         return diff * pow_x / (pow_x + np.power(1 - x, slope)) + start_val
 
     def _generate_gradient_curve(self, gradient, gradient_length):
-        # _LOGGER.info(f"Generating new gradient curve for {gradient}")
+        _LOGGER.debug(f"Generating new gradient curve: {gradient}")
 
         try:
             gradient = parse_gradient(gradient)
@@ -74,9 +74,9 @@ class GradientEffect(Effect):
             gradient = RGB(0, 0, 0)
 
         if isinstance(gradient, RGB):
-            self._gradient_curve = np.tile(
-                gradient, (gradient_length, 1)
-            ).astype(float)
+            self._gradient_curve = (
+                np.tile(gradient, (gradient_length, 1)).astype(float).T
+            )
             return
 
         gradient_colors = gradient.colors
@@ -112,7 +112,7 @@ class GradientEffect(Effect):
             segment[:, 1] = self._ease(segment_len, color_1[1], color_2[1])
             segment[:, 2] = self._ease(segment_len, color_1[2], color_2[2])
 
-        self._gradient_curve = gradient
+        self._gradient_curve = gradient.T
 
     def _assert_gradient(self):
         if (
@@ -138,13 +138,13 @@ class GradientEffect(Effect):
             self._gradient_curve = np.roll(
                 self._gradient_curve,
                 int(pixels_to_roll),
-                axis=1,
+                axis=0,
             )
 
     def get_gradient_color(self, point):
         self._assert_gradient()
 
-        return self._gradient_curve[int((self.pixel_count - 1) * point)]
+        return self._gradient_curve[:, int((self.pixel_count - 1) * point)]
 
     def config_updated(self, config):
         """Invalidate the gradient"""
@@ -153,15 +153,11 @@ class GradientEffect(Effect):
     def apply_gradient(self, y):
         self._assert_gradient()
 
-        if isinstance(y, np.ndarray) and y.ndim == 1:
-            output = self._gradient_curve * y.reshape((-1, 1))
-        else:
-            output = self._gradient_curve * y
-
+        output = self._gradient_curve * y
         # Apply and roll the gradient if necessary
         self._roll_gradient()
 
-        return output
+        return output.T
 
 
 class TemporalGradientEffect(TemporalEffect, GradientEffect, ModulateEffect):

@@ -1,26 +1,21 @@
 {
   "files": {
-    "main.css": "./static/css/main.10a7284f.chunk.css",
-    "main.js": "./static/js/main.531ce6dd.chunk.js",
-    "main.js.map": "./static/js/main.531ce6dd.chunk.js.map",
-    "runtime-main.js": "./static/js/runtime-main.7879bda2.js",
-    "runtime-main.js.map": "./static/js/runtime-main.7879bda2.js.map",
-    "static/js/2.a69c3b5e.chunk.js": "./static/js/2.a69c3b5e.chunk.js",
-    "static/js/2.a69c3b5e.chunk.js.map": "./static/js/2.a69c3b5e.chunk.js.map",
-    "static/js/3.be8fb394.chunk.js": "./static/js/3.be8fb394.chunk.js",
-    "static/js/3.be8fb394.chunk.js.map": "./static/js/3.be8fb394.chunk.js.map",
+    "main.css": "./static/css/main.e749384b.css",
+    "main.js": "./static/js/main.4ca8f0cf.js",
+    "static/js/787.2c81ab53.chunk.js": "./static/js/787.2c81ab53.chunk.js",
+    "static/media/transitions.gif": "./static/media/transitions.53b6d6f458b421f00872.gif",
+    "static/media/materialdesignicons-webfont.woff": "./static/media/materialdesignicons-webfont.d8e8e0f7931afa097409.woff",
+    "static/media/materialdesignicons-webfont.woff2": "./static/media/materialdesignicons-webfont.e9db4005489e24809b62.woff2",
+    "static/media/MaterialIcons-Regular.woff2": "./static/media/MaterialIcons-Regular.f71673ad689fb42ddae1.woff2",
+    "static/media/ring.png": "./static/media/ring.1faea45b576b5380bde1.png",
+    "static/media/blademod.svg": "./static/media/blademod.f939f478785a84b3edcc820eef654556.svg",
     "index.html": "./index.html",
-    "static/css/main.10a7284f.chunk.css.map": "./static/css/main.10a7284f.chunk.css.map",
-    "static/js/2.a69c3b5e.chunk.js.LICENSE.txt": "./static/js/2.a69c3b5e.chunk.js.LICENSE.txt",
-    "static/media/index.css": "./static/media/materialdesignicons-webfont.e9db4005.woff2",
-    "static/media/blademod.04a8d38d.svg": "./static/media/blademod.04a8d38d.svg",
-    "static/media/ring.1faea45b.png": "./static/media/ring.1faea45b.png",
-    "static/media/transitions.53b6d6f4.gif": "./static/media/transitions.53b6d6f4.gif"
+    "main.e749384b.css.map": "./static/css/main.e749384b.css.map",
+    "main.4ca8f0cf.js.map": "./static/js/main.4ca8f0cf.js.map",
+    "787.2c81ab53.chunk.js.map": "./static/js/787.2c81ab53.chunk.js.map"
   },
   "entrypoints": [
-    "static/js/runtime-main.7879bda2.js",
-    "static/js/2.a69c3b5e.chunk.js",
-    "static/css/main.10a7284f.chunk.css",
-    "static/js/main.531ce6dd.chunk.js"
+    "static/css/main.e749384b.css",
+    "static/js/main.4ca8f0cf.js"
   ]
 }
