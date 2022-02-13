@@ -4,10 +4,10 @@ import {
     ResponsiveContainer,
     XAxis,
     YAxis,
-    Tooltip,
     Bar,
     Cell,
     Legend,
+    //Tooltip,
 } from 'recharts';
 
 export default class Chart extends PureComponent {

@@ -291,7 +291,7 @@ class SpotifyPlayer extends React.Component {
     }
 
     render() {
-        const { playerState, classes, scenes, audioFeatures, audioAnalysis } = this.props;
+        const { playerState, classes, scenes, audioFeatures} = this.props;
 
         const rows = [];
         function capitalizeFirstLetter(string) {
