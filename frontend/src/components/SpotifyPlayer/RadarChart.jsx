@@ -31,7 +31,7 @@ export default function RadarChart(props) {
     const [chartData, setChartData] = useState(props.chartData || []);
 
     useEffect(() => {
-        //setChartData(props.chartData);
+        setChartData(props.chartData);
         setChartValues([
             props.chartValues.energy,
             props.chartValues.danceability,
@@ -40,6 +40,7 @@ export default function RadarChart(props) {
             (props.chartValues.loudness * -1) / 13,
         ]);
         console.log('loading');
+        //eslint-disable-next-line
     }, [props.chartValues]);
 
     const chart = () => {
@@ -108,7 +109,8 @@ export default function RadarChart(props) {
             chartOptions.aspectRatio = 2;
         }
         chart();
-    }, [chartOptions, chartValues]);
+        //eslint-disable-next-line
+    }, [chartValues]);
 
     return (
         <RadarChartContainer>

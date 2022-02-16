@@ -105,6 +105,7 @@ export default class Chart extends PureComponent {
                                 />
                             );
                         }
+                        return true;
                     })}
 
                     {/* Dynamically Painted Bar Chart */}

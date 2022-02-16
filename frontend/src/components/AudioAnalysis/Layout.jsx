@@ -5,16 +5,7 @@ import ChartSize from './ChartSize';
 import ChordButtons from './ChordButtons';
 import PitchSelect from './PitchSelect';
 import { connect } from 'react-redux';
-import {
-    Card,
-    Grid,
-    Typography,
-    CardContent,
-    Avatar,
-    Backdrop,
-    CircularProgress,
-    LinearProgress,
-} from '@material-ui/core';
+import { Card, Grid, Typography, CardContent, Avatar, LinearProgress } from '@material-ui/core';
 import { updatePlayerState } from 'modules/spotify';
 import { getAsyncIntegrations } from 'modules/integrations';
 
@@ -65,6 +56,7 @@ export class Layout extends Component {
                     [pitchClasses[item]]: false,
                 },
             }));
+            return true;
         });
 
         setTimeout(() => {
@@ -75,6 +67,7 @@ export class Layout extends Component {
                         [pitchClasses[item]]: true,
                     },
                 }));
+                return true;
             });
         }, 100);
     };

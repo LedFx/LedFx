@@ -1,14 +1,5 @@
 import React, { PureComponent } from 'react';
-import {
-    ComposedChart,
-    ResponsiveContainer,
-    XAxis,
-    YAxis,
-    Bar,
-    Cell,
-    Legend,
-    //Tooltip,
-} from 'recharts';
+import { ComposedChart, ResponsiveContainer, XAxis, YAxis, Bar, Cell, Legend } from 'recharts';
 
 export default class Chart extends PureComponent {
     render() {

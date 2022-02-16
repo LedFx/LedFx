@@ -25,12 +25,7 @@ import {
     TableRow,
     Paper,
 } from '@material-ui/core';
-import {
-    PlayArrow,
-    Pause,
-    SkipNext,
-    SkipPrevious,
-}from '@material-ui/icons';
+import { PlayArrow, Pause, SkipNext, SkipPrevious } from '@material-ui/icons';
 import InfoIcon from '@material-ui/icons/Info';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import Moment from 'react-moment';
@@ -291,7 +286,7 @@ class SpotifyPlayer extends React.Component {
     }
 
     render() {
-        const { playerState, classes, scenes, audioFeatures} = this.props;
+        const { playerState, classes, scenes, audioFeatures } = this.props;
 
         const rows = [];
         function capitalizeFirstLetter(string) {
@@ -546,33 +541,44 @@ class SpotifyPlayer extends React.Component {
                                                     style={{ cursor: 'pointer' }}
                                                 >
                                                     <TableCell component="th" scope="row">
-                                                    BPM (Tempo)
+                                                        BPM (Tempo)
                                                     </TableCell>
                                                     <TableCell align="right">
                                                         {audioFeatures.tempo}
                                                     </TableCell>
                                                 </TableRow>
-                                                <TableRow
-                                                    key={'key'}
-                                                    style={{ cursor: 'pointer' }}
-                                                >
+                                                <TableRow key={'key'} style={{ cursor: 'pointer' }}>
                                                     <TableCell component="th" scope="row">
                                                         Pitch class (Key)
                                                     </TableCell>
                                                     <TableCell align="right">
-                                                        {audioFeatures.key ? 
-                                                        audioFeatures.key===0? 'C' : 
-                                                        audioFeatures.key===1 ? 'C#' :
-                                                        audioFeatures.key===2 ? 'D' :
-                                                        audioFeatures.key===3 ? 'D#' : 
-                                                        audioFeatures.key===4 ? 'E' : 
-                                                        audioFeatures.key===5 ? 'F' : 
-                                                        audioFeatures.key===6 ? 'F#' : 
-                                                        audioFeatures.key===7 ? 'G' : 
-                                                        audioFeatures.key===8 ? 'G#' : 
-                                                        audioFeatures.key===9 ? 'A' : 
-                                                        audioFeatures.key===10 ? 'A#' : 
-                                                        audioFeatures.key===11 ? 'B' : 'N/A' : 'N/A'}
+                                                        {audioFeatures.key
+                                                            ? audioFeatures.key === 0
+                                                                ? 'C'
+                                                                : audioFeatures.key === 1
+                                                                ? 'C#'
+                                                                : audioFeatures.key === 2
+                                                                ? 'D'
+                                                                : audioFeatures.key === 3
+                                                                ? 'D#'
+                                                                : audioFeatures.key === 4
+                                                                ? 'E'
+                                                                : audioFeatures.key === 5
+                                                                ? 'F'
+                                                                : audioFeatures.key === 6
+                                                                ? 'F#'
+                                                                : audioFeatures.key === 7
+                                                                ? 'G'
+                                                                : audioFeatures.key === 8
+                                                                ? 'G#'
+                                                                : audioFeatures.key === 9
+                                                                ? 'A'
+                                                                : audioFeatures.key === 10
+                                                                ? 'A#'
+                                                                : audioFeatures.key === 11
+                                                                ? 'B'
+                                                                : 'N/A'
+                                                            : 'N/A'}
                                                     </TableCell>
                                                 </TableRow>
                                                 <TableRow
@@ -583,7 +589,9 @@ class SpotifyPlayer extends React.Component {
                                                         Modality/Mode (Major/Minor)
                                                     </TableCell>
                                                     <TableCell align="right">
-                                                        {audioFeatures.mode === 0 ? 'Minor' : 'Major'}
+                                                        {audioFeatures.mode === 0
+                                                            ? 'Minor'
+                                                            : 'Major'}
                                                     </TableCell>
                                                 </TableRow>
                                                 <TableRow
