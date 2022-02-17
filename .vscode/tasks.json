@@ -24,9 +24,11 @@
         {
             "label": "[3]-[Frontend]:3000-start",
             "type": "shell",
-            // "command": "runuser -l vscode -c 'cd /workspaces/${workspaceFolderBasename}/frontend; yarn; yarn start'",
             "command": "cd /workspaces/${workspaceFolderBasename}/frontend; yarn; yarn start",
-            "group": "build",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
             "problemMatcher": []
         },
         {
@@ -60,7 +62,7 @@
             "type": "shell",
             "command": "rm -rf /workspaces/${workspaceFolderBasename}/ledfx_frontend/*; runuser -l vscode -c 'cd /workspaces/${workspaceFolderBasename}/frontend; yarn build'",
             "problemMatcher": []
-        },
+        }
     ],
     "inputs": [
         {

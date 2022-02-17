@@ -26,6 +26,7 @@ export function getAsyncqlclisteners(data) {
     //console.log("getAsyncqlclisteners: ", data)
     return async dispatch => {
         try {
+            //data = ({ info: 'status' });
             const response = await integrationsProxies.getQLCInfo(data);
             if (response.statusText === 'OK') {
                 //console.log("GetQLCInfo - Response: ", response.data)

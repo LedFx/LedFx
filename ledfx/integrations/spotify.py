@@ -42,13 +42,14 @@ class Spotify(Integration):
     )
 
     def __init__(self, ledfx, config, active, data):
+
         super().__init__(ledfx, config, active, data)
 
         self._ledfx = ledfx
         self._config = config
         self._data = {}
 
-        self.restore_from_data(data)
+        self.restore_from_data(self._ledfx.config["scenes"])
 
     def restore_from_data(self, data):
         """Might be used in future"""
@@ -70,8 +71,8 @@ class Spotify(Integration):
             if trigger_id in self._data[scene_id].keys():
                 del self._data[scene_id][trigger_id]
 
-    async def connect(self):
-        super().connect()
+    async def connect(self, msg=None):
+        await super().connect()
 
-    async def disconnect(self):
-        super().disconnect()
+    async def disconnect(self, msg=None):
+        await super().disconnect()

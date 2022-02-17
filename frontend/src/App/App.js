@@ -16,6 +16,7 @@ import defaultTheme, {
 // import { createMuiTheme } from '@material-ui/core/styles';
 import './style.css';
 import './materialdesignicons.css';
+import 'react-toastify/dist/ReactToastify.css';
 import SnackbarDynamic from '../components/SnackbarDynamic';
 
 export default function App() {

@@ -1,103 +1,193 @@
 import { createAction, handleActions } from 'redux-actions';
 import Cookies from 'universal-cookie/es6';
-import * as spotifyProxies from '../proxies/spotify'
-
+import * as spotifyProxies from '../proxies/spotify';
 
 // Actions
 const ACTION_ROOT = 'spotify';
 export const authFinished = createAction(`${ACTION_ROOT}/AUTH_FINISHED`);
 export const authRefreshed = createAction(`${ACTION_ROOT}/AUTH_REFRESHED`);
 export const playerStateUpdated = createAction(`${ACTION_ROOT}/PLAYER_STATE_UPDATED`);
+export const audioFeaturesStateUpdated = createAction(
+    `${ACTION_ROOT}/PLAYER_AUDIOFEATURES_UPDATED`
+);
+export const audioAnalysisStateUpdated = createAction(
+    `${ACTION_ROOT}/PLAYER_AUDIOANALYSIS_UPDATED`
+);
 export const cookiesChecked = createAction(`${ACTION_ROOT}/COOKIES_CHECKED`);
+export const logoutAuthUpdated = createAction(`${ACTION_ROOT}/LOGOUT_UPDATED`);
 
 // // Reducer
 const INITIAL_STATE = {
     accessToken: '',
     refreshToken: '',
+    logout: true,
+    audioFeatures: {},
+    audioAnalysis: {},
     playerState: {},
+};
 
-}
+export default handleActions(
+    {
+        [cookiesChecked]: (state, { payload, payload: { accessToken, refreshToken } }) => {
+            return {
+                ...state,
+                accessToken: accessToken,
+                refreshToken: refreshToken,
+            };
+        },
+        [authFinished]: (state, { payload, payload: { accessToken, refreshToken } }) => {
+            return {
+                ...state,
+                accessToken: accessToken,
+                refreshToken: refreshToken,
+            };
+        },
+        [authRefreshed]: (state, { payload, payload: { accessToken, refreshToken } }) => {
+            return {
+                ...state,
+                accessToken: accessToken,
+                refreshToken: refreshToken,
+            };
+        },
+        [audioFeaturesStateUpdated]: (state, { payload, payload: { audioFeatures } }) => {
+            return {
+                ...state,
+                audioFeatures: payload,
+            };
+        },
+        [audioAnalysisStateUpdated]: (state, { payload, payload: { audioAnalysis } }) => {
+            return {
+                ...state,
+                audioAnalysis: payload,
+            };
+        },
+        [playerStateUpdated]: (state, { payload, payload: { playerState } }) => {
+            return {
+                ...state,
+                playerState: payload,
+            };
+        },
 
-export default handleActions({
-    [cookiesChecked]: (state, { payload, payload: { accessToken, refreshToken } }) => {
-        return {
-            ...state,
-            accessToken: accessToken,
-            refreshToken: refreshToken
-        };
+        [logoutAuthUpdated]: (
+            state,
+            { payload, payload: { logout, accessToken, refreshToken } }
+        ) => {
+            return {
+                ...state,
+                accessToken: accessToken,
+                refreshToken: refreshToken,
+                logout: logout,
+            };
+        },
     },
-    [authFinished]: (state, { payload, payload: { accessToken, refreshToken } }) => {
-        return {
-            ...state,
-            accessToken: accessToken,
-            refreshToken: refreshToken
-        };
-    },
-    [authRefreshed]: (state, { payload, payload: { accessToken, refreshToken } }) => {
-        return {
-            ...state,
-            accessToken: accessToken,
-            refreshToken: refreshToken
-        };
-    },
-    [playerStateUpdated]: (state, { payload, payload: { playerState } }) => {
-        console.log(payload)
-        return {
-            ...state,
-            playerState: payload
-        };
-    },
-}, INITIAL_STATE)
+    INITIAL_STATE
+);
 
 export function checkCookiesForTokens() {
-    console.log('checking')
+    console.log('checking');
     return dispatch => {
         const cookies = new Cookies();
         const tokens = {
             accessToken: cookies.get('access_token'),
             refreshToken: cookies.get('refresh_token'),
-        }
-        dispatch(cookiesChecked(tokens))
-    }
+        };
+        dispatch(cookiesChecked(tokens));
+    };
 }
 
 export function finishAuth() {
     return async dispatch => {
         try {
-            const tokens = await spotifyProxies.finishAuth()
-            dispatch(authFinished(tokens))
+            const tokens = await spotifyProxies.finishAuth();
+            dispatch(authFinished(tokens));
         } catch (error) {
-            console.log(error)
+            console.log(error);
         }
-    }
+    };
 }
 
 export function refreshAuth() {
     return async dispatch => {
         try {
-            const tokens = await spotifyProxies.refreshAuth()
+            const tokens = await spotifyProxies.refreshAuth();
             if (tokens.accessToken) {
-                dispatch(authRefreshed(tokens))
+                dispatch(authRefreshed(tokens));
             }
         } catch (error) {
-            console.log(error)
+            console.log(error);
         }
-    }
+    };
 }
 
-export function updatePlayerState(playerState) {
+export function logoutAuth() {
+    return async dispatch => {
+        const check = spotifyProxies.logoutAuth();
+        const cookies = new Cookies();
+        const data = {
+            logout: check,
+            accessToken: cookies.get('access_token'),
+            refreshToken: cookies.get('refresh_token'),
+        };
+        dispatch(logoutAuthUpdated(data));
+    };
+}
+
+export function updatePlayerState(playerState, audioF) {
+    // console.log(audioF);
+    return async dispatch => {
+        try {
+            dispatch(playerStateUpdated(playerState));
+            //console.log('ID for audiofeatures', playerState.track_window.current_track.id);
+        } catch (error) {
+            console.log(error);
+        }
+        if (audioF === undefined && playerState.loading) {
+            const cookies = new Cookies();
+            const access_token = cookies.get('access_token');
+
+            const audioFeatures = await spotifyProxies.getTrackFeatures(
+                playerState.track_window.current_track.id,
+                access_token
+            );
+            const audioAnalysis = await spotifyProxies.getTrackAnalysis(
+                playerState.track_window.current_track.id,
+                access_token
+            );
+
+            let new_analysis = spotifyProxies.fixAnalysis(audioAnalysis);
+
+            dispatch(audioFeaturesStateUpdated(audioFeatures));
+            dispatch(audioAnalysisStateUpdated(new_analysis));
+            console.log('loading');
+        }
+    };
+}
+
+export function updateAudioFeatures(audioFeatures) {
     return dispatch => {
         try {
-            dispatch(playerStateUpdated(playerState))
+            dispatch(audioFeaturesStateUpdated(audioFeatures));
+            console.log('Audiofeatures', audioFeatures);
         } catch (error) {
-            console.log(error)
+            console.log(error);
         }
-    }
+    };
 }
 
-export const increaseSongTime = (time) => {
-    return {
-      type: 'INCREASE_SONG_TIME',
-      time
+export function updateAudioAnalysis(audioAnalysis) {
+    return dispatch => {
+        try {
+            dispatch(audioAnalysisStateUpdated(audioAnalysis));
+            console.log('Audio Analysis', audioAnalysis);
+        } catch (error) {
+            console.log(error);
+        }
     };
-  };
+}
+
+export const increaseSongTime = time => {
+    return {
+        type: 'INCREASE_SONG_TIME',
+        time,
+    };
+};

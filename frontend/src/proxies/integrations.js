@@ -36,7 +36,7 @@ export function createQLCListener(integrationId, data) {
 }
 
 export function deleteQLCListener(integrationId, data) {
-    console.log('DeleteQLClistener', data);
+    // console.log('DeleteQLClistener', data);
     return api.delete(`/integrations/qlc/${integrationId}`, data);
 }
 
