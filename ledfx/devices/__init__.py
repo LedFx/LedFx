@@ -530,13 +530,13 @@ class Devices(RegistryLoader):
                             _LOGGER.info(msg)
                             raise ValueError(msg)
                     elif device_type == "openrgb":
-                        # check the OpenRGB id for OpenRGB device, it might still be okay at a shared ip_address
+                        # check the OpenRGB ID for OpenRGB device, it might still be okay at a shared ip_address
                         # eg. for multi OpenRGB devices
                         if (
                             device_config["openrgb_id"]
                             == existing_device.config["openrgb_id"]
                         ):
-                            msg = f"Ignoring {device_ip}: Shares IP and openrgb name with existing device {existing_device.name}"
+                            msg = f"Ignoring {device_ip}: Shares IP and OpenRGB ID with existing device {existing_device.name}"
                             _LOGGER.info(msg)
                             raise ValueError(msg)
                     else:

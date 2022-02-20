@@ -23,7 +23,7 @@ class OpenRGB(NetworkedDevice):
                 ): str,
                 vol.Required(
                     "openrgb_id",
-                    description="ID of openRGB device (within openRGB).",
+                    description="ID of OpenRGB device (within OpenRGB).",
                     default=0,
                 ): vol.All(int, vol.Range(min=0)),
                 vol.Required(
@@ -76,7 +76,7 @@ class OpenRGB(NetworkedDevice):
             self.deactivate()
         except IndexError:
             _LOGGER.critical(
-                f"Couldn't find openRGB device ID: {self.openrgb_device_id}"
+                f"Couldn't find OpenRGB device ID: {self.openrgb_device_id}"
             )
             self._online = False
             self.deactivate()
