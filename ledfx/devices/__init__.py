@@ -74,7 +74,7 @@ class Device(BaseRegistry):
         self._pixels = None
         self._silence_start = None
         self._device_type = ""
-        self._online = False
+        self._online = True
 
     def __del__(self):
         if self._active:
@@ -336,9 +336,11 @@ class NetworkedDevice(Device):
             _LOGGER.info(
                 f"Device {self.name}: Resolved destination to {self._destination}"
             )
+            self._online = True
             if success_callback:
                 success_callback()
         except ValueError as msg:
+            self._online = False
             _LOGGER.warning(f"Device {self.name}: {msg}")
 
     def activate(self, *args, **kwargs):

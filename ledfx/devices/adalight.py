@@ -51,4 +51,3 @@ class AdalightDevice(SerialDevice):
             _LOGGER.critical(
                 "Serial Connection Interrupted. Please check connections and ensure your device is functioning correctly."
             )
-            self.deactivate()
