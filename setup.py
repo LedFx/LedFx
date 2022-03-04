@@ -41,6 +41,7 @@ INSTALL_REQUIRES = [
     "sacn~=1.6.3",
     "sentry-sdk~=1.4.3",
     "sounddevice~=0.4.2",
+    "samplerate",
     "tcp-latency>=0.0.10",
     "voluptuous~=0.12.1",
     "yappi~=1.3.3",
