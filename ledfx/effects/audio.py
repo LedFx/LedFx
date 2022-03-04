@@ -5,6 +5,7 @@ from functools import cached_property, lru_cache
 
 import aubio
 import numpy as np
+import samplerate
 import sounddevice as sd
 import voluptuous as vol
 
@@ -92,7 +93,7 @@ class AudioInputSource:
         return vol.Schema(
             {
                 vol.Optional("sample_rate", default=60): int,
-                vol.Optional("mic_rate", default=MIC_RATE): int,
+                vol.Optional("mic_rate", default=44100): int,
                 vol.Optional("fft_size", default=FFT_SIZE): int,
                 vol.Optional("min_volume", default=0.2): vol.All(
                     vol.Coerce(float), vol.Range(min=0.0, max=10.0)
@@ -210,25 +211,32 @@ class AudioInputSource:
         freq_domain_length = (self._config["fft_size"] // 2) + 1
 
         self._raw_audio_sample = np.zeros(
-            self._config["mic_rate"] // self._config["sample_rate"],
+            MIC_RATE // self._config["sample_rate"],
             dtype=np.float32,
         )
 
         # Setup the phase vocoder to perform a windowed FFT
         self._phase_vocoder = aubio.pvoc(
             self._config["fft_size"],
-            self._config["mic_rate"] // self._config["sample_rate"],
+            MIC_RATE // self._config["sample_rate"],
         )
         self._frequency_domain_null = aubio.cvec(self._config["fft_size"])
         self._frequency_domain = self._frequency_domain_null
         self._frequency_domain_x = np.linspace(
             0,
-            self._config["mic_rate"],
+            MIC_RATE,
             freq_domain_length,
         )
 
         def open_audio_stream(device_idx):
             device = input_devices[device_idx]
+            print(
+                "############",
+                device["default_samplerate"],
+                int(
+                    device["default_samplerate"] / self._config["sample_rate"]
+                ),
+            )
             if hostapis[device["hostapi"]]["name"] == "WEB AUDIO":
                 ledfx.api.websocket.ACTIVE_AUDIO_STREAM = (
                     self._stream
@@ -237,15 +245,19 @@ class AudioInputSource:
                 )
             else:
                 self._stream = self._audio.InputStream(
-                    samplerate=self._config["mic_rate"],
+                    samplerate=int(device["default_samplerate"]),
                     device=device_idx,
                     channels=1,
                     callback=self._audio_sample_callback,
                     dtype=np.float32,
                     latency="low",
-                    blocksize=self._config["mic_rate"]
-                    // self._config["sample_rate"],
+                    blocksize=int(
+                        device["default_samplerate"]
+                        / self._config["sample_rate"]
+                    ),
                 )
+
+            self.resampler = samplerate.Resampler("sinc_fastest", channels=1)
 
             _LOGGER.info(
                 f"Audio source opened: {hostapis[device['hostapi']]['name']}: {device.get('name', device.get('client'))}"
@@ -297,7 +309,26 @@ class AudioInputSource:
     def _audio_sample_callback(self, in_data, frame_count, time_info, status):
         """Callback for when a new audio sample is acquired"""
         # time_start = time.time()
-        self._raw_audio_sample = np.frombuffer(in_data, dtype=np.float32)
+        # self._raw_audio_sample = np.frombuffer(in_data, dtype=np.float32)
+        raw_sample = np.frombuffer(in_data, dtype=np.float32)
+
+        in_sample_len = len(raw_sample)
+        out_sample_len = MIC_RATE // self._config["sample_rate"]
+
+        if in_sample_len != out_sample_len:
+            # Simple resampling
+            self._raw_audio_sample = self.resampler.process(
+                raw_sample,
+                # MIC_RATE / self._stream.samplerate
+                out_sample_len / in_sample_len
+                # end_of_input=True
+            )
+        else:
+            self._raw_audio_sample = raw_sample
+
+        if len(self._raw_audio_sample) != out_sample_len:
+            print("################### nearly exploded!")
+            return
 
         self.pre_process_audio()
         self._invalidate_caches()
@@ -406,8 +437,8 @@ class AudioAnalysisSource(AudioInputSource):
 
         fft_params = (
             self._config["fft_size"],
-            self._config["mic_rate"] // self._config["sample_rate"],
-            self._config["mic_rate"],
+            MIC_RATE // self._config["sample_rate"],
+            MIC_RATE,
         )
 
         # pitch, tempo, onset
