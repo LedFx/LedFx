@@ -230,13 +230,6 @@ class AudioInputSource:
 
         def open_audio_stream(device_idx):
             device = input_devices[device_idx]
-            print(
-                "############",
-                device["default_samplerate"],
-                int(
-                    device["default_samplerate"] / self._config["sample_rate"]
-                ),
-            )
             if hostapis[device["hostapi"]]["name"] == "WEB AUDIO":
                 ledfx.api.websocket.ACTIVE_AUDIO_STREAM = (
                     self._stream
@@ -327,7 +320,7 @@ class AudioInputSource:
             self._raw_audio_sample = raw_sample
 
         if len(self._raw_audio_sample) != out_sample_len:
-            print("################### nearly exploded!")
+            _LOGGER.warning("Discarded malformed audio frame")
             return
 
         self.pre_process_audio()
