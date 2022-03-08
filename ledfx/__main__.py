@@ -356,9 +356,11 @@ def main():
         icon.visible = True
     else:
         icon = None
+    # icon = None
 
-    if not args.offline_mode and currently_frozen():
-        update_ledfx(icon)
+
+    # if not args.offline_mode and currently_frozen():
+    #     update_ledfx(icon)
 
     if icon:
         icon.run(setup=entry_point)

@@ -9,7 +9,10 @@ from ledfx.color import parse_color
 from ledfx.config import save_config
 from ledfx.consts import PROJECT_VERSION
 from ledfx.effects.audio import AudioInputSource
-from ledfx.events import Event
+from ledfx.events import (
+    EffectSetEvent, 
+    Event
+)
 from ledfx.integrations import Integration
 
 _LOGGER = logging.getLogger(__name__)
@@ -550,10 +553,11 @@ class MQTT_HASS(Integration):
                         config={"color": color},
                     )
                 else:
+                    _LOGGER.warning("2222222222222 %s", color)
                     effect = self._ledfx.effects.create(
                         ledfx=self._ledfx,
                         type="singleColor",
-                        config={"color": color},
+                        config={"color": "orange"},
                     )
                 try:
                     virtual.set_effect(effect)
