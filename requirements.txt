@@ -23,6 +23,7 @@
     requests~=2.24.0
     sacn~=1.6.3
     sentry-sdk==1.4.3
+    samplerate>=0.1.0
     sounddevice~=0.4.2
     tcp-latency~=0.0.10
     voluptuous~=0.12.1
