@@ -126,7 +126,8 @@ class Integrations(RegistryLoader):
 
     def create_from_config(self, config):
         for integration in config:
-            _LOGGER.info(f"Loading integration from config: {integration}")
+            name=integration["config"]["name"]
+            _LOGGER.debug(f"Loading integration from config: {name}")
             try:
                 self._ledfx.integrations.create(
                     id=integration["id"],
