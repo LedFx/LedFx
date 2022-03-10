@@ -119,7 +119,7 @@ class MQTT_HASS(Integration):
         for virtual in self._ledfx.virtuals.values():
             if virtual.active:
                 active_pixels += virtual.pixel_count
-        _LOGGER.info(
+        _LOGGER.debug(
             "active_pixels/total_pixels:"
             + str(active_pixels)
             + "/"
@@ -409,7 +409,7 @@ class MQTT_HASS(Integration):
         client.publish("ledfx/state", "HomeAssistant initialized")
 
     def on_message(self, client, userdata, msg):
-        _LOGGER.info(
+        _LOGGER.debug(
             "MQTT-Message incoming: \n[MQTT    ] Topic: "
             + msg.topic
             + "\n[MQTT    ] Payload: "
@@ -520,7 +520,7 @@ class MQTT_HASS(Integration):
 
         # React to Audio-Selector
         elif virtualid == "ledfxaudio":
-            _LOGGER.info("AUDIO DEVICE BROOOO: " + str(payload))
+            _LOGGER.debug("AUDIO DEVICE BROOOO: " + str(payload))
             if hasattr(self._ledfx, "audio") and self._ledfx.audio is not None:
                 # index = self._ledfx.audio.get_device_index_by_name(payload)
                 index = -1
@@ -553,7 +553,7 @@ class MQTT_HASS(Integration):
                         config={"color": color},
                     )
                 else:
-                    _LOGGER.warning("2222222222222 %s", color)
+                    _LOGGER.debug("COLOR: %s", color)
                     effect = self._ledfx.effects.create(
                         ledfx=self._ledfx,
                         type="singleColor",
