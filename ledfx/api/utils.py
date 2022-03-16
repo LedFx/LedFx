@@ -17,10 +17,7 @@ TYPES_MAP = {
 }
 
 PERMITTED_KEYS = {
-    "audio": (
-        "min_volume",
-        "audio_device",
-    ),
+    "audio": ("min_volume", "audio_device", "delay_ms"),
     "melbanks": (
         "max_frequencies",
         "min_frequency",

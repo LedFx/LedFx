@@ -1,4 +1,5 @@
 import logging
+import queue
 import time
 from collections import deque
 from functools import cached_property, lru_cache
@@ -101,6 +102,11 @@ class AudioInputSource:
                 vol.Optional(
                     "audio_device", default=default_device_index
                 ): AudioInputSource.device_index_validator,
+                vol.Optional(
+                    "delay_ms",
+                    default=0,
+                    description="Add a delay to LedFx's output to sync with your audio. Useful for Bluetooth devices which typically have a short audio lag.",
+                ): vol.All(vol.Coerce(int), vol.Range(min=0, max=5000)),
             },
             extra=vol.ALLOW_EXTRA,
         )
@@ -228,13 +234,21 @@ class AudioInputSource:
             freq_domain_length,
         )
 
+        samples_to_delay = int(
+            0.001 * self._config["delay_ms"] * self._config["sample_rate"]
+        )
+        if samples_to_delay:
+            self.delay_queue = queue.Queue(maxsize=samples_to_delay)
+        else:
+            self.delay_queue = None
+
         def open_audio_stream(device_idx):
             device = input_devices[device_idx]
             ch = 1
             if hostapis[device["hostapi"]]["name"] == "Windows WASAPI":
                 if "Loopback" in device["name"]:
                     ch = 2
-                
+
             if hostapis[device["hostapi"]]["name"] == "WEB AUDIO":
                 ledfx.api.websocket.ACTIVE_AUDIO_STREAM = (
                     self._stream
@@ -315,22 +329,37 @@ class AudioInputSource:
 
         if in_sample_len != out_sample_len:
             # Simple resampling
-            self._raw_audio_sample = self.resampler.process(
+            processed_audio_sample = self.resampler.process(
                 raw_sample,
                 # MIC_RATE / self._stream.samplerate
                 out_sample_len / in_sample_len
                 # end_of_input=True
             )
         else:
-            self._raw_audio_sample = raw_sample
+            processed_audio_sample = raw_sample
 
-        if len(self._raw_audio_sample) != out_sample_len:
-            _LOGGER.warning("Discarded malformed audio frame")
+        if len(processed_audio_sample) != out_sample_len:
+            _LOGGER.warning(
+                f"Discarded malformed audio frame - {len(processed_audio_sample)} samples, expected {out_sample_len}"
+            )
             return
 
-        self.pre_process_audio()
-        self._invalidate_caches()
-        self._invoke_callbacks()
+        # handle delaying the audio with the queue
+        if self.delay_queue:
+            try:
+                self.delay_queue.put_nowait(processed_audio_sample)
+            except queue.Full:
+                self._raw_audio_sample = self.delay_queue.get_nowait()
+                self.delay_queue.put_nowait(processed_audio_sample)
+                self.pre_process_audio()
+                self._invalidate_caches()
+                self._invoke_callbacks()
+        else:
+            self._raw_audio_sample = processed_audio_sample
+            self.pre_process_audio()
+            self._invalidate_caches()
+            self._invoke_callbacks()
+
         # print(f"Core Audio Processing Latency {round(time.time()-time_start, 3)} s")
         # return self._raw_audio_sample
 
