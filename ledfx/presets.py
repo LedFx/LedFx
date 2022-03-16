@@ -1303,7 +1303,7 @@ ledfx_presets = {
     },
     "real_strobe": {
         "reset": {"config": {}, "name": "Reset"},
-        "dancefloor        "dancefloor": {
+        "dancefloor": {
             "config": {
                 "background_brightness": 1,
                 "background_color": "black",
