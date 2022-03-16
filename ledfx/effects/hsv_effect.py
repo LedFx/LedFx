@@ -103,6 +103,7 @@ class HSVEffect(GradientEffect):
         h *= self.pixel_count - 1
         h = h.astype(int)
         # Grab the colors from the gradient
+        self._assert_gradient()
         pixels[:] = self._gradient_curve[:, h].T
         # Apply saturation to colors
         pixels += (np.max(pixels, axis=1).reshape(-1, 1) - pixels) * (1 - s)
