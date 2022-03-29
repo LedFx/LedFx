@@ -131,6 +131,8 @@ class LedFxCore(object):
             # Check if we're binding to all adaptors
             if str(self.config["host"]) == "0.0.0.0":
                 url = f"http://127.0.0.1:{str(self.config['port'])}"
+            elif str(self.config["host"]) == "::":
+                url = f"http://[::1]:{str(self.config['port'])}"
             else:
                 # If the user has specified an adaptor, launch its address
                 url = self.http.base_url
