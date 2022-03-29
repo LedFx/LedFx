@@ -71,7 +71,10 @@ class HttpServer(object):
         try:
             site = web.TCPSite(self.runner, self.host, self.port)
             await site.start()
-            self.base_url = ("http://{}:{}").format(self.host, self.port)
+            if self.host.contains(":"): #ipv6
+                self.base_url = ("http://[{}]:{}").format(self.host, self.port)
+            else:
+                self.base_url = ("http://{}:{}").format(self.host, self.port)
             print(("Started webinterface at {}").format(self.base_url))
         except OSError as error:
             _LOGGER.error(
