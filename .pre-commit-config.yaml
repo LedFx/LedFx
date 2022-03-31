@@ -21,6 +21,6 @@ repos:
     hooks:
       - id: flake8
   - repo: https://github.com/psf/black
-    rev: 21.9b0 # Replace by any tag/version: https://github.com/psf/black/tags
+    rev: 22.3.0
     hooks:
       - id: black
