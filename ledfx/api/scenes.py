@@ -81,7 +81,7 @@ class ScenesEndpoint(RestEndpoint):
             }
             return web.json_response(data=response, status=400)
 
-        if action not in ["activate", "deactivate", "rename"]:
+        if action not in ["activate", "activate_in", "deactivate", "rename"]:
             response = {
                 "status": "failed",
                 "reason": f'Invalid action "{action}"',
@@ -104,6 +104,24 @@ class ScenesEndpoint(RestEndpoint):
             return web.json_response(data=response, status=400)
 
         scene = self._ledfx.config["scenes"][scene_id]
+
+        if action == "activate_in":
+            ms = data.get("ms")
+            if ms is None:
+                response = {
+                    "status": "failed",
+                    "reason": 'Required attribute "ms" was not provided',
+                }
+                return web.json_response(data=response, status=400)
+            self._ledfx.loop.call_later(ms, self._ledfx.scenes.activate, scene_id)
+            response = {
+                "status": "success",
+                "payload": {
+                    "type": "info",
+                    "message": f"Activated scene {scene['name']}",
+                },
+            }
+            return web.json_response(data=response, status=200)
 
         if action == "activate":
             for virtual in self._ledfx.virtuals.values():

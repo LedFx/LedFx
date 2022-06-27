@@ -34,6 +34,7 @@ function createWindow(args) {
         // frame: false,
         webPreferences: {
             webSecurity: false,
+            allowRunningInsecureContent: true,
             plugins: true,
             enableRemoteModule: true,
             backgroundThrottling: false,

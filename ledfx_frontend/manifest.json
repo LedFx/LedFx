@@ -45,14 +45,10 @@
       "density": "4.0"
     }
   ],
-  "start_url": ".",
-  "scope": ".",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "orientation": "any",
-  "serviceworker": {
-    "src": "serviceWorker.js",
-    "scope": "."
-  },
   "theme_color": "#800000",
   "background_color": "#030303"
 }
