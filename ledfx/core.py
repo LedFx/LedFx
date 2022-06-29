@@ -221,9 +221,9 @@ class LedFxCore:
     async def async_start(self, open_ui=False):
         _LOGGER.info("Starting LedFx")
         await self.http.start(get_ssl_certs(config_dir=self.config_dir))
-        if self.icon is not None and self.icon.HAS_NOTIFICATION:
+        if self.icon is not None and self.icon.notify is not None and self.icon.HAS_NOTIFICATION:
             self.icon.notify(
-                "Started in background.\nUse the tray icon to open."
+                "Started in background.\nUse the tray icon to open.", "LedFx"
             )
         self.devices = Devices(self)
         self.effects = Effects(self)
