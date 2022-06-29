@@ -381,6 +381,8 @@ class Virtual:
         # Get and process active effect frame
         self._active_effect.render()
         frame = self._active_effect.get_pixels()
+        if frame is None:
+            return
         frame[frame > 255] = 255
         frame[frame < 0] = 0
         # np.clip(frame, 0, 255, frame)
