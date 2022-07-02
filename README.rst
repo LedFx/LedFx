@@ -4,7 +4,7 @@
 |Build Status| |License| |Build Status Docs| |Discord|
 |Contributor Covenant|
 
-.. image:: https://i.imgur.com/SFWfhFr.png
+.. image:: https://raw.githubusercontent.com/LedFx/LedFx/b8e68beaa215d4308c74d0c7d657556ac894b707/icons/banner.png
 
 LedFx website: https://ledfx.app/
 
@@ -101,14 +101,14 @@ Credits: `Contributors-&-About`_
 
 License
 ---------
-`MIT`_
+`GPL-3`_
 
 
-.. _`MIT`: https://choosealicense.com/licenses/mit/
+.. _`GPL-3`: https://choosealicense.com/licenses/gpl-3.0/
 .. _`LedFx.exe`: https://ledfx.app/download/
-.. _`LedFx Guide`: https://ledfx.readthedocs.io/en/dev/index.html
+.. _`LedFx Guide`: https://ledfx.readthedocs.io/en/latest/index.html
 .. _`WLED`: https://github.com/Aircoookie/WLED/wiki
-.. _`installation documentation`: https://ledfx.readthedocs.io/en/dev/installing.html
+.. _`installation documentation`: https://ledfx.readthedocs.io/en/latest/installing.html
 .. _`Contributors-&-About`: https://ledfx.app/about/
 .. _`How to: Enable Stereo Mix in Windows 10`: https://thegeekpage.com/stereo-mix/
 .. _`Voicemeeter`: https://vb-audio.com/Voicemeeter/index.htm
@@ -117,10 +117,10 @@ License
 .. |Build Status| image:: https://github.com/LedFx/LedFx/actions/workflows/ci-build.yml/badge.svg
    :target: https://github.com/LedFx/LedFx/actions/workflows/ci-build.yml
    :alt: Build Status
-.. |Build Status Docs| image:: https://readthedocs.org/projects/ledfx/badge/?version=dev
+.. |Build Status Docs| image:: https://readthedocs.org/projects/ledfx/badge/?version=main
    :target: https://ledfx.readthedocs.io/
    :alt: Documentation Status
-.. |License| image:: https://img.shields.io/badge/license-MIT-blue.svg
+.. |License| image:: https://img.shields.io/badge/license-GPL3-blue.svg
    :alt: License
 .. |Discord| image:: https://img.shields.io/badge/chat-on%20discord-7289da.svg
    :target: https://discord.gg/xyyHEquZKQ
