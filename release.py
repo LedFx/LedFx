@@ -48,8 +48,8 @@ def main():
     current_branch = execute_command("git rev-parse --abbrev-ref HEAD")
     if current_branch != "dev":  # Temporary sanity check
         print("Releases may only be pushed from the dev branch at this time.")
-        if current_branch != "master":
-            print("Releases must be pushed from the master branch.")
+        if current_branch != "main":
+            print("Releases must be pushed from the main branch.")
             return
 
     current_commit = execute_command("git rev-parse HEAD")
