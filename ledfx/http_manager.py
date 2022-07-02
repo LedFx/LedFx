@@ -40,8 +40,12 @@ class HttpServer:
             name="favicon",
         )
         self.app.router.add_route("get", "/manifest.json", self.manifest)
-        self.app.router.add_route("get", "/serviceWorker.js", self.service_worker)
-        self.app.router.add_route("get", "/service-worker.js", self.service_worker_b)
+        self.app.router.add_route(
+            "get", "/serviceWorker.js", self.service_worker
+        )
+        self.app.router.add_route(
+            "get", "/service-worker.js", self.service_worker_b
+        )
         self.app.router.add_route("get", "/callback/", self.index)
         self.app.router.add_route("get", "/", self.index)
 

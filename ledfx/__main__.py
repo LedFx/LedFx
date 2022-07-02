@@ -358,7 +358,6 @@ def main():
         icon = None
     # icon = None
 
-
     # if not args.offline_mode and currently_frozen():
     #     update_ledfx(icon)
 

@@ -318,7 +318,8 @@ class Effect(BaseRegistry):
         pass
 
     def get_pixels(self):
-        if not hasattr(self, 'pixels'): return
+        if not hasattr(self, "pixels"):
+            return
         pixels = np.copy(self.pixels)
         # Apply some of the base output filters if necessary
         if self._config["flip"]:

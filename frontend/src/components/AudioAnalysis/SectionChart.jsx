@@ -34,7 +34,7 @@ export default class Chart extends PureComponent {
                     <XAxis hide="true" dataKey="start" unit="s" />
                     <YAxis hide="true" height={10} />
                     <Legend align="left" height={20} layout="vertical" content={renderLegend} />
-                    {/* <Tooltip 
+                    {/* <Tooltip
                         content={renderTooltip}
                     /> */}
                     <Bar dataKey="start" minPointSize={10} barGap={0}>

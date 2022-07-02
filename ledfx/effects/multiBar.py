@@ -55,7 +55,7 @@ class MultiBarAudioEffect(AudioReactiveEffect, GradientEffect):
         if self._config["ease_method"] == "ease_in_out":
             x = 0.5 * np.sin(np.pi * (self.beat_oscillator - 0.5)) + 0.5
         elif self._config["ease_method"] == "ease_in":
-            x = self.beat_oscillator ** 2
+            x = self.beat_oscillator**2
         elif self._config["ease_method"] == "ease_out":
             x = -((self.beat_oscillator - 1) ** 2) + 1
         elif self._config["ease_method"] == "linear":

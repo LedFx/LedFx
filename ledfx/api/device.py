@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from json import JSONDecodeError
 
@@ -6,7 +7,6 @@ from aiohttp import web
 
 from ledfx.api import RestEndpoint
 from ledfx.config import save_config
-import asyncio
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -82,10 +82,10 @@ class DeviceEndpoint(RestEndpoint):
         device = self._ledfx.devices.get(device_id)
         if device is None:
             response = {"not found": 404}
-            return web.json_response(data=response, status=404)      
+            return web.json_response(data=response, status=404)
 
         try:
-            if device.type == 'wled':
+            if device.type == "wled":
                 await device.resolve_address()
             status = 200
 
@@ -106,18 +106,19 @@ class DeviceEndpoint(RestEndpoint):
                     effect_response["config"] = virtual.active_effect.config
                     effect_response["name"] = virtual.active_effect.name
                     effect_response["type"] = virtual.active_effect.type
-                    response["virtuals"][virtual.id]["effect"] = effect_response
+                    response["virtuals"][virtual.id][
+                        "effect"
+                    ] = effect_response
 
-            
         except (voluptuous.Error, ValueError) as msg:
             response = {
                 "status": "failed",
                 "payload": {"type": "warning", "reason": str(msg)},
             }
             status = 202
-            # If there's an error updating config, don't write that config, just return an error            
-            return web.json_response(data=response, status=status)              
-       
+            # If there's an error updating config, don't write that config, just return an error
+            return web.json_response(data=response, status=status)
+
         device.activate()
         return web.json_response(data=response, status=status)
 

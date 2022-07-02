@@ -118,11 +118,7 @@ class EffectsEndpoint(RestEndpoint):
                 # this handles special cases where we want to update an effect and also trigger
                 # a transition by creating a new effect.
                 if next(
-                    (
-                        key
-                        for key in effect_config.keys()
-                        if "color" in key
-                    ),
+                    (key for key in effect_config.keys() if "color" in key),
                     None,
                 ):
                     effect = self._ledfx.effects.create(

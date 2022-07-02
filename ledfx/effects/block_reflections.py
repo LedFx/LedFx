@@ -37,14 +37,14 @@ class BlockReflections(AudioReactiveEffect, HSVEffect):
         )
 
     def render_hsv(self):
-        t2 = self.time(1 * self._config["speed"]) * (np.pi ** 2) + (
+        t2 = self.time(1 * self._config["speed"]) * (np.pi**2) + (
             0.8 * self._config["reactivity"] * self._lows_power
         )
         t1 = self.time(1 * self._config["speed"])
         t3 = self.time(5 * self._config["speed"]) + (
             self._config["reactivity"] * self._lows_power
         )
-        t4 = self.time(2 * self._config["speed"]) * (np.pi ** 2)
+        t4 = self.time(2 * self._config["speed"]) * (np.pi**2)
 
         m = 0.3 + self.triangle(t1) * 0.2
         c = self.triangle(t3) * 10 + 4 * self.sin(t4)

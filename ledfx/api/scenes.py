@@ -113,7 +113,9 @@ class ScenesEndpoint(RestEndpoint):
                     "reason": 'Required attribute "ms" was not provided',
                 }
                 return web.json_response(data=response, status=400)
-            self._ledfx.loop.call_later(ms, self._ledfx.scenes.activate, scene_id)
+            self._ledfx.loop.call_later(
+                ms, self._ledfx.scenes.activate, scene_id
+            )
             response = {
                 "status": "success",
                 "payload": {
