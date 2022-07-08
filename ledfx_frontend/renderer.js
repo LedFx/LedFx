@@ -4,10 +4,3 @@
 // `nodeIntegration` is turned off. Use `preload.js` to
 // selectively enable features needed in the rendering
 // process.
-// import { Titlebar } from 'custom-electron-titlebar'
-
-// window.addEventListener('DOMContentLoaded', () => {
-//   new Titlebar({
-//       backgroundColor: '#800000'
-//   })
-// })
