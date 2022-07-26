@@ -11,12 +11,9 @@ class SpectrumAudioEffect(AudioReactiveEffect):
 
     CONFIG_SCHEMA = vol.Schema({})
 
-    _prev_y = None
-
     def on_activate(self, pixel_count):
-        self.r = np.zeros(pixel_count)
-        self.g = np.zeros(pixel_count)
-        self.b = np.zeros(pixel_count)
+        self.out = np.zeros((pixel_count, 3))
+        self._prev_y = np.zeros(pixel_count)
 
     def config_updated(self, config):
 
@@ -28,10 +25,13 @@ class SpectrumAudioEffect(AudioReactiveEffect):
         # Grab the filtered and interpolated melbank data
         # Grab the filtered melbank
         y = self.melbank(filtered=False, size=self.pixel_count)
-        if self._prev_y is None:
-            self._prev_y = y
-        self.pixels[:, 0] = self.melbank(filtered=True, size=self.pixel_count)
-        self.pixels[:, 1] = np.abs(y - self._prev_y)
-        self.pixels[:, 2] = self._b_filter.update(y)
+        self.out[:, 0] = self.melbank(filtered=True, size=self.pixel_count)
+        self.out[:, 1] = np.abs(y - self._prev_y)
+        self.out[:, 2] = self._b_filter.update(y)
+        self.out *= 1000
 
         self._prev_y = y
+
+    def render(self):
+        # Apply the melbank data to the gradient curve and update the pixels
+        self.pixels = self.out
