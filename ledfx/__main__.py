@@ -325,13 +325,8 @@ def main():
     else:
         p.nice(15)
 
-    if not (currently_frozen() or installed_via_pip()):
-        if args.offline_mode:
-            _LOGGER.warning(
-                "Offline Mode Enabled - Please check for updates regularly."
-            )
-        else:
-            import ledfx.sentry_config  # noqa: F401
+    if not (currently_frozen() or installed_via_pip()) and args.offline_mode is False:
+        import ledfx.sentry_config  # noqa: F401
 
     if args.sentry_test:
         """This will crash LedFx and submit a Sentry error if Sentry is configured"""
