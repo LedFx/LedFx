@@ -21,6 +21,7 @@ import logging
 import subprocess
 import sys
 import warnings
+import importlib
 from logging.handlers import RotatingFileHandler
 
 try:
@@ -203,6 +204,9 @@ def installed_via_pip():
     Returns:
         boolean
     """
+    pip_spec = importlib.util.find_spec('pip')
+    if pip_spec is None:
+        return False
     pip_package_command = subprocess.check_output(
         [sys.executable, "-m", "pip", "freeze"]
     )
