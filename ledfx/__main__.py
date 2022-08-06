@@ -23,7 +23,11 @@ import sys
 import warnings
 from logging.handlers import RotatingFileHandler
 
-from pyupdater.client import Client
+try:
+    from pyupdater.client import Client
+    have_updater = True
+except ImportError:
+    have_updater = False
 
 import ledfx.config as config_helpers
 from ledfx.consts import (
@@ -263,8 +267,7 @@ def main():
         _LOGGER.warning("Steering LedFx into a brick wall")
         div_by_zero = 1 / 0
 
-    if args.offline_mode is False and currently_frozen():
-
+    if have_updater and args.offline_mode is False and currently_frozen():
         warnings.filterwarnings("ignore", category=DeprecationWarning)
         update_ledfx()
 
