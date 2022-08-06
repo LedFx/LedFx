@@ -24,7 +24,11 @@ from logging.handlers import RotatingFileHandler
 
 import psutil
 import yappi
-from pyupdater.client import Client
+try:
+    from pyupdater.client import Client
+    have_updater = True
+except ImportError:
+    have_updater = False
 
 import ledfx.config as config_helpers
 from ledfx.consts import (
@@ -358,7 +362,7 @@ def main():
         icon = None
     # icon = None
 
-    # if not args.offline_mode and currently_frozen():
+    # if have_updater and not args.offline_mode and currently_frozen():
     #     update_ledfx(icon)
 
     if icon:
