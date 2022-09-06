@@ -106,7 +106,9 @@ to adjust sync.
 Windows:
 ++++++++
 
-https://thegeekpage.com/stereo-mix/
+For setting up "Stereo Mix" recording device , please see https://thegeekpage.com/stereo-mix/
+
+If "Stereo Mix" is not picking up any sound, your "Playback" device is probably digital (e.g.: HDMI) and external tool must be used. See the "Directing Audio" documentation page.
 
 Squeezebox Server - Logitech
 ++++++++++++++++++++++++++++
