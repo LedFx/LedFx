@@ -22,8 +22,12 @@ import subprocess
 import sys
 import importlib
 from logging.handlers import RotatingFileHandler
+try:
+    import psutil
+    have_psutil = True
+except ImportError:
+    have_psutil = False
 
-import psutil
 import yappi
 try:
     from pyupdater.client import Client
@@ -304,26 +308,27 @@ def main():
     config_helpers.load_logger()
 
     # Set some process priority optimisations
-    p = psutil.Process(os.getpid())
+    if have_psutil:
+        p = psutil.Process(os.getpid())
 
-    if psutil.WINDOWS:
-        try:
-            p.nice(psutil.HIGH_PRIORITY_CLASS)
-        except psutil.Error:
-            _LOGGER.info(
-                "Unable to set priority, please run as Administrator if you are experiencing frame rate issues"
-            )
-        # p.ionice(psutil.IOPRIO_HIGH)
-    elif psutil.LINUX:
-        try:
+        if psutil.WINDOWS:
+            try:
+                p.nice(psutil.HIGH_PRIORITY_CLASS)
+            except psutil.Error:
+                _LOGGER.info(
+                    "Unable to set priority, please run as Administrator if you are experiencing frame rate issues"
+                )
+            # p.ionice(psutil.IOPRIO_HIGH)
+        elif psutil.LINUX:
+            try:
+                p.nice(15)
+                p.ionice(psutil.IOPRIO_CLASS_RT, value=7)
+            except psutil.Error:
+                _LOGGER.info(
+                    "Unable to set priority, please run as root or sudo if you are experiencing frame rate issues",
+                )
+        else:
             p.nice(15)
-            p.ionice(psutil.IOPRIO_CLASS_RT, value=7)
-        except psutil.Error:
-            _LOGGER.info(
-                "Unable to set priority, please run as root or sudo if you are experiencing frame rate issues",
-            )
-    else:
-        p.nice(15)
 
     if not (currently_frozen() or installed_via_pip()) and args.offline_mode is False:
         import ledfx.sentry_config  # noqa: F401
