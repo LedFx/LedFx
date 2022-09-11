@@ -27,8 +27,11 @@ try:
     have_psutil = True
 except ImportError:
     have_psutil = False
-
-import yappi
+try:
+    import yappi
+    have_yappi = True
+except ImportError:
+    have_yappi = False
 try:
     from pyupdater.client import Client
     have_updater = True
@@ -383,7 +386,7 @@ def entry_point(icon=None):
     while exit_code == 4:
         _LOGGER.info("LedFx Core is initializing")
 
-        if args.performance:
+        if args.performance and have_yappi:
             print("Collecting performance data...")
             yappi.start()
 
