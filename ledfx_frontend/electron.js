@@ -42,8 +42,8 @@ function createWindow(args = {}) {
   require('@electron/remote/main').initialize();
   // Create the browser window.
   win = new BrowserWindow({
-    width: 480,
-    height: 768,
+    width: 1024,
+    height: 1024,
     autoHideMenuBar: true,
     titleBarStyle: process.platform === 'darwin' ? 'default' : 'hidden',
     titleBarOverlay:
@@ -96,182 +96,230 @@ let contextMenu = null;
 let wind;
 let willQuitApp = false
 
+if (process.defaultApp) {
+  if (process.argv.length >= 2) {
+    app.setAsDefaultProtocolClient('ledfx', process.execPath, [path.resolve(process.argv[1])])
+  }
+} else {
+  app.setAsDefaultProtocolClient('ledfx')
+}
+
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 
-app.whenReady().then(async () => {
-  nativeTheme.themeSource = 'dark';
-  const thePath = process.env.PORTABLE_EXECUTABLE_DIR || path.resolve('.');
 
-  const integratedCore = (process.platform === 'darwin') 
-    ? fs.existsSync(path.join(path.dirname(__dirname), isDev ? 'extraResources' : '../extraResources','LedFx_core.app'))
-    : fs.existsSync(path.join(path.dirname(__dirname), isDev ? 'extraResources' : '../extraResources','LedFx-notray.exe'))
+const gotTheLock = app.requestSingleInstanceLock()
 
-  const currentDir = fs.readdirSync(thePath)
-  console.log(currentDir)
+const ready = () => (
+  app.whenReady().then(async () => {
+    nativeTheme.themeSource = 'dark';
+    const thePath = process.env.PORTABLE_EXECUTABLE_DIR || path.resolve('.');
 
-  if (integratedCore) {
-    if (process.platform === 'darwin') {
-      subpy = require('child_process').spawn(`${path.join(path.dirname(__dirname), isDev ? 'extraResources' : '../extraResources','LedFx_core.app/Contents/MacOS/LedFx_v2')}`, []);  
-    } else {
-      subpy = require('child_process').spawn(`${path.join(path.dirname(__dirname), isDev ? 'extraResources' : '../extraResources','LedFx-notray.exe')}`, ['-p', '8888']);
-    }
-  } 
+    const integratedCore = (process.platform === 'darwin') 
+      ? fs.existsSync(path.join(path.dirname(__dirname), isDev ? 'extraResources' : '../extraResources','LedFx_core.app'))
+      : fs.existsSync(path.join(path.dirname(__dirname), isDev ? 'extraResources' : '../extraResources','LedFx-notray.exe'))
 
-  wind = integratedCore
-    ? createWindow({ additionalArguments: ['integratedCore'] })
-    : createWindow();  
+    const currentDir = fs.readdirSync(thePath)
+    console.log(currentDir)
 
-  require('@electron/remote/main').enable(wind.webContents);
-  
-  if (isDev) {
-    await installExtension([REACT_DEVELOPER_TOOLS, REDUX_DEVTOOLS], {
-      loadExtensionOptions: { allowFileAccess: true },
-      forceDownload: false,
-    })
-      .then((name) => console.log(`Added Extension:  ${name}`))
-      .catch((error) => console.log(`An error occurred: , ${error}`));
-  }
-
-  const icon = path.join(__dirname, 'icon_16x16a.png');
-  tray = new Tray(icon);
-
-  if (integratedCore) {
-    contextMenu = Menu.buildFromTemplate([
-      { label: 'Show', click: () => {
-        if (process.platform === 'darwin') app.dock.show()
-        wind.show() 
-      }},
-      { label: 'Minimize', click: () => wind.minimize() },
-      { label: 'Minimize to tray', click: () => {
-        if (process.platform === 'darwin') app.dock.hide()
-        wind.hide() 
-      }},
-      //   { label: 'Test Notifiation', click: () => showNotification() },
-      { label: 'seperator', type: 'separator' },
-      { label: 'Dev', click: () => wind.webContents.openDevTools() },
-      { label: 'seperator', type: 'separator' },
-      {
-        label: 'Start core',
-        click: () => (process.platform === 'darwin') 
-          ? subpy = require('child_process').spawn(`${path.join(path.dirname(__dirname), isDev ? 'extraResources' : '../extraResources','LedFx_core.app/Contents/MacOS/LedFx_v2')}`, [])
-          : subpy = require('child_process').spawn(`${path.join(path.dirname(__dirname), isDev ? 'extraResources' : '../extraResources','LedFx-notray.exe')}`, ['-p', '8888'])
-      },
-      {
-        label: 'Stop core',
-        click: () => wind.webContents.send('fromMain', 'shutdown'),
-      },
-      // { label: 'Download core', click: () =>  download(wind, `https://github.com/YeonV/LedFx-Frontend-v2/releases/latest/download/LedFx_core-${app.getVersion().split('-')[1]}--win-portable.exe`, { directory: thePath, overwrite: true }).then((f) => { app.relaunch(); app.exit() }) },
-      {
-        label: 'Restart Client',
-        click: () => {
-          app.relaunch();
-          app.exit();
-        },
-      },
-      { label: 'Open folder', click: () => shell.openPath(thePath) },
-      { label: 'seperator', type: 'separator' },
-      { label: 'Exit', click: () => app.quit() },
-    ]);
-  } else {
-    contextMenu = Menu.buildFromTemplate([
-      { label: 'Show', click: () => {
-        if (process.platform === 'darwin') app.dock.show()
-        wind.show() 
-      }},
-      { label: 'Minimize', click: () => wind.minimize() },
-      { label: 'Minimize to tray', click: () => {
-        if (process.platform === 'darwin') app.dock.hide()
-        wind.hide() 
-      }},
-      //   { label: 'Test Notifiation', click: () => showNotification() },
-      { label: 'seperator', type: 'separator' },
-      { label: 'Dev', click: () => wind.webContents.openDevTools() },
-      { label: 'seperator', type: 'separator' },
-      {
-        label: 'Stop core',
-        click: () => wind.webContents.send('fromMain', 'shutdown'),
-      },
-      // { label: 'Download core', click: () => download(wind, `https://github.com/YeonV/LedFx-Frontend-v2/releases/latest/download/LedFx_core-${app.getVersion().split('-')[1]}--win-portable.exe`, { directory: thePath, overwrite: true, onProgress: (obj)=>{wind.webContents.send('fromMain', ['download-progress', obj])} }).then((f) => { wind.webContents.send('fromMain', 'clear-frontend'); app.relaunch(); app.exit() })},
-      {
-        label: 'Restart Client',
-        click: () => {
-          app.relaunch();
-          app.exit();
-        },
-      },
-      { label: 'Open folder', click: () => shell.openPath(thePath) },
-      { label: 'seperator', type: 'separator' },
-      { label: 'Exit', click: () => app.quit() },
-    ]);
-  }
-  tray.setToolTip(`LedFx Client${isDev ? ' DEV' : ''}`);
-  tray.setContextMenu(contextMenu);
-  tray.setIgnoreDoubleClickEvents(true);
-  tray.on('click', () => wind.show());  
-
-  ipcMain.on('toMain', (event, parameters) => {
-    console.log(parameters);
-    if (parameters === 'get-platform') {
-      wind.webContents.send('fromMain', ['platform', process.platform]);
-      return;
-    }
-    if (parameters === 'start-core') {      
-      if (integratedCore) {
-        if (process.platform === 'darwin') {
-          wind.webContents.send('fromMain', ['currentdir', integratedCore, fs.existsSync(path.join(path.dirname(__dirname), isDev ? 'extraResources' : '../extraResources','LedFx_core.app'))]);
-          subpy = require('child_process').spawn(`${path.join(path.dirname(__dirname), isDev ? 'extraResources' : '../extraResources','LedFx_core.app/Contents/MacOS/LedFx_v2')}`, []);  
-        } else {
-          wind.webContents.send('fromMain', ['currentdir', integratedCore, fs.existsSync(path.join(path.dirname(__dirname), isDev ? 'extraResources' : '../extraResources','LedFx-notray.exe'))]);
-          subpy = require('child_process').spawn(`${path.join(path.dirname(__dirname), isDev ? 'extraResources' : '../extraResources','LedFx-notray.exe')}`, []);
-        }
+    if (integratedCore) {
+      if (process.platform === 'darwin') {
+        subpy = require('child_process').spawn(`${path.join(path.dirname(__dirname), isDev ? 'extraResources' : '../extraResources','LedFx_core.app/Contents/MacOS/LedFx_v2')}`, []);  
+      } else {
+        subpy = require('child_process').spawn(`${path.join(path.dirname(__dirname), isDev ? 'extraResources' : '../extraResources','LedFx-notray.exe')}`, ['-p', '8888']);
       }
-      return;
+    } 
+
+    wind = integratedCore
+      ? createWindow({ additionalArguments: ['integratedCore'] })
+      : createWindow();  
+
+    require('@electron/remote/main').enable(wind.webContents);
+    
+    if (isDev) {
+      await installExtension([REACT_DEVELOPER_TOOLS, REDUX_DEVTOOLS], {
+        loadExtensionOptions: { allowFileAccess: true },
+        forceDownload: false,
+      })
+        .then((name) => console.log(`Added Extension:  ${name}`))
+        .catch((error) => console.log(`An error occurred: , ${error}`));
     }
-    if (parameters === 'open-config') {
-      console.log('Open Config');
-      wind.webContents.send('fromMain', ['currentdir', path.join(path.dirname(__dirname), isDev ? 'extraResources' : '../extraResources')]);
-      shell.showItemInFolder(
-        path.join(app.getPath('appData'), '/.ledfx/config.json')
-      );
-      return;
-    }
-    if (parameters === 'restart-client') {
-      app.relaunch();
-      app.exit();
-      return;
-    }
-    if (parameters === 'download-core') {
-      download(
-        wind,
-        `https://github.com/YeonV/LedFx-Frontend-v2/releases/latest/download/LedFx_core-${
-          app.getVersion().split('-')[1]
-        }--win-portable.exe`,
+
+    const icon = path.join(__dirname, 'icon_16x16a.png');
+    tray = new Tray(icon);
+
+    if (integratedCore) {
+      contextMenu = Menu.buildFromTemplate([
+        { label: 'Show', click: () => {
+          if (process.platform === 'darwin') app.dock.show()
+          wind.show() 
+        }},
+        { label: 'Minimize', click: () => wind.minimize() },
+        { label: 'Minimize to tray', click: () => {
+          if (process.platform === 'darwin') app.dock.hide()
+          wind.hide() 
+        }},
+        //   { label: 'Test Notifiation', click: () => showNotification() },
+        { label: 'seperator', type: 'separator' },
+        { label: 'Dev', click: () => wind.webContents.openDevTools() },
+        { label: 'seperator', type: 'separator' },
         {
-          directory: thePath,
-          overwrite: true,
-          onProgress: (obj) => {
-            wind.webContents.send('fromMain', ['download-progress', obj]);
+          label: 'Start core',
+          click: () => (process.platform === 'darwin') 
+            ? subpy = require('child_process').spawn(`${path.join(path.dirname(__dirname), isDev ? 'extraResources' : '../extraResources','LedFx_core.app/Contents/MacOS/LedFx_v2')}`, [])
+            : subpy = require('child_process').spawn(`${path.join(path.dirname(__dirname), isDev ? 'extraResources' : '../extraResources','LedFx-notray.exe')}`, ['-p', '8888'])
+        },
+        {
+          label: 'Stop core',
+          click: () => wind.webContents.send('fromMain', 'shutdown'),
+        },
+        // { label: 'Download core', click: () =>  download(wind, `https://github.com/YeonV/LedFx-Frontend-v2/releases/latest/download/LedFx_core-${app.getVersion().split('-')[1]}--win-portable.exe`, { directory: thePath, overwrite: true }).then((f) => { app.relaunch(); app.exit() }) },
+        {
+          label: 'Restart Client',
+          click: () => {
+            app.relaunch();
+            app.exit();
           },
+        },
+        { label: 'Open folder', click: () => shell.openPath(thePath) },
+        { label: 'seperator', type: 'separator' },
+        { label: 'Exit', click: () => app.quit() },
+      ]);
+    } else {
+      contextMenu = Menu.buildFromTemplate([
+        { label: 'Show', click: () => {
+          if (process.platform === 'darwin') app.dock.show()
+          wind.show() 
+        }},
+        { label: 'Minimize', click: () => wind.minimize() },
+        { label: 'Minimize to tray', click: () => {
+          if (process.platform === 'darwin') app.dock.hide()
+          wind.hide() 
+        }},
+        //   { label: 'Test Notifiation', click: () => showNotification() },
+        { label: 'seperator', type: 'separator' },
+        { label: 'Dev', click: () => wind.webContents.openDevTools() },
+        { label: 'seperator', type: 'separator' },
+        {
+          label: 'Stop core',
+          click: () => wind.webContents.send('fromMain', 'shutdown'),
+        },
+        // { label: 'Download core', click: () => download(wind, `https://github.com/YeonV/LedFx-Frontend-v2/releases/latest/download/LedFx_core-${app.getVersion().split('-')[1]}--win-portable.exe`, { directory: thePath, overwrite: true, onProgress: (obj)=>{wind.webContents.send('fromMain', ['download-progress', obj])} }).then((f) => { wind.webContents.send('fromMain', 'clear-frontend'); app.relaunch(); app.exit() })},
+        {
+          label: 'Restart Client',
+          click: () => {
+            app.relaunch();
+            app.exit();
+          },
+        },
+        { label: 'Open folder', click: () => shell.openPath(thePath) },
+        { label: 'seperator', type: 'separator' },
+        { label: 'Exit', click: () => app.quit() },
+      ]);
+    }
+    tray.setToolTip(`LedFx Client${isDev ? ' DEV' : ''}`);
+    tray.setContextMenu(contextMenu);
+    tray.setIgnoreDoubleClickEvents(true);
+    tray.on('click', () => wind.show());  
+
+    ipcMain.on('toMain', (event, parameters) => {
+      console.log(parameters);
+      if (parameters === 'get-platform') {
+        wind.webContents.send('fromMain', ['platform', process.platform]);
+        return;
+      }
+      if (parameters === 'start-core') {      
+        if (integratedCore) {
+          if (process.platform === 'darwin') {
+            wind.webContents.send('fromMain', ['currentdir', integratedCore, fs.existsSync(path.join(path.dirname(__dirname), isDev ? 'extraResources' : '../extraResources','LedFx_core.app'))]);
+            subpy = require('child_process').spawn(`${path.join(path.dirname(__dirname), isDev ? 'extraResources' : '../extraResources','LedFx_core.app/Contents/MacOS/LedFx_v2')}`, []);  
+          } else {
+            wind.webContents.send('fromMain', ['currentdir', integratedCore, fs.existsSync(path.join(path.dirname(__dirname), isDev ? 'extraResources' : '../extraResources','LedFx-notray.exe'))]);
+            subpy = require('child_process').spawn(`${path.join(path.dirname(__dirname), isDev ? 'extraResources' : '../extraResources','LedFx-notray.exe')}`, []);
+          }
         }
-      ).then(() => {
-        wind.webContents.send('fromMain', 'clear-frontend');
+        return;
+      }
+      if (parameters === 'open-config') {
+        console.log('Open Config');
+        wind.webContents.send('fromMain', ['currentdir', path.join(path.dirname(__dirname), isDev ? 'extraResources' : '../extraResources')]);
+        shell.showItemInFolder(
+          path.join(app.getPath('appData'), '/.ledfx/config.json')
+        );
+        return;
+      }
+      if (parameters === 'restart-client') {
         app.relaunch();
         app.exit();
-      });
-    }
-  });  
+        return;
+      }
+      if (parameters === 'download-core') {
+        download(
+          wind,
+          `https://github.com/YeonV/LedFx-Frontend-v2/releases/latest/download/LedFx_core-${
+            app.getVersion().split('-')[1]
+          }--win-portable.exe`,
+          {
+            directory: thePath,
+            overwrite: true,
+            onProgress: (obj) => {
+              wind.webContents.send('fromMain', ['download-progress', obj]);
+            },
+          }
+        ).then(() => {
+          wind.webContents.send('fromMain', 'clear-frontend');
+          app.relaunch();
+          app.exit();
+        });
+      }
+    });  
 
-  wind.on('close', function(e){
-    if (subpy !== null) {
-      subpy.kill('SIGINT');
-    }
+    wind.on('close', function(e){
+      if (subpy !== null) {
+        subpy.kill('SIGINT');
+        wind.webContents.send('fromMain', 'shutdown');
+      }
+    })
   })
-});
+)
+
+if (process.platform === 'win32') {
+  if (!gotTheLock) {
+    app.quit()
+  } else {
+    app.on('second-instance', (event, commandLine, workingDirectory) => {
+      // Someone tried to run a second instance, we should focus our window.
+      if (wind) {
+        if (wind.isMinimized()) wind.restore()
+        wind.focus()
+        wind.webContents.send('fromMain', ['protocol', JSON.stringify({event, commandLine, workingDirectory})]);
+      }
+    }) 
+    ready()
+    // Handle the protocol. In this case, we choose to show an Error Box.
+    app.on('open-url', (event, url) => {
+      event.preventDefault()
+      console.log(event, url)
+    })
+  
+  }
+} else {
+  ready()
+  // Handle the protocol. In this case, we choose to show an Error Box.
+  app.on('open-url', (event, url) => {
+    event.preventDefault()
+    console.log(event, url)
+  })
+}
+
+
 
 app.on('window-all-closed', () => {
-    app.quit();
+  if (subpy !== null) {
+    subpy.kill('SIGINT');
+  }
+  app.quit();
 });
 
 app.on('before-quit', () => {
