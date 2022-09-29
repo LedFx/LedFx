@@ -7,7 +7,7 @@
 
     aiohttp~=3.7.4.post0
     aiohttp_cors~=0.7.0
-    aubio~=0.4.9
+    aubio>=0.4.9
     cython~=0.29.21
     certifi~=2020.12.5
     mido>=1.2.10
