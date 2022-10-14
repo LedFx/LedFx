@@ -30,6 +30,8 @@ class Scenes:
                 vol.Required("name", description="Name of the scene"): str,
                 vol.Optional(
                     "scene_image",
+                    "scene_puturl",
+                    "scene_payload",
                     description="Image or icon to display",
                     default="Wallpaper",
                 ): str,
