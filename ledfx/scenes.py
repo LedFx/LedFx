@@ -30,10 +30,16 @@ class Scenes:
                 vol.Required("name", description="Name of the scene"): str,
                 vol.Optional(
                     "scene_image",
-                    "scene_puturl",
-                    "scene_payload",
                     description="Image or icon to display",
                     default="Wallpaper",
+                ): str,
+                vol.Optional(
+                    "scene_puturl",
+                    description="On Scene Activate, URL to PUT too",
+                ): str,
+                vol.Optional(
+                    "scene_payload",
+                    description="On Scene Activate, send this payload to scene_puturl",
                 ): str,
                 vol.Required(
                     "virtuals",
