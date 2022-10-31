@@ -34,6 +34,10 @@ class Scenes:
                     default="Wallpaper",
                 ): str,
                 vol.Optional(
+                    "scene_tags",
+                    description="Tags for filtering",
+                ): str,
+                vol.Optional(
                     "scene_puturl",
                     description="On Scene Activate, URL to PUT too",
                 ): str,

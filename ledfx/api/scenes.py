@@ -218,6 +218,7 @@ class ScenesEndpoint(RestEndpoint):
             return web.json_response(data=response, status=400)
 
         scene_name = data.get("name")
+        scene_tags = data.get("scene_tags")
         scene_puturl = data.get("scene_puturl")
         scene_payload = data.get("scene_payload")
         scene_image = data.get("scene_image")
@@ -237,6 +238,7 @@ class ScenesEndpoint(RestEndpoint):
         scene_config["virtuals"] = {}
         scene_config["scene_image"] = scene_image
         scene_config["scene_puturl"] = scene_puturl
+        scene_config["scene_tags"] = scene_tags
         scene_config["scene_payload"] = scene_payload
         for virtual in self._ledfx.virtuals.values():
             effect = {}
