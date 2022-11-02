@@ -17,7 +17,7 @@ const {
   shell,
 } = require('electron');
 const isDev = require('electron-is-dev');
-const { download } = require('electron-dl');
+// const { download } = require('electron-dl');
 const fs = require('fs');
 
 // Conditionally include the dev tools installer to load React Dev Tools
@@ -254,25 +254,25 @@ const ready = () => (
         app.exit();
         return;
       }
-      if (parameters === 'download-core') {
-        download(
-          wind,
-          `https://github.com/YeonV/LedFx-Frontend-v2/releases/latest/download/LedFx_core-${
-            app.getVersion().split('-')[1]
-          }--win-portable.exe`,
-          {
-            directory: thePath,
-            overwrite: true,
-            onProgress: (obj) => {
-              wind.webContents.send('fromMain', ['download-progress', obj]);
-            },
-          }
-        ).then(() => {
-          wind.webContents.send('fromMain', 'clear-frontend');
-          app.relaunch();
-          app.exit();
-        });
-      }
+      // if (parameters === 'download-core') {
+      //   download(
+      //     wind,
+      //     `https://github.com/YeonV/LedFx-Frontend-v2/releases/latest/download/LedFx_core-${
+      //       app.getVersion().split('-')[1]
+      //     }--win-portable.exe`,
+      //     {
+      //       directory: thePath,
+      //       overwrite: true,
+      //       onProgress: (obj) => {
+      //         wind.webContents.send('fromMain', ['download-progress', obj]);
+      //       },
+      //     }
+      //   ).then(() => {
+      //     wind.webContents.send('fromMain', 'clear-frontend');
+      //     app.relaunch();
+      //     app.exit();
+      //   });
+      // }
     });  
 
     wind.on('close', function(e){
