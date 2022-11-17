@@ -1,5 +1,6 @@
 import colorsys
 import logging
+import threading
 
 # from ledfx.effects.audio import FREQUENCY_RANGES
 from functools import lru_cache
@@ -235,6 +236,7 @@ class Effect(BaseRegistry):
         self._ledfx = ledfx
         self._config = {}
         self.update_config(config)
+        self.lock = threading.Lock()
 
     def __del__(self):
         if self._active:
@@ -307,6 +309,11 @@ class Effect(BaseRegistry):
         should just be referenced in the effect's loop directly
         """
         pass
+
+    def _render(self):
+        self.lock.acquire()
+        self.render()
+        self.lock.release()
 
     def render(self):
         """
