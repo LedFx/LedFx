@@ -384,7 +384,7 @@ class Virtual:
         Assembles the frame to be flushed.
         """
         # Get and process active effect frame
-        self._active_effect.render()
+        self._active_effect._render()
         frame = self._active_effect.get_pixels()
         if frame is None:
             return
