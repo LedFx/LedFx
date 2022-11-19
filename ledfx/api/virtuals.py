@@ -96,6 +96,18 @@ class VirtualsEndpoint(RestEndpoint):
                     item["config"] = virtual.config
                     self._ledfx.config["virtuals"][idx] = item
                     break
+            response = {
+                "status": "success",
+                "payload": {
+                    "type": "success",
+                    "reason": f"Updated Virtual {virtual.id}",
+                },
+                "virtual": {
+                    "config": virtual.config,
+                    "id": virtual.id,
+                    "is_device": virtual.is_device,
+                },
+            }
         # Or, create new virtual if id does not exist
         else:
             virtual_id = generate_id(virtual_config.get("name"))
@@ -118,6 +130,19 @@ class VirtualsEndpoint(RestEndpoint):
                     "is_device": virtual.is_device,
                 }
             )
+            
+            response = {
+                "status": "success",
+                "payload": {
+                    "type": "success",
+                    "reason": f"Created Virtual {virtual_id}",
+                },
+                "virtual": {
+                    "config": virtual.config,
+                    "id": virtual.id,
+                    "is_device": virtual.is_device,
+                },
+            }
 
         # Save config
         save_config(
@@ -125,12 +150,4 @@ class VirtualsEndpoint(RestEndpoint):
             config_dir=self._ledfx.config_dir,
         )
 
-        response = {
-            "status": "success",
-            "virtual": {
-                "config": virtual.config,
-                "id": virtual.id,
-                "is_device": virtual.is_device,
-            },
-        }
         return web.json_response(data=response, status=200)
