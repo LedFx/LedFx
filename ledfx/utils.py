@@ -8,13 +8,13 @@ import os
 import pkgutil
 import re
 import socket
-import subprocess
 import sys
 import time
 from abc import ABC
 from collections.abc import MutableMapping
 from functools import lru_cache
 from itertools import chain
+
 # from asyncio import coroutines, ensure_future
 from subprocess import PIPE, Popen, check_output
 

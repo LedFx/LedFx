@@ -267,17 +267,22 @@ class Virtual:
             _LOGGER.warning(error)
             raise ValueError(error)
 
-        self.transition_frame_total = (
-            self.refresh_rate * self._config["transition_time"]
-        )
-        self.transition_frame_counter = 0
+        if (
+            self._config["transition_mode"] != "None"
+            and self._config["transition_time"] > 0
+        ):
+            self.transition_frame_total = (
+                self.refresh_rate * self._config["transition_time"]
+            )
+            self.transition_frame_counter = 0
 
-        if self._active_effect is None:
-            self._transition_effect = DummyEffect(self.pixel_count)
-
+            if self._active_effect is None:
+                self._transition_effect = DummyEffect(self.pixel_count)
+            else:
+                self.clear_transition_effect()
+                self._transition_effect = self._active_effect
         else:
             self.clear_transition_effect()
-            self._transition_effect = self._active_effect
 
         self._active_effect = effect
         self._active_effect.activate(self)
@@ -379,7 +384,7 @@ class Virtual:
         Assembles the frame to be flushed.
         """
         # Get and process active effect frame
-        self._active_effect.render()
+        self._active_effect._render()
         frame = self._active_effect.get_pixels()
         if frame is None:
             return
@@ -395,8 +400,6 @@ class Virtual:
             self._transition_effect is not None
             and self._transition_effect.is_active
             and hasattr(self._transition_effect, "pixels")
-            and self._config["transition_mode"] != "None"
-            and self._config["transition_time"] > 0
         ):
             # Get and process transition effect frame
             self._transition_effect.render()
