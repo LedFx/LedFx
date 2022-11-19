@@ -18,7 +18,6 @@ class WLEDDevice(NetworkedDevice):
     This class fetches its config (px count, etc) from the WLED device
     at launch, and lets the user choose a sync mode to use.
     """
-
     CONFIG_SCHEMA = vol.Schema(
         {
             vol.Optional(
@@ -40,35 +39,35 @@ class WLEDDevice(NetworkedDevice):
         "E131": E131Device,
     }
 
-    DEVICE_CONFIGS = {
-        "UDP": {
-            "name": None,
-            "ip_address": None,
-            "pixel_count": None,
-            "port": 21324,
-            "udp_packet_type": "DNRGB",
-            "timeout": 1,
-            "minimise_traffic": True,
-        },
-        "DDP": {
-            "name": None,
-            "ip_address": None,
-            "pixel_count": None,
-        },
-        "E131": {
-            "name": None,
-            "ip_address": None,
-            "pixel_count": None,
-            "universe": 1,
-            "universe_size": 510,
-            "channel_offset": 0,
-            "packet_priority": 100,
-        },
-    }
-
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
         self.subdevice = None
+
+        self.DEVICE_CONFIGS = {
+            "UDP": {
+                "name": None,
+                "ip_address": None,
+                "pixel_count": None,
+                "port": 21324,
+                "udp_packet_type": "DNRGB",
+                "timeout": 1,
+                "minimise_traffic": True,
+            },
+            "DDP": {
+                "name": None,
+                "ip_address": None,
+                "pixel_count": None,
+            },
+            "E131": {
+                "name": None,
+                "ip_address": None,
+                "pixel_count": None,
+                "universe": 1,
+                "universe_size": 510,
+                "channel_offset": 0,
+                "packet_priority": 100,
+            },
+        }
 
     def config_updated(self, config):
         if not isinstance(
