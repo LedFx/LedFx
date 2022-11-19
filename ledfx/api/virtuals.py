@@ -130,7 +130,7 @@ class VirtualsEndpoint(RestEndpoint):
                     "is_device": virtual.is_device,
                 }
             )
-            
+
             response = {
                 "status": "success",
                 "payload": {
