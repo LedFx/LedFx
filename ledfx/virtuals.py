@@ -272,7 +272,7 @@ class Virtual:
             and self._config["transition_time"] > 0
         ):
             self.transition_frame_total = (
-                    self.refresh_rate * self._config["transition_time"]
+                self.refresh_rate * self._config["transition_time"]
             )
             self.transition_frame_counter = 0
 

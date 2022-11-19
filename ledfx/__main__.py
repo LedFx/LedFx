@@ -16,24 +16,28 @@ For non-development purposes run:
 """
 
 import argparse
+import importlib
 import logging
 import os
 import subprocess
 import sys
-import importlib
 from logging.handlers import RotatingFileHandler
+
 try:
     import psutil
+
     have_psutil = True
 except ImportError:
     have_psutil = False
 try:
     import yappi
+
     have_yappi = True
 except ImportError:
     have_yappi = False
 try:
     from pyupdater.client import Client
+
     have_updater = True
 except ImportError:
     have_updater = False
@@ -232,7 +236,7 @@ def installed_via_pip():
     Returns:
         boolean
     """
-    pip_spec = importlib.util.find_spec('pip')
+    pip_spec = importlib.util.find_spec("pip")
     if pip_spec is None:
         return False
     pip_package_command = subprocess.check_output(
@@ -333,7 +337,10 @@ def main():
         else:
             p.nice(15)
 
-    if not (currently_frozen() or installed_via_pip()) and args.offline_mode is False:
+    if (
+        not (currently_frozen() or installed_via_pip())
+        and args.offline_mode is False
+    ):
         import ledfx.sentry_config  # noqa: F401
 
     if args.sentry_test:
