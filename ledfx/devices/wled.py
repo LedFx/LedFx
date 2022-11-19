@@ -18,7 +18,7 @@ class WLEDDevice(NetworkedDevice):
     This class fetches its config (px count, etc) from the WLED device
     at launch, and lets the user choose a sync mode to use.
     """
-    
+
     CONFIG_SCHEMA = vol.Schema(
         {
             vol.Optional(
