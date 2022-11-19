@@ -44,7 +44,9 @@ class WLEDDevice(NetworkedDevice):
         super().__init__(ledfx, config)
         self.subdevice = None
 
-        self.DEVICE_CONFIGS = {
+        # moved DEVICE_CONFIGS class var to device_configs instance var as it is manipulated in seperate instances
+        # see https://github.com/LedFx/LedFx/pull/237
+        self.device_configs = {
             "UDP": {
                 "name": None,
                 "ip_address": None,
@@ -81,7 +83,7 @@ class WLEDDevice(NetworkedDevice):
             self.subdevice.deactivate()
 
         device = self.SYNC_MODES[self._config["sync_mode"]]
-        config = self.DEVICE_CONFIGS[self._config["sync_mode"]]
+        config = self.device_configs[self._config["sync_mode"]]
         config["name"] = self._config["name"]
         config["ip_address"] = self._config["ip_address"]
         config["pixel_count"] = self._config["pixel_count"]
