@@ -213,9 +213,11 @@ class EffectsEndpoint(RestEndpoint):
             # if we already have this effect in effects then load it up
             for virtual_cfg in self._ledfx.config["virtuals"]:
                 if virtual_cfg["id"] == virtual_id:
-                    if 'effects' in virtual_cfg:
-                        if effect_type in virtual_cfg['effects']:
-                            effect_config = virtual_cfg['effects'][effect_type]['config']
+                    if "effects" in virtual_cfg:
+                        if effect_type in virtual_cfg["effects"]:
+                            effect_config = virtual_cfg["effects"][
+                                effect_type
+                            ]["config"]
                         break
 
         elif effect_config == "RANDOMIZE":
