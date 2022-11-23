@@ -109,10 +109,10 @@ def setup_logging(loglevel, config_dir):
     file_handler.setLevel(file_loglevel)  # set loglevel
     file_formatter = logging.Formatter(
         file_logformat
-    )  # a simple log file format
+    ) 
     file_handler.setFormatter(
         file_formatter
-    )  # tell the file_handler to use this format
+    ) 
 
     console_handler = logging.StreamHandler()
     console_handler.setLevel(console_loglevel)  # set loglevel
@@ -417,7 +417,7 @@ def entry_point(icon=None):
             yappi.get_thread_stats().print_all()
             stats.save(filename, type="pstat")
             print(
-                f"Saved performance data to config directory      : {filename}"
+                f"Saved performance data to config directory: {filename}"
             )
             print(
                 "Please send the performance data to a developer : https://ledfx.app/contact/"
