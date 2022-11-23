@@ -116,7 +116,7 @@ const ready = () => (
     nativeTheme.themeSource = 'dark';
     const thePath = process.env.PORTABLE_EXECUTABLE_DIR || path.resolve('.');
 
-    const integratedCore = (process.platform === 'darwin')
+    const integratedCore = (process.platform === 'darwin') 
       ? fs.existsSync(path.join(path.dirname(__dirname), isDev ? 'extraResources' : '../extraResources','LedFx_core.app'))
       : fs.existsSync(path.join(path.dirname(__dirname), isDev ? 'extraResources' : '../extraResources','LedFx-notray.exe'))
 
@@ -125,18 +125,18 @@ const ready = () => (
 
     if (integratedCore) {
       if (process.platform === 'darwin') {
-        subpy = require('child_process').spawn(`${path.join(path.dirname(__dirname), isDev ? 'extraResources' : '../extraResources','LedFx_core.app/Contents/MacOS/LedFx_v2')}`, []);
+        subpy = require('child_process').spawn(`${path.join(path.dirname(__dirname), isDev ? 'extraResources' : '../extraResources','LedFx_core.app/Contents/MacOS/LedFx_v2')}`, []);  
       } else {
         subpy = require('child_process').spawn(`${path.join(path.dirname(__dirname), isDev ? 'extraResources' : '../extraResources','LedFx-notray.exe')}`, ['-p', '8888']);
       }
-    }
+    } 
 
     wind = integratedCore
       ? createWindow({ additionalArguments: ['integratedCore'] })
-      : createWindow();
+      : createWindow();  
 
     require('@electron/remote/main').enable(wind.webContents);
-
+    
     if (isDev) {
       await installExtension([REACT_DEVELOPER_TOOLS, REDUX_DEVTOOLS], {
         loadExtensionOptions: { allowFileAccess: true },
@@ -153,12 +153,12 @@ const ready = () => (
       contextMenu = Menu.buildFromTemplate([
         { label: 'Show', click: () => {
           if (process.platform === 'darwin') app.dock.show()
-          wind.show()
+          wind.show() 
         }},
         { label: 'Minimize', click: () => wind.minimize() },
         { label: 'Minimize to tray', click: () => {
           if (process.platform === 'darwin') app.dock.hide()
-          wind.hide()
+          wind.hide() 
         }},
         //   { label: 'Test Notifiation', click: () => showNotification() },
         { label: 'seperator', type: 'separator' },
@@ -166,7 +166,7 @@ const ready = () => (
         { label: 'seperator', type: 'separator' },
         {
           label: 'Start core',
-          click: () => (process.platform === 'darwin')
+          click: () => (process.platform === 'darwin') 
             ? subpy = require('child_process').spawn(`${path.join(path.dirname(__dirname), isDev ? 'extraResources' : '../extraResources','LedFx_core.app/Contents/MacOS/LedFx_v2')}`, [])
             : subpy = require('child_process').spawn(`${path.join(path.dirname(__dirname), isDev ? 'extraResources' : '../extraResources','LedFx-notray.exe')}`, ['-p', '8888'])
         },
@@ -190,12 +190,12 @@ const ready = () => (
       contextMenu = Menu.buildFromTemplate([
         { label: 'Show', click: () => {
           if (process.platform === 'darwin') app.dock.show()
-          wind.show()
+          wind.show() 
         }},
         { label: 'Minimize', click: () => wind.minimize() },
         { label: 'Minimize to tray', click: () => {
           if (process.platform === 'darwin') app.dock.hide()
-          wind.hide()
+          wind.hide() 
         }},
         //   { label: 'Test Notifiation', click: () => showNotification() },
         { label: 'seperator', type: 'separator' },
@@ -221,7 +221,7 @@ const ready = () => (
     tray.setToolTip(`LedFx Client${isDev ? ' DEV' : ''}`);
     tray.setContextMenu(contextMenu);
     tray.setIgnoreDoubleClickEvents(true);
-    tray.on('click', () => wind.show());
+    tray.on('click', () => wind.show());  
 
     ipcMain.on('toMain', (event, parameters) => {
       console.log(parameters);
@@ -229,11 +229,11 @@ const ready = () => (
         wind.webContents.send('fromMain', ['platform', process.platform]);
         return;
       }
-      if (parameters === 'start-core') {
+      if (parameters === 'start-core') {      
         if (integratedCore) {
           if (process.platform === 'darwin') {
             wind.webContents.send('fromMain', ['currentdir', integratedCore, fs.existsSync(path.join(path.dirname(__dirname), isDev ? 'extraResources' : '../extraResources','LedFx_core.app'))]);
-            subpy = require('child_process').spawn(`${path.join(path.dirname(__dirname), isDev ? 'extraResources' : '../extraResources','LedFx_core.app/Contents/MacOS/LedFx_v2')}`, []);
+            subpy = require('child_process').spawn(`${path.join(path.dirname(__dirname), isDev ? 'extraResources' : '../extraResources','LedFx_core.app/Contents/MacOS/LedFx_v2')}`, []);  
           } else {
             wind.webContents.send('fromMain', ['currentdir', integratedCore, fs.existsSync(path.join(path.dirname(__dirname), isDev ? 'extraResources' : '../extraResources','LedFx-notray.exe'))]);
             subpy = require('child_process').spawn(`${path.join(path.dirname(__dirname), isDev ? 'extraResources' : '../extraResources','LedFx-notray.exe')}`, []);
@@ -273,7 +273,7 @@ const ready = () => (
       //     app.exit();
       //   });
       // }
-    });
+    });  
 
     wind.on('close', function(e){
       if (subpy !== null) {
@@ -295,14 +295,14 @@ if (process.platform === 'win32') {
         wind.focus()
         wind.webContents.send('fromMain', ['protocol', JSON.stringify({event, commandLine, workingDirectory})]);
       }
-    })
+    }) 
     ready()
     // Handle the protocol. In this case, we choose to show an Error Box.
     app.on('open-url', (event, url) => {
       event.preventDefault()
       console.log(event, url)
     })
-
+  
   }
 } else {
   ready()
