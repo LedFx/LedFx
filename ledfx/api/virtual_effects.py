@@ -40,8 +40,14 @@ class EffectsEndpoint(RestEndpoint):
 
     def update_effect_config(self, virtual_id, effect):
         # Store as both the active effect to protect existing code, and one of effects
-        virtual = next((item for item in self._ledfx.config["virtuals"]
-                            if item["id"] == virtual_id), None)
+        virtual = next(
+            (
+                item
+                for item in self._ledfx.config["virtuals"]
+                if item["id"] == virtual_id
+            ),
+            None,
+        )
         if virtual:
             if not ("effects" in virtual):
                 virtual["effects"] = {}
@@ -210,11 +216,19 @@ class EffectsEndpoint(RestEndpoint):
         if effect_config is None:
             effect_config = {}
             # if we already have this effect in effects then load it up
-            virtual_cfg = next((item for item in self._ledfx.config["virtuals"]
-                                if item["id"] == virtual_id), None)
-            if virtual_cfg and 'effects' in virtual_cfg:
-                if effect_type in virtual_cfg['effects']:
-                    effect_config = virtual_cfg['effects'][effect_type]['config']
+            virtual_cfg = next(
+                (
+                    item
+                    for item in self._ledfx.config["virtuals"]
+                    if item["id"] == virtual_id
+                ),
+                None,
+            )
+            if virtual_cfg and "effects" in virtual_cfg:
+                if effect_type in virtual_cfg["effects"]:
+                    effect_config = virtual_cfg["effects"][effect_type][
+                        "config"
+                    ]
         elif effect_config == "RANDOMIZE":
             # Parse and break down schema for effect, in order to generate
             # acceptable random values

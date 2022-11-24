@@ -107,12 +107,8 @@ def setup_logging(loglevel, config_dir):
         backupCount=5,  # once it hits 2.5MB total, start removing logs.
     )
     file_handler.setLevel(file_loglevel)  # set loglevel
-    file_formatter = logging.Formatter(
-        file_logformat
-    ) 
-    file_handler.setFormatter(
-        file_formatter
-    ) 
+    file_formatter = logging.Formatter(file_logformat)
+    file_handler.setFormatter(file_formatter)
 
     console_handler = logging.StreamHandler()
     console_handler.setLevel(console_loglevel)  # set loglevel
@@ -416,9 +412,7 @@ def entry_point(icon=None):
             stats = yappi.get_func_stats()
             yappi.get_thread_stats().print_all()
             stats.save(filename, type="pstat")
-            print(
-                f"Saved performance data to config directory: {filename}"
-            )
+            print(f"Saved performance data to config directory: {filename}")
             print(
                 "Please send the performance data to a developer : https://ledfx.app/contact/"
             )

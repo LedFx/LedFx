@@ -57,8 +57,14 @@ class VirtualPresetsEndpoint(RestEndpoint):
 
     def update_effect_config(self, virtual_id, effect):
         # Store as both the active effect to protect existing code, and one of effects
-        virtual = next((item for item in self._ledfx.config["virtuals"]
-                            if item["id"] == virtual_id), None)
+        virtual = next(
+            (
+                item
+                for item in self._ledfx.config["virtuals"]
+                if item["id"] == virtual_id
+            ),
+            None,
+        )
         if virtual:
             if not ("effects" in virtual):
                 virtual["effects"] = {}
