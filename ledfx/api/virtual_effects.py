@@ -38,6 +38,27 @@ class EffectsEndpoint(RestEndpoint):
 
         return web.json_response(data=response, status=200)
 
+    def update_effect_config(self, virtual_id, effect):
+        # Store as both the active effect to protect existing code, and one of effects
+        virtual = next(
+            (
+                item
+                for item in self._ledfx.config["virtuals"]
+                if item["id"] == virtual_id
+            ),
+            None,
+        )
+        if virtual:
+            if not ("effects" in virtual):
+                virtual["effects"] = {}
+            virtual["effects"][effect.type] = {}
+            virtual["effects"][effect.type]["type"] = effect.type
+            virtual["effects"][effect.type]["config"] = effect.config
+            if not ("effect" in virtual):
+                virtual["effect"] = {}
+            virtual["effect"]["type"] = effect.type
+            virtual["effect"]["config"] = effect.config
+
     async def put(self, virtual_id, request) -> web.Response:
         """
         Update the config of the active effect of a virtual
@@ -148,14 +169,7 @@ class EffectsEndpoint(RestEndpoint):
             }
             return web.json_response(data=response, status=202)
 
-        # Update and save the configuration
-        for virtual in self._ledfx.config["virtuals"]:
-            if virtual["id"] == virtual_id:
-                if not ("effect" in virtual):
-                    virtual["effect"] = {}
-                    virtual["effect"]["type"] = effect.type
-                    virtual["effect"]["config"] = effect.config
-                    break
+        self.update_effect_config(virtual_id, effect)
 
         save_config(
             config=self._ledfx.config,
@@ -201,6 +215,18 @@ class EffectsEndpoint(RestEndpoint):
         effect_config = data.get("config")
         if effect_config is None:
             effect_config = {}
+            # if we already have this effect in effects then load it up
+            virt_cfg = next(
+                (
+                    item
+                    for item in self._ledfx.config["virtuals"]
+                    if item["id"] == virtual_id
+                ),
+                None,
+            )
+            if virt_cfg and "effects" in virt_cfg:
+                if effect_type in virt_cfg["effects"]:
+                    effect_config = virt_cfg["effects"][effect_type]["config"]
         elif effect_config == "RANDOMIZE":
             # Parse and break down schema for effect, in order to generate
             # acceptable random values
@@ -253,14 +279,8 @@ class EffectsEndpoint(RestEndpoint):
             }
             return web.json_response(data=response, status=202)
 
-        # Update and save the configuration
-        for virtual in self._ledfx.config["virtuals"]:
-            if virtual["id"] == virtual_id:
-                # if not ('effect' in virtual):
-                virtual["effect"] = {}
-                virtual["effect"]["type"] = effect_type
-                virtual["effect"]["config"] = effect_config
-                break
+        self.update_effect_config(virtual_id, effect)
+
         save_config(
             config=self._ledfx.config,
             config_dir=self._ledfx.config_dir,
