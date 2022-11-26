@@ -24,6 +24,9 @@ class DummyEffect:
     def __init__(self, pixel_count):
         self.pixels = np.zeros((pixel_count, 3))
 
+    def _render(self):
+        pass
+
     def render(self):
         pass
 
