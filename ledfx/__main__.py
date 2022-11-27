@@ -344,7 +344,7 @@ def main():
         _LOGGER.warning("Steering LedFx into a brick wall")
         div_by_zero = 1 / 0
 
-    if args.tray or currently_frozen():
+    if args.tray:
         # If pystray is imported on a device that can't display it, it explodes. Catch it
         try:
             import pystray
