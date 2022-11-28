@@ -749,9 +749,18 @@ class Virtuals:
                 ledfx=self._ledfx,
             )
             if "segments" in virtual:
-                self._ledfx.virtuals.get(virtual["id"]).update_segments(
-                    virtual["segments"]
-                )
+                try:
+                    self._ledfx.virtuals.get(virtual["id"]).update_segments(
+                        virtual["segments"]
+                    )
+                except vol.MultipleInvalid:
+                    _LOGGER.warning(
+                        "Virtual Segment Changed. Not restoring segment"
+                    )
+                    continue
+                except RuntimeError:
+                    pass
+
             if "effect" in virtual:
                 try:
                     effect = self._ledfx.effects.create(
