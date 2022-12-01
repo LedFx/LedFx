@@ -1,7 +1,7 @@
 from functools import lru_cache
 
 import numpy as np
-from numpy import asarray, zeros, place, nan, mod, extract, pi
+from numpy import asarray, extract, mod, nan, pi, place, zeros
 
 
 @lru_cache(maxsize=64)
@@ -23,6 +23,7 @@ def interpolate_pixels(pixels, new_length):
     new_pixels[:, 2] = np.interp(x_new, x_old, pixels[:, 2])
 
     return new_pixels
+
 
 # Copied from scipy to avoid importing the entire dependency.
 # https://github.com/scipy/scipy/blob/main/scipy/signal/_waveforms.py
@@ -97,10 +98,10 @@ def sawtooth(t, width=1):
     t, w = asarray(t), asarray(width)
     w = asarray(w + (t - t))
     t = asarray(t + (w - w))
-    if t.dtype.char in ['fFdD']:
+    if t.dtype.char in ["fFdD"]:
         ytype = t.dtype.char
     else:
-        ytype = 'd'
+        ytype = "d"
     y = zeros(t.shape, ytype)
 
     # width must be between 0 and 1 inclusive
@@ -127,12 +128,14 @@ def sawtooth(t, width=1):
     return y
 # End BSD-3 Licensed Code
 
+
 # Specialization of sawtooth for a triangle wave. Output is often similar enough
 # to a sine wave, but much faster
 def triangle(a):
-        a = sawtooth(a * np.pi * 2, 0.5)
-        np.multiply(a, 0.5, out=a)
-        return np.add(a, 0.5)
+    a = sawtooth(a * np.pi * 2, 0.5)
+    np.multiply(a, 0.5, out=a)
+    return np.add(a, 0.5)
+
 
 class ExpFilter:
     """Simple exponential smoothing filter"""

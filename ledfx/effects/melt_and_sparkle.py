@@ -4,9 +4,9 @@ import time
 import numpy as np
 import voluptuous as vol
 
+from ledfx.effects import smooth
 from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.hsv_effect import HSVEffect
-from ledfx.effects import smooth
 from ledfx.effects.math import triangle
 from ledfx.utils import empty_queue
 
@@ -105,11 +105,16 @@ class HuxleyMelt(AudioReactiveEffect, HSVEffect):
 
     def audio_data_updated(self, data):
         self._last_lows_power = self._lows_power
-        self._lows_power = self._lows_filter.update(data.lows_power(filtered=False))
+        self._lows_power = self._lows_filter.update(
+            data.lows_power(filtered=False)
+        )
         # self._lows_power = 0
         # _LOGGER.debug(f"bass {self._lows_power}")
 
-        if self._lows_power > self.strobe_cutoff and np.random.randint(0, 200) == 0:
+        if (
+            self._lows_power > self.strobe_cutoff
+            and np.random.randint(0, 200) == 0
+        ):
             self._direction *= -1.0
 
         currentTime = time.time()
@@ -118,11 +123,14 @@ class HuxleyMelt(AudioReactiveEffect, HSVEffect):
             (i.max() ** 2 for i in self.melbank_thirds()), float
         )
         np.clip(intensities, 0, 1, out=intensities)
-        self._mids_power = self._mids_filter.update(data.mids_power(filtered=True))
+        self._mids_power = self._mids_filter.update(
+            data.mids_power(filtered=True)
+        )
         if (
             data.onset()
             and currentTime - self.last_strobe_time > self.strobe_wait_time
-                and intensities[2] > self.strobe_cutoff):
+            and intensities[2] > self.strobe_cutoff
+        ):
             self.onsets_queue.put(True)
             self.last_strobe_time = currentTime
 
@@ -171,7 +179,7 @@ class HuxleyMelt(AudioReactiveEffect, HSVEffect):
         # The power operation effectively adjusts the amount of black between
         # lava chunks.  We use a power() operation because the
         width_factor = np.power(1 - self._config["lava_width"], 2)
-        power = (30 * width_factor - (self._mids_power * width_factor))
+        power = 30 * width_factor - (self._mids_power * width_factor)
         np.power(self.v, power, out=self.v)
 
         # Dim the lava so its max brightness is below the strobes.
@@ -182,7 +190,7 @@ class HuxleyMelt(AudioReactiveEffect, HSVEffect):
             self.onsets_queue.get()
             strobe_width = min(self.strobe_width, self.pixel_count)
             position = np.random.randint(self.pixel_count - strobe_width)
-            self.strobe_overlay[position: position + strobe_width] = 1.0
+            self.strobe_overlay[position : position + strobe_width] = 1.0
 
         # Adjust saturation by the strength of the overlay mask
         np.multiply(self.s, np.subtract(1, self.strobe_overlay), out=self.s)
