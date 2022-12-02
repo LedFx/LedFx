@@ -65,7 +65,6 @@ class Water(AudioReactiveEffect, HSVEffect):
         self._drops_queue = queue.Queue()
 
     def on_activate(self, pixel_count):
-        empty_queue(self._drops_queue)
         # Double buffered rendering
         self._buffer = np.zeros((2, pixel_count))
         self._cur_buffer = 0
@@ -74,6 +73,7 @@ class Water(AudioReactiveEffect, HSVEffect):
         self._high_emitters = [(.125, 1.5), (.375, -2.5), (.625, 2.5), (.875, -1.5)]
 
     def deactivate(self):
+        empty_queue(self._drops_queue)
         return super().deactivate()
 
     def audio_data_updated(self, data):

@@ -2,7 +2,6 @@ import queue
 import time
 
 import numpy as np
-from scipy import signal
 import voluptuous as vol
 
 from ledfx.effects.audio import AudioReactiveEffect
