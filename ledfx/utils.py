@@ -28,7 +28,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 def calc_available_fps():
-    monotonic_res = time.get_clock_info("monotonic").resolution
+    monotonic_res = time.get_clock_info("perf_counter").resolution
 
     if monotonic_res < 0.001:
         mult = int(0.001 / monotonic_res)
@@ -49,17 +49,6 @@ def calc_available_fps():
 
 
 AVAILABLE_FPS = calc_available_fps()
-
-
-@lru_cache(maxsize=32)
-def fps_to_sleep_interval(fps):
-    monotonic_res = time.get_clock_info("monotonic").resolution
-    monotonic_ticks = next(
-        (t for f, t in AVAILABLE_FPS.items() if f >= fps),
-        list(AVAILABLE_FPS.values())[-1],
-    )
-    return max(0.001, monotonic_res * (monotonic_ticks - 1))
-
 
 def install_package(package):
     _LOGGER.debug(f"Installed package: {package}")

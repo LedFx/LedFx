@@ -27,10 +27,9 @@ from ledfx.events import (
 
 # from ledfx.config import save_config
 from ledfx.transitions import Transitions
-from ledfx.utils import fps_to_sleep_interval
 
 _LOGGER = logging.getLogger(__name__)
-
+NANOSECONDS = 1000000000
 
 class Virtual:
 
@@ -353,13 +352,16 @@ class Virtual:
         return self._active_effect
 
     def thread_function(self):
+        last_updated = time.monotonic_ns()
         while True:
             if not self._active:
                 break
+            can_update = time.monotonic_ns() >= last_updated + (1 / self.refresh_rate * NANOSECONDS)
             if (
                 self._active_effect
                 and self._active_effect.is_active
                 and hasattr(self._active_effect, "pixels")
+                and can_update
             ):
                 # self.assembled_frame = await self._ledfx.loop.run_in_executor(
                 #     self._ledfx.thread_executor, self.assemble_frame
@@ -376,8 +378,7 @@ class Virtual:
                     self._ledfx.events.fire_event(
                         VirtualUpdateEvent(self.id, self.assembled_frame)
                     )
-
-            time.sleep(fps_to_sleep_interval(self.refresh_rate))
+                    last_updated = time.monotonic_ns()
 
     def assemble_frame(self):
         """
