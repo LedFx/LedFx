@@ -22,7 +22,7 @@ class Water(AudioReactiveEffect, HSVEffect):
     """
 
     NAME = "Water"
-    CATEGORY = "Atmospherics"
+    CATEGORY = "Atmospheric"
 
     CONFIG_SCHEMA = vol.Schema(
         {

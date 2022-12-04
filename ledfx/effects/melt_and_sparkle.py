@@ -14,7 +14,7 @@ from ledfx.utils import empty_queue
 class HuxleyMelt(AudioReactiveEffect, HSVEffect):
 
     NAME = "Melt and Sparkle"
-    CATEGORY = "Atmospherics"
+    CATEGORY = "Atmospheric"
 
     CONFIG_SCHEMA = vol.Schema(
         {
