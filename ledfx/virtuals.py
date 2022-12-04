@@ -1,12 +1,12 @@
 import logging
 import threading
 import time
+import timeit
 from functools import cached_property
 
 import numpy as np
 import voluptuous as vol
 import zeroconf
-import timeit
 
 from ledfx.effects import DummyEffect
 from ledfx.effects.math import interpolate_pixels
@@ -384,7 +384,7 @@ class Virtual:
             min_time = time.get_clock_info("monotonic").resolution
             # use an aggressive check for did we sleep against implied min
             # for all otherwise working behaviours this will be passive
-            if pass_time < ( min_time / 2 ):
+            if pass_time < (min_time / 2):
                 time.sleep(min_time - pass_time)
 
     def assemble_frame(self):
