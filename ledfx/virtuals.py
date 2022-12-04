@@ -31,6 +31,7 @@ from ledfx.transitions import Transitions
 _LOGGER = logging.getLogger(__name__)
 NANOSECONDS = 1000000000
 
+
 class Virtual:
 
     CONFIG_SCHEMA = vol.Schema(
@@ -356,7 +357,9 @@ class Virtual:
         while True:
             if not self._active:
                 break
-            can_update = time.monotonic_ns() >= last_updated + (1 / self.refresh_rate * NANOSECONDS)
+            can_update = time.monotonic_ns() >= last_updated + (
+                1 / self.refresh_rate * NANOSECONDS
+            )
             if (
                 self._active_effect
                 and self._active_effect.is_active

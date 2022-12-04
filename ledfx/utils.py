@@ -50,6 +50,7 @@ def calc_available_fps():
 
 AVAILABLE_FPS = calc_available_fps()
 
+
 def install_package(package):
     _LOGGER.debug(f"Installed package: {package}")
     env = os.environ.copy()
