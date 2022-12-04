@@ -29,6 +29,7 @@ _LOGGER = logging.getLogger(__name__)
 
 sleep_lies = True
 
+
 def does_sleep_lie():
     global sleep_lies
     monotonic_res = time.get_clock_info("monotonic").resolution
@@ -87,6 +88,7 @@ def fps_to_sleep_interval(fps):
         min_clock = 0.001
     _LOGGER.warning(f"MIN clock is {min_clock}")
     return max(min_clock, monotonic_res * (monotonic_ticks - 1))
+
 
 def install_package(package):
     _LOGGER.debug(f"Installed package: {package}")

@@ -1,12 +1,12 @@
 import logging
 import threading
 import time
+import timeit
 from functools import cached_property
 
 import numpy as np
 import voluptuous as vol
 import zeroconf
-import timeit
 
 from ledfx.effects import DummyEffect
 from ledfx.effects.math import interpolate_pixels
@@ -361,7 +361,9 @@ class Virtual:
 
         while True:
             self.start = timeit.default_timer()
-            _LOGGER.warning(f"presleep {self.presleep:.04f} postsleep:{self.postsleep:.04f} sleep for: {self.sleep_time:.04f} passed: {self.passed}")
+            _LOGGER.warning(
+                f"presleep {self.presleep:.04f} postsleep:{self.postsleep:.04f} sleep for: {self.sleep_time:.04f} passed: {self.passed}"
+            )
             if not self._active:
                 break
             if (
@@ -387,12 +389,9 @@ class Virtual:
 
             self.passed = timeit.default_timer() - self.start
             self.sleep_time = fps_to_sleep_interval(self.refresh_rate)
-            self.presleep = timeit.default_timer()-self.start
+            self.presleep = timeit.default_timer() - self.start
             time.sleep(self.sleep_time)
-            self.postsleep = timeit.default_timer()-self.start
-
-
-
+            self.postsleep = timeit.default_timer() - self.start
 
     def assemble_frame(self):
         """
