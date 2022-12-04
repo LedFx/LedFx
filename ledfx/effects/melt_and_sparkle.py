@@ -81,6 +81,7 @@ class HuxleyMelt(AudioReactiveEffect, HSVEffect):
 
     def deactivate(self):
         empty_queue(self.onsets_queue)
+        self.onsets_queue = None
         return super().deactivate()
 
     def config_updated(self, config):

@@ -62,7 +62,7 @@ class Water(AudioReactiveEffect, HSVEffect):
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
         # Queue will contain tuples of (pixel location, water height value)
-        self._drops_queue = queue.Queue()
+        self.drops_queue = queue.Queue()
 
     def on_activate(self, pixel_count):
         # Double buffered rendering
@@ -78,7 +78,8 @@ class Water(AudioReactiveEffect, HSVEffect):
         ]
 
     def deactivate(self):
-        empty_queue(self._drops_queue)
+        empty_queue(self.drops_queue)
+        self.drops_queue = None
         return super().deactivate()
 
     def audio_data_updated(self, data):
@@ -92,11 +93,11 @@ class Water(AudioReactiveEffect, HSVEffect):
         np.clip(intensities, 0, 1, out=intensities)
 
         # Bass emitters stay at start, end, and middle.
-        self._drops_queue.put((1, intensities[0] * self._config["bass_size"]))
-        self._drops_queue.put(
+        self.drops_queue.put((1, intensities[0] * self._config["bass_size"]))
+        self.drops_queue.put(
             (self.pixel_count // 2, intensities[0] * self._config["bass_size"])
         )
-        self._drops_queue.put(
+        self.drops_queue.put(
             (self.pixel_count - 2, intensities[0] * self._config["bass_size"])
         )
 
@@ -104,7 +105,7 @@ class Water(AudioReactiveEffect, HSVEffect):
         for i in range(0, len(self._mids_emitters)):
             mid_pos, mid_speed = self._mids_emitters[i]
             pos = 1 + int(mid_pos * (self.pixel_count - 2))
-            self._drops_queue.put(
+            self.drops_queue.put(
                 (pos, intensities[1] * self._config["mids_size"])
             )
             mid_pos += 0.0002 * mid_speed * self._config["speed"]
@@ -117,7 +118,7 @@ class Water(AudioReactiveEffect, HSVEffect):
         for i in range(0, len(self._high_emitters)):
             high_pos, high_speed = self._high_emitters[i]
             pos = 1 + int(high_pos * (self.pixel_count - 2))
-            self._drops_queue.put(
+            self.drops_queue.put(
                 (pos, intensities[2] * self._config["high_size"])
             )
             high_pos += 0.0002 * high_speed * self._config["speed"]
@@ -137,10 +138,10 @@ class Water(AudioReactiveEffect, HSVEffect):
             )
 
         # Create new drops if any
-        if self._drops_queue is None:
-            self._drops_queue = queue.Queue()
-        while not self._drops_queue.empty():
-            drop_pos, drop_height = self._drops_queue.get()
+        if self.drops_queue is None:
+            self.drops_queue = queue.Queue()
+        while not self.drops_queue.empty():
+            drop_pos, drop_height = self.drops_queue.get()
             self._create_drop(drop_pos, drop_height)
 
         # Render
