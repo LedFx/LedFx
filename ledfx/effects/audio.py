@@ -16,6 +16,7 @@ from ledfx.effects import Effect
 from ledfx.effects.math import ExpFilter
 from ledfx.effects.melbank import FFT_SIZE, MIC_RATE, Melbanks
 from ledfx.events import AudioDeviceChangeEvent, Event
+from ledfx.utils import does_sleep_lie
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -289,6 +290,8 @@ class AudioInputSource:
         except sd.PortAudioError as e:
             _LOGGER.error(f"{e}, Reverting to default input device")
             open_audio_stream(default_device)
+
+        does_sleep_lie()
 
     def deactivate(self):
         if self._stream:

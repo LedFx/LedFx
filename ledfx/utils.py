@@ -10,6 +10,7 @@ import re
 import socket
 import sys
 import time
+import timeit
 from abc import ABC
 from collections.abc import MutableMapping
 from functools import lru_cache
@@ -25,6 +26,28 @@ import voluptuous as vol
 from ledfx.config import save_config
 
 _LOGGER = logging.getLogger(__name__)
+
+sleep_lies = True
+
+def does_sleep_lie():
+    global sleep_lies
+    monotonic_res = time.get_clock_info("monotonic").resolution
+    perf_counter = time.get_clock_info("perf_counter").resolution
+    _LOGGER.warning(f"mono: {monotonic_res} perf: {perf_counter}")
+    count = 0
+    start = timeit.default_timer()
+    time.sleep(0.001)
+    sleep_time = timeit.default_timer() - start
+    _LOGGER.warning(f"{count} sleep_time for 0.001: {sleep_time}")
+
+    if sleep_time < (monotonic_res / 2):
+        _LOGGER.warning(f"Don't trust monotonic")
+        sleep_lies = True
+    else:
+        _LOGGER.warning(f"Trust monotonic")
+        sleep_lies = False
+
+    fps_to_sleep_interval.cache_clear()
 
 
 def calc_available_fps():
@@ -58,8 +81,12 @@ def fps_to_sleep_interval(fps):
         (t for f, t in AVAILABLE_FPS.items() if f >= fps),
         list(AVAILABLE_FPS.values())[-1],
     )
-    return max(0.001, monotonic_res * (monotonic_ticks - 1))
-
+    if sleep_lies:
+        min_clock = monotonic_res
+    else:
+        min_clock = 0.001
+    _LOGGER.warning(f"MIN clock is {min_clock}")
+    return max(min_clock, monotonic_res * (monotonic_ticks - 1))
 
 def install_package(package):
     _LOGGER.debug(f"Installed package: {package}")

@@ -6,6 +6,7 @@ from functools import cached_property
 import numpy as np
 import voluptuous as vol
 import zeroconf
+import timeit
 
 from ledfx.effects import DummyEffect
 from ledfx.effects.math import interpolate_pixels
@@ -353,7 +354,14 @@ class Virtual:
         return self._active_effect
 
     def thread_function(self):
+        self.passed = 0.0
+        self.sleep_time = 0.0
+        self.postsleep = 0.0
+        self.presleep = 0.0
+
         while True:
+            self.start = timeit.default_timer()
+            _LOGGER.warning(f"presleep {self.presleep:.04f} postsleep:{self.postsleep:.04f} sleep for: {self.sleep_time:.04f} passed: {self.passed}")
             if not self._active:
                 break
             if (
@@ -377,7 +385,14 @@ class Virtual:
                         VirtualUpdateEvent(self.id, self.assembled_frame)
                     )
 
-            time.sleep(fps_to_sleep_interval(self.refresh_rate))
+            self.passed = timeit.default_timer() - self.start
+            self.sleep_time = fps_to_sleep_interval(self.refresh_rate)
+            self.presleep = timeit.default_timer()-self.start
+            time.sleep(self.sleep_time)
+            self.postsleep = timeit.default_timer()-self.start
+
+
+
 
     def assemble_frame(self):
         """
