@@ -9,7 +9,11 @@ import voluptuous as vol
 from ledfx.effects import Effect
 
 _LOGGER = logging.getLogger(__name__)
-DEFAULT_RATE = 1.0 / 300.0
+
+# use 10 frames per second as default rate at 1x multiplier
+# windows will cap at 64Hz max for now, others at 100Hz with speed slider ot 10
+# rework when we go to 3.11
+DEFAULT_RATE = 1.0 / 10.0
 
 
 @Effect.no_registration
@@ -45,8 +49,9 @@ class TemporalEffect(Effect):
             timeToSleep = (sleepInterval / self._config["speed"]) - (
                 time.time() - startTime
             )
-            if timeToSleep > 0:
-                time.sleep(timeToSleep)
+            if timeToSleep < 0.001:
+                timeToSleep = 0.001
+            time.sleep(timeToSleep)
 
     def effect_loop(self):
         """
