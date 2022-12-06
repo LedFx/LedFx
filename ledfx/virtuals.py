@@ -386,7 +386,9 @@ class Virtual:
 
             # following is temp debug and will be removed prior to commit
             wake_time = timeit.default_timer() - start_time
-            _LOGGER.warning(f"pass:{pass_time:.04f} frame:{fps_to_sleep_interval(self.refresh_rate):.04f} sleep:{sleep_time:.04f} wake:{wake_time:.04f}")
+            _LOGGER.warning(
+                f"pass:{pass_time:.04f} frame:{fps_to_sleep_interval(self.refresh_rate):.04f} sleep:{sleep_time:.04f} wake:{wake_time:.04f}"
+            )
             # end temp debug
 
     def assemble_frame(self):
