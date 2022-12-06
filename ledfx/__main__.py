@@ -384,6 +384,8 @@ def main():
 def entry_point(icon=None):
     # have to re-parse args here :/ no way to pass them through pysicon's setup
     args = parse_args()
+    # remove prior to merge
+    _LOGGER.warning(f"sys.version:{sys.version}")
 
     exit_code = 4
     while exit_code == 4:

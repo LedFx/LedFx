@@ -379,13 +379,13 @@ class Virtual:
                         VirtualUpdateEvent(self.id, self.assembled_frame)
                     )
 
-            time.sleep(fps_to_sleep_interval(self.refresh_rate))
             pass_time = timeit.default_timer() - start_time
-            min_time = time.get_clock_info("monotonic").resolution
-            # use an aggressive check for did we sleep against implied min
-            # for all otherwise working behaviours this will be passive
-            if pass_time < (min_time / 2):
-                time.sleep(min_time - pass_time)
+            time.sleep(fps_to_sleep_interval(self.refresh_rate) - pass_time)
+
+            # following is temp debug and will be removed prior to commit
+            wake_time = timeit.default_timer() - start_time
+            _LOGGER.warning(f"pass:{pass_time:.04f} frame:{fps_to_sleep_interval(self.refresh_rate):.04f} wake:{wake_time:.04f}")
+            # end temp debug
 
     def assemble_frame(self):
         """

@@ -28,10 +28,10 @@ _LOGGER = logging.getLogger(__name__)
 
 
 def calc_available_fps():
-    monotonic_res = time.get_clock_info("monotonic").resolution
+    sleep_res = time.get_clock_info("perf_counter").resolution
 
-    if monotonic_res < 0.001:
-        mult = int(0.001 / monotonic_res)
+    if sleep_res < 0.001:
+        mult = int(0.001 / sleep_res)
     else:
         mult = 1
 
@@ -39,13 +39,13 @@ def calc_available_fps():
     min_fps_target = 10
 
     max_fps_ticks = np.ceil(
-        (1 / max_fps_target) / (monotonic_res * mult)
+        (1 / max_fps_target) / (sleep_res * mult)
     ).astype(int)
     min_fps_ticks = np.ceil(
-        (1 / min_fps_target) / (monotonic_res * mult)
+        (1 / min_fps_target) / (sleep_res * mult)
     ).astype(int)
     tick_range = reversed(range(max_fps_ticks, min_fps_ticks))
-    return {int(1 / (monotonic_res * mult * i)): i * mult for i in tick_range}
+    return {int(1 / (sleep_res * mult * i)): i * mult for i in tick_range}
 
 
 AVAILABLE_FPS = calc_available_fps()
@@ -53,12 +53,16 @@ AVAILABLE_FPS = calc_available_fps()
 
 @lru_cache(maxsize=32)
 def fps_to_sleep_interval(fps):
-    monotonic_res = time.get_clock_info("monotonic").resolution
-    monotonic_ticks = next(
+    sleep_res = time.get_clock_info("perf_counter").resolution
+    sleep_ticks = next(
         (t for f, t in AVAILABLE_FPS.items() if f >= fps),
         list(AVAILABLE_FPS.values())[-1],
     )
-    return max(0.001, monotonic_res * (monotonic_ticks - 1))
+    # following is temp debug and will be removed prior to commit
+    _LOGGER.warning(f"fps:{fps} FPS:{AVAILABLE_FPS}")
+    _LOGGER.warning(f"returning:{max(0.001, sleep_res * (sleep_ticks - 1))}")
+    # end temp debug
+    return max(0.001, sleep_res * (sleep_ticks - 1))
 
 
 def install_package(package):

@@ -2,7 +2,9 @@ import voluptuous as vol
 
 from ledfx.effects import fill_rainbow
 from ledfx.effects.temporal import TemporalEffect
+import logging
 
+_LOGGER = logging.getLogger(__name__)
 
 class RainbowEffect(TemporalEffect):
 
@@ -22,6 +24,8 @@ class RainbowEffect(TemporalEffect):
     _hue = 0.1
 
     def effect_loop(self):
+        _LOGGER.warning("IN RAINBOW")
+
         hue_delta = self._config["frequency"] / self.pixel_count
         self.pixels = fill_rainbow(self.pixels, self._hue, hue_delta)
 

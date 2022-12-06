@@ -12,7 +12,7 @@
     certifi~=2020.12.5
     mido>=1.2.10
     multidict~=5.0.0
-    numpy~=1.20.2
+    numpy~=1.23.5
     openrgb-python~=0.2.10
     paho-mqtt~=1.5.1
     psutil>=5.8.0
@@ -26,5 +26,5 @@
     sounddevice~=0.4.2
     tcp-latency~=0.0.10
     voluptuous~=0.12.1
-    yappi~=1.3.3
+    yappi~=1.4.0
     zeroconf==0.30.0

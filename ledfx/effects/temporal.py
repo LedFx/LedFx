@@ -1,5 +1,6 @@
 import logging
 import time
+import timeit
 
 # from ledfx.effects.audio import AudioReactiveEffect
 from threading import Thread
@@ -11,8 +12,8 @@ from ledfx.effects import Effect
 _LOGGER = logging.getLogger(__name__)
 
 # use 10 frames per second as default rate at 1x multiplier
-# windows will cap at 64Hz max for now, others at 100Hz with speed slider ot 10
-# rework when we go to 3.11
+# max effective cap is 100 fps due to speed slider multiplier
+
 DEFAULT_RATE = 1.0 / 10.0
 
 
@@ -32,7 +33,8 @@ class TemporalEffect(Effect):
     )
 
     def thread_function(self):
-
+        # this is temp debug to be removed before merge
+        _LOGGER.warning(f"spawning: {self.name}")
         while self._thread_active:
             startTime = time.time()
 
@@ -52,6 +54,9 @@ class TemporalEffect(Effect):
             if timeToSleep < 0.001:
                 timeToSleep = 0.001
             time.sleep(timeToSleep)
+
+            # this is temp debug to be removed before merge
+            _LOGGER.warning(f"Temporal frame time:{(time.time() - startTime):.04f}")
 
     def effect_loop(self):
         """
