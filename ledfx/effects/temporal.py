@@ -56,7 +56,9 @@ class TemporalEffect(Effect):
             time.sleep(timeToSleep)
 
             # this is temp debug to be removed before merge
-            _LOGGER.warning(f"Temporal frame time:{(time.time() - startTime):.04f}")
+            _LOGGER.warning(
+                f"Temporal frame time:{(time.time() - startTime):.04f}"
+            )
 
     def effect_loop(self):
         """
