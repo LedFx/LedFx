@@ -1,10 +1,12 @@
+import logging
+
 import voluptuous as vol
 
 from ledfx.effects import fill_rainbow
 from ledfx.effects.temporal import TemporalEffect
-import logging
 
 _LOGGER = logging.getLogger(__name__)
+
 
 class RainbowEffect(TemporalEffect):
 
