@@ -189,7 +189,11 @@ class MeltSparkle(AudioReactiveEffect, HSVEffect):
         if self.onsets_queue and not self.onsets_queue.empty():
             self.onsets_queue.get()
             # If the config is at 0, we still clip to a minimum of 1 pixel.
-            strobe_width = np.clip(int(self._config["strobe_width"]**3 * self.pixel_count), 1, self.pixel_count - 1)
+            strobe_width = np.clip(
+                int(self._config["strobe_width"] ** 3 * self.pixel_count),
+                1,
+                self.pixel_count - 1,
+            )
             position = np.random.randint(self.pixel_count - strobe_width)
             self.strobe_overlay[position : position + strobe_width] = 1.0
 
