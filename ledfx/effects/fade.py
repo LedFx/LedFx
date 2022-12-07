@@ -27,6 +27,9 @@ class FadeEffect(TemporalEffect, GradientEffect):
         self.idx = 0
         self.forward = True
 
+    def on_activate(self, pixel_count):
+        pass
+
     def effect_loop(self):
         self.idx += 0.0015
         if self.idx > 1:

@@ -169,6 +169,9 @@ class TemporalGradientEffect(TemporalEffect, GradientEffect, ModulateEffect):
     NAME = "Gradient"
     CATEGORY = "Non-Reactive"
 
+    def on_activate(self, pixel_count):
+        pass
+
     def effect_loop(self):
         # TODO: Could add some cool effects like twinkle or sin modulation
         # of the gradient.
