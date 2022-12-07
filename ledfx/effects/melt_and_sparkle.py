@@ -50,7 +50,7 @@ class MeltSparkle(AudioReactiveEffect, HSVEffect):
             ): vol.All(vol.Coerce(float), vol.Range(min=0, max=1)),
             vol.Optional(
                 "strobe_width",
-                description="Percussive strobe width, from one pixel to max of 10% of the total length",
+                description="Percussive strobe width, from one pixel to the full length",
                 default=0.3,
             ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
             vol.Optional(
@@ -189,7 +189,7 @@ class MeltSparkle(AudioReactiveEffect, HSVEffect):
         if self.onsets_queue and not self.onsets_queue.empty():
             self.onsets_queue.get()
             # If the config is at 0, we still clip to a minimum of 1 pixel.
-            strobe_width = np.clip(int(self._config["strobe_width"]**2 * .1 * self.pixel_count), 1, self.pixel_count - 1)
+            strobe_width = np.clip(int(self._config["strobe_width"]**3 * self.pixel_count), 1, self.pixel_count - 1)
             position = np.random.randint(self.pixel_count - strobe_width)
             self.strobe_overlay[position : position + strobe_width] = 1.0
 
