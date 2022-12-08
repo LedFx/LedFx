@@ -1476,4 +1476,5 @@ ledfx_presets = {
     "pitchSpectrum": {"reset": {"config": {}, "name": "Reset"}},
     "power": {"reset": {"config": {}, "name": "Reset"}},
     "spectrum": {"reset": {"config": {}, "name": "Reset"}},
+    "melt_and_sparkle": {"reset": {"config": {}, "name": "Reset"}},
 }
