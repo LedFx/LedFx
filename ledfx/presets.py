@@ -1477,4 +1477,5 @@ ledfx_presets = {
     "power": {"reset": {"config": {}, "name": "Reset"}},
     "spectrum": {"reset": {"config": {}, "name": "Reset"}},
     "melt_and_sparkle": {"reset": {"config": {}, "name": "Reset"}},
+    "water": {"reset": {"config": {}, "name": "Reset"}},
 }
