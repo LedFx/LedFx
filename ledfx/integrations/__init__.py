@@ -138,7 +138,7 @@ class Integrations(RegistryLoader):
                     ledfx=self._ledfx,
                 )
             except Exception as e:
-                _LOGGER.warning(f"Failed to load MIDI integration: {e}")
+                _LOGGER.warning(f"Failed to load integration: {e}")
 
     async def close_all_connections(self):
         for integration in self.values():
