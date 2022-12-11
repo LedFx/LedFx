@@ -1,19 +1,42 @@
-[tool.black]
-line-length = 79
-target-version = ["py37", "py38"]
+[tool.poetry]
+name = "ledfx"
+version = "0.1.0"
+description = "The best thing since sliced germanium!"
+authors = ["Your Name <you@example.com>"]
+license = "MIT"
+readme = "README.md"
 
-[tool.isort]
-profile = "black"
-line_length = 79
-# The following are the default values applied when profile="black"
-# multi_line_output = 3
-# include_trailing_comma = True
-# force_grid_wrap = 0
-# use_parentheses = True
-# ensure_newline_before_comments = True
+[tool.poetry.dependencies]
+python = "^3.11"
+numpy = "^1.23.5"
+aiohttp = "^3.8.3"
+aiohttp_cors = "^0.7.0"
+aubio = "^0.4.9"
+Cython = "^0.29.32"
+certifi = "^2022.12.7"
+multidict = "^6.0.3"
+openrgb-python = "^0.2.15"
+paho-mqtt = "^1.6.1"
+psutil = "^5.9.4"
+pyserial = "^3.5"
+pystray = "^0.19.4"
+requests = "^2.28.1"
+sacn = "^1.9.0"
+sentry-sdk = "^1.11.1"
+samplerate = "^0.1.0"
+sounddevice = "^0.4.5"
+tcp-latency = "^0.0.12"
+voluptuous = "^0.13.1"
+yappi = "^1.4.0"
+zeroconf = "^0.39.4"
+
+[tool.poetry.group.dev.dependencies]
+flake8 = "^6.0.0"
+black = "^22.12.0"
+isort = "^5.10.1"
+pre-commit = "^2.20.0"
+Cython = "^0.29.32"
 
 [build-system]
-# These are the assumed default build requirements from pip:
-# https://pip.pypa.io/en/stable/reference/pip/#pep-517-and-518-support
-requires = ["setuptools>=49.2.1", "wheel"]
-build-backend = "setuptools.build_meta:__legacy__"
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
