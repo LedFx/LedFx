@@ -37,6 +37,9 @@ isort = "^5.10.1"
 pre-commit = "^2.20.0"
 Cython = "^0.29.32"
 
+[tool.poetry.group.windows.dependencies]
+pywin32 = "^305"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
