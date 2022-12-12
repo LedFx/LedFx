@@ -30,12 +30,6 @@ try:
 except ImportError:
     have_psutil = False
 try:
-    import yappi
-
-    have_yappi = True
-except ImportError:
-    have_yappi = False
-try:
     from pyupdater.client import Client
 
     have_updater = True
@@ -204,12 +198,6 @@ def parse_args():
         dest="tray",
         action="store_true",
         help="Hide LedFx console to the system tray",
-    )
-    parser.add_argument(
-        "--performance",
-        dest="performance",
-        action="store_true",
-        help="Profile LedFx's performance. A developer can use this to diagnose performance issues.",
     )
     parser.add_argument(
         "--offline",
@@ -389,10 +377,6 @@ def entry_point(icon=None):
     while exit_code == 4:
         _LOGGER.info("LedFx Core is initializing")
 
-        if args.performance and have_yappi:
-            print("Collecting performance data...")
-            yappi.start()
-
         ledfx = LedFxCore(
             config_dir=args.config,
             host=args.host,
@@ -402,20 +386,6 @@ def entry_point(icon=None):
         )
 
         exit_code = ledfx.start(open_ui=args.open_ui)
-
-        if args.performance:
-            print("Finished collecting performance data")
-            filename = config_helpers.get_profile_dump_location(
-                config_dir=args.config
-            )
-            yappi.stop()
-            stats = yappi.get_func_stats()
-            yappi.get_thread_stats().print_all()
-            stats.save(filename, type="pstat")
-            print(f"Saved performance data to config directory: {filename}")
-            print(
-                "Please send the performance data to a developer : https://ledfx.app/contact/"
-            )
 
     if icon:
         icon.stop()
