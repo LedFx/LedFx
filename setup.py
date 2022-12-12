@@ -23,7 +23,7 @@ SETUP_REQUIRES = [
 ]
 
 INSTALL_REQUIRES = [
-    "aiohttp~=3.7.4.post0",
+    "aiohttp~=3.8.3",
     "aiohttp_cors>=0.7.0",
     "aubio>=0.4.9",
     "cython>=0.29.21",
@@ -43,7 +43,7 @@ INSTALL_REQUIRES = [
     "tcp-latency>=0.0.10",
     "voluptuous~=0.12.1",
     "yappi~=1.3.3",
-    "zeroconf==0.30.0",
+    "zeroconf==0.39.4",
     "pillow>=8.4.0",
     # Conditional Requirement
     # We need pywin32 for Windows
