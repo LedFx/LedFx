@@ -364,7 +364,7 @@ files = [
 name = "cython"
 version = "0.29.32"
 description = "The Cython compiler for writing C extensions for the Python language."
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=2.6, !=3.0.*, !=3.1.*, !=3.2.*"
 files = [
@@ -1523,4 +1523,4 @@ ifaddr = ">=0.1.7"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "e7af6c2fdc93c66aa800576f4189008460f65ced673bfb61d7ed2ce6904d0358"
+content-hash = "81878dac1f9198c51f446b5299173f6e17075f78249ac23a523825689b4abf80"

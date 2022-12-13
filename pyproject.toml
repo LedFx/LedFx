@@ -12,7 +12,6 @@ numpy = "^1.23.5"
 aiohttp = "^3.8.3"
 aiohttp_cors = "^0.7.0"
 aubio = "^0.4.9"
-Cython = "^0.29.32"
 certifi = "^2022.12.7"
 multidict = "^6.0.3"
 openrgb-python = "^0.2.15"
@@ -38,8 +37,8 @@ pre-commit = "^2.20.0"
 Cython = "^0.29.32"
 
 [tool.poetry.group.windows.dependencies]
-pywin32 = "^305"
+pywin32 = {version = "^305", markers = "platform_system == 'windows'"}
 
 [build-system]
-requires = ["poetry-core"]
+requires = ["poetry-core", "Cython"]
 build-backend = "poetry.core.masonry.api"
