@@ -18,7 +18,7 @@ PROJECT_DOCS = "https://ledfx.readthedocs.io"
 
 # Need to install numpy first
 SETUP_REQUIRES = [
-    "numpy>=1.20.2",
+    "numpy~=1.23",
     "wheel>=0.36.2",
 ]
 
