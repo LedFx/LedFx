@@ -402,7 +402,7 @@ class Virtual:
             and hasattr(self._transition_effect, "pixels")
         ):
             # Get and process transition effect frame
-            self._transition_effect.render()
+            self._transition_effect._render()
             transition_frame = self._transition_effect.get_pixels()
             # np.clip(transition_frame, 0, 255, transition_frame)
             transition_frame[frame > 255] = 255

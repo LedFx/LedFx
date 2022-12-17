@@ -16,13 +16,16 @@ from functools import lru_cache
 from itertools import chain
 
 # from asyncio import coroutines, ensure_future
-from subprocess import PIPE, Popen, check_output
+from subprocess import PIPE, Popen
 
 import numpy as np
 import requests
 import voluptuous as vol
 
 from ledfx.config import save_config
+
+# from asyncio import coroutines, ensure_future
+
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -174,13 +177,6 @@ def async_callback(loop, callback, *args):
 
     loop.call_soon(run_callback)
     return future
-
-
-def git_version():
-    """
-    Uses a subprocess to attempt to get the git revision of the running build.
-    """
-    return check_output(["git", "rev-parse", "HEAD"]).strip().decode("ascii")
 
 
 class WLED:
