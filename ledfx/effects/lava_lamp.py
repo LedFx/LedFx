@@ -33,15 +33,11 @@ class Lavalamp(AudioReactiveEffect, HSVEffect):
     def config_updated(self, config):
         self._lows_power = 0
         reactivity = self._config["reactivity"]
-        self._lows_filter = self.create_filter(
-            alpha_decay=0.05, alpha_rise=reactivity
-        )
+        self._lows_filter = self.create_filter(alpha_decay=0.05, alpha_rise=reactivity)
         self._contrast = 1 - self._config["contrast"]
 
     def audio_data_updated(self, data):
-        self._lows_power = self._lows_filter.update(
-            data.lows_power(filtered=False)
-        )
+        self._lows_power = self._lows_filter.update(data.lows_power(filtered=False))
 
     def render_hsv(self):
         # "Global expression"
@@ -49,9 +45,7 @@ class Lavalamp(AudioReactiveEffect, HSVEffect):
             self._config["speed"] * np.maximum(1, 1 + self._lows_power * 0.004)
         )
         t2 = self.time(
-            self._config["speed"]
-            * 2
-            * np.maximum(1, 1 + self._lows_power * 0.007)
+            self._config["speed"] * 2 * np.maximum(1, 1 + self._lows_power * 0.007)
         )
 
         # Vectorised pixel expression

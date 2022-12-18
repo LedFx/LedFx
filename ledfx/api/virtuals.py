@@ -87,9 +87,7 @@ class VirtualsEndpoint(RestEndpoint):
                 return web.json_response(data=response, status=404)
             # Update the virtual's configuration
             virtual.config = virtual_config
-            _LOGGER.info(
-                f"Updated virtual {virtual.id} config to {virtual_config}"
-            )
+            _LOGGER.info(f"Updated virtual {virtual.id} config to {virtual_config}")
             # Update ledfx's config
             for idx, item in enumerate(self._ledfx.config["virtuals"]):
                 if item["id"] == virtual.id:

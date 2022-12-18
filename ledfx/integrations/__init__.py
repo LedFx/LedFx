@@ -4,6 +4,7 @@
 # import requests
 import logging
 from enum import Enum
+
 # from ledfx.config import save_config
 from ledfx.events import Event
 from ledfx.utils import BaseRegistry, RegistryLoader, async_fire_and_forget
@@ -12,11 +13,13 @@ from ledfx.utils import BaseRegistry, RegistryLoader, async_fire_and_forget
 
 _LOGGER = logging.getLogger(__name__)
 
+
 class Status(Enum):
     DISCONNECTED = 0
     CONNECTED = 1
     DISCONNECTING = 2
     CONNECTING = 3
+
 
 @BaseRegistry.no_registration
 class Integration(BaseRegistry):
@@ -32,25 +35,19 @@ class Integration(BaseRegistry):
             async_fire_and_forget(self.deactivate(), self._ledfx.loop)
 
     async def activate(self):
-        _LOGGER.info(
-            ("Activating {} integration").format(self._config["name"])
-        )
+        _LOGGER.info(("Activating {} integration").format(self._config["name"]))
         self._active = True
         self._status = Status.CONNECTING
         async_fire_and_forget(self.connect(), self._ledfx.loop)
 
     async def deactivate(self):
-        _LOGGER.info(
-            ("Deactivating {} integration").format(self._config["name"])
-        )
+        _LOGGER.info(("Deactivating {} integration").format(self._config["name"]))
         self._active = False
         self._status = Status.DISCONNECTING
         async_fire_and_forget(self.disconnect(), self._ledfx.loop)
 
     async def reconnect(self):
-        _LOGGER.info(
-            ("Reconnecting {} integration").format(self._config["name"])
-        )
+        _LOGGER.info(("Reconnecting {} integration").format(self._config["name"]))
         self._status = Status.DISCONNECTING
         await self.disconnect()
         self._status = Status.CONNECTING
@@ -116,9 +113,7 @@ class Integrations(RegistryLoader):
             for integration in self.values():
                 integration.on_shutdown()
 
-            async_fire_and_forget(
-                self.close_all_connections(), self._ledfx.loop
-            )
+            async_fire_and_forget(self.close_all_connections(), self._ledfx.loop)
 
         self._ledfx.events.add_listener(on_shutdown, Event.LEDFX_SHUTDOWN)
 

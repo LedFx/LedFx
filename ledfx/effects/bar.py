@@ -112,8 +112,6 @@ class BarAudioEffect(AudioReactiveEffect, GradientEffect):
         ):
             color = np.array([0, 0, 0])
         self.pixels[
-            int(self.pixel_count * bar_start) : int(
-                self.pixel_count * bar_end
-            ),
+            int(self.pixel_count * bar_start) : int(self.pixel_count * bar_end),
             :,
         ] = color

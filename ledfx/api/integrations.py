@@ -135,9 +135,7 @@ class IntegrationsEndpoint(RestEndpoint):
         ]
 
         # Save the config
-        save_config(
-            config=self._ledfx.config, config_dir=self._ledfx.config_dir
-        )
+        save_config(config=self._ledfx.config, config_dir=self._ledfx.config_dir)
 
         response = {"status": "success"}
         return web.json_response(data=response, status=200)

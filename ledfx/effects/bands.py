@@ -50,9 +50,7 @@ class BandsAudioEffect(AudioReactiveEffect, GradientEffect):
             if vol:
                 out_split[i][:vol] = color
             if self._config["align"] == "center":
-                out_split[i] = np.roll(
-                    out_split[i], (band_width - vol) // 2, axis=0
-                )
+                out_split[i] = np.roll(out_split[i], (band_width - vol) // 2, axis=0)
             elif self._config["align"] == "invert":
                 out_split[i] = np.roll(out_split[i], -vol // 2, axis=0)
             elif self._config["align"] == "right":

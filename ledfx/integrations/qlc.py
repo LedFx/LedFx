@@ -43,9 +43,9 @@ class QLC(Integration):
                 description="QLC+ ip address",
                 default="127.0.0.1",
             ): str,
-            vol.Required(
-                "port", description="QLC+ port", default=9999
-            ): vol.All(vol.Coerce(int), vol.Range(min=1, max=65535)),
+            vol.Required("port", description="QLC+ port", default=9999): vol.All(
+                vol.Coerce(int), vol.Range(min=1, max=65535)
+            ),
         }
     )
 
@@ -67,9 +67,7 @@ class QLC(Integration):
             try:
                 for entry in data:
                     event_type, event_filter, active, qlc_payload = entry
-                    self.create_event(
-                        event_type, event_filter, active, qlc_payload
-                    )
+                    self.create_event(event_type, event_filter, active, qlc_payload)
             except ValueError:
                 _LOGGER.error("Failed to restore QLC+ settings")
 
@@ -173,9 +171,7 @@ class QLC(Integration):
             return callback
 
         callback = make_callback(qlc_payload)
-        listener = self._ledfx.events.add_listener(
-            callback, event_type, event_filter
-        )
+        listener = self._ledfx.events.add_listener(callback, event_type, event_filter)
         # store "listener", a function to remove the listener later if needed
         self._listeners.append((event_type, event_filter, listener))
 
@@ -187,9 +183,7 @@ class QLC(Integration):
         response = await self._client.query(message)
         widgets_list = response.lstrip(f"{message}|").split("|")
         # Then get the type for each widget (in individual requests bc QLC api be like that)
-        for widget_id, widget_name in zip(
-            widgets_list[::2], widgets_list[1::2]
-        ):
+        for widget_id, widget_name in zip(widgets_list[::2], widgets_list[1::2]):
             message = "QLC+API|getWidgetType"
             response = await self._client.query(f"{message}|{widget_id}")
             widget_type = response.lstrip(f"{message}|")
@@ -221,9 +215,7 @@ class QLC(Integration):
         self._cancel_connect()
         if self._client is not None:
             # fire and forget bc for some reason close() never returns... -o-
-            async_fire_and_forget(
-                self._client.disconnect(), loop=self._ledfx.loop
-            )
+            async_fire_and_forget(self._client.disconnect(), loop=self._ledfx.loop)
             await super().disconnect("Disconnected from QLC+ websocket")
         else:
             await super().disconnect()
@@ -250,9 +242,7 @@ class QLCWebsocketClient:
                 # self.websocket = await self.ws_connect(self.url)
                 return True
             except aiohttp.client_exceptions.ClientConnectorError:
-                _LOGGER.info(
-                    f"Connection to {self.domain} failed. Retrying in 5s..."
-                )
+                _LOGGER.info(f"Connection to {self.domain} failed. Retrying in 5s...")
                 await asyncio.sleep(5)
             except asyncio.CancelledError:
                 return False

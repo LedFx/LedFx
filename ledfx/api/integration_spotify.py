@@ -82,9 +82,7 @@ class QLCEndpoint(RestEndpoint):
 
         integration.add_trigger(scene_id, song_id, song_name, song_position)
 
-        save_config(
-            config=self._ledfx.config, config_dir=self._ledfx.config_dir
-        )
+        save_config(config=self._ledfx.config, config_dir=self._ledfx.config_dir)
 
         response = {"status": "success"}
         return web.json_response(data=response, status=200)
@@ -116,9 +114,7 @@ class QLCEndpoint(RestEndpoint):
         integration.delete_trigger(trigger_id)
 
         # Update and save the config
-        save_config(
-            config=self._ledfx.config, config_dir=self._ledfx.config_dir
-        )
+        save_config(config=self._ledfx.config, config_dir=self._ledfx.config_dir)
 
         response = {"status": "success"}
         return web.json_response(data=response, status=200)

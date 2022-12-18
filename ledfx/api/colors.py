@@ -17,9 +17,7 @@ class ColorEndpoint(RestEndpoint):
         Get LedFx colors and gradients
         """
         response = {
-            "colors": dict(
-                zip(("builtin", "user"), self._ledfx.colors.get_all())
-            ),
+            "colors": dict(zip(("builtin", "user"), self._ledfx.colors.get_all())),
             "gradients": dict(
                 zip(("builtin", "user"), self._ledfx.gradients.get_all())
             ),
