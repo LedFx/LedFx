@@ -27,14 +27,10 @@ class Marching(AudioReactiveEffect, HSVEffect):
 
     def config_updated(self, config):
         self._lows_power = 0
-        self._lows_filter = self.create_filter(
-            alpha_decay=0.05, alpha_rise=0.2
-        )
+        self._lows_filter = self.create_filter(alpha_decay=0.05, alpha_rise=0.2)
 
     def audio_data_updated(self, data):
-        self._lows_power = self._lows_filter.update(
-            data.lows_power(filtered=False)
-        )
+        self._lows_power = self._lows_filter.update(data.lows_power(filtered=False))
 
     def render_hsv(self):
         # "Global expression"

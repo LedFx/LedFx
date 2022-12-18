@@ -132,10 +132,7 @@ class AudioInputSource:
         self._config = self.AUDIO_CONFIG_SCHEMA.fget()(config)
         if len(self._callbacks) != 0:
             self.activate()
-        if (
-            old_input_device
-            and self._config["audio_device"] is not old_input_device
-        ):
+        if old_input_device and self._config["audio_device"] is not old_input_device:
             self._ledfx.events.fire_event(
                 AudioDeviceChangeEvent(
                     self.input_devices()[self._config["audio_device"]]
@@ -251,9 +248,7 @@ class AudioInputSource:
                     ch = 2
 
             if hostapis[device["hostapi"]]["name"] == "WEB AUDIO":
-                ledfx.api.websocket.ACTIVE_AUDIO_STREAM = (
-                    self._stream
-                ) = WebAudioStream(
+                ledfx.api.websocket.ACTIVE_AUDIO_STREAM = self._stream = WebAudioStream(
                     device["client"], self._audio_sample_callback
                 )
             else:
@@ -265,8 +260,7 @@ class AudioInputSource:
                     dtype=np.float32,
                     latency="low",
                     blocksize=int(
-                        device["default_samplerate"]
-                        / self._config["sample_rate"]
+                        device["default_samplerate"] / self._config["sample_rate"]
                     ),
                 )
 
@@ -282,9 +276,7 @@ class AudioInputSource:
             open_audio_stream(device_idx)
             self._is_activated = True
         except OSError as e:
-            _LOGGER.critical(
-                f"Unable to open Audio Device: {e} - please retry."
-            )
+            _LOGGER.critical(f"Unable to open Audio Device: {e} - please retry.")
             self.deactivate()
         except sd.PortAudioError as e:
             _LOGGER.error(f"{e}, Reverting to default input device")
@@ -395,14 +387,10 @@ class AudioInputSource:
 
             # Perform a pre-emphasis to balance the highs and lows
             if self.pre_emphasis:
-                self._processed_audio_sample = self.pre_emphasis(
-                    self._raw_audio_sample
-                )
+                self._processed_audio_sample = self.pre_emphasis(self._raw_audio_sample)
 
             # Pass into the phase vocoder to get a windowed FFT
-            self._frequency_domain = self._phase_vocoder(
-                self._processed_audio_sample
-            )
+            self._frequency_domain = self._phase_vocoder(self._processed_audio_sample)
         else:
             self._frequency_domain = self._frequency_domain_null
 
@@ -501,15 +489,11 @@ class AudioAnalysisSource(AudioInputSource):
                     (
                         i
                         for i, f in enumerate(
-                            self.melbanks.melbank_processors[
-                                2
-                            ].melbank_frequencies
+                            self.melbanks.melbank_processors[2].melbank_frequencies
                         )
                         if f > freq
                     ),
-                    len(
-                        self.melbanks.melbank_processors[2].melbank_frequencies
-                    ),
+                    len(self.melbanks.melbank_processors[2].melbank_frequencies),
                 )
             )
 
@@ -593,9 +577,7 @@ class AudioAnalysisSource(AudioInputSource):
         # calculates the % difference of the first value of the channel to the average for the channel
         if sum(self.beat_power_history) > 0:
             difference = (
-                beat_power
-                * self.beat_power_history_len
-                / sum(self.beat_power_history)
+                beat_power * self.beat_power_history_len / sum(self.beat_power_history)
                 - 1
             )
         else:
@@ -618,9 +600,7 @@ class AudioAnalysisSource(AudioInputSource):
 
         melbank = self.melbanks.melbanks[2]
 
-        self.freq_power_raw[0] = np.average(
-            melbank[: self.freq_mel_indexes[0]]
-        )
+        self.freq_power_raw[0] = np.average(melbank[: self.freq_mel_indexes[0]])
         self.freq_power_raw[1] = np.average(
             melbank[self.freq_mel_indexes[0] : self.freq_mel_indexes[1]]
         )
@@ -796,9 +776,7 @@ class AudioReactiveEffect(Effect):
         return next(
             (
                 i
-                for i, x in enumerate(
-                    self.audio.melbanks._config["max_frequencies"]
-                )
+                for i, x in enumerate(self.audio.melbanks._config["max_frequencies"])
                 if x >= self._virtual.frequency_range.max
             ),
             len(self.audio.melbanks._config["max_frequencies"]),
@@ -856,9 +834,9 @@ class AudioReactiveEffect(Effect):
         filtered, bool : melbank with smoothed attack and decay
         """
         if filtered:
-            melbank = self.audio.melbanks.melbanks_filtered[
-                self._selected_melbank
-            ][self._melbank_min_idx : self._melbank_max_idx]
+            melbank = self.audio.melbanks.melbanks_filtered[self._selected_melbank][
+                self._melbank_min_idx : self._melbank_max_idx
+            ]
         else:
             melbank = self.audio.melbanks.melbanks[self._selected_melbank][
                 self._melbank_min_idx : self._melbank_max_idx

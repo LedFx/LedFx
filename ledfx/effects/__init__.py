@@ -60,9 +60,7 @@ def fill_rainbow(pixels, initial_hue, delta_hue):
     sat = 0.95
     val = 1.0
     for i in range(0, len(pixels)):
-        pixels[i, :] = tuple(
-            int(i * 255) for i in colorsys.hsv_to_rgb(hue, sat, val)
-        )
+        pixels[i, :] = tuple(int(i * 255) for i in colorsys.hsv_to_rgb(hue, sat, val))
         hue = hue + delta_hue
     return pixels
 
@@ -169,9 +167,7 @@ def smooth(x, sigma):
     extended_input_len = len(x) + len(filter_kernel) - 1
     x_mirrored = x
     while len(x_mirrored) < extended_input_len:
-        mirror_len = min(
-            len(x_mirrored), (extended_input_len - len(x_mirrored)) // 2
-        )
+        mirror_len = min(len(x_mirrored), (extended_input_len - len(x_mirrored)) // 2)
         x_mirrored = np.r_[
             x_mirrored[mirror_len - 1 :: -1],
             x_mirrored,
@@ -209,9 +205,7 @@ class Effect(BaseRegistry):
                 description="Amount to blur the effect",
                 default=0.0,
             ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=10)),
-            vol.Optional(
-                "flip", description="Flip the effect", default=False
-            ): bool,
+            vol.Optional("flip", description="Flip the effect", default=False): bool,
             vol.Optional(
                 "mirror",
                 description="Mirror the effect",
@@ -298,9 +292,7 @@ class Effect(BaseRegistry):
             if base.config_updated != super(base, base).config_updated:
                 base.config_updated(self, self._config)
 
-        _LOGGER.debug(
-            f"Effect {self.NAME} config updated to {validated_config}."
-        )
+        _LOGGER.debug(f"Effect {self.NAME} config updated to {validated_config}.")
 
         self.configured_blur = self._config["blur"]
 
@@ -335,9 +327,7 @@ class Effect(BaseRegistry):
         if self._config["flip"]:
             pixels = np.flipud(pixels)
         if self._config["mirror"]:
-            pixels = np.concatenate(
-                (pixels[-1 + len(pixels) % -2 :: -2], pixels[::2])
-            )
+            pixels = np.concatenate((pixels[-1 + len(pixels) % -2 :: -2], pixels[::2]))
         if self._config["background_color"]:
             # TODO: colors in future should have an alpha value, which would work nicely to apply to dim the background color
             # for now, just set it a bit less bright.

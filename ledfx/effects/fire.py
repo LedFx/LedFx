@@ -45,9 +45,7 @@ class Fire(AudioReactiveEffect, HSVEffect):
         self.speed = self._config["speed"]
         self.cooling = 0.95
         self._lows_power = 0
-        self._lows_filter = self.create_filter(
-            alpha_decay=0.05, alpha_rise=0.99
-        )
+        self._lows_filter = self.create_filter(alpha_decay=0.05, alpha_rise=0.99)
 
         self.spark_count = self._config["intensity"]
         self.color_shift = self._config["color_shift"]
@@ -55,9 +53,7 @@ class Fire(AudioReactiveEffect, HSVEffect):
         self.sparkX = np.zeros(self.spark_count)
 
     def audio_data_updated(self, data):
-        _lows_power = self._lows_filter.update(
-            np.mean(data.lows_power(filtered=False))
-        )
+        _lows_power = self._lows_filter.update(np.mean(data.lows_power(filtered=False)))
         self.cooling = 0.75 + _lows_power * 0.25
         self.accel = 0.02 + _lows_power * 0.1
         self.speed = self._config["speed"] + _lows_power * 0.01

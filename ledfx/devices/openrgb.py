@@ -18,9 +18,7 @@ class OpenRGB(NetworkedDevice):
     def CONFIG_SCHEMA():
         return vol.Schema(
             {
-                vol.Required(
-                    "name", description="Friendly name for the device"
-                ): str,
+                vol.Required("name", description="Friendly name for the device"): str,
                 vol.Required(
                     "openrgb_id",
                     description="ID of OpenRGB device (within OpenRGB).",

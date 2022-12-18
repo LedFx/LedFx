@@ -48,25 +48,14 @@ class Glitch(AudioReactiveEffect, HSVEffect):
         self.dt = time.time_ns() - self.last_time
         self.timestep += self.dt
         self.timestep += (
-            self._lows_power
-            * self._config["reactivity"]
-            / self._config["speed"]
-            * 1e9
+            self._lows_power * self._config["reactivity"] / self._config["speed"] * 1e9
         )
         self.last_time = time.time_ns()
 
-        t1 = (
-            self.time(self._config["speed"] * 0.5, timestep=self.timestep)
-            * np.pi
-            * 2
-        )
+        t1 = self.time(self._config["speed"] * 0.5, timestep=self.timestep) * np.pi * 2
         t2 = self.time(self._config["speed"] * 0.5, timestep=self.timestep)
         t3 = self.time(self._config["speed"] * 2.5, timestep=self.timestep)
-        t4 = (
-            self.time(self._config["speed"] * 1.0, timestep=self.timestep)
-            * np.pi
-            * 2
-        )
+        t4 = self.time(self._config["speed"] * 1.0, timestep=self.timestep) * np.pi * 2
         t5 = self.time(self._config["speed"] * 0.25, timestep=self.timestep)
         t6 = self.time(self._config["speed"] * 10, timestep=self.timestep)
 

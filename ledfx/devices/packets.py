@@ -85,9 +85,7 @@ def build_drgbw_packet(data: np.ndarray, timeout: int):
     return packet
 
 
-def build_dnrgb_packet(
-    data: np.ndarray, timeout: int, led_start_index: np.uint16
-):
+def build_dnrgb_packet(data: np.ndarray, timeout: int, led_start_index: np.uint16):
     """
     Generic DNRGB packet encoding
     Max LEDs: 489 / packet

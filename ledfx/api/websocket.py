@@ -49,9 +49,7 @@ class WebsocketEndpoint(RestEndpoint):
         try:
             return await WebsocketConnection(self._ledfx).handle(request)
         except ConnectionResetError:
-            _LOGGER.debug(
-                "Connection Reset Error on Websocket Connection - retrying."
-            )
+            _LOGGER.debug("Connection Reset Error on Websocket Connection - retrying.")
 
 
 class WebsocketConnection:
@@ -85,9 +83,7 @@ class WebsocketConnection:
             self._sender_queue.put_nowait(message)
         except asyncio.QueueFull:
             _LOGGER.error(
-                "Client sender queue size exceeded {}".format(
-                    MAX_PENDING_MESSAGES
-                )
+                f"Client sender queue size exceeded {MAX_PENDING_MESSAGES}"
             )
             self.close()
 

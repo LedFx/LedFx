@@ -117,8 +117,7 @@ class GradientEffect(Effect):
     def _assert_gradient(self):
         if (
             self._gradient_curve is None  # Uninitialized gradient
-            or len(self._gradient_curve[0])
-            != self.pixel_count  # Incorrect size
+            or len(self._gradient_curve[0]) != self.pixel_count  # Incorrect size
         ):
             self._generate_gradient_curve(
                 self._config["gradient"],

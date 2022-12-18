@@ -67,18 +67,16 @@ class UDPRealtimeDevice(UDPDevice):
     ):
         frame_size = len(data)
 
-        frame_is_equal_to_last = self._config[
-            "minimise_traffic"
-        ] and np.array_equal(data, self.last_frame)
+        frame_is_equal_to_last = self._config["minimise_traffic"] and np.array_equal(
+            data, self.last_frame
+        )
 
         if self._config["udp_packet_type"] == "DRGB" and frame_size <= 490:
             udpData = packets.build_drgb_packet(data, timeout)
             self.transmit_packet(udpData, frame_is_equal_to_last)
 
         elif self._config["udp_packet_type"] == "WARLS" and frame_size <= 255:
-            udpData = packets.build_warls_packet(
-                data, timeout, self.last_frame
-            )
+            udpData = packets.build_warls_packet(data, timeout, self.last_frame)
             self.transmit_packet(udpData, frame_is_equal_to_last)
 
         elif self._config["udp_packet_type"] == "DRGBW" and frame_size <= 367:
@@ -96,17 +94,14 @@ class UDPRealtimeDevice(UDPDevice):
                 self.transmit_packet(udpData, frame_is_equal_to_last)
 
         elif (
-            self._config["udp_packet_type"] == "adaptive_smallest"
-            and frame_size <= 255
+            self._config["udp_packet_type"] == "adaptive_smallest" and frame_size <= 255
         ):
             # compare potential size of WARLS packet to DRGB packet
             if (
                 np.count_nonzero(np.any(data != self.last_frame, axis=1)) * 4
                 < len(data) * 3
             ):
-                udpData = packets.build_warls_packet(
-                    data, timeout, self.last_frame
-                )
+                udpData = packets.build_warls_packet(data, timeout, self.last_frame)
                 self.transmit_packet(udpData, frame_is_equal_to_last)
             else:
                 udpData = packets.build_drgb_packet(data, timeout)
@@ -133,8 +128,7 @@ class UDPRealtimeDevice(UDPDevice):
         timestamp = time.time()
         if frame_is_equal_to_last:
             half_of_timeout = (
-                ((self._config["timeout"] * self._config["refresh_rate"]) - 1)
-                // 2
+                ((self._config["timeout"] * self._config["refresh_rate"]) - 1) // 2
             ) / self._config["refresh_rate"]
             if timestamp > self.last_frame_sent_time + half_of_timeout:
                 if self._destination is not None:

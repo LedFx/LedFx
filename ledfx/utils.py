@@ -41,12 +41,8 @@ def calc_available_fps():
     max_fps_target = 126
     min_fps_target = 10
 
-    max_fps_ticks = np.ceil(
-        (1 / max_fps_target) / (clock_res * mult)
-    ).astype(int)
-    min_fps_ticks = np.ceil(
-        (1 / min_fps_target) / (clock_res * mult)
-    ).astype(int)
+    max_fps_ticks = np.ceil((1 / max_fps_target) / (clock_res * mult)).astype(int)
+    min_fps_ticks = np.ceil((1 / min_fps_target) / (clock_res * mult)).astype(int)
     tick_range = reversed(range(max_fps_ticks, min_fps_ticks))
     return {int(1 / (clock_res * mult * i)): i * mult for i in tick_range}
 
@@ -194,9 +190,7 @@ class WLED:
         self.sync_settings = await WLED._get_sync_settings(self.ip_address)
 
     @staticmethod
-    async def _wled_request(
-        method, ip_address, endpoint, timeout=0.5, **kwargs
-    ):
+    async def _wled_request(method, ip_address, endpoint, timeout=0.5, **kwargs):
         url = f"http://{ip_address}/{endpoint}"
 
         try:
@@ -215,9 +209,7 @@ class WLED:
     @staticmethod
     async def _get_sync_settings(ip_address):
 
-        response = await WLED._wled_request(
-            requests.get, ip_address, "json/cfg"
-        )
+        response = await WLED._wled_request(requests.get, ip_address, "json/cfg")
         return response.json()
 
     async def flush_sync_settings(self):
@@ -244,12 +236,8 @@ class WLED:
         Returns:
             config: dict, with all wled configuration info
         """
-        _LOGGER.info(
-            f"WLED {self.ip_address}: Attempting to contact device..."
-        )
-        response = await WLED._wled_request(
-            requests.get, self.ip_address, "json/info"
-        )
+        _LOGGER.info(f"WLED {self.ip_address}: Attempting to contact device...")
+        response = await WLED._wled_request(requests.get, self.ip_address, "json/info")
 
         wled_config = response.json()
 
@@ -268,9 +256,7 @@ class WLED:
         Returns:
             state, dict. Full device state
         """
-        response = await WLED._wled_request(
-            requests.get, self.ip_address, "json/state"
-        )
+        response = await WLED._wled_request(requests.get, self.ip_address, "json/state")
 
         return response.json()
 
@@ -308,9 +294,7 @@ class WLED:
             requests.post, self.ip_address, "/json/state", data=power
         )
 
-        _LOGGER.info(
-            f"WLED {self.ip_address}: Turned {'on' if state else 'off'}."
-        )
+        _LOGGER.info(f"WLED {self.ip_address}: Turned {'on' if state else 'off'}.")
 
     async def set_brightness(self, brightness):
         """
@@ -328,9 +312,7 @@ class WLED:
             requests.post, self.ip_address, "/json/state", data=bri
         )
 
-        _LOGGER.info(
-            f"WLED {self.ip_address}: Set brightness to {brightness}."
-        )
+        _LOGGER.info(f"WLED {self.ip_address}: Set brightness to {brightness}.")
 
     def enable_realtime_gamma(self):
         """
@@ -341,9 +323,7 @@ class WLED:
 
         self.sync_settings["if"]["live"]["no-gc"] = False
 
-        _LOGGER.info(
-            f"WLED {self.ip_address}: Enabled realtime gamma correction"
-        )
+        _LOGGER.info(f"WLED {self.ip_address}: Enabled realtime gamma correction")
 
     def force_max_brightness(self):
         """
@@ -406,9 +386,7 @@ class WLED:
 
         self.sync_settings["if"]["live"]["timeout"] = timeout * 10
 
-        _LOGGER.info(
-            f"Set WLED device at {self.ip_address} timeout to {timeout}s"
-        )
+        _LOGGER.info(f"Set WLED device at {self.ip_address} timeout to {timeout}s")
 
     def set_sync_mode(self, mode):
         """
@@ -438,9 +416,7 @@ class WLED:
 
         self.reboot_flag = True
 
-        _LOGGER.info(
-            f"Set WLED device at {self.ip_address} to sync mode '{mode}'"
-        )
+        _LOGGER.info(f"Set WLED device at {self.ip_address} to sync mode '{mode}'")
 
     def get_sync_mode(self):
         """
@@ -450,9 +426,7 @@ class WLED:
         """
         sync_port = self.sync_settings["if"]["live"]["port"]
 
-        return next(
-            key for key, value in WLED.SYNC_MODES.items() if value == sync_port
-        )
+        return next(key for key, value in WLED.SYNC_MODES.items() if value == sync_port)
 
     async def reboot(self):
         """
@@ -479,9 +453,7 @@ def empty_queue(queue: asyncio.Queue):
         queue.task_done()
 
 
-async def resolve_destination(
-    loop, executor, destination, port=7777, timeout=3
-):
+async def resolve_destination(loop, executor, destination, port=7777, timeout=3):
     """Uses asyncio's non blocking DNS funcs to attempt domain lookup
 
     Args:
@@ -557,9 +529,7 @@ def getattr_explicit(cls, attr, *default):
     if default:
         return default[0]
 
-    raise AttributeError(
-        f"type object '{cls.__name__}' has no attribute '{attr}'."
-    )
+    raise AttributeError(f"type object '{cls.__name__}' has no attribute '{attr}'.")
 
 
 class UserDefaultCollection(MutableMapping):
@@ -607,15 +577,11 @@ class UserDefaultCollection(MutableMapping):
 
     def __delitem__(self, key):
         if key in self._default_vals:
-            _LOGGER.error(
-                f"Cannot delete LedFx {self._collection_name}: {key}"
-            )
+            _LOGGER.error(f"Cannot delete LedFx {self._collection_name}: {key}")
             return
         if key in self._user_vals:
             del self._user_vals[key]
-        _LOGGER.info(
-            f"Deleted {self._collection_name.lower().rstrip('s')}: {key}"
-        )
+        _LOGGER.info(f"Deleted {self._collection_name.lower().rstrip('s')}: {key}")
         save_config(
             config=self._ledfx.config,
             config_dir=self._ledfx.config_dir,
@@ -623,14 +589,10 @@ class UserDefaultCollection(MutableMapping):
 
     def __setitem__(self, key, value):
         if key in self._default_vals:
-            _LOGGER.error(
-                f"Cannot overwrite LedFx {self._collection_name}: {key}"
-            )
+            _LOGGER.error(f"Cannot overwrite LedFx {self._collection_name}: {key}")
             return
         self._user_vals[key] = self._validator(value)
-        _LOGGER.info(
-            f"Saved {self._collection_name.lower().rstrip('s')}: {key}"
-        )
+        _LOGGER.info(f"Saved {self._collection_name.lower().rstrip('s')}: {key}")
         save_config(
             config=self._ledfx.config,
             config_dir=self._ledfx.config_dir,
@@ -696,9 +658,7 @@ class BaseRegistry(ABC):
         """Returns the extended schema of the class"""
 
         if extended is False:
-            return getattr_explicit(
-                type(self), self._schema_attr, vol.Schema({})
-            )
+            return getattr_explicit(type(self), self._schema_attr, vol.Schema({}))
 
         schema = vol.Schema({}, extra=extra)
         classes = inspect.getmro(self)[::-1]
@@ -761,9 +721,7 @@ class RegistryLoader:
             watchdog_events = import_or_install("watchdog.events")
             watchdog_observers = import_or_install("watchdog.observers")
 
-            class RegistryReloadHandler(
-                watchdog_events.FileSystemEventHandler
-            ):
+            class RegistryReloadHandler(watchdog_events.FileSystemEventHandler):
                 def __init__(self, registry):
                     self.registry = registry
 
@@ -882,9 +840,7 @@ class RegistryLoader:
     def destroy(self, id):
 
         if id not in self._objects:
-            raise AttributeError(
-                ("Object with id '{}' does not exist.").format(id)
-            )
+            raise AttributeError(("Object with id '{}' does not exist.").format(id))
         del self._objects[id]
 
     def get(self, *args):
