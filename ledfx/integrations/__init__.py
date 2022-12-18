@@ -4,6 +4,7 @@
 # import requests
 import logging
 from enum import Enum
+
 # from ledfx.config import save_config
 from ledfx.events import Event
 from ledfx.utils import BaseRegistry, RegistryLoader, async_fire_and_forget
@@ -12,11 +13,13 @@ from ledfx.utils import BaseRegistry, RegistryLoader, async_fire_and_forget
 
 _LOGGER = logging.getLogger(__name__)
 
+
 class Status(Enum):
     DISCONNECTED = 0
     CONNECTED = 1
     DISCONNECTING = 2
     CONNECTING = 3
+
 
 @BaseRegistry.no_registration
 class Integration(BaseRegistry):
