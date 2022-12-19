@@ -582,9 +582,7 @@ class Devices(RegistryLoader):
         device_id = generate_id(device_config["name"])
 
         # Create the device
-        _LOGGER.info(
-            f"Adding device of type {device_type} with config {device_config}"
-        )
+        _LOGGER.info(f"Adding device of type {device_type} with config {device_config}")
         device = self._ledfx.devices.create(
             id=device_id,
             type=device_type,
