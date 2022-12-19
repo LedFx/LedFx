@@ -28,8 +28,8 @@ tcp-latency = "^0.0.12"
 voluptuous = "^0.13.1"
 yappi = "^1.4.0"
 zeroconf = "^0.39.4"
-uvloop = {version = "^0.17.0", markers = "platform_system != 'windows'"}
-rpi-ws281x = {version = "^4.3.4", markers = "platform_system == 'linux'"}
+uvloop = {version = "^0.17.0", markers = "platform_system != 'Windows'"}
+rpi-ws281x = {version = "^4.3.4", markers = "platform_system == 'Linux'"}
 
 [tool.poetry.group.dev.dependencies]
 flake8 = "^6.0.0"
@@ -39,7 +39,7 @@ pre-commit = "^2.20.0"
 Cython = "^0.29.32"
 
 [tool.poetry.group.windows.dependencies]
-pywin32 = {version = "^305", markers = "platform_system == 'windows'"}
+pywin32 = {version = "^305", markers = "platform_system == 'Windows'"}
 
 [build-system]
 requires = ["poetry-core", "Cython"]
