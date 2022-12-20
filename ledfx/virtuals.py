@@ -378,6 +378,7 @@ class Virtual:
                     self._ledfx.events.fire_event(
                         VirtualUpdateEvent(self.id, self.assembled_frame)
                     )
+
             time.sleep(fps_to_sleep_interval(self.refresh_rate))
             pass_time = timeit.default_timer() - start_time
             min_time = time.get_clock_info("monotonic").resolution
