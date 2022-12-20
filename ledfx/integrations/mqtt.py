@@ -34,9 +34,9 @@ class MQTT(Integration):
                 description="MQTT ip address",
                 default="127.0.0.1",
             ): str,
-            vol.Required("port", description="MQTT port", default=1883): vol.All(
-                vol.Coerce(int), vol.Range(min=1, max=65535)
-            ),
+            vol.Required(
+                "port", description="MQTT port", default=1883
+            ): vol.All(vol.Coerce(int), vol.Range(min=1, max=65535)),
             vol.Optional(
                 "username",
                 description="MQTT username",
@@ -134,6 +134,8 @@ class MQTT(Integration):
             client.username_pw_set(
                 self._config["username"], password=self._config["password"]
             )
-        client.connect_async(self._config["ip_address"], self._config["port"], 60)
+        client.connect_async(
+            self._config["ip_address"], self._config["port"], 60
+        )
         client.loop_start()
         _LOGGER.info(client)

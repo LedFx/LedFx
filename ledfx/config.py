@@ -77,7 +77,9 @@ CORE_CONFIG_SCHEMA = vol.Schema(
         vol.Optional("user_presets", default={}): dict,
         vol.Optional("scenes", default={}): dict,
         vol.Optional("integrations", default=[]): list,
-        vol.Optional("visualisation_fps", default=30): vol.All(int, vol.Range(1, 60)),
+        vol.Optional("visualisation_fps", default=30): vol.All(
+            int, vol.Range(1, 60)
+        ),
         vol.Optional("visualisation_maxlen", default=50): vol.All(
             int, vol.Range(5, 300)
         ),
@@ -90,7 +92,9 @@ CORE_CONFIG_SCHEMA = vol.Schema(
         vol.Optional("user_gradients", default={}): dict,
         vol.Optional("scan_on_startup", default=False): bool,
         vol.Optional("wled_preferences", default={}): dict,
-        vol.Optional("configuration_version", default=CONFIGURATION_VERSION): str,
+        vol.Optional(
+            "configuration_version", default=CONFIGURATION_VERSION
+        ): str,
     },
     extra=vol.ALLOW_EXTRA,
 )
@@ -104,7 +108,9 @@ def load_logger():
 def get_default_config_directory() -> str:
     """Get the default configuration directory"""
 
-    base_dir = os.getenv("APPDATA") if os.name == "nt" else os.path.expanduser("~")
+    base_dir = (
+        os.getenv("APPDATA") if os.name == "nt" else os.path.expanduser("~")
+    )
     return os.path.join(base_dir, CONFIG_DIRECTORY)
 
 
@@ -350,7 +356,9 @@ def migrate_config(old_config):
 
     # if displays/virtuals are present, remove their effects and rename to virtuals
     # else if no virtuals saved, create virtuals for all the devices
-    virtuals = new_config.pop("displays", None) or new_config.pop("virtuals", None)
+    virtuals = new_config.pop("displays", None) or new_config.pop(
+        "virtuals", None
+    )
     if virtuals:
         for virtual in virtuals:
             effect = virtual.get("effect", None)
@@ -387,7 +395,9 @@ def migrate_config(old_config):
                 "name": name,
                 # "icon_name": device_config["icon_name"],
             }
-            segments = [[device["id"], 0, device["config"]["pixel_count"] - 1, False]]
+            segments = [
+                [device["id"], 0, device["config"]["pixel_count"] - 1, False]
+            ]
 
             new_config["virtuals"].append(
                 {
@@ -464,7 +474,9 @@ def migrate_config(old_config):
                         f"Could not match effect id {effect_id} to any current effects. Discarding this effect from scene {scene_id}."
                     )
                     continue
-                new_effect_config = sanitise_effect_config(new_effect_id, effect_config)
+                new_effect_config = sanitise_effect_config(
+                    new_effect_id, effect_config
+                )
                 new_virtuals[actual_virtual] = {
                     "config": new_effect_config,
                     "type": new_effect_id,
@@ -525,7 +537,9 @@ def save_config(config: dict, config_dir: str) -> None:
         del config_view[key]
 
     with open(config_file, "w", encoding="utf-8") as file:
-        json.dump(config_view, file, ensure_ascii=False, sort_keys=True, indent=4)
+        json.dump(
+            config_view, file, ensure_ascii=False, sort_keys=True, indent=4
+        )
 
 
 def save_presets(config: dict, config_dir: str) -> None:
@@ -539,4 +553,6 @@ def save_presets(config: dict, config_dir: str) -> None:
         del config_view[key]
 
     with open(presets_file, "w", encoding="utf-8") as file:
-        json.dump(config_view, file, ensure_ascii=False, sort_keys=True, indent=4)
+        json.dump(
+            config_view, file, ensure_ascii=False, sort_keys=True, indent=4
+        )

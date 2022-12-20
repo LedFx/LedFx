@@ -50,7 +50,9 @@ class BandsMatrixAudioEffect(AudioReactiveEffect, GradientEffect):
             out_split[i][volume:] = self.bkg_color
             for p in range(volume):
                 gradient_value = (
-                    1 - p / band_width if self.flip_gradient else p / band_width
+                    1 - p / band_width
+                    if self.flip_gradient
+                    else p / band_width
                 )
                 out_split[i][p] = self.get_gradient_color(gradient_value)
 

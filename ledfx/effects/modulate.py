@@ -75,7 +75,9 @@ class ModulateEffect(Effect):
                 self._counter = 0
 
             pixels[
-                int(self._breath_cycle[int(self._counter)] * self.pixel_count) :,
+                int(
+                    self._breath_cycle[int(self._counter)] * self.pixel_count
+                ) :,
                 :,
             ] = 0
             return pixels

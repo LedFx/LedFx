@@ -48,7 +48,9 @@ class EQAudioEffect(AudioReactiveEffect, GradientEffect):
             if volume:
                 r_split[i][:volume] = 1
             if self._config["align"] == "center":
-                r_split[i] = np.roll(r_split[i], (band_width - volume) // 2, axis=0)
+                r_split[i] = np.roll(
+                    r_split[i], (band_width - volume) // 2, axis=0
+                )
             elif self._config["align"] == "invert":
                 r_split[i] = np.roll(r_split[i], -volume // 2, axis=0)
             elif self._config["align"] == "right":

@@ -50,9 +50,9 @@ class MQTT_HASS(Integration):
                 description="MQTT ip address",
                 default="127.0.0.1",
             ): str,
-            vol.Required("port", description="MQTT port", default=1883): vol.All(
-                vol.Coerce(int), vol.Range(min=1, max=65535)
-            ),
+            vol.Required(
+                "port", description="MQTT port", default=1883
+            ): vol.All(vol.Coerce(int), vol.Range(min=1, max=65535)),
             vol.Optional(
                 "username",
                 description="MQTT username",
@@ -117,7 +117,10 @@ class MQTT_HASS(Integration):
             if virtual.active:
                 active_pixels += virtual.pixel_count
         _LOGGER.debug(
-            "active_pixels/total_pixels:" + str(active_pixels) + "/" + str(total_pixels)
+            "active_pixels/total_pixels:"
+            + str(active_pixels)
+            + "/"
+            + str(total_pixels)
         )
         # ToDo create sensor with total_pixels
 
@@ -182,7 +185,9 @@ class MQTT_HASS(Integration):
 
         self._listeners.append(
             self._ledfx.events.add_listener(
-                lambda event: self.publish_virtual_config(event.virtual_id, client),
+                lambda event: self.publish_virtual_config(
+                    event.virtual_id, client
+                ),
                 Event.VIRTUAL_CONFIG_UPDATE,
             )
         )
@@ -194,7 +199,9 @@ class MQTT_HASS(Integration):
         )
 
         self._listeners.append(
-            self._ledfx.events.add_listener(publish_paused_state, Event.VIRTUAL_PAUSE)
+            self._ledfx.events.add_listener(
+                publish_paused_state, Event.VIRTUAL_PAUSE
+            )
         )
 
         self._listeners.append(
@@ -215,7 +222,9 @@ class MQTT_HASS(Integration):
         }
 
         # SENSOR
-        client.subscribe(f"{self._config['topic']}/sensor/ledfxpixelsensor/set")
+        client.subscribe(
+            f"{self._config['topic']}/sensor/ledfxpixelsensor/set"
+        )
         client.publish(
             f"{self._config['topic']}/sensor/ledfxpixelsensor/config",
             json.dumps(
@@ -233,7 +242,9 @@ class MQTT_HASS(Integration):
         )
 
         # SCENE SELECTOR
-        client.subscribe(f"{self._config['topic']}/select/ledfxsceneselect/set")
+        client.subscribe(
+            f"{self._config['topic']}/select/ledfxsceneselect/set"
+        )
         client.publish(
             f"{self._config['topic']}/select/ledfxsceneselect/config",
             json.dumps(
@@ -272,7 +283,9 @@ class MQTT_HASS(Integration):
         )
 
         # TRANSITION TYPE
-        client.subscribe(f"{self._config['topic']}/select/ledfxtransitiontype/set")
+        client.subscribe(
+            f"{self._config['topic']}/select/ledfxtransitiontype/set"
+        )
         client.publish(
             f"{self._config['topic']}/select/ledfxtransitiontype/config",
             json.dumps(
@@ -302,7 +315,9 @@ class MQTT_HASS(Integration):
         )
 
         # TRANSITION TIME
-        client.subscribe(f"{self._config['topic']}/number/ledfxtransitiontime/set")
+        client.subscribe(
+            f"{self._config['topic']}/number/ledfxtransitiontime/set"
+        )
         client.publish(
             f"{self._config['topic']}/number/ledfxtransitiontime/config",
             json.dumps(
@@ -419,7 +434,9 @@ class MQTT_HASS(Integration):
                 active_pixels += virtual.pixel_count
         if segs[0] == "ledfx":
             if payload == "HomeAssistant initialized":
-                virtual = self._ledfx.virtuals.get(next(iter(self._ledfx.virtuals)))
+                virtual = self._ledfx.virtuals.get(
+                    next(iter(self._ledfx.virtuals))
+                )
                 client.publish(
                     f"{self._config['topic']}/select/ledfxtransitiontype/state",
                     virtual.config["transition_mode"],
@@ -437,7 +454,9 @@ class MQTT_HASS(Integration):
                 client.publish(
                     f"{self._config['topic']}/select/ledfxaudio/state",
                     AudioInputSource.input_devices()[
-                        self._ledfx.config.get("audio", {}).get("audio_device", {})
+                        self._ledfx.config.get("audio", {}).get(
+                            "audio_device", {}
+                        )
                     ],
                 )
                 # Pixel-Sensor
@@ -476,7 +495,9 @@ class MQTT_HASS(Integration):
             # _LOGGER.info("Transitions: " + str(payload))
             prior_state = self._ledfx.config["global_transitions"]
             self._ledfx.config["global_transitions"] = True
-            virtual = self._ledfx.virtuals.get(next(iter(self._ledfx.virtuals)))
+            virtual = self._ledfx.virtuals.get(
+                next(iter(self._ledfx.virtuals))
+            )
             key = self.TRANSITION_MAPPING[virtualid]
             if key == "transition_time":
                 try:
@@ -612,5 +633,7 @@ class MQTT_HASS(Integration):
             client.username_pw_set(
                 self._config["username"], password=self._config["password"]
             )
-        client.connect_async(self._config["ip_address"], self._config["port"], 60)
+        client.connect_async(
+            self._config["ip_address"], self._config["port"], 60
+        )
         client.loop_start()

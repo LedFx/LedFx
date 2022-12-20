@@ -102,7 +102,9 @@ class SchemaEndpoint(RestEndpoint):
             elif schema == "virtuals":
                 # Get virtuals schema
                 response["virtuals"] = {
-                    "schema": convertToJsonSchema(self._ledfx.virtuals.schema()),
+                    "schema": convertToJsonSchema(
+                        self._ledfx.virtuals.schema()
+                    ),
                 }
 
             elif schema == "audio":
@@ -142,7 +144,11 @@ class SchemaEndpoint(RestEndpoint):
                         **convertToJsonSchema(
                             WLED_CONFIG_SCHEMA,
                         ),
-                        **{"permitted_keys": PERMITTED_KEYS["wled_preferences"]},
+                        **{
+                            "permitted_keys": PERMITTED_KEYS[
+                                "wled_preferences"
+                            ]
+                        },
                     },
                 }
 

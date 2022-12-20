@@ -79,7 +79,9 @@ class Strobe(AudioReactiveEffect, GradientEffect):
 
         self.last_bass_strobe_time = 0
         self.bass_strobe_wait_time = 0.2
-        self.bass_strobe_decay_rate = 1 - self._config["bass_strobe_decay_rate"]
+        self.bass_strobe_decay_rate = (
+            1 - self._config["bass_strobe_decay_rate"]
+        )
 
     def render(self):
         pixels = np.copy(self.bass_strobe_overlay)
@@ -97,7 +99,9 @@ class Strobe(AudioReactiveEffect, GradientEffect):
                 if length_diff == 0
                 else np.random.randint(self.pixel_count - strobe_width)
             )
-            self.strobe_overlay[position : position + strobe_width] = self.strobe_color
+            self.strobe_overlay[
+                position : position + strobe_width
+            ] = self.strobe_color
 
         pixels += self.strobe_overlay
 
@@ -109,7 +113,10 @@ class Strobe(AudioReactiveEffect, GradientEffect):
 
         currentTime = time.time()
 
-        if currentTime - self.last_color_shift_time > self.color_shift_delay_in_seconds:
+        if (
+            currentTime - self.last_color_shift_time
+            > self.color_shift_delay_in_seconds
+        ):
             self.color_idx += self.color_shift_step
             self.color_idx = self.color_idx % 1
             self.bass_strobe_color = self.get_gradient_color(self.color_idx)
@@ -117,7 +124,8 @@ class Strobe(AudioReactiveEffect, GradientEffect):
 
         if (
             data.volume_beat_now()
-            and currentTime - self.last_bass_strobe_time > self.bass_strobe_wait_time
+            and currentTime - self.last_bass_strobe_time
+            > self.bass_strobe_wait_time
             and self.bass_strobe_decay_rate
         ):
             self.bass_strobe_overlay = np.tile(
@@ -125,6 +133,9 @@ class Strobe(AudioReactiveEffect, GradientEffect):
             )
             self.last_bass_strobe_time = currentTime
 
-        if data.onset() and currentTime - self.last_strobe_time > self.strobe_wait_time:
+        if (
+            data.onset()
+            and currentTime - self.last_strobe_time > self.strobe_wait_time
+        ):
             self.onsets_queue.put(True)
             self.last_strobe_time = currentTime

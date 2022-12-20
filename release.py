@@ -12,9 +12,15 @@ def write_version(major, minor, micro):
     with open("ledfx/consts.py") as fil:
         content = fil.read()
 
-    content = re.sub("MAJOR_VERSION = .*\n", f"MAJOR_VERSION = {major}\n", content)
-    content = re.sub("MINOR_VERSION = .*\n", f"MINOR_VERSION = {minor}\n", content)
-    content = re.sub("MICRO_VERSION = .*\n", f"MICRO_VERSION = {micro}\n", content)
+    content = re.sub(
+        "MAJOR_VERSION = .*\n", f"MAJOR_VERSION = {major}\n", content
+    )
+    content = re.sub(
+        "MINOR_VERSION = .*\n", f"MINOR_VERSION = {minor}\n", content
+    )
+    content = re.sub(
+        "MICRO_VERSION = .*\n", f"MICRO_VERSION = {micro}\n", content
+    )
 
     with open("ledfx/consts.py", "w") as fil:
         content = fil.write(content)
@@ -25,7 +31,9 @@ def execute_command(command):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Release a new version of LedFx")
+    parser = argparse.ArgumentParser(
+        description="Release a new version of LedFx"
+    )
     parser.add_argument(
         "type", help="The type of release", choices=["major", "minor", "micro"]
     )
@@ -86,7 +94,9 @@ def main():
 
     shutil.rmtree("dist", ignore_errors=True)
     subprocess.run(["python", "setup.py", "sdist", "bdist_wheel"])
-    subprocess.run(["python", "-m", "twine", "upload", "dist/*", "--skip-existing"])
+    subprocess.run(
+        ["python", "-m", "twine", "upload", "dist/*", "--skip-existing"]
+    )
 
 
 if __name__ == "__main__":

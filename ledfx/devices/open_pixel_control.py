@@ -29,12 +29,16 @@ class OpenPixelControl(NetworkedDevice):
 
     def activate(self):
         self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        _LOGGER.info(f"Open Pixel Control sender for {self.config['name']} started.")
+        _LOGGER.info(
+            f"Open Pixel Control sender for {self.config['name']} started."
+        )
         super().activate()
 
     def deactivate(self):
         super().deactivate()
-        _LOGGER.info(f"Open Pixel Control sender for {self.config['name']} stopped.")
+        _LOGGER.info(
+            f"Open Pixel Control sender for {self.config['name']} stopped."
+        )
         self._sock = None
 
     def flush(self, data):

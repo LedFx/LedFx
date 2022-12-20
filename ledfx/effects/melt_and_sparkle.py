@@ -105,18 +105,27 @@ class MeltSparkle(AudioReactiveEffect, HSVEffect):
 
     def audio_data_updated(self, data):
         self._last_lows_power = self._lows_power
-        self._lows_power = self._lows_filter.update(data.lows_power(filtered=False))
+        self._lows_power = self._lows_filter.update(
+            data.lows_power(filtered=False)
+        )
         # self._lows_power = 0
         # _LOGGER.debug(f"bass {self._lows_power}")
 
-        if self._lows_power > self.strobe_cutoff and np.random.randint(0, 200) == 0:
+        if (
+            self._lows_power > self.strobe_cutoff
+            and np.random.randint(0, 200) == 0
+        ):
             self._direction *= -1.0
 
         currentTime = time.time()
 
-        intensities = np.fromiter((i.max() ** 2 for i in self.melbank_thirds()), float)
+        intensities = np.fromiter(
+            (i.max() ** 2 for i in self.melbank_thirds()), float
+        )
         np.clip(intensities, 0, 1, out=intensities)
-        self._mids_power = self._mids_filter.update(data.mids_power(filtered=True))
+        self._mids_power = self._mids_filter.update(
+            data.mids_power(filtered=True)
+        )
         if (
             data.onset()
             and currentTime - self.last_strobe_time > self.strobe_wait_time

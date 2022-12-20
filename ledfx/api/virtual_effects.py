@@ -131,7 +131,10 @@ class EffectsEndpoint(RestEndpoint):
 
         try:
             # handling an effect update. nested if else and repeated code bleh. ain't a looker ;)
-            if virtual.active_effect and virtual.active_effect.type == effect_type:
+            if (
+                virtual.active_effect
+                and virtual.active_effect.type == effect_type
+            ):
                 # substring search to match any key of color
                 # this handles special cases where we want to update an effect and also trigger
                 # a transition by creating a new effect.

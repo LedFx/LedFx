@@ -29,7 +29,10 @@ class RestEndpoint(BaseRegistry):
 
         try:
             return await method(
-                **{arg_name: available_args[arg_name] for arg_name in wanted_args}
+                **{
+                    arg_name: available_args[arg_name]
+                    for arg_name in wanted_args
+                }
             )
         except Exception as e:
             # _LOGGER.exception(e)

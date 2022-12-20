@@ -47,7 +47,9 @@ class DeviceEndpoint(RestEndpoint):
             return web.json_response(data=response, status=400)
 
         _LOGGER.debug(
-            ("Updating device {} with config {}").format(device_id, device_config)
+            ("Updating device {} with config {}").format(
+                device_id, device_config
+            )
         )
 
         try:
@@ -103,7 +105,9 @@ class DeviceEndpoint(RestEndpoint):
                     effect_response["config"] = virtual.active_effect.config
                     effect_response["name"] = virtual.active_effect.name
                     effect_response["type"] = virtual.active_effect.type
-                    response["virtuals"][virtual.id]["effect"] = effect_response
+                    response["virtuals"][virtual.id][
+                        "effect"
+                    ] = effect_response
 
         except (voluptuous.Error, ValueError) as msg:
             response = {

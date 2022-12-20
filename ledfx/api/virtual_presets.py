@@ -148,7 +148,9 @@ class VirtualPresetsEndpoint(RestEndpoint):
             return web.json_response(data=response, status=400)
 
         # Create the effect and add it to the virtual
-        effect_config = self._ledfx.config[category][effect_id][preset_id]["config"]
+        effect_config = self._ledfx.config[category][effect_id][preset_id][
+            "config"
+        ]
         effect = self._ledfx.effects.create(
             ledfx=self._ledfx, type=effect_id, config=effect_config
         )
@@ -218,7 +220,9 @@ class VirtualPresetsEndpoint(RestEndpoint):
 
         # Update the preset if it already exists, else create it
         self._ledfx.config["user_presets"][effect_id][preset_id] = {}
-        self._ledfx.config["user_presets"][effect_id][preset_id]["name"] = preset_name
+        self._ledfx.config["user_presets"][effect_id][preset_id][
+            "name"
+        ] = preset_name
         self._ledfx.config["user_presets"][effect_id][preset_id][
             "config"
         ] = virtual.active_effect.config
