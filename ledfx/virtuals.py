@@ -351,6 +351,7 @@ class Virtual:
         while True:
             if not self._active:
                 break
+            start_time = timeit.default_timer()
             if (
                 self._active_effect
                 and self._active_effect.is_active
@@ -372,6 +373,12 @@ class Virtual:
                         VirtualUpdateEvent(self.id, self.assembled_frame)
                     )
             time.sleep(fps_to_sleep_interval(self.refresh_rate))
+            pass_time = timeit.default_timer() - start_time
+            min_time = time.get_clock_info("monotonic").resolution
+            # use an aggressive check for did we sleep against implied min
+            # for all otherwise working behaviours this will be passive
+            if pass_time < (min_time / 2):
+                time.sleep(min_time - pass_time)
 
     def assemble_frame(self):
         """
