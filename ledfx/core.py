@@ -18,7 +18,12 @@ from ledfx.config import get_ssl_certs, load_config, save_config
 from ledfx.devices import Devices
 from ledfx.effects import Effects
 from ledfx.effects.math import interpolate_pixels
-from ledfx.events import Event, Events, LedFxShutdownEvent, VisualisationUpdateEvent
+from ledfx.events import (
+    Event,
+    Events,
+    LedFxShutdownEvent,
+    VisualisationUpdateEvent,
+)
 from ledfx.http_manager import HttpServer
 from ledfx.integrations import Integrations
 from ledfx.presets import ledfx_presets
@@ -154,7 +159,9 @@ class LedFxCore:
             if len(pixels) > max_len:
                 pixels = interpolate_pixels(pixels, max_len)
 
-            self.events.fire_event(VisualisationUpdateEvent(is_device, vis_id, pixels))
+            self.events.fire_event(
+                VisualisationUpdateEvent(is_device, vis_id, pixels)
+            )
 
         self.events.add_listener(
             handle_visualisation_update,
@@ -196,7 +203,9 @@ class LedFxCore:
         try:
             self.loop.run_forever()
         except KeyboardInterrupt:
-            self.loop.call_soon(self.loop.create_task, self.async_stop(exit_code=1))
+            self.loop.call_soon(
+                self.loop.create_task, self.async_stop(exit_code=1)
+            )
             self.loop.run_forever()
         except BaseException:
             # Catch all other exceptions and terminate the application. The loop
@@ -258,7 +267,9 @@ class LedFxCore:
         if self.config["scan_on_startup"]:
             async_fire_and_forget(self.devices.find_wled_devices(), self.loop)
 
-        async_fire_and_forget(self.integrations.activate_integrations(), self.loop)
+        async_fire_and_forget(
+            self.integrations.activate_integrations(), self.loop
+        )
 
         if open_ui:
             self.open_ui()
@@ -298,7 +309,9 @@ class LedFxCore:
         # Cancel all the remaining task and wait
         _LOGGER.info("Killing remaining tasks...")
         tasks = [
-            task for task in asyncio.all_tasks() if task is not asyncio.current_task()
+            task
+            for task in asyncio.all_tasks()
+            if task is not asyncio.current_task()
         ]
         list(map(lambda task: task.cancel(), tasks))
 

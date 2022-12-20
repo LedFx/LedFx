@@ -77,7 +77,9 @@ class BladePowerPlus(AudioReactiveEffect, HSVEffect):
 
     def audio_data_updated(self, data):
         # Get filtered bar power
-        self.bar = getattr(data, self.power_func)() * self._config["multiplier"] * 2
+        self.bar = (
+            getattr(data, self.power_func)() * self._config["multiplier"] * 2
+        )
 
     def render_hsv(self):
         # Must be zeroed every cycle to clear the previous frame

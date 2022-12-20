@@ -67,7 +67,9 @@ class Scenes:
         """Creates a scene of current effects of specified virtuals if no ID given, else updates one with matching id"""
         scene_config = self.SCENE_SCHEMA(scene_config)
         scene_id = (
-            scene_id if scene_id in self._scenes else generate_id(scene_config["name"])
+            scene_id
+            if scene_id in self._scenes
+            else generate_id(scene_config["name"])
         )
 
         virtual_effects = {}

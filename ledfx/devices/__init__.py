@@ -41,7 +41,9 @@ class Device(BaseRegistry):
     def CONFIG_SCHEMA():
         return vol.Schema(
             {
-                vol.Required("name", description="Friendly name for the device"): str,
+                vol.Required(
+                    "name", description="Friendly name for the device"
+                ): str,
                 vol.Optional(
                     "icon_name",
                     description="https://material-ui.com/components/material-icons/",
@@ -95,7 +97,9 @@ class Device(BaseRegistry):
                 if base.config_updated != super(base, base).config_updated:
                     base.config_updated(self, validated_config)
 
-        _LOGGER.info(f"Device {self.name} config updated to {validated_config}.")
+        _LOGGER.info(
+            f"Device {self.name} config updated to {validated_config}."
+        )
 
         for virtual_id in self._ledfx.virtuals:
             virtual = self._ledfx.virtuals.get(virtual_id)
@@ -126,7 +130,9 @@ class Device(BaseRegistry):
     def update_pixels(self, virtual_id, data):
         # update each segment from this virtual
         if not self._active:
-            _LOGGER.warning(f"Cannot update pixels of inactive device {self.name}")
+            _LOGGER.warning(
+                f"Cannot update pixels of inactive device {self.name}"
+            )
             return
 
         for pixels, start, end in data:
@@ -189,7 +195,9 @@ class Device(BaseRegistry):
             return None
 
         refresh_rate = max(
-            virtual.refresh_rate for virtual in self._virtuals_objs if virtual.active
+            virtual.refresh_rate
+            for virtual in self._virtuals_objs
+            if virtual.active
         )
         return next(
             virtual
@@ -200,7 +208,8 @@ class Device(BaseRegistry):
     @cached_property
     def _virtuals_objs(self):
         return list(
-            self._ledfx.virtuals.get(virtual_id) for virtual_id in self.virtuals
+            self._ledfx.virtuals.get(virtual_id)
+            for virtual_id in self.virtuals
         )
 
     @property
@@ -210,7 +219,9 @@ class Device(BaseRegistry):
         it's a list bc there can be more than one virtual streaming
         to a device.
         """
-        return list(virtual.id for virtual in self._virtuals_objs if virtual.active)
+        return list(
+            virtual.id for virtual in self._virtuals_objs if virtual.active
+        )
 
     @property
     def online(self):
@@ -230,7 +241,11 @@ class Device(BaseRegistry):
         for _virtual_id, segment_start, segment_end in self._segments:
             if virtual_id == _virtual_id:
                 continue
-            overlap = min(segment_end, end_pixel) - max(segment_start, start_pixel) + 1
+            overlap = (
+                min(segment_end, end_pixel)
+                - max(segment_start, start_pixel)
+                + 1
+            )
             if overlap > 0:
                 virtual_name = self._ledfx.virtuals.get(virtual_id).name
                 blocking_virtual = self._ledfx.virtuals.get(_virtual_id)
@@ -276,7 +291,9 @@ class Device(BaseRegistry):
             if active:
                 virtual.deactivate()
             virtual._segments = list(
-                segment for segment in virtual._segments if segment[0] != self.id
+                segment
+                for segment in virtual._segments
+                if segment[0] != self.id
             )
 
             # Update ledfx's config
@@ -345,7 +362,9 @@ class NetworkedDevice(Device):
             _LOGGER.warning(
                 f"Device {self.name}: Searching for device... Is it online?"
             )
-            async_fire_and_forget(self.resolve_address(), loop=self._ledfx.loop)
+            async_fire_and_forget(
+                self.resolve_address(), loop=self._ledfx.loop
+            )
             return
         else:
             return self._destination
@@ -365,12 +384,16 @@ class UDPDevice(NetworkedDevice):
 
     def activate(self):
         self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        _LOGGER.debug(f"{self._device_type} sender for {self._config['name']} started.")
+        _LOGGER.debug(
+            f"{self._device_type} sender for {self._config['name']} started."
+        )
         super().activate()
 
     def deactivate(self):
         super().deactivate()
-        _LOGGER.debug(f"{self._device_type} sender for {self._config['name']} stopped.")
+        _LOGGER.debug(
+            f"{self._device_type} sender for {self._config['name']} stopped."
+        )
         self._sock = None
 
 
@@ -393,9 +416,9 @@ class SerialDevice(Device):
                 description="COM port for Adalight compatible device",
                 default="",
             ): vol.In(list(AvailableCOMPorts.available_ports)),
-            vol.Required("baudrate", description="baudrate", default=500000): vol.All(
-                int, vol.Range(min=115200)
-            ),
+            vol.Required(
+                "baudrate", description="baudrate", default=500000
+            ): vol.All(int, vol.Range(min=115200)),
         }
     )
 
@@ -582,7 +605,9 @@ class Devices(RegistryLoader):
         device_id = generate_id(device_config["name"])
 
         # Create the device
-        _LOGGER.info(f"Adding device of type {device_type} with config {device_config}")
+        _LOGGER.info(
+            f"Adding device of type {device_type} with config {device_config}"
+        )
         device = self._ledfx.devices.create(
             id=device_id,
             type=device_type,

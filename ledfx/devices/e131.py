@@ -58,7 +58,9 @@ class E131Device(NetworkedDevice):
         else:
             self._config["pixel_count"] = self._config["channel_count"] // 3
 
-        span = self._config["channel_offset"] + self._config["channel_count"] - 1
+        span = (
+            self._config["channel_offset"] + self._config["channel_count"] - 1
+        )
         self._config["universe_end"] = self._config["universe"] + int(
             span / self._config["universe_size"]
         )
@@ -74,7 +76,9 @@ class E131Device(NetworkedDevice):
             multicast = False
 
         if self._sacn:
-            _LOGGER.warning(f"sACN sender already started for device {self.id}")
+            _LOGGER.warning(
+                f"sACN sender already started for device {self.id}"
+            )
 
         # Configure sACN and start the dedicated thread to flush the buffer
         # Some variables are immutable and must be called here
@@ -127,12 +131,12 @@ class E131Device(NetworkedDevice):
         ):
             # Calculate offset into the provide input buffer for the channel. There are some
             # cleaner ways this can be done... This is just the quick and dirty
-            universe_start = (universe - self._config["universe"]) * self._config[
-                "universe_size"
-            ]
-            universe_end = (universe - self._config["universe"] + 1) * self._config[
-                "universe_size"
-            ]
+            universe_start = (
+                universe - self._config["universe"]
+            ) * self._config["universe_size"]
+            universe_end = (
+                universe - self._config["universe"] + 1
+            ) * self._config["universe_size"]
 
             dmx_start = (
                 max(universe_start, self._config["channel_offset"])
@@ -141,7 +145,8 @@ class E131Device(NetworkedDevice):
             dmx_end = (
                 min(
                     universe_end,
-                    self._config["channel_offset"] + self._config["channel_count"],
+                    self._config["channel_offset"]
+                    + self._config["channel_count"],
                 )
                 % self._config["universe_size"]
             )

@@ -106,8 +106,12 @@ class ConfigEndpoint(RestEndpoint):
             audio_config = AudioInputSource.AUDIO_CONFIG_SCHEMA.fget()(
                 config.pop("audio", {})
             )
-            wled_config = WLED_CONFIG_SCHEMA(config.pop("wled_preferences", {}))
-            melbanks_config = Melbanks.CONFIG_SCHEMA(config.pop("melbanks", {}))
+            wled_config = WLED_CONFIG_SCHEMA(
+                config.pop("wled_preferences", {})
+            )
+            melbanks_config = Melbanks.CONFIG_SCHEMA(
+                config.pop("melbanks", {})
+            )
             core_config = CORE_CONFIG_SCHEMA(config)
 
             core_config["audio"] = audio_config
@@ -158,7 +162,9 @@ class ConfigEndpoint(RestEndpoint):
             melbanks_config = validate_and_trim_config(
                 config.pop("melbanks", {}), Melbanks.CONFIG_SCHEMA, "melbanks"
             )
-            core_config = validate_and_trim_config(config, CORE_CONFIG_SCHEMA, "core")
+            core_config = validate_and_trim_config(
+                config, CORE_CONFIG_SCHEMA, "core"
+            )
 
             self._ledfx.config["audio"].update(audio_config)
             self._ledfx.config["melbanks"].update(melbanks_config)
@@ -167,9 +173,13 @@ class ConfigEndpoint(RestEndpoint):
             # handle special case wled_preferences nested dict
             for key in wled_config:
                 if key in self._ledfx.config["wled_preferences"]:
-                    self._ledfx.config["wled_preferences"][key].update(wled_config[key])
+                    self._ledfx.config["wled_preferences"][key].update(
+                        wled_config[key]
+                    )
                 else:
-                    self._ledfx.config["wled_preferences"][key] = wled_config[key]
+                    self._ledfx.config["wled_preferences"][key] = wled_config[
+                        key
+                    ]
 
             # TODO
             # Do something if wled preferences config is updated
@@ -182,7 +192,9 @@ class ConfigEndpoint(RestEndpoint):
                 self._ledfx.audio.update_config(self._ledfx.config["audio"])
 
             if hasattr(self._ledfx, "audio") and melbanks_config:
-                self._ledfx.audio.melbanks.update_config(self._ledfx.config["melbanks"])
+                self._ledfx.audio.melbanks.update_config(
+                    self._ledfx.config["melbanks"]
+                )
 
             if core_config:
                 self._ledfx.loop.call_soon_threadsafe(self._ledfx.stop, 4)

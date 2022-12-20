@@ -69,5 +69,7 @@ class PitchSpectrumAudioEffect(AudioReactiveEffect, GradientEffect):
             # SLOW SLOW SLOW for loop
             #
             new_color = mix_colors(self.pixels[index], note_color, y[index])
-            new_color = mix_colors(new_color, RGB(0, 0, 0), self._config["fade_rate"])
+            new_color = mix_colors(
+                new_color, RGB(0, 0, 0), self._config["fade_rate"]
+            )
             self.pixels[index] = new_color

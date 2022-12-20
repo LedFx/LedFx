@@ -106,7 +106,9 @@ def setup_logging(loglevel, config_dir):
 
     console_handler = logging.StreamHandler()
     console_handler.setLevel(console_loglevel)  # set loglevel
-    console_formatter = logging.Formatter(console_logformat)  # a simple console format
+    console_formatter = logging.Formatter(
+        console_logformat
+    )  # a simple console format
     console_handler.setFormatter(
         console_formatter
     )  # tell the console_handler to use this format
@@ -129,7 +131,9 @@ def setup_logging(loglevel, config_dir):
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="A Networked LED Effect Controller")
+    parser = argparse.ArgumentParser(
+        description="A Networked LED Effect Controller"
+    )
 
     parser.add_argument(
         "--version",
@@ -269,7 +273,9 @@ def update_ledfx(icon=None):
     if ledfx_update is not None:
         client.add_progress_hook(log_status_info)
         _LOGGER.log(PYUPDATERLOGLEVEL, "Update found!")
-        notify("Downloading update, please wait... LedFx will restart when complete.")
+        notify(
+            "Downloading update, please wait... LedFx will restart when complete."
+        )
         ledfx_update.download()
         # Install and restart
         if ledfx_update.is_downloaded():
@@ -315,7 +321,10 @@ def main():
         else:
             p.nice(15)
 
-    if not (currently_frozen() or installed_via_pip()) and args.offline_mode is False:
+    if (
+        not (currently_frozen() or installed_via_pip())
+        and args.offline_mode is False
+    ):
         import ledfx.sentry_config  # noqa: F401
 
     if args.sentry_test:
@@ -340,8 +349,12 @@ def main():
             icon_location = os.path.join(current_directory, "tray.png")
         else:
             current_directory = os.path.dirname(__file__)
-            icon_location = os.path.join(current_directory, "..", "icons/" "tray.png")
-        icon = pystray.Icon("LedFx", icon=Image.open(icon_location), title="LedFx")
+            icon_location = os.path.join(
+                current_directory, "..", "icons/" "tray.png"
+            )
+        icon = pystray.Icon(
+            "LedFx", icon=Image.open(icon_location), title="LedFx"
+        )
         icon.visible = True
     else:
         icon = None

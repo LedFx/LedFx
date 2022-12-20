@@ -37,7 +37,9 @@ class Virtual:
 
     CONFIG_SCHEMA = vol.Schema(
         {
-            vol.Required("name", description="Friendly name for the device"): str,
+            vol.Required(
+                "name", description="Friendly name for the device"
+            ): str,
             vol.Required(
                 "mapping",
                 description="Span: Effect spans all segments. Copy: Effect copied on each segment",
@@ -249,7 +251,9 @@ class Virtual:
 
         # Create the effect and add it to the virtual
         try:
-            effect_config = self._ledfx.config[category][effect_id][preset_id]["config"]
+            effect_config = self._ledfx.config[category][effect_id][preset_id][
+                "config"
+            ]
         except KeyError:
             _LOGGER.error(f"Cannot find preset: {preset_info}")
             return
@@ -317,7 +321,9 @@ class Virtual:
         )
         self.transition_frame_counter = 0
 
-        self._ledfx.loop.call_later(self._config["transition_time"], self.clear_frame)
+        self._ledfx.loop.call_later(
+            self._config["transition_time"], self.clear_frame
+        )
 
     def clear_transition_effect(self):
         if self._transition_effect is not None:
@@ -422,8 +428,12 @@ class Virtual:
                 max(self.transition_frame_counter, 0),
                 self.transition_frame_total,
             )
-            weight = self.transition_frame_counter / self.transition_frame_total
-            self.frame_transitions(self.transitions, frame, transition_frame, weight)
+            weight = (
+                self.transition_frame_counter / self.transition_frame_total
+            )
+            self.frame_transitions(
+                self.transitions, frame, transition_frame, weight
+            )
             if self.transition_frame_counter == self.transition_frame_total:
                 self.clear_transition_effect()
 
@@ -444,7 +454,9 @@ class Virtual:
         if hasattr(self, "_thread"):
             self._thread.join()
 
-        _LOGGER.debug(f"Virtual {self.id}: Activating with segments {self._segments}")
+        _LOGGER.debug(
+            f"Virtual {self.id}: Activating with segments {self._segments}"
+        )
         if not self._active:
             try:
                 self.activate_segments(self._segments)
@@ -504,7 +516,9 @@ class Virtual:
                 device_end,
             ) in segments:
                 if self._config["mapping"] == "span":
-                    data.append((pixels[start:stop:step], device_start, device_end))
+                    data.append(
+                        (pixels[start:stop:step], device_start, device_end)
+                    )
                 elif self._config["mapping"] == "copy":
                     target_len = device_end - device_start + 1
                     data.append(
@@ -516,7 +530,9 @@ class Virtual:
                     )
             device = self._ledfx.devices.get(device_id)
             if device is None:
-                _LOGGER.warning(f"Virtual {self.id}: No active devices - Deactivating.")
+                _LOGGER.warning(
+                    f"Virtual {self.id}: No active devices - Deactivating."
+                )
                 self.deactivate()
             elif device.is_active():
                 device.update_pixels(self.id, data)
@@ -643,9 +659,12 @@ class Virtual:
                 self.invalidate_cached_props()
             if (
                 _config["transition_mode"] != self._config["transition_mode"]
-                or _config["transition_time"] != self._config["transition_time"]
+                or _config["transition_time"]
+                != self._config["transition_time"]
             ):
-                self.frame_transitions = self.transitions[_config["transition_mode"]]
+                self.frame_transitions = self.transitions[
+                    _config["transition_mode"]
+                ]
                 if self._ledfx.config["global_transitions"]:
                     for virtual_id in self._ledfx.virtuals:
                         if virtual_id == self.id:
@@ -654,19 +673,30 @@ class Virtual:
                         virtual.frame_transitions = virtual.transitions[
                             _config["transition_mode"]
                         ]
-                        virtual._config["transition_time"] = _config["transition_time"]
-                        virtual._config["transition_mode"] = _config["transition_mode"]
+                        virtual._config["transition_time"] = _config[
+                            "transition_time"
+                        ]
+                        virtual._config["transition_mode"] = _config[
+                            "transition_mode"
+                        ]
 
-            if "frequency_min" in _config.keys() or "frequency_max" in _config.keys():
+            if (
+                "frequency_min" in _config.keys()
+                or "frequency_max" in _config.keys()
+            ):
                 # if these are in config, manually sanitise them
                 _config["frequency_min"] = min(
                     _config["frequency_min"], MAX_FREQ - MIN_FREQ_DIFFERENCE
                 )
-                _config["frequency_min"] = min(_config["frequency_min"], MIN_FREQ)
+                _config["frequency_min"] = min(
+                    _config["frequency_min"], MIN_FREQ
+                )
                 _config["frequency_max"] = max(
                     _config["frequency_max"], MIN_FREQ + MIN_FREQ_DIFFERENCE
                 )
-                _config["frequency_max"] = min(_config["frequency_max"], MAX_FREQ)
+                _config["frequency_max"] = min(
+                    _config["frequency_max"], MAX_FREQ
+                )
                 diff = abs(_config["frequency_max"] - _config["frequency_min"])
                 if diff < MIN_FREQ_DIFFERENCE:
                     _config["frequency_max"] += diff
@@ -674,11 +704,17 @@ class Virtual:
                 # so the changes take effect
                 if (
                     (
-                        _config["frequency_min"] != self._config["frequency_min"]
-                        or _config["frequency_max"] != self._config["frequency_max"]
+                        _config["frequency_min"]
+                        != self._config["frequency_min"]
+                        or _config["frequency_max"]
+                        != self._config["frequency_max"]
                     )
                     and (self._active_effect is not None)
-                    and (hasattr(self._active_effect, "clear_melbank_freq_props"))
+                    and (
+                        hasattr(
+                            self._active_effect, "clear_melbank_freq_props"
+                        )
+                    )
                 ):
                     self._active_effect.clear_melbank_freq_props()
 
@@ -688,7 +724,9 @@ class Virtual:
             self._config["frequency_min"], self._config["frequency_max"]
         )
 
-        self._ledfx.events.fire_event(VirtualConfigUpdateEvent(self.id, self._config))
+        self._ledfx.events.fire_event(
+            VirtualConfigUpdateEvent(self.id, self._config)
+        )
 
 
 class Virtuals:
@@ -723,7 +761,9 @@ class Virtuals:
                         virtual["segments"]
                     )
                 except vol.MultipleInvalid:
-                    _LOGGER.warning("Virtual Segment Changed. Not restoring segment")
+                    _LOGGER.warning(
+                        "Virtual Segment Changed. Not restoring segment"
+                    )
                     continue
                 except RuntimeError:
                     pass
@@ -737,7 +777,9 @@ class Virtuals:
                     )
                     self._ledfx.virtuals.get(virtual["id"]).set_effect(effect)
                 except vol.MultipleInvalid:
-                    _LOGGER.warning("Effect schema changed. Not restoring effect")
+                    _LOGGER.warning(
+                        "Effect schema changed. Not restoring effect"
+                    )
                 except RuntimeError:
                     pass
             self._ledfx.events.fire_event(
@@ -776,7 +818,9 @@ class Virtuals:
 
     def destroy(self, id):
         if id not in self._virtuals:
-            raise AttributeError(("Object with id '{}' does not exist.").format(id))
+            raise AttributeError(
+                ("Object with id '{}' does not exist.").format(id)
+            )
         del self._virtuals[id]
 
     def __iter__(self):

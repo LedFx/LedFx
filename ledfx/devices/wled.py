@@ -73,7 +73,9 @@ class WLEDDevice(NetworkedDevice):
         }
 
     def config_updated(self, config):
-        if not isinstance(self.subdevice, self.SYNC_MODES[self._config["sync_mode"]]):
+        if not isinstance(
+            self.subdevice, self.SYNC_MODES[self._config["sync_mode"]]
+        ):
             self.setup_subdevice()
 
     def setup_subdevice(self):
@@ -131,7 +133,9 @@ class WLEDDevice(NetworkedDevice):
         # Currently *assuming* that this PR gets released in 0.13
         # https://github.com/Aircoookie/WLED/pull/1944
         if parse_version(wled_version) >= parse_version("0.13.0"):
-            _LOGGER.info(f"WLED Version Supports Sync Setting API: {wled_version}")
+            _LOGGER.info(
+                f"WLED Version Supports Sync Setting API: {wled_version}"
+            )
             wled_sync_settings = await self.wled.get_sync_settings()
         # self.wled.enable_realtime_gamma()
         # self.wled.set_inactivity_timeout(self._config["timeout"])

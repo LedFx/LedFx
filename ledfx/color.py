@@ -29,10 +29,15 @@ class Gradient:
         angle = int(angle.strip("deg"))
         # Split each color/position string
         colors = colors.split("%")
-        colors = [color.strip(", ").rsplit(" ", 1) for color in colors if color.strip()]
+        colors = [
+            color.strip(", ").rsplit(" ", 1)
+            for color in colors
+            if color.strip()
+        ]
         # Parse color and position
         colors = [
-            (parse_color(color), float(position) / 100.0) for color, position in colors
+            (parse_color(color), float(position) / 100.0)
+            for color, position in colors
         ]
         # Sort color list by position (0.0->1.0)
         colors.sort(key=lambda tup: tup[1])
