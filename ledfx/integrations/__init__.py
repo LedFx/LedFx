@@ -20,11 +20,22 @@ class Status(IntEnum):
     DISCONNECTING = 2
     CONNECTING = 3
 
+    def to_json(self):
+        values = {
+            0: "disconnected",
+            1: "connected",
+            2: "disconnecting",
+            3: "connecting"
+        }
+        return values[self.value]
+
 
 @BaseRegistry.no_registration
 class Integration(BaseRegistry):
     def __init__(self, ledfx, config, active, data):
         self._ledfx = ledfx
+        self.name = "Unnamed Integration"
+        self.description = ""
         self._config = config
         self._active = active
         self.published = False
@@ -89,11 +100,11 @@ class Integration(BaseRegistry):
 
     @property
     def name(self):
-        return self._config["name"]
+        return self.name
 
     @property
     def description(self):
-        return self._config["description"]
+        return self.description
 
     @property
     def status(self):
