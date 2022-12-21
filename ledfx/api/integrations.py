@@ -24,8 +24,10 @@ class IntegrationsEndpoint(RestEndpoint):
         for integration in self._ledfx.integrations.values():
             response["integrations"][integration.id] = {
                 "id": integration.id,
+                "name": integration.name,
                 "type": integration.type,
                 "active": integration.active,
+                "published": integration.published,
                 "status": integration.status,
                 "data": integration.data,
                 "config": integration.config,
