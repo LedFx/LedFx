@@ -1,4 +1,5 @@
 import logging
+
 from ledfx.integrations import Integration
 
 _LOGGER = logging.getLogger(__name__)

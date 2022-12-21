@@ -25,7 +25,7 @@ class Status(IntEnum):
             0: "disconnected",
             1: "connected",
             2: "disconnecting",
-            3: "connecting"
+            3: "connecting",
         }
         return values[self.value]
 
@@ -117,10 +117,11 @@ class Integration(BaseRegistry):
     @property
     def data(self):
         return self._data
-    
+
     @property
     def published(self):
         return self._published
+
 
 class Integrations(RegistryLoader):
     """Thin wrapper around the integration registry that manages integrations"""
