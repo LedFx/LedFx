@@ -7,10 +7,13 @@ _LOGGER = logging.getLogger(__name__)
 class Spotify(Integration):
     """Spotify Integration"""
 
+    NAME = "Spotify"
+    DESCRIPTION = "Activate scenes with Spotify Connect [BETA]. Requires Spotify Premium."
+
     def __init__(self, ledfx, config, active, data):
         super().__init__(ledfx, config, active, data)
-        self._name = "Spotify"
-        self._description = "Activate scenes with Spotify Connect [BETA]. Requires Spotify Premium."
+        self._name = self.NAME
+        self._description = self.DESCRIPTION
         self._published = True
         self._data = {}
 
