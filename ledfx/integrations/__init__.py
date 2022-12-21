@@ -22,10 +22,10 @@ class Status(IntEnum):
 
     def to_json(self):
         values = {
-            0: "disconnected",
-            1: "connected",
-            2: "disconnecting",
-            3: "connecting",
+            0: "Disconnected",
+            1: "Connected",
+            2: "Disconnecting",
+            3: "Connecting",
         }
         return values[self.value]
 
