@@ -49,11 +49,11 @@ class Spotify(Integration):
     @property
     def name(self):
         return self._name
-    
+
     @property
     def description(self):
         return self._description
-    
+
     @property
     def published(self):
         return self._published
