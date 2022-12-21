@@ -27,6 +27,7 @@ class Integration(BaseRegistry):
         self._ledfx = ledfx
         self._config = config
         self._active = active
+        self.published = False
         self._data = data
         self._status = Status.DISCONNECTED
 
@@ -105,7 +106,10 @@ class Integration(BaseRegistry):
     @property
     def data(self):
         return self._data
-
+    
+    @property
+    def published(self):
+        return self._published
 
 class Integrations(RegistryLoader):
     """Thin wrapper around the integration registry that manages integrations"""
