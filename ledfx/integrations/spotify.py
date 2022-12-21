@@ -1,21 +1,5 @@
-# from ledfx.utils import RegistryLoader, async_fire_and_forget, async_fire_and_return, async_callback
-# from ledfx.events import Event
-# import importlib
-# import pkgutil
 import logging
-
-# import aiohttp
-# import asyncio
-import voluptuous as vol
-
 from ledfx.integrations import Integration
-
-# import numpy as np
-
-
-# import time
-# import os
-# import re
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -23,30 +7,11 @@ _LOGGER = logging.getLogger(__name__)
 class Spotify(Integration):
     """Spotify Integration"""
 
-    NAME = "Spotify"
-    DESCRIPTION = "Activate scenes with Spotify Connect [BETA]. Requires Spotify Premium."
-
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Required(
-                "name",
-                description="Name of this integration instance and associated settings",
-                default="Spotify",
-            ): str,
-            vol.Required(
-                "description",
-                description="Description of this integration",
-                default="Activate scenes with Spotify",
-            ): str,
-        }
-    )
-
     def __init__(self, ledfx, config, active, data):
-
         super().__init__(ledfx, config, active, data)
-
-        self._ledfx = ledfx
-        self._config = config
+        self.name = "Spotify"
+        self.description = "Activate scenes with Spotify Connect [BETA]. Requires Spotify Premium."
+        self.published = True
         self._data = {}
 
         self.restore_from_data(self._ledfx.config["scenes"])
