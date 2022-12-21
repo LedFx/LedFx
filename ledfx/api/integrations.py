@@ -28,7 +28,7 @@ class IntegrationsEndpoint(RestEndpoint):
                 "type": integration.type,
                 "active": integration.active,
                 "published": integration.published,
-                "status": integration.status,
+                "status": integration.status.to_json(),
                 "data": integration.data,
                 "config": integration.config,
             }
