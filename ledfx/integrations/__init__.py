@@ -34,11 +34,11 @@ class Status(IntEnum):
 class Integration(BaseRegistry):
     def __init__(self, ledfx, config, active, data):
         self._ledfx = ledfx
-        self.name = "Unnamed Integration"
-        self.description = ""
+        self._name = "Unnamed Integration"
+        self._description = ""
         self._config = config
         self._active = active
-        self.published = False
+        self._published = False
         self._data = data
         self._status = Status.DISCONNECTED
 

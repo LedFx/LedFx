@@ -9,9 +9,9 @@ class Spotify(Integration):
 
     def __init__(self, ledfx, config, active, data):
         super().__init__(ledfx, config, active, data)
-        self.name = "Spotify"
-        self.description = "Activate scenes with Spotify Connect [BETA]. Requires Spotify Premium."
-        self.published = True
+        self._name = "Spotify"
+        self._description = "Activate scenes with Spotify Connect [BETA]. Requires Spotify Premium."
+        self._published = True
         self._data = {}
 
         self.restore_from_data(self._ledfx.config["scenes"])
