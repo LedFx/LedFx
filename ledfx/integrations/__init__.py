@@ -100,11 +100,11 @@ class Integration(BaseRegistry):
 
     @property
     def name(self):
-        return self.name
+        return self._name
 
     @property
     def description(self):
-        return self.description
+        return self._description
 
     @property
     def status(self):
