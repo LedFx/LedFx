@@ -13,10 +13,13 @@ class Spotify(Integration):
 
     def __init__(self, ledfx, config, active, data):
         super().__init__(ledfx, config, active, data)
+        self._ledfx = ledfx
+        self._config = config
         self._name = self.NAME
         self._description = self.DESCRIPTION
         self._published = True
         self._data = {}
+        self._config['name'] = self._name
 
         self.restore_from_data(self._ledfx.config["scenes"])
 
