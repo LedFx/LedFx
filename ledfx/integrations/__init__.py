@@ -3,7 +3,7 @@
 # import numpy as np
 # import requests
 import logging
-from enum import Enum
+from enum import IntEnum
 
 # from ledfx.config import save_config
 from ledfx.events import Event
@@ -14,7 +14,7 @@ from ledfx.utils import BaseRegistry, RegistryLoader, async_fire_and_forget
 _LOGGER = logging.getLogger(__name__)
 
 
-class Status(Enum):
+class Status(IntEnum):
     DISCONNECTED = 0
     CONNECTED = 1
     DISCONNECTING = 2
