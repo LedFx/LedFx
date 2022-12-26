@@ -1,22 +1,24 @@
 {
   "files": {
     "main.css": "/static/css/main.4f91d95d.css",
-    "main.js": "/static/js/main.ee41ef86.js",
+    "main.js": "/static/js/main.1b3dcc58.js",
     "static/js/729.58abe218.chunk.js": "/static/js/729.58abe218.chunk.js",
+    "static/media/xmas.png": "/static/media/xmas.c633287113d46706b711.png",
+    "static/media/fireworks.jpg": "/static/media/fireworks.81f25863cf1ec0b30fa2.jpg",
     "static/media/materialdesignicons-webfont.woff": "/static/media/materialdesignicons-webfont.059ea00c378aeafc39fc.woff",
     "static/media/transitions.gif": "/static/media/transitions.53b6d6f458b421f00872.gif",
     "static/media/materialdesignicons-webfont.woff2": "/static/media/materialdesignicons-webfont.d5cba82059f88bfa469e.woff2",
     "static/media/MaterialIcons-Regular.woff2": "/static/media/MaterialIcons-Regular.f71673ad689fb42ddae1.woff2",
     "service-worker.js": "/service-worker.js",
     "static/media/ring.png": "/static/media/ring.1faea45b576b5380bde1.png",
-    "static/media/blademod.svg": "/static/media/blademod.0bd3a194139ca6a1a82fd7f1101c25d0.svg",
+    "static/media/blademod.svg": "/static/media/blademod.f939f478785a84b3edcc820eef654556.svg",
     "index.html": "/index.html",
     "main.4f91d95d.css.map": "/static/css/main.4f91d95d.css.map",
-    "main.ee41ef86.js.map": "/static/js/main.ee41ef86.js.map",
+    "main.1b3dcc58.js.map": "/static/js/main.1b3dcc58.js.map",
     "729.58abe218.chunk.js.map": "/static/js/729.58abe218.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.4f91d95d.css",
-    "static/js/main.ee41ef86.js"
+    "static/js/main.1b3dcc58.js"
   ]
 }
