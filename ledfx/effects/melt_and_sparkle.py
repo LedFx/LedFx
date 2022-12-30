@@ -62,7 +62,7 @@ class MeltSparkle(AudioReactiveEffect, HSVEffect):
                 "strobe_blur",
                 description="How much to blur the strobes",
                 default=3.5,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0, max=10)),
+            ): vol.All(vol.Coerce(float), vol.Range(min=0.1, max=10)),
         }
     )
 

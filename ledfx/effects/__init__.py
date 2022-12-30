@@ -150,6 +150,8 @@ def smooth(x, sigma):
 
     if len(x) == 0:
         raise ValueError("Cannot smooth an empty array")
+    if sigma == 0:
+        raise ValueError("Sigma cannot be zero")
 
     # Choose a radius for the filter kernel large enough to include all significant elements. Using
     # a radius of 4 standard deviations (rounded to int) will only truncate tail values that are of
