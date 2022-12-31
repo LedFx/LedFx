@@ -156,14 +156,18 @@ class IntegrationsEndpoint(RestEndpoint):
             return web.json_response(data=response, status=400)
 
         integration_config = data.get("config")
-        integration_config["name"] = integration_config.get("name") or integration.get('name')
-        integration_config["description"] = integration_config.get("description") or integration.get("description")
+        integration_config["name"] = integration_config.get(
+            "name"
+        ) or integration.get("name")
+        integration_config["description"] = integration_config.get(
+            "description"
+        ) or integration.get("description")
         # if integration_config is None:
         #     response = {
         #         "status": "failed",
         #         "reason": 'Required attribute "config" was not provided',
         #     }
-            # return web.json_response(data=response, status=400)
+        # return web.json_response(data=response, status=400)
 
         integration_type = data.get("type")
         if integration_type is None:

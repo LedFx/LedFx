@@ -19,7 +19,7 @@ class Spotify(Integration):
         self._description = self.DESCRIPTION
         self._published = True
         self._data = {}
-        self._config['name'] = self._name
+        self._config["name"] = self._name
 
         self.restore_from_data(self._ledfx.config["scenes"])
 
