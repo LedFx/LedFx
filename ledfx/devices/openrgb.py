@@ -53,7 +53,10 @@ class OpenRGB(NetworkedDevice):
 
             try:
                 self.openrgb_device = OpenRGBClient(
-                    self.ip_address, self.port, "LedFx", 3  # protocol_version
+                    self.ip_address,
+                    self.port,
+                    self.name,
+                    3,  # protocol_version
                 )
                 self.openrgb_device = self.openrgb_device.devices[
                     self.openrgb_device_id
