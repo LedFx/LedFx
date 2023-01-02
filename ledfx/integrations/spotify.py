@@ -48,6 +48,7 @@ class Spotify(Integration):
         self._ledfx = ledfx
         self._config = config
         self._data = {}
+        self._beta = False
 
         self.restore_from_data(self._ledfx.config["scenes"])
 
