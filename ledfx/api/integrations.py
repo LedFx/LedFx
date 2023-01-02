@@ -31,7 +31,6 @@ class IntegrationsEndpoint(RestEndpoint):
                 "data": integration.data,
                 "config": integration.config,
             }
-            _LOGGER.warning(f"{integration.id} {json.dumps(response['integrations'][integration.id])} ")
 
         if request.body_exists:
             try:
