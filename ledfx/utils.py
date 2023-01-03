@@ -40,7 +40,7 @@ _LOGGER = logging.getLogger(__name__)
 # At 3.11 onwards use the high res perf_counter everywhere as monotonic still
 # reports 15ms on a windows OS, but the sleep implementation is perf based
 
-if sys.version_info[0] >= 3 and sys.version_info[1] >= 11:
+if (sys.version_info[0] == 3 and sys.version_info[1] >= 11) or sys.version_info[0] >= 4:
     clock_source = "perf_counter"
 else:
     clock_source = "monotonic"

@@ -124,7 +124,7 @@ class Virtual:
     _active_effect = None
     _transition_effect = None
 
-    if sys.version_info[0] >= 3 and sys.version_info[1] >= 11:
+    if (sys.version_info[0] == 3 and sys.version_info[1] >= 11) or sys.version_info[0] >= 4:
         _min_time = time.get_clock_info("perf_counter").resolution
     else:
         _min_time = time.get_clock_info("monotonic").resolution
