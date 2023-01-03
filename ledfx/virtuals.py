@@ -388,7 +388,9 @@ class Virtual:
             # adjust for the frame assemble time, min allowed sleep 1 ms
             # this will be more frame accurate on high res sleep systems
             run_time = timeit.default_timer() - start_time
-            sleep_time = max(0.001, fps_to_sleep_interval(self.refresh_rate) - run_time)
+            sleep_time = max(
+                0.001, fps_to_sleep_interval(self.refresh_rate) - run_time
+            )
             time.sleep(sleep_time)
 
             # use an aggressive check for did we sleep against expected min clk
