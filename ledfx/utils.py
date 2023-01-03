@@ -58,12 +58,12 @@ def calc_available_fps():
     max_fps_target = 126
     min_fps_target = 10
 
-    max_fps_ticks = np.ceil(
-        (1 / max_fps_target) / (sleep_res * mult)
-    ).astype(int)
-    min_fps_ticks = np.ceil(
-        (1 / min_fps_target) / (sleep_res * mult)
-    ).astype(int)
+    max_fps_ticks = np.ceil((1 / max_fps_target) / (sleep_res * mult)).astype(
+        int
+    )
+    min_fps_ticks = np.ceil((1 / min_fps_target) / (sleep_res * mult)).astype(
+        int
+    )
     tick_range = reversed(range(max_fps_ticks, min_fps_ticks))
     return {int(1 / (sleep_res * mult * i)): i * mult for i in tick_range}
 
