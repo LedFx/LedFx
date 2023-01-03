@@ -11,7 +11,8 @@ from ledfx.effects import Effect
 _LOGGER = logging.getLogger(__name__)
 
 # use 10 frames per second as default rate at 1x multiplier
-# windows pre 3.11 will cap at 64Hz max for now, others at 100Hz with speed slider ot 10
+# windows pre 3.11 will cap at 64Hz max for now,
+# other OS at 100Hz with speed slider ot 10
 DEFAULT_RATE = 1.0 / 10.0
 
 
