@@ -32,7 +32,6 @@ class MQTT_HASS(Integration):
 
     NAME = "Home Assistant MQTT"
     DESCRIPTION = "MQTT Integration for Home Assistant"
-    BETA = True
 
     CONFIG_SCHEMA = vol.Schema(
         {

@@ -25,7 +25,6 @@ class Spotify(Integration):
 
     NAME = "Spotify"
     DESCRIPTION = "Activate scenes with Spotify Connect [BETA]. Requires Spotify Premium."
-    BETA = False
 
     CONFIG_SCHEMA = vol.Schema(
         {
@@ -49,6 +48,7 @@ class Spotify(Integration):
         self._ledfx = ledfx
         self._config = config
         self._data = {}
+        self._beta = False
 
         self.restore_from_data(self._ledfx.config["scenes"])
 

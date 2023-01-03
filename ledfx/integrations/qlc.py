@@ -25,7 +25,6 @@ class QLC(Integration):
     _widget_types = ["Button", "Slider", "Audio Triggers"]
     NAME = "QLC+"
     DESCRIPTION = "Web Api Integration for Q Light Controller Plus"
-    BETA = True
 
     CONFIG_SCHEMA = vol.Schema(
         {
