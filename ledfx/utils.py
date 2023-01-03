@@ -29,12 +29,29 @@ from ledfx.config import save_config
 
 _LOGGER = logging.getLogger(__name__)
 
+# perf_counter has high resolution on all platforms better than 1 ms
+# however on windows until 3.11 sleep is using monotonic at a low resolution
+# of approx 15.625 ms
+# other OS have monotonic same resolution as perf
+# so prior to 3.11 just default everything to monotonic and let the
+# virtuals thread sleep code deal with the speculative extra sleep for windows
+# OS changes to sleep clock high resolution for some audio sources
+# there is no programmatic inspection for what sleep is doing under the covers
+# At 3.11 onwards use the high res perf_counter everywhere as monotonic still
+# reports 15ms on a windows OS, but the sleep implementation is perf based
+
+if sys.version_info[0] >= 3 and sys.version_info[1] >= 11:
+    clock_source = "perf_counter"
+else:
+    clock_source = "monotonic"
+
 
 def calc_available_fps():
-    monotonic_res = time.get_clock_info("monotonic").resolution
 
-    if monotonic_res < 0.001:
-        mult = int(0.001 / monotonic_res)
+    sleep_res = time.get_clock_info(clock_source).resolution
+
+    if sleep_res < 0.001:
+        mult = int(0.001 / sleep_res)
     else:
         mult = 1
 
@@ -42,13 +59,13 @@ def calc_available_fps():
     min_fps_target = 10
 
     max_fps_ticks = np.ceil(
-        (1 / max_fps_target) / (monotonic_res * mult)
+        (1 / max_fps_target) / (sleep_res * mult)
     ).astype(int)
     min_fps_ticks = np.ceil(
-        (1 / min_fps_target) / (monotonic_res * mult)
+        (1 / min_fps_target) / (sleep_res * mult)
     ).astype(int)
     tick_range = reversed(range(max_fps_ticks, min_fps_ticks))
-    return {int(1 / (monotonic_res * mult * i)): i * mult for i in tick_range}
+    return {int(1 / (sleep_res * mult * i)): i * mult for i in tick_range}
 
 
 AVAILABLE_FPS = calc_available_fps()
@@ -56,12 +73,12 @@ AVAILABLE_FPS = calc_available_fps()
 
 @lru_cache(maxsize=32)
 def fps_to_sleep_interval(fps):
-    monotonic_res = time.get_clock_info("monotonic").resolution
-    monotonic_ticks = next(
+    sleep_res = time.get_clock_info(clock_source).resolution
+    sleep_ticks = next(
         (t for f, t in AVAILABLE_FPS.items() if f >= fps),
         list(AVAILABLE_FPS.values())[-1],
     )
-    return max(0.001, monotonic_res * (monotonic_ticks - 1))
+    return max(0.001, sleep_res * (sleep_ticks - 1))
 
 
 def install_package(package):

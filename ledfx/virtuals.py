@@ -1,4 +1,5 @@
 import logging
+import sys
 import threading
 import time
 import timeit
@@ -122,6 +123,11 @@ class Virtual:
     _output_thread = None
     _active_effect = None
     _transition_effect = None
+
+    if sys.version_info[0] >= 3 and sys.version_info[1] >= 11:
+        _min_time = time.get_clock_info("perf_counter").resolution
+    else:
+        _min_time = time.get_clock_info("monotonic").resolution
 
     def __init__(self, ledfx, config):
         self._ledfx = ledfx
@@ -379,13 +385,18 @@ class Virtual:
                         VirtualUpdateEvent(self.id, self.assembled_frame)
                     )
 
-            time.sleep(fps_to_sleep_interval(self.refresh_rate))
+            # adjust for the frame assemble time, min allowed sleep 1 ms
+            # this will be more frame accurate on high res sleep systems
+            run_time = timeit.default_timer() - start_time
+            sleep_time = max(0.001, fps_to_sleep_interval(self.refresh_rate) - run_time)
+            time.sleep(sleep_time)
+
+            # use an aggressive check for did we sleep against expected min clk
+            # for all high res scenarios this will be passive
+            # for unexpected high res sleep on windows scenarios it will adapt
             pass_time = timeit.default_timer() - start_time
-            min_time = time.get_clock_info("monotonic").resolution
-            # use an aggressive check for did we sleep against implied min
-            # for all otherwise working behaviours this will be passive
-            if pass_time < (min_time / 2):
-                time.sleep(min_time - pass_time)
+            if pass_time < (self._min_time / 2):
+                time.sleep(max(0.001, self._min_time - pass_time))
 
     def assemble_frame(self):
         """
