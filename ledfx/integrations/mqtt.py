@@ -16,6 +16,7 @@ class MQTT(Integration):
 
     NAME = "MQTT"
     DESCRIPTION = "MQTT Integration"
+    BETA = True
 
     CONFIG_SCHEMA = vol.Schema(
         {

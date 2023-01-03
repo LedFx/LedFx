@@ -97,6 +97,7 @@ class SchemaEndpoint(RestEndpoint):
                         "id": integration_type,
                         "name": integration.NAME,
                         "description": integration.DESCRIPTION,
+                        "beta": integration.BETA,
                     }
 
             elif schema == "virtuals":

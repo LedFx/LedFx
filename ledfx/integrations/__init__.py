@@ -28,7 +28,6 @@ class Integration(BaseRegistry):
         self._config = config
         self._active = active
         self._data = data
-        self._beta = True  # Over ride in child classes to publish
         self._status = Status.DISCONNECTED
 
     def __del__(self):
@@ -106,10 +105,6 @@ class Integration(BaseRegistry):
     @property
     def data(self):
         return self._data
-
-    @property
-    def beta(self):
-        return self._beta
 
 
 class Integrations(RegistryLoader):
