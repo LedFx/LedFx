@@ -23,6 +23,8 @@ _LOGGER = logging.getLogger(__name__)
 class Spotify(Integration):
     """Spotify Integration"""
 
+    beta = False
+
     NAME = "Spotify"
     DESCRIPTION = "Activate scenes with Spotify Connect [BETA]. Requires Spotify Premium."
 
