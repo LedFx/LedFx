@@ -23,6 +23,8 @@ _LOGGER = logging.getLogger(__name__)
 class Spotify(Integration):
     """Spotify Integration"""
 
+    beta = False
+
     NAME = "Spotify"
     DESCRIPTION = "Activate scenes with Spotify Connect [BETA]. Requires Spotify Premium."
 
@@ -48,7 +50,6 @@ class Spotify(Integration):
         self._ledfx = ledfx
         self._config = config
         self._data = {}
-        self._beta = False
 
         self.restore_from_data(self._ledfx.config["scenes"])
 
