@@ -8,25 +8,43 @@ from ledfx.color import parse_color, validate_color
 
 _LOGGER = logging.getLogger(__name__)
 
-class VirtualToolsEndpoint(RestEndpoint):
-    """api for all virtual manipulations"""
 
-    ENDPOINT_PATH = "/api/virtuals_tools"
+class VirtualsToolsEndpoint(RestEndpoint):
+    """api for individual virtual tools"""
 
-    async def get(self) -> web.Response:
+    ENDPOINT_PATH = "/api/virtuals_tools/{virtual_id}"
+
+    async def get(self, virtual_id) -> web.Response:
         """
-        No current tools implemented
+        Get presets for active effect of a virtual
         """
+        virtual = self._ledfx.virtuals.get(virtual_id)
+        if virtual is None:
+            response = {
+                "status": "failed",
+                "reason": f"Virtual with ID {virtual_id} not found",
+            }
+            return web.json_response(data=response, status=404)
+
         response = {
             "status": "success",
+            "virtual": virtual_id,
             "Data": "No current tools supported",
         }
 
         return web.json_response(data=response, status=200)
 
-    async def put(self, request) -> web.Response:
+    async def put(self, virtual_id, request) -> web.Response:
         """Extensible tools support"""
         tools = ["force_color"]
+
+        virtual = self._ledfx.virtuals.get(virtual_id)
+        if virtual is None:
+            response = {
+                "status": "failed",
+                "reason": f"Virtual with ID {virtual_id} not found",
+            }
+            return web.json_response(data=response, status=404)
 
         try:
             data = await request.json()
@@ -62,14 +80,10 @@ class VirtualToolsEndpoint(RestEndpoint):
                 }
                 return web.json_response(data=response, status=400)
 
-            for virtual_id in self._ledfx.virtuals:
-                virtual = self._ledfx.virtuals.get(virtual_id)
-                if virtual.is_device == virtual.id:
-                    virtual.force_frame(parse_color(validate_color(color)))
+            virtual.force_frame(parse_color(validate_color(color)))
 
         effect_response = {}
         effect_response["tool"] = tool
 
         response = {"status": "success", "tool": tool}
         return web.json_response(data=response, status=200)
-
