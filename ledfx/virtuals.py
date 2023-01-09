@@ -362,9 +362,7 @@ class Virtual:
         Force all pixels in device to color
         Use for pre-clearing in calibration scenarios
         """
-        _LOGGER.info(f'name: {self.name} active: {self._active} pixel_count: {self.pixel_count}')
         self.assembled_frame = np.full((self.pixel_count, 3), color)
-        _LOGGER.info(f'frame length: {len(self.assembled_frame)}')
         self.flush(self.assembled_frame)
         self._ledfx.events.fire_event(
             VirtualUpdateEvent(self.id, self.assembled_frame)
