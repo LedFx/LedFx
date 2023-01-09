@@ -8,6 +8,7 @@ from ledfx.color import parse_color, validate_color
 
 _LOGGER = logging.getLogger(__name__)
 
+
 class VirtualToolsEndpoint(RestEndpoint):
     """api for all virtual manipulations"""
 
@@ -72,4 +73,3 @@ class VirtualToolsEndpoint(RestEndpoint):
 
         response = {"status": "success", "tool": tool}
         return web.json_response(data=response, status=200)
-
