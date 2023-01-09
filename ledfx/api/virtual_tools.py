@@ -66,17 +66,17 @@ class VirtualToolsEndpoint(RestEndpoint):
         if tool not in ["force_color"]:
             response = {
                 "status": "failed",
-                "reason": f'Category {tool} is not in {tools}',
+                "reason": f"Category {tool} is not in {tools}",
             }
             return web.json_response(data=response, status=400)
 
         if tool == "force_color":
-            _LOGGER.info(f'We have made it to the force color code!!!!')
+            _LOGGER.info(f"We have made it to the force color code!!!!")
             color = data.get("color")
             if color is None:
                 response = {
                     "status": "failed",
-                    "reason": 'Required attribute for force_color, color was not provided',
+                    "reason": "Required attribute for force_color, color was not provided",
                 }
                 return web.json_response(data=response, status=400)
 
