@@ -71,7 +71,6 @@ class VirtualToolsEndpoint(RestEndpoint):
             return web.json_response(data=response, status=400)
 
         if tool == "force_color":
-            _LOGGER.info(f'We have made it to the force color code!!!!')
             color = data.get("color")
             if color is None:
                 response = {
