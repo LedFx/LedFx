@@ -357,6 +357,17 @@ class Virtual:
 
             self._active = False
 
+    def force_frame(self, color):
+        """
+        Force all pixels in device to color
+        Use for pre-clearing in calibration scenarios
+        """
+        self.assembled_frame = np.full((self.pixel_count, 3), color)
+        self.flush(self.assembled_frame)
+        self._ledfx.events.fire_event(
+            VirtualUpdateEvent(self.id, self.assembled_frame)
+        )
+
     @property
     def active_effect(self):
         return self._active_effect
