@@ -31,7 +31,7 @@ class PowerAudioEffect(AudioReactiveEffect, GradientEffect):
             vol.Optional(
                 "bass_decay_rate",
                 description="Bass decay rate. Higher -> decays faster.",
-                default=0.04,
+                default=0.05,
             ): vol.All(vol.Coerce(float), vol.Range(min=0, max=1)),
             vol.Optional(
                 "sparks_decay_rate",
