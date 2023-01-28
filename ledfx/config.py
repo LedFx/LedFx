@@ -95,6 +95,9 @@ CORE_CONFIG_SCHEMA = vol.Schema(
         vol.Optional(
             "configuration_version", default=CONFIGURATION_VERSION
         ): str,
+        vol.Optional("global_brightness", default=1.0): vol.All(
+            vol.Coerce(float), vol.Range(0, 1.0)
+        ),
     },
     extra=vol.ALLOW_EXTRA,
 )

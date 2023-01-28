@@ -32,6 +32,7 @@ PERMITTED_KEYS = {
         "visualisation_fps",
         "visualisation_maxlen",
         "global_transitions",
+        "global_brightness",
     ),
 }
 
