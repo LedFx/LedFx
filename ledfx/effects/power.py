@@ -28,6 +28,16 @@ class PowerAudioEffect(AudioReactiveEffect, GradientEffect):
                 description="Flash on percussive hits",
                 default="#ffffff",
             ): validate_color,
+            vol.Optional(
+                "bass_decay_rate",
+                description="Bass decay rate. Higher -> decays faster.",
+                default=0.05,
+            ): vol.All(vol.Coerce(float), vol.Range(min=0, max=1)),
+            vol.Optional(
+                "sparks_decay_rate",
+                description="Sparks decay rate. Higher -> decays faster.",
+                default=0.15,
+            ): vol.All(vol.Coerce(float), vol.Range(min=0, max=1)),
         }
     )
 
@@ -35,17 +45,18 @@ class PowerAudioEffect(AudioReactiveEffect, GradientEffect):
         self.sparks_overlay = np.zeros((pixel_count, 3))
         self.bass_overlay = np.zeros((pixel_count, 3))
         self.bg = np.zeros((pixel_count, 3))
-        self.sparks_decay = 0.75
         self.onset = False
 
     def config_updated(self, config):
         # Create the filters used for the effect
         self._bass_filter = self.create_filter(alpha_decay=0.1, alpha_rise=0.8)
         self.sparks_color = parse_color(self._config["sparks_color"])
+        self.sparks_decay_rate = 1 - self._config["sparks_decay_rate"]
+        self.bass_decay_rate = 1 - self._config["bass_decay_rate"]
 
     def audio_data_updated(self, data):
         # Fade existing sparks a little
-        self.sparks_overlay *= self.sparks_decay
+        self.sparks_overlay *= self.sparks_decay_rate
         # Get onset data
         if data.onset():
             # Apply new sparks
@@ -53,7 +64,7 @@ class PowerAudioEffect(AudioReactiveEffect, GradientEffect):
             self.sparks_overlay[sparks] = self.sparks_color
 
         # Fade bass overlay a little
-        self.bass_overlay *= 0.95
+        self.bass_overlay *= self.bass_decay_rate
         # Get bass power through filter
         bass = np.max(data.lows_power(filtered=False))
         bass = self._bass_filter.update(bass)
