@@ -19,9 +19,9 @@ LedFx real-time LED strip music visualization effect controller using is a netwo
 Demos
 -------
 
-We are actively adding and perfecting the effects, but here is a quick demo of LedFx running three different effects synced across three different ESP8266 devices:
+Visit `our website`_ to see LedFx in action!
 
-.. image:: https://raw.githubusercontent.com/LedFx/LedFx/gh-pages-old/demos/ledfx_demo-small.gif
+You can also join our `Discord`_ where community members show off their projects.
 
 📑 Quick start guide and documentation📖
 ------------------------------------------
@@ -109,6 +109,8 @@ License
 .. _`LedFx Guide`: https://ledfx.readthedocs.io/en/latest/index.html
 .. _`WLED`: https://github.com/Aircoookie/WLED/wiki
 .. _`installation documentation`: https://ledfx.readthedocs.io/en/latest/installing.html
+.. _`our website`: https://ledfx.app
+.. _`Discord`: https://discord.gg/xyyHEquZKQ
 .. _`Contributors-&-About`: https://ledfx.app/about/
 .. _`How to: Enable Stereo Mix in Windows 10`: https://thegeekpage.com/stereo-mix/
 .. _`Voicemeeter`: https://vb-audio.com/Voicemeeter/index.htm
