@@ -102,7 +102,9 @@ class EnergyAudioEffect(AudioReactiveEffect):
                 self.color_cycler = (self.color_cycler + 1) % 3
                 color = parse_color(
                     np.random.choice(
-                        list(self._ledfx.colors.get_all(merged=True).values())))
+                        list(self._ledfx.colors.get_all(merged=True).values())
+                    )
+                )
 
                 if self.color_cycler == 0:
                     self.lows_color = color
