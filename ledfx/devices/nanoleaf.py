@@ -1,4 +1,6 @@
 import logging
+import socket
+import struct
 from typing import Dict, Tuple
 
 import requests
@@ -23,30 +25,26 @@ class NanoleafDevice(NetworkedDevice):
                 description="Hostname or IP address of the device",
             ): str,
             vol.Optional("port", description="port", default=16021): int,
+            vol.Optional("udp_port", description="port", default=60222): int,
             vol.Optional(
                 "auth_token",
                 description="Auth token",
             ): str,
+            vol.Optional(
+                "sync_mode",
+                description="Streaming protocol to Nanoleaf device",
+                default="UDP",
+            ): vol.In(["TCP", "UDP"]),
         }
     )
 
     status: Dict[int, Tuple[int, int, int]]
+    _sock: socket.socket = None
 
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
 
         self.status = {}
-
-        # moved DEVICE_CONFIGS class var to device_configs instance var as it is manipulated in seperate instances
-        # see https://github.com/LedFx/LedFx/pull/237
-        self.device_configs = {
-            "TCP": {
-                "name": None,
-                "ip_address": None,
-                "auth_token": None,
-                "port": 16021,
-            }
-        }
 
     def config_updated(self, config):
         self.setup_subdevice()
@@ -60,18 +58,51 @@ class NanoleafDevice(NetworkedDevice):
 
     def setup_subdevice(self):
         self.status = {}
+        self.deactivate()
+        self.activate()
 
-        # nl = Nanoleaf(self._config["ip_address"], self.config["auth_token"])
-        # ndt = NanoleafDigitalTwin(nl)
-        # ndt.sync()
+    def activate(self):
+        if self.config["sync_mode"] == "UDP":
+            response = requests.put(
+                self.url(self._config["auth_token"]) + "/effects",
+                json={
+                    "write": {
+                        "command": "display",
+                        "animType": "extControl",
+                        "extControlVersion": "v2",
+                    }
+                },
+            )
+            if response.status_code == 400:
+                raise Exception("Invalid effect dictionary")
 
-    # def activate(self):
-    #     super().activate()
-    #
-    # def deactivate(self):
-    #     super().deactivate()
+            self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            self._sock.connect(
+                (self._config["ip_address"], self._config["udp_port"])
+            )
 
-    def write(self):
+        super().activate()
+
+    def deactivate(self):
+        if self._sock is not None:
+            self._sock.close()
+            self._sock = None
+
+        super().deactivate()
+
+    def write_udp(self):
+        send_data = struct.pack(">H", len(self.status))
+        w = 0
+        transition = 0
+
+        for panel_id, (r, g, b) in self.status.items():
+            send_data += struct.pack(
+                ">HBBBBH", panel_id, r, g, b, w, transition
+            )
+
+        self._sock.send(send_data)
+
+    def write_tcp(self):
         """Syncs the digital twin's changes to the real Nanoleaf device.
 
         :returns: True if success, otherwise False
@@ -101,7 +132,11 @@ class NanoleafDevice(NetworkedDevice):
             self.config["pixel_layout"], data.astype(int).clip(None, 255)
         ):
             self.status[panel["panelId"]] = col.tolist()
-        self.write()
+
+        if self.config["sync_mode"] == "TCP":
+            self.write_tcp()
+        elif self.config["sync_mode"] == "UDP":
+            self.write_udp()
 
     def get_token(self):
         response = requests.post(self.url("new"))
@@ -141,6 +176,7 @@ class NanoleafDevice(NetworkedDevice):
             "name": nanoleaf_config["name"],
             "pixel_count": len(panels),
             "pixel_layout": panels,
+            "refresh_rate": 30,  # problems with too fast udp packets
         }
 
         self.update_config(config)
