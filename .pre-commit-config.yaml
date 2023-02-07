@@ -21,7 +21,7 @@ repos:
     hooks:
       - id: flake8
   - repo: https://github.com/psf/black
-    rev: 22.12.0 # Replace by any tag/version: https://github.com/psf/black/tags
+    rev: 23.1.0 # Replace by any tag/version: https://github.com/psf/black/tags
     hooks:
       - id: black
   - repo: https://github.com/asottile/pyupgrade
