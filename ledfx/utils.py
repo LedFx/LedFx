@@ -49,7 +49,6 @@ else:
 
 
 def calc_available_fps():
-
     sleep_res = time.get_clock_info(clock_source).resolution
 
     if sleep_res < 0.001:
@@ -233,7 +232,6 @@ class WLED:
 
     @staticmethod
     async def _get_sync_settings(ip_address):
-
         response = await WLED._wled_request(
             requests.get, ip_address, "json/cfg"
         )
@@ -899,7 +897,6 @@ class RegistryLoader:
         return obj
 
     def destroy(self, id):
-
         if id not in self._objects:
             raise AttributeError(
                 ("Object with id '{}' does not exist.").format(id)

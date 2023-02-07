@@ -32,7 +32,6 @@ class HttpServer:
         self.port_s = port_s
 
     def register_routes(self):
-
         self.api.register_routes(self.app)
         self.app.router.add_static(
             "/favicon",
@@ -56,7 +55,6 @@ class HttpServer:
         )
 
     async def index(self, response):
-
         return web.FileResponse(
             path=ledfx_frontend.where() + "/index.html", status=200
         )

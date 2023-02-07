@@ -6,7 +6,6 @@ from ledfx.effects.gradient import GradientEffect
 
 
 class WavelengthAudioEffect(AudioReactiveEffect, GradientEffect):
-
     NAME = "Wavelength"
     CATEGORY = "Classic"
 

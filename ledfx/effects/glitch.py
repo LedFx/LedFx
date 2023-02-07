@@ -8,7 +8,6 @@ from ledfx.effects.hsv_effect import HSVEffect
 
 
 class Glitch(AudioReactiveEffect, HSVEffect):
-
     NAME = "Glitch"
     CATEGORY = "Atmospheric"
 

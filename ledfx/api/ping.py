@@ -11,11 +11,9 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class InfoEndpoint(RestEndpoint):
-
     ENDPOINT_PATH = "/api/ping/{device_id}"
 
     async def get(self, device_id) -> web.Response:
-
         device = self._ledfx.devices.get(device_id)
 
         if device is None:
@@ -41,7 +39,6 @@ class InfoEndpoint(RestEndpoint):
         valid_pings = [i for i in output if i is not None]
         valid_ping_count = len(valid_pings)
         if valid_ping_count >= 1:
-
             max_ping = np.round(np.max(valid_pings), decimals=2)
             min_ping = np.round(np.min(valid_pings), decimals=2)
             avg_ping = np.round(np.average(valid_pings), decimals=2)
@@ -57,7 +54,6 @@ class InfoEndpoint(RestEndpoint):
 
             return web.json_response(data=response, status=200)
         else:
-
             response = {"packetlosspercent": float(100)}
 
             return web.json_response(data=response, status=200)

@@ -9,7 +9,6 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class ColorEndpoint(RestEndpoint):
-
     ENDPOINT_PATH = "/api/colors"
 
     async def get(self) -> web.Response:

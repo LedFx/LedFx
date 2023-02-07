@@ -12,7 +12,6 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class EffectsEndpoint(RestEndpoint):
-
     ENDPOINT_PATH = "/api/virtuals/{virtual_id}/effects"
 
     async def get(self, virtual_id) -> web.Response:

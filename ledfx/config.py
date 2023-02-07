@@ -193,7 +193,6 @@ def ensure_config_file(config_dir: str) -> str:
 
 
 def check_preset_file(config_dir: str) -> str:
-
     ensure_config_directory(config_dir)
     presets_path = get_preset_file(config_dir)
     if presets_path is None:
@@ -228,7 +227,6 @@ def load_config(config_dir: str) -> dict:
         f"Loading configuration file: {os.path.join(os.path.abspath(config_dir), CONFIG_FILE_NAME)}"
     )
     try:
-
         with open(config_file, encoding="utf-8") as file:
             config_json = json.load(file)
             try:

@@ -9,7 +9,6 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class InfoEndpoint(RestEndpoint):
-
     ENDPOINT_PATH = "/api/info"
 
     async def get(self) -> web.Response:

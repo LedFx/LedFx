@@ -24,7 +24,6 @@ MAX_MIDI = 108
 
 
 class AudioInputSource:
-
     _is_activated = False
     _audio = None
     _stream = None
@@ -143,7 +142,6 @@ class AudioInputSource:
             )
 
     def activate(self):
-
         if self._audio is None:
             try:
                 self._audio = sd
@@ -423,7 +421,6 @@ class AudioInputSource:
 
 
 class AudioAnalysisSource(AudioInputSource):
-
     CONFIG_SCHEMA = vol.Schema(
         {
             vol.Optional("pitch_method", default="default"): str,

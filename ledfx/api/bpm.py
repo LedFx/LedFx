@@ -13,7 +13,6 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class BPMEndpoint(RestEndpoint):
-
     ENDPOINT_PATH = "/api/audio/bpm"
 
     _audio = None

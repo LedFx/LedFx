@@ -18,7 +18,6 @@ if (
         release=f"ledfx@{PROJECT_VERSION}",
     )
 elif DEV > 0:
-
     sentry_dsn = "https://de9ea3e00f334954b2f1478b90936d55@o482797.ingest.sentry.io/5886499"
 
     from subprocess import PIPE, Popen

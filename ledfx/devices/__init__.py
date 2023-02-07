@@ -372,7 +372,6 @@ class NetworkedDevice(Device):
 
 @BaseRegistry.no_registration
 class UDPDevice(NetworkedDevice):
-
     CONFIG_SCHEMA = vol.Schema(
         {
             vol.Required(
@@ -408,7 +407,6 @@ class AvailableCOMPorts:
 
 @BaseRegistry.no_registration
 class SerialDevice(Device):
-
     CONFIG_SCHEMA = vol.Schema(
         {
             vol.Required(

@@ -15,7 +15,6 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class DummyEffect:
-
     config = vol.Schema({})
     _active = True
     is_active = _active
@@ -274,7 +273,6 @@ class Effect(BaseRegistry):
         prior_config = self._config
 
         if self._config != {}:
-
             self._config = {**prior_config, **config}
         else:
             self._config = validated_config

@@ -5,7 +5,6 @@ from ledfx.effects.audio import AudioReactiveEffect
 
 
 class SpectrumAudioEffect(AudioReactiveEffect):
-
     NAME = "Spectrum"
     CATEGORY = "Classic"
 
@@ -16,12 +15,10 @@ class SpectrumAudioEffect(AudioReactiveEffect):
         self._prev_y = np.zeros(pixel_count)
 
     def config_updated(self, config):
-
         # Create all the filters used for the effect
         self._b_filter = self.create_filter(alpha_decay=0.1, alpha_rise=0.5)
 
     def audio_data_updated(self, data):
-
         # Grab the filtered and interpolated melbank data
         # Grab the filtered melbank
         y = self.melbank(filtered=False, size=self.pixel_count)

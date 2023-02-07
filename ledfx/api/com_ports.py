@@ -9,11 +9,9 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class InfoEndpoint(RestEndpoint):
-
     ENDPOINT_PATH = "/api/comports"
 
     async def get(self) -> web.Response:
-
         ports = serial.tools.list_ports.comports()
 
         available_ports = []
