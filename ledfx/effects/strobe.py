@@ -5,7 +5,6 @@ from ledfx.effects.gradient import GradientEffect
 
 
 class Strobe(AudioReactiveEffect, GradientEffect):
-
     MAPPINGS = {
         "1/1 (.,. )": 1,
         "1/2 (.-. )": 2,

@@ -13,7 +13,6 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class SchemaEndpoint(RestEndpoint):
-
     ENDPOINT_PATH = "/api/schema"
 
     VALID_SCHEMAS = {

@@ -13,7 +13,6 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class AudioDevicesEndpoint(RestEndpoint):
-
     ENDPOINT_PATH = "/api/audio/devices"
 
     _audio = None

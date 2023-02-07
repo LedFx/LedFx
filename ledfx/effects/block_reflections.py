@@ -6,7 +6,6 @@ from ledfx.effects.hsv_effect import HSVEffect
 
 
 class BlockReflections(AudioReactiveEffect, HSVEffect):
-
     NAME = "Block Reflections"
     CATEGORY = "Atmospheric"
 

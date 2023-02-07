@@ -25,7 +25,6 @@ def validate_and_trim_config(config, schema, node):
 
 
 class ConfigEndpoint(RestEndpoint):
-
     ENDPOINT_PATH = "/api/config"
 
     async def get(self, request) -> web.Response:

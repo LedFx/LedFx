@@ -35,7 +35,6 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class Virtual:
-
     CONFIG_SCHEMA = vol.Schema(
         {
             vol.Required(

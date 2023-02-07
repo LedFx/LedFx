@@ -13,7 +13,6 @@ LOG_HISTORY_MAXLEN = 30
 
 
 class LogEndpoint(RestEndpoint):
-
     ENDPOINT_PATH = "/api/log"
 
     def __init__(self, ledfx):

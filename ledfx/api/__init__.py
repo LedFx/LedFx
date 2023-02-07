@@ -55,7 +55,6 @@ class RestEndpoint(BaseRegistry):
 
 
 class RestApi(RegistryLoader):
-
     PACKAGE_NAME = "ledfx.api"
 
     def __init__(self, ledfx):

@@ -12,7 +12,6 @@ from ledfx.utils import empty_queue
 
 
 class MeltSparkle(AudioReactiveEffect, HSVEffect):
-
     NAME = "Melt and Sparkle"
     CATEGORY = "Atmospheric"
 

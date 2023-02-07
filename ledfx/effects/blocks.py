@@ -6,7 +6,6 @@ from ledfx.effects.gradient import GradientEffect
 
 
 class BlocksAudioEffect(AudioReactiveEffect, GradientEffect):
-
     NAME = "Blocks"
     CATEGORY = "2D"
 
