@@ -1,7 +1,7 @@
 import logging
 import socket
 import struct
-from typing import Dict, Tuple
+from typing import Dict, Optional, Tuple
 
 import requests
 import voluptuous as vol
@@ -39,7 +39,7 @@ class NanoleafDevice(NetworkedDevice):
     )
 
     status: Dict[int, Tuple[int, int, int]]
-    _sock: socket.socket = None
+    _sock: Optional[socket.socket] = None
 
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
@@ -129,7 +129,7 @@ class NanoleafDevice(NetworkedDevice):
 
     def flush(self, data):
         for panel, col in zip(
-            self.config["pixel_layout"], data.astype(int).clip(None, 255)
+            self.config["pixel_layout"], data.astype(int).clip(0, 255)
         ):
             self.status[panel["panelId"]] = col.tolist()
 
