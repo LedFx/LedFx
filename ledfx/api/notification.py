@@ -2,8 +2,9 @@ import logging
 import os
 
 from aiohttp import web
-from ledfx.api import RestEndpoint
 from notifypy import Notify
+
+from ledfx.api import RestEndpoint
 from ledfx.utils import currently_frozen
 
 _LOGGER = logging.getLogger(__name__)
@@ -13,10 +14,10 @@ class DeviceStatusEndpoint(RestEndpoint):
     """REST end-point that exposes a notification api"""
 
     ENDPOINT_PATH = "/api/notify"
+
     def __init__(self, ledfx):
         self.icon = ledfx.icon
         print(self.icon)
-
 
     async def put(self, request) -> web.Response:
         try:
@@ -47,17 +48,16 @@ class DeviceStatusEndpoint(RestEndpoint):
         _LOGGER.info(f"notify: {title} --- {text}")
         if self.icon is not None:
             if self.icon.HAS_NOTIFICATION:
-                self.icon.notify(
-                    f"{title}:\n{text}"
-                )
-        else: 
+                self.icon.notify(f"{title}:\n{text}")
+        else:
             if currently_frozen():
                 current_directory = os.path.dirname(__file__)
                 icon_location = os.path.join(current_directory, "tray.png")
             else:
                 current_directory = os.path.dirname(__file__)
                 icon_location = os.path.join(
-                    current_directory, "tray.png" # sadly cant reach ../../icons/tray.png
+                    current_directory,
+                    "tray.png",  # sadly cant reach ../../icons/tray.png
                 )
 
             notification = Notify()
@@ -73,4 +73,3 @@ class DeviceStatusEndpoint(RestEndpoint):
         }
 
         return web.json_response(data=response, status=200)
-
