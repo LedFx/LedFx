@@ -39,7 +39,7 @@ class ScenesEndpoint(RestEndpoint):
         if scene_id is None:
             response = {
                 "status": "failed",
-                "reason": 'Required attribute "scene_id" was not provided',
+                "reason": 'Required attribute "id" was not provided',
             }
             return web.json_response(data=response, status=400)
 
@@ -92,7 +92,7 @@ class ScenesEndpoint(RestEndpoint):
         if scene_id is None:
             response = {
                 "status": "failed",
-                "reason": 'Required attribute "scene_id" was not provided',
+                "reason": 'Required attribute "id" was not provided',
             }
             return web.json_response(data=response, status=400)
 
