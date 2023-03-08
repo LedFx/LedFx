@@ -1,14 +1,17 @@
 import logging
-from ledfx.devices import NetworkedDevice
+
 import flux_led
 import numpy as np
 import voluptuous as vol
+
+from ledfx.devices import NetworkedDevice
+
 _LOGGER = logging.getLogger(__name__)
 
 
 class ZenggeDevice(NetworkedDevice):
     """Zengge/MagicHome/FluxLED device support"""
-    
+
     CONFIG_SCHEMA = vol.Schema(
         {
             vol.Required(
@@ -22,7 +25,6 @@ class ZenggeDevice(NetworkedDevice):
             ): vol.All(int, vol.Range(min=1)),
         }
     )
-
 
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
