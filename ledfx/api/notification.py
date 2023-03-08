@@ -1,12 +1,12 @@
 import logging
 import os
+from json import JSONDecodeError
 
 from aiohttp import web
 from notifypy import Notify
 
 from ledfx.api import RestEndpoint
 from ledfx.utils import currently_frozen
-from json import JSONDecodeError
 
 _LOGGER = logging.getLogger(__name__)
 
