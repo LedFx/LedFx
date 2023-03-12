@@ -350,7 +350,8 @@ def main():
             icon_location = os.path.join(current_directory, "tray.png")
         else:
             icon_location = os.path.normpath(
-                os.path.join(current_directory, "..", "icons", "tray.png"))
+                os.path.join(current_directory, "..", "icons", "tray.png")
+            )
 
         icon = pystray.Icon(
             "LedFx", icon=Image.open(icon_location), title="LedFx"
