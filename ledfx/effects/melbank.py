@@ -216,7 +216,11 @@ class Melbank:
 
         # Coefficients based on Scott's audio reactive led project
         if self._config["coeffs_type"] == "scott":
-            (melmat, center_frequencies_hz, freqs,) = mel.compute_melmat(
+            (
+                melmat,
+                center_frequencies_hz,
+                freqs,
+            ) = mel.compute_melmat(
                 num_mel_bands=self._config["samples"],
                 freq_min=self._config["min_frequency"],
                 freq_max=self._config["max_frequency"],

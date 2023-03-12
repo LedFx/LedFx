@@ -61,7 +61,6 @@ class RPI_WS281X(Device):
         self.color_order = COLOR_ORDERS[self._config["color_order"]]
 
     def activate(self):
-
         try:
             from rpi_ws281x import PixelStrip
         except ImportError:

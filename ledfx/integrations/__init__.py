@@ -23,7 +23,6 @@ class Status(IntEnum):
 
 @BaseRegistry.no_registration
 class Integration(BaseRegistry):
-
     beta = True  # Over ride in child classes to publish
 
     def __init__(self, ledfx, config, active, data):

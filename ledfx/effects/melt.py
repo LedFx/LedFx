@@ -8,7 +8,6 @@ from ledfx.effects.hsv_effect import HSVEffect
 
 
 class Melt(AudioReactiveEffect, HSVEffect):
-
     NAME = "Melt"
     CATEGORY = "Atmospheric"
 

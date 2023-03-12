@@ -35,7 +35,6 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class Virtual:
-
     CONFIG_SCHEMA = vol.Schema(
         {
             vol.Required(
@@ -465,6 +464,7 @@ class Virtual:
                 self.clear_transition_effect()
 
         np.multiply(frame, self._config["max_brightness"], frame)
+        np.multiply(frame, self._ledfx.config["global_brightness"], frame)
 
         return frame
 

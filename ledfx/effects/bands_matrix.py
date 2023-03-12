@@ -6,7 +6,6 @@ from ledfx.effects.gradient import GradientEffect
 
 
 class BandsMatrixAudioEffect(AudioReactiveEffect, GradientEffect):
-
     NAME = "Bands Matrix"
     CATEGORY = "2D"
 

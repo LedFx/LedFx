@@ -6,7 +6,6 @@ from ledfx.effects.audio import AudioReactiveEffect
 
 
 class ScrollAudioEffect(AudioReactiveEffect):
-
     NAME = "Scroll"
     CATEGORY = "Classic"
 

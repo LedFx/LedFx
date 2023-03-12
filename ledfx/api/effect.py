@@ -8,7 +8,6 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class EffectEndpoint(RestEndpoint):
-
     ENDPOINT_PATH = "/api/effects/{effect_id}"
 
     async def get(self, effect_id) -> web.Response:

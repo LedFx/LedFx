@@ -8,7 +8,6 @@ from ledfx.effects.hsv_effect import HSVEffect
 
 
 class Fire(AudioReactiveEffect, HSVEffect):
-
     NAME = "Fire"
     CATEGORY = "Atmospheric"
 
@@ -33,7 +32,6 @@ class Fire(AudioReactiveEffect, HSVEffect):
     )
 
     def on_activate(self, pixel_count):
-
         self.spark_pixels = np.zeros(self.pixel_count)
         self.h = np.zeros(self.pixel_count)
         self.s = np.zeros(self.pixel_count)
@@ -79,7 +77,6 @@ class Fire(AudioReactiveEffect, HSVEffect):
             pixels[k] = (h1 + h2 + h3 * 2 + h4 * 3) / 7
 
         for i in range(self.spark_count):
-
             if self.sparks[i] <= 0:
                 self.sparks[i] = np.random.random(1)
 
