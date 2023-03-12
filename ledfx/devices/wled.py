@@ -93,7 +93,6 @@ class WLEDDevice(NetworkedDevice):
         self.subdevice._destination = self._destination
 
     def activate(self):
-
         if self.subdevice is None:
             self.setup_subdevice()
         self.subdevice.activate()

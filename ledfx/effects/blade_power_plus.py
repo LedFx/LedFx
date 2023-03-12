@@ -15,7 +15,6 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class BladePowerPlus(AudioReactiveEffect, HSVEffect):
-
     NAME = "Blade Power+"
     CATEGORY = "Classic"
 

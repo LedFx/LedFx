@@ -25,7 +25,6 @@ def validate_and_trim_config(config, schema, node):
 
 
 class ConfigEndpoint(RestEndpoint):
-
     ENDPOINT_PATH = "/api/config"
 
     async def get(self, request) -> web.Response:
@@ -196,7 +195,9 @@ class ConfigEndpoint(RestEndpoint):
                     self._ledfx.config["melbanks"]
                 )
 
-            if core_config:
+            if core_config and not (
+                "global_brightness" in core_config and len(core_config) == 1
+            ):
                 self._ledfx.loop.call_soon_threadsafe(self._ledfx.stop, 4)
 
             save_config(

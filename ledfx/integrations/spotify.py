@@ -44,7 +44,6 @@ class Spotify(Integration):
     )
 
     def __init__(self, ledfx, config, active, data):
-
         super().__init__(ledfx, config, active, data)
 
         self._ledfx = ledfx

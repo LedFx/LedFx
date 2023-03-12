@@ -11,7 +11,6 @@ from ledfx.utils import empty_queue
 
 
 class Strobe(AudioReactiveEffect, GradientEffect):
-
     NAME = "Strobe"
     CATEGORY = "Classic"
 
@@ -51,13 +50,11 @@ class Strobe(AudioReactiveEffect, GradientEffect):
     )
 
     def on_activate(self, pixel_count):
-
         self.strobe_overlay = np.zeros(np.shape(self.pixels))
         self.bass_strobe_overlay = np.zeros(np.shape(self.pixels))
         self.onsets_queue = queue.Queue()
 
     def deactivate(self):
-
         empty_queue(self.onsets_queue)
         self.onsets_queue = None
         return super().deactivate()
@@ -110,7 +107,6 @@ class Strobe(AudioReactiveEffect, GradientEffect):
         self.pixels = pixels
 
     def audio_data_updated(self, data):
-
         currentTime = time.time()
 
         if (

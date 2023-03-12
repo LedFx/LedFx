@@ -80,7 +80,6 @@ class MQTT(Integration):
         _LOGGER.info(msg.topic + " " + str(msg.payload))
 
         if msg.topic == f"{self._config['topic']}/SCENE":
-
             scene_id = msg.payload.decode("utf8")
             # SET SCENE not_matt plz do a callable function like set_scene(scene_id)
             if scene_id is None:

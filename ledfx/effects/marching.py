@@ -6,7 +6,6 @@ from ledfx.effects.hsv_effect import HSVEffect
 
 
 class Marching(AudioReactiveEffect, HSVEffect):
-
     NAME = "Marching"
     CATEGORY = "Atmospheric"
 

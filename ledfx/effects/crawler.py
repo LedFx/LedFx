@@ -8,7 +8,6 @@ from ledfx.effects.hsv_effect import HSVEffect
 
 
 class Crawler(AudioReactiveEffect, HSVEffect):
-
     NAME = "Crawler"
     CATEGORY = "Atmospheric"
 

@@ -11,7 +11,6 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class VirtualPresetsEndpoint(RestEndpoint):
-
     ENDPOINT_PATH = "/api/virtuals/{virtual_id}/presets"
 
     async def get(self, virtual_id) -> web.Response:

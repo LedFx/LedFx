@@ -184,7 +184,6 @@ class Events:
         self._listeners = {}
 
     def fire_event(self, event: Event) -> None:
-
         listeners = self._listeners.get(event.event_type, [])
         if not listeners:
             return
@@ -199,7 +198,6 @@ class Events:
         event_type: str,
         event_filter: dict = {},
     ) -> None:
-
         listener = EventListener(callback, event_filter)
         if event_type in self._listeners:
             self._listeners[event_type].append(listener)
@@ -212,7 +210,6 @@ class Events:
         return remove_listener
 
     def _remove_listener(self, event_type: str, listener: Callable) -> None:
-
         try:
             self._listeners[event_type].remove(listener)
             if not self._listeners[event_type]:

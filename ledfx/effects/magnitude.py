@@ -5,7 +5,6 @@ from ledfx.effects.gradient import GradientEffect
 
 
 class MagnitudeAudioEffect(AudioReactiveEffect, GradientEffect):
-
     NAME = "Magnitude"
     CATEGORY = "Classic"
 

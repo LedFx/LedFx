@@ -9,7 +9,6 @@ from ledfx.effects.droplets import DROPLET_NAMES, load_droplet
 
 
 class RainAudioEffect(AudioReactiveEffect):
-
     NAME = "Rain"
     CATEGORY = "Classic"
 
@@ -121,7 +120,6 @@ class RainAudioEffect(AudioReactiveEffect):
         ].T
 
     def audio_data_updated(self, data):
-
         # Calculate the low, mids, and high indexes scaling based on the pixel
         # count
         intensities = np.fromiter(

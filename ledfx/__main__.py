@@ -215,7 +215,6 @@ def parse_args():
 
 
 def installed_via_pip():
-
     """Check to see if LedFx is installed via pip
     Returns:
         boolean

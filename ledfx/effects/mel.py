@@ -150,7 +150,6 @@ def compute_melmat(
     for imelband, (center, lower, upper) in enumerate(
         zip(center_frequencies_hz, lower_edges_hz, upper_edges_hz)
     ):
-
         left_slope = (freqs >= lower) == (freqs <= center)
         melmat[imelband, left_slope] = (freqs[left_slope] - lower) / (
             center - lower
@@ -169,7 +168,6 @@ def compute_melmat_from_range(
     num_fft_bands=513,
     sample_rate=16000,
 ):
-
     melmat = zeros((len(lower_edges_hz), num_fft_bands))
     freqs = linspace(0.0, sample_rate / 2.0, num_fft_bands)
     center_frequencies_hz = mean([lower_edges_hz, upper_edges_hz], axis=0)
@@ -177,7 +175,6 @@ def compute_melmat_from_range(
     for imelband, (lower, center, upper) in enumerate(
         zip(lower_edges_hz, center_frequencies_hz, upper_edges_hz)
     ):
-
         left_slope = (freqs >= lower) == (freqs <= center)
         melmat[imelband, left_slope] = (freqs[left_slope] - lower) / (
             center - lower

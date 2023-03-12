@@ -42,7 +42,6 @@ ACTIVE_AUDIO_STREAM = None
 
 
 class WebsocketEndpoint(RestEndpoint):
-
     ENDPOINT_PATH = "/api/websocket"
 
     async def get(self, request) -> web.Response:
@@ -245,7 +244,6 @@ class WebsocketConnection:
 
     @websocket_handler("unsubscribe_event")
     def unsubscribe_event_handler(self, message):
-
         subscription_id = message["id"]
 
         _LOGGER.debug(f"Websocket unsubscribing event id {subscription_id}")
@@ -280,7 +278,6 @@ class WebsocketConnection:
 
     @websocket_handler("audio_stream_data")
     def audio_stream_data_handler(self, message):
-
         # _LOGGER.info(
         #     "Websocket: {} incoming from {} with type {}".format(
         #         message.get("event_type"),
