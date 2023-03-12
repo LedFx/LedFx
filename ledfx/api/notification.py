@@ -67,7 +67,6 @@ class DeviceStatusEndpoint(RestEndpoint):
             notification.message = text
             notification.icon = icon_location
             notification.send(block=False)
-            notification.send()
 
         response = {
             "status": "success",
