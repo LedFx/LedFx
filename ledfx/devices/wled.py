@@ -58,6 +58,7 @@ class WLEDDevice(NetworkedDevice):
             },
             "DDP": {
                 "name": None,
+                "port": 4048,
                 "ip_address": None,
                 "pixel_count": None,
             },
