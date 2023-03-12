@@ -44,7 +44,7 @@ from ledfx.consts import (
     REQUIRED_PYTHON_VERSION,
 )
 from ledfx.core import LedFxCore
-from ledfx.utils import currently_frozen
+from ledfx.utils import currently_frozen, get_icon_path
 
 # Logger Variables
 PYUPDATERLOGLEVEL = 35
@@ -344,13 +344,7 @@ def main():
 
         from PIL import Image
 
-        current_directory = os.path.dirname(__file__)
-
-        if currently_frozen():
-            icon_location = os.path.join(current_directory, "tray.png")
-        else:
-            icon_location = os.path.normpath(
-                os.path.join(current_directory, "..", "icons", "tray.png"))
+        icon_location = get_icon_path("tray.png")
 
         icon = pystray.Icon(
             "LedFx", icon=Image.open(icon_location), title="LedFx"
