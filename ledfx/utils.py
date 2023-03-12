@@ -542,7 +542,7 @@ def currently_frozen():
     return getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS")
 
 
-def get_icon_path(icon_filename)->str:
+def get_icon_path(icon_filename) -> str:
     """returns fully qualified path for icon, tests for frozen
     and logs error if does not exist
 
@@ -558,7 +558,8 @@ def get_icon_path(icon_filename)->str:
         icon_location = os.path.join(current_directory, icon_filename)
     else:
         icon_location = os.path.normpath(
-            os.path.join(current_directory, "..", "icons", icon_filename))
+            os.path.join(current_directory, "..", "icons", icon_filename)
+        )
 
     if not os.path.isfile(icon_location):
         _LOGGER.error(f"No icon found at {icon_location}")
