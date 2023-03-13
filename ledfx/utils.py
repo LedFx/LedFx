@@ -553,7 +553,7 @@ def get_icon_path(icon_filename) -> str:
     current_directory = os.path.dirname(__file__)
 
     if currently_frozen():
-        icon_location = os.path.join(current_directory, icon_filename)
+        icon_location = os.path.join(current_directory,  "..", "icons", icon_filename)
     else:
         icon_location = os.path.normpath(
             os.path.join(current_directory, "..", "icons", icon_filename)
