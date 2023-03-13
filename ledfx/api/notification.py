@@ -6,12 +6,12 @@ from aiohttp import web
 from notifypy import Notify
 
 from ledfx.api import RestEndpoint
-from ledfx.utils import currently_frozen
+from ledfx.utils import currently_frozen, get_icon_path
 
 _LOGGER = logging.getLogger(__name__)
 
 
-class DeviceStatusEndpoint(RestEndpoint):
+class NotifyEndpoint(RestEndpoint):
     """REST end-point that exposes a notification api"""
 
     ENDPOINT_PATH = "/api/notify"
@@ -51,16 +51,7 @@ class DeviceStatusEndpoint(RestEndpoint):
             if self.icon.HAS_NOTIFICATION:
                 self.icon.notify(f"{title}:\n{text}")
         else:
-            if currently_frozen():
-                current_directory = os.path.dirname(__file__)
-                icon_location = os.path.join(current_directory, "tray.png")
-            else:
-                current_directory = os.path.dirname(__file__)
-                icon_location = os.path.join(
-                    current_directory,
-                    "tray.png",  # sadly cant reach ../../icons/tray.png
-                )
-
+            icon_location = get_icon_path("tray.png")
             notification = Notify()
             notification.application_name = "LedFx"
             notification.title = title
