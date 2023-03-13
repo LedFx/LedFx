@@ -44,7 +44,7 @@ from ledfx.consts import (
     REQUIRED_PYTHON_VERSION,
 )
 from ledfx.core import LedFxCore
-from ledfx.utils import currently_frozen
+from ledfx.utils import currently_frozen, get_icon_path
 
 # Logger Variables
 PYUPDATERLOGLEVEL = 35
@@ -343,18 +343,11 @@ def main():
 
         from PIL import Image
 
-        if currently_frozen():
-            current_directory = os.path.dirname(__file__)
-            icon_location = os.path.join(current_directory, "tray.png")
-        else:
-            current_directory = os.path.dirname(__file__)
-            icon_location = os.path.join(
-                current_directory, "..", "icons/" "tray.png"
-            )
+        icon_location = get_icon_path("tray.png")
+
         icon = pystray.Icon(
             "LedFx", icon=Image.open(icon_location), title="LedFx"
         )
-        icon.visible = True
     else:
         icon = None
     # icon = None
@@ -371,6 +364,9 @@ def main():
 def entry_point(icon=None):
     # have to re-parse args here :/ no way to pass them through pysicon's setup
     args = parse_args()
+
+    if icon:
+        icon.visible = True
 
     exit_code = 4
     while exit_code == 4:
