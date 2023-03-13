@@ -86,6 +86,8 @@ class Water(AudioReactiveEffect, HSVEffect):
         # Just bail out with uselessly-small pixel counts.
         if self.pixel_count < 5:
             return
+        if self.drops_queue is None:
+            return
 
         intensities = np.fromiter(
             (i.max() ** 2 for i in self.melbank_thirds()), float
