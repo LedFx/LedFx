@@ -10,7 +10,7 @@ const {
   app,
   Menu,
   Tray,
-  //   Notification,
+  // Notification,
   nativeTheme,
   BrowserWindow,
   ipcMain,
@@ -83,11 +83,21 @@ function createWindow(args = {}) {
 // const NOTIFICATION_TITLE = 'LedFx Client - by Blade';
 // const NOTIFICATION_BODY = 'Testing Notification from the Main process';
 
-// function showNotification() {
+// // function showNotification(title = NOTIFICATION_TITLE, body = NOTIFICATION_BODY) {
+// function showNotification(title = NOTIFICATION_TITLE, body = NOTIFICATION_BODY) {
 //   new Notification({
-//     title: NOTIFICATION_TITLE,
-//     body: NOTIFICATION_BODY,
-//   }).show();
+//     toastXml: `<toast>
+//        <visual>
+//          <binding template="ToastText02">
+//            <text id="1">LedFx Update available</text>
+//            <text id="2">Click the button to see more informations.</text>
+//          </binding>
+//        </visual>
+//        <actions>
+//          <action content="Goto Release" activationType="protocol" arguments="https://github.com/YeonV/LedFx-Builds/releases/latest" />
+//        </actions>
+//     </toast>`,
+//  }).show();
 // }
 
 let tray = null;
@@ -129,14 +139,14 @@ const ready = () => (
       } else {
         subpy = require('child_process').spawn(`${path.join(path.dirname(__dirname), isDev ? 'extraResources' : '../extraResources','LedFx-notray.exe')}`, ['-p', '8888']);
       }
-    }
+    } 
 
     wind = integratedCore
       ? createWindow({ additionalArguments: ['integratedCore'] })
       : createWindow();
 
     require('@electron/remote/main').enable(wind.webContents);
-
+    
     if (isDev) {
       await installExtension([REACT_DEVELOPER_TOOLS, REDUX_DEVTOOLS], {
         loadExtensionOptions: { allowFileAccess: true },
@@ -160,7 +170,7 @@ const ready = () => (
           if (process.platform === 'darwin') app.dock.hide()
           wind.hide()
         }},
-        //   { label: 'Test Notifiation', click: () => showNotification() },
+        // { label: 'Test Notifiation', click: () => showNotification('Update Available', 'v2.0.62') },
         { label: 'seperator', type: 'separator' },
         { label: 'Dev', click: () => wind.webContents.openDevTools() },
         { label: 'seperator', type: 'separator' },
@@ -190,14 +200,14 @@ const ready = () => (
       contextMenu = Menu.buildFromTemplate([
         { label: 'Show', click: () => {
           if (process.platform === 'darwin') app.dock.show()
-          wind.show()
+          wind.show() 
         }},
         { label: 'Minimize', click: () => wind.minimize() },
         { label: 'Minimize to tray', click: () => {
           if (process.platform === 'darwin') app.dock.hide()
           wind.hide()
         }},
-        //   { label: 'Test Notifiation', click: () => showNotification() },
+        // { label: 'Test Notifiation', click: () => showNotification('Update Available', 'v2.0.62') },
         { label: 'seperator', type: 'separator' },
         { label: 'Dev', click: () => wind.webContents.openDevTools() },
         { label: 'seperator', type: 'separator' },
