@@ -17,7 +17,6 @@ class NotifyEndpoint(RestEndpoint):
 
     def __init__(self, ledfx):
         self.icon = ledfx.icon
-        print(self.icon)
 
     async def put(self, request) -> web.Response:
         try:
