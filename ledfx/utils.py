@@ -561,7 +561,6 @@ def get_icon_path(icon_filename) -> str:
     return icon_location
 
 
-
 def generate_id(name):
     """Converts a name to a id"""
     part1 = re.sub("[^a-zA-Z0-9]", " ", name).lower()
