@@ -1413,6 +1413,25 @@ ledfx_presets = {
             },
             "name": "Glitter",
         },
+        "color-shift": {
+            "config": {
+                "background_brightness": 1.0,
+                "background_color": "black",
+                "bass_strobe_decay_rate": 0,
+                "blur": 0.0,
+                "brightness": 1.0,
+                "color_shift_delay": 1.0,
+                "color_step": 0.0625,
+                "flip": False,
+                "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
+                "gradient_roll": 0.0,
+                "mirror": False,
+                "strobe_color": "black",
+                "strobe_decay_rate": 1,
+                "strobe_width": 0
+            },
+            "name": "Color shift"
+        },
     },
     "blade_power_plus": {
         "reset": {"config": {}, "name": "Reset"},
