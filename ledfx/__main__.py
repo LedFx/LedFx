@@ -301,6 +301,29 @@ def update_ledfx(icon=None):
         )
 
 
+def log_packages():
+    from platform import (
+        processor,
+        python_build,
+        python_implementation,
+        python_version,
+        release,
+        system,
+    )
+
+    from pkg_resources import working_set
+
+    _LOGGER.debug(f"{system()} : {release()} : {processor()}")
+    _LOGGER.debug(
+        f"{python_version()} : {python_build()} : {python_implementation()}"
+    )
+    _LOGGER.debug("Packages")
+    dists = [d for d in working_set]
+    dists.sort(key=lambda x: x.project_name)
+    for dist in dists:
+        _LOGGER.debug(f"{dist.project_name} : {dist.version}")
+
+
 def main():
     """Main entry point allowing external calls"""
     args = parse_args()
@@ -362,6 +385,9 @@ def main():
     else:
         icon = None
     # icon = None
+
+    if _LOGGER.isEnabledFor(logging.DEBUG):
+        log_packages()
 
     # if have_updater and not args.offline_mode and currently_frozen():
     #     update_ledfx(icon)
