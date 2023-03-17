@@ -193,12 +193,23 @@ def parse_args():
         default=None,
         type=str,
     )
-    parser.add_argument(
+
+    group = parser.add_mutually_exclusive_group()
+
+    group.add_argument(
         "--tray",
         dest="tray",
         action="store_true",
-        help="Hide LedFx console to the system tray",
+        help="Force LedFx system tray icon",
     )
+
+    group.add_argument(
+        "--no-tray",
+        dest="no_tray",
+        action="store_true",
+        help="Force no LedFx system tray icon",
+    )
+
     parser.add_argument(
         "--offline",
         dest="offline_mode",
@@ -331,7 +342,7 @@ def main():
         _LOGGER.warning("Steering LedFx into a brick wall")
         div_by_zero = 1 / 0
 
-    if args.tray or currently_frozen():
+    if (args.tray or currently_frozen()) and not args.no_tray:
         # If pystray is imported on a device that can't display it, it explodes. Catch it
         try:
             import pystray
