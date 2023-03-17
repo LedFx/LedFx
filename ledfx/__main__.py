@@ -300,14 +300,23 @@ def update_ledfx(icon=None):
             "You're all up to date, enjoy the light show!",
         )
 
+
 def log_packages():
+    from platform import (
+        processor,
+        python_build,
+        python_implementation,
+        python_version,
+        release,
+        system,
+    )
+
     from pkg_resources import working_set
-    from platform import python_version, python_build, python_implementation
-    from platform import  processor, system, release
 
     _LOGGER.debug(f"{system()} : {release()} : {processor()}")
     _LOGGER.debug(
-        f"{python_version()} : {python_build()} : {python_implementation()}")
+        f"{python_version()} : {python_build()} : {python_implementation()}"
+    )
     _LOGGER.debug("Packages")
     dists = [d for d in working_set]
     dists.sort(key=lambda x: x.project_name)
