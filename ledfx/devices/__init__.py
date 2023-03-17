@@ -719,3 +719,7 @@ class WLEDListener(zeroconf.ServiceBrowser):
                 loop=self._ledfx.loop,
                 exc_handler=handle_exception,
             )
+
+    def update_service(self, zeroconf_obj, type, name):
+        """Callback when a service is updated."""
+        pass
