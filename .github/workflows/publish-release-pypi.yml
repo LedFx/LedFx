@@ -44,3 +44,11 @@ jobs:
         with:
           user: __token__
           password: ${{ secrets.PYPI_API_TOKEN }}
+      - name: Trigger HomeAssistant Add-on
+        uses: benc-uk/workflow-dispatch@v1
+        with:
+          workflow: Builder
+          repo: YeonV/home-assistant-addons
+          ref: refs/heads/master
+          token: ${{ secrets.LEDFX_HOMEASSISTANT_ADDON }}
+          inputs: '{ "version": "${{ github.ref_name }}" }'
