@@ -44,7 +44,7 @@ from ledfx.consts import (
     REQUIRED_PYTHON_VERSION,
 )
 from ledfx.core import LedFxCore
-from ledfx.utils import currently_frozen
+from ledfx.utils import currently_frozen, get_icon_path
 
 # Logger Variables
 PYUPDATERLOGLEVEL = 35
@@ -193,12 +193,23 @@ def parse_args():
         default=None,
         type=str,
     )
-    parser.add_argument(
+
+    group = parser.add_mutually_exclusive_group()
+
+    group.add_argument(
         "--tray",
         dest="tray",
         action="store_true",
-        help="Hide LedFx console to the system tray",
+        help="Force LedFx system tray icon",
     )
+
+    group.add_argument(
+        "--no-tray",
+        dest="no_tray",
+        action="store_true",
+        help="Force no LedFx system tray icon",
+    )
+
     parser.add_argument(
         "--offline",
         dest="offline_mode",
@@ -290,6 +301,29 @@ def update_ledfx(icon=None):
         )
 
 
+def log_packages():
+    from platform import (
+        processor,
+        python_build,
+        python_implementation,
+        python_version,
+        release,
+        system,
+    )
+
+    from pkg_resources import working_set
+
+    _LOGGER.debug(f"{system()} : {release()} : {processor()}")
+    _LOGGER.debug(
+        f"{python_version()} : {python_build()} : {python_implementation()}"
+    )
+    _LOGGER.debug("Packages")
+    dists = [d for d in working_set]
+    dists.sort(key=lambda x: x.project_name)
+    for dist in dists:
+        _LOGGER.debug(f"{dist.project_name} : {dist.version}")
+
+
 def main():
     """Main entry point allowing external calls"""
     args = parse_args()
@@ -331,7 +365,7 @@ def main():
         _LOGGER.warning("Steering LedFx into a brick wall")
         div_by_zero = 1 / 0
 
-    if args.tray or currently_frozen():
+    if (args.tray or currently_frozen()) and not args.no_tray:
         # If pystray is imported on a device that can't display it, it explodes. Catch it
         try:
             import pystray
@@ -343,21 +377,17 @@ def main():
 
         from PIL import Image
 
-        if currently_frozen():
-            current_directory = os.path.dirname(__file__)
-            icon_location = os.path.join(current_directory, "tray.png")
-        else:
-            current_directory = os.path.dirname(__file__)
-            icon_location = os.path.join(
-                current_directory, "..", "icons/" "tray.png"
-            )
+        icon_location = get_icon_path("tray.png")
+
         icon = pystray.Icon(
             "LedFx", icon=Image.open(icon_location), title="LedFx"
         )
-        icon.visible = True
     else:
         icon = None
     # icon = None
+
+    if _LOGGER.isEnabledFor(logging.DEBUG):
+        log_packages()
 
     # if have_updater and not args.offline_mode and currently_frozen():
     #     update_ledfx(icon)
@@ -371,6 +401,9 @@ def main():
 def entry_point(icon=None):
     # have to re-parse args here :/ no way to pass them through pysicon's setup
     args = parse_args()
+
+    if icon:
+        icon.visible = True
 
     exit_code = 4
     while exit_code == 4:

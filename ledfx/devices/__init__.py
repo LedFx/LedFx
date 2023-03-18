@@ -618,12 +618,14 @@ class Devices(RegistryLoader):
         if hasattr(device, "async_initialize"):
             await device.async_initialize()
 
+        device_config = device.config
+        device_config["name"] = wled_name
         # Update and save the configuration
         self._ledfx.config["devices"].append(
             {
                 "id": device.id,
                 "type": device.type,
-                "config": device.config,
+                "config": device_config,
             }
         )
 
@@ -717,3 +719,7 @@ class WLEDListener(zeroconf.ServiceBrowser):
                 loop=self._ledfx.loop,
                 exc_handler=handle_exception,
             )
+
+    def update_service(self, zeroconf_obj, type, name):
+        """Callback when a service is updated."""
+        pass

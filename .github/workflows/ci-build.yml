@@ -13,14 +13,14 @@ jobs:
         python: [3.8,3.9,3.10.x]
     steps:
       - name: Check out code from GitHub
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3.4.0
       - name: Install build dependencies
         run: |
           sudo apt-get update && sudo apt-get install -y \
           gcc libatlas3-base portaudio19-dev
       - name: Setup Python ${{ matrix.python }}
         id: python
-        uses: actions/setup-python@v2.2.1
+        uses: actions/setup-python@v4.5.0
         with:
           python-version: ${{ matrix.python }}
       - name: Build a binary wheel
@@ -39,10 +39,10 @@ jobs:
         python: [3.8,3.9,3.10.x]
     steps:
       - name: Check out code from GitHub
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3.4.0
       - name: Setup Python ${{ matrix.python }}
         id: python
-        uses: actions/setup-python@v2.2.1
+        uses: actions/setup-python@v4.5.0
         with:
           python-version: ${{ matrix.python }}
       - name: Build a binary wheel
@@ -61,13 +61,13 @@ jobs:
         python: [3.8,3.9,3.10.x]
     steps:
       - name: Check out code from GitHub
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3.4.0
       - name: Install build dependencies
         run: |
           brew install portaudio
       - name: Setup Python ${{ matrix.python }}
         id: python
-        uses: actions/setup-python@v2.2.1
+        uses: actions/setup-python@v4.5.0
         with:
           python-version: ${{ matrix.python }}
       - name: Build a binary wheel
@@ -86,7 +86,7 @@ jobs:
 #         node-version: [10, 12, 14]
 #     steps:
 #       - name: Check out code from GitHub
-#         uses: actions/checkout@v2
+#         uses: actions/checkout@v3.4.0
 #       - name: Use Node.js ${{ matrix.node-version }}
 #         uses: actions/setup-node@v2
 #         with:

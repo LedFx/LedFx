@@ -29,6 +29,7 @@ INSTALL_REQUIRES = [
     "cython>=0.29.21",
     "certifi>=2020.12.5",
     "multidict~=5.0.0",
+    "notify-py>=0.3.42",
     "openrgb-python~=0.2.10",
     "paho-mqtt>=1.5.1",
     "psutil>=5.8.0",
@@ -42,7 +43,7 @@ INSTALL_REQUIRES = [
     "samplerate>=0.1.0",
     "tcp-latency>=0.0.10",
     "voluptuous~=0.12.1",
-    "zeroconf==0.39.4",
+    "zeroconf~=0.39.4",
     "pillow>=8.4.0",
     # Conditional Requirement
     # We need pywin32 for Windows
