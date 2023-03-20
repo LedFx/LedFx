@@ -107,7 +107,7 @@ class UDPRealtimeDevice(UDPDevice):
                 udpData = packets.build_warls_packet(
                     data, timeout, self.last_frame
                 )
-                self._sock.sendto( bytes(f'{{"method":"setPilot","params":{{"r":{udpData[12]},"g":{udpData[13]},"b":{udpData[14]} }}}}', "utf-8"), (self.device_ip, self._config["port"]), 
+                self._sock.sendto( bytes(f'{{"method":"setPilot","params":{{"r":{udpData[12]},"g":{udpData[13]},"b":{udpData[14]} }}}}', "utf-8"), (self.device_ip, self._config["port"]),
             else:
                 udpData = packets.build_drgb_packet(data, timeout)
                 self.transmit_packet(udpData, frame_is_equal_to_last)
