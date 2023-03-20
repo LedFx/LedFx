@@ -1,11 +1,12 @@
-import voluptuous as vol
-import timeit
 import logging
-import numpy as np
+import timeit
 
+import numpy as np
+import voluptuous as vol
+
+from ledfx.color import parse_color, validate_color
 from ledfx.effects import fill_rainbow
 from ledfx.effects.temporal import TemporalEffect
-from ledfx.color import parse_color, validate_color
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -15,6 +16,7 @@ _LOGGER = logging.getLogger(__name__)
 # control for time between flashes
 # control for mark space
 # control for count of divisions
+
 
 class MetroEffect(TemporalEffect):
     NAME = "Metro"
@@ -61,13 +63,20 @@ class MetroEffect(TemporalEffect):
         self.step_count = 0
         self.step_div = 1
         self.was_flash = False
+
     def on_activate(self, pixel_count):
         pass
 
     def config_updated(self, config):
-        self.background_color = np.array(parse_color(self._config["background_color"]), dtype=float)
-        self.flash_color = np.array(parse_color(self._config["flash_color"]), dtype=float)
-        self.cycle_threshold = self._config["pulse_period"] * self._config["pulse_ratio"]
+        self.background_color = np.array(
+            parse_color(self._config["background_color"]), dtype=float
+        )
+        self.flash_color = np.array(
+            parse_color(self._config["flash_color"]), dtype=float
+        )
+        self.cycle_threshold = (
+            self._config["pulse_period"] * self._config["pulse_ratio"]
+        )
 
     def effect_loop(self):
         pass_time = timeit.default_timer() - self.start_time
@@ -78,17 +87,19 @@ class MetroEffect(TemporalEffect):
                 if self.step_count >= self._config["steps"]:
                     self.step_count = 0
                     self.step_div = 1
-                self.pixels[0:self.pixel_count] = self.background_color
+                self.pixels[0 : self.pixel_count] = self.background_color
             self.was_flash = False
         else:
             if not self.was_flash:
                 if self.step_count == 0:
-                    self.pixels[0:self.pixel_count] = self.flash_color
+                    self.pixels[0 : self.pixel_count] = self.flash_color
                 else:
                     chunk = int(self.pixel_count / (self.step_div))
                     for blocks in range(0, self.step_div):
                         start_pixel = blocks * chunk
                         end_pixel = start_pixel + int(chunk / 2)
-                        self.pixels[start_pixel:end_pixel-1] = self.flash_color
+                        self.pixels[
+                            start_pixel : end_pixel - 1
+                        ] = self.flash_color
                     self.step_div = self.step_div * 2
             self.was_flash = True
