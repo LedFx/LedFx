@@ -15,6 +15,7 @@ _LOGGER = logging.getLogger(__name__)
 # common derived time base and step count so that seperate devices / virtuals
 # with common configurations will be in sync
 
+
 class MetroEffect(TemporalEffect):
     NAME = "Metro"
     CATEGORY = "Non-Reactive"
@@ -85,8 +86,10 @@ class MetroEffect(TemporalEffect):
                 self.was_flash = False
         else:
             if not self.was_flash:
-                step_count = int(pass_time / self._config["pulse_period"]) % \
-                             self._config["steps"]
+                step_count = (
+                    int(pass_time / self._config["pulse_period"])
+                    % self._config["steps"]
+                )
                 if step_count == 0:
                     self.pixels[0 : self.pixel_count] = self.flash_color
                 else:
