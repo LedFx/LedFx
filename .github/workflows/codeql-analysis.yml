@@ -38,7 +38,7 @@ jobs:
           sudo apt-get update && sudo apt-get install -y portaudio19-dev libatlas3-base
       - name: Set up Python ${{ env.DEFAULT_PYTHON }}
         id: python
-        uses: actions/setup-python@4
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ env.DEFAULT_PYTHON }}
       - name: Restore Python virtual environment

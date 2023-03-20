@@ -20,7 +20,7 @@ jobs:
           gcc libatlas3-base portaudio19-dev
       - name: Setup Python ${{ matrix.python }}
         id: python
-        uses: actions/setup-python@4
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python }}
       - name: Build a binary wheel
@@ -42,7 +42,7 @@ jobs:
         uses: actions/checkout@v3
       - name: Setup Python ${{ matrix.python }}
         id: python
-        uses: actions/setup-python@4
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python }}
       - name: Build a binary wheel
@@ -67,7 +67,7 @@ jobs:
           brew install portaudio
       - name: Setup Python ${{ matrix.python }}
         id: python
-        uses: actions/setup-python@4
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python }}
       - name: Build a binary wheel

@@ -27,7 +27,7 @@ jobs:
         run: |
           sed -i 's,DSN,'"$SENTRY_DSN"',' ./ledfx/sentry_config.py
       - name: Set up Python ${{ env.DEFAULT_PYTHON }}
-        uses: actions/setup-python@4
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ env.DEFAULT_PYTHON }}
       - name: Install build dependencies
