@@ -17,7 +17,7 @@ _LOGGER = logging.getLogger(__name__)
 
 class MetroEffect(TemporalEffect):
     NAME = "Metro"
-    CATEGORY = "Non-Reactive"
+    CATEGORY = "Diagnostic"
     start_time = timeit.default_timer()
 
     CONFIG_SCHEMA = vol.Schema(
@@ -25,7 +25,7 @@ class MetroEffect(TemporalEffect):
             vol.Optional(
                 "speed",
                 default=20.0,
-                description="Speed of the effect",
+                description="Locked to 20 fps",
             ): vol.All(vol.Coerce(float), vol.Range(min=20, max=20)),
             vol.Optional(
                 "pulse_period",
