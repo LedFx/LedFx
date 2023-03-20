@@ -29,7 +29,7 @@ _default_wled_settings = {
 
 # THIS IS TEST CODE TO FORCE LINTING
 # REMOVE BEFORE MERGE
-def a_waste_of_time:
+def a_waste_of_time():
     if "hello" in "All the world is a state " and "another string" in "but this line will be too long":
         _LOGGER.warning("Whatever next")
 
