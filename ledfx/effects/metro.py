@@ -37,7 +37,7 @@ class MetroEffect(TemporalEffect):
                 "pulse_ratio",
                 description="Flash to blank ratio",
                 default=0.3,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.1, max=1)),
+            ): vol.All(vol.Coerce(float), vol.Range(min=0.1, max=0.9)),
             vol.Optional(
                 "steps",
                 description="Steps of pattern division to loop",
@@ -58,8 +58,6 @@ class MetroEffect(TemporalEffect):
 
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
-        self.step_count = 0
-        self.step_div = 1
         self.was_flash = False
 
     def on_activate(self, pixel_count):
@@ -72,8 +70,9 @@ class MetroEffect(TemporalEffect):
         self.flash_color = np.array(
             parse_color(self._config["flash_color"]), dtype=float
         )
+
         self.cycle_threshold = (
-            self._config["pulse_period"] * self._config["pulse_ratio"]
+            self._config["pulse_period"] * (self._config["pulse_ratio"])
         )
 
     def effect_loop(self):
