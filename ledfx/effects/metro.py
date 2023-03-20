@@ -78,7 +78,6 @@ class MetroEffect(TemporalEffect):
     def effect_loop(self):
         pass_time = timeit.default_timer() - self.start_time
         cycle_time = pass_time % self._config["pulse_period"]
-        step_count = int(pass_time / self._config["pulse_period"]) % self._config["steps"]
 
         if cycle_time > self.cycle_threshold:
             if self.was_flash:
@@ -86,6 +85,8 @@ class MetroEffect(TemporalEffect):
                 self.was_flash = False
         else:
             if not self.was_flash:
+                step_count = int(pass_time / self._config["pulse_period"]) % \
+                             self._config["steps"]
                 if step_count == 0:
                     self.pixels[0 : self.pixel_count] = self.flash_color
                 else:
