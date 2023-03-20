@@ -9,13 +9,11 @@ from ledfx.effects.temporal import TemporalEffect
 
 _LOGGER = logging.getLogger(__name__)
 
-# This effect is intended to assist in obvservations of synchronisity from the
-# browser to led strips and between led strips as it uses common timing between
-# all instances
-# control for time between flashes
-# control for mark space
-# control for count of divisions
-
+# Metro intent is to flash a pattern on led strips so end users can look for
+# sync between separate light strips due to protocol, wifi conditions or other
+# Best configured as a copy virtual across mutliple devices, however uses a
+# common derived time base and step count so that seperate devices / virtuals
+# with common configurations will be in sync
 
 class MetroEffect(TemporalEffect):
     NAME = "Metro"
@@ -43,7 +41,7 @@ class MetroEffect(TemporalEffect):
                 "steps",
                 description="Steps of pattern division to loop",
                 default=4,
-            ): vol.All(vol.Coerce(int), vol.Range(min=1, max=10)),
+            ): vol.All(vol.Coerce(int), vol.Range(min=1, max=6)),
             vol.Optional(
                 "background_color",
                 description="Background color",
@@ -80,25 +78,23 @@ class MetroEffect(TemporalEffect):
     def effect_loop(self):
         pass_time = timeit.default_timer() - self.start_time
         cycle_time = pass_time % self._config["pulse_period"]
+        step_count = int(pass_time / self._config["pulse_period"]) % self._config["steps"]
+
         if cycle_time > self.cycle_threshold:
             if self.was_flash:
-                self.step_count += 1
-                if self.step_count >= self._config["steps"]:
-                    self.step_count = 0
-                    self.step_div = 1
                 self.pixels[0 : self.pixel_count] = self.background_color
-            self.was_flash = False
+                self.was_flash = False
         else:
             if not self.was_flash:
-                if self.step_count == 0:
+                if step_count == 0:
                     self.pixels[0 : self.pixel_count] = self.flash_color
                 else:
-                    chunk = int(self.pixel_count / (self.step_div))
-                    for blocks in range(0, self.step_div):
+                    step_div = pow(2, step_count - 1)
+                    chunk = int(self.pixel_count / (step_div))
+                    for blocks in range(0, step_div):
                         start_pixel = blocks * chunk
                         end_pixel = start_pixel + int(chunk / 2)
                         self.pixels[
                             start_pixel : end_pixel - 1
                         ] = self.flash_color
-                    self.step_div = self.step_div * 2
-            self.was_flash = True
+                self.was_flash = True
