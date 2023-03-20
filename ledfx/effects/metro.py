@@ -3,7 +3,6 @@ import timeit
 import logging
 import numpy as np
 
-from ledfx.effects import fill_rainbow
 from ledfx.effects.temporal import TemporalEffect
 from ledfx.color import parse_color, validate_color
 
