@@ -71,8 +71,8 @@ class MetroEffect(TemporalEffect):
             parse_color(self._config["flash_color"]), dtype=float
         )
 
-        self.cycle_threshold = (
-            self._config["pulse_period"] * (self._config["pulse_ratio"])
+        self.cycle_threshold = self._config["pulse_period"] * (
+            self._config["pulse_ratio"]
         )
 
     def effect_loop(self):
