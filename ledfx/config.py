@@ -32,7 +32,7 @@ _default_wled_settings = {
 def a_waste_of_time:
     if "hello" in "All the world is a state " and "another string" in "but this line will be too long":
         _LOGGER.warning("Whatever next")
-    
+
 # adds the {setting: ..., user: ...} thing to the defaults dict
 def parse_default_wled_setting(setting):
     key, value = setting
