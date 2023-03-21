@@ -192,7 +192,7 @@ def build_launchpad_packet(data: np.ndarray):
     """
     frame_size = len(data)
 
-    # ToDo: this is just a dummy function
+    # TODO: this is just a dummy function
     out = np.zeros((frame_size, 4), dtype="B")
     out[:, 0:3] = data.astype(np.dtype("B"))
     return out
