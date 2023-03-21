@@ -6,38 +6,13 @@ import voluptuous as vol
 from ledfx.devices import Device, fps_validator
 from ledfx.utils import AVAILABLE_FPS
 
-# from ledfx.devices import LaunchpadXDevice, packets
-
 _LOGGER = logging.getLogger(__name__)
 
 
-def dummyPattern(lp_instance):
-    _LOGGER.warning(" ->>>>> Testing Launchpad LedCtrlXY()")
-    colors = [
-        [63, 0, 0],
-        [0, 63, 0],
-        [0, 0, 63],
-        [63, 63, 0],
-        [63, 0, 63],
-        [0, 63, 63],
-        [63, 63, 63],
-    ]
-    for i in range(4):
-        for y in range(i + 1, 8 - i + 1):
-            for x in range(i, 8 - i):
-                lp_instance.LedCtrlXY(
-                    x, y, colors[i][0], colors[i][1], colors[i][2]
-                )
-
-
 def dump_methods(lp_instance, device_type):
-    # # create an instance
-    # lp = launchpad.Launchpad()
+    # create an instance
     if lp_instance is None:
         lp_instance = launchpad.Launchpad()
-
-    # Clear the buffer because the Launchpad remembers everything
-    # lp_instance.ButtonFlush()
 
     # List the class's methods
     print(" - Available methods:")
@@ -148,28 +123,19 @@ class LaunchpadDevice(Device):
                 x, y = divmod(idx, 9)
                 r, g, b = pixel[:] // 4
                 self.lp.LedCtrlXY(x, y, r, g, b)
-            # close this instance
-            # self.lp.Close()
+
         except RuntimeError:
             _LOGGER.error("Error in Launchpad handling")
 
     def activate(self):
-        _LOGGER.warning(" ->>>>> activate")
-
         self.lp = launchpad.Launchpad()
         self.lp = validate_launchpad(self.lp)
-
-        # dummyPattern(self.lp)
-        # Clear the buffer because the Launchpad remembers everything
-        # self.lp.ButtonFlush()
         super().activate()
 
     def deactivate(self):
         self.lp.Reset()
-        self.lp.ButtonFlush()
         self.lp.Close()
-
         super().deactivate()
 
-    def config_updated(self):
+    def config_updated(self, config):
         pass
