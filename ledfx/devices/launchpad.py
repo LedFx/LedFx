@@ -1,12 +1,14 @@
-# import logging
+import logging
 
 import launchpad_py as launchpad
 import serial
 import voluptuous as vol
 
-from ledfx.devices import LaunchpadDevice, packets
+from ledfx.devices import LaunchpadDevice
 
-# _LOGGER = logging.getLogger(__name__)
+# from ledfx.devices import LaunchpadDevice, packets
+
+_LOGGER = logging.getLogger(__name__)
 
 
 def dump_methods(lp_instance, device_type):
@@ -20,7 +22,7 @@ def dump_methods(lp_instance, device_type):
 
     # List the class's methods
     print(" - Available methods:")
-    for mName in sorted(dir(lp_instance, device_type)):
+    for mName in sorted(dir(lp_instance)):
         if mName.find("__") >= 0:
             continue
 
@@ -116,12 +118,14 @@ class LaunchpadDevice(LaunchpadDevice):
         # 		import launchpad
         # 	except ImportError:
         # 		sys.exit("ERROR: loading launchpad.py failed")
-        dump_methods(self.lp, self._device_type)
+        self.lp = launchpad.Launchpad()
+        if (self.lp) is not None:
+            dump_methods(self.lp, self._device_type)
 
     def flush(self, data):
         try:
-            yz = packets.build_launchpad_packet(data)
-            print(yz)
+            # yz = packets.build_launchpad_packet(data)
+            # print(yz)
             print(" - Testing Launchpad LedCtrlXY()")
             colors = [
                 [63, 0, 0],
@@ -139,7 +143,7 @@ class LaunchpadDevice(LaunchpadDevice):
                             x, y, colors[i][0], colors[i][1], colors[i][2]
                         )
             # close this instance
-            # self.lp.Close()
+            self.lp.Close()
         except serial.SerialException:
             _LOGGER.warning(
                 "MIDI Connection Interrupted. Please check connections and ensure your device is functioning correctly."
