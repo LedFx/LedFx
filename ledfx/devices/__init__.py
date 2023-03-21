@@ -448,6 +448,23 @@ class SerialDevice(Device):
             self.serial.close()
 
 
+@BaseRegistry.no_registration
+class LaunchpadDevice(Device):
+    CONFIG_SCHEMA = vol.Schema({})
+
+    def __init__(self, ledfx, config):
+        super().__init__(ledfx, config)
+
+    def activate(self):
+        super().activate()
+
+    def deactivate(self):
+        super().deactivate()
+
+    def poll(self):
+        print("hi")
+
+
 class Devices(RegistryLoader):
     """Thin wrapper around the device registry that manages devices"""
 
