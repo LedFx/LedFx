@@ -20,15 +20,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out code from GitHub
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Set up Python ${{ env.DEFAULT_PYTHON }}
         id: python
-        uses: actions/setup-python@v2.2.1
+        uses: actions/setup-python@v4
         with:
             python-version: ${{ env.DEFAULT_PYTHON }}
       - name: Restore base Python virtual environment
         id: cache-venv
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: venv
           key: >-
@@ -47,7 +47,7 @@ jobs:
           pip install -r requirements-dev.txt
       - name: Restore pre-commit environment from cache-name
         id: cache-precommit
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ${{ env.PRE_COMMIT_HOME }}
           key: |
