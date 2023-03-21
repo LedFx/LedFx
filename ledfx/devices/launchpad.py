@@ -8,7 +8,8 @@ from ledfx.devices import LaunchpadDevice, packets
 
 # _LOGGER = logging.getLogger(__name__)
 
-def dump_methods( lp_instance, device_type ):
+
+def dump_methods(lp_instance, device_type):
     # # create an instance
     # lp = launchpad.Launchpad()
     if lp_instance is None:
@@ -26,6 +27,7 @@ def dump_methods( lp_instance, device_type ):
         if callable(getattr(lp_instance, mName)):
             print("     " + str(mName) + "()")
         device_type = "Launchpad"
+
 
 def validate_launchpad(lp_instance):
     lp_instance = launchpad.Launchpad()
@@ -82,6 +84,8 @@ def validate_launchpad(lp_instance):
     else:
         print(" - No Launchpad available")
         return
+
+
 class LaunchpadDevice(LaunchpadDevice):
     """Launchpad device support"""
 
