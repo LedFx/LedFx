@@ -183,16 +183,3 @@ def build_openrgb_packet(
     out[:, 0:3] = data.astype(np.dtype("B"))
     packet.extend(out.flatten().tobytes())
     return packet
-
-
-def build_launchpad_packet(data: np.ndarray):
-    """
-    Launchpad packet encoding
-
-    """
-    frame_size = len(data)
-
-    # TODO: this is just a dummy function
-    out = np.zeros((frame_size, 4), dtype="B")
-    out[:, 0:3] = data.astype(np.dtype("B"))
-    return out

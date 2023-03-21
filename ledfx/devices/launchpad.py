@@ -1,14 +1,33 @@
 import logging
 
 import launchpad_py as launchpad
-import serial
 import voluptuous as vol
 
-from ledfx.devices import LaunchpadDevice
+from ledfx.devices import Device, fps_validator
+from ledfx.utils import AVAILABLE_FPS
 
-# from ledfx.devices import LaunchpadDevice, packets
+# from ledfx.devices import LaunchpadXDevice, packets
 
 _LOGGER = logging.getLogger(__name__)
+
+
+def dummyPattern(lp_instance):
+    _LOGGER.warning(" ->>>>> Testing Launchpad LedCtrlXY()")
+    colors = [
+        [63, 0, 0],
+        [0, 63, 0],
+        [0, 0, 63],
+        [63, 63, 0],
+        [63, 0, 63],
+        [0, 63, 63],
+        [63, 63, 63],
+    ]
+    for i in range(4):
+        for y in range(i + 1, 8 - i + 1):
+            for x in range(i, 8 - i):
+                lp_instance.LedCtrlXY(
+                    x, y, colors[i][0], colors[i][1], colors[i][2]
+                )
 
 
 def dump_methods(lp_instance, device_type):
@@ -18,7 +37,7 @@ def dump_methods(lp_instance, device_type):
         lp_instance = launchpad.Launchpad()
 
     # Clear the buffer because the Launchpad remembers everything
-    # self.lp.ButtonFlush()
+    # lp_instance.ButtonFlush()
 
     # List the class's methods
     print(" - Available methods:")
@@ -28,11 +47,12 @@ def dump_methods(lp_instance, device_type):
 
         if callable(getattr(lp_instance, mName)):
             print("     " + str(mName) + "()")
-        device_type = "Launchpad"
+            device_type = "Launchpad"
 
 
 def validate_launchpad(lp_instance):
-    lp_instance = launchpad.Launchpad()
+    if lp_instance is None:
+        lp_instance = launchpad.Launchpad()
 
     # try the first Mk2
     if lp_instance.Check(0, "mk2"):
@@ -86,9 +106,10 @@ def validate_launchpad(lp_instance):
     else:
         print(" - No Launchpad available")
         return
+    return lp_instance
 
 
-class LaunchpadDevice(LaunchpadDevice):
+class LaunchpadDevice(Device):
     """Launchpad device support"""
 
     @staticmethod
@@ -106,57 +127,49 @@ class LaunchpadDevice(LaunchpadDevice):
                     description="Number of individual rows",
                     default=1,
                 ): vol.All(int, vol.Range(min=1)),
+                vol.Optional(
+                    "refresh_rate",
+                    description="Target rate that pixels are sent to the device",
+                    default=next(
+                        (f for f in AVAILABLE_FPS if f >= 10),
+                        list(AVAILABLE_FPS)[-1],
+                    ),
+                ): fps_validator,
             }
         )
 
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
-        # try:
-        # 	import launchpad_py as launchpad
-        # except ImportError:
-        # 	try:
-        # 		import launchpad
-        # 	except ImportError:
-        # 		sys.exit("ERROR: loading launchpad.py failed")
-        self.lp = launchpad.Launchpad()
-        if (self.lp) is not None:
-            dump_methods(self.lp, self._device_type)
 
     def flush(self, data):
         try:
-            # yz = packets.build_launchpad_packet(data)
-            # print(yz)
-            print(" - Testing Launchpad LedCtrlXY()")
-            colors = [
-                [63, 0, 0],
-                [0, 63, 0],
-                [0, 0, 63],
-                [63, 63, 0],
-                [63, 0, 63],
-                [0, 63, 63],
-                [63, 63, 63],
-            ]
-            for i in range(4):
-                for y in range(i + 1, 8 - i + 1):
-                    for x in range(i, 8 - i):
-                        self.lp.LedCtrlXY(
-                            x, y, colors[i][0], colors[i][1], colors[i][2]
-                        )
+            for idx, pixel in enumerate(data):
+                pixel = pixel.astype(int)
+                x, y = divmod(idx, 9)
+                r, g, b = pixel[:] // 4
+                self.lp.LedCtrlXY(x, y, r, g, b)
             # close this instance
-            self.lp.Close()
-        except serial.SerialException:
-            _LOGGER.warning(
-                "MIDI Connection Interrupted. Please check connections and ensure your device is functioning correctly."
-            )
+            # self.lp.Close()
+        except RuntimeError:
+            _LOGGER.error("Error in Launchpad handling")
 
     def activate(self):
-        validate_launchpad(self.lp)
+        _LOGGER.warning(" ->>>>> activate")
 
+        self.lp = launchpad.Launchpad()
+        self.lp = validate_launchpad(self.lp)
+
+        # dummyPattern(self.lp)
         # Clear the buffer because the Launchpad remembers everything
-        self.lp.ButtonFlush()
+        # self.lp.ButtonFlush()
         super().activate()
 
     def deactivate(self):
+        self.lp.Reset()
+        self.lp.ButtonFlush()
         self.lp.Close()
 
         super().deactivate()
+
+    def config_updated(self):
+        pass
