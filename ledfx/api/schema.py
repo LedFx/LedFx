@@ -1,5 +1,5 @@
 import logging
-from json import JSONDecodeError
+from json import JSONDecodeError, dumps
 
 from aiohttp import web
 
@@ -83,11 +83,10 @@ class SchemaEndpoint(RestEndpoint):
                         "name": effect.NAME,
                         "category": effect.CATEGORY,
                     }
-                    # if effect.HIDDEN_KEYS:
-                    #     response['effects'][effect_type]["hidden_keys"] = effect.HIDDEN_KEYS
-                    # if effect.PERMITTED_KEYS:
-                    #     response['effects'][effect_type]["permitted_keys"] = effect.PERMITTED_KEYS
-                    # _LOGGER.info(f"{response}")
+                    if effect.HIDDEN_KEYS:
+                        response['effects'][effect_type]["hidden_keys"] = effect.HIDDEN_KEYS
+                    if effect.PERMITTED_KEYS:
+                        response['effects'][effect_type]["permitted_keys"] = effect.PERMITTED_KEYS
             elif schema == "integrations":
                 # Generate all the integrations schema
                 response["integrations"] = {}
