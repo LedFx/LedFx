@@ -1,8 +1,8 @@
 import logging
+import timeit
 
 import launchpad_py as launchpad
 import voluptuous as vol
-import timeit
 
 from ledfx.devices import MidiDevice, fps_validator
 from ledfx.utils import AVAILABLE_FPS
@@ -130,7 +130,7 @@ class LaunchpadDevice(MidiDevice):
                 one_took = timeit.default_timer() - begin
                 tooks.append(one_took)
             took = timeit.default_timer() - start
-#            _LOGGER.info(f"Updated Pixels: {count} took: {took} each: {sum(tooks) / len(tooks)} ")
+        #            _LOGGER.info(f"Updated Pixels: {count} took: {took} each: {sum(tooks) / len(tooks)} ")
 
         except RuntimeError:
             _LOGGER.error("Error in Launchpad handling")

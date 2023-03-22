@@ -306,9 +306,11 @@ class Device(BaseRegistry):
             if active:
                 virtual.activate()
 
+
 @BaseRegistry.no_registration
 class MidiDevice(Device):
     pass
+
 
 @BaseRegistry.no_registration
 class NetworkedDevice(Device):
