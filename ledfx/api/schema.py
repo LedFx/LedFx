@@ -1,5 +1,5 @@
 import logging
-from json import JSONDecodeError, dumps
+from json import JSONDecodeError
 
 from aiohttp import web
 
