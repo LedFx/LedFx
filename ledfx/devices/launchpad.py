@@ -1,11 +1,10 @@
 import logging
-import timeit
+# import timeit
 
 import launchpad_py as launchpad
 import voluptuous as vol
 
-from ledfx.devices import MidiDevice, fps_validator
-from ledfx.utils import AVAILABLE_FPS
+from ledfx.devices import MidiDevice
 
 _LOGGER = logging.getLogger(__name__)
 
