@@ -19,6 +19,8 @@ _LOGGER = logging.getLogger(__name__)
 class MetroEffect(TemporalEffect):
     NAME = "Metro"
     CATEGORY = "Diagnostic"
+    HIDDEN_KEYS = ["speed", "background_brightness", "blur", "mirror"]
+
     start_time = timeit.default_timer()
 
     CONFIG_SCHEMA = vol.Schema(
