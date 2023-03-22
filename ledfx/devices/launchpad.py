@@ -167,9 +167,9 @@ class LaunchpadDevice(MidiDevice):
                     [
                         3,
                         pgm_mode_pos,
-                        min(int(pixel[0] // 2), 127),
-                        min(int(pixel[1] // 2), 127),
-                        min(int(pixel[2] // 2), 127)
+                        max(min(int(pixel[0] // 2), 127), 0),
+                        max(min(int(pixel[1] // 2), 127), 0),
+                        max(min(int(pixel[2] // 2), 127), 0)
                     ]
                 )
                 pgm_mode_pos += 1
