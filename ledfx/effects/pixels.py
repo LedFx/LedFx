@@ -34,7 +34,7 @@ class PixelsEffect(TemporalEffect):
                 "step_period",
                 description="Time between each pixel step to light up ",
                 default=1.0,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.1, max=10.0)),
+            ): vol.All(vol.Coerce(float), vol.Range(min=0.1, max=5.0)),
             vol.Optional(
                 "background_color",
                 description="Background color",
