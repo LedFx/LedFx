@@ -102,14 +102,6 @@ class LaunchpadDevice(MidiDevice):
                     description="Number of individual rows",
                     default=8,
                 ): vol.All(int, vol.Range(min=1)),
-                vol.Optional(
-                    "refresh_rate",
-                    description="Target rate that pixels are sent to the device",
-                    default=next(
-                        (f for f in AVAILABLE_FPS if f >= 20),
-                        list(AVAILABLE_FPS)[-1],
-                    ),
-                ): fps_validator,
             }
         )
 
