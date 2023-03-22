@@ -24,6 +24,7 @@ def dump_methods(lp_instance, device_type):
         if callable(getattr(lp_instance, mName)):
             _LOGGER.debug(f"     {mName}()")
 
+
 def validate_launchpad(lp_instance):
     if lp_instance is None:
         lp_instance = launchpad.Launchpad()

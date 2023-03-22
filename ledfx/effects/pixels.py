@@ -75,7 +75,7 @@ class PixelsEffect(TemporalEffect):
         cycle_time = pass_time % self._config["step_period"]
 
         if cycle_time < self.last_cycle_time:
-            if self.current_pixel == 0 or not self._config['build_up']:
+            if self.current_pixel == 0 or not self._config["build_up"]:
                 self.pixels[0 : self.pixel_count] = self.background_color
 
             self.pixels[self.current_pixel] = self.pixel_color
