@@ -1,10 +1,12 @@
 import logging
-# import timeit
 
 import launchpad_py as launchpad
 import voluptuous as vol
 
 from ledfx.devices import MidiDevice
+
+# import timeit
+
 
 _LOGGER = logging.getLogger(__name__)
 
