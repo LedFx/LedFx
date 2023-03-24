@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Hack and slashed down from, to remove pygame
+# Hack and slashed down from original lib, to remove pygame
 # remove all LED manipulations as LEDFX does this in single message
 # generally remove lint problems
 #
@@ -10,7 +10,6 @@
 #
 # FMMT666(ASkr) 01/2013..09/2019..08/2020..01/2021
 # www.askrprojects.net
-#
 
 import array
 import logging
