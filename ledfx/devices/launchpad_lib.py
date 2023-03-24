@@ -39,7 +39,7 @@ class Midi:
         if Midi.instanceMidi is None:
             try:
                 Midi.instanceMidi = Midi.__Midi()
-            except:
+            except Exception:
                 # TODO: maybe sth like sys.exit()?
                 _LOGGER.info("unable to initialize MIDI")
                 Midi.instanceMidi = None
@@ -63,7 +63,7 @@ class Midi:
                 # PyGame's default size of the buffer is 4096.
                 # Removed code to tune that...
                 self.devOut = midi.Output(midi_id, 0)
-            except:
+            except Exception:
                 self.devOut = None
                 return False
         return True
@@ -89,7 +89,7 @@ class Midi:
                 else:
                     # for experiments...
                     self.devIn = midi.Input(midi_id, bufferSize)
-            except:
+            except Exception:
                 self.devIn = None
                 return False
         return True
@@ -147,7 +147,7 @@ class Midi:
                 timeStamp,
                 array.array("B", [0xF0] + lstMessage + [0xF7]).tostring(),
             )
-        except:
+        except Exception:
             self.devOut.write_sys_ex(
                 timeStamp,
                 array.array("B", [0xF0] + lstMessage + [0xF7]).tobytes(),
@@ -187,12 +187,12 @@ class Midi:
             for n in range(midi.get_count()):
                 md = midi.get_device_info(n)
                 if str(md[1].lower()).find(name.lower()) >= 0:
-                    if quiet == False:
+                    if quiet is False:
                         _LOGGER.info("%2d" % (i), md)
                         sys.stdout.flush()
-                    if output == True and md[3] > 0:
+                    if output is True and md[3] > 0:
                         ret.append(i)
-                    if input == True and md[2] > 0:
+                    if input is True and md[2] > 0:
                         ret.append(i)
                 i += 1
 
@@ -245,7 +245,7 @@ class LaunchpadBase:
         if self.idOut is None or self.idIn is None:
             return False
 
-        if self.midi.OpenOutput(self.idOut) == False:
+        if self.midi.OpenOutput(self.idOut) is False:
             return False
 
         return self.midi.OpenInput(self.idIn)
@@ -510,7 +510,7 @@ class LaunchpadPro(LaunchpadBase):
     # Overrides "LaunchpadBase" method
     def Open(self, number=0, name="Pro"):
         retval = super().Open(number=number, name=name)
-        if retval == True:
+        if retval is True:
             # avoid sending this to an Mk2
             if name.lower() == "pro":
                 self.LedSetMode(0)
@@ -603,7 +603,7 @@ class LaunchpadPro(LaunchpadBase):
             #
             # Copied over from the XY method.
             # Try to avoid getting flooded with pressure events
-            if returnPressure == False:
+            if returnPressure is False:
                 while a[0][0][0] == 208:
                     a = self.midi.ReadRaw()
                     if a == []:
@@ -635,7 +635,7 @@ class LaunchpadPro(LaunchpadBase):
         if self.midi.ReadCheck():
             a = self.midi.ReadRaw()
 
-            if returnPressure == False:
+            if returnPressure is False:
                 while a[0][0][0] == 208:
                     a = self.midi.ReadRaw()
                     if a == []:
@@ -851,7 +851,7 @@ class LaunchControlXL(LaunchpadBase):
         self.UserTemplate = template
 
         retval = super().Open(number=number, name=name)
-        if retval == True:
+        if retval is True:
             self.TemplateSet(self.UserTemplate)
 
         return retval
@@ -968,7 +968,7 @@ class LaunchControl(LaunchControlXL):
         self.UserTemplate = template
 
         retval = super().Open(number=number, name=name)
-        if retval == True:
+        if retval is True:
             self.TemplateSet(self.UserTemplate)
 
         return retval
@@ -1279,7 +1279,7 @@ class LaunchpadMiniMk3(LaunchpadPro):
     # Overrides "LaunchpadPro" method
     def Open(self, number=0, name="MiniMK3"):
         retval = super().Open(number=number, name=name)
-        if retval == True:
+        if retval is True:
             self.LedSetMode(1)
 
         return retval
@@ -1476,7 +1476,7 @@ class LaunchpadLPX(LaunchpadPro):
 
             # Copied over from the Pro's method.
             # Try to avoid getting flooded with pressure events
-            if returnPressure == False:
+            if returnPressure is False:
                 while a[0][0][0] == 160:
                     a = self.midi.ReadRaw()
                     if a == []:
@@ -1513,7 +1513,7 @@ class LaunchpadLPX(LaunchpadPro):
 
             # 8/2020: Copied from the Pro.
             # 9/2020: now also _with_ pressure :)
-            if returnPressure == False:
+            if returnPressure is False:
                 while a[0][0][0] == 160:
                     a = self.midi.ReadRaw()
                     if a == []:
@@ -1527,7 +1527,7 @@ class LaunchpadLPX(LaunchpadPro):
                 y = (99 - a[0][0][1]) // 10
 
                 # now with pressure events (9/2020)
-                if a[0][0][0] == 160 and returnPressure == True:
+                if a[0][0][0] == 160 and returnPressure is True:
                     return [x + 255, y + 255, a[0][0][2]]
                 else:
                     return [x, y, a[0][0][2]]
@@ -1810,7 +1810,7 @@ class LaunchpadProMk3(LaunchpadPro):
     # Overrides "LaunchpadPro" method
     def Open(self, number=0, name="ProMk3"):
         retval = super().Open(number=number, name=name)
-        if retval == True:
+        if retval is True:
             # enable Programmer's mode
             self.LedSetMode(1)
         return retval
@@ -1851,7 +1851,7 @@ class LaunchpadProMk3(LaunchpadPro):
 
             # 8/2020: Try to mitigate too many pressure events that a bit (yep, seems to work fine!)
             # 9/2020: XY now also with pressure event functionality
-            if returnPressure == False:
+            if returnPressure is False:
                 while a[0][0][0] == 208:
                     a = self.midi.ReadRaw()
                     if a == []:
@@ -1885,7 +1885,7 @@ class LaunchpadProMk3(LaunchpadPro):
     # -------------------------------------------------------------------------------------
     def Close(self):
         # re-enter Live mode
-        if self.midi.devIn != None and self.midi.devOut != None:
+        if self.midi.devIn is not None and self.midi.devOut is not None:
             self.LedSetMode(0)
         # TODO: redundant (but needs fix for Py2 embedded anyway)
         # self.midi.CloseInput()
