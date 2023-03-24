@@ -16,8 +16,6 @@ import time
 
 from pygame import midi
 
-# from pygame import time
-
 
 ##########################################################################################
 ### CLASS Midi
