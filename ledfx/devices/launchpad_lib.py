@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 #
 # Hack and slashed down from, to remove pygame
+# remove all LED manipulations as LEDFX does this in single message
+# generally remove lint problems
 #
 # A Novation Launchpad control suite for Python.
 #
@@ -11,16 +13,20 @@
 #
 
 import array
+import logging
 import sys
 import time
 
 from pygame import midi
 
+_LOGGER = logging.getLogger(__name__)
 
-##########################################################################################
-### CLASS Midi
-### Midi singleton wrapper
-##########################################################################################
+
+# ==========================================================================
+# CLASS Midi
+# Midi singleton wrapper
+# ==========================================================================
+
 class Midi:
     # instance created
     instanceMidi = None
@@ -35,7 +41,7 @@ class Midi:
                 Midi.instanceMidi = Midi.__Midi()
             except:
                 # TODO: maybe sth like sys.exit()?
-                print("unable to initialize MIDI")
+                _LOGGER.info("unable to initialize MIDI")
                 Midi.instanceMidi = None
 
         self.devIn = None
@@ -146,11 +152,11 @@ class Midi:
                 timeStamp,
                 array.array("B", [0xF0] + lstMessage + [0xF7]).tobytes(),
             )
+    # ==========================================================================
+    # CLASS __Midi
+    # The rest of the Midi class, non Midi-device specific.
+    # ==========================================================================
 
-    ########################################################################################
-    ### CLASS __Midi
-    ### The rest of the Midi class, non Midi-device specific.
-    ########################################################################################
     class __Midi:
         # -------------------------------------------------------------------------------------
         # -- init
@@ -181,7 +187,7 @@ class Midi:
                 md = midi.get_device_info(n)
                 if str(md[1].lower()).find(name.lower()) >= 0:
                     if quiet == False:
-                        print("%2d" % (i), md)
+                        _LOGGER.info("%2d" % (i), md)
                         sys.stdout.flush()
                     if output == True and md[3] > 0:
                         ret.append(i)
@@ -210,10 +216,10 @@ class Midi:
             return midi.time()
 
 
-########################################################################################
-### CLASS LaunchpadBase
-###
-########################################################################################
+# ==========================================================================
+# CLASS LaunchpadBase
+#
+# ==========================================================================
 class LaunchpadBase:
     def __init__(self):
         self.midi = Midi()  # midi interface instance (singleton)
@@ -264,7 +270,7 @@ class LaunchpadBase:
         self.midi.CloseOutput()
 
     # -------------------------------------------------------------------------------------
-    # -- prints a list of all devices to the console (for debug)
+    # -- _LOGGER.info's a list of all devices to the console (for debug)
     # -------------------------------------------------------------------------------------
     def ListAll(self, searchString=""):
         self.midi.SearchDevices(searchString, True, True, False)
@@ -296,11 +302,11 @@ class LaunchpadBase:
             return []
 
 
-########################################################################################
-### CLASS Launchpad
-###
-### For 2-color Launchpads with 8x8 matrix and 2x8 top/right rows
-########################################################################################
+# ==========================================================================
+# CLASS Launchpad
+#
+# For 2-color Launchpads with 8x8 matrix and 2x8 top/right rows
+# ==========================================================================
 class Launchpad(LaunchpadBase):
     # LED AND BUTTON NUMBERS IN RAW MODE (DEC):
     #
@@ -393,11 +399,11 @@ class Launchpad(LaunchpadBase):
         return []
 
 
-########################################################################################
-### CLASS LaunchpadPro
-###
-### For 3-color "Pro" Launchpads with 8x8 matrix and 4x8 left/right/top/bottom rows
-########################################################################################
+# ==========================================================================
+# CLASS LaunchpadPro
+#
+# For 3-color "Pro" Launchpads with 8x8 matrix and 4x8 left/right/top/bottom rows
+# ==========================================================================
 class LaunchpadPro(LaunchpadBase):
     # LED AND BUTTON NUMBERS IN RAW MODE (DEC)
     # WITH LAUNCHPAD IN "LIVE MODE" (PRESS SETUP, top-left GREEN).
@@ -651,11 +657,11 @@ class LaunchpadPro(LaunchpadBase):
             return []
 
 
-########################################################################################
-### CLASS LaunchpadMk2
-###
-### For 3-color "Mk2" Launchpads with 8x8 matrix and 2x8 right/top rows
-########################################################################################
+# ==========================================================================
+# CLASS LaunchpadMk2
+#
+# For 3-color "Mk2" Launchpads with 8x8 matrix and 2x8 right/top rows
+# ==========================================================================
 class LaunchpadMk2(LaunchpadPro):
     # LED AND BUTTON NUMBERS IN RAW MODE (DEC)
     #
@@ -761,11 +767,11 @@ class LaunchpadMk2(LaunchpadPro):
             return []
 
 
-########################################################################################
-### CLASS LaunchControlXL
-###
-### For 2-color Launch Control XL
-########################################################################################
+# ==========================================================================
+# CLASS LaunchControlXL
+#
+# For 2-color Launch Control XL
+# ==========================================================================
 class LaunchControlXL(LaunchpadBase):
     # LED, BUTTON AND POTENTIOMETER NUMBERS IN RAW MODE (DEC)
     #
@@ -913,11 +919,11 @@ class LaunchControlXL(LaunchpadBase):
             return []
 
 
-########################################################################################
-### CLASS LaunchControl
-###
-### For 2-color Launch Control
-########################################################################################
+# ==========================================================================
+# CLASS LaunchControl
+#
+# For 2-color Launch Control
+# ==========================================================================
 class LaunchControl(LaunchControlXL):
     # LED, BUTTON AND POTENTIOMETER NUMBERS IN RAW MODE (DEC)
     #
@@ -986,11 +992,11 @@ class LaunchControl(LaunchControlXL):
             self.midi.RawWriteSysEx([0, 32, 41, 2, 10, 119, templateNum - 1])
 
 
-########################################################################################
-### CLASS LaunchKey
-###
-### For 2-color LaunchKey Keyboards
-########################################################################################
+# ==========================================================================
+# CLASS LaunchKey
+#
+# For 2-color LaunchKey Keyboards
+# ==========================================================================
 class LaunchKeyMini(LaunchpadBase):
     # LED, BUTTON, KEY AND POTENTIOMETER NUMBERS IN RAW MODE (DEC)
     # NOTICE THAT THE OCTAVE BUTTONS SHIFT THE KEYS UP OR DOWN BY 12.
@@ -1094,11 +1100,11 @@ class LaunchKeyMini(LaunchpadBase):
         return self.midi.ReadCheck()
 
 
-########################################################################################
-### CLASS Dicer
-###
-### For that Dicer thingy...
-########################################################################################
+# ==========================================================================
+# CLASS Dicer
+#
+# For that Dicer thingy...
+# ==========================================================================
 class Dicer(LaunchpadBase):
     # LED, BUTTON, KEY AND POTENTIOMETER NUMBERS IN RAW MODE (DEC)
     # NOTICE THAT THE OCTAVE BUTTONS SHIFT THE KEYS UP OR DOWN BY 10.
@@ -1204,11 +1210,11 @@ class Dicer(LaunchpadBase):
         self.midi.RawWrite(186 if device == 0 else 189, 17, mode)
 
 
-########################################################################################
-### CLASS LaunchpadMiniMk3
-###
-### For 3-color "Mk3" Launchpads; Mini and Pro
-########################################################################################
+# ==========================================================================
+# CLASS LaunchpadMiniMk3
+#
+# For 3-color "Mk3" Launchpads; Mini and Pro
+# ==========================================================================
 class LaunchpadMiniMk3(LaunchpadPro):
     # LED AND BUTTON NUMBERS IN RAW MODE (DEC)
     #
@@ -1335,11 +1341,11 @@ class LaunchpadMiniMk3(LaunchpadPro):
         self.midi.CloseOutput()
 
 
-########################################################################################
-### CLASS LaunchpadLPX
-###
-### For 3-color "X" Launchpads
-########################################################################################
+# ==========================================================================
+# CLASS LaunchpadLPX
+#
+# For 3-color "X" Launchpads
+# ==========================================================================
 class LaunchpadLPX(LaunchpadPro):
     # 	COLORS = {'black':0, 'off':0, 'white':3, 'red':5, 'green':17 }
 
@@ -1530,11 +1536,11 @@ class LaunchpadLPX(LaunchpadPro):
             return []
 
 
-########################################################################################
-### CLASS MidiFighter64
-###
-### For Midi Fighter 64 Gedöns
-########################################################################################
+# ==========================================================================
+# CLASS MidiFighter64
+#
+# For Midi Fighter 64 Gedöns
+# ==========================================================================
 class MidiFighter64(LaunchpadBase):
     #
     # LED AND BUTTON NUMBERS IN RAW MODE
@@ -1695,11 +1701,11 @@ class MidiFighter64(LaunchpadBase):
             return []
 
 
-########################################################################################
-### CLASS LaunchpadPROMk3
-###
-### For 3-color Pro Mk3 Launchpads
-########################################################################################
+# ==========================================================================
+# CLASS LaunchpadPROMk3
+#
+# For 3-color Pro Mk3 Launchpads
+# ==========================================================================
 class LaunchpadProMk3(LaunchpadPro):
     #
     # LED AND BUTTON NUMBERS IN RAW MODE
