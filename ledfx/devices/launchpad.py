@@ -101,6 +101,11 @@ class LaunchpadDevice(MidiDevice):
                     description="Number of individual rows",
                     default=8,
                 ): vol.All(int, vol.Range(min=1)),
+                vol.Optional(
+                    "icon_name",
+                    description="Icon for the device*",
+                    default="launchpad",
+                ): str,
             }
         )
 
