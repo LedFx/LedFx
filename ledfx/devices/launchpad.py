@@ -4,7 +4,7 @@ import ledfx.devices.launchpad_lib as launchpad
 import voluptuous as vol
 
 from ledfx.devices import MidiDevice
-
+from numpy import zeros
 # import timeit
 
 
@@ -66,7 +66,7 @@ class LaunchpadDevice(MidiDevice):
         super().activate()
 
     def deactivate(self):
-        self.lp.Reset()
+        self.flush_launchpad(zeros((self.pixel_count, 3)))
         self.lp.Close()
         super().deactivate()
 
