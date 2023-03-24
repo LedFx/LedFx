@@ -43,7 +43,7 @@ class LaunchpadDevice(MidiDevice):
                 vol.Required(
                     "rows",
                     description="Number of individual rows",
-                    default=8,
+                    default=9,
                 ): vol.All(int, vol.Range(min=1)),
                 vol.Optional(
                     "icon_name",
