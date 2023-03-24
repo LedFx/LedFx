@@ -1,8 +1,8 @@
 import logging
 
-import ledfx.devices.launchpad_lib as launchpad
 import voluptuous as vol
 
+import ledfx.devices.launchpad_lib as launchpad
 from ledfx.devices import MidiDevice
 
 # import timeit
