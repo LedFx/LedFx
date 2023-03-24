@@ -1,6 +1,6 @@
 import logging
 
-import launchpad_py as launchpad
+import ledfx.devices.launchpad_lib as launchpad
 import voluptuous as vol
 
 from ledfx.devices import MidiDevice
