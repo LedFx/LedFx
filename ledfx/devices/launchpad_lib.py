@@ -27,6 +27,7 @@ _LOGGER = logging.getLogger(__name__)
 # Midi singleton wrapper
 # ==========================================================================
 
+
 class Midi:
     # instance created
     instanceMidi = None
@@ -152,6 +153,7 @@ class Midi:
                 timeStamp,
                 array.array("B", [0xF0] + lstMessage + [0xF7]).tobytes(),
             )
+
     # ==========================================================================
     # CLASS __Midi
     # The rest of the Midi class, non Midi-device specific.
