@@ -264,14 +264,14 @@ class LaunchpadBase:
     # -- Closes this device
     # -------------------------------------------------------------------------------------
     def Close(self):
-        self.midi.CloseInput()
-        self.midi.CloseOutput()
+        self.myMidi.CloseInput()
+        self.myMidi.CloseOutput()
 
     # -------------------------------------------------------------------------------------
     # -- _LOGGER.info's a list of all devices to the console (for debug)
     # -------------------------------------------------------------------------------------
     def ListAll(self, searchString=""):
-        self.midi.SearchDevices(searchString, True, True, False)
+        self.myMidi.SearchDevices(searchString, True, True, False)
 
     # -------------------------------------------------------------------------------------
     # -- Clears the button buffer (The Launchpads remember everything...)
