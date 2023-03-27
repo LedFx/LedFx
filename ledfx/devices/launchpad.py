@@ -50,6 +50,11 @@ class LaunchpadDevice(MidiDevice):
                     description="Icon for the device*",
                     default="launchpad",
                 ): str,
+                vol.Optional(
+                    "create_segments",
+                    description="Auto-Generate a virtual for each segments",
+                    default=False,
+                ): bool,
             }
         )
 
