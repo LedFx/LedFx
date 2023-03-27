@@ -664,13 +664,10 @@ class Devices(RegistryLoader):
             }
         )
 
-        if (
-            device_type == "launchpad"
-            and device_config["create_segments"] == True
-        ):
+        if device_type == "launchpad" and device_config["create_segments"]:
             # Generate virtual configuration for the Launchpad TopBar
             # TODO: a function createSubVirtual(name, icon, segments)
-            # called like: createSubVirtual('TopBar', 'mdi:r´table-row', [70,79])
+            # called like: createSubVirtual('TopBar', 'mdi:r´table-row', [72,79])
             _LOGGER.info(f"Creating a virtual for device {device.name} TopBar")
             virtual_id = generate_id(device.name)
             virtual_config = {
@@ -678,7 +675,7 @@ class Devices(RegistryLoader):
                 "icon_name": "mdi:table-row",
                 "transition_time": 0,
             }
-            segments = [[device.id, 70, 79, False]]
+            segments = [[device.id, 72, 79, False]]
 
             # Create the virtual
             virtual = self._ledfx.virtuals.create(
@@ -696,6 +693,7 @@ class Devices(RegistryLoader):
                     "id": virtual.id,
                     "config": virtual.config,
                     "segments": virtual.segments,
+                    "is_device": False,
                 }
             )
 
@@ -725,6 +723,7 @@ class Devices(RegistryLoader):
                     "id": virtual.id,
                     "config": virtual.config,
                     "segments": virtual.segments,
+                    "is_device": False,
                 }
             )
 
@@ -765,6 +764,7 @@ class Devices(RegistryLoader):
                     "id": virtual.id,
                     "config": virtual.config,
                     "segments": virtual.segments,
+                    "is_device": False,
                 }
             )
 
@@ -777,14 +777,14 @@ class Devices(RegistryLoader):
                 "transition_time": 0,
             }
             segments = [
-                [device.id, 8, 8, False],
-                [device.id, 17, 17, False],
-                [device.id, 26, 26, False],
-                [device.id, 35, 35, False],
-                [device.id, 44, 44, False],
-                [device.id, 53, 53, False],
-                [device.id, 62, 62, False],
-                [device.id, 71, 71, False],
+                [device.id, 0, 7, False],
+                [device.id, 9, 16, False],
+                [device.id, 18, 25, False],
+                [device.id, 27, 34, False],
+                [device.id, 36, 43, False],
+                [device.id, 45, 52, False],
+                [device.id, 54, 61, False],
+                [device.id, 63, 70, False],
             ]
 
             # Create the virtual
@@ -803,6 +803,7 @@ class Devices(RegistryLoader):
                     "id": virtual.id,
                     "config": virtual.config,
                     "segments": virtual.segments,
+                    "is_device": False,
                 }
             )
 
