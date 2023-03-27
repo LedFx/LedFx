@@ -664,6 +664,144 @@ class Devices(RegistryLoader):
             }
         )
 
+        if device_type == 'launchpad' and device_config["create_segments"] == True:
+            # Generate virtual configuration for the Launchpad TopBar
+            # TODO: a function createSubVirtual(name, icon, segments)
+            # called like: createSubVirtual('TopBar', 'mdi:r´table-row', [70,79])            
+            _LOGGER.info(f"Creating a virtual for device {device.name} TopBar")
+            virtual_id = generate_id(device.name)
+            virtual_config = {
+                "name": device.name + '-TopBar',
+                "icon_name": 'mdi:table-row',
+                "transition_time": 0,
+            }
+            segments = [[device.id, 70, 79, False]]
+
+            # Create the virtual
+            virtual = self._ledfx.virtuals.create(
+                id=virtual_id,
+                config=virtual_config,
+                ledfx=self._ledfx,
+            )
+
+            # Create segment on the virtual
+            virtual.update_segments(segments)
+
+            # Update the configuration
+            self._ledfx.config["virtuals"].append(
+                {
+                    "id": virtual.id,
+                    "config": virtual.config,
+                    "segments": virtual.segments,
+                }
+            )
+
+            # TODO: a function createSubVirtual(name, icon, segments)         
+            _LOGGER.info(f"Creating a virtual for device {device.name} Logo")
+            virtual_id = generate_id(device.name)
+            virtual_config = {
+                "name": device.name + '-Logo',
+                "icon_name": 'launchpad',
+                "transition_time": 0,
+            }
+            segments = [[device.id, 80, 80, False]]
+
+            # Create the virtual
+            virtual = self._ledfx.virtuals.create(
+                id=virtual_id,
+                config=virtual_config,
+                ledfx=self._ledfx,
+            )
+
+            # Create segment on the virtual
+            virtual.update_segments(segments)
+
+            # Update the configuration
+            self._ledfx.config["virtuals"].append(
+                {
+                    "id": virtual.id,
+                    "config": virtual.config,
+                    "segments": virtual.segments,
+                }
+            )
+
+            # TODO: a function createSubVirtual(name, icon, segments)         
+            _LOGGER.info(f"Creating a virtual for device {device.name} RightBar")
+            virtual_id = generate_id(device.name)
+            virtual_config = {
+                "name": device.name + '-RightBar',
+                "icon_name": 'mdi:table-column',
+                "transition_time": 0,
+            }
+            segments = [
+                [device.id,8,8,False],
+                [device.id,17,17,False],
+                [device.id,26,26,False],
+                [device.id,35,35,False],
+                [device.id,44,44,False],
+                [device.id,53,53,False],
+                [device.id,62,62,False],
+                [device.id,71,71,False]
+            ]
+
+            # Create the virtual
+            virtual = self._ledfx.virtuals.create(
+                id=virtual_id,
+                config=virtual_config,
+                ledfx=self._ledfx,
+            )
+
+            # Create segment on the virtual
+            virtual.update_segments(segments)
+
+            # Update the configuration
+            self._ledfx.config["virtuals"].append(
+                {
+                    "id": virtual.id,
+                    "config": virtual.config,
+                    "segments": virtual.segments,
+                }
+            )
+
+            # TODO: a function createSubVirtual(name, icon, segments)         
+            _LOGGER.info(f"Creating a virtual for device {device.name} Matrix")
+            virtual_id = generate_id(device.name)
+            virtual_config = {
+                "name": device.name + '-Matrix',
+                "icon_name": 'mdi:grid',
+                "transition_time": 0,
+            }
+            segments = [
+                [device.id,8,8,False],
+                [device.id,17,17,False],
+                [device.id,26,26,False],
+                [device.id,35,35,False],
+                [device.id,44,44,False],
+                [device.id,53,53,False],
+                [device.id,62,62,False],
+                [device.id,71,71,False]
+            ]
+
+            # Create the virtual
+            virtual = self._ledfx.virtuals.create(
+                id=virtual_id,
+                config=virtual_config,
+                ledfx=self._ledfx,
+            )
+
+            # Create segment on the virtual
+            virtual.update_segments(segments)
+
+            # Update the configuration
+            self._ledfx.config["virtuals"].append(
+                {
+                    "id": virtual.id,
+                    "config": virtual.config,
+                    "segments": virtual.segments,
+                }
+            )
+
+
         # Finally, save the config to file!
         save_config(
             config=self._ledfx.config,
