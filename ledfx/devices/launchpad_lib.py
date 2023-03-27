@@ -14,9 +14,9 @@
 import array
 import logging
 import time
-import rtmidi
 
-from rtmidi.midiutil import open_midioutput, open_midiinput
+import rtmidi
+from rtmidi.midiutil import open_midiinput, open_midioutput
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -88,7 +88,7 @@ class MyMidi:
         rtmidi.API_LINUX_ALSA: "Linux ALSA",
         rtmidi.API_UNIX_JACK: "Jack Client",
         rtmidi.API_WINDOWS_MM: "Windows MultiMedia",
-        rtmidi.API_RTMIDI_DUMMY: "RtMidi Dummy"
+        rtmidi.API_RTMIDI_DUMMY: "RtMidi Dummy",
     }
 
     # -------------------------------------------------------------------------------------
@@ -156,8 +156,9 @@ class MyMidi:
     def OpenOutput(self, midi_id):
         if self.devOut is None:
             try:
-                self.devOut, self.nameOut = open_midioutput(midi_id,
-                                                            interactive=False)
+                self.devOut, self.nameOut = open_midioutput(
+                    midi_id, interactive=False
+                )
             except Exception:
                 self.devOut = None
                 self.nameOut = None
@@ -180,8 +181,9 @@ class MyMidi:
     def OpenInput(self, midi_id):
         if self.devIn is None:
             try:
-                self.devIn, self.nameIn = open_midiinput(midi_id,
-                                                         interactive=False)
+                self.devIn, self.nameIn = open_midiinput(
+                    midi_id, interactive=False
+                )
             except Exception:
                 self.devIn = None
                 self.nameIn = None
