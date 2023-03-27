@@ -112,7 +112,7 @@ class LaunchpadDevice(MidiDevice):
             # example of send RED pixel at row 3 pixel 6
             # send_buffer.extend([3, 35, 127, 0, 0])
 
-            # start = timeit.default_timer()
+#            start = timeit.default_timer()
 
             # stuff the send buffer with the command preamble
             send_buffer = [0, 32, 41, 2, 12, 3]
@@ -133,7 +133,7 @@ class LaunchpadDevice(MidiDevice):
                     ]
                 )
                 pgm_mode_pos += 1
-            self.lp.midi.RawWriteSysEx(send_buffer)
+            self.lp.myMidi.RawWriteSysEx(send_buffer)
             # took = timeit.default_timer() - start
             # _LOGGER.info(f"Updated Pixels: {took} ")
 

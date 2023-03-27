@@ -15,8 +15,7 @@ import array
 import logging
 import sys
 import time
-
-from pygame import midi
+import rtmidi
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -57,55 +56,6 @@ class Midi:
     # -------------------------------------------------------------------------------------
     # --
     # -------------------------------------------------------------------------------------
-    def OpenOutput(self, midi_id):
-        if self.devOut is None:
-            try:
-                # PyGame's default size of the buffer is 4096.
-                # Removed code to tune that...
-                self.devOut = midi.Output(midi_id, 0)
-            except Exception:
-                self.devOut = None
-                return False
-        return True
-
-    # -------------------------------------------------------------------------------------
-    # --
-    # -------------------------------------------------------------------------------------
-    def CloseOutput(self):
-        if self.devOut is not None:
-            # self.devOut.close()
-            del self.devOut
-            self.devOut = None
-
-    # -------------------------------------------------------------------------------------
-    # --
-    # -------------------------------------------------------------------------------------
-    def OpenInput(self, midi_id, bufferSize=None):
-        if self.devIn is None:
-            try:
-                # PyGame's default size of the buffer is 4096.
-                if bufferSize is None:
-                    self.devIn = midi.Input(midi_id)
-                else:
-                    # for experiments...
-                    self.devIn = midi.Input(midi_id, bufferSize)
-            except Exception:
-                self.devIn = None
-                return False
-        return True
-
-    # -------------------------------------------------------------------------------------
-    # --
-    # -------------------------------------------------------------------------------------
-    def CloseInput(self):
-        if self.devIn is not None:
-            # self.devIn.close()
-            del self.devIn
-            self.devIn = None
-
-    # -------------------------------------------------------------------------------------
-    # --
-    # -------------------------------------------------------------------------------------
     def ReadCheck(self):
         return self.devIn.poll()
 
@@ -130,92 +80,131 @@ class Midi:
     def RawWriteMulti(self, lstMessages):
         self.devOut.write(lstMessages)
 
+
+from rtmidi import (API_LINUX_ALSA, API_MACOSX_CORE, API_RTMIDI_DUMMY,
+                    API_UNIX_JACK, API_WINDOWS_MM, MidiIn, MidiOut,
+                    get_compiled_api)
+
+class MyMidi:
+    apis = {
+        API_MACOSX_CORE: "macOS (OS X) CoreMIDI",
+        API_LINUX_ALSA: "Linux ALSA",
+        API_UNIX_JACK: "Jack Client",
+        API_WINDOWS_MM: "Windows MultiMedia",
+        API_RTMIDI_DUMMY: "RtMidi Dummy"
+    }
+
+    # -------------------------------------------------------------------------------------
+    # -- init
+    # -------------------------------------------------------------------------------------
+    def __init__(self):
+        self.devIn = None
+        self.devOut = None
+        self.nameIn = None
+        self.nameOut = None
+
+    def SearchDevices(self, name, output=True, input=True, quiet=True):
+        ret = []
+        available_apis = get_compiled_api()
+        for api, api_name in sorted(self.apis.items()):
+            if api in available_apis:
+                _LOGGER.info(f"Midi API Found: {api_name}")
+                if output:
+                    try:
+                        midi = MidiOut(api)
+                        ports = midi.get_ports()
+                    except Exception as exc:
+                        _LOGGER.warning(f"Could not probe MIDI ouput ports: {exc}")
+                        continue
+                    for port, pname in enumerate(ports):
+                        if str(pname.lower()).find(name.lower()) >= 0:
+                            _LOGGER.info(f"{port} {pname}")
+                            _LOGGER.info("found")
+                            ret.append(port)
+                if input:
+                    try:
+                        midi = MidiIn(api)
+                        ports = midi.get_ports()
+                    except Exception as exc:
+                        _LOGGER.warning(f"Could not probe MIDI input ports: {exc}")
+                        continue
+                    for port, pname in enumerate(ports):
+                        if str(pname.lower()).find(name.lower()) >= 0:
+                            _LOGGER.info(f"{port} {pname}")
+                            _LOGGER.info("found")
+                            ret.append(port)
+                del midi
+
+        return ret
+
+    # -------------------------------------------------------------------------------------
+    # -- Returns the first device that matches the string 'name'.
+    # -- NEW2015/02: added number argument to pick from several devices (if available)
+    # -------------------------------------------------------------------------------------
+    def SearchDevice(self, name, output=True, input=True, number=0):
+        ret = self.SearchDevices(name, output, input)
+
+        if number < 0 or number >= len(ret):
+            return None
+
+        return ret[number]
+
+    # -------------------------------------------------------------------------------------
+    # --
+    # -------------------------------------------------------------------------------------
+    def OpenOutput(self, midi_id):
+        from rtmidi.midiutil import open_midioutput
+
+        if self.devOut is None:
+            try:
+                self.devOut, self.nameOut = open_midioutput(midi_id, interactive=False)
+            except Exception:
+                self.devOut = None
+                self.nameOut = None
+                return False
+        return True
+
+    # -------------------------------------------------------------------------------------
+    # --
+    # -------------------------------------------------------------------------------------
+    def CloseOutput(self):
+        if self.devOut is not None:
+            self.devOut.close_port()
+            del self.devOut
+            self.devOut = None
+            self.nameOut = None
+
+    # -------------------------------------------------------------------------------------
+    # --
+    # -------------------------------------------------------------------------------------
+    def OpenInput(self, midi_id):
+        if self.devIn is None:
+            try:
+                self.devIn, self.nameIn = rtmidi.midiutil.open_midiinput(midi_id)
+            except Exception:
+                self.devIn = None
+                self.nameIn = None
+                return False
+        return True
+
+    # -------------------------------------------------------------------------------------
+    # --
+    # -------------------------------------------------------------------------------------
+    def CloseInput(self):
+        if self.devIn is not None:
+            self.devIn.close_port()
+            del self.devIn
+            self.devIn = None
+            self.nameIn = None
+
+
     # -------------------------------------------------------------------------------------
     # -- Sends a single system-exclusive message, given by list <lstMessage>
     # -- The start (0xF0) and end bytes (0xF7) are added automatically.
     # -- [ <dat1>, <dat2>, ..., <datN> ]
-    # -- Timestamp is not supported and will be sent as '0' (for now)
     # -------------------------------------------------------------------------------------
-    def RawWriteSysEx(self, lstMessage, timeStamp=0):
-        # There's a bug in PyGame's (Python 3) list-type message handling, so as a workaround,
-        # we'll use the string-type message instead...
-        # self.devOut.write_sys_ex( timeStamp, [0xf0] + lstMessage + [0xf7] ) # old Python 2
-
-        # array.tostring() deprecated in 3.9; quickfix ahead
-        try:
-            self.devOut.write_sys_ex(
-                timeStamp,
-                array.array("B", [0xF0] + lstMessage + [0xF7]).tostring(),
-            )
-        except Exception:
-            self.devOut.write_sys_ex(
-                timeStamp,
-                array.array("B", [0xF0] + lstMessage + [0xF7]).tobytes(),
-            )
-
-    # ==========================================================================
-    # CLASS __Midi
-    # The rest of the Midi class, non Midi-device specific.
-    # ==========================================================================
-
-    class __Midi:
-        # -------------------------------------------------------------------------------------
-        # -- init
-        # -------------------------------------------------------------------------------------
-        def __init__(self):
-            # exception handling moved up to Midi()
-            midi.init()
-            # but I can't remember why I put this one in here...
-            midi.get_count()
-
-        # -------------------------------------------------------------------------------------
-        # -- del
-        # -- This will never be executed, because no one knows, how many Launchpad instances
-        # -- exist(ed) until we start to count them...
-        # -------------------------------------------------------------------------------------
-        def __del__(self):
-            # midi.quit()
-            pass
-
-        # -------------------------------------------------------------------------------------
-        # -- Returns a list of devices that matches the string 'name' and has in- or outputs.
-        # -------------------------------------------------------------------------------------
-        def SearchDevices(self, name, output=True, input=True, quiet=True):
-            ret = []
-            i = 0
-
-            for n in range(midi.get_count()):
-                md = midi.get_device_info(n)
-                if str(md[1].lower()).find(name.lower()) >= 0:
-                    if quiet is False:
-                        _LOGGER.info("%2d" % (i), md)
-                        sys.stdout.flush()
-                    if output is True and md[3] > 0:
-                        ret.append(i)
-                    if input is True and md[2] > 0:
-                        ret.append(i)
-                i += 1
-
-            return ret
-
-        # -------------------------------------------------------------------------------------
-        # -- Returns the first device that matches the string 'name'.
-        # -- NEW2015/02: added number argument to pick from several devices (if available)
-        # -------------------------------------------------------------------------------------
-        def SearchDevice(self, name, output=True, input=True, number=0):
-            ret = self.SearchDevices(name, output, input)
-
-            if number < 0 or number >= len(ret):
-                return None
-
-            return ret[number]
-
-        # -------------------------------------------------------------------------------------
-        # -- Return MIDI time
-        # -------------------------------------------------------------------------------------
-        def GetTime(self):
-            return midi.time()
-
+    def RawWriteSysEx(self, lstMessage):
+        self.devOut.send_message(array.array("B", [0xF0] + lstMessage + [0xF7]).tobytes())
 
 # ==========================================================================
 # CLASS LaunchpadBase
@@ -223,14 +212,9 @@ class Midi:
 # ==========================================================================
 class LaunchpadBase:
     def __init__(self):
-        self.midi = Midi()  # midi interface instance (singleton)
-        self.idOut = None  # midi id for output
-        self.idIn = None  # midi id for input
-
-        # scroll directions
-        self.SCROLL_NONE = 0
-        self.SCROLL_LEFT = -1
-        self.SCROLL_RIGHT = 1
+        self.myMidi = MyMidi()  # midi interface instance (singleton)
+        self.myidOut = None
+        self.myidIn = None
 
     def __del__(self):
         self.Close()
@@ -239,26 +223,26 @@ class LaunchpadBase:
     # -- Opens one of the attached Launchpad MIDI devices.
     # -------------------------------------------------------------------------------------
     def Open(self, number=0, name="Launchpad"):
-        self.idOut = self.midi.SearchDevice(name, True, False, number=number)
-        self.idIn = self.midi.SearchDevice(name, False, True, number=number)
+        self.myidOut = self.myMidi.SearchDevice(name, True, False, number=number)
+        self.myidIn = self.myMidi.SearchDevice(name, False, True, number=number)
 
-        if self.idOut is None or self.idIn is None:
+        if self.myidOut is None or self.myidIn is None:
             return False
 
-        if self.midi.OpenOutput(self.idOut) is False:
+        if self.myMidi.OpenOutput(self.myidOut) is False:
             return False
 
-        return self.midi.OpenInput(self.idIn)
+        return self.myMidi.OpenInput(self.myidIn)
 
     # -------------------------------------------------------------------------------------
     # -- Checks if a device exists, but does not open it.
     # -- Does not check whether a device is in use or other, strange things...
     # -------------------------------------------------------------------------------------
     def Check(self, number=0, name="Launchpad"):
-        self.idOut = self.midi.SearchDevice(name, True, False, number=number)
-        self.idIn = self.midi.SearchDevice(name, False, True, number=number)
+        self.myidOut = self.myMidi.SearchDevice(name, True, False, number=number)
+        self.myidIn = self.myMidi.SearchDevice(name, False, True, number=number)
 
-        if self.idOut is None or self.idIn is None:
+        if self.myidOut is None or self.myidIn is None:
             return False
 
         return True
@@ -1434,7 +1418,7 @@ class LaunchpadLPX(LaunchpadPro):
         if mode < 0 or mode > 1:
             return
 
-        self.midi.RawWriteSysEx([0, 32, 41, 2, 12, 14, mode])
+        self.myMidi.RawWriteSysEx([0, 32, 41, 2, 12, 14, mode])
         time.sleep(0.010)
 
     # -------------------------------------------------------------------------------------
