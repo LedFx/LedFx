@@ -13,9 +13,10 @@
 
 import array
 import logging
-import sys
 import time
 import rtmidi
+
+from rtmidi.midiutil import open_midioutput, open_midiinput
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -81,17 +82,13 @@ class Midi:
         self.devOut.write(lstMessages)
 
 
-from rtmidi import (API_LINUX_ALSA, API_MACOSX_CORE, API_RTMIDI_DUMMY,
-                    API_UNIX_JACK, API_WINDOWS_MM, MidiIn, MidiOut,
-                    get_compiled_api)
-
 class MyMidi:
     apis = {
-        API_MACOSX_CORE: "macOS (OS X) CoreMIDI",
-        API_LINUX_ALSA: "Linux ALSA",
-        API_UNIX_JACK: "Jack Client",
-        API_WINDOWS_MM: "Windows MultiMedia",
-        API_RTMIDI_DUMMY: "RtMidi Dummy"
+        rtmidi.API_MACOSX_CORE: "macOS (OS X) CoreMIDI",
+        rtmidi.API_LINUX_ALSA: "Linux ALSA",
+        rtmidi.API_UNIX_JACK: "Jack Client",
+        rtmidi.API_WINDOWS_MM: "Windows MultiMedia",
+        rtmidi.API_RTMIDI_DUMMY: "RtMidi Dummy"
     }
 
     # -------------------------------------------------------------------------------------
@@ -105,13 +102,13 @@ class MyMidi:
 
     def SearchDevices(self, name, output=True, input=True, quiet=True):
         ret = []
-        available_apis = get_compiled_api()
+        available_apis = rtmidi.get_compiled_api()
         for api, api_name in sorted(self.apis.items()):
             if api in available_apis:
                 _LOGGER.info(f"Midi API Found: {api_name}")
                 if output:
                     try:
-                        midi = MidiOut(api)
+                        midi = rtmidi.MidiOut(api)
                         ports = midi.get_ports()
                     except Exception as exc:
                         _LOGGER.warning(f"Could not probe MIDI ouput ports: {exc}")
@@ -123,7 +120,7 @@ class MyMidi:
                             ret.append(port)
                 if input:
                     try:
-                        midi = MidiIn(api)
+                        midi = rtmidi.MidiIn(api)
                         ports = midi.get_ports()
                     except Exception as exc:
                         _LOGGER.warning(f"Could not probe MIDI input ports: {exc}")
@@ -153,11 +150,10 @@ class MyMidi:
     # --
     # -------------------------------------------------------------------------------------
     def OpenOutput(self, midi_id):
-        from rtmidi.midiutil import open_midioutput
-
         if self.devOut is None:
             try:
-                self.devOut, self.nameOut = open_midioutput(midi_id, interactive=False)
+                self.devOut, self.nameOut = open_midioutput(midi_id,
+                                                            interactive=False)
             except Exception:
                 self.devOut = None
                 self.nameOut = None
@@ -180,7 +176,8 @@ class MyMidi:
     def OpenInput(self, midi_id):
         if self.devIn is None:
             try:
-                self.devIn, self.nameIn = rtmidi.midiutil.open_midiinput(midi_id)
+                self.devIn, self.nameIn = open_midiinput(midi_id,
+                                                         interactive=False)
             except Exception:
                 self.devIn = None
                 self.nameIn = None
