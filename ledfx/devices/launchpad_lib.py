@@ -111,7 +111,9 @@ class MyMidi:
                         midi = rtmidi.MidiOut(api)
                         ports = midi.get_ports()
                     except Exception as exc:
-                        _LOGGER.warning(f"Could not probe MIDI ouput ports: {exc}")
+                        _LOGGER.warning(
+                            f"Could not probe MIDI ouput ports: {exc}"
+                        )
                         continue
                     for port, pname in enumerate(ports):
                         if str(pname.lower()).find(name.lower()) >= 0:
@@ -123,7 +125,9 @@ class MyMidi:
                         midi = rtmidi.MidiIn(api)
                         ports = midi.get_ports()
                     except Exception as exc:
-                        _LOGGER.warning(f"Could not probe MIDI input ports: {exc}")
+                        _LOGGER.warning(
+                            f"Could not probe MIDI input ports: {exc}"
+                        )
                         continue
                     for port, pname in enumerate(ports):
                         if str(pname.lower()).find(name.lower()) >= 0:
@@ -194,14 +198,16 @@ class MyMidi:
             self.devIn = None
             self.nameIn = None
 
-
     # -------------------------------------------------------------------------------------
     # -- Sends a single system-exclusive message, given by list <lstMessage>
     # -- The start (0xF0) and end bytes (0xF7) are added automatically.
     # -- [ <dat1>, <dat2>, ..., <datN> ]
     # -------------------------------------------------------------------------------------
     def RawWriteSysEx(self, lstMessage):
-        self.devOut.send_message(array.array("B", [0xF0] + lstMessage + [0xF7]).tobytes())
+        self.devOut.send_message(
+            array.array("B", [0xF0] + lstMessage + [0xF7]).tobytes()
+        )
+
 
 # ==========================================================================
 # CLASS LaunchpadBase
@@ -220,8 +226,12 @@ class LaunchpadBase:
     # -- Opens one of the attached Launchpad MIDI devices.
     # -------------------------------------------------------------------------------------
     def Open(self, number=0, name="Launchpad"):
-        self.myidOut = self.myMidi.SearchDevice(name, True, False, number=number)
-        self.myidIn = self.myMidi.SearchDevice(name, False, True, number=number)
+        self.myidOut = self.myMidi.SearchDevice(
+            name, True, False, number=number
+        )
+        self.myidIn = self.myMidi.SearchDevice(
+            name, False, True, number=number
+        )
 
         if self.myidOut is None or self.myidIn is None:
             return False
@@ -236,8 +246,12 @@ class LaunchpadBase:
     # -- Does not check whether a device is in use or other, strange things...
     # -------------------------------------------------------------------------------------
     def Check(self, number=0, name="Launchpad"):
-        self.myidOut = self.myMidi.SearchDevice(name, True, False, number=number)
-        self.myidIn = self.myMidi.SearchDevice(name, False, True, number=number)
+        self.myidOut = self.myMidi.SearchDevice(
+            name, True, False, number=number
+        )
+        self.myidIn = self.myMidi.SearchDevice(
+            name, False, True, number=number
+        )
 
         if self.myidOut is None or self.myidIn is None:
             return False
