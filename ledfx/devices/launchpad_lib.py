@@ -15,6 +15,7 @@ import array
 import logging
 import sys
 import time
+
 import rtmidi
 
 _LOGGER = logging.getLogger(__name__)
@@ -81,9 +82,17 @@ class Midi:
         self.devOut.write(lstMessages)
 
 
-from rtmidi import (API_LINUX_ALSA, API_MACOSX_CORE, API_RTMIDI_DUMMY,
-                    API_UNIX_JACK, API_WINDOWS_MM, MidiIn, MidiOut,
-                    get_compiled_api)
+from rtmidi import (
+    API_LINUX_ALSA,
+    API_MACOSX_CORE,
+    API_RTMIDI_DUMMY,
+    API_UNIX_JACK,
+    API_WINDOWS_MM,
+    MidiIn,
+    MidiOut,
+    get_compiled_api,
+)
+
 
 class MyMidi:
     apis = {
@@ -91,7 +100,7 @@ class MyMidi:
         API_LINUX_ALSA: "Linux ALSA",
         API_UNIX_JACK: "Jack Client",
         API_WINDOWS_MM: "Windows MultiMedia",
-        API_RTMIDI_DUMMY: "RtMidi Dummy"
+        API_RTMIDI_DUMMY: "RtMidi Dummy",
     }
 
     # -------------------------------------------------------------------------------------
@@ -114,7 +123,9 @@ class MyMidi:
                         midi = MidiOut(api)
                         ports = midi.get_ports()
                     except Exception as exc:
-                        _LOGGER.warning(f"Could not probe MIDI ouput ports: {exc}")
+                        _LOGGER.warning(
+                            f"Could not probe MIDI ouput ports: {exc}"
+                        )
                         continue
                     for port, pname in enumerate(ports):
                         if str(pname.lower()).find(name.lower()) >= 0:
@@ -126,7 +137,9 @@ class MyMidi:
                         midi = MidiIn(api)
                         ports = midi.get_ports()
                     except Exception as exc:
-                        _LOGGER.warning(f"Could not probe MIDI input ports: {exc}")
+                        _LOGGER.warning(
+                            f"Could not probe MIDI input ports: {exc}"
+                        )
                         continue
                     for port, pname in enumerate(ports):
                         if str(pname.lower()).find(name.lower()) >= 0:
@@ -157,7 +170,9 @@ class MyMidi:
 
         if self.devOut is None:
             try:
-                self.devOut, self.nameOut = open_midioutput(midi_id, interactive=False)
+                self.devOut, self.nameOut = open_midioutput(
+                    midi_id, interactive=False
+                )
             except Exception:
                 self.devOut = None
                 self.nameOut = None
@@ -180,7 +195,9 @@ class MyMidi:
     def OpenInput(self, midi_id):
         if self.devIn is None:
             try:
-                self.devIn, self.nameIn = rtmidi.midiutil.open_midiinput(midi_id)
+                self.devIn, self.nameIn = rtmidi.midiutil.open_midiinput(
+                    midi_id
+                )
             except Exception:
                 self.devIn = None
                 self.nameIn = None
@@ -197,14 +214,16 @@ class MyMidi:
             self.devIn = None
             self.nameIn = None
 
-
     # -------------------------------------------------------------------------------------
     # -- Sends a single system-exclusive message, given by list <lstMessage>
     # -- The start (0xF0) and end bytes (0xF7) are added automatically.
     # -- [ <dat1>, <dat2>, ..., <datN> ]
     # -------------------------------------------------------------------------------------
     def RawWriteSysEx(self, lstMessage):
-        self.devOut.send_message(array.array("B", [0xF0] + lstMessage + [0xF7]).tobytes())
+        self.devOut.send_message(
+            array.array("B", [0xF0] + lstMessage + [0xF7]).tobytes()
+        )
+
 
 # ==========================================================================
 # CLASS LaunchpadBase
@@ -223,8 +242,12 @@ class LaunchpadBase:
     # -- Opens one of the attached Launchpad MIDI devices.
     # -------------------------------------------------------------------------------------
     def Open(self, number=0, name="Launchpad"):
-        self.myidOut = self.myMidi.SearchDevice(name, True, False, number=number)
-        self.myidIn = self.myMidi.SearchDevice(name, False, True, number=number)
+        self.myidOut = self.myMidi.SearchDevice(
+            name, True, False, number=number
+        )
+        self.myidIn = self.myMidi.SearchDevice(
+            name, False, True, number=number
+        )
 
         if self.myidOut is None or self.myidIn is None:
             return False
@@ -239,8 +262,12 @@ class LaunchpadBase:
     # -- Does not check whether a device is in use or other, strange things...
     # -------------------------------------------------------------------------------------
     def Check(self, number=0, name="Launchpad"):
-        self.myidOut = self.myMidi.SearchDevice(name, True, False, number=number)
-        self.myidIn = self.myMidi.SearchDevice(name, False, True, number=number)
+        self.myidOut = self.myMidi.SearchDevice(
+            name, True, False, number=number
+        )
+        self.myidIn = self.myMidi.SearchDevice(
+            name, False, True, number=number
+        )
 
         if self.myidOut is None or self.myidIn is None:
             return False
