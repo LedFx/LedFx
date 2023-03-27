@@ -599,7 +599,6 @@ class Devices(RegistryLoader):
 
             wled_config["sync_mode"] = sync_mode
             device_config.update(wled_config)
-            device_config["name"] = wled_name
 
         device_id = generate_id(device_config["name"])
 
@@ -620,6 +619,8 @@ class Devices(RegistryLoader):
             await device.async_initialize()
 
         device_config = device.config
+        if device_type == "wled":
+            device_config["name"] = wled_name
         # Update and save the configuration
         self._ledfx.config["devices"].append(
             {
