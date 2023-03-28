@@ -55,7 +55,8 @@ class LaunchpadDevice(MidiDevice):
         self.flush_launchpad = None
 
     def flush(self, data):
-        self.flush_launchpad(data)
+        if self.flush_launchpad:
+            self.flush_launchpad(data)
 
     def activate(self):
         self.lp = launchpad.Launchpad()
