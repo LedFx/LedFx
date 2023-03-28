@@ -11,8 +11,8 @@ from ledfx.devices import MidiDevice
 
 _LOGGER = logging.getLogger(__name__)
 
-def dump_methods(instance):
 
+def dump_methods(instance):
     # List the class's methods
     _LOGGER.debug(" - Available methods:")
     for mName in sorted(dir(instance)):

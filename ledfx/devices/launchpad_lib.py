@@ -23,6 +23,7 @@ _LOGGER = logging.getLogger(__name__)
 
 # Needs some singleton magic!
 
+
 class MyMidi:
     apis = {
         rtmidi.API_MACOSX_CORE: "macOS (OS X) CoreMIDI",
@@ -160,6 +161,7 @@ class MyMidi:
     # -------------------------------------------------------------------------------------
     def RawWrite(self, stat, dat1, dat2):
         self.devOut.send_message([stat, dat1, dat2])
+
 
 # ==========================================================================
 # CLASS LaunchpadBase
@@ -819,7 +821,6 @@ class LaunchControlXL(LaunchpadBase):
     def InputFlush(self):
         return self.ButtonFlush()
 
-
     # -------------------------------------------------------------------------------------
     # -- Returns the raw value of the last button or potentiometer change as a list:
     # -- potentiometers/sliders:  <pot.number>, <value>     , 0 ]
@@ -1432,7 +1433,6 @@ class LaunchpadLPX(LaunchpadPro):
     def ButtonStateXY(self, mode="classic", returnPressure=False):
         a = self.myMidi.ReadRaw()
         if a is not None:
-
             # 8/2020: Copied from the Pro.
             # 9/2020: now also _with_ pressure :)
             if returnPressure is False:
@@ -1602,7 +1602,6 @@ class MidiFighter64(LaunchpadBase):
     def ButtonStateXY(self):
         a = self.myMidi.ReadRaw()
         if a is not None:
-
             # whatever that is, does not belong here...
             if a[0][0][1] < 36 or a[0][0][1] > 99:
                 return []
