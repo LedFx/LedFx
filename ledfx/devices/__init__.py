@@ -504,13 +504,14 @@ class Devices(RegistryLoader):
             if type(result) is ValueError:
                 _LOGGER.warning(result)
 
-    def sub_v(self, device, name, icon, segs):
+    def sub_v(self, device, name, icon, segs, rows):
         _LOGGER.info(f"Creating a virtual for device {device.name}-{name}")
-        virtual_id = generate_id(device.name)
+        virtual_id = generate_id(device.name + "-" + name)
         virtual_config = {
             "name": device.name + "-" + name,
             "icon_name": icon,
             "transition_time": 0,
+            "rows": rows,
         }
 
         segments = []
@@ -699,8 +700,8 @@ class Devices(RegistryLoader):
 
         if device_type == "launchpad" and device_config["create_segments"]:
             # Generate virtuals for segments
-            self.sub_v(device, "TopBar", "mdi:table-row", [[72, 79]])
-            self.sub_v(device, "Logo", "launchpad", [[80, 80]])
+            self.sub_v(device, "TopBar", "mdi:table-row", [[72, 79]], 1)
+            self.sub_v(device, "Logo", "launchpad", [[80, 80]], 1)
             self.sub_v(
                 device,
                 "RightBar",
@@ -715,6 +716,7 @@ class Devices(RegistryLoader):
                     [62, 62],
                     [71, 71],
                 ],
+                1,
             )
             self.sub_v(
                 device,
@@ -730,6 +732,7 @@ class Devices(RegistryLoader):
                     [54, 61],
                     [63, 70],
                 ],
+                8,
             )
 
         # Finally, save the config to file!
