@@ -27,4 +27,5 @@
     tcp-latency~=0.0.10
     voluptuous~=0.12.1
     yappi~=1.3.3
+    flux_led==0.28.35
     zeroconf~=0.39.4
