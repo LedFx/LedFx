@@ -23,6 +23,7 @@ _LOGGER = logging.getLogger(__name__)
 # This code is not hardened for device not present or device removal
 # in all cases it will be necassary to restart ledfx to recover
 
+
 class RtmidiWrap:
     apis = {
         rtmidi.API_MACOSX_CORE: "macOS (OS X) CoreMIDI",
@@ -179,12 +180,8 @@ class LaunchpadBase:
     # -- Opens one of the attached Launchpad MIDI devices.
     # -------------------------------------------------------------------------------------
     def Open(self, number=0, name="Launchpad"):
-        self.idOut = self.midi.SearchDevice(
-            name, True, False, number=number
-        )
-        self.idIn = self.midi.SearchDevice(
-            name, False, True, number=number
-        )
+        self.idOut = self.midi.SearchDevice(name, True, False, number=number)
+        self.idIn = self.midi.SearchDevice(name, False, True, number=number)
 
         if self.idOut is None or self.idIn is None:
             return False
@@ -199,12 +196,8 @@ class LaunchpadBase:
     # -- Does not check whether a device is in use or other, strange things...
     # -------------------------------------------------------------------------------------
     def Check(self, number=0, name="Launchpad"):
-        self.idOut = self.midi.SearchDevice(
-            name, True, False, number=number
-        )
-        self.idIn = self.midi.SearchDevice(
-            name, False, True, number=number
-        )
+        self.idOut = self.midi.SearchDevice(name, True, False, number=number)
+        self.idIn = self.midi.SearchDevice(name, False, True, number=number)
 
         if self.idOut is None or self.idIn is None:
             return False
