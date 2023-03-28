@@ -144,6 +144,7 @@ class LaunchpadDevice(MidiDevice):
             self.lp = launchpad.LaunchpadMk2()
             if self.lp.Open(0, "mk2"):
                 _LOGGER.info(" - Launchpad Mk2: OK")
+                self.flush_launchpad = None  # replace with flush_launchpadMk2
             else:
                 _LOGGER.error(" - Launchpad Mk2: ERROR")
                 return
@@ -153,6 +154,7 @@ class LaunchpadDevice(MidiDevice):
             self.lp = launchpad.LaunchpadMiniMk3()
             if self.lp.Open(1, "minimk3"):
                 _LOGGER.info(" - Launchpad Mini Mk3: OK")
+                self.flush_launchpad = None  # replace with flush_launchpadMk3
             else:
                 _LOGGER.error(" - Launchpad Mini Mk3: ERROR")
                 return
@@ -162,6 +164,7 @@ class LaunchpadDevice(MidiDevice):
             self.lp = launchpad.LaunchpadPro()
             if self.lp.Open(0, "pad pro"):
                 _LOGGER.info(" - Launchpad Pro: OK")
+                self.flush_launchpad = None  # replace with flush_launchpadPro
             else:
                 _LOGGER.error(" - Launchpad Pro: ERROR")
                 return
@@ -171,6 +174,7 @@ class LaunchpadDevice(MidiDevice):
             self.lp = launchpad.LaunchpadProMk3()
             if self.lp.Open(0):
                 _LOGGER.info(" - Launchpad Pro Mk3: OK")
+                self.flush_launchpad = None  # replace with flush_launchpadProMk3
             else:
                 _LOGGER.error(" - Launchpad Pro Mk3: ERROR")
                 return
@@ -180,15 +184,12 @@ class LaunchpadDevice(MidiDevice):
         # but we're using the one from above!
         elif self.lp.Check(1, "Launchpad X") or self.lp.Check(1, "LPX"):
             self.lp = launchpad.LaunchpadLPX()
-            self.flush_launchpad = self.flush_launchpadLPX
             # Open() includes looking for "LPX" and "Launchpad X"
             if self.lp.Open(1):
                 _LOGGER.info(" - Launchpad X: OK")
-                dump_methods(self.lp.midi.devIn)
-                dump_methods(self.lp.midi.devOut)
+                self.flush_launchpad = self.flush_launchpadLPX
             else:
                 _LOGGER.error(" - Launchpad X: ERROR")
-                self.lp = None
                 self.flush_launchpad = None
                 return
 
