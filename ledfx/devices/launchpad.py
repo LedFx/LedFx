@@ -11,19 +11,15 @@ from ledfx.devices import MidiDevice
 
 _LOGGER = logging.getLogger(__name__)
 
-
-def dump_methods(lp_instance, device_type):
-    # create an instance
-    if lp_instance is None:
-        lp_instance = launchpad.Launchpad()
+def dump_methods(instance):
 
     # List the class's methods
     _LOGGER.debug(" - Available methods:")
-    for mName in sorted(dir(lp_instance)):
+    for mName in sorted(dir(instance)):
         if mName.find("__") >= 0:
             continue
 
-        if callable(getattr(lp_instance, mName)):
+        if callable(getattr(instance, mName)):
             _LOGGER.debug(f"     {mName}()")
 
 
@@ -186,6 +182,8 @@ class LaunchpadDevice(MidiDevice):
             # Open() includes looking for "LPX" and "Launchpad X"
             if self.lp.Open(1):
                 _LOGGER.info(" - Launchpad X: OK")
+                dump_methods(self.lp.myMidi.devIn)
+                dump_methods(self.lp.myMidi.devOut)
             else:
                 _LOGGER.error(" - Launchpad X: ERROR")
                 return

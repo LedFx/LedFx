@@ -21,66 +21,7 @@ from rtmidi.midiutil import open_midiinput, open_midioutput
 _LOGGER = logging.getLogger(__name__)
 
 
-# ==========================================================================
-# CLASS Midi
-# Midi singleton wrapper
-# ==========================================================================
-
-
-class Midi:
-    # instance created
-    instanceMidi = None
-
-    # ---------------------------------------------------------------------------------------
-    # -- init
-    # -- Allow only one instance to be created
-    # ---------------------------------------------------------------------------------------
-    def __init__(self):
-        if Midi.instanceMidi is None:
-            try:
-                Midi.instanceMidi = Midi.__Midi()
-            except Exception:
-                # TODO: maybe sth like sys.exit()?
-                _LOGGER.info("unable to initialize MIDI")
-                Midi.instanceMidi = None
-
-        self.devIn = None
-        self.devOut = None
-
-    # ---------------------------------------------------------------------------------------
-    # -- getattr
-    # -- Pass all unknown method calls to the inner Midi class __Midi()
-    # ---------------------------------------------------------------------------------------
-    def __getattr__(self, name):
-        return getattr(self.instanceMidi, name)
-
-    # -------------------------------------------------------------------------------------
-    # --
-    # -------------------------------------------------------------------------------------
-    def ReadCheck(self):
-        return self.devIn.poll()
-
-    # -------------------------------------------------------------------------------------
-    # --
-    # -------------------------------------------------------------------------------------
-    def ReadRaw(self):
-        return self.devIn.read(1)
-
-    # -------------------------------------------------------------------------------------
-    # -- sends a single, short message
-    # -------------------------------------------------------------------------------------
-    def RawWrite(self, stat, dat1, dat2):
-        self.devOut.write_short(stat, dat1, dat2)
-
-    # -------------------------------------------------------------------------------------
-    # -- Sends a list of messages. If timestamp is 0, it is ignored.
-    # -- Amount of <dat> bytes is arbitrary.
-    # -- [ [ [stat, <dat1>, <dat2>, <dat3>], timestamp ],  [...], ... ]
-    # -- <datN> fields are optional
-    # -------------------------------------------------------------------------------------
-    def RawWriteMulti(self, lstMessages):
-        self.devOut.write(lstMessages)
-
+# Needs some singleton magic!
 
 class MyMidi:
     apis = {
@@ -105,7 +46,6 @@ class MyMidi:
         available_apis = rtmidi.get_compiled_api()
         for api, api_name in sorted(self.apis.items()):
             if api in available_apis:
-                _LOGGER.info(f"Midi API Found: {api_name}")
                 if output:
                     try:
                         midi = rtmidi.MidiOut(api)
@@ -118,7 +58,6 @@ class MyMidi:
                     for port, pname in enumerate(ports):
                         if str(pname.lower()).find(name.lower()) >= 0:
                             _LOGGER.info(f"{port} {pname}")
-                            _LOGGER.info("found")
                             ret.append(port)
                 if input:
                     try:
@@ -132,7 +71,6 @@ class MyMidi:
                     for port, pname in enumerate(ports):
                         if str(pname.lower()).find(name.lower()) >= 0:
                             _LOGGER.info(f"{port} {pname}")
-                            _LOGGER.info("found")
                             ret.append(port)
                 del midi
 
@@ -210,6 +148,18 @@ class MyMidi:
             array.array("B", [0xF0] + lstMessage + [0xF7]).tobytes()
         )
 
+    # --------------------------------------------------------------------------
+    # Behaviour of rtmidi is read if present else return None
+    # there is no Poll
+    # --------------------------------------------------------------------------
+    def ReadRaw(self):
+        return self.devIn.get_message()
+
+    # -------------------------------------------------------------------------------------
+    # -- sends a single, short message
+    # -------------------------------------------------------------------------------------
+    def RawWrite(self, stat, dat1, dat2):
+        self.devOut.send_message([stat, dat1, dat2])
 
 # ==========================================================================
 # CLASS LaunchpadBase
@@ -282,22 +232,22 @@ class LaunchpadBase:
         doReads = 0
         # wait for that amount of consecutive read fails to exit
         while doReads < 3:
-            if self.midi.ReadCheck():
-                doReads = 0
-                self.midi.ReadRaw()
-            else:
+            if self.myMidi.ReadRaw() is None:
                 doReads += 1
                 time.sleep(0.005)
+            else:
+                doReads = 0
 
     # -------------------------------------------------------------------------------------
     # -- Returns a list of all MIDI events, empty list if nothing happened.
     # -- Useful for debugging or checking new devices.
     # -------------------------------------------------------------------------------------
     def EventRaw(self):
-        if self.midi.ReadCheck():
-            return self.midi.ReadRaw()
-        else:
+        message = self.myMidi.ReadRaw()
+        if message is None:
             return []
+        else:
+            return message
 
 
 # ==========================================================================
@@ -358,18 +308,12 @@ class Launchpad(LaunchpadBase):
     #
 
     # -------------------------------------------------------------------------------------
-    # -- Returns True if a button event was received.
-    # -------------------------------------------------------------------------------------
-    def ButtonChanged(self):
-        return self.midi.ReadCheck()
-
-    # -------------------------------------------------------------------------------------
     # -- Returns the raw value of the last button change as a list:
     # -- [ <button>, <True/False> ]
     # -------------------------------------------------------------------------------------
     def ButtonStateRaw(self):
-        if self.midi.ReadCheck():
-            a = self.midi.ReadRaw()
+        a = self.mymidi.devIn.ReadRaw()
+        if a is not None:
             return [
                 a[0][0][1] if a[0][0][0] == 144 else a[0][0][1] + 96,
                 True if a[0][0][2] > 0 else False,
@@ -382,18 +326,15 @@ class Launchpad(LaunchpadBase):
     # -- [ <x>, <y>, <True/False> ]
     # -------------------------------------------------------------------------------------
     def ButtonStateXY(self):
-        if self.midi.ReadCheck():
-            a = self.midi.ReadRaw()
-
+        a = self.mymidi.devIn.ReadRaw()
+        if a is not None:
             if a[0][0][0] == 144:
                 x = a[0][0][1] & 0x0F
                 y = (a[0][0][1] & 0xF0) >> 4
 
                 return [x, y + 1, True if a[0][0][2] > 0 else False]
-
             elif a[0][0][0] == 176:
                 return [a[0][0][1] - 104, 0, True if a[0][0][2] > 0 else False]
-
         return []
 
 
@@ -537,7 +478,7 @@ class LaunchpadPro(LaunchpadBase):
         if mode < 0 or mode > 0x0D:
             return
 
-        self.midi.RawWriteSysEx([0, 32, 41, 2, 16, 34, mode])
+        self.myMidi.RawWriteSysEx([0, 32, 41, 2, 16, 34, mode])
         time.sleep(0.010)
 
     # -------------------------------------------------------------------------------------
@@ -549,7 +490,7 @@ class LaunchpadPro(LaunchpadBase):
         if mode < 0 or mode > 1:
             return
 
-        self.midi.RawWriteSysEx([0, 32, 41, 2, 16, 33, mode])
+        self.myMidi.RawWriteSysEx([0, 32, 41, 2, 16, 33, mode])
         time.sleep(0.010)
 
     # -------------------------------------------------------------------------------------
@@ -565,8 +506,9 @@ class LaunchpadPro(LaunchpadBase):
     # -- so the list looks like [ 255, <value> ].
     # -------------------------------------------------------------------------------------
     def ButtonStateRaw(self, returnPressure=False):
-        if self.midi.ReadCheck():
-            a = self.midi.ReadRaw()
+        a = self.myMidi.ReadRaw()
+        if a is not None:
+            a = self.myMidi.ReadRaw()
 
             # Note:
             #  Beside "144" (Note On, grid buttons), "208" (Pressure Value, grid buttons) and
@@ -602,7 +544,7 @@ class LaunchpadPro(LaunchpadBase):
             # Try to avoid getting flooded with pressure events
             if returnPressure is False:
                 while a[0][0][0] == 208:
-                    a = self.midi.ReadRaw()
+                    a = self.myMidi.ReadRaw()
                     if a == []:
                         return []
 
@@ -629,12 +571,11 @@ class LaunchpadPro(LaunchpadBase):
     # -- Compatibility would require checking via "== True" and not "is True".
     # -------------------------------------------------------------------------------------
     def ButtonStateXY(self, mode="classic", returnPressure=False):
-        if self.midi.ReadCheck():
-            a = self.midi.ReadRaw()
-
+        a = self.myMidi.ReadRaw()
+        if a is not None:
             if returnPressure is False:
                 while a[0][0][0] == 208:
-                    a = self.midi.ReadRaw()
+                    a = self.myMidi.ReadRaw()
                     if a == []:
                         return []
 
@@ -747,9 +688,8 @@ class LaunchpadMk2(LaunchpadPro):
     # -------------------------------------------------------------------------------------
     # Overrides "LaunchpadPro" method
     def ButtonStateXY(self):
-        if self.midi.ReadCheck():
-            a = self.midi.ReadRaw()
-
+        a = self.myMidi.ReadRaw()
+        if a is not None:
             if a[0][0][0] == 144 or a[0][0][0] == 176:
                 if a[0][0][1] >= 104:
                     x = a[0][0][1] - 104
@@ -871,7 +811,7 @@ class LaunchControlXL(LaunchpadBase):
             return
         else:
             self.UserTemplate = templateNum
-            self.midi.RawWriteSysEx([0, 32, 41, 2, 17, 119, templateNum - 1])
+            self.myMidi.RawWriteSysEx([0, 32, 41, 2, 17, 119, templateNum - 1])
 
     # -------------------------------------------------------------------------------------
     # -- Clears the input buffer (The Launchpads remember everything...)
@@ -879,11 +819,6 @@ class LaunchControlXL(LaunchpadBase):
     def InputFlush(self):
         return self.ButtonFlush()
 
-    # -------------------------------------------------------------------------------------
-    # -- Returns True if an event occured.
-    # -------------------------------------------------------------------------------------
-    def InputChanged(self):
-        return self.midi.ReadCheck()
 
     # -------------------------------------------------------------------------------------
     # -- Returns the raw value of the last button or potentiometer change as a list:
@@ -891,9 +826,8 @@ class LaunchControlXL(LaunchpadBase):
     # -- buttons:                 <pot.number>, <True/False>, 0 ]
     # -------------------------------------------------------------------------------------
     def InputStateRaw(self):
-        if self.midi.ReadCheck():
-            a = self.midi.ReadRaw()
-
+        a = self.myMidi.ReadRaw()
+        if a is not None:
             # --- pressed
             if a[0][0][0] == 144:
                 return [a[0][0][1], True, 127]
@@ -987,7 +921,7 @@ class LaunchControl(LaunchControlXL):
         if templateNum < 1 or templateNum > 16:
             return
         else:
-            self.midi.RawWriteSysEx([0, 32, 41, 2, 10, 119, templateNum - 1])
+            self.myMidi.RawWriteSysEx([0, 32, 41, 2, 10, 119, templateNum - 1])
 
 
 # ==========================================================================
@@ -1054,9 +988,8 @@ class LaunchKeyMini(LaunchpadBase):
     # -- numbers collide with the note numbers in the lower octaves.
     # -------------------------------------------------------------------------------------
     def InputStateRaw(self):
-        if self.midi.ReadCheck():
-            a = self.midi.ReadRaw()
-
+        a = self.myMidi.ReadRaw()
+        if a is not None:
             # --- pressed key
             if a[0][0][0] == 144:
                 return [a[0][0][1], True, a[0][0][2]]
@@ -1090,12 +1023,6 @@ class LaunchKeyMini(LaunchpadBase):
     # -------------------------------------------------------------------------------------
     def InputFlush(self):
         return self.ButtonFlush()
-
-    # -------------------------------------------------------------------------------------
-    # -- Returns True if an event occured.
-    # -------------------------------------------------------------------------------------
-    def InputChanged(self):
-        return self.midi.ReadCheck()
 
 
 # ==========================================================================
@@ -1157,9 +1084,8 @@ class Dicer(LaunchpadBase):
     # -- make sense here (less brain calculations for you :)
     # -------------------------------------------------------------------------------------
     def ButtonStateRaw(self):
-        if self.midi.ReadCheck():
-            a = self.midi.ReadRaw()
-
+        a = self.myMidi.ReadRaw()
+        if a is not None:
             # --- button on master
             if a[0][0][0] >= 154 and a[0][0][0] <= 156:
                 butNum = a[0][0][1]
@@ -1205,7 +1131,7 @@ class Dicer(LaunchpadBase):
         if mode < 0 or mode > 6:
             return
 
-        self.midi.RawWrite(186 if device == 0 else 189, 17, mode)
+        self.myMidi.RawWrite(186 if device == 0 else 189, 17, mode)
 
 
 # ==========================================================================
@@ -1304,7 +1230,7 @@ class LaunchpadMiniMk3(LaunchpadPro):
         if mode not in ValidModes:
             return
 
-        self.midi.RawWriteSysEx([0, 32, 41, 2, 13, 0, mode])
+        self.myMidi.RawWriteSysEx([0, 32, 41, 2, 13, 0, mode])
         time.sleep(0.010)
 
     # -------------------------------------------------------------------------------------
@@ -1316,7 +1242,7 @@ class LaunchpadMiniMk3(LaunchpadPro):
         if mode < 0 or mode > 1:
             return
 
-        self.midi.RawWriteSysEx([0, 32, 41, 2, 13, 14, mode])
+        self.myMidi.RawWriteSysEx([0, 32, 41, 2, 13, 14, mode])
         time.sleep(0.010)
 
     # -------------------------------------------------------------------------------------
@@ -1335,8 +1261,8 @@ class LaunchpadMiniMk3(LaunchpadPro):
         # 		self.LedSetLayout( 0x05 )
 
         # TODO: redundant (but needs fix for Py2 embedded anyway)
-        self.midi.CloseInput()
-        self.midi.CloseOutput()
+        self.myMidi.CloseInput()
+        self.myMidi.CloseOutput()
 
 
 # ==========================================================================
@@ -1419,7 +1345,7 @@ class LaunchpadLPX(LaunchpadPro):
         if mode not in ValidModes:
             return
 
-        self.midi.RawWriteSysEx([0, 32, 41, 2, 12, 0, mode])
+        self.myMidi.RawWriteSysEx([0, 32, 41, 2, 12, 0, mode])
         time.sleep(0.010)
 
     # -------------------------------------------------------------------------------------
@@ -1447,8 +1373,8 @@ class LaunchpadLPX(LaunchpadPro):
     # -------------------------------------------------------------------------------------
     def Close(self):
         # TODO: redundant (but needs fix for Py2 embedded anyway)
-        self.midi.CloseInput()
-        self.midi.CloseOutput()
+        self.myMidi.CloseInput()
+        self.myMidi.CloseOutput()
 
     # -------------------------------------------------------------------------------------
     # -- Returns the raw value of the last button change (pressed/unpressed) as a list
@@ -1468,14 +1394,13 @@ class LaunchpadLPX(LaunchpadPro):
     # -------------------------------------------------------------------------------------
     # Overrides "LaunchpadPro" method
     def ButtonStateRaw(self, returnPressure=False):
-        if self.midi.ReadCheck():
-            a = self.midi.ReadRaw()
-
+        a = self.myMidi.ReadRaw()
+        if a is not None:
             # Copied over from the Pro's method.
             # Try to avoid getting flooded with pressure events
             if returnPressure is False:
                 while a[0][0][0] == 160:
-                    a = self.midi.ReadRaw()
+                    a = self.myMidi.ReadRaw()
                     if a == []:
                         return []
 
@@ -1505,14 +1430,14 @@ class LaunchpadLPX(LaunchpadPro):
     # -------------------------------------------------------------------------------------
     # Overrides "LaunchpadPro" method
     def ButtonStateXY(self, mode="classic", returnPressure=False):
-        if self.midi.ReadCheck():
-            a = self.midi.ReadRaw()
+        a = self.myMidi.ReadRaw()
+        if a is not None:
 
             # 8/2020: Copied from the Pro.
             # 9/2020: now also _with_ pressure :)
             if returnPressure is False:
                 while a[0][0][0] == 160:
-                    a = self.midi.ReadRaw()
+                    a = self.myMidi.ReadRaw()
                     if a == []:
                         return []
 
@@ -1629,7 +1554,7 @@ class MidiFighter64(LaunchpadBase):
         if mode < 18 or mode > 53:
             return
 
-        self.midi.RawWrite(147, number - 3 * 12, mode)
+        self.myMidi.RawWrite(147, number - 3 * 12, mode)
 
     # -------------------------------------------------------------------------------------
     # -- Returns the raw value of the last button change (pressed/unpressed) as a list
@@ -1638,9 +1563,8 @@ class MidiFighter64(LaunchpadBase):
     # --   >0 = button pressed; 0 = button released
     # -------------------------------------------------------------------------------------
     def ButtonStateRaw(self):
-        if self.midi.ReadCheck():
-            a = self.midi.ReadRaw()
-
+        a = self.myMidi.ReadRaw()
+        if a is not None:
             # The Midi Fighter 64 does not support velocities. For 500 bucks. Lol :'-)
             # What we see here are either channel 3 or 2 NoteOn/NoteOff commands,
             # the factory settings, depending on the "bank selection".
@@ -1676,8 +1600,8 @@ class MidiFighter64(LaunchpadBase):
     # --   >0 = button pressed; 0 = button released
     # -------------------------------------------------------------------------------------
     def ButtonStateXY(self):
-        if self.midi.ReadCheck():
-            a = self.midi.ReadRaw()
+        a = self.myMidi.ReadRaw()
+        if a is not None:
 
             # whatever that is, does not belong here...
             if a[0][0][1] < 36 or a[0][0][1] > 99:
@@ -1830,7 +1754,7 @@ class LaunchpadProMk3(LaunchpadPro):
         if mode < 0 or mode > 1:
             return
 
-        self.midi.RawWriteSysEx([0, 32, 41, 2, 14, 14, mode])
+        self.myMidi.RawWriteSysEx([0, 32, 41, 2, 14, 14, mode])
         time.sleep(0.1)
 
     # -------------------------------------------------------------------------------------
@@ -1843,14 +1767,13 @@ class LaunchpadProMk3(LaunchpadPro):
     # -- Compatibility would require checking via "== True" and not "is True".
     # -------------------------------------------------------------------------------------
     def ButtonStateXY(self, mode="classic", returnPressure=False):
-        if self.midi.ReadCheck():
-            a = self.midi.ReadRaw()
-
+        a = self.myMidi.ReadRaw()
+        if a is not None:
             # 8/2020: Try to mitigate too many pressure events that a bit (yep, seems to work fine!)
             # 9/2020: XY now also with pressure event functionality
             if returnPressure is False:
                 while a[0][0][0] == 208:
-                    a = self.midi.ReadRaw()
+                    a = self.myMidi.ReadRaw()
                     if a == []:
                         return []
 
@@ -1882,8 +1805,5 @@ class LaunchpadProMk3(LaunchpadPro):
     # -------------------------------------------------------------------------------------
     def Close(self):
         # re-enter Live mode
-        if self.midi.devIn is not None and self.midi.devOut is not None:
+        if self.myMidi.devIn is not None and self.myMidi.devOut is not None:
             self.LedSetMode(0)
-        # TODO: redundant (but needs fix for Py2 embedded anyway)
-        # self.midi.CloseInput()
-        # self.midi.CloseOutput()
