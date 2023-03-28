@@ -66,6 +66,7 @@ class LaunchpadDevice(MidiDevice):
     def deactivate(self):
         self.flush_launchpad(zeros((self.pixel_count, 3)))
         self.lp.Close()
+        self.lp = None
         super().deactivate()
 
     # Need a flush variant for each supported Launchpad, and assign in validate
@@ -130,7 +131,7 @@ class LaunchpadDevice(MidiDevice):
                     ]
                 )
                 pgm_mode_pos += 1
-            self.lp.myMidi.RawWriteSysEx(send_buffer)
+            self.lp.midi.RawWriteSysEx(send_buffer)
             # took = timeit.default_timer() - start
             # _LOGGER.info(f"Updated Pixels: {took} ")
 
@@ -183,10 +184,12 @@ class LaunchpadDevice(MidiDevice):
             # Open() includes looking for "LPX" and "Launchpad X"
             if self.lp.Open(1):
                 _LOGGER.info(" - Launchpad X: OK")
-                dump_methods(self.lp.myMidi.devIn)
-                dump_methods(self.lp.myMidi.devOut)
+                dump_methods(self.lp.midi.devIn)
+                dump_methods(self.lp.midi.devOut)
             else:
                 _LOGGER.error(" - Launchpad X: ERROR")
+                self.lp = None
+                self.flush_launchpad = None
                 return
 
         # nope
