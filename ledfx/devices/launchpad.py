@@ -174,7 +174,7 @@ class LaunchpadDevice(MidiDevice):
             self.lp = launchpad.LaunchpadProMk3()
             if self.lp.Open(0):
                 _LOGGER.info(" - Launchpad Pro Mk3: OK")
-                self.flush_launchpad = None  # replace with flush_launchpadProMk3
+                self.flush_launchpad = None # replace with flush_launchpadProMk3
             else:
                 _LOGGER.error(" - Launchpad Pro Mk3: ERROR")
                 return
