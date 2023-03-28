@@ -153,7 +153,11 @@ class RtmidiWrap:
     # there is no Poll
     # --------------------------------------------------------------------------
     def ReadRaw(self):
-        return self.devIn.get_message()
+        result = self.devIn.get_message()
+        if result:
+            return result[0]
+        else:
+            return None
 
     # -------------------------------------------------------------------------------------
     # -- sends a single, short message
@@ -313,11 +317,11 @@ class Launchpad(LaunchpadBase):
     # -- [ <button>, <True/False> ]
     # -------------------------------------------------------------------------------------
     def ButtonStateRaw(self):
-        a = self.mymidi.devIn.ReadRaw()
+        a = self.midi.ReadRaw()
         if a is not None:
             return [
-                a[0][0][1] if a[0][0][0] == 144 else a[0][0][1] + 96,
-                True if a[0][0][2] > 0 else False,
+                a[1] if a[0] == 144 else a[1] + 96,
+                True if a[2] > 0 else False,
             ]
         else:
             return []
@@ -327,15 +331,15 @@ class Launchpad(LaunchpadBase):
     # -- [ <x>, <y>, <True/False> ]
     # -------------------------------------------------------------------------------------
     def ButtonStateXY(self):
-        a = self.mymidi.devIn.ReadRaw()
+        a = self.midi.ReadRaw()
         if a is not None:
-            if a[0][0][0] == 144:
-                x = a[0][0][1] & 0x0F
-                y = (a[0][0][1] & 0xF0) >> 4
+            if a[0] == 144:
+                x = a[1] & 0x0F
+                y = (a[1] & 0xF0) >> 4
 
-                return [x, y + 1, True if a[0][0][2] > 0 else False]
-            elif a[0][0][0] == 176:
-                return [a[0][0][1] - 104, 0, True if a[0][0][2] > 0 else False]
+                return [x, y + 1, True if a[2] > 0 else False]
+            elif a[0] == 176:
+                return [a[1] - 104, 0, True if a[2] > 0 else False]
         return []
 
 
@@ -509,8 +513,6 @@ class LaunchpadPro(LaunchpadBase):
     def ButtonStateRaw(self, returnPressure=False):
         a = self.midi.ReadRaw()
         if a is not None:
-            a = self.midi.ReadRaw()
-
             # Note:
             #  Beside "144" (Note On, grid buttons), "208" (Pressure Value, grid buttons) and
             #  "176" (Control Change, outer buttons), random (broken) SysEx messages
@@ -544,17 +546,17 @@ class LaunchpadPro(LaunchpadBase):
             # Copied over from the XY method.
             # Try to avoid getting flooded with pressure events
             if returnPressure is False:
-                while a[0][0][0] == 208:
+                while a[0] == 208:
                     a = self.midi.ReadRaw()
-                    if a == []:
+                    if a is None:
                         return []
 
-            if a[0][0][0] == 144 or a[0][0][0] == 176:
-                return [a[0][0][1], a[0][0][2]]
+            if a[0] == 144 or a[0] == 176:
+                return [a[1], a[2]]
             else:
                 if returnPressure:
-                    if a[0][0][0] == 208:
-                        return [255, a[0][0][1]]
+                    if a[0] == 208:
+                        return [255, a[1]]
                     else:
                         return []
                 else:
@@ -575,22 +577,22 @@ class LaunchpadPro(LaunchpadBase):
         a = self.midi.ReadRaw()
         if a is not None:
             if returnPressure is False:
-                while a[0][0][0] == 208:
+                while a[0] == 208:
                     a = self.midi.ReadRaw()
-                    if a == []:
+                    if a is None:
                         return []
 
-            if a[0][0][0] == 144 or a[0][0][0] == 176:
+            if a[0] == 144 or a[0] == 176:
                 if mode.lower() != "pro":
-                    x = (a[0][0][1] - 1) % 10
+                    x = (a[1] - 1) % 10
                 else:
-                    x = a[0][0][1] % 10
-                y = (99 - a[0][0][1]) // 10
+                    x = a[1] % 10
+                y = (99 - a[1]) // 10
 
-                return [x, y, a[0][0][2]]
+                return [x, y, a[2]]
             else:
-                if a[0][0][0] == 208:
-                    return [255, 255, a[0][0][1]]
+                if a[0] == 208:
+                    return [255, 255, a[1]]
                 else:
                     return []
         else:
@@ -691,15 +693,15 @@ class LaunchpadMk2(LaunchpadPro):
     def ButtonStateXY(self):
         a = self.midi.ReadRaw()
         if a is not None:
-            if a[0][0][0] == 144 or a[0][0][0] == 176:
-                if a[0][0][1] >= 104:
-                    x = a[0][0][1] - 104
+            if a[0] == 144 or a[0] == 176:
+                if a[1] >= 104:
+                    x = a[1] - 104
                     y = 0
                 else:
-                    x = (a[0][0][1] - 1) % 10
-                    y = (99 - a[0][0][1]) // 10
+                    x = (a[1] - 1) % 10
+                    y = (99 - a[1]) // 10
 
-                return [x, y, a[0][0][2]]
+                return [x, y, a[2]]
             else:
                 return []
         else:
@@ -829,22 +831,22 @@ class LaunchControlXL(LaunchpadBase):
         a = self.midi.ReadRaw()
         if a is not None:
             # --- pressed
-            if a[0][0][0] == 144:
-                return [a[0][0][1], True, 127]
+            if a[0] == 144:
+                return [a[1], True, 127]
             # --- released
-            elif a[0][0][0] == 128:
-                return [a[0][0][1], False, 0]
+            elif a[0] == 128:
+                return [a[1], False, 0]
             # --- potentiometers and the four cursor buttons
-            elif a[0][0][0] == 176:
+            elif a[0] == 176:
                 # --- cursor buttons
-                if a[0][0][1] >= 104 and a[0][0][1] <= 107:
-                    if a[0][0][2] > 0:
-                        return [a[0][0][1], True, a[0][0][2]]
+                if a[1] >= 104 and a[1] <= 107:
+                    if a[2] > 0:
+                        return [a[1], True, a[2]]
                     else:
-                        return [a[0][0][1], False, 0]
+                        return [a[1], False, 0]
                 # --- potentiometers
                 else:
-                    return [a[0][0][1], a[0][0][2], 0]
+                    return [a[1], a[2], 0]
             else:
                 return []
         else:
@@ -991,28 +993,28 @@ class LaunchKeyMini(LaunchpadBase):
         a = self.midi.ReadRaw()
         if a is not None:
             # --- pressed key
-            if a[0][0][0] == 144:
-                return [a[0][0][1], True, a[0][0][2]]
+            if a[0] == 144:
+                return [a[1], True, a[2]]
             # --- released key
-            elif a[0][0][0] == 128:
-                return [a[0][0][1], False, 0]
+            elif a[0] == 128:
+                return [a[1], False, 0]
             # --- pressed button
-            elif a[0][0][0] == 153:
-                return [a[0][0][1], True, a[0][0][2]]
+            elif a[0] == 153:
+                return [a[1], True, a[2]]
             # --- released button
-            elif a[0][0][0] == 137:
-                return [a[0][0][1], False, 0]
+            elif a[0] == 137:
+                return [a[1], False, 0]
             # --- potentiometers and the four cursor buttons
-            elif a[0][0][0] == 176:
+            elif a[0] == 176:
                 # --- cursor, track and scene buttons
-                if a[0][0][1] >= 104 and a[0][0][1] <= 109:
-                    if a[0][0][2] > 0:
-                        return [a[0][0][1], True, 127]
+                if a[1] >= 104 and a[1] <= 109:
+                    if a[2] > 0:
+                        return [a[1], True, 127]
                     else:
-                        return [a[0][0][1], False, 0]
+                        return [a[1], False, 0]
                 # --- potentiometers
                 else:
-                    return [a[0][0][1], a[0][0][2], 0]
+                    return [a[1], a[2], 0]
             else:
                 return []
         else:
@@ -1087,24 +1089,24 @@ class Dicer(LaunchpadBase):
         a = self.midi.ReadRaw()
         if a is not None:
             # --- button on master
-            if a[0][0][0] >= 154 and a[0][0][0] <= 156:
-                butNum = a[0][0][1]
+            if a[0] >= 154 and a[0] <= 156:
+                butNum = a[1]
                 if butNum >= 60 and butNum <= 69:
                     butNum -= 59
-                    butNum += 10 * (a[0][0][0] - 154)
-                    if a[0][0][2] == 127:
+                    butNum += 10 * (a[0] - 154)
+                    if a[2] == 127:
                         return [butNum, True, 127]
                     else:
                         return [butNum, False, 0]
                 else:
                     return []
             # --- button on master
-            elif a[0][0][0] >= 157 and a[0][0][0] <= 159:
-                butNum = a[0][0][1]
+            elif a[0] >= 157 and a[0] <= 159:
+                butNum = a[1]
                 if butNum >= 60 and butNum <= 69:
                     butNum -= 59
-                    butNum += 100 + 10 * (a[0][0][0] - 157)
-                    if a[0][0][2] == 127:
+                    butNum += 100 + 10 * (a[0] - 157)
+                    if a[2] == 127:
                         return [butNum, True, 127]
                     else:
                         return [butNum, False, 0]
@@ -1399,19 +1401,19 @@ class LaunchpadLPX(LaunchpadPro):
             # Copied over from the Pro's method.
             # Try to avoid getting flooded with pressure events
             if returnPressure is False:
-                while a[0][0][0] == 160:
+                while a[0] == 160:
                     a = self.midi.ReadRaw()
-                    if a == []:
+                    if a is None:
                         return []
 
-            if a[0][0][0] == 144 or a[0][0][0] == 176:
-                return [a[0][0][1], a[0][0][2]]
+            if a[0] == 144 or a[0] == 176:
+                return [a[1], a[2]]
             else:
                 if returnPressure:
-                    if a[0][0][0] == 160:
+                    if a[0] == 160:
                         # the X returns button number AND pressure value
                         # adding 255 to make it possible to distinguish "pressed" from "pressure"
-                        return [255 + a[0][0][1], a[0][0][2]]
+                        return [255 + a[1], a[2]]
                     else:
                         return []
                 else:
@@ -1432,26 +1434,24 @@ class LaunchpadLPX(LaunchpadPro):
     def ButtonStateXY(self, mode="classic", returnPressure=False):
         a = self.midi.ReadRaw()
         if a is not None:
-            # 8/2020: Copied from the Pro.
-            # 9/2020: now also _with_ pressure :)
             if returnPressure is False:
-                while a[0][0][0] == 160:
+                while a[0] == 160:
                     a = self.midi.ReadRaw()
-                    if a == []:
+                    if a is None:
                         return []
 
-            if a[0][0][0] == 144 or a[0][0][0] == 176 or a[0][0][0] == 160:
+            if a[0] == 144 or a[0] == 176 or a[0] == 160:
                 if mode.lower() != "pro":
-                    x = (a[0][0][1] - 1) % 10
+                    x = (a[1] - 1) % 10
                 else:
-                    x = a[0][0][1] % 10
-                y = (99 - a[0][0][1]) // 10
+                    x = a[1] % 10
+                y = (99 - a[1]) // 10
 
                 # now with pressure events (9/2020)
-                if a[0][0][0] == 160 and returnPressure is True:
-                    return [x + 255, y + 255, a[0][0][2]]
+                if a[0] == 160 and returnPressure is True:
+                    return [x + 255, y + 255, a[2]]
                 else:
-                    return [x, y, a[0][0][2]]
+                    return [x, y, a[2]]
             else:
                 return []
         else:
@@ -1582,11 +1582,11 @@ class MidiFighter64(LaunchpadBase):
 
             # Mhh, I guess it's about time to think about adding MIDI channels, isn't it?
             # But for now, we just check ch 2 and 3:
-            if a[0][0][0] == 145 or a[0][0][0] == 146:
-                return [a[0][0][1], a[0][0][2]]
+            if a[0] == 145 or a[0] == 146:
+                return [a[1], a[2]]
             else:
-                if a[0][0][0] == 130 or a[0][0][0] == 129:
-                    return [a[0][0][1], 0]
+                if a[0] == 130 or a[0] == 129:
+                    return [a[1], 0]
                 else:
                     return []
         else:
@@ -1602,18 +1602,18 @@ class MidiFighter64(LaunchpadBase):
         a = self.midi.ReadRaw()
         if a is not None:
             # whatever that is, does not belong here...
-            if a[0][0][1] < 36 or a[0][0][1] > 99:
+            if a[1] < 36 or a[1] > 99:
                 return []
 
-            x = (a[0][0][1] - 36) % 4
-            if a[0][0][1] >= 68:
+            x = (a[1] - 36) % 4
+            if a[1] >= 68:
                 x += 4
-            y = 7 - ((a[0][0][1] - 36) % 32) // 4
+            y = 7 - ((a[1] - 36) % 32) // 4
 
-            if a[0][0][0] == 145 or a[0][0][0] == 146:
-                return [x, y, a[0][0][2]]
+            if a[0] == 145 or a[0] == 146:
+                return [x, y, a[2]]
             else:
-                if a[0][0][0] == 130 or a[0][0][0] == 129:
+                if a[0] == 130 or a[0] == 129:
                     return [x, y, 0]
                 else:
                     return []
@@ -1770,28 +1770,28 @@ class LaunchpadProMk3(LaunchpadPro):
             # 8/2020: Try to mitigate too many pressure events that a bit (yep, seems to work fine!)
             # 9/2020: XY now also with pressure event functionality
             if returnPressure is False:
-                while a[0][0][0] == 208:
+                while a[0] == 208:
                     a = self.midi.ReadRaw()
-                    if a == []:
+                    if a is None:
                         return []
 
-            if a[0][0][0] == 144 or a[0][0][0] == 176:
+            if a[0] == 144 or a[0] == 176:
                 if mode.lower() != "pro":
-                    x = (a[0][0][1] - 1) % 10
+                    x = (a[1] - 1) % 10
                 else:
-                    x = a[0][0][1] % 10
-                if a[0][0][1] > 99:
+                    x = a[1] % 10
+                if a[1] > 99:
                     y = 9
-                elif a[0][0][1] < 10:
+                elif a[1] < 10:
                     y = 10
                 else:
-                    y = (99 - a[0][0][1]) // 10
+                    y = (99 - a[1]) // 10
 
-                return [x, y, a[0][0][2]]
+                return [x, y, a[2]]
             else:
                 # TOCHK: this should be safe without checking "returnPressure"
-                if a[0][0][0] == 208:
-                    return [255, 255, a[0][0][1]]
+                if a[0] == 208:
+                    return [255, 255, a[1]]
                 else:
                     return []
         else:
