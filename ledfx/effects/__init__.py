@@ -198,6 +198,10 @@ class Effect(BaseRegistry):
     """
 
     NAME = ""
+    # over ride in effect children to hide existing keys from UI
+    HIDDEN_KEYS = None
+    # over ride in effect children to allow edit and show others
+    PERMITTED_KEYS = None
     _config = None
     _active = False
     _virtual = None

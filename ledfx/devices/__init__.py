@@ -308,6 +308,11 @@ class Device(BaseRegistry):
 
 
 @BaseRegistry.no_registration
+class MidiDevice(Device):
+    pass
+
+
+@BaseRegistry.no_registration
 class NetworkedDevice(Device):
     """
     Networked device, handles resolving IP
