@@ -12,18 +12,14 @@ from ledfx.devices import MidiDevice
 _LOGGER = logging.getLogger(__name__)
 
 
-def dump_methods(lp_instance, device_type):
-    # create an instance
-    if lp_instance is None:
-        lp_instance = launchpad.Launchpad()
-
+def dump_methods(instance):
     # List the class's methods
     _LOGGER.debug(" - Available methods:")
-    for mName in sorted(dir(lp_instance)):
+    for mName in sorted(dir(instance)):
         if mName.find("__") >= 0:
             continue
 
-        if callable(getattr(lp_instance, mName)):
+        if callable(getattr(instance, mName)):
             _LOGGER.debug(f"     {mName}()")
 
 
@@ -64,7 +60,8 @@ class LaunchpadDevice(MidiDevice):
         self.flush_launchpad = None
 
     def flush(self, data):
-        self.flush_launchpad(data)
+        if self.flush_launchpad:
+            self.flush_launchpad(data)
 
     def activate(self):
         self.lp = launchpad.Launchpad()
@@ -74,6 +71,7 @@ class LaunchpadDevice(MidiDevice):
     def deactivate(self):
         self.flush_launchpad(zeros((self.pixel_count, 3)))
         self.lp.Close()
+        self.lp = None
         super().deactivate()
 
     # Need a flush variant for each supported Launchpad, and assign in validate
@@ -138,7 +136,7 @@ class LaunchpadDevice(MidiDevice):
                     ]
                 )
                 pgm_mode_pos += 1
-            self.lp.myMidi.RawWriteSysEx(send_buffer)
+            self.lp.midi.RawWriteSysEx(send_buffer)
             # took = timeit.default_timer() - start
             # _LOGGER.info(f"Updated Pixels: {took} ")
 
@@ -151,6 +149,7 @@ class LaunchpadDevice(MidiDevice):
             self.lp = launchpad.LaunchpadMk2()
             if self.lp.Open(0, "mk2"):
                 _LOGGER.info(" - Launchpad Mk2: OK")
+                self.flush_launchpad = None  # replace with flush_launchpadMk2
             else:
                 _LOGGER.error(" - Launchpad Mk2: ERROR")
                 return
@@ -160,6 +159,7 @@ class LaunchpadDevice(MidiDevice):
             self.lp = launchpad.LaunchpadMiniMk3()
             if self.lp.Open(1, "minimk3"):
                 _LOGGER.info(" - Launchpad Mini Mk3: OK")
+                self.flush_launchpad = None  # replace with flush_launchpadMk3
             else:
                 _LOGGER.error(" - Launchpad Mini Mk3: ERROR")
                 return
@@ -169,6 +169,7 @@ class LaunchpadDevice(MidiDevice):
             self.lp = launchpad.LaunchpadPro()
             if self.lp.Open(0, "pad pro"):
                 _LOGGER.info(" - Launchpad Pro: OK")
+                self.flush_launchpad = None  # replace with flush_launchpadPro
             else:
                 _LOGGER.error(" - Launchpad Pro: ERROR")
                 return
@@ -178,6 +179,9 @@ class LaunchpadDevice(MidiDevice):
             self.lp = launchpad.LaunchpadProMk3()
             if self.lp.Open(0):
                 _LOGGER.info(" - Launchpad Pro Mk3: OK")
+                self.flush_launchpad = (
+                    None  # replace with flush_launchpadProMk3
+                )
             else:
                 _LOGGER.error(" - Launchpad Pro Mk3: ERROR")
                 return
@@ -187,12 +191,13 @@ class LaunchpadDevice(MidiDevice):
         # but we're using the one from above!
         elif self.lp.Check(1, "Launchpad X") or self.lp.Check(1, "LPX"):
             self.lp = launchpad.LaunchpadLPX()
-            self.flush_launchpad = self.flush_launchpadLPX
             # Open() includes looking for "LPX" and "Launchpad X"
             if self.lp.Open(1):
                 _LOGGER.info(" - Launchpad X: OK")
+                self.flush_launchpad = self.flush_launchpadLPX
             else:
                 _LOGGER.error(" - Launchpad X: ERROR")
+                self.flush_launchpad = None
                 return
 
         # nope
