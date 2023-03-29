@@ -1418,6 +1418,8 @@ class LaunchpadLPX(LaunchpadPro):
     # -- Notice that this is not (directly) compatible with the original ButtonStateRaw()
     # -- method in the "Classic" Launchpad, which only returned [ <button>, <True/False> ].
     # -- Compatibility would require checking via "== True" and not "is True".
+    # Origin is bottom left 0,0 top right which is not actually a button woudl be 8,8
+    # Matches orientation of LED writes order
     # -------------------------------------------------------------------------------------
     # Overrides "LaunchpadPro" method
     def ButtonStateXY(self, mode="classic", returnPressure=False):
