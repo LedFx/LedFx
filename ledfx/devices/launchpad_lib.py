@@ -1437,7 +1437,7 @@ class LaunchpadLPX(LaunchpadPro):
                 else:
                     x = a[1] % 10
                 # flipped Y axis to match logical fill order of LEDs
-                y = (a[1] // 10)-1
+                y = (a[1] // 10) - 1
 
                 # now with pressure events (9/2020)
                 if a[0] == 160 and returnPressure is True:
