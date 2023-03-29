@@ -1430,12 +1430,12 @@ class LaunchpadLPX(LaunchpadPro):
                         return None
 
             if a[0] == 144 or a[0] == 176 or a[0] == 160:
-                # FIX THIS
                 if mode.lower() != "pro":
                     x = (a[1] - 1) % 10
                 else:
                     x = a[1] % 10
-                y = (99 - a[1]) // 10
+                # flipped Y axis to match logical fill order of LEDs
+                y = (a[1] // 10)-1
 
                 # now with pressure events (9/2020)
                 if a[0] == 160 and returnPressure is True:
