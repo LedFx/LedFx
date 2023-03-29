@@ -28,3 +28,4 @@
     yappi~=1.3.3
     flux_led==0.28.35
     zeroconf~=0.39.4
+    flux-led>=0.28.36

@@ -51,6 +51,7 @@ INSTALL_REQUIRES = [
     'uvloop>=0.16.0; platform_system != "Windows"',
     # We can install this on all linux devices, it just won't work for anything other than a Pi
     'rpi-ws281x>=4.3.0; platform_system == "Linux"',
+    "flux-led>=0.28.36",
 ]
 
 
