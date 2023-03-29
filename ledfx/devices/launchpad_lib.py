@@ -241,11 +241,7 @@ class LaunchpadBase:
     # -- Useful for debugging or checking new devices.
     # -------------------------------------------------------------------------------------
     def EventRaw(self):
-        message = self.midi.ReadRaw()
-        if message is None:
-            return []
-        else:
-            return message
+        return self.midi.ReadRaw()
 
 
 # ==========================================================================
@@ -317,7 +313,7 @@ class Launchpad(LaunchpadBase):
                 True if a[2] > 0 else False,
             ]
         else:
-            return []
+            return None
 
     # -------------------------------------------------------------------------------------
     # -- Returns an x/y value of the last button change as a list:
@@ -333,7 +329,7 @@ class Launchpad(LaunchpadBase):
                 return [x, y + 1, True if a[2] > 0 else False]
             elif a[0] == 176:
                 return [a[1] - 104, 0, True if a[2] > 0 else False]
-        return []
+        return None
 
 
 # ==========================================================================
@@ -542,7 +538,7 @@ class LaunchpadPro(LaunchpadBase):
                 while a[0] == 208:
                     a = self.midi.ReadRaw()
                     if a is None:
-                        return []
+                        return None
 
             if a[0] == 144 or a[0] == 176:
                 return [a[1], a[2]]
@@ -551,11 +547,11 @@ class LaunchpadPro(LaunchpadBase):
                     if a[0] == 208:
                         return [255, a[1]]
                     else:
-                        return []
+                        return None
                 else:
-                    return []
+                    return None
         else:
-            return []
+            return None
 
     # -------------------------------------------------------------------------------------
     # -- Returns the raw value of the last button change (pressed/unpressed) as a list
@@ -573,7 +569,7 @@ class LaunchpadPro(LaunchpadBase):
                 while a[0] == 208:
                     a = self.midi.ReadRaw()
                     if a is None:
-                        return []
+                        return None
 
             if a[0] == 144 or a[0] == 176:
                 if mode.lower() != "pro":
@@ -587,9 +583,9 @@ class LaunchpadPro(LaunchpadBase):
                 if a[0] == 208:
                     return [255, 255, a[1]]
                 else:
-                    return []
+                    return None
         else:
-            return []
+            return None
 
 
 # ==========================================================================
@@ -696,9 +692,9 @@ class LaunchpadMk2(LaunchpadPro):
 
                 return [x, y, a[2]]
             else:
-                return []
+                return None
         else:
-            return []
+            return None
 
 
 # ==========================================================================
@@ -841,9 +837,9 @@ class LaunchControlXL(LaunchpadBase):
                 else:
                     return [a[1], a[2], 0]
             else:
-                return []
+                return None
         else:
-            return []
+            return None
 
 
 # ==========================================================================
@@ -1009,9 +1005,9 @@ class LaunchKeyMini(LaunchpadBase):
                 else:
                     return [a[1], a[2], 0]
             else:
-                return []
+                return None
         else:
-            return []
+            return None
 
     # -------------------------------------------------------------------------------------
     # -- Clears the input buffer (The Launchpads remember everything...)
@@ -1092,7 +1088,7 @@ class Dicer(LaunchpadBase):
                     else:
                         return [butNum, False, 0]
                 else:
-                    return []
+                    return None
             # --- button on master
             elif a[0] >= 157 and a[0] <= 159:
                 butNum = a[1]
@@ -1104,9 +1100,9 @@ class Dicer(LaunchpadBase):
                     else:
                         return [butNum, False, 0]
                 else:
-                    return []
+                    return None
         else:
-            return []
+            return None
 
     # -------------------------------------------------------------------------------------
     # -- Sets the Dicer <device> (0=master, 1=slave) to one of its six modes,
@@ -1397,7 +1393,7 @@ class LaunchpadLPX(LaunchpadPro):
                 while a[0] == 160:
                     a = self.midi.ReadRaw()
                     if a is None:
-                        return []
+                        return None
 
             if a[0] == 144 or a[0] == 176:
                 return [a[1], a[2]]
@@ -1408,11 +1404,11 @@ class LaunchpadLPX(LaunchpadPro):
                         # adding 255 to make it possible to distinguish "pressed" from "pressure"
                         return [255 + a[1], a[2]]
                     else:
-                        return []
+                        return None
                 else:
-                    return []
+                    return None
         else:
-            return []
+            return None
 
     # -------------------------------------------------------------------------------------
     # -- Returns the raw value of the last button change (pressed/unpressed) as a list
@@ -1431,9 +1427,10 @@ class LaunchpadLPX(LaunchpadPro):
                 while a[0] == 160:
                     a = self.midi.ReadRaw()
                     if a is None:
-                        return []
+                        return None
 
             if a[0] == 144 or a[0] == 176 or a[0] == 160:
+                # FIX THIS
                 if mode.lower() != "pro":
                     x = (a[1] - 1) % 10
                 else:
@@ -1446,9 +1443,9 @@ class LaunchpadLPX(LaunchpadPro):
                 else:
                     return [x, y, a[2]]
             else:
-                return []
+                return None
         else:
-            return []
+            return None
 
 
 # ==========================================================================
@@ -1581,9 +1578,9 @@ class MidiFighter64(LaunchpadBase):
                 if a[0] == 130 or a[0] == 129:
                     return [a[1], 0]
                 else:
-                    return []
+                    return None
         else:
-            return []
+            return None
 
     # -------------------------------------------------------------------------------------
     # -- Returns the raw value of the last button change (pressed/unpressed) as a list
@@ -1596,7 +1593,7 @@ class MidiFighter64(LaunchpadBase):
         if a is not None:
             # whatever that is, does not belong here...
             if a[1] < 36 or a[1] > 99:
-                return []
+                return None
 
             x = (a[1] - 36) % 4
             if a[1] >= 68:
@@ -1609,9 +1606,9 @@ class MidiFighter64(LaunchpadBase):
                 if a[0] == 130 or a[0] == 129:
                     return [x, y, 0]
                 else:
-                    return []
+                    return None
         else:
-            return []
+            return None
 
 
 # ==========================================================================
@@ -1766,7 +1763,7 @@ class LaunchpadProMk3(LaunchpadPro):
                 while a[0] == 208:
                     a = self.midi.ReadRaw()
                     if a is None:
-                        return []
+                        return None
 
             if a[0] == 144 or a[0] == 176:
                 if mode.lower() != "pro":
@@ -1786,9 +1783,9 @@ class LaunchpadProMk3(LaunchpadPro):
                 if a[0] == 208:
                     return [255, 255, a[1]]
                 else:
-                    return []
+                    return None
         else:
-            return []
+            return None
 
     # -------------------------------------------------------------------------------------
     # -- Go back to custom modes before closing connection
