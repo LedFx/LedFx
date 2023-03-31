@@ -88,7 +88,7 @@ class HueDevice(NetworkedDevice):
                 (self._config["ip_address"], self._config["udp_port"])
             )
         else:
-            raise Exception(f"Unable to activate UDP stream mode")
+            raise Exception("Unable to activate UDP stream mode")
 
         # I'm a hack, but I seem to be necessary and I work
         for _ in range(10):
