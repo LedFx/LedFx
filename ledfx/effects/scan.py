@@ -2,12 +2,15 @@ import timeit
 
 import numpy as np
 import voluptuous as vol
-# import logging
 
 from ledfx.color import parse_color, validate_color
 from ledfx.effects.audio import AudioReactiveEffect
 
+# import logging
+
+
 # _LOGGER = logging.getLogger(__name__)
+
 
 class ScanAudioEffect(AudioReactiveEffect):
     NAME = "Scan"
@@ -79,12 +82,10 @@ class ScanAudioEffect(AudioReactiveEffect):
 
     def audio_data_updated(self, data):
         self.bar = (
-                getattr(data, self.power_func)() * self._config[
-            "multiplier"] * 2
+            getattr(data, self.power_func)() * self._config["multiplier"] * 2
         )
 
     def render(self):
-
         now = timeit.default_timer()
         time_passed = now - self.last_time
         self.last_time = now
@@ -94,7 +95,9 @@ class ScanAudioEffect(AudioReactiveEffect):
 
         step_size = step_size * self.bar
 
-        scan_width_pixels = int(max(1, int(self.pixel_count / 100.0 * self._config["scan_width"])))
+        scan_width_pixels = int(
+            max(1, int(self.pixel_count / 100.0 * self._config["scan_width"]))
+        )
         if self.returning:
             self.scan_pos -= step_size
         else:
@@ -113,9 +116,10 @@ class ScanAudioEffect(AudioReactiveEffect):
 
         pixel_pos = max(0, min(int(self.scan_pos), self.pixel_count))
 
-        self.pixels[0: self.pixel_count] = self.background_color
-        self.pixels[pixel_pos: min(pixel_pos + scan_width_pixels, self.pixel_count)] = self.color_scan
-        overflow = ( pixel_pos + scan_width_pixels ) - self.pixel_count
+        self.pixels[0 : self.pixel_count] = self.background_color
+        self.pixels[
+            pixel_pos : min(pixel_pos + scan_width_pixels, self.pixel_count)
+        ] = self.color_scan
+        overflow = (pixel_pos + scan_width_pixels) - self.pixel_count
         if overflow > 0:
-            self.pixels[: overflow] = self.color_scan
-
+            self.pixels[:overflow] = self.color_scan
