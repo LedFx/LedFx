@@ -47,7 +47,10 @@ class HueDevice(NetworkedDevice):
 
         self._dtls_client_context = tls.ClientContext(
             tls.DTLSConfiguration(
-                pre_shared_key=(self._config["user_name"], bytes.fromhex(self._config["client_key"])),
+                pre_shared_key=(
+                    self._config["user_name"],
+                    bytes.fromhex(self._config["client_key"]),
+                ),
                 ciphers=["TLS-PSK-WITH-AES-128-GCM-SHA256"],
             )
         )
@@ -55,12 +58,14 @@ class HueDevice(NetworkedDevice):
 
     def _hue_get(self, api_endpoint, data=None):
         return requests.get(
-            f"http://{self._config['ip_address']}/api/{self._config['user_name']}/{api_endpoint}", json=data
+            f"http://{self._config['ip_address']}/api/{self._config['user_name']}/{api_endpoint}",
+            json=data,
         ).json()
 
     def _hue_put(self, api_endpoint, data):
         return requests.put(
-            f"http://{self._config['ip_address']}/api/{self._config['user_name']}/{api_endpoint}", json=data
+            f"http://{self._config['ip_address']}/api/{self._config['user_name']}/{api_endpoint}",
+            json=data,
         ).json()
 
     def _entertainment_groups(self):
@@ -73,11 +78,15 @@ class HueDevice(NetworkedDevice):
 
     def activate(self):
         request_data = {"stream": {"active": True}}
-        response = self._hue_put(f"groups/{self._config['group_id']}", request_data)[0]
+        response = self._hue_put(
+            f"groups/{self._config['group_id']}", request_data
+        )[0]
         if "success" in response:
             sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             self._sock = self._dtls_client_context.wrap_socket(sock, None)
-            self._sock.connect((self._config["ip_address"], self._config["udp_port"]))
+            self._sock.connect(
+                (self._config["ip_address"], self._config["udp_port"])
+            )
         else:
             raise Exception(f"Unable to activate UDP stream mode")
 
@@ -101,7 +110,7 @@ class HueDevice(NetworkedDevice):
         super().deactivate()
 
     def flush(self, data):
-        pixels = [[int(r), int(g), int(b)] for r,g,b in data]
+        pixels = [[int(r), int(g), int(b)] for r, g, b in data]
         send_data = bytearray(b"HueStream")
         send_data.append(1)  # Major version
         send_data.append(0)  # Minor version
@@ -113,7 +122,9 @@ class HueDevice(NetworkedDevice):
         for i in range(len(pixels)):
             light_id = int(self._config["pixel_light_ids"][i])
             send_data.append(0)  # Device Type (0=Light)
-            send_data.extend(light_id.to_bytes(2, byteorder="big"))  # ID of Light
+            send_data.extend(
+                light_id.to_bytes(2, byteorder="big")
+            )  # ID of Light
             send_data.append(pixels[i][0])  # Red
             send_data.append(pixels[i][0])  # Red
             send_data.append(pixels[i][1])  # Green
@@ -124,13 +135,17 @@ class HueDevice(NetworkedDevice):
             self._sock.send(send_data)
         except Exception:
             self.activate()
-            
-        
+
     async def async_initialize(self):
         await super().async_initialize()
 
         entertainment_groups = self._entertainment_groups()
-        group_id = next(id for id in entertainment_groups if entertainment_groups[id].get("name") == self._config.get("group_name"))
+        group_id = next(
+            id
+            for id in entertainment_groups
+            if entertainment_groups[id].get("name")
+            == self._config.get("group_name")
+        )
         group = entertainment_groups[group_id]
 
         config = {
