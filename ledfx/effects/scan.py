@@ -102,7 +102,6 @@ class ScanAudioEffect(AudioReactiveEffect, GradientEffect):
             self.color_scan = self.color_scan * min(1.0, self.power)
 
     def render(self):
-
         now = timeit.default_timer()
         time_passed = now - self.last_time
         self.last_time = now
@@ -140,3 +139,4 @@ class ScanAudioEffect(AudioReactiveEffect, GradientEffect):
             overflow = ( pixel_pos + scan_width_pixels ) - self.pixel_count
             if overflow > 0:
                 self.pixels[: overflow] = self.color_scan
+
