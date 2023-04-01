@@ -1,6 +1,5 @@
 import logging
 
-import numpy as np
 from aiohttp import web
 from icmplib import async_ping
 
