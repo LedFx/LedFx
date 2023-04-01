@@ -35,7 +35,7 @@ class InfoEndpoint(RestEndpoint):
             "max_ping": ping.max_rtt,
             "avg_ping": ping.avg_rtt,
             "min_ping": ping.min_rtt,
-            "packetlosspercent": ping.packet_loss
+            "packetlosspercent": ping.packet_loss,
         }
 
         return web.json_response(data=response, status=200)
