@@ -132,11 +132,12 @@ class ScanAudioEffect(AudioReactiveEffect, GradientEffect):
 
         pixel_pos = max(0, min(int(self.scan_pos), self.pixel_count))
 
-        self.pixels[0: self.pixel_count] = self.background_color
-        self.pixels[pixel_pos: min(pixel_pos + scan_width_pixels, self.pixel_count)] = self.color_scan
+        self.pixels[0 : self.pixel_count] = self.background_color
+        self.pixels[
+            pixel_pos : min(pixel_pos + scan_width_pixels, self.pixel_count)
+        ] = self.color_scan
 
         if not self._config["bounce"]:
-            overflow = ( pixel_pos + scan_width_pixels ) - self.pixel_count
+            overflow = (pixel_pos + scan_width_pixels) - self.pixel_count
             if overflow > 0:
-                self.pixels[: overflow] = self.color_scan
-
+                self.pixels[:overflow] = self.color_scan
