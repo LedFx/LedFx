@@ -5,16 +5,13 @@ import voluptuous as vol
 
 from ledfx.color import parse_color, validate_color
 from ledfx.effects.audio import AudioReactiveEffect
-
-# import logging
-
-
-# _LOGGER = logging.getLogger(__name__)
+from ledfx.effects.gradient import GradientEffect
 
 
-class ScanAudioEffect(AudioReactiveEffect):
+class ScanAudioEffect(AudioReactiveEffect, GradientEffect):
     NAME = "Scan"
     CATEGORY = "Classic"
+    HIDDEN_KEYS = ["gradient_roll"]
 
     _power_funcs = {
         "Beat": "beat_power",
@@ -62,6 +59,16 @@ class ScanAudioEffect(AudioReactiveEffect):
                 description="Speed impact multiplier",
                 default=3.0,
             ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=5.0)),
+            vol.Optional(
+                "color_intensity",
+                description="Adjust color intensity based on audio power",
+                default=True,
+            ): bool,
+            vol.Optional(
+                "use_grad",
+                description="Use colors from gradient selector",
+                default=False,
+            ): bool,
         }
     )
 
@@ -75,15 +82,24 @@ class ScanAudioEffect(AudioReactiveEffect):
         self.background_color = np.array(
             parse_color(self._config["background_color"]), dtype=float
         )
-        self.color_scan = np.array(
+        self.power_func = self._power_funcs[self._config["frequency_range"]]
+        self.color_scan_cache = np.array(
             parse_color(self._config["color_scan"]), dtype=float
         )
-        self.power_func = self._power_funcs[self._config["frequency_range"]]
+        self.color_scan = self.color_scan_cache
 
     def audio_data_updated(self, data):
-        self.bar = (
-            getattr(data, self.power_func)() * self._config["multiplier"] * 2
-        )
+        self.power = getattr(data, self.power_func)() * 2
+        self.bar = self.power * self._config["multiplier"]
+
+        if self._config["use_grad"]:
+            gradient_pos = (self.scan_pos / self.pixel_count) % 1
+            self.color_scan = self.get_gradient_color(gradient_pos)
+        else:
+            self.color_scan = self.color_scan_cache
+
+        if self._config["color_intensity"]:
+            self.color_scan = self.color_scan * min(1.0, self.power)
 
     def render(self):
 
@@ -124,4 +140,3 @@ class ScanAudioEffect(AudioReactiveEffect):
             overflow = ( pixel_pos + scan_width_pixels ) - self.pixel_count
             if overflow > 0:
                 self.pixels[: overflow] = self.color_scan
-
