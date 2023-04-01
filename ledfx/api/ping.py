@@ -2,7 +2,7 @@ import logging
 
 import numpy as np
 from aiohttp import web
-from tcp_latency import measure_latency
+from icmplib import async_ping
 
 from ledfx.api import RestEndpoint
 from ledfx.utils import resolve_destination
@@ -25,35 +25,17 @@ class InfoEndpoint(RestEndpoint):
             self._ledfx.thread_executor,
             device.config["ip_address"],
         )
-        output = measure_latency(
-            host=ping_target,
-            port=80,
-            runs=10,
-            wait=0.25,
-            timeout=0.2,
-            human_output=False,
+        ping = await async_ping(
+            address=ping_target,
+            count=10,
+            privileged=False,
+            timeout=0.500,
         )
+        response = {
+            "max_ping": ping.max_rtt,
+            "avg_ping": ping.avg_rtt,
+            "min_ping": ping.min_rtt,
+            "packetlosspercent": ping.packet_loss
+        }
 
-        ping_count = len(output)
-
-        valid_pings = [i for i in output if i is not None]
-        valid_ping_count = len(valid_pings)
-        if valid_ping_count >= 1:
-            max_ping = np.round(np.max(valid_pings), decimals=2)
-            min_ping = np.round(np.min(valid_pings), decimals=2)
-            avg_ping = np.round(np.average(valid_pings), decimals=2)
-
-            successful_packets = (valid_ping_count / ping_count) * 100
-            packetloss = successful_packets - 100
-            response = {
-                "max_ping": max_ping,
-                "avg_ping": avg_ping,
-                "min_ping": min_ping,
-                "packetlosspercent": float(packetloss),
-            }
-
-            return web.json_response(data=response, status=200)
-        else:
-            response = {"packetlosspercent": float(100)}
-
-            return web.json_response(data=response, status=200)
+        return web.json_response(data=response, status=200)
