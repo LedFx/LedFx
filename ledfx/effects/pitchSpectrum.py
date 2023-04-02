@@ -40,11 +40,11 @@ class PitchSpectrumAudioEffect(AudioReactiveEffect, GradientEffect):
 
     def audio_data_updated(self, data):
         # Grab the filtered melbank
-        y = self.melbank(filtered=False, size=self.pixel_count)
+        self.filtered_melbank = self.melbank(filtered=False, size=self.pixel_count)
         midi_value = data.pitch()
         if midi_value is None:
             midi_value = 0
-        note_color = RGB(0, 0, 0)
+        self.note_color = RGB(0, 0, 0)
         if not self.avg_midi:
             self.avg_midi = midi_value
 
@@ -59,13 +59,18 @@ class PitchSpectrumAudioEffect(AudioReactiveEffect, GradientEffect):
         if self.avg_midi >= MIN_MIDI:
             midi_scaled = (self.avg_midi - MIN_MIDI) / (MAX_MIDI - MIN_MIDI)
             midi_scaled = max(0, min(midi_scaled, 1))
-            note_color = self.get_gradient_color(midi_scaled)
+            # TODO: Move this into Render
+            self.note_color = self.get_gradient_color(midi_scaled)
 
+
+
+
+    def render(self):
         # Mix in the new color based on the filterbank information and fade out
         # the old colors
         # Mix colors for each pixel
-        new_colors = np.multiply(self.pixels, (1 - y[:, None])) + np.multiply(
-            note_color, y[:, None]
+        new_colors = np.multiply(self.pixels, (1 - self.filtered_melbank[:, None])) + np.multiply(
+            self.note_color, self.filtered_melbank[:, None]
         )
 
         # Apply fade_rate
@@ -74,6 +79,5 @@ class PitchSpectrumAudioEffect(AudioReactiveEffect, GradientEffect):
         new_colors = np.multiply(new_colors, (1 - fade_rate)) + np.multiply(
             black, fade_rate
         )
-
-        # Assign new_colors back to self.pixels
+            # Assign new_colors back to self.pixels
         self.pixels = new_colors
