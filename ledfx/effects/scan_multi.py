@@ -1,4 +1,5 @@
 import timeit
+from enum import IntEnum
 
 import numpy as np
 import voluptuous as vol
@@ -6,7 +7,6 @@ import voluptuous as vol
 from ledfx.color import parse_color, validate_color
 from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.gradient import GradientEffect
-from enum import IntEnum
 
 
 class Power(IntEnum):
@@ -23,9 +23,7 @@ class Scan:
         self.power_func = power_func
 
     def set_color_scan_cache(self, color):
-        self.color_scan_cache = np.array(
-            parse_color(color), dtype=float
-        )
+        self.color_scan_cache = np.array(parse_color(color), dtype=float)
         self.color_scan = self.color_scan_cache
 
 
@@ -66,7 +64,8 @@ class ScanMultiAudioEffect(AudioReactiveEffect, GradientEffect):
                 "color_mid",
                 description="Color of mid power scan",
                 default="#00FF00",
-            ): validate_color,            vol.Optional(
+            ): validate_color,
+            vol.Optional(
                 "color_high",
                 description="Color of high power scan",
                 default="#0000FF",
@@ -111,7 +110,6 @@ class ScanMultiAudioEffect(AudioReactiveEffect, GradientEffect):
         self.scans[Power.HIGH].set_color_scan_cache(self._config["color_high"])
 
     def audio_data_updated(self, data):
-
         for scan in self.scans:
             scan.power = getattr(data, scan.power_func)() * 2
             scan.bar = scan.power * self._config["multiplier"]
@@ -137,7 +135,7 @@ class ScanMultiAudioEffect(AudioReactiveEffect, GradientEffect):
             max(1, int(self.pixel_count / 100.0 * self._config["scan_width"]))
         )
 
-        self.pixels[0: self.pixel_count] = self.background_color
+        self.pixels[0 : self.pixel_count] = self.background_color
 
         for scan in self.scans:
             step_size = step_size * scan.bar
@@ -162,7 +160,9 @@ class ScanMultiAudioEffect(AudioReactiveEffect, GradientEffect):
 
             # actually render
             self.pixels[
-                pixel_pos : min(pixel_pos + scan_width_pixels, self.pixel_count)
+                pixel_pos : min(
+                    pixel_pos + scan_width_pixels, self.pixel_count
+                )
             ] += scan.color_scan
 
             if not self._config["bounce"]:
