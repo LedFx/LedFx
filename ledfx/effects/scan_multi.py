@@ -90,13 +90,9 @@ class ScanMultiAudioEffect(AudioReactiveEffect, GradientEffect):
     )
 
     def __init__(self, ledfx, config):
-        self.scans = []
-        scan = Scan("lows_power")
-        self.scans.append(scan)
-        scan = Scan("mids_power")
-        self.scans.append(scan)
-        scan = Scan("high_power")
-        self.scans.append(scan)
+        self.scans = [Scan("lows_power"),
+                      Scan("mids_power"),
+                      Scan("high_power")]
         super().__init__(ledfx, config)
 
     def on_activate(self, pixel_count):
