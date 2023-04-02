@@ -1,7 +1,7 @@
+import numpy as np
 import voluptuous as vol
 
 from ledfx.color import RGB
-from ledfx.effects import mix_colors
 from ledfx.effects.audio import MAX_MIDI, MIN_MIDI, AudioReactiveEffect
 from ledfx.effects.gradient import GradientEffect
 
@@ -37,14 +37,15 @@ class PitchSpectrumAudioEffect(AudioReactiveEffect, GradientEffect):
 
     def config_updated(self, config):
         self.avg_midi = None
+        self.filtered_melbank = None
 
     def audio_data_updated(self, data):
         # Grab the filtered melbank
-        y = self.melbank(filtered=False, size=self.pixel_count)
-        midi_value = data.pitch()
-        if midi_value is None:
-            midi_value = 0
-        note_color = RGB(0, 0, 0)
+        self.filtered_melbank = self.melbank(
+            filtered=False, size=self.pixel_count
+        )
+        midi_value = data.pitch() or 0
+
         if not self.avg_midi:
             self.avg_midi = midi_value
 
@@ -55,20 +56,31 @@ class PitchSpectrumAudioEffect(AudioReactiveEffect, GradientEffect):
                 + midi_value * self._config["responsiveness"]
             )
 
-        # Grab the note color based on where it falls in the midi range
+    def render(self):
+        # If the melbanks are empty, then we can't render anything yet
+        # This also catches avg_midi being None
+        if self.filtered_melbank is None:
+            return
+
+        # Calculate the note color based on where it falls in the midi range
         if self.avg_midi >= MIN_MIDI:
             midi_scaled = (self.avg_midi - MIN_MIDI) / (MAX_MIDI - MIN_MIDI)
             midi_scaled = max(0, min(midi_scaled, 1))
             note_color = self.get_gradient_color(midi_scaled)
+        else:
+            note_color = RGB(0, 0, 0)
 
         # Mix in the new color based on the filterbank information and fade out
         # the old colors
-        for index in range(self.pixel_count):
-            #
-            # SLOW SLOW SLOW for loop
-            #
-            new_color = mix_colors(self.pixels[index], note_color, y[index])
-            new_color = mix_colors(
-                new_color, RGB(0, 0, 0), self._config["fade_rate"]
-            )
-            self.pixels[index] = new_color
+        new_colors = np.multiply(
+            self.pixels, (1 - self.filtered_melbank[:, np.newaxis])
+        ) + np.multiply(note_color, self.filtered_melbank[:, np.newaxis])
+
+        # Apply fade_rate
+        fade_rate = self._config["fade_rate"]
+        black = np.zeros((self.pixel_count, 3))
+        new_colors = np.multiply(new_colors, (1 - fade_rate)) + np.multiply(
+            black, fade_rate
+        )
+        # Assign new_colors back to self.pixels
+        self.pixels = new_colors

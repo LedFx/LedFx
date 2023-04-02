@@ -36,7 +36,7 @@ hiddenimports = [
     "serial",
     "pystray._win32",
     "serial.tools.list_ports",
-    "tcp_latency",
+    "icmplib",
     "aiohttp_cors",
     "psutil",
     "yappi",

@@ -35,12 +35,12 @@ INSTALL_REQUIRES = [
     "pyserial>=3.5",
     "pystray>=0.17",
     "pyupdater>=3.1.0",
-    "requests>=2.24.0",
+    "requests~=2.28.2",
     "sacn~=1.6.3",
-    "sentry-sdk~=1.4.3",
+    "sentry-sdk==1.14.0",
     "sounddevice~=0.4.2",
     "samplerate>=0.1.0",
-    "tcp-latency>=0.0.10",
+    "icmplib~=3.0.3",
     "voluptuous~=0.12.1",
     "zeroconf~=0.39.4",
     "pillow>=8.4.0",
@@ -51,6 +51,7 @@ INSTALL_REQUIRES = [
     'uvloop>=0.16.0; platform_system != "Windows"',
     # We can install this on all linux devices, it just won't work for anything other than a Pi
     'rpi-ws281x>=4.3.0; platform_system == "Linux"',
+    "flux-led>=0.28.35",
 ]
 
 
