@@ -30,7 +30,7 @@ class Sparkle:
         if now - self.born > self.die_off:
             self.alive = False
         self.health = 1 - ((now - self.born) / self.die_off)
-        self.pos += self.speed * frame_time
+        self.pos += self.speed * frame_time * self.health
         self.pos = self.pos % pixel_count
         self.pos = int(self.pos)
 
