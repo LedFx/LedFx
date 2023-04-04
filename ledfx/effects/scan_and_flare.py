@@ -145,6 +145,8 @@ class ScanAndFlareAudioEffect(AudioReactiveEffect, GradientEffect):
         self.power = getattr(data, self.power_func)() * 2
         self.bar = self.power * self._config["multiplier"]
 
+    def render(self):
+        # setup colors
         if self._config["use_grad"]:
             gradient_pos = (self.scan_pos / self.pixel_count) % 1
             self.color_scan = self.get_gradient_color(gradient_pos)
@@ -154,7 +156,6 @@ class ScanAndFlareAudioEffect(AudioReactiveEffect, GradientEffect):
         if self._config["color_intensity"]:
             self.color_scan = self.color_scan * min(1.0, self.power)
 
-    def render(self):
         now = timeit.default_timer()
         time_passed = now - self.last_time
         self.last_time = now
