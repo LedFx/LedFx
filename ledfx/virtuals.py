@@ -100,6 +100,11 @@ class Virtual:
                     max=MAX_FREQ,
                 ),
             ),  # AND HERE TOO,
+            vol.Optional(
+                "rows",
+                description="Amount of rows. > 1 if this virtual is a matrix",
+                default=1,
+            ): int,
         }
     )
 
