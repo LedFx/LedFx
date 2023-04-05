@@ -14,8 +14,7 @@ hiddenimports = [
     "openrgb",
     "python-rtmidi",
     "rtmidi",
-    "rtmidi.midiutil"
-    "mido.backends.rtmidi",
+    "rtmidi.midiutil" "mido.backends.rtmidi",
     "paho.mqtt.client",
     "samplerate",
     "samplerate._src",
