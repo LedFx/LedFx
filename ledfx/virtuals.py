@@ -100,6 +100,11 @@ class Virtual:
                     max=MAX_FREQ,
                 ),
             ),  # AND HERE TOO,
+            vol.Optional(
+                "rows",
+                description="Amount of rows. > 1 if this virtual is a matrix",
+                default=1,
+            ): int,
         }
     )
 
@@ -780,6 +785,7 @@ class Virtuals:
                 id=virtual["id"],
                 config=virtual["config"],
                 is_device=virtual["is_device"],
+                auto_generated=virtual["auto_generated"],
                 ledfx=self._ledfx,
             )
             if "segments" in virtual:
@@ -829,6 +835,7 @@ class Virtuals:
         # Create the new virtual and validate the schema.
         _config = kwargs.pop("config", None)
         _is_device = kwargs.pop("is_device", False)
+        _auto_generated = kwargs.pop("auto_generated", False)
         if _config is not None:
             _config = Virtual.CONFIG_SCHEMA(_config)
             obj = Virtual(config=_config, *args, **kwargs)
@@ -838,6 +845,7 @@ class Virtuals:
         # Attach some common properties
         setattr(obj, "_id", id)
         setattr(obj, "is_device", _is_device)
+        setattr(obj, "auto_generated", _auto_generated)
 
         # Store the object into the internal list and return it
         self._virtuals[id] = obj

@@ -32,6 +32,7 @@ class VirtualEndpoint(RestEndpoint):
             "config": virtual.config,
             "id": virtual.id,
             "is_device": virtual.is_device,
+            "auto_generated": virtual.auto_generated,
             "segments": virtual.segments,
             "pixel_count": virtual.pixel_count,
             "active": virtual.active,
@@ -172,7 +173,7 @@ class VirtualEndpoint(RestEndpoint):
         device_id = virtual.is_device
         device = self._ledfx.devices.get(device_id)
         if device is not None:
-            device.remove_from_virtuals()
+            await device.remove_from_virtuals()
             self._ledfx.devices.destroy(device_id)
 
             # Update and save the configuration

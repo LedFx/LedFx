@@ -46,6 +46,11 @@ class LaunchpadDevice(MidiDevice):
                     description="Icon for the device*",
                     default="launchpad",
                 ): str,
+                vol.Optional(
+                    "create_segments",
+                    description="Auto-Generate a virtual for each segments",
+                    default=False,
+                ): bool,
             }
         )
 
@@ -68,6 +73,43 @@ class LaunchpadDevice(MidiDevice):
         self.lp.Close()
         self.lp = None
         super().deactivate()
+
+    def add_postamble(self):
+        _LOGGER.info("Doing post creation things for LP...")
+        if self.config["create_segments"]:
+            # Generate virtuals for segments
+            self.sub_v("TopBar", "mdi:table-row", [[72, 79]], 1)
+            self.sub_v("Logo", "launchpad", [[80, 80]], 1)
+            self.sub_v(
+                "RightBar",
+                "mdi:table-column",
+                [
+                    [8, 8],
+                    [17, 17],
+                    [26, 26],
+                    [35, 35],
+                    [44, 44],
+                    [53, 53],
+                    [62, 62],
+                    [71, 71],
+                ],
+                1,
+            )
+            self.sub_v(
+                "Matrix",
+                "mdi:grid",
+                [
+                    [0, 7],
+                    [9, 16],
+                    [18, 25],
+                    [27, 34],
+                    [36, 43],
+                    [45, 52],
+                    [54, 61],
+                    [63, 70],
+                ],
+                8,
+            )
 
     # Need a flush variant for each supported Launchpad, and assign in validate
     def flush_launchpadLPX(self, data):
