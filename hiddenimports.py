@@ -14,6 +14,7 @@ hiddenimports = [
     "openrgb",
     "python-rtmidi",
     "rtmidi",
+    "rtmidi.midiutil"
     "mido.backends.rtmidi",
     "paho.mqtt.client",
     "samplerate",
@@ -40,4 +41,5 @@ hiddenimports = [
     "aiohttp_cors",
     "psutil",
     "yappi",
+    "flux_led",
 ]
