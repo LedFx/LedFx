@@ -29,6 +29,7 @@ PERMITTED_KEYS = {
         "port_s",
         "dev_mode",
         "scan_on_startup",
+        "create_segments",
         "visualisation_fps",
         "visualisation_maxlen",
         "global_transitions",
