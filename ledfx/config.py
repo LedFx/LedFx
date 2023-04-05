@@ -405,6 +405,7 @@ def migrate_config(old_config):
                 {
                     "id": generate_id(name),
                     "is_device": device["id"],
+                    "auto_generated": device["auto_generated"],
                     "config": virtual_config,
                     "segments": segments,
                 }

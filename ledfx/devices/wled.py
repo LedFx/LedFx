@@ -33,7 +33,7 @@ class WLEDDevice(NetworkedDevice):
             ): vol.All(int, vol.Range(0, 255)),
             vol.Optional(
                 "create_segments",
-                description="Auto-Generate a virtual for each segments",
+                description="Import WLED segments into LedFx",
                 default=False,
             ): bool,
             vol.Optional(
@@ -119,7 +119,10 @@ class WLEDDevice(NetworkedDevice):
 
     async def add_postamble(self):
         _LOGGER.debug("Doing post creation things for WLED...")
-        if self.config["create_segments"]:
+        if (
+            self.config["create_segments"]
+            or self._ledfx.config["create_segments"]
+        ):
             segments = await self.wled.get_segments()
             if len(segments) > 1:
                 for seg in segments:

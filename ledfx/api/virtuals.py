@@ -26,6 +26,7 @@ class VirtualsEndpoint(RestEndpoint):
                 "config": virtual.config,
                 "id": virtual.id,
                 "is_device": virtual.is_device,
+                "auto_generated": virtual.auto_generated,
                 "segments": virtual.segments,
                 "pixel_count": virtual.pixel_count,
                 "active": virtual.active,
@@ -106,6 +107,7 @@ class VirtualsEndpoint(RestEndpoint):
                     "config": virtual.config,
                     "id": virtual.id,
                     "is_device": virtual.is_device,
+                    "auto_generated": virtual.auto_generated,
                 },
             }
         # Or, create new virtual if id does not exist
@@ -128,6 +130,7 @@ class VirtualsEndpoint(RestEndpoint):
                     "id": virtual.id,
                     "config": virtual.config,
                     "is_device": virtual.is_device,
+                    "auto_generated": virtual.auto_generated,
                 }
             )
 
@@ -141,6 +144,7 @@ class VirtualsEndpoint(RestEndpoint):
                     "config": virtual.config,
                     "id": virtual.id,
                     "is_device": virtual.is_device,
+                    "auto_generated": virtual.auto_generated,
                 },
             }
 

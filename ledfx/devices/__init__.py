@@ -280,9 +280,11 @@ class Device(BaseRegistry):
             if hasattr(self, prop):
                 delattr(self, prop)
 
-    def remove_from_virtuals(self):
+    async def remove_from_virtuals(self):
         # delete segments for this device in any virtuals
 
+        # list of ids to destroy after iterating
+        auto_generated_virtuals_to_destroy = []
         for virtual in self._ledfx.virtuals.values():
             if not any(segment[0] == self.id for segment in virtual._segments):
                 continue
@@ -295,6 +297,22 @@ class Device(BaseRegistry):
                 for segment in virtual._segments
                 if segment[0] != self.id
             )
+            # If the virtual is auto generated and has no segments left, nuke it
+            if len(virtual._segments) == 0 and virtual.auto_generated:
+                virtual.clear_effect()
+                # cleanup this virtual from any scenes
+                ledfx_scenes = self._ledfx.config["scenes"].copy()
+                for scene_id, scene_config in ledfx_scenes.items():
+                    self._ledfx.config["scenes"][scene_id]["virtuals"] = {
+                        _virtual_id: effect
+                        for _virtual_id, effect in scene_config[
+                            "virtuals"
+                        ].items()
+                        if _virtual_id != virtual.id
+                    }
+                # add it to the list to be destroyed
+                auto_generated_virtuals_to_destroy.append(virtual.id)
+                continue
 
             # Update ledfx's config
             for idx, item in enumerate(self._ledfx.config["virtuals"]):
@@ -305,6 +323,44 @@ class Device(BaseRegistry):
 
             if active:
                 virtual.activate()
+
+        for id in auto_generated_virtuals_to_destroy:
+            virtual = self._ledfx.virtuals.get(id)
+            virtual.clear_effect()
+            device_id = virtual.is_device
+            device = self._ledfx.devices.get(device_id)
+            if device is not None:
+                await device.remove_from_virtuals()
+                self._ledfx.devices.destroy(device_id)
+
+                # Update and save the configuration
+                self._ledfx.config["devices"] = [
+                    _device
+                    for _device in self._ledfx.config["devices"]
+                    if _device["id"] != device_id
+                ]
+
+            # cleanup this virtual from any scenes
+            ledfx_scenes = self._ledfx.config["scenes"].copy()
+            for scene_id, scene_config in ledfx_scenes.items():
+                self._ledfx.config["scenes"][scene_id]["virtuals"] = {
+                    _virtual_id: effect
+                    for _virtual_id, effect in scene_config["virtuals"].items()
+                    if _virtual_id != id
+                }
+
+            self._ledfx.virtuals.destroy(id)
+
+            # Update and save the configuration
+            self._ledfx.config["virtuals"] = [
+                virtual
+                for virtual in self._ledfx.config["virtuals"]
+                if virtual["id"] != id
+            ]
+            save_config(
+                config=self._ledfx.config,
+                config_dir=self._ledfx.config_dir,
+            )
 
     def add_postamble(self):
         # over ride in child classes for device specific behaviours
@@ -330,6 +386,7 @@ class Device(BaseRegistry):
             id=virtual_id,
             config=virtual_config,
             ledfx=self._ledfx,
+            auto_generated=True,
         )
 
         # Create segment on the virtual
@@ -342,6 +399,7 @@ class Device(BaseRegistry):
                 "config": virtual.config,
                 "segments": virtual.segments,
                 "is_device": False,
+                "auto_generated": True,
             }
         )
 
@@ -689,6 +747,7 @@ class Devices(RegistryLoader):
             config=virtual_config,
             ledfx=self._ledfx,
             is_device=device.id,
+            auto_generated=False,
         )
 
         # Create the device as a single segment on the virtual
@@ -701,6 +760,7 @@ class Devices(RegistryLoader):
                 "config": virtual.config,
                 "segments": virtual.segments,
                 "is_device": device.id,
+                "auto_generated": virtual.auto_generated,
             }
         )
 
