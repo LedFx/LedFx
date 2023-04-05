@@ -531,7 +531,7 @@ async def resolve_destination(
 
 
 def currently_frozen():
-    """Checks to see if running in a frozen environment such as pyinstaller or pyupdater package
+    """Checks to see if running in a frozen environment such as pyinstaller created binaries
     Args:
         Nil
 

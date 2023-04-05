@@ -29,12 +29,7 @@ try:
     have_psutil = True
 except ImportError:
     have_psutil = False
-try:
-    from pyupdater.client import Client
 
-    have_updater = True
-except ImportError:
-    have_updater = False
 
 import ledfx.config as config_helpers
 from ledfx.consts import (
@@ -45,9 +40,6 @@ from ledfx.consts import (
 )
 from ledfx.core import LedFxCore
 from ledfx.utils import currently_frozen, get_icon_path
-
-# Logger Variables
-PYUPDATERLOGLEVEL = 35
 
 
 def validate_python() -> None:
@@ -82,9 +74,6 @@ def reset_logging():
 
 
 def setup_logging(loglevel, config_dir):
-    # Create a custom logging level to virtual pyupdater progress
-    reset_logging()
-
     console_loglevel = loglevel or logging.WARNING
     console_logformat = "[%(levelname)-8s] %(name)-30s : %(message)s"
 
@@ -118,12 +107,9 @@ def setup_logging(loglevel, config_dir):
     root_logger.addHandler(console_handler)
     root_logger.addHandler(file_handler)
 
-    logging.addLevelName(PYUPDATERLOGLEVEL, "Updater")
-
     # Suppress some of the overly verbose logs
     logging.getLogger("sacn").setLevel(logging.WARNING)
     logging.getLogger("aiohttp.access").setLevel(logging.WARNING)
-    logging.getLogger("pyupdater").setLevel(logging.WARNING)
     logging.getLogger("zeroconf").setLevel(logging.WARNING)
 
     global _LOGGER
@@ -214,7 +200,7 @@ def parse_args():
         "--offline",
         dest="offline_mode",
         action="store_true",
-        help="Disable automated updates and sentry crash logger",
+        help="Disable sentry crash logger",
     )
     parser.add_argument(
         "--sentry-crash-test",
@@ -243,62 +229,6 @@ def installed_via_pip():
         return True
     else:
         return False
-
-
-def update_ledfx(icon=None):
-    # initialize & refresh in one update, check client
-
-    def notify(msg):
-        if icon and icon.HAS_NOTIFICATION:
-            icon.remove_notification()
-            icon.notify(msg)
-        _LOGGER.log(PYUPDATERLOGLEVEL, msg)
-
-    def log_status_info(info):
-        total = info.get("total")
-        downloaded = info.get("downloaded")
-        percent_complete = info.get("percent_complete")
-        time = info.get("time")
-        _LOGGER.log(
-            PYUPDATERLOGLEVEL,
-            f"{downloaded} of {total} [{percent_complete} complete, {time} remaining]",
-        )
-
-    class ClientConfig:
-        PUBLIC_KEY = "Txce3TE9BUixsBtqzDba6V5vBYltt/0pw5oKL8ueCDg"
-        APP_NAME = PROJECT_NAME
-        COMPANY_NAME = "LedFx Developers"
-        HTTP_TIMEOUT = 5
-        MAX_DOWNLOAD_RETRIES = 2
-        UPDATE_URLS = ["https://ledfx.app/downloads/"]
-
-    client = Client(ClientConfig(), refresh=True)
-    _LOGGER.log(PYUPDATERLOGLEVEL, "Checking for updates...")
-    # First we check for updates.
-    # If an update is found, an update object will be returned
-    # If no updates are available, None will be returned
-    ledfx_update = client.update_check(PROJECT_NAME, PROJECT_VERSION)
-
-    # Download the update
-    if ledfx_update is not None:
-        client.add_progress_hook(log_status_info)
-        _LOGGER.log(PYUPDATERLOGLEVEL, "Update found!")
-        notify(
-            "Downloading update, please wait... LedFx will restart when complete."
-        )
-        ledfx_update.download()
-        # Install and restart
-        if ledfx_update.is_downloaded():
-            notify("Download complete. Restarting LedFx...")
-            ledfx_update.extract_restart()
-        else:
-            notify("Unable to download update.")
-    else:
-        # No Updates, into main we go
-        _LOGGER.log(
-            PYUPDATERLOGLEVEL,
-            "You're all up to date, enjoy the light show!",
-        )
 
 
 def log_packages():
@@ -384,13 +314,9 @@ def main():
         )
     else:
         icon = None
-    # icon = None
 
     if _LOGGER.isEnabledFor(logging.DEBUG):
         log_packages()
-
-    # if have_updater and not args.offline_mode and currently_frozen():
-    #     update_ledfx(icon)
 
     if icon:
         icon.run(setup=entry_point)
