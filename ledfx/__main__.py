@@ -33,7 +33,6 @@ except ImportError:
 
 import ledfx.config as config_helpers
 from ledfx.consts import (
-    PROJECT_NAME,
     PROJECT_VERSION,
     REQUIRED_PYTHON_STRING,
     REQUIRED_PYTHON_VERSION,
