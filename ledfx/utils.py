@@ -311,7 +311,8 @@ class WLED:
         Returns:
             dict: array of segments
         """
-        return await self.get_state()["seg"]
+        res = await self.get_state()
+        return res["seg"]
 
     async def set_power_state(self, state):
         """
