@@ -383,6 +383,7 @@ def migrate_config(old_config):
                     "config": new_effect_config,
                     "type": new_effect_id,
                 }
+            virtual["auto_generated"] = virtual.get("auto_generated", False)
         new_config["virtuals"] = virtuals
     else:  # time to make some virtuals
         from ledfx.utils import generate_id
@@ -405,7 +406,7 @@ def migrate_config(old_config):
                 {
                     "id": generate_id(name),
                     "is_device": device["id"],
-                    "auto_generated": device["auto_generated"],
+                    "auto_generated": False,
                     "config": virtual_config,
                     "segments": segments,
                 }
