@@ -230,6 +230,5 @@ class ScanAndFlareAudioEffect(AudioReactiveEffect, GradientEffect):
                 self.pixels[:overflow] = self.color_scan
 
         # render any sparkles
-        if self._config["spark_on"]:
-            for sparkles in self.sparkles:
-                sparkles.render(self.pixels, self.pixel_count)
+        for sparkles in self.sparkles:
+            sparkles.render(self.pixels, self.pixel_count)
