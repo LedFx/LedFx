@@ -306,6 +306,45 @@ class Device(BaseRegistry):
             if active:
                 virtual.activate()
 
+    def add_postamble(self):
+        # over ride in child classes for device specific behaviours
+        pass
+
+    def sub_v(self, name, icon, segs, rows):
+        compound_name = f"{self.name}-{name}"
+        _LOGGER.info(f"Creating a virtual for device {compound_name}")
+        virtual_id = generate_id(compound_name)
+        virtual_config = {
+            "name": compound_name,
+            "icon_name": icon,
+            "transition_time": 0,
+            "rows": rows,
+        }
+
+        segments = []
+        for seg in segs:
+            segments.append([self.id, seg[0], seg[1], False])
+
+        # Create the virtual
+        virtual = self._ledfx.virtuals.create(
+            id=virtual_id,
+            config=virtual_config,
+            ledfx=self._ledfx,
+        )
+
+        # Create segment on the virtual
+        virtual.update_segments(segments)
+
+        # Update the configuration
+        self._ledfx.config["virtuals"].append(
+            {
+                "id": virtual.id,
+                "config": virtual.config,
+                "segments": virtual.segments,
+                "is_device": False,
+            }
+        )
+
 
 @BaseRegistry.no_registration
 class MidiDevice(Device):
@@ -664,6 +703,8 @@ class Devices(RegistryLoader):
                 "is_device": device.id,
             }
         )
+
+        await device.add_postamble()
 
         # Finally, save the config to file!
         save_config(
