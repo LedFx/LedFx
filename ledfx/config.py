@@ -91,6 +91,7 @@ CORE_CONFIG_SCHEMA = vol.Schema(
         vol.Optional("user_colors", default={}): dict,
         vol.Optional("user_gradients", default={}): dict,
         vol.Optional("scan_on_startup", default=False): bool,
+        vol.Optional("create_segments", default=False): bool,
         vol.Optional("wled_preferences", default={}): dict,
         vol.Optional(
             "configuration_version", default=CONFIGURATION_VERSION

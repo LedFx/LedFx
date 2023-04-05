@@ -699,6 +699,10 @@ class Devices(RegistryLoader):
             }
         )
 
+        # if device.onAfterDeviceAdded is not None:
+        #     device.onAfterDeviceAdded()
+        #     # device.onAfterDeviceAdded(device_config, device)
+
         if device_type == "launchpad" and device_config["create_segments"]:
             # Generate virtuals for segments
             self.sub_v(device, "TopBar", "mdi:table-row", [[72, 79]], 1)

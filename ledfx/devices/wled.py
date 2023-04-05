@@ -144,3 +144,69 @@ class WLEDDevice(NetworkedDevice):
         # self.wled.multirgb_dmx_mode()
 
         # await self.wled.flush_sync_settings()
+
+    # def async onAfterDeviceAdded():
+    #     _LOGGER.info("HACKED BY Y WLED-after")
+    #      if device_config["create_segments"]:
+    #         segments = await get_segments() #from utils.py
+    #         if segments.length > 1: # this is javascript condition for if array has more than one element
+    #             for seg in segments:
+    #                 if seg.stop - seg.start > 0:
+    #                     self.sub_v(device, seg.id, "wled", [[seg.start, seg.stop]], 1)
+
+    # def onBeforeDeviceAdded():
+    #     _LOGGER.info("HACKED BY Y WLED-b4")
+
+    # wled = WLED(resolved_dest)
+    # wled_config = await wled.get_config()
+
+    # led_info = wled_config["leds"]
+    # # If we've found the device via WLED scan, it won't have a custom name from the frontend
+    # # However if it's "WLED" (i.e, Default) then we will name the device exactly how WLED does, by using the second half of it's MAC address
+    # # This allows us to respect the users choice of names if adding a WLED device via frontend
+    # # I turned black off as this logic is clearer on one line
+    # # fmt: off
+    # if "name" in device_config.keys() and device_config["name"] is not None:
+    #     wled_name = device_config["name"]
+    # elif wled_config["name"] == "WLED":
+    #     wled_name = f"{wled_config['name']}-{wled_config['mac'][6:]}".upper()
+    # else:
+    #     wled_name = wled_config['name']
+    # # fmt: on
+    # wled_count = led_info["count"]
+    # wled_rgbmode = led_info["rgbw"]
+
+    # wled_config = {
+    #     "name": wled_name,
+    #     "pixel_count": wled_count,
+    #     "icon_name": "wled",
+    #     "rgbw_led": wled_rgbmode,
+    # }
+
+    # # determine sync mode
+    # # UDP < 480
+    # # DDP or E131 depending on: ledfx's configured preferred mode first, else the device's mode
+    # # ARTNET can do one
+
+    # if wled_count > 480:
+    #     await wled.get_sync_settings()
+    #     sync_mode = wled.get_sync_mode()
+    # else:
+    #     sync_mode = "UDP"
+
+    #     # preferred_mode = self._ledfx.config["wled_preferences"][
+    #     #     "wled_preferred_mode"
+    #     # ]
+    #     # if preferred_mode:
+    #     #     sync_mode = preferred_mode
+    #     # else:
+    #     #     await wled.get_sync_settings()
+    #     #     sync_mode = wled.get_sync_mode()
+
+    # if sync_mode == "ARTNET":
+    #     msg = f"Cannot add WLED device at {resolved_dest}. Unsupported mode: 'ARTNET', and too many pixels for UDP sync (>480)"
+    #     _LOGGER.warning(msg)
+    #     raise ValueError(msg)
+
+    # wled_config["sync_mode"] = sync_mode
+    # device_config.update(wled_config)
