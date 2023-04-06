@@ -124,12 +124,19 @@ class WLEDDevice(NetworkedDevice):
             or self._ledfx.config["create_segments"]
         ):
             segments = await self.wled.get_segments()
-            if len(segments) > 1:
+            isMatrix = segments[0].get("stopY", 0) > 0
+            if len(segments) > 1 or isMatrix:
                 for seg in segments:
                     if seg["stop"] - seg["start"] > 0:
                         name = seg.get("n", f'Seg-{seg["id"]}')
+                        if seg.get("stopY", 0) > 0:
+                            name = seg.get("n", f'Matrix-{seg["id"]}')
+                        rows = seg.get("stopY", 1)
                         self.sub_v(
-                            name, "wled", [[seg["start"], seg["stop"] - 1]], 1
+                            name,
+                            "wled",
+                            [[seg["start"], seg["stop"] - 1]],
+                            rows,
                         )
 
     async def async_initialize(self):
