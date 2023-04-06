@@ -127,10 +127,7 @@ class WLEDDevice(NetworkedDevice):
             if len(segments) > 1:
                 for seg in segments:
                     if seg["stop"] - seg["start"] > 0:
-                        if seg["n"] is not None:
-                            name = seg["n"]
-                        else:
-                            name = "Segment " + seg["id"]
+                        name = seg.get("n", f'Seg-{seg["id"]}')
                         self.sub_v(
                             name, "wled", [[seg["start"], seg["stop"] - 1]], 1
                         )
