@@ -362,7 +362,7 @@ class Device(BaseRegistry):
                 config_dir=self._ledfx.config_dir,
             )
 
-    def add_postamble(self):
+    async def add_postamble(self):
         # over ride in child classes for device specific behaviours
         pass
 

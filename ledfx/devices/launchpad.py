@@ -74,7 +74,7 @@ class LaunchpadDevice(MidiDevice):
         self.lp = None
         super().deactivate()
 
-    def add_postamble(self):
+    async def add_postamble(self):
         _LOGGER.info("Doing post creation things for LP...")
         if self.config["create_segments"]:
             # Generate virtuals for segments
