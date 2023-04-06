@@ -32,6 +32,11 @@ class ScanMultiAudioEffect(AudioReactiveEffect, GradientEffect):
     CATEGORY = "Classic"
     HIDDEN_KEYS = ["gradient_roll"]
 
+    _sources = {
+        "Power": "power",
+        "Melbank": "melbank",
+    }
+
     CONFIG_SCHEMA = vol.Schema(
         {
             vol.Optional(
@@ -85,6 +90,11 @@ class ScanMultiAudioEffect(AudioReactiveEffect, GradientEffect):
                 description="Use colors from gradient selector",
                 default=False,
             ): bool,
+            vol.Optional(
+                "input_source",
+                description="Audio processing source for low, mid, high",
+                default="Power",
+            ): vol.In(list(_sources.keys())),
         }
     )
 
@@ -108,8 +118,16 @@ class ScanMultiAudioEffect(AudioReactiveEffect, GradientEffect):
         self.scans[Power.HIGH].set_color_scan_cache(self._config["color_high"])
 
     def audio_data_updated(self, data):
+        if self._config["input_source"] == "power":
+            self.scan_power[0], self.scan_power[1], self.scan_power[2] = (
+                int(2 * np.mean(i))
+                for i in self.melbank_thirds(filtered=False)
+            )
+        else:
+            for scan in self.scans:
+                scan.power = getattr(data, scan.power_func)() * 2
+
         for scan in self.scans:
-            scan.power = getattr(data, scan.power_func)() * 2
             scan.bar = scan.power * self._config["multiplier"]
 
             if self._config["use_grad"]:
