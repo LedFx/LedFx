@@ -1,5 +1,8 @@
-+ Release 2.0.63
-+ Adjust core path. Adjust workflow
-+ Use extracted core instead of portable
-+ Remove Trigger for HomeAssistant Addon Pipeline
-+ Adjust to new core
++ Release 2.0.65
++ Release 2.0.65
++ Add create_segments to Settings
++ playing around with 2d
++ Add Option to toggle dynamic ordering of devices
++ support hidden_keys in EffectSchemaForm
++ Add launchpad icon
++ Show current segment range on edit
