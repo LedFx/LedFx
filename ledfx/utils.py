@@ -12,8 +12,8 @@ import socket
 import sys
 import time
 import timeit
-
 from abc import ABC
+from collections import deque
 from collections.abc import MutableMapping
 from functools import lru_cache
 from itertools import chain
@@ -24,12 +24,10 @@ from subprocess import PIPE, Popen
 import numpy as np
 import requests
 import voluptuous as vol
+from bokeh.palettes import Category10
+from bokeh.plotting import figure, show
 
 from ledfx.config import save_config
-
-from bokeh.plotting import figure, show
-from collections import deque
-from bokeh.palettes import Category10
 
 # from asyncio import coroutines, ensure_future
 
@@ -938,9 +936,9 @@ class RegistryLoader:
 class Plot_range:
     def __init__(self, key, birth, points=1000):
         self.key = key
-        self.xs=deque(maxlen=points)
-        self.ys=deque(maxlen=points)
-        self.birth=birth
+        self.xs = deque(maxlen=points)
+        self.ys = deque(maxlen=points)
+        self.birth = birth
 
     def append(self, y):
         self.xs.append(timeit.default_timer() - self.birth)
@@ -968,6 +966,7 @@ class Graph:
 
         myGraph.dump_graph()
     """
+
     def __init__(self, title, keys, points=1000, y_title="plumbus"):
         """
         Creates a graph instance, sets X axis to 0 seconds
@@ -984,7 +983,7 @@ class Graph:
         self.keys = keys
         birth = timeit.default_timer()
         for key in keys:
-            self.ranges[key]= Plot_range(key, birth, points=points)
+            self.ranges[key] = Plot_range(key, birth, points=points)
 
     def append_by_key(self, key, value):
         """
@@ -1005,11 +1004,21 @@ class Graph:
         TOOLS = "xpan,xwheel_zoom,box_zoom,reset,save,box_select"
         colors = itertools.cycle(Category10[10])
 
-        p = figure(title=self.title, x_axis_label="sec since start",
-                   y_axis_label=self.y_title, tools=TOOLS, width=1200,
-                   height=600)
+        p = figure(
+            title=self.title,
+            x_axis_label="sec since start",
+            y_axis_label=self.y_title,
+            tools=TOOLS,
+            width=1200,
+            height=600,
+        )
 
         for range in self.ranges.values():
-            p.line(range.list_x(), range.list_y(),
-                   legend_label=range.key, line_width=2, color=next(colors))
+            p.line(
+                range.list_x(),
+                range.list_y(),
+                legend_label=range.key,
+                line_width=2,
+                color=next(colors),
+            )
         show(p)

@@ -1,5 +1,5 @@
+import logging
 import timeit
-
 from enum import IntEnum
 
 import numpy as np
@@ -10,8 +10,8 @@ from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.gradient import GradientEffect
 from ledfx.utils import Graph
 
-import logging
 _LOGGER = logging.getLogger(__name__)
+
 
 class Power(IntEnum):
     LOWS = 0
@@ -136,7 +136,7 @@ class ScanMultiAudioEffect(AudioReactiveEffect, GradientEffect):
         for scan in self.scans:
             scan._p_filter = self.create_filter(
                 alpha_decay=(self._config["sensitivity"] - 0.1) * 0.7,
-                alpha_rise=(self._config["sensitivity"] - 0.0) * 1.0
+                alpha_rise=(self._config["sensitivity"] - 0.0) * 1.0,
             )
 
         if self._config["flip"] != self.flip_was:
@@ -146,11 +146,9 @@ class ScanMultiAudioEffect(AudioReactiveEffect, GradientEffect):
         self.flip_was = self._config["flip"]
 
     def audio_data_updated(self, data):
-
         if self._config["input_source"] == "Melbank":
             self.scans[0].power, self.scans[1].power, self.scans[2].power = (
-                2 * np.mean(i)
-                for i in self.melbank_thirds(filtered=False)
+                2 * np.mean(i) for i in self.melbank_thirds(filtered=False)
             )
         else:
             for scan in self.scans:
