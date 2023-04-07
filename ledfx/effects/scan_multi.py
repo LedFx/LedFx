@@ -1,4 +1,5 @@
 import timeit
+
 from enum import IntEnum
 
 import numpy as np
@@ -7,7 +8,10 @@ import voluptuous as vol
 from ledfx.color import parse_color, validate_color
 from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.gradient import GradientEffect
+from ledfx.utils import Graph
 
+import logging
+_LOGGER = logging.getLogger(__name__)
 
 class Power(IntEnum):
     LOWS = 0
@@ -21,6 +25,7 @@ class Scan:
         self.returning = False
         self.bar = 0
         self.power_func = power_func
+        self.graph = Graph(f"Scan Filter {power_func}", ["p_in", "p_out"])
 
     def set_color_scan_cache(self, color):
         self.color_scan_cache = np.array(parse_color(color), dtype=float)
@@ -95,6 +100,16 @@ class ScanMultiAudioEffect(AudioReactiveEffect, GradientEffect):
                 description="Audio processing source for low, mid, high",
                 default="Power",
             ): vol.In(list(_sources.keys())),
+            vol.Optional(
+                "sensitivity",
+                description="Filter damping on inputs, lower number is more",
+                default=0.7,
+            ): vol.All(vol.Coerce(float), vol.Range(min=0.15, max=0.99999)),
+            vol.Optional(
+                "filter",
+                description="Enable damping filters set to sensitity on attack and decay",
+                default=False,
+            ): bool,
         }
     )
 
@@ -104,6 +119,7 @@ class ScanMultiAudioEffect(AudioReactiveEffect, GradientEffect):
             Scan("mids_power"),
             Scan("high_power"),
         ]
+        self.flip_was = config["flip"]
         super().__init__(ledfx, config)
 
     def on_activate(self, pixel_count):
@@ -117,10 +133,23 @@ class ScanMultiAudioEffect(AudioReactiveEffect, GradientEffect):
         self.scans[Power.MIDS].set_color_scan_cache(self._config["color_mid"])
         self.scans[Power.HIGH].set_color_scan_cache(self._config["color_high"])
 
+        for scan in self.scans:
+            scan._p_filter = self.create_filter(
+                alpha_decay=(self._config["sensitivity"] - 0.1) * 0.7,
+                alpha_rise=(self._config["sensitivity"] - 0.0) * 1.0
+            )
+
+        if self._config["flip"] != self.flip_was:
+            _LOGGER.info("Do a Thing")
+            for scan in self.scans:
+                scan.graph.dump_graph()
+        self.flip_was = self._config["flip"]
+
     def audio_data_updated(self, data):
-        if self._config["input_source"] == "power":
-            self.scan_power[0], self.scan_power[1], self.scan_power[2] = (
-                int(2 * np.mean(i))
+
+        if self._config["input_source"] == "Melbank":
+            self.scans[0].power, self.scans[1].power, self.scans[2].power = (
+                2 * np.mean(i)
                 for i in self.melbank_thirds(filtered=False)
             )
         else:
@@ -128,6 +157,11 @@ class ScanMultiAudioEffect(AudioReactiveEffect, GradientEffect):
                 scan.power = getattr(data, scan.power_func)() * 2
 
         for scan in self.scans:
+            scan.graph.append_by_key("p_in", scan.power)
+            if self._config["filter"]:
+                scan.power = scan._p_filter.update(scan.power)
+            scan.graph.append_by_key("p_out", scan.power)
+
             scan.bar = scan.power * self._config["multiplier"]
 
             if self._config["use_grad"]:
