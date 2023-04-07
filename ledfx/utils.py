@@ -3,6 +3,7 @@ import concurrent.futures
 import importlib
 import inspect
 import ipaddress
+import itertools
 import logging
 import os
 import pkgutil
@@ -10,6 +11,8 @@ import re
 import socket
 import sys
 import time
+import timeit
+
 from abc import ABC
 from collections.abc import MutableMapping
 from functools import lru_cache
@@ -24,8 +27,11 @@ import voluptuous as vol
 
 from ledfx.config import save_config
 
-# from asyncio import coroutines, ensure_future
+from bokeh.plotting import figure, show
+from collections import deque
+from bokeh.palettes import Category10
 
+# from asyncio import coroutines, ensure_future
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -927,3 +933,83 @@ class RegistryLoader:
 
     def get(self, *args):
         return self._objects.get(*args)
+
+
+class Plot_range:
+    def __init__(self, key, birth, points=1000):
+        self.key = key
+        self.xs=deque(maxlen=points)
+        self.ys=deque(maxlen=points)
+        self.birth=birth
+
+    def append(self, y):
+        self.xs.append(timeit.default_timer() - self.birth)
+        self.ys.append(y)
+
+    def list_x(self):
+        return list(self.xs)
+
+    def list_y(self):
+        return list(self.ys)
+
+
+class Graph:
+    """
+    Graph is a simple wrapper for bokeh to give high value multi range
+    time domain graphs with absolute minimum code
+
+    Lifecycle:
+        myGraph=("Animal hunt", ["Frogs", "Elephants"], y_title="Distance")
+        ...
+        myGraph.append_by_key("Frogs", 2.7)
+        myGraph.append_by_key("Elephants", 9.2)
+        ...
+        myGraph.append_by_key("Elephants", 6.0)
+
+        myGraph.dump_graph()
+    """
+    def __init__(self, title, keys, points=1000, y_title="plumbus"):
+        """
+        Creates a graph instance, sets X axis to 0 seconds
+
+        Parameters:
+            title (str): String title to be displayed on graph
+            keys (list[(str)]: list of range titles to be display in key and available to append data values to
+            points (int): how many points to support in rolling buffer
+            y_title (str): Axis title for Y range
+        """
+        self.title = title
+        self.y_title = y_title
+        self.ranges = {}
+        self.keys = keys
+        birth = timeit.default_timer()
+        for key in keys:
+            self.ranges[key]= Plot_range(key, birth, points=points)
+
+    def append_by_key(self, key, value):
+        """
+        Appends a value into range ring buffer associated with axis key, timestamp is applied in second since graph creation
+
+        Parameters:
+            key (str): key name of the range, matching those used during creation to which to append
+            value (float): value which you wish to append to the range
+        """
+        self.ranges[key].append(value)
+
+    def dump_graph(self):
+        """
+        Will spawn an interaction graph session into the browser
+        """
+        _LOGGER.info(f"Attempting to dump graph {self.title}")
+
+        TOOLS = "xpan,xwheel_zoom,box_zoom,reset,save,box_select"
+        colors = itertools.cycle(Category10[10])
+
+        p = figure(title=self.title, x_axis_label="sec since start",
+                   y_axis_label=self.y_title, tools=TOOLS, width=1200,
+                   height=600)
+
+        for range in self.ranges.values():
+            p.line(range.list_x(), range.list_y(),
+                   legend_label=range.key, line_width=2, color=next(colors))
+        show(p)
