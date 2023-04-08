@@ -1,5 +1,4 @@
 import timeit
-
 from enum import IntEnum
 
 import numpy as np
@@ -30,8 +29,9 @@ class Scan:
         self.power_func = power_func
         self.power = 0.0
         if graph_dump:
-            self.graph = Graph(f"Scan Filter {power_func}", ["p_in", "p_out"],
-                               y_title="Power")
+            self.graph = Graph(
+                f"Scan Filter {power_func}", ["p_in", "p_out"], y_title="Power"
+            )
 
     def set_color_scan_cache(self, color):
         self.color_scan_cache = np.array(parse_color(color), dtype=float)
@@ -153,14 +153,16 @@ class ScanMultiAudioEffect(AudioReactiveEffect, GradientEffect):
         for scan in self.scans:
             scan._p_filter = self.create_filter(
                 alpha_decay=self._config["decay"],
-                alpha_rise=self._config["attack"]
+                alpha_rise=self._config["attack"],
             )
 
         if graph_dump:
             for scan in self.scans:
                 if self._config["flip"] != self.flip_was:
                     scan.graph.dump_graph("Flip")
-                scan.graph.append_tag("Config changed", scan.power, color="red")
+                scan.graph.append_tag(
+                    "Config changed", scan.power, color="red"
+                )
             self.flip_was = self._config["flip"]
 
     def audio_data_updated(self, data):

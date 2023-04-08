@@ -12,8 +12,8 @@ import socket
 import sys
 import time
 import timeit
-
 from abc import ABC
+from collections import deque
 from collections.abc import MutableMapping
 from functools import lru_cache
 from itertools import chain, cycle
@@ -24,14 +24,11 @@ from subprocess import PIPE, Popen
 import numpy as np
 import requests
 import voluptuous as vol
-
-from ledfx.config import save_config
-
-from bokeh.plotting import figure, show
 from bokeh.models import Label
 from bokeh.palettes import Category10
-from collections import deque
+from bokeh.plotting import figure, show
 
+from ledfx.config import save_config
 
 # from asyncio import coroutines, ensure_future
 
@@ -942,7 +939,7 @@ class Plot_range:
         self.key = key
         self.xs = deque(maxlen=points)
         self.ys = deque(maxlen=points)
-        self.birth=birth
+        self.birth = birth
 
     def append(self, y):
         self.xs.append(timeit.default_timer() - self.birth)
@@ -954,12 +951,14 @@ class Plot_range:
     def list_y(self):
         return list(self.ys)
 
+
 class Tag:
     def __init__(self, x, y, text, color="black"):
         self.x = x
         self.y = y
         self.text = text
         self.color = color
+
 
 class Graph:
     """
@@ -978,6 +977,7 @@ class Graph:
 
         myGraph.dump_graph()
     """
+
     def __init__(self, title, keys, points=1000, tags=10, y_title="plumbus"):
         """
         Creates a graph instance, sets X axis to 0 seconds
@@ -995,8 +995,8 @@ class Graph:
         self.keys = keys
         self.birth = timeit.default_timer()
         for key in keys:
-            self.ranges[key]= Plot_range(key, self.birth, points=points)
-        self.tags=deque(maxlen=tags)
+            self.ranges[key] = Plot_range(key, self.birth, points=points)
+        self.tags = deque(maxlen=tags)
 
     def append_by_key(self, key, value):
         """
@@ -1017,8 +1017,9 @@ class Graph:
             y (float): value which you wish to display the tag
         """
 
-        self.tags.append(Tag(timeit.default_timer() - self.birth,  y,
-                             text, color=color))
+        self.tags.append(
+            Tag(timeit.default_timer() - self.birth, y, text, color=color)
+        )
 
     def dump_graph(self, sub_title=None):
         """
@@ -1039,19 +1040,33 @@ class Graph:
         TOOLS = "xpan,xwheel_zoom,box_zoom,reset,save,box_select"
         colors = cycle(Category10[10])
 
-        p = figure(title=compound,
-                   x_axis_label="sec since start",
-                   y_axis_label=self.y_title, tools=TOOLS, width=1200,
-                   height=600)
+        p = figure(
+            title=compound,
+            x_axis_label="sec since start",
+            y_axis_label=self.y_title,
+            tools=TOOLS,
+            width=1200,
+            height=600,
+        )
 
         for range in self.ranges.values():
-            p.line(range.list_x(), range.list_y(),
-                   legend_label=range.key, line_width=2, color=next(colors))
+            p.line(
+                range.list_x(),
+                range.list_y(),
+                legend_label=range.key,
+                line_width=2,
+                color=next(colors),
+            )
 
         for tag in self.tags:
-            label = Label(x=tag.x, y=tag.y,
-                          text=tag.text, text_font_size="12pt",
-                          text_color=tag.color, angle=1.57 )
+            label = Label(
+                x=tag.x,
+                y=tag.y,
+                text=tag.text,
+                text_font_size="12pt",
+                text_color=tag.color,
+                angle=1.57,
+            )
             p.add_layout(label)
 
         # title is not working for browser tab, TBD
