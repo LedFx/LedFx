@@ -10,11 +10,11 @@ from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.gradient import GradientEffect
 from ledfx.utils import Graph
 
-
 # this is kept as an example of how to use the graph util
 # set to True to test, hit flip to trigger graph spawning in browser
 # any config change will add a text annotation to the graph
 graph_dump = True
+
 
 class Power(IntEnum):
     LOWS = 0
@@ -163,13 +163,10 @@ class ScanMultiAudioEffect(AudioReactiveEffect, GradientEffect):
                 scan.graph.append_tag("Config changed", scan.power, color="red")
             self.flip_was = self._config["flip"]
 
-
     def audio_data_updated(self, data):
-
         if self._config["input_source"] == "Melbank":
             self.scans[0].power, self.scans[1].power, self.scans[2].power = (
-                2 * np.mean(i)
-                for i in self.melbank_thirds(filtered=False)
+                2 * np.mean(i) for i in self.melbank_thirds(filtered=False)
             )
         else:
             for scan in self.scans:
