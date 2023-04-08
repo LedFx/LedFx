@@ -3,7 +3,6 @@ import concurrent.futures
 import importlib
 import inspect
 import ipaddress
-import itertools
 import logging
 import os
 import pkgutil
@@ -16,7 +15,7 @@ import timeit
 from abc import ABC
 from collections.abc import MutableMapping
 from functools import lru_cache
-from itertools import chain
+from itertools import chain, cycle
 
 # from asyncio import coroutines, ensure_future
 from subprocess import PIPE, Popen
@@ -28,8 +27,10 @@ import voluptuous as vol
 from ledfx.config import save_config
 
 from bokeh.plotting import figure, show
-from collections import deque
+from bokeh.models import Label
 from bokeh.palettes import Category10
+from collections import deque
+
 
 # from asyncio import coroutines, ensure_future
 
@@ -938,8 +939,8 @@ class RegistryLoader:
 class Plot_range:
     def __init__(self, key, birth, points=1000):
         self.key = key
-        self.xs=deque(maxlen=points)
-        self.ys=deque(maxlen=points)
+        self.xs = deque(maxlen=points)
+        self.ys = deque(maxlen=points)
         self.birth=birth
 
     def append(self, y):
@@ -952,11 +953,18 @@ class Plot_range:
     def list_y(self):
         return list(self.ys)
 
+class Tag:
+    def __init__(self, x, y, text, color="black"):
+        self.x = x
+        self.y = y
+        self.text = text
+        self.color = color
 
 class Graph:
     """
     Graph is a simple wrapper for bokeh to give high value multi range
     time domain graphs with absolute minimum code
+    Supports mulitple ranges, and text tags
 
     Lifecycle:
         myGraph=("Animal hunt", ["Frogs", "Elephants"], y_title="Distance")
@@ -965,10 +973,11 @@ class Graph:
         myGraph.append_by_key("Elephants", 9.2)
         ...
         myGraph.append_by_key("Elephants", 6.0)
+        myGraph.append_tag("I am hungry", 1.0, color="red")
 
         myGraph.dump_graph()
     """
-    def __init__(self, title, keys, points=1000, y_title="plumbus"):
+    def __init__(self, title, keys, points=1000, tags=10, y_title="plumbus"):
         """
         Creates a graph instance, sets X axis to 0 seconds
 
@@ -976,15 +985,17 @@ class Graph:
             title (str): String title to be displayed on graph
             keys (list[(str)]: list of range titles to be display in key and available to append data values to
             points (int): how many points to support in rolling buffer
+            tags (int): how many text tags to support in rolling buffer
             y_title (str): Axis title for Y range
         """
         self.title = title
         self.y_title = y_title
         self.ranges = {}
         self.keys = keys
-        birth = timeit.default_timer()
+        self.birth = timeit.default_timer()
         for key in keys:
-            self.ranges[key]= Plot_range(key, birth, points=points)
+            self.ranges[key]= Plot_range(key, self.birth, points=points)
+        self.tags=deque(maxlen=tags)
 
     def append_by_key(self, key, value):
         """
@@ -996,20 +1007,51 @@ class Graph:
         """
         self.ranges[key].append(value)
 
-    def dump_graph(self):
+    def append_tag(self, text, y, color="black"):
+        """
+        Appends a text tag into tag ring buffer, timestamp is applied in seconds since graph creation
+
+        Parameters:
+            text (str): text to be displayed as tag
+            y (float): value which you wish to display the tag
+        """
+
+        self.tags.append(Tag(timeit.default_timer() - self.birth,  y,
+                             text, color=color))
+
+    def dump_graph(self, sub_title=None):
         """
         Will spawn an interaction graph session into the browser
+
+        Parameters:
+            sub_title (str): Optional sub title to add to the base title
+                             Useful for when you want to know why the graph
+                             was dumped
         """
-        _LOGGER.info(f"Attempting to dump graph {self.title}")
+        if sub_title:
+            compound = f"{self.title} : {sub_title}"
+        else:
+            compound = self.title
+
+        _LOGGER.info(f"Attempting to dump graph {compound}")
 
         TOOLS = "xpan,xwheel_zoom,box_zoom,reset,save,box_select"
-        colors = itertools.cycle(Category10[10])
+        colors = cycle(Category10[10])
 
-        p = figure(title=self.title, x_axis_label="sec since start",
+        p = figure(title=compound,
+                   x_axis_label="sec since start",
                    y_axis_label=self.y_title, tools=TOOLS, width=1200,
                    height=600)
 
         for range in self.ranges.values():
             p.line(range.list_x(), range.list_y(),
                    legend_label=range.key, line_width=2, color=next(colors))
-        show(p)
+
+        for tag in self.tags:
+            label = Label(x=tag.x, y=tag.y,
+                          text=tag.text, text_font_size="12pt",
+                          text_color=tag.color, angle=1.57 )
+            p.add_layout(label)
+
+        # title is not working for browser tab, TBD
+        show(p, title=compound)

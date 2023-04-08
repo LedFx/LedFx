@@ -10,8 +10,11 @@ from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.gradient import GradientEffect
 from ledfx.utils import Graph
 
-import logging
-_LOGGER = logging.getLogger(__name__)
+
+# this is kept as an example of how to use the graph util
+# set to True to test, hit flip to trigger graph spawning in browser
+# any config change will add a text annotation to the graph
+graph_dump = True
 
 class Power(IntEnum):
     LOWS = 0
@@ -25,7 +28,10 @@ class Scan:
         self.returning = False
         self.bar = 0
         self.power_func = power_func
-        self.graph = Graph(f"Scan Filter {power_func}", ["p_in", "p_out"])
+        self.power = 0.0
+        if graph_dump:
+            self.graph = Graph(f"Scan Filter {power_func}", ["p_in", "p_out"],
+                               y_title="Power")
 
     def set_color_scan_cache(self, color):
         self.color_scan_cache = np.array(parse_color(color), dtype=float)
@@ -36,6 +42,7 @@ class ScanMultiAudioEffect(AudioReactiveEffect, GradientEffect):
     NAME = "Scan Multi"
     CATEGORY = "Classic"
     HIDDEN_KEYS = ["gradient_roll"]
+    ADVANCED_KEYS = ["input_source", "attack", "decay", "filter"]
 
     _sources = {
         "Power": "power",
@@ -96,18 +103,28 @@ class ScanMultiAudioEffect(AudioReactiveEffect, GradientEffect):
                 default=False,
             ): bool,
             vol.Optional(
+                "advanced",
+                description="enable advanced options",
+                default=True,
+            ): bool,
+            vol.Optional(
                 "input_source",
                 description="Audio processing source for low, mid, high",
                 default="Power",
             ): vol.In(list(_sources.keys())),
             vol.Optional(
-                "sensitivity",
-                description="Filter damping on inputs, lower number is more",
+                "attack",
+                description="Filter damping on attack, lower number is more",
+                default=0.9,
+            ): vol.All(vol.Coerce(float), vol.Range(min=0.01, max=0.99999)),
+            vol.Optional(
+                "decay",
+                description="Filter damping on decay, lower number is more",
                 default=0.7,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.15, max=0.99999)),
+            ): vol.All(vol.Coerce(float), vol.Range(min=0.01, max=0.99999)),
             vol.Optional(
                 "filter",
-                description="Enable damping filters set to sensitity on attack and decay",
+                description="Enable damping filters on attack and decay",
                 default=False,
             ): bool,
         }
@@ -135,15 +152,17 @@ class ScanMultiAudioEffect(AudioReactiveEffect, GradientEffect):
 
         for scan in self.scans:
             scan._p_filter = self.create_filter(
-                alpha_decay=(self._config["sensitivity"] - 0.1) * 0.7,
-                alpha_rise=(self._config["sensitivity"] - 0.0) * 1.0
+                alpha_decay=self._config["decay"],
+                alpha_rise=self._config["attack"]
             )
 
-        if self._config["flip"] != self.flip_was:
-            _LOGGER.info("Do a Thing")
+        if graph_dump:
             for scan in self.scans:
-                scan.graph.dump_graph()
-        self.flip_was = self._config["flip"]
+                if self._config["flip"] != self.flip_was:
+                    scan.graph.dump_graph("Flip")
+                scan.graph.append_tag("Config changed", scan.power, color="red")
+            self.flip_was = self._config["flip"]
+
 
     def audio_data_updated(self, data):
 
@@ -157,10 +176,12 @@ class ScanMultiAudioEffect(AudioReactiveEffect, GradientEffect):
                 scan.power = getattr(data, scan.power_func)() * 2
 
         for scan in self.scans:
-            scan.graph.append_by_key("p_in", scan.power)
+            if graph_dump:
+                scan.graph.append_by_key("p_in", scan.power)
             if self._config["filter"]:
                 scan.power = scan._p_filter.update(scan.power)
-            scan.graph.append_by_key("p_out", scan.power)
+            if graph_dump:
+                scan.graph.append_by_key("p_out", scan.power)
 
             scan.bar = scan.power * self._config["multiplier"]
 
