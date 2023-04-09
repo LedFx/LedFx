@@ -7,12 +7,12 @@ from ledfx.color import parse_color, validate_color
 from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.utils import Graph
 
-
 # Metro intent is to flash a pattern on led strips so end users can look for
 # sync between separate light strips due to protocol, wifi conditions or other
 # Best configured as a copy virtual across mutliple devices, however uses a
 # common derived time base and step count so that seperate devices / virtuals
 # with common configurations will be in sync
+
 
 class MetroEffect(AudioReactiveEffect):
     NAME = "Metro"
@@ -66,7 +66,6 @@ class MetroEffect(AudioReactiveEffect):
         pass
 
     def config_updated(self, config):
-
         self.background_color = np.array(
             parse_color(self._config["background_color"]), dtype=float
         )
@@ -78,9 +77,9 @@ class MetroEffect(AudioReactiveEffect):
             self._config["pulse_ratio"]
         )
         if self._config["capture"] and self.graph is None:
-            self.graph = Graph(f"Metro Callback Timing",
-                           ["Audio", "Render"],
-                           points=5000)
+            self.graph = Graph(
+                f"Metro Callback Timing", ["Audio", "Render"], points=5000
+            )
         elif not self._config["capture"] and self.graph is not None:
             self.graph.dump_graph(only_jitter=True)
             self.graph = None
