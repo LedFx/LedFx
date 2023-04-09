@@ -1023,8 +1023,9 @@ class Graph:
             Tag(timeit.default_timer() - self.birth, y, text, color=color)
         )
 
-    def dump_graph(self, sub_title=None, jitter=False,
-                   only_jitter=False, y_axis_max=None):
+    def dump_graph(
+        self, sub_title=None, jitter=False, only_jitter=False, y_axis_max=None
+    ):
         """
         Will spawn an interaction graph session into the browser
 
