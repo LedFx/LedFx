@@ -1,13 +1,12 @@
-import logging
 import timeit
 
 import numpy as np
 import voluptuous as vol
 
 from ledfx.color import parse_color, validate_color
-from ledfx.effects.temporal import TemporalEffect
+from ledfx.effects.audio import AudioReactiveEffect
+from ledfx.utils import Graph
 
-_LOGGER = logging.getLogger(__name__)
 
 # Metro intent is to flash a pattern on led strips so end users can look for
 # sync between separate light strips due to protocol, wifi conditions or other
@@ -15,21 +14,15 @@ _LOGGER = logging.getLogger(__name__)
 # common derived time base and step count so that seperate devices / virtuals
 # with common configurations will be in sync
 
-
-class MetroEffect(TemporalEffect):
+class MetroEffect(AudioReactiveEffect):
     NAME = "Metro"
     CATEGORY = "Diagnostic"
-    HIDDEN_KEYS = ["speed", "background_brightness", "blur", "mirror"]
+    HIDDEN_KEYS = ["background_brightness", "blur", "mirror"]
 
     start_time = timeit.default_timer()
 
     CONFIG_SCHEMA = vol.Schema(
         {
-            vol.Optional(
-                "speed",
-                default=20.0,
-                description="Locked to 20 fps",
-            ): vol.All(vol.Coerce(float), vol.Range(min=20, max=20)),
             vol.Optional(
                 "pulse_period",
                 description="Time between flash in seconds",
@@ -55,17 +48,25 @@ class MetroEffect(TemporalEffect):
                 description="Flash color",
                 default="#FFFFFF",
             ): validate_color,
+            vol.Optional(
+                "capture",
+                description="graph capture, on to start, off to dump",
+                default=True,
+            ): bool,
         }
     )
 
     def __init__(self, ledfx, config):
-        super().__init__(ledfx, config)
         self.was_flash = False
+        self.graph = None
+        config["capture"] = False
+        super().__init__(ledfx, config)
 
     def on_activate(self, pixel_count):
         pass
 
     def config_updated(self, config):
+
         self.background_color = np.array(
             parse_color(self._config["background_color"]), dtype=float
         )
@@ -76,8 +77,28 @@ class MetroEffect(TemporalEffect):
         self.cycle_threshold = self._config["pulse_period"] * (
             self._config["pulse_ratio"]
         )
+        if self._config["capture"] and self.graph is None:
+            self.graph = Graph(f"Metro Callback Timing",
+                           ["Audio", "Render"],
+                           points=5000)
+        elif not self._config["capture"] and self.graph is not None:
+            self.graph.dump_graph(only_jitter=True)
+            self.graph = None
 
-    def effect_loop(self):
+        if self.graph:
+            # Y value does not matter as we are only looking at jitter
+            self.graph.append_tag("Config Update", 10.0)
+
+    def audio_data_updated(self, data):
+        if self.graph is not None:
+            # value does not matter as we are only looking at jitter
+            self.graph.append_by_key("Audio", 1.0)
+
+    def render(self):
+        if self.graph is not None:
+            # value does not matter as we are only looking at jitter
+            self.graph.append_by_key("Render", 1.0)
+
         pass_time = timeit.default_timer() - self.start_time
         cycle_time = pass_time % self._config["pulse_period"]
 

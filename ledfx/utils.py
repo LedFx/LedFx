@@ -23,9 +23,12 @@ from subprocess import PIPE, Popen
 import numpy as np
 import requests
 import voluptuous as vol
+
 from bokeh.models import Label
 from bokeh.palettes import Category10
-from bokeh.plotting import figure, show
+from bokeh.io import show, curdoc
+from bokeh.layouts import column
+from bokeh.plotting import figure
 
 from ledfx.config import save_config
 
@@ -1020,7 +1023,7 @@ class Graph:
             Tag(timeit.default_timer() - self.birth, y, text, color=color)
         )
 
-    def dump_graph(self, sub_title=None):
+    def dump_graph(self, sub_title=None, jitter=False, only_jitter=False):
         """
         Will spawn an interaction graph session into the browser
 
@@ -1028,6 +1031,8 @@ class Graph:
             sub_title (str): Optional sub title to add to the base title
                              Useful for when you want to know why the graph
                              was dumped
+            jitter (bool): If true, will dump the jitter graph
+            only_jitter (bool): If true, will only dump the jitter graph
         """
         if sub_title:
             compound = f"{self.title} : {sub_title}"
@@ -1035,21 +1040,21 @@ class Graph:
             compound = self.title
 
         _LOGGER.info(f"Attempting to dump graph {compound}")
-
         TOOLS = "xpan,xwheel_zoom,box_zoom,reset,save,box_select"
         colors = cycle(Category10[10])
 
-        p = figure(
+        vals_fig = figure(
             title=compound,
             x_axis_label="sec since start",
             y_axis_label=self.y_title,
             tools=TOOLS,
+            active_scroll="xwheel_zoom",
             width=1200,
             height=600,
         )
 
         for range in self.ranges.values():
-            p.line(
+            vals_fig.line(
                 range.list_x(),
                 range.list_y(),
                 legend_label=range.key,
@@ -1066,7 +1071,61 @@ class Graph:
                 text_color=tag.color,
                 angle=1.57,
             )
-            p.add_layout(label)
+            vals_fig.add_layout(label)
 
-        # title is not working for browser tab, TBD
-        show(p, title=compound)
+        vals_fig.legend.click_policy = "hide"
+
+        if jitter or only_jitter:
+            jitter_title = f"{compound} jitter"
+
+            jitter_fig = figure(
+                title=jitter_title,
+                x_axis_label="sec since start",
+                x_range=vals_fig.x_range,
+                y_axis_label="periodic secs",
+                tools=TOOLS,
+                active_scroll="xwheel_zoom",
+                width=1200,
+                height=600,
+            )
+
+            for range in self.ranges.values():
+                # Calculte jitter for range x and prestuff so len is same
+                jitter = np.diff(range.list_x())
+                jitter = np.insert(jitter, 0, 0.0)
+
+                jitter_fig.circle(
+                    range.list_x(),
+                    jitter,
+                    legend_label=range.key,
+                    size=3,
+                    color=next(colors),
+                )
+
+            for tag in self.tags:
+                label = Label(
+                    x=tag.x,
+                    y=0.001,
+                    text=tag.text,
+                    text_font_size="12pt",
+                    text_color=tag.color,
+                    angle=1.57
+                )
+                jitter_fig.add_layout(label)
+
+            jitter_fig.legend.click_policy = "hide"
+
+        # work out layour according to requested graphs
+        if only_jitter:
+            p = column(jitter_fig)
+        elif jitter:
+            p = column(vals_fig, jitter_fig)
+        else:
+            p = column(vals_fig)
+
+        # This is not working :-(
+        doc = curdoc()
+        doc.add_root(p)
+        doc.title = compound
+
+        show(p)
