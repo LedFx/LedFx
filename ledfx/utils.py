@@ -1052,14 +1052,15 @@ class Graph:
             height=600,
         )
 
-        for range in self.ranges.values():
-            vals_fig.line(
-                range.list_x(),
-                range.list_y(),
-                legend_label=range.key,
-                line_width=2,
-                color=next(colors),
-            )
+        for a_range in self.ranges.values():
+            if len(a_range.list_x()) > 0:
+                vals_fig.line(
+                    a_range.list_x(),
+                    a_range.list_y(),
+                    legend_label=a_range.key,
+                    line_width=2,
+                    color=next(colors),
+                )
 
         for tag in self.tags:
             label = Label(
@@ -1088,18 +1089,20 @@ class Graph:
                 height=600,
             )
 
-            for range in self.ranges.values():
+            for a_range in self.ranges.values():
                 # Calculte jitter for range x and prestuff so len is same
-                jitter = np.diff(range.list_x())
-                jitter = np.insert(jitter, 0, 0.0)
-
-                jitter_fig.circle(
-                    range.list_x(),
-                    jitter,
-                    legend_label=range.key,
-                    size=3,
-                    color=next(colors),
-                )
+                # don't use numpy due to some side effects
+                x = a_range.list_x()
+                if len(x) > 0:
+                    jitter = [x[i + 1] - x[i] for i in range(len(x) - 1)]
+                    jitter.insert(0, 0.0)
+                    jitter_fig.circle(
+                        a_range.list_x(),
+                        jitter,
+                        legend_label=a_range.key,
+                        size=3,
+                        color=next(colors),
+                    )
 
             for tag in self.tags:
                 label = Label(
@@ -1109,7 +1112,9 @@ class Graph:
                     text_font_size="12pt",
                     text_color=tag.color,
                     angle=1.57,
+                    text_baseline="middle",
                 )
+
                 jitter_fig.add_layout(label)
 
             jitter_fig.legend.click_policy = "hide"
@@ -1128,3 +1133,4 @@ class Graph:
         doc.title = compound
 
         show(p)
+

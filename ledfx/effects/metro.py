@@ -2,6 +2,7 @@ import timeit
 
 import numpy as np
 import voluptuous as vol
+import psutil
 
 from ledfx.color import parse_color, validate_color
 from ledfx.effects.audio import AudioReactiveEffect
@@ -54,12 +55,20 @@ class MetroEffect(AudioReactiveEffect):
                 description="graph capture, on to start, off to dump",
                 default=True,
             ): bool,
+            vol.Optional(
+                "cpu_secs",
+                description="Window over which to measure CPU usage",
+                default=1.0,
+            ): vol.All(vol.Coerce(float), vol.Range(min=0.1, max=1.0)),
         }
     )
 
     def __init__(self, ledfx, config):
         self.was_flash = False
-        self.graph = None
+        self.graph_callbacks = None
+        self.graph_cpu = None
+        self.cores = 0
+        self.last_cpu = 0
         config["capture"] = False
         super().__init__(ledfx, config)
 
@@ -78,29 +87,41 @@ class MetroEffect(AudioReactiveEffect):
         self.cycle_threshold = self._config["pulse_period"] * (
             self._config["pulse_ratio"]
         )
-        if self._config["capture"] and self.graph is None:
-            self.graph = Graph(
+        if self._config["capture"] and self.graph_callbacks is None:
+            # start a capture sequence, generate base graphs
+            self.graph_callbacks = Graph(
                 "Metro Callback Timing", ["Audio", "Render"], points=5000
             )
-        elif not self._config["capture"] and self.graph is not None:
-            self.graph.dump_graph(only_jitter=True)
-            self.graph = None
+            self.cores = psutil.cpu_count()
+            # zero the local timer and prime cpu measurement
+            self.last_cpu = timeit.default_timer()
+            psutil.cpu_percent(percpu=True)
+            cpu_keys = [f"CPU {i}" for i in range(self.cores)]
+            self.graph_cpu = Graph("Metro CPU Usage", cpu_keys, points=1000)
+        elif not self._config["capture"] and self.graph_callbacks is not None:
+            self.graph_callbacks.dump_graph(only_jitter=True)
+            self.lock.acquire()
+            self.graph_cpu.dump_graph(jitter=True, sub_title=f"{self._config['cpu_secs']} secs")
+            self.lock.release()
+            self.graph_callbacks = None
+            self.graph_cpu = None
 
-        if self.graph:
+        if self.graph_callbacks:
             # Y value does not matter as we are only looking at jitter
-            self.graph.append_tag("Config Update", 10.0)
+            self.graph_callbacks.append_tag("Config Update", 10.0)
 
     def audio_data_updated(self, data):
-        if self.graph is not None:
+        if self.graph_callbacks is not None:
             # value does not matter as we are only looking at jitter
-            self.graph.append_by_key("Audio", 1.0)
+            self.graph_callbacks.append_by_key("Audio", 1.0)
 
     def render(self):
-        if self.graph is not None:
+        now = timeit.default_timer()
+        if self.graph_callbacks is not None:
             # value does not matter as we are only looking at jitter
-            self.graph.append_by_key("Render", 1.0)
+            self.graph_callbacks.append_by_key("Render", 1.0)
 
-        pass_time = timeit.default_timer() - self.start_time
+        pass_time = now - self.start_time
         cycle_time = pass_time % self._config["pulse_period"]
 
         if cycle_time > self.cycle_threshold:
@@ -125,3 +146,10 @@ class MetroEffect(AudioReactiveEffect):
                             start_pixel : end_pixel - 1
                         ] = self.flash_color
                 self.was_flash = True
+
+        if self.graph_cpu is not None:
+            if now - self.last_cpu > self._config["cpu_secs"]:
+                cpu = psutil.cpu_percent(percpu=True)
+                for i in range(self.cores):
+                    self.graph_cpu.append_by_key(f"CPU {i}", cpu[i])
+                self.last_cpu = now

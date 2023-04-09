@@ -12,7 +12,7 @@ from ledfx.utils import Graph
 # this is kept as an example of how to use the graph util
 # set to True to test, hit flip to trigger graph spawning in browser
 # any config change will add a text annotation to the graph
-graph_dump = False
+graph_dump = True
 
 
 class Power(IntEnum):
