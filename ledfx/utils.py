@@ -1133,4 +1133,3 @@ class Graph:
         doc.title = compound
 
         show(p)
-
