@@ -78,9 +78,9 @@ class MetroEffect(AudioReactiveEffect):
             self._config["pulse_ratio"]
         )
         if self._config["capture"] and self.graph is None:
-            self.graph = Graph(f"Metro Callback Timing",
-                           ["Audio", "Render"],
-                           points=5000)
+            self.graph = Graph("Metro Callback Timing",
+                               ["Audio", "Render"],
+                               points=5000)
         elif not self._config["capture"] and self.graph is not None:
             self.graph.dump_graph(only_jitter=True)
             self.graph = None
