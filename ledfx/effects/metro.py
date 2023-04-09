@@ -1,8 +1,8 @@
 import timeit
 
 import numpy as np
-import voluptuous as vol
 import psutil
+import voluptuous as vol
 
 from ledfx.color import parse_color, validate_color
 from ledfx.effects.audio import AudioReactiveEffect
@@ -100,7 +100,8 @@ class MetroEffect(AudioReactiveEffect):
             self.graph_callbacks.dump_graph(only_jitter=True)
             self.lock.acquire()
             self.graph_cpu.dump_graph(jitter=True,
-                sub_title=f"{self._config['cpu_secs']} secs", y_axis_max=100.0)
+                sub_title=f"{self._config['cpu_secs']} secs", y_axis_max=100.0
+            )
             self.lock.release()
             self.graph_callbacks = None
             self.graph_cpu = None
