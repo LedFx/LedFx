@@ -8,7 +8,6 @@ from ledfx.color import parse_color, validate_color
 from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.utils import Graph
 
-
 # Metro intent is to flash a pattern on led strips so end users can look for
 # sync between separate light strips due to protocol, wifi conditions or other
 # Best configured as a copy virtual across mutliple devices, however uses a
@@ -76,7 +75,6 @@ class MetroEffect(AudioReactiveEffect):
         pass
 
     def config_updated(self, config):
-
         self.background_color = np.array(
             parse_color(self._config["background_color"]), dtype=float
         )
