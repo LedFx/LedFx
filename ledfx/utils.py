@@ -23,11 +23,10 @@ from subprocess import PIPE, Popen
 import numpy as np
 import requests
 import voluptuous as vol
-
+from bokeh.io import curdoc, show
+from bokeh.layouts import column
 from bokeh.models import Label
 from bokeh.palettes import Category10
-from bokeh.io import show, curdoc
-from bokeh.layouts import column
 from bokeh.plotting import figure
 
 from ledfx.config import save_config
@@ -1109,7 +1108,7 @@ class Graph:
                     text=tag.text,
                     text_font_size="12pt",
                     text_color=tag.color,
-                    angle=1.57
+                    angle=1.57,
                 )
                 jitter_fig.add_layout(label)
 

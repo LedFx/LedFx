@@ -14,6 +14,7 @@ from ledfx.utils import Graph
 # common derived time base and step count so that seperate devices / virtuals
 # with common configurations will be in sync
 
+
 class MetroEffect(AudioReactiveEffect):
     NAME = "Metro"
     CATEGORY = "Diagnostic"
@@ -78,9 +79,9 @@ class MetroEffect(AudioReactiveEffect):
             self._config["pulse_ratio"]
         )
         if self._config["capture"] and self.graph is None:
-            self.graph = Graph("Metro Callback Timing",
-                               ["Audio", "Render"],
-                               points=5000)
+            self.graph = Graph(
+                "Metro Callback Timing", ["Audio", "Render"], points=5000
+            )
         elif not self._config["capture"] and self.graph is not None:
             self.graph.dump_graph(only_jitter=True)
             self.graph = None
