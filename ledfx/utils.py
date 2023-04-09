@@ -1022,7 +1022,8 @@ class Graph:
             Tag(timeit.default_timer() - self.birth, y, text, color=color)
         )
 
-    def dump_graph(self, sub_title=None, jitter=False, only_jitter=False):
+    def dump_graph(self, sub_title=None, jitter=False,
+                   only_jitter=False, y_axis_max=None):
         """
         Will spawn an interaction graph session into the browser
 
@@ -1032,6 +1033,7 @@ class Graph:
                              was dumped
             jitter (bool): If true, will dump the jitter graph
             only_jitter (bool): If true, will only dump the jitter graph
+            y_axis_max (float): If not None, will force the y axis max
         """
         if sub_title:
             compound = f"{self.title} : {sub_title}"
@@ -1072,6 +1074,9 @@ class Graph:
                 angle=1.57,
             )
             vals_fig.add_layout(label)
+
+        if y_axis_max is not None:
+            vals_fig.y_range.end = y_axis_max
 
         vals_fig.legend.click_policy = "hide"
 
