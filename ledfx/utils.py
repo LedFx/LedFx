@@ -23,13 +23,14 @@ from subprocess import PIPE, Popen
 import numpy as np
 import requests
 import voluptuous as vol
-from bokeh.io import curdoc, show
+from bokeh.io import show, output_file
 from bokeh.layouts import column
 from bokeh.models import Label
 from bokeh.palettes import Category10
 from bokeh.plotting import figure
 
-from ledfx.config import save_config
+from ledfx.config import save_config, get_default_config_directory
+
 
 # from asyncio import coroutines, ensure_future
 
@@ -1132,9 +1133,8 @@ class Graph:
         else:
             p = column(vals_fig)
 
-        # This is not working :-(
-        doc = curdoc()
-        doc.add_root(p)
-        doc.title = compound
-
+        save_as = os.path.join(get_default_config_directory(),
+                               f"{re.sub('[^A-Za-z0-9]+', '_', compound)}.html")
+        output_file(filename=save_as, title=compound)
         show(p)
+
