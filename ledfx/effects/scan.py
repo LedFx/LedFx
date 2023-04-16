@@ -132,7 +132,7 @@ class ScanAudioEffect(AudioReactiveEffect, GradientEffect):
 
         pixel_pos = max(0, min(int(self.scan_pos), self.pixel_count))
 
-        self.pixels[0 : self.pixel_count] = self.background_color
+        self.pixels[0 : self.pixel_count] = self.background_color * self.config["background_brightness"]
         self.pixels[
             pixel_pos : min(pixel_pos + scan_width_pixels, self.pixel_count)
         ] = self.color_scan

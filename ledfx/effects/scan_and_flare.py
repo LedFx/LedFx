@@ -219,7 +219,7 @@ class ScanAndFlareAudioEffect(AudioReactiveEffect, GradientEffect):
                 self.last_sparkle = now
 
         # this is the real render pass
-        self.pixels[0 : self.pixel_count] = self.background_color
+        self.pixels[0 : self.pixel_count] = self.background_color * self.config["background_brightness"]
         self.pixels[
             pixel_pos : min(pixel_pos + scan_width_pixels, self.pixel_count)
         ] = self.color_scan

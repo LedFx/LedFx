@@ -205,7 +205,7 @@ class ScanMultiAudioEffect(AudioReactiveEffect, GradientEffect):
             max(1, int(self.pixel_count / 100.0 * self._config["scan_width"]))
         )
 
-        self.pixels[0 : self.pixel_count] = self.background_color
+        self.pixels[0 : self.pixel_count] = self.background_color * self.config["background_brightness"]
 
         for scan in self.scans:
             step_size = step_size * scan.bar
