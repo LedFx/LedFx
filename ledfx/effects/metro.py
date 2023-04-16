@@ -67,7 +67,7 @@ class MetroEffect(AudioReactiveEffect):
         self.graph_callbacks = None
         self.graph_cpu = None
         self.cores = 0
-        self.last_cpu = 0
+        self.last_cpu = 0.0
         config["capture"] = False
         super().__init__(ledfx, config)
 
@@ -95,15 +95,16 @@ class MetroEffect(AudioReactiveEffect):
             self.last_cpu = timeit.default_timer()
             psutil.cpu_percent(percpu=True)
             cpu_keys = [f"CPU {i}" for i in range(self.cores)]
-            self.graph_cpu = Graph("Metro CPU Usage", cpu_keys, points=1000)
+            self.graph_cpu = Graph("Metro CPU Usage", cpu_keys, points=1000,
+                                   y_title="CPU %", y_axis_max=100.0)
         elif not self._config["capture"] and self.graph_callbacks is not None:
             self.graph_callbacks.dump_graph(only_jitter=True)
             self.lock.acquire()
-            self.graph_cpu.dump_graph(
-                jitter=True,
-                sub_title=f"{self._config['cpu_secs']} secs",
-                y_axis_max=100.0,
-            )
+            if self.graph_cpu:
+                self.graph_cpu.dump_graph(
+                    jitter=True,
+                    sub_title=f"{self._config['cpu_secs']} secs"
+                )
             self.lock.release()
             self.graph_callbacks = None
             self.graph_cpu = None

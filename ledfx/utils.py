@@ -979,7 +979,8 @@ class Graph:
         myGraph.dump_graph()
     """
 
-    def __init__(self, title, keys, points=1000, tags=10, y_title="plumbus"):
+    def __init__(self, title, keys, points=1000, tags=10,
+                 y_title="plumbus", y_axis_max=None):
         """
         Creates a graph instance, sets X axis to 0 seconds
 
@@ -989,9 +990,11 @@ class Graph:
             points (int): how many points to support in rolling buffer
             tags (int): how many text tags to support in rolling buffer
             y_title (str): Axis title for Y range
+            y_axis_max (float): If not None, will force the y axis max
         """
         self.title = title
         self.y_title = y_title
+        self.y_axis_max = y_axis_max
         self.ranges = {}
         self.keys = keys
         self.birth = timeit.default_timer()
@@ -1023,7 +1026,7 @@ class Graph:
         )
 
     def dump_graph(
-        self, sub_title=None, jitter=False, only_jitter=False, y_axis_max=None
+        self, sub_title=None, jitter=False, only_jitter=False
     ):
         """
         Will spawn an interaction graph session into the browser
@@ -1034,7 +1037,6 @@ class Graph:
                              was dumped
             jitter (bool): If true, will dump the jitter graph
             only_jitter (bool): If true, will only dump the jitter graph
-            y_axis_max (float): If not None, will force the y axis max
         """
         if sub_title:
             compound = f"{self.title} : {sub_title}"
@@ -1076,8 +1078,8 @@ class Graph:
             )
             vals_fig.add_layout(label)
 
-        if y_axis_max is not None:
-            vals_fig.y_range.end = y_axis_max
+        if self.y_axis_max is not None:
+            vals_fig.y_range.end = self.y_axis_max
 
         vals_fig.legend.click_policy = "hide"
 
