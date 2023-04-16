@@ -979,8 +979,15 @@ class Graph:
         myGraph.dump_graph()
     """
 
-    def __init__(self, title, keys, points=1000, tags=10,
-                 y_title="plumbus", y_axis_max=None):
+    def __init__(
+        self,
+        title,
+        keys,
+        points=1000,
+        tags=10,
+        y_title="plumbus",
+        y_axis_max=None,
+    ):
         """
         Creates a graph instance, sets X axis to 0 seconds
 
@@ -1025,9 +1032,7 @@ class Graph:
             Tag(timeit.default_timer() - self.birth, y, text, color=color)
         )
 
-    def dump_graph(
-        self, sub_title=None, jitter=False, only_jitter=False
-    ):
+    def dump_graph(self, sub_title=None, jitter=False, only_jitter=False):
         """
         Will spawn an interaction graph session into the browser
 
