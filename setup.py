@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 
-from setuptools import setup, Extension
+import os
+
+import numpy
+from setuptools import Extension, setup
 
 import ledfx.consts as const
-import os
-import numpy
 
 # Set the include path to the numpy headers
 numpy_include_dir = numpy.get_include()
