@@ -1,8 +1,14 @@
 #!/usr/bin/env python3
 
-from setuptools import setup
+from setuptools import setup, Extension
 
 import ledfx.consts as const
+import os
+import numpy
+
+# Set the include path to the numpy headers
+numpy_include_dir = numpy.get_include()
+os.environ["C_INCLUDE_PATH"] = numpy_include_dir
 
 PROJECT_DOCS = "https://ledfx.readthedocs.io"
 PROJECT_PACKAGE_NAME = "ledfx"
@@ -75,4 +81,12 @@ setup(
     setup_requires=SETUP_REQUIRES,
     python_requires=const.REQUIRED_PYTHON_STRING,
     entry_points={"console_scripts": ["ledfx = ledfx.__main__:main"]},
+    ext_modules=[
+        Extension(
+            "aubio",
+            sources=["src/aubio.c"],
+            include_dirs=[numpy_include_dir],
+            libraries=["m"],
+        )
+    ],
 )
