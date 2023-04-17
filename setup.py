@@ -4,11 +4,6 @@ from setuptools import setup, Extension
 
 import ledfx.consts as const
 import os
-import numpy
-
-# Set the include path to the numpy headers
-numpy_include_dir = numpy.get_include()
-os.environ["C_INCLUDE_PATH"] = numpy_include_dir
 
 PROJECT_DOCS = "https://ledfx.readthedocs.io"
 PROJECT_PACKAGE_NAME = "ledfx"
@@ -27,6 +22,12 @@ SETUP_REQUIRES = [
     "numpy~=1.23",
     "wheel>=0.36.2",
 ]
+
+import numpy
+
+# Set the include path to the numpy headers
+numpy_include_dir = numpy.get_include()
+os.environ["C_INCLUDE_PATH"] = numpy_include_dir
 
 INSTALL_REQUIRES = [
     "aiohttp~=3.8.3",
