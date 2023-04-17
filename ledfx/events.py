@@ -10,6 +10,7 @@ class Event:
     """Base for events"""
 
     LEDFX_SHUTDOWN = "shutdown"
+    DEVICE_CREATED = "device_created"
     DEVICE_UPDATE = "device_update"
     DEVICES_UPDATED = "devices_updated"
     VIRTUAL_UPDATE = "virtual_update"
@@ -40,6 +41,14 @@ class DeviceUpdateEvent(Event):
         self.device_id = device_id
         # self.pixels = pixels.astype(np.uint8).T.tolist()
         self.pixels = pixels
+
+
+class DeviceCreatedEvent(Event):
+    """Event emitted when a device is created"""
+
+    def __init__(self, device_name):
+        self.device_name = device_name
+        super().__init__(Event.DEVICE_CREATED)
 
 
 class DevicesUpdatedEvent(Event):

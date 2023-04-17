@@ -80,7 +80,7 @@ CORE_CONFIG_SCHEMA = vol.Schema(
         vol.Optional("visualisation_fps", default=30): vol.All(
             int, vol.Range(1, 60)
         ),
-        vol.Optional("visualisation_maxlen", default=50): vol.All(
+        vol.Optional("visualisation_maxlen", default=81): vol.All(
             int, vol.Range(5, 300)
         ),
         vol.Optional(

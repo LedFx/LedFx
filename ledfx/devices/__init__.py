@@ -11,7 +11,7 @@ import voluptuous as vol
 import zeroconf
 
 from ledfx.config import save_config
-from ledfx.events import DeviceUpdateEvent, Event
+from ledfx.events import DeviceCreatedEvent, DeviceUpdateEvent, Event
 from ledfx.utils import (
     AVAILABLE_FPS,
     WLED,
@@ -763,7 +763,7 @@ class Devices(RegistryLoader):
                 "auto_generated": virtual.auto_generated,
             }
         )
-
+        self._ledfx.events.fire_event(DeviceCreatedEvent(device.name))
         await device.add_postamble()
 
         # Finally, save the config to file!
