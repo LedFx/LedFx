@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 
-from setuptools import setup, Extension
+import os
+
+from setuptools import Extension, setup
 
 import ledfx.consts as const
-import os
 
 PROJECT_DOCS = "https://ledfx.readthedocs.io"
 PROJECT_PACKAGE_NAME = "ledfx"
