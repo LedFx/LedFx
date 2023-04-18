@@ -200,6 +200,9 @@ class Effect(BaseRegistry):
     NAME = ""
     # over ride in effect children to hide existing keys from UI
     HIDDEN_KEYS = None
+    # over ride in effect children AND add an "advanced" bool to schema
+    # to show or hide in UI
+    ADVANCED_KEYS = None
     # over ride in effect children to allow edit and show others
     PERMITTED_KEYS = None
     _config = None
