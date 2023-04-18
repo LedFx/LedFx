@@ -163,8 +163,7 @@ const ready = () => (
       contextMenu = Menu.buildFromTemplate([
         { label: 'Show', click: () => {
           if (process.platform === 'darwin') app.dock.show()
-          wind.show()
-        }},
+          wind.show()        }},
         { label: 'Minimize', click: () => wind.minimize() },
         { label: 'Minimize to tray', click: () => {
           if (process.platform === 'darwin') app.dock.hide()
