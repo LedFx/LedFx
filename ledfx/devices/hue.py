@@ -56,10 +56,10 @@ class HueDevice(NetworkedDevice):
         )
         self.status = {}
 
-    def _hue_request(self, method, api_endpoint, data=None): 
+    def _hue_request(self, method, api_endpoint, data=None):
         return getattr(requests, method.lower())(
             f"http://{self._config['ip_address']}/api/{self._config['user_name']}/{api_endpoint}",
-            json=data
+            json=data,
         ).json()
 
     def _entertainment_groups(self):
@@ -73,9 +73,7 @@ class HueDevice(NetworkedDevice):
     def activate(self):
         request_data = {"stream": {"active": True}}
         response = self._hue_request(
-            "PUT",
-            f"groups/{self._config['group_id']}", 
-            request_data
+            "PUT", f"groups/{self._config['group_id']}", request_data
         )[0]
         if "success" in response:
             sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -92,7 +90,9 @@ class HueDevice(NetworkedDevice):
                 time.sleep(0.2)
                 self._sock.do_handshake()
             except exceptions.TLSError as e:
-                _LOGGER.warning(f"Failed to establish TLS handshake when activating the UDP stream.  Retrying.")
+                _LOGGER.warning(
+                    f"Failed to establish TLS handshake when activating the UDP stream.  Retrying."
+                )
 
         super().activate()
 
@@ -102,9 +102,7 @@ class HueDevice(NetworkedDevice):
             self._sock = None
         request_data = {"stream": {"active": False}}
         self._hue_request(
-            "PUT",
-            f"groups/{self._config['group_id']}", 
-            request_data
+            "PUT", f"groups/{self._config['group_id']}", request_data
         )
 
         super().deactivate()
