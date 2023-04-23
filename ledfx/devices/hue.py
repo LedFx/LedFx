@@ -56,20 +56,14 @@ class HueDevice(NetworkedDevice):
         )
         self.status = {}
 
-    def _hue_get(self, api_endpoint, data=None):
-        return requests.get(
+    def _hue_request(self, method, api_endpoint, data=None): 
+        return getattr(requests, method.lower())(
             f"http://{self._config['ip_address']}/api/{self._config['user_name']}/{api_endpoint}",
-            json=data,
-        ).json()
-
-    def _hue_put(self, api_endpoint, data):
-        return requests.put(
-            f"http://{self._config['ip_address']}/api/{self._config['user_name']}/{api_endpoint}",
-            json=data,
+            json=data
         ).json()
 
     def _entertainment_groups(self):
-        all_groups = self._hue_get("groups")
+        all_groups = self._hue_request("GET", "groups")
         return {
             id: all_groups[id]
             for id in all_groups
@@ -78,8 +72,10 @@ class HueDevice(NetworkedDevice):
 
     def activate(self):
         request_data = {"stream": {"active": True}}
-        response = self._hue_put(
-            f"groups/{self._config['group_id']}", request_data
+        response = self._hue_request(
+            "PUT",
+            f"groups/{self._config['group_id']}", 
+            request_data
         )[0]
         if "success" in response:
             sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -96,7 +92,7 @@ class HueDevice(NetworkedDevice):
                 time.sleep(0.2)
                 self._sock.do_handshake()
             except exceptions.TLSError as e:
-                ...
+                _LOGGER.warning(f"Failed to establish TLS handshake when activating the UDP stream.  Retrying.")
 
         super().activate()
 
@@ -105,7 +101,11 @@ class HueDevice(NetworkedDevice):
             self._sock.close()
             self._sock = None
         request_data = {"stream": {"active": False}}
-        self._hue_put(f"groups/{self._config['group_id']}", request_data)
+        self._hue_request(
+            "PUT",
+            f"groups/{self._config['group_id']}", 
+            request_data
+        )
 
         super().deactivate()
 
