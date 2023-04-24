@@ -1,6 +1,7 @@
 hiddenimports = [
     "sacn",
     "aubio",
+    "bokeh",
     "numpy",
     "math",
     "voluptuous",
