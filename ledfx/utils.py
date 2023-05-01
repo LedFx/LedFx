@@ -15,7 +15,7 @@ from abc import ABC
 from collections import deque
 from collections.abc import MutableMapping
 from functools import lru_cache
-from itertools import chain, cycle
+from itertools import chain
 
 # from asyncio import coroutines, ensure_future
 from subprocess import PIPE, Popen
@@ -24,15 +24,16 @@ import numpy as np
 import requests
 import voluptuous as vol
 
-from ledfx.config import get_default_config_directory, save_config
+from ledfx.config import save_config
 
-# UNCOMMENT TO ENABEL BOKEH GRAPHING ALONG WITH FUNCTION dump_graph()
+# UNCOMMENT TO ENABLE BOKEH GRAPHING ALONG WITH FUNCTION dump_graph()
 # from bokeh.io import output_file, show
 # from bokeh.layouts import column
 # from bokeh.models import Label
 # from bokeh.palettes import Category10
 # from bokeh.plotting import figure
-
+# from itertools import cycle
+# from ledfx.config import get_default_config_directory
 
 # from asyncio import coroutines, ensure_future
 
@@ -1048,7 +1049,7 @@ class Graph:
         """
         # THIS CODE HAS BEEN STUBBED TO REMOVE BOKEH DEPENDENCY
 
-        _LOGGER.info(f"Bokeh is disabled dump is disabled")
+        _LOGGER.info("Bokeh is disabled dump is disabled")
 
         # UNCOMMENT ALL FOLLOW CODE TO ENABLE BOKEH GRAPHING
         # ALSO ENABLE THE import sectoin at the top of this file
