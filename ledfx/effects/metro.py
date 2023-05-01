@@ -18,7 +18,7 @@ from ledfx.utils import Graph
 class MetroEffect(AudioReactiveEffect):
     NAME = "Metro"
     CATEGORY = "Diagnostic"
-    HIDDEN_KEYS = ["background_brightness", "blur", "mirror"]
+    HIDDEN_KEYS = ["background_brightness", "blur", "mirror", "capture"]
 
     start_time = timeit.default_timer()
 
