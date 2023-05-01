@@ -24,6 +24,8 @@ import numpy as np
 import requests
 import voluptuous as vol
 
+from ledfx.config import get_default_config_directory, save_config
+
 # UNCOMMENT TO ENABEL BOKEH GRAPHING ALONG WITH FUNCTION dump_graph()
 # from bokeh.io import output_file, show
 # from bokeh.layouts import column
@@ -31,7 +33,6 @@ import voluptuous as vol
 # from bokeh.palettes import Category10
 # from bokeh.plotting import figure
 
-from ledfx.config import get_default_config_directory, save_config
 
 # from asyncio import coroutines, ensure_future
 
