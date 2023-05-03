@@ -62,10 +62,12 @@ class AudioInputSource:
         device_list = sd.query_devices()
         default_output_device = sd.default.device["output"]
         # target device should be the name of the default_output device plus " [Loopback]"
-        target_device = f"{device_list[default_output_device]['name']} [Loopback]"
+        target_device = (
+            f"{device_list[default_output_device]['name']} [Loopback]"
+        )
         # We need to run over the device list looking for the target device
         for device_index, device in enumerate(device_list):
-            if device['name'] == target_device:
+            if device["name"] == target_device:
                 # Return the loopback device index
                 return device_index
         # No Loopback device matching output found - return the default input device index
