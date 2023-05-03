@@ -53,7 +53,23 @@ class AudioInputSource:
 
     @staticmethod
     def default_device_index():
-        return sd.default.device[0]
+        """
+        Finds the WASAPI loopback device index of the default output device if it exists
+        If it does not exist, return the default input device index
+        Returns:
+            integer: the sounddevice device index to use for audio input
+        """
+        device_list = sd.query_devices()
+        default_output_device = sd.default.device["output"]
+        # target device should be the name of the default_output device plus " [Loopback]"
+        target_device = f"{device_list[default_output_device]['name']} [Loopback]"
+        # We need to run over the device list looking for the target device
+        for device_index, device in enumerate(device_list):
+            if device['name'] == target_device:
+                # Return the loopback device index
+                return device_index
+        # No Loopback device matching output found - return the default input device index
+        return sd.default.device["input"]
 
     @staticmethod
     def query_hostapis():
@@ -146,7 +162,7 @@ class AudioInputSource:
             try:
                 self._audio = sd
             except OSError as Error:
-                _LOGGER.critical(f"Error: {Error}. Shutting down.")
+                _LOGGER.critical(f"Sounddevice error: {Error}. Shutting down.")
                 self._ledfx.stop()
 
         # Enumerate all of the input devices and find the one matching the
