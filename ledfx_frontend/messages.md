@@ -1,6 +1,7 @@
-+ Release 2.0.67
-+ Setup Assistant
-+ ...
-+ ..
-+ .
-+ Refactoring pt1
++ Release 2.0.68
++ Update Setup-Assistant
++ Adjust settings styles
++ Support Matrix PixelGraph
++ Update & Fix Storybook
++ one simply updates all deps at once
++ Add multiGraphToggle to SetupAssistant
