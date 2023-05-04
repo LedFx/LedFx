@@ -132,12 +132,20 @@ class WLEDDevice(NetworkedDevice):
                         if seg.get("stopY", 0) > 0:
                             name = seg.get("n", f'Matrix-{seg["id"]}')
                         rows = seg.get("stopY", 1)
-                        self.sub_v(
-                            name,
-                            "wled",
-                            [[seg["start"], seg["stop"] - 1]],
-                            rows,
-                        )
+                        if rows > 1:
+                            self.sub_v(
+                                name,
+                                "wled",
+                                [[seg["start"], rows * (seg["stop"] - 1) + 1]],
+                                rows,
+                            )
+                        else:
+                            self.sub_v(
+                                name,
+                                "wled",
+                                [[seg["start"], rows * (seg["stop"] - 1)]],
+                                rows,
+                            )
 
     async def async_initialize(self):
         await super().async_initialize()
