@@ -492,9 +492,9 @@ class Melbanks:
             > self._audio._config["min_volume"]
         )
 
-        for i in range(self.mel_count):
+        for i, proc in enumerate(self.melbank_processors):
             if volume:
-                self.melbank_processors[i](
+                proc(
                     frequency_domain,
                     self.melbanks[i],
                     self.melbanks_filtered[i],
