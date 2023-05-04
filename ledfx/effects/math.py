@@ -18,9 +18,9 @@ def interpolate_pixels(pixels, new_length):
     x_new = _normalized_linspace(new_length)
     new_pixels = np.zeros((len(x_new), pixels.shape[1]))
 
-    new_pixels[:, 0] = np.interp(x_new, x_old, pixels[:, 0])
-    new_pixels[:, 1] = np.interp(x_new, x_old, pixels[:, 1])
-    new_pixels[:, 2] = np.interp(x_new, x_old, pixels[:, 2])
+    # Use a loop to apply the interpolation on each column
+    for col in range(pixels.shape[1]):
+        new_pixels[:, col] = np.interp(x_new, x_old, pixels[:, col])
 
     return new_pixels
 
