@@ -368,7 +368,7 @@ class Effect(BaseRegistry):
             pixels[:, 0] = np.convolve(pixels[:, 0], kernel, mode="same")  # R
             pixels[:, 1] = np.convolve(pixels[:, 1], kernel, mode="same")  # G
             pixels[:, 2] = np.convolve(pixels[:, 2], kernel, mode="same")  # B
-            # pixels[:, 3] = np.convolve(pixels[:, 2], kernel, mode="same") # W
+            # pixels[:, 3] = np.convolve(pixels[:, 3], kernel, mode="same") # W
         return pixels
 
     @property
