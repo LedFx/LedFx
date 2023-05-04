@@ -21,12 +21,12 @@ def interpolate_pixels(pixels, new_length):
     # Interpolate the R,G,B portions of the pixel array
     # Lots of attempts at vectorisation/performance improvements here
     # This appears to be optimal from a readability/performance point of view
-    # TODO: If we ever move to RGBW pixel arrays, this needs to change since we will miss the W portion
+    # TODO: If we ever move to RGBW pixel arrays, uncomment the last line to operate on the W portion
 
-    new_pixels[:, 0] = np.interp(x_new, x_old, pixels[:, 0])
-    new_pixels[:, 1] = np.interp(x_new, x_old, pixels[:, 1])
-    new_pixels[:, 2] = np.interp(x_new, x_old, pixels[:, 2])
-
+    new_pixels[:, 0] = np.interp(x_new, x_old, pixels[:, 0])  # R
+    new_pixels[:, 1] = np.interp(x_new, x_old, pixels[:, 1])  # G
+    new_pixels[:, 2] = np.interp(x_new, x_old, pixels[:, 2])  # B
+    # new_pixels[:, 3] = np.interp(x_new, x_old, pixels[:, 3]) # W
     return new_pixels
 
 
