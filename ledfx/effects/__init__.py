@@ -359,8 +359,12 @@ class Effect(BaseRegistry):
         # TODO: Handle RGBW properly
         if config["blur"] != 0.0 and self.pixel_count > 3:
             kernel = _gaussian_kernel1d(config["blur"], 0, len(pixels))
-            for i in range(3):  # Iterate over the RGB channels
-                pixels[:, i] = np.convolve(pixels[:, i], kernel, mode="same")
+            # Vectorized convolution
+            pixels = np.apply_along_axis(
+                lambda channel: np.convolve(channel, kernel, mode="same"),
+                axis=0,
+                arr=pixels,
+            )
 
         return pixels
 
