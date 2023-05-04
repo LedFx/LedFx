@@ -359,13 +359,16 @@ class Effect(BaseRegistry):
         # TODO: Handle RGBW properly
         if config["blur"] != 0.0 and self.pixel_count > 3:
             kernel = _gaussian_kernel1d(config["blur"], 0, len(pixels))
-            # Vectorized convolution
-            pixels = np.apply_along_axis(
-                lambda channel: np.convolve(channel, kernel, mode="same"),
-                axis=0,
-                arr=pixels,
-            )
 
+            # Blur the R,G,B portions of the pixel array
+            # Lots of attempts at vectorisation/performance improvements here
+            # This appears to be optimal from a readability/performance point of view
+            # TODO: If we ever move to RGBW pixel arrays, uncomment the last line to operate on the W portion
+
+            pixels[:, 0] = np.convolve(pixels[:, 0], kernel, mode="same")  # R
+            pixels[:, 1] = np.convolve(pixels[:, 1], kernel, mode="same")  # G
+            pixels[:, 2] = np.convolve(pixels[:, 2], kernel, mode="same")  # B
+            # pixels[:, 3] = np.convolve(pixels[:, 2], kernel, mode="same") # W
         return pixels
 
     @property
