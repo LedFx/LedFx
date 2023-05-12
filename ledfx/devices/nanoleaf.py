@@ -13,6 +13,7 @@ _LOGGER = logging.getLogger(__name__)
 LightPanelModel = "NL22"
 CanvasModel = "NL29"
 
+
 class NanoleafDevice(NetworkedDevice):
     """
     Dedicated Nanoleaf device support
@@ -27,11 +28,7 @@ class NanoleafDevice(NetworkedDevice):
                 description="Hostname or IP address of the device",
             ): str,
             vol.Optional("port", description="port", default=16021): int,
-            vol.Optional(
-                "udp_port", 
-                description="port", 
-                default=60222
-            ): int,
+            vol.Optional("udp_port", description="port", default=60222): int,
             vol.Optional(
                 "auth_token",
                 description="Auth token",
@@ -84,7 +81,7 @@ class NanoleafDevice(NetworkedDevice):
                 self.url(self._config["auth_token"]) + "/effects",
                 json=payload,
             )
-            
+
             if response.status_code == 400:
                 raise Exception("Invalid effect dictionary")
 
@@ -204,7 +201,7 @@ class NanoleafDevice(NetworkedDevice):
             "pixel_count": len(panels),
             "pixel_layout": panels,
             "refresh_rate": 30,  # problems with too fast udp packets
-            "model": nanoleaf_config["model"]
+            "model": nanoleaf_config["model"],
         }
 
         if nanoleaf_config["model"] == LightPanelModel:
