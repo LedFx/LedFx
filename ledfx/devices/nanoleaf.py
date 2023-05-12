@@ -10,11 +10,13 @@ from ledfx.devices import NetworkedDevice
 
 _LOGGER = logging.getLogger(__name__)
 
+LightPanelModel = "NL22"
+CanvasModel = "NL29"
 
 class NanoleafDevice(NetworkedDevice):
     """
-    Dedicated WLED device support
-    This class fetches its config (px count, etc) from the WLED device
+    Dedicated Nanoleaf device support
+    This class fetches its config (px count, etc) from the Nanoleaf device
     at launch, and lets the user choose a sync mode to use.
     """
 
@@ -25,7 +27,11 @@ class NanoleafDevice(NetworkedDevice):
                 description="Hostname or IP address of the device",
             ): str,
             vol.Optional("port", description="port", default=16021): int,
-            vol.Optional("udp_port", description="port", default=60222): int,
+            vol.Optional(
+                "udp_port", 
+                description="port", 
+                default=60222
+            ): int,
             vol.Optional(
                 "auth_token",
                 description="Auth token",
@@ -43,7 +49,6 @@ class NanoleafDevice(NetworkedDevice):
 
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
-
         self.status = {}
 
     def config_updated(self, config):
@@ -57,22 +62,29 @@ class NanoleafDevice(NetworkedDevice):
         )
 
     def setup_subdevice(self):
+        _LOGGER.debug("setup_subdevice")
         self.status = {}
         self.deactivate()
         self.activate()
 
     def activate(self):
         if self.config["sync_mode"] == "UDP":
+            _LOGGER.info(f"Activating UDP stream mode...")
+            payload = {
+                "write": {
+                    "command": "display",
+                    "animType": "extControl",
+                    "extControlVersion": "v2",
+                }
+            }
+            if self._config["model"] == LightPanelModel:
+                payload["write"]["extControlVersion"] = "v1"
+
             response = requests.put(
                 self.url(self._config["auth_token"]) + "/effects",
-                json={
-                    "write": {
-                        "command": "display",
-                        "animType": "extControl",
-                        "extControlVersion": "v2",
-                    }
-                },
+                json=payload,
             )
+            
             if response.status_code == 400:
                 raise Exception("Invalid effect dictionary")
 
@@ -84,6 +96,7 @@ class NanoleafDevice(NetworkedDevice):
         super().activate()
 
     def deactivate(self):
+        _LOGGER.debug("deactivate")
         if self._sock is not None:
             self._sock.close()
             self._sock = None
@@ -91,14 +104,24 @@ class NanoleafDevice(NetworkedDevice):
         super().deactivate()
 
     def write_udp(self):
-        send_data = struct.pack(">H", len(self.status))
-        w = 0
-        transition = 0
+        if self._config["model"] == LightPanelModel:
+            send_data = struct.pack(">B", len(self.status.items()))
+            w = 0
+            transition = 1
 
-        for panel_id, (r, g, b) in self.status.items():
-            send_data += struct.pack(
-                ">HBBBBH", panel_id, r, g, b, w, transition
-            )
+            for panel_id, (r, g, b) in self.status.items():
+                send_data += struct.pack(
+                    ">BBBBBH", panel_id, w, r, g, b, transition
+                )
+        else:
+            send_data = struct.pack(">H", len(self.status))
+            w = 0
+            transition = 0
+
+            for panel_id, (r, g, b) in self.status.items():
+                send_data += struct.pack(
+                    ">HBBBBH", panel_id, r, g, b, w, transition
+                )
 
         self._sock.send(send_data)
 
@@ -139,6 +162,7 @@ class NanoleafDevice(NetworkedDevice):
             self.write_udp()
 
     def get_token(self):
+        _LOGGER.info(f"acquiring nanoleaf auth token...")
         response = requests.post(self.url("new"))
 
         if response and response.status_code == 200:
@@ -157,17 +181,20 @@ class NanoleafDevice(NetworkedDevice):
             auth_token = self.get_token()
             self.update_config({"auth_token": auth_token})
 
-        self.setup_subdevice()
+        _LOGGER.info("fetching nanoleaf's device info...")
 
         nanoleaf_config = requests.get(
             self.url(self.config["auth_token"])
         ).json()
 
+        _LOGGER.debug(f"nanoleaf config response: {nanoleaf_config}")
+        _LOGGER.info(f"parsing panel layout...")
+
         panels = [
             {"x": i["x"], "y": i["y"], "panelId": i["panelId"]}
             for i in sorted(
                 nanoleaf_config["panelLayout"]["layout"]["positionData"],
-                key=lambda x: (x["x"], x["y"]),
+                key=lambda panel: (panel["x"], panel["y"]),
             )
             if i["panelId"] != 0
         ]
@@ -177,6 +204,12 @@ class NanoleafDevice(NetworkedDevice):
             "pixel_count": len(panels),
             "pixel_layout": panels,
             "refresh_rate": 30,  # problems with too fast udp packets
+            "model": nanoleaf_config["model"]
         }
+
+        if nanoleaf_config["model"] == LightPanelModel:
+            config["udp_port"] = 60221
+
+        self.setup_subdevice()
 
         self.update_config(config)
