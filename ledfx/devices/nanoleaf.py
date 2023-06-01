@@ -66,7 +66,7 @@ class NanoleafDevice(NetworkedDevice):
 
     def activate(self):
         if self.config["sync_mode"] == "UDP":
-            _LOGGER.info(f"Activating UDP stream mode...")
+            _LOGGER.info("Activating UDP stream mode...")
             payload = {
                 "write": {
                     "command": "display",
@@ -159,7 +159,7 @@ class NanoleafDevice(NetworkedDevice):
             self.write_udp()
 
     def get_token(self):
-        _LOGGER.info(f"acquiring nanoleaf auth token...")
+        _LOGGER.info("acquiring nanoleaf auth token...")
         response = requests.post(self.url("new"))
 
         if response and response.status_code == 200:
@@ -185,7 +185,7 @@ class NanoleafDevice(NetworkedDevice):
         ).json()
 
         _LOGGER.debug(f"nanoleaf config response: {nanoleaf_config}")
-        _LOGGER.info(f"parsing panel layout...")
+        _LOGGER.info("parsing panel layout...")
 
         panels = [
             {"x": i["x"], "y": i["y"], "panelId": i["panelId"]}
