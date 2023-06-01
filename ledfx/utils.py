@@ -29,13 +29,16 @@ from ledfx.config import save_config
 # from asyncio import coroutines, ensure_future
 
 try:
+    from itertools import cycle
+
     from bokeh.io import output_file, show
     from bokeh.layouts import column
     from bokeh.models import Label
     from bokeh.palettes import Category10
     from bokeh.plotting import figure
-    from itertools import cycle
+
     from ledfx.config import get_default_config_directory
+
     bokeh_available = True
 except ImportError:
     bokeh_available = False
