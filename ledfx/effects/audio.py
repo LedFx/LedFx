@@ -15,6 +15,7 @@ from ledfx.api.websocket import WEB_AUDIO_CLIENTS, WebAudioStream
 from ledfx.effects import Effect
 from ledfx.effects.math import ExpFilter
 from ledfx.effects.melbank import FFT_SIZE, MIC_RATE, Melbanks
+from ledfx.effects.audiosync import AudioSync
 from ledfx.events import AudioDeviceChangeEvent, Event
 
 _LOGGER = logging.getLogger(__name__)
@@ -187,45 +188,6 @@ class AudioInputSource:
             )
             device_idx = default_device
 
-        # hostapis = self._audio.query_hostapis()
-        # devices = self._audio.query_devices()
-        # default_api = self._audio.default.hostapi
-
-        # Show device and api info in logger
-        # _LOGGER.debug("Audio Input Devices:")
-        # for api_idx, api in enumerate(hostapis):
-        #     _LOGGER.debug(
-        #         "Host API: {} {}".format(
-        #             api["name"],
-        #             "[DEFAULT]" if api_idx == default_api else "",
-        #         )
-        #     )
-        #     for idx in api["devices"]:
-        #         device = devices[idx]
-        #         if device["max_input_channels"] > 0:
-        #             _LOGGER.debug(
-        #                 "    [{}] {} {} {}".format(
-        #                     idx,
-        #                     device["name"],
-        #                     "[DEFAULT]" if idx == default_device else "",
-        #                     "[SELECTED]" if idx == device_idx else "",
-        #                 )
-        #             )
-
-        # old, do not use
-        # self.pre_emphasis.set_biquad(1., -self._config['pre_emphasis'], 0, 0, 0)
-
-        # USE THESE FOR SCOTT_MEL OR OTHERS
-        # self.pre_emphasis.set_biquad(1.3662, -1.9256, 0.5621, -1.9256, 0.9283)
-
-        # USE THESE FOR MATT_MEl
-        # weaker bass, good for vocals, highs
-        # self.pre_emphasis.set_biquad(0.87492, -1.74984, 0.87492, -1.74799, 0.75169)
-        # bass heavier overall more balanced
-        # self.pre_emphasis.set_biquad(
-        #     0.85870, -1.71740, 0.85870, -1.71605, 0.71874
-        # )
-
         # Setup a pre-emphasis filter to balance the input volume of lows to highs
         self.pre_emphasis = aubio.digital_filter(3)
         self.pre_emphasis.set_biquad(0.8268, -1.6536, 0.8268, -1.6536, 0.6536)
@@ -337,8 +299,6 @@ class AudioInputSource:
 
     def _audio_sample_callback(self, in_data, frame_count, time_info, status):
         """Callback for when a new audio sample is acquired"""
-        # time_start = time.time()
-        # self._raw_audio_sample = np.frombuffer(in_data, dtype=np.float32)
         raw_sample = np.frombuffer(in_data, dtype=np.float32)
 
         in_sample_len = len(raw_sample)
@@ -348,9 +308,7 @@ class AudioInputSource:
             # Simple resampling
             processed_audio_sample = self.resampler.process(
                 raw_sample,
-                # MIC_RATE / self._stream.samplerate
                 out_sample_len / in_sample_len
-                # end_of_input=True
             )
         else:
             processed_audio_sample = raw_sample
@@ -376,9 +334,6 @@ class AudioInputSource:
             self.pre_process_audio()
             self._invalidate_caches()
             self._invoke_callbacks()
-
-        # print(f"Core Audio Processing Latency {round(time.time()-time_start, 3)} s")
-        # return self._raw_audio_sample
 
     def _invoke_callbacks(self):
         """Notifies all clients of the new data"""
@@ -465,6 +420,7 @@ class AudioAnalysisSource(AudioInputSource):
 
         # Subscribe functions to be run on every frame of audio
         self.subscribe(self.melbanks)
+        self.subscribe(self.audiosync)
         self.subscribe(self.pitch)
         self.subscribe(self.onset)
         self.subscribe(self.bar_oscillator)
@@ -480,6 +436,10 @@ class AudioAnalysisSource(AudioInputSource):
             self.melbanks = Melbanks(
                 self._ledfx, self, self._ledfx.config.get("melbanks", {})
             )
+        
+        # audiosync
+        if not hasattr(self, "audiosync"):
+            self.audiosync = AudioSync(self)
 
         fft_params = (
             self._config["fft_size"],
