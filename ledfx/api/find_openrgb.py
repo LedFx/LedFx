@@ -27,10 +27,7 @@ class FindOpenRGBDevicesEndpoint(RestEndpoint):
         devices = []
         for device in client.devices:
             devices.append(
-                {
-                    "name": device.name,
-                    "type": device.type,
-                }
+                {"name": device.name, "type": device.type, "id": device.id}
             )
         response = {"status": "success", "devices": devices}
         return web.json_response(data=response, status=200)
