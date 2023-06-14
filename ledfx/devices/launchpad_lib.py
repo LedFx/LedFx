@@ -243,7 +243,7 @@ class LaunchpadBase:
     def EventRaw(self):
         return self.midi.ReadRaw()
 
-    def find_launchpad(self)->str:
+    def find_launchpad(self) -> str:
         if self.Check(0, "mk2"):
             return "Launchpad Mk2"
         elif self.Check(1, "minimk3"):
