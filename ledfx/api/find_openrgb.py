@@ -41,7 +41,7 @@ class FindOpenRGBDevicesEndpoint(RestEndpoint):
                     "name": device.name,
                     "type": device.type,
                     "id": device.id,
-                    "leds": len(device.leds)
+                    "leds": len(device.leds),
                 }
             )
 
