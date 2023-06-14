@@ -10,7 +10,7 @@ _LOGGER = logging.getLogger(__name__)
 
 class FindOpenRGBDevicesEndpoint(RestEndpoint):
     """REST end-point for detecting and reporting OpenRGB devices
-       optional params for server and port"""
+    optional params for server and port"""
 
     ENDPOINT_PATH = "/api/find_openrgb"
 
