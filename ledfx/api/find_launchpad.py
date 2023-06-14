@@ -1,9 +1,9 @@
 import logging
 
 from aiohttp import web
-from ledfx.devices.launchpad_lib import LaunchpadBase
 
 from ledfx.api import RestEndpoint
+from ledfx.devices.launchpad_lib import LaunchpadBase
 
 _LOGGER = logging.getLogger(__name__)
 
