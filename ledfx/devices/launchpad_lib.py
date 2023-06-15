@@ -57,6 +57,7 @@ class RtmidiWrap:
                         )
                         continue
                     for port, pname in enumerate(ports):
+                        _LOGGER.info(f"SearchDevices: {port} {pname}")
                         if str(pname.lower()).find(name.lower()) >= 0:
                             _LOGGER.info(f"{port} {pname}")
                             ret.append(port)
