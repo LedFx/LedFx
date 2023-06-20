@@ -244,19 +244,6 @@ class LaunchpadBase:
     def EventRaw(self):
         return self.midi.ReadRaw()
 
-    def find_launchpad(self) -> str:
-        if self.Check(0, "mk2"):
-            return "Launchpad Mk2"
-        elif self.Check(1, "minimk3"):
-            return "Launchpad Mini Mk3"
-        elif self.Check(0, "pad pro"):
-            return "Launchpad Pro"
-        elif self.Check(0, "promk3"):
-            return "Launchpad Pro Mk3"
-        elif self.Check(1, "Launchpad X") or self.Check(1, "LPX"):
-            return "Launchpad X"
-        return None
-
 
 # ==========================================================================
 # CLASS Launchpad
@@ -314,6 +301,11 @@ class Launchpad(LaunchpadBase):
     # |   |   |   |   |   |   |   |   |  |8/8|  8
     # +---+---+---+---+---+---+---+---+  +---+
     #
+
+    segments = []
+
+    def flush(self, data):
+        _LOGGER.error(f"flush not implemented for {self.__class__.__name__}")
 
     # -------------------------------------------------------------------------------------
     # -- Returns the raw value of the last button change as a list:
@@ -448,6 +440,11 @@ class LaunchpadPro(LaunchpadBase):
     #
 
     COLORS = {"black": 0, "off": 0, "white": 3, "red": 5, "green": 17}
+
+    segments = []
+
+    def flush(self, data):
+        _LOGGER.error(f"flush not implemented for {self.__class__.__name__}")
 
     # -------------------------------------------------------------------------------------
     # -- Opens one of the attached Launchpad MIDI devices.
@@ -665,6 +662,11 @@ class LaunchpadMk2(LaunchpadPro):
     #        +---+---+---+---+---+---+---+---+  +---+
     #
 
+    segments = []
+
+    def flush(self, data):
+        _LOGGER.error(f"flush not implemented for {self.__class__.__name__}")
+
     # -------------------------------------------------------------------------------------
     # -- Opens one of the attached Launchpad MIDI devices.
     # -- Uses search string "Mk2", by default.
@@ -773,6 +775,11 @@ class LaunchControlXL(LaunchpadBase):
     #     +---+---+---+---+---+---+---+---+
     #
     #
+
+    segments = []
+
+    def flush(self, data):
+        _LOGGER.error(f"flush not implemented for {self.__class__.__name__}")
 
     # -------------------------------------------------------------------------------------
     # -- Opens one of the attached Control XL MIDI devices.
@@ -889,6 +896,11 @@ class LaunchControl(LaunchControlXL):
     #  0  |0/0|   |   |   |   |   |   |7/0|  |8/0||9/0|
     #     +---+---+---+---+---+---+---+---+  +---++---+
 
+    segments = []
+
+    def flush(self, data):
+        _LOGGER.error(f"flush not implemented for {self.__class__.__name__}")
+
     # -------------------------------------------------------------------------------------
     # -- Opens one of the attached Control MIDI devices.
     # -- Uses search string "Control MIDI", by default.
@@ -964,6 +976,11 @@ class LaunchKeyMini(LaunchpadBase):
     #    SLIDERS:           41..48
     #    SLIDER (MASTER):   7
     #
+
+    segments = []
+
+    def flush(self, data):
+        _LOGGER.error(f"flush not implemented for {self.__class__.__name__}")
 
     # -------------------------------------------------------------------------------------
     # -- Opens one of the attached LaunchKey devices.
@@ -1059,6 +1076,11 @@ class Dicer(LaunchpadBase):
     #     +-----+                                                 +-----+
     #
     #
+
+    segments = []
+
+    def flush(self, data):
+        _LOGGER.error(f"flush not implemented for {self.__class__.__name__}")
 
     # -------------------------------------------------------------------------------------
     # -- Opens one of the attached Dicer devices.
@@ -1200,6 +1222,11 @@ class LaunchpadMiniMk3(LaunchpadPro):
 
     # 	COLORS = {'black':0, 'off':0, 'white':3, 'red':5, 'green':17 }
 
+    segments = []
+
+    def flush(self, data):
+        _LOGGER.error(f"flush not implemented for {self.__class__.__name__}")
+
     # -------------------------------------------------------------------------------------
     # -- Opens one of the attached Launchpad MIDI devices.
     # -- Uses search string "MiniMk3", by default.
@@ -1303,6 +1330,41 @@ class LaunchpadLPX(LaunchpadPro):
     # -- So the old strategy of simply looking for "LPX" will not work.
     # -- Workaround: If the user doesn't request a specific name, we'll just
     # -- search for "Launchpad X" and "LPX"...
+
+    segments = [
+        ("TopBar", "mdi:table-row", [[72, 79]], 1),
+        ("Logo", "launchpad", [[80, 80]], 1),
+        (
+            "RightBar",
+            "mdi:table-column",
+            [
+                [8, 8],
+                [17, 17],
+                [26, 26],
+                [35, 35],
+                [44, 44],
+                [53, 53],
+                [62, 62],
+                [71, 71],
+            ],
+            1,
+        ),
+        (
+            "Matrix",
+            "mdi:grid",
+            [
+                [0, 7],
+                [9, 16],
+                [18, 25],
+                [27, 34],
+                [36, 43],
+                [45, 52],
+                [54, 61],
+                [63, 70],
+            ],
+            8,
+        ),
+    ]
 
     # -------------------------------------------------------------------------------------
     # Overrides "LaunchpadPro" method
@@ -1463,6 +1525,74 @@ class LaunchpadLPX(LaunchpadPro):
         else:
             return None
 
+    def flush(self, data):
+        try:
+            # we will use RawWriteSysEx(self, lstMessage, timeStamp=0)
+            # this function adds the preamble 240 and post amble 247
+            #
+            # This message can be sent to Lighting Custom Modes and the Programmer mode
+            # to light up LEDs. The LED indices used always correspond to those of
+            # Programmer mode, regardless of the layout selected:
+            #
+            # Host => Launchpad X:
+            # Hex: F0h 00h 20h 29h 02h 0Ch 03h <colourspec> [<colourspec> […]] F7h
+            # Dec: 240 0   32  41  2   12   3  <colourspec> [<colourspec> […]] 247
+            #
+            # the <colourspec> is structured as follows:
+            # - Lighting type (1 byte)
+            # - LED index (1 byte)  ---- WARNING, each row starts at 11, 21, 31 etc
+            # - Lighting data (1 – 3 bytes)
+            # Lighting types:
+            # - 0: Static colour from palette 1 byte specifying palette entry.
+            # - 1: Flashing colour, 2 bytes specifying Colour B and Colour A.
+            # - 2: Pulsing colour, 1 byte specifying palette entry.
+            # - 3: RGB colour, 3 bytes for Red, Green and Blue (127: Max, 0: Min).
+            #
+            # The message may contain up to 81 <colourspec> entries to light up the entire
+            # Launchpad X surface.
+            # Example:
+
+            # Host => Launchpad X:
+            # Hex: F0h 00h 20h 29h 02h 0Ch 03h 00h 0Bh 0Dh 01h 0Ch 15h 17h 02h 0Dh 25h F7h
+            # Dec: 240  0  32  41   2  12   3   0  11  13   1  12  21  23   2  13  37  247
+            #
+            # Sending this message to the Launchpad X in Programmer layout sets up the
+            # bottom left pad to static yellow, the pad next to it to flashing green
+            # (between dim and bright green), and the pad next to that pulsing turquoise
+            #
+            # in summary
+            # [ 3 = RGB, Pos = layout BE CAREFUL, R,G, B max 127 ]
+            # example of send RED pixel at row 3 pixel 6
+            # send_buffer.extend([3, 35, 127, 0, 0])
+
+            #            start = timeit.default_timer()
+
+            # stuff the send buffer with the command preamble
+            send_buffer = [0, 32, 41, 2, 12, 3]
+
+            # prebump the programmer mode index up a row and just before
+            pgm_mode_pos = 10
+            for idx, pixel in enumerate(data):
+                # check for row bumps, position is specific to programmer mode
+                if idx % 9 == 0:
+                    pgm_mode_pos += 1
+                send_buffer.extend(
+                    [
+                        3,
+                        pgm_mode_pos,
+                        max(min(int(pixel[0] // 2), 127), 0),
+                        max(min(int(pixel[1] // 2), 127), 0),
+                        max(min(int(pixel[2] // 2), 127), 0),
+                    ]
+                )
+                pgm_mode_pos += 1
+            self.lp.midi.RawWriteSysEx(send_buffer)
+            # took = timeit.default_timer() - start
+            # _LOGGER.info(f"Updated Pixels: {took} ")
+
+        except RuntimeError:
+            _LOGGER.error("Error in LaunchpadLPX handling")
+
 
 # ==========================================================================
 # CLASS MidiFighter64
@@ -1513,6 +1643,11 @@ class MidiFighter64(LaunchpadBase):
     #        |   |   |   |   |   |   |   |   | 7
     #        +---+---+---+---+---+---+---+---+
     #
+
+    segments = []
+
+    def flush(self, data):
+        _LOGGER.error(f"flush not implemented for {self.__class__.__name__}")
 
     # -------------------------------------------------------------------------------------
     # -- Add some LED mode "constants" for better usability.
@@ -1727,6 +1862,11 @@ class LaunchpadProMk3(LaunchpadPro):
     #        +---+---+---+---+---+---+---+---+
     #        |   |   |   |   |   |   |   |/10|        10
     #        +---+---+---+---+---+---+---+---+
+
+    segments = []
+
+    def flush(self, data):
+        _LOGGER.error(f"flush not implemented for {self.__class__.__name__}")
 
     # -------------------------------------------------------------------------------------
     # -- Opens one of the attached Launchpad MIDI devices.
