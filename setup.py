@@ -34,7 +34,7 @@ INSTALL_REQUIRES = [
     "psutil>=5.8.0",
     "pyserial>=3.5",
     "pystray>=0.17",
-    "python-rtmidi~=1.5.1",
+    "python-rtmidi~=1.5.2",
     "requests~=2.28.2",
     "sacn~=1.6.3",
     "sentry-sdk==1.14.0",
