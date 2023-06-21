@@ -48,6 +48,12 @@ launchpads = [
         "number": 1,
         "class": launchpad.LaunchpadLPX(),
     },
+    {
+        "name": "Launchpad S",
+        "search": "Launchpad S",
+        "number": 1,
+        "class": launchpad.LaunchpadLPX(),
+    },
 ]
 
 
@@ -107,14 +113,19 @@ class LaunchpadDevice(MidiDevice):
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
         self.lp = None
+        _LOGGER.info("Launchpad device created")
 
     def flush(self, data):
         self.lp.flush(data)
 
     def activate(self):
+        self.set_class()
+        super().activate()
+
+    def set_class(self):
         self.lp = launchpad.Launchpad()
         self.validate_launchpad()
-        super().activate()
+        _LOGGER.info(f"Launchpad device class: {self.lp.__class__.__name__}")
 
     def deactivate(self):
         self.lp.flush(zeros((self.pixel_count, 3)))
@@ -123,10 +134,15 @@ class LaunchpadDevice(MidiDevice):
         super().deactivate()
 
     async def add_postamble(self):
-        _LOGGER.info("Doing post creation things for LP...")
+        _LOGGER.info("Doing post creation things")
         if self.config["create_segments"]:
-            for segment in self.lp.segments:
-                self.sub_v(segment)
+            if self.lp is None:
+                self.set_class()
+            if len(self.lp.segments) == 0:
+                _LOGGER.warning("No segments defined in {self.lp.__class__.__name__}")
+            else:
+                for segment in self.lp.segments:
+                    self.sub_v(segment[0], segment[1], segment[2], segment[3])
 
     def validate_launchpad(self) -> str:
         for pad in launchpads:

@@ -1586,7 +1586,7 @@ class LaunchpadLPX(LaunchpadPro):
                     ]
                 )
                 pgm_mode_pos += 1
-            self.lp.midi.RawWriteSysEx(send_buffer)
+            self.midi.RawWriteSysEx(send_buffer)
             # took = timeit.default_timer() - start
             # _LOGGER.info(f"Updated Pixels: {took} ")
 
