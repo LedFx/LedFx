@@ -45,10 +45,6 @@ class RtmidiWrap:
     def SearchDevices(self, name, output=True, input=True, quiet=True):
         ret = []
         available_apis = rtmidi.get_compiled_api()
-        _LOGGER.info("TEMP MIDI DEBUG-----------")
-        _LOGGER.info(self.apis.items())
-        _LOGGER.info(available_apis)
-        _LOGGER.info("TEMP MIDI DEBUG END-------")
 
         for api, api_name in sorted(self.apis.items()):
             if api in available_apis:
@@ -178,6 +174,15 @@ class RtmidiWrap:
 #
 # ==========================================================================
 class LaunchpadBase:
+    # these are defaults that need to be overridden in inheriting classes
+    layout = {"pixels": 0, "rows": 0}
+    segments = []
+
+    def flush(self, data):
+        _LOGGER.error(f"flush not implemented for {self.__class__.__name__}")
+
+    # end defaults
+
     def __init__(self):
         self.midi = RtmidiWrap()  # midi interface instance (singleton)
         self.idOut = None
@@ -306,11 +311,6 @@ class Launchpad(LaunchpadBase):
     # |   |   |   |   |   |   |   |   |  |8/8|  8
     # +---+---+---+---+---+---+---+---+  +---+
     #
-
-    segments = []
-
-    def flush(self, data):
-        _LOGGER.error(f"flush not implemented for {self.__class__.__name__}")
 
     # -------------------------------------------------------------------------------------
     # -- Returns the raw value of the last button change as a list:
@@ -445,11 +445,6 @@ class LaunchpadPro(LaunchpadBase):
     #
 
     COLORS = {"black": 0, "off": 0, "white": 3, "red": 5, "green": 17}
-
-    segments = []
-
-    def flush(self, data):
-        _LOGGER.error(f"flush not implemented for {self.__class__.__name__}")
 
     # -------------------------------------------------------------------------------------
     # -- Opens one of the attached Launchpad MIDI devices.
@@ -667,11 +662,6 @@ class LaunchpadMk2(LaunchpadPro):
     #        +---+---+---+---+---+---+---+---+  +---+
     #
 
-    segments = []
-
-    def flush(self, data):
-        _LOGGER.error(f"flush not implemented for {self.__class__.__name__}")
-
     # -------------------------------------------------------------------------------------
     # -- Opens one of the attached Launchpad MIDI devices.
     # -- Uses search string "Mk2", by default.
@@ -780,11 +770,6 @@ class LaunchControlXL(LaunchpadBase):
     #     +---+---+---+---+---+---+---+---+
     #
     #
-
-    segments = []
-
-    def flush(self, data):
-        _LOGGER.error(f"flush not implemented for {self.__class__.__name__}")
 
     # -------------------------------------------------------------------------------------
     # -- Opens one of the attached Control XL MIDI devices.
@@ -901,11 +886,6 @@ class LaunchControl(LaunchControlXL):
     #  0  |0/0|   |   |   |   |   |   |7/0|  |8/0||9/0|
     #     +---+---+---+---+---+---+---+---+  +---++---+
 
-    segments = []
-
-    def flush(self, data):
-        _LOGGER.error(f"flush not implemented for {self.__class__.__name__}")
-
     # -------------------------------------------------------------------------------------
     # -- Opens one of the attached Control MIDI devices.
     # -- Uses search string "Control MIDI", by default.
@@ -981,11 +961,6 @@ class LaunchKeyMini(LaunchpadBase):
     #    SLIDERS:           41..48
     #    SLIDER (MASTER):   7
     #
-
-    segments = []
-
-    def flush(self, data):
-        _LOGGER.error(f"flush not implemented for {self.__class__.__name__}")
 
     # -------------------------------------------------------------------------------------
     # -- Opens one of the attached LaunchKey devices.
@@ -1081,11 +1056,6 @@ class Dicer(LaunchpadBase):
     #     +-----+                                                 +-----+
     #
     #
-
-    segments = []
-
-    def flush(self, data):
-        _LOGGER.error(f"flush not implemented for {self.__class__.__name__}")
 
     # -------------------------------------------------------------------------------------
     # -- Opens one of the attached Dicer devices.
@@ -1227,11 +1197,6 @@ class LaunchpadMiniMk3(LaunchpadPro):
 
     # 	COLORS = {'black':0, 'off':0, 'white':3, 'red':5, 'green':17 }
 
-    segments = []
-
-    def flush(self, data):
-        _LOGGER.error(f"flush not implemented for {self.__class__.__name__}")
-
     # -------------------------------------------------------------------------------------
     # -- Opens one of the attached Launchpad MIDI devices.
     # -- Uses search string "MiniMk3", by default.
@@ -1335,7 +1300,7 @@ class LaunchpadLPX(LaunchpadPro):
     # -- So the old strategy of simply looking for "LPX" will not work.
     # -- Workaround: If the user doesn't request a specific name, we'll just
     # -- search for "Launchpad X" and "LPX"...
-
+    layout = {"pixels": 81, "rows": 9}
     segments = [
         ("TopBar", "mdi:table-row", [[72, 79]], 1),
         ("Logo", "launchpad", [[80, 80]], 1),
@@ -1649,11 +1614,6 @@ class MidiFighter64(LaunchpadBase):
     #        +---+---+---+---+---+---+---+---+
     #
 
-    segments = []
-
-    def flush(self, data):
-        _LOGGER.error(f"flush not implemented for {self.__class__.__name__}")
-
     # -------------------------------------------------------------------------------------
     # -- Add some LED mode "constants" for better usability.
     # -------------------------------------------------------------------------------------
@@ -1867,11 +1827,6 @@ class LaunchpadProMk3(LaunchpadPro):
     #        +---+---+---+---+---+---+---+---+
     #        |   |   |   |   |   |   |   |/10|        10
     #        +---+---+---+---+---+---+---+---+
-
-    segments = []
-
-    def flush(self, data):
-        _LOGGER.error(f"flush not implemented for {self.__class__.__name__}")
 
     # -------------------------------------------------------------------------------------
     # -- Opens one of the attached Launchpad MIDI devices.

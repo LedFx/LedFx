@@ -57,14 +57,18 @@ launchpads = [
 ]
 
 
-def find_launchpad() -> str:
+def find_launchpad() -> dict:
     lp = launchpad.LaunchpadBase()
     for pad in launchpads:
         _LOGGER.info(
             f"Searching for {pad['name']} on {pad['number']} with {pad['search']}"
         )
         if lp.Check(pad["number"], pad["search"]):
-            return pad["name"]
+            lp = pad["class"]
+            result = lp.layout
+            result["name"] = pad["name"]
+            result["segments"] = lp.segments
+            return result
     return None
 
 
