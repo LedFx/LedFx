@@ -45,6 +45,11 @@ class RtmidiWrap:
     def SearchDevices(self, name, output=True, input=True, quiet=True):
         ret = []
         available_apis = rtmidi.get_compiled_api()
+        _LOGGER.info("TEMP MIDI DEBUG-----------")
+        _LOGGER.info(self.apis.items())
+        _LOGGER.info(available_apis)
+        _LOGGER.info("TEMP MIDI DEBUG END-------")
+
         for api, api_name in sorted(self.apis.items()):
             if api in available_apis:
                 if output:
