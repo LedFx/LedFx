@@ -3,7 +3,7 @@ import logging
 from aiohttp import web
 
 from ledfx.api import RestEndpoint
-from ledfx.devices.launchpad_lib import LaunchpadBase
+from ledfx.devices.launchpad import find_launchpad
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -17,8 +17,7 @@ class FindLaunchpadDevicesEndpoint(RestEndpoint):
         """Check for launchpad present"""
 
         try:
-            lp = LaunchpadBase()
-            found = lp.find_launchpad()
+            found = find_launchpad()
         except Exception as e:
             _LOGGER.error(f"Error in checking for launchpad: {e}")
             response = {"status": "error", "error": str(e)}
