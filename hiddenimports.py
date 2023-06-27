@@ -20,4 +20,5 @@ hiddenimports = [
     "serial.tools.list_ports",
     "icmplib",
     "flux_led",
+    "voluptuous"
 ]
