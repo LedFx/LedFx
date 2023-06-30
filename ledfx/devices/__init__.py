@@ -268,7 +268,7 @@ class Device(BaseRegistry):
         self._segments = [
             segment for segment in self._segments if segment[0] != virtual_id
         ]
-        if virtual_id == self.priority_virtual:
+        if virtual_id == self.priority_virtual.id:
             self.invalidate_cached_props()
 
     def clear_segments(self):
