@@ -359,7 +359,7 @@ class Virtual:
                 VirtualUpdateEvent(self.id, self.assembled_frame)
             )
 
-            self._active = False
+            self.deactivate()
 
     def force_frame(self, color):
         """
