@@ -1160,3 +1160,11 @@ class Graph:
             )
             output_file(filename=save_as, title=compound)
             show(p)
+
+
+def wled_support_DDP(build)->bool:
+    # https://github.com/Aircoookie/WLED/blob/main/CHANGELOG.md#build-2110060
+    if build >= 2110060:
+        return True
+    else:
+        return False

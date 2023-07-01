@@ -20,6 +20,7 @@ from ledfx.utils import (
     async_fire_and_forget,
     generate_id,
     resolve_destination,
+    wled_support_DDP
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -674,40 +675,23 @@ class Devices(RegistryLoader):
             # fmt: on
             wled_count = led_info["count"]
             wled_rgbmode = led_info["rgbw"]
+            wled_build = wled_config["vid"]
+
+            if wled_support_DDP(wled_build):
+                _LOGGER.info(f"WLED build Supports DDP: {wled_build}")
+                sync_mode = "DDP"
+            else:
+                _LOGGER.info(f"WLED build pre DDP, default to UDP: {wled_build}")
+                sync_mode = "UDP"
 
             wled_config = {
                 "name": wled_name,
                 "pixel_count": wled_count,
                 "icon_name": "wled",
                 "rgbw_led": wled_rgbmode,
+                "sync_mode": sync_mode
             }
 
-            # determine sync mode
-            # UDP < 480
-            # DDP or E131 depending on: ledfx's configured preferred mode first, else the device's mode
-            # ARTNET can do one
-
-            if wled_count > 480:
-                await wled.get_sync_settings()
-                sync_mode = wled.get_sync_mode()
-            else:
-                sync_mode = "UDP"
-
-                # preferred_mode = self._ledfx.config["wled_preferences"][
-                #     "wled_preferred_mode"
-                # ]
-                # if preferred_mode:
-                #     sync_mode = preferred_mode
-                # else:
-                #     await wled.get_sync_settings()
-                #     sync_mode = wled.get_sync_mode()
-
-            if sync_mode == "ARTNET":
-                msg = f"Cannot add WLED device at {resolved_dest}. Unsupported mode: 'ARTNET', and too many pixels for UDP sync (>480)"
-                _LOGGER.warning(msg)
-                raise ValueError(msg)
-
-            wled_config["sync_mode"] = sync_mode
             device_config.update(wled_config)
 
         device_id = generate_id(device_config["name"])
