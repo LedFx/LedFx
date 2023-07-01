@@ -6,8 +6,7 @@ from ledfx.devices import NetworkedDevice
 from ledfx.devices.ddp import DDPDevice
 from ledfx.devices.e131 import E131Device
 from ledfx.devices.udp import UDPRealtimeDevice
-from ledfx.utils import WLED
-from ledfx.utils import wled_support_DDP
+from ledfx.utils import WLED, wled_support_DDP
 
 _LOGGER = logging.getLogger(__name__)
 

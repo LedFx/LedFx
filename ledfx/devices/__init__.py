@@ -20,7 +20,7 @@ from ledfx.utils import (
     async_fire_and_forget,
     generate_id,
     resolve_destination,
-    wled_support_DDP
+    wled_support_DDP,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -673,7 +673,9 @@ class Devices(RegistryLoader):
                 _LOGGER.info(f"WLED build Supports DDP: {wled_build}")
                 sync_mode = "DDP"
             else:
-                _LOGGER.info(f"WLED build pre DDP, default to UDP: {wled_build}")
+                _LOGGER.info(
+                    f"WLED build pre DDP, default to UDP: {wled_build}"
+                )
                 sync_mode = "UDP"
 
             wled_config = {
@@ -681,7 +683,7 @@ class Devices(RegistryLoader):
                 "pixel_count": wled_count,
                 "icon_name": "wled",
                 "rgbw_led": wled_rgbmode,
-                "sync_mode": sync_mode
+                "sync_mode": sync_mode,
             }
 
             device_config.update(wled_config)
