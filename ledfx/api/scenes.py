@@ -221,6 +221,7 @@ class ScenesEndpoint(RestEndpoint):
         scene_tags = data.get("scene_tags")
         scene_puturl = data.get("scene_puturl")
         scene_payload = data.get("scene_payload")
+        scene_midiactivate = data.get("scene_midiactivate")
         scene_image = data.get("scene_image")
         if scene_image is None:
             scene_image = "Wallpaper"
@@ -240,6 +241,7 @@ class ScenesEndpoint(RestEndpoint):
         scene_config["scene_puturl"] = scene_puturl
         scene_config["scene_tags"] = scene_tags
         scene_config["scene_payload"] = scene_payload
+        scene_config["scene_midiactivate"] = scene_midiactivate
         for virtual in self._ledfx.virtuals.values():
             effect = {}
             if virtual.active_effect:

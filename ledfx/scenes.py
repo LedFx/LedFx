@@ -45,6 +45,10 @@ class Scenes:
                     "scene_payload",
                     description="On Scene Activate, send this payload to scene_puturl",
                 ): str,
+                vol.Optional(
+                    "scene_midiactivate",
+                    description="On MIDI key/note, Activate a scene",
+                ): str,
                 vol.Required(
                     "virtuals",
                     description="The effects of these virtuals will be saved",
