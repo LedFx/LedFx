@@ -138,12 +138,15 @@ class Device(BaseRegistry):
         for pixels, start, end in data:
             self._pixels[start : end + 1] = pixels
 
-        if virtual_id == self.priority_virtual.id:
-            frame = self.assemble_frame()
-            self.flush(frame)
-            # _LOGGER.debug(f"Device {self.id} flushed by Virtual {virtual_id}")
+        if self.priority_virtual:
+            if virtual_id == self.priority_virtual.id:
+                frame = self.assemble_frame()
+                self.flush(frame)
+                # _LOGGER.debug(f"Device {self.id} flushed by Virtual {virtual_id}")
 
-            self._ledfx.events.fire_event(DeviceUpdateEvent(self.id, frame))
+                self._ledfx.events.fire_event(DeviceUpdateEvent(self.id, frame))
+        else:
+            _LOGGER.warning(f"Flush skipped as {self.id} has no priority_virtual")
 
     def assemble_frame(self):
         """
