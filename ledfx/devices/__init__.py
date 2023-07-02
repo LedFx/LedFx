@@ -144,9 +144,13 @@ class Device(BaseRegistry):
                 self.flush(frame)
                 # _LOGGER.debug(f"Device {self.id} flushed by Virtual {virtual_id}")
 
-                self._ledfx.events.fire_event(DeviceUpdateEvent(self.id, frame))
+                self._ledfx.events.fire_event(
+                    DeviceUpdateEvent(self.id, frame)
+                )
         else:
-            _LOGGER.warning(f"Flush skipped as {self.id} has no priority_virtual")
+            _LOGGER.warning(
+                f"Flush skipped as {self.id} has no priority_virtual"
+            )
 
     def assemble_frame(self):
         """
