@@ -30,7 +30,7 @@ from ledfx.consts import (
 
 PROJECT_PACKAGE_NAME = PROJECT_NAME
 PROJECT_AUTHOR = const.__author__
-PROJECT_COPYRIGHT = f" 2018-2021, {PROJECT_AUTHOR}"
+PROJECT_COPYRIGHT = f" 2018-2023, {PROJECT_AUTHOR}"
 PROJECT_SHORT_DESCRIPTION = "LedFx is an open-source effect controller"
 PROJECT_LONG_DESCRIPTION = (
     "LedFx is an open-source effect controller "
@@ -39,7 +39,7 @@ PROJECT_LONG_DESCRIPTION = (
 )
 PROJECT_GITHUB_USERNAME = "LedFx"
 PROJECT_GITHUB_REPOSITORY = "LedFx"
-PROJECT_GITHUB_BRANCH = "dev"
+PROJECT_GITHUB_BRANCH = "main"
 PROJECT_GITHUB_PATH = "{}/{}".format(
     PROJECT_GITHUB_USERNAME, PROJECT_GITHUB_REPOSITORY
 )
@@ -97,9 +97,11 @@ pygments_style = "sphinx"
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = None
+language = "en"
 
 gettext_compact = False
+
+linkcheck_timeout = 2
 
 # -- Options for HTML output -------------------------------------------------
 

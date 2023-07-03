@@ -78,7 +78,7 @@ Tested on macOS Catalina 10.15.7
 
 
 Windows
-======
+=======
 Tested on Windows 10 (21H2)
 
 Windows have output devices and input devices. LedFx works processing an input device.

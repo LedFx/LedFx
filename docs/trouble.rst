@@ -14,12 +14,12 @@ Developer Setup Installation - Python venv
   - Install Python 3.9
   - Install Git.
   - Using "Build Tools for Visual Studio 2019" installer:
-    - https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2019
-    - You require the mandatory selected build tools, and the following optional tools;
+      - https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2019
+      - You require the mandatory selected build tools, and the following optional tools;
         - Windows 10 SDK (or your equivalent Windows Version)
         - C++ CMAKE tools for Windows
         - MSVC v142 (or above) - VS 2019 C++ x64/x86 build tools
-    - Default install options are appropriate.
+      - Default install options are appropriate.
   - Reboot
 
 

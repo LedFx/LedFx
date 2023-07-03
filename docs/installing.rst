@@ -76,7 +76,7 @@ macOS Installation @frontend_beta branch (Apple Silicon)
 
 To install on macOS (Apple Silicon) first ensure you have at least Python 3.8 installed.
 
-**1.** Install LedFx and all the dependencies using `homebrew`_ in a `virtualenv`_:
+**1.** Install LedFx and all the dependencies using `homebrew`_ in a `python venv`_:
 
 .. code:: console
 

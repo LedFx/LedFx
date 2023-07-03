@@ -1,10 +1,9 @@
-docutils<0.18
-sphinx==3.3.1
+# docutils<0.18 # No longer needed
+sphinx<7.0.0
 sphinxcontrib-websupport==1.2.4
-sphinxcontrib-httpdomain==1.7.0
-sphinx-autodoc-typehints==1.11.1
+sphinxcontrib-httpdomain==1.8.1
+sphinx-autodoc-typehints==1.23.0
 sphinx-autodoc-annotation==1.0-1
 sphinx-autobuild
-sphinx_rtd_theme==0.5.0
-travis-sphinx==2.2.1
-rstcheck==3.3.1
+sphinx_rtd_theme==1.2.2
+rstcheck==6.1.2
