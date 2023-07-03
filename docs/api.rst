@@ -454,6 +454,80 @@ Save configuration of virtual's active effect as a custom preset for that effect
 
 Clear effect of a virtual
 
+/api/virtuals_tools
+===================
+
+Extensible support for general tools towards ALL virtuals in one call
+
+.. rubric:: PUT
+
+Supports tool instances of currently only force_color, others may be added in the future
+
+**force_color**
+
+Move all pixels in a virtual to specific color, will be overwritten by active effect
+Use during configuration / calibration
+
+.. code-block:: json
+
+    {
+      "tool": "force_color",
+      "color": "blue"
+    }
+
+.. code-block:: json
+
+    {
+      "tool": "force_color",
+      "color": "#FFFFFF"
+    }
+
+returns
+
+.. code-block:: json
+
+    {
+        "status": "success",
+        "tool": "force_color"
+    }
+
+/api/virtuals_tools/<virtual_id>
+===================
+
+Extensible support for general tools towards a specified virtual
+
+.. rubric:: PUT
+
+Supports tool instances of currently only force_color, others may be added in the future
+
+**force_color**
+
+Move all pixels in a virtual to specific color, will be overwritten by active effect
+Use during configuration / calibration
+
+.. code-block:: json
+
+    {
+      "tool": "force_color",
+      "color": "blue"
+    }
+
+.. code-block:: json
+
+    {
+      "tool": "force_color",
+      "color": "#FFFFFF"
+    }
+
+returns
+
+.. code-block:: json
+
+    {
+        "status": "success",
+        "tool": "force_color"
+    }
+
 /api/effects/<effect_id>/presets
 ===================================
 
