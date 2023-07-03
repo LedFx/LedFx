@@ -22,9 +22,9 @@ class WLEDDevice(NetworkedDevice):
         {
             vol.Optional(
                 "sync_mode",
-                description="Streaming protocol to WLED device. Recommended: UDP<480px, DDP>480px",
-                default="UDP",
-            ): vol.In(["UDP", "DDP", "E131"]),
+                description="Streaming protocol to WLED device. Recommended: DDP for all",
+                default="DDP",
+            ): vol.In(["DDP", "UDP", "E131"]),
             vol.Optional(
                 "timeout",
                 description="Time between LedFx effect off and WLED effect activate",
