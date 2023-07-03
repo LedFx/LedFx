@@ -21,14 +21,30 @@ Demos
 
 Visit `our website`_ to see LedFx in action!
 
-You can also join our `Discord`_ where community members show off their projects.
+You can also join our `Discord`_ where community members show off their projects. Check out the #projects or #showcase channels.
 
 📑 Quick start guide and documentation📖
 ------------------------------------------
+**Version 2 (highly recommended, but still in Beta)**
+
+Head over to `LedFx Builds`_ to get the latest releases for Windows, Mac and Linux.
+If you are in a hurry, grab the latest Core version for your operating system and off you go.
+For more info on what the different versions do, read the release description on the releases page
+
+**Version 0.10 (Old and stable, but not recommended)**
+
 Windows users can use the installer from the LedFx website: https://ledfx.app/download/
 
-Mac and Linux are also supported, though currently do not have installers.
-For detailed installation instructions, see the `installation documentation`_.
+**Bleeding edge (Experimental)**
+
+If you want the absolute bleeding edge and are not afraid of using the terminal, take a look at the detailed installation instructions here: `Installation documentation`_.
+
+**Documenation**
+
+Documentation for the LedFx-Builds can be found here: `Stable documentation`_
+
+Documentation built against this repository can be found here: `Latest documentation`_
+
 
 😍 Show me how to make one!
 -----------------------------
@@ -108,7 +124,10 @@ License
 .. _`LedFx.exe`: https://ledfx.app/download/
 .. _`LedFx Guide`: https://ledfx.readthedocs.io/en/latest/index.html
 .. _`WLED`: https://github.com/Aircoookie/WLED/wiki
-.. _`installation documentation`: https://ledfx.readthedocs.io/en/latest/installing.html
+.. _`LedFx Builds`: https://github.com/YeonV/LedFx-Builds/releases/latest
+.. _`Installation documentation`: https://ledfx.readthedocs.io/en/latest/installing.html
+.. _`Stable documentation`: https://ledfx.readthedocs.io/en/stable/
+.. _`Latest documentation`: https://ledfx.readthedocs.io/en/latest/
 .. _`our website`: https://ledfx.app
 .. _`Discord`: https://discord.gg/xyyHEquZKQ
 .. _`Contributors-&-About`: https://ledfx.app/about/
