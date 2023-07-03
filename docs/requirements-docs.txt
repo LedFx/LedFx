@@ -8,3 +8,4 @@ sphinx-autobuild
 sphinx_rtd_theme==0.5.0
 travis-sphinx==2.2.1
 rstcheck==3.3.1
+jinja2<3.1
