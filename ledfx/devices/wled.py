@@ -22,7 +22,7 @@ class WLEDDevice(NetworkedDevice):
         {
             vol.Optional(
                 "sync_mode",
-                description="Streaming protocol to WLED device. Recommended: DDP for all",
+                description="Streaming protocol to WLED device. Recommended: DDP for 0.13 or later. Use UDP for older versions.",
                 default="DDP",
             ): vol.In(["DDP", "UDP", "E131"]),
             vol.Optional(
