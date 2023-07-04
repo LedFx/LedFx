@@ -183,6 +183,109 @@ Modifies the information pertaining to the device and returns the new device as 
 
 Deletes a device with the matching *device_id*
 
+/api/find_devices
+=========================
+
+Find and add all WLED devices on the LAN.
+
+.. rubric:: POST
+
+For unregisted WLED devices, reads config direct from WLED remote device
+Will default the remote protocol to DDP, unless WLED device build is prior to DDP support, in which case it will default to UDP
+If device name has not been over ridden in WLED itself, then name will be generated from WLED-<6 digits of MAC Address>
+Additionally ledfx virtuals will be created for all virtuals defined on the WLED device itself
+
+Returns success as this is only a trigger action, device registration is handled by the back end
+
+/api/find_launchpad
+=========================
+
+.. rubric:: GET
+
+Returns the name of the first Launchpad device discovered on the system
+
+example:
+
+.. code-block:: json
+
+    {
+        "status": "success",
+        "device": "Launchpad X"
+    }
+
+if no device is found will return an error
+
+.. code-block:: json
+
+    {
+        "status": "error",
+        "error": "Failed to find launchpad"
+    }
+
+/api/find_openrgb/?server=1.2.3.4&port=5678
+===========================================
+
+.. rubric:: GET
+
+Optional Query parameters are supported as follows:
+
+'**server**' (optional): IP address of openRGB server, a default value of loacl host will be used
+'**port**' (optional): Port to be used for openRGB server. a default value of 6742 will be used
+
+In most cases these do not need to be defined as defaults of localhost and 6742 are used
+
+Returns all found openRGB devices registered with the openRGB server
+
+example:
+
+.. code-block:: json
+
+    {
+        "status": "success",
+        "devices": [
+            {
+                "name": "ASRock Z370 Gaming K6",
+                "type": 0,
+                "id": 0,
+                "leds": 1
+            },
+            {
+                "name": "ASUS ROG STRIX 3080 O10G V2 WHITE",
+                "type": 2,
+                "id": 1,
+                "leds": 22
+            },
+            {
+                "name": "Razer Deathadder V2",
+                "type": 6,
+                "id": 2,
+                "leds": 2
+            }
+        ]
+    }
+
+if no devices are found an empty array will be returned
+
+example:
+
+.. code-block:: json
+
+    {
+        "status": "success",
+        "devices": []
+    }
+
+if the openRGB server is not found an error will be returned
+
+example:
+
+.. code-block:: json
+
+    {
+        "status": "error",
+        "error": "timed out"
+    }
+
 /api/effects
 =========================
 
@@ -350,6 +453,80 @@ Save configuration of virtual's active effect as a custom preset for that effect
 .. rubric:: DELETE
 
 Clear effect of a virtual
+
+/api/virtuals_tools
+===================
+
+Extensible support for general tools towards ALL virtuals in one call
+
+.. rubric:: PUT
+
+Supports tool instances of currently only force_color, others may be added in the future
+
+**force_color**
+
+Move all pixels in a virtual to specific color, will be overwritten by active effect
+Use during configuration / calibration
+
+.. code-block:: json
+
+    {
+      "tool": "force_color",
+      "color": "blue"
+    }
+
+.. code-block:: json
+
+    {
+      "tool": "force_color",
+      "color": "#FFFFFF"
+    }
+
+returns
+
+.. code-block:: json
+
+    {
+        "status": "success",
+        "tool": "force_color"
+    }
+
+/api/virtuals_tools/<virtual_id>
+===================
+
+Extensible support for general tools towards a specified virtual
+
+.. rubric:: PUT
+
+Supports tool instances of currently only force_color, others may be added in the future
+
+**force_color**
+
+Move all pixels in a virtual to specific color, will be overwritten by active effect
+Use during configuration / calibration
+
+.. code-block:: json
+
+    {
+      "tool": "force_color",
+      "color": "blue"
+    }
+
+.. code-block:: json
+
+    {
+      "tool": "force_color",
+      "color": "#FFFFFF"
+    }
+
+returns
+
+.. code-block:: json
+
+    {
+        "status": "success",
+        "tool": "force_color"
+    }
 
 /api/effects/<effect_id>/presets
 ===================================
