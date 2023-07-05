@@ -1392,7 +1392,6 @@ class LaunchpadLPX(LaunchpadPro):
     def LedSetButtonLayoutSession(self):
         self.LedSetLayout(0)
 
-
     # -------------------------------------------------------------------------------------
     # -- Returns the raw value of the last button change (pressed/unpressed) as a list
     # -- [ <button>, <value> ], in which <button> is the raw number of the button and
@@ -1942,13 +1941,17 @@ class LaunchpadS(LaunchpadPro):
         _LOGGER.error("LedSetMode for Launchpad S has not been implemented")
 
     def LedSetButtonLayoutSession(self):
-        _LOGGER.error("LedSetButtonLayoutSession for Launchpad S has not been implemented")
+        _LOGGER.error(
+            "LedSetButtonLayoutSession for Launchpad S has not been implemented"
+        )
 
     def ButtonStateRaw(self, returnPressure=False):
-        _LOGGER.error("ButtonStateRaw for Launchpad S has not been implemented")
+        _LOGGER.error(
+            "ButtonStateRaw for Launchpad S has not been implemented"
+        )
 
     def ButtonStateXY(self, mode="classic", returnPressure=False):
         _LOGGER.error("ButtonStateXY for Launchpad S has not been implemented")
 
     def flush(self, data):
-         _LOGGER.error("flush for Launchpad S has not been implemented")
+        _LOGGER.error("flush for Launchpad S has not been implemented")
