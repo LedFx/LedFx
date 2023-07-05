@@ -91,7 +91,7 @@ class HueDevice(NetworkedDevice):
                 self._sock.do_handshake()
             except exceptions.TLSError:
                 _LOGGER.warning(
-                    "Failed to establish TLS handshake when activating the UDP stream.  Retrying."
+                    f"Failed to establish TLS handshake when activating the UDP stream.  Retrying."
                 )
 
         super().activate()
