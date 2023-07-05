@@ -51,8 +51,8 @@ launchpads = [
     {
         "name": "Launchpad S",
         "search": "Launchpad S",
-        "number": 1,
-        "class": launchpad.LaunchpadLPX(),
+        "number": 0,
+        "class": launchpad.LaunchpadS(),
     },
 ]
 

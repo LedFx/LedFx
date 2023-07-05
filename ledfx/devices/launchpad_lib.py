@@ -1254,18 +1254,6 @@ class LaunchpadMiniMk3(LaunchpadPro):
     def LedSetButtonLayoutSession(self):
         self.LedSetLayout(0)
 
-    # -------------------------------------------------------------------------------------
-    # -- Go back to custom modes before closing connection
-    # -- Otherwise Launchpad will stuck in programmer mode
-    # -------------------------------------------------------------------------------------
-    def Close(self):
-        # removed for now (LEDs would light up again; should be in the user's code)
-        # 		self.LedSetLayout( 0x05 )
-
-        # TODO: redundant (but needs fix for Py2 embedded anyway)
-        self.midi.CloseInput()
-        self.midi.CloseOutput()
-
 
 # ==========================================================================
 # CLASS LaunchpadLPX
@@ -1404,14 +1392,6 @@ class LaunchpadLPX(LaunchpadPro):
     def LedSetButtonLayoutSession(self):
         self.LedSetLayout(0)
 
-    # -------------------------------------------------------------------------------------
-    # -- Go back to custom modes before closing connection
-    # -- Otherwise Launchpad will stuck in programmer mode
-    # -------------------------------------------------------------------------------------
-    def Close(self):
-        # TODO: redundant (but needs fix for Py2 embedded anyway)
-        self.midi.CloseInput()
-        self.midi.CloseOutput()
 
     # -------------------------------------------------------------------------------------
     # -- Returns the raw value of the last button change (pressed/unpressed) as a list
@@ -1911,3 +1891,64 @@ class LaunchpadProMk3(LaunchpadPro):
         # re-enter Live mode
         if self.midi.devIn is not None and self.midi.devOut is not None:
             self.LedSetMode(0)
+
+
+# ==========================================================================
+# CLASS Launchpad S
+#
+# Got to start somewhere
+# ==========================================================================
+class LaunchpadS(LaunchpadPro):
+    layout = {"pixels": 81, "rows": 9}
+    segments = [
+        ("TopBar", "mdi:table-row", [[72, 79]], 1),
+        ("Logo", "launchpad", [[80, 80]], 1),
+        (
+            "RightBar",
+            "mdi:table-column",
+            [
+                [8, 8],
+                [17, 17],
+                [26, 26],
+                [35, 35],
+                [44, 44],
+                [53, 53],
+                [62, 62],
+                [71, 71],
+            ],
+            1,
+        ),
+        (
+            "Matrix",
+            "mdi:grid",
+            [
+                [0, 7],
+                [9, 16],
+                [18, 25],
+                [27, 34],
+                [36, 43],
+                [45, 52],
+                [54, 61],
+                [63, 70],
+            ],
+            8,
+        ),
+    ]
+
+    def LedSetLayout(self, mode):
+        _LOGGER.error("LedSetLayout for Launchpad S has not been implemented")
+
+    def LedSetMode(self, mode):
+        _LOGGER.error("LedSetMode for Launchpad S has not been implemented")
+
+    def LedSetButtonLayoutSession(self):
+        _LOGGER.error("LedSetButtonLayoutSession for Launchpad S has not been implemented")
+
+    def ButtonStateRaw(self, returnPressure=False):
+        _LOGGER.error("ButtonStateRaw for Launchpad S has not been implemented")
+
+    def ButtonStateXY(self, mode="classic", returnPressure=False):
+        _LOGGER.error("ButtonStateXY for Launchpad S has not been implemented")
+
+    def flush(self, data):
+         _LOGGER.error("flush for Launchpad S has not been implemented")
