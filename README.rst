@@ -79,7 +79,7 @@ The below image describes a basic setup - LedFx running on PC, communicating wit
 
 #. **Install LedFx.**
       - After you have WLED installed on your ESP device, download: `LedFx.exe`_ and install LedFx.
-      - For Mac and Linux `LedFx Builds`_, see the `installation documentation`_ or `LedFx Guide`_.
+      - For Mac and Linux `LedFx Builds`_, or see the `installation documentation`_ or `LedFx Guide`_.
 
 #. **Direct computer audio output to LedFx.**
       - Follow guide, `How to: Enable Stereo Mix in Windows 10`_.
@@ -89,7 +89,7 @@ The below image describes a basic setup - LedFx running on PC, communicating wit
 
 #. **Start LedFx.**
       - Your WLED devices should appear in LedFx, automagically configured and ready to go! 🎆🔥
-      - If not, on the bottom, click on the big plus sign -> ``Find WLED devices`` button, or ``Add Device`` to add them manually.
+      - If not, on the bottom click Home,  -> ``Scan for WLED devices`` button, or click on the big plus sign and ``Add Device`` to add them manually.
       - If they're still not showing up, make sure they're powered on and properly connected to your WiFi.
 
 #. **Start using effects!**
