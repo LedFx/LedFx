@@ -40,10 +40,11 @@ class BandsMatrixAudioEffect(AudioReactiveEffect, GradientEffect):
         self.r = self.melbank(filtered=True, size=self.pixel_count)
 
     def render(self):
+        bands_active = min(self._config["band_count"], self.pixel_count)
         out = np.tile(self.r, (3, 1)).T
         np.clip(out, 0, 1, out=out)
-        out_split = np.array_split(out, self._config["band_count"], axis=0)
-        for i in range(self._config["band_count"]):
+        out_split = np.array_split(out, bands_active, axis=0)
+        for i in range(bands_active):
             band_width = len(out_split[i])
             volume = int(out_split[i].max() * band_width)
             out_split[i][volume:] = self.bkg_color
