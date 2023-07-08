@@ -51,7 +51,7 @@ Documentation built against this repository can be found here: `Latest documenta
 
 The below image describes a basic setup - LedFx running on PC, communicating with a WLED Device controlling an LED strip.
 
-.. image:: https://i.imgur.com/vzyHNwG.png
+.. image:: https://raw.githubusercontent.com/LedFx/LedFx/main/docs/_static/topology.png
 
 .. list-table::
    :widths: 75 75
