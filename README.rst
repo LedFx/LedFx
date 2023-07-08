@@ -4,7 +4,7 @@
 |Build Status| |License| |Build Status Docs| |Discord|
 |Contributor Covenant|
 
-.. image:: https://raw.githubusercontent.com/LedFx/LedFx/b8e68beaa215d4308c74d0c7d657556ac894b707/icons/banner.png
+.. image:: https://raw.githubusercontent.com/LedFx/LedFx/main/icons/banner.png
 
 LedFx website: https://ledfx.app/
 
