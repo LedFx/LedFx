@@ -1989,6 +1989,6 @@ class LaunchpadS(LaunchpadPro):
             0x0F, 0x1F, 0x2F, 0x3F # green 0 to full, red 3
             ])
         # fmt: on
-        
+
         deltat = timeit.default_timer() - start
         _LOGGER.error(f"Launchpad S flush time {deltat}")
