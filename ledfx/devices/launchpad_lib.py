@@ -1934,6 +1934,15 @@ class LaunchpadS(LaunchpadPro):
         ),
     ]
 
+    def Open(self, number=0, name="Launchpad S"):
+        retval = super().Open(number=number, name=name)
+        if retval is True:
+            _LOGGER.info("Launchpad S ready")
+            # no mode set required, at least nothing in the manual
+        # try and clear the leds
+        self.midi.RawWrite(0xB0, 0x00, 0x00)
+        return retval
+
     def LedSetLayout(self, mode):
         _LOGGER.error("LedSetLayout for Launchpad S has not been implemented")
 
@@ -1954,4 +1963,5 @@ class LaunchpadS(LaunchpadPro):
         _LOGGER.error("ButtonStateXY for Launchpad S has not been implemented")
 
     def flush(self, data):
-        _LOGGER.error("flush for Launchpad S has not been implemented")
+        self.midi.RawWrite(0x90, 0x60, 0x0F)
+        _LOGGER.error("Trying to light up second-from-bottomleft grid LED red")
