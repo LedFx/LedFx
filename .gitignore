@@ -72,3 +72,4 @@ frontend/*.eslintcache
 ledfx/effects/__pycache__/*
 ledfx/__pycache__/*
 __pycache__/*
+/docs/build/
