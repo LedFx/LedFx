@@ -22,6 +22,8 @@ _LOGGER = logging.getLogger(__name__)
 class QLC(Integration):
     """QLC+ Integration"""
 
+    beta = False
+
     _widget_types = ["Button", "Slider", "Audio Triggers"]
     NAME = "QLC+"
     DESCRIPTION = "Web Api Integration for Q Light Controller Plus"

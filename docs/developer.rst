@@ -17,11 +17,11 @@ You will see ``pip install -e .`` frequently in the documentation. Please see th
 Linux
 -------
 
-**1.** Clone the dev branch from the LedFx Github repository:
+**1.** Clone the main branch from the LedFx Github repository:
 
 .. code:: console
 
-    $ git clone https://github.com/LedFx/LedFx.git -b dev
+    $ git clone https://github.com/LedFx/LedFx.git
     $ cd LedFx
 
 **2.** Install system dependencies via ``apt install``:
@@ -51,11 +51,11 @@ Linux
 macOS
 -------
 
-**1.** Clone the dev branch from the LedFx Github repository:
+**1.** Clone the main branch from the LedFx Github repository:
 
 .. code:: console
 
-    $ git clone https://github.com/LedFx/LedFx.git -b dev
+    $ git clone https://github.com/LedFx/LedFx.git
     $ cd ./LedFx
 
 **2.** Create a python venv for LedFx with python>=3.7 and install dependencies:

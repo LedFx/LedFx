@@ -492,7 +492,7 @@ returns
     }
 
 /api/virtuals_tools/<virtual_id>
-===================
+=================================
 
 Extensible support for general tools towards a specified virtual
 
