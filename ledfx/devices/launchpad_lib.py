@@ -1963,7 +1963,6 @@ class LaunchpadS(LaunchpadPro):
     def ButtonStateXY(self, mode="classic", returnPressure=False):
         _LOGGER.error("ButtonStateXY for Launchpad S has not been implemented")
 
-
     def flush(self, data):
         # Single led left second row from botto
         # self.midi.RawWrite(0x90, 0x60, 0x0F)
