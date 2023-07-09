@@ -14,6 +14,7 @@
 import array
 import logging
 import time
+import timeit
 
 import rtmidi
 from rtmidi.midiutil import open_midiinput, open_midioutput
@@ -1963,5 +1964,29 @@ class LaunchpadS(LaunchpadPro):
         _LOGGER.error("ButtonStateXY for Launchpad S has not been implemented")
 
     def flush(self, data):
-        self.midi.RawWrite(0x90, 0x60, 0x0F)
-        _LOGGER.error("Trying to light up second-from-bottomleft grid LED red")
+        # Single led left second row from botto
+        # self.midi.RawWrite(0x90, 0x60, 0x0F)
+
+        # this is Rapid led update mode, need to know if it restarts each time
+        # then if this works map the entire grid in and see what
+        # - pixel tells us for order
+        # - metro tells us for ripple update
+
+        # 92 is Note on, channel 3 ( 3 - 1) followed by folor pixel data
+        # pixel data = 0x0C | 0x30 green | 0x03 red
+
+        start = timeit.default_timer()
+
+        self.midi.RawWriteSysEx([ 0x92,
+            0x0C, 0x0D, 0x0E, 0x0F, # green off red off to full
+            0x1C, 0x1D, 0x1E, 0x1F, # green 1 red off to full
+            0x2C, 0x2D, 0x2E, 0x2F, # green 2 red off to full
+            0x3C, 0x3D, 0x3E, 0x3F, # green 3 red off to full
+            0x0C, 0x1C, 0x2C, 0x3C, # green 0 to full, red off
+            0x0D, 0x1D, 0x2D, 0x3D, # green 0 to full, red 1
+            0x0E, 0x1E, 0x2E, 0x3E, # green 0 to full, red 2
+            0x0F, 0x1F, 0x2F, 0x3F # green 0 to full, red 3
+            ])
+
+        deltat = timeit.default_timer() - start
+        _LOGGER.error(f"Launchpad S flush time {deltat}")
