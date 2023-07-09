@@ -1963,7 +1963,8 @@ class LaunchpadS(LaunchpadPro):
     def ButtonStateXY(self, mode="classic", returnPressure=False):
         _LOGGER.error("ButtonStateXY for Launchpad S has not been implemented")
 
-    def flush(self, data):
+
+    def flush(self, data):  # flake8: noqa: E128
         # Single led left second row from botto
         # self.midi.RawWrite(0x90, 0x60, 0x0F)
 
@@ -1978,16 +1979,15 @@ class LaunchpadS(LaunchpadPro):
         start = timeit.default_timer()
 
         # fmt: off
-        self.midi.RawWriteSysEx([ 0x92,
-            0x0C, 0x0D, 0x0E, 0x0F, # green off red off to full
-            0x1C, 0x1D, 0x1E, 0x1F, # green 1 red off to full
-            0x2C, 0x2D, 0x2E, 0x2F, # green 2 red off to full
-            0x3C, 0x3D, 0x3E, 0x3F, # green 3 red off to full
-            0x0C, 0x1C, 0x2C, 0x3C, # green 0 to full, red off
-            0x0D, 0x1D, 0x2D, 0x3D, # green 0 to full, red 1
-            0x0E, 0x1E, 0x2E, 0x3E, # green 0 to full, red 2
-            0x0F, 0x1F, 0x2F, 0x3F # green 0 to full, red 3
-            ])
+        self.midi.RawWriteSysEx([0x92,
+            0x0C, 0x0D, 0x0E, 0x0F, #  green off red off to full
+            0x1C, 0x1D, 0x1E, 0x1F, #  green 1 red off to full
+            0x2C, 0x2D, 0x2E, 0x2F, #  green 2 red off to full
+            0x3C, 0x3D, 0x3E, 0x3F, #  green 3 red off to full
+            0x0C, 0x1C, 0x2C, 0x3C, #  green 0 to full, red off
+            0x0D, 0x1D, 0x2D, 0x3D, #  green 0 to full, red 1
+            0x0E, 0x1E, 0x2E, 0x3E, #  green 0 to full, red 2
+            0x0F, 0x1F, 0x2F, 0x3F])  #  green 0 to full, red 3
         # fmt: on
 
         deltat = timeit.default_timer() - start
