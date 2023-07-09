@@ -1964,9 +1964,12 @@ class LaunchpadS(LaunchpadPro):
         _LOGGER.error("ButtonStateXY for Launchpad S has not been implemented")
 
 
-    def flush(self, data):  # flake8: noqa: E128
+    def flush(self, data):
         # Single led left second row from botto
         # self.midi.RawWrite(0x90, 0x60, 0x0F)
+
+        # how to do channels in rtmidi
+        # https://github.com/SpotlightKid/python-rtmidi/issues/38
 
         # this is Rapid led update mode, need to know if it restarts each time
         # then if this works map the entire grid in and see what
