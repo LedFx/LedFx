@@ -1904,10 +1904,8 @@ class LaunchpadProMk3(LaunchpadPro):
 # Got to start somewhere
 # ==========================================================================
 class LaunchpadS(LaunchpadPro):
-    layout = {"pixels": 81, "rows": 9}
+    layout = {"pixels": 72, "rows": 8}
     segments = [
-        ("TopBar", "mdi:table-row", [[72, 79]], 1),
-        ("Logo", "launchpad", [[80, 80]], 1),
         (
             "RightBar",
             "mdi:table-column",
@@ -1939,6 +1937,15 @@ class LaunchpadS(LaunchpadPro):
             8,
         ),
     ]
+
+    pixel_map = [112, 113, 114, 115, 116, 117, 118, 119, 120,
+                 96, 97, 98, 99, 100, 101, 102, 103, 104,
+                 80, 81, 82, 83, 84, 85, 86, 87, 88,
+                 64, 65, 66, 67, 68, 69, 70, 71, 72,
+                 48, 49, 50, 51, 52, 53, 54, 55, 56,
+                 32, 33, 34, 35, 36, 37, 38, 39, 40,
+                 16, 17, 18, 19, 20, 21, 22, 23, 24,
+                 0, 1, 2, 3, 4, 5, 6, 7, 8]
 
     def Open(self, number=0, name="Launchpad S"):
         retval = super().Open(number=number, name=name)
@@ -1980,23 +1987,48 @@ class LaunchpadS(LaunchpadPro):
         # - pixel tells us for order
         # - metro tells us for ripple update
 
-        # 92 is Note on, channel 3 ( 3 - 1) followed by folor pixel data
+        # 92 is Note on, channel 3 ( 3 - 1) followed by color pixel data
         # pixel data = 0x0C | 0x30 green | 0x03 red
 
         start = timeit.default_timer()
 
-        # fmt: off
-        self.midi.RawWriteSysEx([     # [0x92,
-            0x00, 0x20, 0x29, 0x02, 0x18, # GO CHATGPT
-            0x0C, 0x0D, 0x0E, 0x0F,   #  green off red off to full
-            0x1C, 0x1D, 0x1E, 0x1F,   #  green 1 red off to full
-            0x2C, 0x2D, 0x2E, 0x2F,   #  green 2 red off to full
-            0x3C, 0x3D, 0x3E, 0x3F,   #  green 3 red off to full
-            0x0C, 0x1C, 0x2C, 0x3C,   #  green off to full, red off
-            0x0D, 0x1D, 0x2D, 0x3D,   #  green off to full, red 1
-            0x0E, 0x1E, 0x2E, 0x3E,   #  green off to full, red 2
-            0x0F, 0x1F, 0x2F, 0x3F])  #  green off to full, red 3
-        # fmt: on
+        if True:
+            # the hard way, lets walk row by row, starting with the bottom row
+
+            for index, map in enumerate(self.pixel_map):
+                r = data[index][0]
+                g = data[index][1]
+
+                if r > 191:
+                    out = 0x0F
+                elif r > 127:
+                    out = 0x0E
+                elif r > 63:
+                    out = 0x0D
+                else:
+                    out = 0x0C
+
+                if g > 191:
+                    out |= 0x30
+                elif g > 127:
+                    out |= 0x20
+                elif g > 63:
+                    out |= 0x10
+
+                self.midi.RawWrite(0x90, map, out)
+        else:
+            # fmt: off
+            self.midi.RawWriteSysEx([     # [0x92,
+                0x00, 0x20, 0x29, 0x02, 0x18, # GO CHATGPT
+                0x0C, 0x0D, 0x0E, 0x0F,   #  green off red off to full
+                0x1C, 0x1D, 0x1E, 0x1F,   #  green 1 red off to full
+                0x2C, 0x2D, 0x2E, 0x2F,   #  green 2 red off to full
+                0x3C, 0x3D, 0x3E, 0x3F,   #  green 3 red off to full
+                0x0C, 0x1C, 0x2C, 0x3C,   #  green off to full, red off
+                0x0D, 0x1D, 0x2D, 0x3D,   #  green off to full, red 1
+                0x0E, 0x1E, 0x2E, 0x3E,   #  green off to full, red 2
+                0x0F, 0x1F, 0x2F, 0x3F])  #  green off to full, red 3
+            # fmt: on
 
         deltat = timeit.default_timer() - start
         _LOGGER.error(f"Launchpad S flush time {deltat}")
