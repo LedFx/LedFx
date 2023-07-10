@@ -1976,17 +1976,6 @@ class LaunchpadS(LaunchpadPro):
         # Single led left second row from botto
         # self.midi.RawWrite(0x90, 0x60, 0x0F)
 
-        # how to do channels in rtmidi
-        # https://github.com/SpotlightKid/python-rtmidi/issues/38
-
-        # this is Rapid led update mode, need to know if it restarts each time
-        # then if this works map the entire grid in and see what
-        # - pixel tells us for order
-        # - metro tells us for ripple update
-
-        # 92 is Note on, channel 3 ( 3 - 1) followed by color pixel data
-        # pixel data = 0x0C | 0x30 green | 0x03 red
-
         # start = timeit.default_timer()
 
         if True:
@@ -2014,6 +2003,18 @@ class LaunchpadS(LaunchpadPro):
 
                 self.midi.RawWrite(0x90, map, out)
         else:
+            # we need to work out rapid led update before we can use this
+            # how to do channels in rtmidi
+            # https://github.com/SpotlightKid/python-rtmidi/issues/38
+
+            # this is Rapid led update mode, need to know if it restarts each time
+            # then if this works map the entire grid in and see what
+            # - pixel tells us for order
+            # - metro tells us for ripple update
+
+            # 92 is Note on, channel 3 ( 3 - 1) followed by color pixel data
+            # pixel data = 0x0C | 0x30 green | 0x03 red
+
             # fmt: off
             self.midi.RawWriteSysEx([     # [0x92,
                 0x00, 0x20, 0x29, 0x02, 0x18,  # GO CHATGPT
