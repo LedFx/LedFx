@@ -152,6 +152,11 @@ class RtmidiWrap:
             array.array("B", [0xF0] + lstMessage + [0xF7]).tobytes()
         )
 
+    def RawWriteHack(self, lstMessage):
+        self.devOut.send_message(
+            array.array("B", lstMessage).tobytes()
+        )
+
     # --------------------------------------------------------------------------
     # Behaviour of rtmidi is read if present else return None
     # there is no Poll
@@ -1981,15 +1986,16 @@ class LaunchpadS(LaunchpadPro):
         start = timeit.default_timer()
 
         # fmt: off
-        self.midi.RawWriteSysEx([0x92,
-            0x0C, 0x0D, 0x0E, 0x0F, #  green off red off to full
-            0x1C, 0x1D, 0x1E, 0x1F, #  green 1 red off to full
-            0x2C, 0x2D, 0x2E, 0x2F, #  green 2 red off to full
-            0x3C, 0x3D, 0x3E, 0x3F, #  green 3 red off to full
-            0x0C, 0x1C, 0x2C, 0x3C, #  green 0 to full, red off
-            0x0D, 0x1D, 0x2D, 0x3D, #  green 0 to full, red 1
-            0x0E, 0x1E, 0x2E, 0x3E, #  green 0 to full, red 2
-            0x0F, 0x1F, 0x2F, 0x3F])  #  green 0 to full, red 3
+        self.midi.RawWriteSysEx([     # [0x92,
+            0x00, 0x20, 0x29, 0x02, 0x18, # GO CHATGPT
+            0x0C, 0x0D, 0x0E, 0x0F,   #  green off red off to full
+            0x1C, 0x1D, 0x1E, 0x1F,   #  green 1 red off to full
+            0x2C, 0x2D, 0x2E, 0x2F,   #  green 2 red off to full
+            0x3C, 0x3D, 0x3E, 0x3F,   #  green 3 red off to full
+            0x0C, 0x1C, 0x2C, 0x3C,   #  green off to full, red off
+            0x0D, 0x1D, 0x2D, 0x3D,   #  green off to full, red 1
+            0x0E, 0x1E, 0x2E, 0x3E,   #  green off to full, red 2
+            0x0F, 0x1F, 0x2F, 0x3F])  #  green off to full, red 3
         # fmt: on
 
         deltat = timeit.default_timer() - start
