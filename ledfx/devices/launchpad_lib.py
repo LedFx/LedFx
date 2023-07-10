@@ -1973,14 +1973,35 @@ class LaunchpadS(LaunchpadPro):
     def ButtonStateXY(self, mode="classic", returnPressure=False):
         _LOGGER.error("ButtonStateXY for Launchpad S has not been implemented")
 
+
+    def scolmap(self, r, g):
+        if r > 191.0:
+            out = 0x0F
+        elif r > 127.0:
+            out = 0x0E
+        elif r > 63.0:
+            out = 0x0D
+        else:
+            out = 0x0C
+
+        if g > 191.0:
+            out |= 0x30
+        elif g > 127.0:
+            out |= 0x20
+        elif g > 63.0:
+            out |= 0x10
+
+        return out
+
+
     def flush(self, data):
         # Single led left second row from botto
         # self.midi.RawWrite(0x90, 0x60, 0x0F)
 
-        # import timeit
-        # start = timeit.default_timer()
+        import timeit
+        start = timeit.default_timer()
 
-        if True:
+        if False:
             # the hard way, lets walk row by row, starting with the bottom row
 
             for index, map in enumerate(self.pixel_map):
@@ -2022,18 +2043,16 @@ class LaunchpadS(LaunchpadPro):
             # 92 is Note on, channel 3 ( 3 - 1) followed by color pixel data
             # pixel data = 0x0C | 0x30 green | 0x03 red
 
-            # fmt: off
-            self.midi.RawWriteSysEx([     # [0x92,
-                0x00, 0x20, 0x29, 0x02, 0x18,  # GO CHATGPT
-                0x0C, 0x0D, 0x0E, 0x0F,   # green off red off to full
-                0x1C, 0x1D, 0x1E, 0x1F,   # green 1 red off to full
-                0x2C, 0x2D, 0x2E, 0x2F,   # green 2 red off to full
-                0x3C, 0x3D, 0x3E, 0x3F,   # green 3 red off to full
-                0x0C, 0x1C, 0x2C, 0x3C,   # green off to full, red off
-                0x0D, 0x1D, 0x2D, 0x3D,   # green off to full, red 1
-                0x0E, 0x1E, 0x2E, 0x3E,   # green off to full, red 2
-                0x0F, 0x1F, 0x2F, 0x3F])  # green off to full, red 3
-            # fmt: on
+            it = iter(data)
+            for c in it:
+                out1 = self.scolmap(c[0], c[1])
+                try:
+                    col = next(it)
+                except StopIteration:
+                    col = [0.0, 0.0]
+                out2 = self.scolmap(col[0], col[1])
 
-        # deltat = timeit.default_timer() - start
-        # _LOGGER.error(f"Launchpad S flush time {deltat}")
+                self.midi.RawWrite(0x92, out1, out2)
+
+        deltat = timeit.default_timer() - start
+        _LOGGER.error(f"Launchpad S flush time {deltat}")
