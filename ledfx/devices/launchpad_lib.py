@@ -18,9 +18,6 @@ import time
 import rtmidi
 from rtmidi.midiutil import open_midiinput, open_midioutput
 
-# import timeit
-
-
 _LOGGER = logging.getLogger(__name__)
 
 # This code is not hardened for device not present or device removal
@@ -1903,6 +1900,7 @@ class LaunchpadProMk3(LaunchpadPro):
 class LaunchpadS(LaunchpadPro):
     layout = {"pixels": 81, "rows": 9}
     segments = [
+        ("TopBar", "mdi:table-row", [[72, 79]], 1),
         (
             "RightBar",
             "mdi:table-column",
@@ -1979,6 +1977,7 @@ class LaunchpadS(LaunchpadPro):
         # Single led left second row from botto
         # self.midi.RawWrite(0x90, 0x60, 0x0F)
 
+        # import timeit
         # start = timeit.default_timer()
 
         if True:
