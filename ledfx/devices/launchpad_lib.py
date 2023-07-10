@@ -14,10 +14,12 @@
 import array
 import logging
 import time
-# import timeit
 
 import rtmidi
 from rtmidi.midiutil import open_midiinput, open_midioutput
+
+# import timeit
+
 
 _LOGGER = logging.getLogger(__name__)
 
