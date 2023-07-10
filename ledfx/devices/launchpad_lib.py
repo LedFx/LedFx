@@ -1901,7 +1901,7 @@ class LaunchpadProMk3(LaunchpadPro):
 # Got to start somewhere
 # ==========================================================================
 class LaunchpadS(LaunchpadPro):
-    layout = {"pixels": 72, "rows": 8}
+    layout = {"pixels": 81, "rows": 9}
     segments = [
         (
             "RightBar",
@@ -1943,7 +1943,8 @@ class LaunchpadS(LaunchpadPro):
                  48, 49, 50, 51, 52, 53, 54, 55, 56,
                  32, 33, 34, 35, 36, 37, 38, 39, 40,
                  16, 17, 18, 19, 20, 21, 22, 23, 24,
-                 0, 1, 2, 3, 4, 5, 6, 7, 8]
+                 0, 1, 2, 3, 4, 5, 6, 7, 8,
+                 104, 105, 106, 107, 108, 109, 110, 111, 112]
     # fmt: on
 
     def Open(self, number=0, name="Launchpad S"):
@@ -2003,7 +2004,12 @@ class LaunchpadS(LaunchpadPro):
                 elif g > 63.0:
                     out |= 0x10
 
-                self.midi.RawWrite(0x90, map, out)
+                if index < 72:
+                    # send as note on message
+                    self.midi.RawWrite(0x90, map, out)
+                else:
+                    # send as control change message
+                    self.midi.RawWrite(0xB0, map, out)
         else:
             # we need to work out rapid led update before we can use this
             # how to do channels in rtmidi
