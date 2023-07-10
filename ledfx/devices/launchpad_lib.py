@@ -14,7 +14,7 @@
 import array
 import logging
 import time
-import timeit
+# import timeit
 
 import rtmidi
 from rtmidi.midiutil import open_midiinput, open_midioutput
