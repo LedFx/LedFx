@@ -1973,7 +1973,6 @@ class LaunchpadS(LaunchpadPro):
     def ButtonStateXY(self, mode="classic", returnPressure=False):
         _LOGGER.error("ButtonStateXY for Launchpad S has not been implemented")
 
-
     def scolmap(self, r, g):
         if r > 191.0:
             out = 0x0F
@@ -1992,7 +1991,6 @@ class LaunchpadS(LaunchpadPro):
             out |= 0x10
 
         return out
-
 
     def flush(self, data):
         # Single led left second row from botto
