@@ -1973,7 +1973,6 @@ class LaunchpadS(LaunchpadPro):
     def ButtonStateXY(self, mode="classic", returnPressure=False):
         _LOGGER.error("ButtonStateXY for Launchpad S has not been implemented")
 
-
     def scolmap(self, r, g):
         if r > 191.0:
             out = 0x0F
@@ -1993,12 +1992,12 @@ class LaunchpadS(LaunchpadPro):
 
         return out
 
-
     def flush(self, data):
         # Single led left second row from botto
         # self.midi.RawWrite(0x90, 0x60, 0x0F)
 
         import timeit
+
         start = timeit.default_timer()
 
         if False:
