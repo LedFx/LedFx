@@ -153,9 +153,7 @@ class RtmidiWrap:
         )
 
     def RawWriteHack(self, lstMessage):
-        self.devOut.send_message(
-            array.array("B", lstMessage).tobytes()
-        )
+        self.devOut.send_message(array.array("B", lstMessage).tobytes())
 
     # --------------------------------------------------------------------------
     # Behaviour of rtmidi is read if present else return None
