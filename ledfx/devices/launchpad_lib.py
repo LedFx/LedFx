@@ -2003,7 +2003,6 @@ class LaunchpadS(LaunchpadPro):
             # the hard way, lets walk row by row, starting with the bottom row
 
             for index, map in enumerate(self.pixel_map):
-
                 out = self.scolmap(data[index][0], data[index][1])
 
                 if index < 72:
