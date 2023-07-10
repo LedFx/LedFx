@@ -1254,18 +1254,6 @@ class LaunchpadMiniMk3(LaunchpadPro):
     def LedSetButtonLayoutSession(self):
         self.LedSetLayout(0)
 
-    # -------------------------------------------------------------------------------------
-    # -- Go back to custom modes before closing connection
-    # -- Otherwise Launchpad will stuck in programmer mode
-    # -------------------------------------------------------------------------------------
-    def Close(self):
-        # removed for now (LEDs would light up again; should be in the user's code)
-        # 		self.LedSetLayout( 0x05 )
-
-        # TODO: redundant (but needs fix for Py2 embedded anyway)
-        self.midi.CloseInput()
-        self.midi.CloseOutput()
-
 
 # ==========================================================================
 # CLASS LaunchpadLPX
@@ -1403,15 +1391,6 @@ class LaunchpadLPX(LaunchpadPro):
     # TODO: ASkr, Undocumented!
     def LedSetButtonLayoutSession(self):
         self.LedSetLayout(0)
-
-    # -------------------------------------------------------------------------------------
-    # -- Go back to custom modes before closing connection
-    # -- Otherwise Launchpad will stuck in programmer mode
-    # -------------------------------------------------------------------------------------
-    def Close(self):
-        # TODO: redundant (but needs fix for Py2 embedded anyway)
-        self.midi.CloseInput()
-        self.midi.CloseOutput()
 
     # -------------------------------------------------------------------------------------
     # -- Returns the raw value of the last button change (pressed/unpressed) as a list
@@ -1911,3 +1890,150 @@ class LaunchpadProMk3(LaunchpadPro):
         # re-enter Live mode
         if self.midi.devIn is not None and self.midi.devOut is not None:
             self.LedSetMode(0)
+
+
+# ==========================================================================
+# CLASS Launchpad S
+#
+# Got to start somewhere
+# ==========================================================================
+class LaunchpadS(LaunchpadPro):
+    layout = {"pixels": 81, "rows": 9}
+    segments = [
+        ("TopBar", "mdi:table-row", [[72, 79]], 1),
+        (
+            "RightBar",
+            "mdi:table-column",
+            [
+                [8, 8],
+                [17, 17],
+                [26, 26],
+                [35, 35],
+                [44, 44],
+                [53, 53],
+                [62, 62],
+                [71, 71],
+            ],
+            1,
+        ),
+        (
+            "Matrix",
+            "mdi:grid",
+            [
+                [0, 7],
+                [9, 16],
+                [18, 25],
+                [27, 34],
+                [36, 43],
+                [45, 52],
+                [54, 61],
+                [63, 70],
+            ],
+            8,
+        ),
+    ]
+
+    # fmt: off
+    pixel_map = [112, 113, 114, 115, 116, 117, 118, 119, 120,
+                 96, 97, 98, 99, 100, 101, 102, 103, 104,
+                 80, 81, 82, 83, 84, 85, 86, 87, 88,
+                 64, 65, 66, 67, 68, 69, 70, 71, 72,
+                 48, 49, 50, 51, 52, 53, 54, 55, 56,
+                 32, 33, 34, 35, 36, 37, 38, 39, 40,
+                 16, 17, 18, 19, 20, 21, 22, 23, 24,
+                 0, 1, 2, 3, 4, 5, 6, 7, 8,
+                 104, 105, 106, 107, 108, 109, 110, 111, 112]
+    # fmt: on
+
+    def Open(self, number=0, name="Launchpad S"):
+        retval = super().Open(number=number, name=name)
+        if retval is True:
+            _LOGGER.info("Launchpad S ready")
+            # no mode set required, at least nothing in the manual
+        # try and clear the leds
+        self.midi.RawWrite(0xB0, 0x00, 0x00)
+        return retval
+
+    def LedSetLayout(self, mode):
+        _LOGGER.error("LedSetLayout for Launchpad S has not been implemented")
+
+    def LedSetMode(self, mode):
+        _LOGGER.error("LedSetMode for Launchpad S has not been implemented")
+
+    def LedSetButtonLayoutSession(self):
+        _LOGGER.error(
+            "LedSetButtonLayoutSession for Launchpad S has not been implemented"
+        )
+
+    def ButtonStateRaw(self, returnPressure=False):
+        _LOGGER.error(
+            "ButtonStateRaw for Launchpad S has not been implemented"
+        )
+
+    def ButtonStateXY(self, mode="classic", returnPressure=False):
+        _LOGGER.error("ButtonStateXY for Launchpad S has not been implemented")
+
+    def scolmap(self, r, g):
+        if r > 191.0:
+            out = 0x0F
+        elif r > 127.0:
+            out = 0x0E
+        elif r > 63.0:
+            out = 0x0D
+        else:
+            out = 0x0C
+
+        if g > 191.0:
+            out |= 0x30
+        elif g > 127.0:
+            out |= 0x20
+        elif g > 63.0:
+            out |= 0x10
+
+        return out
+
+    def flush(self, data):
+        # Single led left second row from botto
+        # self.midi.RawWrite(0x90, 0x60, 0x0F)
+
+        # import timeit
+        # start = timeit.default_timer()
+
+        if True:
+            # the hard way, lets walk row by row, starting with the bottom row
+
+            for index, map in enumerate(self.pixel_map):
+                out = self.scolmap(data[index][0], data[index][1])
+
+                if index < 72:
+                    # send as note on message
+                    self.midi.RawWrite(0x90, map, out)
+                else:
+                    # send as control change message
+                    self.midi.RawWrite(0xB0, map, out)
+        else:
+            # we need to work out rapid led update before we can use this
+            # how to do channels in rtmidi
+            # https://github.com/SpotlightKid/python-rtmidi/issues/38
+
+            # this is Rapid led update mode, need to know if it restarts each time
+            # then if this works map the entire grid in and see what
+            # - pixel tells us for order
+            # - metro tells us for ripple update
+
+            # 92 is Note on, channel 3 ( 3 - 1) followed by color pixel data
+            # pixel data = 0x0C | 0x30 green | 0x03 red
+
+            it = iter(data)
+            for c in it:
+                out1 = self.scolmap(c[0], c[1])
+                try:
+                    col = next(it)
+                except StopIteration:
+                    col = [0.0, 0.0]
+                out2 = self.scolmap(col[0], col[1])
+
+                self.midi.RawWrite(0x92, out1, out2)
+
+        # deltat = timeit.default_timer() - start
+        # _LOGGER.error(f"Launchpad S flush time {deltat}")
