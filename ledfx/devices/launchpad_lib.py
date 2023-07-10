@@ -1973,7 +1973,6 @@ class LaunchpadS(LaunchpadPro):
     def ButtonStateXY(self, mode="classic", returnPressure=False):
         _LOGGER.error("ButtonStateXY for Launchpad S has not been implemented")
 
-
     def scolmap(self, r, g):
         if r > 191.0:
             out = 0x0F
@@ -1993,7 +1992,6 @@ class LaunchpadS(LaunchpadPro):
 
         return out
 
-
     def flush(self, data):
         # Single led left second row from botto
         # self.midi.RawWrite(0x90, 0x60, 0x0F)
@@ -2005,7 +2003,6 @@ class LaunchpadS(LaunchpadPro):
             # the hard way, lets walk row by row, starting with the bottom row
 
             for index, map in enumerate(self.pixel_map):
-
                 out = self.scolmap(data[index][0], data[index][1])
 
                 if index < 72:
