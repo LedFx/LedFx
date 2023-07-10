@@ -1990,7 +1990,7 @@ class LaunchpadS(LaunchpadPro):
         # 92 is Note on, channel 3 ( 3 - 1) followed by color pixel data
         # pixel data = 0x0C | 0x30 green | 0x03 red
 
-        start = timeit.default_timer()
+        # start = timeit.default_timer()
 
         if True:
             # the hard way, lets walk row by row, starting with the bottom row
@@ -1999,20 +1999,20 @@ class LaunchpadS(LaunchpadPro):
                 r = data[index][0]
                 g = data[index][1]
 
-                if r > 191:
+                if r > 191.0:
                     out = 0x0F
-                elif r > 127:
+                elif r > 127.0:
                     out = 0x0E
-                elif r > 63:
+                elif r > 63.0:
                     out = 0x0D
                 else:
                     out = 0x0C
 
-                if g > 191:
+                if g > 191.0:
                     out |= 0x30
-                elif g > 127:
+                elif g > 127.0:
                     out |= 0x20
-                elif g > 63:
+                elif g > 63.0:
                     out |= 0x10
 
                 self.midi.RawWrite(0x90, map, out)
@@ -2030,5 +2030,5 @@ class LaunchpadS(LaunchpadPro):
                 0x0F, 0x1F, 0x2F, 0x3F])  #  green off to full, red 3
             # fmt: on
 
-        deltat = timeit.default_timer() - start
-        _LOGGER.error(f"Launchpad S flush time {deltat}")
+        # deltat = timeit.default_timer() - start
+        # _LOGGER.error(f"Launchpad S flush time {deltat}")
