@@ -1998,31 +1998,15 @@ class LaunchpadS(LaunchpadPro):
         # Single led left second row from botto
         # self.midi.RawWrite(0x90, 0x60, 0x0F)
 
-        import timeit
-        start = timeit.default_timer()
+        # import timeit
+        # start = timeit.default_timer()
 
-        if False:
+        if True:
             # the hard way, lets walk row by row, starting with the bottom row
 
             for index, map in enumerate(self.pixel_map):
-                r = data[index][0]
-                g = data[index][1]
 
-                if r > 191.0:
-                    out = 0x0F
-                elif r > 127.0:
-                    out = 0x0E
-                elif r > 63.0:
-                    out = 0x0D
-                else:
-                    out = 0x0C
-
-                if g > 191.0:
-                    out |= 0x30
-                elif g > 127.0:
-                    out |= 0x20
-                elif g > 63.0:
-                    out |= 0x10
+                out = self.scolmap(data[index][0], data[index][1])
 
                 if index < 72:
                     # send as note on message
@@ -2054,5 +2038,5 @@ class LaunchpadS(LaunchpadPro):
 
                 self.midi.RawWrite(0x92, out1, out2)
 
-        deltat = timeit.default_timer() - start
-        _LOGGER.error(f"Launchpad S flush time {deltat}")
+        # deltat = timeit.default_timer() - start
+        # _LOGGER.error(f"Launchpad S flush time {deltat}")
