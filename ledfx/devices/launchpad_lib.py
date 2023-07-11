@@ -1964,8 +1964,8 @@ class LaunchpadS(LaunchpadPro):
                   18, 19, 20, 21, 22, 23, 24, 25,
                   9, 10, 11, 12, 13, 14, 15, 16,
                   0, 1, 2, 3, 4, 5, 6, 7,
-                  72, 73, 74, 75, 76, 77, 78, 79,
-                  71, 62, 53, 44, 35, 26, 17, 8]
+                  71, 62, 53, 44, 35, 26, 17, 8,
+                  79, 78, 77, 76, 75, 74, 73, 72]
     # fmt: on
 
     def Open(self, number=0, name="Launchpad S"):
@@ -2015,51 +2015,48 @@ class LaunchpadS(LaunchpadPro):
 
         return out
 
+    def flush_slow(self, data):
+        # the hard way, single pixel programming using pixel_map for key
+        # addresses bottom left to top right
+
+        # import timeit
+        # start = timeit.default_timer()
+
+        for index, map in enumerate(self.pixel_map):
+            out = self.scolmap(data[index][0], data[index][1])
+
+            if index < 72:
+                # send as note on message
+                self.midi.RawWrite(0x90, map, out)
+            else:
+                # send as control change message
+                self.midi.RawWrite(0xB0, map, out)
+
+        # deltat = timeit.default_timer() - start
+        # _LOGGER.error(f"Launchpad S flush slow time {deltat}")
+
     def flush(self, data):
-        # Single led left second row from botto
-        # self.midi.RawWrite(0x90, 0x60, 0x0F)
+        # TODO: BACK BUFFER UPDATE
 
-#        import timeit
-#        start = timeit.default_timer()
+        # https://www.bhphotovideo.com/lit_files/88417.pdf
+        # how to do channels in rtmidi
+        # https://github.com/SpotlightKid/python-rtmidi/issues/38
 
-        if False:
-            # the hard way, lets walk row by row, starting with the bottom row
+        # 92 is Note on, channel 3 ( 3 - 1) followed by 2 color pixel data bytes
+        # pixel data = 0x0C | 0x30 green | 0x03 red
 
-            for index, map in enumerate(self.pixel_map):
-                out = self.scolmap(data[index][0], data[index][1])
+        # import timeit
+        # start = timeit.default_timer()
 
-                if index < 72:
-                    # send as note on message
-                    self.midi.RawWrite(0x90, map, out)
-                else:
-                    # send as control change message
-                    self.midi.RawWrite(0xB0, map, out)
-        else:
-            # we need to work out rapid led update before we can use this
-            # how to do channels in rtmidi
-            # https://github.com/SpotlightKid/python-rtmidi/issues/38
+        # Speculating write on channel 1 to reset everything
+        self.midi.RawWrite(0x90, 0x00, 0x0C)
 
-            # this is Rapid led update mode, need to know if it restarts each time
-            # then if this works map the entire grid in and see what
-            # - pixel tells us for order
-            # - metro tells us for ripple update
+        for index, map in enumerate(self.pixel_map2):
+            if (index % 2) == 0:
+                out1 = self.scolmap(data[map][0], data[map][1])
+            else:
+                out2 = self.scolmap(data[map][0], data[map][1])
+                self.midi.RawWrite(0x92, out1, out2)
 
-            # 92 is Note on, channel 3 ( 3 - 1) followed by color pixel data
-            # pixel data = 0x0C | 0x30 green | 0x03 red
-
-            # SEND A FRAME RESET COMMAND
-            # use pixel_map2 so that for each send, we know where to pull from data
-            # don't send the last pixel byte +1, we don't have an ICON!
-
-            # Speculating write on channel 1 to reset everything
-            self.midi.RawWrite(0x90, 0x00, 0x0C)
-
-            for index, map in enumerate(self.pixel_map2):
-                if (index % 2) == 0:
-                    out1 = self.scolmap(data[map][0], data[map][1])
-                else:
-                    out2 = self.scolmap(data[map][0], data[map][1])
-                    self.midi.RawWrite(0x92, out1, out2)
-
-#        deltat = timeit.default_timer() - start
-#        _LOGGER.error(f"Launchpad S flush time {deltat}")
+        # deltat = timeit.default_timer() - start
+        # _LOGGER.error(f"Launchpad S flush time {deltat}")
