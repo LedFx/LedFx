@@ -21,4 +21,8 @@ hiddenimports = [
     "icmplib",
     "flux_led",
     "voluptuous",
+    "mbedtls",
+    "mbedtls.mpi",
+    "mbedtls._platform",
+    "mbedtls._ringbuf",
 ]
