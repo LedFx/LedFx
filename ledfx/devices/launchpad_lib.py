@@ -1933,6 +1933,8 @@ class LaunchpadS(LaunchpadPro):
         ),
     ]
 
+    # this maps pixels from physical bottom left to launchpad references
+    # as it is explicit per pixel
     # fmt: off
     pixel_map = [112, 113, 114, 115, 116, 117, 118, 119, 120,
                  96, 97, 98, 99, 100, 101, 102, 103, 104,
@@ -1943,6 +1945,27 @@ class LaunchpadS(LaunchpadPro):
                  16, 17, 18, 19, 20, 21, 22, 23, 24,
                  0, 1, 2, 3, 4, 5, 6, 7, 8,
                  104, 105, 106, 107, 108, 109, 110, 111, 112]
+    # fmt: on
+
+    # this maps launchpad pixels from bottom left to source from data
+    # as plotting is order driven via a complex mapping of
+
+    # Starting at the top-left-hand corner in either mode, subsequent
+    # note messages update the 64-pad grid horizontally and then
+    # vertically. They then update the eight clip launch buttons, and
+    # then the eight mode buttons.
+
+    # fmt: off
+    pixel_map2 = [63, 64, 65, 66, 67, 68, 69, 70,
+                  54, 55, 56, 57, 58, 59, 60, 61,
+                  45, 46, 47, 48, 49, 50, 51, 52,
+                  36, 37, 38, 39, 40, 41, 42, 43,
+                  27, 28, 29, 30, 31, 32, 33, 34,
+                  18, 19, 20, 21, 22, 23, 24, 25,
+                  9, 10, 11, 12, 13, 14, 15, 16,
+                  0, 1, 2, 3, 4, 5, 6, 7,
+                  72, 73, 74, 75, 76, 77, 78, 79,
+                  71, 62, 53, 44, 35, 26, 17, 8]
     # fmt: on
 
     def Open(self, number=0, name="Launchpad S"):
@@ -1996,10 +2019,10 @@ class LaunchpadS(LaunchpadPro):
         # Single led left second row from botto
         # self.midi.RawWrite(0x90, 0x60, 0x0F)
 
-        # import timeit
-        # start = timeit.default_timer()
+#        import timeit
+#        start = timeit.default_timer()
 
-        if True:
+        if False:
             # the hard way, lets walk row by row, starting with the bottom row
 
             for index, map in enumerate(self.pixel_map):
@@ -2024,16 +2047,19 @@ class LaunchpadS(LaunchpadPro):
             # 92 is Note on, channel 3 ( 3 - 1) followed by color pixel data
             # pixel data = 0x0C | 0x30 green | 0x03 red
 
-            it = iter(data)
-            for c in it:
-                out1 = self.scolmap(c[0], c[1])
-                try:
-                    col = next(it)
-                except StopIteration:
-                    col = [0.0, 0.0]
-                out2 = self.scolmap(col[0], col[1])
+            # SEND A FRAME RESET COMMAND
+            # use pixel_map2 so that for each send, we know where to pull from data
+            # don't send the last pixel byte +1, we don't have an ICON!
 
-                self.midi.RawWrite(0x92, out1, out2)
+            # Speculating write on channel 1 to reset everything
+            self.midi.RawWrite(0x90, 0x00, 0x0C)
 
-        # deltat = timeit.default_timer() - start
-        # _LOGGER.error(f"Launchpad S flush time {deltat}")
+            for index, map in enumerate(self.pixel_map2):
+                if (index % 2) == 0:
+                    out1 = self.scolmap(data[map][0], data[map][1])
+                else:
+                    out2 = self.scolmap(data[map][0], data[map][1])
+                    self.midi.RawWrite(0x92, out1, out2)
+
+#        deltat = timeit.default_timer() - start
+#        _LOGGER.error(f"Launchpad S flush time {deltat}")
