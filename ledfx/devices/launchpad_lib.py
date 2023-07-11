@@ -1965,7 +1965,7 @@ class LaunchpadS(LaunchpadPro):
                   9, 10, 11, 12, 13, 14, 15, 16,
                   0, 1, 2, 3, 4, 5, 6, 7,
                   71, 62, 53, 44, 35, 26, 17, 8,
-                  79, 78, 77, 76, 75, 74, 73, 72]
+                  72, 73, 74, 75, 76, 77, 78, 79]
     # fmt: on
 
     def Open(self, number=0, name="Launchpad S"):
