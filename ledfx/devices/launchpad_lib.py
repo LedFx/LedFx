@@ -2019,8 +2019,8 @@ class LaunchpadS(LaunchpadPro):
         # Single led left second row from botto
         # self.midi.RawWrite(0x90, 0x60, 0x0F)
 
-#        import timeit
-#        start = timeit.default_timer()
+        #        import timeit
+        #        start = timeit.default_timer()
 
         if False:
             # the hard way, lets walk row by row, starting with the bottom row
@@ -2060,6 +2060,7 @@ class LaunchpadS(LaunchpadPro):
                 else:
                     out2 = self.scolmap(data[map][0], data[map][1])
                     self.midi.RawWrite(0x92, out1, out2)
+
 
 #        deltat = timeit.default_timer() - start
 #        _LOGGER.error(f"Launchpad S flush time {deltat}")
