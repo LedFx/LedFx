@@ -73,6 +73,7 @@ class ScenesEndpoint(RestEndpoint):
             }
             return web.json_response(data=response, status=400)
         import json
+
         _LOGGER.info("Dumping from put")
         _LOGGER.info(json.dumps(data, indent=4))
 
