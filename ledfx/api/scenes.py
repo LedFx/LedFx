@@ -219,7 +219,6 @@ class ScenesEndpoint(RestEndpoint):
                 "reason": "JSON Decoding failed",
             }
             return web.json_response(data=response, status=400)
-        import json
 
         scene_name = data.get("name")
         scene_tags = data.get("scene_tags")
@@ -247,7 +246,6 @@ class ScenesEndpoint(RestEndpoint):
         scene_config["scene_payload"] = scene_payload
         scene_config["scene_midiactivate"] = scene_midiactivate
 
-        _LOGGER.info("Outside the mind")
         if "virtuals" not in data.keys():
             for virtual in self._ledfx.virtuals.values():
                 effect = {}
@@ -258,22 +256,14 @@ class ScenesEndpoint(RestEndpoint):
                 scene_config["virtuals"][virtual.id] = effect
         else:
             virtuals = data.get("virtuals")
-            _LOGGER.info("Defined virtuals, dumping")
-            _LOGGER.info(json.dumps(virtuals, indent=4))
 
             for virtualid in virtuals:
-                _LOGGER.info(f"Dumping a {virtualid}")
                 virtual = data.get("virtuals")[virtualid]
-                _LOGGER.info(virtual)
                 if bool(virtual):
-                    _LOGGER.info("Virual is not empty, so add to scene")
                     effect = {}
                     effect["type"] = virtual["type"]
                     effect["config"] = virtual["config"]
                     scene_config["virtuals"][virtualid] = effect
-
-        _LOGGER.info("Dumping scene_config")
-        _LOGGER.info(json.dumps(scene_config, indent=4))
 
         # Update the scene if it already exists, else create it
         self._ledfx.config["scenes"][scene_id] = scene_config
