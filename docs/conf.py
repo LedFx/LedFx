@@ -70,7 +70,7 @@ extensions = [
     "sphinx.ext.githubpages",
     "sphinxcontrib.httpdomain",
     "sphinx_rtd_theme",
-    'sphinx_toolbox.collapse',
+    "sphinx_toolbox.collapse",
 ]
 
 # The suffix(es) of source filenames.
