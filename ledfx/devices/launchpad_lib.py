@@ -178,7 +178,7 @@ class LaunchpadBase:
     layout = {"pixels": 0, "rows": 0}
     segments = []
 
-    def flush(self, data):
+    def flush(self, data, alpha):
         _LOGGER.error(f"flush not implemented for {self.__class__.__name__}")
 
     # end defaults
@@ -1474,7 +1474,7 @@ class LaunchpadLPX(LaunchpadPro):
         else:
             return None
 
-    def flush(self, data):
+    def flush(self, data, alpha):
         try:
             # we will use RawWriteSysEx(self, lstMessage, timeStamp=0)
             # this function adds the preamble 240 and post amble 247
@@ -1967,6 +1967,7 @@ class LaunchpadS(LaunchpadPro):
                   71, 62, 53, 44, 35, 26, 17, 8,
                   72, 73, 74, 75, 76, 77, 78, 79]
     # fmt: on
+    buffer0 = True
 
     def Open(self, number=0, name="Launchpad S"):
         retval = super().Open(number=number, name=name)
@@ -2015,7 +2016,7 @@ class LaunchpadS(LaunchpadPro):
 
         return out
 
-    def flush_slow(self, data):
+    def flush_slow(self, data, alpha):
         # the hard way, single pixel programming using pixel_map for key
         # addresses bottom left to top right
 
@@ -2035,9 +2036,7 @@ class LaunchpadS(LaunchpadPro):
         # deltat = timeit.default_timer() - start
         # _LOGGER.error(f"Launchpad S flush slow time {deltat}")
 
-    def flush(self, data):
-        # TODO: BACK BUFFER UPDATE
-
+    def flush(self, data, alpha):
         # https://www.bhphotovideo.com/lit_files/88417.pdf
         # how to do channels in rtmidi
         # https://github.com/SpotlightKid/python-rtmidi/issues/38
@@ -2048,8 +2047,11 @@ class LaunchpadS(LaunchpadPro):
         # import timeit
         # start = timeit.default_timer()
 
-        # Speculating write on channel 1 to reset everything
-        self.midi.RawWrite(0x90, 0x00, 0x0C)
+        if not alpha:
+            # Speculating write on channel 1 to reset everything
+#            self.midi.RawWrite(0x90, 0x00, 0x0C)
+            # simple update mode, display and write buffer 0
+            self.midi.RawWrite(0xB0, 0x00, 0x20)
 
         for index, map in enumerate(self.pixel_map2):
             if (index % 2) == 0:
@@ -2057,6 +2059,17 @@ class LaunchpadS(LaunchpadPro):
             else:
                 out2 = self.scolmap(data[map][0], data[map][1])
                 self.midi.RawWrite(0x92, out1, out2)
+
+        if alpha:
+            if self.buffer0:
+                # Display buffer 0, and write to buffer 1
+                self.midi.RawWrite(0xB0, 0x00, 0x24)
+            else:
+                # Display buffer 1, and write to buffer 0
+                self.midi.RawWrite(0xB0, 0x00, 0x21)
+
+            # and flip buffers
+            self.buffer0 = not self.buffer0
 
         # deltat = timeit.default_timer() - start
         # _LOGGER.error(f"Launchpad S flush time {deltat}")
