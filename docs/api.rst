@@ -624,7 +624,7 @@ Where a "virtuals" key is provided, only the virtuals specified will be saved to
             }
         }
 
-
+|
 .. rubric:: DELETE
 
 Delete a scene
