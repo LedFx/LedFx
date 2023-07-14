@@ -562,9 +562,79 @@ Set effects and configs of all devices to those specified in a scene
 
 Save effect configuration of devices as a scene
 
+Now support default behaviour when no "virtuals" key is provided of saving all currently active virtuals to the scene in their current configuration
+
+.. code-block:: json
+
+    {
+        "name": "test1",
+        "scene_image": "",
+        "scene_tags": "",
+        "scene_puturl": "",
+        "scene_payload": ""
+    }
+
+Where a "virtuals" key is provided, only the virtuals specified will be saved to the scene, using the effect type and config carried in the json payload
+
+.. collapse:: Expand for specified Virtuals Example
+
+    .. code-block:: json
+
+        {
+            "name": "test2",
+            "scene_image": "image: https://i.pinimg.com/736x/05/9c/a7/059ca7cf94a85a3e836693e84c5bf42f--red-frogs.jpg",
+            "scene_tags": "",
+            "scene_puturl": "",
+            "scene_payload": "",
+            "virtuals": {
+                "falcon1": {
+                    "type": "blade_power_plus",
+                    "config": {
+                        "background_brightness": 1,
+                        "background_color": "#000000",
+                        "blur": 2,
+                        "brightness": 1,
+                        "decay": 0.7,
+                        "flip": false,
+                        "frequency_range": "Lows (beat+bass)",
+                        "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
+                        "gradient_roll": 0,
+                        "invert_roll": false,
+                        "mirror": false,
+                        "multiplier": 0.5
+                    }
+                },
+                "big-copy": {
+                    "type": "energy",
+                    "config": {
+                        "background_brightness": 1,
+                        "background_color": "#000000",
+                        "blur": 4,
+                        "brightness": 1,
+                        "color_cycler": false,
+                        "color_high": "#0000ff",
+                        "color_lows": "#ff0000",
+                        "color_mids": "#00ff00",
+                        "flip": false,
+                        "mirror": true,
+                        "mixing_mode": "additive",
+                        "sensitivity": 0.6
+                    }
+                }
+            }
+        }
+
+
 .. rubric:: DELETE
 
 Delete a scene
+
+.. code-block:: json
+
+    {
+        "id": "test2"
+    }
+
 
 /api/integrations
 ================================
