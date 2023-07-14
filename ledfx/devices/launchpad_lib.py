@@ -2049,7 +2049,7 @@ class LaunchpadS(LaunchpadPro):
 
         if not alpha:
             # Speculating write on channel 1 to reset everything
-#            self.midi.RawWrite(0x90, 0x00, 0x0C)
+            #            self.midi.RawWrite(0x90, 0x00, 0x0C)
             # simple update mode, display and write buffer 0
             self.midi.RawWrite(0xB0, 0x00, 0x20)
 
