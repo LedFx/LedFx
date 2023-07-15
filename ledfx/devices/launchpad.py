@@ -116,6 +116,11 @@ class LaunchpadDevice(MidiDevice):
                     description="Dark and dangerous features of the damned",
                     default=False,
                 ): bool,
+                vol.Optional(
+                    "Diagnostic",
+                    description="enable timing diagnostics in logger",
+                    default=False,
+                ): bool,
             }
         )
 
@@ -125,7 +130,7 @@ class LaunchpadDevice(MidiDevice):
         _LOGGER.info("Launchpad device created")
 
     def flush(self, data):
-        self.lp.flush(data, self._config["Alpha"])
+        self.lp.flush(data, self._config["Alpha"], self._config["Diagnostic"])
 
     def activate(self):
         self.set_class()
