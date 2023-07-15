@@ -175,6 +175,7 @@ class RtmidiWrap:
     def RawWriteTwo(self, dat1, dat2):
         self.devOut.send_message([dat1, dat2])
 
+
 # ==========================================================================
 # CLASS LaunchpadBase
 #
