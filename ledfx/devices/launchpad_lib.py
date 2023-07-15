@@ -14,6 +14,7 @@
 import array
 import logging
 import time
+import timeit
 
 import rtmidi
 from rtmidi.midiutil import open_midiinput, open_midioutput
@@ -168,6 +169,12 @@ class RtmidiWrap:
     def RawWrite(self, stat, dat1, dat2):
         self.devOut.send_message([stat, dat1, dat2])
 
+    # -------------------------------------------------------------------------------------
+    # -- sends a running status 2 byte message MADNESS
+    # -------------------------------------------------------------------------------------
+    def RawWriteTwo(self, dat1, dat2):
+        self.devOut.send_message([dat1, dat2])
+
 
 # ==========================================================================
 # CLASS LaunchpadBase
@@ -178,7 +185,7 @@ class LaunchpadBase:
     layout = {"pixels": 0, "rows": 0}
     segments = []
 
-    def flush(self, data):
+    def flush(self, data, alpha, diag):
         _LOGGER.error(f"flush not implemented for {self.__class__.__name__}")
 
     # end defaults
@@ -1474,7 +1481,7 @@ class LaunchpadLPX(LaunchpadPro):
         else:
             return None
 
-    def flush(self, data):
+    def flush(self, data, alpha, diag):
         try:
             # we will use RawWriteSysEx(self, lstMessage, timeStamp=0)
             # this function adds the preamble 240 and post amble 247
@@ -1895,7 +1902,8 @@ class LaunchpadProMk3(LaunchpadPro):
 # ==========================================================================
 # CLASS Launchpad S
 #
-# Got to start somewhere
+# It's an older code sir, but it checks out.
+# https://www.bhphotovideo.com/lit_files/88417.pdf
 # ==========================================================================
 class LaunchpadS(LaunchpadPro):
     layout = {"pixels": 81, "rows": 9}
@@ -1967,6 +1975,10 @@ class LaunchpadS(LaunchpadPro):
                   71, 62, 53, 44, 35, 26, 17, 8,
                   72, 73, 74, 75, 76, 77, 78, 79]
     # fmt: on
+    buffer0 = True
+    lasttime = 0
+    frame = 0
+    fps = 0
 
     def Open(self, number=0, name="Launchpad S"):
         retval = super().Open(number=number, name=name)
@@ -2015,48 +2027,53 @@ class LaunchpadS(LaunchpadPro):
 
         return out
 
-    def flush_slow(self, data):
-        # the hard way, single pixel programming using pixel_map for key
-        # addresses bottom left to top right
-
-        # import timeit
-        # start = timeit.default_timer()
-
-        for index, map in enumerate(self.pixel_map):
-            out = self.scolmap(data[index][0], data[index][1])
-
-            if index < 72:
-                # send as note on message
-                self.midi.RawWrite(0x90, map, out)
-            else:
-                # send as control change message
-                self.midi.RawWrite(0xB0, map, out)
-
-        # deltat = timeit.default_timer() - start
-        # _LOGGER.error(f"Launchpad S flush slow time {deltat}")
-
-    def flush(self, data):
-        # TODO: BACK BUFFER UPDATE
-
+    def flush(self, data, alpha, diag):
         # https://www.bhphotovideo.com/lit_files/88417.pdf
         # how to do channels in rtmidi
         # https://github.com/SpotlightKid/python-rtmidi/issues/38
 
         # 92 is Note on, channel 3 ( 3 - 1) followed by 2 color pixel data bytes
         # pixel data = 0x0C | 0x30 green | 0x03 red
+        # code now supports running mode where status byte is only sent at
+        # start of frame
+        if diag:
+            start = timeit.default_timer()
 
-        # import timeit
-        # start = timeit.default_timer()
-
-        # Speculating write on channel 1 to reset everything
-        self.midi.RawWrite(0x90, 0x00, 0x0C)
+        send_status = True
 
         for index, map in enumerate(self.pixel_map2):
             if (index % 2) == 0:
                 out1 = self.scolmap(data[map][0], data[map][1])
             else:
                 out2 = self.scolmap(data[map][0], data[map][1])
-                self.midi.RawWrite(0x92, out1, out2)
 
-        # deltat = timeit.default_timer() - start
-        # _LOGGER.error(f"Launchpad S flush time {deltat}")
+                if alpha:
+                    if send_status:
+                        self.midi.RawWrite(0x92, out1, out2)
+                        send_status = False
+                    else:
+                        self.midi.RawWriteTwo(out1, out2)
+                else:
+                    self.midi.RawWrite(0x92, out1, out2)
+
+        if self.buffer0:
+            # Display buffer 0, and write to buffer 1
+            self.midi.RawWrite(0xB0, 0x00, 0x24)
+        else:
+            # Display buffer 1, and write to buffer 0
+            self.midi.RawWrite(0xB0, 0x00, 0x21)
+
+        # and flip buffers
+        self.buffer0 = not self.buffer0
+
+        if diag:
+            now = timeit.default_timer()
+            nowint = int(now)
+            # if now just rolled over a second boundary
+            if nowint != self.lasttime:
+                self.fps = self.frame
+                self.frame = 0
+            else:
+                self.frame += 1
+            _LOGGER.info(f"Launchpad S flush {self.fps} : {now - start}")
+            self.lasttime = nowint
