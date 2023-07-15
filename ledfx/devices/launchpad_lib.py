@@ -169,6 +169,11 @@ class RtmidiWrap:
     def RawWrite(self, stat, dat1, dat2):
         self.devOut.send_message([stat, dat1, dat2])
 
+    # -------------------------------------------------------------------------------------
+    # -- sends a running status 2 byte message
+    # -------------------------------------------------------------------------------------
+    def RawWriteTwo(self, dat1, dat2):
+        self.devOut.send_message([dat1, dat2])
 
 # ==========================================================================
 # CLASS LaunchpadBase
@@ -1896,7 +1901,8 @@ class LaunchpadProMk3(LaunchpadPro):
 # ==========================================================================
 # CLASS Launchpad S
 #
-# Got to start somewhere
+# It's an older code sir, but it checks out.
+# https://www.bhphotovideo.com/lit_files/88417.pdf
 # ==========================================================================
 class LaunchpadS(LaunchpadPro):
     layout = {"pixels": 81, "rows": 9}
@@ -2043,7 +2049,7 @@ class LaunchpadS(LaunchpadPro):
                         self.midi.RawWrite(0x92, out1, out2)
                         send_status = False
                     else:
-                        self.midi.RawWrite(out1, out2)
+                        self.midi.RawWriteTwo(out1, out2)
                 else:
                     self.midi.RawWrite(0x92, out1, out2)
 
