@@ -170,7 +170,7 @@ class RtmidiWrap:
         self.devOut.send_message([stat, dat1, dat2])
 
     # -------------------------------------------------------------------------------------
-    # -- sends a running status 2 byte message
+    # -- sends a running status 2 byte message MADNESS
     # -------------------------------------------------------------------------------------
     def RawWriteTwo(self, dat1, dat2):
         self.devOut.send_message([dat1, dat2])
@@ -2033,6 +2033,8 @@ class LaunchpadS(LaunchpadPro):
 
         # 92 is Note on, channel 3 ( 3 - 1) followed by 2 color pixel data bytes
         # pixel data = 0x0C | 0x30 green | 0x03 red
+        # code now supports running mode where status byte is only sent at
+        # start of frame
         if diag:
             start = timeit.default_timer()
 
