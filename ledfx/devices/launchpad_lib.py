@@ -2074,5 +2074,5 @@ class LaunchpadS(LaunchpadPro):
                 self.frame = 0
             else:
                 self.frame += 1
-            _LOGGER.error(f"Launchpad S flush {self.fps} : {now - start}")
+            _LOGGER.info(f"Launchpad S flush {self.fps} : {now - start}")
             self.lasttime = nowint
