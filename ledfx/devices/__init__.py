@@ -107,6 +107,7 @@ class Device(BaseRegistry):
             if virtual.is_device == self.id:
                 segments = [[self.id, 0, self.pixel_count - 1, False]]
                 virtual.update_segments(segments)
+                virtual.invalidate_cached_props()
 
         for virtual in self._virtuals_objs:
             virtual.deactivate_segments()
