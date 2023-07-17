@@ -767,7 +767,7 @@ class LaunchpadMk2(LaunchpadPro):
             #
             # There is only one layout implied for LEDs:
             #
-            # Host => Launchpad X:
+            # Host => Launchpad MK2:
             # Hex: F0h 00h 20h 29h 02h 18h 08h <colourspec> [<colourspec> […]] F7h
             # Dec: 240 0   32  41  2   24  11  <colourspec> [<colourspec> […]] 247
             #
@@ -775,17 +775,10 @@ class LaunchpadMk2(LaunchpadPro):
             # - LED index (1 byte)  ---- WARNING, each row starts at 11, 21, 31 etc
             # - Lighting data (1 – 3 bytes)
             # - 3: RGB colour, 3 bytes for Red, Green and Blue 6 bit (63: Max, 0: Min).
+            # Final top row starts at 104 for control buttons and is only 8 wide
             #
             # The message may contain up to 80 <colourspec> entries to light up the entire
             # Launchpad Mk2 surface.
-            # Example:
-            #
-            # in summary
-            # [ 3 = RGB, Pos = layout BE CAREFUL, R,G, B max 63
-            # example of send RED pixel at row 3 pixel 6
-            # send_buffer.extend([35, 63, 0, 0])
-
-            #            start = timeit.default_timer()
 
             # stuff the send buffer with the command preamble
             send_buffer = [0, 32, 41, 2, 24, 11]
