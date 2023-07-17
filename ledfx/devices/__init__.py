@@ -138,7 +138,9 @@ class Device(BaseRegistry):
             return
 
         for pixels, start, end in data:
-            self._pixels[start : end + 1] = pixels
+            # protect against an empty race condition
+            if pixels.shape[0] != 0:
+                self._pixels[start : end + 1] = pixels
 
         if self.priority_virtual:
             if virtual_id == self.priority_virtual.id:
