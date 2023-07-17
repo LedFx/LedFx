@@ -829,7 +829,6 @@ class LaunchpadMk2(LaunchpadPro):
             self.lasttime = nowint
 
 
-
 # ==========================================================================
 # CLASS LaunchControlXL
 #
@@ -1674,6 +1673,7 @@ class LaunchpadLPX(LaunchpadPro):
                 self.frame += 1
             _LOGGER.info(f"Launchpad X flush {self.fps} : {now - start}")
             self.lasttime = nowint
+
 
 # ==========================================================================
 # CLASS MidiFighter64
