@@ -543,7 +543,7 @@ class Virtual:
         """
         Flushes the provided data to the devices.
         """
-       # _LOGGER.info(f"Virtual {self.id}: Flushing frame")
+        # _LOGGER.info(f"Virtual {self.id}: Flushing frame")
 
         if pixels is None:
             pixels = self.assembled_frame
@@ -556,7 +556,13 @@ class Virtual:
 
             if self._calibration:
                 # set data to black for full length of led strip allow other segments to overwrite
-                data.append((np.array([0.0, 0.0, 0.0], dtype=float), 0, device.pixel_count - 1))
+                data.append(
+                    (
+                        np.array([0.0, 0.0, 0.0], dtype=float),
+                        0,
+                        device.pixel_count - 1,
+                    )
+                )
 
             for (
                 start,
