@@ -543,6 +543,8 @@ class Virtual:
         """
         Flushes the provided data to the devices.
         """
+       # _LOGGER.info(f"Virtual {self.id}: Flushing frame")
+
         if pixels is None:
             pixels = self.assembled_frame
 
@@ -550,10 +552,12 @@ class Virtual:
 
         for device_id, segments in self._segments_by_device.items():
             data = []
+            device = self._ledfx.devices.get(device_id)
+
             if self._calibration:
                 # set data to black for full length of led strip allow other segments to overwrite
-                device = self._ledfx.devices.get_device(device_id)
-                data.append(([0.0, 0.0, 0.0], 0, device.pixel_count - 1))
+                data.append((np.array([0.0, 0.0, 0.0], dtype=float), 0, device.pixel_count - 1))
+
             for (
                 start,
                 stop,
@@ -582,7 +586,6 @@ class Virtual:
                             )
                         )
 
-            device = self._ledfx.devices.get(device_id)
             if device is None:
                 _LOGGER.warning(
                     f"Virtual {self.id}: No active devices - Deactivating."
