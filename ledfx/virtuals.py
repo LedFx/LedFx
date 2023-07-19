@@ -1,3 +1,4 @@
+import itertools
 import logging
 import sys
 import threading
@@ -9,6 +10,7 @@ import numpy as np
 import voluptuous as vol
 import zeroconf
 
+from ledfx.color import parse_color
 from ledfx.effects import DummyEffect
 from ledfx.effects.math import interpolate_pixels
 from ledfx.effects.melbank import (
@@ -32,6 +34,8 @@ from ledfx.transitions import Transitions
 from ledfx.utils import fps_to_sleep_interval
 
 _LOGGER = logging.getLogger(__name__)
+
+color_list = ["red", "green", "blue", "cyan", "magenta", "#ffff00"]
 
 
 class Virtual:
@@ -127,6 +131,7 @@ class Virtual:
     _output_thread = None
     _active_effect = None
     _transition_effect = None
+    _calibration = False
 
     if (
         sys.version_info[0] == 3 and sys.version_info[1] >= 11
@@ -372,6 +377,9 @@ class Virtual:
             VirtualUpdateEvent(self.id, self.assembled_frame)
         )
 
+    def set_calibration(self, calibration):
+        self._calibration = calibration
+
     @property
     def active_effect(self):
         return self._active_effect
@@ -535,10 +543,27 @@ class Virtual:
         """
         Flushes the provided data to the devices.
         """
+        # _LOGGER.info(f"Virtual {self.id}: Flushing frame")
+
         if pixels is None:
             pixels = self.assembled_frame
+
+        color_cycle = itertools.cycle(color_list)
+
         for device_id, segments in self._segments_by_device.items():
             data = []
+            device = self._ledfx.devices.get(device_id)
+
+            if self._calibration:
+                # set data to black for full length of led strip allow other segments to overwrite
+                data.append(
+                    (
+                        np.array([0.0, 0.0, 0.0], dtype=float),
+                        0,
+                        device.pixel_count - 1,
+                    )
+                )
+
             for (
                 start,
                 stop,
@@ -546,20 +571,27 @@ class Virtual:
                 device_start,
                 device_end,
             ) in segments:
-                if self._config["mapping"] == "span":
-                    data.append(
-                        (pixels[start:stop:step], device_start, device_end)
+                if self._calibration:
+                    # add data forced to color sequence of RGBCMY
+                    color = np.array(
+                        parse_color(next(color_cycle)), dtype=float
                     )
-                elif self._config["mapping"] == "copy":
-                    target_len = device_end - device_start + 1
-                    data.append(
-                        (
-                            interpolate_pixels(pixels, target_len)[::step],
-                            device_start,
-                            device_end,
+                    data.append((color, device_start, device_end))
+                else:
+                    if self._config["mapping"] == "span":
+                        data.append(
+                            (pixels[start:stop:step], device_start, device_end)
                         )
-                    )
-            device = self._ledfx.devices.get(device_id)
+                    elif self._config["mapping"] == "copy":
+                        target_len = device_end - device_start + 1
+                        data.append(
+                            (
+                                interpolate_pixels(pixels, target_len)[::step],
+                                device_start,
+                                device_end,
+                            )
+                        )
+
             if device is None:
                 _LOGGER.warning(
                     f"Virtual {self.id}: No active devices - Deactivating."

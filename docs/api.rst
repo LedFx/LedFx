@@ -498,7 +498,7 @@ Extensible support for general tools towards a specified virtual
 
 .. rubric:: PUT
 
-Supports tool instances of currently only force_color, others may be added in the future
+Supports tool instances of force_color and calibration, others may be added in the future
 
 **force_color**
 
@@ -527,6 +527,43 @@ returns
         "status": "success",
         "tool": "force_color"
     }
+
+**calibration**
+
+Force virtual into calibration mode.
+All segments will be switched to solid color rotation of RGBCMY on the final devices
+Device backgrounds will be set to black
+Changes to virtual segments in edit virtual will be displayed on browser second tab if open on devices view and physical devices live
+
+Setting is not persistant. Shutting down ledfx while in calibration mode will leave virtual in normal effect settings in next cycle
+
+Enter calibration mode with
+
+.. code-block:: json
+
+    {
+      "tool": "calibration",
+      "mode": "on"
+    }
+
+Exit calibration mode with
+
+.. code-block:: json
+
+    {
+      "tool": "calibration",
+      "mode": "off"
+    }
+
+returns
+
+.. code-block:: json
+
+    {
+        "status": "success",
+        "tool": "calibration"
+    }
+
 
 /api/effects/<effect_id>/presets
 ===================================
@@ -625,6 +662,7 @@ Where a "virtuals" key is provided, only the virtuals specified will be saved to
         }
 
 |
+
 .. rubric:: DELETE
 
 Delete a scene
