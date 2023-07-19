@@ -550,10 +550,12 @@ class Virtual:
 
         for device_id, segments in self._segments_by_device.items():
             data = []
+            device = self._ledfx.devices.get(device_id)
+
             if self._calibration:
                 # set data to black for full length of led strip allow other segments to overwrite
-                device = self._ledfx.devices.get_device(device_id)
-                data.append(([0.0, 0.0, 0.0], 0, device.pixel_count - 1))
+                data.append((np.array([0.0, 0.0, 0.0], dtype=float), 0, device.pixel_count - 1))
+
             for (
                 start,
                 stop,
