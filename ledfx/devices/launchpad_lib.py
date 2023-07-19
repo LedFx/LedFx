@@ -185,6 +185,10 @@ class LaunchpadBase:
     layout = {"pixels": 0, "rows": 0}
     segments = []
 
+    lasttime = 0
+    frame = 0
+    fps = 0
+
     def flush(self, data, alpha, diag):
         _LOGGER.error(f"flush not implemented for {self.__class__.__name__}")
 
@@ -673,6 +677,45 @@ class LaunchpadMk2(LaunchpadPro):
     # -- Opens one of the attached Launchpad MIDI devices.
     # -- Uses search string "Mk2", by default.
     # -------------------------------------------------------------------------------------
+
+    # Mk2 programmers manual
+    # https://fael-downloads-prod.focusrite.com/customer/prod/s3fs-public/downloads/Launchpad%20MK2%20Programmers%20Reference%20Manual%20v1.03.pdf
+
+    layout = {"pixels": 81, "rows": 9}
+    segments = [
+        ("TopBar", "mdi:table-row", [[72, 79]], 1),
+        (
+            "RightBar",
+            "mdi:table-column",
+            [
+                [8, 8],
+                [17, 17],
+                [26, 26],
+                [35, 35],
+                [44, 44],
+                [53, 53],
+                [62, 62],
+                [71, 71],
+            ],
+            1,
+        ),
+        (
+            "Matrix",
+            "mdi:grid",
+            [
+                [0, 7],
+                [9, 16],
+                [18, 25],
+                [27, 34],
+                [36, 43],
+                [45, 52],
+                [54, 61],
+                [63, 70],
+            ],
+            8,
+        ),
+    ]
+
     # Overrides "LaunchpadPro" method
     def Open(self, number=0, name="Mk2"):
         return super().Open(number=number, name=name)
@@ -713,6 +756,70 @@ class LaunchpadMk2(LaunchpadPro):
                 return None
         else:
             return None
+
+    def flush(self, data, alpha, diag):
+        if diag:
+            start = timeit.default_timer()
+
+        try:
+            # we will use RawWriteSysEx(self, lstMessage, timeStamp=0)
+            # this function adds the preamble 240 and post amble 247
+            #
+            # There is only one layout implied for LEDs:
+            #
+            # Host => Launchpad MK2:
+            # Hex: F0h 00h 20h 29h 02h 18h 08h <colourspec> [<colourspec> […]] F7h
+            # Dec: 240 0   32  41  2   24  11  <colourspec> [<colourspec> […]] 247
+            #
+            # the <colourspec> is structured as follows:
+            # - LED index (1 byte)  ---- WARNING, each row starts at 11, 21, 31 etc
+            # - Lighting data (1 – 3 bytes)
+            # - 3: RGB colour, 3 bytes for Red, Green and Blue 6 bit (63: Max, 0: Min).
+            # Final top row starts at 104 for control buttons and is only 8 wide
+            #
+            # The message may contain up to 80 <colourspec> entries to light up the entire
+            # Launchpad Mk2 surface.
+
+            # stuff the send buffer with the command preamble
+            send_buffer = [0, 32, 41, 2, 24, 11]
+
+            # prebump the programmer mode index up a row and just before
+            pgm_mode_pos = 10
+            for idx, pixel in enumerate(data):
+                # there is no top right icon, skip it
+                if idx >= 80:
+                    break
+                # check for row bumps
+                if idx % 9 == 0:
+                    pgm_mode_pos += 1
+                # one time correct for top row control buttons index'd at 104
+                if pgm_mode_pos == 91:
+                    pgm_mode_pos = 104
+                send_buffer.extend(
+                    [
+                        pgm_mode_pos,
+                        max(min(int(pixel[0] // 4), 63), 0),
+                        max(min(int(pixel[1] // 4), 63), 0),
+                        max(min(int(pixel[2] // 4), 63), 0),
+                    ]
+                )
+                pgm_mode_pos += 1
+            self.midi.RawWriteSysEx(send_buffer)
+
+        except RuntimeError:
+            _LOGGER.error("Error in Launchpad Mk2 handling")
+
+        if diag:
+            now = timeit.default_timer()
+            nowint = int(now)
+            # if now just rolled over a second boundary
+            if nowint != self.lasttime:
+                self.fps = self.frame
+                self.frame = 0
+            else:
+                self.frame += 1
+            _LOGGER.info(f"Launchpad Mk2 flush {self.fps} : {now - start}")
+            self.lasttime = nowint
 
 
 # ==========================================================================
@@ -1482,6 +1589,9 @@ class LaunchpadLPX(LaunchpadPro):
             return None
 
     def flush(self, data, alpha, diag):
+        if diag:
+            start = timeit.default_timer()
+
         try:
             # we will use RawWriteSysEx(self, lstMessage, timeStamp=0)
             # this function adds the preamble 240 and post amble 247
@@ -1521,8 +1631,6 @@ class LaunchpadLPX(LaunchpadPro):
             # example of send RED pixel at row 3 pixel 6
             # send_buffer.extend([3, 35, 127, 0, 0])
 
-            #            start = timeit.default_timer()
-
             # stuff the send buffer with the command preamble
             send_buffer = [0, 32, 41, 2, 12, 3]
 
@@ -1543,11 +1651,21 @@ class LaunchpadLPX(LaunchpadPro):
                 )
                 pgm_mode_pos += 1
             self.midi.RawWriteSysEx(send_buffer)
-            # took = timeit.default_timer() - start
-            # _LOGGER.info(f"Updated Pixels: {took} ")
 
         except RuntimeError:
             _LOGGER.error("Error in LaunchpadLPX handling")
+
+        if diag:
+            now = timeit.default_timer()
+            nowint = int(now)
+            # if now just rolled over a second boundary
+            if nowint != self.lasttime:
+                self.fps = self.frame
+                self.frame = 0
+            else:
+                self.frame += 1
+            _LOGGER.info(f"Launchpad X flush {self.fps} : {now - start}")
+            self.lasttime = nowint
 
 
 # ==========================================================================
@@ -1975,10 +2093,8 @@ class LaunchpadS(LaunchpadPro):
                   71, 62, 53, 44, 35, 26, 17, 8,
                   72, 73, 74, 75, 76, 77, 78, 79]
     # fmt: on
+
     buffer0 = True
-    lasttime = 0
-    frame = 0
-    fps = 0
 
     def Open(self, number=0, name="Launchpad S"):
         retval = super().Open(number=number, name=name)
