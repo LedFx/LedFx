@@ -18,8 +18,6 @@ DEFAULT_RATE = 1.0 / 10.0
 
 @Effect.no_registration
 class TemporalEffect(Effect):
-    _thread_active = False
-    _thread = None
 
     CONFIG_SCHEMA = vol.Schema(
         {
@@ -30,6 +28,11 @@ class TemporalEffect(Effect):
             ): vol.All(vol.Coerce(float), vol.Range(min=0.1, max=10)),
         }
     )
+
+    def __init__(self, ledfx, config):
+        super().__init__(ledfx, config)
+        self._thread_active = False
+        self._thread = None
 
     def thread_function(self):
         while self._thread_active:
