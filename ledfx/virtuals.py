@@ -295,9 +295,10 @@ class Virtual:
                 self.clear_transition_effect()
                 self._transition_effect = self._active_effect
         else:
+            # no transition effect to clean up, so clear the active effect now!
+            self.clear_active_effect()
             self.clear_transition_effect()
 
-        self.clear_active_effect()
         self._active_effect = effect
         self._active_effect.activate(self)
         self._ledfx.events.fire_event(
