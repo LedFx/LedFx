@@ -18,7 +18,6 @@ DEFAULT_RATE = 1.0 / 10.0
 
 @Effect.no_registration
 class TemporalEffect(Effect):
-
     CONFIG_SCHEMA = vol.Schema(
         {
             vol.Optional(
