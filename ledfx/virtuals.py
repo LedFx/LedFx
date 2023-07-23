@@ -388,7 +388,7 @@ class Virtual:
     def set_highlight(self, highlight):
         if self._calibration is False:
             return f"Cannot set highlight when {self.name} is not in calibration mode"
-        if highlight < -1 or highlight > ( len(self._segments) - 1):
+        if highlight < -1 or highlight > (len(self._segments) - 1):
             return f"Highlight must be between -1 (off) and {len(self._segments) - 1} inclusive"
         self._highlight = highlight
         return None
@@ -577,10 +577,18 @@ class Virtual:
                     )
                 )
 
-            for index, (start, stop, step, device_start, device_end) in enumerate(segments):
+            for index, (
+                start,
+                stop,
+                step,
+                device_start,
+                device_end,
+            ) in enumerate(segments):
                 if self._calibration:
                     # add data forced to color sequence of RGBCMY
-                    color = np.array(parse_color(next(color_cycle)), dtype=float)
+                    color = np.array(
+                        parse_color(next(color_cycle)), dtype=float
+                    )
                     if self._highlight == index:
                         color = np.array(parse_color("white"), dtype=float)
 
