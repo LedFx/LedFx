@@ -115,12 +115,6 @@ class VirtualsToolsEndpoint(RestEndpoint):
                 return web.json_response(data=response, status=400)
 
             device = data.get("device")
-            if device is None:
-                response = {
-                    "status": "failed",
-                    "reason": "Required attribute for highlight, device was not provided",
-                }
-                return web.json_response(data=response, status=400)
 
             hl_error = virtual.set_highlight(segment, device)
             if hl_error is not None:

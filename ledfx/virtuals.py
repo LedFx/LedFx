@@ -388,8 +388,6 @@ class Virtual:
 
     def set_highlight(self, highlight, device_id):
 
-        device_id = device_id.lower()
-
         if self._calibration is False:
             return f"Cannot set highlight when {self.name} is not in calibration mode"
 
@@ -397,6 +395,7 @@ class Virtual:
             self._hl_segment = -1
             return None
 
+        device_id = device_id.lower()
         device = self._ledfx.devices.get(device_id)
         if device is None:
             return f"Device {device_id} not found"
