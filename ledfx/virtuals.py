@@ -131,7 +131,6 @@ class Virtual:
     _output_thread = None
     _active_effect = None
     _transition_effect = None
-    _calibration = False
 
     if (
         sys.version_info[0] == 3 and sys.version_info[1] >= 11
@@ -147,6 +146,8 @@ class Virtual:
         # in, +ve mean fading out
         self.fade_timer = 0
         self._segments = []
+        self._calibration = False
+        self._highlight = -1
 
         self.frequency_range = FrequencyRange(
             self._config["frequency_min"], self._config["frequency_max"]
@@ -381,6 +382,16 @@ class Virtual:
 
     def set_calibration(self, calibration):
         self._calibration = calibration
+        if calibration is False:
+            self._highlight = -1
+
+    def set_highlight(self, highlight):
+        if self._calibration is False:
+            return f"Cannot set highlight when {self.name} is not in calibration mode"
+        if highlight < -1 or highlight > ( len(self._segments) - 1):
+            return f"Highlight must be between -1 (off) and {len(self._segments) - 1} inclusive"
+        self._highlight = highlight
+        return None
 
     @property
     def active_effect(self):
@@ -566,18 +577,13 @@ class Virtual:
                     )
                 )
 
-            for (
-                start,
-                stop,
-                step,
-                device_start,
-                device_end,
-            ) in segments:
+            for index, (start, stop, step, device_start, device_end) in enumerate(segments):
                 if self._calibration:
                     # add data forced to color sequence of RGBCMY
-                    color = np.array(
-                        parse_color(next(color_cycle)), dtype=float
-                    )
+                    color = np.array(parse_color(next(color_cycle)), dtype=float)
+                    if self._highlight == index:
+                        color = np.array(parse_color("white"), dtype=float)
+
                     data.append((color, device_start, device_end))
                 else:
                     if self._config["mapping"] == "span":

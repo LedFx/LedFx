@@ -498,7 +498,7 @@ Extensible support for general tools towards a specified virtual
 
 .. rubric:: PUT
 
-Supports tool instances of force_color and calibration, others may be added in the future
+Supports tool instances of force_color, calibration and highlight, others may be added in the future
 
 **force_color**
 
@@ -564,6 +564,56 @@ returns
         "tool": "calibration"
     }
 
+**highlight**
+
+Highlight a segment of a virtual with white, use for editing of virtual segmentations in calibration mode
+Highlight the last edited segment
+Cleared to -1 on setting calibration mode of a virtual to off
+Segment must be between 0 and number of segments - 1 inclusive
+Virtual must be in calibration mode
+
+.. code-block:: json
+
+    {
+      "tool": "highlight",
+      "segment": 3
+    }
+
+returns
+
+.. code-block:: json
+
+    {
+        "status": "success",
+        "tool": "highlight"
+    }
+
+If virutal is not in calibraiton mode
+
+.. code-block:: json
+
+    {
+        "status": "failed",
+        "reason": "Cannot set highlight when WideBoy is not in calibration mode"
+    }
+
+If highlight is out of range, for current segment count on virtual returns
+
+.. code-block:: json
+
+    {
+        "status": "failed",
+        "reason": "Highlight must be between -1 (off) and 20 inclusive"
+    }
+
+If highlight is not an integer
+
+.. code-block:: json
+
+    {
+        "status": "failed",
+        "reason": "segment must be an integer"
+    }
 
 /api/effects/<effect_id>/presets
 ===================================

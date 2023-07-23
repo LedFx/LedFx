@@ -36,7 +36,7 @@ class VirtualsToolsEndpoint(RestEndpoint):
 
     async def put(self, virtual_id, request) -> web.Response:
         """Extensible tools support"""
-        tools = ["force_color", "calibration"]
+        tools = ["force_color", "calibration", "highlight"]
 
         virtual = self._ledfx.virtuals.get(virtual_id)
         if virtual is None:
@@ -92,6 +92,33 @@ class VirtualsToolsEndpoint(RestEndpoint):
                 response = {
                     "status": "failed",
                     "reason": "calibration mode:on or mode:off expected",
+                }
+                return web.json_response(data=response, status=400)
+
+        if tool == "highlight":
+            segment = data.get("segment")
+            if segment is None:
+                response = {
+                    "status": "failed",
+                    "reason": "Required attribute for highlight, segment was not provided",
+                }
+                return web.json_response(data=response, status=400)
+
+            # test if segment is an integer
+            try:
+                segment = int(segment)
+            except ValueError:
+                response = {
+                    "status": "failed",
+                    "reason": "segment must be an integer",
+                }
+                return web.json_response(data=response, status=400)
+
+            hl_error = virtual.set_highlight(segment)
+            if hl_error is not None:
+                response = {
+                    "status": "failed",
+                    "reason": hl_error,
                 }
                 return web.json_response(data=response, status=400)
 
