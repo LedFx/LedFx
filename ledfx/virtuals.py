@@ -147,7 +147,8 @@ class Virtual:
         self.fade_timer = 0
         self._segments = []
         self._calibration = False
-        self._highlight = -1
+        self._hl_segment = -1
+        self._hl_device = None
 
         self.frequency_range = FrequencyRange(
             self._config["frequency_min"], self._config["frequency_max"]
@@ -383,14 +384,29 @@ class Virtual:
     def set_calibration(self, calibration):
         self._calibration = calibration
         if calibration is False:
-            self._highlight = -1
+            self._hl_segment = -1
 
-    def set_highlight(self, highlight):
+    def set_highlight(self, highlight, device_id):
+
+        device_id = device_id.lower()
+
         if self._calibration is False:
             return f"Cannot set highlight when {self.name} is not in calibration mode"
-        if highlight < -1 or highlight > (len(self._segments) - 1):
-            return f"Highlight must be between -1 (off) and {len(self._segments) - 1} inclusive"
-        self._highlight = highlight
+
+        if highlight == -1:
+            self._hl_segment = -1
+            return None
+
+        device = self._ledfx.devices.get(device_id)
+        if device is None:
+            return f"Device {device_id} not found"
+
+        seg_count = len(self._segments_by_device[device_id])
+        if highlight < 0 or highlight > seg_count - 1:
+            return f"Highlight must be between -1 and {seg_count -1} inclusive"
+
+        self._hl_device = device_id
+        self._hl_segment = highlight
         return None
 
     @property
@@ -556,12 +572,12 @@ class Virtual:
         """
         Flushes the provided data to the devices.
         """
-        # _LOGGER.info(f"Virtual {self.id}: Flushing frame")
 
         if pixels is None:
             pixels = self.assembled_frame
 
         color_cycle = itertools.cycle(color_list)
+        hl_segment = 0
 
         for device_id, segments in self._segments_by_device.items():
             data = []
@@ -577,36 +593,47 @@ class Virtual:
                     )
                 )
 
-            for index, (
-                start,
-                stop,
-                step,
-                device_start,
-                device_end,
-            ) in enumerate(segments):
-                if self._calibration:
+                for index, (
+                        start,
+                        stop,
+                        step,
+                        device_start,
+                        device_end,
+                ) in enumerate(segments):
                     # add data forced to color sequence of RGBCMY
                     color = np.array(
                         parse_color(next(color_cycle)), dtype=float
                     )
-                    if self._highlight == index:
+                    if self._hl_segment == index and device_id == self._hl_device:
                         color = np.array(parse_color("white"), dtype=float)
-
                     data.append((color, device_start, device_end))
-                else:
-                    if self._config["mapping"] == "span":
-                        data.append(
-                            (pixels[start:stop:step], device_start, device_end)
+            elif self._config["mapping"] == "span":
+                for (
+                    start,
+                    stop,
+                    step,
+                    device_start,
+                    device_end,
+                ) in segments:
+                    data.append(
+                        (pixels[start:stop:step], device_start, device_end)
+                    )
+            elif self._config["mapping"] == "copy":
+                for (
+                        start,
+                        stop,
+                        step,
+                        device_start,
+                        device_end,
+                ) in segments:
+                    target_len = device_end - device_start + 1
+                    data.append(
+                        (
+                            interpolate_pixels(pixels, target_len)[::step],
+                            device_start,
+                            device_end,
                         )
-                    elif self._config["mapping"] == "copy":
-                        target_len = device_end - device_start + 1
-                        data.append(
-                            (
-                                interpolate_pixels(pixels, target_len)[::step],
-                                device_start,
-                                device_end,
-                            )
-                        )
+                    )
 
             if device is None:
                 _LOGGER.warning(
