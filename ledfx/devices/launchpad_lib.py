@@ -197,7 +197,9 @@ class LaunchpadBase:
 
     def flush(self, data, alpha, diag):
         if self.do_once:
-            _LOGGER.error(f"flush not implemented for {self.__class__.__name__}")
+            _LOGGER.error(
+                f"flush not implemented for {self.__class__.__name__}"
+            )
             self.do_once = False
 
     def __del__(self):

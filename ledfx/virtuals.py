@@ -387,7 +387,6 @@ class Virtual:
             self._hl_segment = -1
 
     def set_highlight(self, highlight, device_id):
-
         device_id = device_id.lower()
 
         if self._calibration is False:
@@ -594,17 +593,20 @@ class Virtual:
                 )
 
                 for index, (
-                        start,
-                        stop,
-                        step,
-                        device_start,
-                        device_end,
+                    start,
+                    stop,
+                    step,
+                    device_start,
+                    device_end,
                 ) in enumerate(segments):
                     # add data forced to color sequence of RGBCMY
                     color = np.array(
                         parse_color(next(color_cycle)), dtype=float
                     )
-                    if self._hl_segment == index and device_id == self._hl_device:
+                    if (
+                        self._hl_segment == index
+                        and device_id == self._hl_device
+                    ):
                         color = np.array(parse_color("white"), dtype=float)
                     data.append((color, device_start, device_end))
             elif self._config["mapping"] == "span":
@@ -620,11 +622,11 @@ class Virtual:
                     )
             elif self._config["mapping"] == "copy":
                 for (
-                        start,
-                        stop,
-                        step,
-                        device_start,
-                        device_end,
+                    start,
+                    stop,
+                    step,
+                    device_start,
+                    device_end,
                 ) in segments:
                     target_len = device_end - device_start + 1
                     data.append(
