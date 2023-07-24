@@ -96,27 +96,24 @@ class VirtualsToolsEndpoint(RestEndpoint):
                 return web.json_response(data=response, status=400)
 
         if tool == "highlight":
-            segment = data.get("segment")
-            if segment is None:
-                response = {
-                    "status": "failed",
-                    "reason": "Required attribute for highlight, segment was not provided",
-                }
-                return web.json_response(data=response, status=400)
+            state = data.get("state", True)
+            device = data.get("device")
+            start = data.get("start")
+            end = data.get("stop")
+            flip = data.get("flip", False)
 
-            # test if segment is an integer
+            # test if start and end are integers
             try:
-                segment = int(segment)
+                start = int(start)
+                end = int(end)
             except ValueError:
                 response = {
                     "status": "failed",
-                    "reason": "segment must be an integer",
+                    "reason": "start and end must be integers",
                 }
                 return web.json_response(data=response, status=400)
 
-            device = data.get("device")
-
-            hl_error = virtual.set_highlight(segment, device)
+            hl_error = virtual.set_highlight(state, device, start, end, flip)
             if hl_error is not None:
                 response = {
                     "status": "failed",

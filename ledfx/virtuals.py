@@ -147,8 +147,11 @@ class Virtual:
         self.fade_timer = 0
         self._segments = []
         self._calibration = False
-        self._hl_segment = -1
+        self._hl_state = False
         self._hl_device = None
+        self._hl_start = 0
+        self._hl_end = 0
+        self._hl_flip = False
 
         self.frequency_range = FrequencyRange(
             self._config["frequency_min"], self._config["frequency_max"]
@@ -386,13 +389,13 @@ class Virtual:
         if calibration is False:
             self._hl_segment = -1
 
-    def set_highlight(self, highlight, device_id):
+    def set_highlight(self, state, device_id, start, end, flip):
 
         if self._calibration is False:
             return f"Cannot set highlight when {self.name} is not in calibration mode"
 
-        if highlight == -1:
-            self._hl_segment = -1
+        self._hl_state = state
+        if not state:
             return None
 
         device_id = device_id.lower()
@@ -400,12 +403,13 @@ class Virtual:
         if device is None:
             return f"Device {device_id} not found"
 
-        seg_count = len(self._segments_by_device[device_id])
-        if highlight < 0 or highlight > seg_count - 1:
-            return f"Highlight must be between -1 and {seg_count -1} inclusive"
+        if start > device.pixel_count - 1 or end > device.pixel_count - 1:
+            return f"start and end must be less that {device.pixel_count}"
 
         self._hl_device = device_id
-        self._hl_segment = highlight
+        self._hl_start = start
+        self._hl_end = end
+        self._hl_flip = flip
         return None
 
     @property
@@ -592,20 +596,22 @@ class Virtual:
                     )
                 )
 
-                for index, (
-                        start,
-                        stop,
-                        step,
-                        device_start,
-                        device_end,
-                ) in enumerate(segments):
+                for (
+                    start,
+                    stop,
+                    step,
+                    device_start,
+                    device_end,
+                ) in segments:
                     # add data forced to color sequence of RGBCMY
                     color = np.array(
                         parse_color(next(color_cycle)), dtype=float
                     )
-                    if self._hl_segment == index and device_id == self._hl_device:
-                        color = np.array(parse_color("white"), dtype=float)
+
                     data.append((color, device_start, device_end))
+                if self._hl_state and device_id == self._hl_device:
+                     color = np.array(parse_color("white"), dtype=float)
+                     data.append((color, self._hl_start, self._hl_end))
             elif self._config["mapping"] == "span":
                 for (
                     start,
