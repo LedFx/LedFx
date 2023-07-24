@@ -98,8 +98,8 @@ class VirtualsToolsEndpoint(RestEndpoint):
         if tool == "highlight":
             state = data.get("state", True)
             device = data.get("device")
-            start = data.get("start")
-            end = data.get("stop")
+            start = data.get("start", -1)
+            end = data.get("stop", -1)
             flip = data.get("flip", False)
 
             # test if start and end are integers
