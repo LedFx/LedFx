@@ -390,7 +390,6 @@ class Virtual:
             self._hl_segment = -1
 
     def set_highlight(self, state, device_id, start, end, flip):
-
         if self._calibration is False:
             return f"Cannot set highlight when {self.name} is not in calibration mode"
 
@@ -610,8 +609,8 @@ class Virtual:
 
                     data.append((color, device_start, device_end))
                 if self._hl_state and device_id == self._hl_device:
-                     color = np.array(parse_color("white"), dtype=float)
-                     data.append((color, self._hl_start, self._hl_end))
+                    color = np.array(parse_color("white"), dtype=float)
+                    data.append((color, self._hl_start, self._hl_end))
             elif self._config["mapping"] == "span":
                 for (
                     start,
@@ -625,11 +624,11 @@ class Virtual:
                     )
             elif self._config["mapping"] == "copy":
                 for (
-                        start,
-                        stop,
-                        step,
-                        device_start,
-                        device_end,
+                    start,
+                    stop,
+                    step,
+                    device_start,
+                    device_end,
                 ) in segments:
                     target_len = device_end - device_start + 1
                     data.append(
