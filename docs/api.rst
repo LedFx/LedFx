@@ -530,12 +530,11 @@ returns
 
 **calibration**
 
-Force virtual into calibration mode.
-All segments will be switched to solid color rotation of RGBCMY on the final devices
-Device backgrounds will be set to black
-Changes to virtual segments in edit virtual will be displayed on browser second tab if open on devices view and physical devices live
-
-Setting is not persistant. Shutting down ledfx while in calibration mode will leave virtual in normal effect settings in next cycle
+| Force virtual into calibration mode
+| All segments will be switched to solid color rotation of RGBCMY on the final devices
+| Device backgrounds will be set to black
+| Changes to virtual segments in edit virtual will be displayed on browser second tab if open on devices view and physical devices live
+| Setting is not persistant. Shutting down ledfx while in calibration mode will leave virtual in normal effect settings in next cycle
 
 Enter calibration mode with
 
@@ -566,17 +565,36 @@ returns
 
 **highlight**
 
-Highlight a segment of a virtual with white, use for editing of virtual segmentations in calibration mode
-Highlight the last edited segment
-Cleared to -1 on setting calibration mode of a virtual to off
-Segment must be between 0 and number of segments - 1 inclusive
-Virtual must be in calibration mode
+| Highlight a segment of a virtual with white, use for editing of virtual segmentations in calibration mode
+| Highlight the last edited segment, or last reordered segment
+
+| Cleared to -1 on setting calibration mode of a virtual to off
+| Segment must be between 0 and number of segments - 1 inclusive
+| Virtual must be in calibration mode
+
+| state: defaults to true, explicity send False to turn off highlight
+| device: device id of the device which the segment is to be highlighted on, forced to lower case
+| start: index of led start on device for highlight
+| stop: index of led stop on device for highlight
+| flip: render order inversion, default to false
 
 .. code-block:: json
 
     {
       "tool": "highlight",
-      "segment": 3
+      "device": "falcon1",
+      "start": 2019,
+      "stop": 2451,
+      "flip": true
+    }
+
+Disable highlight
+
+.. code-block:: json
+
+    {
+      "tool": "highlight",
+      "state": false
     }
 
 returns
@@ -586,33 +604,6 @@ returns
     {
         "status": "success",
         "tool": "highlight"
-    }
-
-If virutal is not in calibraiton mode
-
-.. code-block:: json
-
-    {
-        "status": "failed",
-        "reason": "Cannot set highlight when WideBoy is not in calibration mode"
-    }
-
-If highlight is out of range, for current segment count on virtual returns
-
-.. code-block:: json
-
-    {
-        "status": "failed",
-        "reason": "Highlight must be between -1 (off) and 20 inclusive"
-    }
-
-If highlight is not an integer
-
-.. code-block:: json
-
-    {
-        "status": "failed",
-        "reason": "segment must be an integer"
     }
 
 /api/effects/<effect_id>/presets

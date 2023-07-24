@@ -403,7 +403,7 @@ class Virtual:
             return f"Device {device_id} not found"
 
         if start > device.pixel_count - 1 or end > device.pixel_count - 1:
-            return f"start and end must be less that {device.pixel_count}"
+            return f"start and end must be less than {device.pixel_count}"
 
         self._hl_device = device_id
         self._hl_start = start
