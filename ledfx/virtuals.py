@@ -621,7 +621,11 @@ class Virtual:
                             device_end,
                         ) in segments:
                             data.append(
-                                (pixels[start:stop:step], device_start, device_end)
+                                (
+                                    pixels[start:stop:step],
+                                    device_start,
+                                    device_end,
+                                )
                             )
                     elif self._config["mapping"] == "copy":
                         for (
@@ -634,7 +638,9 @@ class Virtual:
                             target_len = device_end - device_start + 1
                             data.append(
                                 (
-                                    interpolate_pixels(pixels, target_len)[::step],
+                                    interpolate_pixels(pixels, target_len)[
+                                        ::step
+                                    ],
                                     device_start,
                                     device_end,
                                 )
