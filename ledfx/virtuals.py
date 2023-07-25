@@ -584,69 +584,62 @@ class Virtual:
         for device_id, segments in self._segments_by_device.items():
             data = []
             device = self._ledfx.devices.get(device_id)
+            if device is not None:
+                if device.is_active():
+                    if self._calibration:
+                        # set data to black for full length of led strip allow other segments to overwrite
+                        data.append(
+                            (
+                                np.array([0.0, 0.0, 0.0], dtype=float),
+                                0,
+                                device.pixel_count - 1,
+                            )
+                        )
 
-            if self._calibration:
-                # set data to black for full length of led strip allow other segments to overwrite
-                data.append(
-                    (
-                        np.array([0.0, 0.0, 0.0], dtype=float),
-                        0,
-                        device.pixel_count - 1,
-                    )
-                )
-
-                for (
-                    start,
-                    stop,
-                    step,
-                    device_start,
-                    device_end,
-                ) in segments:
-                    # add data forced to color sequence of RGBCMY
-                    color = np.array(
-                        parse_color(next(color_cycle)), dtype=float
-                    )
-
-                    data.append((color, device_start, device_end))
-                if self._hl_state and device_id == self._hl_device:
-                    color = np.array(parse_color("white"), dtype=float)
-                    data.append((color, self._hl_start, self._hl_end))
-            elif self._config["mapping"] == "span":
-                for (
-                    start,
-                    stop,
-                    step,
-                    device_start,
-                    device_end,
-                ) in segments:
-                    data.append(
-                        (pixels[start:stop:step], device_start, device_end)
-                    )
-            elif self._config["mapping"] == "copy":
-                for (
-                    start,
-                    stop,
-                    step,
-                    device_start,
-                    device_end,
-                ) in segments:
-                    target_len = device_end - device_start + 1
-                    data.append(
-                        (
-                            interpolate_pixels(pixels, target_len)[::step],
+                        for (
+                            start,
+                            stop,
+                            step,
                             device_start,
                             device_end,
-                        )
-                    )
+                        ) in segments:
+                            # add data forced to color sequence of RGBCMY
+                            color = np.array(
+                                parse_color(next(color_cycle)), dtype=float
+                            )
 
-            if device is None:
-                _LOGGER.warning(
-                    f"Virtual {self.id}: No active devices - Deactivating."
-                )
-                self.deactivate()
-            elif device.is_active():
-                device.update_pixels(self.id, data)
-        # self.interpolate.cache_clear()
+                            data.append((color, device_start, device_end))
+                        if self._hl_state and device_id == self._hl_device:
+                            color = np.array(parse_color("white"), dtype=float)
+                            data.append((color, self._hl_start, self._hl_end))
+                    elif self._config["mapping"] == "span":
+                        for (
+                            start,
+                            stop,
+                            step,
+                            device_start,
+                            device_end,
+                        ) in segments:
+                            data.append(
+                                (pixels[start:stop:step], device_start, device_end)
+                            )
+                    elif self._config["mapping"] == "copy":
+                        for (
+                            start,
+                            stop,
+                            step,
+                            device_start,
+                            device_end,
+                        ) in segments:
+                            target_len = device_end - device_start + 1
+                            data.append(
+                                (
+                                    interpolate_pixels(pixels, target_len)[::step],
+                                    device_start,
+                                    device_end,
+                                )
+                            )
+                    device.update_pixels(self.id, data)
 
     @property
     def name(self):

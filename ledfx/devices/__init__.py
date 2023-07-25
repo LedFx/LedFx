@@ -137,7 +137,6 @@ class Device(BaseRegistry):
             )
             return
 
-        #        count = 0
         for pixels, start, end in data:
             # protect against an empty race condition
             if pixels.shape[0] != 0:
@@ -145,10 +144,6 @@ class Device(BaseRegistry):
                     self._pixels[start : end + 1]
                 ) == np.shape(pixels):
                     self._pixels[start : end + 1] = pixels
-            #     else:
-            #         _LOGGER.info(f"{virtual_id} {count} shape: {np.shape(self._pixels[start: end + 1])} {np.shape(pixels)}")
-            #         _LOGGER.error("THIS IS A REALLY BAD THINGS!!!********************************************")
-            # count+= 1
 
         if self.priority_virtual:
             if virtual_id == self.priority_virtual.id:
