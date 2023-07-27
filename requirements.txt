@@ -29,5 +29,5 @@
     yappi~=1.4
     zeroconf~=0.39.4
     flux-led>=0.28.35
-    python-mbedtls~=2.6.1
+    python-mbedtls~=2.7.1
 

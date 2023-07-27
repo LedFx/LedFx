@@ -52,7 +52,7 @@ INSTALL_REQUIRES = [
     # We can install this on all linux devices, it just won't work for anything other than a Pi
     'rpi-ws281x>=4.3.0; platform_system == "Linux"',
     "flux-led>=0.28.35",
-    "python-mbedtls~=2.6.1",
+    "python-mbedtls~=2.7.1",
 ]
 
 
