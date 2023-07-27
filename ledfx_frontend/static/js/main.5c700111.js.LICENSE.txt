@@ -1,0 +1,350 @@
+/*!
+  Copyright (c) 2018 Jed Watson.
+  Licensed under the MIT License (MIT), see
+  http://jedwatson.github.io/classnames
+*/
+
+/*!
+ * @kurkle/color v0.3.2
+ * https://github.com/kurkle/color#readme
+ * (c) 2023 Jukka Kurkela
+ * Released under the MIT License
+ */
+
+/*!
+ * Chart.js v4.3.0
+ * https://www.chartjs.org
+ * (c) 2023 Chart.js Contributors
+ * Released under the MIT License
+ */
+
+/*!
+ * cookie
+ * Copyright(c) 2012-2014 Roman Shtylman
+ * Copyright(c) 2015 Douglas Christopher Wilson
+ * MIT Licensed
+ */
+
+/*! *****************************************************************************
+Copyright (c) Microsoft Corporation.
+
+Permission to use, copy, modify, and/or distribute this software for any
+purpose with or without fee is hereby granted.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
+REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
+AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
+LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
+OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+PERFORMANCE OF THIS SOFTWARE.
+***************************************************************************** */
+
+/*! regenerator-runtime -- Copyright (c) 2014-present, Facebook, Inc. -- license (MIT): https://github.com/facebook/regenerator/blob/main/LICENSE */
+
+/**
+     * Returns a MIDI note number matching the identifier passed in the form of a string. The
+     * identifier must include the octave number. The identifier also optionally include a sharp (#),
+     * a double sharp (##), a flat (b) or a double flat (bb) symbol. For example, these are all valid
+     * identifiers: C5, G4, D#-1, F0, Gb7, Eb-1, Abb4, B##6, etc.
+     *
+     * When converting note identifiers to numbers, C4 is considered to be middle C (MIDI note number
+     * 60) as per the scientific pitch notation standard.
+     *
+     * The resulting note number can be offset by using the `octaveOffset` parameter.
+     *
+     * @param identifier {string} The identifier in the form of a letter, followed by an optional "#",
+     * "##", "b" or "bb" followed by the octave number. For exemple: C5, G4, D#-1, F0, Gb7, Eb-1,
+     * Abb4, B##6, etc.
+     *
+     * @param {number} [octaveOffset=0] A integer to offset the octave by.
+     *
+     * @returns {number} The MIDI note number (an integer between 0 and 127).
+     *
+     * @throws RangeError Invalid 'octaveOffset' value
+     *
+     * @throws TypeError Invalid note identifier
+     *
+     * @license Apache-2.0
+     * @since 3.0.0
+     * @static
+     */
+
+/**
+     * Sends a MIDI **control change** message to the channel at the scheduled time. The control
+     * change message to send can be specified numerically (`0` to `127`) or by using one of the
+     * following common names:
+     *
+     * | Number | Name                          |
+     * |--------|-------------------------------|
+     * | 0      |`bankselectcoarse`             |
+     * | 1      |`modulationwheelcoarse`        |
+     * | 2      |`breathcontrollercoarse`       |
+     * | 4      |`footcontrollercoarse`         |
+     * | 5      |`portamentotimecoarse`         |
+     * | 6      |`dataentrycoarse`              |
+     * | 7      |`volumecoarse`                 |
+     * | 8      |`balancecoarse`                |
+     * | 10     |`pancoarse`                    |
+     * | 11     |`expressioncoarse`             |
+     * | 12     |`effectcontrol1coarse`         |
+     * | 13     |`effectcontrol2coarse`         |
+     * | 18     |`generalpurposeslider3`        |
+     * | 19     |`generalpurposeslider4`        |
+     * | 32     |`bankselectfine`               |
+     * | 33     |`modulationwheelfine`          |
+     * | 34     |`breathcontrollerfine`         |
+     * | 36     |`footcontrollerfine`           |
+     * | 37     |`portamentotimefine`           |
+     * | 38     |`dataentryfine`                |
+     * | 39     |`volumefine`                   |
+     * | 40     |`balancefine`                  |
+     * | 42     |`panfine`                      |
+     * | 43     |`expressionfine`               |
+     * | 44     |`effectcontrol1fine`           |
+     * | 45     |`effectcontrol2fine`           |
+     * | 64     |`holdpedal`                    |
+     * | 65     |`portamento`                   |
+     * | 66     |`sustenutopedal`               |
+     * | 67     |`softpedal`                    |
+     * | 68     |`legatopedal`                  |
+     * | 69     |`hold2pedal`                   |
+     * | 70     |`soundvariation`               |
+     * | 71     |`resonance`                    |
+     * | 72     |`soundreleasetime`             |
+     * | 73     |`soundattacktime`              |
+     * | 74     |`brightness`                   |
+     * | 75     |`soundcontrol6`                |
+     * | 76     |`soundcontrol7`                |
+     * | 77     |`soundcontrol8`                |
+     * | 78     |`soundcontrol9`                |
+     * | 79     |`soundcontrol10`               |
+     * | 80     |`generalpurposebutton1`        |
+     * | 81     |`generalpurposebutton2`        |
+     * | 82     |`generalpurposebutton3`        |
+     * | 83     |`generalpurposebutton4`        |
+     * | 91     |`reverblevel`                  |
+     * | 92     |`tremololevel`                 |
+     * | 93     |`choruslevel`                  |
+     * | 94     |`celestelevel`                 |
+     * | 95     |`phaserlevel`                  |
+     * | 96     |`dataincrement`                |
+     * | 97     |`datadecrement`                |
+     * | 98     |`nonregisteredparametercoarse` |
+     * | 99     |`nonregisteredparameterfine`   |
+     * | 100    |`registeredparametercoarse`    |
+     * | 101    |`registeredparameterfine`      |
+     * | 120    |`allsoundoff`                  |
+     * | 121    |`resetallcontrollers`          |
+     * | 122    |`localcontrol`                 |
+     * | 123    |`allnotesoff`                  |
+     * | 124    |`omnimodeoff`                  |
+     * | 125    |`omnimodeon`                   |
+     * | 126    |`monomodeon`                   |
+     * | 127    |`polymodeon`                   |
+     *
+     * As you can see above, not all control change message have a matching name. This does not mean
+     * you cannot use the others. It simply means you will need to use their number
+     * (`0` to `127`) instead of their name. While you can still use them, numbers `120` to `127` are
+     * usually reserved for *channel mode* messages. See
+     * [`sendChannelMode()`]{@link OutputChannel#sendChannelMode} method for more info.
+     *
+     * To view a detailed list of all available **control change** messages, please consult "Table 3 -
+     * Control Change Messages" from the [MIDI Messages](
+     * https://www.midi.org/specifications/item/table-3-control-change-messages-data-bytes-2)
+     * specification.
+     *
+     * **Note**: messages #0-31 (MSB) are paired with messages #32-63 (LSB). For example, message #1
+     * (`modulationwheelcoarse`) can be accompanied by a second control change message for
+     * `modulationwheelfine` to achieve a greater level of precision. if you want to specify both MSB
+     * and LSB for messages between `0` and `31`, you can do so by passing a 2-value array as the
+     * second parameter.
+     *
+     * @param {number|string} controller The MIDI controller name or number (`0` - `127`).
+     *
+     * @param {number|number[]} value The value to send (0-127). You can also use a two-position array
+     * for controllers 0 to 31. In this scenario, the first value will be sent as usual and the second
+     * value will be sent to the matching LSB controller (which is obtained by adding 32 to the first
+     * controller)
+     *
+     * @param {object} [options={}]
+     *
+     * @param {number|string} [options.time=(now)] If `time` is a string prefixed with `"+"` and
+     * followed by a number, the message will be delayed by that many milliseconds. If the value is a
+     * positive number
+     * ([`DOMHighResTimeStamp`]{@link https://developer.mozilla.org/docs/Web/API/DOMHighResTimeStamp}),
+     * the operation will be scheduled for that time. The current time can be retrieved with
+     * [`WebMidi.time`]{@link WebMidi#time}. If `options.time` is omitted, or in the past, the
+     * operation will be carried out as soon as possible.
+     *
+     * @throws {RangeError} Controller numbers must be between 0 and 127.
+     * @throws {RangeError} Invalid controller name.
+     * @throws {TypeError} The value array must have a length of 2.
+     *
+     * @returns {OutputChannel} Returns the `OutputChannel` object so methods can be chained.
+     *
+     * @license Apache-2.0
+     * @since 3.0.0
+     */
+
+/**
+     * Sends a MIDI message on the MIDI output port. If no time is specified, the message will be
+     * sent immediately. The message should be an array of 8 bit unsigned integers (0-225), a
+     * [`Uint8Array`]{@link https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array}
+     * object or a [`Message`](Message) object.
+     *
+     * It is usually not necessary to use this method directly as you can use one of the simpler
+     * helper methods such as [`playNote()`](#playNote), [`stopNote()`](#stopNote),
+     * [`sendControlChange()`](#sendControlChange), etc.
+     *
+     * Details on the format of MIDI messages are available in the summary of
+     * [MIDI messages]{@link https://www.midi.org/specifications-old/item/table-1-summary-of-midi-message}
+     * from the MIDI Manufacturers Association.
+     *
+     * @param message {number[]|Uint8Array|Message} An array of 8bit unsigned integers, a `Uint8Array`
+     * object (not available in Node.js) containing the message bytes or a `Message` object.
+     *
+     * @param {object} [options={}]
+     *
+     * @param {number|string} [options.time=(now)] If `time` is a string prefixed with `"+"` and
+     * followed by a number, the message will be delayed by that many milliseconds. If the value is a
+     * positive number
+     * ([`DOMHighResTimeStamp`]{@link https://developer.mozilla.org/docs/Web/API/DOMHighResTimeStamp}),
+     * the operation will be scheduled for that time. The current time can be retrieved with
+     * [`WebMidi.time`]{@link WebMidi#time}. If `options.time` is omitted, or in the past, the
+     * operation will be carried out as soon as possible.
+     *
+     * @throws {RangeError} The first byte (status) must be an integer between 128 and 255.
+     *
+     * @returns {Output} Returns the `Output` object so methods can be chained.
+     *
+     * @license Apache-2.0
+     */
+
+/**
+ * @license React
+ * react-dom.production.min.js
+ *
+ * Copyright (c) Facebook, Inc. and its affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+/**
+ * @license React
+ * react-is.production.min.js
+ *
+ * Copyright (c) Facebook, Inc. and its affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+/**
+ * @license React
+ * react-jsx-runtime.production.min.js
+ *
+ * Copyright (c) Facebook, Inc. and its affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+/**
+ * @license React
+ * react.production.min.js
+ *
+ * Copyright (c) Facebook, Inc. and its affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+/**
+ * @license React
+ * scheduler.production.min.js
+ *
+ * Copyright (c) Facebook, Inc. and its affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+/**
+ * @license React
+ * use-sync-external-store-shim.production.min.js
+ *
+ * Copyright (c) Facebook, Inc. and its affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+/**
+ * @license React
+ * use-sync-external-store-shim/with-selector.production.min.js
+ *
+ * Copyright (c) Facebook, Inc. and its affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+/**
+ * @mui/styled-engine v5.13.2
+ *
+ * @license MIT
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+/**
+ * @remix-run/router v1.7.2
+ *
+ * Copyright (c) Remix Software Inc.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE.md file in the root directory of this source tree.
+ *
+ * @license MIT
+ */
+
+/**
+ * A better abstraction over CSS.
+ *
+ * @copyright Oleg Isonen (Slobodskoi) / Isonen 2014-present
+ * @website https://github.com/cssinjs/jss
+ * @license MIT
+ */
+
+/**
+ * React Router DOM v6.14.2
+ *
+ * Copyright (c) Remix Software Inc.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE.md file in the root directory of this source tree.
+ *
+ * @license MIT
+ */
+
+/**
+ * React Router v6.14.2
+ *
+ * Copyright (c) Remix Software Inc.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE.md file in the root directory of this source tree.
+ *
+ * @license MIT
+ */
+
+/** @license React v16.13.1
+ * react-is.production.min.js
+ *
+ * Copyright (c) Facebook, Inc. and its affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
