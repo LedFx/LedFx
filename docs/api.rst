@@ -498,7 +498,7 @@ Extensible support for general tools towards a specified virtual
 
 .. rubric:: PUT
 
-Supports tool instances of currently only force_color, others may be added in the future
+Supports tool instances of force_color, calibration and highlight, others may be added in the future
 
 **force_color**
 
@@ -526,6 +526,84 @@ returns
     {
         "status": "success",
         "tool": "force_color"
+    }
+
+**calibration**
+
+| Force virtual into calibration mode
+| All segments will be switched to solid color rotation of RGBCMY on the final devices
+| Device backgrounds will be set to black
+| Changes to virtual segments in edit virtual will be displayed on browser second tab if open on devices view and physical devices live
+| Setting is not persistant. Shutting down ledfx while in calibration mode will leave virtual in normal effect settings in next cycle
+
+Enter calibration mode with
+
+.. code-block:: json
+
+    {
+      "tool": "calibration",
+      "mode": "on"
+    }
+
+Exit calibration mode with
+
+.. code-block:: json
+
+    {
+      "tool": "calibration",
+      "mode": "off"
+    }
+
+returns
+
+.. code-block:: json
+
+    {
+        "status": "success",
+        "tool": "calibration"
+    }
+
+**highlight**
+
+| Highlight a segment of a virtual with white, use for editing of virtual segmentations in calibration mode
+| Highlight the last edited segment, or last reordered segment
+
+| Cleared to -1 on setting calibration mode of a virtual to off
+| Segment must be between 0 and number of segments - 1 inclusive
+| Virtual must be in calibration mode
+
+| state: defaults to true, explicity send False to turn off highlight
+| device: device id of the device which the segment is to be highlighted on, forced to lower case
+| start: index of led start on device for highlight
+| stop: index of led stop on device for highlight
+| flip: render order inversion, default to false
+
+.. code-block:: json
+
+    {
+      "tool": "highlight",
+      "device": "falcon1",
+      "start": 2019,
+      "stop": 2451,
+      "flip": true
+    }
+
+Disable highlight
+
+.. code-block:: json
+
+    {
+      "tool": "highlight",
+      "state": false
+    }
+
+returns
+
+.. code-block:: json
+
+    {
+        "status": "success",
+        "tool": "highlight"
     }
 
 /api/effects/<effect_id>/presets
@@ -625,6 +703,7 @@ Where a "virtuals" key is provided, only the virtuals specified will be saved to
         }
 
 |
+
 .. rubric:: DELETE
 
 Delete a scene

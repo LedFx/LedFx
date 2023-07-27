@@ -184,20 +184,23 @@ class LaunchpadBase:
     # these are defaults that need to be overridden in inheriting classes
     layout = {"pixels": 0, "rows": 0}
     segments = []
-
-    lasttime = 0
-    frame = 0
-    fps = 0
-
-    def flush(self, data, alpha, diag):
-        _LOGGER.error(f"flush not implemented for {self.__class__.__name__}")
-
     # end defaults
 
     def __init__(self):
         self.midi = RtmidiWrap()  # midi interface instance (singleton)
         self.idOut = None
         self.idIn = None
+        self.lasttime = 0
+        self.frame = 0
+        self.fps = 0
+        self.do_once = True
+
+    def flush(self, data, alpha, diag):
+        if self.do_once:
+            _LOGGER.error(
+                f"flush not implemented for {self.__class__.__name__}"
+            )
+            self.do_once = False
 
     def __del__(self):
         self.Close()

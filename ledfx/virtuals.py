@@ -1,3 +1,4 @@
+import itertools
 import logging
 import sys
 import threading
@@ -9,6 +10,7 @@ import numpy as np
 import voluptuous as vol
 import zeroconf
 
+from ledfx.color import parse_color
 from ledfx.effects import DummyEffect
 from ledfx.effects.math import interpolate_pixels
 from ledfx.effects.melbank import (
@@ -32,6 +34,8 @@ from ledfx.transitions import Transitions
 from ledfx.utils import fps_to_sleep_interval
 
 _LOGGER = logging.getLogger(__name__)
+
+color_list = ["red", "green", "blue", "cyan", "magenta", "#ffff00"]
 
 
 class Virtual:
@@ -142,6 +146,12 @@ class Virtual:
         # in, +ve mean fading out
         self.fade_timer = 0
         self._segments = []
+        self._calibration = False
+        self._hl_state = False
+        self._hl_device = None
+        self._hl_start = 0
+        self._hl_end = 0
+        self._hl_flip = False
 
         self.frequency_range = FrequencyRange(
             self._config["frequency_min"], self._config["frequency_max"]
@@ -374,6 +384,33 @@ class Virtual:
             VirtualUpdateEvent(self.id, self.assembled_frame)
         )
 
+    def set_calibration(self, calibration):
+        self._calibration = calibration
+        if calibration is False:
+            self._hl_segment = -1
+
+    def set_highlight(self, state, device_id, start, end, flip):
+        if self._calibration is False:
+            return f"Cannot set highlight when {self.name} is not in calibration mode"
+
+        self._hl_state = state
+        if not state:
+            return None
+
+        device_id = device_id.lower()
+        device = self._ledfx.devices.get(device_id)
+        if device is None:
+            return f"Device {device_id} not found"
+
+        if start > device.pixel_count - 1 or end > device.pixel_count - 1:
+            return f"start and end must be less than {device.pixel_count}"
+
+        self._hl_device = device_id
+        self._hl_start = start
+        self._hl_end = end
+        self._hl_flip = flip
+        return None
+
     @property
     def active_effect(self):
         return self._active_effect
@@ -537,39 +574,78 @@ class Virtual:
         """
         Flushes the provided data to the devices.
         """
+
         if pixels is None:
             pixels = self.assembled_frame
+
+        color_cycle = itertools.cycle(color_list)
+        hl_segment = 0
+
         for device_id, segments in self._segments_by_device.items():
             data = []
-            for (
-                start,
-                stop,
-                step,
-                device_start,
-                device_end,
-            ) in segments:
-                if self._config["mapping"] == "span":
-                    data.append(
-                        (pixels[start:stop:step], device_start, device_end)
-                    )
-                elif self._config["mapping"] == "copy":
-                    target_len = device_end - device_start + 1
-                    data.append(
-                        (
-                            interpolate_pixels(pixels, target_len)[::step],
+            device = self._ledfx.devices.get(device_id)
+            if device is not None:
+                if device.is_active():
+                    if self._calibration:
+                        # set data to black for full length of led strip allow other segments to overwrite
+                        data.append(
+                            (
+                                np.array([0.0, 0.0, 0.0], dtype=float),
+                                0,
+                                device.pixel_count - 1,
+                            )
+                        )
+
+                        for (
+                            start,
+                            stop,
+                            step,
                             device_start,
                             device_end,
-                        )
-                    )
-            device = self._ledfx.devices.get(device_id)
-            if device is None:
-                _LOGGER.warning(
-                    f"Virtual {self.id}: No active devices - Deactivating."
-                )
-                self.deactivate()
-            elif device.is_active():
-                device.update_pixels(self.id, data)
-        # self.interpolate.cache_clear()
+                        ) in segments:
+                            # add data forced to color sequence of RGBCMY
+                            color = np.array(
+                                parse_color(next(color_cycle)), dtype=float
+                            )
+
+                            data.append((color, device_start, device_end))
+                        if self._hl_state and device_id == self._hl_device:
+                            color = np.array(parse_color("white"), dtype=float)
+                            data.append((color, self._hl_start, self._hl_end))
+                    elif self._config["mapping"] == "span":
+                        for (
+                            start,
+                            stop,
+                            step,
+                            device_start,
+                            device_end,
+                        ) in segments:
+                            data.append(
+                                (
+                                    pixels[start:stop:step],
+                                    device_start,
+                                    device_end,
+                                )
+                            )
+                    elif self._config["mapping"] == "copy":
+                        for (
+                            start,
+                            stop,
+                            step,
+                            device_start,
+                            device_end,
+                        ) in segments:
+                            target_len = device_end - device_start + 1
+                            data.append(
+                                (
+                                    interpolate_pixels(pixels, target_len)[
+                                        ::step
+                                    ],
+                                    device_start,
+                                    device_end,
+                                )
+                            )
+                    device.update_pixels(self.id, data)
 
     @property
     def name(self):
