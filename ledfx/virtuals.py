@@ -152,6 +152,7 @@ class Virtual:
         self._hl_start = 0
         self._hl_end = 0
         self._hl_flip = False
+        self.lock = threading.Lock()
 
         self.frequency_range = FrequencyRange(
             self._config["frequency_min"], self._config["frequency_max"]
@@ -230,6 +231,7 @@ class Virtual:
                 delattr(self, prop)
 
     def update_segments(self, segments_config):
+        self.lock.acquire()
         segments_config = [list(item) for item in segments_config]
         _segments = self.SEGMENTS_SCHEMA(segments_config)
 
@@ -267,6 +269,7 @@ class Virtual:
 
             mode = self._config["transition_mode"]
             self.frame_transitions = self.transitions[mode]
+        self.lock.release()
 
     def set_preset(self, preset_info):
         category, effect_id, preset_id = preset_info
@@ -460,6 +463,7 @@ class Virtual:
         """
         Assembles the frame to be flushed.
         """
+        self.lock.acquire()
         # Get and process active effect frame
         self._active_effect._render()
         frame = self._active_effect.get_pixels()
@@ -508,7 +512,7 @@ class Virtual:
 
         np.multiply(frame, self._config["max_brightness"], frame)
         np.multiply(frame, self._ledfx.config["global_brightness"], frame)
-
+        self.lock.release()
         return frame
 
     def activate(self):
