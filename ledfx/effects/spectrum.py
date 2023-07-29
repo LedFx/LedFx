@@ -14,6 +14,12 @@ class SpectrumAudioEffect(AudioReactiveEffect):
         self.out = np.zeros((pixel_count, 3))
         self._prev_y = np.zeros(pixel_count)
 
+        # make sure the b_filter is flushed from prior lifecycles
+        # prevent crashes from segment edit / led count changes
+        if self._b_filter is not None:
+            self._b_filter.value = None
+
+
     def config_updated(self, config):
         # Create all the filters used for the effect
         self._b_filter = self.create_filter(alpha_decay=0.1, alpha_rise=0.5)
