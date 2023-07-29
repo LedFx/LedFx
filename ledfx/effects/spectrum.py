@@ -19,7 +19,6 @@ class SpectrumAudioEffect(AudioReactiveEffect):
         if self._b_filter is not None:
             self._b_filter.value = None
 
-
     def config_updated(self, config):
         # Create all the filters used for the effect
         self._b_filter = self.create_filter(alpha_decay=0.1, alpha_rise=0.5)
