@@ -61,6 +61,11 @@ class EnergyAudioEffect(AudioReactiveEffect):
         self.mids_idx = 0
         self.highs_idx = 0
 
+        # make sure the p_filter is flushed from prior lifecycles
+        # prevent crashes from segment edit / led count changes
+        if self._p_filter is not None:
+            self._p_filter.value = None
+
     def config_updated(self, config):
         # scale decay value between 0.1 and 0.2
         decay_sensitivity = (self._config["sensitivity"] - 0.1) * 0.7
