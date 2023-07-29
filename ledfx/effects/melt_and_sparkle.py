@@ -77,6 +77,7 @@ class MeltSparkle(AudioReactiveEffect, HSVEffect):
         self.dt = 0
 
         self.strobe_overlay = np.zeros(self.pixel_count)
+        self.onsets_queue = queue.Queue()
 
     def deactivate(self):
         empty_queue(self.onsets_queue)
