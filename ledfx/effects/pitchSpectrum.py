@@ -35,6 +35,11 @@ class PitchSpectrumAudioEffect(AudioReactiveEffect, GradientEffect):
         }
     )
 
+    def on_activate(self, pixel_count):
+        # protect from changes to the pixel count during segment edits
+        self.avg_midi = None
+        self.filtered_melbank = None
+
     def config_updated(self, config):
         self.avg_midi = None
         self.filtered_melbank = None
