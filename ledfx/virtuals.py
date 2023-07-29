@@ -232,6 +232,8 @@ class Virtual:
 
     def update_segments(self, segments_config):
         self.lock.acquire()
+        if self._active_effect is not None:
+            self._active_effect.lock.acquire()
         segments_config = [list(item) for item in segments_config]
         _segments = self.SEGMENTS_SCHEMA(segments_config)
 
@@ -269,6 +271,8 @@ class Virtual:
 
             mode = self._config["transition_mode"]
             self.frame_transitions = self.transitions[mode]
+        if self._active_effect is not None:
+            self._active_effect.lock.release()
         self.lock.release()
 
     def set_preset(self, preset_info):
