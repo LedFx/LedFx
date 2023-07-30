@@ -471,51 +471,50 @@ class Virtual:
         # Get and process active effect frame
         self._active_effect._render()
         frame = self._active_effect.get_pixels()
-        if frame is None:
-            return
-        frame[frame > 255] = 255
-        frame[frame < 0] = 0
-        # np.clip(frame, 0, 255, frame)
-
-        if self._config["center_offset"]:
-            frame = np.roll(frame, self._config["center_offset"], axis=0)
-
-        # This part handles blending two effects together
-        if (
-            self._transition_effect is not None
-            and self._transition_effect.is_active
-            and hasattr(self._transition_effect, "pixels")
-        ):
-            # Get and process transition effect frame
-            self._transition_effect._render()
-            transition_frame = self._transition_effect.get_pixels()
-            transition_frame[transition_frame > 255] = 255
-            transition_frame[transition_frame < 0] = 0
+        if frame is not None:
+            frame[frame > 255] = 255
+            frame[frame < 0] = 0
+            # np.clip(frame, 0, 255, frame)
 
             if self._config["center_offset"]:
-                transition_frame = np.roll(
-                    transition_frame,
-                    self._config["center_offset"],
-                    axis=0,
+                frame = np.roll(frame, self._config["center_offset"], axis=0)
+
+            # This part handles blending two effects together
+            if (
+                self._transition_effect is not None
+                and self._transition_effect.is_active
+                and hasattr(self._transition_effect, "pixels")
+            ):
+                # Get and process transition effect frame
+                self._transition_effect._render()
+                transition_frame = self._transition_effect.get_pixels()
+                transition_frame[transition_frame > 255] = 255
+                transition_frame[transition_frame < 0] = 0
+
+                if self._config["center_offset"]:
+                    transition_frame = np.roll(
+                        transition_frame,
+                        self._config["center_offset"],
+                        axis=0,
+                    )
+
+                # Blend both frames together
+                self.transition_frame_counter += 1
+                self.transition_frame_counter = min(
+                    max(self.transition_frame_counter, 0),
+                    self.transition_frame_total,
                 )
+                weight = (
+                    self.transition_frame_counter / self.transition_frame_total
+                )
+                self.frame_transitions(
+                    self.transitions, frame, transition_frame, weight
+                )
+                if self.transition_frame_counter == self.transition_frame_total:
+                    self.clear_transition_effect()
 
-            # Blend both frames together
-            self.transition_frame_counter += 1
-            self.transition_frame_counter = min(
-                max(self.transition_frame_counter, 0),
-                self.transition_frame_total,
-            )
-            weight = (
-                self.transition_frame_counter / self.transition_frame_total
-            )
-            self.frame_transitions(
-                self.transitions, frame, transition_frame, weight
-            )
-            if self.transition_frame_counter == self.transition_frame_total:
-                self.clear_transition_effect()
-
-        np.multiply(frame, self._config["max_brightness"], frame)
-        np.multiply(frame, self._ledfx.config["global_brightness"], frame)
+            np.multiply(frame, self._config["max_brightness"], frame)
+            np.multiply(frame, self._ledfx.config["global_brightness"], frame)
         self.lock.release()
         return frame
 
