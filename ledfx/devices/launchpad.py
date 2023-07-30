@@ -142,13 +142,14 @@ class LaunchpadDevice(MidiDevice):
         _LOGGER.info(f"Launchpad device class: {self.lp.__class__.__name__}")
 
     def deactivate(self):
-        self.lp.flush(
-            zeros((self.pixel_count, 3)),
-            self._config["Alpha"],
-            self._config["Diagnostic"],
-        )
-        self.lp.Close()
-        self.lp = None
+        if self.lp is not None:
+            self.lp.flush(
+                zeros((self.pixel_count, 3)),
+                self._config["Alpha"],
+                self._config["Diagnostic"],
+            )
+            self.lp.Close()
+            self.lp = None
         super().deactivate()
 
     async def add_postamble(self):
