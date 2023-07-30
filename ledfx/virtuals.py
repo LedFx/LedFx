@@ -151,7 +151,7 @@ class Virtual:
         self._hl_device = None
         self._hl_start = 0
         self._hl_end = 0
-        self._hl_flip = False
+        self._hl_step = 1
         self.lock = threading.Lock()
 
         self.frequency_range = FrequencyRange(
@@ -232,8 +232,6 @@ class Virtual:
 
     def update_segments(self, segments_config):
         self.lock.acquire()
-        if self._active_effect is not None:
-            self._active_effect.lock.acquire()
         segments_config = [list(item) for item in segments_config]
         _segments = self.SEGMENTS_SCHEMA(segments_config)
 
@@ -271,8 +269,7 @@ class Virtual:
 
             mode = self._config["transition_mode"]
             self.frame_transitions = self.transitions[mode]
-        if self._active_effect is not None:
-            self._active_effect.lock.release()
+
         self.lock.release()
 
     def set_preset(self, preset_info):
@@ -415,7 +412,10 @@ class Virtual:
         self._hl_device = device_id
         self._hl_start = start
         self._hl_end = end
-        self._hl_flip = flip
+        if flip:
+            self._hl_step = -1
+        else:
+            self._hl_step = 1
         return None
 
     @property
@@ -594,8 +594,6 @@ class Virtual:
             if device is not None:
                 if device.is_active():
                     if self._calibration:
-                        # default step direction for highlight just in case
-                        hl_step = 1
                         # set data to black for full length of led strip allow other segments to overwrite
                         data.append(
                             (
@@ -620,20 +618,13 @@ class Virtual:
                                 color, device_end - device_start + 1, step
                             )
                             data.append((pattern, device_start, device_end))
-                            # if this is the segment of highlight, grab its step direction
-                            if (
-                                self._hl_state
-                                and device_id == self._hl_device
-                                and device_start == self._hl_start
-                            ):
-                                hl_step = step
                         # render the highlight
                         if self._hl_state and device_id == self._hl_device:
                             color = np.array(parse_color("white"), dtype=float)
                             pattern = make_pattern(
                                 color,
                                 self._hl_end - self._hl_start + 1,
-                                hl_step,
+                                self._hl_step,
                             )
                             data.append(
                                 (pattern, self._hl_start, self._hl_end)
