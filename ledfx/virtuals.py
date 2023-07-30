@@ -510,7 +510,10 @@ class Virtual:
                 self.frame_transitions(
                     self.transitions, frame, transition_frame, weight
                 )
-                if self.transition_frame_counter == self.transition_frame_total:
+                if (
+                    self.transition_frame_counter
+                    == self.transition_frame_total
+                ):
                     self.clear_transition_effect()
 
             np.multiply(frame, self._config["max_brightness"], frame)
