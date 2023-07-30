@@ -1169,6 +1169,7 @@ def wled_support_DDP(build) -> bool:
     else:
         return False
 
+
 def interpolate_colors(c1, c2, elements):
     """
     Create np color array of equally interpolated values between c1 and c2
@@ -1204,6 +1205,7 @@ def roll_pixel_array(array, fraction):
     rolled_array = np.roll(array, shift_amount, axis=0)
     return rolled_array
 
+
 def time_factor(window):
     """
     Returns a value between 0 and 1 based on time modulated by window
@@ -1217,7 +1219,8 @@ def time_factor(window):
         float: value between 0 and 1
     """
 
-    return (timeit.default_timer() % window ) / window
+    return (timeit.default_timer() % window) / window
+
 
 def make_pattern(color, length, step):
     """
@@ -1239,9 +1242,13 @@ def make_pattern(color, length, step):
     color2 = color * 0.2
     quart = int(length / 4)
     extra = length - quart * 4
-    pattern = np.vstack((interpolate_colors(color, color, quart),
-                         interpolate_colors(color, color2, quart),
-                         interpolate_colors(color2, color2, quart),
-                         interpolate_colors(color2, color, quart+extra)))
-    pattern = roll_pixel_array(pattern, factor*step)
+    pattern = np.vstack(
+        (
+            interpolate_colors(color, color, quart),
+            interpolate_colors(color, color2, quart),
+            interpolate_colors(color2, color2, quart),
+            interpolate_colors(color2, color, quart + extra),
+        )
+    )
+    pattern = roll_pixel_array(pattern, factor * step)
     return pattern

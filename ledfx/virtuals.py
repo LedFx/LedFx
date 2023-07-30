@@ -31,8 +31,7 @@ from ledfx.events import (
 
 # from ledfx.config import save_config
 from ledfx.transitions import Transitions
-from ledfx.utils import fps_to_sleep_interval
-from ledfx.utils import make_pattern
+from ledfx.utils import fps_to_sleep_interval, make_pattern
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -618,16 +617,28 @@ class Virtual:
                             color = np.array(
                                 parse_color(next(color_cycle)), dtype=float
                             )
-                            pattern = make_pattern(color, device_end - device_start + 1, step)
+                            pattern = make_pattern(
+                                color, device_end - device_start + 1, step
+                            )
                             data.append((pattern, device_start, device_end))
                             # if this is the segment of highlight, grab its step direction
-                            if self._hl_state and device_id == self._hl_device and device_start == self._hl_start:
+                            if (
+                                self._hl_state
+                                and device_id == self._hl_device
+                                and device_start == self._hl_start
+                            ):
                                 hl_step = step
                         # render the highlight
                         if self._hl_state and device_id == self._hl_device:
                             color = np.array(parse_color("white"), dtype=float)
-                            pattern = make_pattern(color, self._hl_end - self._hl_start + 1, hl_step)
-                            data.append((pattern, self._hl_start, self._hl_end))
+                            pattern = make_pattern(
+                                color,
+                                self._hl_end - self._hl_start + 1,
+                                hl_step,
+                            )
+                            data.append(
+                                (pattern, self._hl_start, self._hl_end)
+                            )
 
                     elif self._config["mapping"] == "span":
                         for (
