@@ -32,6 +32,7 @@ from ledfx.events import (
 # from ledfx.config import save_config
 from ledfx.transitions import Transitions
 from ledfx.utils import fps_to_sleep_interval
+from ledfx.utils import make_pattern
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -595,6 +596,8 @@ class Virtual:
             if device is not None:
                 if device.is_active():
                     if self._calibration:
+                        # default step direction for highlight just in case
+                        hl_step = 1
                         # set data to black for full length of led strip allow other segments to overwrite
                         data.append(
                             (
@@ -615,11 +618,17 @@ class Virtual:
                             color = np.array(
                                 parse_color(next(color_cycle)), dtype=float
                             )
-
-                            data.append((color, device_start, device_end))
+                            pattern = make_pattern(color, device_end - device_start + 1, step)
+                            data.append((pattern, device_start, device_end))
+                            # if this is the segment of highlight, grab its step direction
+                            if self._hl_state and device_id == self._hl_device and device_start == self._hl_start:
+                                hl_step = step
+                        # render the highlight
                         if self._hl_state and device_id == self._hl_device:
                             color = np.array(parse_color("white"), dtype=float)
-                            data.append((color, self._hl_start, self._hl_end))
+                            pattern = make_pattern(color, self._hl_end - self._hl_start + 1, hl_step)
+                            data.append((pattern, self._hl_start, self._hl_end))
+
                     elif self._config["mapping"] == "span":
                         for (
                             start,
