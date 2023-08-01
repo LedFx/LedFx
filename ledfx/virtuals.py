@@ -31,7 +31,8 @@ from ledfx.events import (
 
 # from ledfx.config import save_config
 from ledfx.transitions import Transitions
-from ledfx.utils import fps_to_sleep_interval, make_pattern
+from ledfx.utils import fps_to_sleep_interval
+from ledfx.effects.math import make_pattern
 
 _LOGGER = logging.getLogger(__name__)
 
