@@ -12,7 +12,7 @@ import zeroconf
 
 from ledfx.color import parse_color
 from ledfx.effects import DummyEffect
-from ledfx.effects.math import interpolate_pixels
+from ledfx.effects.math import interpolate_pixels, make_pattern
 from ledfx.effects.melbank import (
     MAX_FREQ,
     MIN_FREQ,
@@ -32,7 +32,6 @@ from ledfx.events import (
 # from ledfx.config import save_config
 from ledfx.transitions import Transitions
 from ledfx.utils import fps_to_sleep_interval
-from ledfx.effects.math import make_pattern
 
 _LOGGER = logging.getLogger(__name__)
 

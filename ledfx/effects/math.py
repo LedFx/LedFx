@@ -1,6 +1,6 @@
+import timeit
 from functools import lru_cache
 
-import timeit
 import numpy as np
 from numpy import asarray, extract, mod, nan, pi, place, zeros
 
