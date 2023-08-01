@@ -184,7 +184,7 @@ def async_fire_and_return(coro, callback, timeout=10):
         exc = future.exception()
         if exc:
             # Handle wonderful empty TimeoutError exception
-            if type(exc) == TimeoutError:
+            if isinstance(exc, TimeoutError):
                 _LOGGER.warning(f"Coroutine {future} timed out.")
             else:
                 _LOGGER.error(exc)
