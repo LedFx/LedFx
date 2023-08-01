@@ -356,7 +356,10 @@ class Effect(BaseRegistry):
                     pixels += self._bg_color
                 if config["brightness"] is not None:
                     np.multiply(
-                        pixels, config["brightness"], out=pixels, casting="unsafe"
+                        pixels,
+                        config["brightness"],
+                        out=pixels,
+                        casting="unsafe",
                     )
 
                 # If the configured blur is greater than 0 and pixel_count > 3, apply blur
@@ -371,9 +374,15 @@ class Effect(BaseRegistry):
                     # This appears to be optimal from a readability/performance point of view
                     # TODO: If we ever move to RGBW pixel arrays, uncomment the last line to operate on the W portion
 
-                    pixels[:, 0] = np.convolve(pixels[:, 0], kernel, mode="same")  # R
-                    pixels[:, 1] = np.convolve(pixels[:, 1], kernel, mode="same")  # G
-                    pixels[:, 2] = np.convolve(pixels[:, 2], kernel, mode="same")  # B
+                    pixels[:, 0] = np.convolve(
+                        pixels[:, 0], kernel, mode="same"
+                    )  # R
+                    pixels[:, 1] = np.convolve(
+                        pixels[:, 1], kernel, mode="same"
+                    )  # G
+                    pixels[:, 2] = np.convolve(
+                        pixels[:, 2], kernel, mode="same"
+                    )  # B
                     # pixels[:, 3] = np.convolve(pixels[:, 3], kernel, mode="same") # W
         self.lock.release()
         return pixels
