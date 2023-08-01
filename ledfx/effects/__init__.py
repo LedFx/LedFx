@@ -254,6 +254,7 @@ class Effect(BaseRegistry):
             self.deactivate()
 
     def activate(self, virtual):
+        self.lock.acquire()
         """Attaches an output channel to the effect"""
         self._virtual = virtual
         self.pixels = np.zeros((virtual.pixel_count, 3))
@@ -266,13 +267,15 @@ class Effect(BaseRegistry):
                 base.on_activate(self, virtual.pixel_count)
 
         self._active = True
+        self.lock.release()
         _LOGGER.info(f"Effect {self.NAME} activated.")
 
     def deactivate(self):
+        self.lock.acquire()
         """Detaches an output channel from the effect"""
         self.pixels = None
         self._active = False
-
+        self.lock.release()
         _LOGGER.info(f"Effect {self.NAME} deactivated.")
 
     def update_config(self, config):
@@ -319,7 +322,9 @@ class Effect(BaseRegistry):
 
     def _render(self):
         self.lock.acquire()
-        self.render()
+        # its possible we were waiting on the effect being deactivated
+        if self._active:
+            self.render()
         self.lock.release()
 
     def render(self):

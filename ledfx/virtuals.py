@@ -12,7 +12,7 @@ import zeroconf
 
 from ledfx.color import parse_color
 from ledfx.effects import DummyEffect
-from ledfx.effects.math import interpolate_pixels
+from ledfx.effects.math import interpolate_pixels, make_pattern
 from ledfx.effects.melbank import (
     MAX_FREQ,
     MIN_FREQ,
@@ -151,7 +151,7 @@ class Virtual:
         self._hl_device = None
         self._hl_start = 0
         self._hl_end = 0
-        self._hl_flip = False
+        self._hl_step = 1
         self.lock = threading.Lock()
 
         self.frequency_range = FrequencyRange(
@@ -232,8 +232,6 @@ class Virtual:
 
     def update_segments(self, segments_config):
         self.lock.acquire()
-        if self._active_effect is not None:
-            self._active_effect.lock.acquire()
         segments_config = [list(item) for item in segments_config]
         _segments = self.SEGMENTS_SCHEMA(segments_config)
 
@@ -271,8 +269,7 @@ class Virtual:
 
             mode = self._config["transition_mode"]
             self.frame_transitions = self.transitions[mode]
-        if self._active_effect is not None:
-            self._active_effect.lock.release()
+
         self.lock.release()
 
     def set_preset(self, preset_info):
@@ -415,7 +412,10 @@ class Virtual:
         self._hl_device = device_id
         self._hl_start = start
         self._hl_end = end
-        self._hl_flip = flip
+        if flip:
+            self._hl_step = -1
+        else:
+            self._hl_step = 1
         return None
 
     @property
@@ -471,51 +471,53 @@ class Virtual:
         # Get and process active effect frame
         self._active_effect._render()
         frame = self._active_effect.get_pixels()
-        if frame is None:
-            return
-        frame[frame > 255] = 255
-        frame[frame < 0] = 0
-        # np.clip(frame, 0, 255, frame)
-
-        if self._config["center_offset"]:
-            frame = np.roll(frame, self._config["center_offset"], axis=0)
-
-        # This part handles blending two effects together
-        if (
-            self._transition_effect is not None
-            and self._transition_effect.is_active
-            and hasattr(self._transition_effect, "pixels")
-        ):
-            # Get and process transition effect frame
-            self._transition_effect._render()
-            transition_frame = self._transition_effect.get_pixels()
-            transition_frame[transition_frame > 255] = 255
-            transition_frame[transition_frame < 0] = 0
+        if frame is not None:
+            frame[frame > 255] = 255
+            frame[frame < 0] = 0
+            # np.clip(frame, 0, 255, frame)
 
             if self._config["center_offset"]:
-                transition_frame = np.roll(
-                    transition_frame,
-                    self._config["center_offset"],
-                    axis=0,
+                frame = np.roll(frame, self._config["center_offset"], axis=0)
+
+            # This part handles blending two effects together
+            if (
+                self._transition_effect is not None
+                and self._transition_effect.is_active
+                and hasattr(self._transition_effect, "pixels")
+            ):
+                # Get and process transition effect frame
+                self._transition_effect._render()
+                transition_frame = self._transition_effect.get_pixels()
+                transition_frame[transition_frame > 255] = 255
+                transition_frame[transition_frame < 0] = 0
+
+                if self._config["center_offset"]:
+                    transition_frame = np.roll(
+                        transition_frame,
+                        self._config["center_offset"],
+                        axis=0,
+                    )
+
+                # Blend both frames together
+                self.transition_frame_counter += 1
+                self.transition_frame_counter = min(
+                    max(self.transition_frame_counter, 0),
+                    self.transition_frame_total,
                 )
+                weight = (
+                    self.transition_frame_counter / self.transition_frame_total
+                )
+                self.frame_transitions(
+                    self.transitions, frame, transition_frame, weight
+                )
+                if (
+                    self.transition_frame_counter
+                    == self.transition_frame_total
+                ):
+                    self.clear_transition_effect()
 
-            # Blend both frames together
-            self.transition_frame_counter += 1
-            self.transition_frame_counter = min(
-                max(self.transition_frame_counter, 0),
-                self.transition_frame_total,
-            )
-            weight = (
-                self.transition_frame_counter / self.transition_frame_total
-            )
-            self.frame_transitions(
-                self.transitions, frame, transition_frame, weight
-            )
-            if self.transition_frame_counter == self.transition_frame_total:
-                self.clear_transition_effect()
-
-        np.multiply(frame, self._config["max_brightness"], frame)
-        np.multiply(frame, self._ledfx.config["global_brightness"], frame)
+            np.multiply(frame, self._config["max_brightness"], frame)
+            np.multiply(frame, self._ledfx.config["global_brightness"], frame)
         self.lock.release()
         return frame
 
@@ -615,11 +617,22 @@ class Virtual:
                             color = np.array(
                                 parse_color(next(color_cycle)), dtype=float
                             )
-
-                            data.append((color, device_start, device_end))
+                            pattern = make_pattern(
+                                color, device_end - device_start + 1, step
+                            )
+                            data.append((pattern, device_start, device_end))
+                        # render the highlight
                         if self._hl_state and device_id == self._hl_device:
                             color = np.array(parse_color("white"), dtype=float)
-                            data.append((color, self._hl_start, self._hl_end))
+                            pattern = make_pattern(
+                                color,
+                                self._hl_end - self._hl_start + 1,
+                                self._hl_step,
+                            )
+                            data.append(
+                                (pattern, self._hl_start, self._hl_end)
+                            )
+
                     elif self._config["mapping"] == "span":
                         for (
                             start,
