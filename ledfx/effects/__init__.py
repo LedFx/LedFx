@@ -337,43 +337,45 @@ class Effect(BaseRegistry):
         pass
 
     def get_pixels(self):
-        if not hasattr(self, "pixels"):
-            return
+        self.lock.acquire()
+        pixels = None
+        if hasattr(self, "pixels"):
+            if self.pixels is not None:
+                pixels = np.copy(self.pixels)
+                # Grab the config and store it here for use in the function - we use it a lot
+                config = self._config
 
-        pixels = np.copy(self.pixels)
-        # Grab the config and store it here for use in the function - we use it a lot
-        config = self._config
+                # Apply some of the base output filters if necessary
+                if config["flip"]:
+                    pixels = np.flipud(pixels)
+                if config["mirror"]:
+                    pixels = np.concatenate(
+                        (pixels[-1 + len(pixels) % -2 :: -2], pixels[::2])
+                    )
+                if config["background_color"]:
+                    pixels += self._bg_color
+                if config["brightness"] is not None:
+                    np.multiply(
+                        pixels, config["brightness"], out=pixels, casting="unsafe"
+                    )
 
-        # Apply some of the base output filters if necessary
-        if config["flip"]:
-            pixels = np.flipud(pixels)
-        if config["mirror"]:
-            pixels = np.concatenate(
-                (pixels[-1 + len(pixels) % -2 :: -2], pixels[::2])
-            )
-        if config["background_color"]:
-            pixels += self._bg_color
-        if config["brightness"] is not None:
-            np.multiply(
-                pixels, config["brightness"], out=pixels, casting="unsafe"
-            )
+                # If the configured blur is greater than 0 and pixel_count > 3, apply blur
+                # The matrix math requires > 3 pixels to work properly
+                # And blurring with a less than 3 pixels seems... redundant
+                # TODO: Handle RGBW properly
+                if config["blur"] != 0.0 and self.pixel_count > 3:
+                    kernel = _gaussian_kernel1d(config["blur"], 0, len(pixels))
 
-        # If the configured blur is greater than 0 and pixel_count > 3, apply blur
-        # The matrix math requires > 3 pixels to work properly
-        # And blurring with a less than 3 pixels seems... redundant
-        # TODO: Handle RGBW properly
-        if config["blur"] != 0.0 and self.pixel_count > 3:
-            kernel = _gaussian_kernel1d(config["blur"], 0, len(pixels))
+                    # Blur the R,G,B portions of the pixel array
+                    # Lots of attempts at vectorisation/performance improvements here
+                    # This appears to be optimal from a readability/performance point of view
+                    # TODO: If we ever move to RGBW pixel arrays, uncomment the last line to operate on the W portion
 
-            # Blur the R,G,B portions of the pixel array
-            # Lots of attempts at vectorisation/performance improvements here
-            # This appears to be optimal from a readability/performance point of view
-            # TODO: If we ever move to RGBW pixel arrays, uncomment the last line to operate on the W portion
-
-            pixels[:, 0] = np.convolve(pixels[:, 0], kernel, mode="same")  # R
-            pixels[:, 1] = np.convolve(pixels[:, 1], kernel, mode="same")  # G
-            pixels[:, 2] = np.convolve(pixels[:, 2], kernel, mode="same")  # B
-            # pixels[:, 3] = np.convolve(pixels[:, 3], kernel, mode="same") # W
+                    pixels[:, 0] = np.convolve(pixels[:, 0], kernel, mode="same")  # R
+                    pixels[:, 1] = np.convolve(pixels[:, 1], kernel, mode="same")  # G
+                    pixels[:, 2] = np.convolve(pixels[:, 2], kernel, mode="same")  # B
+                    # pixels[:, 3] = np.convolve(pixels[:, 3], kernel, mode="same") # W
+        self.lock.release()
         return pixels
 
     @property
