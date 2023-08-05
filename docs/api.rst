@@ -566,11 +566,7 @@ returns
 **highlight**
 
 | Highlight a segment of a virtual with white, use for editing of virtual segmentations in calibration mode
-| Highlight the last edited segment, or last reordered segment
-
-| Cleared to -1 on setting calibration mode of a virtual to off
-| Segment must be between 0 and number of segments - 1 inclusive
-| Virtual must be in calibration mode
+| Intended to highlight the last edited segment, or last reordered segment
 
 | state: defaults to true, explicity send False to turn off highlight
 | device: device id of the device which the segment is to be highlighted on, forced to lower case
