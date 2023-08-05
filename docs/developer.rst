@@ -12,6 +12,74 @@ You will see ``pip install -e .`` frequently in the documentation. Please see th
    Backend Development
 -------------------------
 
+.. _win-dev:
+
+Windows
+-------
+
+*  Install Python 3.8 or above. https://www.python.org/downloads/windows/
+*  Install Git. https://gitforwindows.org/
+*  Install Microsoft Visual Studio 2022 Build Tools - or later
+
+   * https://visualstudio.microsoft.com/downloads/
+   * Under All Downloads / Tools for visual studio / Build Tools for Visual Studio 2022
+   * Download and run the installer - then select
+
+   * Workloads
+     * Desktop development with C++
+   * This should enable in the installation details
+  * Included
+     * C++ Build Tools core features
+     * C++ 2022 Redistributable Update
+     * C++ core desktop features
+  * Optional
+     * MSVC v143 - VS 2022 C++ x64/x86 build tools (vXX,XX)
+     * Windows SDK (10.0.XXXXX.X)
+     * C++ CMake tools for Windows
+     * Testing tools core features - Build Tools
+     * C++ AddressSanitizer
+
+  *  Default install options are appropriate - go get some coffee
+
+*  Reboot
+
+.. code:: console
+
+    $ py -m venv C:\ledfx
+    $ cd C:\ledfx
+    $ .\Scripts\activate.bat
+    $ pip install wheel
+    $ pip install pywin32
+    $ python .\Scripts\pywin32_postinstall.py -install
+    $ git clone https://github.com/LedFx/LedFx.git .\ledfx-git
+    $ cd .\ledfx-git
+
+Manual call to requirements.txt is a temporary step as we need to fix up setup.py
+
+We need to install numpy first, or aubio will not be happy
+
+.. code:: console
+
+    $ pip install numpy==1.23.5
+    $ pip install -r requirements.txt
+    $ python setup.py develop
+    $ ledfx --open-ui
+
+**1.** To develop, open up a terminal and activate the ledfx virtual environment
+
+.. code:: console
+
+    $ C:\ledfx\Scripts\activate.bat
+
+**2.** Make changes to LedFx's files in C:/ledfx/ledfx-git. Your changed files will be run when you run LedFx
+
+.. code:: console
+
+    $ ledfx --open-ui
+
+You can keep the ledfx virtual environment open and keep making changes then running ledfx.
+No need to reactivate the virtual environment between changes.
+
 .. _linux-dev:
 
 Linux

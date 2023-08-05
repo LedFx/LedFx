@@ -22,24 +22,32 @@ configuration based on your firmware:
 
     * WLED_
 
-        - WLED devices are now auto-configured. In most cases you will not have to change any settings in LedFx
-        - The following instructions are provided for those who wish to make changes
-        - Add WLED as UDP device
-            - Enter the name for your device and IP address
-            - Enter 21324 for the port
-            - Enter the total number of pixels
-            - Click "Show More" and enter 02 for "Data Prefix
-            - Click Submit
-        - Add WLED as E1.31 device
-            - Enable E1.31 support from the 'Sync Settings' page on the WLED web-interface and reboot WLED
-            - Enter the name and IP address
-            - Enter the total number of pixels
-            - Click Submit
-        - Add WLED as DDP device
-            - Enable DDP support from the 'Sync Settings' page on the WLED web-interface and reboot WLED
-            - Enter the name and IP address
-            - Enter the total number of pixels
-            - Click Submit
+     - Auto-configuration of WLED Devices:
+        - WLED devices are now auto-configured in LedFx.
+        - In most cases, you will not have to change any settings.
+        - LedFx now defaults to DDP protocol for WLED devices. It has better latency and no pixel count limits.
+        - If you are using an older version of WLED prior to 0.13, you may need to manually change the supported protocol on the WLED device to DDP or fall back to UDP on ledfx.
+     - Manual Configuration:
+        - Add WLED as UDP Device:
+           - Enter the name for your device and its IP address.
+           - Enter 21324 for the port.
+           - Enter the total number of pixels.
+           - Click "Show More" and enter 02 for "Data Prefix".
+           - Click Submit.
+        - Add WLED as E1.31 Device:
+           - If your WLED version is prior to 0.13:
+              - Enable E1.31 support from the 'Sync Settings' page on the WLED web-interface and reboot WLED.
+           - For all versions:
+              - Enter the name and IP address.
+              - Enter the total number of pixels.
+              - Click Submit.
+        - Add WLED as DDP Device:
+           - If your WLED version is prior to 0.13:
+              - Enable DDP support from the 'Sync Settings' page on the WLED web-interface and reboot WLED.
+           - For all versions:
+              - Enter the name and IP address.
+              - Enter the total number of pixels.
+              - Click Submit.
 
 .. Links Down Here
 
