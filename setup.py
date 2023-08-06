@@ -53,6 +53,7 @@ INSTALL_REQUIRES = [
     'rpi-ws281x>=4.3.0; platform_system == "Linux"',
     "flux-led>=0.28.35",
     "python-mbedtls~=2.7.1",
+    "python-osc~=1.8.3",
 ]
 
 
