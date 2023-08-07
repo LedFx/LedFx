@@ -659,7 +659,6 @@ class Virtual:
                             seg = pixels[start:stop:step]
                             if self._os_active:
                                 self.oneshot_apply(seg)
-
                             data.append((seg, device_start, device_end))
                     elif self._config["mapping"] == "copy":
                         for (
