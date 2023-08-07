@@ -141,7 +141,9 @@ class VirtualsToolsEndpoint(RestEndpoint):
                 }
                 return web.json_response(data=response, status=400)
 
-            result = virtual.oneshot(parse_color(validate_color(color)), ramp, hold, fade)
+            result = virtual.oneshot(
+                parse_color(validate_color(color)), ramp, hold, fade
+            )
             if result is False:
                 response = {
                     "status": "failed",
