@@ -461,7 +461,7 @@ Extensible support for general tools towards ALL virtuals in one call
 
 .. rubric:: PUT
 
-Supports tool instances of currently only force_color, others may be added in the future
+Supports tool instances of currently only force_color and oneshot, others may be added in the future
 
 **force_color**
 
@@ -491,6 +491,38 @@ returns
         "tool": "force_color"
     }
 
+**oneshot**
+
+| Fill all active virtuals with a single color in a defined envelope of timing
+| Intended to allow integration of instantaneous game effects over all active virtual
+| Repeated oneshot will overwrite the previous oneshot if has not finished
+
+| color: The color to which we wish to fill the virtual, any format supported
+| ramp: The time in ms over which to ramp the color from zero to full weight over the active effect
+| hold: The time in ms to hold the color to full weight over the active effect
+| fade: The time in ms to fade the color from full weight to zero over the active effect
+
+At least one of ramp, hold or fade must be specified
+
+.. code-block:: json
+
+    {
+        "tool":"oneshot",
+        "color":"white",
+        "ramp":10,
+        "hold":200,
+        "fade":2000
+    }
+
+returns
+
+.. code-block:: json
+
+    {
+        "status": "success",
+        "tool": "oneshot"
+    }
+
 /api/virtuals_tools/<virtual_id>
 =================================
 
@@ -498,7 +530,7 @@ Extensible support for general tools towards a specified virtual
 
 .. rubric:: PUT
 
-Supports tool instances of force_color, calibration and highlight, others may be added in the future
+Supports tool instances of force_color, calibration, highlight and oneshot others may be added in the future
 
 **force_color**
 
