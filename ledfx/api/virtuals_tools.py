@@ -149,7 +149,6 @@ class VirtualsToolsEndpoint(RestEndpoint):
                 }
                 return web.json_response(data=response, status=400)
 
-
         effect_response = {}
         effect_response["tool"] = tool
 
