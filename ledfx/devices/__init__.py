@@ -277,6 +277,8 @@ class Device(BaseRegistry):
         _LOGGER.debug(
             f"Device {self.id}: Added segment {virtual_id, start_pixel, end_pixel}"
         )
+        # We have added a segment, therefore the priority virtual may of changed
+        self.invalidate_cached_props()
 
     def clear_virtual_segments(self, virtual_id):
         self._segments = [
