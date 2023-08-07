@@ -30,4 +30,5 @@
     zeroconf~=0.39.4
     flux-led>=0.28.35
     python-mbedtls~=2.7.1
+    python-osc~=1.8.3
 
