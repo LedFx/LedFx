@@ -658,6 +658,15 @@ class Devices(RegistryLoader):
                             msg = f"Ignoring {device_ip}: Shares IP and OpenRGB ID with existing device {existing_device.name}"
                             _LOGGER.info(msg)
                             raise ValueError(msg)
+                    elif device_type == "osc":
+                        # Allow multiple OSC Server devices, but not on the same universe + starting_addr combination
+                        if (
+                            device_config["universe"]
+                            == existing_device.config["universe"]
+                            and device_config["starting_addr"]
+                            == existing_device.config["starting_addr"]
+                        ):
+                            msg = f"Ignoring {device_ip}:{device_config['port']}/{device_config['universe']}/{device_config['starting_addr']}: Shares IP, Port, Universe AND starting address with existing device {existing_device.name}"
                     else:
                         msg = f"Ignoring {device_ip}: Shares destination with existing device {existing_device.name}"
                         _LOGGER.info(msg)
