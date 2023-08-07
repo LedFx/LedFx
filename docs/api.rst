@@ -602,6 +602,47 @@ returns
         "tool": "highlight"
     }
 
+**oneshot**
+
+| Fill the specified virtual with a single color in a defined envelope of timing
+| Intended to allow integration of instantaneous game effects over any active virtual
+| Repeated oneshot to a virtual will overwrite the previous oneshot if has not finished
+
+| color: The color to which we wish to fill the virtual, any format supported
+| ramp: The time in ms over which to ramp the color from zero to full weight over the active effect
+| hold: The time in ms to hold the color to full weight over the active effect
+| fade: The time in ms to fade the color from full weight to zero over the active effect
+
+At least one of ramp, hold or fade must be specified
+
+.. code-block:: json
+
+    {
+        "tool":"oneshot",
+        "color":"white",
+        "ramp":10,
+        "hold":200,
+        "fade":2000
+    }
+
+returns
+
+.. code-block:: json
+
+    {
+        "status": "success",
+        "tool": "oneshot"
+    }
+
+The virtual must be active or an error will be returned
+
+.. code-block:: json
+
+    {
+        "status": "failed",
+        "reason": "virtual falcon1 is not active"
+    }
+
 /api/effects/<effect_id>/presets
 ===================================
 
