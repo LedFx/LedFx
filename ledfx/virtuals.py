@@ -391,7 +391,7 @@ class Virtual:
 
     def oneshot(self, color, ramp, hold, fade):
         """
-        Force all pixels in device to color over a time envelope defined in ms
+        Force all pixels in virtual to color over a time envelope defined in ms
         Following calls will override any active one shot
 
         Parameters:
