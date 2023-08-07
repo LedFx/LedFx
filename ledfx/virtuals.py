@@ -152,6 +152,7 @@ class Virtual:
         self._hl_start = 0
         self._hl_end = 0
         self._hl_step = 1
+        self._os_active = False
         self.lock = threading.Lock()
 
         self.frequency_range = FrequencyRange(
@@ -388,10 +389,53 @@ class Virtual:
             VirtualUpdateEvent(self.id, self.assembled_frame)
         )
 
+    def oneshot(self, color, ramp, hold, fade):
+        """
+        Force all pixels in device to color over a time envelope defined in ms
+        Following calls will override any active one shot
+
+        Parameters:
+            ramp time from 0% to 100% in ms
+            hold time at 100% in ms
+            fade time from 100% to 0% in ms
+        Returns:
+            True if oneshot was activated, False if not
+        """
+        if self.active:
+            self._os_color = np.array(color, dtype=float)
+            self._os_ramp = ramp / 1000.0
+            self._os_hold = hold / 1000.0
+            self._os_fade = fade / 1000.0
+            self._os_start = timeit.default_timer()
+            self._os_hold_end = self._os_ramp + self._os_hold
+            self._os_fade_end = self._os_ramp + self._os_hold + self._os_fade
+            self._os_weight = 0.0
+            self._os_active = True
+            result = True
+        else:
+            result = False
+        return result
+
+    def oneshot_weight(self):
+        passed = timeit.default_timer() - self._os_start
+        if passed <= self._os_ramp:
+            self._os_weight = passed / self._os_ramp
+        elif passed <= self._os_hold_end:
+            self._os_weight = 1.0
+        elif passed <= self._os_fade_end:
+            self._os_weight = (self._os_fade_end - passed) / self._os_fade
+        else:
+            self._os_active = False
+            self._os_weight = 0.0
+        # _LOGGER.info(f"oneshot_state: {passed} {self._os_ramp} {self._os_hold_end} {self._os_fade_end} {self._os_active} {self._os_weight}")
+
+    def oneshot_apply(self, seg):
+        blend = np.multiply(self._os_color, self._os_weight)
+        np.multiply(seg, 1 - self._os_weight, seg)
+        np.add(seg, blend, seg)
+
     def set_calibration(self, calibration):
         self._calibration = calibration
-        if calibration is False:
-            self._hl_segment = -1
 
     def set_highlight(self, state, device_id, start, end, flip):
         if self._calibration is False:
@@ -543,6 +587,7 @@ class Virtual:
             except ValueError as e:
                 _LOGGER.error(e)
             self._active = True
+            self._os_active = False
 
         # self.thread_function()
 
@@ -554,6 +599,7 @@ class Virtual:
 
     def deactivate(self):
         self._active = False
+        self._os_active = False
         if hasattr(self, "_thread"):
             self._thread.join()
         self.deactivate_segments()
@@ -588,8 +634,10 @@ class Virtual:
         if pixels is None:
             pixels = self.assembled_frame
 
+        if self._os_active:
+            self.oneshot_weight()
+
         color_cycle = itertools.cycle(color_list)
-        hl_segment = 0
 
         for device_id, segments in self._segments_by_device.items():
             data = []
@@ -597,42 +645,11 @@ class Virtual:
             if device is not None:
                 if device.is_active():
                     if self._calibration:
-                        # set data to black for full length of led strip allow other segments to overwrite
-                        data.append(
-                            (
-                                np.array([0.0, 0.0, 0.0], dtype=float),
-                                0,
-                                device.pixel_count - 1,
-                            )
-                        )
-
-                        for (
-                            start,
-                            stop,
-                            step,
-                            device_start,
-                            device_end,
-                        ) in segments:
-                            # add data forced to color sequence of RGBCMY
-                            color = np.array(
-                                parse_color(next(color_cycle)), dtype=float
-                            )
-                            pattern = make_pattern(
-                                color, device_end - device_start + 1, step
-                            )
-                            data.append((pattern, device_start, device_end))
-                        # render the highlight
-                        if self._hl_state and device_id == self._hl_device:
-                            color = np.array(parse_color("white"), dtype=float)
-                            pattern = make_pattern(
-                                color,
-                                self._hl_end - self._hl_start + 1,
-                                self._hl_step,
-                            )
-                            data.append(
-                                (pattern, self._hl_start, self._hl_end)
-                            )
-
+                        self.render_calibration(data,
+                                                device,
+                                                segments,
+                                                device_id,
+                                                color_cycle)
                     elif self._config["mapping"] == "span":
                         for (
                             start,
@@ -641,13 +658,11 @@ class Virtual:
                             device_start,
                             device_end,
                         ) in segments:
-                            data.append(
-                                (
-                                    pixels[start:stop:step],
-                                    device_start,
-                                    device_end,
-                                )
-                            )
+                            seg = pixels[start:stop:step]
+                            if self._os_active:
+                                self.oneshot_apply(seg)
+
+                            data.append((seg, device_start, device_end))
                     elif self._config["mapping"] == "copy":
                         for (
                             start,
@@ -657,16 +672,46 @@ class Virtual:
                             device_end,
                         ) in segments:
                             target_len = device_end - device_start + 1
-                            data.append(
-                                (
-                                    interpolate_pixels(pixels, target_len)[
-                                        ::step
-                                    ],
-                                    device_start,
-                                    device_end,
-                                )
-                            )
+                            seg = interpolate_pixels(pixels, target_len)[::step]
+                            if self._os_active:
+                                self.oneshot_apply(seg)
+                            data.append((seg, device_start, device_end))
                     device.update_pixels(self.id, data)
+
+    def render_calibration(self, data, device, segments, device_id, color_cycle):
+        """
+        Renders the calibration data to the virtual output
+        """
+
+        # set data to black for full length of led strip allow other segments to overwrite
+        data.append(
+            (
+                np.array([0.0, 0.0, 0.0], dtype=float),
+                0,
+                device.pixel_count - 1,
+            )
+        )
+
+        for (start, stop, step, device_start, device_end) in segments:
+            # add data forced to color sequence of RGBCMY
+            color = np.array(
+                parse_color(next(color_cycle)), dtype=float
+            )
+            pattern = make_pattern(
+                color, device_end - device_start + 1, step
+            )
+            data.append((pattern, device_start, device_end))
+        # render the highlight
+        if self._hl_state and device_id == self._hl_device:
+            color = np.array(parse_color("white"), dtype=float)
+            pattern = make_pattern(
+                color,
+                self._hl_end - self._hl_start + 1,
+                self._hl_step,
+            )
+            data.append(
+                (pattern, self._hl_start, self._hl_end)
+            )
 
     @property
     def name(self):
