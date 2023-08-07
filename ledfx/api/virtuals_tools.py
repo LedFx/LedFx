@@ -36,7 +36,7 @@ class VirtualsToolsEndpoint(RestEndpoint):
 
     async def put(self, virtual_id, request) -> web.Response:
         """Extensible tools support"""
-        tools = ["force_color", "calibration", "highlight"]
+        tools = ["force_color", "calibration", "highlight", "oneshot"]
 
         virtual = self._ledfx.virtuals.get(virtual_id)
         if virtual is None:
@@ -120,6 +120,35 @@ class VirtualsToolsEndpoint(RestEndpoint):
                     "reason": hl_error,
                 }
                 return web.json_response(data=response, status=400)
+
+        if tool == "oneshot":
+            color = data.get("color")
+            if color is None:
+                response = {
+                    "status": "failed",
+                    "reason": "Required attribute for oneshot, color was not provided",
+                }
+                return web.json_response(data=response, status=400)
+
+            ramp = data.get("ramp", 0)
+            hold = data.get("hold", 0)
+            fade = data.get("fade", 0)
+
+            if ramp == 0 and hold == 0 and fade == 0:
+                response = {
+                    "status": "failed",
+                    "reason": "At least one of ramp, hold or fade must be greater than 0",
+                }
+                return web.json_response(data=response, status=400)
+
+            result = virtual.oneshot(parse_color(validate_color(color)), ramp, hold, fade)
+            if result is False:
+                response = {
+                    "status": "failed",
+                    "reason": f"virtual {virtual_id} is not active",
+                }
+                return web.json_response(data=response, status=400)
+
 
         effect_response = {}
         effect_response["tool"] = tool
