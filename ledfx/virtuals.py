@@ -645,11 +645,9 @@ class Virtual:
             if device is not None:
                 if device.is_active():
                     if self._calibration:
-                        self.render_calibration(data,
-                                                device,
-                                                segments,
-                                                device_id,
-                                                color_cycle)
+                        self.render_calibration(
+                            data, device, segments, device_id, color_cycle
+                        )
                     elif self._config["mapping"] == "span":
                         for (
                             start,
@@ -671,13 +669,17 @@ class Virtual:
                             device_end,
                         ) in segments:
                             target_len = device_end - device_start + 1
-                            seg = interpolate_pixels(pixels, target_len)[::step]
+                            seg = interpolate_pixels(pixels, target_len)[
+                                ::step
+                            ]
                             if self._os_active:
                                 self.oneshot_apply(seg)
                             data.append((seg, device_start, device_end))
                     device.update_pixels(self.id, data)
 
-    def render_calibration(self, data, device, segments, device_id, color_cycle):
+    def render_calibration(
+        self, data, device, segments, device_id, color_cycle
+    ):
         """
         Renders the calibration data to the virtual output
         """
@@ -691,14 +693,10 @@ class Virtual:
             )
         )
 
-        for (start, stop, step, device_start, device_end) in segments:
+        for start, stop, step, device_start, device_end in segments:
             # add data forced to color sequence of RGBCMY
-            color = np.array(
-                parse_color(next(color_cycle)), dtype=float
-            )
-            pattern = make_pattern(
-                color, device_end - device_start + 1, step
-            )
+            color = np.array(parse_color(next(color_cycle)), dtype=float)
+            pattern = make_pattern(color, device_end - device_start + 1, step)
             data.append((pattern, device_start, device_end))
         # render the highlight
         if self._hl_state and device_id == self._hl_device:
@@ -708,9 +706,7 @@ class Virtual:
                 self._hl_end - self._hl_start + 1,
                 self._hl_step,
             )
-            data.append(
-                (pattern, self._hl_start, self._hl_end)
-            )
+            data.append((pattern, self._hl_start, self._hl_end))
 
     @property
     def name(self):
