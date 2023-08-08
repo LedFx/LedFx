@@ -31,8 +31,8 @@ class FindOpenRGBDevicesEndpoint(RestEndpoint):
             client = OpenRGBClient(address=server, port=port)
         except Exception as e:
             _LOGGER.error(f"Failed to connect to OpenRGB server: {e}")
-            response = {"status": "error", "error": str(e)}
-            return web.json_response(data=response, status=500)
+            response = {"status": "success", "payload": { "type": "info", "message": f"No OpenRGB server on port {port} found"}}
+            return web.json_response(data=response, status=200)
 
         devices = []
         for device in client.devices:
