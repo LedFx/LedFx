@@ -10,8 +10,8 @@ from ledfx.devices import NetworkedDevice
 _LOGGER = logging.getLogger(__name__)
 
 
-class OSCRealtimeDevice(NetworkedDevice):
-    """Generic UDP Realtime device support"""
+class OSCServerDevice(NetworkedDevice):
+    """OSC Server 'device' support"""
 
     CONFIG_SCHEMA = vol.Schema(
         {
@@ -21,31 +21,39 @@ class OSCRealtimeDevice(NetworkedDevice):
                 default=9000,
             ): vol.All(int, vol.Range(min=1, max=65535)),
             vol.Required(
-                "universe",
-                description="Universe of the DMX device",
-                default=0,
-            ): vol.All(int, vol.Range(min=0)),
+                "pixel_count",
+                description="The amount of channels OR if address_type == Three_addresses then this is the amount of RGB subsequent addresses (set to 3 if your addresses are defined like R,G,B,R,G,B)",
+                default=1,
+            ): vol.All(int, vol.Range(min=1)),
+            vol.Required(
+                "send_type",
+                description="One_Argument -> /<uni>/dmx/<addr> [R, G, B]; Three_Arguments -> /<uni>/dmx/<addr> R G B; Three_Addresses -> /<uni>/dmx/<addr> R, /<uni>/dmx/<addr+1> G, /<uni>/dmx/<addr+2> B",
+                default="One_Argument",
+            ): vol.In(["One_Argument", "Three_Arguments", "Three_Addresses"]),
             vol.Required(
                 "starting_addr",
                 description="Starting address of the DMX device",
                 default=0,
             ): vol.All(int, vol.Range(min=0)),
             vol.Required(
-                "pixel_count",
-                description="Amount of channels where every pixel consists of 3 channels",
-                default=1,
-            ): vol.All(int, vol.Range(min=1)),
+                "universe",
+                description="Universe of the DMX device",
+                default=0,
+            ): vol.All(int, vol.Range(min=0)),
         }
     )
 
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
-        self._device_type = "OSC"
         self.last_frame = np.full((config["pixel_count"], 3), -1)
-        self.last_frame_sent_time = 0
+
+    def config_updated(self, config):
+        self.last_frame = np.full((config["pixel_count"], 3), -1)
+        self.deactivate()
+        self.activate()
 
     def activate(self):
-        self._device = SimpleUDPClient(self.destination, self._config["port"])
+        self._client = SimpleUDPClient(self.destination, self._config["port"])
         _LOGGER.debug(
             f"{self._device_type} sender for {self._config['name']} started."
         )
@@ -56,39 +64,75 @@ class OSCRealtimeDevice(NetworkedDevice):
         _LOGGER.debug(
             f"{self._device_type} sender for {self._config['name']} stopped."
         )
-        self._device = None
+        if "_client" in dir(self):
+            self._client._sock.close()
+            self._client = None
 
     def flush(self, data):
         if np.array_equal(data, self.last_frame):
             return
+
+        if data.size != self._config["pixel_count"] * 3:
+            raise Exception(
+                f"Invalid buffer size. {data.size} != {self._config['pixel_count'] * 3}"
+            )
+
         colors = [[int(r), int(g), int(b)] for r, g, b in data]
+        messages = []
         for i in range(self._config["pixel_count"]):
             r, g, b = colors[i % len(colors)]
-            send_data_r = OscMessageBuilder(
-                "/{u}/dmx/{a}".format(
-                    u=self._config["universe"],
-                    a=self._config["starting_addr"] + (i * 3),
+            if self._config["send_type"] == "One_Argument":
+                send_data = OscMessageBuilder(
+                    "/{u}/dmx/{a}".format(
+                        u=self._config["universe"],
+                        a=self._config["starting_addr"] + i,
+                    )
                 )
-            )
-            send_data_r.add_arg(r / 255)
-            send_data_g = OscMessageBuilder(
-                "/{u}/dmx/{a}".format(
-                    u=self._config["universe"],
-                    a=self._config["starting_addr"] + (i * 3) + 1,
+                send_data.add_arg([r / 255, g / 255, b / 255])
+                messages.append(send_data)
+            elif self._config["send_type"] == "Three_Arguments":
+                # this one needs editing + saving the device after EVERY restart (atm) for some reason
+                send_data = OscMessageBuilder(
+                    "/{u}/dmx/{a}".format(
+                        u=self._config["universe"],
+                        a=self._config["starting_addr"] + i,
+                    )
                 )
-            )
-            send_data_g.add_arg(g / 255)
-            send_data_b = OscMessageBuilder(
-                "/{u}/dmx/{a}".format(
-                    u=self._config["universe"],
-                    a=self._config["starting_addr"] + (i * 3) + 2,
+                send_data.add_arg(r / 255)
+                send_data.add_arg(g / 255)
+                send_data.add_arg(b / 255)
+                messages.append(send_data)
+            elif self._config["send_type"] == "Three_Addresses":
+                send_data_r = OscMessageBuilder(
+                    "/{u}/dmx/{a}".format(
+                        u=self._config["universe"],
+                        a=self._config["starting_addr"] + (i * 3),
+                    )
                 )
-            )
-            send_data_b.add_arg(b / 255)
+                send_data_r.add_arg(r / 255)
+                send_data_g = OscMessageBuilder(
+                    "/{u}/dmx/{a}".format(
+                        u=self._config["universe"],
+                        a=self._config["starting_addr"] + (i * 3) + 1,
+                    )
+                )
+                send_data_g.add_arg(g / 255)
+                send_data_b = OscMessageBuilder(
+                    "/{u}/dmx/{a}".format(
+                        u=self._config["universe"],
+                        a=self._config["starting_addr"] + (i * 3) + 2,
+                    )
+                )
+                send_data_b.add_arg(b / 255)
+                messages.append(send_data_r)
+                messages.append(send_data_g)
+                messages.append(send_data_b)
+
+        for message in messages:
             try:
-                self._device.send(send_data_r.build())
-                self._device.send(send_data_g.build())
-                self._device.send(send_data_b.build())
+                self._client.send(message.build())
             except AttributeError:
                 self.activate()
+                continue
+
         self.last_frame = np.copy(data)
