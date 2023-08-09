@@ -110,6 +110,8 @@ class BarAudioEffect(AudioReactiveEffect, GradientEffect):
             == (self._config["beat_skip"] == "even")
         ):
             color = np.array([0, 0, 0])
+
+        self.pixels = np.zeros(np.shape(self.pixels))
         self.pixels[
             int(self.pixel_count * bar_start) : int(
                 self.pixel_count * bar_end
