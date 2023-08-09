@@ -25,7 +25,10 @@ class FindLaunchpadDevicesEndpoint(RestEndpoint):
 
         if found is None:
             _LOGGER.error("No launchpad found")
-            response = {"status": "ok", "payload": { "type": "info", "message": "No launchpad found"}}
+            response = {
+                "status": "ok",
+                "payload": {"type": "info", "message": "No launchpad found"},
+            }
             return web.json_response(data=response, status=200)
 
         _LOGGER.info(f"Found launchpad: {found}")
