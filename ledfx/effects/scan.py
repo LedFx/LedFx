@@ -6,12 +6,13 @@ import voluptuous as vol
 from ledfx.color import parse_color, validate_color
 from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.gradient import GradientEffect
+from ledfx.effects.modulate import ModulateEffect
 
 
-class ScanAudioEffect(AudioReactiveEffect, GradientEffect):
+class ScanAudioEffect(AudioReactiveEffect, GradientEffect, ModulateEffect):
     NAME = "Scan"
     CATEGORY = "Classic"
-    HIDDEN_KEYS = ["gradient_roll"]
+    ADVANCED_KEYS = ["count", "gradient_roll", "modulation_speed", "modulate", "modulation_effect", "full_grad"]
 
     _power_funcs = {
         "Beat": "beat_power",
@@ -20,6 +21,8 @@ class ScanAudioEffect(AudioReactiveEffect, GradientEffect):
         "Mids": "mids_power",
         "High": "high_power",
     }
+
+    clear = np.array([0.0, 0.0, 0.0])
 
     CONFIG_SCHEMA = vol.Schema(
         {
@@ -69,6 +72,19 @@ class ScanAudioEffect(AudioReactiveEffect, GradientEffect):
                 description="Use colors from gradient selector",
                 default=False,
             ): bool,
+            vol.Optional(
+                "full_grad",
+                description="spread the gradient colors across the scan",
+                default=False,
+            ): bool,
+            vol.Optional(
+                "advanced",
+                description="enable advanced options",
+                default=False,
+            ): bool,
+            vol.Optional(
+                "count", description="Number of scan to render", default=1
+            ): vol.All(vol.Coerce(int), vol.Range(min=1, max=10)),
         }
     )
 
@@ -111,8 +127,11 @@ class ScanAudioEffect(AudioReactiveEffect, GradientEffect):
 
         step_size = step_size * self.bar
 
+        count = self._config["count"]
+        block = self.pixel_count / count
+
         scan_width_pixels = int(
-            max(1, int(self.pixel_count / 100.0 * self._config["scan_width"]))
+            max(1, int(self.pixel_count / 100.0 * self._config["scan_width"]) /count)
         )
         if self.returning:
             self.scan_pos -= step_size
@@ -122,24 +141,40 @@ class ScanAudioEffect(AudioReactiveEffect, GradientEffect):
         if self._config["bounce"]:
             if self.scan_pos > self.pixel_count - scan_width_pixels:
                 self.returning = True
+                self.scan_pos = self.pixel_count - scan_width_pixels
             if self.scan_pos < 0:
                 self.returning = False
+                self.scan_pos = 0
         else:
             if self.scan_pos > self.pixel_count:
-                self.scan_pos = 0.0
+                self.scan_pos %= self.pixel_count
             if self.scan_pos < 0:
                 self.returning = False
 
-        pixel_pos = max(0, min(int(self.scan_pos), self.pixel_count))
+        if self._config["full_grad"]:
+            pixels = self.apply_gradient(1)
+            self.pixels = self.modulate(pixels)
+        else:
+            self.pixels = np.zeros(np.shape(self.pixels))
 
-        self.pixels[0 : self.pixel_count] = (
-            self.background_color * self.config["background_brightness"]
-        )
-        self.pixels[
-            pixel_pos : min(pixel_pos + scan_width_pixels, self.pixel_count)
-        ] = self.color_scan
+        for idx in range(count):
+            if self._config["full_grad"]:
+                pixel_pos = max(0, int(self.scan_pos + (block * idx)) % self.pixel_count)
+                mid_pos = pixel_pos + scan_width_pixels
+                end_pos = pixel_pos + int(block)
+                self.pixels[min(mid_pos, self.pixel_count): min(end_pos, self.pixel_count)] = self.clear
 
-        if not self._config["bounce"]:
-            overflow = (pixel_pos + scan_width_pixels) - self.pixel_count
-            if overflow > 0:
-                self.pixels[:overflow] = self.color_scan
+                end_flow = end_pos - self.pixel_count
+                if end_flow > 0:
+                    mid_flow = max(0, mid_pos - self.pixel_count)
+                    self.pixels[mid_flow:end_flow] = self.clear
+            else:
+                pixel_pos = max(0, int(self.scan_pos + (block * idx)) % self.pixel_count)
+
+                self.pixels[
+                    pixel_pos : min(pixel_pos + scan_width_pixels, self.pixel_count)
+                ] = self.color_scan
+
+                overflow = (pixel_pos + scan_width_pixels) - self.pixel_count
+                if overflow > 0:
+                    self.pixels[:overflow] = self.color_scan
