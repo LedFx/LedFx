@@ -12,7 +12,14 @@ from ledfx.effects.modulate import ModulateEffect
 class ScanAudioEffect(AudioReactiveEffect, GradientEffect, ModulateEffect):
     NAME = "Scan"
     CATEGORY = "Classic"
-    ADVANCED_KEYS = ["count", "gradient_roll", "modulation_speed", "modulate", "modulation_effect", "full_grad"]
+    ADVANCED_KEYS = [
+        "count",
+        "gradient_roll",
+        "modulation_speed",
+        "modulate",
+        "modulation_effect",
+        "full_grad",
+    ]
 
     _power_funcs = {
         "Beat": "beat_power",
@@ -131,7 +138,11 @@ class ScanAudioEffect(AudioReactiveEffect, GradientEffect, ModulateEffect):
         block = self.pixel_count / count
 
         scan_width_pixels = int(
-            max(1, int(self.pixel_count / 100.0 * self._config["scan_width"]) /count)
+            max(
+                1,
+                int(self.pixel_count / 100.0 * self._config["scan_width"])
+                / count,
+            )
         )
         if self.returning:
             self.scan_pos -= step_size
@@ -159,20 +170,30 @@ class ScanAudioEffect(AudioReactiveEffect, GradientEffect, ModulateEffect):
 
         for idx in range(count):
             if self._config["full_grad"]:
-                pixel_pos = max(0, int(self.scan_pos + (block * idx)) % self.pixel_count)
+                pixel_pos = max(
+                    0, int(self.scan_pos + (block * idx)) % self.pixel_count
+                )
                 mid_pos = pixel_pos + scan_width_pixels
                 end_pos = pixel_pos + int(block)
-                self.pixels[min(mid_pos, self.pixel_count): min(end_pos, self.pixel_count)] = self.clear
+                self.pixels[
+                    min(mid_pos, self.pixel_count) : min(
+                        end_pos, self.pixel_count
+                    )
+                ] = self.clear
 
                 end_flow = end_pos - self.pixel_count
                 if end_flow > 0:
                     mid_flow = max(0, mid_pos - self.pixel_count)
                     self.pixels[mid_flow:end_flow] = self.clear
             else:
-                pixel_pos = max(0, int(self.scan_pos + (block * idx)) % self.pixel_count)
+                pixel_pos = max(
+                    0, int(self.scan_pos + (block * idx)) % self.pixel_count
+                )
 
                 self.pixels[
-                    pixel_pos : min(pixel_pos + scan_width_pixels, self.pixel_count)
+                    pixel_pos : min(
+                        pixel_pos + scan_width_pixels, self.pixel_count
+                    )
                 ] = self.color_scan
 
                 overflow = (pixel_pos + scan_width_pixels) - self.pixel_count

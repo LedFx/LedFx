@@ -2111,7 +2111,7 @@ ledfx_presets = {
                 "multiplier": 3.0,
                 "scan_width": 30,
                 "speed": 50,
-                "use_grad": False
+                "use_grad": False,
             },
             "name": "Reset",
         },
@@ -2138,9 +2138,9 @@ ledfx_presets = {
                 "multiplier": 3.0,
                 "scan_width": 30,
                 "speed": 31,
-                "use_grad": True
+                "use_grad": True,
             },
-            "name": "painbow"
-        }
-    }
+            "name": "painbow",
+        },
+    },
 }
