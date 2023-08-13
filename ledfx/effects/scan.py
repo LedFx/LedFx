@@ -116,13 +116,12 @@ class ScanAudioEffect(AudioReactiveEffect, GradientEffect, ModulateEffect):
     def set_values(self):
         if hasattr(self, "pixels"):  # protect against calling too early
             self.block = self.pixel_count / self._config["count"]
-            self.step_per_sec = self.pixel_count / 100.0 * self._config["speed"]
+            self.step_per_sec = (
+                self.pixel_count / 100.0 * self._config["speed"]
+            )
 
             self.scan_width_pixels = int(
-                max(
-                    1,
-                    int(self.block / 100.0 * self._config["scan_width"])
-                )
+                max(1, int(self.block / 100.0 * self._config["scan_width"]))
             )
 
             self.bounce = self._config["bounce"]
@@ -131,9 +130,13 @@ class ScanAudioEffect(AudioReactiveEffect, GradientEffect, ModulateEffect):
 
             for idx in range(self._config["count"]):
                 # a block is start, mid, end index
-                self.blocks.append([int(self.block * idx),
-                                    int(self.block * idx + self.scan_width_pixels),
-                                    int(self.block * idx + self.block)])
+                self.blocks.append(
+                    [
+                        int(self.block * idx),
+                        int(self.block * idx + self.scan_width_pixels),
+                        int(self.block * idx + self.block),
+                    ]
+                )
 
     def audio_data_updated(self, data):
         self.power = getattr(data, self.power_func)() * 2
@@ -187,7 +190,11 @@ class ScanAudioEffect(AudioReactiveEffect, GradientEffect, ModulateEffect):
             if self.full_grad:
                 mid_pos = int(block[1] + self.scan_pos)
                 end_pos = int(block[2] + self.scan_pos)
-                self.pixels[min(mid_pos, self.pixel_count): min(end_pos, self.pixel_count)] = self.clear
+                self.pixels[
+                    min(mid_pos, self.pixel_count) : min(
+                        end_pos, self.pixel_count
+                    )
+                ] = self.clear
 
                 end_flow = end_pos - self.pixel_count
                 if end_flow > 0:
@@ -197,7 +204,11 @@ class ScanAudioEffect(AudioReactiveEffect, GradientEffect, ModulateEffect):
                 start_pos = int(block[0] + self.scan_pos)
                 mid_pos = int(block[1] + self.scan_pos)
 
-                self.pixels[min(start_pos, self.pixel_count) : min(mid_pos, self.pixel_count)] = self.color_scan
+                self.pixels[
+                    min(start_pos, self.pixel_count) : min(
+                        mid_pos, self.pixel_count
+                    )
+                ] = self.color_scan
 
                 mid_flow = mid_pos - self.pixel_count
                 if mid_flow > 0:
