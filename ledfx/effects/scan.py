@@ -100,6 +100,7 @@ class ScanAudioEffect(AudioReactiveEffect, GradientEffect, ModulateEffect):
         self.returning = False
         self.last_time = timeit.default_timer()
         self.bar = 0
+        self.set_values()
 
     def config_updated(self, config):
         self.background_color = np.array(
@@ -110,6 +111,29 @@ class ScanAudioEffect(AudioReactiveEffect, GradientEffect, ModulateEffect):
             parse_color(self._config["color_scan"]), dtype=float
         )
         self.color_scan = self.color_scan_cache
+        self.set_values()
+
+    def set_values(self):
+        if hasattr(self, "pixels"):  # protect against calling too early
+            self.block = self.pixel_count / self._config["count"]
+            self.step_per_sec = self.pixel_count / 100.0 * self._config["speed"]
+
+            self.scan_width_pixels = int(
+                max(
+                    1,
+                    int(self.block / 100.0 * self._config["scan_width"])
+                )
+            )
+
+            self.bounce = self._config["bounce"]
+            self.full_grad = self._config["full_grad"]
+            self.blocks = []
+
+            for idx in range(self._config["count"]):
+                # a block is start, mid, end index
+                self.blocks.append([int(self.block * idx),
+                                    int(self.block * idx + self.scan_width_pixels),
+                                    int(self.block * idx + self.block)])
 
     def audio_data_updated(self, data):
         self.power = getattr(data, self.power_func)() * 2
@@ -125,34 +149,23 @@ class ScanAudioEffect(AudioReactiveEffect, GradientEffect, ModulateEffect):
             self.color_scan = self.color_scan * min(1.0, self.power)
 
     def render(self):
+        # handle time variant
         now = timeit.default_timer()
         time_passed = now - self.last_time
         self.last_time = now
 
-        step_per_sec = self.pixel_count / 100.0 * self._config["speed"]
-        step_size = time_passed * step_per_sec
-
-        step_size = step_size * self.bar
-
-        count = self._config["count"]
-        block = self.pixel_count / count
-
-        scan_width_pixels = int(
-            max(
-                1,
-                int(self.pixel_count / 100.0 * self._config["scan_width"])
-                / count,
-            )
-        )
+        # handle step offset for frame
+        step_size = time_passed * self.step_per_sec * self.bar
         if self.returning:
             self.scan_pos -= step_size
         else:
             self.scan_pos += step_size
 
-        if self._config["bounce"]:
-            if self.scan_pos > self.pixel_count - scan_width_pixels:
+        # handle scroll modes and looping
+        if self.bounce:
+            if self.scan_pos > self.pixel_count - self.scan_width_pixels:
                 self.returning = True
-                self.scan_pos = self.pixel_count - scan_width_pixels
+                self.scan_pos = self.pixel_count - self.scan_width_pixels
             if self.scan_pos < 0:
                 self.returning = False
                 self.scan_pos = 0
@@ -162,40 +175,31 @@ class ScanAudioEffect(AudioReactiveEffect, GradientEffect, ModulateEffect):
             if self.scan_pos < 0:
                 self.returning = False
 
-        if self._config["full_grad"]:
+        # Fill pixels to baseline
+        if self.full_grad:
             pixels = self.apply_gradient(1)
             self.pixels = self.modulate(pixels)
         else:
             self.pixels = np.zeros(np.shape(self.pixels))
 
-        for idx in range(count):
-            if self._config["full_grad"]:
-                pixel_pos = max(
-                    0, int(self.scan_pos + (block * idx)) % self.pixel_count
-                )
-                mid_pos = pixel_pos + scan_width_pixels
-                end_pos = pixel_pos + int(block)
-                self.pixels[
-                    min(mid_pos, self.pixel_count) : min(
-                        end_pos, self.pixel_count
-                    )
-                ] = self.clear
+        # render blocks accordingly
+        for block in self.blocks:
+            if self.full_grad:
+                mid_pos = int(block[1] + self.scan_pos)
+                end_pos = int(block[2] + self.scan_pos)
+                self.pixels[min(mid_pos, self.pixel_count): min(end_pos, self.pixel_count)] = self.clear
 
                 end_flow = end_pos - self.pixel_count
                 if end_flow > 0:
                     mid_flow = max(0, mid_pos - self.pixel_count)
                     self.pixels[mid_flow:end_flow] = self.clear
             else:
-                pixel_pos = max(
-                    0, int(self.scan_pos + (block * idx)) % self.pixel_count
-                )
+                start_pos = int(block[0] + self.scan_pos)
+                mid_pos = int(block[1] + self.scan_pos)
 
-                self.pixels[
-                    pixel_pos : min(
-                        pixel_pos + scan_width_pixels, self.pixel_count
-                    )
-                ] = self.color_scan
+                self.pixels[min(start_pos, self.pixel_count) : min(mid_pos, self.pixel_count)] = self.color_scan
 
-                overflow = (pixel_pos + scan_width_pixels) - self.pixel_count
-                if overflow > 0:
-                    self.pixels[:overflow] = self.color_scan
+                mid_flow = mid_pos - self.pixel_count
+                if mid_flow > 0:
+                    start_flow = max(0, start_pos - self.pixel_count)
+                    self.pixels[start_flow:mid_flow] = self.color_scan
