@@ -48,6 +48,7 @@ class HueDevice(NetworkedDevice):
             raise Exception("You need to install the python-mbedtls package for Hue to work.")
 
         if "hue_application_id" in self._config:
+            # since this is present the init gets called because the device is already known
             self._dtls_client_context = tls.ClientContext(
                 tls.DTLSConfiguration(
                     pre_shared_key=(
@@ -58,6 +59,16 @@ class HueDevice(NetworkedDevice):
                     validate_certificates=False
                 )
             )
+        else:
+            # The device gets setup for the first time.
+            # We call these functions here so the device does only get added if they both succeed!
+            # If we won't do that then the device would already be added and a second try wouldn't work
+            # until "ledfx" is restartet.
+            # But this can't be called if the device is already setup since it would block and the event loop
+            # would throw an error. In this case this would get executed in the "async_initialize"
+            self._hue_register()
+            self._check_hue_bridge()
+
         self.status = {}
 
     def _hue_register(self):
@@ -205,8 +216,22 @@ class HueDevice(NetworkedDevice):
     async def async_initialize(self):
         await super().async_initialize()
 
-        self._hue_register()
-        self._check_hue_bridge()
+        # see "self.__init__" why we do this.
+        if "hue_application_id" in self._config:
+            self._hue_register()
+            self._check_hue_bridge()
+            hue_application_id = self._config["hue_application_id"]
+        else:
+            hue_application_id = self._get_application_id()
+            self._dtls_client_context = tls.ClientContext(
+                tls.DTLSConfiguration(
+                    pre_shared_key=(
+                        hue_application_id,
+                        bytes.fromhex(self._config["clientkey"]),
+                    ),
+                    ciphers=["TLS-PSK-WITH-AES-128-GCM-SHA256"],
+                )
+            )
 
         entertainment_groups = self._entertainment_groups()
         entertainment_id = next(
@@ -219,17 +244,6 @@ class HueDevice(NetworkedDevice):
         group_id = re.findall("\d+", entertainment_group['id_v1'])[0]
 
         lights = self._lights_from_entertainment_group(entertainment_id)
-
-        hue_application_id = self._get_application_id()
-        self._dtls_client_context = tls.ClientContext(
-            tls.DTLSConfiguration(
-                pre_shared_key=(
-                    hue_application_id,
-                    bytes.fromhex(self._config["clientkey"]),
-                ),
-                ciphers=["TLS-PSK-WITH-AES-128-GCM-SHA256"],
-            )
-        )
 
         config = {
             "group_id": group_id,
