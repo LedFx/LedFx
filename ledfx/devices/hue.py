@@ -2,7 +2,6 @@ import logging
 import re
 import socket
 import time
-from select import select
 from typing import Dict, Optional, Tuple
 
 import requests
@@ -171,7 +170,7 @@ class HueDevice(NetworkedDevice):
         return lights
 
     def _get_application_id(self):
-        _, headers = self._hue_request("GET", f"/auth/v1", ssl=True)
+        _, headers = self._hue_request("GET", "/auth/v1", ssl=True)
         return headers.get("hue-application-id")
 
     def activate(self):
