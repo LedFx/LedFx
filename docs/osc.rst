@@ -36,7 +36,7 @@ Now at the 'Send Type' setting you choose between:
         - Path: `/<universe>/dmx/<addr> [R, G, B]`
         - Pro's:
             - Works good
-        - Cons: 
+        - Cons:
             - Not all servers support it
 
     * Three Arguments
