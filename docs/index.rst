@@ -13,6 +13,7 @@
 
    configuring
    directing_audio
+   osc
 
 .. toctree::
    :maxdepth: 2
