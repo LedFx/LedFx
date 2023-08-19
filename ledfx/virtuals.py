@@ -548,9 +548,15 @@ class Virtual:
                     max(self.transition_frame_counter, 0),
                     self.transition_frame_total,
                 )
-                weight = (
-                    self.transition_frame_counter / self.transition_frame_total
-                )
+
+                if self.transition_frame_total == 0:
+                    # the transition should happen immediately
+                    weight = 1
+                else:
+                    # calculates how far in we are in the transition
+                    # 0 = previous effect and 1 = next effect
+                    weight = self.transition_frame_counter / self.transition_frame_total
+
                 self.frame_transitions(
                     self.transitions, frame, transition_frame, weight
                 )
