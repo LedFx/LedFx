@@ -342,13 +342,21 @@ class Virtual:
     def clear_effect(self):
         self._ledfx.events.fire_event(EffectClearedEvent())
 
-        self._transition_effect = self._active_effect
-        self._active_effect = DummyEffect(self.pixel_count)
+        if (
+            self._config["transition_mode"] != "None"
+            and self._config["transition_time"] > 0
+        ):
+            self._transition_effect = self._active_effect
+            self._active_effect = DummyEffect(self.pixel_count)
 
-        self.transition_frame_total = (
-            self.refresh_rate * self._config["transition_time"]
-        )
-        self.transition_frame_counter = 0
+            self.transition_frame_total = (
+                self.refresh_rate * self._config["transition_time"]
+            )
+            self.transition_frame_counter = 0
+        else:
+            # no transition effect to clean up, so clear the active effect now!
+            self.clear_active_effect()
+            self.clear_transition_effect()
 
         self._ledfx.loop.call_later(
             self._config["transition_time"], self.clear_frame

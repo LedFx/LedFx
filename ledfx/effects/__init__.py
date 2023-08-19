@@ -22,12 +22,17 @@ class DummyEffect:
 
     def __init__(self, pixel_count):
         self.pixels = np.zeros((pixel_count, 3))
+        self.pixel_count = pixel_count
 
     def _render(self):
-        pass
+        # we don't need a self.lock as we don't do anything in deactivate
+        # self.pixels will be valid while this instance is in scope
+        self.render()
 
     def render(self):
-        pass
+        # we need to clear this each render frame as transitions reuse
+        # active effect pixel space
+        self.pixels = np.zeros((self.pixel_count, 3))
 
     def get_pixels(self):
         return self.pixels
