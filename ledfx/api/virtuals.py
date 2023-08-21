@@ -32,7 +32,8 @@ class VirtualsEndpoint(RestEndpoint):
                 "active": virtual.active,
                 "effect": {},
             }
-            if virtual.active_effect:
+            # TODO: protecting DummyEffect with test for no name, needs better
+            if virtual.active_effect and virtual.active_effect.name != "":
                 effect_response = {}
                 effect_response["config"] = virtual.active_effect.config
                 effect_response["name"] = virtual.active_effect.name
