@@ -40,6 +40,9 @@ class DummyEffect:
     def activate(self):
         pass
 
+    def _deactivate(self):
+        self.deactivate()
+
     def deactivate(self):
         pass
 
@@ -256,7 +259,7 @@ class Effect(BaseRegistry):
 
     def __del__(self):
         if self._active:
-            self.deactivate()
+            self._deactivate()
 
     def activate(self, virtual):
         self.lock.acquire()
@@ -275,12 +278,17 @@ class Effect(BaseRegistry):
         self.lock.release()
         _LOGGER.info(f"Effect {self.NAME} activated.")
 
-    def deactivate(self):
+    def _deactivate(self):
+        # we need this wrapper to ensure the full chain of
+        # deactivation is protected
         self.lock.acquire()
+        self.deactivate()
+        self.lock.release()
+
+    def deactivate(self):
         """Detaches an output channel from the effect"""
         self.pixels = None
         self._active = False
-        self.lock.release()
         _LOGGER.info(f"Effect {self.NAME} deactivated.")
 
     def update_config(self, config):

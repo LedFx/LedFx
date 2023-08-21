@@ -264,7 +264,7 @@ class Virtual:
             if self.pixel_count != _pixel_count:
                 self.transitions = Transitions(self.pixel_count)
                 if self._active_effect is not None:
-                    self._active_effect.deactivate()
+                    self._active_effect._deactivate()
                     if self.pixel_count > 0:
                         self._active_effect.activate(self)
 
@@ -290,6 +290,7 @@ class Virtual:
         self.set_effect(effect)
 
     def set_effect(self, effect):
+        self.lock.acquire()
         if not self._devices:
             error = f"Virtual {self.id}: Cannot activate, no configured device segments"
             _LOGGER.warning(error)
@@ -324,7 +325,7 @@ class Virtual:
                 self.id,
             )
         )
-
+        self.lock.release()
         try:
             self.active = True
         except RuntimeError:
@@ -340,6 +341,7 @@ class Virtual:
         self._active_effect = None
 
     def clear_effect(self):
+        self.lock.acquire()
         self._ledfx.events.fire_event(EffectClearedEvent())
 
         if (
@@ -361,18 +363,20 @@ class Virtual:
         self._ledfx.loop.call_later(
             self._config["transition_time"], self.clear_frame
         )
+        self.lock.release()
 
     def clear_transition_effect(self):
         if self._transition_effect is not None:
-            self._transition_effect.deactivate()
+            self._transition_effect._deactivate()
         self._transition_effect = None
 
     def clear_active_effect(self):
         if self._active_effect is not None:
-            self._active_effect.deactivate()
+            self._active_effect._deactivate()
         self._active_effect = None
 
     def clear_frame(self):
+        self.lock.acquire()
         self.clear_active_effect()
         self.clear_transition_effect()
 
@@ -383,8 +387,10 @@ class Virtual:
             self._ledfx.events.fire_event(
                 VirtualUpdateEvent(self.id, self.assembled_frame)
             )
-
+            self.lock.release()
             self.deactivate()
+        else:
+            self.lock.release()
 
     def force_frame(self, color):
         """
@@ -479,6 +485,9 @@ class Virtual:
             if not self._active:
                 break
             start_time = timeit.default_timer()
+            # we need to lock before we test, or we could deactivate
+            # between test and execution
+            self.lock.acquire()
             if (
                 self._active_effect
                 and self._active_effect.is_active
@@ -499,6 +508,7 @@ class Virtual:
                     self._ledfx.events.fire_event(
                         VirtualUpdateEvent(self.id, self.assembled_frame)
                     )
+            self.lock.release()
 
             # adjust for the frame assemble time, min allowed sleep 1 ms
             # this will be more frame accurate on high res sleep systems
@@ -519,7 +529,6 @@ class Virtual:
         """
         Assembles the frame to be flushed.
         """
-        self.lock.acquire()
         # Get and process active effect frame
         self._active_effect._render()
         frame = self._active_effect.get_pixels()
@@ -579,7 +588,6 @@ class Virtual:
 
             np.multiply(frame, self._config["max_brightness"], frame)
             np.multiply(frame, self._ledfx.config["global_brightness"], frame)
-        self.lock.release()
         return frame
 
     def activate(self):
