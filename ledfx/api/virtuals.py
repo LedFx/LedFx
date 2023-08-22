@@ -6,6 +6,7 @@ from aiohttp import web
 from ledfx.api import RestEndpoint
 from ledfx.config import save_config
 from ledfx.utils import generate_id
+from ledfx.effects import DummyEffect
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -32,8 +33,8 @@ class VirtualsEndpoint(RestEndpoint):
                 "active": virtual.active,
                 "effect": {},
             }
-            # TODO: protecting DummyEffect with test for no name, needs better
-            if virtual.active_effect and virtual.active_effect.name != "":
+            # TODO: protect from DummyEffect, future consider side effects
+            if virtual.active_effect and not isinstance(virtual.active_effect, DummyEffect):
                 effect_response = {}
                 effect_response["config"] = virtual.active_effect.config
                 effect_response["name"] = virtual.active_effect.name
