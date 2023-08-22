@@ -40,7 +40,9 @@ class VirtualEndpoint(RestEndpoint):
             "effect": {},
         }
         # TODO: protect from DummyEffect, future consider side effects
-        if virtual.active_effect and not isinstance(virtual.active_effect, DummyEffect):
+        if virtual.active_effect and not isinstance(
+            virtual.active_effect, DummyEffect
+        ):
             effect_response = {}
             effect_response["config"] = virtual.active_effect.config
             effect_response["name"] = virtual.active_effect.name
