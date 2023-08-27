@@ -27,19 +27,29 @@ class OSCServerDevice(NetworkedDevice):
             ): vol.All(int, vol.Range(min=1)),
             vol.Required(
                 "send_type",
-                description="One_Argument -> /<uni>/dmx/<addr> [R, G, B]; Three_Arguments -> /<uni>/dmx/<addr> R G B; Three_Addresses -> /<uni>/dmx/<addr> R, /<uni>/dmx/<addr+1> G, /<uni>/dmx/<addr+2> B",
+                description="One_Argument -> <addr> [R, G, B]; Three_Arguments -> <addr> R G B; Three_Addresses -> <addr> R, <addr+1> G, <addr+2> B; All_To_One -> <addr> [[R, G, B], [R, G, B], [R, G, B]]",
                 default="One_Argument",
-            ): vol.In(["One_Argument", "Three_Arguments", "Three_Addresses"]),
+            ): vol.All(
+                str,
+                vol.In(
+                    [
+                        "One_Argument",
+                        "Three_Arguments",
+                        "Three_Addresses",
+                        "All_To_One",
+                    ]
+                ),
+            ),
             vol.Required(
                 "starting_addr",
-                description="Starting address of the DMX device",
+                description="Starting address/id of the OSC device",
                 default=0,
             ): vol.All(int, vol.Range(min=0)),
             vol.Required(
-                "universe",
-                description="Universe of the DMX device",
-                default=0,
-            ): vol.All(int, vol.Range(min=0)),
+                "path",
+                description="The OSC Path to send to - Placeholders: {address} -> this will start at the starting_addr and count up",
+                default="/0/dmx/{address}",
+            ): vol.All(str),
         }
     )
 
@@ -77,26 +87,29 @@ class OSCServerDevice(NetworkedDevice):
                 f"Invalid buffer size. {data.size} != {self._config['pixel_count'] * 3}"
             )
 
-        colors = [[int(r), int(g), int(b)] for r, g, b in data]
+        # Get the config values to variables
+        starting_addr = self._config["starting_addr"]
+
+        # Convert data to rgb tuple
+        colors = [(int(r), int(g), int(b)) for r, g, b in data]
+
+        # Create array for messages
         messages = []
+
+        # Go though all the pixels
         for i in range(self._config["pixel_count"]):
+            # Get the rgb values from the colors array
             r, g, b = colors[i % len(colors)]
             if self._config["send_type"] == "One_Argument":
                 send_data = OscMessageBuilder(
-                    "/{u}/dmx/{a}".format(
-                        u=self._config["universe"],
-                        a=self._config["starting_addr"] + i,
-                    )
+                    self.__generate_path(address=starting_addr + i)
                 )
                 send_data.add_arg([r / 255, g / 255, b / 255])
                 messages.append(send_data)
             elif self._config["send_type"] == "Three_Arguments":
                 # this one needs editing + saving the device after EVERY restart (atm) for some reason
                 send_data = OscMessageBuilder(
-                    "/{u}/dmx/{a}".format(
-                        u=self._config["universe"],
-                        a=self._config["starting_addr"] + i,
-                    )
+                    self.__generate_path(address=starting_addr + i)
                 )
                 send_data.add_arg(r / 255)
                 send_data.add_arg(g / 255)
@@ -104,29 +117,31 @@ class OSCServerDevice(NetworkedDevice):
                 messages.append(send_data)
             elif self._config["send_type"] == "Three_Addresses":
                 send_data_r = OscMessageBuilder(
-                    "/{u}/dmx/{a}".format(
-                        u=self._config["universe"],
-                        a=self._config["starting_addr"] + (i * 3),
-                    )
+                    self.__generate_path(address=starting_addr + (i * 3))
                 )
                 send_data_r.add_arg(r / 255)
                 send_data_g = OscMessageBuilder(
-                    "/{u}/dmx/{a}".format(
-                        u=self._config["universe"],
-                        a=self._config["starting_addr"] + (i * 3) + 1,
-                    )
+                    self.__generate_path(address=starting_addr + (i * 3) + 1)
                 )
                 send_data_g.add_arg(g / 255)
                 send_data_b = OscMessageBuilder(
-                    "/{u}/dmx/{a}".format(
-                        u=self._config["universe"],
-                        a=self._config["starting_addr"] + (i * 3) + 2,
-                    )
+                    self.__generate_path(address=starting_addr + (i * 3) + 2)
                 )
                 send_data_b.add_arg(b / 255)
                 messages.append(send_data_r)
                 messages.append(send_data_g)
                 messages.append(send_data_b)
+            elif self._config["send_type"] == "All_To_One":
+                if len(messages) == 0:
+                    send_data = OscMessageBuilder(
+                        self.__generate_path(address=starting_addr)
+                    )
+                    send_data.add_arg([r / 255, g / 255, b / 255])
+                    messages.append(send_data)
+                else:
+                    send_data = messages[0]
+                    send_data.add_arg([r / 255, g / 255, b / 255])
+                    messages[0] = send_data
 
         for message in messages:
             try:
@@ -136,3 +151,11 @@ class OSCServerDevice(NetworkedDevice):
                 continue
 
         self.last_frame = np.copy(data)
+
+    def __generate_path(self, path=None, address=None):
+        path = self._config["path"] if path is None else path
+        address = (
+            self._config["starting_address"] if address is None else address
+        )
+
+        return path.format(address=address)
