@@ -68,10 +68,11 @@ Now at the 'Send Type' setting you choose between:
         - Will send ALL the RGB data to ONE path.
         - Path: `<addr> [[R, G, B],[R, G, B],[R, G, B]]`
         - Pro's:
-            - Works with QLC+ with the 'Generic RGB' fixture
+            - Sends all the data in one message
+            - No slowing down
         - Cons:
-            - Sends a lot of data
-            - Can slow down the result (will result into 'latency' at your receiving server)
+            - Requires a custom server to handle
+            - Might become an issue if you're having too much pixels (possibly)
 
 
 Then you have to set the 'Pixel Count' option.
