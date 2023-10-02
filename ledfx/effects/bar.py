@@ -30,7 +30,7 @@ class BarAudioEffect(AudioReactiveEffect, GradientEffect):
                 "beat_skip",
                 description="Skips odd or even beats",
                 default="none",
-            ): vol.In(list(["none", "odds", "even"])),
+            ): vol.In(list(["none", "odd", "even"])),
             vol.Optional(
                 "skip_every",
                 description="If skipping beats, skip every",
