@@ -885,7 +885,7 @@ class Virtual:
                 _config["frequency_min"] = min(
                     _config["frequency_min"], MAX_FREQ - MIN_FREQ_DIFFERENCE
                 )
-                _config["frequency_min"] = min(
+                _config["frequency_min"] = max(
                     _config["frequency_min"], MIN_FREQ
                 )
                 _config["frequency_max"] = max(
