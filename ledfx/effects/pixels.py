@@ -32,9 +32,14 @@ class PixelsEffect(TemporalEffect):
             ): vol.All(vol.Coerce(float), vol.Range(min=20, max=20)),
             vol.Optional(
                 "step_period",
-                description="Time between each pixel step to light up ",
+                description="Time between each pixel step to light up",
                 default=1.0,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.01, max=5.0)),
+            ): vol.All(vol.Coerce(float), vol.Range(min=0.1, max=5.0)),
+            vol.Optional(
+                "pixels",
+                description="Number of pixels each step",
+                default=1,
+            ): vol.All(vol.Coerce(int), vol.Range(min=1, max=32)),
             vol.Optional(
                 "background_color",
                 description="Background color",
@@ -78,11 +83,14 @@ class PixelsEffect(TemporalEffect):
             if self.current_pixel == 0 or not self._config["build_up"]:
                 self.pixels[0 : self.pixel_count] = self.background_color
 
-            self.pixels[self.current_pixel] = self.pixel_color
+            self.pixels[
+                self.current_pixel : self.current_pixel
+                + self._config["pixels"]
+            ] = self.pixel_color
 
-            self.current_pixel += 1
+            self.current_pixel += self._config["pixels"]
 
-            if self.current_pixel == self.pixel_count:
+            if self.current_pixel >= self.pixel_count:
                 self.current_pixel = 0
 
         self.last_cycle_time = cycle_time
