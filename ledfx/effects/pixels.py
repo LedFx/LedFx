@@ -84,8 +84,10 @@ class PixelsEffect(TemporalEffect):
                 self.pixels[0 : self.pixel_count] = self.background_color
 
             self.pixels[
-                self.current_pixel : self.current_pixel
-                + self._config["pixels"]
+                self.current_pixel : min(
+                    self.current_pixel + self._config["pixels"],
+                    self.pixel_count - 1,
+                )
             ] = self.pixel_color
 
             self.current_pixel += self._config["pixels"]
