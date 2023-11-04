@@ -254,8 +254,8 @@ class Effect(BaseRegistry):
     def __init__(self, ledfx, config):
         self._ledfx = ledfx
         self._config = {}
-        self.update_config(config)
         self.lock = threading.Lock()
+        self.update_config(config)
 
     def __del__(self):
         if self._active:
@@ -292,8 +292,7 @@ class Effect(BaseRegistry):
         _LOGGER.info(f"Effect {self.NAME} deactivated.")
 
     def update_config(self, config):
-        # TODO: Sync locks to ensure everything is thread safe
-
+        self.lock.acquire()
         validated_config = type(self).schema()(config)
         prior_config = self._config
 
@@ -319,6 +318,7 @@ class Effect(BaseRegistry):
         for base in valid_classes:
             if base.config_updated != super(base, base).config_updated:
                 base.config_updated(self, self._config)
+        self.lock.release()
 
         _LOGGER.debug(
             f"Effect {self.NAME} config updated to {validated_config}."
