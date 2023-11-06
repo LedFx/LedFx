@@ -6,7 +6,6 @@ import numpy as np
 import voluptuous as vol
 from PIL import Image, ImageGrab
 
-from ledfx.color import parse_color, validate_color
 from ledfx.effects.temporal import TemporalEffect
 
 _LOGGER = logging.getLogger(__name__)
