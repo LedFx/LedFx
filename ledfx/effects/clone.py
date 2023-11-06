@@ -6,6 +6,7 @@ from PIL import Image, ImageGrab
 import numpy as np
 import voluptuous as vol
 
+from ledfx.color import parse_color, validate_color
 from ledfx.effects.temporal import TemporalEffect
 
 _LOGGER = logging.getLogger(__name__)
@@ -142,7 +143,9 @@ class PixelsEffect(TemporalEffect):
             pre_end = timeit.default_timer()
             frame = self.sct.grab(self.grab)
             part1_start = timeit.default_timer()
-            rgb_image = Image.frombytes('RGB', frame.size, frame.bgra, 'raw', 'BGRX')
+            rgb_image = Image.frombytes(
+                "RGB", frame.size, frame.bgra, "raw", "BGRX"
+            )
             part2_start = timeit.default_timer()
         else: # with pillow
             self.t_height = int(self.pixel_count / self.t_width)
@@ -153,11 +156,12 @@ class PixelsEffect(TemporalEffect):
             screenshot = ImageGrab.grab(bbox=box)
             part1_start = timeit.default_timer()
             # Convert the screenshot to an RGB image
-            rgb_image = screenshot.convert('RGB')
+            rgb_image = screenshot.convert("RGB")
             part2_start = timeit.default_timer()
 
-        rgb_image = rgb_image.resize((self.t_width, self.t_height),
-                                     Image.BILINEAR)
+        rgb_image = rgb_image.resize(
+            (self.t_width, self.t_height), Image.BILINEAR
+        )
         part3_start = timeit.default_timer()
         rgb_image = rgb_image.transpose(self.transpose)
         part4_start = timeit.default_timer()
@@ -172,14 +176,18 @@ class PixelsEffect(TemporalEffect):
         end = timeit.default_timer()
         if log is True:
             render_time = timeit.default_timer() - now
-            _LOGGER.info(f"screen:{self.screen} x,y: {self.x},{self.y} w,h: {self.width},{self.height}")
+            _LOGGER.info(
+                f"screen:{self.screen} x,y: {self.x},{self.y} w,h: {self.width},{self.height}"
+            )
             _LOGGER.info(f"transpose: {self.transpose}")
             _LOGGER.info(f"{self.t_width}x{self.t_height}")
             _LOGGER.info(f"{rgb_array.shape} {self.pixels.shape}")
             _LOGGER.info(f"clone {self.fps} full render:{render_time:.6f}")
-            _LOGGER.info(f"cyc: {(end - self.last):0.4f} sleep: {(now - self.last):0.4f} pre: {(pre_end - now):0.4f} grab: {(part1_start - pre_end):0.4f} RGB: {(part2_start - part1_start):0.4f} size: {(part3_start - part2_start):0.4f} trans {(part4_start - part3_start):0.4f} mash: {(part5_start - part4_start):0.4f}")
+            _LOGGER.info(
+                f"cyc: {(end - self.last):0.4f} sleep: {(now - self.last):0.4f} pre: {(pre_end - now):0.4f} grab: {(part1_start - pre_end):0.4f} RGB: {(part2_start - part1_start):0.4f} size: {(part3_start - part2_start):0.4f} trans {(part4_start - part3_start):0.4f} mash: {(part5_start - part4_start):0.4f}"
+            )
 
         self.last = end
 
-        return 0.05 # 0.1 64 fps, 0.2 32 fps don't know why
+        return 0.05  # 0.1 64 fps, 0.2 32 fps don't know why
 
