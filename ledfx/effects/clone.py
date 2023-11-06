@@ -1,10 +1,10 @@
 import logging
 import timeit
-import mss
-from PIL import Image, ImageGrab
 
+import mss
 import numpy as np
 import voluptuous as vol
+from PIL import Image, ImageGrab
 
 from ledfx.color import parse_color, validate_color
 from ledfx.effects.temporal import TemporalEffect
@@ -147,7 +147,7 @@ class PixelsEffect(TemporalEffect):
                 "RGB", frame.size, frame.bgra, "raw", "BGRX"
             )
             part2_start = timeit.default_timer()
-        else: # with pillow
+        else:  # with pillow
             self.t_height = int(self.pixel_count / self.t_width)
             # Define the coordinates of the screen area you want to capture
             box = (self.y, self.x, self.y + self.width, self.x + self.height)
@@ -187,4 +187,3 @@ class PixelsEffect(TemporalEffect):
         self.last = end
 
         return 0.05  # 0.1 64 fps, 0.2 32 fps don't know why
-
