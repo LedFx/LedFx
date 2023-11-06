@@ -177,12 +177,9 @@ class PixelsEffect(TemporalEffect):
         if log is True:
             render_time = timeit.default_timer() - now
             _LOGGER.info(
-                f"screen:{self.screen} x,y: {self.x},{self.y} w,h: {self.width},{self.height}"
+                f"screen:{self.screen} x,y: {self.x},{self.y} w,h: {self.width},{self.height} to: {self.t_width}x{self.t_height} trans: {self.transpose}"
             )
-            _LOGGER.info(f"transpose: {self.transpose}")
-            _LOGGER.info(f"{self.t_width}x{self.t_height}")
-            _LOGGER.info(f"{rgb_array.shape} {self.pixels.shape}")
-            _LOGGER.info(f"clone {self.fps} full render:{render_time:.6f}")
+            _LOGGER.info(f"clone FPS {self.fps} Full render:{render_time:.6f}")
             _LOGGER.info(
                 f"cyc: {(end - self.last):0.4f} sleep: {(now - self.last):0.4f} pre: {(pre_end - now):0.4f} grab: {(part1_start - pre_end):0.4f} RGB: {(part2_start - part1_start):0.4f} size: {(part3_start - part2_start):0.4f} trans {(part4_start - part3_start):0.4f} mash: {(part5_start - part4_start):0.4f}"
             )
