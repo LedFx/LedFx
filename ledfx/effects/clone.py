@@ -2,12 +2,10 @@ import logging
 import timeit
 import mss
 from PIL import Image, ImageGrab
-import sys
 
 import numpy as np
 import voluptuous as vol
 
-from ledfx.color import parse_color, validate_color
 from ledfx.effects.temporal import TemporalEffect
 
 _LOGGER = logging.getLogger(__name__)
@@ -127,7 +125,7 @@ class PixelsEffect(TemporalEffect):
             self.lasttime = nowint
 
         if self.with_mss is True:
-            if self.sct == None:
+            if self.sct is None:
                 self.sct = mss.mss()
                 self.t_height = int(self.pixel_count / self.t_width)
 
@@ -146,7 +144,6 @@ class PixelsEffect(TemporalEffect):
             part1_start = timeit.default_timer()
             rgb_image = Image.frombytes('RGB', frame.size, frame.bgra, 'raw', 'BGRX')
             part2_start = timeit.default_timer()
-
         else: # with pillow
             self.t_height = int(self.pixel_count / self.t_width)
             # Define the coordinates of the screen area you want to capture
@@ -169,17 +166,6 @@ class PixelsEffect(TemporalEffect):
         rgb_array = rgb_array.astype(np.float32)
         rgb_array = rgb_array.reshape(int(rgb_array.shape[0] / 3), 3)
         part5_start = timeit.default_timer()
-
-        # part2_start = timeit.default_timer()
-        # rgb_image = rgb_image.transpose(self.transpose)
-        # part3_start = timeit.default_timer()
-        # rgb_image = rgb_image.resize((self.t_width, self.t_height), Image.BILINEAR)
-        # part4_start = timeit.default_timer()
-        # rgb_bytes = rgb_image.tobytes()
-        # rgb_array = np.frombuffer(rgb_bytes, dtype=np.uint8)
-        # rgb_array = rgb_array.astype(np.float32)
-        # rgb_array = rgb_array.reshape(int(rgb_array.shape[0] / 3), 3)
-        # part5_start = timeit.default_timer()
 
         self.pixels = rgb_array
 
