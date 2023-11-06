@@ -24,6 +24,11 @@ class BandsMatrixAudioEffect(AudioReactiveEffect, GradientEffect):
                 description="Flip Gradient",
                 default=False,
             ): bool,
+            vol.Optional(
+                "flip_horizontal",
+                description="Flip horizontally",
+                default=False,
+            ): bool,
         }
     )
 
@@ -34,6 +39,7 @@ class BandsMatrixAudioEffect(AudioReactiveEffect, GradientEffect):
         # Create the filters used for the effect
         self.bkg_color = np.array((0, 0, 0), dtype=float)
         self.flip_gradient = config["flip_gradient"]
+        self.flip_horizontal = config["flip_horizontal"]
 
     def audio_data_updated(self, data):
         # Grab the filtered melbank
@@ -58,5 +64,8 @@ class BandsMatrixAudioEffect(AudioReactiveEffect, GradientEffect):
 
             if i % 2 != 0:
                 out_split[i] = np.flip(out_split[i], axis=0)
+
+        if self.flip_horizontal:
+            out_split = np.flip(out_split, axis=0)
 
         self.pixels = np.vstack(out_split)
