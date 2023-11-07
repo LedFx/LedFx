@@ -66,6 +66,11 @@ class PixelsEffect(TemporalEffect):
                 default=False,
             ): bool,
             vol.Optional(
+                "dump",
+                description="dump image",
+                default=False,
+            ): bool,
+            vol.Optional(
                 "rotate",
                 description="90 Degree rotations",
                 default=0,
@@ -81,6 +86,7 @@ class PixelsEffect(TemporalEffect):
         self.sct = None
         self.last = 0
         self.with_mss = True
+        self.last_dump = self._config["dump"]
 
     def on_activate(self, pixel_count):
         self.current_pixel = 0
@@ -88,24 +94,22 @@ class PixelsEffect(TemporalEffect):
 
     def config_updated(self, config):
         self.diag = self._config["diag"]
-
         self.screen = self._config["screen"]
         self.x = self._config["down"]
         self.y = self._config["across"]
         self.width = self._config["width"]
         self.height = self._config["height"]
         self.t_width = self._config["LED width"]
-        self.transpose = 0
-        if self._config["flip horizontal"] is True:
-            self.transpose |= Image.FLIP_LEFT_RIGHT
-        if self._config["flip vertical"] is True:
-            self.transpose |= Image.FLIP_TOP_BOTTOM
+
+        self.flip = self._config["flip vertical"]
+        self.mirror = self._config["flip horizontal"]
+        self.rotate = 0
         if self._config["rotate"] == 1:
-            self.transpose |= Image.ROTATE_90
+            self.rotate = Image.Transpose.ROTATE_90
         if self._config["rotate"] == 2:
-            self.transpose |= Image.ROTATE_180
+            self.rotate = Image.Transpose.ROTATE_180
         if self._config["rotate"] == 3:
-            self.transpose |= Image.ROTATE_270
+            self.rotate = Image.Transpose.ROTATE_270
 
         self.sct = None
 
@@ -162,7 +166,12 @@ class PixelsEffect(TemporalEffect):
             (self.t_width, self.t_height), Image.BILINEAR
         )
         part3_start = timeit.default_timer()
-        rgb_image = rgb_image.transpose(self.transpose)
+        if self.flip:
+            rgb_image = rgb_image.transpose(Image.Transpose.FLIP_TOP_BOTTOM)
+        if self.mirror:
+            rgb_image = rgb_image.transpose(Image.Transpose.FLIP_LEFT_RIGHT)
+        if self.rotate != 0:
+            rgb_image = rgb_image.transpose(self.rotate)
         part4_start = timeit.default_timer()
         rgb_bytes = rgb_image.tobytes()
         rgb_array = np.frombuffer(rgb_bytes, dtype=np.uint8)
@@ -184,5 +193,14 @@ class PixelsEffect(TemporalEffect):
             )
 
         self.last = end
+
+        if self.last_dump != self._config["dump"]:
+            _LOGGER.info("DUMP DUMP DUMP!!!!")
+            self.last_dump = self._config["dump"]
+            # show image on screen
+            rgb_image.show()
+            _LOGGER.info(
+                f"screen:{self.screen} x,y: {self.x},{self.y} w,h: {self.width},{self.height} to: {self.t_width}x{self.t_height} R: {self.rotate} F: {self.flip} M: {self.mirror}"
+            )
 
         return 0.05  # 0.1 64 fps, 0.2 32 fps don't know why
