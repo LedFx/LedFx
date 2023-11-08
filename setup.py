@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+from platform import release
+
 from setuptools import setup
 
 import ledfx.consts as const
@@ -52,10 +54,12 @@ INSTALL_REQUIRES = [
     # We can install this on all linux devices, it just won't work for anything other than a Pi
     'rpi-ws281x>=4.3.0; platform_system == "Linux"',
     "flux-led>=0.28.35",
-    "python-mbedtls~=2.7.1",
     "python-osc~=1.8.3",
 ]
 
+osstring = release()
+if not ("rpi" in osstring or "raspi" in osstring):
+    INSTALL_REQUIRES.append("python-mbedtls~=2.7.1")
 
 setup(
     name=PROJECT_PACKAGE_NAME,
