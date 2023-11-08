@@ -15,6 +15,7 @@ const {
   BrowserWindow,
   ipcMain,
   shell,
+  session
 } = require('electron');
 const isDev = require('electron-is-dev');
 // const { download } = require('electron-dl');
@@ -22,13 +23,9 @@ const fs = require('fs');
 
 // Conditionally include the dev tools installer to load React Dev Tools
 let installExtension;
-let REACT_DEVELOPER_TOOLS;
-let REDUX_DEVTOOLS; // NEW!
 if (isDev) {
   const devTools = require('electron-devtools-installer');
   installExtension = devTools.default;
-  REACT_DEVELOPER_TOOLS = devTools.REACT_DEVELOPER_TOOLS;
-  REDUX_DEVTOOLS = devTools.REDUX_DEVTOOLS;
 }
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling
@@ -148,7 +145,7 @@ const ready = () => (
     require('@electron/remote/main').enable(wind.webContents);
 
     if (isDev) {
-      await installExtension([REACT_DEVELOPER_TOOLS, REDUX_DEVTOOLS], {
+      await installExtension(['lmhkpmbekcpmknklioeibfkpmmfibljd', 'fmkadmapgofadopljbjfkapdkoienihi'], {
         loadExtensionOptions: { allowFileAccess: true },
         forceDownload: false,
       })
@@ -232,6 +229,13 @@ const ready = () => (
     tray.setIgnoreDoubleClickEvents(true);
     tray.on('click', () => wind.show());
 
+    wind.webContents.setWindowOpenHandler(({ url }) => {
+      if (url.includes(' https://accounts.spotify.com/authorize')) {
+        shell.openExternal(url)
+      }
+      return { action: 'allow' }
+    })
+
     ipcMain.on('toMain', (event, parameters) => {
       console.log(parameters);
       if (parameters === 'get-platform') {
@@ -308,7 +312,7 @@ if (process.platform === 'win32') {
     ready()
     // Handle the protocol. In this case, we choose to show an Error Box.
     app.on('open-url', (event, url) => {
-      event.preventDefault()
+      // event.preventDefault()
       console.log(event, url)
     })
 
@@ -317,7 +321,7 @@ if (process.platform === 'win32') {
   ready()
   // Handle the protocol. In this case, we choose to show an Error Box.
   app.on('open-url', (event, url) => {
-    event.preventDefault()
+    // event.preventDefault()
     console.log(event, url)
   })
 }

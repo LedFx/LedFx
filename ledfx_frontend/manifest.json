@@ -3,6 +3,12 @@
   "name": "LedFx Client by Blade",
   "description": "Connect to any LedFx-Instance",
   "author": "Yeon (Blade)",
+  "protocol_handlers": [
+    {
+      "protocol": "web+ledfx",
+      "url": "%s"
+    }
+  ],
   "developer": {
     "name": "Yeon",
     "url": "https://github.com/YeonV"
