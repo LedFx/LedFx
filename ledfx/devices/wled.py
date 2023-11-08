@@ -135,7 +135,7 @@ class WLEDDevice(NetworkedDevice):
                             self.sub_v(
                                 name,
                                 "wled",
-                                [[seg["start"], rows * (seg["stop"] - 1) + 1]],
+                                [[seg["start"], (rows * seg["stop"]) - 1]],
                                 rows,
                             )
                         else:
