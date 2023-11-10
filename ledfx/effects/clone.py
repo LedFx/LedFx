@@ -14,7 +14,7 @@ _LOGGER = logging.getLogger(__name__)
 class PixelsEffect(TemporalEffect):
     NAME = "Clone"
     CATEGORY = "Non-Reactive"
-    HIDDEN_KEYS = ["speed", "background_brightness", "blur", "mirror"]
+    HIDDEN_KEYS = ["speed", "background_brightness", "blur", "mirror", "flip"]
 
     start_time = timeit.default_timer()
 
@@ -117,7 +117,6 @@ class PixelsEffect(TemporalEffect):
         log = False
         now = timeit.default_timer()
         if self.diag:
-            now = timeit.default_timer()
             nowint = int(now)
             # if now just rolled over a second boundary
             if nowint != self.lasttime:
