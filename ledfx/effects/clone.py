@@ -184,7 +184,7 @@ class PixelsEffect(TemporalEffect):
         if log is True:
             render_time = timeit.default_timer() - now
             _LOGGER.info(
-                f"screen:{self.screen} x,y: {self.x},{self.y} w,h: {self.width},{self.height} to: {self.t_width}x{self.t_height} trans: {self.transpose}"
+                f"screen:{self.screen} x,y: {self.x},{self.y} w,h: {self.width},{self.height} to: {self.t_width}x{self.t_height} f: {self.flip} m: {self.mirror}"
             )
             _LOGGER.info(f"clone FPS {self.fps} Full render:{render_time:.6f}")
             _LOGGER.info(
