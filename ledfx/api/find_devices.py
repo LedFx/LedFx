@@ -1,4 +1,5 @@
 import logging
+from json import JSONDecodeError
 
 from aiohttp import web
 
@@ -13,8 +14,19 @@ class FindDevicesEndpoint(RestEndpoint):
 
     ENDPOINT_PATH = "/api/find_devices"
 
-    async def post(self) -> web.Response:
+    async def post(self, request) -> web.Response:
         """Find and add all WLED devices on the LAN"""
+        try:
+            data = await request.json()
+        except JSONDecodeError:
+            response = {
+                "status": "failed",
+                "reason": "JSON Decoding failed",
+            }
+            return web.json_response(data=response, status=400)
+
+        name_to_icon = data.get("name_to_icon")
+        _LOGGER.debug(f"name_to_icon: {name_to_icon}")
 
         def handle_exception(future):
             # Ignore exceptions, these will be raised when a device is found that already exists
