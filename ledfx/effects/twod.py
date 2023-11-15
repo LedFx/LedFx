@@ -18,6 +18,13 @@ class twod(AudioReactiveEffect):
     CATEGORY = "Diagnostic"
     HIDDEN_KEYS = ["speed", "background_brightness", "mirror", "flip", "blur"]
 
+    ADVANCED_KEYS = [
+        "test",
+        "dump",
+        "diag",
+        "pattern"
+    ]
+
     start_time = timeit.default_timer()
 
     _power_funcs = {
@@ -57,7 +64,12 @@ class twod(AudioReactiveEffect):
             ): bool,
             vol.Optional(
                 "test",
-                description="trigger stuff",
+                description="ignore audio input",
+                default=False,
+            ): bool,
+            vol.Optional(
+                "pattern",
+                description="use a test pattern",
                 default=False,
             ): bool,
             vol.Optional(
@@ -89,6 +101,11 @@ class twod(AudioReactiveEffect):
                 "url source", description="Load image from",
                 default=""
             ): str,
+            vol.Optional(
+                "advanced",
+                description="enable advanced options",
+                default=False,
+            ): bool,
         }
     )
 
@@ -112,10 +129,8 @@ class twod(AudioReactiveEffect):
         self.diag = self._config["diag"]
         self.t_width = self._config["LED width"]
         # if we have an attibute for pixel_count the use it in calc, otherwise guess
-        if hasattr(self, "pixel_count"):
-            temp_height = int(self.pixel_count / self.t_width)
-        else:
-            temp_height = self.t_width
+
+        temp_height = self.t_width
 
         # cannot get t_height here, pixel_count is not set yet on first call :-(
         self.flip = self._config["flip vertical"]
@@ -130,7 +145,7 @@ class twod(AudioReactiveEffect):
         if self._config["rotate"] == 3:
             self.rotate = Image.Transpose.ROTATE_270
 
-        if self.test:
+        if self._config["pattern"]:
             url_path = "https://images.squarespace-cdn.com/content/v1/60cc480d9290423b888eb94a/1624780092100-4FLILMIV0YHHU45GB7XZ/Test+Pattern+t.png"
         else:
             url_path = self._config["url source"]
@@ -191,8 +206,7 @@ class twod(AudioReactiveEffect):
 
     def draw(self):
         # this should be an empty function with pass
-        if self.t_height == -1:
-            self.t_height = int(self.pixel_count / self.t_width)
+        self.t_height = int(self.pixel_count / self.t_width)
 
         rgb_image = Image.new("RGB", (self.t_width, self.t_height))
         rgb_draw = ImageDraw.Draw(rgb_image)
