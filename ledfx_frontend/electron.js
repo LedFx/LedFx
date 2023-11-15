@@ -144,7 +144,7 @@ const ready = () => (
 
     require('@electron/remote/main').enable(wind.webContents);
 
-    if (isDev) {
+    if (isDev) {     
       await installExtension(['lmhkpmbekcpmknklioeibfkpmmfibljd', 'fmkadmapgofadopljbjfkapdkoienihi'], {
         loadExtensionOptions: { allowFileAccess: true },
         forceDownload: false,
