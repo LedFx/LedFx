@@ -1168,3 +1168,19 @@ def wled_support_DDP(build) -> bool:
         return True
     else:
         return False
+
+
+name_to_icon = {}
+
+
+def set_name_to_icon(new_dict):
+    global name_to_icon
+    name_to_icon = new_dict
+
+
+def get_icon_name(wled_name):
+    global name_to_icon
+    for name, icon in name_to_icon.items():
+        if name.lower() in wled_name.lower():
+            return icon
+    return "wled"
