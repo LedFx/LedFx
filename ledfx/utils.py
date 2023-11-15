@@ -1170,43 +1170,17 @@ def wled_support_DDP(build) -> bool:
         return False
 
 
-name_to_icon = {
-    "Desk": "mdi:desk",
-    "Desktop": "mdi:desktop-classic",
-    "Monitor": "mdi:monitor",
-    "TV": "mdi:television",
-    "Kitchen": "mdi:stove",
-    "Fridge": "mdi:fridge",
-    "Bed": "mdi:bed",
-    "Radiator": "mdi:radiator",
-    "Heater": "mdi:radiator",
-    "Cinema": "mdi:theater",
-    "Water": "mdi:water-pump",
-    "Matrix": "mdi:table-large",
-    "Wardrobe": "mdi:wardrobe",
-    "Cupboard": "mdi:cupboard",
-    "Speaker": "mdi:speaker",
-    "Chair": "mdi:chair-rolling",
-    "Couch": "mdi:sofa",
-    "Sofa": "mdi:sofa",
-    "Cloud": "mdi:cloud",
-    "Roof": "mdi:home-roof",
-    "Logo-III-Y": "yz:logo3y",
-    "Logo-III-Z": "yz:logo3z",
-    "Logo-III-Top": "yz:logo3top",
-    "Logo-III-Left": "yz:logo3left",
-    "Logo-III-Right": "yz:logo3right",
-    "Logo-III": "yz:logo3",
-    "Logo-II-Y": "yz:logo2y",
-    "Logo-II-Z": "yz:logo2z",
-    "Logo-II-Top": "yz:logo2top",
-    "Logo-II-Bottom": "yz:logo2bot",
-    "Logo-II": "yz:logo2",
-}
+name_to_icon = {}
+
+
+def set_name_to_icon(new_dict):
+    global name_to_icon
+    name_to_icon = new_dict
 
 
 def get_icon_name(wled_name):
+    global name_to_icon
     for name, icon in name_to_icon.items():
-        if name in wled_name:
+        if name.lower() in wled_name.lower():
             return icon
     return "wled"

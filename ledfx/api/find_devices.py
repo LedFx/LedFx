@@ -4,7 +4,7 @@ from json import JSONDecodeError
 from aiohttp import web
 
 from ledfx.api import RestEndpoint
-from ledfx.utils import async_fire_and_forget
+from ledfx.utils import async_fire_and_forget, set_name_to_icon
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -25,8 +25,7 @@ class FindDevicesEndpoint(RestEndpoint):
             }
             return web.json_response(data=response, status=400)
 
-        name_to_icon = data.get("name_to_icon")
-        _LOGGER.debug(f"name_to_icon: {name_to_icon}")
+        set_name_to_icon(data.get("name_to_icon"))
 
         def handle_exception(future):
             # Ignore exceptions, these will be raised when a device is found that already exists
