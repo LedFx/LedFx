@@ -4,7 +4,6 @@ import urllib.request
 
 import numpy as np
 import voluptuous as vol
-
 from PIL import Image, ImageDraw
 
 from ledfx.effects.audio import AudioReactiveEffect
@@ -18,12 +17,7 @@ class twod(AudioReactiveEffect):
     CATEGORY = "Diagnostic"
     HIDDEN_KEYS = ["speed", "background_brightness", "mirror", "flip", "blur"]
 
-    ADVANCED_KEYS = [
-        "test",
-        "dump",
-        "diag",
-        "pattern"
-    ]
+    ADVANCED_KEYS = ["test", "dump", "diag", "pattern"]
 
     start_time = timeit.default_timer()
 
@@ -98,8 +92,7 @@ class twod(AudioReactiveEffect):
                 default=False,
             ): bool,
             vol.Optional(
-                "url source", description="Load image from",
-                default=""
+                "url source", description="Load image from", default=""
             ): str,
             vol.Optional(
                 "advanced",
@@ -154,16 +147,24 @@ class twod(AudioReactiveEffect):
             try:
                 with urllib.request.urlopen(url_path) as url:
                     self.bass_image = Image.open(url)
-                    self.bass_image.thumbnail((self.t_width * 4, temp_height * 4))
+                    self.bass_image.thumbnail(
+                        (self.t_width * 4, temp_height * 4)
+                    )
                 _LOGGER.info(f"pre scaled {self.bass_image.size}")
 
                 if self.bass_image.mode != "RGBA":
                     # If it doesn't have an alpha channel, create a new image with an alpha channel
-                    image_with_alpha = Image.new("RGBA", self.bass_image.size, (255, 255, 255, 255))  # Create a white image with an alpha channel
-                    image_with_alpha.paste(self.bass_image, (0, 0))  # Paste the original image onto the new one
+                    image_with_alpha = Image.new(
+                        "RGBA", self.bass_image.size, (255, 255, 255, 255)
+                    )  # Create a white image with an alpha channel
+                    image_with_alpha.paste(
+                        self.bass_image, (0, 0)
+                    )  # Paste the original image onto the new one
                     self.bass_image = image_with_alpha
             except Exception as e:
-                _LOGGER.error(f"Failed to load image from {self._config['url source']}: {e}")
+                _LOGGER.error(
+                    f"Failed to load image from {self._config['url source']}: {e}"
+                )
                 self.bass_image = Image.open(get_icon_path("tray.png"))
         else:
             self.bass_image = Image.open(get_icon_path("tray.png"))
@@ -219,10 +220,14 @@ class twod(AudioReactiveEffect):
             mid_w, mid_h = int(self.t_width / 2), int(self.t_height / 2)
             rgb_draw.line([(0, 0), (mid_w, mid_h)], fill="red", width=1)
             rgb_draw.line(
-                [(self.t_width - 1, 0), (mid_w-1, mid_h)], fill="blue", width=1
+                [(self.t_width - 1, 0), (mid_w - 1, mid_h)],
+                fill="blue",
+                width=1,
             )
             rgb_draw.line(
-                [(0, self.t_height - 1), (mid_w-1, mid_h)], fill="green", width=1
+                [(0, self.t_height - 1), (mid_w - 1, mid_h)],
+                fill="green",
+                width=1,
             )
             rgb_draw.line(
                 [(self.t_width - 1, self.t_height - 1), (mid_w, mid_h)],
@@ -237,7 +242,6 @@ class twod(AudioReactiveEffect):
         image_h = int(self.t_height * self.bar)
 
         if image_w > 0 and image_h > 0:
-
             # make a copy of the original that we will manipulate
             bass_sized_img = self.bass_image.copy()
 
@@ -245,7 +249,9 @@ class twod(AudioReactiveEffect):
                 self.spin += self.bar
                 if self.spin > 360:
                     self.spin = 0
-                bass_sized_img = bass_sized_img.rotate(self.spin, expand = self.clip)
+                bass_sized_img = bass_sized_img.rotate(
+                    self.spin, expand=self.clip
+                )
 
             # resize bass_image to fit in the target
             bass_sized_img.thumbnail(
