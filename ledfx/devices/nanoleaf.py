@@ -36,7 +36,7 @@ class NanoleafDevice(NetworkedDevice):
             vol.Optional(
                 "sync_mode",
                 description="Streaming protocol to Nanoleaf device",
-                default="UDP",
+                default="TCP",
             ): vol.In(["TCP", "UDP"]),
         }
     )
