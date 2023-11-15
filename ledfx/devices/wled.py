@@ -134,14 +134,14 @@ class WLEDDevice(NetworkedDevice):
                         if rows > 1:
                             self.sub_v(
                                 name,
-                                "wled",
+                                None,
                                 [[seg["start"], (rows * seg["stop"]) - 1]],
                                 rows,
                             )
                         else:
                             self.sub_v(
                                 name,
-                                "wled",
+                                None,
                                 [[seg["start"], rows * (seg["stop"] - 1)]],
                                 rows,
                             )

@@ -19,6 +19,7 @@ from ledfx.utils import (
     RegistryLoader,
     async_fire_and_forget,
     generate_id,
+    get_icon_name,
     resolve_destination,
     wled_support_DDP,
 )
@@ -387,9 +388,12 @@ class Device(BaseRegistry):
         compound_name = f"{self.name}-{name}"
         _LOGGER.info(f"Creating a virtual for device {compound_name}")
         virtual_id = generate_id(compound_name)
+        icon_name = get_icon_name(compound_name)
+        if icon_name == "wled" and icon is not None:
+            icon_name = icon
         virtual_config = {
             "name": compound_name,
-            "icon_name": icon,
+            "icon_name": icon_name,
             "transition_time": 0,
             "rows": rows,
         }
@@ -703,10 +707,12 @@ class Devices(RegistryLoader):
                 )
                 sync_mode = "UDP"
 
+            icon_name = get_icon_name(wled_name)
+
             wled_config = {
                 "name": wled_name,
                 "pixel_count": wled_count,
-                "icon_name": "wled",
+                "icon_name": icon_name,
                 "rgbw_led": wled_rgbmode,
                 "sync_mode": sync_mode,
             }
