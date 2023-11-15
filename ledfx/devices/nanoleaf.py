@@ -205,7 +205,7 @@ class NanoleafDevice(NetworkedDevice):
         }
 
         if nanoleaf_config["model"] == LightPanelModel:
-           config["udp_port"] = 60221
+            config["udp_port"] = 60221
 
         self.update_config(config)
 
