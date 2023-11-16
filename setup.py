@@ -52,7 +52,7 @@ INSTALL_REQUIRES = [
     # We can install this on all linux devices, it just won't work for anything other than a Pi
     'rpi-ws281x>=4.3.0; platform_system == "Linux"',
     # No whl for arm linux need to be build from source
-    'python-mbedtls~=2.7.1; (platform_system == "Linux" and platform_machine != "aarch64") or platform_system == "Windows" or platform_system == "Darwin"',
+    'python-mbedtls~=2.7.1; (platform_system == "Linux" and platform_machine != "aarch64" and platform_machine != "armv7l") or platform_system == "Windows" or platform_system == "Darwin"',
     "flux-led>=0.28.35",
     "python-osc~=1.8.3",
 ]
