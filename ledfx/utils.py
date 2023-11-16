@@ -1186,6 +1186,7 @@ def clean_ip(ip_address):
         .replace("/", "")
     )
 
+
 name_to_icon = {}
 
 
