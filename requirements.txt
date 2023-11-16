@@ -29,6 +29,6 @@
     yappi~=1.4
     zeroconf~=0.39.4
     flux-led>=0.28.35
-    python-mbedtls~=2.7.1
+    python-mbedtls~=2.7.1; (platform_system == 'Linux' and platform_machine != 'aarch64' and platform_machine != 'armv7l') or platform_system == 'Windows' or platform_system == 'Darwin'
     python-osc~=1.8.3
 

@@ -1713,6 +1713,7 @@ ledfx_presets = {
             "config": {
                 "blur": 0,
                 "flip_gradient": False,
+                "flip_horizontal": False,
                 "background_brightness": 1,
                 "background_color": "#000000",
                 "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
