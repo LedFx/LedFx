@@ -26,8 +26,9 @@ class GetNanoleadTokenEndpoint(RestEndpoint):
             return web.json_response(data=response, status=400)
 
         ip = data.get("ip_address")
+        port = data.get("port")
         # TODO: Get Nanoleaf Token from IP
-        _LOGGER.info(f"Get Nanoleaf Token from {ip}")
+        _LOGGER.info(f"Get Nanoleaf Token from {ip}:{port}")
 
         # TODO: Replace with actual token
         response = {"status": "success", "auth_token": "1337Blade"}
