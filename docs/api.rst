@@ -286,6 +286,30 @@ example:
         "error": "timed out"
     }
 
+/api/getNanoleafToken
+=========================
+
+.. rubric:: POST
+
+REST end-point for requesting auth token from Nanoleaf
+Ensure that the Nanoleaf controller is in pairing mode
+Long press the power button on the controller for 5-7 seconds
+White LEDs will scan back and forth to indicate pairing mode
+
+Returns the auth token as a string
+
+.. code-block:: json
+    {
+        "auth_token":"N7knmECvfRjoBlahBlah1Gsn5K5HcxHy"
+    }
+
+If the Nanoleaf controller is present but not in pairing mode will return an error message
+
+.. code-block:: json
+    {
+        "error":"{ip}:{port}: Ensure Nanoleaf controller is in pairing mode"
+    }
+
 /api/effects
 =========================
 
