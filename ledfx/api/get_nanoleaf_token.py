@@ -28,7 +28,12 @@ class GetNanoleadTokenEndpoint(RestEndpoint):
         ip = data.get("ip_address")
         port = data.get("port")
         _LOGGER.info(f"Get Nanoleaf Token from {ip}:{port}")
-        # TODO: Get Nanoleaf Token from IP and Port
-        # TODO: Replace with actual token
-        response = {"status": "success", "auth_token": "1337Blade"}
-        return web.json_response(data=response, status=200)
+        
+        try:
+            response = requests.post(f"http://{ip}:{port}/api/v1/new")
+            data = response.json()
+        except requests.exceptions.RequestException:
+            msg = f"{unquote(url)}: Failed to fetch"
+            raise ValueError(msg)
+
+        return web.json_response(data=data, status=200)
