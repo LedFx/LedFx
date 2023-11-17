@@ -28,7 +28,7 @@ class GetNanoleadTokenEndpoint(RestEndpoint):
         ip = data.get("ip_address")
         port = data.get("port")
         _LOGGER.info(f"Get Nanoleaf Token from {ip}:{port}")
-        
+
         try:
             response = requests.post(f"http://{ip}:{port}/api/v1/new")
             data = response.json()
