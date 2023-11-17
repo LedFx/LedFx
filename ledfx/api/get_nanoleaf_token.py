@@ -15,7 +15,7 @@ class GetNanoleadTokenEndpoint(RestEndpoint):
     Long press the power button on the controller for 5-7 seconds
     White LEDs will scan back and forth to indicate pairing mode"""
 
-    ENDPOINT_PATH = "/api/getNanoleafToken"
+    ENDPOINT_PATH = "/api/get_nanoleaf_token"
 
     async def post(self, request) -> web.Response:
         """Find and add all WLED devices on the LAN"""

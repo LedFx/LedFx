@@ -286,7 +286,7 @@ example:
         "error": "timed out"
     }
 
-/api/getNanoleafToken
+/api/get_nanoleaf_token
 =========================
 
 .. rubric:: POST
@@ -299,6 +299,7 @@ White LEDs will scan back and forth to indicate pairing mode
 Returns the auth token as a string
 
 .. code-block:: json
+
     {
         "auth_token":"N7knmECvfRjoBlahBlah1Gsn5K5HcxHy"
     }
@@ -306,6 +307,7 @@ Returns the auth token as a string
 If the Nanoleaf controller is present but not in pairing mode will return an error message
 
 .. code-block:: json
+
     {
         "error":"{ip}:{port}: Ensure Nanoleaf controller is in pairing mode"
     }
