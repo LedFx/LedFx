@@ -5,7 +5,6 @@ import requests
 from aiohttp import web
 
 from ledfx.api import RestEndpoint
-from ledfx.utils import async_fire_and_forget, set_name_to_icon
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -31,10 +30,13 @@ class GetNanoleadTokenEndpoint(RestEndpoint):
         _LOGGER.info(f"Get Nanoleaf Token from {ip}:{port}")
 
         try:
-            response = requests.post(f"http://{ip}:{port}/api/v1/new")
+            response = requests.post(
+                f"http://{ip}:{port}/api/v1/new", timeout=(3, 3)
+            )
             data = response.json()
-        except requests.exceptions.RequestException:
-            msg = f"{ip}:{port}: Failed to fetch"
+        except requests.exceptions.RequestException as e:
+            msg = f"{ip}:{port}: exception {str(e)}"
+            _LOGGER.error(msg)
             raise ValueError(msg)
 
         return web.json_response(data=data, status=200)
