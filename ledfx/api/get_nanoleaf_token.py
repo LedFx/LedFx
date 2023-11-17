@@ -10,9 +10,12 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class GetNanoleadTokenEndpoint(RestEndpoint):
-    """REST end-point for detecting and adding wled devices"""
+    """REST end-point for requesting auth token from Nanoleaf
+    Ensure that the Nanoleaf controller is in pairing mode
+    Long press the power button on the controller for 5-7 seconds
+    White LEDs will scan back and forth to indicate pairing mode"""
 
-    ENDPOINT_PATH = "/api/getNanoleafToken"
+    ENDPOINT_PATH = "/api/get_nanoleaf_token"
 
     async def post(self, request) -> web.Response:
         """Find and add all WLED devices on the LAN"""
@@ -33,6 +36,10 @@ class GetNanoleadTokenEndpoint(RestEndpoint):
             response = requests.post(
                 f"http://{ip}:{port}/api/v1/new", timeout=(3, 3)
             )
+            if response.text == "":
+                msg = f"{ip}:{port}: Ensure Nanoleaf controller is in pairing mode"
+                _LOGGER.error(msg)
+                raise ValueError(msg)
             data = response.json()
         except requests.exceptions.RequestException as e:
             msg = f"{ip}:{port}: exception {str(e)}"
