@@ -291,10 +291,10 @@ example:
 
 .. rubric:: POST
 
-REST end-point for requesting auth token from Nanoleaf
-Ensure that the Nanoleaf controller is in pairing mode
-Long press the power button on the controller for 5-7 seconds
-White LEDs will scan back and forth to indicate pairing mode
+REST end-point for requesting auth token from Nanoleaf.
+Ensure that the Nanoleaf controller is in pairing mode.
+Long press the power button on the controller for 5-7 seconds.
+White LEDs will scan back and forth to indicate pairing mode.
 
 Returns the auth token as a string
 
