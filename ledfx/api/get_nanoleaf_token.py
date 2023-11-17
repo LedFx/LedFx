@@ -33,8 +33,9 @@ class GetNanoleadTokenEndpoint(RestEndpoint):
         _LOGGER.info(f"Get Nanoleaf Token from {ip}:{port}")
 
         try:
-            response = requests.post(f"http://{ip}:{port}/api/v1/new",
-                                     timeout=(3,3))
+            response = requests.post(
+                f"http://{ip}:{port}/api/v1/new", timeout=(3, 3)
+            )
             if response.text == "":
                 msg = f"{ip}:{port}: Ensure Nanoleaf controller is in pairing mode"
                 _LOGGER.error(msg)
