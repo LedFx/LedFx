@@ -9,6 +9,7 @@ import numpy as np
 import samplerate
 import sounddevice as sd
 import voluptuous as vol
+import timeit
 
 import ledfx.api.websocket
 from ledfx.api.websocket import WEB_AUDIO_CLIENTS, WebAudioStream
@@ -16,6 +17,7 @@ from ledfx.effects import Effect
 from ledfx.effects.math import ExpFilter
 from ledfx.effects.melbank import FFT_SIZE, MIC_RATE, Melbanks
 from ledfx.events import AudioDeviceChangeEvent, Event
+from ledfx.utils import Graph
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -129,9 +131,33 @@ class AudioInputSource:
             extra=vol.ALLOW_EXTRA,
         )
 
+    def log_sec(self, now):
+        result = False
+        nowint = int(now)
+        # if now just rolled over a second boundary
+        if nowint != self.lasttime:
+            self.fps = self.frame
+            self.frame = 0
+            result = True
+        else:
+            self.frame += 1
+        self.lasttime = nowint
+        return result
+
     def __init__(self, ledfx, config):
         self._ledfx = ledfx
         self.update_config(config)
+        self.lasttime = 0
+        self.frame = 0
+        self.fps = 0
+        self.graph_samples = Graph(
+            "Audio Samples",
+            ["raw","post"],
+            points=40000, # LOOK: Hard coded for 1 seconds worth of samples
+            y_title="sample",
+            y_axis_max=None, # let it auto scale Y
+        )
+        self.sample_count = 0
 
         def deactivate(e):
             self.deactivate()
@@ -360,6 +386,24 @@ class AudioInputSource:
                 f"Discarded malformed audio frame - {len(processed_audio_sample)} samples, expected {out_sample_len}"
             )
             return
+
+        if self.log_sec(timeit.default_timer()):
+            _LOGGER.info(f"Audio Processing FPS: {self.fps}")
+            _LOGGER.info(f"Raw Sample Length: {len(raw_sample)}")
+            _LOGGER.info(f"Processed Sample Length: {len(processed_audio_sample)}")
+
+        # LOOK: this is a hard coding for what we expect the packet sample rate to be
+        # Replace with value from logging for audio FPS if in doubt, look for
+        # [INFO    ] ledfx.effects.audio            : Audio Processing FPS: 59
+        frame_time = 1/59.0
+        if self.graph_samples is not None:
+            self.graph_samples.append_multi_by_key(f"raw", raw_sample, frame_time / len(raw_sample))
+            self.graph_samples.append_multi_by_key(f"post", processed_audio_sample, frame_time / len(processed_audio_sample))
+            self.sample_count += 1
+            # LOOK: hard code to dump after 1 second
+            if self.sample_count > 60:
+                self.graph_samples.dump_graph()
+                self.graph_samples = None
 
         # handle delaying the audio with the queue
         if self.delay_queue:

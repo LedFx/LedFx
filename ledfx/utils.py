@@ -957,6 +957,15 @@ class Plot_range:
         self.xs.append(timeit.default_timer() - self.birth)
         self.ys.append(y)
 
+    def append_multi(self, ys, inc_t):
+        base_time = timeit.default_timer() - self.birth
+        offset_t = 0.0
+        for v in ys:
+            self.xs.append(base_time + offset_t)
+            offset_t += inc_t
+            self.ys.append(v)
+
+
     def list_x(self):
         return list(self.xs)
 
@@ -1029,6 +1038,17 @@ class Graph:
             value (float): value which you wish to append to the range
         """
         self.ranges[key].append(value)
+
+    def append_multi_by_key(self, key, values, off_t):
+        """
+        Appends a value array into range ring buffer associated with axis key, timestamp is applied in second since graph creation
+
+        Parameters:
+            key (str): key name of the range, matching those used during creation to which to append
+            values (float): value which you wish to append to the range
+            off_t (float): offset time between values in seconds
+        """
+        self.ranges[key].append_multi(values, off_t)
 
     def append_tag(self, text, y, color="black"):
         """
