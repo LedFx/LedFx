@@ -55,6 +55,11 @@ class PixelsEffect(TemporalEffect):
                 description="Single or building pixels",
                 default=False,
             ): bool,
+            vol.Optional(
+                "Capture",
+                description="Trigger an audio capture for 1 sec and dump",
+                default=False,
+            ): bool,
         }
     )
 
@@ -74,6 +79,14 @@ class PixelsEffect(TemporalEffect):
         self.pixel_color = np.array(
             parse_color(self._config["pixel_color"]), dtype=float
         )
+
+        if hasattr(self, "last_capture"):
+            if config["Capture"] != self.last_capture:
+                _LOGGER.info("Trigger Audio Capture for 1 sec")
+                self._ledfx.audio.capture()
+                self.last_capture = config["Capture"]
+        else:
+            self.last_capture = self.config["Capture"]
 
     def effect_loop(self):
         pass_time = timeit.default_timer() - self.start_time

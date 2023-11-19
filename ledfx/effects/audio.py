@@ -150,6 +150,14 @@ class AudioInputSource:
         self.lasttime = 0
         self.frame = 0
         self.fps = 0
+        self.graph_samples = None
+
+        def deactivate(e):
+            self.deactivate()
+
+        self._ledfx.events.add_listener(deactivate, Event.LEDFX_SHUTDOWN)
+
+    def capture(self):
         self.graph_samples = Graph(
             "Audio Samples",
             ["raw","post"],
@@ -158,11 +166,6 @@ class AudioInputSource:
             y_axis_max=None, # let it auto scale Y
         )
         self.sample_count = 0
-
-        def deactivate(e):
-            self.deactivate()
-
-        self._ledfx.events.add_listener(deactivate, Event.LEDFX_SHUTDOWN)
 
     def update_config(self, config):
         """Deactivate the audio, update the config, the reactivate"""
