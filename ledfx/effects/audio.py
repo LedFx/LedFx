@@ -397,8 +397,8 @@ class AudioInputSource:
         # [INFO    ] ledfx.effects.audio            : Audio Processing FPS: 59
         frame_time = 1/59.0
         if self.graph_samples is not None:
-            self.graph_samples.append_multi_by_key(f"raw", raw_sample, frame_time / len(raw_sample))
-            self.graph_samples.append_multi_by_key(f"post", processed_audio_sample, frame_time / len(processed_audio_sample))
+            self.graph_samples.append_multi_by_key("raw", raw_sample, frame_time / len(raw_sample))
+            self.graph_samples.append_multi_by_key("post", processed_audio_sample, frame_time / len(processed_audio_sample))
             self.sample_count += 1
             # LOOK: hard code to dump after 1 second
             if self.sample_count > 60:
