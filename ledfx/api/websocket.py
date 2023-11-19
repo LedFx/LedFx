@@ -52,7 +52,6 @@ class WebsocketEndpoint(RestEndpoint):
                 "Connection Reset Error on Websocket Connection - retrying."
             )
 
-
 class WebsocketConnection:
     def __init__(self, ledfx):
         self._ledfx = ledfx
@@ -297,6 +296,19 @@ class WebsocketConnection:
             message.get("data").values(), dtype=np.float32
         )
 
+class UdpProtocol(asyncio.DatagramProtocol):
+    def __init__(self):
+        super().__init__()
+
+    def connection_made(self, transport) -> "Used by asyncio":
+        self.transport = transport
+
+    def datagram_received(self, data, addr) -> "Main entrypoint for processing message":
+        fdata = np.array(
+            [(int.from_bytes(data[i:i + 2], "little") - 2048) / 2048 for i in range(0, len(data), 2)],
+            dtype=np.float32)
+        ACTIVE_AUDIO_STREAM.data = fdata
+
 
 class WebAudioStream:
     def __init__(self, client: str, callback: callable):
@@ -304,8 +316,14 @@ class WebAudioStream:
         self.callback = callback
         self._data = None
         self._active = False
+        self._topUdpLoop = None
+        self._udpLoop = None
+        self._transport = None
+        self._protocol = None
 
     def start(self):
+        self._topUdpLoop = asyncio.get_event_loop()
+        self._topUdpLoop.create_task(self.run_server())
         self._active = True
 
     def stop(self):
@@ -313,6 +331,12 @@ class WebAudioStream:
 
     def close(self):
         self._active = False
+        self._transport.close()
+
+    async def run_server(self):
+        self._udpLoop = asyncio.get_event_loop()
+        self._transport, self._protocol = await self._udpLoop.create_datagram_endpoint(UdpProtocol,
+                                                                                       local_addr=('0.0.0.0', 8000))
 
     @property
     def data(self, x):
