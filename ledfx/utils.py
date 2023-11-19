@@ -965,7 +965,6 @@ class Plot_range:
             offset_t += inc_t
             self.ys.append(v)
 
-
     def list_x(self):
         return list(self.xs)
 
