@@ -267,10 +267,11 @@ class AudioInputSource:
                     ch = 2
 
             if hostapis[device["hostapi"]]["name"] == "WEB AUDIO":
+                # Add a way to parse from config the UDP port.
                 ledfx.api.websocket.ACTIVE_AUDIO_STREAM = (
                     self._stream
                 ) = WebAudioStream(
-                    device["client"], self._audio_sample_callback
+                    device["client"], 8000, self._audio_sample_callback
                 )
             else:
                 self._stream = self._audio.InputStream(
