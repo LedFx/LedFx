@@ -274,6 +274,19 @@ class WebsocketConnection:
                 message.get("data"),
             )
         )
+        try:
+            ACTIVE_AUDIO_STREAM._bits = int(message.get("bits"))
+        except Exception as err:
+            _LOGGER.info("Web audio client {} did not specify bit depth, using default 12 bits.".format(
+                message.get("client")
+            ))
+        self.send(
+            {
+                "connected": True,
+                "udp_port": ACTIVE_AUDIO_STREAM.udp_port,
+            }
+        )
+        
 
     @websocket_handler("audio_stream_data")
     def audio_stream_data_handler(self, message):
@@ -311,8 +324,9 @@ class UdpProtocol(asyncio.DatagramProtocol):
 
 
 class WebAudioStream:
-    def __init__(self, client: str, callback: callable):
+    def __init__(self, client: str, udp_port: int, callback: callable):
         self.client = client
+        self.udp_port = udp_port
         self.callback = callback
         self._data = None
         self._active = False
@@ -320,6 +334,7 @@ class WebAudioStream:
         self._udpLoop = None
         self._transport = None
         self._protocol = None
+        self._bits = 12
 
     def start(self):
         self._topUdpLoop = asyncio.get_event_loop()
@@ -331,12 +346,18 @@ class WebAudioStream:
 
     def close(self):
         self._active = False
-        self._transport.close()
+        try:
+            self._transport.close()
+        except Exception as err:
+            _LOGGER.error("Failed to close UDP server, error: %s", err)
 
     async def run_server(self):
         self._udpLoop = asyncio.get_event_loop()
-        self._transport, self._protocol = await self._udpLoop.create_datagram_endpoint(UdpProtocol,
-                                                                                       local_addr=('0.0.0.0', 8000))
+        try:
+            self._transport, self._protocol = await self._udpLoop.create_datagram_endpoint(UdpProtocol,
+                                                                                       local_addr=('0.0.0.0', self.udp_port))
+        except Exception as err:
+            _LOGGER.error("Could not start UDP server, error: %s", err)
 
     @property
     def data(self, x):
