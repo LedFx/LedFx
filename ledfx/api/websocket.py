@@ -313,10 +313,10 @@ class UdpProtocol(asyncio.DatagramProtocol):
     def __init__(self):
         super().__init__()
 
-    def connection_made(self, transport) -> "Used by asyncio":
+    def connection_made(self, transport):
         self.transport = transport
 
-    def datagram_received(self, data, addr) -> "Main entrypoint for processing message":
+    def datagram_received(self, data, addr):
         fdata = np.array(
             [(int.from_bytes(data[i:i + 2], "little") - 2048) / 2048 for i in range(0, len(data), 2)],
             dtype=np.float32)
