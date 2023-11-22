@@ -52,6 +52,7 @@ class WebsocketEndpoint(RestEndpoint):
                 "Connection Reset Error on Websocket Connection - retrying."
             )
 
+
 class WebsocketConnection:
     def __init__(self, ledfx):
         self._ledfx = ledfx
@@ -277,16 +278,17 @@ class WebsocketConnection:
         try:
             ACTIVE_AUDIO_STREAM._bits = int(message.get("bits"))
         except Exception as err:
-            _LOGGER.info("Web audio client {} did not specify bit depth, using default 12 bits.".format(
-                message.get("client")
-            ))
+            _LOGGER.info(
+                "Web audio client {} did not specify bit depth, using default 12 bits.".format(
+                    message.get("client")
+                )
+            )
         self.send(
             {
                 "connected": True,
                 "udp_port": ACTIVE_AUDIO_STREAM.udp_port,
             }
         )
-        
 
     @websocket_handler("audio_stream_data")
     def audio_stream_data_handler(self, message):
@@ -309,6 +311,7 @@ class WebsocketConnection:
             message.get("data").values(), dtype=np.float32
         )
 
+
 class UdpProtocol(asyncio.DatagramProtocol):
     def __init__(self):
         super().__init__()
@@ -316,10 +319,16 @@ class UdpProtocol(asyncio.DatagramProtocol):
     def connection_made(self, transport) -> "Used by asyncio":
         self.transport = transport
 
-    def datagram_received(self, data, addr) -> "Main entrypoint for processing message":
+    def datagram_received(
+        self, data, addr
+    ) -> "Main entrypoint for processing message":
         fdata = np.array(
-            [(int.from_bytes(data[i:i + 2], "little") - 2048) / 2048 for i in range(0, len(data), 2)],
-            dtype=np.float32)
+            [
+                (int.from_bytes(data[i : i + 2], "little") - 2048) / 2048
+                for i in range(0, len(data), 2)
+            ],
+            dtype=np.float32,
+        )
         ACTIVE_AUDIO_STREAM.data = fdata
 
 
@@ -354,8 +363,12 @@ class WebAudioStream:
     async def run_server(self):
         self._udpLoop = asyncio.get_event_loop()
         try:
-            self._transport, self._protocol = await self._udpLoop.create_datagram_endpoint(UdpProtocol,
-                                                                                       local_addr=('0.0.0.0', self.udp_port))
+            (
+                self._transport,
+                self._protocol,
+            ) = await self._udpLoop.create_datagram_endpoint(
+                UdpProtocol, local_addr=("0.0.0.0", self.udp_port)
+            )
         except Exception as err:
             _LOGGER.error("Could not start UDP server, error: %s", err)
 
