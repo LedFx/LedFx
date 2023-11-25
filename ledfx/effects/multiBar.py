@@ -8,6 +8,7 @@ from ledfx.effects.gradient import GradientEffect
 class MultiBarAudioEffect(AudioReactiveEffect, GradientEffect):
     NAME = "Multicolor Bar"
     CATEGORY = "BPM"
+    HIDDEN_KEYS = ["gradient_roll"]
 
     CONFIG_SCHEMA = vol.Schema(
         {
