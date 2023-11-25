@@ -11,6 +11,8 @@ from ledfx.api import RestEndpoint
 from ledfx.events import Event
 from ledfx.utils import empty_queue
 
+from dataclasses import dataclass
+
 _LOGGER = logging.getLogger(__name__)
 MAX_PENDING_MESSAGES = 256
 
@@ -37,8 +39,15 @@ def websocket_handler(type):
     return function
 
 
+@dataclass
+class GlobalParams:
+    bits: int
+    udp_port: int
+
+
 WEB_AUDIO_CLIENTS = set()
 ACTIVE_AUDIO_STREAM = None
+WEB_AUDIO_PARAMS = GlobalParams(12, 8000)
 
 
 class WebsocketEndpoint(RestEndpoint):
@@ -276,7 +285,7 @@ class WebsocketConnection:
             )
         )
         try:
-            ACTIVE_AUDIO_STREAM._bits = int(message.get("bits"))
+            ACTIVE_AUDIO_STREAM._bits = int(message.get("bits", 12))
         except Exception as err:
             _LOGGER.info(
                 "Web audio client {} did not specify bit depth, using default 12 bits.".format(
@@ -285,8 +294,8 @@ class WebsocketConnection:
             )
         self.send(
             {
-                "connected": True,
-                "udp_port": ACTIVE_AUDIO_STREAM.udp_port,
+                "connected": "true",
+                "udp_port": WEB_AUDIO_PARAMS.udp_port,
             }
         )
 
@@ -331,9 +340,8 @@ class UdpProtocol(asyncio.DatagramProtocol):
 
 
 class WebAudioStream:
-    def __init__(self, client: str, udp_port: int, callback: callable):
+    def __init__(self, client: str, callback: callable):
         self.client = client
-        self.udp_port = udp_port
         self.callback = callback
         self._data = None
         self._active = False
@@ -341,7 +349,6 @@ class WebAudioStream:
         self._udpLoop = None
         self._transport = None
         self._protocol = None
-        self._bits = 12
 
     def start(self):
         self._topUdpLoop = asyncio.get_event_loop()
@@ -365,7 +372,7 @@ class WebAudioStream:
                 self._transport,
                 self._protocol,
             ) = await self._udpLoop.create_datagram_endpoint(
-                UdpProtocol, local_addr=("0.0.0.0", self.udp_port)
+                UdpProtocol, local_addr=("0.0.0.0", WEB_AUDIO_PARAMS.udp_port)
             )
         except Exception as err:
             _LOGGER.error("Could not start UDP server, error: %s", err)

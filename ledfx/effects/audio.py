@@ -271,7 +271,7 @@ class AudioInputSource:
                 ledfx.api.websocket.ACTIVE_AUDIO_STREAM = (
                     self._stream
                 ) = WebAudioStream(
-                    device["client"], 8000, self._audio_sample_callback
+                    device["client"], self._audio_sample_callback
                 )
             else:
                 self._stream = self._audio.InputStream(
