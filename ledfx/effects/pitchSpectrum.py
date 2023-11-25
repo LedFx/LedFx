@@ -89,3 +89,4 @@ class PitchSpectrumAudioEffect(AudioReactiveEffect, GradientEffect):
         )
         # Assign new_colors back to self.pixels
         self.pixels = new_colors
+        self.roll_gradient()

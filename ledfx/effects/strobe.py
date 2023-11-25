@@ -16,6 +16,7 @@ class Strobe(AudioReactiveEffect, GradientEffect):
 
     NAME = "BPM Strobe"
     CATEGORY = "BPM"
+    HIDDEN_KEYS = ["gradient_roll"]
 
     CONFIG_SCHEMA = vol.Schema(
         {

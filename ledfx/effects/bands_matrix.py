@@ -69,3 +69,4 @@ class BandsMatrixAudioEffect(AudioReactiveEffect, GradientEffect):
             out_split = np.flip(out_split, axis=0)
 
         self.pixels = np.vstack(out_split)
+        self.roll_gradient()
