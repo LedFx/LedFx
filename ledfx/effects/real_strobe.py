@@ -13,6 +13,7 @@ from ledfx.utils import empty_queue
 class Strobe(AudioReactiveEffect, GradientEffect):
     NAME = "Strobe"
     CATEGORY = "Classic"
+    HIDDEN_KEYS = ["gradient_roll"]
 
     CONFIG_SCHEMA = vol.Schema(
         {
