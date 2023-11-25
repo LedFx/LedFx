@@ -2,6 +2,7 @@ import asyncio
 import json
 import logging
 from concurrent import futures
+from dataclasses import dataclass
 
 import numpy as np
 import voluptuous as vol
@@ -10,8 +11,6 @@ from aiohttp import web
 from ledfx.api import RestEndpoint
 from ledfx.events import Event
 from ledfx.utils import empty_queue
-
-from dataclasses import dataclass
 
 _LOGGER = logging.getLogger(__name__)
 MAX_PENDING_MESSAGES = 256
