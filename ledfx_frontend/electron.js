@@ -26,6 +26,8 @@ const crypto = require('crypto');
 const base32Encode = require('base32-encode');
 const qrcode = require('qrcode');
 
+require('events').EventEmitter.defaultMaxListeners = 15;
+
 // Conditionally include the dev tools installer to load React Dev Tools
 let installExtension;
 if (isDev) {
