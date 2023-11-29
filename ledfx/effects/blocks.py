@@ -38,3 +38,4 @@ class BlocksAudioEffect(AudioReactiveEffect, GradientEffect):
             )
 
         self.pixels = np.hstack(out_split).T
+        self.roll_gradient()

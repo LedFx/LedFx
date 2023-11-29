@@ -125,9 +125,11 @@ class GradientEffect(Effect):
                 self.pixel_count,
             )
 
-    def _roll_gradient(self):
+    def roll_gradient(self):
         if self._config["gradient_roll"] == 0:
             return
+
+        self._assert_gradient()
 
         self._gradient_roll_counter += self._config["gradient_roll"]
 
@@ -155,7 +157,7 @@ class GradientEffect(Effect):
 
         output = self._gradient_curve * y
         # Apply and roll the gradient if necessary
-        self._roll_gradient()
+        self.roll_gradient()
 
         return output.T
 
