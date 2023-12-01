@@ -76,7 +76,7 @@ def setup_logging(loglevel, config_dir):
     console_loglevel = loglevel or logging.WARNING
     console_logformat = "[%(levelname)-8s] %(name)-30s : %(message)s"
 
-    file_loglevel = logging.INFO
+    file_loglevel = loglevel or logging.INFO
     file_logformat = "%(asctime)-8s %(name)-30s %(levelname)-8s %(message)s"
 
     root_logger = logging.getLogger()
