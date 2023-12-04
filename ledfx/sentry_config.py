@@ -1,6 +1,3 @@
-import sentry_sdk
-from sentry_sdk.integrations.aiohttp import AioHttpIntegration
-
 from ledfx.consts import DEV, PROJECT_VERSION
 import logging
 
@@ -38,6 +35,9 @@ if DEV > 0:
 
 
 if sentry_dsn != "DSN":
+    import sentry_sdk
+    from sentry_sdk.integrations.aiohttp import AioHttpIntegration
+
     _LOGGER.info(
         f"Sentry config\ndsn first ten: {sentry_dsn[8:18]}\nsample_rate: {sample_rate}\nrelease: {release}")
     sentry_sdk.init(
