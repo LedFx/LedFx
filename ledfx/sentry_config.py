@@ -1,8 +1,9 @@
+import logging
+
 import sentry_sdk
 from sentry_sdk.integrations.aiohttp import AioHttpIntegration
 
 from ledfx.consts import DEV, PROJECT_VERSION
-import logging
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -39,7 +40,8 @@ if DEV > 0:
 
 if sentry_dsn != "DSN":
     _LOGGER.info(
-        f"Sentry config\ndsn first ten: {sentry_dsn[8:18]}\nsample_rate: {sample_rate}\nrelease: {release}")
+        f"Sentry config\ndsn first ten: {sentry_dsn[8:18]}\nsample_rate: {sample_rate}\nrelease: {release}"
+    )
     sentry_sdk.init(
         sentry_dsn,
         traces_sample_rate=sample_rate,
@@ -48,4 +50,3 @@ if sentry_dsn != "DSN":
     )
 else:
     _LOGGER.info("Sentry not configured")
-
