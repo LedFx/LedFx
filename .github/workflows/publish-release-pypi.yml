@@ -23,7 +23,7 @@ jobs:
       - name: Setup sentry config
         shell: bash
         env:
-          SENTRY_DSN: ${{ secrets.SENTRY_DSN_PYPI }}
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN_V2_REL }}
         run: |
           sed -i 's,DSN,'"$SENTRY_DSN"',' ./ledfx/sentry_config.py
       - name: Set up Python ${{ env.DEFAULT_PYTHON }}
