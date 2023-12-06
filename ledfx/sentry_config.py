@@ -22,8 +22,9 @@ release = f"ledfx@{PROJECT_VERSION}"
 # along with transaction measurements if they wish to by bumping up DEV value in
 # consts.py to 1 or higher
 if DEV > 0:
-    if sentry_dsn == "DSN":
-        sentry_dsn = "https://de9ea3e00f334954b2f1478b90936d55@o482797.ingest.sentry.io/5886499"
+    # if a developer has overridden dsn, use it, else inject a dev dsn
+    if len(sentry_dsn) == 3:  # avoid string replace problems with existing scripts
+        sentry_dsn = "https://b192934eebd517c86bf7e9c512b3888a@o482797.ingest.sentry.io/4506350241841152"
     sample_rate = 1
 
     from subprocess import PIPE, Popen
