@@ -6,15 +6,15 @@ import numpy as np
 import voluptuous as vol
 from PIL import Image, ImageDraw
 
-from ledfx.effects import Effect
 from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.utils import get_icon_path
 
 _LOGGER = logging.getLogger(__name__)
 
 
-@Effect.no_registration
-class twod(AudioReactiveEffect):
+class Imagespin(AudioReactiveEffect):
+    NAME = "Image"
+    CATEGORY = "Matrix"
     HIDDEN_KEYS = ["speed", "background_brightness", "mirror", "flip", "blur"]
 
     ADVANCED_KEYS = ["test", "dump", "diag", "pattern"]

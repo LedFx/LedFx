@@ -13,7 +13,7 @@ _LOGGER = logging.getLogger(__name__)
 
 class PixelsEffect(TemporalEffect):
     NAME = "Clone"
-    CATEGORY = "Non-Reactive"
+    CATEGORY = "Matrix"
     HIDDEN_KEYS = ["speed", "background_brightness", "blur", "mirror", "flip"]
 
     start_time = timeit.default_timer()
