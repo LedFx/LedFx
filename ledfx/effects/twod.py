@@ -14,7 +14,6 @@ _LOGGER = logging.getLogger(__name__)
 
 @Effect.no_registration
 class Twod(AudioReactiveEffect):
-
     start_time = timeit.default_timer()
     ADVANCED_KEYS = ["dump", "diag"]
 
@@ -110,7 +109,7 @@ class Twod(AudioReactiveEffect):
         copy_length = min(self.pixels.shape[0], rgb_array.shape[0])
         self.pixels[:copy_length, :] = rgb_array[:copy_length, :]
 
-        #self.pixels = rgb_array
+        # self.pixels = rgb_array
 
         return rgb_image
 
@@ -132,7 +131,9 @@ class Twod(AudioReactiveEffect):
     def try_log(self):
         end = timeit.default_timer()
         if self.log is True:
-            _LOGGER.info(f"FPS {self.fps} Render:{(end - self.start):0.6f} Cycle: {(end - self.last):0.6f} Sleep: {(self.start - self.last):0.6f}")
+            _LOGGER.info(
+                f"FPS {self.fps} Render:{(end - self.start):0.6f} Cycle: {(end - self.last):0.6f} Sleep: {(self.start - self.last):0.6f}"
+            )
         self.last = end
         return self.log
 
