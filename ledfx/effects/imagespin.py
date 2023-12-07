@@ -5,8 +5,8 @@ import urllib.request
 import voluptuous as vol
 from PIL import Image, ImageDraw
 
-from ledfx.utils import get_icon_path
 from ledfx.effects.twod import Twod
+from ledfx.utils import get_icon_path
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -188,5 +188,3 @@ class Imagespin(Twod):
             )
 
         return rgb_image
-
-

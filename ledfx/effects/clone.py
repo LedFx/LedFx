@@ -64,7 +64,6 @@ class Clone(Twod):
         self.sct = None
 
     def draw(self):
-
         if self.sct is None:
             self.sct = mss.mss()
         else:
@@ -99,4 +98,3 @@ class Clone(Twod):
         )
 
         return rgb_image
-
