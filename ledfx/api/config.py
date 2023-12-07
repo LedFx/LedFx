@@ -198,7 +198,12 @@ class ConfigEndpoint(RestEndpoint):
             if core_config and not (
                 any(
                     key in core_config
-                    for key in ["global_brightness", "create_segments"]
+                    for key in [
+                        "global_brightness",
+                        "create_segments",
+                        "scan_on_startup",
+                        "user_presets",
+                    ]
                 )
                 and len(core_config) == 1
             ):
