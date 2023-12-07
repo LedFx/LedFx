@@ -2,22 +2,20 @@ import logging
 import timeit
 import urllib.request
 
-import numpy as np
 import voluptuous as vol
 from PIL import Image, ImageDraw
 
-from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.utils import get_icon_path
+from ledfx.effects.twod import Twod
 
 _LOGGER = logging.getLogger(__name__)
 
 
-class Imagespin(AudioReactiveEffect):
+class Imagespin(Twod):
     NAME = "Image"
     CATEGORY = "Matrix"
     HIDDEN_KEYS = ["speed", "background_brightness", "mirror", "flip", "blur"]
-
-    ADVANCED_KEYS = ["test", "dump", "diag", "pattern"]
+    ADVANCED_KEYS = Twod.ADVANCED_KEYS + ["test", "pattern"]
 
     start_time = timeit.default_timer()
 
@@ -32,31 +30,6 @@ class Imagespin(AudioReactiveEffect):
     CONFIG_SCHEMA = vol.Schema(
         {
             vol.Optional(
-                "LED width",
-                description="Row width of target",
-                default=128,
-            ): vol.All(vol.Coerce(int), vol.Range(min=1, max=128)),
-            vol.Optional(
-                "flip horizontal",
-                description="flip the image horizontally",
-                default=False,
-            ): bool,
-            vol.Optional(
-                "flip vertical",
-                description="flip the image vertically",
-                default=False,
-            ): bool,
-            vol.Optional(
-                "diag",
-                description="diagnostic enable",
-                default=False,
-            ): bool,
-            vol.Optional(
-                "dump",
-                description="dump image",
-                default=False,
-            ): bool,
-            vol.Optional(
                 "test",
                 description="ignore audio input",
                 default=False,
@@ -66,11 +39,6 @@ class Imagespin(AudioReactiveEffect):
                 description="use a test pattern",
                 default=False,
             ): bool,
-            vol.Optional(
-                "rotate",
-                description="90 Degree rotations",
-                default=0,
-            ): vol.All(vol.Coerce(int), vol.Range(min=0, max=3)),
             vol.Optional(
                 "frequency_range",
                 description="Frequency range for the beat detection",
@@ -94,49 +62,22 @@ class Imagespin(AudioReactiveEffect):
             vol.Optional(
                 "url source", description="Load image from", default=""
             ): str,
-            vol.Optional(
-                "advanced",
-                description="enable advanced options",
-                default=False,
-            ): bool,
         }
     )
 
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
-        self.lasttime = 0
-        self.frame = 0
-        self.fps = 0
-        self.last = 0
-        self.last_dump = self._config["dump"]
         self.spin = 0
         self.t_height = -1
-
-    def on_activate(self, pixel_count):
-        self.current_pixel = 0
-        self.last_cycle_time = 20
-
-        self.bar = 0
+        self.spin = 0
 
     def config_updated(self, config):
-        self.diag = self._config["diag"]
-        self.t_width = self._config["LED width"]
+        super().config_updated(config)
         # if we have an attibute for pixel_count the use it in calc, otherwise guess
-
         temp_height = self.t_width
 
-        # cannot get t_height here, pixel_count is not set yet on first call :-(
-        self.flip = self._config["flip vertical"]
-        self.mirror = self._config["flip horizontal"]
         self.clip = self._config["clip"]
         self.test = self._config["test"]
-        self.rotate = 0
-        if self._config["rotate"] == 1:
-            self.rotate = Image.Transpose.ROTATE_90
-        if self._config["rotate"] == 2:
-            self.rotate = Image.Transpose.ROTATE_180
-        if self._config["rotate"] == 3:
-            self.rotate = Image.Transpose.ROTATE_270
 
         if self._config["pattern"]:
             url_path = "https://images.squarespace-cdn.com/content/v1/60cc480d9290423b888eb94a/1624780092100-4FLILMIV0YHHU45GB7XZ/Test+Pattern+t.png"
@@ -176,34 +117,6 @@ class Imagespin(AudioReactiveEffect):
         self.bar = (
             getattr(data, self.power_func)() * self._config["multiplier"] * 2
         )
-
-    def image_to_pixels(self, rgb_image):
-        if self.flip:
-            rgb_image = rgb_image.transpose(Image.Transpose.FLIP_TOP_BOTTOM)
-        if self.mirror:
-            rgb_image = rgb_image.transpose(Image.Transpose.FLIP_LEFT_RIGHT)
-        if self.rotate != 0:
-            rgb_image = rgb_image.transpose(self.rotate)
-        rgb_bytes = rgb_image.tobytes()
-        rgb_array = np.frombuffer(rgb_bytes, dtype=np.uint8)
-        rgb_array = rgb_array.astype(np.float32)
-        rgb_array = rgb_array.reshape(int(rgb_array.shape[0] / 3), 3)
-        self.pixels = rgb_array
-        return rgb_image
-
-    def log_sec(self, now):
-        result = False
-        if self.diag:
-            nowint = int(now)
-            # if now just rolled over a second boundary
-            if nowint != self.lasttime:
-                self.fps = self.frame
-                self.frame = 0
-                result = True
-            else:
-                self.frame += 1
-            self.lasttime = nowint
-        return result
 
     def draw(self):
         # this should be an empty function with pass
@@ -268,29 +181,7 @@ class Imagespin(AudioReactiveEffect):
                 ),
                 bass_sized_img,
             )
+
         return rgb_image
 
-    def render(self):
-        now = timeit.default_timer()
-        log = self.log_sec(now)
-        rgb_image = self.draw()
-        draw_end = timeit.default_timer()
-        rgb_image = self.image_to_pixels(rgb_image)
-        end = timeit.default_timer()
 
-        if log is True:
-            render_time = timeit.default_timer() - now
-            _LOGGER.info(f"twod FPS {self.fps} Full render:{render_time:.6f}")
-            _LOGGER.info(
-                f"cyc: {(end - self.last):0.4f} sleep: {(now - self.last):0.4f} draw {(draw_end - now):0.4f} stuff {(end - draw_end):0.4f}"
-            )
-
-        self.last = end
-
-        if self.last_dump != self._config["dump"]:
-            self.last_dump = self._config["dump"]
-            # show image on screen
-            rgb_image.show()
-            _LOGGER.info(
-                f"dump {self.t_width}x{self.t_height} R: {self.rotate} F: {self.flip} M: {self.mirror}"
-            )
