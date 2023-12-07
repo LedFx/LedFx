@@ -71,7 +71,7 @@ class Clone(Twod):
             # Don't like it, but some cases _handles is empty!
             if not hasattr(self.sct._handles, "srcdc"):
                 self.sct = mss.mss()
-                _LOGGER.warning(f"Recreated sct")
+                _LOGGER.warning("Recreated sct")
 
         if self.grab is None:
             self.t_height = int(self.pixel_count / self.t_width)

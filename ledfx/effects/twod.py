@@ -1,6 +1,5 @@
 import logging
 import timeit
-import urllib.request
 
 import numpy as np
 import voluptuous as vol
