@@ -46,8 +46,13 @@ class Imagespin(Twod):
             ): vol.In(list(_power_funcs.keys())),
             vol.Optional(
                 "multiplier",
-                description="Make the reactive bar bigger/smaller",
+                description="Applied to the audio input to amplify effect",
                 default=0.5,
+            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
+            vol.Optional(
+                "Min Size",
+                description="The minimum size multiplier for the image",
+                default=0.3,
             ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
             vol.Optional(
                 "spin",
@@ -116,7 +121,7 @@ class Imagespin(Twod):
         # Get filtered bar power
         self.bar = (
             getattr(data, self.power_func)() * self._config["multiplier"] * 2
-        )
+        ) + self._config["Min Size"]
 
     def draw(self):
         # this should be an empty function with pass
