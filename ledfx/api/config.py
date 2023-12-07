@@ -202,6 +202,7 @@ class ConfigEndpoint(RestEndpoint):
                         "global_brightness",
                         "create_segments",
                         "scan_on_startup",
+                        "user_presets",
                     ]
                 )
                 and len(core_config) == 1
