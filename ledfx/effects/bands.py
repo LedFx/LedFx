@@ -61,3 +61,4 @@ class BandsAudioEffect(AudioReactiveEffect, GradientEffect):
                 pass
 
         self.pixels = np.vstack(out_split)
+        self.roll_gradient()

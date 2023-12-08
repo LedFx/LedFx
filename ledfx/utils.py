@@ -1170,6 +1170,23 @@ def wled_support_DDP(build) -> bool:
         return False
 
 
+def clean_ip(ip_address):
+    """Strip common error input from IP copy from chrome that is actually a URL
+
+    Args:
+        ip_address (string): The IP address to be cleaned
+
+    Returns:
+        string: The cleaned IP address
+    """
+
+    return (
+        ip_address.replace("https://", "")
+        .replace("http://", "")
+        .replace("/", "")
+    )
+
+
 name_to_icon = {}
 
 
