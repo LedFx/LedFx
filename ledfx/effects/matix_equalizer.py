@@ -1,13 +1,12 @@
 import logging
 import timeit
 
-import voluptuous as vol
 import numpy as np
-
+import voluptuous as vol
 from PIL import Image, ImageDraw
 
-from ledfx.effects.twod import Twod
 from ledfx.effects.gradient import GradientEffect
+from ledfx.effects.twod import Twod
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -66,10 +65,16 @@ class Matrix_eq(Twod, GradientEffect):
         self.colors = []
         self.bandsx = []
         for i in range(self.bands):
-            self.colors.append(self.get_gradient_color(1 / self.bands * i).astype(int))
-            self.bandsx.append([int(self.max_dim / self.bands * i), int(self.max_dim / self.bands * (i+1) - 1)])
+            self.colors.append(
+                self.get_gradient_color(1 / self.bands * i).astype(int)
+            )
+            self.bandsx.append(
+                [
+                    int(self.max_dim / self.bands * i),
+                    int(self.max_dim / self.bands * (i + 1) - 1),
+                ]
+            )
         self.init = True
-
 
     def audio_data_updated(self, data):
         # Grab the filtered melbank
@@ -80,7 +85,13 @@ class Matrix_eq(Twod, GradientEffect):
         if not self.init:
             self.do_once()
 
-        rgb_image = Image.new("RGB", (max(self.t_width, self.t_height), max(self.t_width, self.t_height)))
+        rgb_image = Image.new(
+            "RGB",
+            (
+                max(self.t_width, self.t_height),
+                max(self.t_width, self.t_height),
+            ),
+        )
         rgb_draw = ImageDraw.Draw(rgb_image)
 
         if self.test:
@@ -90,7 +101,15 @@ class Matrix_eq(Twod, GradientEffect):
 
         for i in range(self.bands):
             volume = r_split[i].mean()
-            rgb_draw.rectangle((self.bandsx[i][0], 0, self.bandsx[i][1], int(self.t_height * volume)), fill=tuple(self.colors[i]))
+            rgb_draw.rectangle(
+                (
+                    self.bandsx[i][0],
+                    0,
+                    self.bandsx[i][1],
+                    int(self.t_height * volume),
+                ),
+                fill=tuple(self.colors[i]),
+            )
 
         self.roll_gradient()
         return rgb_image
