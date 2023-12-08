@@ -38,7 +38,7 @@ INSTALL_REQUIRES = [
     "python-rtmidi~=1.5.6",
     "requests~=2.28.2",
     "sacn~=1.6.3",
-    "sentry-sdk==1.14.0",
+    "sentry-sdk==1.38.0",
     "sounddevice~=0.4.2",
     "samplerate>=0.1.0",
     "icmplib~=3.0.3",

@@ -30,7 +30,6 @@ try:
 except ImportError:
     have_psutil = False
 
-
 import ledfx.config as config_helpers
 from ledfx.consts import (
     PROJECT_VERSION,
@@ -76,7 +75,7 @@ def setup_logging(loglevel, config_dir):
     console_loglevel = loglevel or logging.WARNING
     console_logformat = "[%(levelname)-8s] %(name)-30s : %(message)s"
 
-    file_loglevel = logging.INFO
+    file_loglevel = loglevel or logging.INFO
     file_logformat = "%(asctime)-8s %(name)-30s %(levelname)-8s %(message)s"
 
     root_logger = logging.getLogger()
@@ -283,10 +282,7 @@ def main():
         else:
             p.nice(15)
 
-    if (
-        not (currently_frozen() or installed_via_pip())
-        and args.offline_mode is False
-    ):
+    if args.offline_mode is False:
         import ledfx.sentry_config  # noqa: F401
 
     if args.sentry_test:
