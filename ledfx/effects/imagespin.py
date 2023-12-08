@@ -72,9 +72,7 @@ class Imagespin(Twod):
 
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
-        self.spin = 0
-        self.t_height = -1
-        self.spin = 0
+        self.spin = 0.0
 
     def config_updated(self, config):
         super().config_updated(config)
@@ -124,9 +122,6 @@ class Imagespin(Twod):
         ) + self._config["Min Size"]
 
     def draw(self):
-        # this should be an empty function with pass
-        self.t_height = int(self.pixel_count / self.t_width)
-
         rgb_image = Image.new("RGB", (self.t_width, self.t_height))
         rgb_draw = ImageDraw.Draw(rgb_image)
         if self.test:
@@ -166,7 +161,7 @@ class Imagespin(Twod):
             if self._config["spin"]:
                 self.spin += self.bar
                 if self.spin > 360:
-                    self.spin = 0
+                    self.spin = 0.0
                 bass_sized_img = bass_sized_img.rotate(
                     self.spin, expand=self.clip
                 )

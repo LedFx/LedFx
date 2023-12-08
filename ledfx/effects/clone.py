@@ -74,7 +74,6 @@ class Clone(Twod):
                 _LOGGER.warning("Recreated sct")
 
         if self.grab is None:
-            self.t_height = int(self.pixel_count / self.t_width)
             # grab a screen clip from screen x at x,y of width, height
             mon = self.sct.monitors[self.screen]
             self.grab = {

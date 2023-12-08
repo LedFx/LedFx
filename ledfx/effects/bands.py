@@ -19,11 +19,6 @@ class BandsAudioEffect(AudioReactiveEffect, GradientEffect):
                 description="Alignment of bands",
                 default="left",
             ): vol.In(list(["left", "right", "invert", "center"])),
-            vol.Optional(
-                "mirror",
-                description="Mirror the effect",
-                default=False,
-            ): bool,
         }
     )
 

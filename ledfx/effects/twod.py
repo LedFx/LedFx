@@ -99,8 +99,8 @@ class Twod(AudioReactiveEffect):
 
         # rgb_image should be the matching size to the display
         # TODO: Add speculative resize
-
-        rgb_bytes = rgb_image.tobytes()
+        rgb_resized = rgb_image.resize((self.t_width, self.t_height), Image.BICUBIC)
+        rgb_bytes = rgb_resized.tobytes()
         rgb_array = np.frombuffer(rgb_bytes, dtype=np.uint8)
         rgb_array = rgb_array.astype(np.float32)
         rgb_array = rgb_array.reshape(int(rgb_array.shape[0] / 3), 3)
@@ -145,6 +145,30 @@ class Twod(AudioReactiveEffect):
                 f"dump {self.t_width}x{self.t_height} R: {self.rotate} F: {self.flip} M: {self.mirror}"
             )
 
+    def draw_test(self, rgb_draw):
+            rgb_draw.rectangle(
+                [(0, 0), (self.t_width - 1, self.t_height - 1)],
+                fill=None,
+                outline="white",
+            )
+            mid_w, mid_h = int(self.t_width / 2), int(self.t_height / 2)
+            rgb_draw.line([(0, 0), (mid_w, mid_h)], fill="red", width=1)
+            rgb_draw.line(
+                [(self.t_width - 1, 0), (mid_w - 1, mid_h)],
+                fill="blue",
+                width=1,
+            )
+            rgb_draw.line(
+                [(0, self.t_height - 1), (mid_w - 1, mid_h)],
+                fill="green",
+                width=1,
+            )
+            rgb_draw.line(
+                [(self.t_width - 1, self.t_height - 1), (mid_w, mid_h)],
+                fill="white",
+                width=1,
+            )
+
     def draw(self):
         # this should be implemented in the child class
         # should render into a PIL image at the final size for display
@@ -152,6 +176,9 @@ class Twod(AudioReactiveEffect):
         pass
 
     def render(self):
+        # TODO: Move this and rgb_image into do_once function
+        self.t_height = int(self.pixel_count / self.t_width)
+
         self.log_sec()
 
         rgb_image = self.draw()
