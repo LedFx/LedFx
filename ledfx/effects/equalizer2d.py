@@ -62,7 +62,6 @@ class Equalizer2d(Twod, GradientEffect):
 
     def config_updated(self, config):
         super().config_updated(config)
-        self.pattern = self._config["pattern"]
         self.bands = self._config["bands"]
         self.init = False
         self.center = self._config["center"]
