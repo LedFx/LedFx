@@ -101,7 +101,9 @@ class Matrix_eq(Twod, GradientEffect):
                         self.bandsx[i][1],
                         int(self.max_dim * (1 + volume) / 2),
                     ),
-                    fill=tuple(self.get_gradient_color(1 / self.bands * i).astype(int)),
+                    fill=tuple(
+                        self.get_gradient_color(1 / self.bands * i).astype(int)
+                    ),
                 )
             else:  # default bottom to top
                 rgb_draw.rectangle(
@@ -111,7 +113,9 @@ class Matrix_eq(Twod, GradientEffect):
                         self.bandsx[i][1],
                         int(self.max_dim * volume),
                     ),
-                    fill=tuple(self.get_gradient_color(1 / self.bands * i).astype(int)),
+                    fill=tuple(
+                        self.get_gradient_color(1 / self.bands * i).astype(int)
+                    ),
                 )
 
         self.roll_gradient()
