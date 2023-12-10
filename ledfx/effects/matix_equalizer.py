@@ -21,7 +21,6 @@ class Matrix_eq(Twod, GradientEffect):
 
     CONFIG_SCHEMA = vol.Schema(
         {
-
             vol.Optional(
                 "pattern",
                 description="use a test pattern",
