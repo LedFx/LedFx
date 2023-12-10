@@ -158,6 +158,7 @@ class Imagespin(Twod):
             # make a copy of the original that we will manipulate
             bass_sized_img = self.bass_image.copy()
 
+            #TODO: This is not sane, seems a constant spin rate
             if self._config["spin"]:
                 self.spin += self.bar
                 if self.spin > 360:
