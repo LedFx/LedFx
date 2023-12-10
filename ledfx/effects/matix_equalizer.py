@@ -88,8 +88,8 @@ class Matrix_eq(Twod, GradientEffect):
         rgb_image = Image.new(
             "RGB",
             (
-                max(self.t_width, self.t_height),
-                max(self.t_width, self.t_height),
+                self.max_dim,
+                self.max_dim,
             ),
         )
         rgb_draw = ImageDraw.Draw(rgb_image)
@@ -106,7 +106,7 @@ class Matrix_eq(Twod, GradientEffect):
                     self.bandsx[i][0],
                     0,
                     self.bandsx[i][1],
-                    int(self.t_height * volume),
+                    int(self.max_dim * volume),
                 ),
                 fill=tuple(self.colors[i]),
             )
