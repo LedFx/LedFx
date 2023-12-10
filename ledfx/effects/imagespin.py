@@ -112,7 +112,9 @@ class Imagespin(Twod):
 
     def audio_data_updated(self, data):
         # Get filtered bar power
-        self.bar = getattr(data, self.power_func)() * self._config["multiplier"] * 2
+        self.bar = (
+            getattr(data, self.power_func)() * self._config["multiplier"] * 2
+        )
 
     def draw(self):
         rgb_image = Image.new("RGB", (self.t_width, self.t_height))
