@@ -180,7 +180,8 @@ class Twod(AudioReactiveEffect):
 
     def render(self):
         # TODO: Move this and rgb_image into do_once function
-        self.t_height = int(self.pixel_count / self.t_width)
+        # also protect against insane width setting at first config
+        self.t_height = max(1, int(self.pixel_count / self.t_width))
 
         self.log_sec()
 
