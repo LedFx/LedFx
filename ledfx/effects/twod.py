@@ -14,7 +14,8 @@ _LOGGER = logging.getLogger(__name__)
 @Effect.no_registration
 class Twod(AudioReactiveEffect):
     start_time = timeit.default_timer()
-    ADVANCED_KEYS = ["dump", "diag"]
+    HIDDEN_KEYS = ["background_brightness", "mirror", "flip", "blur"]
+    ADVANCED_KEYS = ["dump", "diag", "test"]
 
     CONFIG_SCHEMA = vol.Schema(
         {
@@ -34,8 +35,18 @@ class Twod(AudioReactiveEffect):
                 default=False,
             ): bool,
             vol.Optional(
-                "dump",
-                description="dump image",
+                "rotate",
+                description="90 Degree rotations",
+                default=0,
+            ): vol.All(vol.Coerce(int), vol.Range(min=0, max=3)),
+            vol.Optional(
+                "advanced",
+                description="enable advanced options",
+                default=False,
+            ): bool,
+            vol.Optional(
+                "test",
+                description="ignore audio input",
                 default=False,
             ): bool,
             vol.Optional(
@@ -44,13 +55,8 @@ class Twod(AudioReactiveEffect):
                 default=False,
             ): bool,
             vol.Optional(
-                "rotate",
-                description="90 Degree rotations",
-                default=0,
-            ): vol.All(vol.Coerce(int), vol.Range(min=0, max=3)),
-            vol.Optional(
-                "advanced",
-                description="enable advanced options",
+                "dump",
+                description="dump image",
                 default=False,
             ): bool,
         }
@@ -73,8 +79,8 @@ class Twod(AudioReactiveEffect):
 
     def config_updated(self, config):
         self.diag = self._config["diag"]
+        self.test = self._config["test"]
         self.t_width = self._config["LED width"]
-        temp_height = self.t_width
 
         # cannot get t_height here, pixel_count is not set yet on first call :-(
         self.flip = self._config["flip vertical"]

@@ -13,7 +13,7 @@ _LOGGER = logging.getLogger(__name__)
 class Clone(Twod):
     NAME = "Clone"
     CATEGORY = "Matrix"
-    HIDDEN_KEYS = ["speed", "background_brightness", "blur", "mirror", "flip"]
+    HIDDEN_KEYS = Twod.HIDDEN_KEYS + ["test"]
 
     start_time = timeit.default_timer()
 

@@ -14,18 +14,14 @@ _LOGGER = logging.getLogger(__name__)
 class Matrix_eq(Twod, GradientEffect):
     NAME = "Equalizer2d"
     CATEGORY = "Matrix"
-    HIDDEN_KEYS = ["speed", "background_brightness", "mirror", "flip", "blur"]
-    ADVANCED_KEYS = Twod.ADVANCED_KEYS + []
+    HIDDEN_KEYS = Twod.HIDDEN_KEYS + []
+    ADVANCED_KEYS = Twod.ADVANCED_KEYS + ["pattern"]
 
     start_time = timeit.default_timer()
 
     CONFIG_SCHEMA = vol.Schema(
         {
-            vol.Optional(
-                "test",
-                description="ignore audio input",
-                default=False,
-            ): bool,
+
             vol.Optional(
                 "pattern",
                 description="use a test pattern",
@@ -53,7 +49,6 @@ class Matrix_eq(Twod, GradientEffect):
     def config_updated(self, config):
         super().config_updated(config)
         # if we have an attibute for pixel_count the use it in calc, otherwise guess
-        self.test = self._config["test"]
         self.pattern = self._config["pattern"]
         self.bands = self._config["bands"]
         self.init = False
