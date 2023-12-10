@@ -47,22 +47,18 @@ class Matrix_eq(Twod, GradientEffect):
 
     def config_updated(self, config):
         super().config_updated(config)
-        # if we have an attibute for pixel_count the use it in calc, otherwise guess
         self.pattern = self._config["pattern"]
         self.bands = self._config["bands"]
         self.init = False
         self.center = self._config["center"]
+        self.grad_roll = self._config["gradient_roll"]
 
     def do_once(self):
         # defer things that can't be done when pixel_count is not known
         self.max_dim = max(self.t_width, self.t_height)
         self.bands = min(self.bands, self.pixel_count)
-        self.colors = []
         self.bandsx = []
         for i in range(self.bands):
-            self.colors.append(
-                self.get_gradient_color(1 / self.bands * i).astype(int)
-            )
             self.bandsx.append(
                 [
                     int(self.max_dim / self.bands * i),
@@ -105,7 +101,7 @@ class Matrix_eq(Twod, GradientEffect):
                         self.bandsx[i][1],
                         int(self.max_dim * (1 + volume) / 2),
                     ),
-                    fill=tuple(self.colors[i]),
+                    fill=tuple(self.get_gradient_color(1 / self.bands * i).astype(int)),
                 )
             else: # default bottom to top
                 rgb_draw.rectangle(
@@ -115,7 +111,7 @@ class Matrix_eq(Twod, GradientEffect):
                         self.bandsx[i][1],
                         int(self.max_dim * volume),
                     ),
-                    fill=tuple(self.colors[i]),
+                    fill=tuple(self.get_gradient_color(1 / self.bands * i).astype(int)),
                 )
 
         self.roll_gradient()
