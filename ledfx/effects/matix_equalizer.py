@@ -21,17 +21,16 @@ class Matrix_eq(Twod, GradientEffect):
 
     CONFIG_SCHEMA = vol.Schema(
         {
-
             vol.Optional(
                 "pattern",
                 description="use a test pattern",
                 default=False,
             ): bool,
             vol.Optional(
-                "align",
-                description="Alignment of bands",
-                default="left",
-            ): vol.In(list(["left", "right", "invert", "center"])),
+                "center",
+                description="Center the equalizer bar",
+                default=False,
+            ): bool,
             vol.Optional(
                 "bands",
                 description="Number of freq bands",
@@ -52,6 +51,7 @@ class Matrix_eq(Twod, GradientEffect):
         self.pattern = self._config["pattern"]
         self.bands = self._config["bands"]
         self.init = False
+        self.center = self._config["center"]
 
     def do_once(self):
         # defer things that can't be done when pixel_count is not known
@@ -96,15 +96,27 @@ class Matrix_eq(Twod, GradientEffect):
 
         for i in range(self.bands):
             volume = r_split[i].mean()
-            rgb_draw.rectangle(
-                (
-                    self.bandsx[i][0],
-                    0,
-                    self.bandsx[i][1],
-                    int(self.max_dim * volume),
-                ),
-                fill=tuple(self.colors[i]),
-            )
+
+            if self.center:
+                rgb_draw.rectangle(
+                    (
+                        self.bandsx[i][0],
+                        int(self.max_dim * (1 - volume) / 2),
+                        self.bandsx[i][1],
+                        int(self.max_dim * (1 + volume) / 2),
+                    ),
+                    fill=tuple(self.colors[i]),
+                )
+            else: # default bottom to top
+                rgb_draw.rectangle(
+                    (
+                        self.bandsx[i][0],
+                        0,
+                        self.bandsx[i][1],
+                        int(self.max_dim * volume),
+                    ),
+                    fill=tuple(self.colors[i]),
+                )
 
         self.roll_gradient()
         return rgb_image
