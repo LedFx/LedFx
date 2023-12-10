@@ -147,14 +147,27 @@ class Equalizer2d(Twod, GradientEffect):
                 (band_start, top, band_end, bottom), fill=gradient_colors[i]
             )
 
+            # Draw the peak marker
             if self.peak:
-                # Draw the peak marker
-                peak_scaled = int(self.max_dim * peaks[i])
-                peak_end = peak_scaled + self.peak_size
-                rgb_draw.rectangle(
-                    (band_start, peak_scaled, band_end, peak_end),
-                    fill=(255, 255, 255),
-                )
+                if self.center:
+                    peak_scaled = int(self.max_dim * peaks[i] // 2)
+                    peak_end = int(peak_scaled + self.peak_size // 2)
+                    rgb_draw.rectangle(
+                        (band_start, half_max_dim + peak_scaled, band_end, half_max_dim + peak_end),
+                        fill=(255, 255, 255),
+                    )
+                    rgb_draw.rectangle(
+                        (band_start, half_max_dim - peak_scaled, band_end, half_max_dim - peak_end),
+                        fill=(255, 255, 255),
+                    )
+                else:
+                    peak_scaled = int(self.max_dim * peaks[i])
+                    peak_end = peak_scaled + self.peak_size
+
+                    rgb_draw.rectangle(
+                        (band_start, peak_scaled, band_end, peak_end),
+                        fill=(255, 255, 255),
+                    )
 
         self.roll_gradient()
         return rgb_image
