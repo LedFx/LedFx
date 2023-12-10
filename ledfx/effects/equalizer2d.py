@@ -15,7 +15,11 @@ class Equalizer2d(Twod, GradientEffect):
     NAME = "Equalizer2d"
     CATEGORY = "Matrix"
     HIDDEN_KEYS = Twod.HIDDEN_KEYS + []
-    ADVANCED_KEYS = Twod.ADVANCED_KEYS + ["peak percent", "peak decay", "max vs mean"]
+    ADVANCED_KEYS = Twod.ADVANCED_KEYS + [
+        "peak percent",
+        "peak decay",
+        "max vs mean",
+    ]
 
     start_time = timeit.default_timer()
 
@@ -84,7 +88,8 @@ class Equalizer2d(Twod, GradientEffect):
                 ]
             )
         self.peaks_filter = self.create_filter(
-            alpha_decay=self.peak_decay, alpha_rise=0.99)
+            alpha_decay=self.peak_decay, alpha_rise=0.99
+        )
         self.peak_size = int(self.peak_per * self.max_dim / 100)
         self.init = True
 
@@ -121,8 +126,9 @@ class Equalizer2d(Twod, GradientEffect):
         # Precompute values that are constant for each iteration
         half_max_dim = int(self.max_dim / 2)
         gradient_colors = [
-            tuple(self.get_gradient_color(1 / self.bands * i).astype(int)) for i
-            in range(self.bands)]
+            tuple(self.get_gradient_color(1 / self.bands * i).astype(int))
+            for i in range(self.bands)
+        ]
 
         for i in range(self.bands):
             band_start, band_end = self.bandsx[i]
@@ -138,8 +144,7 @@ class Equalizer2d(Twod, GradientEffect):
 
             # Draw the rectangle
             rgb_draw.rectangle(
-                (band_start, top, band_end, bottom),
-                fill=gradient_colors[i]
+                (band_start, top, band_end, bottom), fill=gradient_colors[i]
             )
 
             if self.peak:
@@ -148,7 +153,7 @@ class Equalizer2d(Twod, GradientEffect):
                 peak_end = peak_scaled + self.peak_size
                 rgb_draw.rectangle(
                     (band_start, peak_scaled, band_end, peak_end),
-                    fill=(255, 255, 255)
+                    fill=(255, 255, 255),
                 )
 
         self.roll_gradient()
