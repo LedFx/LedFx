@@ -99,7 +99,9 @@ class Twod(AudioReactiveEffect):
 
         # rgb_image should be the matching size to the display
         # TODO: Add speculative resize
-        rgb_resized = rgb_image.resize((self.t_width, self.t_height), Image.BICUBIC)
+        rgb_resized = rgb_image.resize(
+            (self.t_width, self.t_height), Image.BICUBIC
+        )
         rgb_bytes = rgb_resized.tobytes()
         rgb_array = np.frombuffer(rgb_bytes, dtype=np.uint8)
         rgb_array = rgb_array.astype(np.float32)
