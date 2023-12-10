@@ -103,7 +103,7 @@ class Matrix_eq(Twod, GradientEffect):
                     ),
                     fill=tuple(self.get_gradient_color(1 / self.bands * i).astype(int)),
                 )
-            else: # default bottom to top
+            else:  # default bottom to top
                 rgb_draw.rectangle(
                     (
                         self.bandsx[i][0],
