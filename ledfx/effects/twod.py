@@ -148,29 +148,29 @@ class Twod(AudioReactiveEffect):
             )
 
     def draw_test(self, rgb_draw):
-            width, height  = rgb_draw._image.size
-            rgb_draw.rectangle(
-                [(0, 0), (width - 1, height - 1)],
-                fill=None,
-                outline="white",
-            )
-            mid_w, mid_h = int(width / 2), int(height / 2)
-            rgb_draw.line([(0, 0), (mid_w, mid_h)], fill="red", width=1)
-            rgb_draw.line(
-                [(width - 1, 0), (mid_w - 1, mid_h)],
-                fill="blue",
-                width=1,
-            )
-            rgb_draw.line(
-                [(0, height - 1), (mid_w - 1, mid_h)],
-                fill="green",
-                width=1,
-            )
-            rgb_draw.line(
-                [(width - 1, height - 1), (mid_w, mid_h)],
-                fill="white",
-                width=1,
-            )
+        width, height = rgb_draw._image.size
+        rgb_draw.rectangle(
+            [(0, 0), (width - 1, height - 1)],
+            fill=None,
+            outline="white",
+        )
+        mid_w, mid_h = int(width / 2), int(height / 2)
+        rgb_draw.line([(0, 0), (mid_w, mid_h)], fill="red", width=1)
+        rgb_draw.line(
+            [(width - 1, 0), (mid_w - 1, mid_h)],
+            fill="blue",
+            width=1,
+        )
+        rgb_draw.line(
+            [(0, height - 1), (mid_w - 1, mid_h)],
+            fill="green",
+            width=1,
+        )
+        rgb_draw.line(
+            [(width - 1, height - 1), (mid_w, mid_h)],
+            fill="white",
+            width=1,
+        )
 
     def draw(self):
         # this should be implemented in the child class
