@@ -20,11 +20,6 @@ class Twod(AudioReactiveEffect):
     CONFIG_SCHEMA = vol.Schema(
         {
             vol.Optional(
-                "LED width",
-                description="Row width of target",
-                default=128,
-            ): vol.All(vol.Coerce(int), vol.Range(min=1, max=128)),
-            vol.Optional(
                 "flip horizontal",
                 description="flip the image horizontally",
                 default=False,
@@ -69,18 +64,19 @@ class Twod(AudioReactiveEffect):
         self.fps = 0
         self.last = 0
         self.last_dump = self._config["dump"]
-        self.t_height = -1
 
     def on_activate(self, pixel_count):
         self.current_pixel = 0
         self.last_cycle_time = 20
-
         self.bar = 0
+        # TODO: Changes to this value from virtual config are only picked up
+        # on change of effect
+        self.t_height = self._virtual.config["rows"]
+        self.t_width = self.pixel_count // self.t_height
 
     def config_updated(self, config):
         self.diag = self._config["diag"]
         self.test = self._config["test"]
-        self.t_width = self._config["LED width"]
 
         # cannot get t_height here, pixel_count is not set yet on first call :-(
         self.flip = self._config["flip vertical"]
@@ -186,8 +182,6 @@ class Twod(AudioReactiveEffect):
 
     def render(self):
         # TODO: Move this and rgb_image into do_once function
-        # also protect against insane width setting at first config
-        self.t_height = max(1, int(self.pixel_count / self.t_width))
 
         self.log_sec()
 

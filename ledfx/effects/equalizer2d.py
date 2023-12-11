@@ -81,12 +81,9 @@ class Equalizer2d(Twod, GradientEffect):
         self.bands = min(self.bands, self.pixel_count)
         self.bandsx = []
         for i in range(self.bands):
-            self.bandsx.append(
-                [
-                    int(self.max_dim / self.bands * i),
-                    int(self.max_dim / self.bands * (i + 1) - 1),
-                ]
-            )
+            start = int((self.max_dim / float(self.bands)) * i)
+            end = max(start, int(((self.max_dim / float(self.bands)) * (i + 1)) - 1))
+            self.bandsx.append([start, end])
         self.peaks_filter = self.create_filter(
             alpha_decay=self.peak_decay, alpha_rise=0.99
         )

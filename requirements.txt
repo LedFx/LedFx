@@ -16,6 +16,7 @@
     notify-py>=0.3.42
     openrgb-python~=0.2.10
     paho-mqtt~=1.5.1
+    pillow>=10.1.0
     psutil>=5.8.0
     pyserial~=3.5
     pystray>=0.17
