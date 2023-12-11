@@ -1,10 +1,10 @@
 import asyncio
+import binascii
 import json
 import logging
 import struct
-import binascii
-from concurrent import futures
 from base64 import b64decode
+from concurrent import futures
 
 import numpy as np
 import voluptuous as vol
@@ -316,13 +316,18 @@ class WebsocketConnection:
         except binascii.Error:
             _LOGGER.info("Incorrect base64 padding.")
         except Exception as err:
-            _LOGGER.exception("Unexpected Exception in base64 decoding: %s", err)
+            _LOGGER.exception(
+                "Unexpected Exception in base64 decoding: %s", err
+            )
         else:
             fmt = "<%dh" % (len(decoded) // 2)
             data = list(struct.unpack(fmt, decoded))
             # Minimum value is -32768 for signed, so that's why if the number is negative,
             # it is divided by 32768 when converting to float.
-            data = np.array([d/MAX_VAL if d >= 0 else d/(MAX_VAL+1) for d in data], dtype=np.float32)
+            data = np.array(
+                [d / MAX_VAL if d >= 0 else d / (MAX_VAL + 1) for d in data],
+                dtype=np.float32,
+            )
             ACTIVE_AUDIO_STREAM.data = data
 
 
