@@ -13,7 +13,7 @@ _LOGGER = logging.getLogger(__name__)
 class Clone(Twod):
     NAME = "Clone"
     CATEGORY = "Matrix"
-    HIDDEN_KEYS = ["speed", "background_brightness", "blur", "mirror", "flip"]
+    HIDDEN_KEYS = Twod.HIDDEN_KEYS + ["test"]
 
     start_time = timeit.default_timer()
 
@@ -74,7 +74,6 @@ class Clone(Twod):
                 _LOGGER.warning("Recreated sct")
 
         if self.grab is None:
-            self.t_height = int(self.pixel_count / self.t_width)
             # grab a screen clip from screen x at x,y of width, height
             mon = self.sct.monitors[self.screen]
             self.grab = {
