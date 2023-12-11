@@ -164,9 +164,9 @@ class Equalizer2d(Twod, GradientEffect):
                     rgb_draw.rectangle(
                         (
                             band_start,
-                            half_max_dim - peak_scaled,
-                            band_end,
                             half_max_dim - peak_end,
+                            band_end,
+                            half_max_dim - peak_scaled,
                         ),
                         fill=(255, 255, 255),
                     )
