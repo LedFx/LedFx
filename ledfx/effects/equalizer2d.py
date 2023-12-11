@@ -135,8 +135,8 @@ class Equalizer2d(Twod, GradientEffect):
             volume_scaled = int(self.max_dim * volumes[i])
             if self.center:
                 # Calculate dimensions for the centered rectangle
-                top = half_max_dim - volume_scaled // 2
-                bottom = half_max_dim + volume_scaled // 2
+                bottom = half_max_dim - volume_scaled // 2
+                top = half_max_dim + volume_scaled // 2
             else:
                 # Dimensions for the bottom to top rectangle
                 bottom = 0
@@ -144,7 +144,7 @@ class Equalizer2d(Twod, GradientEffect):
 
             # Draw the rectangle
             rgb_draw.rectangle(
-                (band_start, top, band_end, bottom), fill=gradient_colors[i]
+                (band_start, bottom, band_end, top), fill=gradient_colors[i]
             )
 
             # Draw the peak marker
