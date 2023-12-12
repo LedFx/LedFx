@@ -71,12 +71,19 @@ class Imagespin(Twod):
 
     def config_updated(self, config):
         super().config_updated(config)
-        # if we have an attibute for pixel_count the use it in calc, otherwise guess
-        temp_height = self.t_width
 
         self.clip = self._config["clip"]
         self.min_size = self._config["Min Size"]
+        self.power_func = self._power_funcs[self._config["frequency_range"]]
+        self.init = True
 
+    def audio_data_updated(self, data):
+        # Get filtered bar power
+        self.bar = (
+            getattr(data, self.power_func)() * self._config["multiplier"] * 2
+        )
+
+    def do_once(self):
         if self._config["pattern"]:
             url_path = "https://images.squarespace-cdn.com/content/v1/60cc480d9290423b888eb94a/1624780092100-4FLILMIV0YHHU45GB7XZ/Test+Pattern+t.png"
         else:
@@ -87,7 +94,7 @@ class Imagespin(Twod):
                 with urllib.request.urlopen(url_path) as url:
                     self.bass_image = Image.open(url)
                     self.bass_image.thumbnail(
-                        (self.t_width * 4, temp_height * 4)
+                        (self.t_width * 4, self.t_height * 4)
                     )
                 _LOGGER.info(f"pre scaled {self.bass_image.size}")
 
@@ -107,16 +114,12 @@ class Imagespin(Twod):
                 self.bass_image = Image.open(get_icon_path("tray.png"))
         else:
             self.bass_image = Image.open(get_icon_path("tray.png"))
-
-        self.power_func = self._power_funcs[self._config["frequency_range"]]
-
-    def audio_data_updated(self, data):
-        # Get filtered bar power
-        self.bar = (
-            getattr(data, self.power_func)() * self._config["multiplier"] * 2
-        )
+        self.init = False
 
     def draw(self):
+        if self.init:
+            self.do_once()
+
         rgb_image = Image.new("RGB", (self.t_width, self.t_height))
         rgb_draw = ImageDraw.Draw(rgb_image)
 
