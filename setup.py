@@ -44,7 +44,7 @@ INSTALL_REQUIRES = [
     "icmplib~=3.0.3",
     "voluptuous~=0.12.1",
     "zeroconf~=0.39.4",
-    "pillow>=10.1.0",
+    "pillow~=10.1.0",
     # Conditional Requirement
     # We need pywin32 for Windows
     'pywin32>=302; platform_system == "Windows"',
