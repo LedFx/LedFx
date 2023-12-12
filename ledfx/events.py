@@ -2,6 +2,7 @@ import logging
 from typing import Callable
 
 import numpy as np
+import base64
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -120,7 +121,19 @@ class VisualisationUpdateEvent(Event):
         super().__init__(Event.VISUALISATION_UPDATE)
         self.is_device = is_device
         self.vis_id = vis_id
-        self.pixels = pixels.astype(np.uint8).T.tolist()
+        self.pixels = []
+        for p in pixels.astype(np.uint8).tolist():
+            pixel_color = (p[0] << 16) | (p[1] << 8) | p[2]
+            byte_size = 3
+            if pixel_color & (0xFF << 16):
+                byte_size = 3
+            elif pixel_color & (0xFF << 8):
+                byte_size = 2
+            elif pixel_color & 0xFF or pixel_color == 0:
+                byte_size = 1
+            encoded_color = base64.b64encode(pixel_color.to_bytes(byte_size, 'little')).decode('ascii')
+            self.pixels.append(encoded_color.replace('=', ''))
+        print()
 
 
 class EffectSetEvent(Event):
