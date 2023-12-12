@@ -21,11 +21,6 @@ class EQAudioEffect(AudioReactiveEffect, GradientEffect):
                 description="Repeat the gradient into segments",
                 default=6,
             ): vol.All(vol.Coerce(int), vol.Range(min=1, max=16)),
-            vol.Optional(
-                "mirror",
-                description="Mirror the effect",
-                default=False,
-            ): bool,
         }
     )
 
