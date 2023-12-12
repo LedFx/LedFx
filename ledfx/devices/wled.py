@@ -128,17 +128,8 @@ class WLEDDevice(NetworkedDevice):
                 for seg in segments:
                     if seg["stop"] - seg["start"] > 0:
                         name = seg.get("n", f'Seg-{seg["id"]}')
-                        if seg.get("stopY", 0) > 0:
-                            name = seg.get("n", f'Matrix-{seg["id"]}')
                         rows = seg.get("stopY", 1)
-                        if rows > 1:
-                            self.sub_v(
-                                name,
-                                None,
-                                [[seg["start"], (rows * seg["stop"]) - 1]],
-                                rows,
-                            )
-                        else:
+                        if not rows > 1:
                             self.sub_v(
                                 name,
                                 None,
