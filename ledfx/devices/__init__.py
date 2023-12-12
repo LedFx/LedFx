@@ -758,6 +758,12 @@ class Devices(RegistryLoader):
             "name": device.name,
             "icon_name": device_config["icon_name"],
         }
+
+        if device_type == "wled":
+            if "matrix" in led_info.keys():
+                if "h" in led_info["matrix"].keys():
+                    virtual_config["rows"] = led_info["matrix"]["h"]
+
         segments = [[device.id, 0, device_config["pixel_count"] - 1, False]]
 
         # Create the virtual

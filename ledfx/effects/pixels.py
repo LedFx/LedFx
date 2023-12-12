@@ -9,11 +9,10 @@ from ledfx.effects.temporal import TemporalEffect
 
 _LOGGER = logging.getLogger(__name__)
 
-# Metro intent is to flash a pattern on led strips so end users can look for
-# sync between separate light strips due to protocol, wifi conditions or other
-# Best configured as a copy virtual across mutliple devices, however uses a
-# common derived time base and step count so that seperate devices / virtuals
-# with common configurations will be in sync
+# Pixels is a diagnositc effect to allow the confirmation of order of addressing
+# of pixels in a strip.
+# For very large displays set pixels to a higher value so more pixels are lit
+# and progressed each step
 
 
 class PixelsEffect(TemporalEffect):
@@ -86,7 +85,7 @@ class PixelsEffect(TemporalEffect):
             self.pixels[
                 self.current_pixel : min(
                     self.current_pixel + self._config["pixels"],
-                    self.pixel_count - 1,
+                    self.pixel_count,
                 )
             ] = self.pixel_color
 
