@@ -1,8 +1,8 @@
+import base64
 import logging
 from typing import Callable
 
 import numpy as np
-import base64
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -131,8 +131,10 @@ class VisualisationUpdateEvent(Event):
                 byte_size = 2
             elif pixel_color & 0xFF or pixel_color == 0:
                 byte_size = 1
-            encoded_color = base64.b64encode(pixel_color.to_bytes(byte_size, 'little')).decode('ascii')
-            self.pixels.append(encoded_color.replace('=', ''))
+            encoded_color = base64.b64encode(
+                pixel_color.to_bytes(byte_size, "little")
+            ).decode("ascii")
+            self.pixels.append(encoded_color.replace("=", ""))
         print()
 
 
