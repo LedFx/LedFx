@@ -67,6 +67,8 @@ class Twinklefox2(AudioReactiveEffect, HSVEffect):
         now_ns = time.time_ns()
         dt = (now_ns - self.last_time)/1.0e6 #Original twinklefox ticks in milliseconds
 
+        reac_factor = self._lows_power*self._config["reactivity"] #Can lows_power ever be > 1.0?  I don't think so?
+        dt *= 1.0 + reac_factor
         #Rewrite twinklefox's clock increase in a different manner.
         self.phase += self.speed_modifier*dt/(self.clk_div*256.0)
         self.last_time = now_ns
@@ -78,7 +80,7 @@ class Twinklefox2(AudioReactiveEffect, HSVEffect):
         #Determine whether to trigger a new twinkle, and if so, choose a new random hue and speed mult, and reset phase to zero
         #Unlike original twinklefox, the deadtime for any pixel is exactly (1-density) - we rely on the speed multiplier to hide that
         #from the viewer
-        trig_idxs = (self.phase > 1.0 + self.trig_thresh).nonzero()[0]
+        trig_idxs = (self.phase > 1.0 + (1.0-reac_factor)*self.trig_thresh).nonzero()[0]
         numup = len(trig_idxs)
 
         if(numup > 0):
