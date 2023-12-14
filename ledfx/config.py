@@ -27,10 +27,20 @@ _default_wled_settings = {
     "inactivity_timeout": 1,
 }
 
-_transmission_modes = [
-    "compressed",
-    "uncompressed"
-]
+
+# Transmission types for pixel visualisation on frontend
+class Transmission:
+    BASE64_COMPRESSED = "compressed"
+    UNCOMPRESSED = "uncompressed"
+
+    @staticmethod
+    def get_list():
+        transmission_dict = vars(Transmission)
+        t_list = []
+        for attribute in transmission_dict.keys():
+            if attribute[:2] != '__' and attribute != "get_list":
+                t_list.append(getattr(Transmission, attribute))
+        return t_list
 
 
 # adds the {setting: ..., user: ...} thing to the defaults dict
@@ -82,7 +92,7 @@ CORE_CONFIG_SCHEMA = vol.Schema(
         vol.Optional("user_presets", default={}): dict,
         vol.Optional("scenes", default={}): dict,
         vol.Optional("integrations", default=[]): list,
-        vol.Optional("transmission_mode", default="compressed"): vol.In(_transmission_modes),
+        vol.Optional("transmission_mode", default="compressed"): vol.In(Transmission.get_list()),
         vol.Optional("visualisation_fps", default=30): vol.All(
             int, vol.Range(1, 60)
         ),

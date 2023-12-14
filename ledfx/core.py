@@ -17,7 +17,7 @@ from ledfx.color import (
     validate_color,
     validate_gradient,
 )
-from ledfx.config import get_ssl_certs, load_config, save_config
+from ledfx.config import Transmission, get_ssl_certs, load_config, save_config
 from ledfx.devices import Devices
 from ledfx.effects import Effects
 from ledfx.effects.math import interpolate_pixels
@@ -42,12 +42,6 @@ from ledfx.virtuals import Virtuals
 _LOGGER = logging.getLogger(__name__)
 if currently_frozen():
     warnings.filterwarnings("ignore")
-
-
-# Transmission types for pixel visualisation on frontend
-class Transmission:
-    BASE64_COMPRESSED = "compressed"
-    UNCOMPRESSED = "uncompressed"
 
 
 class LedFxCore:
