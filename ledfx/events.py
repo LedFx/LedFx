@@ -1,4 +1,3 @@
-import base64
 import logging
 from typing import Callable
 
@@ -121,9 +120,7 @@ class VisualisationUpdateEvent(Event):
         super().__init__(Event.VISUALISATION_UPDATE)
         self.is_device = is_device
         self.vis_id = vis_id
-        b_arr = bytearray()
-        b_arr = bytes(pixels.astype(np.uint8).flatten())
-        self.pixels = base64.b64encode(b_arr).decode("ASCII")
+        self.pixels = pixels
 
 
 class EffectSetEvent(Event):

@@ -4,6 +4,8 @@ import sys
 import time
 import warnings
 import webbrowser
+import base64
+import numpy as np
 from concurrent.futures import ThreadPoolExecutor
 
 from ledfx.color import (
@@ -159,6 +161,10 @@ class LedFxCore:
 
             if len(pixels) > max_len:
                 pixels = interpolate_pixels(pixels, max_len)
+
+            b_arr = bytearray()
+            b_arr = bytes(pixels.astype(np.uint8).flatten())
+            pixels = base64.b64encode(b_arr).decode("ASCII")
 
             self.events.fire_event(
                 VisualisationUpdateEvent(is_device, vis_id, pixels)
