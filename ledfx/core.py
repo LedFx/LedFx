@@ -1,5 +1,5 @@
 import asyncio
-import base64
+import pybase64
 import logging
 import sys
 import time
@@ -174,7 +174,7 @@ class LedFxCore:
                 == Transmission.BASE64_COMPRESSED
             ):
                 b_arr = bytes(pixels.astype(np.uint8).flatten())
-                pixels = base64.b64encode(b_arr).decode("ASCII")
+                pixels = pybase64.b64encode(b_arr).decode("ASCII")
             else:
                 pixels = pixels.astype(np.uint8).T.tolist()
 

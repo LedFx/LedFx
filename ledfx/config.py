@@ -27,6 +27,11 @@ _default_wled_settings = {
     "inactivity_timeout": 1,
 }
 
+_transmission_modes = [
+    "compressed",
+    "uncompressed"
+]
+
 
 # adds the {setting: ..., user: ...} thing to the defaults dict
 def parse_default_wled_setting(setting):
@@ -77,7 +82,7 @@ CORE_CONFIG_SCHEMA = vol.Schema(
         vol.Optional("user_presets", default={}): dict,
         vol.Optional("scenes", default={}): dict,
         vol.Optional("integrations", default=[]): list,
-        vol.Optional("transmission_mode", default="compressed"): str,
+        vol.Optional("transmission_mode", default="compressed"): vol.In(_transmission_modes),
         vol.Optional("visualisation_fps", default=30): vol.All(
             int, vol.Range(1, 60)
         ),
