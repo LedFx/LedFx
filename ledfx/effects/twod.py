@@ -114,13 +114,19 @@ class Twod(AudioReactiveEffect):
     def image_to_pixels(self):
         # image should be the right size to map in, at this point
         if self.flip:
-            self.matrix = self.matrix.transpose(Image.Transpose.FLIP_TOP_BOTTOM)
+            self.matrix = self.matrix.transpose(
+                Image.Transpose.FLIP_TOP_BOTTOM
+            )
         if self.mirror:
-            self.matrix = self.matrix.transpose(Image.Transpose.FLIP_LEFT_RIGHT)
+            self.matrix = self.matrix.transpose(
+                Image.Transpose.FLIP_LEFT_RIGHT
+            )
         if self.rotate != 0:
             self.matrix = self.matrix.transpose(self.rotate)
         if self.matrix.size != (self.t_width, self.t_height):
-            _LOGGER.error(f"Image is wrong size {self.matrix.size} vs {self.r_width}x{self.r_height}")
+            _LOGGER.error(
+                f"Image is wrong size {self.matrix.size} vs {self.r_width}x{self.r_height}"
+            )
 
         rgb_array = np.frombuffer(self.matrix.tobytes(), dtype=np.uint8)
         rgb_array = rgb_array.astype(np.float32)
@@ -194,7 +200,6 @@ class Twod(AudioReactiveEffect):
         pass
 
     def render(self):
-
         if self.init:
             self.do_once()
 
