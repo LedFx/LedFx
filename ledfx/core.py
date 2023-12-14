@@ -1,12 +1,13 @@
 import asyncio
+import base64
 import logging
 import sys
 import time
 import warnings
 import webbrowser
-import base64
-import numpy as np
 from concurrent.futures import ThreadPoolExecutor
+
+import numpy as np
 
 from ledfx.color import (
     LEDFX_COLORS,
