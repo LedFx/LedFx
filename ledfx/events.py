@@ -1,7 +1,7 @@
 import base64
 import logging
-from typing import Callable
 from time import perf_counter
+from typing import Callable
 
 import numpy as np
 
@@ -124,7 +124,7 @@ class VisualisationUpdateEvent(Event):
         self.vis_id = vis_id
         b_arr = bytearray()
         b_arr = bytes(pixels.astype(np.uint8).flatten())
-        self.pixels = base64.b64encode(b_arr).decode('ASCII')
+        self.pixels = base64.b64encode(b_arr).decode("ASCII")
 
 
 class EffectSetEvent(Event):
