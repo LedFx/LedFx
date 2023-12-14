@@ -77,7 +77,7 @@ CORE_CONFIG_SCHEMA = vol.Schema(
         vol.Optional("user_presets", default={}): dict,
         vol.Optional("scenes", default={}): dict,
         vol.Optional("integrations", default=[]): list,
-        vol.Optional("transmission_mode", default=0): int,
+        vol.Optional("transmission_mode", default="compressed"): str,
         vol.Optional("visualisation_fps", default=30): vol.All(
             int, vol.Range(1, 60)
         ),

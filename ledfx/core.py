@@ -44,6 +44,12 @@ if currently_frozen():
     warnings.filterwarnings("ignore")
 
 
+# Transmission types for pixel visualisation on frontend
+class Transmission:
+    BASE64_COMPRESSED = "compressed"
+    UNCOMPRESSED = "uncompressed"
+
+
 class LedFxCore:
     def __init__(
         self,
@@ -163,11 +169,10 @@ class LedFxCore:
             if len(pixels) > max_len:
                 pixels = interpolate_pixels(pixels, max_len)
 
-            if self.config["transmission_mode"] == 1:
-                b_arr = bytearray()
+            if self.config["transmission_mode"] == Transmission.BASE64_COMPRESSED:
                 b_arr = bytes(pixels.astype(np.uint8).flatten())
                 pixels = base64.b64encode(b_arr).decode("ASCII")
-            elif self.config["transmission_mode"] == 0:
+            else:
                 pixels = pixels.astype(np.uint8).T.tolist()
 
             self.events.fire_event(
