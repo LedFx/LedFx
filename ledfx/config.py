@@ -38,7 +38,7 @@ class Transmission:
         transmission_dict = vars(Transmission)
         t_list = []
         for attribute in transmission_dict.keys():
-            if attribute[:2] != '__' and attribute != "get_list":
+            if attribute[:2] != "__" and attribute != "get_list":
                 t_list.append(getattr(Transmission, attribute))
         return t_list
 
@@ -92,7 +92,9 @@ CORE_CONFIG_SCHEMA = vol.Schema(
         vol.Optional("user_presets", default={}): dict,
         vol.Optional("scenes", default={}): dict,
         vol.Optional("integrations", default=[]): list,
-        vol.Optional("transmission_mode", default="compressed"): vol.In(Transmission.get_list()),
+        vol.Optional("transmission_mode", default="compressed"): vol.In(
+            Transmission.get_list()
+        ),
         vol.Optional("visualisation_fps", default=30): vol.All(
             int, vol.Range(1, 60)
         ),
