@@ -84,6 +84,7 @@ class Imagespin(Twod):
         )
 
     def do_once(self):
+        super().do_once()
         if self._config["pattern"]:
             url_path = "https://images.squarespace-cdn.com/content/v1/60cc480d9290423b888eb94a/1624780092100-4FLILMIV0YHHU45GB7XZ/Test+Pattern+t.png"
         else:
@@ -94,7 +95,7 @@ class Imagespin(Twod):
                 with urllib.request.urlopen(url_path) as url:
                     self.bass_image = Image.open(url)
                     self.bass_image.thumbnail(
-                        (self.t_width * 4, self.t_height * 4)
+                        (self.r_width * 4, self.r_height * 4)
                     )
                 _LOGGER.info(f"pre scaled {self.bass_image.size}")
 
@@ -120,19 +121,16 @@ class Imagespin(Twod):
         if self.init:
             self.do_once()
 
-        rgb_image = Image.new("RGB", (self.t_width, self.t_height))
-        rgb_draw = ImageDraw.Draw(rgb_image)
-
         if self.test:
-            self.draw_test(rgb_draw)
+            self.draw_test(self.m_draw)
             size = 1.0
             spin = 1.0
         else:
             size = self.bar + self.min_size
             spin = self.bar
 
-        image_w = int(self.t_width * size)
-        image_h = int(self.t_height * size)
+        image_w = int(self.r_width * size)
+        image_h = int(self.r_height * size)
 
         if image_w > 0 and image_h > 0:
             # make a copy of the original that we will manipulate
@@ -153,14 +151,12 @@ class Imagespin(Twod):
                 Image.BILINEAR,
             )
 
-            # render bass_sized_img into rgb_image centered with alpha
-            rgb_image.paste(
+            # render bass_sized_img into self.matrix centered with alpha
+            self.matrix.paste(
                 bass_sized_img,
                 (
-                    int((self.t_width - bass_sized_img.width) / 2),
-                    int((self.t_height - bass_sized_img.height) / 2),
+                    int((self.r_width - bass_sized_img.width) / 2),
+                    int((self.r_height - bass_sized_img.height) / 2),
                 ),
                 bass_sized_img,
             )
-
-        return rgb_image

@@ -92,8 +92,6 @@ class Clone(Twod):
             "RGB", frame.size, frame.bgra, "raw", "BGRX"
         )
 
-        rgb_image = rgb_image.resize(
-            (self.t_width, self.t_height), Image.BILINEAR
+        self.matrix = rgb_image.resize(
+            (self.r_width, self.r_height), Image.BILINEAR
         )
-
-        return rgb_image

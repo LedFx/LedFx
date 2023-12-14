@@ -3,7 +3,6 @@ import timeit
 
 import numpy as np
 import voluptuous as vol
-from PIL import Image, ImageDraw
 
 from ledfx.effects.gradient import GradientEffect
 from ledfx.effects.twod import Twod
@@ -67,7 +66,6 @@ class Equalizer2d(Twod, GradientEffect):
     def config_updated(self, config):
         super().config_updated(config)
         self.bands = self._config["bands"]
-        self.init = False
         self.center = self._config["center"]
         self.grad_roll = self._config["gradient_roll"]
         self.max = self._config["max vs mean"]
@@ -76,21 +74,21 @@ class Equalizer2d(Twod, GradientEffect):
         self.peak_decay = self.config["peak decay"]
 
     def do_once(self):
+        super().do_once()
         # defer things that can't be done when pixel_count is not known
-        self.max_dim = max(self.t_width, self.t_height)
         self.bands = min(self.bands, self.pixel_count)
         self.bandsx = []
         for i in range(self.bands):
-            start = int((self.max_dim / float(self.bands)) * i)
+            start = int((self.r_width / float(self.bands)) * i)
             end = max(
-                start, int(((self.max_dim / float(self.bands)) * (i + 1)) - 1)
+                start, int(((self.r_width / float(self.bands)) * (i + 1)) - 1)
             )
             self.bandsx.append([start, end])
         self.peaks_filter = self.create_filter(
             alpha_decay=self.peak_decay, alpha_rise=0.99
         )
-        self.peak_size = int(self.peak_per * self.max_dim / 100)
-        self.init = True
+        self.peak_size = int(self.peak_per * self.r_height / 100)
+        self.half_height = self.r_height // 2
 
     def audio_data_updated(self, data):
         # Grab the filtered melbank
@@ -98,20 +96,9 @@ class Equalizer2d(Twod, GradientEffect):
         np.clip(self.r, 0, 1, out=self.r)
 
     def draw(self):
-        if not self.init:
-            self.do_once()
-
-        rgb_image = Image.new(
-            "RGB",
-            (
-                self.max_dim,
-                self.max_dim,
-            ),
-        )
-        rgb_draw = ImageDraw.Draw(rgb_image)
 
         if self.test:
-            self.draw_test(rgb_draw)
+            self.draw_test(self.m_draw)
 
         r_split = np.array_split(self.r, self.bands)
         if self.max:
@@ -123,7 +110,6 @@ class Equalizer2d(Twod, GradientEffect):
             peaks = self.peaks_filter.update(volumes)
 
         # Precompute values that are constant for each iteration
-        half_max_dim = int(self.max_dim / 2)
         gradient_colors = [
             tuple(self.get_gradient_color(1 / self.bands * i).astype(int))
             for i in range(self.bands)
@@ -131,52 +117,51 @@ class Equalizer2d(Twod, GradientEffect):
 
         for i in range(self.bands):
             band_start, band_end = self.bandsx[i]
-            volume_scaled = int(self.max_dim * volumes[i])
+            volume_scaled = int(self.r_height * volumes[i])
             if self.center:
                 # Calculate dimensions for the centered rectangle
-                bottom = half_max_dim - volume_scaled // 2
-                top = half_max_dim + volume_scaled // 2
+                bottom = self.half_height - volume_scaled // 2
+                top = self.half_height + volume_scaled // 2
             else:
                 # Dimensions for the bottom to top rectangle
                 bottom = 0
                 top = volume_scaled
 
             # Draw the rectangle
-            rgb_draw.rectangle(
+            self.m_draw.rectangle(
                 (band_start, bottom, band_end, top), fill=gradient_colors[i]
             )
 
             # Draw the peak marker
             if self.peak:
                 if self.center:
-                    peak_scaled = int(self.max_dim * peaks[i] // 2)
+                    peak_scaled = int(self.half_height * peaks[i])
                     peak_end = int(peak_scaled + self.peak_size // 2)
-                    rgb_draw.rectangle(
+                    self.m_draw.rectangle(
                         (
                             band_start,
-                            half_max_dim + peak_scaled,
+                            self.half_height + peak_scaled,
                             band_end,
-                            half_max_dim + peak_end,
+                            self.half_height + peak_end,
                         ),
                         fill=(255, 255, 255),
                     )
-                    rgb_draw.rectangle(
+                    self.m_draw.rectangle(
                         (
                             band_start,
-                            half_max_dim - peak_end,
+                            self.half_height - peak_end,
                             band_end,
-                            half_max_dim - peak_scaled,
+                            self.half_height - peak_scaled,
                         ),
                         fill=(255, 255, 255),
                     )
                 else:
-                    peak_scaled = int(self.max_dim * peaks[i])
+                    peak_scaled = int(self.r_height * peaks[i])
                     peak_end = peak_scaled + self.peak_size
 
-                    rgb_draw.rectangle(
+                    self.m_draw.rectangle(
                         (band_start, peak_scaled, band_end, peak_end),
                         fill=(255, 255, 255),
                     )
 
         self.roll_gradient()
-        return rgb_image
