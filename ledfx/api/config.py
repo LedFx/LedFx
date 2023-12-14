@@ -203,6 +203,7 @@ class ConfigEndpoint(RestEndpoint):
                         "create_segments",
                         "scan_on_startup",
                         "user_presets",
+                        "transmission_mode",
                     ]
                 )
                 and len(core_config) == 1
