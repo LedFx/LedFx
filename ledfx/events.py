@@ -1,6 +1,5 @@
 import base64
 import logging
-from time import perf_counter
 from typing import Callable
 
 import numpy as np
