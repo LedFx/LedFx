@@ -169,7 +169,10 @@ class LedFxCore:
             if len(pixels) > max_len:
                 pixels = interpolate_pixels(pixels, max_len)
 
-            if self.config["transmission_mode"] == Transmission.BASE64_COMPRESSED:
+            if (
+                self.config["transmission_mode"]
+                == Transmission.BASE64_COMPRESSED
+            ):
                 b_arr = bytes(pixels.astype(np.uint8).flatten())
                 pixels = base64.b64encode(b_arr).decode("ASCII")
             else:
