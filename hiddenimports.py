@@ -28,5 +28,5 @@ hiddenimports = [
     "pythonosc",
     "pythonosc.osc_message_builder",
     "pythonosc.udp_client",
-    "mss"
+    "mss",
 ]

@@ -96,7 +96,6 @@ class Equalizer2d(Twod, GradientEffect):
         np.clip(self.r, 0, 1, out=self.r)
 
     def draw(self):
-
         if self.test:
             self.draw_test(self.m_draw)
 

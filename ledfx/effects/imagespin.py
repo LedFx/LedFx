@@ -3,7 +3,7 @@ import timeit
 import urllib.request
 
 import voluptuous as vol
-from PIL import Image, ImageDraw
+from PIL import Image
 
 from ledfx.effects.twod import Twod
 from ledfx.utils import get_icon_path
