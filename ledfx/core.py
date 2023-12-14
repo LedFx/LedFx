@@ -1,5 +1,4 @@
 import asyncio
-import pybase64
 import logging
 import sys
 import time
@@ -8,6 +7,7 @@ import webbrowser
 from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
+import pybase64
 
 from ledfx.color import (
     LEDFX_COLORS,
