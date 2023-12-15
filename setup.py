@@ -56,6 +56,7 @@ INSTALL_REQUIRES = [
     'python-mbedtls~=2.7.1; (platform_system == "Linux" and platform_machine != "aarch64" and platform_machine != "armv7l") or platform_system == "Windows" or platform_system == "Darwin"',
     "flux-led>=0.28.35",
     "python-osc~=1.8.3",
+    "pybase64~=1.3.1",
 ]
 
 

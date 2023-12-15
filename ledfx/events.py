@@ -120,7 +120,7 @@ class VisualisationUpdateEvent(Event):
         super().__init__(Event.VISUALISATION_UPDATE)
         self.is_device = is_device
         self.vis_id = vis_id
-        self.pixels = pixels.astype(np.uint8).T.tolist()
+        self.pixels = pixels
 
 
 class EffectSetEvent(Event):

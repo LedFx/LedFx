@@ -32,6 +32,7 @@ PERMITTED_KEYS = {
         "create_segments",
         "visualisation_fps",
         "visualisation_maxlen",
+        "transmission_mode",
         "global_transitions",
         "global_brightness",
     ),

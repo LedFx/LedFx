@@ -3,7 +3,7 @@ import timeit
 
 import numpy as np
 import voluptuous as vol
-from PIL import Image
+from PIL import Image, ImageDraw
 
 from ledfx.effects import Effect
 from ledfx.effects.audio import AudioReactiveEffect
@@ -73,48 +73,67 @@ class Twod(AudioReactiveEffect):
         # on change of effect
         self.t_height = self._virtual.config["rows"]
         self.t_width = self.pixel_count // self.t_height
+        self.init = True
 
     def config_updated(self, config):
         self.diag = self._config["diag"]
         self.test = self._config["test"]
 
-        # cannot get t_height here, pixel_count is not set yet on first call :-(
+        # We will render in to native image size of the matrix on rotation
+        # This saves us from having to do ugly resizing and aliasing effects
+        # as well as a small performance boost
+        # we need to accout for swapping vertical and horizotal for 90 / 270
+
         self.flip = self._config["flip vertical"]
         self.mirror = self._config["flip horizontal"]
 
         self.rotate = 0
         if self._config["rotate"] == 1:
             self.rotate = Image.Transpose.ROTATE_90
+            self.flip, self.mirror = self.mirror, self.flip
         if self._config["rotate"] == 2:
             self.rotate = Image.Transpose.ROTATE_180
         if self._config["rotate"] == 3:
             self.rotate = Image.Transpose.ROTATE_270
+            self.flip, self.mirror = self.mirror, self.flip
+        self.init = True
 
-    def image_to_pixels(self, rgb_image):
+    def do_once(self):
+        # defer things that can't be done when pixel_count is not known
+        # so therefore cannot be addressed in config_updated
+        self.init = False
+
+        if self._config["rotate"] == 1 or self._config["rotate"] == 3:
+            # swap width and height for render
+            self.r_width = self.t_height
+            self.r_height = self.t_width
+        else:
+            self.r_width = self.t_width
+            self.r_height = self.t_height
+
+    def image_to_pixels(self):
         # image should be the right size to map in, at this point
         if self.flip:
-            rgb_image = rgb_image.transpose(Image.Transpose.FLIP_TOP_BOTTOM)
+            self.matrix = self.matrix.transpose(
+                Image.Transpose.FLIP_TOP_BOTTOM
+            )
         if self.mirror:
-            rgb_image = rgb_image.transpose(Image.Transpose.FLIP_LEFT_RIGHT)
+            self.matrix = self.matrix.transpose(
+                Image.Transpose.FLIP_LEFT_RIGHT
+            )
         if self.rotate != 0:
-            rgb_image = rgb_image.transpose(self.rotate)
+            self.matrix = self.matrix.transpose(self.rotate)
+        if self.matrix.size != (self.t_width, self.t_height):
+            _LOGGER.error(
+                f"Image is wrong size {self.matrix.size} vs {self.r_width}x{self.r_height}"
+            )
 
-        # rgb_image should be the matching size to the display
-        # TODO: Add speculative resize
-        rgb_resized = rgb_image.resize(
-            (self.t_width, self.t_height), Image.BICUBIC
-        )
-        rgb_bytes = rgb_resized.tobytes()
-        rgb_array = np.frombuffer(rgb_bytes, dtype=np.uint8)
+        rgb_array = np.frombuffer(self.matrix.tobytes(), dtype=np.uint8)
         rgb_array = rgb_array.astype(np.float32)
         rgb_array = rgb_array.reshape(int(rgb_array.shape[0] / 3), 3)
 
         copy_length = min(self.pixels.shape[0], rgb_array.shape[0])
         self.pixels[:copy_length, :] = rgb_array[:copy_length, :]
-
-        # self.pixels = rgb_array
-
-        return rgb_image
 
     def log_sec(self):
         self.start = timeit.default_timer()
@@ -140,11 +159,11 @@ class Twod(AudioReactiveEffect):
         self.last = end
         return self.log
 
-    def try_dump(self, rgb_image):
+    def try_dump(self):
         if self.last_dump != self._config["dump"]:
             self.last_dump = self._config["dump"]
             # show image on screen
-            rgb_image.show()
+            self.matrix.show()
             _LOGGER.info(
                 f"dump {self.t_width}x{self.t_height} R: {self.rotate} F: {self.flip} M: {self.mirror}"
             )
@@ -176,17 +195,21 @@ class Twod(AudioReactiveEffect):
 
     def draw(self):
         # this should be implemented in the child class
-        # should render into a PIL image at the final size for display
-        # and return it!
+        # should render into self.matrix at the final size
+        # for display using self.m_draw
         pass
 
     def render(self):
-        # TODO: Move this and rgb_image into do_once function
+        if self.init:
+            self.do_once()
 
         self.log_sec()
 
-        rgb_image = self.draw()
-        rgb_image = self.image_to_pixels(rgb_image)
+        self.matrix = Image.new("RGB", (self.r_width, self.r_height))
+        self.m_draw = ImageDraw.Draw(self.matrix)
+
+        self.draw()
+        self.image_to_pixels()
 
         self.try_log()
-        self.try_dump(rgb_image)
+        self.try_dump()
