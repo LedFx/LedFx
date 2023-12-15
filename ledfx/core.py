@@ -6,6 +6,9 @@ import warnings
 import webbrowser
 from concurrent.futures import ThreadPoolExecutor
 
+import numpy as np
+import pybase64
+
 from ledfx.color import (
     LEDFX_COLORS,
     LEDFX_GRADIENTS,
@@ -14,7 +17,7 @@ from ledfx.color import (
     validate_color,
     validate_gradient,
 )
-from ledfx.config import get_ssl_certs, load_config, save_config
+from ledfx.config import Transmission, get_ssl_certs, load_config, save_config
 from ledfx.devices import Devices
 from ledfx.effects import Effects
 from ledfx.effects.math import interpolate_pixels
@@ -159,6 +162,15 @@ class LedFxCore:
 
             if len(pixels) > max_len:
                 pixels = interpolate_pixels(pixels, max_len)
+
+            if (
+                self.config["transmission_mode"]
+                == Transmission.BASE64_COMPRESSED
+            ):
+                b_arr = bytes(pixels.astype(np.uint8).flatten())
+                pixels = pybase64.b64encode(b_arr).decode("ASCII")
+            else:
+                pixels = pixels.astype(np.uint8).T.tolist()
 
             self.events.fire_event(
                 VisualisationUpdateEvent(is_device, vis_id, pixels)
