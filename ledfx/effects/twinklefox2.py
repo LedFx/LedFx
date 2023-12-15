@@ -59,8 +59,8 @@ class Twinklefox2(AudioReactiveEffect, HSVEffect):
 
     def on_activate(self, pixel_count):
         self.last_time = time.time_ns()
-        self.speed_modifier = np.ones(self.pixel_count)
-        self.phase = np.ones(self.pixel_count)
+        self.speed_modifier = 1.0 + 2.0*np.random.rand(self.pixel_count)
+        self.phase = np.random.rand(self.pixel_count)/self._config["density"]
         self.hue = np.random.rand(self.pixel_count)
 
     def config_updated(self, config):
