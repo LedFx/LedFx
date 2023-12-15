@@ -29,4 +29,6 @@ hiddenimports = [
     "pythonosc.osc_message_builder",
     "pythonosc.udp_client",
     "mss",
+    "PIL.Image",
+    "PIL.ImageDraw",
 ]
