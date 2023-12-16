@@ -3,7 +3,7 @@ import binascii
 import json
 import logging
 import struct
-from base64 import b64decode
+import pybase64
 from concurrent import futures
 
 import numpy as np
@@ -310,7 +310,7 @@ class WebsocketConnection:
         if ACTIVE_AUDIO_STREAM.client != client:
             return
         try:
-            decoded = b64decode(message.get("data"))
+            decoded = pybase64.b64decode(message.get("data"))
         except binascii.Error:
             _LOGGER.info("Incorrect base64 padding.")
         except Exception as err:
