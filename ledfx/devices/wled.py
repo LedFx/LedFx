@@ -115,7 +115,7 @@ class WLEDDevice(NetworkedDevice):
 
     async def resolve_address(self, success_callback=None):
         await super().resolve_address(success_callback)
-        self._destination = self.subdevice._destination = self._destination
+        self.subdevice._destination = self._destination
 
     def flush(self, data):
         self.subdevice.flush(data)
