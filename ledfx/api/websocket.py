@@ -3,10 +3,10 @@ import binascii
 import json
 import logging
 import struct
-import pybase64
 from concurrent import futures
 
 import numpy as np
+import pybase64
 import voluptuous as vol
 from aiohttp import web
 
