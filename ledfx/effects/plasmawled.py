@@ -16,7 +16,7 @@ _LOGGER = logging.getLogger(__name__)
 class Plasmawled(Twod, GradientEffect):
     NAME = "PlasmaWled2d"
     CATEGORY = "Matrix"
-    HIDDEN_KEYS = Twod.HIDDEN_KEYS + []
+    HIDDEN_KEYS = Twod.HIDDEN_KEYS + ["background_color"]
     ADVANCED_KEYS = Twod.ADVANCED_KEYS + []
 
     start_time = timeit.default_timer()
