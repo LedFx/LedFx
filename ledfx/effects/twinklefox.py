@@ -7,8 +7,8 @@ from ledfx.effects.hsv_effect import HSVEffect
 
 #Second attempt at reimplementing https://gist.github.com/kriegsman/756ea6dcae8e30845b5a / twinklefox_base from https://github.com/Aircoookie/WLED/blob/main/wled00/FX.cpp
 #in a manner suited to a machine with more RAM and CPU than a microcontroller/numpy
-class Twinklefox2(AudioReactiveEffect, HSVEffect):
-    NAME = "Twinklefox v2"
+class Twinklefox(AudioReactiveEffect, HSVEffect):
+    NAME = "Twinklefox"
     CATEGORY = "Atmospheric"
 
     _power_funcs = {
