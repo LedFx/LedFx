@@ -64,9 +64,13 @@ class Twinklefox(AudioReactiveEffect, HSVEffect):
 
         # Instead of generating our random values from a deterministic PRNG on every run to save RAM, we've got lots of RAM, so maintain state variables for each pixel
         # and assign fully random values to them all
-        self.speed_modifier = 1.0 + 2.0 * np.random.rand(self.pixel_count) # Initialize with a random speed modifier, otherwise the effect starts out too uniform
-        self.phase = np.random.rand(self.pixel_count) / self._config["density"] # Also a random portion of the phase cycle
-        self.hue = np.random.rand(self.pixel_count) # Random hue
+        self.speed_modifier = 1.0 + 2.0 * np.random.rand(
+            self.pixel_count
+        )  # Initialize with a random speed modifier, otherwise the effect starts out too uniform
+        self.phase = (
+            np.random.rand(self.pixel_count) / self._config["density"]
+        )  # Also a random portion of the phase cycle
+        self.hue = np.random.rand(self.pixel_count)  # Random hue
 
     def config_updated(self, config):
         self._power = 0
