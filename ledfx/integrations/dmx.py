@@ -1,24 +1,30 @@
-# pip install pyusb
 import usb.core
 import usb.util
-import asyncio
 import logging
-import aiohttp
+
 import voluptuous as vol
+
+from ledfx.color import parse_color
+from ledfx.config import save_config
+from ledfx.consts import PROJECT_VERSION
+from ledfx.effects.audio import AudioInputSource
+from ledfx.events import Event
 from ledfx.integrations import Integration
-from ledfx.utils import async_fire_and_forget, resolve_destination
 
 _LOGGER = logging.getLogger(__name__)
 
 
-class DMX(Integration):
+class MQTT_HASS(Integration):
     """DMX Integration"""
 
     beta = False
-    _widget_types = ["Button", "Slider", "Audio Triggers"]
     NAME = "DMX USB Controller"
     DESCRIPTION = "DMX USB, For stage lighting such as DMXKing"
-    usb_devices = usb.core.find(find_all=True)  # Retrieve USB DMX devices
+
+    _usb_devices = {
+        "Test1": "Test2",
+        "Test3": "Test4",
+    }
 
     CONFIG_SCHEMA = vol.Schema(
         {
@@ -31,6 +37,6 @@ class DMX(Integration):
                 "usb_device",
                 description="Select the USB DMX device",
                 default=None,
-            ): vol.In([f"{dev.idVendor:04X}:{dev.idProduct:04X}" for dev in usb_devices]),
+            ): vol.In(list(_usb_devices.keys())),
         }
     )
