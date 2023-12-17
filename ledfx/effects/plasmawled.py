@@ -2,8 +2,8 @@ import logging
 import timeit
 
 import numpy as np
-import voluptuous as vol
 import PIL.Image as Image
+import voluptuous as vol
 
 from ledfx.effects.gradient import GradientEffect
 from ledfx.effects.twod import Twod
@@ -12,6 +12,7 @@ _LOGGER = logging.getLogger(__name__)
 
 # inspired by 2D Hiphotic effect in WLED
 # https://github.com/Aircoookie/WLED/blob/main/wled00/FX.cp
+
 
 class Plasmawled(Twod, GradientEffect):
     NAME = "PlasmaWled2d"
@@ -61,7 +62,6 @@ class Plasmawled(Twod, GradientEffect):
                 description="Sound to speed multiplier",
                 default=0.4,
             ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
-
         }
     )
 
@@ -70,12 +70,20 @@ class Plasmawled(Twod, GradientEffect):
 
         # all trig calculations are in 8 bit space 0 - 255 so lets create lookup tables
         self.sine_lookup_table = np.array(
-            [(np.sin(theta * (2.0 * np.pi / 255.0)) * 127.5 + 127.5) for theta
-             in range(256)], dtype=int)
+            [
+                (np.sin(theta * (2.0 * np.pi / 255.0)) * 127.5 + 127.5)
+                for theta in range(256)
+            ],
+            dtype=int,
+        )
         self.sine_lookup_table = np.clip(self.sine_lookup_table, 0, 255)
         self.cosine_lookup_table = np.array(
-            [(np.cos(theta * (2.0 * np.pi / 255.0)) * 127.5 + 127.5) for theta
-                in range(256)], dtype=int)
+            [
+                (np.cos(theta * (2.0 * np.pi / 255.0)) * 127.5 + 127.5)
+                for theta in range(256)
+            ],
+            dtype=int,
+        )
         self.cosine_lookup_table = np.clip(self.cosine_lookup_table, 0, 255)
 
     def sin8(self, theta):
@@ -122,8 +130,12 @@ class Plasmawled(Twod, GradientEffect):
 
         a = time_val / (self._speed + 1)
 
-        h_stretch = max(0.01, self.h_stretch - (self.sizeb * self.h_stretch / 3))
-        v_stretch = max(0.01, self.v_stretch - (self.sizeb * self.v_stretch / 3))
+        h_stretch = max(
+            0.01, self.h_stretch - (self.sizeb * self.h_stretch / 3)
+        )
+        v_stretch = max(
+            0.01, self.v_stretch - (self.sizeb * self.v_stretch / 3)
+        )
 
         # original python code was as commented below
         # kudo's to chatgpt for working through vectorisation
@@ -140,14 +152,18 @@ class Plasmawled(Twod, GradientEffect):
         y_vals = y_indices * v_stretch / 16 + a / 4
 
         # Use vectorized operations to compute indices for lookup tables
-        sin_cos_indices = (self.cosine_lookup_table[np.uint8(x_vals)] + a) % 256
+        sin_cos_indices = (
+            self.cosine_lookup_table[np.uint8(x_vals)] + a
+        ) % 256
         sin_indices = (self.sine_lookup_table[np.uint8(y_vals)] + a) % 256
 
         # Use advanced indexing to access lookup table values
         data = self.sin8(sin_cos_indices + sin_indices) / 255.0
 
-        color_mapped_plasma = self.get_gradient_color_vectorized(data).astype(np.uint8)
+        color_mapped_plasma = self.get_gradient_color_vectorized(data).astype(
+            np.uint8
+        )
 
-        self.matrix = Image.fromarray(color_mapped_plasma, 'RGB')
+        self.matrix = Image.fromarray(color_mapped_plasma, "RGB")
 
         self.roll_gradient()

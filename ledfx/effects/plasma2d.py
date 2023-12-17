@@ -2,8 +2,8 @@ import logging
 import timeit
 
 import numpy as np
-import voluptuous as vol
 import PIL.Image as Image
+import voluptuous as vol
 
 from ledfx.effects.gradient import GradientEffect
 from ledfx.effects.twod import Twod
@@ -83,28 +83,29 @@ class Plasma2d(Twod, GradientEffect):
 
     def audio_data_updated(self, data):
         # Get filtered bar power
-        self.bar = (
-            getattr(data, self.power_func)()
-        )
+        self.bar = getattr(data, self.power_func)()
 
     def generate_plasma(self, width, height, time, power):
         # Calculate the scale
-        scale = self.lower + ( power * self.density)
+        scale = self.lower + (power * self.density)
 
         # Create coordinate grids with a limited number of steps
-        y, x = np.ogrid[0:min(height, height * scale):complex(height),
-               0:min(width, width * scale):complex(width)]
+        y, x = np.ogrid[
+            0 : min(height, height * scale) : complex(height),
+            0 : min(width, width * scale) : complex(width),
+        ]
 
         # Calculate the plasma values
         plasma = (
-                         np.sin(x * 0.1 + time) * np.cos(y * 0.1 - time) +
-                         np.sin((x * self.v_density + y * self.twist + time) * 2.5) +
-                         np.sin(np.sqrt(x ** 2 + y ** 2) * self.radius - time)
-                 ) * 128 + 128
+            np.sin(x * 0.1 + time) * np.cos(y * 0.1 - time)
+            + np.sin((x * self.v_density + y * self.twist + time) * 2.5)
+            + np.sin(np.sqrt(x**2 + y**2) * self.radius - time)
+        ) * 128 + 128
 
         # Normalize the plasma values to the range [0, 1]
         plasma_normalized = (plasma - np.min(plasma)) / (
-                    np.max(plasma) - np.min(plasma))
+            np.max(plasma) - np.min(plasma)
+        )
         return plasma_normalized
 
     def draw(self):
@@ -113,8 +114,12 @@ class Plasma2d(Twod, GradientEffect):
 
         current_time = timeit.default_timer() - self.start_time
 
-        plasma_array = self.generate_plasma(self.r_width, self.r_height, current_time, self.bar)
+        plasma_array = self.generate_plasma(
+            self.r_width, self.r_height, current_time, self.bar
+        )
 
-        color_mapped_plasma = self.get_gradient_color_vectorized(plasma_array).astype(np.uint8)
+        color_mapped_plasma = self.get_gradient_color_vectorized(
+            plasma_array
+        ).astype(np.uint8)
 
-        self.matrix = Image.fromarray(color_mapped_plasma, 'RGB')
+        self.matrix = Image.fromarray(color_mapped_plasma, "RGB")

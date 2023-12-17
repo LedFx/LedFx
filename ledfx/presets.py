@@ -24,11 +24,11 @@ ledfx_presets = {
                 "twist": 0.07,
                 "v density": 0.1,
             },
-            "name": "Reset"
+            "name": "Reset",
         },
     },
     "plasmawled": {
-        "reset":{
+        "reset": {
             "config": {
                 "advanced": False,
                 "background_brightness": 1.0,
@@ -51,7 +51,7 @@ ledfx_presets = {
                 "speed": 128,
                 "speed x": 0.4,
                 "test": False,
-                "v_stretch": 128
+                "v_stretch": 128,
             },
             "name": "Reset",
         },
@@ -78,7 +78,7 @@ ledfx_presets = {
                 "speed": 28,
                 "speed x": 0.23,
                 "test": False,
-                "v_stretch": 30
+                "v_stretch": 30,
             },
             "name": "Snow Crash",
         },
