@@ -125,7 +125,7 @@ class Twod(AudioReactiveEffect):
             self.matrix = self.matrix.transpose(self.rotate)
         if self.matrix.size != (self.t_width, self.t_height):
             _LOGGER.error(
-                f"Image is wrong size {self.matrix.size} vs {self.r_width}x{self.r_height}"
+                f"Matrix is wrong size {self.matrix.size} vs r {(self.r_width, self.r_height)} vs t {(self.t_width, self.t_height)}"
             )
 
         rgb_array = np.frombuffer(self.matrix.tobytes(), dtype=np.uint8)
