@@ -26,6 +26,32 @@ ledfx_presets = {
             },
             "name": "Reset",
         },
+        "aprilnight": {
+            "config": {
+                "advanced": False,
+                "background_brightness": 1.0,
+                "background_color": "#000000",
+                "blur": 0.0,
+                "brightness": 1.0,
+                "density": 0.7,
+                "diag": False,
+                "dump": False,
+                "flip": False,
+                "flip horizontal": False,
+                "flip vertical": False,
+                "frequency_range": "Bass",
+                "gradient": "linear-gradient(90deg, #000000 0.00%,#000000 3.00%,#05a9af 9.00%,#000000 15.00%,#000000 23.00%,#2daf1f 29.00%,#000000 35.00%,#000000 43.00%,#f99605 49.00%,#000000 56.00%,#000000 63.00%,#ff5c00 69.00%,#000000 75.00%,#000000 83.00%,#df2d48 89.00%,#000000 95.00%,#000000 100.00%)",
+                "gradient_roll": 0.0,
+                "lower": 0.83,
+                "mirror": False,
+                "radius": 0.2,
+                "rotate": 0,
+                "test": False,
+                "twist": 0.07,
+                "v density": 0.1
+            },
+            "name": "AprilNight"
+        }
     },
     "plasmawled": {
         "reset": {
