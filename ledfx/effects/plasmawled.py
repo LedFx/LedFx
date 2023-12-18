@@ -17,7 +17,7 @@ _LOGGER = logging.getLogger(__name__)
 class Plasmawled(Twod, GradientEffect):
     NAME = "PlasmaWled2d"
     CATEGORY = "Matrix"
-    HIDDEN_KEYS = Twod.HIDDEN_KEYS + ["background_color"]
+    HIDDEN_KEYS = Twod.HIDDEN_KEYS + ["background_color", "gradient_roll"]
     ADVANCED_KEYS = Twod.ADVANCED_KEYS + []
 
     start_time = timeit.default_timer()
@@ -166,4 +166,3 @@ class Plasmawled(Twod, GradientEffect):
 
         self.matrix = Image.fromarray(color_mapped_plasma, "RGB")
 
-        self.roll_gradient()
