@@ -48,10 +48,10 @@ ledfx_presets = {
                 "rotate": 0,
                 "test": False,
                 "twist": 0.07,
-                "v density": 0.1
+                "v density": 0.1,
             },
-            "name": "AprilNight"
-        }
+            "name": "AprilNight",
+        },
     },
     "plasmawled": {
         "reset": {
