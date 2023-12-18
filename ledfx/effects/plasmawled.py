@@ -130,7 +130,6 @@ class Plasmawled(Twod, GradientEffect):
 
         a = time_val / (self._speed + 1)
 
-        # a = time_val
         h_stretch = max(
             0.01, self.h_stretch - (self.sizeb * self.h_stretch / 3)
         )
