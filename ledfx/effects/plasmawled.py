@@ -165,4 +165,3 @@ class Plasmawled(Twod, GradientEffect):
         )
 
         self.matrix = Image.fromarray(color_mapped_plasma, "RGB")
-
