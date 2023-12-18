@@ -65,9 +65,6 @@ class Plasma2d(Twod, GradientEffect):
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
 
-    def on_activate(self, pixel_count):
-        self.r = np.zeros(pixel_count)
-
     def config_updated(self, config):
         self.time = timeit.default_timer()
         self.density = self._config["density"]
