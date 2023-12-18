@@ -102,7 +102,7 @@ ledfx_presets = {
                 "rotate": 0,
                 "size x": 0.7,
                 "speed": 28,
-                "speed x": 0.23,
+                "speed x": 0.0,
                 "test": False,
                 "v_stretch": 30,
             },
