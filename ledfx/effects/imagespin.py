@@ -17,8 +17,6 @@ class Imagespin(Twod):
     HIDDEN_KEYS = ["speed", "background_brightness", "mirror", "flip", "blur"]
     ADVANCED_KEYS = Twod.ADVANCED_KEYS + ["pattern"]
 
-    start_time = timeit.default_timer()
-
     _power_funcs = {
         "Beat": "beat_power",
         "Bass": "bass_power",
