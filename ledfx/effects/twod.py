@@ -87,15 +87,17 @@ class Twod(AudioReactiveEffect):
         self.flip = self._config["flip vertical"]
         self.mirror = self._config["flip horizontal"]
 
-        self.rotate = 0
-        if self._config["rotate"] == 1:
-            self.rotate = Image.Transpose.ROTATE_90
+        self.rotate = self._config["rotate"]
+        self.rotate_t = 0
+        if self.rotate == 1:
+            self.rotate_t = Image.Transpose.ROTATE_90
             self.flip, self.mirror = self.mirror, self.flip
-        if self._config["rotate"] == 2:
-            self.rotate = Image.Transpose.ROTATE_180
-        if self._config["rotate"] == 3:
-            self.rotate = Image.Transpose.ROTATE_270
+        if self.rotate == 2:
+            self.rotate_t = Image.Transpose.ROTATE_180
+        if self.rotate == 3:
+            self.rotate_t = Image.Transpose.ROTATE_270
             self.flip, self.mirror = self.mirror, self.flip
+
         self.init = True
 
     def do_once(self):
@@ -103,7 +105,7 @@ class Twod(AudioReactiveEffect):
         # so therefore cannot be addressed in config_updated
         self.init = False
 
-        if self._config["rotate"] == 1 or self._config["rotate"] == 3:
+        if self.rotate == 1 or self.rotate == 3:
             # swap width and height for render
             self.r_width = self.t_height
             self.r_height = self.t_width
@@ -121,8 +123,8 @@ class Twod(AudioReactiveEffect):
             self.matrix = self.matrix.transpose(
                 Image.Transpose.FLIP_LEFT_RIGHT
             )
-        if self.rotate != 0:
-            self.matrix = self.matrix.transpose(self.rotate)
+        if self.rotate_t != 0:
+            self.matrix = self.matrix.transpose(self.rotate_t)
         if self.matrix.size != (self.t_width, self.t_height):
             _LOGGER.error(
                 f"Matrix is wrong size {self.matrix.size} vs r {(self.r_width, self.r_height)} vs t {(self.t_width, self.t_height)}"
@@ -165,7 +167,7 @@ class Twod(AudioReactiveEffect):
             # show image on screen
             self.matrix.show()
             _LOGGER.info(
-                f"dump {self.t_width}x{self.t_height} R: {self.rotate} F: {self.flip} M: {self.mirror}"
+                f"dump {self.t_width}x{self.t_height} R: {self.rotate_t} F: {self.flip} M: {self.mirror}"
             )
 
     def draw_test(self, rgb_draw):
