@@ -204,6 +204,7 @@ class ConfigEndpoint(RestEndpoint):
                         "scan_on_startup",
                         "user_presets",
                         "transmission_mode",
+                        "visualisation_maxlen",
                     ]
                 )
                 and len(core_config) == 1

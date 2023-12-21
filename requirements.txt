@@ -9,7 +9,7 @@
     aiohttp_cors~=0.7.0
     aubio>=0.4.9
     cython~=0.29.21
-    certifi~=2020.12.5
+    certifi>=2023.11.17
     multidict~=5.0.0
     mss~=9.0.1
     numpy~=1.23
@@ -21,7 +21,7 @@
     pyserial~=3.5
     pystray>=0.17
     python-rtmidi~=1.5.6
-    requests~=2.28.2
+    requests~=2.31.0
     sacn~=1.6.3
     sentry-sdk==1.38.0
     samplerate>=0.1.0
