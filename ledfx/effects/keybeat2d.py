@@ -284,9 +284,9 @@ class Keybeat2d(Twod, GradientEffect):
                 _LOGGER.info(f"beat kick {self.beat_idx} {self.beat_frames[self.beat_idx]}")
 
             frame_progress = self.beat / self.beat_incs[self.beat_idx]
-            _LOGGER.info(f"self.beat {self.beat} beat_inc: {self.beat_incs[self.beat_idx]} frame_progress: {frame_progress}")
             frame = int(frame_progress) + self.beat_frames[self.beat_idx]
-            _LOGGER.info(f"frame: {frame}")
+            if self.diag:
+                _LOGGER.info(f"self.beat {self.beat:0.6f} beat_inc: {self.beat_incs[self.beat_idx]:0.6f} frame_progress: {frame_progress:0.6f} frame{frame}")
             if frame >= self.framecount:
                 frame = frame - self.framecount
                 _LOGGER.info(f"frame wrap: {frame}")
