@@ -1,8 +1,9 @@
 import logging
-import urllib.request
 import re
+import urllib.request
 
 import PIL.Image as Image
+import PIL.ImageFont as ImageFont
 import PIL.ImageSequence as ImageSequence
 import voluptuous as vol
 
@@ -14,14 +15,16 @@ _LOGGER = logging.getLogger(__name__)
 
 def extract_positive_integers(s):
     # Use regular expression to find all sequences of digits
-    numbers = re.findall(r'\d+', s)
+    numbers = re.findall(r"\d+", s)
 
     # Convert each found sequence to an integer and filter out non-positive numbers
     return [int(num) for num in numbers if int(num) >= 0]
 
+
 def remove_values_above_limit(numbers, limit):
     # Keep only values that are less than or equal to the limit
     return [num for num in numbers if num <= limit]
+
 
 class Keybeat2d(Twod, GradientEffect):
     NAME = "Keybeat2d"
@@ -77,6 +80,11 @@ class Keybeat2d(Twod, GradientEffect):
             vol.Optional(
                 "ping pong",
                 description="play in gif source forward and reverse, not just loop",
+                default=False,
+            ): bool,
+            vol.Optional(
+                "test",
+                description="Trigger test code",
                 default=False,
             ): bool,
         }
@@ -140,11 +148,21 @@ class Keybeat2d(Twod, GradientEffect):
         self.bar = 0.0
 
         self.framecount = len(self.orig_frames)
-        self.beat_frames = remove_values_above_limit(sorted(extract_positive_integers(self._config["beat frames"])), len(self.orig_frames))
-        self.skip_frames = remove_values_above_limit(sorted(extract_positive_integers(self._config["skip frames"])), len(self.orig_frames))
+        self.beat_frames = remove_values_above_limit(
+            sorted(extract_positive_integers(self._config["beat frames"])),
+            len(self.orig_frames),
+        )
+        self.skip_frames = remove_values_above_limit(
+            sorted(extract_positive_integers(self._config["skip frames"])),
+            len(self.orig_frames),
+        )
 
-        _LOGGER.info(f"framecount {self.framecount} beat frames {self.beat_frames}")
-        _LOGGER.info(f"framecount {self.framecount} skip frames {self.skip_frames}")
+        _LOGGER.info(
+            f"framecount {self.framecount} beat frames {self.beat_frames}"
+        )
+        _LOGGER.info(
+            f"framecount {self.framecount} skip frames {self.skip_frames}"
+        )
 
         self.post_frames = self.orig_frames.copy()
         # remove any frames that are in skip_frames
@@ -154,27 +172,37 @@ class Keybeat2d(Twod, GradientEffect):
         # strip out None frames
         self.post_frames = [img for img in self.post_frames if img is not None]
 
-        _LOGGER.info("************************* start beat frame debug *************************")
+        _LOGGER.info(
+            "************************* start beat frame debug *************************"
+        )
         # adjust beat frames for removed frames
         sl = len(self.skip_frames)
         for s, skip_index in enumerate(reversed(self.skip_frames)):
             si = sl - 1 - s
-            _LOGGER.info(f"si: {si} skip_index: {skip_index} resolves {self.skip_frames[si]} from {self.skip_frames}")
+            _LOGGER.info(
+                f"si: {si} skip_index: {skip_index} resolves {self.skip_frames[si]} from {self.skip_frames}"
+            )
             bl = len(self.beat_frames)
             for b, beat_index in enumerate(reversed(self.beat_frames)):
                 bi = bl - 1 - b
-                #_LOGGER.info(f"bi: {bi} len: {len(self.beat_frames)}")
-                _LOGGER.info(f"bi: {bi} beat_index: {beat_index} resolves {self.beat_frames[bi]} from {self.beat_frames}")
+                # _LOGGER.info(f"bi: {bi} len: {len(self.beat_frames)}")
+                _LOGGER.info(
+                    f"bi: {bi} beat_index: {beat_index} resolves {self.beat_frames[bi]} from {self.beat_frames}"
+                )
                 if beat_index > skip_index:
                     self.beat_frames[bi] -= 1
                     _LOGGER.info(f"reduce by 1 {self.beat_frames[bi]}")
                 if beat_index == skip_index:
                     del self.beat_frames[bi]
-                    _LOGGER.info(f"delete {beat_index} from {self.beat_frames}")
+                    _LOGGER.info(
+                        f"delete {beat_index} from {self.beat_frames}"
+                    )
 
         self.framecount = len(self.post_frames)
 
-        _LOGGER.info(f"framecount {self.framecount} beat frames {self.beat_frames}")
+        _LOGGER.info(
+            f"framecount {self.framecount} beat frames {self.beat_frames}"
+        )
 
         # we have beat frames, that are now correctly indexed against image frames
         # next we have to calculate for each beat end point, how much a frame represents in a beat continuum of 1
@@ -201,21 +229,32 @@ class Keybeat2d(Twod, GradientEffect):
                 if b == len(self.beat_frames) - 1:
                     # last beat frame so loop to first for calculation
                     frames = self.framecount - beat_index + self.beat_frames[0]
-                    _LOGGER.info(f"Last beat frame wrap around {frames} {frames / 1.0}")
+                    _LOGGER.info(
+                        f"Last beat frame wrap around {frames} {frames / 1.0}"
+                    )
                     self.beat_incs.append(1.0 / frames)
                 else:
-                    self.beat_incs.append(1.0 / (self.beat_frames[b+1] - beat_index))
+                    self.beat_incs.append(
+                        1.0 / (self.beat_frames[b + 1] - beat_index)
+                    )
 
-        _LOGGER.info("************************* end beat frame debug *************************")
+        _LOGGER.info(
+            "************************* end beat frame debug *************************"
+        )
         _LOGGER.info(f"beat_frames: {self.beat_frames}")
         _LOGGER.info(f"beat_incs  {self.beat_incs}")
-        _LOGGER.info("************************* end beat frame debug *************************")
+        _LOGGER.info(
+            "************************* end beat frame debug *************************"
+        )
 
         self.last_beat = 0.0
 
         if self.rotate == 1 or self.rotate == 3:
             self.stretch_v, self.stretch_h = self.stretch_h, self.stretch_v
             self.center_v, self.center_h = self.center_h, self.center_v
+
+        if self.diag:
+            self.font = font = ImageFont.truetype("consola.ttf", 12)
 
     def do_once(self):
         super().do_once()
@@ -281,19 +320,29 @@ class Keybeat2d(Twod, GradientEffect):
                 self.beat_idx += 1
                 if self.beat_idx >= len(self.beat_frames):
                     self.beat_idx = 0
-                _LOGGER.info(f"beat kick {self.beat_idx} {self.beat_frames[self.beat_idx]}")
+                _LOGGER.info(
+                    f"beat kick {self.beat_idx} {self.beat_frames[self.beat_idx]}"
+                )
 
             frame_progress = self.beat / self.beat_incs[self.beat_idx]
             frame = int(frame_progress) + self.beat_frames[self.beat_idx]
-            if self.diag:
-                _LOGGER.info(f"self.beat {self.beat:0.6f} beat_inc: {self.beat_incs[self.beat_idx]:0.6f} frame_progress: {frame_progress:0.6f} frame{frame}")
             if frame >= self.framecount:
                 frame = frame - self.framecount
                 _LOGGER.info(f"frame wrap: {frame}")
+
+            if self.diag:
+                _LOGGER.info(
+                    f"self.beat {self.beat:0.6f} beat_inc: {self.beat_incs[self.beat_idx]:0.6f} frame_progress: {frame_progress:0.6f} frame{frame}"
+                )
 
             self.last_beat = self.beat
 
         current_frame = self.frames[frame]
         self.matrix.paste(current_frame, (self.offset_x, self.offset_y))
+        if self.diag:
+            self.m_draw.text(
+                (0, 0), f"{frame}", fill=(255, 255, 0), font=self.font
+            )
+
 
 #        self.bump_frame()
