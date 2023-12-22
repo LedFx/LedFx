@@ -83,8 +83,8 @@ class Keybeat2d(Twod, GradientEffect):
                 default=False,
             ): bool,
             vol.Optional(
-                "test",
-                description="Trigger test code",
+                "fake_beat",
+                description="Trigger test code with 0.05 beat per frame",
                 default=False,
             ): bool,
         }
@@ -120,6 +120,7 @@ class Keybeat2d(Twod, GradientEffect):
         self.ping_pong = self._config["ping pong"]
         self.force_fit = self._config["force fit"]
         self.force_aspect = self._config["force aspect"]
+        self.fake_beat = self._config["fake_beat"]
 
         self.frames = []
         self.reverse = False
@@ -146,6 +147,7 @@ class Keybeat2d(Twod, GradientEffect):
         self.last_gif = self.url_gif
         self.beat = 0.0
         self.bar = 0.0
+        self.f_beat = 0.0
 
         self.framecount = len(self.orig_frames)
         self.beat_frames = remove_values_above_limit(
@@ -310,6 +312,14 @@ class Keybeat2d(Twod, GradientEffect):
         if self.test:
             self.draw_test(self.m_draw)
 
+        beat_kick = False
+
+        if self.fake_beat:
+            self.f_beat += 0.005
+            if self.f_beat >= 1.0:
+                self.f_beat = 0.0
+            self.beat = self.f_beat
+
         # Using the self.beat progress, we can interpolate between frames
         # if we see beat go from a larger number to a smaller one, we hit a beat and wrapped, so display the beat frame itself
         if len(self.beat_frames) == 0:
@@ -320,29 +330,36 @@ class Keybeat2d(Twod, GradientEffect):
                 self.beat_idx += 1
                 if self.beat_idx >= len(self.beat_frames):
                     self.beat_idx = 0
-                _LOGGER.info(
-                    f"beat kick {self.beat_idx} {self.beat_frames[self.beat_idx]}"
-                )
+                beat_kick = True
+
 
             frame_progress = self.beat / self.beat_incs[self.beat_idx]
             frame = int(frame_progress) + self.beat_frames[self.beat_idx]
+            if self.diag:
+                seq_frame = frame
+
             if frame >= self.framecount:
                 frame = frame - self.framecount
-                _LOGGER.info(f"frame wrap: {frame}")
 
             if self.diag:
                 _LOGGER.info(
-                    f"self.beat {self.beat:0.6f} beat_inc: {self.beat_incs[self.beat_idx]:0.6f} frame_progress: {frame_progress:0.6f} frame{frame}"
+                    f"self.beat {self.beat:0.6f} beat_inc: {self.beat_incs[self.beat_idx]:0.6f} frame_progress: {frame_progress:0.6f} kick: {beat_kick} seq: {seq_frame} frame: {frame}"
                 )
 
             self.last_beat = self.beat
 
         current_frame = self.frames[frame]
         self.matrix.paste(current_frame, (self.offset_x, self.offset_y))
+
         if self.diag:
-            self.m_draw.text(
-                (0, 0), f"{frame}", fill=(255, 255, 0), font=self.font
-            )
+            if beat_kick:
+                self.m_draw.text(
+                    (0, 0), f"{frame:02} {seq_frame:02} \u25CF", fill=(255, 255, 0), font=self.font
+                )
+            else:
+                self.m_draw.text(
+                    (0, 0), f"{frame:02} {seq_frame:02}", fill=(255,255,0), font=self.font
+                )
 
 
 #        self.bump_frame()
