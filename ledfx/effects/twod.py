@@ -113,6 +113,9 @@ class Twod(AudioReactiveEffect):
             self.r_width = self.t_width
             self.r_height = self.t_height
 
+        # initialise here so inherited can assume it exists
+        self.start = timeit.default_timer()
+
     def image_to_pixels(self):
         # image should be the right size to map in, at this point
         if self.flip:

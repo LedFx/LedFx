@@ -30,7 +30,7 @@ class Keybeat2d(Twod, GradientEffect):
     NAME = "Keybeat2d"
     CATEGORY = "Matrix"
     HIDDEN_KEYS = Twod.HIDDEN_KEYS + ["background_color", "gradient_roll"]
-    ADVANCED_KEYS = Twod.ADVANCED_KEYS + []
+    ADVANCED_KEYS = Twod.ADVANCED_KEYS + ["diag2", "fake_beat"]
 
     CONFIG_SCHEMA = vol.Schema(
         {
@@ -68,8 +68,13 @@ class Keybeat2d(Twod, GradientEffect):
                 default="",
             ): str,
             vol.Optional(
-                "force fit",
-                description="Force fit to matrix",
+                "diag2",
+                description="diagnostic overlayed on matrix",
+                default=False,
+            ): bool,
+            vol.Optional(
+                "fake_beat",
+                description="Trigger test code with 0.05 beat per frame",
                 default=False,
             ): bool,
             vol.Optional(
@@ -78,13 +83,13 @@ class Keybeat2d(Twod, GradientEffect):
                 default=False,
             ): bool,
             vol.Optional(
-                "ping pong",
-                description="play in gif source forward and reverse, not just loop",
+                "force fit",
+                description="Force fit to matrix",
                 default=False,
             ): bool,
             vol.Optional(
-                "fake_beat",
-                description="Trigger test code with 0.05 beat per frame",
+                "ping pong",
+                description="play in gif source forward and reverse, not just loop",
                 default=False,
             ): bool,
         }
@@ -121,6 +126,7 @@ class Keybeat2d(Twod, GradientEffect):
         self.force_fit = self._config["force fit"]
         self.force_aspect = self._config["force aspect"]
         self.fake_beat = self._config["fake_beat"]
+        self.diag2 = self._config["diag2"]
 
         self.frames = []
         self.reverse = False
@@ -145,9 +151,10 @@ class Keybeat2d(Twod, GradientEffect):
             self.gif.close()
 
         self.last_gif = self.url_gif
-        self.beat = 0.0
-        self.bar = 0.0
-        self.f_beat = 0.0
+        self.beat = 0.0     # beat oscillator
+        self.frame_c = 0    # current frame index to render
+        self.frame_s = 0    # seq frame index for when wrapping around
+        self.f_beat = 0.0   # fake beat oscillator
 
         self.framecount = len(self.orig_frames)
         self.beat_frames = remove_values_above_limit(
@@ -159,12 +166,13 @@ class Keybeat2d(Twod, GradientEffect):
             len(self.orig_frames),
         )
 
-        _LOGGER.info(
-            f"framecount {self.framecount} beat frames {self.beat_frames}"
-        )
-        _LOGGER.info(
-            f"framecount {self.framecount} skip frames {self.skip_frames}"
-        )
+        if self.diag:
+            _LOGGER.info(
+                f"framecount {self.framecount} beat frames {self.beat_frames}"
+            )
+            _LOGGER.info(
+                f"framecount {self.framecount} skip frames {self.skip_frames}"
+            )
 
         self.post_frames = self.orig_frames.copy()
         # remove any frames that are in skip_frames
@@ -174,37 +182,42 @@ class Keybeat2d(Twod, GradientEffect):
         # strip out None frames
         self.post_frames = [img for img in self.post_frames if img is not None]
 
-        _LOGGER.info(
-            "************************* start beat frame debug *************************"
-        )
+        if self.diag:
+            _LOGGER.info(
+                "************************* start beat frame debug *************************"
+            )
         # adjust beat frames for removed frames
         sl = len(self.skip_frames)
         for s, skip_index in enumerate(reversed(self.skip_frames)):
             si = sl - 1 - s
-            _LOGGER.info(
-                f"si: {si} skip_index: {skip_index} resolves {self.skip_frames[si]} from {self.skip_frames}"
-            )
+            if self.diag:
+                _LOGGER.info(
+                    f"si: {si} skip_index: {skip_index} resolves {self.skip_frames[si]} from {self.skip_frames}"
+                )
             bl = len(self.beat_frames)
             for b, beat_index in enumerate(reversed(self.beat_frames)):
                 bi = bl - 1 - b
-                # _LOGGER.info(f"bi: {bi} len: {len(self.beat_frames)}")
-                _LOGGER.info(
-                    f"bi: {bi} beat_index: {beat_index} resolves {self.beat_frames[bi]} from {self.beat_frames}"
-                )
+                if self.diag:
+                    _LOGGER.info(
+                        f"bi: {bi} beat_index: {beat_index} resolves {self.beat_frames[bi]} from {self.beat_frames}"
+                    )
                 if beat_index > skip_index:
                     self.beat_frames[bi] -= 1
-                    _LOGGER.info(f"reduce by 1 {self.beat_frames[bi]}")
+                    if self.diag:
+                        _LOGGER.info(f"reduce by 1 {self.beat_frames[bi]}")
                 if beat_index == skip_index:
                     del self.beat_frames[bi]
-                    _LOGGER.info(
-                        f"delete {beat_index} from {self.beat_frames}"
-                    )
+                    if self.diag:
+                        _LOGGER.info(
+                            f"delete {beat_index} from {self.beat_frames}"
+                        )
 
         self.framecount = len(self.post_frames)
 
-        _LOGGER.info(
-            f"framecount {self.framecount} beat frames {self.beat_frames}"
-        )
+        if self.diag:
+            _LOGGER.info(
+                f"framecount {self.framecount} beat frames {self.beat_frames}"
+            )
 
         # we have beat frames, that are now correctly indexed against image frames
         # next we have to calculate for each beat end point, how much a frame represents in a beat continuum of 1
@@ -225,38 +238,33 @@ class Keybeat2d(Twod, GradientEffect):
         else:
             self.beat_idx = 0
             self.idx = self.beat_frames[self.beat_idx]
-            _LOGGER.info(f"First beat frame will be : {self.idx}")
 
             for b, beat_index in enumerate(self.beat_frames):
                 if b == len(self.beat_frames) - 1:
                     # last beat frame so loop to first for calculation
                     frames = self.framecount - beat_index + self.beat_frames[0]
-                    _LOGGER.info(
-                        f"Last beat frame wrap around {frames} {frames / 1.0}"
-                    )
                     self.beat_incs.append(1.0 / frames)
                 else:
                     self.beat_incs.append(
                         1.0 / (self.beat_frames[b + 1] - beat_index)
                     )
 
-        _LOGGER.info(
-            "************************* end beat frame debug *************************"
-        )
-        _LOGGER.info(f"beat_frames: {self.beat_frames}")
-        _LOGGER.info(f"beat_incs  {self.beat_incs}")
-        _LOGGER.info(
-            "************************* end beat frame debug *************************"
-        )
+        if self.diag:
+            _LOGGER.info(
+                "************************* end beat frame debug *************************"
+            )
+            _LOGGER.info(f"beat_frames: {self.beat_frames}")
+            _LOGGER.info(f"beat_incs  {self.beat_incs}")
+            _LOGGER.info(
+                "************************* end beat frame debug *************************"
+            )
 
+        self.num_beat_frames = len(self.beat_frames)
         self.last_beat = 0.0
 
         if self.rotate == 1 or self.rotate == 3:
             self.stretch_v, self.stretch_h = self.stretch_h, self.stretch_v
             self.center_v, self.center_h = self.center_h, self.center_v
-
-        if self.diag:
-            self.font = font = ImageFont.truetype("consola.ttf", 12)
 
     def do_once(self):
         super().do_once()
@@ -288,78 +296,96 @@ class Keybeat2d(Twod, GradientEffect):
             + (self.center_v * self.r_height)
         )
 
+        if self.diag2:
+            self.font = ImageFont.truetype("consola.ttf", 12)
+            self.beat_times = []    # rolling window of beat timestamps
+            self.beat_f_times = []  # rolling windows of frame info
+            self.begin = self.start # used for seconds running total
+
     def audio_data_updated(self, data):
-        self.bar = data.bar_oscillator()
         self.beat = data.beat_oscillator()
 
-    def bump_frame(self):
-        if not self.reverse:
-            self.idx += 1
-        else:
-            self.idx -= 1
+    def overlay(self, beat_kick):
+        # add beat timestamps to the rolling window beat_list
+        # use len of beat_list as bpm
+        if beat_kick:
+            self.beat_times.append(self.start)
+        self.beat_f_times.append((self.start, self.beat, self.frame_c, beat_kick))
+        # cull any beats older than 60 seconds
+        self.beat_times = [
+            beat for beat in self.beat_times if self.start - beat < 60.0
+        ]
+        self.beat_f_times = [
+            f_beat for f_beat in self.beat_f_times if self.start - f_beat[0] < 60.0
+        ]
 
-        if self.idx >= self.framecount:
-            if self.ping_pong:
-                self.reverse = True
-                self.idx -= 2
-            else:
-                self.idx = 0
-        if self.idx < 0:
-            self.idx = 1
-            self.reverse = False
+        # lets graph directly into the draw space, ignoring dimensions
+        # loop through beat_list and draw a dot for each beat
+        # start at the last entry and work backwards
+        x = 0
+        pixels = self.matrix.load()
+        for _, beat, f_frame, f_kick in reversed(self.beat_f_times):
+            y_beat = 11 + 32 - beat * 32
+            if y_beat < self.matrix.height:
+                pixels[x, y_beat] = (255, 255, 0)
+            y_frame = 11 + 32 - ( f_frame / self.framecount ) * 32
+            if y_frame < self.matrix.height:
+                if f_kick:
+                    pixels[x, y_frame] = (255, 255, 255)
+                else:
+                    pixels[x, y_frame] = (255, 0, 255)
+            x += 1
+            if x >= self.matrix.width:
+                break
+
+        # if we have not reached a 60 second window yet, then gestimate bpm
+        passed = self.start - self.begin
+        self.bpm = len(self.beat_times)
+        if passed < 60.0:
+            self.bpm *= 60 / passed
+            color = (255, 0, 255)
+        else:
+            color = (255, 255, 0)
+
+        diag_string = f"{self.frame_c:02} {self.frame_s:02} {self.bpm:3.0f} {passed:3.0f}"
+        if beat_kick:
+            diag_string += " \u25CF" # filled circle char
+        self.m_draw.text((0, 0), diag_string, fill=color, font=self.font)
 
     def draw(self):
-        if self.test:
-            self.draw_test(self.m_draw)
-
         beat_kick = False
 
+        # fake beat for testing at 200 frames per beat
         if self.fake_beat:
-            self.f_beat += 0.005
-            if self.f_beat >= 1.0:
-                self.f_beat = 0.0
+            self.f_beat = (self.f_beat + 0.005) % 1.0
             self.beat = self.f_beat
 
-        # Using the self.beat progress, we can interpolate between frames
-        # if we see beat go from a larger number to a smaller one, we hit a beat and wrapped, so display the beat frame itself
-        if len(self.beat_frames) == 0:
-            # TODO: move one frame per beat
-            frame = 0
-        else:
-            if self.beat < self.last_beat:
-                self.beat_idx += 1
-                if self.beat_idx >= len(self.beat_frames):
-                    self.beat_idx = 0
-                beat_kick = True
+        # if we see beat go from a larger number to a smaller one, we hit a beat
+        if self.beat < self.last_beat:
+            beat_kick = True
+            if self.num_beat_frames == 0:
+                # let's just advance one frame per beat when there are no key frames
+                self.frame_s = self.frame_c = (self.frame_c + 1) % self.framecount
+            else:
+                self.beat_idx = (self.beat_idx + 1) % self.num_beat_frames
+        self.last_beat = self.beat
 
-
+        if self.num_beat_frames > 0:
+            # Using the self.beat progress, we can interpolate between frames
             frame_progress = self.beat / self.beat_incs[self.beat_idx]
-            frame = int(frame_progress) + self.beat_frames[self.beat_idx]
-            if self.diag:
-                seq_frame = frame
-
-            if frame >= self.framecount:
-                frame = frame - self.framecount
-
-            if self.diag:
-                _LOGGER.info(
-                    f"self.beat {self.beat:0.6f} beat_inc: {self.beat_incs[self.beat_idx]:0.6f} frame_progress: {frame_progress:0.6f} kick: {beat_kick} seq: {seq_frame} frame: {frame}"
-                )
-
-            self.last_beat = self.beat
-
-        current_frame = self.frames[frame]
-        self.matrix.paste(current_frame, (self.offset_x, self.offset_y))
+            self.frame_c = int(frame_progress) + self.beat_frames[self.beat_idx]
+            self.frame_s = self.frame_c
+            self.frame_c %= self.framecount
+        else:
+            frame_progress = 0.0
 
         if self.diag:
-            if beat_kick:
-                self.m_draw.text(
-                    (0, 0), f"{frame:02} {seq_frame:02} \u25CF", fill=(255, 255, 0), font=self.font
-                )
-            else:
-                self.m_draw.text(
-                    (0, 0), f"{frame:02} {seq_frame:02}", fill=(255,255,0), font=self.font
-                )
+            _LOGGER.info(
+                f"self.beat {self.beat:0.6f} beat_inc: {self.beat_incs[self.beat_idx]:0.6f} beat_idx: {self.beat_idx} frame_progress: {frame_progress:0.6f} kick: {beat_kick} seq: {self.frame_s} frame: {self.frame_c}"
+             )
 
+        current_frame = self.frames[self.frame_c]
+        self.matrix.paste(current_frame, (self.offset_x, self.offset_y))
 
-#        self.bump_frame()
+        if self.diag2:
+            self.overlay(beat_kick)
