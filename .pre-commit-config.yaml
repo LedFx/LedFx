@@ -12,15 +12,15 @@ repos:
     - id: check-ast
     - id: trailing-whitespace
     - id: check-toml
-  # - repo: https://github.com/PyCQA/isort
-  #   rev: 5.9.3
-  #   hooks:
-  #     - id: isort
-  # - repo: https://gitlab.com/pycqa/flake8
-  #   rev: 3.9.2
-  #   hooks:
-  #     - id: flake8
-  # - repo: https://github.com/psf/black
-  #   rev: 21.9b0 # Replace by any tag/version: https://github.com/psf/black/tags
-  #   hooks:
-  #     - id: black
+  - repo: https://github.com/PyCQA/isort
+    rev: 5.9.3
+    hooks:
+      - id: isort
+  - repo: https://gitlab.com/pycqa/flake8
+    rev: 3.9.2
+    hooks:
+      - id: flake8
+  - repo: https://github.com/psf/black
+    rev: 21.9b0 # Replace by any tag/version: https://github.com/psf/black/tags
+    hooks:
+      - id: black
