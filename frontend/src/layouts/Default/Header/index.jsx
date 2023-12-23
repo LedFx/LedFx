@@ -13,6 +13,8 @@ import DevIcon from '@material-ui/icons/DeveloperMode';
 import viewRoutes from 'routes/views.jsx';
 import { drawerWidth } from 'utils/style';
 import Fab from '@material-ui/core/Fab';
+import PleaseUpdateDialog from 'components/PleaseUpdateDialog'
+import { Warning } from '@material-ui/icons'
 
 const styles = theme => ({
     appBar: {
@@ -56,11 +58,13 @@ const Header = props => {
         return name;
     };
     const [easterEgg, setEasterEgg] = useState(false);
+    const [open, setOpen] = useState(true);
 
     const { classes } = props;
     const name = getPageName();
     return (
         <AppBar className={classes.appBar}>
+            <PleaseUpdateDialog open={open} onClose={() => setOpen(false)} />
             <Toolbar className={classes.toolBar}>
                 <>
                     <Typography
@@ -75,6 +79,12 @@ const Header = props => {
                     >
                         {getPageName()}
                     </Typography>
+                    <Fab
+                            variant="round"
+                            color="primary"
+                            size="small"
+                            onClick={() => setOpen(true)}
+                            ><Warning /></Fab>
                     {(easterEgg || parseInt(window.localStorage.getItem('BladeMod')) > 0) && (
                         <Fab
                             variant="round"
