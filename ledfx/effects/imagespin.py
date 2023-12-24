@@ -73,6 +73,7 @@ class Imagespin(Twod):
         self.clip = self._config["clip"]
         self.min_size = self._config["Min Size"]
         self.power_func = self._power_funcs[self._config["frequency_range"]]
+        self.do_spin = self._config["spin"]
         self.init = True
 
     def audio_data_updated(self, data):
@@ -134,11 +135,8 @@ class Imagespin(Twod):
             # make a copy of the original that we will manipulate
             bass_sized_img = self.bass_image.copy()
 
-            if self._config["spin"]:
-                self.spin += spin
-
-                if self.spin > 360:
-                    self.spin = 0.0
+            if self.do_spin:
+                self.spin = (self.spin + spin) % 360.0
                 bass_sized_img = bass_sized_img.rotate(
                     self.spin, expand=self.clip
                 )

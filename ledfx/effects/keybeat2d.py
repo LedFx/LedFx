@@ -226,14 +226,8 @@ class Keybeat2d(Twod, GradientEffect):
 
         self.beat_incs = []
         if len(self.beat_frames) == 0:
-            # TODO: no beat frames so use a safe default
             self.idx = 0
             self.beat_idx = 0
-            self.beat_incs = [1.0]
-        elif len(self.beat_frames) == 1:
-            # TODO: only one beat frame so use a safe default
-            self.beat_idx = 0
-            self.idx = self.beat_frames[self.beat_idx]
             self.beat_incs = [1.0]
         else:
             self.beat_idx = 0
