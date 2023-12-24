@@ -81,6 +81,19 @@ class Imagespin(Twod):
             getattr(data, self.power_func)() * self._config["multiplier"] * 2
         )
 
+    def open_image(self, image_path):
+        try:
+            if image_path.startswith("http://") or image_path.startswith(
+                "https://" or image_path.startswith("file://")
+            ):
+                with urllib.request.urlopen(image_path) as url:
+                    return Image.open(url)
+            else:
+                return Image.open(image_path)  # Directly open for local files
+        except Exception as e:
+            _LOGGER.error("Failed to open iamge: %s", e)
+            return None
+
     def do_once(self):
         super().do_once()
         if self._config["pattern"]:
@@ -89,12 +102,11 @@ class Imagespin(Twod):
             url_path = self._config["url source"]
 
         if url_path != "":
-            try:
-                with urllib.request.urlopen(url_path) as url:
-                    self.bass_image = Image.open(url)
-                    self.bass_image.thumbnail(
-                        (self.r_width * 4, self.r_height * 4)
-                    )
+            self.bass_image = self.open_image(url_path)
+            if self.bass_image:
+                self.bass_image.thumbnail(
+                    (self.r_width * 4, self.r_height * 4)
+                )
                 _LOGGER.info(f"pre scaled {self.bass_image.size}")
 
                 if self.bass_image.mode != "RGBA":
@@ -106,10 +118,7 @@ class Imagespin(Twod):
                         self.bass_image, (0, 0)
                     )  # Paste the original image onto the new one
                     self.bass_image = image_with_alpha
-            except Exception as e:
-                _LOGGER.error(
-                    f"Failed to load image from {self._config['url source']}: {e}"
-                )
+            else:
                 self.bass_image = Image.open(get_icon_path("tray.png"))
         else:
             self.bass_image = Image.open(get_icon_path("tray.png"))
