@@ -29,7 +29,7 @@ def remove_values_above_limit(numbers, limit):
 class Keybeat2d(Twod, GradientEffect):
     NAME = "Keybeat2d"
     CATEGORY = "Matrix"
-    HIDDEN_KEYS = Twod.HIDDEN_KEYS + ["background_color", "gradient_roll"]
+    HIDDEN_KEYS = Twod.HIDDEN_KEYS + ["background_color", "gradient_roll", "gradient"]
     ADVANCED_KEYS = Twod.ADVANCED_KEYS + ["diag2", "fake_beat"]
 
     CONFIG_SCHEMA = vol.Schema(
