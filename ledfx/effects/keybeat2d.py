@@ -234,8 +234,15 @@ class Keybeat2d(Twod, GradientEffect):
             # remove first and last frames from the copy, so we don't repeat them
             self.post_frames.extend(reversed(self.post_frames[1:-1]))
             # ensure we don't have beat indexes into the removed frames
-            self.mirror_beats = [x for x in reversed(self.beat_frames) if x != 0 and x != self.framecount - 1]
-            beat_frames_ext = [self.framecount + self.framecount - b - 2 for b in self.mirror_beats]
+            self.mirror_beats = [
+                x
+                for x in reversed(self.beat_frames)
+                if x != 0 and x != self.framecount - 1
+            ]
+            beat_frames_ext = [
+                self.framecount + self.framecount - b - 2
+                for b in self.mirror_beats
+            ]
 
             # its hard to decide if this makes sense as a feature
             if self.pp_skip and len(beat_frames_ext) >= 2:

@@ -257,10 +257,10 @@ ledfx_presets = {
                 "skip frames": "",
                 "stretch hor": 105,
                 "stretch ver": 100,
-                "test": False
+                "test": False,
             },
-            "name": "phoebe"
-        }
+            "name": "phoebe",
+        },
     },
     "plasma2d": {
         "reset": {
