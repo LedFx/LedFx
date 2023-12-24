@@ -132,8 +132,7 @@ class Keybeat2d(Twod, GradientEffect):
         self.reverse = False
 
         self.gif = None
-        #        self.default = "C:/Users/atod/Downloads/cat.gif"
-        self.default = "https://media.tenor.com/Wgw2UQmPXM8AAAAM/vibing-cat-cat-nodding.gif"
+        self.default = "https://phoneky.co.uk/thumbs/screensavers/down/fantasy/skullncros_jj9beivs.gif"
 
         # attempt to load gif, default on error or no url to test pattern
         if self.last_gif != self.url_gif:
