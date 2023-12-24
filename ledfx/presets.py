@@ -28,9 +28,9 @@ ledfx_presets = {
                 "skip frames": "",
                 "stretch hor": 55,
                 "stretch ver": 57,
-                "test": False
+                "test": False,
             },
-            "name": "beat cat"
+            "name": "beat cat",
         },
         "bruce": {
             "config": {
@@ -61,9 +61,9 @@ ledfx_presets = {
                 "skip frames": "",
                 "stretch hor": 105,
                 "stretch ver": 100,
-                "test": False
+                "test": False,
             },
-            "name": "bruce"
+            "name": "bruce",
         },
         "dance": {
             "config": {
@@ -93,9 +93,9 @@ ledfx_presets = {
                 "skip frames": "",
                 "stretch hor": 55,
                 "stretch ver": 57,
-                "test": False
+                "test": False,
             },
-            "name": "dance"
+            "name": "dance",
         },
         "nyan": {
             "config": {
@@ -125,9 +125,9 @@ ledfx_presets = {
                 "skip frames": "",
                 "stretch hor": 55,
                 "stretch ver": 57,
-                "test": False
+                "test": False,
             },
-            "name": "nyan"
+            "name": "nyan",
         },
         "snoopy": {
             "config": {
@@ -157,9 +157,9 @@ ledfx_presets = {
                 "skip frames": "1",
                 "stretch hor": 55,
                 "stretch ver": 57,
-                "test": False
+                "test": False,
             },
-            "name": "snoopy"
+            "name": "snoopy",
         },
         "sponge": {
             "config": {
@@ -190,9 +190,9 @@ ledfx_presets = {
                 "skip frames": "",
                 "stretch hor": 105,
                 "stretch ver": 100,
-                "test": False
+                "test": False,
             },
-            "name": "sponge"
+            "name": "sponge",
         },
         "zilla": {
             "config": {
@@ -223,9 +223,9 @@ ledfx_presets = {
                 "skip frames": "",
                 "stretch hor": 105,
                 "stretch ver": 100,
-                "test": False
+                "test": False,
             },
-            "name": "zilla"
+            "name": "zilla",
         },
     },
     "plasma2d": {
