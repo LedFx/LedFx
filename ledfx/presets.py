@@ -2,7 +2,7 @@ ledfx_presets = {
     "keybeat2d": {
         "beat-cat": {
             "config": {
-                "advanced": True,
+                "advanced": False,
                 "background_brightness": 1.0,
                 "background_color": "#000000",
                 "beat frames": "2 7 12 18 23 29 33 38 42 47 51 57 61",
@@ -34,7 +34,7 @@ ledfx_presets = {
         },
         "bruce": {
             "config": {
-                "advanced": True,
+                "advanced": False,
                 "background_brightness": 1.0,
                 "background_color": "#000000",
                 "beat frames": "12 20 27 41 57 72 82 96  107  126",
@@ -67,7 +67,7 @@ ledfx_presets = {
         },
         "dance": {
             "config": {
-                "advanced": True,
+                "advanced": False,
                 "background_brightness": 1.0,
                 "background_color": "#000000",
                 "beat frames": "4 0",
@@ -99,7 +99,7 @@ ledfx_presets = {
         },
         "nyan": {
             "config": {
-                "advanced": True,
+                "advanced": False,
                 "background_brightness": 1.0,
                 "background_color": "#000000",
                 "beat frames": "3 8",
@@ -131,7 +131,7 @@ ledfx_presets = {
         },
         "snoopy": {
             "config": {
-                "advanced": True,
+                "advanced": False,
                 "background_brightness": 1.0,
                 "background_color": "#000000",
                 "beat frames": "7 17 27 36 45",
@@ -163,7 +163,7 @@ ledfx_presets = {
         },
         "sponge": {
             "config": {
-                "advanced": True,
+                "advanced": False,
                 "background_brightness": 1.0,
                 "background_color": "#000000",
                 "beat frames": "0 4",
@@ -196,7 +196,7 @@ ledfx_presets = {
         },
         "zilla": {
             "config": {
-                "advanced": True,
+                "advanced": False,
                 "background_brightness": 1.0,
                 "background_color": "#000000",
                 "beat frames": "2 7 10 15 21",
@@ -227,6 +227,40 @@ ledfx_presets = {
             },
             "name": "zilla",
         },
+        "phoebe": {
+            "config": {
+                "advanced": False,
+                "background_brightness": 1.0,
+                "background_color": "#000000",
+                "beat frames": "3  15",
+                "blur": 0.0,
+                "brightness": 1.0,
+                "center hor": 0,
+                "center ver": 0,
+                "crazy": False,
+                "diag": False,
+                "diag2": False,
+                "dump": False,
+                "fake_beat": False,
+                "flip": False,
+                "flip horizontal": False,
+                "flip vertical": False,
+                "force aspect": False,
+                "force fit": False,
+                "gif at": "https://github.com/bigredfrog/LedFx/blob/keybeat/gifs/phoebe.gif?raw=true",
+                "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
+                "gradient_roll": 0.0,
+                "mirror": False,
+                "ping pong": True,
+                "pp skip": False,
+                "rotate": 1,
+                "skip frames": "",
+                "stretch hor": 105,
+                "stretch ver": 100,
+                "test": False
+            },
+            "name": "phoebe"
+        }
     },
     "plasma2d": {
         "reset": {

@@ -50,14 +50,14 @@ class Keybeat2d(Twod, GradientEffect):
             ): vol.All(vol.Coerce(int), vol.Range(min=1, max=200)),
             vol.Optional(
                 "center hor",
-                description="center offset in horizontal direction percent of matrix width",
+                description="Center offset in horizontal direction percent of matrix width",
                 default=0,
-            ): vol.All(vol.Coerce(int), vol.Range(min=-100, max=100)),
+            ): vol.All(vol.Coerce(int), vol.Range(min=-90, max=90)),
             vol.Optional(
                 "center ver",
-                description="center offset in vertical direction percent of matrix height",
+                description="Center offset in vertical direction percent of matrix height",
                 default=0,
-            ): vol.All(vol.Coerce(int), vol.Range(min=-100.0, max=100)),
+            ): vol.All(vol.Coerce(int), vol.Range(min=-90, max=90)),
             vol.Optional(
                 "gif at", description="Load gif from url or path", default=""
             ): str,
@@ -73,7 +73,7 @@ class Keybeat2d(Twod, GradientEffect):
             ): str,
             vol.Optional(
                 "diag2",
-                description="diagnostic overlayed on matrix",
+                description="Diagnostic overlayed on matrix",
                 default=False,
             ): bool,
             vol.Optional(
@@ -92,8 +92,13 @@ class Keybeat2d(Twod, GradientEffect):
                 default=False,
             ): bool,
             vol.Optional(
+                "pp skip",
+                description="When ping pong, skip the first beat key frame on both ends, use when key beat frames are very close to start and ends only",
+                default=False,
+            ): bool,
+            vol.Optional(
                 "ping pong",
-                description="play in gif source forward and reverse, not just loop",
+                description="Play gif forward and reverse, not just loop",
                 default=False,
             ): bool,
         }
@@ -127,6 +132,7 @@ class Keybeat2d(Twod, GradientEffect):
         self.url_gif = self._config["gif at"]
 
         self.ping_pong = self._config["ping pong"]
+        self.pp_skip = self._config["pp skip"]
         self.force_fit = self._config["force fit"]
         self.force_aspect = self._config["force aspect"]
         self.fake_beat = self._config["fake_beat"]
@@ -221,6 +227,31 @@ class Keybeat2d(Twod, GradientEffect):
             _LOGGER.info(
                 f"framecount {self.framecount} beat frames {self.beat_frames}"
             )
+
+        # for ping pong, first lets copy all the frames in reverse order, without repeating the end frames
+        # then we need to add the beat frame indexs in reverse order, while accounting that they are now reversed and offset
+        if self.ping_pong:
+            # remove first and last frames from the copy, so we don't repeat them
+            self.post_frames.extend(reversed(self.post_frames[1:-1]))
+            # ensure we don't have beat indexes into the removed frames
+            self.mirror_beats = [x for x in reversed(self.beat_frames) if x != 0 and x != self.framecount - 1]
+            beat_frames_ext = [self.framecount + self.framecount - b - 2 for b in self.mirror_beats]
+
+            # its hard to decide if this makes sense as a feature
+            if self.pp_skip and len(beat_frames_ext) >= 2:
+                beat_frames_ext = beat_frames_ext[:-1]
+                self.beat_frames = self.beat_frames[:-1]
+
+            self.beat_frames.extend(beat_frames_ext)
+            self.framecount = len(self.post_frames)
+
+            if self.diag:
+                _LOGGER.info(
+                    "************************* Ping Pong impacts *************************"
+                )
+                _LOGGER.info(
+                    f"framecount {self.framecount} beat frames {self.beat_frames}"
+                )
 
         # we have beat frames, that are now correctly indexed against image frames
         # next we have to calculate for each beat end point, how much a frame represents in a beat continuum of 1
