@@ -78,7 +78,9 @@ class Imagespin(Twod):
         self.min_size = self._config["Min Size"]
         self.power_func = self._power_funcs[self._config["frequency_range"]]
         self.do_spin = self._config["spin"]
-        self.resize = Image.BILINEAR if self._config["bilinear"] else Image.NEAREST
+        self.resize = (
+            Image.BILINEAR if self._config["bilinear"] else Image.NEAREST
+        )
         self.init = True
 
     def audio_data_updated(self, data):
