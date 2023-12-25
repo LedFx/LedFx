@@ -26,7 +26,7 @@ INSTALL_REQUIRES = [
     "voluptuous>=0.12.0",
     "pyaudio>=0.2.11",
     "sacn==1.5.0",
-    "aiohttp~=3.9",
+    "aiohttp~=3.7",
     "multidict>=5.0.0",
     "aiohttp_jinja2>=1.4.2",
     "requests>=2.24.0",
@@ -37,7 +37,6 @@ INSTALL_REQUIRES = [
     "zeroconf<=0.28.8||>=0.30.0",
     'pywin32>=300; platform_system == "Windows"',
     "cython>=0.29.21",
-    "sentry-sdk~=1.1.0",
     "certifi>=2020.12.5",
     "pyserial>=3.5",
 ]

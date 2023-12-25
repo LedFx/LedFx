@@ -229,8 +229,6 @@ def main():
         _LOGGER.warning(
             "Offline Mode Enabled - Please check for updates regularly."
         )
-    if args.offline_mode is False:
-        import ledfx.sentry_config  # noqa: F401
 
     if not currently_frozen() and installed_via_pip():
         warnings.filterwarnings("ignore", category=DeprecationWarning)
