@@ -14,7 +14,7 @@ class Imagespin(Twod):
     NAME = "Image"
     CATEGORY = "Matrix"
     HIDDEN_KEYS = ["speed", "background_brightness", "mirror", "flip", "blur"]
-    ADVANCED_KEYS = Twod.ADVANCED_KEYS + ["pattern"]
+    ADVANCED_KEYS = Twod.ADVANCED_KEYS + ["pattern", "bilinear"]
 
     _power_funcs = {
         "Beat": "beat_power",
@@ -47,6 +47,11 @@ class Imagespin(Twod):
                 default=0.3,
             ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
             vol.Optional(
+                "bilinear",
+                description="default NEAREST, use BILINEAR for smoother scaling, expensive on runtime takes a few ms",
+                default=False,
+            ): bool,
+            vol.Optional(
                 "spin",
                 description="spin image according to filter impulse",
                 default=False,
@@ -73,6 +78,7 @@ class Imagespin(Twod):
         self.min_size = self._config["Min Size"]
         self.power_func = self._power_funcs[self._config["frequency_range"]]
         self.do_spin = self._config["spin"]
+        self.resize = Image.BILINEAR if self._config["bilinear"] else Image.NEAREST
         self.init = True
 
     def audio_data_updated(self, data):
@@ -156,7 +162,7 @@ class Imagespin(Twod):
             # resize bass_image to fit in the target
             spin_img.thumbnail(
                 (image_w, image_h),
-                Image.BILINEAR,
+                self.resize,
             )
 
             # render bass_sized_img into self.matrix centered with alpha
