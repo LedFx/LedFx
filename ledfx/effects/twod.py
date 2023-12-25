@@ -63,6 +63,7 @@ class Twod(AudioReactiveEffect):
         self.frame = 0
         self.fps = 0
         self.last = 0
+        self.r_total = 0.0
         self.last_dump = self._config["dump"]
 
     def on_activate(self, pixel_count):
@@ -157,10 +158,17 @@ class Twod(AudioReactiveEffect):
 
     def try_log(self):
         end = timeit.default_timer()
+        r_time = end - self.start
+        self.r_total += r_time
         if self.log is True:
+            if self.fps > 0:
+                r_avg = self.r_total / self.fps
+            else:
+                r_avg = 0.0
             _LOGGER.info(
-                f"FPS {self.fps} Render:{(end - self.start):0.6f} Cycle: {(end - self.last):0.6f} Sleep: {(self.start - self.last):0.6f}"
+                f"FPS {self.fps} Render:{r_avg:0.6f} Cycle: {(end - self.last):0.6f} Sleep: {(self.start - self.last):0.6f}"
             )
+            self.r_total = 0.0
         self.last = end
         return self.log
 

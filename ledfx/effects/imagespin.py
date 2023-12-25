@@ -104,9 +104,6 @@ class Imagespin(Twod):
         if url_path != "":
             self.bass_image = self.open_image(url_path)
             if self.bass_image:
-                self.bass_image.thumbnail(
-                    (self.r_width * 4, self.r_height * 4)
-                )
                 _LOGGER.info(f"pre scaled {self.bass_image.size}")
 
                 if self.bass_image.mode != "RGBA":
@@ -122,6 +119,15 @@ class Imagespin(Twod):
                 self.bass_image = Image.open(get_icon_path("tray.png"))
         else:
             self.bass_image = Image.open(get_icon_path("tray.png"))
+
+        # preserve image resolution for manipulation, but don't expand it
+        self.bass_image.thumbnail(
+            (
+                min(self.r_width * 4, self.bass_image.width),
+                min(self.r_height * 4, self.bass_image.height),
+            )
+        )
+
         self.init = False
 
     def draw(self):
@@ -141,26 +147,24 @@ class Imagespin(Twod):
 
         if image_w > 0 and image_h > 0:
             # make a copy of the original that we will manipulate
-            bass_sized_img = self.bass_image.copy()
+            spin_img = self.bass_image
 
             if self.do_spin:
                 self.spin = (self.spin + spin) % 360.0
-                bass_sized_img = bass_sized_img.rotate(
-                    self.spin, expand=self.clip
-                )
+                spin_img = spin_img.rotate(self.spin, expand=self.clip)
 
             # resize bass_image to fit in the target
-            bass_sized_img.thumbnail(
+            spin_img.thumbnail(
                 (image_w, image_h),
                 Image.BILINEAR,
             )
 
             # render bass_sized_img into self.matrix centered with alpha
             self.matrix.paste(
-                bass_sized_img,
+                spin_img,
                 (
-                    int((self.r_width - bass_sized_img.width) / 2),
-                    int((self.r_height - bass_sized_img.height) / 2),
+                    int((self.r_width - spin_img.width) / 2),
+                    int((self.r_height - spin_img.height) / 2),
                 ),
-                bass_sized_img,
+                spin_img,
             )

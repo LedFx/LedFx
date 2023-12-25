@@ -34,7 +34,7 @@ class Keybeat2d(Twod, GradientEffect):
         "gradient_roll",
         "gradient",
     ]
-    ADVANCED_KEYS = Twod.ADVANCED_KEYS + ["diag2", "fake_beat"]
+    ADVANCED_KEYS = Twod.ADVANCED_KEYS + ["diag2", "fake_beat", "pp skip"]
 
     CONFIG_SCHEMA = vol.Schema(
         {
@@ -422,7 +422,7 @@ class Keybeat2d(Twod, GradientEffect):
         else:
             frame_progress = 0.0
 
-        if self.diag:
+        if self.diag2:
             _LOGGER.info(
                 f"self.beat {self.beat:0.6f} beat_inc: {self.beat_incs[self.beat_idx]:0.6f} beat_idx: {self.beat_idx} frame_progress: {frame_progress:0.6f} kick: {beat_kick} seq: {self.frame_s} frame: {self.frame_c}"
             )
