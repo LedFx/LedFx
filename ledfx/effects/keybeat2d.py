@@ -321,6 +321,9 @@ class Keybeat2d(Twod, GradientEffect):
                     stretch_height = scale
                     stretch_width = scale
 
+            stretch_width = max(1, stretch_width)
+            stretch_height = max(1, stretch_height)
+
             self.frames.append(frame.resize((stretch_width, stretch_height)))
 
         self.offset_x = int(
