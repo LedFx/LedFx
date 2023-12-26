@@ -90,7 +90,7 @@ ledfx_presets = {
                 "gradient_roll": 0.0,
                 "mirror": False,
                 "ping pong": True,
-                "pp skip": True,
+                "pp skip": False,
                 "rotate": 1,
                 "skip frames": "",
                 "stretch hor": 100,
