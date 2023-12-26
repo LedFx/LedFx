@@ -6,6 +6,7 @@ import PIL.Image as Image
 import PIL.ImageFont as ImageFont
 import PIL.ImageSequence as ImageSequence
 import voluptuous as vol
+from voluptuous import Invalid
 
 from ledfx.effects.gradient import GradientEffect
 from ledfx.effects.twod import Twod
@@ -24,6 +25,17 @@ def extract_positive_integers(s):
 def remove_values_above_limit(numbers, limit):
     # Keep only values that are less than or equal to the limit
     return [num for num in numbers if num <= limit]
+
+
+def gif(value):
+    # Check if the value is a string
+    if not isinstance(value, str):
+        raise Invalid("Value must be a string")
+
+    # Optional: Add additional checks here, like validating it's a path or URL for a GIF
+    # ...
+
+    return value
 
 
 class Keybeat2d(Twod, GradientEffect):
@@ -65,7 +77,7 @@ class Keybeat2d(Twod, GradientEffect):
                 "beat frames",
                 description="Frame index to interpolate beats between",
                 default="",
-            ): str,
+            ): gif,
             vol.Optional(
                 "skip frames",
                 description="Frames to remove from gif animation",
