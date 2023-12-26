@@ -354,9 +354,7 @@ class Keybeat2d(Twod, GradientEffect):
         else:
             color = (255, 255, 0)
 
-        self.beat_f_times.append(
-            (self.start, self.beat, self.frame_c, color)
-        )
+        self.beat_f_times.append((self.start, self.beat, self.frame_c, color))
         # cull any beats older than 60 seconds
         self.beat_times = [
             beat for beat in self.beat_times if self.start - beat < 60.0
@@ -413,7 +411,8 @@ class Keybeat2d(Twod, GradientEffect):
                 skip_beat = True
                 if self.diag2:
                     _LOGGER.info(
-                        f"skip beat threshold triggered: {self.start - self.last_beat_t:0.6f}")
+                        f"skip beat threshold triggered: {self.start - self.last_beat_t:0.6f}"
+                    )
             else:
                 beat_kick = True
                 if self.num_beat_frames == 0:
