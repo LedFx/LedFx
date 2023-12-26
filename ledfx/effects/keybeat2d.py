@@ -27,17 +27,6 @@ def remove_values_above_limit(numbers, limit):
     return [num for num in numbers if num <= limit]
 
 
-def gif(value):
-    # Check if the value is a string
-    if not isinstance(value, str):
-        raise Invalid("Value must be a string")
-
-    # Optional: Add additional checks here, like validating it's a path or URL for a GIF
-    # ...
-
-    return value
-
-
 class Keybeat2d(Twod, GradientEffect):
     NAME = "Keybeat2d"
     CATEGORY = "Matrix"
@@ -72,7 +61,7 @@ class Keybeat2d(Twod, GradientEffect):
             ): vol.All(vol.Coerce(int), vol.Range(min=-90, max=90)),
             vol.Optional(
                 "gif at", description="Load gif from url or path", default=""
-            ): gif,
+            ): str,
             vol.Optional(
                 "beat frames",
                 description="Frame index to interpolate beats between",
