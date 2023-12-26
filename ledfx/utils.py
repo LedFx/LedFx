@@ -5,12 +5,15 @@ import inspect
 import ipaddress
 import logging
 import os
+import PIL.Image as Image
 import pkgutil
 import re
 import socket
 import sys
 import time
 import timeit
+import urllib.request
+
 from abc import ABC
 from collections import deque
 from collections.abc import MutableMapping
@@ -1201,3 +1204,37 @@ def get_icon_name(wled_name):
         if name.lower() in wled_name.lower():
             return icon
     return "wled"
+
+
+def extract_positive_integers(s):
+    # Use regular expression to find all sequences of digits
+    numbers = re.findall(r"\d+", s)
+
+    # Convert each found sequence to an integer and filter out non-positive numbers
+    return [int(num) for num in numbers if int(num) >= 0]
+
+
+def remove_values_above_limit(numbers, limit):
+    # Keep only values that are less than or equal to the limit
+    return [num for num in numbers if num <= limit]
+
+
+def open_gif(gif_path):
+    current_file_path = __file__
+    # Get the directory containing the current file
+    current_directory = os.path.dirname(current_file_path)
+    # Optionally, you can get the absolute path of the directory
+    absolute_directory = os.path.abspath(current_directory)
+    _LOGGER.debug(f"\n{current_file_path}\n{current_directory}\n{absolute_directory}\n")
+
+    try:
+        if gif_path.startswith("http://") or gif_path.startswith(
+            "https://"
+        ):
+            with urllib.request.urlopen(gif_path) as url:
+                return Image.open(url)
+        else:
+            return Image.open(gif_path)  # Directly open for local files
+    except Exception as e:
+        _LOGGER.error(f"Failed to open gif : {gif_path} : {e}")
+        return None

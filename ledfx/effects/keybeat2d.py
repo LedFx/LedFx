@@ -1,30 +1,15 @@
 import logging
-import re
-import urllib.request
 
 import PIL.Image as Image
 import PIL.ImageFont as ImageFont
 import PIL.ImageSequence as ImageSequence
 import voluptuous as vol
-from voluptuous import Invalid
 
 from ledfx.effects.gradient import GradientEffect
 from ledfx.effects.twod import Twod
+from ledfx.utils import extract_positive_integers, remove_values_above_limit, open_gif
 
 _LOGGER = logging.getLogger(__name__)
-
-
-def extract_positive_integers(s):
-    # Use regular expression to find all sequences of digits
-    numbers = re.findall(r"\d+", s)
-
-    # Convert each found sequence to an integer and filter out non-positive numbers
-    return [int(num) for num in numbers if int(num) >= 0]
-
-
-def remove_values_above_limit(numbers, limit):
-    # Keep only values that are less than or equal to the limit
-    return [num for num in numbers if num <= limit]
 
 
 class Keybeat2d(Twod, GradientEffect):
@@ -110,19 +95,6 @@ class Keybeat2d(Twod, GradientEffect):
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
 
-    def open_gif(self, gif_path):
-        try:
-            if gif_path.startswith("http://") or gif_path.startswith(
-                "https://"
-            ):
-                with urllib.request.urlopen(gif_path) as url:
-                    return Image.open(url)
-            else:
-                return Image.open(gif_path)  # Directly open for local files
-        except Exception as e:
-            _LOGGER.error("Failed to open gif: %s", e)
-            return None
-
     def config_updated(self, config):
         super().config_updated(config)
         self.stretch_h = self._config["stretch hor"] / 100.0
@@ -143,15 +115,15 @@ class Keybeat2d(Twod, GradientEffect):
         self.reverse = False
 
         self.gif = None
-        self.default = "https://phoneky.co.uk/thumbs/screensavers/down/fantasy/skullncros_jj9beivs.gif"
+        self.default = "../gifs/skull.gif"
 
         # attempt to load gif, default on error or no url to test pattern
         if self.last_gif != self.url_gif:
             if self.url_gif:
-                self.gif = self.open_gif(self.url_gif)
+                self.gif = open_gif(self.url_gif)
 
             if self.gif is None:
-                self.gif = self.open_gif(self.default)
+                self.gif = open_gif(self.default)
                 self.force_fit = True
 
             iterator = ImageSequence.Iterator(self.gif)
