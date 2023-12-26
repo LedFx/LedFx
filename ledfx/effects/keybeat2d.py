@@ -151,6 +151,7 @@ class Keybeat2d(Twod, GradientEffect):
 
             if self.gif is None:
                 self.gif = self.open_gif(self.default)
+                self.force_fit = True
 
             iterator = ImageSequence.Iterator(self.gif)
             self.orig_frames = []
