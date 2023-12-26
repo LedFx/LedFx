@@ -338,16 +338,24 @@ class Keybeat2d(Twod, GradientEffect):
             self.beat_f_times = []  # rolling windows of frame info
             self.begin = self.start  # used for seconds running total
 
+        self.last_beat_t = self.start
+
     def audio_data_updated(self, data):
         self.beat = data.beat_oscillator()
 
-    def overlay(self, beat_kick):
+    def overlay(self, beat_kick, skip_beat):
         # add beat timestamps to the rolling window beat_list
         # use len of beat_list as bpm
         if beat_kick:
             self.beat_times.append(self.start)
+            color = (255, 255, 255)
+        elif skip_beat:
+            color = (255, 0, 0)
+        else:
+            color = (255, 255, 0)
+
         self.beat_f_times.append(
-            (self.start, self.beat, self.frame_c, beat_kick)
+            (self.start, self.beat, self.frame_c, color)
         )
         # cull any beats older than 60 seconds
         self.beat_times = [
@@ -364,16 +372,13 @@ class Keybeat2d(Twod, GradientEffect):
         # start at the last entry and work backwards
         x = 0
         pixels = self.matrix.load()
-        for _, beat, f_frame, f_kick in reversed(self.beat_f_times):
+        for _, beat, f_frame, color in reversed(self.beat_f_times):
             y_beat = 11 + 32 - beat * 32
             if y_beat < self.matrix.height:
                 pixels[x, y_beat] = (255, 255, 0)
             y_frame = 11 + 32 - (f_frame / self.framecount) * 32
             if y_frame < self.matrix.height:
-                if f_kick:
-                    pixels[x, y_frame] = (255, 255, 255)
-                else:
-                    pixels[x, y_frame] = (255, 0, 255)
+                pixels[x, y_frame] = color
             x += 1
             if x >= self.matrix.width:
                 break
@@ -394,6 +399,7 @@ class Keybeat2d(Twod, GradientEffect):
 
     def draw(self):
         beat_kick = False
+        skip_beat = False
 
         # fake beat for testing at 200 frames per beat
         if self.fake_beat:
@@ -402,14 +408,24 @@ class Keybeat2d(Twod, GradientEffect):
 
         # if we see beat go from a larger number to a smaller one, we hit a beat
         if self.beat < self.last_beat:
-            beat_kick = True
-            if self.num_beat_frames == 0:
-                # let's just advance one frame per beat when there are no key frames
-                self.frame_s = self.frame_c = (
-                    self.frame_c + 1
-                ) % self.framecount
+            # protect against false beats with less than 100ms ~= 600 bpm!
+            if self.start - self.last_beat_t < 0.1:
+                skip_beat = True
+                if self.diag2:
+                    _LOGGER.info(
+                        f"skip beat threshold triggered: {self.start - self.last_beat_t:0.6f}")
             else:
-                self.beat_idx = (self.beat_idx + 1) % self.num_beat_frames
+                beat_kick = True
+                if self.num_beat_frames == 0:
+                    # let's just advance one frame per beat when there are no key frames
+                    self.frame_s = self.frame_c = (
+                        self.frame_c + 1
+                    ) % self.framecount
+                else:
+                    self.beat_idx = (self.beat_idx + 1) % self.num_beat_frames
+
+            self.last_beat_t = self.start
+
         self.last_beat = self.beat
 
         if self.num_beat_frames > 0:
@@ -432,4 +448,4 @@ class Keybeat2d(Twod, GradientEffect):
         self.matrix.paste(current_frame, (self.offset_x, self.offset_y))
 
         if self.diag2:
-            self.overlay(beat_kick)
+            self.overlay(beat_kick, skip_beat)

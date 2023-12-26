@@ -91,7 +91,7 @@ ledfx_presets = {
                 "mirror": False,
                 "ping pong": True,
                 "pp skip": False,
-                "rotate": 1,
+                "rotate": 0,
                 "skip frames": "",
                 "stretch hor": 100,
                 "stretch ver": 100,
