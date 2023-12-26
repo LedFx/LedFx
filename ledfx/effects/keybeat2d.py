@@ -7,7 +7,11 @@ import voluptuous as vol
 
 from ledfx.effects.gradient import GradientEffect
 from ledfx.effects.twod import Twod
-from ledfx.utils import extract_positive_integers, remove_values_above_limit, open_gif
+from ledfx.utils import (
+    extract_positive_integers,
+    open_gif,
+    remove_values_above_limit,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
