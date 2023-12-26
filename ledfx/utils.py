@@ -1219,13 +1219,10 @@ def remove_values_above_limit(numbers, limit):
 
 
 def open_gif(gif_path):
-    current_file_path = __file__
-    # Get the directory containing the current file
-    current_directory = os.path.dirname(current_file_path)
-    # Optionally, you can get the absolute path of the directory
+    current_directory = os.path.dirname(__file__)
     absolute_directory = os.path.abspath(current_directory)
     _LOGGER.debug(
-        f"\n{current_file_path}\n{current_directory}\n{absolute_directory}\n"
+        f"open_gif cur: {current_directory} abs: {absolute_directory}"
     )
 
     try:
