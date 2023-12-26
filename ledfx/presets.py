@@ -95,9 +95,9 @@ ledfx_presets = {
                 "skip frames": "",
                 "stretch hor": 100,
                 "stretch ver": 100,
-                "test": False
+                "test": False,
             },
-            "name": "bumble"
+            "name": "bumble",
         },
         "dance": {
             "config": {
