@@ -72,12 +72,12 @@ class Keybeat2d(Twod, GradientEffect):
             ): vol.All(vol.Coerce(int), vol.Range(min=-90, max=90)),
             vol.Optional(
                 "gif at", description="Load gif from url or path", default=""
-            ): str,
+            ): gif,
             vol.Optional(
                 "beat frames",
                 description="Frame index to interpolate beats between",
                 default="",
-            ): gif,
+            ): str,
             vol.Optional(
                 "skip frames",
                 description="Frames to remove from gif animation",
