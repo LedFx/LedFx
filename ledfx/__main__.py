@@ -40,14 +40,6 @@ from ledfx.core import LedFxCore
 from ledfx.utils import currently_frozen, get_icon_path
 
 
-def validate_python() -> None:
-    """Validate the python version for when manually running"""
-
-    if sys.version_info[:3] < REQUIRED_PYTHON_VERSION:
-        print(("Python {} is required.").format(REQUIRED_PYTHON_STRING))
-        sys.exit(1)
-
-
 def reset_logging():
     manager = logging.root.manager
     manager.disabled = logging.NOTSET

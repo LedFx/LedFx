@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "ledfx"
+name = "LedFx"
 version = "2.0.86"
 description = "A network based light effect controller"
 authors = ["LedFx Developers"]
