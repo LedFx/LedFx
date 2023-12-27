@@ -1,10 +1,10 @@
 # Couldn't get this to work. Will revisit.
 # from packaging.version import Version
-import toml
+import tomli
 
 # Read the pyproject.toml file
-with open("../pyproject.toml") as file:
-    toml_data = toml.load(file)
+with open("../pyproject.toml", 'rb') as file:
+    toml_data = tomli.load(file)
 
 # Access the values from pyproject dict
 # To bump version, update pyproject.toml

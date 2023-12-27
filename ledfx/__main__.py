@@ -31,11 +31,7 @@ except ImportError:
     have_psutil = False
 
 import ledfx.config as config_helpers
-from ledfx.consts import (
-    PROJECT_VERSION,
-    REQUIRED_PYTHON_STRING,
-    REQUIRED_PYTHON_VERSION,
-)
+from ledfx.consts import PROJECT_VERSION
 from ledfx.core import LedFxCore
 from ledfx.utils import currently_frozen, get_icon_path
 
@@ -114,7 +110,7 @@ def parse_args():
     parser.add_argument(
         "--version",
         action="version",
-        version=f"ledfx {PROJECT_VERSION}",
+        version=f"LedFx {PROJECT_VERSION}",
     )
     parser.add_argument(
         "-c",
