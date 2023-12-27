@@ -22,8 +22,12 @@ ledfx = "ledfx.__main__:main"
 ledfx-loopback-install = "loopback.__main__:copy_lib"
 
 [tool.poetry.dependencies]
+python = "^3.9"
 numpy = "^1.26"
+# Later than 1.15 on Linux fails.
 cffi = {version = "<=1.15.0", platform = "linux"}
+# Earlier than 1.16 on Windows Python 3.12 fails.
+cffi = {version = ">=1.16.0", platform = "win32"}
 wheel = ">=0.36.2"
 aiohttp = "^3.9.1"
 aiohttp-cors = ">=0.7.0"
