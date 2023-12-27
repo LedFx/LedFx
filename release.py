@@ -87,9 +87,7 @@ def main():
                 "git",
                 "commit",
                 "-am",
-                "Version Bump for Release {}.{}.{}".format(
-                    major, minor, micro
-                ),
+                f"Version Bump for Release {major}.{minor}.{micro}",
             ]
         )
         subprocess.run(["git", "push", "origin", branch])

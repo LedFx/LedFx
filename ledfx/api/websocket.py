@@ -84,9 +84,7 @@ class WebsocketConnection:
             self._sender_queue.put_nowait(message)
         except asyncio.QueueFull:
             _LOGGER.error(
-                "Client sender queue size exceeded {}".format(
-                    MAX_PENDING_MESSAGES
-                )
+                f"Client sender queue size exceeded {MAX_PENDING_MESSAGES}"
             )
             self.close()
 

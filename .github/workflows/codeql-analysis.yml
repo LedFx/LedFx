@@ -58,9 +58,8 @@ jobs:
         run: |
           python -m venv venv
           . venv/bin/activate
-          pip install -U pip	wheel setuptools
-          pip install -r requirements-dev.txt
-          pip install -r requirements.txt
+          pipx install poetry
+          poetry install --no-root --with dev
           echo "CODEQL_PYTHON=$(which python)" >> $GITHUB_ENV
 
       # Initializes the CodeQL tools for scanning

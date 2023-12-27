@@ -725,9 +725,7 @@ class Devices(RegistryLoader):
 
         # Create the device
         _LOGGER.info(
-            "Adding device of type {} with config {}".format(
-                device_type, device_config
-            )
+            f"Adding device of type {device_type} with config {device_config}"
         )
         device = self._ledfx.devices.create(
             id=device_id,

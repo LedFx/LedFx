@@ -43,8 +43,8 @@ jobs:
         run: |
           python -m venv venv
           . venv/bin/activate
-          pip install -U pip setuptools wheel
-          pip install -r requirements-dev.txt
+          pipx install poetry
+          poetry install --no-root --only dev
       - name: Restore pre-commit environment from cache-name
         id: cache-precommit
         uses: actions/cache@v3
