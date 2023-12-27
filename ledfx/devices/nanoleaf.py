@@ -1,7 +1,7 @@
 import logging
 import socket
 import struct
-from typing import Dict, Optional, Tuple
+from typing import Optional
 
 import requests
 import voluptuous as vol

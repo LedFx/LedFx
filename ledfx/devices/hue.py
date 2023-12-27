@@ -2,7 +2,7 @@ import logging
 import re
 import socket
 import time
-from typing import Dict, Optional, Tuple
+from typing import Optional 
 
 import requests
 import voluptuous as vol
