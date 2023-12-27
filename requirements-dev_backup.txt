@@ -1,8 +1,0 @@
-# Requirements. These can can be installed with:
-#   pip install -r requirements-dev.txt
-
-flake8~=6.0.0
-black~=23.3.0
-isort~=5.12.0
-pre-commit~=3.3.0
-cython~=0.29.21
