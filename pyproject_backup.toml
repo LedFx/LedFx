@@ -1,0 +1,19 @@
+[tool.black]
+line-length = 79
+target-version = ["py37", "py38"]
+
+[tool.isort]
+profile = "black"
+line_length = 79
+# The following are the default values applied when profile="black"
+# multi_line_output = 3
+# include_trailing_comma = True
+# force_grid_wrap = 0
+# use_parentheses = True
+# ensure_newline_before_comments = True
+
+[build-system]
+# These are the assumed default build requirements from pip:
+# https://pip.pypa.io/en/stable/reference/pip/#pep-517-and-518-support
+requires = ["setuptools>=49.2.1", "wheel"]
+build-backend = "setuptools.build_meta:__legacy__"

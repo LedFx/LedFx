@@ -29,7 +29,6 @@ INSTALL_REQUIRES = [
     "cython>=0.29.21",
     "certifi>=2020.12.5",
     "multidict~=5.0.0",
-    "mss~=9.0.1",
     "openrgb-python~=0.2.10",
     "paho-mqtt>=1.5.1",
     "psutil>=5.8.0",
@@ -38,13 +37,13 @@ INSTALL_REQUIRES = [
     "python-rtmidi~=1.5.6",
     "requests~=2.28.2",
     "sacn~=1.6.3",
-    "sentry-sdk==1.38.0",
+    "sentry-sdk==1.14.0",
     "sounddevice~=0.4.2",
     "samplerate>=0.1.0",
     "icmplib~=3.0.3",
     "voluptuous~=0.12.1",
     "zeroconf~=0.39.4",
-    "pillow~=10.1.0",
+    "pillow>=8.4.0",
     # Conditional Requirement
     # We need pywin32 for Windows
     'pywin32>=302; platform_system == "Windows"',
@@ -56,7 +55,6 @@ INSTALL_REQUIRES = [
     'python-mbedtls~=2.7.1; (platform_system == "Linux" and platform_machine != "aarch64" and platform_machine != "armv7l") or platform_system == "Windows" or platform_system == "Darwin"',
     "flux-led>=0.28.35",
     "python-osc~=1.8.3",
-    "pybase64~=1.3.1",
 ]
 
 
