@@ -20,8 +20,6 @@ class Plasmawled(Twod, GradientEffect):
     HIDDEN_KEYS = Twod.HIDDEN_KEYS + ["background_color", "gradient_roll"]
     ADVANCED_KEYS = Twod.ADVANCED_KEYS + []
 
-    start_time = timeit.default_timer()
-
     _power_funcs = {
         "Beat": "beat_power",
         "Bass": "bass_power",
