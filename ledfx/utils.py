@@ -571,7 +571,7 @@ def get_icon_path(icon_filename) -> str:
     current_directory = os.path.dirname(__file__)
 
     icon_location = os.path.normpath(
-        os.path.join(current_directory, "..", "icons", icon_filename)
+        os.path.join(current_directory, "..", "assets", icon_filename)
     )
 
     if not os.path.isfile(icon_location):
