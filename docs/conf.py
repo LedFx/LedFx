@@ -19,12 +19,7 @@ import sphinx_rtd_theme
 sys.path.insert(0, os.path.abspath(".."))
 
 import ledfx.consts as const
-from ledfx.consts import (
-    DEV_VERSION,
-    POST_VERSION,
-    PROJECT_NAME,
-    PROJECT_VERSION,
-)
+from ledfx.consts import DEV_VERSION, POST_VERSION, PROJECT_NAME, PROJECT_VERSION
 
 # -- Project information -----------------------------------------------------
 

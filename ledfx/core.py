@@ -21,12 +21,7 @@ from ledfx.config import Transmission, get_ssl_certs, load_config, save_config
 from ledfx.devices import Devices
 from ledfx.effects import Effects
 from ledfx.effects.math import interpolate_pixels
-from ledfx.events import (
-    Event,
-    Events,
-    LedFxShutdownEvent,
-    VisualisationUpdateEvent,
-)
+from ledfx.events import Event, Events, LedFxShutdownEvent, VisualisationUpdateEvent
 from ledfx.http_manager import HttpServer
 from ledfx.integrations import Integrations
 from ledfx.presets import ledfx_presets
