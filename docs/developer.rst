@@ -72,7 +72,7 @@ Linux
 **1.** Install poetry:
 
 .. code:: console
-    
+
     $ curl -sSL https://install.python-poetry.org | python3 -
 
 **2.** Clone the main branch from the LedFx Github repository:
