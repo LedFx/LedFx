@@ -3,7 +3,7 @@
 import toml
 
 # Read the pyproject.toml file
-with open("../pyproject.toml", "r") as file:
+with open("../pyproject.toml") as file:
     toml_data = toml.load(file)
 
 # Access the values from pyproject dict
