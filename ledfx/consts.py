@@ -1,6 +1,5 @@
-import os
-
 import tomli
+import os
 
 # Get the path to pyproject.toml file
 pyproject_path = os.path.join(
