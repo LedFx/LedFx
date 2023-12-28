@@ -1,6 +1,4 @@
-
 import ledfx_assets
-
 
 # TODO: Bump pyproject.toml if you bump this!
 PROJECT_VERSION = "2.0.68"
