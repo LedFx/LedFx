@@ -1,6 +1,7 @@
 import os
 
 import tomli
+
 import ledfx_assets
 
 # Get the path to pyproject.toml file

@@ -1,12 +1,14 @@
 import logging
-import urllib.request
 import os
+import urllib.request
+
 import voluptuous as vol
 from PIL import Image
 
+from ledfx.consts import LEDFX_ASSETS_PATH
 from ledfx.effects.twod import Twod
 from ledfx.utils import get_icon_path
-from ledfx.consts import LEDFX_ASSETS_PATH
+
 _LOGGER = logging.getLogger(__name__)
 
 

@@ -26,9 +26,9 @@ import PIL.Image as Image
 import requests
 import voluptuous as vol
 
-
 from ledfx.config import save_config
 from ledfx.consts import LEDFX_ASSETS_PATH
+
 # from asyncio import coroutines, ensure_future
 
 try:
