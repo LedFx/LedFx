@@ -2,7 +2,6 @@ import logging
 import os
 
 import PIL.Image as Image
-import PIL.ImageFont as ImageFont
 import PIL.ImageSequence as ImageSequence
 import voluptuous as vol
 
@@ -13,6 +12,7 @@ from ledfx.utils import (
     extract_positive_integers,
     open_gif,
     remove_values_above_limit,
+    get_mono_font,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -320,7 +320,8 @@ class Keybeat2d(Twod, GradientEffect):
         )
 
         if self.diag2:
-            self.font = ImageFont.truetype("consola.ttf", 12)
+            self.font = get_mono_font(10)
+
             self.beat_times = []  # rolling window of beat timestamps
             self.beat_f_times = []  # rolling windows of frame info
             self.begin = self.start  # used for seconds running total
@@ -339,7 +340,7 @@ class Keybeat2d(Twod, GradientEffect):
         elif skip_beat:
             color = (255, 0, 0)
         else:
-            color = (255, 255, 0)
+            color = (255, 0, 255)
 
         self.beat_f_times.append((self.start, self.beat, self.frame_c, color))
         # cull any beats older than 60 seconds
@@ -352,16 +353,18 @@ class Keybeat2d(Twod, GradientEffect):
             if self.start - f_beat[0] < 60.0
         ]
 
-        # lets graph directly into the draw space, ignoring dimensions
+        # lets graph directly into the draw space
         # loop through beat_list and draw a dot for each beat
         # start at the last entry and work backwards
+        graph_s = 9
+        graph_h = min(self.r_height - 9, 32)
         x = 0
         pixels = self.matrix.load()
         for _, beat, f_frame, color in reversed(self.beat_f_times):
-            y_beat = 11 + 32 - beat * 32
+            y_beat = graph_s + graph_h - beat * graph_h
             if y_beat < self.matrix.height:
                 pixels[x, y_beat] = (255, 255, 0)
-            y_frame = 11 + 32 - (f_frame / self.framecount) * 32
+            y_frame = graph_s + graph_h - (f_frame / self.framecount) * graph_h
             if y_frame < self.matrix.height:
                 pixels[x, y_frame] = color
             x += 1
@@ -377,9 +380,14 @@ class Keybeat2d(Twod, GradientEffect):
         else:
             color = (255, 255, 0)
 
-        diag_string = f"{self.frame_c:02} {self.frame_s:02} {self.bpm:3.0f} {passed:3.0f}"
         if beat_kick:
-            diag_string += " \u25CF"  # filled circle char
+            diag_string = "\u25CF\u25CF\u25CF\u25CF"  # filled circle char
+            color = (255, 255, 255)
+        else:
+            diag_string = ("\u25CB" * int(self.beat * 4) +
+                           " " * (4 - int(self.beat * 4)))
+
+        diag_string += f"{self.frame_c:03} {self.bpm:3.0f} {passed:.0f}"
         self.m_draw.text((0, 0), diag_string, fill=color, font=self.font)
 
     def draw(self):

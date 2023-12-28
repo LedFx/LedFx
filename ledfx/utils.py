@@ -17,6 +17,7 @@ from collections import deque
 from collections.abc import MutableMapping
 from functools import lru_cache
 from itertools import chain
+import PIL.ImageFont as ImageFont
 
 # from asyncio import coroutines, ensure_future
 from subprocess import PIPE, Popen
@@ -1236,3 +1237,24 @@ def open_gif(gif_path):
     except Exception as e:
         _LOGGER.error(f"Failed to open gif : {gif_path} : {e}")
         return None
+
+
+def get_mono_font(size):
+    font_names = ["Courier New", "cour.ttf",
+                  "DejaVu Sans Mono", "DejaVuSansMono.ttf",
+                  "DejaVuSansMono-Regular.ttf",
+                  "Liberation Mono", "LiberationMono-Regular.ttf",
+                  "Consolas", "consola.ttf",
+                  "monospace"]
+    return get_font(font_names, size)
+
+
+def get_font(font_list, size):
+    for font_name in font_list:
+        try:
+            font = ImageFont.truetype(font_name, size)
+            _LOGGER.info(f"Found font: {font_name}")
+            return font
+        except IOError:
+            continue
+    raise RuntimeError("None of the fonts are available on the system.")
