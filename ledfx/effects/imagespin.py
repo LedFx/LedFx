@@ -1,12 +1,12 @@
 import logging
 import urllib.request
-
+import os
 import voluptuous as vol
 from PIL import Image
 
 from ledfx.effects.twod import Twod
 from ledfx.utils import get_icon_path
-
+from ledfx.consts import LEDFX_ASSETS_PATH
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -105,7 +105,7 @@ class Imagespin(Twod):
     def do_once(self):
         super().do_once()
         if self._config["pattern"]:
-            url_path = "https://images.squarespace-cdn.com/content/v1/60cc480d9290423b888eb94a/1624780092100-4FLILMIV0YHHU45GB7XZ/Test+Pattern+t.png"
+            url_path = f"{os.path.join(LEDFX_ASSETS_PATH, 'test_images', 'TVTestPattern.png')}"
         else:
             url_path = self._config["url source"]
 

@@ -26,9 +26,9 @@ import PIL.Image as Image
 import requests
 import voluptuous as vol
 
-import ledfx_assets
-from ledfx.config import save_config
 
+from ledfx.config import save_config
+from ledfx.consts import LEDFX_ASSETS_PATH
 # from asyncio import coroutines, ensure_future
 
 try:
@@ -574,7 +574,7 @@ def get_icon_path(icon_filename) -> str:
     """
 
     icon_location = os.path.normpath(
-        os.path.join(ledfx_assets.where(), icon_filename)
+        os.path.join(LEDFX_ASSETS_PATH, icon_filename)
     )
 
     if not os.path.isfile(icon_location):
