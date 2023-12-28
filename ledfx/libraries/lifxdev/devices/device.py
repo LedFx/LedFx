@@ -5,7 +5,7 @@ from __future__ import annotations
 import socket
 from collections.abc import Callable
 
-from lifxdev.messages import device_messages, packet
+from ledfx.libraries.lifxdev.messages import device_messages, packet
 
 
 class LifxDevice:

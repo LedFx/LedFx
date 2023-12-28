@@ -8,12 +8,12 @@ import enum
 import socket
 
 # These are needed to populate the packet internal responses
-from lifxdev.messages import device_messages  # noqa: F401
-from lifxdev.messages import firmware_effects  # noqa: F401
-from lifxdev.messages import light_messages  # noqa: F401
-from lifxdev.messages import multizone_messages  # noqa: F401
-from lifxdev.messages import tile_messages  # noqa: F401
-from lifxdev.messages import packet
+from ledfx.libraries.lifxdev.messages import device_messages  # noqa: F401
+from ledfx.libraries.lifxdev.messages import firmware_effects  # noqa: F401
+from ledfx.libraries.lifxdev.messages import light_messages  # noqa: F401
+from ledfx.libraries.lifxdev.messages import multizone_messages  # noqa: F401
+from ledfx.libraries.lifxdev.messages import tile_messages  # noqa: F401
+from ledfx.libraries.lifxdev.messages import packet
 
 # Number of read attempts on the read socket
 _N_READS = 16
@@ -170,9 +170,7 @@ class MockSocket:
                 self._responses[response_name], addr
             ).payload
             payload_registers = {rr[0] for rr in payload.registers}
-            response_registers = {
-                rr[0] for rr in response_payload.registers
-            }
+            response_registers = {rr[0] for rr in response_payload.registers}
             intersection = response_registers & payload_registers
             for name in intersection:
                 response_payload[name] = payload[name]
@@ -194,7 +192,7 @@ class MockSocket:
         else:
             self._response_bytes = self._responses[response_name]
         self._first_response_query = True
-        self._wsock.send(b'')
+        self._wsock.send(b"")
         return len(message_bytes)
 
     def recvfrom(self, buffer_size: int) -> tuple[bytes, tuple[str, int]]:

@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from lifxdev.colors import color
-from lifxdev.devices import light
-from lifxdev.messages import multizone_messages, packet
+from ledfx.libraries.lifxdev.colors import color
+from ledfx.libraries.lifxdev.devices import light
+from ledfx.libraries.lifxdev.messages import multizone_messages, packet
 
 
 class LifxMultiZone(light.LifxLight):
