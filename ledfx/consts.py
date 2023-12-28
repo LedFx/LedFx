@@ -3,7 +3,7 @@
 import tomli
 
 # Read the pyproject.toml file
-with open("../pyproject.toml", 'rb') as file:
+with open("../pyproject.toml", "rb") as file:
     toml_data = tomli.load(file)
 
 # Access the values from pyproject dict
