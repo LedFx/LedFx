@@ -1,11 +1,12 @@
 import logging
+import os
 
 import PIL.Image as Image
 import PIL.ImageFont as ImageFont
 import PIL.ImageSequence as ImageSequence
 import voluptuous as vol
+
 import ledfx_assets
-import os
 from ledfx.effects.gradient import GradientEffect
 from ledfx.effects.twod import Twod
 from ledfx.utils import (
