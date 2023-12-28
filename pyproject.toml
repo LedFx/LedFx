@@ -8,6 +8,7 @@ readme = "README.rst"
 packages = [
 	{include = "ledfx"},
 	{include = "ledfx_frontend"},
+    {include = "ledfx_assets"},
     {include = "loopback"},
 ]
 include = [

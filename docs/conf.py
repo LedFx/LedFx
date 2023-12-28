@@ -122,7 +122,7 @@ html_context = {
 }
 
 html_logo = "_static/small_white_alpha.png"
-html_favicon = "../assets/favicon.ico"
+html_favicon = "../ledfx_assets/favicon.ico"
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,

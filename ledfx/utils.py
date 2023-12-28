@@ -16,6 +16,7 @@ from collections import deque
 from collections.abc import MutableMapping
 from functools import lru_cache
 from itertools import chain
+import ledfx_assets
 
 # from asyncio import coroutines, ensure_future
 from subprocess import PIPE, Popen
@@ -559,19 +560,17 @@ def currently_frozen():
 
 
 def get_icon_path(icon_filename) -> str:
-    """returns fully qualified path for icon, tests for frozen
-    and logs error if does not exist
+    """returns fully qualified path for icon and logs error if does not exist
 
     Parameters:
-        icon_filename(str): the filename of the icon to be pathed
+        icon_filename(str): the filename of the icon
 
     Returns:
             icon_location(str): fully qualified path
     """
-    current_directory = os.path.dirname(__file__)
 
     icon_location = os.path.normpath(
-        os.path.join(current_directory, "..", "assets", icon_filename)
+        os.path.join(ledfx_assets.where(), icon_filename)
     )
 
     if not os.path.isfile(icon_location):
