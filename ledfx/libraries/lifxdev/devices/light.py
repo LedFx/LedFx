@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from lifxdev.colors import color
-from lifxdev.devices import device
-from lifxdev.messages import light_messages, packet
+from ledfx.libraries.lifxdev.colors import color
+from ledfx.libraries.lifxdev.devices import device
+from ledfx.libraries.lifxdev.messages import light_messages, packet
 
 COLOR_T = tuple[float, float, float, int]
 

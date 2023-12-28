@@ -7,7 +7,7 @@ https://lan.developer.lifx.com/docs/light-messages
 
 from __future__ import annotations
 
-from lifxdev.messages import packet
+from ledfx.libraries.lifxdev.messages import packet
 
 
 @packet.set_message_type(101)

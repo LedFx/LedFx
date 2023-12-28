@@ -10,7 +10,7 @@ from __future__ import annotations
 import enum
 from typing import Any
 
-from lifxdev.messages import packet
+from ledfx.libraries.lifxdev.messages import packet
 
 
 class MultiZoneEffectType(enum.Enum):

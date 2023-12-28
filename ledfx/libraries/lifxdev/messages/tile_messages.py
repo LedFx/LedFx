@@ -7,7 +7,7 @@ https://lan.developer.lifx.com/docs/tile-messages
 
 from __future__ import annotations
 
-from lifxdev.messages import packet
+from ledfx.libraries.lifxdev.messages import packet
 
 
 class Tile(packet.LifxStruct):

@@ -2,11 +2,9 @@
 
 from __future__ import annotations
 
-from matplotlib import colors
-
-from lifxdev.colors import color
-from lifxdev.devices import light
-from lifxdev.messages import packet, tile_messages
+from ledfx.libraries.lifxdev.colors import color
+from ledfx.libraries.lifxdev.devices import light
+from ledfx.libraries.lifxdev.messages import packet, tile_messages
 
 TILE_WIDTH = 8
 

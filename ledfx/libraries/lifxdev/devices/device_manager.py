@@ -13,9 +13,9 @@ from typing import Any
 
 import yaml
 
-from lifxdev.colors import color
-from lifxdev.devices import device, light, multizone, tile
-from lifxdev.messages import device_messages, packet
+from ledfx.libraries.lifxdev.colors import color
+from ledfx.libraries.lifxdev.devices import device, light, multizone, tile
+from ledfx.libraries.lifxdev.messages import device_messages, packet
 
 CONFIG_PATH = pathlib.Path.home() / ".lifx" / "devices.yaml"
 
@@ -466,21 +466,3 @@ class DeviceManager(device.LifxDevice):
         """Check if a group exists."""
         assert self._root_device_group is not None
         return self._root_device_group.has_group(name)
-
-
-if __name__ == "__main__":
-    import coloredlogs
-
-    coloredlogs.install(
-        level=logging.INFO, fmt="%(asctime)s %(levelname)s %(message)s"
-    )
-
-    device_manager = DeviceManager()
-    devices = device_manager.discover(num_retries=1)
-    for device_info in sorted(devices.values(), key=lambda d: d.ip):
-        product = device_info.product_name
-        ip = device_info.ip
-        port = device_info.port
-        label = device_info.label
-        logging.info(f"{ip}:\tDiscovered {product}: {label}, {port}")
-    logging.info(f"Total number of devices: {len(devices)}")

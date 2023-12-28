@@ -13,7 +13,7 @@ import socket
 import struct
 import sys
 from collections.abc import Callable
-from typing import Any, Union, cast
+from typing import Any, cast
 
 BUFFER_SIZE = 65535
 LIFX_PORT = 56700
@@ -169,7 +169,7 @@ class LifxStruct:
 
     @staticmethod
     def get_nbits_and_signed(
-        register_type: LifxType | LifxStruct
+        register_type: LifxType | LifxStruct,
     ) -> tuple[int, bool]:
         """Get the number of bits used to represent positive numbers for a type"""
         n_bits = register_type.value[0]

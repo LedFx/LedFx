@@ -4,7 +4,10 @@ import numpy as np
 import voluptuous as vol
 
 from ledfx.devices import NetworkedDevice
-from lifxdev.devices import light, multizone  # Import the lifxdev library
+from ledfx.libraries.lifxdev.devices import (
+    light,
+    multizone,
+)  # Import the lifxdev library
 
 _LOGGER = logging.getLogger(__name__)
 
