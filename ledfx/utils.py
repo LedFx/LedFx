@@ -26,7 +26,6 @@ import voluptuous as vol
 
 import ledfx_assets
 from ledfx.config import save_config
-import ledfx_assets
 
 # from asyncio import coroutines, ensure_future
 
