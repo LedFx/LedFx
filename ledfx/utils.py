@@ -27,6 +27,7 @@ import requests
 import voluptuous as vol
 
 from ledfx.config import save_config
+from ledfx.consts import LEDFX_ASSETS_PATH
 
 # from asyncio import coroutines, ensure_future
 
@@ -561,23 +562,24 @@ def currently_frozen():
 
 
 def get_icon_path(icon_filename) -> str:
-    """returns fully qualified path for icon, tests for frozen
-    and logs error if does not exist
+    """Returns fully qualified path for the tray icon
+    Assumes that the file is within ledfx_assets folder
+
 
     Parameters:
-        icon_filename(str): the filename of the icon to be pathed
+        icon_filename(str): the filename of the icon
 
     Returns:
             icon_location(str): fully qualified path
     """
-    current_directory = os.path.dirname(__file__)
 
     icon_location = os.path.normpath(
-        os.path.join(current_directory, "..", "ledfx_assets", icon_filename)
+        os.path.join(LEDFX_ASSETS_PATH, icon_filename)
     )
 
     if not os.path.isfile(icon_location):
         _LOGGER.error(f"No icon found at {icon_location}")
+
     return icon_location
 
 

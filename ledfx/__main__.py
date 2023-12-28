@@ -1,25 +1,16 @@
 #!/usr/bin/env python
 """
-Entry point for the ledfx controller. To run this script for development
-purposes use:
+Entry point for LedFx.
+To run this script for development purposes use:
 
-    [console_scripts]
-    python setup.py develop
-    ledfx
-
-For non-development purposes run:
-
-    [console_scripts]
-    python setup.py install
+    poetry install
     ledfx
 
 """
 
 import argparse
-import importlib
 import logging
 import os
-import subprocess
 import sys
 from logging.handlers import RotatingFileHandler
 
@@ -31,21 +22,9 @@ except ImportError:
     have_psutil = False
 
 import ledfx.config as config_helpers
-from ledfx.consts import (
-    PROJECT_VERSION,
-    REQUIRED_PYTHON_STRING,
-    REQUIRED_PYTHON_VERSION,
-)
+from ledfx.consts import PROJECT_VERSION
 from ledfx.core import LedFxCore
 from ledfx.utils import currently_frozen, get_icon_path
-
-
-def validate_python() -> None:
-    """Validate the python version for when manually running"""
-
-    if sys.version_info[:3] < REQUIRED_PYTHON_VERSION:
-        print(("Python {} is required.").format(REQUIRED_PYTHON_STRING))
-        sys.exit(1)
 
 
 def reset_logging():
@@ -122,7 +101,7 @@ def parse_args():
     parser.add_argument(
         "--version",
         action="version",
-        version=f"ledfx {PROJECT_VERSION}",
+        version=f"LedFx {PROJECT_VERSION}",
     )
     parser.add_argument(
         "-c",
@@ -207,26 +186,6 @@ def parse_args():
         help="This crashes LedFx to test the sentry crash logger",
     )
     return parser.parse_args()
-
-
-def installed_via_pip():
-    """Check to see if LedFx is installed via pip
-    Returns:
-        boolean
-    """
-    pip_spec = importlib.util.find_spec("pip")
-    if pip_spec is None:
-        return False
-    pip_package_command = subprocess.check_output(
-        [sys.executable, "-m", "pip", "freeze"]
-    )
-    installed_packages = [
-        r.decode().split("==")[0] for r in pip_package_command.split()
-    ]
-    if "ledfx" in installed_packages:
-        return True
-    else:
-        return False
 
 
 def log_packages():

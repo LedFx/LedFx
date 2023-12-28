@@ -1,6 +1,6 @@
 import os
 
-import ledfx_assets
+from ledfx.consts import LEDFX_ASSETS_PATH
 
 ledfx_presets = {
     "keybeat2d": {
@@ -23,7 +23,7 @@ ledfx_presets = {
                 "flip vertical": False,
                 "force aspect": False,
                 "force fit": True,
-                "gif at": f"{os.path.join(ledfx_assets.where(), 'gifs', 'catfixed.gif')}",
+                "gif at": f"{os.path.join(LEDFX_ASSETS_PATH, 'gifs', 'catfixed.gif')}",
                 "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
                 "gradient_roll": 0.0,
                 "mirror": False,
@@ -56,7 +56,7 @@ ledfx_presets = {
                 "flip vertical": False,
                 "force aspect": True,
                 "force fit": True,
-                "gif at": f"{os.path.join(ledfx_assets.where(), 'gifs', 'bruces1.gif')}",
+                "gif at": f"{os.path.join(LEDFX_ASSETS_PATH, 'gifs', 'bruces1.gif')}",
                 "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
                 "gradient_roll": 0.0,
                 "mirror": False,
@@ -89,7 +89,7 @@ ledfx_presets = {
                 "flip vertical": False,
                 "force aspect": False,
                 "force fit": False,
-                "gif at": f"{os.path.join(ledfx_assets.where(), 'gifs', 'bumble.gif')}",
+                "gif at": f"{os.path.join(LEDFX_ASSETS_PATH, 'gifs', 'bumble.gif')}",
                 "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
                 "gradient_roll": 0.0,
                 "mirror": False,
@@ -122,7 +122,7 @@ ledfx_presets = {
                 "flip vertical": False,
                 "force aspect": True,
                 "force fit": True,
-                "gif at": f"{os.path.join(ledfx_assets.where(), 'gifs', 'dancing.gif')}",
+                "gif at": f"{os.path.join(LEDFX_ASSETS_PATH, 'gifs', 'dancing.gif')}",
                 "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
                 "gradient_roll": 0.0,
                 "mirror": False,
@@ -154,7 +154,7 @@ ledfx_presets = {
                 "flip vertical": False,
                 "force aspect": False,
                 "force fit": True,
-                "gif at": f"{os.path.join(ledfx_assets.where(), 'gifs', 'cat-space.gif')}",
+                "gif at": f"{os.path.join(LEDFX_ASSETS_PATH, 'gifs', 'cat-space.gif')}",
                 "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
                 "gradient_roll": 0.0,
                 "mirror": False,
@@ -187,7 +187,7 @@ ledfx_presets = {
                 "flip vertical": False,
                 "force aspect": False,
                 "force fit": False,
-                "gif at": f"{os.path.join(ledfx_assets.where(), 'gifs', 'phoebe.gif')}",
+                "gif at": f"{os.path.join(LEDFX_ASSETS_PATH, 'gifs', 'phoebe.gif')}",
                 "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
                 "gradient_roll": 0.0,
                 "mirror": False,
@@ -220,7 +220,7 @@ ledfx_presets = {
                 "flip vertical": False,
                 "force aspect": False,
                 "force fit": True,
-                "gif at": f"{os.path.join(ledfx_assets.where(), 'gifs', 'snoopy.gif')}",
+                "gif at": f"{os.path.join(LEDFX_ASSETS_PATH, 'gifs', 'snoopy.gif')}",
                 "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
                 "gradient_roll": 0.0,
                 "mirror": False,
@@ -253,7 +253,7 @@ ledfx_presets = {
                 "flip vertical": False,
                 "force aspect": True,
                 "force fit": True,
-                "gif at": f"{os.path.join(ledfx_assets.where(), 'gifs', 'sponge.gif')}",
+                "gif at": f"{os.path.join(LEDFX_ASSETS_PATH, 'gifs', 'sponge.gif')}",
                 "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
                 "gradient_roll": 0.0,
                 "mirror": False,
@@ -286,7 +286,7 @@ ledfx_presets = {
                 "flip vertical": False,
                 "force aspect": True,
                 "force fit": True,
-                "gif at": f"{os.path.join(ledfx_assets.where(), 'gifs', 'zilla1.gif')}",
+                "gif at": f"{os.path.join(LEDFX_ASSETS_PATH, 'gifs', 'zilla1.gif')}",
                 "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
                 "gradient_roll": 0.0,
                 "mirror": False,
