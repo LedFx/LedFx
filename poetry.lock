@@ -1626,16 +1626,6 @@ CFFI = ">=1.0"
 [package.extras]
 numpy = ["NumPy"]
 
-[[package]]
-name = "tomli"
-version = "2.0.1"
-description = "A lil' TOML parser"
-optional = false
-python-versions = ">=3.7"
-files = [
-    {file = "tomli-2.0.1-py3-none-any.whl", hash = "sha256:939de3e7a6161af0c887ef91b7d41a53e7c5a1ca976325f429cb46ea9bc30ecc"},
-    {file = "tomli-2.0.1.tar.gz", hash = "sha256:de526c12914f0c550d15924c62d72abc48d6fe7364aa87328337a31007fe8a4f"},
-]
 
 [[package]]
 name = "typing-extensions"
@@ -1938,4 +1928,4 @@ ifaddr = ">=0.1.7"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "ab1dadf74f31ad598697396478d4a102bffbc5e4f29fba3989841b8d89690925"
+content-hash = "1c62cb354f7ea6118fe8bf7127fb426b56e45864151c62fec776ec5ad99be01a"
