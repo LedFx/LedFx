@@ -25,8 +25,6 @@ class Plasma2d(Twod, GradientEffect):
         "High": "high_power",
     }
 
-    start_time = timeit.default_timer()
-
     CONFIG_SCHEMA = vol.Schema(
         {
             vol.Optional(
