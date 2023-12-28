@@ -5,16 +5,16 @@
 -------------------------
    Backend Development
 -------------------------
-.. warning:: 
+.. warning::
 
     Always be aware of piping commands to any shell - this is the recommended method for poetry but there are `other options <https://python-poetry.org/docs/#installation>`_.
-    
+
 Windows
 -------
 .. note::
 
-    Do not install python from the Windows Store - it will not work with these instructions. 
-    
+    Do not install python from the Windows Store - it will not work with these instructions.
+
 #. Install `python <https://www.python.org/downloads/windows/>`_ version 3.9 or above.
 #. Install `git <https://gitforwindows.org/>`_.
 #. Install `Build Tools for Visual Studio 2022 <https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2022>`_
