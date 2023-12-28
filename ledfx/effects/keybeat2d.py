@@ -4,7 +4,8 @@ import PIL.Image as Image
 import PIL.ImageFont as ImageFont
 import PIL.ImageSequence as ImageSequence
 import voluptuous as vol
-
+import ledfx_assets
+import os
 from ledfx.effects.gradient import GradientEffect
 from ledfx.effects.twod import Twod
 from ledfx.utils import (
@@ -119,7 +120,7 @@ class Keybeat2d(Twod, GradientEffect):
         self.reverse = False
 
         self.gif = None
-        self.default = "../gifs/skull.gif"
+        self.default = os.path.join(ledfx_assets.where(), "gifs", "skull.gif")
 
         # attempt to load gif, default on error or no url to test pattern
         if self.last_gif != self.url_gif:
