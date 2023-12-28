@@ -56,7 +56,7 @@ Windows
 
     $ git clone https://github.com/LedFx/LedFx.git
 
-    
+
 **3.** Install LedFx and its requirements using poetry:
 
 .. code:: console
