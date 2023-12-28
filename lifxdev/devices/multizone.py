@@ -4,8 +4,7 @@ from __future__ import annotations
 
 from lifxdev.colors import color
 from lifxdev.devices import light
-from lifxdev.messages import multizone_messages
-from lifxdev.messages import packet
+from lifxdev.messages import multizone_messages, packet
 
 
 class LifxMultiZone(light.LifxLight):
@@ -21,7 +20,9 @@ class LifxMultiZone(light.LifxLight):
         Returns:
             List of human-readable HSBK tuples representing the device.
         """
-        response = self.send_recv(multizone_messages.GetExtendedColorZones(), res_required=True)
+        response = self.send_recv(
+            multizone_messages.GetExtendedColorZones(), res_required=True
+        )
         assert response is not None
         payload = response[0].payload
         self._num_zones = payload["count"]
@@ -59,7 +60,9 @@ class LifxMultiZone(light.LifxLight):
         for ii, hsbk in enumerate(multizone_colors):
             set_colors.set_value(
                 "colors",
-                color.Hsbk.from_tuple(hsbk).max_brightness(self.max_brightness).to_packet(),
+                color.Hsbk.from_tuple(hsbk)
+                .max_brightness(self.max_brightness)
+                .to_packet(),
                 index + ii,
             )
         return self.send_msg(set_colors, ack_required=ack_required)

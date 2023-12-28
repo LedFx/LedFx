@@ -13,7 +13,7 @@ import socket
 import struct
 import sys
 from collections.abc import Callable
-from typing import cast, Any, Union
+from typing import Any, Union, cast
 
 BUFFER_SIZE = 65535
 LIFX_PORT = 56700
@@ -55,11 +55,13 @@ class LifxStruct:
         2: (int) number of items of the type
     """
 
-    registers: list[tuple[str, Union[LifxType, "LifxStruct"], int]] = []
+    registers: list[tuple[str, LifxType | LifxStruct, int]] = []
 
     def __init__(self, **kwargs):
         # Set to tuples because they're immutable. _names and _sizes should not be changed.
-        self._names: tuple[str, ...] = tuple([rr[0].lower() for rr in self.registers])
+        self._names: tuple[str, ...] = tuple(
+            [rr[0].lower() for rr in self.registers]
+        )
         for kw in kwargs:
             if kw not in self._names:
                 name = type(self).__name__
@@ -90,7 +92,7 @@ class LifxStruct:
     def __repr__(self) -> str:
         return f"<{type(self).__name__}({id(self)})>\n{self.__str__()}"
 
-    def __eq__(self, other: "LifxStruct") -> bool:
+    def __eq__(self, other: LifxStruct) -> bool:
         if type(self) != type(other):  # noqa: E721
             return False
 
@@ -102,7 +104,7 @@ class LifxStruct:
         return True
 
     @classmethod
-    def from_bytes(cls, message_bytes: bytes) -> "LifxStruct":
+    def from_bytes(cls, message_bytes: bytes) -> LifxStruct:
         """Create a LifxStruct from bytes
 
         Anything with irregular bits will have this class overrwitten.
@@ -117,11 +119,15 @@ class LifxStruct:
             # Easy decoding using struct.unpack for LifxType data
             if isinstance(rtype, LifxType):
                 if rtype.value[1] is None:
-                    raise RuntimeError(f"Register {rname} cannot be represented as bytes.")
+                    raise RuntimeError(
+                        f"Register {rname} cannot be represented as bytes."
+                    )
 
                 t_nbytes = rtype.value[0] // 8 * rlen
                 msg_chunk = message_bytes[offset : offset + t_nbytes]
-                value_list = list(struct.unpack("<" + rtype.value[1] * rlen, msg_chunk))
+                value_list = list(
+                    struct.unpack("<" + rtype.value[1] * rlen, msg_chunk)
+                )
                 decoded_registers[rname] = value_list
 
             # If bytes are supposed to represent a type, use the from_bytes from that type
@@ -129,7 +135,9 @@ class LifxStruct:
                 t_nbytes = len(rtype) * rlen
                 msg_chunk = message_bytes[offset : offset + t_nbytes]
                 for _ in range(rlen):
-                    decoded_registers[rname].append(rtype.from_bytes(msg_chunk[: len(rtype)]))
+                    decoded_registers[rname].append(
+                        rtype.from_bytes(msg_chunk[: len(rtype)])
+                    )
                     msg_chunk = msg_chunk[len(rtype) :]
 
             offset += t_nbytes
@@ -155,12 +163,14 @@ class LifxStruct:
     def get_nbytes_per_name(self, name: str) -> int:
         return self.get_nbits_per_name(name) // 8
 
-    def get_type(self, name: str) -> Union[LifxType, "LifxStruct"]:
+    def get_type(self, name: str) -> LifxType | LifxStruct:
         name = name.lower()
         return self._types[name]
 
     @staticmethod
-    def get_nbits_and_signed(register_type: Union[LifxType, "LifxStruct"]) -> tuple[int, bool]:
+    def get_nbits_and_signed(
+        register_type: LifxType | LifxStruct
+    ) -> tuple[int, bool]:
         """Get the number of bits used to represent positive numbers for a type"""
         n_bits = register_type.value[0]
         # struct identifiers are lowercase for signed types
@@ -175,7 +185,9 @@ class LifxStruct:
         """Get the maximum value a member of an integer register can hold"""
         register_type = self.get_type(name)
         if register_type.value[1] is None:
-            raise NotImplementedError(f"Maximum undefined for type: {register_type}")
+            raise NotImplementedError(
+                f"Maximum undefined for type: {register_type}"
+            )
 
         # Floating point maximum
         if register_type.value[1] == "f":
@@ -188,7 +200,9 @@ class LifxStruct:
         """Get the minimum value a member of an integer register can hold"""
         register_type = self.get_type(name)
         if register_type.value[1] is None:
-            raise NotImplementedError(f"Maximum undefined for type: {register_type}")
+            raise NotImplementedError(
+                f"Maximum undefined for type: {register_type}"
+            )
 
         # Floating point minimum
         if register_type.value[1] == "f":
@@ -247,7 +261,9 @@ class LifxStruct:
         min_value = self.get_min(name)
         max_value = self.get_max(name)
         if value < min_value or value > max_value:
-            raise ValueError(f"value {value} out of bounds for register {name!r}")
+            raise ValueError(
+                f"value {value} out of bounds for register {name!r}"
+            )
         return value
 
     def __setitem__(self, name: str, value: Any) -> None:
@@ -327,7 +343,9 @@ class LifxStruct:
             # Use struct.path for LifxTypes
             if isinstance(rtype, LifxType):
                 if rtype.value[1] is None:
-                    raise RuntimeError(f"Register {rname} cannot be represented as bytes.")
+                    raise RuntimeError(
+                        f"Register {rname} cannot be represented as bytes."
+                    )
                 fmt = "<" + rtype.value[1] * rlen
                 values = self._values[rname]
                 # Convert bytes  to list for struct packing
@@ -385,7 +403,7 @@ class Frame(LifxStruct):
         return struct.pack("<HHI", size, bit_field, source)
 
     @classmethod
-    def from_bytes(cls, message_bytes: bytes) -> "Frame":
+    def from_bytes(cls, message_bytes: bytes) -> Frame:
         """Override defaults because of sub-byte packing"""
         size, bit_field, source = struct.unpack("<HHI", message_bytes)
         frame = cls(size=size, source=source)
@@ -438,9 +456,15 @@ class FrameAddress(LifxStruct):
     def to_bytes(self) -> bytes:
         """Override defaults because of sub-byte packing"""
 
-        target_bytes = struct.pack(self._fmt("target"), *self.get_value("target"))
-        res_1_bytes = struct.pack(self._fmt("reserved_1"), *self.get_value("reserved_1"))
-        sequence_bytes = struct.pack(self._fmt("sequence"), self.get_value("sequence"))
+        target_bytes = struct.pack(
+            self._fmt("target"), *self.get_value("target")
+        )
+        res_1_bytes = struct.pack(
+            self._fmt("reserved_1"), *self.get_value("reserved_1")
+        )
+        sequence_bytes = struct.pack(
+            self._fmt("sequence"), self.get_value("sequence")
+        )
 
         bit_field = int(self.get_value("res_required"))
         offset = self.get_nbits_per_name("res_required")
@@ -450,7 +474,7 @@ class FrameAddress(LifxStruct):
         return target_bytes + res_1_bytes + bit_field_bytes + sequence_bytes
 
     @classmethod
-    def from_bytes(cls, message_bytes: bytes) -> "FrameAddress":
+    def from_bytes(cls, message_bytes: bytes) -> FrameAddress:
         """Override defaults because of sub-byte packing"""
         frame_address = cls()
         get_len = frame_address.get_nbytes_per_name
@@ -459,7 +483,11 @@ class FrameAddress(LifxStruct):
         chunk_len = get_len("target")
         target_bytes = message_bytes[:chunk_len]
         offset = chunk_len + get_len("reserved_1")
-        chunk_len = get_nbits("res_required") + get_nbits("ack_required") + get_nbits("reserved_2")
+        chunk_len = (
+            get_nbits("res_required")
+            + get_nbits("ack_required")
+            + get_nbits("reserved_2")
+        )
         chunk_len //= 8
         bit_field_bytes = message_bytes[offset : offset + chunk_len]
         offset += chunk_len
@@ -467,7 +495,9 @@ class FrameAddress(LifxStruct):
         chunk_len = get_len("sequence")
         sequence_bytes = message_bytes[offset : offset + chunk_len]
 
-        frame_address["target"] = list(struct.unpack(frame_address._fmt("target"), target_bytes))
+        frame_address["target"] = list(
+            struct.unpack(frame_address._fmt("target"), target_bytes)
+        )
         frame_address["sequence"] = list(
             struct.unpack(frame_address._fmt("sequence"), sequence_bytes)
         )
@@ -539,7 +569,7 @@ class LifxMessage(LifxStruct):
         return msg_str
 
     @classmethod
-    def from_bytes(cls, message_bytes: bytes) -> "LifxMessage":
+    def from_bytes(cls, message_bytes: bytes) -> LifxMessage:
         return cast(cls, super().from_bytes(message_bytes))
 
 
@@ -633,7 +663,12 @@ class UdpSender:
 class PacketComm:
     """Communicate packets with LIFX devices"""
 
-    def __init__(self, comm: UdpSender, verbose: bool = False, timeout: float = TIMEOUT_S):
+    def __init__(
+        self,
+        comm: UdpSender,
+        verbose: bool = False,
+        timeout: float = TIMEOUT_S,
+    ):
         """Create a packet communicator
 
         Args:
@@ -669,36 +704,49 @@ class PacketComm:
         # Verify the message size matches the expected size
         size = frame["size"]
         if len(message_bytes) != size:
-            raise RuntimeError(f"Message size mismatch: R({len(message_bytes)}) != E({size})")
+            raise RuntimeError(
+                f"Message size mismatch: R({len(message_bytes)}) != E({size})"
+            )
 
         # Verify the source is the expected source
         if nominal_source is not None:
             source = frame["source"]
             if source != nominal_source:
-                raise RuntimeError(f"Source mismatch: R({source}) != E({nominal_source})")
+                raise RuntimeError(
+                    f"Source mismatch: R({source}) != E({nominal_source})"
+                )
 
         # Decode the Frame Address
         offset = chunk_len
         chunk_len = _get_nbytes(FrameAddress)
-        frame_address = FrameAddress.from_bytes(message_bytes[offset : offset + chunk_len])
+        frame_address = FrameAddress.from_bytes(
+            message_bytes[offset : offset + chunk_len]
+        )
 
         # Verify the sequence is the expected sequence
         if nominal_sequence is not None:
             sequence = frame_address["sequence"]
             if sequence != nominal_sequence:
-                raise RuntimeError(f"Sequence mismatch: R({sequence}) != E({nominal_sequence})")
+                raise RuntimeError(
+                    f"Sequence mismatch: R({sequence}) != E({nominal_sequence})"
+                )
 
         # Decode the payload
         offset += chunk_len
         chunk_len = _get_nbytes(ProtocolHeader)
         protocol_header = cast(
-            ProtocolHeader, ProtocolHeader.from_bytes(message_bytes[offset : offset + chunk_len])
+            ProtocolHeader,
+            ProtocolHeader.from_bytes(
+                message_bytes[offset : offset + chunk_len]
+            ),
         )
 
         offset += chunk_len
         payload_klass = _MESSAGE_TYPES[protocol_header["type"]]
         chunk_len = _get_nbytes(payload_klass)
-        payload = payload_klass.from_bytes(message_bytes[offset : offset + chunk_len])
+        payload = payload_klass.from_bytes(
+            message_bytes[offset : offset + chunk_len]
+        )
 
         return LifxResponse(
             addr=message_addr,
@@ -751,7 +799,12 @@ class PacketComm:
         # tagged must be true when sending a GetService(2)
         frame["tagged"] = not sum(frame_address["target"]) or payload.type == 2
         frame["source"] = os.getpid() if source is None else source
-        frame["size"] = len(frame) + len(frame_address) + len(protocol_header) + len(payload)
+        frame["size"] = (
+            len(frame)
+            + len(frame_address)
+            + len(protocol_header)
+            + len(payload)
+        )
 
         # Generate the bytes for the packet
         packet_bytes = frame.to_bytes()
@@ -801,7 +854,9 @@ class PacketComm:
         kwargs.pop("source", None)
 
         responses = []
-        if kwargs.get("ack_required", False) or kwargs.get("res_required", False):
+        if kwargs.get("ack_required", False) or kwargs.get(
+            "res_required", False
+        ):
             selector = selectors.DefaultSelector()
             selector.register(comm, selectors.EVENT_READ)
             while True:
@@ -878,10 +933,14 @@ class PacketComm:
             assert event & selectors.EVENT_READ
             assert key.fileobj == self._comm.comm
             recv_bytes, recv_addr = comm.recvfrom(self._comm.buffer_size)
-            response = self.decode_bytes(recv_bytes, recv_addr, source, kwargs.get("sequence", 0))
+            response = self.decode_bytes(
+                recv_bytes, recv_addr, source, kwargs.get("sequence", 0)
+            )
             responses.append(response)
             payload_name = response.payload.name
-            log_func(f"Received {payload_name} message from {recv_addr[0]}:{recv_addr[1]}")
+            log_func(
+                f"Received {payload_name} message from {recv_addr[0]}:{recv_addr[1]}"
+            )
 
         return responses
 

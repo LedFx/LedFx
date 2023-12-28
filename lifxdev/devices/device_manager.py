@@ -14,13 +14,8 @@ from typing import Any
 import yaml
 
 from lifxdev.colors import color
-from lifxdev.devices import device
-from lifxdev.devices import light
-from lifxdev.devices import multizone
-from lifxdev.devices import tile
-from lifxdev.messages import packet
-from lifxdev.messages import device_messages
-
+from lifxdev.devices import device, light, multizone, tile
+from lifxdev.messages import device_messages, packet
 
 CONFIG_PATH = pathlib.Path.home() / ".lifx" / "devices.yaml"
 
@@ -59,9 +54,15 @@ class DeviceGroup:
         for name, device_or_group in self._devices_and_groups.items():
             if isinstance(device_or_group, type(self)):
                 self._all_groups[name] = device_or_group
-                for sub_name, sub_device in device_or_group.get_all_devices().items():
+                for (
+                    sub_name,
+                    sub_device,
+                ) in device_or_group.get_all_devices().items():
                     self._all_devices[sub_name] = sub_device
-                for sub_name, sub_group in device_or_group.get_all_groups().items():
+                for (
+                    sub_name,
+                    sub_group,
+                ) in device_or_group.get_all_groups().items():
                     self._all_groups[sub_name] = sub_group
             else:
                 self._all_devices[name] = device_or_group
@@ -69,19 +70,21 @@ class DeviceGroup:
         # Organizing devices by type is useful for setting colormaps
         self._devices_by_type = collections.defaultdict(list)
         for lifx_device in self._all_devices.values():
-            device_type = DeviceType[_DEVICE_TYPES_R[type(lifx_device).__name__]]
+            device_type = DeviceType[
+                _DEVICE_TYPES_R[type(lifx_device).__name__]
+            ]
             self._devices_by_type[device_type].append(lifx_device)
 
     def get_all_devices(self) -> dict[str, Any]:
         return self._all_devices
 
-    def get_all_groups(self) -> dict[str, "DeviceGroup"]:
+    def get_all_groups(self) -> dict[str, DeviceGroup]:
         return self._all_groups
 
     def get_device(self, name: str) -> Any:
         return self._all_devices[name]
 
-    def get_group(self, name: str) -> "DeviceGroup":
+    def get_group(self, name: str) -> DeviceGroup:
         return self._all_groups[name]
 
     def has_device(self, name: str) -> bool:
@@ -90,7 +93,9 @@ class DeviceGroup:
     def has_group(self, name: str) -> bool:
         return name in self._all_groups
 
-    def set_color(self, hsbk: color.Hsbk | light.COLOR_T, *, duration: float = 0.0) -> None:
+    def set_color(
+        self, hsbk: color.Hsbk | light.COLOR_T, *, duration: float = 0.0
+    ) -> None:
         """Set the color of all lights in the device group.
 
         Args:
@@ -110,6 +115,7 @@ class DeviceGroup:
         """
         for target in self._all_devices.values():
             target.set_power(state, duration=duration, ack_required=False)
+
 
 # Convienence for validating type names in config files
 class DeviceType(enum.Enum):
@@ -200,7 +206,9 @@ class DeviceManager(device.LifxDevice):
     def discovered(self) -> DeviceGroup:
         """The discovered group"""
         if not self._discovered_device_group:
-            raise DeviceDiscoveryError("Device discovery has not been performed.")
+            raise DeviceDiscoveryError(
+                "Device discovery has not been performed."
+            )
         return self._discovered_device_group
 
     @property
@@ -264,7 +272,9 @@ class DeviceManager(device.LifxDevice):
         Returns:
             A list of StateService responses.
         """
-        return self.send_recv(device_messages.GetService(), res_required=True, retry_recv=True)
+        return self.send_recv(
+            device_messages.GetService(), res_required=True, retry_recv=True
+        )
 
     def get_label(
         self,
@@ -335,7 +345,9 @@ class DeviceManager(device.LifxDevice):
         product["class"] = klass
         return product
 
-    def load_config(self, config_path: str | pathlib.Path | None = None) -> None:
+    def load_config(
+        self, config_path: str | pathlib.Path | None = None
+    ) -> None:
         """Load a config and populate device groups.
 
         Args:
@@ -356,11 +368,15 @@ class DeviceManager(device.LifxDevice):
             # Validate the type name
             type_name = conf.get("type")
             if not type_name:
-                raise DeviceConfigError(f"Device/group {name!r} missing 'type' field.")
+                raise DeviceConfigError(
+                    f"Device/group {name!r} missing 'type' field."
+                )
             try:
                 device_type = DeviceType[type_name]
             except KeyError:
-                raise DeviceConfigError(f"Invalid type for device {name!r}: {type_name}")
+                raise DeviceConfigError(
+                    f"Invalid type for device {name!r}: {type_name}"
+                )
 
             # Check that the IP address is present
             ip = conf.get("ip")
@@ -371,9 +387,13 @@ class DeviceManager(device.LifxDevice):
             conf_mb = conf.get(mb_key)
             if conf_mb is not None:
                 if conf_mb <= 0:
-                    raise ValueError(f"{name}:{mb_key}: must be greater than zero.")
+                    raise ValueError(
+                        f"{name}:{mb_key}: must be greater than zero."
+                    )
                 elif conf_mb > 1:
-                    raise ValueError(f"{name}:{mb_key}: must be less than or equal to one.")
+                    raise ValueError(
+                        f"{name}:{mb_key}: must be less than or equal to one."
+                    )
                 elif conf_mb < max_brightness:
                     max_brightness = conf_mb
 
@@ -382,15 +402,21 @@ class DeviceManager(device.LifxDevice):
                 length_key = "length"
                 length = conf.get(length_key)
                 if not isinstance(length, int):
-                    raise ValueError(f"{name}:{length_key}: must be an integer.")
+                    raise ValueError(
+                        f"{name}:{length_key}: must be an integer."
+                    )
                 if length <= 0:
-                    raise ValueError(f"{name}:{length_key}: must be greater than zero.")
+                    raise ValueError(
+                        f"{name}:{length_key}: must be greater than zero."
+                    )
                 kwargs[length_key] = length
 
             # Recurse through group listing
             if device_type == DeviceType.group:
                 group_devices = conf.get("devices")
-                devices_and_groups[name] = self._load_device_group(group_devices, max_brightness)
+                devices_and_groups[name] = self._load_device_group(
+                    group_devices, max_brightness
+                )
 
             else:
                 port = conf.get("port", packet.LIFX_PORT)
@@ -445,7 +471,9 @@ class DeviceManager(device.LifxDevice):
 if __name__ == "__main__":
     import coloredlogs
 
-    coloredlogs.install(level=logging.INFO, fmt="%(asctime)s %(levelname)s %(message)s")
+    coloredlogs.install(
+        level=logging.INFO, fmt="%(asctime)s %(levelname)s %(message)s"
+    )
 
     device_manager = DeviceManager()
     devices = device_manager.discover(num_retries=1)

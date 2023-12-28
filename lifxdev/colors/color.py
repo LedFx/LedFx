@@ -12,6 +12,7 @@ from lifxdev.messages import packet
 
 KELVIN = 5500
 
+
 @dataclasses.dataclass
 class Hsbk:
     """Human-readable HSBK tuple"""
@@ -22,7 +23,7 @@ class Hsbk:
     kelvin: int
 
     @classmethod
-    def from_packet(cls, hsbk: packet.Hsbk) -> "Hsbk":
+    def from_packet(cls, hsbk: packet.Hsbk) -> Hsbk:
         """Create a HSBK tuple from a message packet"""
         max_hue = hsbk.get_max("hue") + 1
         max_saturation = hsbk.get_max("saturation")
@@ -33,17 +34,27 @@ class Hsbk:
         brightness = hsbk["brightness"] / max_brightness
         kelvin = hsbk["kelvin"]
 
-        return cls(hue=hue, saturation=saturation, brightness=brightness, kelvin=kelvin)
+        return cls(
+            hue=hue,
+            saturation=saturation,
+            brightness=brightness,
+            kelvin=kelvin,
+        )
 
     @classmethod
-    def from_tuple(cls, hsbk: Union[tuple, "Hsbk"]) -> "Hsbk":
+    def from_tuple(cls, hsbk: tuple | Hsbk) -> Hsbk:
         """Create a HSBK tuple from a normal tuple. Assume input is human-readable"""
         if isinstance(hsbk, Hsbk):
             return hsbk
         hue, saturation, brightness, kelvin = hsbk
-        return cls(hue=hue, saturation=saturation, brightness=brightness, kelvin=kelvin)
+        return cls(
+            hue=hue,
+            saturation=saturation,
+            brightness=brightness,
+            kelvin=kelvin,
+        )
 
-    def max_brightness(self, brightness: float) -> "Hsbk":
+    def max_brightness(self, brightness: float) -> Hsbk:
         """Force the brightness to be at most a specific value"""
         if self.brightness > brightness:
             return dataclasses.replace(self, brightness=brightness)
@@ -57,8 +68,11 @@ class Hsbk:
         max_brightness = hsbk.get_max("brightness")
 
         hsbk["hue"] = int(self.hue * max_hue / 360) % max_hue
-        hsbk["saturation"] = min(int(self.saturation * max_saturation), max_saturation)
-        hsbk["brightness"] = min(int(self.brightness * max_brightness), max_brightness)
+        hsbk["saturation"] = min(
+            int(self.saturation * max_saturation), max_saturation
+        )
+        hsbk["brightness"] = min(
+            int(self.brightness * max_brightness), max_brightness
+        )
         hsbk["kelvin"] = int(self.kelvin)
         return hsbk
-

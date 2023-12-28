@@ -1,8 +1,10 @@
 import logging
+
 import numpy as np
 import voluptuous as vol
-from lifxdev.devices import light, multizone # Import the lifxdev library
+
 from ledfx.devices import NetworkedDevice
+from lifxdev.devices import light, multizone  # Import the lifxdev library
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -24,9 +26,13 @@ class LifxDevice(NetworkedDevice):
         super().__init__(ledfx, config)
         self._device_type = "LIFX"
         if config["pixel_count"] > 1:
-            self.bulb = multizone.LifxMultiZone(config["ip_address"], label=config["name"])
+            self.bulb = multizone.LifxMultiZone(
+                config["ip_address"], label=config["name"]
+            )
         else:
-            self.bulb = light.LifxLight(config["ip_address"], label=config["name"])
+            self.bulb = light.LifxLight(
+                config["ip_address"], label=config["name"]
+            )
 
     def activate(self):
         super().activate()
@@ -69,9 +75,13 @@ class LifxDevice(NetworkedDevice):
 
             if len(zone_colors) > 1:
                 # print(zone_colors)
-                self.bulb.set_multizone(zone_colors, duration=0, index=0, ack_required=False)
+                self.bulb.set_multizone(
+                    zone_colors, duration=0, index=0, ack_required=False
+                )
             else:
-                self.bulb.set_color(zone_colors[0], duration=0, ack_required=False)
+                self.bulb.set_color(
+                    zone_colors[0], duration=0, ack_required=False
+                )
 
         except Exception as e:
             _LOGGER.error("Error connecting to bulb: %s", e)

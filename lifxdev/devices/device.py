@@ -5,8 +5,7 @@ from __future__ import annotations
 import socket
 from collections.abc import Callable
 
-from lifxdev.messages import packet
-from lifxdev.messages import device_messages
+from lifxdev.messages import device_messages, packet
 
 
 class LifxDevice:
@@ -72,7 +71,9 @@ class LifxDevice:
             ack_required: (bool) Require an acknowledgement from the device.
             verbose: (bool) Log messages as info instead of debug.
         """
-        response = self.send_recv(payload, ack_required=ack_required, verbose=verbose)
+        response = self.send_recv(
+            payload, ack_required=ack_required, verbose=verbose
+        )
         if response:
             return response.pop()
 
@@ -107,7 +108,9 @@ class LifxDevice:
             verbose: (bool) Log messages as info instead of debug.
         """
         if res_required and ack_required:
-            raise ValueError("Cannot set both res_required and ack_required to True.")
+            raise ValueError(
+                "Cannot set both res_required and ack_required to True."
+            )
         return self._comm.send_recv(
             payload=payload,
             res_required=res_required,
@@ -122,11 +125,15 @@ class LifxDevice:
 
     def get_power(self) -> bool:
         """Return True if the light is powered on."""
-        response = self.send_recv(device_messages.GetPower(), res_required=True)
+        response = self.send_recv(
+            device_messages.GetPower(), res_required=True
+        )
         assert response is not None
         return response.pop().payload["level"]
 
-    def set_power(self, state: bool, *, ack_required=False) -> packet.LifxResponse | None:
+    def set_power(
+        self, state: bool, *, ack_required=False
+    ) -> packet.LifxResponse | None:
         """Set power state on the device"""
         power = device_messages.SetPower(level=state)
         response = self.send_recv(power, ack_required=ack_required)

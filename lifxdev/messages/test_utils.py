@@ -7,14 +7,13 @@ from __future__ import annotations
 import enum
 import socket
 
-from lifxdev.messages import packet
-
 # These are needed to populate the packet internal responses
 from lifxdev.messages import device_messages  # noqa: F401
+from lifxdev.messages import firmware_effects  # noqa: F401
 from lifxdev.messages import light_messages  # noqa: F401
 from lifxdev.messages import multizone_messages  # noqa: F401
 from lifxdev.messages import tile_messages  # noqa: F401
-from lifxdev.messages import firmware_effects  # noqa: F401
+from lifxdev.messages import packet
 
 # Number of read attempts on the read socket
 _N_READS = 16
@@ -75,7 +74,10 @@ class MockSocket:
                 message["vendor"] = 1
                 message["product"] = product.value
 
-            self._responses[name], self._source = packet.PacketComm.get_bytes_and_source(
+            (
+                self._responses[name],
+                self._source,
+            ) = packet.PacketComm.get_bytes_and_source(
                 payload=message,
                 mac_addr=self._mac_addr,
                 res_required=True,
@@ -84,23 +86,36 @@ class MockSocket:
     def fileno(self) -> int:
         return self._rsock.fileno()
 
-    def set_label(self, label: str, addr: tuple[str, int] = ("127.0.0.1", packet.LIFX_PORT)):
+    def set_label(
+        self,
+        label: str,
+        addr: tuple[str, int] = ("127.0.0.1", packet.LIFX_PORT),
+    ):
         """Set the label returned in messages"""
         self.update_payload("State", addr, label=label)
         self.update_payload("StateLabel", addr, label=label)
 
     def set_product(
-        self, product: Product, addr: tuple[str, int] = ("127.0.0.1", packet.LIFX_PORT)
+        self,
+        product: Product,
+        addr: tuple[str, int] = ("127.0.0.1", packet.LIFX_PORT),
     ):
         """Set the product returned in messages"""
         self.update_payload("StateVersion", addr, product=product.value)
 
-    def update_payload(self, register_name: str, addr: tuple[str, int], **kwargs):
+    def update_payload(
+        self, register_name: str, addr: tuple[str, int], **kwargs
+    ):
         """Update a payload's bytes registers"""
-        payload = packet.PacketComm.decode_bytes(self._responses[register_name], addr).payload
+        payload = packet.PacketComm.decode_bytes(
+            self._responses[register_name], addr
+        ).payload
         for key, value in kwargs.items():
             payload[key] = value
-        self._responses[register_name], self._source = packet.PacketComm.get_bytes_and_source(
+        (
+            self._responses[register_name],
+            self._source,
+        ) = packet.PacketComm.get_bytes_and_source(
             payload=payload,
             mac_addr=self._mac_addr,
             source=self._source,
@@ -137,7 +152,9 @@ class MockSocket:
         self._sequence = full_packet.frame_address["sequence"]
 
         # usually, replacing get/set with state, but there are exceptions
-        response_name = payload.name.replace("Get", "State").replace("Set", "State")
+        response_name = payload.name.replace("Get", "State").replace(
+            "Set", "State"
+        )
         if payload.name in ["GetColor", "SetColor", "SetWaveform"]:
             response_name = "State"
         elif payload.name == "EchoRequest":
@@ -152,14 +169,19 @@ class MockSocket:
             response_payload = packet.PacketComm.decode_bytes(
                 self._responses[response_name], addr
             ).payload
-            payload_registers = set([rr[0] for rr in payload.registers])
-            response_registers = set([rr[0] for rr in response_payload.registers])
+            payload_registers = {rr[0] for rr in payload.registers}
+            response_registers = {
+                rr[0] for rr in response_payload.registers
+            }
             intersection = response_registers & payload_registers
             for name in intersection:
                 response_payload[name] = payload[name]
             if response_name == "StateExtendedColorZones":
                 response_payload["count"] = response_payload["colors_count"]
-            self._responses[response_name], self._source = packet.PacketComm.get_bytes_and_source(
+            (
+                self._responses[response_name],
+                self._source,
+            ) = packet.PacketComm.get_bytes_and_source(
                 payload=response_payload,
                 mac_addr=self._mac_addr,
                 source=self._source,
@@ -172,7 +194,7 @@ class MockSocket:
         else:
             self._response_bytes = self._responses[response_name]
         self._first_response_query = True
-        self._wsock.send(bytes())
+        self._wsock.send(b'')
         return len(message_bytes)
 
     def recvfrom(self, buffer_size: int) -> tuple[bytes, tuple[str, int]]:
@@ -190,13 +212,16 @@ class MockSocket:
 
 
 if __name__ == "__main__":
-    import coloredlogs
     import logging
     from typing import cast
 
+    import coloredlogs
+
     coloredlogs.install(level=logging.INFO)
 
-    udp_sender = packet.UdpSender(ip="127.0.0.1", comm=cast(socket.socket, MockSocket()))
+    udp_sender = packet.UdpSender(
+        ip="127.0.0.1", comm=cast(socket.socket, MockSocket())
+    )
     packet_comm = packet.PacketComm(udp_sender, verbose=True)
     set_color = light_messages.SetColor(
         color=packet.Hsbk(
@@ -208,8 +233,16 @@ if __name__ == "__main__":
     )
 
     logging.info(
-        packet_comm.send_recv(payload=light_messages.SetPower(level=65535), res_required=True)
+        packet_comm.send_recv(
+            payload=light_messages.SetPower(level=65535), res_required=True
+        )
     )
     logging.info(packet_comm.send_recv(payload=set_color, res_required=True))
-    logging.info(packet_comm.send_recv(payload=light_messages.SetPower(), ack_required=True))
-    logging.info(packet_comm.send_recv(payload=light_messages.Get(), res_required=True))
+    logging.info(
+        packet_comm.send_recv(
+            payload=light_messages.SetPower(), ack_required=True
+        )
+    )
+    logging.info(
+        packet_comm.send_recv(payload=light_messages.Get(), res_required=True)
+    )

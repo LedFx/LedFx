@@ -6,8 +6,7 @@ from matplotlib import colors
 
 from lifxdev.colors import color
 from lifxdev.devices import light
-from lifxdev.messages import tile_messages
-from lifxdev.messages import packet
+from lifxdev.messages import packet, tile_messages
 
 TILE_WIDTH = 8
 
@@ -21,7 +20,9 @@ class LifxTile(light.LifxLight):
 
     def get_chain(self) -> packet.LifxResponse:
         """Get information about the current tile chain"""
-        response = self.send_recv(tile_messages.GetDeviceChain(), res_required=True)
+        response = self.send_recv(
+            tile_messages.GetDeviceChain(), res_required=True
+        )
         assert response is not None
         response = response.pop()
         self._num_tiles = response.payload["total_count"]
@@ -34,7 +35,9 @@ class LifxTile(light.LifxLight):
         else:
             return self.get_chain().payload["total_count"]
 
-    def get_tile_colors(self, tile_index: int, *, length: int = 1) -> list[list[color.Hsbk]]:
+    def get_tile_colors(
+        self, tile_index: int, *, length: int = 1
+    ) -> list[list[color.Hsbk]]:
         """Get the color state for individual tiles.
 
         Args:
@@ -47,11 +50,18 @@ class LifxTile(light.LifxLight):
         get_request = tile_messages.GetTileState64(width=TILE_WIDTH)
         get_request["tile_index"] = tile_index
         get_request["length"] = length
-        responses = self.send_recv(get_request, res_required=True, retry_recv=length > 1)
+        responses = self.send_recv(
+            get_request, res_required=True, retry_recv=length > 1
+        )
         assert responses is not None
         matrix_list: list[list[color.Hsbk]] = []
         for state in responses:
-            matrix_list.append([color.Hsbk.from_packet(hsbk) for hsbk in state.payload["colors"]])
+            matrix_list.append(
+                [
+                    color.Hsbk.from_packet(hsbk)
+                    for hsbk in state.payload["colors"]
+                ]
+            )
         return matrix_list
 
     def set_tile_colors(
