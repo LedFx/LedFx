@@ -10,9 +10,9 @@ from ledfx.effects.gradient import GradientEffect
 from ledfx.effects.twod import Twod
 from ledfx.utils import (
     extract_positive_integers,
+    get_mono_font,
     open_gif,
     remove_values_above_limit,
-    get_mono_font,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -384,8 +384,9 @@ class Keybeat2d(Twod, GradientEffect):
             diag_string = "\u25CF\u25CF\u25CF\u25CF"  # filled circle char
             color = (255, 255, 255)
         else:
-            diag_string = ("\u25CB" * int(self.beat * 4) +
-                           " " * (4 - int(self.beat * 4)))
+            diag_string = "\u25CB" * int(self.beat * 4) + " " * (
+                4 - int(self.beat * 4)
+            )
 
         diag_string += f"{self.frame_c:03} {self.bpm:3.0f} {passed:.0f}"
         self.m_draw.text((0, 0), diag_string, fill=color, font=self.font)
