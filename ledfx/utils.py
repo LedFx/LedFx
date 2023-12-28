@@ -16,7 +16,6 @@ from collections import deque
 from collections.abc import MutableMapping
 from functools import lru_cache
 from itertools import chain
-import ledfx_assets
 
 # from asyncio import coroutines, ensure_future
 from subprocess import PIPE, Popen
@@ -25,6 +24,7 @@ import numpy as np
 import requests
 import voluptuous as vol
 
+import ledfx_assets
 from ledfx.config import save_config
 
 # from asyncio import coroutines, ensure_future
