@@ -15,8 +15,6 @@ class Clone(Twod):
     CATEGORY = "Matrix"
     HIDDEN_KEYS = Twod.HIDDEN_KEYS + ["test"]
 
-    start_time = timeit.default_timer()
-
     CONFIG_SCHEMA = vol.Schema(
         {
             vol.Optional(
