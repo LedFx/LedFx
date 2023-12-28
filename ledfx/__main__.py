@@ -1,25 +1,16 @@
 #!/usr/bin/env python
 """
-Entry point for the ledfx controller. To run this script for development
-purposes use:
+Entry point for LedFx. 
+To run this script for development purposes use:
 
-    [console_scripts]
-    python setup.py develop
-    ledfx
-
-For non-development purposes run:
-
-    [console_scripts]
-    python setup.py install
+    poetry install
     ledfx
 
 """
 
 import argparse
-import importlib
 import logging
 import os
-import subprocess
 import sys
 from logging.handlers import RotatingFileHandler
 
