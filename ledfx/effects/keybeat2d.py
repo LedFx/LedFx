@@ -296,9 +296,9 @@ class Keybeat2d(Twod, GradientEffect):
                 else:
                     # preserve aspect ratio
                     # find the larger scale factor
-                    scale = min(self.r_width, self.r_height)
-                    stretch_height = scale
-                    stretch_width = scale
+                    scale = min(float(self.r_width) / frame.width, float(self.r_height) / frame.height)
+                    stretch_height = int(scale * frame.height)
+                    stretch_width = int(scale * frame.width)
 
             stretch_width = max(1, stretch_width)
             stretch_height = max(1, stretch_height)
