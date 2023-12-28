@@ -1,7 +1,7 @@
 import logging
 import socket
 import struct
-from typing import Dict, Optional, Tuple
+from typing import Optional
 
 import requests
 import voluptuous as vol
@@ -41,7 +41,7 @@ class NanoleafDevice(NetworkedDevice):
         }
     )
 
-    status: Dict[int, Tuple[int, int, int]]
+    status: dict[int, tuple[int, int, int]]
     _sock: Optional[socket.socket] = None
 
     def __init__(self, ledfx, config):

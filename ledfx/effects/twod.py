@@ -63,6 +63,7 @@ class Twod(AudioReactiveEffect):
         self.frame = 0
         self.fps = 0
         self.last = 0
+        self.r_total = 0.0
         self.last_dump = self._config["dump"]
 
     def on_activate(self, pixel_count):
@@ -87,15 +88,17 @@ class Twod(AudioReactiveEffect):
         self.flip = self._config["flip vertical"]
         self.mirror = self._config["flip horizontal"]
 
-        self.rotate = 0
-        if self._config["rotate"] == 1:
-            self.rotate = Image.Transpose.ROTATE_90
+        self.rotate = self._config["rotate"]
+        self.rotate_t = 0
+        if self.rotate == 1:
+            self.rotate_t = Image.Transpose.ROTATE_90
             self.flip, self.mirror = self.mirror, self.flip
-        if self._config["rotate"] == 2:
-            self.rotate = Image.Transpose.ROTATE_180
-        if self._config["rotate"] == 3:
-            self.rotate = Image.Transpose.ROTATE_270
+        if self.rotate == 2:
+            self.rotate_t = Image.Transpose.ROTATE_180
+        if self.rotate == 3:
+            self.rotate_t = Image.Transpose.ROTATE_270
             self.flip, self.mirror = self.mirror, self.flip
+
         self.init = True
 
     def do_once(self):
@@ -103,13 +106,16 @@ class Twod(AudioReactiveEffect):
         # so therefore cannot be addressed in config_updated
         self.init = False
 
-        if self._config["rotate"] == 1 or self._config["rotate"] == 3:
+        if self.rotate == 1 or self.rotate == 3:
             # swap width and height for render
             self.r_width = self.t_height
             self.r_height = self.t_width
         else:
             self.r_width = self.t_width
             self.r_height = self.t_height
+
+        # initialise here so inherited can assume it exists
+        self.start = timeit.default_timer()
 
     def image_to_pixels(self):
         # image should be the right size to map in, at this point
@@ -121,8 +127,8 @@ class Twod(AudioReactiveEffect):
             self.matrix = self.matrix.transpose(
                 Image.Transpose.FLIP_LEFT_RIGHT
             )
-        if self.rotate != 0:
-            self.matrix = self.matrix.transpose(self.rotate)
+        if self.rotate_t != 0:
+            self.matrix = self.matrix.transpose(self.rotate_t)
         if self.matrix.size != (self.t_width, self.t_height):
             _LOGGER.error(
                 f"Matrix is wrong size {self.matrix.size} vs r {(self.r_width, self.r_height)} vs t {(self.t_width, self.t_height)}"
@@ -152,10 +158,17 @@ class Twod(AudioReactiveEffect):
 
     def try_log(self):
         end = timeit.default_timer()
+        r_time = end - self.start
+        self.r_total += r_time
         if self.log is True:
+            if self.fps > 0:
+                r_avg = self.r_total / self.fps
+            else:
+                r_avg = 0.0
             _LOGGER.info(
-                f"FPS {self.fps} Render:{(end - self.start):0.6f} Cycle: {(end - self.last):0.6f} Sleep: {(self.start - self.last):0.6f}"
+                f"FPS {self.fps} Render:{r_avg:0.6f} Cycle: {(end - self.last):0.6f} Sleep: {(self.start - self.last):0.6f}"
             )
+            self.r_total = 0.0
         self.last = end
         return self.log
 
@@ -165,7 +178,7 @@ class Twod(AudioReactiveEffect):
             # show image on screen
             self.matrix.show()
             _LOGGER.info(
-                f"dump {self.t_width}x{self.t_height} R: {self.rotate} F: {self.flip} M: {self.mirror}"
+                f"dump {self.t_width}x{self.t_height} R: {self.rotate_t} F: {self.flip} M: {self.mirror}"
             )
 
     def draw_test(self, rgb_draw):

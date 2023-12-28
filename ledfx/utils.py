@@ -11,6 +11,7 @@ import socket
 import sys
 import time
 import timeit
+import urllib.request
 from abc import ABC
 from collections import deque
 from collections.abc import MutableMapping
@@ -21,10 +22,12 @@ from itertools import chain
 from subprocess import PIPE, Popen
 
 import numpy as np
+import PIL.Image as Image
 import requests
 import voluptuous as vol
 
 from ledfx.config import save_config
+from ledfx.consts import LEDFX_ASSETS_PATH
 
 # from asyncio import coroutines, ensure_future
 
@@ -559,23 +562,24 @@ def currently_frozen():
 
 
 def get_icon_path(icon_filename) -> str:
-    """returns fully qualified path for icon, tests for frozen
-    and logs error if does not exist
+    """Returns fully qualified path for the tray icon
+    Assumes that the file is within ledfx_assets folder
+
 
     Parameters:
-        icon_filename(str): the filename of the icon to be pathed
+        icon_filename(str): the filename of the icon
 
     Returns:
             icon_location(str): fully qualified path
     """
-    current_directory = os.path.dirname(__file__)
 
     icon_location = os.path.normpath(
-        os.path.join(current_directory, "..", "icons", icon_filename)
+        os.path.join(LEDFX_ASSETS_PATH, icon_filename)
     )
 
     if not os.path.isfile(icon_location):
         _LOGGER.error(f"No icon found at {icon_location}")
+
     return icon_location
 
 
@@ -1201,3 +1205,34 @@ def get_icon_name(wled_name):
         if name.lower() in wled_name.lower():
             return icon
     return "wled"
+
+
+def extract_positive_integers(s):
+    # Use regular expression to find all sequences of digits
+    numbers = re.findall(r"\d+", s)
+
+    # Convert each found sequence to an integer and filter out non-positive numbers
+    return [int(num) for num in numbers if int(num) >= 0]
+
+
+def remove_values_above_limit(numbers, limit):
+    # Keep only values that are less than or equal to the limit
+    return [num for num in numbers if num <= limit]
+
+
+def open_gif(gif_path):
+    current_directory = os.path.dirname(__file__)
+    absolute_directory = os.path.abspath(current_directory)
+    _LOGGER.debug(
+        f"open_gif cur: {current_directory} abs: {absolute_directory}"
+    )
+
+    try:
+        if gif_path.startswith("http://") or gif_path.startswith("https://"):
+            with urllib.request.urlopen(gif_path) as url:
+                return Image.open(url)
+        else:
+            return Image.open(gif_path)  # Directly open for local files
+    except Exception as e:
+        _LOGGER.error(f"Failed to open gif : {gif_path} : {e}")
+        return None

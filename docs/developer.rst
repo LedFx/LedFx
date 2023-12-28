@@ -2,115 +2,101 @@
    Development Setup
 =======================
 
-The development workflow is still being worked on, but this page covers the current state of the world.
-
-You will see ``pip install -e .`` frequently in the documentation. Please see the `pip documentation`_ for an explanation on what this does.
-
-------------------------------
-
 -------------------------
    Backend Development
 -------------------------
+.. warning::
 
-.. _win-dev:
+    Always be aware of piping commands to any shell - this is the recommended method for poetry but there are `other options <https://python-poetry.org/docs/#installation>`_.
 
 Windows
 -------
+.. note::
 
-*  Install Python 3.8 or above. https://www.python.org/downloads/windows/
-*  Install Git. https://gitforwindows.org/
-*  Install Microsoft Visual Studio 2022 Build Tools - or later
+    Do not install python from the Windows Store - it will not work with these instructions.
 
-   * https://visualstudio.microsoft.com/downloads/
-   * Under All Downloads / Tools for visual studio / Build Tools for Visual Studio 2022
-   * Download and run the installer - then select
+#. Install `python <https://www.python.org/downloads/windows/>`_ version 3.9 or above.
+#. Install `git <https://gitforwindows.org/>`_.
+#. Install `Build Tools for Visual Studio 2022 <https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2022>`_
 
-   * Workloads
-     * Desktop development with C++
-   * This should enable in the installation details
-  * Included
-     * C++ Build Tools core features
-     * C++ 2022 Redistributable Update
-     * C++ core desktop features
-  * Optional
-     * MSVC v143 - VS 2022 C++ x64/x86 build tools (vXX,XX)
-     * Windows SDK (10.0.XXXXX.X)
-     * C++ CMake tools for Windows
-     * Testing tools core features - Build Tools
-     * C++ AddressSanitizer
+     - When asked for Workloads, select "Desktop development with C++"
+     - Included
+         - C++ Build Tools core features
+         - C++ 2022 Redistributable Update
+         - C++ Core desktop features
+     - Optional
+         - MSVC v143 - VS 2022 C++ x64/x86 build tools (vXX,XX)
+         - Windows SDK
+         - C++ CMake tools for Windows
+         - Testing tools core features - Build Tools
+         - C++ AddressSanitizer
+     - The default install options are appropriate.
+#. Reboot
+#. Install poetry using PowerShell:
 
-  *  Default install options are appropriate - go get some coffee
+   .. code:: console
 
-*  Reboot
+    $ (Invoke-WebRequest -Uri https://install.python-poetry.org -UseBasicParsing).Content | py -
 
-.. code:: console
+#. Clone the main branch from the LedFx Github repository:
 
-    $ py -m venv C:\ledfx
-    $ cd C:\ledfx
-    $ .\Scripts\activate.bat
-    $ pip install wheel
-    $ pip install pywin32
-    $ python .\Scripts\pywin32_postinstall.py -install
-    $ git clone https://github.com/LedFx/LedFx.git .\ledfx-git
-    $ cd .\ledfx-git
+   .. code:: console
 
-Manual call to requirements.txt is a temporary step as we need to fix up setup.py
+    $ git clone https://github.com/LedFx/LedFx.git
 
-We need to install numpy first, or aubio will not be happy
 
-.. code:: console
+#. Install LedFx and its requirements using poetry:
 
-    $ pip install numpy==1.23.5
-    $ pip install -r requirements.txt
-    $ python setup.py develop
-    $ ledfx --open-ui
+   .. code:: console
 
-**1.** To develop, open up a terminal and activate the ledfx virtual environment
+    $ cd LedFx
+    $ poetry install
 
-.. code:: console
+#. This will let you run LedFx directly from the cloned repository via:
 
-    $ C:\ledfx\Scripts\activate.bat
-
-**2.** Make changes to LedFx's files in C:/ledfx/ledfx-git. Your changed files will be run when you run LedFx
-
-.. code:: console
+   .. code:: console
 
     $ ledfx --open-ui
-
-You can keep the ledfx virtual environment open and keep making changes then running ledfx.
-No need to reactivate the virtual environment between changes.
 
 .. _linux-dev:
 
 Linux
 -------
+.. note::
 
-**1.** Clone the main branch from the LedFx Github repository:
+    This assumes an apt based system such as ubuntu.
+    If your system uses another package manager you should be able use it to get the required packages.
+#. Install poetry:
 
-.. code:: console
+   .. code:: console
+
+    $ curl -sSL https://install.python-poetry.org | python3 -
+
+#. Clone the main branch from the LedFx Github repository:
+
+   .. code:: console
 
     $ git clone https://github.com/LedFx/LedFx.git
-    $ cd LedFx
 
-**2.** Install system dependencies via ``apt install``:
+#. Install system dependencies via ``apt install``:
 
-.. code:: console
+   .. code:: console
 
     $ sudo apt install libatlas3-base \
           libavformat58 \
           portaudio19-dev \
-          pulseaudio
+          pulseaudio \
 
-**3.** Install LedFx and its requirements using pip:
+#. Install LedFx and its requirements using poetry:
 
-.. code:: console
+   .. code:: console
 
-    $ pip install -r requirements-dev.txt
-    $ pip install -e .
+    $ cd LedFx
+    $ poetry install
 
-**4.** This will let you run LedFx directly from your Git repository via:
+#. This will let you run LedFx directly from your local copy via:
 
-.. code:: console
+   .. code:: console
 
     $ ledfx --open-ui
 
@@ -118,114 +104,110 @@ Linux
 
 macOS
 -------
+#. Install poetry:
 
-**1.** Clone the main branch from the LedFx Github repository:
+   .. code:: console
 
-.. code:: console
+    $ curl -sSL https://install.python-poetry.org | python3 -
+
+#. Clone the main branch from the LedFx Github repository:
+
+   .. code:: console
 
     $ git clone https://github.com/LedFx/LedFx.git
-    $ cd ./LedFx
 
-**2.** Create a python venv for LedFx with python>=3.7 and install dependencies:
+#. Install LedFx and its requirements using poetry:
 
-.. code:: console
+   .. code:: console
 
-    $ python3 -m venv ~/ledfx-venv
-    $ source ~/ledfx-venv/bin/activate
-    $ brew install portaudio pulseaudio
+    $ cd LedFx
+    $ poetry install
 
-**3.** Install LedFx and its requirements using pip:
+#. This will let you run LedFx directly from your local copy via:
 
-.. code:: console
-
-    $ pip install -r requirements-dev.txt
-    $ pip install -e .
-
-**4.** This will let you run LedFx directly from your Git repository via:
-
-.. code:: console
+   .. code:: console
 
     $ ledfx --open-ui
 
 ------------------------------
 
---------------------------
-   Frontend Development
---------------------------
+.. --------------------------
+..    Frontend Development
+.. --------------------------
 
-Building the LedFx frontend is different from how the core backend is built. The frontend is based on React.js and thus
-uses NPM as the core package management.
+.. Building the LedFx frontend is different from how the core backend is built. The frontend is based on React.js and thus
+.. uses NPM as the core package management.
 
-.. note:: LedFx will need to be running in development mode for everything to work. To enable development mode,
-          open the ``config.json`` file in the ``.ledfx`` folder and set ``dev_mode: true``)
+.. .. note:: LedFx will need to be running in development mode for everything to work. To enable development mode,
+..           open the ``config.json`` file in the ``.ledfx`` folder and set ``dev_mode: true``)
 
-.. _linux-frontend:
+.. .. _linux-frontend:
 
-Linux
--------
+.. Linux
+.. -------
 
-.. note:: The following instructions assume you have already followed the steps above to :ref:`install the LedFx dev environment <linux-dev>`
+.. .. note:: The following instructions assume you have already followed the steps above to :ref:`install the LedFx dev environment <linux-dev>`
 
-To get started, first install npm and all the requirements:
+.. To get started, first install npm and all the requirements:
 
-**1.** Start in the LedFx repo directory:
+.. **1.** Start in the LedFx repo directory:
 
-.. code:: console
+.. .. code:: console
 
-    $ pip install yarn
-    $ cd frontend
-    $ yarn
+..     $ pip install yarn
+..     $ cd frontend
+..     $ yarn
 
-The easiest way to test and validate your changes is to run a watcher that will automatically rebuild as you save and then
-just leave LedFx running in a separate command window.
+.. The easiest way to test and validate your changes is to run a watcher that will automatically rebuild as you save and then
+.. just leave LedFx running in a separate command window.
 
-**2.** Start LedFx in development mode and start the watcher:
+.. **2.** Start LedFx in development mode and start the watcher:
 
-.. code:: console
+.. .. code:: console
 
-    $ python3 ledfx
-    $ yarn start
+..     $ python3 ledfx
+..     $ yarn start
 
-At that point any change you make to the frontend will be recompiled and after a browser refresh LedFx will pick up the
-new files. After development and testing you will need to run a full build to generate the appropriate distribution files
-prior to submitting any changes.
+.. At that point any change you make to the frontend will be recompiled and after a browser refresh LedFx will pick up the
+.. new files. After development and testing you will need to run a full build to generate the appropriate distribution files
+.. prior to submitting any changes.
 
-**3.** When you are finished with your changes, build the frontend:
+.. **3.** When you are finished with your changes, build the frontend:
 
-.. code:: console
+.. .. code:: console
 
-    $ yarn build
+..     $ yarn build
 
-.. _macos-frontend:
+.. .. _macos-frontend:
 
-macOS
--------
+.. macOS
+.. -------
 
-.. note:: The following instructions assume you have already followed the steps above to :ref:`install the LedFx dev environment <macos-dev>`
+.. .. note:: The following instructions assume you have already followed the steps above to :ref:`install the LedFx dev environment <macos-dev>`
 
-**1.** Install nodejs and NPM requirements using `homebrew`_:
+.. **1.** Install nodejs and NPM requirements using `homebrew`_:
 
-.. code:: console
+.. .. code:: console
 
-    $ brew install nodejs
-    $ brew install yarn
-    $ cd ~/frontend
-    $ yarn
+..     $ brew install nodejs
+..     $ brew install yarn
+..     $ cd ~/frontend
+..     $ yarn
 
-**2.** Start LedFx in developer mode and start the NPM watcher:
+.. **2.** Start LedFx in developer mode and start the NPM watcher:
 
-.. code:: console
+.. .. code:: console
 
-    $ python3 ledfx
-    $ yarn start
+..     $ python3 ledfx
+..     $ yarn start
 
-**3.** When you are finished with your changes, build the frontend:
+.. **3.** When you are finished with your changes, build the frontend:
 
-.. code:: console
+.. .. code:: console
 
-    $ yarn build
+..     $ yarn build
 
-------------------------------
+.. ------------------------------
 
 .. include:: README.rst
 

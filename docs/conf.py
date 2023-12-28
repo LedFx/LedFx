@@ -19,17 +19,12 @@ import sphinx_rtd_theme
 sys.path.insert(0, os.path.abspath(".."))
 
 import ledfx.consts as const
-from ledfx.consts import (
-    DEV_VERSION,
-    POST_VERSION,
-    PROJECT_NAME,
-    PROJECT_VERSION,
-)
+from ledfx.consts import PROJECT_AUTHOR, PROJECT_NAME, PROJECT_VERSION
 
 # -- Project information -----------------------------------------------------
 
 PROJECT_PACKAGE_NAME = PROJECT_NAME
-PROJECT_AUTHOR = const.__author__
+PROJECT_AUTHOR = PROJECT_AUTHOR
 PROJECT_COPYRIGHT = f" 2018-2023, {PROJECT_AUTHOR}"
 PROJECT_SHORT_DESCRIPTION = "LedFx is an open-source effect controller"
 PROJECT_LONG_DESCRIPTION = (
@@ -48,11 +43,6 @@ author = f"{PROJECT_AUTHOR}"
 copyright = f"{PROJECT_COPYRIGHT}" + " & contributors"
 release = PROJECT_VERSION
 version = PROJECT_VERSION
-
-if DEV_VERSION:
-    version = DEV_VERSION
-elif POST_VERSION:
-    version = POST_VERSION
 
 # -- General configuration ---------------------------------------------------
 
@@ -130,9 +120,9 @@ html_context = {
     "conf_py_path": "docs",
     "source_suffix": ".rst",
 }
-
+# TODO: Use os.path.join for these instead of hardcoding
 html_logo = "_static/small_white_alpha.png"
-html_favicon = "../icons/favicon.ico"
+html_favicon = "../ledfx_assets/favicon.ico"
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,

@@ -2,7 +2,7 @@ import logging
 import re
 import socket
 import time
-from typing import Dict, Optional, Tuple
+from typing import Optional
 
 import requests
 import voluptuous as vol
@@ -39,7 +39,7 @@ class HueDevice(NetworkedDevice):
         }
     )
 
-    status: Dict[int, Tuple[int, int, int]]
+    status: dict[int, tuple[int, int, int]]
     _sock: Optional[socket.socket] = None
 
     def __init__(self, ledfx, config):
