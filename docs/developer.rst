@@ -43,27 +43,32 @@ Windows
 
 *  Reboot
 
+
+**1.** Install poetry:
+
 .. code:: console
 
     $ (Invoke-WebRequest -Uri https://install.python-poetry.org -UseBasicParsing).Content | py -
-    $ git clone https://github.com/LedFx/LedFx.git
-    $ cd ledfx
-    $ poetry install
 
-**1.** To develop, open up a terminal and activate the ledfx virtual environment
+**2.** Clone the main branch from the LedFx Github repository:
 
 .. code:: console
 
-    $ C:\ledfx\Scripts\activate.bat
+    $ git clone https://github.com/LedFx/LedFx.git
 
-**2.** Make changes to LedFx. Your changed files will be run when you re-run LedFx
+    
+**3.** Install LedFx and its requirements using poetry:
+
+.. code:: console
+
+    $ cd LedFx
+    $ poetry install
+
+**4.** This will let you run LedFx directly from your Git repository via:
 
 .. code:: console
 
     $ ledfx --open-ui
-
-You can keep the ledfx virtual environment open and keep making changes then running ledfx.
-No need to reactivate the virtual environment between changes.
 
 .. _linux-dev:
 
