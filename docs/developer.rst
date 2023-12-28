@@ -2,71 +2,59 @@
    Development Setup
 =======================
 
-The development workflow is still being worked on, but this page covers the current state of the world.
-
-You will see ``pip install -e .`` frequently in the documentation. Please see the `pip documentation`_ for an explanation on what this does.
-
-------------------------------
-
 -------------------------
    Backend Development
 -------------------------
+.. warning:: 
 
-.. _win-dev:
-
+    Always be aware of piping commands to any shell - this is the recommended method for poetry but there are `other options <https://python-poetry.org/docs/#installation>`_.
+    
 Windows
 -------
+.. note::
 
-*  Install Python 3.9 or above. https://www.python.org/downloads/windows/
-*  Install Git. https://gitforwindows.org/
-*  Install Microsoft Visual Studio 2022 Build Tools - or later
+    Do not install python from the Windows Store - it will not work with these instructions. 
+    
+#. Install `python <https://www.python.org/downloads/windows/>`_ version 3.9 or above.
+#. Install `git <https://gitforwindows.org/>`_.
+#. Install `Build Tools for Visual Studio 2022 <https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2022>`_
 
-   * https://visualstudio.microsoft.com/downloads/
-   * Under All Downloads / Tools for visual studio / Build Tools for Visual Studio 2022
-   * Download and run the installer - then select
+     - When asked for Workloads, select "Desktop development with C++"
+     - Included
+         - C++ Build Tools core features
+         - C++ 2022 Redistributable Update
+         - C++ Core desktop features
+     - Optional
+         - MSVC v143 - VS 2022 C++ x64/x86 build tools (vXX,XX)
+         - Windows SDK
+         - C++ CMake tools for Windows
+         - Testing tools core features - Build Tools
+         - C++ AddressSanitizer
+     - The default install options are appropriate.
+#. Reboot
+#. Install poetry using PowerShell:
 
-   * Workloads
-     * Desktop development with C++
-   * This should enable in the installation details
-  * Included
-     * C++ Build Tools core features
-     * C++ 2022 Redistributable Update
-     * C++ core desktop features
-  * Optional
-     * MSVC v143 - VS 2022 C++ x64/x86 build tools (vXX,XX)
-     * Windows SDK (10.0.XXXXX.X)
-     * C++ CMake tools for Windows
-     * Testing tools core features - Build Tools
-     * C++ AddressSanitizer
-
-  *  Default install options are appropriate - go get some coffee
-
-*  Reboot
-
-
-**1.** Install poetry:
-
-.. code:: console
+   .. code:: console
 
     $ (Invoke-WebRequest -Uri https://install.python-poetry.org -UseBasicParsing).Content | py -
 
-**2.** Clone the main branch from the LedFx Github repository:
+#. Clone the main branch from the LedFx Github repository:
 
-.. code:: console
+   .. code:: console
 
     $ git clone https://github.com/LedFx/LedFx.git
 
 
-**3.** Install LedFx and its requirements using poetry:
+#. Install LedFx and its requirements using poetry:
 
-.. code:: console
+   .. code:: console
 
     $ cd LedFx
     $ poetry install
 
-**4.** This will let you run LedFx directly from your Git repository via:
+#. This will let you run LedFx directly from the cloned repository via:
 
-.. code:: console
+   .. code:: console
 
     $ ledfx --open-ui
 
@@ -74,37 +62,41 @@ Windows
 
 Linux
 -------
-**1.** Install poetry:
+.. note::
 
-.. code:: console
+    This assumes an apt based system such as ubuntu.
+    If your system uses another package manager you should be able use it to get the required packages.
+#. Install poetry:
+
+   .. code:: console
 
     $ curl -sSL https://install.python-poetry.org | python3 -
 
-**2.** Clone the main branch from the LedFx Github repository:
+#. Clone the main branch from the LedFx Github repository:
 
-.. code:: console
+   .. code:: console
 
     $ git clone https://github.com/LedFx/LedFx.git
 
-**3.** Install system dependencies via ``apt install``:
+#. Install system dependencies via ``apt install``:
 
-.. code:: console
+   .. code:: console
 
     $ sudo apt install libatlas3-base \
           libavformat58 \
           portaudio19-dev \
           pulseaudio \
 
-**4.** Install LedFx and its requirements using poetry:
+#. Install LedFx and its requirements using poetry:
 
-.. code:: console
+   .. code:: console
 
     $ cd LedFx
     $ poetry install
 
-**5.** This will let you run LedFx directly from your Git repository via:
+#. This will let you run LedFx directly from your local copy via:
 
-.. code:: console
+   .. code:: console
 
     $ ledfx --open-ui
 
@@ -112,28 +104,28 @@ Linux
 
 macOS
 -------
-**1.** Install poetry:
+#. Install poetry:
 
-.. code:: console
+   .. code:: console
 
     $ curl -sSL https://install.python-poetry.org | python3 -
 
-**2.** Clone the main branch from the LedFx Github repository:
+#. Clone the main branch from the LedFx Github repository:
 
-.. code:: console
+   .. code:: console
 
     $ git clone https://github.com/LedFx/LedFx.git
 
-**3.** Install LedFx and its requirements using poetry:
+#. Install LedFx and its requirements using poetry:
 
-.. code:: console
+   .. code:: console
 
     $ cd LedFx
     $ poetry install
 
-**4.** This will let you run LedFx directly from your Git repository via:
+#. This will let you run LedFx directly from your local copy via:
 
-.. code:: console
+   .. code:: console
 
     $ ledfx --open-ui
 
