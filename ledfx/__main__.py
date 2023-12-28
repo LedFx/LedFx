@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Entry point for LedFx. 
+Entry point for LedFx.
 To run this script for development purposes use:
 
     poetry install
