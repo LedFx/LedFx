@@ -1,5 +1,6 @@
-import ledfx_assets
 import os
+
+import ledfx_assets
 
 ledfx_presets = {
     "keybeat2d": {
