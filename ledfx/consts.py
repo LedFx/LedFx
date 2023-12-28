@@ -1,9 +1,12 @@
-# Couldn't get this to work. Will revisit.
-# from packaging.version import Version
+
 import tomli
+import os
+
+# Get the path to pyproject.toml file
+pyproject_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "pyproject.toml")
 
 # Read the pyproject.toml file
-with open("../pyproject.toml", "rb") as file:
+with open(pyproject_path, "rb") as file:
     toml_data = tomli.load(file)
 
 # Access the values from pyproject dict
@@ -15,6 +18,8 @@ PROJECT_LICENSE = toml_data["tool"]["poetry"]["license"]
 CONFIG_MAJOR_VERSION = 2
 CONFIG_MINOR_VERSION = 2
 CONFIG_MICRO_VERSION = 0
+# Dev turns sentry logging on and off
+DEV = 0 
 
 CONFIGURATION_VERSION = "{}.{}.{}".format(
     CONFIG_MAJOR_VERSION, CONFIG_MINOR_VERSION, CONFIG_MICRO_VERSION
