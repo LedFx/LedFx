@@ -17,13 +17,13 @@ from collections import deque
 from collections.abc import MutableMapping
 from functools import lru_cache
 from itertools import chain
-import PIL.ImageFont as ImageFont
 
 # from asyncio import coroutines, ensure_future
 from subprocess import PIPE, Popen
 
 import numpy as np
 import PIL.Image as Image
+import PIL.ImageFont as ImageFont
 import requests
 import voluptuous as vol
 
@@ -1240,12 +1240,18 @@ def open_gif(gif_path):
 
 
 def get_mono_font(size):
-    font_names = ["Courier New", "cour.ttf",
-                  "DejaVu Sans Mono", "DejaVuSansMono.ttf",
-                  "DejaVuSansMono-Regular.ttf",
-                  "Liberation Mono", "LiberationMono-Regular.ttf",
-                  "Consolas", "consola.ttf",
-                  "monospace"]
+    font_names = [
+        "Courier New",
+        "cour.ttf",
+        "DejaVu Sans Mono",
+        "DejaVuSansMono.ttf",
+        "DejaVuSansMono-Regular.ttf",
+        "Liberation Mono",
+        "LiberationMono-Regular.ttf",
+        "Consolas",
+        "consola.ttf",
+        "monospace",
+    ]
     return get_font(font_names, size)
 
 
@@ -1255,6 +1261,6 @@ def get_font(font_list, size):
             font = ImageFont.truetype(font_name, size)
             _LOGGER.info(f"Found font: {font_name}")
             return font
-        except IOError:
+        except OSError:
             continue
     raise RuntimeError("None of the fonts are available on the system.")
