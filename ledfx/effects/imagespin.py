@@ -101,7 +101,7 @@ class Imagespin(Twod):
             else:
                 return Image.open(image_path)  # Directly open for local files
         except Exception as e:
-            _LOGGER.error("Failed to open iamge: %s", e)
+            _LOGGER.error("Failed to open image: %s", e)
             return None
 
     def do_once(self):
