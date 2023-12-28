@@ -1,9 +1,11 @@
-
-import tomli
 import os
 
+import tomli
+
 # Get the path to pyproject.toml file
-pyproject_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "pyproject.toml")
+pyproject_path = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "..", "pyproject.toml"
+)
 
 # Read the pyproject.toml file
 with open(pyproject_path, "rb") as file:
@@ -19,7 +21,7 @@ CONFIG_MAJOR_VERSION = 2
 CONFIG_MINOR_VERSION = 2
 CONFIG_MICRO_VERSION = 0
 # Dev turns sentry logging on and off
-DEV = 0 
+DEV = 0
 
 CONFIGURATION_VERSION = "{}.{}.{}".format(
     CONFIG_MAJOR_VERSION, CONFIG_MINOR_VERSION, CONFIG_MICRO_VERSION
