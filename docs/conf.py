@@ -120,7 +120,7 @@ html_context = {
     "conf_py_path": "docs",
     "source_suffix": ".rst",
 }
-
+# TODO: Use os.path.join for these instead of hardcoding
 html_logo = "_static/small_white_alpha.png"
 html_favicon = "../ledfx_assets/favicon.ico"
 
