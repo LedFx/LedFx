@@ -197,26 +197,6 @@ def parse_args():
     return parser.parse_args()
 
 
-def installed_via_pip():
-    """Check to see if LedFx is installed via pip
-    Returns:
-        boolean
-    """
-    pip_spec = importlib.util.find_spec("pip")
-    if pip_spec is None:
-        return False
-    pip_package_command = subprocess.check_output(
-        [sys.executable, "-m", "pip", "freeze"]
-    )
-    installed_packages = [
-        r.decode().split("==")[0] for r in pip_package_command.split()
-    ]
-    if "ledfx" in installed_packages:
-        return True
-    else:
-        return False
-
-
 def log_packages():
     from platform import (
         processor,
