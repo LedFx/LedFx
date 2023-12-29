@@ -290,6 +290,7 @@ class LedFxCore:
             self.open_ui()
 
         if self.ci_testing:
+            await asyncio.sleep(5)
             self.stop(5)
         await self.flush_loop()
 

@@ -189,7 +189,7 @@ def parse_args():
         "--ci-smoke-test",
         dest="ci_smoke_test",
         action="store_true",
-        help="Launch LedFx for 10 seconds to sanity check the install",
+        help="Launch LedFx and then exit after 5 seconds to sanity check the install",
     )
     return parser.parse_args()
 
