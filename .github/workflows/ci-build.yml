@@ -70,10 +70,6 @@ jobs:
       - name: Smoketest LedFx
         run: |
           poetry run ledfx --ci-smoke-test
-          if [ $? -ne 0 ]; then
-            echo "LedFx launch failed: $?"
-            exit 1
-          fi
 
   build-ledfx-windows:
     name: Build LedFx (Windows)
@@ -144,10 +140,6 @@ jobs:
       - name: Smoketest LedFx with poetry
         run: |
           poetry run ledfx --ci-smoke-test
-          if [ $? -ne 0 ]; then
-            echo "LedFx launch failed: $?"
-            exit 1
-          fi
 
   build-ledfx-osx:
     name: Build LedFx (OS X)
@@ -213,7 +205,4 @@ jobs:
       - name: Smoketest LedFx
         run: |
           poetry run ledfx --ci-smoke-test
-          if [ $? -ne 0 ]; then
-            echo "LedFx launch failed: $?"
-            exit 1
-          fi
+
