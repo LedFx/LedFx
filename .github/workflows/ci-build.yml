@@ -101,13 +101,14 @@ jobs:
             exit 1
           fi
 
-      # - name: Smoketest LedFx
-      #   run: |
-      #     ledfx --ci-smoke-test
-      #     if [ $? -ne 0 ]; then
-      #       echo "LedFx launch failed: $?"
-      #       exit 1
-      #     fi   
+      - name: Smoketest LedFx
+        run: |
+          poetry shell
+          ledfx --ci-smoke-test
+          if [ $? -ne 0 ]; then
+            echo "LedFx launch failed: $?"
+            exit 1
+          fi   
 
   build-ledfx-osx:
     name: Build LedFx (OS X)
