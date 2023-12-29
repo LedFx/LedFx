@@ -1,7 +1,9 @@
 import logging
+
 import numpy as np
 import voluptuous as vol
 from stupidArtnet import StupidArtnet
+
 from ledfx.devices import NetworkedDevice
 
 _LOGGER = logging.getLogger(__name__)
