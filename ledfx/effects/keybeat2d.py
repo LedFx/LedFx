@@ -290,6 +290,9 @@ class Keybeat2d(Twod, GradientEffect):
                 stretch_height = int(self.stretch_v * frame.height)
                 stretch_width = int(self.stretch_h * frame.width)
             else:
+                self.center_h = 0
+                self.center_v = 0
+
                 if not self.force_aspect:
                     stretch_height = self.r_height
                     stretch_width = self.r_width
@@ -302,6 +305,7 @@ class Keybeat2d(Twod, GradientEffect):
                     )
                     stretch_height = int(scale * frame.height)
                     stretch_width = int(scale * frame.width)
+
 
             stretch_width = max(1, stretch_width)
             stretch_height = max(1, stretch_height)
