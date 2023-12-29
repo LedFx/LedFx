@@ -813,13 +813,11 @@ class Devices(RegistryLoader):
         # Service Discovery Library
         _LOGGER.info("Scanning for WLED devices...")
         wled_listener = WLEDListener(self._ledfx)
-        wledbrowser = self._zeroconf.add_service_listener(
-            "_wled._tcp.local.", wled_listener
-        )
+        self._zeroconf.add_service_listener("_wled._tcp.local.", wled_listener)
         try:
             await asyncio.sleep(30)
         finally:
-            _LOGGER.info("Scan Finished")
+            _LOGGER.info("WLED device scan finished!")
             self._zeroconf.remove_service_listener(wled_listener)
 
 
@@ -835,7 +833,7 @@ class WLEDListener(zeroconf.ServiceBrowser):
 
         if info:
             hostname = str(info.server).rstrip(".")
-            _LOGGER.info(f"Found device: {hostname}")
+            _LOGGER.info(f"Found WLED device: {hostname}")
 
             device_type = "wled"
             device_config = {"ip_address": hostname}
