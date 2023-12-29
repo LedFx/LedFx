@@ -64,9 +64,10 @@ jobs:
       - name: Install LedFx
         run: |
           poetry install
+      - name: Add Poetry's virtual environment to PATH
+        run: echo "$(poetry env info -p)/Scripts" >> $GITHUB_PATH
       - name: Smoketest LedFx
         run: |
-          poetry shell
           ledfx --ci-smoke-test
           if ($LASTEXITCODE -ne 0) {
             Write-Host "LedFx launch failed: $LASTEXITCODE"
