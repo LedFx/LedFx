@@ -337,15 +337,22 @@ Response
 --------
 
 - **Success**:
+
   - Status Code: 200
+
   - Body:
+
     - ``frame_count`` (Integer): The number of frames extracted from the GIF.
     - ``frames`` (List): A list of base64 encoded strings, each representing a frame in JPEG format.
 
 - **Failure**:
+
   - Status Code: 400 (Bad Request)
+
     - When JSON decoding fails or the required attribute ``path_url`` is not provided.
+
   - Status Code: 404 (Not Found)
+
     - When the GIF image at the specified URL or file path cannot be opened or processed.
 
 Error Handling
