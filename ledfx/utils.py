@@ -1222,7 +1222,15 @@ def remove_values_above_limit(numbers, limit):
 
 
 def open_gif(gif_path):
-    ```
+    """
+    Open a gif from a local file or url
+
+    Args:
+        gif_path: str
+            path to gif file or url
+    Returns:
+        Image: PIL Image object or None if failed to open
+    """
     current_directory = os.path.dirname(__file__)
     absolute_directory = os.path.abspath(current_directory)
     _LOGGER.debug(
