@@ -47,32 +47,66 @@ jobs:
     strategy:
       matrix:
         python: [3.9.x,3.10.x,3.11.x,3.12.x]
+    defaults:
+      run:
+        shell: bash
     steps:
       - name: Check out code from GitHub
         uses: actions/checkout@v4
+
       - name: Setup Python ${{ matrix.python }}
         id: python
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
+
       - name: Install poetry
         run: |
-          pipx install poetry
+          curl -sSL https://install.python-poetry.org | python - -y
+
+      - name: Update PATH
+        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Update Path for Windows
+        run: echo "$APPDATA\Python\Scripts" >> $GITHUB_PATH
+
+      - name: Enable long paths for git on Windows
+        # Enable handling long path names (+260 char) on the Windows platform
+        # https://docs.microsoft.com/en-us/windows/win32/fileio/naming-a-file#maximum-path-length-limitation
+        run: git config --system core.longpaths true
+
+      - name: Configure poetry
+        run: poetry config virtualenvs.in-project true
+
+      - name: Check lock file
+        run: poetry check --lock
+
       - name: Build a binary wheel
         run: |
           poetry build
+
       - name: Install LedFx
         run: |
           poetry install
-      - name: Add Poetry's virtual environment to PATH
-        run: echo "Env:PATH=$(poetry env info -p)/Scripts;$Env:PATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-      - name: Smoketest LedFx
+
+      # - name: Add Poetry's virtual environment to PATH
+      #   run: echo "Env:PATH=$(poetry env info -p)/Scripts;$Env:PATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Smoketest LedFx with poetry
         run: |
-          ledfx --ci-smoke-test
+          poetry run ledfx --ci-smoke-test
           if ($LASTEXITCODE -ne 0) {
             Write-Host "LedFx launch failed: $LASTEXITCODE"
             exit 1
-          }      
+          }
+
+      - name: Smoketest LedFx with poetry
+        run: |
+          poetry run ledfx --ci-smoke-test
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "LedFx launch failed: $LASTEXITCODE"
+            exit 1
+          }   
 
   build-ledfx-osx:
     name: Build LedFx (OS X)
