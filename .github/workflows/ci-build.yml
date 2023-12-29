@@ -65,9 +65,8 @@ jobs:
         run: |
           poetry install
       - name: Smoketest LedFx
-        shell: bash
         run: |
-          source $(poetry env info -p)\\bin\\activate
+          poetry shell
           ledfx --ci-smoke-test
           if [ $? -ne 0 ]; then
             echo "LedFx launch failed: $?"
