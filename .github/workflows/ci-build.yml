@@ -83,7 +83,7 @@ jobs:
         python: [3.9.x,3.10.x,3.11.x,3.12.x]
     defaults:
       run:
-        shell: bash
+        shell: bash -x {0}
     steps:
       - name: Check out code from GitHub
         uses: actions/checkout@v4
