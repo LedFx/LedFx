@@ -1222,6 +1222,7 @@ def remove_values_above_limit(numbers, limit):
 
 
 def open_gif(gif_path):
+    ```
     current_directory = os.path.dirname(__file__)
     absolute_directory = os.path.abspath(current_directory)
     _LOGGER.debug(
@@ -1240,6 +1241,16 @@ def open_gif(gif_path):
 
 
 def get_mono_font(size):
+    """
+    Get a monospace font from a list of fonts common across platforms
+
+    Args:
+        size: int
+            font size in points
+    Returns:
+        font: ImageFont
+    """
+
     font_names = [
         "Courier New",
         "cour.ttf",
@@ -1256,6 +1267,16 @@ def get_mono_font(size):
 
 
 def get_font(font_list, size):
+    """
+    Get the first font from a list of fonts that is available on the system
+
+    Args:
+        font_list: list
+            list of font name str to try
+        size: int
+            font size in points
+    """
+
     for font_name in font_list:
         try:
             font = ImageFont.truetype(font_name, size)
