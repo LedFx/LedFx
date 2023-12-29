@@ -93,6 +93,11 @@ class Keybeat2d(Twod, GradientEffect):
                 description="Play gif forward and reverse, not just loop",
                 default=False,
             ): bool,
+            vol.Optional(
+                "half beat",
+                description="half the beat input impulse, slow things down",
+                default=False,
+            ): bool,
         }
     )
 
@@ -116,6 +121,7 @@ class Keybeat2d(Twod, GradientEffect):
         self.force_aspect = self._config["force aspect"]
         self.fake_beat = self._config["fake_beat"]
         self.diag2 = self._config["diag2"]
+        self.half_beat = self._config["half beat"]
 
         self.frames = []
         self.reverse = False
@@ -332,7 +338,11 @@ class Keybeat2d(Twod, GradientEffect):
         self.last_beat_t = self.start
 
     def audio_data_updated(self, data):
-        self.beat = data.beat_oscillator()
+
+        if self.half_beat:
+            self.beat = (data.bar_oscillator() % 2) / 2
+        else:
+            self.beat = data.beat_oscillator()
 
     def overlay(self, beat_kick, skip_beat):
         # add beat timestamps to the rolling window beat_list
