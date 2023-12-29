@@ -19,15 +19,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out code from GitHub
-        uses: actions/checkout@v3
-      - name: Setup sentry config
-        shell: bash
-        env:
-          SENTRY_DSN: ${{ secrets.SENTRY_DSN_PYPI }}
-        run: |
-          sed -i 's,DSN,'"$SENTRY_DSN"',' ./ledfx/sentry_config.py
+        uses: actions/checkout@v4
       - name: Set up Python ${{ env.DEFAULT_PYTHON }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ env.DEFAULT_PYTHON }}
       - name: Install build dependencies

@@ -13,14 +13,14 @@ jobs:
         python: [3.9.x,3.10.x,3.11.x,3.12.x]
     steps:
       - name: Check out code from GitHub
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Install build dependencies
         run: |
           sudo apt-get update && sudo apt-get install -y \
           gcc libatlas3-base portaudio19-dev
       - name: Setup Python ${{ matrix.python }}
         id: python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
       - name: Install poetry
@@ -41,10 +41,10 @@ jobs:
         python: [3.9.x,3.10.x,3.11.x,3.12.x]
     steps:
       - name: Check out code from GitHub
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Setup Python ${{ matrix.python }}
         id: python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
       - name: Install poetry
@@ -65,13 +65,13 @@ jobs:
         python: [3.9.x,3.10.x,3.11.x,3.12.x]
     steps:
       - name: Check out code from GitHub
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Install build dependencies
         run: |
           brew install portaudio
       - name: Setup Python ${{ matrix.python }}
         id: python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
       - name: Install poetry
@@ -83,27 +83,3 @@ jobs:
       - name: Install LedFx
         run: |
           poetry install
-#   build-ledfx-frontend:
-#     name: Build LedFx Frontend
-#     runs-on: ubuntu-latest
-#     strategy:
-#       matrix:
-#         node-version: [10, 12, 14]
-#     steps:
-#       - name: Check out code from GitHub
-#         uses: actions/checkout@v3
-#       - name: Use Node.js ${{ matrix.node-version }}
-#         uses: actions/setup-node@v2
-#         with:
-#           node-version: ${{ matrix.node-version }}
-#       - name: Install yarn
-#         run: |
-#           npm install -g yarn
-#       - name: Run yarn install and build
-#         run: |
-#           cd frontend
-#           yarn
-#           yarn build
-#         env:
-#           CI: true
-
