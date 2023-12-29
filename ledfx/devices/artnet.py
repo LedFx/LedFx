@@ -61,7 +61,6 @@ class ArtNetDevice(NetworkedDevice):
             _LOGGER.warning(
                 f"Art-Net sender already started for device {self.config['name']}"
             )
-
         self._artnet = StupidArtnet(
             target_ip=self._config["ip_address"],
             universe=self._config["universe"],
@@ -70,7 +69,7 @@ class ArtNetDevice(NetworkedDevice):
             even_packet_size=self._config["even_packet_size"],
             broadcast=False,
         )
-        self._artnet.start()
+        # Don't use start for stupidArtnet - we handle fps locally, and it spawns hundreds of threads
 
         _LOGGER.info(f"Art-Net sender for {self.config['name']} started.")
         super().activate()
@@ -81,7 +80,6 @@ class ArtNetDevice(NetworkedDevice):
             return
 
         self._artnet.blackout()
-        self._artnet.stop()
         self._artnet.close()
         self._artnet = None
         _LOGGER.info(f"Art-Net sender for {self.config['name']} stopped.")
@@ -102,4 +100,5 @@ class ArtNetDevice(NetworkedDevice):
                 start:end
             ]
             self._artnet.set_universe(i + self._config["universe"])
-            self._artnet.send(packet)
+            self._artnet.set(packet)
+            self._artnet.show()
