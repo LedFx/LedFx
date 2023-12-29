@@ -44,12 +44,12 @@ class Keybeat2d(Twod, GradientEffect):
                 "center hor",
                 description="Center offset in horizontal direction percent of matrix width",
                 default=0,
-            ): vol.All(vol.Coerce(int), vol.Range(min=-90, max=90)),
+            ): vol.All(vol.Coerce(int), vol.Range(min=-95, max=95)),
             vol.Optional(
                 "center ver",
                 description="Center offset in vertical direction percent of matrix height",
                 default=0,
-            ): vol.All(vol.Coerce(int), vol.Range(min=-90, max=90)),
+            ): vol.All(vol.Coerce(int), vol.Range(min=-95, max=95)),
             vol.Optional(
                 "gif at", description="Load gif from url or path", default=""
             ): str,
