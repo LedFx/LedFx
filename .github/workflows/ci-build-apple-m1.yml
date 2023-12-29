@@ -1,0 +1,33 @@
+name: CI Build LedFx (Apple Silicon)
+
+on:
+  workflow_dispatch:
+
+jobs:
+
+  build-ledfx-osx:
+    name: Build LedFx (OS X) (Apple Silicon)
+    runs-on: flyci-macos-large-latest-m1
+    strategy:
+      matrix:
+        python: [3.9.x,3.10.x,3.11.x,3.12.x]
+    steps:
+      - name: Check out code from GitHub
+        uses: actions/checkout@v3
+      - name: Install build dependencies
+        run: |
+          brew install portaudio
+      - name: Setup Python ${{ matrix.python }}
+        id: python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install poetry
+        run: |
+          pipx install poetry
+      - name: Build a binary wheel
+        run: |
+          poetry build
+      - name: Install LedFx
+        run: |
+          poetry install
