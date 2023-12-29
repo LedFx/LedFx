@@ -1,8 +1,9 @@
 import logging
 import os
-import sentry_sdk
 
+import sentry_sdk
 from sentry_sdk.integrations.aiohttp import AioHttpIntegration
+
 from ledfx.consts import PROJECT_VERSION
 
 _LOGGER = logging.getLogger(__name__)
