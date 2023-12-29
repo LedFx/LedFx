@@ -52,6 +52,7 @@ class LedFxCore:
         port=None,
         port_s=None,
         icon=None,
+        ci_testing=False,
     ):
         self.icon = icon
         self.config_dir = config_dir
@@ -60,6 +61,7 @@ class LedFxCore:
         self.host = host if host else self.config["host"]
         self.port = port if port else self.config["port"]
         self.port_s = port_s if port_s else self.config["port_s"]
+        self.ci_testing = ci_testing
 
         if sys.platform == "win32":
             self.loop = asyncio.ProactorEventLoop()
@@ -287,6 +289,8 @@ class LedFxCore:
         if open_ui:
             self.open_ui()
 
+        if self.ci_testing:
+            self.stop(5)
         await self.flush_loop()
 
     def stop(self, exit_code):
@@ -311,7 +315,8 @@ class LedFxCore:
             _LOGGER.info("LedFx Shutdown Request via API. Shutting Down.")
         if exit_code == 4:
             _LOGGER.info("LedFx is restarting.")
-
+        if exit_code == 5:
+            _LOGGER.info("LedFx Shutdown via CI Testing Flag.")
         # Fire a shutdown event and flush the loop
         self.events.fire_event(LedFxShutdownEvent())
         await asyncio.sleep(0)
