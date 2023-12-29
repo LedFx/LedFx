@@ -7,8 +7,6 @@ from ledfx.consts import PROJECT_VERSION
 
 _LOGGER = logging.getLogger(__name__)
 
-# if you want your own sentry backend for development then replace the first one
-# only
 
 env = os.getenv("ENVIRONMENT", "dev")
 
@@ -24,7 +22,7 @@ if env == "dev":
     exit_code = process.wait()
     release = f"ledfx@{PROJECT_VERSION}-{commit_hash}"
 else:
-    # production / release behaviour due to injection of "prod" into
+    # production / release behaviour due to injection of "prod" or anything really into ENVIRONMENT env variable
     sentry_dsn = "https://dc6070345a8dfa1f2f24433d16f7a133@o482797.ingest.sentry.io/4506350233321472"
     sample_rate = 0
     release = f"ledfx@{PROJECT_VERSION}"
