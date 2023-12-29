@@ -1,11 +1,9 @@
 import logging
 import io
 import pybase64
-import json
 
 from json import JSONDecodeError
 
-import requests
 from aiohttp import web
 import PIL.ImageSequence as ImageSequence
 
