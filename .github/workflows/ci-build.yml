@@ -139,7 +139,7 @@ jobs:
 
       - name: Smoketest LedFx with poetry
         run: |
-          poetry run ledfx --ci-smoke-test
+          poetry run ledfx -vv --ci-smoke-test
 
   build-ledfx-osx:
     name: Build LedFx (OS X)
