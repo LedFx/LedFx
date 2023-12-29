@@ -1626,6 +1626,16 @@ CFFI = ">=1.0"
 [package.extras]
 numpy = ["NumPy"]
 
+[[package]]
+name = "stupidartnet"
+version = "1.4.0"
+description = "(Very) Simple implementation of the Art-Net protocol"
+optional = false
+python-versions = ">=3.6"
+files = [
+    {file = "stupidArtnet-1.4.0-py3-none-any.whl", hash = "sha256:bbdb2eaa4e3bed01ad31040830f5ee82048f32e94dd289041018f171b5850a51"},
+    {file = "stupidArtnet-1.4.0.tar.gz", hash = "sha256:6aaf096d1ebb41053200de76373645453c0e81ab0699a938823e375151556923"},
+]
 
 [[package]]
 name = "typing-extensions"
@@ -1928,4 +1938,4 @@ ifaddr = ">=0.1.7"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "1c62cb354f7ea6118fe8bf7127fb426b56e45864151c62fec776ec5ad99be01a"
+content-hash = "c4eb9bdb226127b3c7dbb346cedfa8635b43744eb92713a249d1fcd8f6b2957b"
