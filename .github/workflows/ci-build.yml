@@ -14,28 +14,59 @@ jobs:
     steps:
       - name: Check out code from GitHub
         uses: actions/checkout@v4
+
       - name: Install build dependencies
         run: |
           sudo apt-get update && sudo apt-get install -y \
           gcc libatlas3-base portaudio19-dev libsamplerate-dev
+
       - name: Setup Python ${{ matrix.python }}
         id: python
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
+
+      - name: Get full Python version
+        id: full-python-version
+        run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
+
       - name: Install poetry
         run: |
-          pipx install poetry
+          curl -sSL https://install.python-poetry.org | python - -y
+
+      - name: Configure poetry
+        run: poetry config virtualenvs.in-project true
+
+      - name: Set up cache
+        uses: actions/cache@v3
+        id: cache
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/poetry.lock') }}
+
+      - name: Ensure cache is healthy
+        if: steps.cache.outputs.cache-hit == 'true'
+        run: |
+          # `timeout` is not available on macOS, so we define a custom function.
+          [ "$(command -v timeout)" ] || function timeout() { perl -e 'alarm shift; exec @ARGV' "$@"; }
+
+          # Using `timeout` is a safeguard against the Poetry command hanging for some reason.
+          timeout 10s poetry run pip --version || rm -rf .venv
+
+      - name: Check lock file
+        run: poetry check --lock
+
       - name: Build a binary wheel
         run: |
           poetry build
+
       - name: Install LedFx
         run: |
           poetry install
+
       - name: Smoketest LedFx
         run: |
-          source $(poetry env info -p)/bin/activate
-          ledfx --ci-smoke-test
+          poetry run ledfx --ci-smoke-test
           if [ $? -ne 0 ]; then
             echo "LedFx launch failed: $?"
             exit 1
@@ -60,6 +91,10 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
 
+      - name: Get full Python version
+        id: full-python-version
+        run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
+
       - name: Install poetry
         run: |
           curl -sSL https://install.python-poetry.org | python - -y
@@ -79,6 +114,22 @@ jobs:
       - name: Configure poetry
         run: poetry config virtualenvs.in-project true
 
+      - name: Set up cache
+        uses: actions/cache@v3
+        id: cache
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/poetry.lock') }}
+
+      - name: Ensure cache is healthy
+        if: steps.cache.outputs.cache-hit == 'true'
+        run: |
+          # `timeout` is not available on macOS, so we define a custom function.
+          [ "$(command -v timeout)" ] || function timeout() { perl -e 'alarm shift; exec @ARGV' "$@"; }
+
+          # Using `timeout` is a safeguard against the Poetry command hanging for some reason.
+          timeout 10s poetry run pip --version || rm -rf .venv
+
       - name: Check lock file
         run: poetry check --lock
 
@@ -90,9 +141,6 @@ jobs:
         run: |
           poetry install
 
-      # - name: Add Poetry's virtual environment to PATH
-      #   run: echo "Env:PATH=$(poetry env info -p)/Scripts;$Env:PATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-
       - name: Smoketest LedFx with poetry
         run: |
           poetry run ledfx --ci-smoke-test
@@ -100,14 +148,6 @@ jobs:
             echo "LedFx launch failed: $?"
             exit 1
           fi
-
-      # - name: Smoketest LedFx
-      #   run: |
-      #     ledfx --ci-smoke-test
-      #     if [ $? -ne 0 ]; then
-      #       echo "LedFx launch failed: $?"
-      #       exit 1
-      #     fi   
 
   build-ledfx-osx:
     name: Build LedFx (OS X)
@@ -118,27 +158,58 @@ jobs:
     steps:
       - name: Check out code from GitHub
         uses: actions/checkout@v4
+
       - name: Install build dependencies
         run: |
           brew install portaudio
+
       - name: Setup Python ${{ matrix.python }}
         id: python
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
+
+      - name: Get full Python version
+        id: full-python-version
+        run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
+
       - name: Install poetry
         run: |
-          pipx install poetry
+          curl -sSL https://install.python-poetry.org | python - -y
+
+      - name: Configure poetry
+        run: poetry config virtualenvs.in-project true
+
+      - name: Set up cache
+        uses: actions/cache@v3
+        id: cache
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/poetry.lock') }}
+
+      - name: Ensure cache is healthy
+        if: steps.cache.outputs.cache-hit == 'true'
+        run: |
+          # `timeout` is not available on macOS, so we define a custom function.
+          [ "$(command -v timeout)" ] || function timeout() { perl -e 'alarm shift; exec @ARGV' "$@"; }
+
+          # Using `timeout` is a safeguard against the Poetry command hanging for some reason.
+          timeout 10s poetry run pip --version || rm -rf .venv
+
+      - name: Check lock file
+        run: poetry check --lock
+
       - name: Build a binary wheel
         run: |
           poetry build
+
       - name: Install LedFx
         run: |
           poetry install
+
       - name: Smoketest LedFx
         run: |
-          source $(poetry env info -p)/bin/activate
-          ledfx --ci-smoke-test
+          poetry run ledfx --ci-smoke-test
           if [ $? -ne 0 ]; then
             echo "LedFx launch failed: $?"
             exit 1
