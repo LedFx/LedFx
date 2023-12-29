@@ -1,13 +1,12 @@
-import logging
 import io
-import pybase64
 import json
-
+import logging
 from json import JSONDecodeError
 
+import PIL.ImageSequence as ImageSequence
+import pybase64
 import requests
 from aiohttp import web
-import PIL.ImageSequence as ImageSequence
 
 from ledfx.api import RestEndpoint
 from ledfx.utils import open_gif
@@ -49,7 +48,7 @@ class GetGifFramesEndpoint(RestEndpoint):
         if not gif_image:
             response = {
                 "status": "failed",
-                "reason": 'Failed to open GIF image',
+                "reason": "Failed to open GIF image",
             }
             return web.json_response(data=response, status=404)
 
@@ -58,14 +57,14 @@ class GetGifFramesEndpoint(RestEndpoint):
             with io.BytesIO() as output:
                 # we don't care about a bit of loss, so encode to JPEG
                 # in example test 5x+ data saving 600kb - > 112 kb
-                frame.convert("RGB").save(output,
-                                          format="JPEG")  # Convert frame to JPEG
-                encoded_frame = pybase64.b64encode(output.getvalue()).decode('utf-8')
+                frame.convert("RGB").save(
+                    output, format="JPEG"
+                )  # Convert frame to JPEG
+                encoded_frame = pybase64.b64encode(output.getvalue()).decode(
+                    "utf-8"
+                )
                 frames.append(encoded_frame)
 
-        response = {
-            "frame_count": len(frames),
-            "frames": frames
-        }
+        response = {"frame_count": len(frames), "frames": frames}
 
         return web.json_response(data=response, status=200)
