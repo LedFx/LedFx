@@ -65,7 +65,7 @@ jobs:
         run: |
           poetry install
       - name: Add Poetry's virtual environment to PATH
-        run: echo "$(poetry env info -p)/Scripts" >> $GITHUB_PATH
+        run: echo "Env:PATH=$(poetry env info -p)/Scripts;$Env:PATH" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
       - name: Smoketest LedFx
         run: |
           ledfx --ci-smoke-test
