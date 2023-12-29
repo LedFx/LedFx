@@ -75,7 +75,6 @@ class ArtNetDevice(NetworkedDevice):
 
     def deactivate(self):
         super().deactivate()
-        print("DEACTIVATING")
         if not self._artnet:
             return
 
@@ -102,4 +101,3 @@ class ArtNetDevice(NetworkedDevice):
             ]
             self._artnet.set_universe(i + self._config["universe"])
             self._artnet.send(packet)
-             
