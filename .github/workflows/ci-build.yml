@@ -71,6 +71,7 @@ jobs:
         run: echo "$APPDATA\Python\Scripts" >> $GITHUB_PATH
 
       - name: Enable long paths for git on Windows
+      
         # Enable handling long path names (+260 char) on the Windows platform
         # https://docs.microsoft.com/en-us/windows/win32/fileio/naming-a-file#maximum-path-length-limitation
         run: git config --system core.longpaths true
