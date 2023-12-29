@@ -1,7 +1,9 @@
 import logging
 import os
+import sentry_sdk
 
-from ledfx.consts import DEV, PROJECT_VERSION
+from sentry_sdk.integrations.aiohttp import AioHttpIntegration
+from ledfx.consts import PROJECT_VERSION
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -26,9 +28,6 @@ else:
     sentry_dsn = "https://dc6070345a8dfa1f2f24433d16f7a133@o482797.ingest.sentry.io/4506350233321472"
     sample_rate = 0
     release = f"ledfx@{PROJECT_VERSION}"
-
-import sentry_sdk
-from sentry_sdk.integrations.aiohttp import AioHttpIntegration
 
 _LOGGER.info(
     f"Sentry config\ndsn first ten: {sentry_dsn[8:18]}\nsample_rate: {sample_rate}\nrelease: {release}"
