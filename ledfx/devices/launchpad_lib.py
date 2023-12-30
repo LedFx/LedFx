@@ -1322,6 +1322,7 @@ class LaunchpadLPX(LaunchpadPro):
         ),
     ]
 
+    device_id = 12
     # -------------------------------------------------------------------------------------
     # Overrides "LaunchpadPro" method
     def Open(self, number=0, name="AUTO"):
@@ -1368,7 +1369,8 @@ class LaunchpadLPX(LaunchpadPro):
         if mode not in ValidModes:
             return
 
-        self.midi.RawWriteSysEx([0, 32, 41, 2, 12, 0, mode])
+        self.midi.RawWriteSysEx([0, 32, 41, 2, self.device_id, 0, mode])
+
         time.sleep(0.010)
 
     # -------------------------------------------------------------------------------------
@@ -1380,7 +1382,7 @@ class LaunchpadLPX(LaunchpadPro):
         if mode < 0 or mode > 1:
             return
 
-        self.midi.RawWriteSysEx([0, 32, 41, 2, 12, 14, mode])
+        self.midi.RawWriteSysEx([0, 32, 41, 2, self.device_id, 14, mode])
         time.sleep(0.010)
 
     # -------------------------------------------------------------------------------------
@@ -1472,11 +1474,7 @@ class LaunchpadLPX(LaunchpadPro):
         else:
             return None
 
-    # flush with a specific device identifier 2 12
     def flush(self, data, alpha, diag):
-        self.flush_p(data, alpha, diag, [0, 32, 41, 2, 12, 3])
-
-    def flush_p(self, data, alpha, diag, preamble):
         if diag:
             start = timeit.default_timer()
 
@@ -1520,7 +1518,7 @@ class LaunchpadLPX(LaunchpadPro):
             # send_buffer.extend([3, 35, 127, 0, 0])
 
             # stuff the send buffer with the command preamble
-            send_buffer = preamble
+            send_buffer = [0, 32, 41, 2, self.device_id, 3]
 
             # prebump the programmer mode index up a row and just before
             pgm_mode_pos = 10
@@ -1562,6 +1560,9 @@ class LaunchpadLPX(LaunchpadPro):
 # For 3-color "Mk3" Launchpads; Mini and Pro
 # ==========================================================================
 class LaunchpadMiniMk3(LaunchpadLPX):
+
+    device_id = 13
+
     # -------------------------------------------------------------------------------------
     # -- Opens one of the attached Launchpad MIDI devices.
     # -- Uses search string "MiniMk3", by default.
@@ -1582,10 +1583,6 @@ class LaunchpadMiniMk3(LaunchpadLPX):
     # Overrides "LaunchpadBase" method
     def Check(self, number=0, name="MiniMK3"):
         return super().Check(number=number, name=name)
-
-    # flush with a specific device identifier 2 13
-    def flush(self, data, alpha, diag):
-        self.flush_p(data, alpha, diag, [0, 32, 41, 2, 13, 3])
 
 # ==========================================================================
 # CLASS MidiFighter64
