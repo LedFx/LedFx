@@ -23,7 +23,7 @@ class VirtualPresetsEndpoint(RestEndpoint):
                 "status": "failed",
                 "reason": f"Virtual with ID {virtual_id} not found",
             }
-            return web.json_response(data=response, status=404)
+            return web.json_response(data=response, status=400)
 
         if not virtual.active_effect:
             response = {
@@ -48,8 +48,8 @@ class VirtualPresetsEndpoint(RestEndpoint):
             "status": "success",
             "virtual": virtual_id,
             "effect": effect_id,
-            "default_presets": default,
-            "custom_presets": custom,
+            "ledfx_presets": default,
+            "user_presets": custom,
         }
 
         return web.json_response(data=response, status=200)
@@ -83,7 +83,7 @@ class VirtualPresetsEndpoint(RestEndpoint):
                 "status": "failed",
                 "reason": f"Virtual with ID {virtual_id} not found",
             }
-            return web.json_response(data=response, status=404)
+            return web.json_response(data=response, status=400)
 
         try:
             data = await request.json()
@@ -100,17 +100,12 @@ class VirtualPresetsEndpoint(RestEndpoint):
             }
             return web.json_response(data=response, status=400)
 
-        if category not in ["default_presets", "custom_presets"]:
+        if category not in ["ledfx_presets", "user_presets"]:
             response = {
                 "status": "failed",
                 "reason": f'Category {category} is not "ledfx_presets" or "user_presets"',
             }
             return web.json_response(data=response, status=400)
-
-        if category == "default_presets":
-            category = "ledfx_presets"
-        else:
-            category = "user_presets"
 
         if effect_id is None:
             response = {
@@ -136,9 +131,7 @@ class VirtualPresetsEndpoint(RestEndpoint):
         if preset_id not in self._ledfx.config[category][effect_id].keys():
             response = {
                 "status": "failed",
-                "reason": "Preset {} does not exist for effect {} in category {}".format(
-                    preset_id, effect_id, category
-                ),
+                "reason": f"Preset {preset_id} does not exist for effect {effect_id} in category {category}",
             }
             return web.json_response(data=response, status=400)
 
@@ -181,14 +174,14 @@ class VirtualPresetsEndpoint(RestEndpoint):
                 "status": "failed",
                 "reason": f"Virtual with ID {virtual_id} not found",
             }
-            return web.json_response(data=response, status=404)
+            return web.json_response(data=response, status=400)
 
         if not virtual.active_effect:
             response = {
                 "status": "failed",
                 "reason": f"Virtual {virtual_id} has no active effect",
             }
-            return web.json_response(data=response, status=404)
+            return web.json_response(data=response, status=400)
 
         try:
             data = await request.json()
@@ -241,7 +234,7 @@ class VirtualPresetsEndpoint(RestEndpoint):
                 "status": "failed",
                 "reason": f"Virtual with ID {virtual_id} not found",
             }
-            return web.json_response(data=response, status=404)
+            return web.json_response(data=response, status=400)
 
         # Clear the effect
         virtual.clear_effect()

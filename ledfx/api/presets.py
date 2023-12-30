@@ -27,20 +27,20 @@ class PresetsEndpoint(RestEndpoint):
             return web.json_response(data=response, status=400)
 
         if effect_id in self._ledfx.config["ledfx_presets"].keys():
-            default = self._ledfx.config["ledfx_presets"][effect_id]
+            ledfx_presets = self._ledfx.config["ledfx_presets"][effect_id]
         else:
-            default = {}
+            ledfx_presets = {}
 
         if effect_id in self._ledfx.config["user_presets"].keys():
-            custom = self._ledfx.config["user_presets"][effect_id]
+            user_presets = self._ledfx.config["user_presets"][effect_id]
         else:
-            custom = {}
+            user_presets = {}
 
         response = {
             "status": "success",
             "effect": effect_id,
-            "default_presets": default,
-            "custom_presets": custom,
+            "ledfx_presets": ledfx_presets,
+            "user_presets": user_presets,
         }
         return web.json_response(data=response, status=200)
 
@@ -65,9 +65,7 @@ class PresetsEndpoint(RestEndpoint):
         if category not in ["ledfx_presets", "user_presets"]:
             response = {
                 "status": "failed",
-                "reason": 'Category {} is not "ledfx_presets" or "user_presets"'.format(
-                    category
-                ),
+                "reason": f'Category {category} is not "ledfx_presets" or "user_presets"',
             }
             return web.json_response(data=response, status=400)
 
@@ -81,9 +79,7 @@ class PresetsEndpoint(RestEndpoint):
         if effect_id not in self._ledfx.config[category].keys():
             response = {
                 "status": "failed",
-                "reason": "Effect {} does not exist in category {}".format(
-                    effect_id, category
-                ),
+                "reason": f"Effect {effect_id} does not exist in category {category}",
             }
             return web.json_response(data=response, status=400)
 
@@ -106,9 +102,7 @@ class PresetsEndpoint(RestEndpoint):
         if preset_id not in self._ledfx.config[category][effect_id].keys():
             response = {
                 "status": "failed",
-                "reason": "Preset {} does not exist for effect {} in category {}".format(
-                    preset_id, effect_id, category
-                ),
+                "reason": f"Preset {preset_id} does not exist for effect {effect_id} in category {category}",
             }
             return web.json_response(data=response, status=400)
 
@@ -148,9 +142,7 @@ class PresetsEndpoint(RestEndpoint):
         if category not in ["ledfx_presets", "user_presets"]:
             response = {
                 "status": "failed",
-                "reason": 'Category {} is not "ledfx_presets" or "user_presets"'.format(
-                    category
-                ),
+                "reason": f'Category {category} is not "ledfx_presets" or "user_presets"',
             }
             return web.json_response(data=response, status=400)
 
@@ -173,9 +165,7 @@ class PresetsEndpoint(RestEndpoint):
         if effect_id not in self._ledfx.config[category].keys():
             response = {
                 "status": "failed",
-                "reason": "Effect {} does not exist in category {}".format(
-                    effect_id, category
-                ),
+                "reason": f"Effect {effect_id} does not exist in category {category}",
             }
             return web.json_response(data=response, status=400)
 
@@ -189,9 +179,7 @@ class PresetsEndpoint(RestEndpoint):
         if preset_id not in self._ledfx.config[category][effect_id].keys():
             response = {
                 "status": "failed",
-                "reason": "Preset {} does not exist for effect {} in category {}".format(
-                    preset_id, effect_id, category
-                ),
+                "reason": f"Preset {preset_id} does not exist for effect {effect_id} in category {category}",
             }
             return web.json_response(data=response, status=400)
 
