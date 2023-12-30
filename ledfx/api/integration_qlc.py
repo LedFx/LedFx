@@ -19,8 +19,11 @@ class QLCEndpoint(RestEndpoint):
         """Get info from QLC+ integration"""
         integration = self._ledfx.integrations.get(integration_id)
         if (integration is None) or (integration.type != "qlc"):
-            response = {"not found": 404}
-            return web.json_response(data=response, status=404)
+            response = {
+                "status": "failed",
+                "reason": f"{integration} was not found or was not type qlc",
+            }
+            return web.json_response(data=response, status=400)
 
         response = {}
 
@@ -58,8 +61,11 @@ class QLCEndpoint(RestEndpoint):
         """Toggle a QLC event listener"""
         integration = self._ledfx.integrations.get(integration_id)
         if (integration is None) or (integration.type != "qlc"):
-            response = {"not found": 404}
-            return web.json_response(data=response, status=404)
+            response = {
+                "status": "failed",
+                "reason": f"{integration} was not found or was not type qlc",
+            }
+            return web.json_response(data=response, status=400)
 
         try:
             data = await request.json()
@@ -118,8 +124,11 @@ class QLCEndpoint(RestEndpoint):
         """Add a new QLC event listener or update an existing one"""
         integration = self._ledfx.integrations.get(integration_id)
         if (integration is None) or (integration.type != "qlc"):
-            response = {"not found": 404}
-            return web.json_response(data=response, status=404)
+            response = {
+                "status": "failed",
+                "reason": f"{integration} was not found or was not type qlc",
+            }
+            return web.json_response(data=response, status=400)
 
         try:
             data = await request.json()
@@ -181,8 +190,11 @@ class QLCEndpoint(RestEndpoint):
         """Delete a QLC event listener"""
         integration = self._ledfx.integrations.get(integration_id)
         if (integration is None) or (integration.type != "qlc"):
-            response = {"not found": 404}
-            return web.json_response(data=response, status=404)
+            response = {
+                "status": "failed",
+                "reason": f"{integration} was not found or was not type qlc",
+            }
+            return web.json_response(data=response, status=400)
 
         try:
             data = await request.json()

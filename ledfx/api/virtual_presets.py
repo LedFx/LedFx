@@ -199,7 +199,7 @@ class VirtualPresetsEndpoint(RestEndpoint):
         if preset_name is None:
             response = {
                 "status": "failed",
-                "reason": 'Required attribute "preset_name" was not provided',
+                "reason": 'Required attribute "name" was not provided',
             }
             return web.json_response(data=response, status=400)
 

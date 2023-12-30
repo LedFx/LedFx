@@ -19,8 +19,11 @@ class QLCEndpoint(RestEndpoint):
         """Get all song triggers"""
         integration = self._ledfx.integrations.get(integration_id)
         if (integration is None) or (integration.type != "spotify"):
-            response = {"not found": 404}
-            return web.json_response(data=response, status=404)
+            response = {
+                "status": "failed",
+                "reason": f"{integration} was not found or was not type spotify",
+            }
+            return web.json_response(data=response, status=400)
 
         response = integration.get_triggers()
 
@@ -30,8 +33,11 @@ class QLCEndpoint(RestEndpoint):
         """Update a Spotify song trigger"""
         integration = self._ledfx.integrations.get(integration_id)
         if (integration is None) or (integration.type != "spotify"):
-            response = {"not found": 404}
-            return web.json_response(data=response, status=404)
+            response = {
+                "status": "failed",
+                "reason": f"{integration} was not found or was not type spotify",
+            }
+            return web.json_response(data=response, status=400)
 
         response = {
             "Ok": "This endpoint does nothing yet",
@@ -43,8 +49,11 @@ class QLCEndpoint(RestEndpoint):
         """Add Spotify song trigger"""
         integration = self._ledfx.integrations.get(integration_id)
         if (integration is None) or (integration.type != "spotify"):
-            response = {"not found": 404}
-            return web.json_response(data=response, status=404)
+            response = {
+                "status": "failed",
+                "reason": f"{integration} was not found or was not type spotify",
+            }
+            return web.json_response(data=response, status=400)
 
         try:
             data = await request.json()
@@ -93,8 +102,11 @@ class QLCEndpoint(RestEndpoint):
         """Delete a Spotify song trigger"""
         integration = self._ledfx.integrations.get(integration_id)
         if (integration is None) or (integration.type != "spotify"):
-            response = {"not found": 404}
-            return web.json_response(data=response, status=404)
+            response = {
+                "status": "failed",
+                "reason": f"{integration} was not found or was not type spotify",
+            }
+            return web.json_response(data=response, status=400)
 
         try:
             data = await request.json()

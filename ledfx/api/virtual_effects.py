@@ -24,7 +24,7 @@ class EffectsEndpoint(RestEndpoint):
                 "status": "failed",
                 "reason": f"Virtual with ID {virtual_id} not found",
             }
-            return web.json_response(data=response, status=404)
+            return web.json_response(data=response, status=400)
 
         # Get the active effect
         response = {"effect": {}}
@@ -68,7 +68,7 @@ class EffectsEndpoint(RestEndpoint):
                 "status": "failed",
                 "reason": f"Virtual with ID {virtual_id} not found",
             }
-            return web.json_response(data=response, status=404)
+            return web.json_response(data=response, status=400)
 
         if not virtual.active_effect:
             response = {
@@ -193,7 +193,7 @@ class EffectsEndpoint(RestEndpoint):
                 "status": "failed",
                 "reason": f"Virtual with ID {virtual_id} not found",
             }
-            return web.json_response(data=response, status=404)
+            return web.json_response(data=response, status=400)
 
         try:
             data = await request.json()
@@ -300,7 +300,7 @@ class EffectsEndpoint(RestEndpoint):
                 "status": "failed",
                 "reason": f"Virtual with ID {virtual_id} not found",
             }
-            return web.json_response(data=response, status=404)
+            return web.json_response(data=response, status=400)
 
         # Clear the effect
         virtual.clear_effect()
