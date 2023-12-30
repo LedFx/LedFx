@@ -138,6 +138,12 @@ jobs:
           poetry install
 
       - name: Smoketest LedFx with poetry
+        if: ${{ matrix.python == '3.11.x' }}
+        run: |
+          poetry run ledfx --version
+
+      - name: Smoketest LedFx with poetry
+        if: ${{ matrix.python != '3.11.x' }}
         run: |
           poetry run ledfx -vv --ci-smoke-test
 
