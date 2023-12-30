@@ -1323,6 +1323,7 @@ class LaunchpadLPX(LaunchpadPro):
     ]
 
     device_id = 12
+
     # -------------------------------------------------------------------------------------
     # Overrides "LaunchpadPro" method
     def Open(self, number=0, name="AUTO"):
@@ -1560,7 +1561,6 @@ class LaunchpadLPX(LaunchpadPro):
 # For 3-color "Mk3" Launchpads; Mini and Pro
 # ==========================================================================
 class LaunchpadMiniMk3(LaunchpadLPX):
-
     device_id = 13
 
     # -------------------------------------------------------------------------------------
@@ -1583,6 +1583,7 @@ class LaunchpadMiniMk3(LaunchpadLPX):
     # Overrides "LaunchpadBase" method
     def Check(self, number=0, name="MiniMK3"):
         return super().Check(number=number, name=name)
+
 
 # ==========================================================================
 # CLASS MidiFighter64
