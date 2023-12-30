@@ -70,11 +70,7 @@ class QLCEndpoint(RestEndpoint):
         try:
             data = await request.json()
         except JSONDecodeError:
-            response = {
-                "status": "failed",
-                "reason": "JSON Decoding failed",
-            }
-            return web.json_response(data=response, status=400)
+            return await self.json_decode_error()
         event_type = data.get("event_type")
         event_filter = data.get("event_filter")
 
@@ -133,11 +129,7 @@ class QLCEndpoint(RestEndpoint):
         try:
             data = await request.json()
         except JSONDecodeError:
-            response = {
-                "status": "failed",
-                "reason": "JSON Decoding failed",
-            }
-            return web.json_response(data=response, status=400)
+            return await self.json_decode_error()
         event_type = data.get("event_type")
         event_filter = data.get("event_filter")
         qlc_payload = data.get("qlc_payload")
@@ -199,11 +191,7 @@ class QLCEndpoint(RestEndpoint):
         try:
             data = await request.json()
         except JSONDecodeError:
-            response = {
-                "status": "failed",
-                "reason": "JSON Decoding failed",
-            }
-            return web.json_response(data=response, status=400)
+            return await self.json_decode_error()
         event_type = data.get("event_type")
         event_filter = data.get("event_filter")
 

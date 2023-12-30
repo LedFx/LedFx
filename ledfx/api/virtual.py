@@ -66,11 +66,7 @@ class VirtualEndpoint(RestEndpoint):
         try:
             data = await request.json()
         except JSONDecodeError:
-            response = {
-                "status": "failed",
-                "reason": "JSON Decoding failed",
-            }
-            return web.json_response(data=response, status=400)
+            return await self.json_decode_error()
         active = data.get("active")
         if active is None:
             response = {
@@ -119,11 +115,7 @@ class VirtualEndpoint(RestEndpoint):
         try:
             data = await request.json()
         except JSONDecodeError:
-            response = {
-                "status": "failed",
-                "reason": "JSON Decoding failed",
-            }
-            return web.json_response(data=response, status=400)
+            return await self.json_decode_error()
         virtual_segments = data.get("segments")
         if virtual_segments is None:
             response = {

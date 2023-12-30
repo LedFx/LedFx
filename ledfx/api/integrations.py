@@ -36,11 +36,7 @@ class IntegrationsEndpoint(RestEndpoint):
             try:
                 data = await request.json()
             except JSONDecodeError:
-                response = {
-                    "status": "failed",
-                    "reason": "JSON Decoding failed",
-                }
-                return web.json_response(data=response, status=400)
+                return await self.json_decode_error()
             info = data.get("info")
             for integration in self._ledfx.integrations.values():
                 if info not in response["integrations"][integration.id].keys():
@@ -60,11 +56,7 @@ class IntegrationsEndpoint(RestEndpoint):
         try:
             data = await request.json()
         except JSONDecodeError:
-            response = {
-                "status": "failed",
-                "reason": "JSON Decoding failed",
-            }
-            return web.json_response(data=response, status=400)
+            return await self.json_decode_error()
         integration_id = data.get("id")
         if integration_id is None:
             response = {
@@ -109,11 +101,7 @@ class IntegrationsEndpoint(RestEndpoint):
         try:
             data = await request.json()
         except JSONDecodeError:
-            response = {
-                "status": "failed",
-                "reason": "JSON Decoding failed",
-            }
-            return web.json_response(data=response, status=400)
+            return await self.json_decode_error()
         integration_id = data.get("id")
         if integration_id is None:
             response = {
@@ -154,11 +142,7 @@ class IntegrationsEndpoint(RestEndpoint):
         try:
             data = await request.json()
         except JSONDecodeError:
-            response = {
-                "status": "failed",
-                "reason": "JSON Decoding failed",
-            }
-            return web.json_response(data=response, status=400)
+            return await self.json_decode_error()
 
         integration_config = data.get("config")
         if integration_config is None:

@@ -15,14 +15,11 @@ class InfoEndpoint(RestEndpoint):
     exit_codes = {"shutdown": 3, "restart": 4}
 
     async def post(self, request) -> web.Response:
+        
         try:
             data = await request.json()
         except JSONDecodeError:
-            response = {
-                "status": "failed",
-                "reason": "JSON Decoding failed",
-            }
-            return web.json_response(data=response, status=400)
+            return await self.json_decode_error()
 
         action = data.get("action")
         timeout = data.get("timeout")

@@ -40,11 +40,7 @@ class ConfigEndpoint(RestEndpoint):
             try:
                 wanted_keys = await request.json()
             except JSONDecodeError:
-                response = {
-                    "status": "failed",
-                    "reason": "JSON Decoding failed",
-                }
-                return web.json_response(data=response, status=400)
+                return await self.json_decode_error()
 
             if isinstance(wanted_keys, list):
                 keys.update(wanted_keys)
@@ -129,11 +125,7 @@ class ConfigEndpoint(RestEndpoint):
             return web.json_response(data={"status": "success"}, status=200)
 
         except JSONDecodeError:
-            response = {
-                "status": "failed",
-                "reason": "JSON Decoding failed",
-            }
-            return web.json_response(data=response, status=400)
+            return await self.json_decode_error()
         except vol.MultipleInvalid as msg:
             response = {
                 "status": "failed",
@@ -219,11 +211,7 @@ class ConfigEndpoint(RestEndpoint):
             return web.json_response(data={"status": "success"}, status=200)
 
         except JSONDecodeError:
-            response = {
-                "status": "failed",
-                "reason": "JSON Decoding failed",
-            }
-            return web.json_response(data=response, status=400)
+            return await self.json_decode_error()
 
         except (KeyError, vol.MultipleInvalid) as msg:
             response = {
