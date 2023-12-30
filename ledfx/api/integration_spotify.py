@@ -58,11 +58,7 @@ class QLCEndpoint(RestEndpoint):
         try:
             data = await request.json()
         except JSONDecodeError:
-            response = {
-                "status": "failed",
-                "reason": "JSON Decoding failed",
-            }
-            return web.json_response(data=response, status=400)
+            return await self.json_decode_error()
         scene_id = data.get("scene_id")
         song_id = data.get("song_id")
         song_name = data.get("song_name")
@@ -111,11 +107,7 @@ class QLCEndpoint(RestEndpoint):
         try:
             data = await request.json()
         except JSONDecodeError:
-            response = {
-                "status": "failed",
-                "reason": "JSON Decoding failed",
-            }
-            return web.json_response(data=response, status=400)
+            return await self.json_decode_error()
         trigger_id = data.get("trigger_id")
 
         if trigger_id is None:
