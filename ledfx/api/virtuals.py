@@ -89,7 +89,7 @@ class VirtualsEndpoint(RestEndpoint):
                     "status": "failed",
                     "reason": f"Virtual with ID {virtual_id} not found",
                 }
-                return web.json_response(data=response, status=404)
+                return web.json_response(data=response, status=400)
             # Update the virtual's configuration
             virtual.config = virtual_config
             _LOGGER.info(

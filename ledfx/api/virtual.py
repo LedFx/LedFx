@@ -26,7 +26,7 @@ class VirtualEndpoint(RestEndpoint):
                 "status": "failed",
                 "reason": f"Virtual with ID {virtual_id} not found",
             }
-            return web.json_response(data=response, status=404)
+            return web.json_response(data=response, status=400)
 
         response = {"status": "success"}
         response[virtual.id] = {
@@ -61,7 +61,7 @@ class VirtualEndpoint(RestEndpoint):
                 "status": "failed",
                 "reason": f"Virtual with ID {virtual_id} not found",
             }
-            return web.json_response(data=response, status=404)
+            return web.json_response(data=response, status=400)
 
         try:
             data = await request.json()
@@ -114,7 +114,7 @@ class VirtualEndpoint(RestEndpoint):
                 "status": "failed",
                 "reason": f"Virtual with ID {virtual_id} not found",
             }
-            return web.json_response(data=response, status=404)
+            return web.json_response(data=response, status=400)
 
         try:
             data = await request.json()
@@ -171,7 +171,7 @@ class VirtualEndpoint(RestEndpoint):
                 "status": "failed",
                 "reason": f"Virtual with ID {virtual_id} not found",
             }
-            return web.json_response(data=response, status=404)
+            return web.json_response(data=response, status=400)
 
         virtual.clear_effect()
         device_id = virtual.is_device

@@ -48,7 +48,7 @@ class IntegrationsEndpoint(RestEndpoint):
                         "status": "failed",
                         "reason": f"info attribute {info} not found",
                     }
-                    return web.json_response(data=response, status=404)
+                    return web.json_response(data=response, status=400)
                 response["integrations"][integration.id] = {
                     info: response["integrations"][integration.id][info]
                 }
@@ -75,8 +75,11 @@ class IntegrationsEndpoint(RestEndpoint):
 
         integration = self._ledfx.integrations.get(integration_id)
         if integration is None:
-            response = {"not found": 404}
-            return web.Response(text=json.dumps(response), status=404)
+            response = {
+                "status": "failed",
+                "reason": 'Required attribute "integration_id" was not provided',
+            }
+            return web.Response(text=json.dumps(response), status=400)
 
         # Toggle the integration
         active = integration.active
@@ -121,8 +124,11 @@ class IntegrationsEndpoint(RestEndpoint):
 
         integration = self._ledfx.integrations.get(integration_id)
         if integration is None:
-            response = {"not found": 404}
-            return web.Response(text=json.dumps(response), status=404)
+            response = {
+                "status": "failed",
+                "reason": 'Required attribute "integration_id" was not provided',
+            }
+            return web.Response(text=json.dumps(response), status=400)
 
         if hasattr(integration, "on_delete"):
             await integration.on_delete()
