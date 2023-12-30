@@ -14,6 +14,10 @@ on:
   schedule:
     - cron: '0 8,20 * * *'
   workflow_dispatch:
+    
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
   CACHE_VERSION: 1
