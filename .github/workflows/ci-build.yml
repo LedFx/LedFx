@@ -73,7 +73,7 @@ jobs:
 
       - name: Smoketest LedFx
         run: |
-          poetry run ledfx --ci-smoke-test
+          poetry run ledfx -vv --ci-smoke-test
 
   build-ledfx-windows:
     name: Build LedFx (Windows)
@@ -217,5 +217,5 @@ jobs:
 
       - name: Smoketest LedFx
         run: |
-          poetry run ledfx --ci-smoke-test
+          poetry run ledfx -vv --ci-smoke-test
 
