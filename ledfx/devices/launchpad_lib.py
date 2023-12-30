@@ -1587,6 +1587,7 @@ class LaunchpadMiniMk3(LaunchpadLPX):
     def flush(self, data, alpha, diag):
         self.flush_p(data, alpha, diag, [0, 32, 41, 2, 13, 3])
 
+
 # ==========================================================================
 # CLASS MidiFighter64
 #
