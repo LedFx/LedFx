@@ -1244,7 +1244,7 @@ def open_gif(gif_path):
         else:
             return Image.open(gif_path)  # Directly open for local files
     except Exception as e:
-        _LOGGER.error(f"Failed to open gif : {gif_path} : {e}")
+        _LOGGER.warning(f"Failed to open gif : {gif_path} : {e}")
         return None
 
 

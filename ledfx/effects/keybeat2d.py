@@ -44,12 +44,12 @@ class Keybeat2d(Twod, GradientEffect):
                 "center hor",
                 description="Center offset in horizontal direction percent of matrix width",
                 default=0,
-            ): vol.All(vol.Coerce(int), vol.Range(min=-90, max=90)),
+            ): vol.All(vol.Coerce(int), vol.Range(min=-95, max=95)),
             vol.Optional(
                 "center ver",
                 description="Center offset in vertical direction percent of matrix height",
                 default=0,
-            ): vol.All(vol.Coerce(int), vol.Range(min=-90, max=90)),
+            ): vol.All(vol.Coerce(int), vol.Range(min=-95, max=95)),
             vol.Optional(
                 "gif at", description="Load gif from url or path", default=""
             ): str,
@@ -93,6 +93,11 @@ class Keybeat2d(Twod, GradientEffect):
                 description="Play gif forward and reverse, not just loop",
                 default=False,
             ): bool,
+            vol.Optional(
+                "half beat",
+                description="half the beat input impulse, slow things down",
+                default=False,
+            ): bool,
         }
     )
 
@@ -116,6 +121,7 @@ class Keybeat2d(Twod, GradientEffect):
         self.force_aspect = self._config["force aspect"]
         self.fake_beat = self._config["fake_beat"]
         self.diag2 = self._config["diag2"]
+        self.half_beat = self._config["half beat"]
 
         self.frames = []
         self.reverse = False
@@ -290,6 +296,9 @@ class Keybeat2d(Twod, GradientEffect):
                 stretch_height = int(self.stretch_v * frame.height)
                 stretch_width = int(self.stretch_h * frame.width)
             else:
+                self.center_h = 0
+                self.center_v = 0
+
                 if not self.force_aspect:
                     stretch_height = self.r_height
                     stretch_width = self.r_width
@@ -329,7 +338,10 @@ class Keybeat2d(Twod, GradientEffect):
         self.last_beat_t = self.start
 
     def audio_data_updated(self, data):
-        self.beat = data.beat_oscillator()
+        if self.half_beat:
+            self.beat = (data.bar_oscillator() % 2) / 2
+        else:
+            self.beat = data.beat_oscillator()
 
     def overlay(self, beat_kick, skip_beat):
         # add beat timestamps to the rolling window beat_list

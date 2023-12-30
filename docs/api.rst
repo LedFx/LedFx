@@ -312,6 +312,98 @@ If the Nanoleaf controller is present but not in pairing mode will return an err
         "error":"{ip}:{port}: Ensure Nanoleaf controller is in pairing mode"
     }
 
+
+/api/get_gif_frames
+===========================================
+
+Overview
+--------
+
+A RESTful endpoint designed for extracting and returning individual frames from a GIF image. Clients can request frames by providing either the URL or the local file path of the GIF resource. The frames are returned in JPEG format for efficient data transmission.
+
+Endpoint Details
+----------------
+
+- **Endpoint Path**: ``/api/get_gif_frames``
+
+Request
+-------
+
+- **Method**: GET
+- **Request Data**:
+  - ``path_url`` (String): The URL or local file path of the GIF image from which frames are to be extracted.
+
+Response
+--------
+
+- **Success**:
+
+  - Status Code: 200
+
+  - Body:
+
+    - ``frame_count`` (Integer): The number of frames extracted from the GIF.
+    - ``frames`` (List): A list of base64 encoded strings, each representing a frame in JPEG format.
+
+- **Failure**:
+
+  - Status Code: 400 (Bad Request)
+
+    - When JSON decoding fails or the required attribute ``path_url`` is not provided.
+
+  - Status Code: 404 (Not Found)
+
+    - When the GIF image at the specified URL or file path cannot be opened or processed.
+
+Error Handling
+--------------
+
+In case of an error, the endpoint returns a JSON object with the following structure:
+
+.. code-block:: json
+
+    {
+      "status": "failed",
+      "reason": "<error reason>"
+    }
+
+Usage Example
+-------------
+
+Requesting GIF Frames
+^^^^^^^^^^^^^^^^^^^^^
+
+To request frames from a GIF image, send a GET request with either the URL or local file path in the request data:
+
+.. code-block:: json
+
+    {
+      "path_url": "http://example.com/image.gif"
+    }
+
+Or, for a local file:
+
+.. code-block:: json
+
+    {
+      "path_url": "/path/to/local/image.gif"
+    }
+
+Sample Response
+^^^^^^^^^^^^^^^
+
+A successful response with two extracted frames might look like this:
+
+.. code-block:: json
+
+    {
+      "frame_count": 2,
+      "frames": [
+        "<base64-encoded JPEG data>",
+        "<base64-encoded JPEG data>"
+      ]
+    }
+
 /api/effects
 =========================
 
