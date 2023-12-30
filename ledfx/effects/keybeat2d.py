@@ -338,7 +338,6 @@ class Keybeat2d(Twod, GradientEffect):
         self.last_beat_t = self.start
 
     def audio_data_updated(self, data):
-
         if self.half_beat:
             self.beat = (data.bar_oscillator() % 2) / 2
         else:
