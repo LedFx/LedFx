@@ -1254,125 +1254,6 @@ class Dicer(LaunchpadBase):
 
 
 # ==========================================================================
-# CLASS LaunchpadMiniMk3
-#
-# For 3-color "Mk3" Launchpads; Mini and Pro
-# ==========================================================================
-class LaunchpadMiniMk3(LaunchpadPro):
-    # LED AND BUTTON NUMBERS IN RAW MODE (DEC)
-    #
-    #
-    #        +---+---+---+---+---+---+---+---+  +---+
-    #        |104|   |106|   |   |   |   |111|  |112|
-    #        +---+---+---+---+---+---+---+---+  +---+
-    #
-    #        +---+---+---+---+---+---+---+---+  +---+
-    #        | 81|   |   |   |   |   |   |   |  | 89|
-    #        +---+---+---+---+---+---+---+---+  +---+
-    #        | 71|   |   |   |   |   |   |   |  | 79|
-    #        +---+---+---+---+---+---+---+---+  +---+
-    #        | 61|   |   |   |   |   | 67|   |  | 69|
-    #        +---+---+---+---+---+---+---+---+  +---+
-    #        | 51|   |   |   |   |   |   |   |  | 59|
-    #        +---+---+---+---+---+---+---+---+  +---+
-    #        | 41|   |   |   |   |   |   |   |  | 49|
-    #        +---+---+---+---+---+---+---+---+  +---+
-    #        | 31|   |   |   |   |   |   |   |  | 39|
-    #        +---+---+---+---+---+---+---+---+  +---+
-    #        | 21|   | 23|   |   |   |   |   |  | 29|
-    #        +---+---+---+---+---+---+---+---+  +---+
-    #        | 11|   |   |   |   |   |   |   |  | 19|
-    #        +---+---+---+---+---+---+---+---+  +---+
-    #
-    #
-    #
-    # LED AND BUTTON NUMBERS IN XY MODE (X/Y)
-    #
-    #          0   1   2   3   4   5   6   7      8
-    #        +---+---+---+---+---+---+---+---+  +---+
-    #        |0/0|   |2/0|   |   |   |   |   |  |8/0|  0
-    #        +---+---+---+---+---+---+---+---+  +---+
-    #
-    #        +---+---+---+---+---+---+---+---+  +---+
-    #        |0/1|   |   |   |   |   |   |   |  |   |  1
-    #        +---+---+---+---+---+---+---+---+  +---+
-    #        |   |   |   |   |   |   |   |   |  |   |  2
-    #        +---+---+---+---+---+---+---+---+  +---+
-    #        |   |   |   |   |   |5/3|   |   |  |   |  3
-    #        +---+---+---+---+---+---+---+---+  +---+
-    #        |   |   |   |   |   |   |   |   |  |   |  4
-    #        +---+---+---+---+---+---+---+---+  +---+
-    #        |   |   |   |   |   |   |   |   |  |   |  5
-    #        +---+---+---+---+---+---+---+---+  +---+
-    #        |   |   |   |   |4/6|   |   |   |  |   |  6
-    #        +---+---+---+---+---+---+---+---+  +---+
-    #        |   |   |   |   |   |   |   |   |  |   |  7
-    #        +---+---+---+---+---+---+---+---+  +---+
-    #        |   |   |   |   |   |   |   |   |  |8/8|  8
-    #        +---+---+---+---+---+---+---+---+  +---+
-    #
-
-    # 	COLORS = {'black':0, 'off':0, 'white':3, 'red':5, 'green':17 }
-
-    # -------------------------------------------------------------------------------------
-    # -- Opens one of the attached Launchpad MIDI devices.
-    # -- Uses search string "MiniMk3", by default.
-    # -------------------------------------------------------------------------------------
-    # Overrides "LaunchpadPro" method
-    def Open(self, number=0, name="MiniMK3"):
-        retval = super().Open(number=number, name=name)
-        if retval is True:
-            self.LedSetMode(1)
-
-        return retval
-
-    # -------------------------------------------------------------------------------------
-    # -- Checks if a device exists, but does not open it.
-    # -- Does not check whether a device is in use or other, strange things...
-    # -- Uses search string "MiniMk3", by default.
-    # -------------------------------------------------------------------------------------
-    # Overrides "LaunchpadBase" method
-    def Check(self, number=0, name="MiniMK3"):
-        return super().Check(number=number, name=name)
-
-    # -------------------------------------------------------------------------------------
-    # -- Sets the button layout (and codes) to the set, specified by <mode>.
-    # -- Valid options:
-    # --  00 - Session, 04 - Drums, 05 - Keys, 06 - User (Drum)
-    # --  0D - DAW Faders (available if Session enabled), 7F - Programmer
-    # -- Until now, we'll need the "Session" (0x00) settings.
-    # -------------------------------------------------------------------------------------
-    # TODO: ASkr, Undocumented!
-    # TODO: return value
-    def LedSetLayout(self, mode):
-        ValidModes = [0x00, 0x04, 0x05, 0x06, 0x0D, 0x7F]
-        if mode not in ValidModes:
-            return
-
-        self.midi.RawWriteSysEx([0, 32, 41, 2, 13, 0, mode])
-        time.sleep(0.010)
-
-    # -------------------------------------------------------------------------------------
-    # -- Selects the Mk3's mode.
-    # -- <mode> -> 0 -> "Ableton Live mode"
-    # --           1 -> "Programmer mode"	(what we need)
-    # -------------------------------------------------------------------------------------
-    def LedSetMode(self, mode):
-        if mode < 0 or mode > 1:
-            return
-
-        self.midi.RawWriteSysEx([0, 32, 41, 2, 13, 14, mode])
-        time.sleep(0.010)
-
-    # -------------------------------------------------------------------------------------
-    # -- Sets the button layout to "Session" mode.
-    # -------------------------------------------------------------------------------------
-    # TODO: ASkr, Undocumented!
-    def LedSetButtonLayoutSession(self):
-        self.LedSetLayout(0)
-
-
-# ==========================================================================
 # CLASS LaunchpadLPX
 #
 # For 3-color "X" Launchpads
@@ -1669,6 +1550,125 @@ class LaunchpadLPX(LaunchpadPro):
                 self.frame += 1
             _LOGGER.info(f"Launchpad X flush {self.fps} : {now - start}")
             self.lasttime = nowint
+
+
+# ==========================================================================
+# CLASS LaunchpadMiniMk3
+#
+# For 3-color "Mk3" Launchpads; Mini and Pro
+# ==========================================================================
+class LaunchpadMiniMk3(LaunchpadLPX):
+    # LED AND BUTTON NUMBERS IN RAW MODE (DEC)
+    #
+    #
+    #        +---+---+---+---+---+---+---+---+  +---+
+    #        |104|   |106|   |   |   |   |111|  |112|
+    #        +---+---+---+---+---+---+---+---+  +---+
+    #
+    #        +---+---+---+---+---+---+---+---+  +---+
+    #        | 81|   |   |   |   |   |   |   |  | 89|
+    #        +---+---+---+---+---+---+---+---+  +---+
+    #        | 71|   |   |   |   |   |   |   |  | 79|
+    #        +---+---+---+---+---+---+---+---+  +---+
+    #        | 61|   |   |   |   |   | 67|   |  | 69|
+    #        +---+---+---+---+---+---+---+---+  +---+
+    #        | 51|   |   |   |   |   |   |   |  | 59|
+    #        +---+---+---+---+---+---+---+---+  +---+
+    #        | 41|   |   |   |   |   |   |   |  | 49|
+    #        +---+---+---+---+---+---+---+---+  +---+
+    #        | 31|   |   |   |   |   |   |   |  | 39|
+    #        +---+---+---+---+---+---+---+---+  +---+
+    #        | 21|   | 23|   |   |   |   |   |  | 29|
+    #        +---+---+---+---+---+---+---+---+  +---+
+    #        | 11|   |   |   |   |   |   |   |  | 19|
+    #        +---+---+---+---+---+---+---+---+  +---+
+    #
+    #
+    #
+    # LED AND BUTTON NUMBERS IN XY MODE (X/Y)
+    #
+    #          0   1   2   3   4   5   6   7      8
+    #        +---+---+---+---+---+---+---+---+  +---+
+    #        |0/0|   |2/0|   |   |   |   |   |  |8/0|  0
+    #        +---+---+---+---+---+---+---+---+  +---+
+    #
+    #        +---+---+---+---+---+---+---+---+  +---+
+    #        |0/1|   |   |   |   |   |   |   |  |   |  1
+    #        +---+---+---+---+---+---+---+---+  +---+
+    #        |   |   |   |   |   |   |   |   |  |   |  2
+    #        +---+---+---+---+---+---+---+---+  +---+
+    #        |   |   |   |   |   |5/3|   |   |  |   |  3
+    #        +---+---+---+---+---+---+---+---+  +---+
+    #        |   |   |   |   |   |   |   |   |  |   |  4
+    #        +---+---+---+---+---+---+---+---+  +---+
+    #        |   |   |   |   |   |   |   |   |  |   |  5
+    #        +---+---+---+---+---+---+---+---+  +---+
+    #        |   |   |   |   |4/6|   |   |   |  |   |  6
+    #        +---+---+---+---+---+---+---+---+  +---+
+    #        |   |   |   |   |   |   |   |   |  |   |  7
+    #        +---+---+---+---+---+---+---+---+  +---+
+    #        |   |   |   |   |   |   |   |   |  |8/8|  8
+    #        +---+---+---+---+---+---+---+---+  +---+
+    #
+
+    # 	COLORS = {'black':0, 'off':0, 'white':3, 'red':5, 'green':17 }
+
+    # -------------------------------------------------------------------------------------
+    # -- Opens one of the attached Launchpad MIDI devices.
+    # -- Uses search string "MiniMk3", by default.
+    # -------------------------------------------------------------------------------------
+    # Overrides "LaunchpadPro" method
+    def Open(self, number=0, name="MiniMK3"):
+        retval = super().Open(number=number, name=name)
+        if retval is True:
+            self.LedSetMode(1)
+
+        return retval
+
+    # -------------------------------------------------------------------------------------
+    # -- Checks if a device exists, but does not open it.
+    # -- Does not check whether a device is in use or other, strange things...
+    # -- Uses search string "MiniMk3", by default.
+    # -------------------------------------------------------------------------------------
+    # Overrides "LaunchpadBase" method
+    def Check(self, number=0, name="MiniMK3"):
+        return super().Check(number=number, name=name)
+
+    # # -------------------------------------------------------------------------------------
+    # # -- Sets the button layout (and codes) to the set, specified by <mode>.
+    # # -- Valid options:
+    # # --  00 - Session, 04 - Drums, 05 - Keys, 06 - User (Drum)
+    # # --  0D - DAW Faders (available if Session enabled), 7F - Programmer
+    # # -- Until now, we'll need the "Session" (0x00) settings.
+    # # -------------------------------------------------------------------------------------
+    # # TODO: ASkr, Undocumented!
+    # # TODO: return value
+    # def LedSetLayout(self, mode):
+    #     ValidModes = [0x00, 0x04, 0x05, 0x06, 0x0D, 0x7F]
+    #     if mode not in ValidModes:
+    #         return
+    #
+    #     self.midi.RawWriteSysEx([0, 32, 41, 2, 13, 0, mode])
+    #     time.sleep(0.010)
+    #
+    # # -------------------------------------------------------------------------------------
+    # # -- Selects the Mk3's mode.
+    # # -- <mode> -> 0 -> "Ableton Live mode"
+    # # --           1 -> "Programmer mode"	(what we need)
+    # # -------------------------------------------------------------------------------------
+    # def LedSetMode(self, mode):
+    #     if mode < 0 or mode > 1:
+    #         return
+    #
+    #     self.midi.RawWriteSysEx([0, 32, 41, 2, 13, 14, mode])
+    #     time.sleep(0.010)
+    #
+    # # -------------------------------------------------------------------------------------
+    # # -- Sets the button layout to "Session" mode.
+    # # -------------------------------------------------------------------------------------
+    # # TODO: ASkr, Undocumented!
+    # def LedSetButtonLayoutSession(self):
+    #     self.LedSetLayout(0)
 
 
 # ==========================================================================
