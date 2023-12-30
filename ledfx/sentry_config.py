@@ -9,9 +9,9 @@ from ledfx.consts import PROJECT_VERSION
 _LOGGER = logging.getLogger(__name__)
 
 
-env = os.getenv("ENVIRONMENT", "dev")
+is_release = os.getenv("IS_RELEASE", "false").lower()
 
-if env == "dev":
+if is_release == "false":
     sentry_dsn = "https://b192934eebd517c86bf7e9c512b3888a@o482797.ingest.sentry.io/4506350241841152"
     sample_rate = 1
 
