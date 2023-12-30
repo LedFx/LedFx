@@ -51,17 +51,17 @@ class RestEndpoint(BaseRegistry):
             return web.json_response(data=response, status=202)
 
     async def json_decode_error(self) -> web.Response:
-            """
-            Handle messaging for JSON Decoding errors.
+        """
+        Handle messaging for JSON Decoding errors.
 
-            Returns:
-                A web response with a JSON payload containing the error and a 400 status.
-            """
-            response = {
-                "status": "failed",
-                "reason": "JSON decoding failed",
-            }
-            return web.json_response(data=response, status=400)
+        Returns:
+            A web response with a JSON payload containing the error and a 400 status.
+        """
+        response = {
+            "status": "failed",
+            "reason": "JSON decoding failed",
+        }
+        return web.json_response(data=response, status=400)
 
 
 class RestApi(RegistryLoader):
