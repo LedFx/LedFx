@@ -66,9 +66,9 @@ ledfx_presets = {
                 "skip frames": "",
                 "stretch hor": 66,
                 "stretch ver": 67,
-                "test": False
+                "test": False,
             },
-            "name": "blade"
+            "name": "blade",
         },
         "bruce": {
             "config": {
@@ -198,9 +198,9 @@ ledfx_presets = {
                 "skip frames": "",
                 "stretch hor": 66,
                 "stretch ver": 67,
-                "test": False
+                "test": False,
             },
-            "name": "MOONMAN"
+            "name": "MOONMAN",
         },
         "nyan": {
             "config": {
