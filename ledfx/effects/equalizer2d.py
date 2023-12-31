@@ -1,5 +1,4 @@
 import logging
-import timeit
 
 import numpy as np
 import voluptuous as vol
@@ -19,8 +18,6 @@ class Equalizer2d(Twod, GradientEffect):
         "peak decay",
         "max vs mean",
     ]
-
-    start_time = timeit.default_timer()
 
     CONFIG_SCHEMA = vol.Schema(
         {
