@@ -10,6 +10,7 @@ _LOGGER = logging.getLogger(__name__)
 
 # Anywhere you see template, replace it with your own class reference / name
 
+
 class Template2d(Twod, GradientEffect):
     NAME = "Template2d"
     CATEGORY = "Matrix"
@@ -69,4 +70,3 @@ class Template2d(Twod, GradientEffect):
         # pixels = self.matrix.load()
         # pixels[x, y] = (r, g, b)
         #   iterate
-
