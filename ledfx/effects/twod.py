@@ -70,8 +70,6 @@ class Twod(AudioReactiveEffect):
         self.current_pixel = 0
         self.last_cycle_time = 20
         self.bar = 0
-        # TODO: Changes to this value from virtual config are only picked up
-        # on change of effect
         self.t_height = self._virtual.config["rows"]
         self.t_width = self.pixel_count // self.t_height
         self.init = True
@@ -105,6 +103,9 @@ class Twod(AudioReactiveEffect):
         # defer things that can't be done when pixel_count is not known
         # so therefore cannot be addressed in config_updated
         self.init = False
+
+        self.t_height = self._virtual.config["rows"]
+        self.t_width = self.pixel_count // self.t_height
 
         if self.rotate == 1 or self.rotate == 3:
             # swap width and height for render
