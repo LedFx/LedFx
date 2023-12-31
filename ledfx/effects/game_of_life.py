@@ -1,14 +1,14 @@
 import logging
+import random
+import time
+from enum import Enum
 
+import numpy as np
 import voluptuous as vol
+from PIL import Image
 
 from ledfx.effects.gradient import GradientEffect
 from ledfx.effects.twod import Twod
-import numpy as np
-from PIL import Image
-import time
-from enum import Enum
-import random
 
 _LOGGER = logging.getLogger(__name__)
 
