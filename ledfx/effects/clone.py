@@ -65,9 +65,8 @@ class Clone(Twod):
         if self.sct is None:
             self.sct = mss.mss()
         else:
-            # this is a deep sniff to see if the sct object is still valid
-            # Don't like it, but some cases _handles is empty!
-            if not hasattr(self.sct._handles, "srcdc"):
+            # Check if the sct object is still valid
+            if not hasattr(self.sct, "_handles") or not hasattr(self.sct._handles, "srcdc"):
                 self.sct = mss.mss()
                 _LOGGER.warning("Recreated sct")
 
