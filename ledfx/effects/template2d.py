@@ -1,5 +1,4 @@
 import logging
-import timeit
 
 import voluptuous as vol
 
