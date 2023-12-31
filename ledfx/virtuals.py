@@ -853,9 +853,13 @@ class Virtual:
 
         if hasattr(self, "_config"):
             if _config["rows"] != self._config["rows"]:
-                _LOGGER.info(f"rows changed from {self._config['rows']} to {_config['rows']}")
+                _LOGGER.info(
+                    f"rows changed from {self._config['rows']} to {_config['rows']}"
+                )
                 if self._active_effect is not None:
-                    self._active_effect.config_updated(self._active_effect.config)
+                    self._active_effect.config_updated(
+                        self._active_effect.config
+                    )
 
             if _config["mapping"] != self._config["mapping"]:
                 self.invalidate_cached_props()
