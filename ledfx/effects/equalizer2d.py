@@ -20,8 +20,6 @@ class Equalizer2d(Twod, GradientEffect):
         "max vs mean",
     ]
 
-    start_time = timeit.default_timer()
-
     CONFIG_SCHEMA = vol.Schema(
         {
             vol.Optional(

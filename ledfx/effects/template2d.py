@@ -8,6 +8,7 @@ from ledfx.effects.twod import Twod
 
 _LOGGER = logging.getLogger(__name__)
 
+# copy this file and rename it into the effects folder
 # Anywhere you see template, replace it with your own class reference / name
 
 class Template2d(Twod, GradientEffect):
@@ -16,8 +17,6 @@ class Template2d(Twod, GradientEffect):
     # add keys you want hidden or in advanced here
     HIDDEN_KEYS = Twod.HIDDEN_KEYS + []
     ADVANCED_KEYS = Twod.ADVANCED_KEYS + []
-
-    start_time = timeit.default_timer()
 
     CONFIG_SCHEMA = vol.Schema(
         {
@@ -42,7 +41,15 @@ class Template2d(Twod, GradientEffect):
         super().do_once()
         # defer things that can't be done when pixel_count is not known
         # this is probably important for most 2d matrix where you want
-        # things to be initialized to the space
+        # things to be initialized to led length and implied dimensions
+        #
+        # self.r_width and self.r_height should be used for the (r)ender space
+        # as the self.matrix will not exist yet
+        #
+        # note that self.t_width and self.t_height are the physical dimensions
+        #
+        # this function will be called once on the first entry to render call
+        # in base class twod AND every time there is a config_updated thereafter
 
     def audio_data_updated(self, data):
         # Grab your audio input here, such as bar oscillator
@@ -55,6 +62,7 @@ class Template2d(Twod, GradientEffect):
         # self.m_draw is the attached draw object
 
         # all rotation abstraction is done for you
+        # you can use image dimensions now
         # self.matrix.height
         # self.matrix.width
 
