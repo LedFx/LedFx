@@ -1,10 +1,11 @@
 import logging
 import os
+import time
 import urllib.request
 
 import voluptuous as vol
 from PIL import Image
-import time
+
 from ledfx.consts import LEDFX_ASSETS_PATH
 from ledfx.effects.twod import Twod
 
@@ -56,7 +57,7 @@ class GifPlayer(Twod):
         self.init = True
 
     def audio_data_updated(self, data):
-        # Get filtered bar power
+        # Non-reactive by design - do nothing
         return
 
     def open_image(self, image_path):
@@ -67,7 +68,7 @@ class GifPlayer(Twod):
                 with urllib.request.urlopen(image_path) as url:
                     return Image.open(url)
             else:
-                return Image.open(image_path)  # Directly open for local files=
+                return Image.open(image_path)  # Directly open for local files
         except Exception as e:
             _LOGGER.error("Failed to open image, using default GIF: %s", e)
             return Image.open(self.DEFAULT_GIF_PATH)
@@ -124,7 +125,7 @@ class GifPlayer(Twod):
         Process the GIF frames and store them in the frames object.
 
         This method iterates over each frame of the GIF, applies necessary transformations,
-        and stores the processed frames in the `frames` object.
+        and stores the processed frames.
 
         Returns:
             None
