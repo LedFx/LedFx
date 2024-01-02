@@ -23,6 +23,7 @@ from subprocess import PIPE, Popen
 
 import numpy as np
 import PIL.Image as Image
+import PIL.ImageFont as ImageFont
 import requests
 import voluptuous as vol
 
@@ -1221,6 +1222,15 @@ def remove_values_above_limit(numbers, limit):
 
 
 def open_gif(gif_path):
+    """
+    Open a gif from a local file or url
+
+    Args:
+        gif_path: str
+            path to gif file or url
+    Returns:
+        Image: PIL Image object or None if failed to open
+    """
     current_directory = os.path.dirname(__file__)
     absolute_directory = os.path.abspath(current_directory)
     _LOGGER.debug(
@@ -1234,5 +1244,52 @@ def open_gif(gif_path):
         else:
             return Image.open(gif_path)  # Directly open for local files
     except Exception as e:
-        _LOGGER.error(f"Failed to open gif : {gif_path} : {e}")
+        _LOGGER.warning(f"Failed to open gif : {gif_path} : {e}")
         return None
+
+
+def get_mono_font(size):
+    """
+    Get a monospace font from a list of fonts common across platforms
+
+    Args:
+        size: int
+            font size in points
+    Returns:
+        font: ImageFont
+    """
+
+    font_names = [
+        "Courier New",
+        "cour.ttf",
+        "DejaVu Sans Mono",
+        "DejaVuSansMono.ttf",
+        "DejaVuSansMono-Regular.ttf",
+        "Liberation Mono",
+        "LiberationMono-Regular.ttf",
+        "Consolas",
+        "consola.ttf",
+        "monospace",
+    ]
+    return get_font(font_names, size)
+
+
+def get_font(font_list, size):
+    """
+    Get the first font from a list of fonts that is available on the system
+
+    Args:
+        font_list: list
+            list of font name str to try
+        size: int
+            font size in points
+    """
+
+    for font_name in font_list:
+        try:
+            font = ImageFont.truetype(font_name, size)
+            _LOGGER.info(f"Found font: {font_name}")
+            return font
+        except OSError:
+            continue
+    raise RuntimeError("None of the fonts are available on the system.")

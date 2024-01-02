@@ -7,6 +7,7 @@ from ledfx.api import RestEndpoint
 _LOGGER = logging.getLogger(__name__)
 
 
+# TODO: Delete me
 class SpecifiedDeviceStatusEndpoint(RestEndpoint):
     """REST end-point for querying specific device/virtuals"""
 

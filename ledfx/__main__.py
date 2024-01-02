@@ -185,6 +185,12 @@ def parse_args():
         action="store_true",
         help="This crashes LedFx to test the sentry crash logger",
     )
+    parser.add_argument(
+        "--ci-smoke-test",
+        dest="ci_smoke_test",
+        action="store_true",
+        help="Launch LedFx and then exit after 5 seconds to sanity check the install",
+    )
     return parser.parse_args()
 
 
@@ -295,6 +301,7 @@ def entry_point(icon=None):
             port=args.port,
             port_s=args.port_s,
             icon=icon,
+            ci_testing=args.ci_smoke_test,
         )
 
         exit_code = ledfx.start(open_ui=args.open_ui)

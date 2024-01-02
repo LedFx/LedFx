@@ -22,11 +22,7 @@ class GetNanoleadTokenEndpoint(RestEndpoint):
         try:
             data = await request.json()
         except JSONDecodeError:
-            response = {
-                "status": "failed",
-                "reason": "JSON Decoding failed",
-            }
-            return web.json_response(data=response, status=400)
+            return await self.json_decode_error()
 
         ip = data.get("ip_address")
         port = data.get("port")

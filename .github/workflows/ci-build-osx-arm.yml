@@ -1,0 +1,48 @@
+name: CI Build LedFx (Apple Silicon)
+
+on:
+  workflow_dispatch:
+
+jobs:
+
+  build-ledfx-osx:
+    name: Build LedFx (OS X) (Apple Silicon)
+    runs-on: flyci-macos-large-latest-m1
+    strategy:
+      matrix:
+        python: [3.10.x,3.11.x,3.12.x]
+    steps:
+      - name: Check out code from GitHub
+        uses: actions/checkout@v4
+      - name: Install build dependencies
+        run: |
+          brew install portaudio
+          brew install mbedtls@2
+          brew install libsamplerate
+      - name: Setup mbedtls path
+        run: |
+          echo 'export PATH="/opt/homebrew/opt/mbedtls@2/bin:$PATH"' >> /Users/runner/.bash_profile
+      - name: Setup Python ${{ matrix.python }}
+        id: python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install poetry via Homebrew
+        run: |
+          brew install poetry
+      - name: Build LedFx wheel
+        run: |
+          poetry build
+      - name: Install LedFx from wheel
+        run: |
+          export LDFLAGS="-L/opt/homebrew/opt/mbedtls@2/lib"
+          export CPPFLAGS="-I/opt/homebrew/opt/mbedtls@2/include"
+          poetry install
+      - name: Smoketest LedFx
+        run: |
+          source $(poetry env info -p)/bin/activate
+          ledfx --ci-smoke-test
+          if [ $? -ne 0 ]; then
+            echo "LedFx launch failed: $?"
+            exit 1
+          fi

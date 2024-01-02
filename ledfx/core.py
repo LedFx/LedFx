@@ -52,6 +52,7 @@ class LedFxCore:
         port=None,
         port_s=None,
         icon=None,
+        ci_testing=False,
     ):
         self.icon = icon
         self.config_dir = config_dir
@@ -60,6 +61,7 @@ class LedFxCore:
         self.host = host if host else self.config["host"]
         self.port = port if port else self.config["port"]
         self.port_s = port_s if port_s else self.config["port_s"]
+        self.ci_testing = ci_testing
 
         if sys.platform == "win32":
             self.loop = asyncio.ProactorEventLoop()
@@ -202,17 +204,6 @@ class LedFxCore:
     def start(self, open_ui=False):
         async_fire_and_forget(self.async_start(open_ui=open_ui), self.loop)
 
-        # Windows does not seem to handle Ctrl+C well so as a workaround
-        # register a handler and manually stop the app
-        if sys.platform == "win32":
-            import win32api
-
-            def handle_win32_interrupt(sig, func=None):
-                self.stop(exit_code=2)
-                return True
-
-            win32api.SetConsoleCtrlHandler(handle_win32_interrupt, 1)
-
         try:
             self.loop.run_forever()
         except KeyboardInterrupt:
@@ -287,6 +278,9 @@ class LedFxCore:
         if open_ui:
             self.open_ui()
 
+        if self.ci_testing:
+            await asyncio.sleep(5)
+            self.stop(5)
         await self.flush_loop()
 
     def stop(self, exit_code):
@@ -311,7 +305,8 @@ class LedFxCore:
             _LOGGER.info("LedFx Shutdown Request via API. Shutting Down.")
         if exit_code == 4:
             _LOGGER.info("LedFx is restarting.")
-
+        if exit_code == 5:
+            _LOGGER.info("LedFx Shutdown via CI Testing Flag.")
         # Fire a shutdown event and flush the loop
         self.events.fire_event(LedFxShutdownEvent())
         await asyncio.sleep(0)
