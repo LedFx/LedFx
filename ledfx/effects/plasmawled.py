@@ -1,5 +1,4 @@
 import logging
-import timeit
 
 import numpy as np
 import PIL.Image as Image
@@ -124,7 +123,9 @@ class Plasmawled(Twod, GradientEffect):
             self.time += self.speedb
             time_val = int(self.time * 1000)
         else:
-            time_val = int((timeit.default_timer() - self.start_time) * 1000)
+            time_val = int(
+                (self.current_time - self.EFFECT_START_TIME) * 1000
+            )  # TODO: Confirm this logic/timer structure
 
         a = time_val / (self._speed + 1)
 
