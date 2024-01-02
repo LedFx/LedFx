@@ -42,7 +42,7 @@ class GifPlayer(Twod):
                 [resize_method.value for resize_method in GIFResizeMethods]
             ),
             vol.Optional(
-                "GIF Path",
+                "gif_path",
                 description="Load GIF from URL/local file",
                 default="",
             ): str,
@@ -79,7 +79,7 @@ class GifPlayer(Twod):
     def do_once(self):
         super().do_once()
 
-        gif_path = self._config["GIF Path"]
+        gif_path = self._config["gif_path"]
         # If for some unknown reason the url_path is blank (someone saved a preset with no string)/
         if gif_path == "":
             # Show animated LedFx logo
