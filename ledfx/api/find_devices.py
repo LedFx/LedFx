@@ -28,7 +28,7 @@ class FindDevicesEndpoint(RestEndpoint):
             exc = future.exception()
 
         async_fire_and_forget(
-            self._ledfx.devices.find_wled_devices(),
+            self._ledfx.zeroconf.discover_wled_devices(),
             loop=self._ledfx.loop,
             exc_handler=handle_exception,
         )

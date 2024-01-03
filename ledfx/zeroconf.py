@@ -1,70 +1,143 @@
-
-import asyncio
-
-from typing import Any, Optional, cast
 import logging
-from zeroconf import  ServiceStateChange, Zeroconf
+
+from zeroconf import ServiceStateChange, Zeroconf
 from zeroconf.asyncio import (
     AsyncServiceBrowser,
     AsyncServiceInfo,
     AsyncZeroconf,
-    
 )
+
 from ledfx.utils import async_fire_and_forget
+
 _LOGGER = logging.getLogger(__name__)
-
-class WLEDResponder:
-
-    def async_on_service_state_change(
-        zeroconf: Zeroconf, service_type: str, name: str, state_change: ServiceStateChange
-    ) -> None:
-        print(f"Service {name} of type {service_type} state changed: {state_change}")
-        if state_change is not ServiceStateChange.Added:
-            return
-        async_fire_and_forget(WLEDResponder.async_display_service_info(zeroconf, service_type, name))
-
-
-    async def async_display_service_info(zeroconf: Zeroconf, service_type: str, name: str) -> None:
-        info = AsyncServiceInfo(service_type, name)
-        await info.async_request(zeroconf, 3000)
-        print("Info from zeroconf.get_service_info: %r" % (info))
-        if info:
-            addresses = ["%s:%d" % (addr, cast(int, info.port)) for addr in info.parsed_scoped_addresses()]
-            print("  Name: %s" % name)
-            print("  Addresses: %s" % ", ".join(addresses))
-            print("  Weight: %d, priority: %d" % (info.weight, info.priority))
-            print(f"  Server: {info.server}")
-            if info.properties:
-                print("  Properties are:")
-                for key, value in info.properties.items():
-                    print(f"    {key!r}: {value!r}")
-            else:
-                print("  No properties")
-        else:
-            print("  No info")
-        print('\n')
 
 
 class ZeroConfRunner:
+    """
+    Class responsible for handling zeroconf, WLED discovery and WLED device registration.
 
-    def __init__(self, args: Any) -> None:
-        self.args = args
-        self.aiobrowser: Optional[AsyncServiceBrowser] = None
-        self.aiozc: Optional[AsyncZeroconf] = None
+    Attributes:
+        aiobrowser (Optional[AsyncServiceBrowser]): The async service browser for zeroconf.
+        aiozc (Optional[AsyncZeroconf]): The async zeroconf instance.
+        _ledfx: The ledfx instance.
 
-    async def async_run(self) -> None:
-        self.aiozc = AsyncZeroconf()
+    Methods:
+        on_service_state_change: Callback function for service state change.
+        async_on_service_state_change: Asynchronous function for handling WLED service state change.
+        add_wled_device: Asynchronous function for adding discovered WLED devices to config.
+        discover_wled_devices: Asynchronous function for discovering WLED devices.
+        async_close: Asynchronous function for closing zeroconf listener.
+    """
 
-        services = ["_wled._tcp.local."]
+    def __init__(self, ledfx):
+        self.aiobrowser = None
+        self.aiozc = None
+        self._ledfx = ledfx
 
-        print("\nBrowsing %s service(s), press Ctrl-C to exit...\n" % services)
-        self.aiobrowser = AsyncServiceBrowser(
-            self.aiozc.zeroconf, services, handlers=[WLEDResponder.async_on_service_state_change]
+    def on_service_state_change(
+        self,
+        zeroconf: Zeroconf,
+        service_type: str,
+        name: str,
+        state_change: ServiceStateChange,
+    ):
+        """
+        Callback function for service state change.
+
+        Args:
+            zeroconf (Zeroconf): The zeroconf instance.
+            service_type (str): The service type.
+            name (str): The service name.
+            state_change (ServiceStateChange): The state change event.
+        """
+        # Schedule the coroutine to be run on the event loop
+        async_fire_and_forget(
+            self.async_on_service_state_change(
+                zeroconf=zeroconf,
+                service_type=service_type,
+                name=name,
+                state_change=state_change,
+            ),
+            self._ledfx.loop,
         )
 
+    async def async_on_service_state_change(
+        self,
+        zeroconf: Zeroconf,
+        service_type: str,
+        name: str,
+        state_change: ServiceStateChange,
+    ):
+        """
+        Asynchronous function for handling service state change.
+
+        Args:
+            zeroconf (Zeroconf): The zeroconf instance.
+            service_type (str): The service type.
+            name (str): The service name.
+            state_change (ServiceStateChange): The state change event.
+        """
+        _LOGGER.debug(
+            f"Service {name} of type {service_type} state changed: {state_change}"
+        )
+        if state_change is not ServiceStateChange.Added:
+            return
+
+        async_fire_and_forget(
+            self.add_wled_device(zeroconf, service_type, name),
+            self._ledfx.loop,
+        )
+
+    async def add_wled_device(
+        self, zeroconf: Zeroconf, service_type: str, name: str
+    ) -> None:
+        """
+        Asynchronous function for
+
+        Args:
+            zeroconf (Zeroconf): The zeroconf instance.
+            service_type (str): The service type.
+            name (str): The service name.
+        """
+        info = AsyncServiceInfo(service_type, name)
+        await info.async_request(zeroconf, 3000)
+        if info:
+            hostname = str(info.server).rstrip(".")
+            _LOGGER.info(f"Found WLED device: {hostname}")
+
+            device_type = "wled"
+            device_config = {"ip_address": hostname}
+
+            def handle_exception(future):
+                # Ignore exceptions, these will be raised when a device is found that already exists
+                exc = future.exception()
+
+            async_fire_and_forget(
+                self._ledfx.devices.add_new_device(device_type, device_config),
+                loop=self._ledfx.loop,
+                exc_handler=handle_exception,
+            )
+
+    async def discover_wled_devices(self) -> None:
+        """
+        Asynchronous function for discovering WLED devices.
+        """
+        self.aiozc = AsyncZeroconf()
+        services = ["_wled._tcp.local."]
+        _LOGGER.info("Browsing for WLED devices...")
+        self.aiobrowser = AsyncServiceBrowser(
+            self.aiozc.zeroconf,
+            services,
+            handlers=[self.on_service_state_change],
+        )
 
     async def async_close(self) -> None:
+        """
+        Asynchronous function for closing zeroconf listener.
+        """
         assert self.aiozc is not None
         assert self.aiobrowser is not None
+        _LOGGER.info("Closing zeroconf listener.")
         await self.aiobrowser.async_cancel()
         await self.aiozc.async_close()
+        _LOGGER.info("Zeroconf closed.")
