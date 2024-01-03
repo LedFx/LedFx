@@ -333,9 +333,9 @@ class Keybeat2d(Twod, GradientEffect):
 
             self.beat_times = []  # rolling window of beat timestamps
             self.beat_f_times = []  # rolling windows of frame info
-            self.begin = self.start  # used for seconds running total
+            self.begin = self.current_time  # used for seconds running total
 
-        self.last_beat_t = self.start
+        self.last_beat_t = self.current_time
 
     def audio_data_updated(self, data):
         if self.half_beat:
@@ -347,22 +347,24 @@ class Keybeat2d(Twod, GradientEffect):
         # add beat timestamps to the rolling window beat_list
         # use len of beat_list as bpm
         if beat_kick:
-            self.beat_times.append(self.start)
+            self.beat_times.append(self.current_time)
             color = (255, 255, 255)
         elif skip_beat:
             color = (255, 0, 0)
         else:
             color = (255, 0, 255)
 
-        self.beat_f_times.append((self.start, self.beat, self.frame_c, color))
+        self.beat_f_times.append(
+            (self.current_time, self.beat, self.frame_c, color)
+        )
         # cull any beats older than 60 seconds
         self.beat_times = [
-            beat for beat in self.beat_times if self.start - beat < 60.0
+            beat for beat in self.beat_times if self.current_time - beat < 60.0
         ]
         self.beat_f_times = [
             f_beat
             for f_beat in self.beat_f_times
-            if self.start - f_beat[0] < 60.0
+            if self.current_time - f_beat[0] < 60.0
         ]
 
         # lets graph directly into the draw space
@@ -384,7 +386,7 @@ class Keybeat2d(Twod, GradientEffect):
                 break
 
         # if we have not reached a 60 second window yet, then gestimate bpm
-        passed = self.start - self.begin
+        passed = self.current_time - self.begin
         self.bpm = len(self.beat_times)
         if passed < 60.0:
             self.bpm *= 60 / passed
@@ -415,11 +417,11 @@ class Keybeat2d(Twod, GradientEffect):
         # if we see beat go from a larger number to a smaller one, we hit a beat
         if self.beat < self.last_beat:
             # protect against false beats with less than 100ms ~= 600 bpm!
-            if self.start - self.last_beat_t < 0.1:
+            if self.current_time - self.last_beat_t < 0.1:
                 skip_beat = True
                 if self.diag2:
                     _LOGGER.info(
-                        f"skip beat threshold triggered: {self.start - self.last_beat_t:0.6f}"
+                        f"skip beat threshold triggered: {self.current_time - self.last_beat_t:0.6f}"
                     )
             else:
                 beat_kick = True
@@ -431,7 +433,7 @@ class Keybeat2d(Twod, GradientEffect):
                 else:
                     self.beat_idx = (self.beat_idx + 1) % self.num_beat_frames
 
-            self.last_beat_t = self.start
+            self.last_beat_t = self.current_time
 
         self.last_beat = self.beat
 
