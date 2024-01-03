@@ -17,8 +17,8 @@ class ZeroConfRunner:
     Class responsible for handling zeroconf, WLED discovery and WLED device registration.
 
     Attributes:
-        aiobrowser (Optional[AsyncServiceBrowser]): The async service browser for zeroconf.
-        aiozc (Optional[AsyncZeroconf]): The async zeroconf instance.
+        aiobrowser: The async service browser for zeroconf.
+        aiozc: The async zeroconf instance.
         _ledfx: The ledfx instance.
 
     Methods:
