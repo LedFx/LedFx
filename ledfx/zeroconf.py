@@ -137,8 +137,6 @@ class ZeroConfRunner:
         """
         Asynchronous function for closing zeroconf listener.
         """
-        assert self.aiozc is not None
-        assert self.aiobrowser is not None
         _LOGGER.info("Closing zeroconf listener.")
         await self.aiobrowser.async_cancel()
         await self.aiozc.async_close()
