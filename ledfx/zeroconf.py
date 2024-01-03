@@ -137,7 +137,9 @@ class ZeroConfRunner:
         """
         Asynchronous function for closing zeroconf listener.
         """
-        _LOGGER.info("Closing zeroconf listener.")
-        await self.aiobrowser.async_cancel()
-        await self.aiozc.async_close()
-        _LOGGER.info("Zeroconf closed.")
+        # If aiobrowser exists, then aiozc must also exist.
+        if self.aiobrowser:
+            _LOGGER.info("Closing zeroconf listener.")
+            await self.aiobrowser.async_cancel()
+            await self.aiozc.async_close()
+            _LOGGER.info("Zeroconf closed.")
