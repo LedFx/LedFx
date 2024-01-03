@@ -48,7 +48,7 @@ class GetGifFramesEndpoint(RestEndpoint):
                 "status": "failed",
                 "reason": "Failed to open GIF image",
             }
-            return web.json_response(data=response, status=404)
+            return web.json_response(data=response, status=400)
 
         frames = []
         for frame in ImageSequence.Iterator(gif_image):

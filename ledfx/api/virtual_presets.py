@@ -23,7 +23,7 @@ class VirtualPresetsEndpoint(RestEndpoint):
                 "status": "failed",
                 "reason": f"Virtual with ID {virtual_id} not found",
             }
-            return web.json_response(data=response, status=404)
+            return web.json_response(data=response, status=400)
 
         if not virtual.active_effect:
             response = {
@@ -83,7 +83,7 @@ class VirtualPresetsEndpoint(RestEndpoint):
                 "status": "failed",
                 "reason": f"Virtual with ID {virtual_id} not found",
             }
-            return web.json_response(data=response, status=404)
+            return web.json_response(data=response, status=400)
 
         try:
             data = await request.json()
@@ -106,7 +106,6 @@ class VirtualPresetsEndpoint(RestEndpoint):
                 "reason": f'Category {category} is not "ledfx_presets" or "user_presets"',
             }
             return web.json_response(data=response, status=400)
-
 
         if effect_id is None:
             response = {
@@ -177,14 +176,14 @@ class VirtualPresetsEndpoint(RestEndpoint):
                 "status": "failed",
                 "reason": f"Virtual with ID {virtual_id} not found",
             }
-            return web.json_response(data=response, status=404)
+            return web.json_response(data=response, status=400)
 
         if not virtual.active_effect:
             response = {
                 "status": "failed",
                 "reason": f"Virtual {virtual_id} has no active effect",
             }
-            return web.json_response(data=response, status=404)
+            return web.json_response(data=response, status=400)
 
         try:
             data = await request.json()
@@ -237,7 +236,7 @@ class VirtualPresetsEndpoint(RestEndpoint):
                 "status": "failed",
                 "reason": f"Virtual with ID {virtual_id} not found",
             }
-            return web.json_response(data=response, status=404)
+            return web.json_response(data=response, status=400)
 
         # Clear the effect
         virtual.clear_effect()
