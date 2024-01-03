@@ -107,10 +107,8 @@ class Plasma2d(Twod, GradientEffect):
         if self.test:
             self.draw_test(self.m_draw)
 
-        current_time = timeit.default_timer() - self.start_time
-
         plasma_array = self.generate_plasma(
-            self.r_width, self.r_height, current_time, self.bar
+            self.r_width, self.r_height, self.current_time, self.bar
         )
 
         color_mapped_plasma = self.get_gradient_color_vectorized(
