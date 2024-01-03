@@ -254,9 +254,9 @@ ledfx_presets = {
                 "skip frames": "",
                 "stretch hor": 100,
                 "stretch ver": 100,
-                "test": False
+                "test": False,
             },
-            "name": "dj bird"
+            "name": "dj bird",
         },
         "moonman": {
             "config": {
