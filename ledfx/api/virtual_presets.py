@@ -35,21 +35,21 @@ class VirtualPresetsEndpoint(RestEndpoint):
         effect_id = virtual.active_effect.type
 
         if effect_id in self._ledfx.config["ledfx_presets"].keys():
-            default = self._ledfx.config["ledfx_presets"][effect_id]
+            ledfx_presets = self._ledfx.config["ledfx_presets"][effect_id]
         else:
-            default = {}
+            ledfx_presets = {}
 
         if effect_id in self._ledfx.config["user_presets"].keys():
-            custom = self._ledfx.config["user_presets"][effect_id]
+            user_presets = self._ledfx.config["user_presets"][effect_id]
         else:
-            custom = {}
+            user_presets = {}
 
         response = {
             "status": "success",
             "virtual": virtual_id,
             "effect": effect_id,
-            "default_presets": default,
-            "custom_presets": custom,
+            "ledfx_presets": ledfx_presets,
+            "user_presets": user_presets,
         }
 
         return web.json_response(data=response, status=200)
@@ -100,17 +100,13 @@ class VirtualPresetsEndpoint(RestEndpoint):
             }
             return web.json_response(data=response, status=400)
 
-        if category not in ["default_presets", "custom_presets"]:
+        if category not in ["ledfx_presets", "user_presets"]:
             response = {
                 "status": "failed",
                 "reason": f'Category {category} is not "ledfx_presets" or "user_presets"',
             }
             return web.json_response(data=response, status=400)
 
-        if category == "default_presets":
-            category = "ledfx_presets"
-        else:
-            category = "user_presets"
 
         if effect_id is None:
             response = {
