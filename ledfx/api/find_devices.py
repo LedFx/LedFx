@@ -35,3 +35,19 @@ class FindDevicesEndpoint(RestEndpoint):
 
         response = {"status": "success"}
         return web.json_response(data=response, status=200)
+
+    async def get(self) -> web.Response:
+        """Handle HTTP GET requests"""
+
+        def handle_exception(future):
+            # Ignore exceptions, these will be raised when a device is found that already exists
+            exc = future.exception()
+
+        async_fire_and_forget(
+            self._ledfx.zeroconf.discover_wled_devices(),
+            loop=self._ledfx.loop,
+            exc_handler=handle_exception,
+        )
+
+        response = {"status": "success"}
+        return web.json_response(data=response, status=200)
