@@ -92,7 +92,9 @@ class ZeroConfRunner:
         self, zeroconf: Zeroconf, service_type: str, name: str
     ) -> None:
         """
-        Asynchronous function for
+        Asynchronous function for feeding discovered WLED devices to add_new_device.
+
+        Duplicate detection is handled within add_new_device.
 
         Args:
             zeroconf (Zeroconf): The zeroconf instance.
