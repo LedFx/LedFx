@@ -106,7 +106,6 @@ class Twod(AudioReactiveEffect):
     def do_once(self):
         # defer things that can't be done when pixel_count is not known
         # so therefore cannot be addressed in config_updated
-        self.init = False
 
         if self.rotate == 1 or self.rotate == 3:
             # swap width and height for render
@@ -115,6 +114,8 @@ class Twod(AudioReactiveEffect):
         else:
             self.r_width = self.t_width
             self.r_height = self.t_height
+
+        self.init = False
 
     def image_to_pixels(self):
         # image should be the right size to map in, at this point
@@ -211,10 +212,11 @@ class Twod(AudioReactiveEffect):
         pass
 
     def render(self):
+        self.current_time = timeit.default_timer()
         if self.init:
             self.do_once()
         # Update the time every frame
-        self.current_time = timeit.default_timer()
+
         self.log_sec()
 
         self.matrix = Image.new("RGB", (self.r_width, self.r_height))
