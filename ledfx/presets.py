@@ -3,6 +3,33 @@ import os
 from ledfx.consts import LEDFX_ASSETS_PATH
 
 ledfx_presets = {
+    "equalizer2d": {
+        "reset": {
+            "config": {
+                "advanced": True,
+                "background_brightness": 1,
+                "background_color": "#000000",
+                "bands": 16,
+                "blur": 0,
+                "brightness": 1,
+                "center": True,
+                "diag": False,
+                "dump": False,
+                "flip": False,
+                "flip horizontal": False,
+                "flip vertical": False,
+                "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
+                "gradient_roll": 0,
+                "max vs mean": False,
+                "mirror": False,
+                "peak decay": 0.03,
+                "peak marks": False,
+                "peak percent": 1,
+                "rotate": 0,
+                "test": False,
+            }
+        }
+    },
     "keybeat2d": {
         "beat-cat": {
             "config": {
@@ -2132,6 +2159,7 @@ ledfx_presets = {
                 "brightness": 1,
                 "color": "#00ffff",
                 "color_correction": True,
+                "decay": 0.7,
                 "flip": False,
                 "frequency_range": "High",
                 "gradient": "linear-gradient(90deg, #ff00b2 0.00%,#ffa500 50.00%,#ffc800 100.00%)",
