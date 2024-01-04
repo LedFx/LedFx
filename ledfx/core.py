@@ -29,6 +29,7 @@ from ledfx.events import (
 )
 from ledfx.http_manager import HttpServer
 from ledfx.integrations import Integrations
+from ledfx.mdns_manager import ZeroConfRunner
 from ledfx.presets import ledfx_presets
 from ledfx.scenes import Scenes
 from ledfx.utils import (
@@ -38,7 +39,6 @@ from ledfx.utils import (
     currently_frozen,
 )
 from ledfx.virtuals import Virtuals
-from ledfx.zeroconf import ZeroConfRunner
 
 _LOGGER = logging.getLogger(__name__)
 if currently_frozen():
