@@ -179,5 +179,5 @@ class LaunchpadDevice(MidiDevice):
                 else:
                     _LOGGER.error(f" - {pad['name']}: ERROR")
                     return None
-        _LOGGER.error(" validate - No Launchpad available")
+        _LOGGER.warning(" validate - No Launchpad available")
         return None

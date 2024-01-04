@@ -26,7 +26,7 @@ class VirtualEndpoint(RestEndpoint):
                 "status": "failed",
                 "reason": f"Virtual with ID {virtual_id} not found",
             }
-            return web.json_response(data=response, status=404)
+            return web.json_response(data=response, status=400)
 
         response = {"status": "success"}
         response[virtual.id] = {
@@ -61,16 +61,12 @@ class VirtualEndpoint(RestEndpoint):
                 "status": "failed",
                 "reason": f"Virtual with ID {virtual_id} not found",
             }
-            return web.json_response(data=response, status=404)
+            return web.json_response(data=response, status=400)
 
         try:
             data = await request.json()
         except JSONDecodeError:
-            response = {
-                "status": "failed",
-                "reason": "JSON Decoding failed",
-            }
-            return web.json_response(data=response, status=400)
+            return await self.json_decode_error()
         active = data.get("active")
         if active is None:
             response = {
@@ -114,16 +110,12 @@ class VirtualEndpoint(RestEndpoint):
                 "status": "failed",
                 "reason": f"Virtual with ID {virtual_id} not found",
             }
-            return web.json_response(data=response, status=404)
+            return web.json_response(data=response, status=400)
 
         try:
             data = await request.json()
         except JSONDecodeError:
-            response = {
-                "status": "failed",
-                "reason": "JSON Decoding failed",
-            }
-            return web.json_response(data=response, status=400)
+            return await self.json_decode_error()
         virtual_segments = data.get("segments")
         if virtual_segments is None:
             response = {
@@ -171,7 +163,7 @@ class VirtualEndpoint(RestEndpoint):
                 "status": "failed",
                 "reason": f"Virtual with ID {virtual_id} not found",
             }
-            return web.json_response(data=response, status=404)
+            return web.json_response(data=response, status=400)
 
         virtual.clear_effect()
         device_id = virtual.is_device

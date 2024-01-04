@@ -8,7 +8,7 @@ Our pip package will be rebuilt automatically when new releases are pushed - we 
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 1.0.0   | :white_check_mark: |
+| 2.0.x   | :white_check_mark: |
 | <1.0.0  | :x:                |
 
 

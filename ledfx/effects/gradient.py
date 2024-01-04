@@ -148,6 +148,21 @@ class GradientEffect(Effect):
 
         return self._gradient_curve[:, int((self.pixel_count - 1) * point)]
 
+    def get_gradient_color_vectorized(self, points):
+        self._assert_gradient()
+
+        # Ensure points are within the valid range [0, 1]
+        points = np.clip(points, 0, 1)
+
+        # Calculate indices for the gradient lookup
+        indices = ((self.pixel_count - 1) * points).astype(int)
+
+        # Use advanced indexing to get colors for each point
+        colors = self._gradient_curve[:, indices]
+
+        # Transpose and reshape to get the correct shape (height, width, color_channels)
+        return colors.transpose(1, 2, 0)
+
     def config_updated(self, config):
         """Invalidate the gradient"""
         self._gradient_curve = None

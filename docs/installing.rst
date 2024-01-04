@@ -3,20 +3,13 @@
 ============================
 
 LedFx is a network controller that aims to enable synchronization of multiple lights across a network.
-LedFx doesn't currently support local control of LED strings, so you need a separate device
-(e.g., ESP8266/ESP32) to control the LEDs directly. To be able to add your LED strips to LedFx your device
-needs to be capable of receiving data either via the E1.31 sACN protocol or a generic (simple)
-UDP protocol. See below for a list of tested ESP8266 firmware that can be used with LedFx.
+To be able to add your LED strips to LedFx your device needs to be capable of receiving data via one of the supported protocols.
+See below for a list of tested ESP8266 firmware that can be used with LedFx.
 
 Here is everything you need to get started with LedFx:
 
-    #. A Computer (or Raspberry Pi) with Python >= 3.8
+    #. A Computer (or Raspberry Pi) with Python >= 3.9
     #. An E1.31 capable device with addressable LEDs connected
-
-        - Commercial grade DMX controllers
-        - ESP8266 modules can be purchased for as little as $2 USD from AliExpress
-
-.. warning:: Anaconda is no longer recommended for installing LedFx. We have removed all references to Anaconda. If you are coming from an old install, we recommend removing Anaconda completely.
 
 Here is a list of tested ESP8266 firmware that works with LedFx:
 
@@ -27,93 +20,95 @@ Here is a list of tested ESP8266 firmware that works with LedFx:
 Windows Installation
 ----------------------
 
-To get started on Windows please use our `LedFx Windows Installer`_.
+To get started on Windows the easiest option is to `download the latest release <https://download.ledfx.app>`_.
 
-.. note:: See :ref:`this page <win-dev-install>` for alternative installation instructions for Windows.
+There is no installation required, the application is portable.
 
 Linux Installation
 --------------------
 
-To install on Linux first ensure you have at least Python 3.8 installed.
+To install on Linux first ensure you have at least Python 3.9 installed.
 
-**1.** Install LedFx and all the dependencies using our `LedFx Bash Install Script`_:
+#. Install LedFx and all the dependencies using pipx:
 
-.. code:: console
+   .. code:: console
 
-    $ curl -sSL https://install.ledfx.app | bash
+    $ python -m pip install ledfx
 
-**2.** Follow the instructions presented by the installer.
+#. Run LedFx!
+
+   .. code:: console
+
+    $ ledfx
 
 macOS Installation
 --------------------
 
-To install on macOS first ensure you have at least Python 3.8 installed.
+To install on macOS first ensure you have at least Python 3.9 installed.
 
-**1.** Install LedFx and all the dependencies using `homebrew`_ and pip:
+#. Install LedFx and all the dependencies using `homebrew`_ and pip:
 
-.. code:: console
+   .. code:: console
 
     $ brew install portaudio
     $ python3 -m pip install ledfx
 
-**2.** Alternatively, install LedFx in a `python venv`_:
+#. Alternatively, install LedFx in a `python venv`_:
 
-.. code:: console
+   .. code:: console
 
     $ python3 -m venv ~/ledfx-venv
     $ source ~/ledfx-venv/bin/activate
     $ python -m pip install -U pip setuptools wheel
     $ python -m pip install ledfx
 
-**3.** Launch LedFx with the ``open-ui`` option to launch the browser:
+#. Launch LedFx with the ``open-ui`` option to launch the browser:
 
-.. code:: console
+   .. code:: console
 
     $ ledfx --open-ui
 
-macOS Installation @frontend_beta branch (Apple Silicon)
+macOS Installation (Apple Silicon)
 ----------------------------------------------------------------
 
-To install on macOS (Apple Silicon) first ensure you have at least Python 3.8 installed.
+To install on macOS (Apple Silicon) first ensure you have at least Python 3.9 installed.
 
-**1.** Install LedFx and all the dependencies using `homebrew`_ in a `python venv`_:
+#. Install LedFx and all the dependencies using `homebrew`_ in a `python venv`_:
 
-.. code:: console
+   .. code:: console
 
     $ brew install python@3.9
     $ brew install portaudio --HEAD
     $ brew install virtualenv
     $ virtualenv -p python3.9 ~/ledfx-venv
     $ source ~/ledfx-venv/bin/activate
-    $ pip install --force-reinstall git+https://github.com/LedFx/LedFx
-
-    ** --force-reinstall assures that you will be up to date whenever you run the command
+    $ pip install --force-reinstall ledfx
 
 
-**2.**  If you get a numpy/aubio error please do the following:
+#.  If you get a numpy/aubio error please do the following:
 
-.. code:: console
+    .. code:: console
 
     $ pip uninstall numpy aubio
     $ pip install numpy --no-cache-dir
     $ pip install aubio --no-cache-dir
 
-**3.** Launch LedFx with the ``open-ui`` option to launch the browser:
+#. Launch LedFx with the ``open-ui`` option to launch the browser:
 
-.. code:: console
+   .. code:: console
 
     $ ledfx --open-ui
 
 Raspberry Pi Installation
 ---------------------------
 
-.. note::
+.. warning::
   This installation method is still in development. Use at your discretion.
 
 .. note::
   To use LedFx on a pi you will need a USB audio card.
 
-Verify you have Python 3.8 or greater by running ``python3 --version``
+Verify you have Python 3.9 or greater by running ``python3 --version``
 
 **1.** Modify /usr/share/alsa/alsa.conf:
 

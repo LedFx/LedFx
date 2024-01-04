@@ -19,8 +19,11 @@ class QLCEndpoint(RestEndpoint):
         """Get all song triggers"""
         integration = self._ledfx.integrations.get(integration_id)
         if (integration is None) or (integration.type != "spotify"):
-            response = {"not found": 404}
-            return web.json_response(data=response, status=404)
+            response = {
+                "status": "failed",
+                "reason": f"{integration} was not found or was not type spotify",
+            }
+            return web.json_response(data=response, status=400)
 
         response = integration.get_triggers()
 
@@ -30,8 +33,11 @@ class QLCEndpoint(RestEndpoint):
         """Update a Spotify song trigger"""
         integration = self._ledfx.integrations.get(integration_id)
         if (integration is None) or (integration.type != "spotify"):
-            response = {"not found": 404}
-            return web.json_response(data=response, status=404)
+            response = {
+                "status": "failed",
+                "reason": f"{integration} was not found or was not type spotify",
+            }
+            return web.json_response(data=response, status=400)
 
         response = {
             "Ok": "This endpoint does nothing yet",
@@ -43,17 +49,16 @@ class QLCEndpoint(RestEndpoint):
         """Add Spotify song trigger"""
         integration = self._ledfx.integrations.get(integration_id)
         if (integration is None) or (integration.type != "spotify"):
-            response = {"not found": 404}
-            return web.json_response(data=response, status=404)
+            response = {
+                "status": "failed",
+                "reason": f"{integration} was not found or was not type spotify",
+            }
+            return web.json_response(data=response, status=400)
 
         try:
             data = await request.json()
         except JSONDecodeError:
-            response = {
-                "status": "failed",
-                "reason": "JSON Decoding failed",
-            }
-            return web.json_response(data=response, status=400)
+            return await self.json_decode_error()
         scene_id = data.get("scene_id")
         song_id = data.get("song_id")
         song_name = data.get("song_name")
@@ -93,17 +98,16 @@ class QLCEndpoint(RestEndpoint):
         """Delete a Spotify song trigger"""
         integration = self._ledfx.integrations.get(integration_id)
         if (integration is None) or (integration.type != "spotify"):
-            response = {"not found": 404}
-            return web.json_response(data=response, status=404)
+            response = {
+                "status": "failed",
+                "reason": f"{integration} was not found or was not type spotify",
+            }
+            return web.json_response(data=response, status=400)
 
         try:
             data = await request.json()
         except JSONDecodeError:
-            response = {
-                "status": "failed",
-                "reason": "JSON Decoding failed",
-            }
-            return web.json_response(data=response, status=400)
+            return await self.json_decode_error()
         trigger_id = data.get("trigger_id")
 
         if trigger_id is None:

@@ -1,12 +1,10 @@
 =====================================================
-   Welcome to LedFx ✨ *-Making music come alive!*
+   Welcome to LedFx ✨ *Making music come alive!*
 =====================================================
 |Build Status| |License| |Build Status Docs| |Discord|
 |Contributor Covenant|
 
-.. image:: https://raw.githubusercontent.com/LedFx/LedFx/main/icons/banner.png
-
-LedFx website: https://ledfx.app/
+.. image:: https://raw.githubusercontent.com/LedFx/LedFx/main/ledfx_assets/banner.png
 
 What is LedFx?
 ----------------
@@ -25,21 +23,16 @@ You can also join our `Discord`_ where community members show off their projects
 
 📑 Quick start guide and documentation📖
 ------------------------------------------
-**Version 2 (highly recommended, but still in Beta)**
 
 Head over to `LedFx Builds`_ to get the latest releases for Windows, Mac and Linux.
 If you are in a hurry, grab the latest Core version for your operating system and off you go.
 For more info on what the different versions do, read the release description on the releases page
 
-**Version 0.10 (Old and stable, but not recommended)**
-
-Windows users can use the installer from the LedFx website: https://ledfx.app/download/
-
 **Bleeding edge (Experimental)**
 
 If you want the absolute bleeding edge and are not afraid of using the terminal, take a look at the detailed installation instructions here: `Installation documentation`_.
 
-**Documenation**
+**Documentation**
 
 Documentation for the LedFx-Builds can be found here: `Stable documentation`_
 
@@ -72,8 +65,8 @@ The below image describes a basic setup - LedFx running on PC, communicating wit
 
 #. **Build your networked LED Strip.**
       - For most, this is the difficult step. Don't worry! There's guides here and online, and plenty of people able to help on WLED and LedFx Discord.
-      - Follow the WLED guide to connect the LED strip and ESP together: https://kno.wled.ge/basics/getting-started/
-      - Flash WLED to the ESP device: https://kno.wled.ge/basics/install-binary/
+      - Follow the `WLED guide to connect the LED strip and ESP together <https://kno.wled.ge/basics/getting-started/>`_.
+      - `Flash WLED to the ESP device <https://kno.wled.ge/basics/install-binary/>`_.
       - Ensure all WLED devices are powered on, and connected to your Wi-Fi.
       - Test you can access the WLED web interface from your PC. If so, then you're good to go!
 

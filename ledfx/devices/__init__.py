@@ -8,7 +8,6 @@ import numpy as np
 import serial
 import serial.tools.list_ports
 import voluptuous as vol
-import zeroconf
 
 from ledfx.config import save_config
 from ledfx.events import DeviceCreatedEvent, DeviceUpdateEvent, Event
@@ -581,11 +580,9 @@ class Devices(RegistryLoader):
         super().__init__(ledfx, Device, self.PACKAGE_NAME)
 
         def on_shutdown(e):
-            self._zeroconf.close()
             self.deactivate_devices()
 
         self._ledfx.events.add_listener(on_shutdown, Event.LEDFX_SHUTDOWN)
-        self._zeroconf = zeroconf.Zeroconf()
 
     def create_from_config(self, config):
         for device in config:
@@ -725,9 +722,7 @@ class Devices(RegistryLoader):
 
         # Create the device
         _LOGGER.info(
-            "Adding device of type {} with config {}".format(
-                device_type, device_config
-            )
+            f"Adding device of type {device_type} with config {device_config}"
         )
         device = self._ledfx.devices.create(
             id=device_id,
@@ -809,49 +804,3 @@ class Devices(RegistryLoader):
                 device.wled.set_sync_mode(mode)
                 await device.wled.flush_sync_settings()
                 device.update_config({"sync_mode": mode})
-
-    async def find_wled_devices(self):
-        # Scan the LAN network that match WLED using zeroconf - Multicast DNS
-        # Service Discovery Library
-        _LOGGER.info("Scanning for WLED devices...")
-        wled_listener = WLEDListener(self._ledfx)
-        wledbrowser = self._zeroconf.add_service_listener(
-            "_wled._tcp.local.", wled_listener
-        )
-        try:
-            await asyncio.sleep(30)
-        finally:
-            _LOGGER.info("Scan Finished")
-            self._zeroconf.remove_service_listener(wled_listener)
-
-
-class WLEDListener(zeroconf.ServiceBrowser):
-    def __init__(self, _ledfx):
-        self._ledfx = _ledfx
-
-    def remove_service(self, zeroconf_obj, type, name):
-        _LOGGER.info(f"Service {name} removed")
-
-    def add_service(self, zeroconf_obj, type, name):
-        info = zeroconf_obj.get_service_info(type, name)
-
-        if info:
-            hostname = str(info.server).rstrip(".")
-            _LOGGER.info(f"Found device: {hostname}")
-
-            device_type = "wled"
-            device_config = {"ip_address": hostname}
-
-            def handle_exception(future):
-                # Ignore exceptions, these will be raised when a device is found that already exists
-                exc = future.exception()
-
-            async_fire_and_forget(
-                self._ledfx.devices.add_new_device(device_type, device_config),
-                loop=self._ledfx.loop,
-                exc_handler=handle_exception,
-            )
-
-    def update_service(self, zeroconf_obj, type, name):
-        """Callback when a service is updated."""
-        pass

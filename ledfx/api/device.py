@@ -18,8 +18,11 @@ class DeviceEndpoint(RestEndpoint):
     async def get(self, device_id) -> web.Response:
         device = self._ledfx.devices.get(device_id)
         if device is None:
-            response = {"not found": 404}
-            return web.json_response(data=response, status=404)
+            response = {
+                "status": "failed",
+                "reason": f"{device} was not found",
+            }
+            return web.json_response(data=response, status=400)
 
         response = device.config
         return web.json_response(data=response, status=200)
@@ -27,17 +30,16 @@ class DeviceEndpoint(RestEndpoint):
     async def put(self, device_id, request) -> web.Response:
         device = self._ledfx.devices.get(device_id)
         if device is None:
-            response = {"not found": 404}
-            return web.json_response(data=response, status=404)
+            response = {
+                "status": "failed",
+                "reason": f"{device} was not found",
+            }
+            return web.json_response(data=response, status=400)
 
         try:
             data = await request.json()
         except JSONDecodeError:
-            response = {
-                "status": "failed",
-                "reason": "JSON Decoding failed",
-            }
-            return web.json_response(data=response, status=400)
+            return await self.json_decode_error()
         device_config = data.get("config")
         if device_config is None:
             response = {
@@ -80,8 +82,11 @@ class DeviceEndpoint(RestEndpoint):
     async def post(self, device_id, request) -> web.Response:
         device = self._ledfx.devices.get(device_id)
         if device is None:
-            response = {"not found": 404}
-            return web.json_response(data=response, status=404)
+            response = {
+                "status": "failed",
+                "reason": f"{device} was not found",
+            }
+            return web.json_response(data=response, status=400)
 
         try:
             if device.type == "wled":
@@ -125,8 +130,11 @@ class DeviceEndpoint(RestEndpoint):
     async def delete(self, device_id) -> web.Response:
         device = self._ledfx.devices.get(device_id)
         if device is None:
-            response = {"not found": 404}
-            return web.json_response(data=response, status=404)
+            response = {
+                "status": "failed",
+                "reason": f"{device} was not found",
+            }
+            return web.json_response(data=response, status=400)
 
         device.clear_effect()
         await device.remove_from_virtuals()

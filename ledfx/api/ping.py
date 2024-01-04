@@ -16,8 +16,11 @@ class InfoEndpoint(RestEndpoint):
         device = self._ledfx.devices.get(device_id)
 
         if device is None:
-            response = {f"{device_id} not found": 404}
-            return web.json_response(data=response, status=404)
+            response = {
+                "status": "failed",
+                "reason": 'Required attribute "device_id" was not found',
+            }
+            return web.json_response(data=response, status=400)
 
         ping_target = await resolve_destination(
             self._ledfx.loop,
