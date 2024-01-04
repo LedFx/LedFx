@@ -3,7 +3,7 @@ import os
 from ledfx.consts import LEDFX_ASSETS_PATH
 
 ledfx_presets = {
-    "template2d": {
+    "equalizer2d": {
         "reset": {
             "config": {
                 "A switch": False,
@@ -21,7 +21,7 @@ ledfx_presets = {
                 "gradient_roll": 0.0,
                 "mirror": False,
                 "rotate": 0,
-                "test": True,
+                "test": True
             },
             "name": "reset",
         },
@@ -35,6 +35,7 @@ ledfx_presets = {
                 "bands": 16,
                 "blur": 0,
                 "brightness": 1,
+                "center": False,
                 "center": False,
                 "diag": False,
                 "dump": False,
@@ -50,6 +51,9 @@ ledfx_presets = {
                 "peak percent": 1,
                 "rotate": 0,
                 "test": False,
+            },
+            "name": "reset",
+        },
             },
             "name": "reset",
         },
