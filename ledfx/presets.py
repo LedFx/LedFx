@@ -21,7 +21,7 @@ ledfx_presets = {
                 "gradient_roll": 0.0,
                 "mirror": False,
                 "rotate": 0,
-                "test": True
+                "test": True,
             },
             "name": "reset",
         },
