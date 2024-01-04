@@ -1,6 +1,6 @@
 import logging
 
-from zeroconf import ServiceStateChange, Zeroconf
+from zeroconf import Zeroconf, ServiceStateChange
 from zeroconf.asyncio import (
     AsyncServiceBrowser,
     AsyncServiceInfo,
