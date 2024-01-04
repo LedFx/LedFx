@@ -3,16 +3,39 @@ import os
 from ledfx.consts import LEDFX_ASSETS_PATH
 
 ledfx_presets = {
+    "template2d": {
+        "reset": {
+            "config": {
+                "A switch": False,
+                "advanced": True,
+                "background_brightness": 1.0,
+                "background_color": "#000000",
+                "blur": 0.0,
+                "brightness": 1.0,
+                "diag": False,
+                "dump": False,
+                "flip": False,
+                "flip horizontal": False,
+                "flip vertical": False,
+                "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
+                "gradient_roll": 0.0,
+                "mirror": False,
+                "rotate": 0,
+                "test": True,
+            },
+            "name": "reset",
+        },
+    },
     "equalizer2d": {
         "reset": {
             "config": {
-                "advanced": True,
+                "advanced": False,
                 "background_brightness": 1,
                 "background_color": "#000000",
                 "bands": 16,
                 "blur": 0,
                 "brightness": 1,
-                "center": True,
+                "center": False,
                 "diag": False,
                 "dump": False,
                 "flip": False,
@@ -27,8 +50,9 @@ ledfx_presets = {
                 "peak percent": 1,
                 "rotate": 0,
                 "test": False,
-            }
-        }
+            },
+            "name": "reset",
+        },
     },
     "keybeat2d": {
         "beat-cat": {
@@ -195,6 +219,40 @@ ledfx_presets = {
                 "test": False,
             },
             "name": "dance",
+        },
+        "dj bird": {
+            "config": {
+                "advanced": False,
+                "background_brightness": 1.0,
+                "background_color": "#000000",
+                "beat frames": "",
+                "blur": 0.0,
+                "brightness": 1.0,
+                "center hor": 0,
+                "center ver": 0,
+                "diag": False,
+                "diag2": False,
+                "dump": False,
+                "fake_beat": False,
+                "flip": False,
+                "flip horizontal": False,
+                "flip vertical": False,
+                "force aspect": False,
+                "force fit": True,
+                "gif at": f"{os.path.join(LEDFX_ASSETS_PATH, 'gifs', 'pixelart', 'dj_bird.gif')}",
+                "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
+                "gradient_roll": 0.0,
+                "half beat": False,
+                "mirror": False,
+                "ping pong": False,
+                "pp skip": False,
+                "rotate": 0,
+                "skip frames": "",
+                "stretch hor": 100,
+                "stretch ver": 100,
+                "test": False,
+            },
+            "name": "dj bird",
         },
         "moonman": {
             "config": {
