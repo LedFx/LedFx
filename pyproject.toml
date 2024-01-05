@@ -62,7 +62,7 @@ stupidartnet = "^1.4.0"
 optional = true
 
 [tool.poetry.group.dev.dependencies]
-flake8 = ">=6.1.0,<6.2.0"
+flake8 = ">=7.0.0,<7.1.0"
 black = ">=23.12.1,<23.13.0"
 isort = ">=5.13.2,<5.14.0"
 pre-commit = ">=3.6.0,<3.7.0"
