@@ -136,7 +136,7 @@ class ConfigEndpoint(RestEndpoint):
 
         except vol.MultipleInvalid as msg:
             error_message = f"Error loading config: {msg}"
-            _LOGGER.error(error_message)
+            _LOGGER.warning(error_message)
             return await self.internal_error("error", error_message)
 
     async def put(self, request: web.Request) -> web.Response:
@@ -226,5 +226,5 @@ class ConfigEndpoint(RestEndpoint):
 
         except (KeyError, vol.MultipleInvalid) as msg:
             error_message = f"Error updating config: {msg}"
-            _LOGGER.error(error_message)
+            _LOGGER.warning(error_message)
             return await self.internal_error("error", error_message)

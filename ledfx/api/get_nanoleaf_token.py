@@ -57,13 +57,13 @@ class GetNanoleadTokenEndpoint(RestEndpoint):
                 error_message = (
                     "Nanoleaf did not return a token: is it in pairing mode?"
                 )
-                _LOGGER.error(error_message)
+                _LOGGER.warning(error_message)
                 return await self.internal_error("error", error_message)
             data = response.json()
         except requests.exceptions.RequestException as msg:
             error_message = (
                 f"Error getting Nanoleaf token from {ip}:{port}: {msg}"
             )
-            _LOGGER.error(error_message)
+            _LOGGER.warning(error_message)
             return await self.internal_error("error", error_message)
         return await self.bare_request_success(data)

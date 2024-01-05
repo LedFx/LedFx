@@ -159,7 +159,7 @@ class VirtualPresetsEndpoint(RestEndpoint):
             error_message = (
                 f"Unable to set effect on virtual {virtual.id}: {msg}"
             )
-            _LOGGER.error(error_message)
+            _LOGGER.warning(error_message)
             return await self.internal_error("error", error_message)
 
         self.update_effect_config(virtual_id, effect)

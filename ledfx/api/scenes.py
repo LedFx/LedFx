@@ -197,7 +197,7 @@ class ScenesEndpoint(RestEndpoint):
             scene_image = "Wallpaper"
         if scene_name is None or scene_name == "":
             error_message = "Required attribute 'scene_name' was not provided"
-            _LOGGER.error(error_message)
+            _LOGGER.warning(error_message)
 
             return await self.invalid_request(error_message)
 

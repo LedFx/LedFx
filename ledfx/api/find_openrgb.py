@@ -40,7 +40,7 @@ class FindOpenRGBDevicesEndpoint(RestEndpoint):
                 port = int(data["port"])
             except ValueError:
                 error_message = f"Unable to convert {data['port']} to int."
-                _LOGGER.error(error_message)
+                _LOGGER.warning(error_message)
                 return await self.invalid_request(error_message)
         else:
             port = 6742

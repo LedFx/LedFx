@@ -177,7 +177,7 @@ class EffectsEndpoint(RestEndpoint):
 
         except (ValueError, RuntimeError) as msg:
             error_message = f"Unable to set effect: {msg}"
-            _LOGGER.error(error_message)
+            _LOGGER.warning(error_message)
             return await self.internal_error("warning", error_message)
 
         self.update_effect_config(virtual_id, effect)
@@ -286,7 +286,7 @@ class EffectsEndpoint(RestEndpoint):
             error_message = (
                 f"Unable to set effect {effect} on {virtual_id}: {msg}"
             )
-            _LOGGER.error(error_message)
+            _LOGGER.warning(error_message)
             return await self.internal_error("error", error_message)
 
         self.update_effect_config(virtual_id, effect)
