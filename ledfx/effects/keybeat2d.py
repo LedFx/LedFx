@@ -6,9 +6,8 @@ import PIL.ImageSequence as ImageSequence
 import voluptuous as vol
 
 from ledfx.consts import LEDFX_ASSETS_PATH
-from ledfx.effects.twod import Twod
 from ledfx.effects.gifbase import GifBase
-
+from ledfx.effects.twod import Twod
 from ledfx.utils import (
     extract_positive_integers,
     get_mono_font,
@@ -25,7 +24,12 @@ class Keybeat2d(Twod, GifBase):
     HIDDEN_KEYS = Twod.HIDDEN_KEYS + [
         "background_color",
     ]
-    ADVANCED_KEYS = Twod.ADVANCED_KEYS + ["diag2", "fake_beat", "pp skip", "resize_method"]
+    ADVANCED_KEYS = Twod.ADVANCED_KEYS + [
+        "diag2",
+        "fake_beat",
+        "pp skip",
+        "resize_method",
+    ]
 
     CONFIG_SCHEMA = vol.Schema(
         {
@@ -315,8 +319,9 @@ class Keybeat2d(Twod, GifBase):
             stretch_height = max(1, stretch_height)
 
             self.frames.append(
-                frame.resize((stretch_width, stretch_height),
-                             self.resize_method)
+                frame.resize(
+                    (stretch_width, stretch_height), self.resize_method
+                )
             )
 
         self.offset_x = int(
