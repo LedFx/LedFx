@@ -18,21 +18,9 @@ class GifPlayer(Twod, GifBase):
     HIDDEN_KEYS = Twod.HIDDEN_KEYS + ["gradient", "background"]
     ADVANCED_KEYS = Twod.ADVANCED_KEYS + ["blur", "resize_method"]
     DEFAULT_GIF_PATH = f"{os.path.join(LEDFX_ASSETS_PATH, 'animated.gif')}"
-    RESIZE_METHOD_MAPPING = {
-        GIFResizeMethods.NEAREST.value: Image.NEAREST,
-        GIFResizeMethods.BILINEAR.value: Image.BILINEAR,
-        GIFResizeMethods.BICUBIC.value: Image.BICUBIC,
-        GIFResizeMethods.LANCZOS.value: Image.LANCZOS,
-    }
+
     CONFIG_SCHEMA = vol.Schema(
         {
-            vol.Optional(
-                "resize_method",
-                description="What strategy to use when resizing GIF",
-                default=GIFResizeMethods.BICUBIC.value,
-            ): vol.In(
-                [resize_method.value for resize_method in GIFResizeMethods]
-            ),
             vol.Optional(
                 "gif_path",
                 description="Load GIF from URL/local file",
@@ -56,12 +44,8 @@ class GifPlayer(Twod, GifBase):
         super().config_updated(config)
         self.gif_fps = self._config["GIF FPS"]
         self.bounce = self._config["bounce"]
-        self.resize_method = self.RESIZE_METHOD_MAPPING[
-            self._config["resize_method"]
-        ]
         self.frames = []
         self.current_frame = 0
-
         self.init = True
 
     def audio_data_updated(self, data):
