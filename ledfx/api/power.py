@@ -14,7 +14,16 @@ class InfoEndpoint(RestEndpoint):
 
     exit_codes = {"shutdown": 3, "restart": 4}
 
-    async def post(self, request) -> web.Response:
+    async def post(self, request: web.Request) -> web.Response:
+        """
+        Handle POST requests to control LedFx shutdown/restart actions.
+
+        Args:
+            request (web.Request): The incoming request object optionally containing `action` and `timeout`.
+
+        Returns:
+            web.Response: The response object.
+        """
         try:
             data = await request.json()
         except JSONDecodeError:
@@ -29,23 +38,19 @@ class InfoEndpoint(RestEndpoint):
             timeout = 0
 
         if action not in self.exit_codes.keys():
-            response = {
-                "status": "failed",
-                "reason": f"Action {action} not in {list(self.exit_codes.keys())}",
-            }
-            return web.json_response(data=response, status=400)
+            return await self.invalid_request(
+                f"Action {action} not in {list(self.exit_codes.keys())}"
+            )
 
-        if timeout < 0:
-            response = {
-                "status": "failed",
-                "reason": f"Invalid timeout: {timeout}. Timeout is integer?",
-            }
-            return web.json_response(data=response, status=400)
+        if timeout < 0 or not isinstance(timeout, int):
+            return await self.invalid_request(
+                "Timeout must be a positive integer"
+            )
 
         # This is an ugly hack.
         # We probably should have a better way of doing this but o well.
         try:
-            return web.json_response(data={"status": "success"}, status=200)
+            return await self.request_success()
         finally:
             await asyncio.sleep(timeout)
             self._ledfx.stop(self.exit_codes[action])

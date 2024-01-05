@@ -16,7 +16,16 @@ class NotifyEndpoint(RestEndpoint):
     def __init__(self, ledfx):
         self.icon = ledfx.icon
 
-    async def put(self, request) -> web.Response:
+    async def put(self, request: web.Request) -> web.Response:
+        """
+        Handle the PUT request for notifications.
+
+        Args:
+            request (web.Request): The request object containing the notification `title` and `text`.
+
+        Returns:
+            web.Response: The response object.
+        """
         try:
             data = await request.json()
         except JSONDecodeError:
@@ -24,27 +33,18 @@ class NotifyEndpoint(RestEndpoint):
 
         title = data.get("title")
         if title is None:
-            response = {
-                "status": "failed",
-                "reason": 'Required attribute "title" was not provided',
-            }
-            return web.json_response(data=response, status=400)
+            return await self.invalid_request(
+                'Required attribute "title" was not provided'
+            )
 
         text = data.get("text")
         if text is None:
-            response = {
-                "status": "failed",
-                "reason": 'Required attribute "text" was not provided',
-            }
-            return web.json_response(data=response, status=400)
+            return await self.invalid_request(
+                'Required attribute "text" was not provided'
+            )
 
         _LOGGER.info(f"notify: {title} --- {text}")
         if self.icon is not None:
             if self.icon.HAS_NOTIFICATION:
                 self.icon.notify(f"{title}:\n{text}")
-
-        response = {
-            "status": "success",
-        }
-
-        return web.json_response(data=response, status=200)
+        return await self.request_success()

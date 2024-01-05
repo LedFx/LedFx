@@ -13,24 +13,23 @@ class FindLaunchpadDevicesEndpoint(RestEndpoint):
 
     ENDPOINT_PATH = "/api/find_launchpad"
 
-    async def get(self, request) -> web.Response:
-        """Check for launchpad present"""
+    async def get(self) -> web.Response:
+        """
+        Check for launchpad present
 
+        Returns:
+            web.Response: The response containing the information about the launchpad.
+        """
         try:
             found = find_launchpad()
-        except Exception as e:
-            _LOGGER.error(f"Error in checking for launchpad: {e}")
-            response = {"status": "error", "error": str(e)}
-            return web.json_response(data=response, status=500)
+        except Exception as msg:
+            error_message = f"Error checking for launchpad: {msg}"
+            _LOGGER.error(error_message)
+            return await self.internal_error("error", error_message)
 
         if found is None:
             _LOGGER.warning("No launchpad found")
-            response = {
-                "status": "ok",
-                "payload": {"type": "info", "message": "No launchpad found"},
-            }
-            return web.json_response(data=response, status=200)
+            return await self.request_success("info", "No launchpad found")
 
         _LOGGER.info(f"Found launchpad: {found}")
-        response = {"status": "success", "device": found}
-        return web.json_response(data=response, status=200)
+        return await self.request_success("info", "Found launchpad")

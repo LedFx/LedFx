@@ -1,4 +1,3 @@
-import json
 import logging
 from json import JSONDecodeError
 
@@ -19,7 +18,12 @@ class IntegrationsEndpoint(RestEndpoint):
     ENDPOINT_PATH = "/api/integrations"
 
     async def get(self, request=None) -> web.Response:
-        """Get info of all integrations"""
+        """
+        Get info of all integrations.
+
+        Returns:
+            web.Response: The response containing the info of all integrations. Optionally filtered by info attribute passed in the request body.
+        """
         response = {"status": "success", "integrations": {}}
         for integration in self._ledfx.integrations.values():
             response["integrations"][integration.id] = {
@@ -40,38 +44,39 @@ class IntegrationsEndpoint(RestEndpoint):
             info = data.get("info")
             for integration in self._ledfx.integrations.values():
                 if info not in response["integrations"][integration.id].keys():
-                    response = {
-                        "status": "failed",
-                        "reason": f"info attribute {info} not found",
-                    }
-                    return web.json_response(data=response, status=400)
+                    return await self.invalid_request(
+                        f"info attribute {info} not found"
+                    )
                 response["integrations"][integration.id] = {
                     info: response["integrations"][integration.id][info]
                 }
+        return await self.bare_request_success(response)
 
-        return web.Response(text=json.dumps(response), status=200)
+    async def put(self, request: web.Request) -> web.Response:
+        """Toggle an integration on or off.
 
-    async def put(self, request) -> web.Response:
-        """Toggle an integration on or off"""
+        Args:
+            request (web.Request): The request object with the integration `id` to toggle.
+
+        Returns:
+            A web.Response object.
+        """
         try:
             data = await request.json()
         except JSONDecodeError:
             return await self.json_decode_error()
         integration_id = data.get("id")
         if integration_id is None:
-            response = {
-                "status": "failed",
-                "reason": 'Required attribute "id" was not provided',
-            }
-            return web.json_response(data=response, status=400)
+            return await self.invalid_request(
+                "Required attribute 'id' was not provided"
+            )
 
         integration = self._ledfx.integrations.get(integration_id)
+
         if integration is None:
-            response = {
-                "status": "failed",
-                "reason": 'Required attribute "integration_id" was not provided',
-            }
-            return web.Response(text=json.dumps(response), status=400)
+            return await self.invalid_request(
+                "Required attribute 'integration_id' was not provided"
+            )
 
         # Toggle the integration
         active = integration.active
@@ -90,33 +95,35 @@ class IntegrationsEndpoint(RestEndpoint):
             config=self._ledfx.config,
             config_dir=self._ledfx.config_dir,
         )
+        return await self.request_success()
 
-        response = {"status": "success"}
-        return web.json_response(data=response, status=200)
-
-    async def delete(self, request) -> web.Response:
-        """Delete an integration, erasing all its configuration
+    async def delete(self, request: web.Request) -> web.Response:
+        """
+        Delete an integration, erasing all its configuration
         NOTE: THIS DOES NOT TURN OFF THE INTEGRATION, IT DELETES IT!
-        USE PUT TO TOGGLE!"""
+        USE PUT TO TOGGLE!
+
+        Args:
+            request (web.Request): The request object containing the integration `id` to be deleted.
+
+        Returns:
+            A web.Response indicating the success or failure of the deletion.
+        """
         try:
             data = await request.json()
         except JSONDecodeError:
             return await self.json_decode_error()
         integration_id = data.get("id")
         if integration_id is None:
-            response = {
-                "status": "failed",
-                "reason": 'Required attribute "id" was not provided',
-            }
-            return web.json_response(data=response, status=400)
+            return await self.invalid_request(
+                "Required attribute 'id' was not provided"
+            )
 
         integration = self._ledfx.integrations.get(integration_id)
         if integration is None:
-            response = {
-                "status": "failed",
-                "reason": 'Required attribute "integration_id" was not provided',
-            }
-            return web.Response(text=json.dumps(response), status=400)
+            return await self.invalid_request(
+                "Required attribute 'integration_id' was not provided"
+            )
 
         if hasattr(integration, "on_delete"):
             await integration.on_delete()
@@ -133,11 +140,9 @@ class IntegrationsEndpoint(RestEndpoint):
         save_config(
             config=self._ledfx.config, config_dir=self._ledfx.config_dir
         )
+        return await self.request_success()
 
-        response = {"status": "success"}
-        return web.json_response(data=response, status=200)
-
-    async def post(self, request) -> web.Response:
+    async def post(self, request: web.Request) -> web.Response:
         """Create a new integration, or update an existing one"""
         try:
             data = await request.json()
@@ -145,22 +150,20 @@ class IntegrationsEndpoint(RestEndpoint):
             return await self.json_decode_error()
 
         integration_config = data.get("config")
+
         if integration_config is None:
-            response = {
-                "status": "failed",
-                "reason": 'Required attribute "config" was not provided',
-            }
-            return web.json_response(data=response, status=400)
+            return await self.invalid_request(
+                'Required attribute "config" was not provided'
+            )
 
         integration_type = data.get("type")
         if integration_type is None:
-            response = {
-                "status": "failed",
-                "reason": 'Required attribute "type" was not provided',
-            }
-            return web.json_response(data=response, status=400)
-
+            return await self.invalid_request(
+                'Required attribute "type" was not provided'
+            )
+        # Allow for id be None for new integrations
         integration_id = data.get("id")
+
         new = not bool(integration_id)
         if integration_id is None:
             # Create new integration if no id is given
@@ -175,11 +178,9 @@ class IntegrationsEndpoint(RestEndpoint):
             existing_integration = self._ledfx.integrations.get(integration_id)
 
             if existing_integration is None:
-                response = {
-                    "status": "failed",
-                    "reason": f"Integration with id {integration_id} not found",
-                }
-                return web.json_response(data=response, status=400)
+                return await self.invalid_request(
+                    f"Integration with id {integration_id} not found"
+                )
 
             _LOGGER.info(
                 ("Updating {} integration '{}' with config {}").format(
@@ -220,6 +221,4 @@ class IntegrationsEndpoint(RestEndpoint):
             config=self._ledfx.config,
             config_dir=self._ledfx.config_dir,
         )
-
-        response = {"status": "success"}
-        return web.json_response(data=response, status=200)
+        return await self.request_success()

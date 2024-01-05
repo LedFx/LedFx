@@ -1,4 +1,5 @@
 import logging
+from json import JSONDecodeError
 
 from aiohttp import web
 from openrgb import OpenRGBClient
@@ -14,16 +15,33 @@ class FindOpenRGBDevicesEndpoint(RestEndpoint):
 
     ENDPOINT_PATH = "/api/find_openrgb"
 
-    async def get(self, request) -> web.Response:
-        """Check for an openrgb server and report devices"""
+    async def get(self, request: web.Request) -> web.Response:
+        """
+        Check for an openRGB server and report devices
 
-        if "server" in request.query.keys():
-            server = request.query["server"]
+        Args:
+            request (web.Request): The incoming request object that contains the `server` (str) and `port` (str or int). Defaults to 127.0.0.1 and 6742 if not provided.
+
+        Returns:
+            web.Response: The HTTP response object.
+        """
+        try:
+            data = await request.json()
+        except JSONDecodeError:
+            return await self.json_decode_error()
+
+        if "server" in data.keys():
+            server = data["server"]
         else:
             server = "127.0.0.1"
 
-        if "port" in request.query.keys():
-            port = int(request.query["port"])
+        if "port" in data.keys():
+            try:
+                port = int(data["port"])
+            except ValueError:
+                error_message = f"Unable to convert {data['port']} to int."
+                _LOGGER.error(error_message)
+                return await self.invalid_request(error_message)
         else:
             port = 6742
 
@@ -31,14 +49,9 @@ class FindOpenRGBDevicesEndpoint(RestEndpoint):
             client = OpenRGBClient(address=server, port=port)
         except Exception as e:
             _LOGGER.error(f"Failed to connect to OpenRGB server: {e}")
-            response = {
-                "status": "success",
-                "payload": {
-                    "type": "info",
-                    "message": f"No OpenRGB server on port {port} found",
-                },
-            }
-            return web.json_response(data=response, status=200)
+            return await self.request_success(
+                "info", "No OpenRGB server found at {server}:{port}"
+            )
 
         devices = []
         for device in client.devices:
@@ -50,6 +63,5 @@ class FindOpenRGBDevicesEndpoint(RestEndpoint):
                     "leds": len(device.leds),
                 }
             )
-
         response = {"status": "success", "devices": devices}
-        return web.json_response(data=response, status=200)
+        return await self.bare_request_success(response)

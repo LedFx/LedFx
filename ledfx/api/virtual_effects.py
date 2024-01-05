@@ -16,15 +16,20 @@ class EffectsEndpoint(RestEndpoint):
 
     async def get(self, virtual_id) -> web.Response:
         """
-        Get active effect configuration for a virtual
+        Get active effect configuration for a virtual.
+
+        Parameters:
+        - virtual_id (str): The ID of the virtual.
+
+        Returns:
+        - web.Response: The response containing the active effect configuration.
+
         """
         virtual = self._ledfx.virtuals.get(virtual_id)
         if virtual is None:
-            response = {
-                "status": "failed",
-                "reason": f"Virtual with ID {virtual_id} not found",
-            }
-            return web.json_response(data=response, status=400)
+            return await self.invalid_request(
+                f"Virtual with ID {virtual_id} not found"
+            )
 
         # Get the active effect
         response = {"effect": {}}
@@ -34,10 +39,19 @@ class EffectsEndpoint(RestEndpoint):
             effect_response["name"] = virtual.active_effect.name
             effect_response["type"] = virtual.active_effect.type
             response = {"effect": effect_response}
-
-        return web.json_response(data=response, status=200)
+        return await self.bare_request_success(response)
 
     def update_effect_config(self, virtual_id, effect):
+        """
+        Update the configuration of a virtual effect.
+
+        Args:
+            virtual_id (str): The ID of the virtual effect.
+            effect (Effect): The effect object containing the updated configuration.
+
+        Returns:
+            None
+        """
         # Store as both the active effect to protect existing code, and one of effects
         virtual = next(
             (
@@ -60,27 +74,31 @@ class EffectsEndpoint(RestEndpoint):
 
     async def put(self, virtual_id, request) -> web.Response:
         """
-        Update the config of the active effect of a virtual
+        Update the config of the active effect of a virtual.
+
+        Args:
+            virtual_id (str): The ID of the virtual.
+            request (web.Request): The request object with effect `config` and `type`. An empty `config` resets the effect config.
+
+        Returns:
+            web.Response: The HTTP response object.
         """
         virtual = self._ledfx.virtuals.get(virtual_id)
         if virtual is None:
-            response = {
-                "status": "failed",
-                "reason": f"Virtual with ID {virtual_id} not found",
-            }
-            return web.json_response(data=response, status=400)
+            return await self.invalid_request(
+                f"Virtual with ID {virtual_id} not found"
+            )
 
         if not virtual.active_effect:
-            response = {
-                "status": "failed",
-                "reason": f"Virtual {virtual_id} has no active effect",
-            }
-            return web.json_response(data=response, status=400)
+            return await self.invalid_request(
+                f"Virtual {virtual_id} has no active effect"
+            )
 
         try:
             data = await request.json()
         except JSONDecodeError:
             return await self.json_decode_error()
+
         effect_config = data.get("config")
         effect_type = data.get("type")
         if effect_config is None:
@@ -158,11 +176,9 @@ class EffectsEndpoint(RestEndpoint):
                 virtual.set_effect(effect)
 
         except (ValueError, RuntimeError) as msg:
-            response = {
-                "status": "failed",
-                "payload": {"type": "warning", "reason": str(msg)},
-            }
-            return web.json_response(data=response, status=202)
+            error_message = f"Unable to set effect: {msg}"
+            _LOGGER.error(error_message)
+            return await self.internal_error("warning", error_message)
 
         self.update_effect_config(virtual_id, effect)
 
@@ -177,19 +193,24 @@ class EffectsEndpoint(RestEndpoint):
         effect_response["type"] = effect.type
 
         response = {"status": "success", "effect": effect_response}
-        return web.json_response(data=response, status=200)
+        return await self.bare_request_success(response)
 
     async def post(self, virtual_id, request) -> web.Response:
         """
-        Set the active effect of a virtual
+        Set the active effect of a virtual.
+
+        Parameters:
+        - virtual_id (str): The ID of the virtual.
+        - request (web.Request): The request object containing the effect `type` and `config` (optional). An empty config resets the effect config.
+
+        Returns:
+        - web.Response: The HTTP response object.
         """
         virtual = self._ledfx.virtuals.get(virtual_id)
         if virtual is None:
-            response = {
-                "status": "failed",
-                "reason": f"Virtual with ID {virtual_id} not found",
-            }
-            return web.json_response(data=response, status=400)
+            return await self.invalid_request(
+                f"Virtual with ID {virtual_id} not found"
+            )
 
         try:
             data = await request.json()
@@ -197,11 +218,9 @@ class EffectsEndpoint(RestEndpoint):
             return await self.json_decode_error()
         effect_type = data.get("type")
         if effect_type is None:
-            response = {
-                "status": "failed",
-                "reason": 'Required attribute "type" was not provided',
-            }
-            return web.json_response(data=response, status=400)
+            return await self.invalid_request(
+                'Required attribute "type" was not provided'
+            )
 
         effect_config = data.get("config")
         if effect_config is None:
@@ -264,11 +283,11 @@ class EffectsEndpoint(RestEndpoint):
         try:
             virtual.set_effect(effect)
         except (ValueError, RuntimeError) as msg:
-            response = {
-                "status": "failed",
-                "payload": {"type": "warning", "reason": str(msg)},
-            }
-            return web.json_response(data=response, status=202)
+            error_message = (
+                f"Unable to set effect {effect} on {virtual_id}: {msg}"
+            )
+            _LOGGER.error(error_message)
+            return await self.internal_error("error", error_message)
 
         self.update_effect_config(virtual_id, effect)
 
@@ -283,16 +302,23 @@ class EffectsEndpoint(RestEndpoint):
         effect_response["type"] = effect.type
 
         response = {"status": "success", "effect": effect_response}
-        return web.json_response(data=response, status=200)
+        return await self.bare_request_success(response)
 
     async def delete(self, virtual_id) -> web.Response:
+        """
+        Deletes a virtual effect with the given ID.
+
+        Args:
+            virtual_id (str): The ID of the virtual effect to delete.
+
+        Returns:
+            web.Response: The response indicating the success or failure of the deletion.
+        """
         virtual = self._ledfx.virtuals.get(virtual_id)
         if virtual is None:
-            response = {
-                "status": "failed",
-                "reason": f"Virtual with ID {virtual_id} not found",
-            }
-            return web.json_response(data=response, status=400)
+            return await self.invalid_request(
+                f"Virtual with ID {virtual_id} not found"
+            )
 
         # Clear the effect
         virtual.clear_effect()
@@ -308,4 +334,4 @@ class EffectsEndpoint(RestEndpoint):
         )
 
         response = {"status": "success", "effect": {}}
-        return web.json_response(data=response, status=200)
+        return await self.bare_request_success(response)

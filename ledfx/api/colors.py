@@ -1,4 +1,5 @@
 import logging
+from json import JSONDecodeError
 
 from aiohttp import web
 
@@ -14,6 +15,9 @@ class ColorEndpoint(RestEndpoint):
     async def get(self) -> web.Response:
         """
         Get LedFx colors and gradients
+
+        Returns:
+            web.Response: The response containing the colors and gradients.
         """
         response = {
             "colors": dict(
@@ -23,14 +27,19 @@ class ColorEndpoint(RestEndpoint):
                 zip(("builtin", "user"), self._ledfx.gradients.get_all())
             ),
         }
+        return await self.bare_request_success(response)
 
-        return web.json_response(data=response, status=200)
-
-    async def delete(self, request) -> web.Response:
+    async def delete(self, request: web.Request) -> web.Response:
         """
         Deletes a user defined color or gradient
         Request body is a string of the color key to delete
         eg. ["my_red_color"]
+
+        Parameters:
+        - request (web.Request): The HTTP request object
+
+        Returns:
+        - web.Response: The HTTP response object
         """
 
         data = await request.json()
@@ -38,26 +47,40 @@ class ColorEndpoint(RestEndpoint):
         for key in data:
             del self._ledfx.colors[key]
             del self._ledfx.gradients[key]
+        return await self.request_success("success", "Deleted {key}")
 
-        response = {
-            "status": "success",
-            "payload": {
-                "type": "success",
-                "reason": "Deleted",
-            },
-        }
-
-        return web.json_response(data=response, status=200)
-
-    async def post(self, request) -> web.Response:
+    async def post(self, request: web.Request) -> web.Response:
         """
         Creates or updates existing colors or gradients.
-        eg. {"my_red_color": "#ffffff"}
-        or  {"my_cool_gradient": "lin..."}
+
+        Parameters:
+        - request (web.Request): The request containing the color or gradient to create or update.
+
+        Returns:
+        - web.Response: The HTTP response object.
+
+        Example:
+        ```
+        {
+            "my_red_color": "#ffffff"
+        }
+        ```
+        or
+        ```
+        {
+            "my_cool_gradient": "lin..."
+        }
         """
+        try:
+            data = await request.json()
+        except JSONDecodeError:
+            return await self.json_decode_error()
+        if data is None:
+            return await self.invalid_request(
+                reason="Required attribute was not provided"
+            )
 
-        data = await request.json()
-
+        # TODO: Handle instances where neither color nor gradient is provided
         for key, val in data.items():
             try:
                 is_color = validate_color(val)
@@ -68,12 +91,4 @@ class ColorEndpoint(RestEndpoint):
             else:
                 self._ledfx.gradients[key] = val
 
-        response = {
-            "status": "success",
-            "payload": {
-                "type": "success",
-                "reason": "Saved",
-            },
-        }
-
-        return web.json_response(data=response, status=200)
+        return await self.request_success("success", "Saved {key}")

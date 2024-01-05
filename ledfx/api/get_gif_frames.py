@@ -13,42 +13,37 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class GetGifFramesEndpoint(RestEndpoint):
-    """
-    REST end-point for requesting GIF frames from path_url in request data
-    """
-
     ENDPOINT_PATH = "/api/get_gif_frames"
 
-    async def get(self, request) -> web.Response:
-        """Open GIF resource and return frames"""
+    async def get(self, request: web.Request) -> web.Response:
+        """Open GIF resource and return frames
+
+        Args:
+            request (web.Request): The request object containing the `path_url` to open.
+
+        Returns:
+            web.Response: The HTTP response object containing the frames of the GIF.
+        """
         try:
             data = await request.json()
         except JSONDecodeError:
-            response = {
-                "status": "failed",
-                "reason": "JSON Decoding failed",
-            }
-            return web.json_response(data=response, status=400)
+            return await self.json_decode_error()
 
         path_url = data.get("path_url")
 
         if path_url is None:
-            response = {
-                "status": "failed",
-                "reason": 'Required attribute "path_urk" was not provided',
-            }
-            return web.json_response(data=response, status=400)
+            return await self.invalid_request(
+                reason='Required attribute "path_url" was not provided'
+            )
 
         _LOGGER.info(f"GetGifFramesEndpoint from {path_url}")
 
         gif_image = open_gif(path_url)
 
         if not gif_image:
-            response = {
-                "status": "failed",
-                "reason": "Failed to open GIF image",
-            }
-            return web.json_response(data=response, status=404)
+            return await self.invalid_request(
+                reason=f"Failed to open GIF image from: {path_url}"
+            )
 
         frames = []
         for frame in ImageSequence.Iterator(gif_image):
