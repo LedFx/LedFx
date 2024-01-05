@@ -5,7 +5,6 @@ import PIL.ImageSequence as ImageSequence
 import voluptuous as vol
 
 from ledfx.consts import LEDFX_ASSETS_PATH
-from ledfx.effects.gifbase import GifBase
 from ledfx.effects.twod import Twod
 from ledfx.utils import (
     extract_positive_integers,
@@ -17,7 +16,7 @@ from ledfx.utils import (
 _LOGGER = logging.getLogger(__name__)
 
 
-class Keybeat2d(Twod, GifBase):
+class Keybeat2d(Twod):
     NAME = "Keybeat2d"
     CATEGORY = "Matrix"
     HIDDEN_KEYS = Twod.HIDDEN_KEYS + [
