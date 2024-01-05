@@ -1,7 +1,6 @@
 import logging
 import os
 
-import PIL.Image as Image
 import PIL.ImageSequence as ImageSequence
 import voluptuous as vol
 
