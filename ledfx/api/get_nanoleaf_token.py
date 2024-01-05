@@ -39,11 +39,11 @@ class GetNanoleadTokenEndpoint(RestEndpoint):
 
         if ip is None:
             return await self.invalid_request(
-                reason='Required attribute "ip_address" was not provided'
+                'Required attribute "ip_address" was not provided'
             )
         if port is None:
             return await self.invalid_request(
-                reason='Required attribute "port" was not provided'
+                'Required attribute "port" was not provided'
             )
 
         _LOGGER.info(f"Getting Nanoleaf token from {ip}:{port}")

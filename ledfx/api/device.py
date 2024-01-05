@@ -27,7 +27,7 @@ class DeviceEndpoint(RestEndpoint):
         """
         device = self._ledfx.devices.get(device_id)
         if device is None:
-            return await self.invalid_request(reason="{device} was not found")
+            return await self.invalid_request("{device} was not found")
 
         response = device.config
         return await self.bare_request_success(response)
@@ -45,7 +45,7 @@ class DeviceEndpoint(RestEndpoint):
         """
         device = self._ledfx.devices.get(device_id)
         if device is None:
-            return await self.invalid_request(reason=f"{device} was not found")
+            return await self.invalid_request(f"{device} was not found")
 
         try:
             data = await request.json()
@@ -54,7 +54,7 @@ class DeviceEndpoint(RestEndpoint):
         device_config = data.get("config")
         if device_config is None:
             return await self.invalid_request(
-                reason="Required attribute 'config' was not provided"
+                "Required attribute 'config' was not provided"
             )
         _LOGGER.debug(
             f"Updating device {device_id} with config {device_config}"
@@ -89,7 +89,7 @@ class DeviceEndpoint(RestEndpoint):
             web.Response: The response object.
         """
         if device_id is None:
-            return await self.invalid_request(reason="No device ID provided")
+            return await self.invalid_request("No `device_id` provided")
         device = self._ledfx.devices.get(device_id)
         if device is None:
             error_message = f"Device with ID {device_id} not found"

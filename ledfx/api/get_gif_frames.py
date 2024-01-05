@@ -33,7 +33,7 @@ class GetGifFramesEndpoint(RestEndpoint):
 
         if path_url is None:
             return await self.invalid_request(
-                reason='Required attribute "path_url" was not provided'
+                'Required attribute "path_url" was not provided'
             )
 
         _LOGGER.info(f"GetGifFramesEndpoint from {path_url}")
@@ -42,7 +42,7 @@ class GetGifFramesEndpoint(RestEndpoint):
 
         if not gif_image:
             return await self.invalid_request(
-                reason=f"Failed to open GIF image from: {path_url}"
+                f"Failed to open GIF image from: {path_url}"
             )
 
         frames = []

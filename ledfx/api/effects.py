@@ -45,13 +45,11 @@ class EffectsEndpoint(RestEndpoint):
         action = data.get("action")
         if action is None:
             return await self.invalid_request(
-                reason='Required attribute "action" was not provided'
+                'Required attribute "action" was not provided'
             )
 
         if action not in ["clear_all_effects"]:
-            return await self.invalid_request(
-                reason=f'Invalid action "{action}"'
-            )
+            return await self.invalid_request(f'Invalid action "{action}"')
 
         # Clear all effects on all devices
         if action == "clear_all_effects":

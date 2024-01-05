@@ -77,7 +77,7 @@ class ColorEndpoint(RestEndpoint):
             return await self.json_decode_error()
         if data is None:
             return await self.invalid_request(
-                reason="Required attribute was not provided"
+                "Required attribute was not provided"
             )
 
         # TODO: Handle instances where neither color nor gradient is provided

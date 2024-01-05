@@ -39,7 +39,7 @@ class FindDevicesEndpoint(RestEndpoint):
 
         if name_to_icon is None:
             return await self.invalid_request(
-                reason='Required attribute "name_to_icon" was not provided'
+                'Required attribute "name_to_icon" was not provided'
             )
         set_name_to_icon(name_to_icon)
 

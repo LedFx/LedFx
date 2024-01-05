@@ -63,21 +63,24 @@ class RestEndpoint(BaseRegistry):
         }
         return web.json_response(data=response, status=400)
 
-    async def internal_error(self, type, msg) -> web.Response:
+    async def internal_error(
+        self, message="Internal error", type="error"
+    ) -> web.Response:
         """
         Handle messaging for internal errors.
+        Default a type of error.
 
         Returns:
             A web response with a JSON payload containing the error and a 500 status.
         """
         response = {
             "status": "failed",
-            "payload": {"type": type, "reason": msg},
+            "payload": {"type": type, "reason": message},
         }
         return web.json_response(data=response, status=500)
 
     async def invalid_request(
-        self, reason="Invalid request", type="error", resp_code=200
+        self, message="Invalid request", type="error", resp_code=200
     ) -> web.Response:
         """
         Returns a JSON response indicating an invalid request.
@@ -94,7 +97,7 @@ class RestEndpoint(BaseRegistry):
             "status": "failed",
             "payload": {
                 "type": type,
-                "reason": reason,
+                "reason": message,
             },
         }
         return web.json_response(data=response, status=resp_code)
