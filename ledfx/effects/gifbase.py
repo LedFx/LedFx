@@ -1,13 +1,13 @@
 import logging
+from enum import Enum
 
 import voluptuous as vol
-
-from enum import Enum
 from PIL import Image
 
 from ledfx.effects import Effect
 
 _LOGGER = logging.getLogger(__name__)
+
 
 class GIFResizeMethods(Enum):
     # https://pillow.readthedocs.io/en/stable/handbook/concepts.html#filters-comparison-table
@@ -15,6 +15,7 @@ class GIFResizeMethods(Enum):
     BILINEAR = "Fast"
     BICUBIC = "Slow"
     LANCZOS = "Slowest"
+
 
 @Effect.no_registration
 class GifBase(Effect):
@@ -45,5 +46,3 @@ class GifBase(Effect):
         self.resize_method = self.RESIZE_METHOD_MAPPING[
             self._config["resize_method"]
         ]
-
-

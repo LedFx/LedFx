@@ -8,7 +8,6 @@ from ledfx.consts import LEDFX_ASSETS_PATH
 from ledfx.effects.gifbase import GifBase
 from ledfx.effects.twod import Twod
 from ledfx.utils import open_gif
-from ledfx.effects.gifbase import GifBase
 
 _LOGGER = logging.getLogger(__name__)
 
