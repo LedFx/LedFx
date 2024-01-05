@@ -7,6 +7,8 @@ import voluptuous as vol
 
 from ledfx.consts import LEDFX_ASSETS_PATH
 from ledfx.effects.twod import Twod
+from ledfx.effects.gifbase import GifBase
+
 from ledfx.utils import (
     extract_positive_integers,
     get_mono_font,
@@ -17,13 +19,13 @@ from ledfx.utils import (
 _LOGGER = logging.getLogger(__name__)
 
 
-class Keybeat2d(Twod):
+class Keybeat2d(Twod, GifBase):
     NAME = "Keybeat2d"
     CATEGORY = "Matrix"
     HIDDEN_KEYS = Twod.HIDDEN_KEYS + [
         "background_color",
     ]
-    ADVANCED_KEYS = Twod.ADVANCED_KEYS + ["diag2", "fake_beat", "pp skip"]
+    ADVANCED_KEYS = Twod.ADVANCED_KEYS + ["diag2", "fake_beat", "pp skip", "resize_method"]
 
     CONFIG_SCHEMA = vol.Schema(
         {
@@ -313,7 +315,8 @@ class Keybeat2d(Twod):
             stretch_height = max(1, stretch_height)
 
             self.frames.append(
-                frame.resize((stretch_width, stretch_height), Image.BICUBIC)
+                frame.resize((stretch_width, stretch_height),
+                             self.resize_method)
             )
 
         self.offset_x = int(
@@ -330,7 +333,7 @@ class Keybeat2d(Twod):
 
             self.beat_times = []  # rolling window of beat timestamps
             self.beat_f_times = []  # rolling windows of frame info
-            self.begin = self.current_time  # used for seconds running total
+            self.begin_time = self.current_time
 
         self.last_beat_t = self.current_time
 
@@ -383,9 +386,10 @@ class Keybeat2d(Twod):
                 break
 
         # if we have not reached a 60 second window yet, then gestimate bpm
-        passed = self.current_time - self.begin
+        passed = self.current_time - self.begin_time
         self.bpm = len(self.beat_times)
-        if passed < 60.0:
+
+        if passed > 0 and passed < 60.0:
             self.bpm *= 60 / passed
             color = (255, 0, 255)
         else:
