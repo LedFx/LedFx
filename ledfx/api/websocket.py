@@ -4,7 +4,6 @@ import json
 import logging
 import struct
 from concurrent import futures
-from time import perf_counter
 
 import numpy as np
 import pybase64
