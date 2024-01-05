@@ -4,6 +4,7 @@ import json
 import logging
 import struct
 from concurrent import futures
+from time import perf_counter
 
 import numpy as np
 import pybase64
@@ -16,6 +17,7 @@ from ledfx.utils import empty_queue
 
 _LOGGER = logging.getLogger(__name__)
 MAX_PENDING_MESSAGES = 256
+MAX_VAL = 32767
 
 BASE_MESSAGE_SCHEMA = vol.Schema(
     {
@@ -301,7 +303,6 @@ class WebsocketConnection:
     @websocket_handler("audio_stream_data_v2")
     def audio_stream_data_base64_handler(self, message):
         # Max value for signed 16-bit values.
-        MAX_VAL = 32767
         if not ACTIVE_AUDIO_STREAM:
             return
 
