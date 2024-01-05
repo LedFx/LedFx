@@ -1,6 +1,5 @@
 import logging
 import os
-from enum import Enum
 
 import voluptuous as vol
 from PIL import Image
@@ -8,19 +7,12 @@ from PIL import Image
 from ledfx.consts import LEDFX_ASSETS_PATH
 from ledfx.effects.twod import Twod
 from ledfx.utils import open_gif
+from ledfx.effects.gifbase import GifBase
 
 _LOGGER = logging.getLogger(__name__)
 
 
-class GIFResizeMethods(Enum):
-    # https://pillow.readthedocs.io/en/stable/handbook/concepts.html#filters-comparison-table
-    NEAREST = "Fastest"
-    BILINEAR = "Fast"
-    BICUBIC = "Slow"
-    LANCZOS = "Slowest"
-
-
-class GifPlayer(Twod):
+class GifPlayer(Twod, GifBase):
     NAME = "GIF Player"
     CATEGORY = "Matrix"
     HIDDEN_KEYS = Twod.HIDDEN_KEYS + ["gradient", "background"]
