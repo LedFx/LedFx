@@ -2,7 +2,6 @@ import logging
 
 import voluptuous as vol
 
-from ledfx.effects.gradient import GradientEffect
 from ledfx.effects.twod import Twod
 
 _LOGGER = logging.getLogger(__name__)
@@ -11,7 +10,7 @@ _LOGGER = logging.getLogger(__name__)
 # Anywhere you see template, replace it with your own class reference / name
 
 
-class Template2d(Twod, GradientEffect):
+class Template2d(Twod):
     NAME = "Template2d"
     CATEGORY = "Matrix"
     # add keys you want hidden or in advanced here
