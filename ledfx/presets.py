@@ -3,7 +3,7 @@ import os
 from ledfx.consts import LEDFX_ASSETS_PATH
 
 ledfx_presets = {
-    "equalizer2d": {
+    "template2d": {
         "reset": {
             "config": {
                 "A switch": False,
@@ -35,7 +35,6 @@ ledfx_presets = {
                 "bands": 16,
                 "blur": 0,
                 "brightness": 1,
-                "center": False,
                 "center": False,
                 "diag": False,
                 "dump": False,
