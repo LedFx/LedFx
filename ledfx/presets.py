@@ -54,9 +54,6 @@ ledfx_presets = {
             },
             "name": "reset",
         },
-            },
-            "name": "reset",
-        },
     },
     "keybeat2d": {
         "beat-cat": {
