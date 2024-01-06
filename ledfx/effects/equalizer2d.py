@@ -96,14 +96,16 @@ class Equalizer2d(Twod, GradientEffect):
             angle = 2.0 * np.pi * i / self.bands + np.radians(rotation)
             x = (self.r_width) / 2.0 + (self.r_width - 1) / 2.0 * np.cos(angle)
             y = (self.r_height) / 2.0 + (self.r_height - 1) / 2.0 * np.sin(
-                angle)
+                angle
+            )
             self.bandsc.append((x, y))
 
         # calc mid points of bands
         self.bandscm = []
         for i in range(self.bands):
             self.bandscm.append(
-                interpolate_point(self.bandsc[i], self.bandsc[i + 1], 0.5))
+                interpolate_point(self.bandsc[i], self.bandsc[i + 1], 0.5)
+            )
         # Add from beginnning to end for wrap around
         self.bandscm.append(self.bandscm[0])
         self.p_center = (self.r_width / 2.0, self.r_height / 2.0)
@@ -162,28 +164,65 @@ class Equalizer2d(Twod, GradientEffect):
     def draw_ring(self):
         for i in range(self.bands):
             if self.center:
-                self.m_draw.polygon([interpolate_point(self.p_center, self.bandsc[i], self.volumes[i]),
-                                     interpolate_point(self.p_center, self.bandsc[i + 1], self.volumes[i]),
-                                     self.p_center],
-                                    fill=self.gradient_colors[i])
+                self.m_draw.polygon(
+                    [
+                        interpolate_point(
+                            self.p_center, self.bandsc[i], self.volumes[i]
+                        ),
+                        interpolate_point(
+                            self.p_center, self.bandsc[i + 1], self.volumes[i]
+                        ),
+                        self.p_center,
+                    ],
+                    fill=self.gradient_colors[i],
+                )
 
                 if self.peak:
-                    self.m_draw.line([interpolate_point(self.p_center, self.bandscm[i], self.peaks[i]),
-                                      interpolate_point(self.p_center, self.bandscm[i + 1], self.peaks[i + 1])],
-                                     fill=(255, 255, 255),
-                                     width=self.peak_size)
+                    self.m_draw.line(
+                        [
+                            interpolate_point(
+                                self.p_center, self.bandscm[i], self.peaks[i]
+                            ),
+                            interpolate_point(
+                                self.p_center,
+                                self.bandscm[i + 1],
+                                self.peaks[i + 1],
+                            ),
+                        ],
+                        fill=(255, 255, 255),
+                        width=self.peak_size,
+                    )
             else:
-                self.m_draw.polygon([self.bandsc[i],
-                                     self.bandsc[i + 1],
-                                     interpolate_point(self.bandscm[i], self.p_center, self.volumes[i])],
-                                    fill=self.gradient_colors[i],
-                                    outline = tuple(max(component - 1, 0) for component in self.gradient_colors[i]))
+                self.m_draw.polygon(
+                    [
+                        self.bandsc[i],
+                        self.bandsc[i + 1],
+                        interpolate_point(
+                            self.bandscm[i], self.p_center, self.volumes[i]
+                        ),
+                    ],
+                    fill=self.gradient_colors[i],
+                    outline=tuple(
+                        max(component - 1, 0)
+                        for component in self.gradient_colors[i]
+                    ),
+                )
 
                 if self.peak:
-                    self.m_draw.line([interpolate_point(self.bandscm[i], self.p_center, self.peaks[i]),
-                                      interpolate_point(self.bandscm[i + 1], self.p_center, self.peaks[i + 1])],
-                                     fill=(255, 255, 255),
-                                     width=self.peak_size)
+                    self.m_draw.line(
+                        [
+                            interpolate_point(
+                                self.bandscm[i], self.p_center, self.peaks[i]
+                            ),
+                            interpolate_point(
+                                self.bandscm[i + 1],
+                                self.p_center,
+                                self.peaks[i + 1],
+                            ),
+                        ],
+                        fill=(255, 255, 255),
+                        width=self.peak_size,
+                    )
 
     def draw_normal(self):
         for i in range(self.bands):
@@ -200,7 +239,7 @@ class Equalizer2d(Twod, GradientEffect):
 
             self.m_draw.rectangle(
                 (band_start, bottom, band_end, top),
-                fill=self.gradient_colors[i]
+                fill=self.gradient_colors[i],
             )
 
             # Draw the peak marker
