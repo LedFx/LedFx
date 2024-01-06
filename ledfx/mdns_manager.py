@@ -7,6 +7,7 @@ from zeroconf.asyncio import (
     AsyncZeroconf,
 )
 
+from ledfx.events import Event
 from ledfx.utils import async_fire_and_forget
 
 _LOGGER = logging.getLogger(__name__)
@@ -33,6 +34,11 @@ class ZeroConfRunner:
         self.aiobrowser = None
         self.aiozc = None
         self._ledfx = ledfx
+
+        def on_shutdown(e):
+            async_fire_and_forget(self.async_close(), self._ledfx.loop)
+
+        self._ledfx.events.add_listener(on_shutdown, Event.LEDFX_SHUTDOWN)
 
     def on_service_state_change(
         self,
