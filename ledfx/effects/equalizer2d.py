@@ -8,8 +8,10 @@ from ledfx.effects.twod import Twod
 
 _LOGGER = logging.getLogger(__name__)
 
+
 def interpolate_point(p1, p2, t):
     return (p1[0] + (p2[0] - p1[0]) * t, p1[1] + (p2[1] - p1[1]) * t)
+
 
 class Equalizer2d(Twod, GradientEffect):
     NAME = "Equalizer2d"
@@ -196,7 +198,6 @@ class Equalizer2d(Twod, GradientEffect):
                 bottom = 0
                 top = volume_scaled
 
-            # Draw the rectangle
             self.m_draw.rectangle(
                 (band_start, bottom, band_end, top),
                 fill=self.gradient_colors[i]
