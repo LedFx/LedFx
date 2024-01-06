@@ -308,7 +308,6 @@ class LedFxCore:
         # Fire a shutdown event and flush the loop
         self.events.fire_event(LedFxShutdownEvent())
         await asyncio.sleep(0)
-        await self.zeroconf.async_close()
         _LOGGER.info("Stopping HttpServer...")
         await self.http.stop()
 
