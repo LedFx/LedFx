@@ -4,7 +4,7 @@ from ledfx.consts import LEDFX_ASSETS_PATH
 
 ledfx_presets = {
     "template2d": {
-        "reset": {
+        "test": {
             "config": {
                 "A switch": False,
                 "advanced": True,
@@ -23,41 +23,10 @@ ledfx_presets = {
                 "rotate": 0,
                 "test": True,
             },
-            "name": "reset",
+            "name": "test",
         },
     },
     "equalizer2d": {
-        "reset": {
-            "config": {
-                "advanced": False,
-                "background_brightness": 1,
-                "background_color": "#000000",
-                "bands": 16,
-                "blur": 0.0,
-                "brightness": 1,
-                "center": False,
-                "diag": False,
-                "dump": False,
-                "flip": False,
-                "flip horizontal": False,
-                "flip vertical": False,
-                "frequency_range": "Lows (beat+bass)",
-                "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
-                "gradient_roll": 0,
-                "max vs mean": False,
-                "mirror": False,
-                "peak decay": 0.03,
-                "peak marks": False,
-                "peak percent": 1,
-                "ring": False,
-                "rotate": 0,
-                "spin": False,
-                "spin decay": 0.1,
-                "spin multiplier": 1.0,
-                "test": False,
-            },
-            "name": "reset",
-        },
         "earth": {
             "config": {
                 "advanced": False,
@@ -582,32 +551,6 @@ ledfx_presets = {
         },
     },
     "plasma2d": {
-        "reset": {
-            "config": {
-                "advanced": False,
-                "background_brightness": 1.0,
-                "background_color": "#000000",
-                "blur": 0.0,
-                "brightness": 1.0,
-                "density": 0.7,
-                "diag": False,
-                "dump": False,
-                "flip": False,
-                "flip horizontal": False,
-                "flip vertical": False,
-                "frequency_range": "Lows (beat+bass)",
-                "gradient": "linear-gradient(90deg, #ff0000 0.00%,#ff7800 14.00%,#ffc800 28.00%,#00ff00 42.00%,#00c78c 56.00%,#0000ff 70.00%,#800080 84.00%,#ff00b2 98.00%)",
-                "gradient_roll": 0.0,
-                "lower": 0.57,
-                "mirror": False,
-                "radius": 0.2,
-                "rotate_t": 0,
-                "test": False,
-                "twist": 0.07,
-                "v density": 0.1,
-            },
-            "name": "Reset",
-        },
         "aprilnight": {
             "config": {
                 "advanced": False,
@@ -636,33 +579,6 @@ ledfx_presets = {
         },
     },
     "plasmawled": {
-        "reset": {
-            "config": {
-                "advanced": False,
-                "background_brightness": 1.0,
-                "background_color": "#000000",
-                "blur": 0.0,
-                "brightness": 1.0,
-                "diag": False,
-                "dump": False,
-                "flip": False,
-                "flip horizontal": False,
-                "flip vertical": False,
-                "frequency_range": "Lows (beat+bass)",
-                "gradient": "linear-gradient(90deg, #ff0000 0.00%,#ff7800 14.00%,#ffc800 28.00%,#00ff00 42.00%,#00c78c 56.00%,#0000ff 70.00%,#800080 84.00%,#ff00b2 98.00%)",
-                "gradient_roll": 0.0,
-                "h_stretch": 128,
-                "mirror": False,
-                "multiplier": 1.0,
-                "rotate_t": 0,
-                "size x": 0.4,
-                "speed": 128,
-                "speed x": 0.4,
-                "test": False,
-                "v_stretch": 128,
-            },
-            "name": "Reset",
-        },
         "snowcrash": {
             "config": {
                 "advanced": False,
@@ -692,24 +608,6 @@ ledfx_presets = {
         },
     },
     "bar": {
-        "reset": {
-            "config": {
-                "blur": 0,
-                "background_brightness": 1,
-                "color_step": 0.125,
-                "skip_every": 1,
-                "background_color": "#000000",
-                "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
-                "brightness": 1,
-                "mode": "wipe",
-                "ease_method": "ease_out",
-                "beat_skip": "none",
-                "gradient_roll": 0,
-                "mirror": False,
-                "flip": False,
-            },
-            "name": "Reset",
-        },
         "bouncing-blues": {
             "config": {
                 "background_brightness": 1,
@@ -810,23 +708,6 @@ ledfx_presets = {
         },
     },
     "energy": {
-        "reset": {
-            "config": {
-                "color_mids": "#00ff00",
-                "blur": 4,
-                "color_cycler": False,
-                "color_lows": "#ff0000",
-                "sensitivity": 0.6,
-                "mixing_mode": "additive",
-                "background_brightness": 1,
-                "background_color": "#000000",
-                "brightness": 1,
-                "color_high": "#0000ff",
-                "mirror": True,
-                "flip": False,
-            },
-            "name": "Reset",
-        },
         "clear-sky": {
             "config": {
                 "background_brightness": 1,
@@ -905,20 +786,6 @@ ledfx_presets = {
         },
     },
     "fade": {
-        "reset": {
-            "config": {
-                "blur": 0,
-                "background_brightness": 1,
-                "speed": 0.5,
-                "background_color": "#000000",
-                "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
-                "brightness": 1,
-                "gradient_roll": 0,
-                "mirror": False,
-                "flip": False,
-            },
-            "name": "Reset",
-        },
         "blues": {
             "config": {
                 "background_brightness": 1,
@@ -1006,23 +873,6 @@ ledfx_presets = {
         },
     },
     "gradient": {
-        "reset": {
-            "config": {
-                "modulate": False,
-                "blur": 0,
-                "background_brightness": 1,
-                "modulation_speed": 0.5,
-                "speed": 1,
-                "modulation_effect": "sine",
-                "background_color": "#000000",
-                "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
-                "brightness": 1,
-                "gradient_roll": 0,
-                "mirror": False,
-                "flip": False,
-            },
-            "name": "Reset",
-        },
         "breathing": {
             "config": {
                 "background_brightness": 1,
@@ -1165,20 +1015,6 @@ ledfx_presets = {
         },
     },
     "magnitude": {
-        "reset": {
-            "config": {
-                "blur": 0,
-                "background_brightness": 1,
-                "background_color": "#000000",
-                "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
-                "brightness": 1,
-                "frequency_range": "Lows (beat+bass)",
-                "gradient_roll": 0,
-                "mirror": False,
-                "flip": False,
-            },
-            "name": "Reset",
-        },
         "cold-fire": {
             "config": {
                 "background_brightness": 1,
@@ -1266,22 +1102,6 @@ ledfx_presets = {
         },
     },
     "multiBar": {
-        "reset": {
-            "config": {
-                "blur": 0,
-                "background_brightness": 1,
-                "color_step": 0.125,
-                "background_color": "#000000",
-                "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
-                "brightness": 1,
-                "mode": "wipe",
-                "ease_method": "linear",
-                "gradient_roll": 0,
-                "mirror": False,
-                "flip": False,
-            },
-            "name": "Reset",
-        },
         "bright-cascade": {
             "config": {
                 "background_brightness": 1,
@@ -1360,24 +1180,6 @@ ledfx_presets = {
         },
     },
     "rain": {
-        "reset": {
-            "config": {
-                "blur": 0,
-                "mids_sensitivity": 0.05,
-                "lows_color": "#ffffff",
-                "background_brightness": 1,
-                "raindrop_animation": "Blob",
-                "high_color": "#0000ff",
-                "high_sensitivity": 0.1,
-                "background_color": "#000000",
-                "brightness": 1,
-                "mids_color": "#ff0000",
-                "mirror": True,
-                "flip": False,
-                "lows_sensitivity": 0.1,
-            },
-            "name": "Reset",
-        },
         "cold-drops": {
             "config": {
                 "background_brightness": 1.0,
@@ -1476,19 +1278,6 @@ ledfx_presets = {
         },
     },
     "rainbow": {
-        "reset": {
-            "config": {
-                "blur": 0,
-                "background_brightness": 1,
-                "speed": 1,
-                "frequency": 1,
-                "background_color": "#000000",
-                "brightness": 1,
-                "mirror": False,
-                "flip": False,
-            },
-            "name": "Reset",
-        },
         "cascade": {
             "config": {
                 "background_brightness": 1.0,
@@ -1556,23 +1345,6 @@ ledfx_presets = {
         },
     },
     "scroll": {
-        "reset": {
-            "config": {
-                "color_mids": "#00ff00",
-                "blur": 3,
-                "color_lows": "#ff0000",
-                "background_brightness": 1,
-                "speed": 3,
-                "decay": 0.97,
-                "threshold": 0,
-                "background_color": "#000000",
-                "brightness": 1,
-                "color_high": "#0000ff",
-                "mirror": True,
-                "flip": False,
-            },
-            "name": "Reset",
-        },
         "cold-crawl": {
             "config": {
                 "background_brightness": 1.0,
@@ -1695,22 +1467,6 @@ ledfx_presets = {
         },
     },
     "singleColor": {
-        "reset": {
-            "config": {
-                "modulate": False,
-                "blur": 0,
-                "color": "#ff0000",
-                "background_brightness": 1,
-                "modulation_speed": 0.5,
-                "speed": 1,
-                "modulation_effect": "sine",
-                "background_color": "#000000",
-                "brightness": 1,
-                "mirror": False,
-                "flip": False,
-            },
-            "name": "Reset",
-        },
         "blue": {
             "config": {
                 "background_brightness": 1.0,
@@ -1905,22 +1661,6 @@ ledfx_presets = {
         },
     },
     "strobe": {
-        "reset": {
-            "config": {
-                "blur": 0,
-                "strobe_decay": 1.5,
-                "background_brightness": 1,
-                "background_color": "#000000",
-                "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
-                "brightness": 1,
-                "strobe_frequency": "1/2 (.-. )",
-                "beat_decay": 2,
-                "gradient_roll": 0,
-                "mirror": False,
-                "flip": False,
-            },
-            "name": "Reset",
-        },
         "aggro-red": {
             "config": {
                 "background_brightness": 1,
@@ -2044,19 +1784,6 @@ ledfx_presets = {
         },
     },
     "wavelength": {
-        "reset": {
-            "config": {
-                "blur": 3,
-                "background_brightness": 1,
-                "background_color": "#000000",
-                "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
-                "brightness": 1,
-                "gradient_roll": 0,
-                "mirror": False,
-                "flip": False,
-            },
-            "name": "Reset",
-        },
         "classic": {
             "config": {
                 "background_brightness": 1,
@@ -2171,25 +1898,6 @@ ledfx_presets = {
         },
     },
     "real_strobe": {
-        "reset": {
-            "config": {
-                "blur": 0,
-                "strobe_width": 10,
-                "background_brightness": 1,
-                "bass_strobe_decay_rate": 0.5,
-                "color_step": 0.0625,
-                "background_color": "#000000",
-                "gradient": "Dancefloor",
-                "brightness": 1,
-                "strobe_color": "#ffffff",
-                "color_shift_delay": 1,
-                "gradient_roll": 0,
-                "mirror": False,
-                "flip": False,
-                "strobe_decay_rate": 0.5,
-            },
-            "name": "Reset",
-        },
         "dancefloor": {
             "config": {
                 "background_brightness": 1,
@@ -2321,23 +2029,6 @@ ledfx_presets = {
         },
     },
     "blade_power_plus": {
-        "reset": {
-            "config": {
-                "brightness": 1,
-                "mirror": False,
-                "background_brightness": 1,
-                "background_color": "#000000",
-                "flip": False,
-                "blur": 2,
-                "decay": 0.7,
-                "frequency_range": "Lows (beat+bass)",
-                "gradient_roll": 0,
-                "multiplier": 0.5,
-                "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
-                "invert_roll": False,
-            },
-            "name": "Reset",
-        },
         "orange-hi-hat": {
             "config": {
                 "background_brightness": 0.3,
@@ -2406,162 +2097,7 @@ ledfx_presets = {
             "name": "PurpleRed Bass",
         },
     },
-    "bands": {
-        "reset": {
-            "config": {
-                "blur": 0,
-                "align": "left",
-                "background_brightness": 1,
-                "background_color": "#000000",
-                "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
-                "brightness": 1,
-                "gradient_roll": 0,
-                "mirror": False,
-                "flip": False,
-                "band_count": 6,
-            },
-            "name": "Reset",
-        }
-    },
-    "bands_matrix": {
-        "reset": {
-            "config": {
-                "blur": 0,
-                "flip_gradient": False,
-                "flip_horizontal": False,
-                "background_brightness": 1,
-                "background_color": "#000000",
-                "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
-                "brightness": 1,
-                "gradient_roll": 0,
-                "mirror": False,
-                "flip": False,
-                "band_count": 6,
-            },
-            "name": "Reset",
-        }
-    },
-    "block_reflections": {
-        "reset": {
-            "config": {
-                "blur": 0,
-                "reactivity": 0.5,
-                "background_brightness": 1,
-                "speed": 0.5,
-                "background_color": "#000000",
-                "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
-                "brightness": 1,
-                "gradient_roll": 0,
-                "mirror": False,
-                "flip": False,
-            },
-            "name": "Reset",
-        }
-    },
-    "crawler": {
-        "reset": {
-            "config": {
-                "blur": 0,
-                "reactivity": 0.25,
-                "stretch": 2.5,
-                "chop": 30,
-                "background_brightness": 1,
-                "speed": 0.5,
-                "sway": 20,
-                "background_color": "#000000",
-                "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
-                "brightness": 1,
-                "gradient_roll": 0,
-                "mirror": False,
-                "flip": False,
-            },
-            "name": "Reset",
-        }
-    },
-    "scan_multi": {
-        "reset": {
-            "config": {
-                "color_intensity": True,
-                "blur": 3,
-                "filter": False,
-                "multiplier": 3,
-                "attack": 0.9,
-                "background_brightness": 1,
-                "scan_width": 30,
-                "color_low": "#ff0000",
-                "input_source": "Power",
-                "advanced": True,
-                "bounce": True,
-                "decay": 0.7,
-                "use_grad": False,
-                "brightness": 1,
-                "mirror": False,
-                "speed": 50,
-                "background_color": "#000000",
-                "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
-                "color_high": "#0000ff",
-                "gradient_roll": 0,
-                "flip": False,
-                "color_mid": "#00ff00",
-            },
-            "name": "Reset",
-        }
-    },
-    "scan_and_flare": {
-        "reset": {
-            "config": {
-                "color_intensity": True,
-                "blur": 3,
-                "sparkles_time": 1,
-                "multiplier": 3,
-                "background_brightness": 1,
-                "frequency_range": "Lows (beat+bass)",
-                "scan_width": 30,
-                "sparkles_threshold": 0.6,
-                "sparkles_size": 0.1,
-                "sparkles_max": 10,
-                "color_scan": "#ff0000",
-                "bounce": True,
-                "use_grad": False,
-                "brightness": 1,
-                "mirror": False,
-                "speed": 50,
-                "background_color": "#000000",
-                "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
-                "gradient_roll": 0,
-                "flip": False,
-            },
-            "name": "Reset",
-        }
-    },
     "scan": {
-        "reset": {
-            "config": {
-                "advanced": False,
-                "background_brightness": 1.0,
-                "background_color": "#000000",
-                "blur": 3,
-                "bounce": True,
-                "brightness": 1,
-                "color_intensity": True,
-                "color_scan": "#ff0000",
-                "count": 1,
-                "flip": False,
-                "frequency_range": "Lows (beat+bass)",
-                "full_grad": False,
-                "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
-                "gradient_roll": 0,
-                "mirror": False,
-                "modulate": False,
-                "modulation_effect": "sine",
-                "modulation_speed": 0.5,
-                "multiplier": 3,
-                "scan_width": 30,
-                "speed": 50,
-                "use_grad": False,
-            },
-            "name": "Reset",
-        },
         "painbow": {
             "config": {
                 "advanced": True,
@@ -2590,143 +2126,7 @@ ledfx_presets = {
             "name": "painbow",
         },
     },
-    "blocks": {
-        "reset": {
-            "config": {
-                "blur": 0,
-                "background_brightness": 1,
-                "block_count": 4,
-                "background_color": "#000000",
-                "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
-                "brightness": 1,
-                "gradient_roll": 0,
-                "mirror": False,
-                "flip": False,
-            },
-            "name": "Reset",
-        }
-    },
-    "energy2": {
-        "reset": {
-            "config": {
-                "blur": 0,
-                "reactivity": 0.2,
-                "background_brightness": 1,
-                "speed": 0.1,
-                "background_color": "#000000",
-                "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
-                "brightness": 1,
-                "gradient_roll": 0,
-                "mirror": False,
-                "flip": False,
-            },
-            "name": "Reset",
-        }
-    },
-    "equalizer": {
-        "reset": {
-            "config": {
-                "blur": 0,
-                "align": "left",
-                "background_brightness": 1,
-                "gradient_repeat": 6,
-                "background_color": "#000000",
-                "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
-                "brightness": 1,
-                "gradient_roll": 0,
-                "mirror": False,
-                "flip": False,
-            },
-            "name": "Reset",
-        }
-    },
-    "fire": {
-        "reset": {
-            "config": {
-                "blur": 0,
-                "color_shift": 0.15,
-                "background_brightness": 1,
-                "speed": 0.04,
-                "background_color": "#000000",
-                "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
-                "brightness": 1,
-                "gradient_roll": 0,
-                "mirror": False,
-                "flip": False,
-                "intensity": 8,
-            },
-            "name": "Reset",
-        }
-    },
-    "glitch": {
-        "reset": {
-            "config": {
-                "blur": 0,
-                "reactivity": 0.2,
-                "background_brightness": 1,
-                "speed": 0.5,
-                "background_color": "#000000",
-                "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
-                "brightness": 1,
-                "gradient_roll": 0,
-                "mirror": False,
-                "flip": False,
-            },
-            "name": "Reset",
-        }
-    },
-    "hue_fix_demo": {"reset": {"config": {}, "name": "Reset"}},
-    "lava_lamp": {
-        "reset": {
-            "config": {
-                "blur": 0,
-                "reactivity": 0.3,
-                "background_brightness": 1,
-                "speed": 7,
-                "background_color": "#000000",
-                "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
-                "brightness": 1,
-                "contrast": 0.6,
-                "gradient_roll": 0,
-                "mirror": False,
-                "flip": False,
-            },
-            "name": "Reset",
-        }
-    },
-    "marching": {
-        "reset": {
-            "config": {
-                "blur": 0,
-                "reactivity": 0.2,
-                "background_brightness": 1,
-                "speed": 0.1,
-                "background_color": "#000000",
-                "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
-                "brightness": 1,
-                "gradient_roll": 0,
-                "mirror": False,
-                "flip": False,
-            },
-            "name": "Reset",
-        }
-    },
     "melt": {
-        "reset": {
-            "config": {
-                "blur": 0,
-                "reactivity": 0.5,
-                "background_brightness": 1,
-                "speed": 0.5,
-                "background_color": "#000000",
-                "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
-                "brightness": 1,
-                "gradient_roll": 0,
-                "mirror": False,
-                "flip": False,
-            },
-            "name": "Reset",
-        },
         "bladesmooth": {
             "name": "Blade Smooth",
             "config": {
@@ -2757,99 +2157,6 @@ ledfx_presets = {
                 "background_brightness": 0.3,
             },
         },
-    },
-    "pitchSpectrum": {
-        "reset": {
-            "config": {
-                "blur": 1,
-                "fade_rate": 0.15,
-                "responsiveness": 0.15,
-                "background_brightness": 1,
-                "background_color": "#000000",
-                "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
-                "brightness": 1,
-                "gradient_roll": 0,
-                "mirror": True,
-                "flip": False,
-            },
-            "name": "Reset",
-        }
-    },
-    "power": {
-        "reset": {
-            "config": {
-                "blur": 0,
-                "sparks_color": "#ffffff",
-                "background_brightness": 1,
-                "sparks_decay_rate": 0.15,
-                "background_color": "#000000",
-                "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
-                "brightness": 1,
-                "gradient_roll": 0,
-                "mirror": True,
-                "flip": False,
-                "bass_decay_rate": 0.05,
-            },
-            "name": "Reset",
-        }
-    },
-    "spectrum": {
-        "reset": {
-            "config": {
-                "blur": 0,
-                "background_brightness": 1,
-                "background_color": "#000000",
-                "brightness": 1,
-                "mirror": False,
-                "flip": False,
-            },
-            "name": "Reset",
-        }
-    },
-    "melt_and_sparkle": {
-        "reset": {
-            "config": {
-                "blur": 0,
-                "reactivity": 0.5,
-                "strobe_rate": 0.75,
-                "strobe_width": 0.3,
-                "background_brightness": 1,
-                "speed": 0.5,
-                "strobe_threshold": 0.75,
-                "strobe_blur": 3.5,
-                "background_color": "#000000",
-                "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
-                "brightness": 1,
-                "lava_width": 0.5,
-                "gradient_roll": 0,
-                "mirror": False,
-                "flip": False,
-                "bg_bright": 0.4,
-                "strobe_decay_rate": 0.25,
-            },
-            "name": "Reset",
-        }
-    },
-    "water": {
-        "reset": {
-            "config": {
-                "blur": 0,
-                "viscosity": 6,
-                "bass_size": 8,
-                "background_brightness": 1,
-                "speed": 1,
-                "background_color": "#000000",
-                "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
-                "brightness": 1,
-                "mids_size": 6,
-                "gradient_roll": 0,
-                "mirror": False,
-                "flip": False,
-                "high_size": 3,
-                "vertical_shift": 0.12,
-            },
-            "name": "Reset",
-        }
     },
     "gifplayer": {
         "dj-bird": {
@@ -2968,29 +2275,6 @@ ledfx_presets = {
                 "gif_path": f"{os.path.join(LEDFX_ASSETS_PATH, 'gifs', 'pixelart', 'chicken.gif')}",
             },
             "name": "Chicken",
-        },
-        "reset": {
-            "config": {
-                "GIF FPS": 10,
-                "advanced": False,
-                "background_brightness": 1.0,
-                "background_color": "#000000",
-                "resize_method": "Fastest",
-                "blur": 0.0,
-                "bounce": True,
-                "brightness": 1.0,
-                "diag": False,
-                "dump": False,
-                "flip": False,
-                "flip horizontal": False,
-                "flip vertical": False,
-                "mirror": False,
-                "pattern": False,
-                "rotate": 0,
-                "test": False,
-                "gif_path": "",
-            },
-            "name": "Reset",
         },
     },
 }

@@ -1318,11 +1318,10 @@ def generate_defaults(ledfx_presets, ledfx_effects, effect_id):
     else:
         presets = {}
 
-    # TODO: Change default to reset when we purge old reset hardcoded presets
     default = {
-        "default": {
+        "reset": {
             "config": generate_default_config(ledfx_effects, effect_id),
-            "name": "default",
+            "name": "reset",
         }
     }
     default.update(presets)

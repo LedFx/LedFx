@@ -135,8 +135,7 @@ class VirtualPresetsEndpoint(RestEndpoint):
         else:
             category = "user_presets"
 
-        # TODO: Change default to reset when we purge old reset hardcoded presets
-        if category == "ledfx_presets" and preset_id == "default":
+        if category == "ledfx_presets" and preset_id == "reset":
             effect_config = generate_default_config(
                 self._ledfx.effects, effect_id
             )
@@ -147,7 +146,7 @@ class VirtualPresetsEndpoint(RestEndpoint):
                 )
             if preset_id not in self._ledfx.config[category][effect_id].keys():
                 return await self.invalid_request(
-                    f"Elephant Preset {preset_id} does not exist for effect {effect_id} in category {category}"
+                    f"Preset {preset_id} does not exist for effect {effect_id} in category {category}"
                 )
             else:
                 # Create the effect and add it to the virtual
