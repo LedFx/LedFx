@@ -1,9 +1,12 @@
 import asyncio
+import binascii
 import json
 import logging
+import struct
 from concurrent import futures
 
 import numpy as np
+import pybase64
 import voluptuous as vol
 from aiohttp import web
 
@@ -13,6 +16,7 @@ from ledfx.utils import empty_queue
 
 _LOGGER = logging.getLogger(__name__)
 MAX_PENDING_MESSAGES = 256
+MAX_VAL = 32767
 
 BASE_MESSAGE_SCHEMA = vol.Schema(
     {
@@ -294,6 +298,35 @@ class WebsocketConnection:
         ACTIVE_AUDIO_STREAM.data = np.fromiter(
             message.get("data").values(), dtype=np.float32
         )
+
+    @websocket_handler("audio_stream_data_v2")
+    def audio_stream_data_base64_handler(self, message):
+        # Max value for signed 16-bit values.
+        if not ACTIVE_AUDIO_STREAM:
+            return
+
+        client = message.get("client")
+
+        if ACTIVE_AUDIO_STREAM.client != client:
+            return
+        try:
+            decoded = pybase64.b64decode(message.get("data"))
+        except binascii.Error:
+            _LOGGER.info("Incorrect base64 padding.")
+        except Exception as err:
+            _LOGGER.exception(
+                "Unexpected Exception in base64 decoding: %s", err
+            )
+        else:
+            fmt = "<%dh" % (len(decoded) // 2)
+            data = list(struct.unpack(fmt, decoded))
+            # Minimum value is -32768 for signed, so that's why if the number is negative,
+            # it is divided by 32768 when converting to float.
+            data = np.array(
+                [d / MAX_VAL if d >= 0 else d / (MAX_VAL + 1) for d in data],
+                dtype=np.float32,
+            )
+            ACTIVE_AUDIO_STREAM.data = data
 
 
 class WebAudioStream:

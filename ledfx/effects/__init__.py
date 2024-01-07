@@ -309,7 +309,13 @@ class Effect(BaseRegistry):
 
     def update_config(self, config):
         self.lock.acquire()
-        validated_config = type(self).schema()(config)
+        try:
+            validated_config = type(self).schema()(config)
+        except vol.Invalid as err:
+            _LOGGER.warning(f"Error updating effect {self.NAME} config: {err}")
+            self.lock.release()
+            return
+
         prior_config = self._config
 
         if self._config != {}:

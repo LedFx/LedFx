@@ -12,11 +12,16 @@ class InfoEndpoint(RestEndpoint):
     ENDPOINT_PATH = "/api/comports"
 
     async def get(self) -> web.Response:
+        """
+        Get the list of available COM ports.
+
+        Returns:
+            web.Response: The response containing the list of available COM ports.
+        """
         ports = serial.tools.list_ports.comports()
 
         available_ports = []
 
         for p in ports:
             available_ports.append(p.device)
-
-        return web.json_response(data=available_ports, status=200)
+        return await self.bare_request_success(available_ports)

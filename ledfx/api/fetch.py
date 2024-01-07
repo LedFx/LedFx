@@ -9,6 +9,10 @@ from ledfx.api import RestEndpoint
 _LOGGER = logging.getLogger(__name__)
 
 
+# TODO: Figure out what this is and what uses it and if it's needed
+# Worried it's a potential security issue since it can be used as a proxy
+# to fetch any URL on the internet or local network without authentication
+# and without CORS restrictions (since it's a local API)
 class InfoEndpoint(RestEndpoint):
     ENDPOINT_PATH = "/api/fetch/{url}"
 
