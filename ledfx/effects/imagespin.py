@@ -6,6 +6,7 @@ import voluptuous as vol
 from PIL import Image
 
 from ledfx.consts import LEDFX_ASSETS_PATH
+from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.twod import Twod
 from ledfx.utils import get_icon_path
 
@@ -18,14 +19,6 @@ class Imagespin(Twod):
     HIDDEN_KEYS = ["speed", "background_brightness", "mirror", "flip", "blur"]
     ADVANCED_KEYS = Twod.ADVANCED_KEYS + ["pattern", "bilinear"]
 
-    _power_funcs = {
-        "Beat": "beat_power",
-        "Bass": "bass_power",
-        "Lows (beat+bass)": "lows_power",
-        "Mids": "mids_power",
-        "High": "high_power",
-    }
-
     CONFIG_SCHEMA = vol.Schema(
         {
             vol.Optional(
@@ -37,7 +30,7 @@ class Imagespin(Twod):
                 "frequency_range",
                 description="Frequency range for the beat detection",
                 default="Lows (beat+bass)",
-            ): vol.In(list(_power_funcs.keys())),
+            ): vol.In(list(AudioReactiveEffect.POWER_FUNCS_MAPPING.keys())),
             vol.Optional(
                 "multiplier",
                 description="Applied to the audio input to amplify effect",
@@ -78,7 +71,9 @@ class Imagespin(Twod):
 
         self.clip = self._config["clip"]
         self.min_size = self._config["Min Size"]
-        self.power_func = self._power_funcs[self._config["frequency_range"]]
+        self.power_func = self.POWER_FUNCS_MAPPING[
+            self._config["frequency_range"]
+        ]
         self.do_spin = self._config["spin"]
         self.resize = (
             Image.BILINEAR if self._config["bilinear"] else Image.NEAREST

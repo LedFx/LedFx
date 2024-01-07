@@ -5,6 +5,7 @@ import numpy as np
 import PIL.Image as Image
 import voluptuous as vol
 
+from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.gradient import GradientEffect
 from ledfx.effects.twod import Twod
 
@@ -17,21 +18,13 @@ class Plasma2d(Twod, GradientEffect):
     HIDDEN_KEYS = Twod.HIDDEN_KEYS + ["background_color", "gradient_roll"]
     ADVANCED_KEYS = Twod.ADVANCED_KEYS + []
 
-    _power_funcs = {
-        "Beat": "beat_power",
-        "Bass": "bass_power",
-        "Lows (beat+bass)": "lows_power",
-        "Mids": "mids_power",
-        "High": "high_power",
-    }
-
     CONFIG_SCHEMA = vol.Schema(
         {
             vol.Optional(
                 "frequency_range",
                 description="Frequency range for the beat detection",
                 default="Lows (beat+bass)",
-            ): vol.In(list(_power_funcs.keys())),
+            ): vol.In(list(AudioReactiveEffect.POWER_FUNCS_MAPPING.keys())),
             vol.Optional(
                 "v density",
                 description="Lets pretend its vertical density",
@@ -67,7 +60,9 @@ class Plasma2d(Twod, GradientEffect):
         self.time = timeit.default_timer()
         self.density = self._config["density"]
         self.lower = self._config["lower"]
-        self.power_func = self._power_funcs[self._config["frequency_range"]]
+        self.power_func = self.POWER_FUNCS_MAPPING[
+            self._config["frequency_range"]
+        ]
         self.v_density = self._config["v density"]
         self.twist = self._config["twist"]
         self.radius = self.config["radius"]
