@@ -85,9 +85,9 @@ ledfx_presets = {
                 "spin": True,
                 "spin decay": 0.1,
                 "spin multiplier": 1.0,
-                "test": False
+                "test": False,
             },
-            "name": "earth"
+            "name": "earth",
         },
         "flare": {
             "config": {
@@ -116,9 +116,9 @@ ledfx_presets = {
                 "spin": True,
                 "spin decay": 0.07,
                 "spin multiplier": 3.7,
-                "test": False
+                "test": False,
             },
-            "name": "flare"
+            "name": "flare",
         },
         "mountain": {
             "config": {
@@ -147,9 +147,9 @@ ledfx_presets = {
                 "spin": True,
                 "spin decay": 0.1,
                 "spin multiplier": 1.0,
-                "test": False
+                "test": False,
             },
-            "name": "mountain"
+            "name": "mountain",
         },
         "neon": {
             "config": {
@@ -178,10 +178,10 @@ ledfx_presets = {
                 "spin": True,
                 "spin decay": 0.1,
                 "spin multiplier": 1.0,
-                "test": False
+                "test": False,
             },
-            "name": "neon"
-        }
+            "name": "neon",
+        },
     },
     "keybeat2d": {
         "beat-cat": {
