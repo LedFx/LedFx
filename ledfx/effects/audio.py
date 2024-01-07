@@ -747,6 +747,16 @@ class AudioReactiveEffect(Effect):
     subclasses. This can be expanded to do the common r/g/b filters.
     """
 
+    # this can be used by inheriting classes for power func selection in schema
+    # see magnitude or scan effect for examples
+    POWER_FUNCS_MAPPING = {
+        "Beat": "beat_power",
+        "Bass": "bass_power",
+        "Lows (beat+bass)": "lows_power",
+        "Mids": "mids_power",
+        "High": "high_power",
+    }
+
     def activate(self, channel):
         _LOGGER.info("Activating AudioReactiveEffect.")
         super().activate(channel)
