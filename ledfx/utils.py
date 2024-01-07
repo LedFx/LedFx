@@ -1298,6 +1298,7 @@ def get_font(font_list, size):
 def generate_default_config(ledfx_effects, effect_id):
     return ledfx_effects.get_class(effect_id).get_combined_default_schema()
 
+
 def generate_defaults(ledfx_presets, ledfx_effects, effect_id):
     """Generate default presets for an effect.
     appends effect class defaults to presets
@@ -1318,6 +1319,11 @@ def generate_defaults(ledfx_presets, ledfx_effects, effect_id):
         presets = {}
 
     # TODO: Change default to reset when we purge old reset hardcoded presets
-    default = { "default": { "config": generate_default_config(ledfx_effects, effect_id), "name": "default" } }
+    default = {
+        "default": {
+            "config": generate_default_config(ledfx_effects, effect_id),
+            "name": "default",
+        }
+    }
     default.update(presets)
     return default

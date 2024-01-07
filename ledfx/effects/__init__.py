@@ -300,7 +300,7 @@ class Effect(BaseRegistry):
         def merge_schema(c):
             for base in c.__bases__:
                 merge_schema(base)
-            if hasattr(c, 'CONFIG_SCHEMA'):
+            if hasattr(c, "CONFIG_SCHEMA"):
                 combined_schema.update(c.CONFIG_SCHEMA({}))
 
         merge_schema(cls)

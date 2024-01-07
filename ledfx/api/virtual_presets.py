@@ -5,7 +5,7 @@ from aiohttp import web
 
 from ledfx.api import RestEndpoint
 from ledfx.config import save_config
-from ledfx.utils import generate_defaults, generate_default_config, generate_id
+from ledfx.utils import generate_default_config, generate_defaults, generate_id
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -35,8 +35,9 @@ class VirtualPresetsEndpoint(RestEndpoint):
             )
         effect_id = virtual.active_effect.type
 
-        default = generate_defaults(self._ledfx.config["ledfx_presets"],
-                                    self._ledfx.effects, effect_id)
+        default = generate_defaults(
+            self._ledfx.config["ledfx_presets"], self._ledfx.effects, effect_id
+        )
 
         if effect_id in self._ledfx.config["user_presets"].keys():
             custom = self._ledfx.config["user_presets"][effect_id]
@@ -141,14 +142,18 @@ class VirtualPresetsEndpoint(RestEndpoint):
 
         # TODO: Change default to reset when we purge old reset hardcoded presets
         if category == "ledfx_presets" and preset_id == "default":
-            effect_config = generate_default_config(self._ledfx.effects, effect_id)
+            effect_config = generate_default_config(
+                self._ledfx.effects, effect_id
+            )
         elif preset_id not in self._ledfx.config[category][effect_id].keys():
             return await self.invalid_request(
                 f"Preset {preset_id} does not exist for effect {effect_id} in category {category}"
             )
         else:
             # Create the effect and add it to the virtual
-            effect_config = self._ledfx.config[category][effect_id][preset_id]["config"]
+            effect_config = self._ledfx.config[category][effect_id][preset_id][
+                "config"
+            ]
 
         effect = self._ledfx.effects.create(
             ledfx=self._ledfx, type=effect_id, config=effect_config

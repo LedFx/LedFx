@@ -45,7 +45,9 @@ class PresetsEndpoint(RestEndpoint):
         except BaseException:
             return await self.invalid_effect_id(effect_id)
 
-        default = generate_defaults(self._ledfx.config["ledfx_presets"], self._ledfx.effects, effect_id)
+        default = generate_defaults(
+            self._ledfx.config["ledfx_presets"], self._ledfx.effects, effect_id
+        )
 
         if effect_id in self._ledfx.config["user_presets"].keys():
             custom = self._ledfx.config["user_presets"][effect_id]
