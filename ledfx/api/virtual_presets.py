@@ -151,9 +151,9 @@ class VirtualPresetsEndpoint(RestEndpoint):
                 )
             else:
                 # Create the effect and add it to the virtual
-                effect_config = self._ledfx.config[category][effect_id][preset_id][
-                    "config"
-                ]
+                effect_config = self._ledfx.config[category][effect_id][
+                    preset_id
+                ]["config"]
 
         effect = self._ledfx.effects.create(
             ledfx=self._ledfx, type=effect_id, config=effect_config
