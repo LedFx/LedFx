@@ -7,6 +7,7 @@ from ledfx.api import RestEndpoint
 from ledfx.color import parse_color, validate_color
 
 _LOGGER = logging.getLogger(__name__)
+TOOLS = ["force_color", "oneshot"]
 
 
 class VirtualToolsEndpoint(RestEndpoint):
@@ -15,19 +16,10 @@ class VirtualToolsEndpoint(RestEndpoint):
     ENDPOINT_PATH = "/api/virtuals_tools"
 
     async def get(self) -> web.Response:
-        """
-        No current tools implemented
-        """
-        response = {
-            "status": "success",
-            "Data": "No current tools supported",
-        }
+        return await self.request_success("info", f"Available tools: {TOOLS}")
 
-        return web.json_response(data=response, status=200)
-
-    async def put(self, request) -> web.Response:
+    async def put(self, request: web.Request) -> web.Response:
         """Extensible tools support"""
-        tools = ["force_color", "oneshot"]
 
         try:
             data = await request.json()
@@ -37,28 +29,19 @@ class VirtualToolsEndpoint(RestEndpoint):
         tool = data.get("tool")
 
         if tool is None:
-            response = {
-                "status": "failed",
-                "reason": 'Required attribute "tool" was not provided',
-            }
-            return web.json_response(data=response, status=400)
+            return await self.invalid_request(
+                'Required attribute "tool" was not provided'
+            )
 
-        if tool not in tools:
-            response = {
-                "status": "failed",
-                "reason": f"Category {tool} is not in {tools}",
-            }
-            return web.json_response(data=response, status=400)
+        if tool not in TOOLS:
+            return await self.invalid_request(f"Tool {tool} is not in {TOOLS}")
 
         if tool == "force_color":
             color = data.get("color")
             if color is None:
-                response = {
-                    "status": "failed",
-                    "reason": "Required attribute for force_color, color was not provided",
-                }
-                return web.json_response(data=response, status=400)
-
+                return await self.invalid_request(
+                    "Required attribute for force_color, color was not provided"
+                )
             for virtual_id in self._ledfx.virtuals:
                 virtual = self._ledfx.virtuals.get(virtual_id)
                 if virtual.is_device == virtual.id:
@@ -67,22 +50,18 @@ class VirtualToolsEndpoint(RestEndpoint):
         if tool == "oneshot":
             color = data.get("color")
             if color is None:
-                response = {
-                    "status": "failed",
-                    "reason": "Required attribute for oneshot, color was not provided",
-                }
-                return web.json_response(data=response, status=400)
+                return await self.invalid_request(
+                    "Required attribute for oneshot, color was not provided"
+                )
 
             ramp = data.get("ramp", 0)
             hold = data.get("hold", 0)
             fade = data.get("fade", 0)
 
             if ramp == 0 and hold == 0 and fade == 0:
-                response = {
-                    "status": "failed",
-                    "reason": "At least one of ramp, hold or fade must be greater than 0",
-                }
-                return web.json_response(data=response, status=400)
+                return await self.invalid_request(
+                    "At least one of ramp, hold or fade must be greater than 0"
+                )
 
             # iterate through all virtuals and apply oneshot
             for virtual_id in self._ledfx.virtuals:
@@ -96,4 +75,4 @@ class VirtualToolsEndpoint(RestEndpoint):
         effect_response["tool"] = tool
 
         response = {"status": "success", "tool": tool}
-        return web.json_response(data=response, status=200)
+        return await self.bare_request_success(response)

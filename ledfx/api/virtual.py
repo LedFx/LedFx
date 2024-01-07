@@ -22,11 +22,9 @@ class VirtualEndpoint(RestEndpoint):
         """
         virtual = self._ledfx.virtuals.get(virtual_id)
         if virtual is None:
-            response = {
-                "status": "failed",
-                "reason": f"Virtual with ID {virtual_id} not found",
-            }
-            return web.json_response(data=response, status=400)
+            return await self.invalid_request(
+                f"Virtual with ID {virtual_id} not found"
+            )
 
         response = {"status": "success"}
         response[virtual.id] = {
@@ -39,7 +37,7 @@ class VirtualEndpoint(RestEndpoint):
             "active": virtual.active,
             "effect": {},
         }
-        # TODO: protect from DummyEffect, future consider side effects
+        # Protect from DummyEffect
         if virtual.active_effect and not isinstance(
             virtual.active_effect, DummyEffect
         ):
@@ -48,8 +46,7 @@ class VirtualEndpoint(RestEndpoint):
             effect_response["name"] = virtual.active_effect.name
             effect_response["type"] = virtual.active_effect.type
             response[virtual.id]["effect"] = effect_response
-
-        return web.json_response(data=response, status=200)
+        return await self.bare_request_success(response)
 
     async def put(self, virtual_id, request) -> web.Response:
         """
@@ -57,11 +54,9 @@ class VirtualEndpoint(RestEndpoint):
         """
         virtual = self._ledfx.virtuals.get(virtual_id)
         if virtual is None:
-            response = {
-                "status": "failed",
-                "reason": f"Virtual with ID {virtual_id} not found",
-            }
-            return web.json_response(data=response, status=400)
+            return await self.invalid_request(
+                f"Virtual with ID {virtual_id} not found"
+            )
 
         try:
             data = await request.json()
@@ -69,21 +64,17 @@ class VirtualEndpoint(RestEndpoint):
             return await self.json_decode_error()
         active = data.get("active")
         if active is None:
-            response = {
-                "status": "failed",
-                "reason": 'Required attribute "active" was not provided',
-            }
-            return web.json_response(data=response, status=400)
+            return await self.invalid_request(
+                'Required attribute "active" was not provided'
+            )
 
         # Update the virtual's configuration
         try:
             virtual.active = active
         except ValueError as msg:
-            response = {
-                "status": "failed",
-                "payload": {"type": "warning", "reason": str(msg)},
-            }
-            return web.json_response(data=response, status=202)
+            error_message = f"Unable to set virtual {virtual.id} status: {msg}"
+            _LOGGER.warning(error_message)
+            return await self.internal_error("error", error_message)
 
         # Update ledfx's config
         for idx, item in enumerate(self._ledfx.config["virtuals"]):
@@ -98,7 +89,7 @@ class VirtualEndpoint(RestEndpoint):
         )
 
         response = {"status": "success", "active": virtual.active}
-        return web.json_response(data=response, status=200)
+        return await self.bare_request_success(response)
 
     async def post(self, virtual_id, request) -> web.Response:
         """
@@ -106,11 +97,9 @@ class VirtualEndpoint(RestEndpoint):
         """
         virtual = self._ledfx.virtuals.get(virtual_id)
         if virtual is None:
-            response = {
-                "status": "failed",
-                "reason": f"Virtual with ID {virtual_id} not found",
-            }
-            return web.json_response(data=response, status=400)
+            return await self.invalid_request(
+                f"Virtual with ID {virtual_id} not found"
+            )
 
         try:
             data = await request.json()
@@ -118,23 +107,21 @@ class VirtualEndpoint(RestEndpoint):
             return await self.json_decode_error()
         virtual_segments = data.get("segments")
         if virtual_segments is None:
-            response = {
-                "status": "failed",
-                "reason": 'Required attribute "segments" was not provided',
-            }
-            return web.json_response(data=response, status=400)
+            return await self.invalid_request(
+                'Required attribute "segments" was not provided'
+            )
 
         # Update the virtual's configuration
         old_segments = virtual.segments
         try:
             virtual.update_segments(virtual_segments)
         except (ValueError, vol.MultipleInvalid, vol.Invalid) as msg:
-            response = {
-                "status": "failed",
-                "payload": {"type": "error", "message": str(msg)},
-            }
+            error_message = (
+                f"Unable to set virtual segments {virtual_segments}: {msg}"
+            )
+            _LOGGER.warning(error_message)
             virtual.update_segments(old_segments)
-            return web.json_response(data=response, status=202)
+            return await self.internal_error("error", error_message)
 
         # Update ledfx's config
         for idx, item in enumerate(self._ledfx.config["virtuals"]):
@@ -149,7 +136,7 @@ class VirtualEndpoint(RestEndpoint):
         )
 
         response = {"status": "success", "segments": virtual.segments}
-        return web.json_response(data=response, status=200)
+        return await self.bare_request_success(response)
 
     async def delete(self, virtual_id) -> web.Response:
         """
@@ -159,11 +146,9 @@ class VirtualEndpoint(RestEndpoint):
         """
         virtual = self._ledfx.virtuals.get(virtual_id)
         if virtual is None:
-            response = {
-                "status": "failed",
-                "reason": f"Virtual with ID {virtual_id} not found",
-            }
-            return web.json_response(data=response, status=400)
+            return await self.invalid_request(
+                f"Virtual with ID {virtual_id} not found"
+            )
 
         virtual.clear_effect()
         device_id = virtual.is_device
@@ -200,6 +185,4 @@ class VirtualEndpoint(RestEndpoint):
             config=self._ledfx.config,
             config_dir=self._ledfx.config_dir,
         )
-
-        response = {"status": "success"}
-        return web.json_response(data=response, status=200)
+        return await self.request_success()
