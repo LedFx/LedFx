@@ -63,6 +63,87 @@ class RestEndpoint(BaseRegistry):
         }
         return web.json_response(data=response, status=400)
 
+    async def internal_error(
+        self, message="Internal error", type="error"
+    ) -> web.Response:
+        """
+        Handle messaging for internal errors.
+        Default a type of error.
+
+        Returns:
+            A web response with a JSON payload containing the error and a 500 status.
+        """
+        response = {
+            "status": "failed",
+            "payload": {"type": type, "reason": message},
+        }
+        return web.json_response(data=response, status=500)
+
+    async def invalid_request(
+        self, message="Invalid request", type="error", resp_code=200
+    ) -> web.Response:
+        """
+        Returns a JSON response indicating an invalid request.
+
+        Args:
+            reason (str): The reason for the invalid request. Defaults to 'Invalid request'.
+            type (str): The type of error. Defaults to 'error'. Options 'default','error', 'success', 'warning','info'.
+            resp_code (int): The response code to be returned. Defaults to 200 so that snackbar works.
+
+        Returns:
+            web.Response: A JSON response with the status and reason for the invalid request.
+        """
+        response = {
+            "status": "failed",
+            "payload": {
+                "type": type,
+                "reason": message,
+            },
+        }
+        return web.json_response(data=response, status=resp_code)
+
+    async def request_success(
+        self, type=None, message=None, resp_code=200
+    ) -> web.Response:
+        """
+        Returns a JSON response indicating a successful request.
+        Optionally include a snackbar type and message to return to the user.
+
+        Args:
+            type (str): The type of snackbar to display. Defaults to None.
+            message (str): The message to display in the snackbar. Defaults to None.
+            resp_code (int): The response code to be returned. Defaults to 200.
+
+        Returns:
+            web.Response: A JSON response with the status and payload for the successful request.
+        """
+        response = {
+            "status": "success",
+        }
+        if type and message is not None:
+            response["payload"] = {
+                "type": type,
+                "reason": message,
+            }
+        return web.json_response(data=response, status=resp_code)
+
+    async def bare_request_success(self, payload) -> web.Response:
+        """
+        Returns a "bare" JSON response indicating a successful request - only a payload and a 200 code.
+
+        Args:
+            payload (dict): The payload to be returned.
+            resp_code (int): The response code to be returned. Defaults to 200.
+
+        Returns:
+            web.Response: A JSON response with the status and payload for the successful request.
+        """
+        if payload is None:
+            raise ValueError(
+                "Payload must be provided to the bare request_success method"
+            )
+        return web.json_response(data=payload, status=200)
+
 
 class RestApi(RegistryLoader):
     PACKAGE_NAME = "ledfx.api"

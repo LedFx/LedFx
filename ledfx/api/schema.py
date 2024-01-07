@@ -26,7 +26,7 @@ class SchemaEndpoint(RestEndpoint):
         "core",
     }
 
-    async def get(self, request) -> web.Response:
+    async def get(self, request: web.Request) -> web.Response:
         """
         Get ledfx schemas.
         You may ask for a specific schema/schemas in the request body

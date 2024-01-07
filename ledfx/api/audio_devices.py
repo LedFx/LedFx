@@ -18,22 +18,34 @@ class AudioDevicesEndpoint(RestEndpoint):
     _audio = None
 
     async def get(self) -> web.Response:
-        """Get list of audio devices using sound device"""
+        """
+        Get list of audio devices using sound device
 
+        Returns:
+            web.Response: The response containing the list of audio devices and the active device index.
+        """
         audio_config = AudioInputSource.AUDIO_CONFIG_SCHEMA.fget()(
-            self._ledfx.config.get("audio", {})
+            self._ledfx.config.get("audio_device", {})
         )
 
         response = {}
-        response["active_device_index"] = audio_config["device_index"]
+        response["active_device_index"] = audio_config["audio_device"]
         response[
             "devices"
         ] = AudioInputSource.input_devices()  # dict(enumerate(input_devices))
+        return await self.request_success(response)
 
-        return web.json_response(data=response, status=200)
+    async def put(self, request: web.Request) -> web.Response:
+        """
+        Set audio device to use as input.
 
-    async def put(self, request) -> web.Response:
-        """Set audio device to use as input"""
+        Args:
+            request (web.Request): The request object containing the new device `index`.
+
+        Returns:
+            web.Response: The HTTP response object.
+
+        """
         try:
             data = await request.json()
         except JSONDecodeError:
@@ -41,20 +53,16 @@ class AudioDevicesEndpoint(RestEndpoint):
 
         index = data.get("index")
         if index is None:
-            response = {
-                "status": "failed",
-                "reason": 'Required attribute "index" was not provided',
-            }
-            return web.json_response(data=response, status=400)
+            return await self.invalid_request(
+                "Required attribute 'index' was not provided"
+            )
 
         valid_indexes = AudioInputSource.valid_device_indexes()
 
         if index not in valid_indexes:
-            response = {
-                "status": "failed",
-                "reason": f"Invalid device index [{index}]",
-            }
-            return web.json_response(data=response, status=400)
+            return await self.invalid_request(
+                f"Invalid device index [{index}]"
+            )
 
         # Update and save config
         new_config = self._ledfx.config.get("audio", {})
@@ -69,5 +77,4 @@ class AudioDevicesEndpoint(RestEndpoint):
         if self._ledfx.audio:
             self._ledfx.audio.update_config(new_config)
 
-        response = {"status": "success"}
-        return web.json_response(data=response, status=200)
+        await self.request_success()
