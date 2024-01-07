@@ -5,6 +5,7 @@ import voluptuous as vol
 
 from ledfx.effects.gradient import GradientEffect
 from ledfx.effects.twod import Twod
+from ledfx.effects.audio import AudioReactiveEffect
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -21,6 +22,9 @@ class Equalizer2d(Twod, GradientEffect):
         "peak percent",
         "peak decay",
         "max vs mean",
+        "frequency_range",
+        "spin multiplier",
+        "spin decay",
     ]
 
     CONFIG_SCHEMA = vol.Schema(
@@ -65,6 +69,21 @@ class Equalizer2d(Twod, GradientEffect):
                 description="Number of freq bands",
                 default=16,
             ): vol.All(vol.Coerce(int), vol.Range(min=1, max=64)),
+            vol.Optional(
+                "frequency_range",
+                description="Frequency range for spin impulse",
+                default="Lows (beat+bass)",
+            ): vol.In(list(AudioReactiveEffect.POWER_FUNCS_MAPPING.keys())),
+            vol.Optional(
+                "spin multiplier",
+                description="Spin impulse multiplier",
+                default=1.0,
+            ): vol.All(vol.Coerce(float), vol.Range(min=0, max=5)),
+            vol.Optional(
+                "spin decay",
+                description="Decay filter applied to the spin impulse",
+                default=0.1,
+            ): vol.All(vol.Coerce(float), vol.Range(min=0.01, max=0.3)),
         }
     )
 
@@ -85,6 +104,11 @@ class Equalizer2d(Twod, GradientEffect):
         self.peak_decay = self.config["peak decay"]
         self.ring = self._config["ring"]
         self.spin = self._config["spin"]
+        self.power_func = self.POWER_FUNCS_MAPPING[self._config["frequency_range"]]
+        self.power_multiplier = self._config["spin multiplier"]
+        self.impulse_filter = self.create_filter(
+            alpha_decay=self.config["spin decay"], alpha_rise=0.99
+        )
 
     def calc_ring_segments(self, rotation):
         # we want coordinates for self.bands around an oval defined by self.r_width and self.r_height
@@ -128,11 +152,13 @@ class Equalizer2d(Twod, GradientEffect):
         if self.ring:
             self.calc_ring_segments(0)
             self.spin_value = 0.0
+            self.impulse = 0.0
 
     def audio_data_updated(self, data):
         # Grab the filtered melbank
         self.r = self.melbank(filtered=True, size=self.pixel_count)
         np.clip(self.r, 0, 1, out=self.r)
+        self.impulse = self.impulse_filter.update(getattr(data, self.power_func)() * self.power_multiplier)
 
     def prep_frame_vars(self):
         # prepare volumes, peaks and colors for drawing
@@ -154,8 +180,7 @@ class Equalizer2d(Twod, GradientEffect):
         ]
 
         if self.ring and self.spin:
-            # TODO: This needs to be a filtered impulse from the bass input
-            self.spin_value += 0.1
+            self.spin_value += self.impulse
             self.spin_value %= 360
             self.calc_ring_segments(self.spin_value)
 

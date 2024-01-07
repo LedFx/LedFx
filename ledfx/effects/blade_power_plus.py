@@ -18,14 +18,6 @@ class BladePowerPlus(AudioReactiveEffect, HSVEffect):
     NAME = "Blade Power+"
     CATEGORY = "Classic"
 
-    _power_funcs = {
-        "Beat": "beat_power",
-        "Bass": "bass_power",
-        "Lows (beat+bass)": "lows_power",
-        "Mids": "mids_power",
-        "High": "high_power",
-    }
-
     CONFIG_SCHEMA = vol.Schema(
         {
             vol.Optional(
@@ -57,7 +49,7 @@ class BladePowerPlus(AudioReactiveEffect, HSVEffect):
                 "frequency_range",
                 description="Frequency range for the beat detection",
                 default="Lows (beat+bass)",
-            ): vol.In(list(_power_funcs.keys())),
+            ): vol.In(list(AudioReactiveEffect.POWER_FUNCS_MAPPING.keys())),
             vol.Optional(
                 "invert_roll",
                 description="Invert the direction of the gradient roll",
@@ -72,7 +64,7 @@ class BladePowerPlus(AudioReactiveEffect, HSVEffect):
         self.hsv_array[:, 1] = 1
 
     def config_updated(self, config):
-        self.power_func = self._power_funcs[self._config["frequency_range"]]
+        self.power_func = self.POWER_FUNCS_MAPPING[self._config["frequency_range"]]
 
     def audio_data_updated(self, data):
         # Get filtered bar power

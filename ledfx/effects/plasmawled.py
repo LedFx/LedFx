@@ -6,6 +6,8 @@ import voluptuous as vol
 
 from ledfx.effects.gradient import GradientEffect
 from ledfx.effects.twod import Twod
+from ledfx.effects.audio import AudioReactiveEffect
+
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -19,21 +21,13 @@ class Plasmawled(Twod, GradientEffect):
     HIDDEN_KEYS = Twod.HIDDEN_KEYS + ["background_color", "gradient_roll"]
     ADVANCED_KEYS = Twod.ADVANCED_KEYS + []
 
-    _power_funcs = {
-        "Beat": "beat_power",
-        "Bass": "bass_power",
-        "Lows (beat+bass)": "lows_power",
-        "Mids": "mids_power",
-        "High": "high_power",
-    }
-
     CONFIG_SCHEMA = vol.Schema(
         {
             vol.Optional(
                 "frequency_range",
                 description="Frequency range for the beat detection",
                 default="Lows (beat+bass)",
-            ): vol.In(list(_power_funcs.keys())),
+            ): vol.In(list(AudioReactiveEffect.POWER_FUNCS_MAPPING.keys())),
             vol.Optional(
                 "speed",
                 description="Speed multiplier",
@@ -98,7 +92,7 @@ class Plasmawled(Twod, GradientEffect):
         self.v_stretch = self._config["v_stretch"]
         self.speedx = self._config["speed x"]
         self.sizex = self._config["size x"]
-        self.power_func = self._power_funcs[self._config["frequency_range"]]
+        self.power_func = self.POWER_FUNCS_MAPPING[self._config["frequency_range"]]
         self.speedb = 0
         self.sizeb = 0
         self.time_modifier = 0

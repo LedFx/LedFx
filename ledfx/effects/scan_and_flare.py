@@ -47,14 +47,6 @@ class ScanAndFlareAudioEffect(AudioReactiveEffect, GradientEffect):
     CATEGORY = "Classic"
     HIDDEN_KEYS = ["gradient_roll"]
 
-    _power_funcs = {
-        "Beat": "beat_power",
-        "Bass": "bass_power",
-        "Lows (beat+bass)": "lows_power",
-        "Mids": "mids_power",
-        "High": "high_power",
-    }
-
     CONFIG_SCHEMA = vol.Schema(
         {
             vol.Optional(
@@ -103,7 +95,7 @@ class ScanAndFlareAudioEffect(AudioReactiveEffect, GradientEffect):
                 "frequency_range",
                 description="Frequency range for the beat detection",
                 default="Lows (beat+bass)",
-            ): vol.In(list(_power_funcs.keys())),
+            ): vol.In(list(AudioReactiveEffect.POWER_FUNCS_MAPPING.keys())),
             vol.Optional(
                 "multiplier",
                 description="Speed impact multiplier",
@@ -135,7 +127,7 @@ class ScanAndFlareAudioEffect(AudioReactiveEffect, GradientEffect):
         self.background_color = np.array(
             parse_color(self._config["background_color"]), dtype=float
         )
-        self.power_func = self._power_funcs[self._config["frequency_range"]]
+        self.power_func = self.POWER_FUNCS_MAPPING[self._config["frequency_range"]]
         self.color_scan_cache = np.array(
             parse_color(self._config["color_scan"]), dtype=float
         )
