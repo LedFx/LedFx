@@ -92,6 +92,7 @@ class Equalizer2d(Twod, GradientEffect):
 
     def on_activate(self, pixel_count):
         self.r = np.zeros(pixel_count)
+        self.spin_value = 0.0
 
     def config_updated(self, config):
         super().config_updated(config)
@@ -155,7 +156,6 @@ class Equalizer2d(Twod, GradientEffect):
 
         if self.ring:
             self.calc_ring_segments(0)
-            self.spin_value = 0.0
             self.impulse = 0.0
 
     def audio_data_updated(self, data):
