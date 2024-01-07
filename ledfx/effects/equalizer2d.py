@@ -3,9 +3,9 @@ import logging
 import numpy as np
 import voluptuous as vol
 
+from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.gradient import GradientEffect
 from ledfx.effects.twod import Twod
-from ledfx.effects.audio import AudioReactiveEffect
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -104,7 +104,9 @@ class Equalizer2d(Twod, GradientEffect):
         self.peak_decay = self.config["peak decay"]
         self.ring = self._config["ring"]
         self.spin = self._config["spin"]
-        self.power_func = self.POWER_FUNCS_MAPPING[self._config["frequency_range"]]
+        self.power_func = self.POWER_FUNCS_MAPPING[
+            self._config["frequency_range"]
+        ]
         self.power_multiplier = self._config["spin multiplier"]
         self.impulse_filter = self.create_filter(
             alpha_decay=self.config["spin decay"], alpha_rise=0.99
@@ -160,7 +162,9 @@ class Equalizer2d(Twod, GradientEffect):
         # Grab the filtered melbank
         self.r = self.melbank(filtered=True, size=self.pixel_count)
         np.clip(self.r, 0, 1, out=self.r)
-        self.impulse = self.impulse_filter.update(getattr(data, self.power_func)() * self.power_multiplier)
+        self.impulse = self.impulse_filter.update(
+            getattr(data, self.power_func)() * self.power_multiplier
+        )
 
     def prep_frame_vars(self):
         # prepare volumes, peaks and colors for drawing

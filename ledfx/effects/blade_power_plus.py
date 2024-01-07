@@ -64,7 +64,9 @@ class BladePowerPlus(AudioReactiveEffect, HSVEffect):
         self.hsv_array[:, 1] = 1
 
     def config_updated(self, config):
-        self.power_func = self.POWER_FUNCS_MAPPING[self._config["frequency_range"]]
+        self.power_func = self.POWER_FUNCS_MAPPING[
+            self._config["frequency_range"]
+        ]
 
     def audio_data_updated(self, data):
         # Get filtered bar power

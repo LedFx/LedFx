@@ -4,10 +4,9 @@ import numpy as np
 import PIL.Image as Image
 import voluptuous as vol
 
+from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.gradient import GradientEffect
 from ledfx.effects.twod import Twod
-from ledfx.effects.audio import AudioReactiveEffect
-
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -92,7 +91,9 @@ class Plasmawled(Twod, GradientEffect):
         self.v_stretch = self._config["v_stretch"]
         self.speedx = self._config["speed x"]
         self.sizex = self._config["size x"]
-        self.power_func = self.POWER_FUNCS_MAPPING[self._config["frequency_range"]]
+        self.power_func = self.POWER_FUNCS_MAPPING[
+            self._config["frequency_range"]
+        ]
         self.speedb = 0
         self.sizeb = 0
         self.time_modifier = 0

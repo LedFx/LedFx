@@ -6,8 +6,8 @@ import voluptuous as vol
 from PIL import Image
 
 from ledfx.consts import LEDFX_ASSETS_PATH
-from ledfx.effects.twod import Twod
 from ledfx.effects.audio import AudioReactiveEffect
+from ledfx.effects.twod import Twod
 from ledfx.utils import get_icon_path
 
 _LOGGER = logging.getLogger(__name__)
@@ -71,7 +71,9 @@ class Imagespin(Twod):
 
         self.clip = self._config["clip"]
         self.min_size = self._config["Min Size"]
-        self.power_func = self.POWER_FUNCS_MAPPING[self._config["frequency_range"]]
+        self.power_func = self.POWER_FUNCS_MAPPING[
+            self._config["frequency_range"]
+        ]
         self.do_spin = self._config["spin"]
         self.resize = (
             Image.BILINEAR if self._config["bilinear"] else Image.NEAREST

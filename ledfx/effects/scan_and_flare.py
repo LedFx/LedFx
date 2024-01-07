@@ -127,7 +127,9 @@ class ScanAndFlareAudioEffect(AudioReactiveEffect, GradientEffect):
         self.background_color = np.array(
             parse_color(self._config["background_color"]), dtype=float
         )
-        self.power_func = self.POWER_FUNCS_MAPPING[self._config["frequency_range"]]
+        self.power_func = self.POWER_FUNCS_MAPPING[
+            self._config["frequency_range"]
+        ]
         self.color_scan_cache = np.array(
             parse_color(self._config["color_scan"]), dtype=float
         )

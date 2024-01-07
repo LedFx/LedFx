@@ -22,7 +22,9 @@ class MagnitudeAudioEffect(AudioReactiveEffect, GradientEffect):
         self.magnitude = 0
 
     def config_updated(self, config):
-        self.power_func = self.POWER_FUNCS_MAPPING[self._config["frequency_range"]]
+        self.power_func = self.POWER_FUNCS_MAPPING[
+            self._config["frequency_range"]
+        ]
 
     def audio_data_updated(self, data):
         self.magnitude = getattr(data, self.power_func)()
