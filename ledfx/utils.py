@@ -1293,3 +1293,36 @@ def get_font(font_list, size):
         except OSError:
             continue
     raise RuntimeError("None of the fonts are available on the system.")
+
+
+def generate_default_config(ledfx_effects, effect_id):
+    return ledfx_effects.get_class(effect_id).get_combined_default_schema()
+
+
+def generate_defaults(ledfx_presets, ledfx_effects, effect_id):
+    """Generate default presets for an effect.
+    appends effect class defaults to presets
+    This is done at run time, as defaults may not reference all effects
+    So we have to just deal with it when used
+
+    Args:
+        ledfx_presets (dict): The current presets.
+        ledfx_effects (dict): The current effects.
+        effect_id (str): The ID of the effect.
+
+    Returns:
+        dict: The default presets for the effect.
+    """
+    if effect_id in ledfx_presets.keys():
+        presets = ledfx_presets[effect_id]
+    else:
+        presets = {}
+
+    default = {
+        "reset": {
+            "config": generate_default_config(ledfx_effects, effect_id),
+            "name": "reset",
+        }
+    }
+    default.update(presets)
+    return default

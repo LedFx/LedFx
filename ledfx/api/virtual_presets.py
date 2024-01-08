@@ -5,7 +5,7 @@ from aiohttp import web
 
 from ledfx.api import RestEndpoint
 from ledfx.config import save_config
-from ledfx.utils import generate_id
+from ledfx.utils import generate_default_config, generate_defaults, generate_id
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -35,10 +35,9 @@ class VirtualPresetsEndpoint(RestEndpoint):
             )
         effect_id = virtual.active_effect.type
 
-        if effect_id in self._ledfx.config["ledfx_presets"].keys():
-            default = self._ledfx.config["ledfx_presets"][effect_id]
-        else:
-            default = {}
+        default = generate_defaults(
+            self._ledfx.config["ledfx_presets"], self._ledfx.effects, effect_id
+        )
 
         if effect_id in self._ledfx.config["user_presets"].keys():
             custom = self._ledfx.config["user_presets"][effect_id]
@@ -136,20 +135,25 @@ class VirtualPresetsEndpoint(RestEndpoint):
         else:
             category = "user_presets"
 
-        if effect_id not in self._ledfx.config[category].keys():
-            return await self.invalid_request(
-                f"Effect {effect_id} does not exist in category {category}"
+        if category == "ledfx_presets" and preset_id == "reset":
+            effect_config = generate_default_config(
+                self._ledfx.effects, effect_id
             )
+        else:
+            if effect_id not in self._ledfx.config[category].keys():
+                return await self.invalid_request(
+                    f"Effect {effect_id} does not exist in category {category}"
+                )
+            if preset_id not in self._ledfx.config[category][effect_id].keys():
+                return await self.invalid_request(
+                    f"Preset {preset_id} does not exist for effect {effect_id} in category {category}"
+                )
+            else:
+                # Create the effect and add it to the virtual
+                effect_config = self._ledfx.config[category][effect_id][
+                    preset_id
+                ]["config"]
 
-        if preset_id not in self._ledfx.config[category][effect_id].keys():
-            return await self.invalid_request(
-                f"Preset {preset_id} does not exist for effect {effect_id} in category {category}"
-            )
-
-        # Create the effect and add it to the virtual
-        effect_config = self._ledfx.config[category][effect_id][preset_id][
-            "config"
-        ]
         effect = self._ledfx.effects.create(
             ledfx=self._ledfx, type=effect_id, config=effect_config
         )

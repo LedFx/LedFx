@@ -5,6 +5,7 @@ from aiohttp import web
 
 from ledfx.api import RestEndpoint
 from ledfx.config import save_config
+from ledfx.utils import generate_defaults
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -44,10 +45,9 @@ class PresetsEndpoint(RestEndpoint):
         except BaseException:
             return await self.invalid_effect_id(effect_id)
 
-        if effect_id in self._ledfx.config["ledfx_presets"].keys():
-            default = self._ledfx.config["ledfx_presets"][effect_id]
-        else:
-            default = {}
+        default = generate_defaults(
+            self._ledfx.config["ledfx_presets"], self._ledfx.effects, effect_id
+        )
 
         if effect_id in self._ledfx.config["user_presets"].keys():
             custom = self._ledfx.config["user_presets"][effect_id]
