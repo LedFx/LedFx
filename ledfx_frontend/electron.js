@@ -175,7 +175,9 @@ const ready = () => (
 
     const integratedCore = (process.platform === 'darwin')
       ? fs.existsSync(path.join(path.dirname(__dirname), isDev ? 'extraResources' : '../extraResources','LedFx_core.app'))
-      : fs.existsSync(path.join(path.dirname(__dirname), isDev ? 'extraResources' : '../extraResources','LedFx/LedFx.exe'))
+      : (process.platform === 'linux') 
+        ? fs.existsSync(path.join(path.dirname(__dirname), isDev ? 'extraResources' : '../extraResources','LedFx'))
+        : fs.existsSync(path.join(path.dirname(__dirname), isDev ? 'extraResources' : '../extraResources','LedFx/LedFx.exe'))
 
     const currentDir = fs.readdirSync(thePath)
     console.log(currentDir)
@@ -183,6 +185,8 @@ const ready = () => (
     if (integratedCore) {
       if (process.platform === 'darwin') {
         subpy = require('child_process').spawn(`${path.join(path.dirname(__dirname), isDev ? 'extraResources' : '../extraResources','LedFx_core.app/Contents/MacOS/LedFx_v2')}`, []);
+      } else if (process.platform === 'linux') {
+        subpy = require('child_process').spawn(`${path.join(path.dirname(__dirname), isDev ? 'extraResources' : '../extraResources','LedFx')}`, ['-p', '8888', '--no-tray']);
       } else {
         subpy = require('child_process').spawn(`${path.join(path.dirname(__dirname), isDev ? 'extraResources' : '../extraResources','LedFx/LedFx.exe')}`, ['-p', '8888', '--no-tray']);
       }
@@ -194,7 +198,7 @@ const ready = () => (
 
     require('@electron/remote/main').enable(wind.webContents);
 
-    if (isDev) {
+    if (isDev) {     
       await installExtension(['lmhkpmbekcpmknklioeibfkpmmfibljd', 'fmkadmapgofadopljbjfkapdkoienihi'], {
         loadExtensionOptions: { allowFileAccess: true },
         forceDownload: false,
@@ -224,7 +228,9 @@ const ready = () => (
           label: 'Start core',
           click: () => (process.platform === 'darwin')
             ? subpy = require('child_process').spawn(`${path.join(path.dirname(__dirname), isDev ? 'extraResources' : '../extraResources','LedFx_core.app/Contents/MacOS/LedFx_v2')}`, [])
-            : subpy = require('child_process').spawn(`${path.join(path.dirname(__dirname), isDev ? 'extraResources' : '../extraResources','LedFx/LedFx.exe')}`, ['-p', '8888', '--no-tray'])
+            : (process.platform === 'linux') 
+              ? subpy = require('child_process').spawn(`${path.join(path.dirname(__dirname), isDev ? 'extraResources' : '../extraResources','LedFx')}`, ['-p', '8888', '--no-tray'])
+              : subpy = require('child_process').spawn(`${path.join(path.dirname(__dirname), isDev ? 'extraResources' : '../extraResources','LedFx/LedFx.exe')}`, ['-p', '8888', '--no-tray'])
         },
         {
           label: 'Stop core',
@@ -302,7 +308,7 @@ const ready = () => (
           user.mfaEnabled = true;
           store.set('user', user);
         }
-
+        
         console.log('verified_otp:', verified ,user)
         wind.webContents.send('fromMain', ['mfa-verified', verified]);
         return;
@@ -316,7 +322,7 @@ const ready = () => (
         console.log('generate-mfa-qr:', user)
         // For security, we no longer show the QR code after is verified
         if (user.mfaEnabled) return;
-
+    
         if (!user.mfaSecret) {
           // generate unique secret for user
           // this secret will be used to check the verification code sent by user
@@ -331,11 +337,11 @@ const ready = () => (
         const period = '30';
         const otpType = 'totp';
         const configUri = `otpauth://${otpType}/${issuer}:${user.username}?algorithm=${algorithm}&digits=${digits}&period=${period}&issuer=${issuer}&secret=${user.mfaSecret}`;
-
+    
         qrcode.toDataURL(configUri, {
           color: { dark: '#333333FF', light: '#00000000' },
         }).then((png=>wind.webContents.send('fromMain', ['mfa-qr-code', png])));
-
+    
         return;
       }
       if (parameters === 'get-platform') {
@@ -347,6 +353,9 @@ const ready = () => (
           if (process.platform === 'darwin') {
             wind.webContents.send('fromMain', ['currentdir', integratedCore, fs.existsSync(path.join(path.dirname(__dirname), isDev ? 'extraResources' : '../extraResources','LedFx_core.app'))]);
             subpy = require('child_process').spawn(`${path.join(path.dirname(__dirname), isDev ? 'extraResources' : '../extraResources','LedFx_core.app/Contents/MacOS/LedFx_v2')}`, []);
+          } else if (process.platform === 'linux') {
+            wind.webContents.send('fromMain', ['currentdir', integratedCore, fs.existsSync(path.join(path.dirname(__dirname), isDev ? 'extraResources' : '../extraResources','LedFx/LedFx'))]);
+            subpy = require('child_process').spawn(`${path.join(path.dirname(__dirname), isDev ? 'extraResources' : '../extraResources','LedFx/LedFx')}`, ['-p', '8888', '--no-tray']);
           } else {
             wind.webContents.send('fromMain', ['currentdir', integratedCore, fs.existsSync(path.join(path.dirname(__dirname), isDev ? 'extraResources' : '../extraResources','LedFx/LedFx.exe'))]);
             subpy = require('child_process').spawn(`${path.join(path.dirname(__dirname), isDev ? 'extraResources' : '../extraResources','LedFx/LedFx.exe')}`, []);
