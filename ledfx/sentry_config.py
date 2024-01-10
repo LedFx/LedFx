@@ -22,6 +22,7 @@ if is_release == "false":
         (commit_hash, err) = process.communicate()
         commit_hash = commit_hash[:7].decode("utf-8")
         exit_code = process.wait()
+    # TODO: trap explicit exceptions if it becomes clear what they are
     except Exception as e:
         commit_hash = "unknown"
         _LOGGER.warning(f"Failed to get git commit hash: {e}")
