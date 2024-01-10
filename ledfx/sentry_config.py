@@ -15,12 +15,16 @@ if is_release == "false":
     sentry_dsn = "https://b192934eebd517c86bf7e9c512b3888a@o482797.ingest.sentry.io/4506350241841152"
     sample_rate = 1
 
-    from subprocess import PIPE, Popen
+    try:
+        from subprocess import PIPE, Popen
 
-    process = Popen(["git", "rev-parse", "HEAD"], stdout=PIPE)
-    (commit_hash, err) = process.communicate()
-    commit_hash = commit_hash[:7].decode("utf-8")
-    exit_code = process.wait()
+        process = Popen(["git", "rev-parse", "HEAD"], stdout=PIPE)
+        (commit_hash, err) = process.communicate()
+        commit_hash = commit_hash[:7].decode("utf-8")
+        exit_code = process.wait()
+    except Exception as e:
+        commit_hash = "unknown"
+        _LOGGER.warning(f"Failed to get git commit hash: {e}")
     release = f"ledfx@{PROJECT_VERSION}-{commit_hash}"
 else:
     # production / release behaviour due to injection of "prod" or anything really into ENVIRONMENT env variable
