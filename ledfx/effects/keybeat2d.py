@@ -33,7 +33,7 @@ class Keybeat2d(Twod, GifBase):
     CONFIG_SCHEMA = vol.Schema(
         {
             vol.Optional(
-                "stretch hor",
+                "stretch_hor",
                 description="Percentage of original to matrix width",
                 default=100,
             ): vol.All(vol.Coerce(int), vol.Range(min=1, max=200)),
@@ -53,7 +53,7 @@ class Keybeat2d(Twod, GifBase):
                 default=0,
             ): vol.All(vol.Coerce(int), vol.Range(min=-95, max=95)),
             vol.Optional(
-                "git_at", description="Load gif from url or path", default=""
+                "gif_at", description="Load gif from url or path", default=""
             ): str,
             vol.Optional(
                 "beat_frames",
@@ -110,12 +110,12 @@ class Keybeat2d(Twod, GifBase):
 
     def config_updated(self, config):
         super().config_updated(config)
-        self.stretch_h = self._config["stretch hor"] / 100.0
+        self.stretch_h = self._config["stretch_hor"] / 100.0
         self.stretch_v = self._config["stretch_ver"] / 100.0
         self.center_h = self._config["center_hor"] / 100.0
         self.center_v = self._config["center_ver"] / 100.0
 
-        self.url_gif = self._config["git_at"]
+        self.url_gif = self._config["gif_at"]
 
         self.ping_pong = self._config["ping_pong"]
         self.pp_skip = self._config["pp_skip"]
