@@ -26,7 +26,7 @@ class BandsMatrixAudioEffect(AudioReactiveEffect, GradientEffect):
             ): bool,
             vol.Optional(
                 "flip_horizontal",
-                description="flip_horly",
+                description="flip horizontally",
                 default=False,
             ): bool,
         }
