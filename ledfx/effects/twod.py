@@ -15,7 +15,13 @@ _LOGGER = logging.getLogger(__name__)
 class Twod(AudioReactiveEffect):
     EFFECT_START_TIME = timeit.default_timer()
     HIDDEN_KEYS = ["background_brightness", "mirror", "flip", "blur"]
-    ADVANCED_KEYS = ["dump", "diag", "test", "flip horizontal", "flip vertical"]
+    ADVANCED_KEYS = [
+        "dump",
+        "diag",
+        "test",
+        "flip horizontal",
+        "flip vertical",
+    ]
 
     CONFIG_SCHEMA = vol.Schema(
         {
