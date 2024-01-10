@@ -20,12 +20,12 @@ class Twod(AudioReactiveEffect):
     CONFIG_SCHEMA = vol.Schema(
         {
             vol.Optional(
-                "flip horizontal",
+                "flip_hor",
                 description="flip the image horizontally",
                 default=False,
             ): bool,
             vol.Optional(
-                "flip vertical",
+                "flip_ver",
                 description="flip the image vertically",
                 default=False,
             ): bool,
@@ -87,8 +87,8 @@ class Twod(AudioReactiveEffect):
         # as well as a small performance boost
         # we need to accout for swapping vertical and horizotal for 90 / 270
 
-        self.flip = self._config["flip vertical"]
-        self.mirror = self._config["flip horizontal"]
+        self.flip = self._config["flip_ver"]
+        self.mirror = self._config["flip_hor"]
 
         self.rotate = self._config["rotate"]
         self.rotate_t = 0

@@ -26,7 +26,7 @@ class Keybeat2d(Twod, GifBase):
     ADVANCED_KEYS = Twod.ADVANCED_KEYS + [
         "diag2",
         "fake_beat",
-        "pp skip",
+        "pp_skip",
         "resize_method",
     ]
 
@@ -38,30 +38,30 @@ class Keybeat2d(Twod, GifBase):
                 default=100,
             ): vol.All(vol.Coerce(int), vol.Range(min=1, max=200)),
             vol.Optional(
-                "stretch ver",
+                "stretch_ver",
                 description="Percentage of original to matrix height",
                 default=100,
             ): vol.All(vol.Coerce(int), vol.Range(min=1, max=200)),
             vol.Optional(
-                "center hor",
+                "center_hor",
                 description="Center offset in horizontal direction percent of matrix width",
                 default=0,
             ): vol.All(vol.Coerce(int), vol.Range(min=-95, max=95)),
             vol.Optional(
-                "center ver",
+                "center_ver",
                 description="Center offset in vertical direction percent of matrix height",
                 default=0,
             ): vol.All(vol.Coerce(int), vol.Range(min=-95, max=95)),
             vol.Optional(
-                "gif at", description="Load gif from url or path", default=""
+                "git_at", description="Load gif from url or path", default=""
             ): str,
             vol.Optional(
-                "beat frames",
+                "beat_frames",
                 description="Frame index to interpolate beats between",
                 default="",
             ): str,
             vol.Optional(
-                "skip frames",
+                "skip_frames",
                 description="Frames to remove from gif animation",
                 default="",
             ): str,
@@ -76,27 +76,27 @@ class Keybeat2d(Twod, GifBase):
                 default=False,
             ): bool,
             vol.Optional(
-                "force aspect",
-                description="Preserve aspect ratio if force fit",
+                "force_aspect",
+                description="Preserve aspect ratio if force_fit",
                 default=False,
             ): bool,
             vol.Optional(
-                "force fit",
-                description="Force fit to matrix",
+                "force_fit",
+                description="force_fit to matrix",
                 default=False,
             ): bool,
             vol.Optional(
-                "pp skip",
-                description="When ping pong, skip the first beat key frame on both ends, use when key beat frames are very close to start and ends only",
+                "pp_skip",
+                description="When ping_pong, skip the first beat key frame on both ends, use when key beat_frames are very close to start and ends only",
                 default=False,
             ): bool,
             vol.Optional(
-                "ping pong",
+                "ping_pong",
                 description="Play gif forward and reverse, not just loop",
                 default=False,
             ): bool,
             vol.Optional(
-                "half beat",
+                "half_beat",
                 description="half the beat input impulse, slow things down",
                 default=False,
             ): bool,
@@ -111,19 +111,19 @@ class Keybeat2d(Twod, GifBase):
     def config_updated(self, config):
         super().config_updated(config)
         self.stretch_h = self._config["stretch hor"] / 100.0
-        self.stretch_v = self._config["stretch ver"] / 100.0
-        self.center_h = self._config["center hor"] / 100.0
-        self.center_v = self._config["center ver"] / 100.0
+        self.stretch_v = self._config["stretch_ver"] / 100.0
+        self.center_h = self._config["center_hor"] / 100.0
+        self.center_v = self._config["center_ver"] / 100.0
 
-        self.url_gif = self._config["gif at"]
+        self.url_gif = self._config["git_at"]
 
-        self.ping_pong = self._config["ping pong"]
-        self.pp_skip = self._config["pp skip"]
-        self.force_fit = self._config["force fit"]
-        self.force_aspect = self._config["force aspect"]
+        self.ping_pong = self._config["ping_pong"]
+        self.pp_skip = self._config["pp_skip"]
+        self.force_fit = self._config["force_fit"]
+        self.force_aspect = self._config["force_aspect"]
         self.fake_beat = self._config["fake_beat"]
         self.diag2 = self._config["diag2"]
-        self.half_beat = self._config["half beat"]
+        self.half_beat = self._config["half_beat"]
 
         self.frames = []
         self.reverse = False
@@ -155,20 +155,20 @@ class Keybeat2d(Twod, GifBase):
 
         self.framecount = len(self.orig_frames)
         self.beat_frames = remove_values_above_limit(
-            sorted(extract_positive_integers(self._config["beat frames"])),
+            sorted(extract_positive_integers(self._config["beat_frames"])),
             len(self.orig_frames),
         )
         self.skip_frames = remove_values_above_limit(
-            sorted(extract_positive_integers(self._config["skip frames"])),
+            sorted(extract_positive_integers(self._config["skip_frames"])),
             len(self.orig_frames),
         )
 
         if self.diag:
             _LOGGER.info(
-                f"framecount {self.framecount} beat frames {self.beat_frames}"
+                f"framecount {self.framecount} beat_frames {self.beat_frames}"
             )
             _LOGGER.info(
-                f"framecount {self.framecount} skip frames {self.skip_frames}"
+                f"framecount {self.framecount} skip_frames {self.skip_frames}"
             )
 
         self.post_frames = self.orig_frames.copy()
@@ -183,7 +183,7 @@ class Keybeat2d(Twod, GifBase):
             _LOGGER.info(
                 "************************* start beat frame debug *************************"
             )
-        # adjust beat frames for removed frames
+        # adjust beat_frames for removed frames
         sl = len(self.skip_frames)
         for s, skip_index in enumerate(reversed(self.skip_frames)):
             si = sl - 1 - s
@@ -213,10 +213,10 @@ class Keybeat2d(Twod, GifBase):
 
         if self.diag:
             _LOGGER.info(
-                f"framecount {self.framecount} beat frames {self.beat_frames}"
+                f"framecount {self.framecount} beat_frames {self.beat_frames}"
             )
 
-        # for ping pong, first lets copy all the frames in reverse order, without repeating the end frames
+        # for ping_pong, first lets copy all the frames in reverse order, without repeating the end frames
         # then we need to add the beat frame indexs in reverse order, while accounting that they are now reversed and offset
         if self.ping_pong:
             # remove first and last frames from the copy, so we don't repeat them
@@ -242,13 +242,13 @@ class Keybeat2d(Twod, GifBase):
 
             if self.diag:
                 _LOGGER.info(
-                    "************************* Ping Pong impacts *************************"
+                    "************************* ping_pong impacts *************************"
                 )
                 _LOGGER.info(
-                    f"framecount {self.framecount} beat frames {self.beat_frames}"
+                    f"framecount {self.framecount} beat_frames {self.beat_frames}"
                 )
 
-        # we have beat frames, that are now correctly indexed against image frames
+        # we have beat_frames, that are now correctly indexed against image frames
         # next we have to calculate for each beat end point, how much a frame represents in a beat continuum of 1
         # then we can interpolate between frames based on beat progress
         # we should always start animation from the first frame with a beat, never from frame 0

@@ -33,22 +33,22 @@ class Plasmawled(Twod, GradientEffect):
                 default=128,
             ): vol.All(vol.Coerce(int), vol.Range(min=0, max=255)),
             vol.Optional(
-                "h_stretch",
+                "stretch_hor",
                 description="Smaller is less block in horizontal dimension",
                 default=128,
             ): vol.All(vol.Coerce(int), vol.Range(min=0, max=255)),
             vol.Optional(
-                "v_stretch",
+                "stretch_ver",
                 description="Smaller is less block in vertical dimension",
                 default=128,
             ): vol.All(vol.Coerce(int), vol.Range(min=0, max=255)),
             vol.Optional(
-                "size x",
+                "size_x",
                 description="Sound to size multiplier",
                 default=0.4,
             ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
             vol.Optional(
-                "speed x",
+                "speed_x",
                 description="Sound to speed multiplier",
                 default=0.4,
             ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
@@ -87,10 +87,10 @@ class Plasmawled(Twod, GradientEffect):
     def config_updated(self, config):
         super().config_updated(config)
         self.configured_speed = self._config["speed"]
-        self.h_stretch = self._config["h_stretch"]
-        self.v_stretch = self._config["v_stretch"]
-        self.speedx = self._config["speed x"]
-        self.sizex = self._config["size x"]
+        self.stretch_hor = self._config["stretch_hor"]
+        self.stretch_ver = self._config["stretch_ver"]
+        self.speedx = self._config["speed_x"]
+        self.sizex = self._config["size_x"]
         self.power_func = self.POWER_FUNCS_MAPPING[
             self._config["frequency_range"]
         ]
@@ -122,11 +122,11 @@ class Plasmawled(Twod, GradientEffect):
 
         a = time_val / (self.configured_speed + 1)
 
-        h_stretch = max(
-            0.01, self.h_stretch - (self.sizeb * self.h_stretch / 3)
+        stretch_hor = max(
+            0.01, self.stretch_hor - (self.sizeb * self.stretch_hor / 3)
         )
-        v_stretch = max(
-            0.01, self.v_stretch - (self.sizeb * self.v_stretch / 3)
+        stretch_ver = max(
+            0.01, self.stretch_ver - (self.sizeb * self.stretch_ver / 3)
         )
 
         # original python code was as commented below
@@ -135,13 +135,13 @@ class Plasmawled(Twod, GradientEffect):
 
         # for x in range(self.r_height):
         #     for y in range(self.r_width):
-        #         data[x][y] = self.sin8(self.cos8( x * self.h_stretch/16 + a / 3) + self.sin8(y * self.v_stretch/16 + a / 4) + a)
+        #         data[x][y] = self.sin8(self.cos8( x * self.stretch_hor/16 + a / 3) + self.sin8(y * self.stretch_ver/16 + a / 4) + a)
 
         x_indices = np.arange(self.r_height).reshape(-1, 1)  # Column vector
         y_indices = np.arange(self.r_width)  # Row vector
 
-        x_vals = x_indices * h_stretch / 16 + a / 3
-        y_vals = y_indices * v_stretch / 16 + a / 4
+        x_vals = x_indices * stretch_hor / 16 + a / 3
+        y_vals = y_indices * stretch_ver / 16 + a / 4
 
         # Use vectorized operations to compute indices for lookup tables
         sin_cos_indices = (

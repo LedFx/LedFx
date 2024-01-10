@@ -37,7 +37,7 @@ class Imagespin(Twod):
                 default=0.5,
             ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
             vol.Optional(
-                "Min Size",
+                "min_size",
                 description="The minimum size multiplier for the image",
                 default=0.3,
             ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
@@ -53,7 +53,7 @@ class Imagespin(Twod):
             ): bool,
             vol.Optional(
                 "clip",
-                description="When spinning the image, force fit to frame, or allow clipping",
+                description="When spinning the image, force_fit to frame, or allow clipping",
                 default=False,
             ): bool,
             vol.Optional(
@@ -70,7 +70,7 @@ class Imagespin(Twod):
         super().config_updated(config)
 
         self.clip = self._config["clip"]
-        self.min_size = self._config["Min Size"]
+        self.min_size = self._config["min_size"]
         self.power_func = self.POWER_FUNCS_MAPPING[
             self._config["frequency_range"]
         ]

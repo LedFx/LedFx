@@ -32,7 +32,7 @@ class GifPlayer(Twod, GifBase):
                 default=False,
             ): bool,
             vol.Optional(
-                "GIF FPS", description="How fast to play the gif", default=10
+                "gif_fps", description="How fast to play the gif", default=10
             ): vol.All(vol.Coerce(int), vol.Range(min=1, max=60)),
         }
     )
@@ -42,7 +42,7 @@ class GifPlayer(Twod, GifBase):
 
     def config_updated(self, config):
         super().config_updated(config)
-        self.gif_fps = self._config["GIF FPS"]
+        self.gif_fps = self._config["gif_fps"]
         self.bounce = self._config["bounce"]
         self.frames = []
         self.current_frame = 0
