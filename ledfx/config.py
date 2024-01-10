@@ -328,7 +328,9 @@ def migrate_config(old_config):
         schema = effects[effect_type].schema().schema
         new_config = {}
         for old_key in old_config:
-            new_key = old_key.replace("colour", "color")
+            new_key = (
+                old_key.replace("colour", "color").replace(" ", "_").lower()
+            )
             if new_key in schema:
                 try:
                     if (
@@ -448,6 +450,28 @@ def migrate_config(old_config):
                 "name": user_presets[effect_id][preset_id]["name"],
                 "config": sanitise_effect_config(
                     new_effect_id, user_presets[effect_id][preset_id]["config"]
+                ),
+            }
+
+    # clean up ledfx presets. effect names have changed, we'll try to clean them up here
+    ledfx_presets = new_config.pop("default_presets", ()) or new_config.pop(
+        "ledfx_presets", ()
+    )
+    new_config["ledfx_presets"] = {}
+    for effect_id in ledfx_presets:
+        new_effect_id = get_matching_effect_id(effect_id)
+        if not new_effect_id:
+            _LOGGER.warning(
+                f"Could not match effect id {effect_id} to any current effects. Discarding presets for this effect."
+            )
+            continue
+        new_config["ledfx_presets"][new_effect_id] = {}
+        for preset_id in ledfx_presets[effect_id]:
+            new_config["ledfx_presets"][new_effect_id][preset_id] = {
+                "name": ledfx_presets[effect_id][preset_id]["name"],
+                "config": sanitise_effect_config(
+                    new_effect_id,
+                    ledfx_presets[effect_id][preset_id]["config"],
                 ),
             }
 
