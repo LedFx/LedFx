@@ -8,10 +8,10 @@ from ledfx.consts import LEDFX_ASSETS_PATH
 from ledfx.effects.gifbase import GifBase
 from ledfx.effects.twod import Twod
 from ledfx.utils import (
+    clip_at_limit,
     extract_positive_integers,
     get_mono_font,
     open_gif,
-    clip_at_limit,
 )
 
 _LOGGER = logging.getLogger(__name__)
