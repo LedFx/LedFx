@@ -855,10 +855,13 @@ class Virtual:
                 _LOGGER.info(
                     f"rows changed from {self._config['rows']} to {_config['rows']}"
                 )
+                # if effect has an init val, then set to true, this is atomic
+                # and will allow do once to run in the correct context so will
+                # not introduce pre-emption problems
+                # TODO: we should have an event to fire for this
                 if self._active_effect is not None:
-                    self._active_effect.config_updated(
-                        self._active_effect.config
-                    )
+                    if hasattr(self._active_effect, "init"):
+                        self._active_effect.init = True
 
             if _config["mapping"] != self._config["mapping"]:
                 self.invalidate_cached_props()
