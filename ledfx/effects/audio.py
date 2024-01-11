@@ -135,10 +135,14 @@ class AudioInputSource:
         self._ledfx = ledfx
         self.update_config(config)
 
-        def deactivate(e):
-            self.deactivate()
+        def shutdown_event(e):
+            # We give the rest of LedFx a second to shutdown before we deactivate the audio subsystem.
+            # This is to prevent LedFx hanging on shutdown if the audio subsystem is still running while
+            # effects are being unloaded. This is a bit hacky but it works.
+            self._timer = threading.Timer(0.5, self.check_and_deactivate)
+            self._timer.start()
 
-        self._ledfx.events.add_listener(deactivate, Event.LEDFX_SHUTDOWN)
+        self._ledfx.events.add_listener(shutdown_event, Event.LEDFX_SHUTDOWN)
 
     def update_config(self, config):
         """Deactivate the audio, update the config, the reactivate"""
