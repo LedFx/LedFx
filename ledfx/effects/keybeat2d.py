@@ -156,11 +156,11 @@ class Keybeat2d(Twod, GifBase):
         self.framecount = len(self.orig_frames)
         self.beat_frames = remove_values_above_limit(
             sorted(extract_positive_integers(self._config["beat frames"])),
-            len(self.orig_frames)-1,
+            len(self.orig_frames) - 1,
         )
         self.skip_frames = remove_values_above_limit(
             sorted(extract_positive_integers(self._config["skip frames"])),
-            len(self.orig_frames)-1,
+            len(self.orig_frames) - 1,
         )
 
         if self.diag:
