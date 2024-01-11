@@ -132,6 +132,7 @@ class AudioInputSource:
     def __init__(self, ledfx, config):
         self._ledfx = ledfx
         self.update_config(config)
+        self.pending_deactivation = False
 
         def deactivate(e):
             self.deactivate()
@@ -319,15 +320,22 @@ class AudioInputSource:
         self._callbacks.append(callback)
 
         if len(self._callbacks) > 0 and not self._is_activated:
+            self.pending_deactivation = False
             self.activate()
 
     def unsubscribe(self, callback):
         """Unregisters a callback with the input source"""
         if callback in self._callbacks:
             self._callbacks.remove(callback)
-
-        if len(self._callbacks) <= self._subscriber_threshold:
-            self.deactivate()
+        # Notes for future spelunkers looking for speed improvements
+        # The code below shuts down the audio stream when there are no more callbacks
+        # However, it is not currently used because it reveals a bug within portaudio
+        # The call portaudio to close the stream never returns from the portaudio bindings.
+        # I've tried every combo of sounddevice/portaudio stream terminator and nothing works.
+        # So instead, we will just leave the audio device open and listening for audio.
+        # This is not ideal, but it's better than crashing.
+        # if len(self._callbacks) <= self._subscriber_threshold and self._is_activated:
+        #    self.deactivate()
 
     def get_device_index_by_name(self, device_name: str):
         for key, value in self.input_devices().items():
