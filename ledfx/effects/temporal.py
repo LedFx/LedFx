@@ -63,7 +63,9 @@ class TemporalEffect(Effect):
 
     def on_activate(self, pixel_count):
         self._thread_active = True
-        self._thread = Thread(target=self.thread_function)
+        self._thread = Thread(
+            name=f"Effect: {self.name}", target=self.thread_function
+        )
         self._thread.start()
 
     def deactivate(self):
