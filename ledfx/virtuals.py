@@ -8,7 +8,6 @@ from functools import cached_property
 
 import numpy as np
 import voluptuous as vol
-import zeroconf
 
 from ledfx.color import parse_color
 from ledfx.effects import DummyEffect
@@ -949,7 +948,6 @@ class Virtuals:
 
         self._ledfx = ledfx
         self._ledfx.events.add_listener(cleanup_effects, Event.LEDFX_SHUTDOWN)
-        self._zeroconf = zeroconf.Zeroconf()
         self._virtuals = {}
 
     def create_from_config(self, config):

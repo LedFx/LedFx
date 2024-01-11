@@ -18,7 +18,7 @@ class LogEndpoint(RestEndpoint):
     def __init__(self, ledfx):
         self.logwebsocket = LogWebsocket(ledfx, ledfx.logqueue)
 
-    async def get(self, request) -> web.Response:
+    async def get(self, request: web.Request) -> web.Response:
         return await self.logwebsocket.handle(request)
 
 
@@ -77,7 +77,7 @@ class LogWebsocket:
 
         _LOGGER.info("Stopping log sender")
 
-    async def handle(self, request):
+    async def handle(self, request: web.Request):
         """Handle the websocket connection"""
         # close existing connection and sender if it exists
         self.close()

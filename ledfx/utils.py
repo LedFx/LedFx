@@ -1231,18 +1231,18 @@ def open_gif(gif_path):
     Returns:
         Image: PIL Image object or None if failed to open
     """
-    current_directory = os.path.dirname(__file__)
-    absolute_directory = os.path.abspath(current_directory)
-    _LOGGER.debug(
-        f"open_gif cur: {current_directory} abs: {absolute_directory}"
-    )
-
+    _LOGGER.info(f"Attempting to open GIF: {gif_path}")
     try:
         if gif_path.startswith("http://") or gif_path.startswith("https://"):
             with urllib.request.urlopen(gif_path) as url:
-                return Image.open(url)
+                gif = Image.open(url)
+                _LOGGER.info("GIF downloaded and opened.")
+                return gif
+
         else:
-            return Image.open(gif_path)  # Directly open for local files
+            gif = Image.open(gif_path)  # Directly open for local files
+            _LOGGER.info("GIF opened.")
+            return gif
     except Exception as e:
         _LOGGER.warning(f"Failed to open gif : {gif_path} : {e}")
         return None
@@ -1293,3 +1293,36 @@ def get_font(font_list, size):
         except OSError:
             continue
     raise RuntimeError("None of the fonts are available on the system.")
+
+
+def generate_default_config(ledfx_effects, effect_id):
+    return ledfx_effects.get_class(effect_id).get_combined_default_schema()
+
+
+def generate_defaults(ledfx_presets, ledfx_effects, effect_id):
+    """Generate default presets for an effect.
+    appends effect class defaults to presets
+    This is done at run time, as defaults may not reference all effects
+    So we have to just deal with it when used
+
+    Args:
+        ledfx_presets (dict): The current presets.
+        ledfx_effects (dict): The current effects.
+        effect_id (str): The ID of the effect.
+
+    Returns:
+        dict: The default presets for the effect.
+    """
+    if effect_id in ledfx_presets.keys():
+        presets = ledfx_presets[effect_id]
+    else:
+        presets = {}
+
+    default = {
+        "reset": {
+            "config": generate_default_config(ledfx_effects, effect_id),
+            "name": "reset",
+        }
+    }
+    default.update(presets)
+    return default

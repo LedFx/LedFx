@@ -29,6 +29,7 @@ from ledfx.events import (
 )
 from ledfx.http_manager import HttpServer
 from ledfx.integrations import Integrations
+from ledfx.mdns_manager import ZeroConfRunner
 from ledfx.presets import ledfx_presets
 from ledfx.scenes import Scenes
 from ledfx.utils import (
@@ -259,17 +260,14 @@ class LedFxCore:
         self.devices.create_from_config(self.config["devices"])
         await self.devices.async_initialize_devices()
 
-        # sync_mode = WLED_CONFIG_SCHEMA(self.config["wled_preferences"])[
-        #     "wled_preferred_mode"
-        # ]
-        # if sync_mode:
-        #     await self.devices.set_wleds_sync_mode(sync_mode)
-
+        self.zeroconf = ZeroConfRunner(ledfx=self)
         self.virtuals.create_from_config(self.config["virtuals"])
         self.integrations.create_from_config(self.config["integrations"])
 
         if self.config["scan_on_startup"]:
-            async_fire_and_forget(self.devices.find_wled_devices(), self.loop)
+            async_fire_and_forget(
+                self.zeroconf.discover_wled_devices(), self.loop
+            )
 
         async_fire_and_forget(
             self.integrations.activate_integrations(), self.loop
@@ -310,7 +308,6 @@ class LedFxCore:
         # Fire a shutdown event and flush the loop
         self.events.fire_event(LedFxShutdownEvent())
         await asyncio.sleep(0)
-
         _LOGGER.info("Stopping HttpServer...")
         await self.http.stop()
 

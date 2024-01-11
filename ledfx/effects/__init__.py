@@ -291,9 +291,31 @@ class Effect(BaseRegistry):
         self._active = False
         _LOGGER.info(f"Effect {self.NAME} deactivated.")
 
+    @classmethod
+    def get_combined_default_schema(cls):
+        # Initialize an empty schema
+        combined_schema = {}
+
+        # Function to recursively merge schemas from parent classes
+        def merge_schema(c):
+            for base in c.__bases__:
+                merge_schema(base)
+            if hasattr(c, "CONFIG_SCHEMA"):
+                combined_schema.update(c.CONFIG_SCHEMA({}))
+
+        merge_schema(cls)
+
+        return combined_schema
+
     def update_config(self, config):
         self.lock.acquire()
-        validated_config = type(self).schema()(config)
+        try:
+            validated_config = type(self).schema()(config)
+        except vol.Invalid as err:
+            _LOGGER.warning(f"Error updating effect {self.NAME} config: {err}")
+            self.lock.release()
+            return
+
         prior_config = self._config
 
         if self._config != {}:

@@ -28,4 +28,10 @@ hiddenimports = [
     "pythonosc",
     "pythonosc.osc_message_builder",
     "pythonosc.udp_client",
+    "zeroconf._utils.ipaddress",
+    "zeroconf._handlers.answers",
+    "stupidArtnet",
+    "mss",
+    "PIL.Image",
+    "PIL.ImageDraw",
 ]

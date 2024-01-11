@@ -16,14 +16,24 @@ class QLCEndpoint(RestEndpoint):
     ENDPOINT_PATH = "/api/integrations/qlc/{integration_id}"
 
     async def get(self, integration_id) -> web.Response:
-        """Get info from QLC+ integration"""
+        """
+        Get info from QLC+ integration.
+
+        Args:
+            integration_id (str): The ID of the QLC+ integration.
+
+        Returns:
+            web.Response: The response containing the QLC+ integration information.
+        """
+        if integration_id is None:
+            return await self.invalid_request(
+                'Required attribute "integration_id" was not provided'
+            )
         integration = self._ledfx.integrations.get(integration_id)
         if (integration is None) or (integration.type != "qlc"):
-            response = {
-                "status": "failed",
-                "reason": f"{integration} was not found or was not type qlc",
-            }
-            return web.json_response(data=response, status=400)
+            return await self.invalid_request(
+                f"{integration} was not found or was not type qlc"
+            )
 
         response = {}
 
@@ -54,18 +64,26 @@ class QLCEndpoint(RestEndpoint):
         response["qlc_widgets"] = await integration.get_widgets()
 
         response["qlc_listeners"] = integration.data
-
-        return web.json_response(data=response, status=200)
+        return await self.request_success(response)
 
     async def put(self, integration_id, request) -> web.Response:
-        """Toggle a QLC event listener"""
+        """Toggle a QLC event listener
+
+        Args:
+            integration_id (str): The ID of the integration.
+            request (web.Request): The request object containing `event_type` and `event_filter`.
+
+        Returns:
+            web.Response: The response object.
+
+        Raises:
+            JSONDecodeError: If there is an error decoding the JSON data.
+        """
         integration = self._ledfx.integrations.get(integration_id)
         if (integration is None) or (integration.type != "qlc"):
-            response = {
-                "status": "failed",
-                "reason": f"{integration} was not found or was not type qlc",
-            }
-            return web.json_response(data=response, status=400)
+            return await self.invalid_request(
+                f"{integration} was not found or was not type qlc"
+            )
 
         try:
             data = await request.json()
@@ -74,34 +92,26 @@ class QLCEndpoint(RestEndpoint):
         event_type = data.get("event_type")
         event_filter = data.get("event_filter")
 
+        missing_attributes = []
         if event_type is None:
-            response = {
-                "status": "failed",
-                "reason": 'Required attribute "event_type" was not provided',
-            }
-            return web.json_response(data=response, status=400)
-
+            missing_attributes.append("event_type")
         if event_filter is None:
-            response = {
-                "status": "failed",
-                "reason": 'Required attribute "event_filter" was not provided',
-            }
-            return web.json_response(data=response, status=400)
+            missing_attributes.append("event_filter")
+        if missing_attributes:
+            return await self.invalid_request(
+                f'Required attributes {", ".join(missing_attributes)} were not provided'
+            )
 
         if type(event_filter) is not dict:
-            response = {
-                "status": "failed",
-                "reason": f'Invalid filter "{event_filter}", should be dictionary eg. {{ "scene_id" : "my scene" }} ',
-            }
-            return web.json_response(data=response, status=400)
+            return await self.invalid_request(
+                f'Invalid filter "{event_filter}", should be dictionary eg. {{ "scene_id" : "my scene" }} '
+            )
 
         # toggle the event listener
         if not integration.toggle_event(event_type, event_filter):
-            response = {
-                "status": "failed",
-                "reason": f"Could not find event with type {event_type} and filter {event_filter}",
-            }
-            return web.json_response(data=response, status=400)
+            return await self.invalid_request(
+                f"Could not find event with type {event_type} and filter {event_filter}"
+            )
 
         # Save the configuration (integration will handle modifying "data")
         for _integration in self._ledfx.config["integrations"]:
@@ -112,19 +122,24 @@ class QLCEndpoint(RestEndpoint):
             config=self._ledfx.config,
             config_dir=self._ledfx.config_dir,
         )
-
-        response = {"status": "success"}
-        return web.json_response(data=response, status=200)
+        return await self.request_success()
 
     async def post(self, integration_id, request) -> web.Response:
-        """Add a new QLC event listener or update an existing one"""
+        """
+        Add a new QLC event listener or update an existing one.
+
+        Args:
+            integration_id (str): The ID of the integration.
+            request (web.Request): The request object containing `event_type`, `event_filter` and `qlc_payload`.
+
+        Returns:
+            web.Response: The response object.
+        """
         integration = self._ledfx.integrations.get(integration_id)
         if (integration is None) or (integration.type != "qlc"):
-            response = {
-                "status": "failed",
-                "reason": f"{integration} was not found or was not type qlc",
-            }
-            return web.json_response(data=response, status=400)
+            return await self.invalid_request(
+                f"{integration} was not found or was not type qlc"
+            )
 
         try:
             data = await request.json()
@@ -133,34 +148,22 @@ class QLCEndpoint(RestEndpoint):
         event_type = data.get("event_type")
         event_filter = data.get("event_filter")
         qlc_payload = data.get("qlc_payload")
-
+        missing_attributes = []
         if event_type is None:
-            response = {
-                "status": "failed",
-                "reason": 'Required attribute "event_type" was not provided',
-            }
-            return web.json_response(data=response, status=400)
-
+            missing_attributes.append("event_type")
         if event_filter is None:
-            response = {
-                "status": "failed",
-                "reason": 'Required attribute "event_filter" was not provided',
-            }
-            return web.json_response(data=response, status=400)
+            missing_attributes.append("event_filter")
+        if qlc_payload is None:
+            missing_attributes.append("qlc_payload")
+        if missing_attributes:
+            return await self.invalid_request(
+                f'Required attributes {", ".join(missing_attributes)} were not provided'
+            )
 
         if type(event_filter) is not dict:
-            response = {
-                "status": "failed",
-                "reason": f'Invalid filter "{event_filter}", should be dictionary eg. {{ "scene_id" : "my scene" }} ',
-            }
-            return web.json_response(data=response, status=400)
-
-        if qlc_payload is None:
-            response = {
-                "status": "failed",
-                "reason": 'Required attribute "qlc_payload" was not provided',
-            }
-            return web.json_response(data=response, status=400)
+            return await self.invalid_request(
+                f'Invalid filter "{event_filter}", should be dictionary eg. {{ "scene_id" : "my scene" }} '
+            )
 
         # Create a link between ledfx event and sending the payload
         integration.create_event(event_type, event_filter, True, qlc_payload)
@@ -174,19 +177,24 @@ class QLCEndpoint(RestEndpoint):
             config=self._ledfx.config,
             config_dir=self._ledfx.config_dir,
         )
-
-        response = {"status": "success"}
-        return web.json_response(data=response, status=200)
+        return await self.request_success()
 
     async def delete(self, integration_id, request) -> web.Response:
-        """Delete a QLC event listener"""
+        """
+        Delete a QLC event listener.
+
+        Args:
+            integration_id (str): The ID of the integration.
+            request (web.Request): The request object containing `event_type` and `event_filter`.
+
+        Returns:
+            web.Response: The response object.
+        """
         integration = self._ledfx.integrations.get(integration_id)
         if (integration is None) or (integration.type != "qlc"):
-            response = {
-                "status": "failed",
-                "reason": f"{integration} was not found or was not type qlc",
-            }
-            return web.json_response(data=response, status=400)
+            return await self.invalid_request(
+                f"{integration} was not found or was not type qlc"
+            )
 
         try:
             data = await request.json()
@@ -194,27 +202,20 @@ class QLCEndpoint(RestEndpoint):
             return await self.json_decode_error()
         event_type = data.get("event_type")
         event_filter = data.get("event_filter")
-
+        missing_attributes = []
         if event_type is None:
-            response = {
-                "status": "failed",
-                "reason": 'Required attribute "event_type" was not provided',
-            }
-            return web.json_response(data=response, status=400)
-
+            missing_attributes.append("event_type")
         if event_filter is None:
-            response = {
-                "status": "failed",
-                "reason": 'Required attribute "event_filter" was not provided',
-            }
-            return web.json_response(data=response, status=400)
+            missing_attributes.append("event_filter")
+        if missing_attributes:
+            return await self.invalid_request(
+                f'Required attributes {", ".join(missing_attributes)} were not provided'
+            )
 
         if type(event_filter) is not dict:
-            response = {
-                "status": "failed",
-                "reason": f'Invalid filter "{event_filter}", should be dictionary eg. {{ "scene_id" : "my scene" }} ',
-            }
-            return web.json_response(data=response, status=400)
+            return await self.invalid_request(
+                f'Invalid filter "{event_filter}", should be dictionary eg. {{ "scene_id" : "my scene" }} '
+            )
 
         # Delete the listener and event from data
         integration.delete_event(event_type, event_filter)
@@ -228,6 +229,4 @@ class QLCEndpoint(RestEndpoint):
             config=self._ledfx.config,
             config_dir=self._ledfx.config_dir,
         )
-
-        response = {"status": "success"}
-        return web.json_response(data=response, status=200)
+        return await self.request_success()

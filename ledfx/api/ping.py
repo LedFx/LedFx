@@ -13,14 +13,21 @@ class InfoEndpoint(RestEndpoint):
     ENDPOINT_PATH = "/api/ping/{device_id}"
 
     async def get(self, device_id) -> web.Response:
+        """
+        Retrieves ping statistics for a specific device.
+
+        Args:
+            device_id (str): The ID of the device.
+
+        Returns:
+            web.Response: The response containing ping statistics.
+        """
         device = self._ledfx.devices.get(device_id)
 
         if device is None:
-            response = {
-                "status": "failed",
-                "reason": 'Required attribute "device_id" was not found',
-            }
-            return web.json_response(data=response, status=400)
+            return await self.invalid_request(
+                f"Device {device_id} was not found"
+            )
 
         ping_target = await resolve_destination(
             self._ledfx.loop,
@@ -39,5 +46,4 @@ class InfoEndpoint(RestEndpoint):
             "min_ping": ping.min_rtt,
             "packetlosspercent": ping.packet_loss,
         }
-
-        return web.json_response(data=response, status=200)
+        return await self.bare_request_success(response)

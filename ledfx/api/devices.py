@@ -14,6 +14,12 @@ class DevicesEndpoint(RestEndpoint):
     ENDPOINT_PATH = "/api/devices"
 
     async def get(self) -> web.Response:
+        """
+        Retrieves information about all devices.
+
+        Returns:
+            web.Response: The response containing the device information.
+        """
         response = {"status": "success", "devices": {}}
         for device in self._ledfx.devices.values():
             response["devices"][device.id] = {
@@ -24,41 +30,44 @@ class DevicesEndpoint(RestEndpoint):
                 "virtuals": device.virtuals,
                 "active_virtuals": device.active_virtuals,
             }
+        return await self.bare_request_success(response)
 
-        return web.json_response(data=response, status=200)
+    async def post(self, request: web.Request) -> web.Response:
+        """
+        Handle POST request to create a new device.
 
-    async def post(self, request) -> web.Response:
+        Args:
+            request (web.Request): The incoming request object that contains the device `config` and `type`
+
+        Returns:
+            web.Response: The response containing the result of the request.
+        """
         try:
             data = await request.json()
         except JSONDecodeError:
             return await self.json_decode_error()
 
         device_config = data.get("config")
-        if device_config is None:
-            response = {
-                "status": "failed",
-                "reason": 'Required attribute "config" was not provided',
-            }
-            return web.json_response(data=response, status=400)
-
         device_type = data.get("type")
-        if device_type is None:
-            response = {
-                "status": "failed",
-                "reason": 'Required attribute "type" was not provided',
-            }
-            return web.json_response(data=response, status=400)
 
+        missing_attributes = []
+        if device_config is None:
+            missing_attributes.append("device_config")
+        if device_type is None:
+            missing_attributes.append("device_type")
+
+        if missing_attributes:
+            return await self.invalid_request(
+                f'Required attributes {", ".join(missing_attributes)} were not provided'
+            )
         try:
             device = await self._ledfx.devices.add_new_device(
                 device_type, device_config
             )
         except ValueError as msg:
-            response = {
-                "status": "failed",
-                "payload": {"type": "error", "reason": str(msg)},
-            }
-            return web.json_response(data=response, status=202)
+            error_message = f"Error creating device: {msg}"
+            _LOGGER.warning(error_message)
+            return await self.internal_error("error", error_message)
 
         response = {
             "status": "success",
@@ -73,4 +82,4 @@ class DevicesEndpoint(RestEndpoint):
                 "virtuals": device.virtuals,
             },
         }
-        return web.json_response(data=response, status=200)
+        return await self.bare_request_success(response)
