@@ -1,5 +1,6 @@
 import logging
 import queue
+import threading
 import time
 from collections import deque
 from functools import cached_property, lru_cache
@@ -33,6 +34,7 @@ class AudioInputSource:
     _volume = -90
     _volume_filter = ExpFilter(-90, alpha_decay=0.99, alpha_rise=0.99)
     _subscriber_threshold = 0
+    _timer = None
 
     @staticmethod
     def device_index_validator(val):
@@ -317,23 +319,34 @@ class AudioInputSource:
     def subscribe(self, callback):
         """Registers a callback with the input source"""
         self._callbacks.append(callback)
-
         if len(self._callbacks) > 0 and not self._is_activated:
             self.activate()
+        if self._timer is not None:
+            self._timer.cancel()
+            self._timer = None
 
     def unsubscribe(self, callback):
         """Unregisters a callback with the input source"""
         if callback in self._callbacks:
             self._callbacks.remove(callback)
-        # Notes for future spelunkers looking for speed improvements
-        # The code below shuts down the audio stream when there are no more callbacks
-        # However, it is not currently used because it reveals a bug within portaudio
-        # The call portaudio to close the stream never returns from the portaudio bindings.
-        # I've tried every combo of sounddevice/portaudio stream terminator and nothing works.
-        # So instead, we will just leave the audio device open and listening for audio.
-        # This is not ideal, but it's better than crashing.
-        # if len(self._callbacks) <= self._subscriber_threshold and self._is_activated:
-        #    self.deactivate()
+        if (
+            len(self._callbacks) <= self._subscriber_threshold
+            and self._is_activated
+        ):
+            if self._timer is not None:
+                self._timer.cancel()
+            self._timer = threading.Timer(5.0, self.check_and_deactivate)
+            self._timer.start()
+
+    def check_and_deactivate(self):
+        if self._timer is not None:
+            self._timer.cancel()
+        self._timer = None
+        if (
+            len(self._callbacks) <= self._subscriber_threshold
+            and self._is_activated
+        ):
+            self.deactivate()
 
     def get_device_index_by_name(self, device_name: str):
         for key, value in self.input_devices().items():
