@@ -132,7 +132,6 @@ class AudioInputSource:
     def __init__(self, ledfx, config):
         self._ledfx = ledfx
         self.update_config(config)
-        self.pending_deactivation = False
 
         def deactivate(e):
             self.deactivate()
@@ -320,7 +319,6 @@ class AudioInputSource:
         self._callbacks.append(callback)
 
         if len(self._callbacks) > 0 and not self._is_activated:
-            self.pending_deactivation = False
             self.activate()
 
     def unsubscribe(self, callback):
