@@ -902,16 +902,13 @@ class Virtual:
                 # so the changes take effect
                 if self._active_effect is not None:
                     if (
-                        (
-                            _config["frequency_min"]
-                            != self._config["frequency_min"]
-                            or _config["frequency_max"]
-                            != self._config["frequency_max"]
-                        )
-                        and (
-                            hasattr(
-                                self._active_effect, "clear_melbank_freq_props"
-                            )
+                        _config["frequency_min"]
+                        != self._config["frequency_min"]
+                        or _config["frequency_max"]
+                        != self._config["frequency_max"]
+                    ) and (
+                        hasattr(
+                            self._active_effect, "clear_melbank_freq_props"
                         )
                     ):
                         self._active_effect.clear_melbank_freq_props()
