@@ -55,7 +55,7 @@ class GifPlayer(Twod, GifBase):
     def do_once(self):
         super().do_once()
 
-        gif_path = self._config["gif_path"]
+        gif_path = self._config["image_location"]
         # If for some unknown reason the url_path is blank (someone saved a preset with no string)/
         if gif_path == "":
             # Show animated LedFx logo

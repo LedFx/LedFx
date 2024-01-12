@@ -359,9 +359,18 @@ def migrate_config(old_config):
             return None
 
     def sanitise_effect_config(effect_type, old_config):
+        """
+        Sanitizes the effect configuration by attempting to find old keys or values and replace them
+
+        Args:
+            effect_type (str): The type of effect.
+            old_config (dict): The original effect configuration.
+
+        Returns:
+            dict: The sanitized effect configuration.
+        """
         # checks each config key against the current schema, discarding any values that dont match
         schema = effects[effect_type].schema().schema
-        # Invert the keys
         new_config = {}
         for old_key in old_config:
             # Replace old key with new key if it exists in the other_replacement_keys dictionary

@@ -131,7 +131,7 @@ class LaunchpadDevice(MidiDevice):
 
     def flush(self, data):
         self.lp.flush(
-            data, self._config["alpha_options"], self._config["Diagnostic"]
+            data, self._config["alpha_options"], self._config["diag"]
         )
 
     def activate(self):
@@ -148,7 +148,7 @@ class LaunchpadDevice(MidiDevice):
             self.lp.flush(
                 zeros((self.pixel_count, 3)),
                 self._config["alpha_options"],
-                self._config["Diagnostic"],
+                self._config["diag"],
             )
             self.lp.Close()
             self.lp = None

@@ -65,7 +65,7 @@ class Plasma2d(Twod, GradientEffect):
         ]
         self.density_vertical = self._config["density_vertical"]
         self.twist = self._config["twist"]
-        self.radius = self.config["radius"]
+        self.radius = self._config["radius"]
         super().config_updated(config)
 
     def do_once(self):

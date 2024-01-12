@@ -785,8 +785,11 @@ class BaseRegistry(ABC):
                 if not is_snake_case(actual_key):
                     # Raise an error if the key is not snake_case - this is to prevent
                     # development of new effects/devices that have keys that are not snake_case
+                    _LOGGER.critical(
+                        f"Invalid key '{actual_key}' in {self.__name__}. Keys must use snake_case."
+                    )
                     raise ValueError(
-                        f"Invalid key '{actual_key}' in schema. Keys must use snake_case."
+                        f"Invalid key '{actual_key}' in {self.__name__}. Keys must use snake_case."
                     )
 
         return schema
