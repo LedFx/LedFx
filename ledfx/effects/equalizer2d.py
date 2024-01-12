@@ -102,7 +102,7 @@ class Equalizer2d(Twod, GradientEffect):
         self.max = self._config["max_vs_mean"]
         self.peak = self._config["peak_marks"]
         self.peak_per = self._config["peak_percent"]
-        self.peak_decay = self.config["peak_decay"]
+        self.peak_decay = self._config["peak_decay"]
         self.ring = self._config["ring"]
         self.spin = self._config["spin"]
         self.power_func = self.POWER_FUNCS_MAPPING[
@@ -110,7 +110,7 @@ class Equalizer2d(Twod, GradientEffect):
         ]
         self.power_multiplier = self._config["spin_multiplier"]
         self.impulse_filter = self.create_filter(
-            alpha_decay=self.config["spin_decay"], alpha_rise=0.99
+            alpha_decay=self._config["spin_decay"], alpha_rise=0.99
         )
 
     def calc_ring_segments(self, rotation):

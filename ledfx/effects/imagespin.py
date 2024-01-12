@@ -1,6 +1,5 @@
 import logging
 import os
-import urllib.request
 
 import voluptuous as vol
 from PIL import Image
@@ -8,7 +7,7 @@ from PIL import Image
 from ledfx.consts import LEDFX_ASSETS_PATH
 from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.twod import Twod
-from ledfx.utils import get_icon_path
+from ledfx.utils import get_icon_path, open_gif
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -86,19 +85,6 @@ class Imagespin(Twod):
             getattr(data, self.power_func)() * self._config["multiplier"] * 2
         )
 
-    def open_image(self, image_path):
-        try:
-            if image_path.startswith("http://") or image_path.startswith(
-                "https://" or image_path.startswith("file://")
-            ):
-                with urllib.request.urlopen(image_path) as url:
-                    return Image.open(url)
-            else:
-                return Image.open(image_path)  # Directly open for local files
-        except Exception as e:
-            _LOGGER.error("Failed to open image: %s", e)
-            return None
-
     def do_once(self):
         super().do_once()
         if self._config["pattern"]:
@@ -107,7 +93,7 @@ class Imagespin(Twod):
             url_path = self._config["image_source"]
 
         if url_path != "":
-            self.bass_image = self.open_image(url_path)
+            self.bass_image = open_gif(url_path)
             if self.bass_image:
                 _LOGGER.info(f"pre scaled {self.bass_image.size}")
 

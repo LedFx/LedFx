@@ -783,6 +783,27 @@ class BaseRegistry(ABC):
                 else:
                     schema = schema.extend(c_schema.schema)
 
+        # Check if all keys in the schema use snake_case
+        for key in schema.schema.keys():
+            # If key is a vol.Required or vol.Optional, get the schema from the key
+            # Otherwise, the key is the actual key
+            # This is to handle nested schemas
+            actual_key = (
+                key.schema
+                if isinstance(key, (vol.Required, vol.Optional))
+                else key
+            )
+            if isinstance(actual_key, str):  # Check if actual_key is a string
+                if not is_snake_case(actual_key):
+                    # Raise an error if the key is not snake_case - this is to prevent
+                    # development of new effects/devices that have keys that are not snake_case
+                    _LOGGER.critical(
+                        f"Invalid key '{actual_key}' in {self.__name__}. Keys must use snake_case."
+                    )
+                    raise ValueError(
+                        f"Invalid key '{actual_key}' in {self.__name__}. Keys must use snake_case."
+                    )
+
         return schema
 
     @classmethod
