@@ -853,18 +853,6 @@ class Virtual:
         _config = self.CONFIG_SCHEMA(_config)
 
         if hasattr(self, "_config"):
-            if _config["rows"] != self._config["rows"]:
-                _LOGGER.info(
-                    f"rows changed from {self._config['rows']} to {_config['rows']}"
-                )
-                # if effect has an init val, then set to true, this is atomic
-                # and will allow do once to run in the correct context so will
-                # not introduce pre-emption problems
-                # TODO: we should have an event to fire for this
-                if self._active_effect is not None:
-                    if hasattr(self._active_effect, "init"):
-                        self._active_effect.init = True
-
             if _config["mapping"] != self._config["mapping"]:
                 self.invalidate_cached_props()
             if (
@@ -912,21 +900,25 @@ class Virtual:
                     _config["frequency_max"] += diff
                 # if they're changed, clear some cached properties
                 # so the changes take effect
-                if (
-                    (
-                        _config["frequency_min"]
-                        != self._config["frequency_min"]
-                        or _config["frequency_max"]
-                        != self._config["frequency_max"]
-                    )
-                    and (self._active_effect is not None)
-                    and (
-                        hasattr(
-                            self._active_effect, "clear_melbank_freq_props"
+                if self._active_effect is not None:
+                    if (
+                        (
+                            _config["frequency_min"]
+                            != self._config["frequency_min"]
+                            or _config["frequency_max"]
+                            != self._config["frequency_max"]
                         )
-                    )
-                ):
-                    self._active_effect.clear_melbank_freq_props()
+                        and (
+                            hasattr(
+                                self._active_effect, "clear_melbank_freq_props"
+                            )
+                        )
+                    ):
+                        self._active_effect.clear_melbank_freq_props()
+
+                    if _config["rows"] != self._config["rows"]:
+                        if hasattr(self._active_effect, "set_init"):
+                            self._active_effect.set_init()
 
         setattr(self, "_config", _config)
 
