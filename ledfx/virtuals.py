@@ -898,9 +898,10 @@ class Virtual:
                 diff = abs(_config["frequency_max"] - _config["frequency_min"])
                 if diff < MIN_FREQ_DIFFERENCE:
                     _config["frequency_max"] += diff
-                # if they're changed, clear some cached properties
-                # so the changes take effect
+
                 if self._active_effect is not None:
+                    # if they're changed, clear some cached properties
+                    # so the changes take effect
                     if (
                         (
                             _config["frequency_min"]
