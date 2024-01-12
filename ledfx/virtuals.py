@@ -617,7 +617,9 @@ class Virtual:
 
         # self.thread_function()
 
-        self._thread = threading.Thread(target=self.thread_function)
+        self._thread = threading.Thread(
+            name=f"Virtual: {self.id}", target=self.thread_function
+        )
         self._thread.start()
         self._ledfx.events.fire_event(VirtualPauseEvent(self.id))
         # self._task = self._ledfx.loop.create_task(self.thread_function())

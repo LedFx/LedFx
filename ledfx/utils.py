@@ -1216,9 +1216,9 @@ def extract_positive_integers(s):
     return [int(num) for num in numbers if int(num) >= 0]
 
 
-def remove_values_above_limit(numbers, limit):
-    # Keep only values that are less than or equal to the limit
-    return [num for num in numbers if num <= limit]
+def clip_at_limit(numbers, limit):
+    # Keep only values that are less than the limit
+    return [num for num in numbers if num < limit]
 
 
 def open_gif(gif_path):

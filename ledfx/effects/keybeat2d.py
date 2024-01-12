@@ -8,10 +8,10 @@ from ledfx.consts import LEDFX_ASSETS_PATH
 from ledfx.effects.gifbase import GifBase
 from ledfx.effects.twod import Twod
 from ledfx.utils import (
+    clip_at_limit,
     extract_positive_integers,
     get_mono_font,
     open_gif,
-    remove_values_above_limit,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -154,11 +154,11 @@ class Keybeat2d(Twod, GifBase):
         self.f_beat = 0.0  # fake beat oscillator
 
         self.framecount = len(self.orig_frames)
-        self.beat_frames = remove_values_above_limit(
+        self.beat_frames = clip_at_limit(
             sorted(extract_positive_integers(self._config["beat frames"])),
             len(self.orig_frames),
         )
-        self.skip_frames = remove_values_above_limit(
+        self.skip_frames = clip_at_limit(
             sorted(extract_positive_integers(self._config["skip frames"])),
             len(self.orig_frames),
         )
