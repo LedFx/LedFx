@@ -1521,3 +1521,17 @@ class PerformanceAnalysis:
                 writer = csv.writer(file)
                 writer.writerows(PerformanceAnalysis._write_buffer)
                 PerformanceAnalysis._write_buffer.clear()
+
+
+@lru_cache(maxsize=128)
+def is_snake_case(string) -> bool:
+    """
+    Check if a string is in snake_case format.
+
+    Args:
+        string (str): The string to be checked.
+
+    Returns:
+        bool: True if the string is in snake_case format, False otherwise.
+    """
+    return re.match("^[a-z][a-z_]*[a-z]$", string) is not None

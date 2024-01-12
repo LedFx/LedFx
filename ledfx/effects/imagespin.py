@@ -37,7 +37,7 @@ class Imagespin(Twod):
                 default=0.5,
             ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
             vol.Optional(
-                "Min Size",
+                "min_size",
                 description="The minimum size multiplier for the image",
                 default=0.3,
             ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
@@ -57,7 +57,7 @@ class Imagespin(Twod):
                 default=False,
             ): bool,
             vol.Optional(
-                "url source", description="Load image from", default=""
+                "image_source", description="Load image from", default=""
             ): str,
         }
     )
@@ -70,7 +70,7 @@ class Imagespin(Twod):
         super().config_updated(config)
 
         self.clip = self._config["clip"]
-        self.min_size = self._config["Min Size"]
+        self.min_size = self._config["min_size"]
         self.power_func = self.POWER_FUNCS_MAPPING[
             self._config["frequency_range"]
         ]
@@ -104,7 +104,7 @@ class Imagespin(Twod):
         if self._config["pattern"]:
             url_path = f"{os.path.join(LEDFX_ASSETS_PATH, 'test_images', 'TVTestPattern.png')}"
         else:
-            url_path = self._config["url source"]
+            url_path = self._config["image_source"]
 
         if url_path != "":
             self.bass_image = self.open_image(url_path)

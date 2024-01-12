@@ -288,6 +288,7 @@ def migrate_config(old_config):
 
     # most invalid keys were from invalid frequency ranges.
     # this replacement dict should fix that
+    # oldkey: newkey
     replacement_frequency_ranges = {
         "Ultra Low (1-20Hz)": "Beat",
         "Sub Bass (20-60Hz)": "Lows (beat+bass)",
@@ -297,6 +298,40 @@ def migrate_config(old_config):
         "Upper Midrange (2Khz-4kHz)": "Mids",
         "High Midrange (4kHz-6kHz)": "High",
         "High Frequency (6kHz-24kHz)": "High",
+    }
+
+    # These keys were renamed in the schema, so we need to replace them
+    # oldkey: newkey
+    other_replacement_keys = {
+        "flip horizontal": "flip_horizontal",
+        "flip vertical": "flip_vertical",
+        "peak percent": "peak_percent",
+        "peak decay": "peak_decay",
+        "peak marks": "peak_marks",
+        "max vs mean": "max_vs_mean",
+        "spin multiplier": "spin_multiplier",
+        "spin decay": "spin_decay",
+        "GIF FPS": "gif_fps",
+        "Min Size": "min_size",
+        "pp skip": "ping_pong_skip",
+        "stretch hor": "stretch_horizontal",
+        "v_stretch": "stretch_vertical",
+        "center hor": "center_horizontal",
+        "center ver": "center_vertical",
+        "gif_path": "image_location",
+        "beat frames": "beat_frames",
+        "skip frames": "skip_frames",
+        "force aspect": "force_aspect_ratio",
+        "force fit": "force_fit",
+        "ping pong": "ping_pong",
+        "half beat": "half_beat",
+        "v density": "density_vertical",
+        "size x": "size_multiplication",
+        "speed x": "speed_multiplication",
+        "Alpha": "alpha_options",
+        "Diagnostic": "diag",
+        "RGB Mix": "rgb_mix",
+        "diag2": "deep_diag",
     }
 
     class DummyLedfx:
@@ -326,9 +361,13 @@ def migrate_config(old_config):
     def sanitise_effect_config(effect_type, old_config):
         # checks each config key against the current schema, discarding any values that dont match
         schema = effects[effect_type].schema().schema
+        # Invert the keys
         new_config = {}
         for old_key in old_config:
-            new_key = old_key.replace("colour", "color")
+            # Replace old key with new key if it exists in the other_replacement_keys dictionary
+            new_key = other_replacement_keys.get(old_key, old_key).replace(
+                "colour", "color"
+            )
             if new_key in schema:
                 try:
                     if (

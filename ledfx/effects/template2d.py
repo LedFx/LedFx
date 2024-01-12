@@ -20,7 +20,7 @@ class Template2d(Twod):
     CONFIG_SCHEMA = vol.Schema(
         {
             vol.Optional(
-                "A switch",
+                "a_switch",
                 description="Does a boolean thing",
                 default=False,
             ): bool,
@@ -34,7 +34,7 @@ class Template2d(Twod):
     def config_updated(self, config):
         super().config_updated(config)
         # copy over your configs here into variables
-        self.a_switch = self._config["A switch"]
+        self.a_switch = self._config["a_switch"]
 
     def do_once(self):
         super().do_once()
