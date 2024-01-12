@@ -19,28 +19,28 @@ class Equalizer2d(Twod, GradientEffect):
     CATEGORY = "Matrix"
     HIDDEN_KEYS = Twod.HIDDEN_KEYS + []
     ADVANCED_KEYS = Twod.ADVANCED_KEYS + [
-        "peak percent",
-        "peak decay",
-        "max vs mean",
+        "peak_percent",
+        "peak_decay",
+        "max_vs_mean",
         "frequency_range",
-        "spin multiplier",
-        "spin decay",
+        "spin_multiplier",
+        "spin_decay",
     ]
 
     CONFIG_SCHEMA = vol.Schema(
         {
             vol.Optional(
-                "peak percent",
+                "peak_percent",
                 description="Size of the tracer bar that follows a filtered value",
                 default=1.0,
             ): vol.All(vol.Coerce(int), vol.Range(min=0, max=5)),
             vol.Optional(
-                "peak decay",
+                "peak_decay",
                 description="Decay filter applied to the peak value",
                 default=0.03,
             ): vol.All(vol.Coerce(float), vol.Range(min=0.01, max=0.1)),
             vol.Optional(
-                "peak marks",
+                "peak_marks",
                 description="Turn on white peak markers that follow a freq value filtered with decay",
                 default=False,
             ): bool,
@@ -50,7 +50,7 @@ class Equalizer2d(Twod, GradientEffect):
                 default=False,
             ): bool,
             vol.Optional(
-                "max vs mean",
+                "max_vs_mean",
                 description="Use max or mean value for bar size",
                 default=False,
             ): bool,
@@ -75,12 +75,12 @@ class Equalizer2d(Twod, GradientEffect):
                 default="Lows (beat+bass)",
             ): vol.In(list(AudioReactiveEffect.POWER_FUNCS_MAPPING.keys())),
             vol.Optional(
-                "spin multiplier",
+                "spin_multiplier",
                 description="Spin impulse multiplier",
                 default=1.0,
             ): vol.All(vol.Coerce(float), vol.Range(min=0, max=5)),
             vol.Optional(
-                "spin decay",
+                "spin_decay",
                 description="Decay filter applied to the spin impulse",
                 default=0.1,
             ): vol.All(vol.Coerce(float), vol.Range(min=0.01, max=0.3)),
@@ -99,18 +99,18 @@ class Equalizer2d(Twod, GradientEffect):
         self.bands = self._config["bands"]
         self.center = self._config["center"]
         self.grad_roll = self._config["gradient_roll"]
-        self.max = self._config["max vs mean"]
-        self.peak = self._config["peak marks"]
-        self.peak_per = self._config["peak percent"]
-        self.peak_decay = self.config["peak decay"]
+        self.max = self._config["max_vs_mean"]
+        self.peak = self._config["peak_marks"]
+        self.peak_per = self._config["peak_percent"]
+        self.peak_decay = self.config["peak_decay"]
         self.ring = self._config["ring"]
         self.spin = self._config["spin"]
         self.power_func = self.POWER_FUNCS_MAPPING[
             self._config["frequency_range"]
         ]
-        self.power_multiplier = self._config["spin multiplier"]
+        self.power_multiplier = self._config["spin_multiplier"]
         self.impulse_filter = self.create_filter(
-            alpha_decay=self.config["spin decay"], alpha_rise=0.99
+            alpha_decay=self.config["spin_decay"], alpha_rise=0.99
         )
 
     def calc_ring_segments(self, rotation):

@@ -112,12 +112,12 @@ class LaunchpadDevice(MidiDevice):
                     default=False,
                 ): bool,
                 vol.Optional(
-                    "Alpha",
+                    "alpha_options",
                     description="Dark and dangerous features of the damned",
                     default=False,
                 ): bool,
                 vol.Optional(
-                    "Diagnostic",
+                    "diag",
                     description="enable timing diagnostics in logger",
                     default=False,
                 ): bool,
@@ -130,7 +130,9 @@ class LaunchpadDevice(MidiDevice):
         _LOGGER.info("Launchpad device created")
 
     def flush(self, data):
-        self.lp.flush(data, self._config["Alpha"], self._config["Diagnostic"])
+        self.lp.flush(
+            data, self._config["alpha_options"], self._config["Diagnostic"]
+        )
 
     def activate(self):
         self.set_class()
@@ -145,7 +147,7 @@ class LaunchpadDevice(MidiDevice):
         if self.lp is not None:
             self.lp.flush(
                 zeros((self.pixel_count, 3)),
-                self._config["Alpha"],
+                self._config["alpha_options"],
                 self._config["Diagnostic"],
             )
             self.lp.Close()

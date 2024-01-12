@@ -771,6 +771,24 @@ class BaseRegistry(ABC):
                 else:
                     schema = schema.extend(c_schema.schema)
 
+        # Check if all keys in the schema use snake_case
+        for key in schema.schema.keys():
+            # If key is a vol.Required or vol.Optional, get the schema from the key
+            # Otherwise, the key is the actual key
+            # This is to handle nested schemas
+            actual_key = (
+                key.schema
+                if isinstance(key, (vol.Required, vol.Optional))
+                else key
+            )
+            if isinstance(actual_key, str):  # Check if actual_key is a string
+                if not is_snake_case(actual_key):
+                    # Raise an error if the key is not snake_case - this is to prevent
+                    # development of new effects/devices that have keys that are not snake_case
+                    raise ValueError(
+                        f"Invalid key '{actual_key}' in schema. Keys must use snake_case."
+                    )
+
         return schema
 
     @classmethod
@@ -1326,3 +1344,17 @@ def generate_defaults(ledfx_presets, ledfx_effects, effect_id):
     }
     default.update(presets)
     return default
+
+
+@lru_cache(maxsize=128)
+def is_snake_case(string) -> bool:
+    """
+    Check if a string is in snake_case format.
+
+    Args:
+        string (str): The string to be checked.
+
+    Returns:
+        bool: True if the string is in snake_case format, False otherwise.
+    """
+    return re.match("^[a-z][a-z_]*[a-z]$", string) is not None
