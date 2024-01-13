@@ -1,11 +1,8 @@
 {
-    // Use IntelliSense to learn about possible attributes.
-    // Hover to view descriptions of existing attributes.
-    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python: LedFx",
+            "name": "LedFx",
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/ledfx/__main__.py",
@@ -13,10 +10,14 @@
             "justMyCode": false,
             "windows": {
                 "program": "${workspaceFolder}\\ledfx\\__main__.py"
+            },
+            "presentation": {
+                "group": "Sentry Enabled",
+                "order": 1
             }
         },
         {
-            "name": "Python: LedFx Verbose Logging",
+            "name": "LedFx (Verbose Logging)",
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/ledfx/__main__.py",
@@ -25,18 +26,43 @@
             "justMyCode": false,
             "windows": {
                 "program": "${workspaceFolder}\\ledfx\\__main__.py"
+            },
+            "presentation": {
+                "group": "Sentry Enabled",
+                "order": 2
             }
         },
         {
-            "name": "Python: Current File",
+            "name": "LedFx (Verbose Logging, No Sentry)",
             "type": "python",
             "request": "launch",
-            "program": "${file}",
+            "program": "${workspaceFolder}/ledfx/__main__.py",
+            "args": ["-vv", "--offline"],
             "console": "integratedTerminal",
-            "justMyCode": false
-        }
-
+            "justMyCode": false,
+            "windows": {
+                "program": "${workspaceFolder}\\ledfx\\__main__.py"
+            },
+            "presentation": {
+                "group": "Sentry Disabled",
+                "order": 2
+            }
+        },
+        {
+            "name": "LedFx (No Sentry)",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/ledfx/__main__.py",
+            "args": ["--offline"],
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "windows": {
+                "program": "${workspaceFolder}\\ledfx\\__main__.py"
+            },
+            "presentation": {
+                "group": "Sentry Disabled",
+                "order": 1
+            }
+        },
     ]
-
-
 }
