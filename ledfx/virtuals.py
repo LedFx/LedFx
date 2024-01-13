@@ -898,23 +898,25 @@ class Virtual:
                 diff = abs(_config["frequency_max"] - _config["frequency_min"])
                 if diff < MIN_FREQ_DIFFERENCE:
                     _config["frequency_max"] += diff
-                # if they're changed, clear some cached properties
-                # so the changes take effect
-                if (
-                    (
+
+                if self._active_effect is not None:
+                    # if they're changed, clear some cached properties
+                    # so the changes take effect
+                    if (
                         _config["frequency_min"]
                         != self._config["frequency_min"]
                         or _config["frequency_max"]
                         != self._config["frequency_max"]
-                    )
-                    and (self._active_effect is not None)
-                    and (
+                    ) and (
                         hasattr(
                             self._active_effect, "clear_melbank_freq_props"
                         )
-                    )
-                ):
-                    self._active_effect.clear_melbank_freq_props()
+                    ):
+                        self._active_effect.clear_melbank_freq_props()
+
+                    if _config["rows"] != self._config["rows"]:
+                        if hasattr(self._active_effect, "set_init"):
+                            self._active_effect.set_init()
 
         setattr(self, "_config", _config)
 
