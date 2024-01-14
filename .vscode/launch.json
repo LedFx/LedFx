@@ -7,7 +7,10 @@
             "request": "launch",
             "program": "${workspaceFolder}/ledfx/__main__.py",
             "console": "integratedTerminal",
+            "pythonArgs": ["-Xfrozen_modules=off"],
+            "subProcess": true,
             "justMyCode": false,
+            "env":{"PYDEVD_DISABLE_FILE_VALIDATION": "1"},
             "windows": {
                 "program": "${workspaceFolder}\\ledfx\\__main__.py"
             },
@@ -24,6 +27,9 @@
             "args": ["-vv"],
             "console": "integratedTerminal",
             "justMyCode": false,
+            "pythonArgs": ["-Xfrozen_modules=off"],
+            "subProcess": true,
+            "env":{"PYDEVD_DISABLE_FILE_VALIDATION": "1"},
             "windows": {
                 "program": "${workspaceFolder}\\ledfx\\__main__.py"
             },
@@ -40,6 +46,9 @@
             "args": ["-vv", "--offline"],
             "console": "integratedTerminal",
             "justMyCode": false,
+            "pythonArgs": ["-Xfrozen_modules=off"],
+            "subProcess": true,
+            "env":{"PYDEVD_DISABLE_FILE_VALIDATION": "1"},
             "windows": {
                 "program": "${workspaceFolder}\\ledfx\\__main__.py"
             },
@@ -56,6 +65,9 @@
             "args": ["--offline"],
             "console": "integratedTerminal",
             "justMyCode": false,
+            "pythonArgs": ["-Xfrozen_modules=off"],
+            "subProcess": true,
+            "env":{"PYDEVD_DISABLE_FILE_VALIDATION": "1"},
             "windows": {
                 "program": "${workspaceFolder}\\ledfx\\__main__.py"
             },

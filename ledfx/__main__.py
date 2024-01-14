@@ -7,12 +7,12 @@ To run this script for development purposes use:
     ledfx
 
 """
-
 import argparse
 import logging
 import os
 import sys
 from logging.handlers import RotatingFileHandler
+from multiprocessing import freeze_support
 
 try:
     import psutil
@@ -219,6 +219,8 @@ def log_packages():
 
 def main():
     """Main entry point allowing external calls"""
+    # We need to enable multiprocessing freeze support
+    freeze_support()
     args = parse_args()
     config_helpers.ensure_config_directory(args.config)
     setup_logging(args.loglevel, config_dir=args.config)
