@@ -61,6 +61,8 @@ pyu-data/
 # Sentry Data
 formatting_test.bat
 
+# LedFx helper functions leave these files behind
+performance_analysis.csv
 
 # Misc
 .devcontainer/ledfx-config.yml
