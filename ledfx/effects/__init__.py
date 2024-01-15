@@ -48,6 +48,17 @@ class DummyEffect:
 
 
 def mix_colors(color_1, color_2, ratio):
+    """
+    Mixes two colors based on a given ratio.
+
+    Parameters:
+    color_1 (tuple): The first color represented as a tuple of RGB values.
+    color_2 (tuple): The second color represented as a tuple of RGB values.
+    ratio (float): The ratio of color_1 to color_2 in the final mixed color.
+
+    Returns:
+    tuple: The mixed color represented as a tuple of RGB values.
+    """
     if np.array_equal(color_2, []):
         return (
             color_1[0] * (1 - ratio) + 0,
@@ -63,18 +74,40 @@ def mix_colors(color_1, color_2, ratio):
 
 
 def fill_rainbow(pixels, initial_hue, delta_hue):
-    hue = initial_hue
+    """
+    Fills the given pixels with a rainbow effect.
+
+    Args:
+        pixels (numpy.ndarray): Array of pixels to be filled with colors.
+        initial_hue (float): Initial hue value for the rainbow effect.
+        delta_hue (float): Difference in hue between each pixel.
+
+    Returns:
+        numpy.ndarray: Array of RGB values representing the rainbow effect.
+    """
     sat = 0.95
     val = 1.0
-    for i in range(0, len(pixels)):
-        pixels[i, :] = tuple(
-            int(i * 255) for i in colorsys.hsv_to_rgb(hue, sat, val)
-        )
-        hue = hue + delta_hue
+    hues = np.arange(
+        initial_hue, initial_hue + len(pixels) * delta_hue, delta_hue
+    )
+    hues = hues[: len(pixels)]  # Ensure hues has the same length as pixels
+    pixels = (
+        np.array([colorsys.hsv_to_rgb(hue, sat, val) for hue in hues]) * 255
+    )  # the array is 0-1, we need 0-255
     return pixels
 
 
 def blur_pixels(pixels, sigma):
+    """
+    Applies a blur effect to the given pixels.
+
+    Args:
+        pixels (ndarray): The input pixel array.
+        sigma (float): The standard deviation of the Gaussian kernel.
+
+    Returns:
+        ndarray: The blurred pixel array.
+    """
     rgb_array = pixels.T
     rgb_array[0] = smooth(rgb_array[0], sigma)
     rgb_array[1] = smooth(rgb_array[1], sigma)
@@ -129,6 +162,19 @@ def _gaussian_kernel1d(sigma, order, array_len):
 
 
 def fast_blur_pixels(pixels, sigma):
+    """
+    Applies a fast blur effect to the given pixels using a Gaussian kernel.
+
+    Args:
+        pixels (ndarray): The input array of pixels.
+        sigma (float): The standard deviation of the Gaussian kernel.
+
+    Returns:
+        ndarray: The blurred pixels array.
+
+    Raises:
+        ValueError: If the input array is empty.
+    """
     if len(pixels) == 0:
         raise ValueError("Cannot smooth an empty array")
     kernel = _gaussian_kernel1d(sigma, 0, len(pixels))
@@ -139,6 +185,19 @@ def fast_blur_pixels(pixels, sigma):
 
 
 def fast_blur_array(array, sigma):
+    """
+    Apply fast Gaussian blur to a 1-dimensional array.
+
+    Args:
+        array (numpy.ndarray): The input array to be blurred.
+        sigma (float): The standard deviation of the Gaussian kernel.
+
+    Returns:
+        numpy.ndarray: The blurred array.
+
+    Raises:
+        ValueError: If the input array is empty.
+    """
     if len(array) == 0:
         raise ValueError("Cannot smooth an empty array")
     kernel = _gaussian_kernel1d(sigma, 0, len(array))

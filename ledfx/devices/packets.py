@@ -171,7 +171,7 @@ def build_openrgb_packet(
             b"O", b"R", b"G", b"B",
             device_id,
             1050,  # RGBCONTROLLER_UPDATELEDS packet
-            struct.calcsize(f"IH{3*frame_size}b{frame_size}x"),   # total packet length
+            struct.calcsize(f"IH{3 * frame_size}b{frame_size}x"),   # total packet length
             (frame_size * 4 + 2),  # body length
             frame_size,  # number of pixels
         )

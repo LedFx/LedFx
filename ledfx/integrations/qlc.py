@@ -210,7 +210,7 @@ class QLC(Integration):
             self._ledfx.thread_executor,
             self._config["ip_address"],
         )
-        domain = f"{resolved_ip }:{self._config['port']}"
+        domain = f"{resolved_ip}:{self._config['port']}"
         url = f"http://{domain}/qlcplusWS"
         if self._client is None:
             self._client = QLCWebsocketClient(url, domain)
