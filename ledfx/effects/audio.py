@@ -930,8 +930,7 @@ class AudioReactiveEffect(Effect):
         # the audio input device. If NaNs are present, replace them with 0
         # TODO: Investigate why NaNs are present in the melbank array for some people/devices
         if np.isnan(melbank).any():
-            print("NaNs!")
+            _LOGGER.warning("NaN values detected in the melbank array and replaced with 0.")
             # Replace NaN values with 0
             melbank = np.nan_to_num(melbank)
-
         return np.split(melbank, splits)
