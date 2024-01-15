@@ -925,4 +925,13 @@ class AudioReactiveEffect(Effect):
         mel_length = len(melbank)
         splits = tuple(map(lambda i: int(i * mel_length), [0.2, 0.5]))
 
+        # Check for NaN values in the melbank array
+        # Difficult to determine why this happens, but it seems to be related to
+        # the audio input device. If NaNs are present, replace them with 0
+        # TODO: Investigate why NaNs are present in the melbank array for some people/devices
+        if np.isnan(melbank).any():
+            print("NaNs!")
+            # Replace NaN values with 0
+            melbank = np.nan_to_num(melbank)
+
         return np.split(melbank, splits)
