@@ -84,7 +84,10 @@ class Clone(Twod):
                     "mon": self.screen,
                 }
             except Exception as e:
-                _LOGGER.error("Caught exception trying to grab screenclip in draw() of clone.py", exc_info=True)
+                _LOGGER.error(
+                    "Caught exception trying to grab screenclip in draw() of clone.py",
+                    exc_info=True,
+                )
                 super.super.virtual.clear_effect()
                 return
 
@@ -92,7 +95,10 @@ class Clone(Twod):
         try:
             frame = self.sct.grab(self.grab)
         except Exception as e:
-            _LOGGER.error("Intercepted crash as a result of clone effect - screengrab failed", exc_info=True)
+            _LOGGER.error(
+                "Intercepted crash as a result of clone effect - screengrab failed",
+                exc_info=True,
+            )
             self.deactivate()
             return
         grab = timeit.default_timer()

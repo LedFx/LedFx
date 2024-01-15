@@ -444,7 +444,7 @@ Query and manage virtuals connected to LedFx
 Get configuration of all virtuals
 
 .. rubric:: PUT
-   
+
 Pause/Unpause all virtuals
 
 .. rubric:: POST

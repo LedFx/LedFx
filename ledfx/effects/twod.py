@@ -159,7 +159,7 @@ class Twod(AudioReactiveEffect):
         try:
             copy_length = min(self.pixels.shape[0], rgb_array.shape[0])
             self.pixels[:copy_length, :] = rgb_array[:copy_length, :]
-        except: 
+        except:
             _LOGGER.error("Failed to copy image to matrix!", exc_info=True)
 
     def log_sec(self):
