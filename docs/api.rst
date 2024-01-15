@@ -443,6 +443,10 @@ Query and manage virtuals connected to LedFx
 
 Get configuration of all virtuals
 
+.. rubric:: PUT
+   
+Pause/Unpause all virtuals
+
 .. rubric:: POST
 
 Adds a new virtual to LedFx based on the provided JSON configuration

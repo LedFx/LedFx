@@ -74,17 +74,27 @@ class Clone(Twod):
 
         if self.grab is None:
             # grab a screen clip from screen x at x,y of width, height
-            mon = self.sct.monitors[self.screen]
-            self.grab = {
-                "top": mon["top"] + self.x,
-                "left": mon["left"] + self.y,
-                "width": self.width,
-                "height": self.height,
-                "mon": self.screen,
-            }
+            try:
+                mon = self.sct.monitors[self.screen]
+                self.grab = {
+                    "top": mon["top"] + self.x,
+                    "left": mon["left"] + self.y,
+                    "width": self.width,
+                    "height": self.height,
+                    "mon": self.screen,
+                }
+            except Exception as e:
+                _LOGGER.error("Caught exception trying to grab screenclip in draw() of clone.py", exc_info=True)
+                super.super.virtual.clear_effect()
+                return
 
         pre = timeit.default_timer()
-        frame = self.sct.grab(self.grab)
+        try:
+            frame = self.sct.grab(self.grab)
+        except Exception as e:
+            _LOGGER.error("Intercepted crash as a result of clone effect - screengrab failed", exc_info=True)
+            self.deactivate()
+            return
         grab = timeit.default_timer()
 
         rgb_image = Image.frombytes(
