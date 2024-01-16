@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "LedFx"
-version = "2.0.88"
+version = "2.0.89"
 description = "A network based light effect controller"
 authors = ["LedFx Developers"]
 license = "GPL-3.0 License"
