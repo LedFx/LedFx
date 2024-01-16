@@ -5,7 +5,12 @@ from aiohttp import web
 
 from ledfx.api import RestEndpoint
 from ledfx.config import save_config
-from ledfx.utils import generate_default_config, generate_defaults, generate_id, inject_missing_default_keys
+from ledfx.utils import (
+    generate_default_config,
+    generate_defaults,
+    generate_id,
+    inject_missing_default_keys,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
