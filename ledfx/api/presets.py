@@ -5,7 +5,7 @@ from aiohttp import web
 
 from ledfx.api import RestEndpoint
 from ledfx.config import save_config
-from ledfx.utils import generate_defaults
+from ledfx.utils import generate_defaults, inject_missing_default_keys
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -53,6 +53,8 @@ class PresetsEndpoint(RestEndpoint):
             custom = self._ledfx.config["user_presets"][effect_id]
         else:
             custom = {}
+
+        custom = inject_missing_default_keys(custom, default)
 
         response = {
             "status": "success",
