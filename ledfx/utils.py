@@ -1298,6 +1298,22 @@ def get_font(font_list, size):
 def generate_default_config(ledfx_effects, effect_id):
     return ledfx_effects.get_class(effect_id).get_combined_default_schema()
 
+def inject_missing_default_keys(presets, defaults):
+    """Inject missing keys from defaults into presets
+    This happens when static or user presets are defined and there are
+    new keys added to the effect config schema later
+    Args:
+        presets (dict): The current presets.
+        defaults (dict): The current defaults.
+    Returns:
+        dict: The updated presets.
+    """
+    for preset in presets.values():
+        default_preset = defaults["reset"]["config"]
+        for key, value in default_preset.items():
+            if key not in preset["config"]:
+                preset["config"][key] = value
+    return presets
 
 def generate_defaults(ledfx_presets, ledfx_effects, effect_id):
     """Generate default presets for an effect.
@@ -1324,5 +1340,9 @@ def generate_defaults(ledfx_presets, ledfx_effects, effect_id):
             "name": "reset",
         }
     }
+
+    presets = inject_missing_default_keys(presets, default)
+
     default.update(presets)
     return default
+
