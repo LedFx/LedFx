@@ -464,7 +464,7 @@ class Effect(BaseRegistry):
                     if config["background_mixing"] == "additive":
                         pixels += self.bg_color_array
                     elif config["background_mixing"] == "replace":
-                        # We use >= 1 here because we want to replace any pixels that are
+                        # We use >= 2 here because we want to replace any pixels that are
                         # very close to black, but not exactly black, with the background color
                         # This is because the blur effect can leave some pixels that are very
                         # close to black, but not exactly black.
