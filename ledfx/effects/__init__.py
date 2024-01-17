@@ -307,6 +307,9 @@ class Effect(BaseRegistry):
                 description="Brightness of the background color",
                 default=1.0,
             ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
+            vol.Optional("background_mixing", default="additive"): vol.In(
+                ["additive", "replace"]
+            ),
         }
     )
 
@@ -446,8 +449,7 @@ class Effect(BaseRegistry):
                     pixels = np.concatenate(
                         (pixels[-1 + len(pixels) % -2 :: -2], pixels[::2])
                     )
-                if config["background_color"]:
-                    pixels += self._bg_color
+
                 if config["brightness"] is not None:
                     np.multiply(
                         pixels,
@@ -455,6 +457,50 @@ class Effect(BaseRegistry):
                         out=pixels,
                         casting="unsafe",
                     )
+                if config["background_color"]:
+                    self.bg_color_array = np.tile(
+                        self._bg_color, (self.pixel_count, 1)
+                    )
+                    if config["background_mixing"] == "additive":
+                        pixels += self.bg_color_array
+                    elif config["background_mixing"] == "replace":
+                        # We use >= 1 here because we want to replace any pixels that are
+                        # very close to black, but not exactly black, with the background color
+                        # This is because the blur effect can leave some pixels that are very
+                        # close to black, but not exactly black.
+
+                        non_black_mask = np.any(pixels >= [2, 2, 2], axis=-1)
+                        self.bg_color_array[non_black_mask] = pixels[
+                            non_black_mask
+                        ]
+                        pixels = self.bg_color_array
+                        boundary_mask = np.zeros_like(non_black_mask)
+                        boundary_mask[:-1] = (
+                            non_black_mask[1:] != non_black_mask[:-1]
+                        )
+                        boundary_mask[1:] |= (
+                            non_black_mask[:-1] != non_black_mask[1:]
+                        )
+
+                        # Blur the boundary pixels
+                        # Check if there are any boundary pixels
+                        if np.any(boundary_mask):
+                            kernel = _gaussian_kernel1d(1, 0, len(pixels))
+                            blurred_pixels = np.zeros_like(pixels)
+                            blurred_pixels[:, 0] = np.convolve(
+                                pixels[:, 0], kernel, mode="same"
+                            )  # R
+                            blurred_pixels[:, 1] = np.convolve(
+                                pixels[:, 1], kernel, mode="same"
+                            )  # G
+                            blurred_pixels[:, 2] = np.convolve(
+                                pixels[:, 2], kernel, mode="same"
+                            )  # B
+
+                            # Apply the boundary mask to the blurred pixels
+                            pixels[boundary_mask] = blurred_pixels[
+                                boundary_mask
+                            ]
 
                 # If the configured blur is greater than 0 and pixel_count > 3, apply blur
                 # The matrix math requires > 3 pixels to work properly
@@ -478,8 +524,9 @@ class Effect(BaseRegistry):
                         pixels[:, 2], kernel, mode="same"
                     )  # B
                     # pixels[:, 3] = np.convolve(pixels[:, 3], kernel, mode="same") # W
-        self.lock.release()
-        return pixels
+
+                self.lock.release()
+                return pixels
 
     @property
     def is_active(self):
