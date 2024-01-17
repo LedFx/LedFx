@@ -319,6 +319,7 @@ def migrate_config(old_config):
         "center hor": "center_horizontal",
         "center ver": "center_vertical",
         "gif_path": "image_location",
+        "gif at": "image_location",
         "beat frames": "beat_frames",
         "skip frames": "skip_frames",
         "force aspect": "force_aspect_ratio",
