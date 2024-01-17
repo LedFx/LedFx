@@ -1,5 +1,7 @@
 import asyncio
 import concurrent.futures
+import csv
+import datetime
 import importlib
 import inspect
 import ipaddress
@@ -20,6 +22,7 @@ from itertools import chain
 
 # from asyncio import coroutines, ensure_future
 from subprocess import PIPE, Popen
+from typing import Callable
 
 import numpy as np
 import PIL.Image as Image
@@ -1347,3 +1350,101 @@ def generate_defaults(ledfx_presets, ledfx_effects, effect_id):
 
     default.update(presets)
     return default
+
+
+class PerformanceAnalysis:
+    """
+    A class for comparing the performance of two functions.
+    """
+
+    @staticmethod
+    def compare_functions(
+        original_function: Callable,
+        optimized_function: Callable,
+        num_runs: int = 1000,
+    ):
+        """
+        Compare the execution time of two functions.
+
+        Parameters:
+        original_function (Callable): The original function to be compared.
+        optimized_function (Callable): The optimized function to be compared.
+        num_runs (int, optional): The number of times each function should be run. Defaults to 1000.
+
+        Returns:
+        None
+        """
+        original_time = PerformanceAnalysis._timeit_wrapper(
+            original_function, num_runs
+        )
+        optimized_time = PerformanceAnalysis._timeit_wrapper(
+            optimized_function, num_runs
+        )
+
+        if original_time < optimized_time:
+            faster_method = "Original"
+            percent_faster = (
+                (optimized_time - original_time) / original_time
+            ) * 100
+        else:
+            faster_method = "Optimized"
+            percent_faster = (
+                (original_time - optimized_time) / optimized_time
+            ) * 100
+
+        PerformanceAnalysis._write_to_csv(
+            num_runs,
+            faster_method,
+            original_time,
+            optimized_time,
+            percent_faster,
+        )
+
+    @staticmethod
+    def _timeit_wrapper(func: Callable, num_runs: int) -> float:
+        """
+        Time a function over a number of runs.
+
+        Args:
+            func (Callable): The function to be timed.
+            num_runs (int): The number of times to run the function.
+
+        Returns:
+            float: The average time taken to run the function.
+
+        """
+        return timeit.timeit(func, number=num_runs)
+
+    @staticmethod
+    def _write_to_csv(
+        num_runs: int,
+        faster_method: str,
+        original_time: float,
+        optimized_time: float,
+        percent_faster: float,
+    ):
+        """
+        Write the function comparison results to a CSV file.
+
+        Parameters:
+        - num_runs (int): The number of runs performed for the function comparison.
+        - faster_method (str): The name of the faster method being compared.
+        - original_time (float): The execution time of the original method.
+        - optimized_time (float): The execution time of the optimized method.
+        - percent_faster (float): The percentage improvement in execution time of the optimized method compared to the original method.
+        """
+        with open("performance_analysis.csv", mode="a", newline="") as file:
+            writer = csv.writer(file)
+            timestamp = datetime.datetime.now().strftime(
+                "%Y-%m-%d %H:%M:%S.%f"
+            )
+            writer.writerow(
+                [
+                    timestamp,
+                    num_runs,
+                    faster_method,
+                    original_time,
+                    optimized_time,
+                    f"{percent_faster}%",
+                ]
+            )
