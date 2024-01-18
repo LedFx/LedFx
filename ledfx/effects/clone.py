@@ -60,32 +60,44 @@ class Clone(Twod):
         self.height = self._config["height"]
         self.grab = None
         self.sct = None
+        self.fails = 0
+        self.giveup = False
 
     def draw(self):
+        # if we hit 5 in a row, lets just give up and stop impacting the system
+        if self.fails >= 5:
+            self.giveup = True
+            _LOGGER.warning(f"Clone giving up after {self.fails} failures")
+            self.fails = 0
+
+        if self.giveup:
+            return
+
         if self.sct is None:
             self.sct = mss.mss()
-        else:
-            # Check if the sct object is still valid
-            if not hasattr(self.sct, "_handles") or not hasattr(
-                self.sct._handles, "srcdc"
-            ):
-                self.sct = mss.mss()
-                _LOGGER.warning("Recreated sct")
+            try:
+                # set up a grab dict to be used in the grab call
+                mon = self.sct.monitors[self.screen]
+                self.grab = {
+                    "top": mon["top"] + self.x,
+                    "left": mon["left"] + self.y,
+                    "width": self.width,
+                    "height": self.height,
+                    "mon": self.screen,
+                }
+            except Exception as e:
+                self.fails += 1
+                _LOGGER.warning(f"Clone Error setting up grab: {self.fails} {e}")
+                self.sct = None
+                return
 
-        if self.grab is None:
-            # grab a screen clip from screen x at x,y of width, height
-            mon = self.sct.monitors[self.screen]
-            self.grab = {
-                "top": mon["top"] + self.x,
-                "left": mon["left"] + self.y,
-                "width": self.width,
-                "height": self.height,
-                "mon": self.screen,
-            }
-
-        pre = timeit.default_timer()
-        frame = self.sct.grab(self.grab)
-        grab = timeit.default_timer()
+        try:
+            frame = self.sct.grab(self.grab)
+        except Exception as e:
+            self.fails += 1
+            _LOGGER.warning(f"Clone Error grabbing frame :{self.fails}: {e}")
+            self.sct = None
+            return
 
         rgb_image = Image.frombytes(
             "RGB", frame.size, frame.bgra, "raw", "BGRX"
@@ -94,3 +106,5 @@ class Clone(Twod):
         self.matrix = rgb_image.resize(
             (self.r_width, self.r_height), Image.BILINEAR
         )
+
+        self.fails = 0
