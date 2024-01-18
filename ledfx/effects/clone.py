@@ -85,7 +85,9 @@ class Clone(Twod):
                 }
             except Exception as e:
                 self.fails += 1
-                _LOGGER.warning(f"Clone Error setting up grab: {self.fails} {e}")
+                _LOGGER.warning(
+                    f"Clone Error setting up grab: {self.fails} {e}"
+                )
                 self.sct = None
                 return
 
