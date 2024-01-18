@@ -1,6 +1,4 @@
 import logging
-import timeit
-
 import mss
 import voluptuous as vol
 from PIL import Image
