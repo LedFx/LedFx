@@ -1,4 +1,5 @@
 import logging
+
 import mss
 import voluptuous as vol
 from PIL import Image
