@@ -2,13 +2,14 @@ import logging
 from json import JSONDecodeError
 
 from aiohttp import web
+from ledfx.config import save_config
 
 from ledfx.api import RestEndpoint
 from ledfx.color import parse_color, validate_color
 
 _LOGGER = logging.getLogger(__name__)
 
-TOOLS = ["force_color", "calibration", "highlight", "oneshot"]
+TOOLS = ["force_color", "calibration", "highlight", "oneshot", "copy"]
 
 
 class VirtualsToolsEndpoint(RestEndpoint):
@@ -120,6 +121,31 @@ class VirtualsToolsEndpoint(RestEndpoint):
             )
             if result is False:
                 return await self.invalid_request("oneshot failed")
+
+        if tool == "copy":
+            # copy the config of the specified virtual instance to all virtuals listed in the target payload
+            target = data.get("target")
+            if target is None:
+                return await self.invalid_request(
+                    "Required attribute for copy, target was not provided"
+                )
+            updated = 0
+            for dest_virtual in target:
+                dest_virtual = self._ledfx.virtuals.get(dest_virtual)
+                if dest_virtual is None:
+                    continue
+                # only copy the effect type and effect config
+                dest_virtual.config["effect_type"] = virtual.config["effect_type"]
+                dest_virtual.config["effect_config"] = virtual.config["effect_config"]
+                updated += 1
+            
+            if updated > 0:
+                save_config(
+                    config=self._ledfx.config,
+                    config_dir=self._ledfx.config_dir,
+                )
+            else:
+                return await self.invalid_request("Virtual copy failed, no valid targets")
 
         effect_response = {}
         effect_response["tool"] = tool
