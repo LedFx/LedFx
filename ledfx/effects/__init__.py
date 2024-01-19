@@ -458,49 +458,32 @@ class Effect(BaseRegistry):
                         casting="unsafe",
                     )
                 if config["background_color"]:
-                    self.bg_color_array = np.tile(
-                        self._bg_color, (self.pixel_count, 1)
+                    # We need to keep _bg_color as a float - 0 and 1 are valid values but
+                    # numpy will cast them to int if we don't keep it as a float
+                    # This blows up later when we try to multiply the pixels by brightness, which is a float
+                    bg_color_array = np.tile(
+                        self._bg_color.astype(np.float64),
+                        (self.pixel_count, 1),
                     )
                     if config["background_mixing"] == "additive":
-                        pixels += self.bg_color_array
+                        pixels += bg_color_array
                     elif config["background_mixing"] == "replace":
-                        # We use >= 2 here because we want to replace any pixels that are
+                        # We use a static threshold here here because we want to replace any pixels that are
                         # very close to black, but not exactly black, with the background color
                         # This is because the blur effect can leave some pixels that are very
-                        # close to black, but not exactly black.
-
-                        non_black_mask = np.any(pixels >= [2, 2, 2], axis=-1)
-                        self.bg_color_array[non_black_mask] = pixels[
-                            non_black_mask
-                        ]
-                        pixels = self.bg_color_array
-                        boundary_mask = np.zeros_like(non_black_mask)
-                        boundary_mask[:-1] = (
-                            non_black_mask[1:] != non_black_mask[:-1]
+                        # close to black, but not exactly black, and we want to replace those.
+                        # TODO: Figure out a better way to do this, since this is a bit of a hack
+                        black_threshold = 10
+                        # Find all pixels that have a combined R,G,B value of greater than than black_threshold
+                        # We will consider this to be a pixel that holds effect information
+                        effect_mask = np.any(
+                            pixels >= black_threshold, axis=-1
                         )
-                        boundary_mask[1:] |= (
-                            non_black_mask[:-1] != non_black_mask[1:]
-                        )
-
-                        # Blur the boundary pixels
-                        # Check if there are any boundary pixels
-                        if np.any(boundary_mask):
-                            kernel = _gaussian_kernel1d(1, 0, len(pixels))
-                            blurred_pixels = np.zeros_like(pixels)
-                            blurred_pixels[:, 0] = np.convolve(
-                                pixels[:, 0], kernel, mode="same"
-                            )  # R
-                            blurred_pixels[:, 1] = np.convolve(
-                                pixels[:, 1], kernel, mode="same"
-                            )  # G
-                            blurred_pixels[:, 2] = np.convolve(
-                                pixels[:, 2], kernel, mode="same"
-                            )  # B
-
-                            # Apply the boundary mask to the blurred pixels
-                            pixels[boundary_mask] = blurred_pixels[
-                                boundary_mask
-                            ]
+                        # apply the effect_mask to the background color array
+                        bg_color_array[effect_mask] = pixels[effect_mask]
+                        # Set the pixels to the background color array
+                        # which now contains the effect pixels and the background color
+                        pixels = bg_color_array
 
                 # If the configured blur is greater than 0 and pixel_count > 3, apply blur
                 # The matrix math requires > 3 pixels to work properly
