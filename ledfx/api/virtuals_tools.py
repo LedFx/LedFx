@@ -125,18 +125,27 @@ class VirtualsToolsEndpoint(RestEndpoint):
         if tool == "copy":
             # copy the config of the specified virtual instance to all virtuals listed in the target payload
             target = data.get("target")
+            # test if target is none or not a list
+
             if target is None:
                 return await self.invalid_request(
                     "Required attribute for copy, target was not provided"
                 )
+            if type(target) is not list:
+                return await self.invalid_request(
+                    "Required attribute for copy, target must be a list"
+                )
             updated = 0
+            if virtual.active_effect is None:
+                return await self.invalid_request(
+                    "Virtual copy failed, no active effect on source virtual"
+                )
+            effect = virtual.active_effect
             for dest_virtual in target:
                 dest_virtual = self._ledfx.virtuals.get(dest_virtual)
                 if dest_virtual is None:
                     continue
-                # only copy the effect type and effect config
-                dest_virtual.config["effect_type"] = virtual.config["effect_type"]
-                dest_virtual.config["effect_config"] = virtual.config["effect_config"]
+                dest_virtual.set_effect(effect)
                 updated += 1
             
             if updated > 0:
