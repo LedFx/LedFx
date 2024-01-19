@@ -12,15 +12,20 @@ from ledfx.utils import currently_frozen
 _LOGGER = logging.getLogger(__name__)
 
 # Load the prod.env - this does not exist by default, and will thus be false when run from source
-extDataDir = os.getcwd()
+extDataDir = os.path.dirname(os.path.realpath(__file__))
+
 if currently_frozen():
     extDataDir = sys._MEIPASS
-load_dotenv(dotenv_path=os.path.join(extDataDir, "prod.env"))
+    load_dotenv(dotenv_path=os.path.join(extDataDir, "prod.env"))
+else:
+    parent_dir = os.path.dirname(extDataDir)
+    load_dotenv(dotenv_path=os.path.join(parent_dir, "prod.env"))
 
 
 is_release = os.getenv("IS_RELEASE", "false").lower()
 
 if is_release == "false":
+    _LOGGER.debug("Running in development mode.")
     sentry_dsn = "https://b192934eebd517c86bf7e9c512b3888a@o482797.ingest.sentry.io/4506350241841152"
     sample_rate = 1
 
@@ -37,6 +42,7 @@ if is_release == "false":
         _LOGGER.warning(f"Failed to get git commit hash: {e}")
     release = f"ledfx@{PROJECT_VERSION}-{commit_hash}"
 else:
+    _LOGGER.debug("Running in production mode.")
     # production / release behaviour due to injection of "prod" or anything really into ENVIRONMENT env variable
     sentry_dsn = "https://dc6070345a8dfa1f2f24433d16f7a133@o482797.ingest.sentry.io/4506350233321472"
     sample_rate = 0
