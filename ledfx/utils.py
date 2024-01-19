@@ -18,7 +18,16 @@ from abc import ABC
 from collections import deque
 from collections.abc import MutableMapping
 from functools import lru_cache
+from importlib import metadata
 from itertools import chain
+from platform import (
+    processor,
+    python_build,
+    python_implementation,
+    python_version,
+    release,
+    system,
+)
 
 # from asyncio import coroutines, ensure_future
 from subprocess import PIPE, Popen
@@ -1350,6 +1359,47 @@ def generate_defaults(ledfx_presets, ledfx_effects, effect_id):
 
     default.update(presets)
     return default
+
+
+def log_packages():
+    _LOGGER.debug(f"{system()} : {release()} : {processor()}")
+    _LOGGER.debug(
+        f"{python_version()} : {python_build()} : {python_implementation()}"
+    )
+    _LOGGER.debug("Packages")
+    dists = list(metadata.distributions())
+    dists.sort(key=lambda x: x.metadata["name"])
+    for dist in dists:
+        _LOGGER.debug(f"{dist.metadata['name']} : {dist.version}")
+
+
+def is_package_installed(package_name):
+    """
+    Check if a Python package is installed.
+
+    Args:
+        package_name (str): The name of the package to check.
+
+    Returns:
+        bool: True if the package is installed, False otherwise.
+    """
+    try:
+        metadata.distribution(package_name)
+        return True
+    except ModuleNotFoundError:
+        return False
+
+
+def check_optional_dependencies():
+    """
+    Check for optional dependencies and log if they are not installed.
+    """
+    dependencies = ["psutil", "python-mbedtls"]
+    for dependency in dependencies:
+        if is_package_installed(dependency):
+            _LOGGER.info(f"Optional dependency '{dependency}' installed.")
+        else:
+            _LOGGER.info(f"Optional dependency '{dependency}' not installed.")
 
 
 class PerformanceAnalysis:
