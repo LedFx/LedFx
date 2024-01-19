@@ -15,7 +15,7 @@ _LOGGER = logging.getLogger(__name__)
 extDataDir = os.path.dirname(os.path.realpath(__file__))
 
 if currently_frozen():
-    extDataDir = sys._MEIPASS    
+    extDataDir = sys._MEIPASS
     load_dotenv(dotenv_path=os.path.join(extDataDir, "prod.env"))
 else:
     parent_dir = os.path.dirname(extDataDir)
