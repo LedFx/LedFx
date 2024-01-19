@@ -1,12 +1,21 @@
 import logging
 import os
+import sys
 
 import sentry_sdk
+from dotenv import load_dotenv
 from sentry_sdk.integrations.aiohttp import AioHttpIntegration
 
 from ledfx.consts import PROJECT_VERSION
+from ledfx.utils import currently_frozen
 
 _LOGGER = logging.getLogger(__name__)
+
+# Load the prod.env - this does not exist by default, and will thus be false when run from source
+extDataDir = os.getcwd()
+if currently_frozen():
+    extDataDir = sys._MEIPASS
+load_dotenv(dotenv_path=os.path.join(extDataDir, "prod.env"))
 
 
 is_release = os.getenv("IS_RELEASE", "false").lower()
@@ -33,9 +42,11 @@ else:
     sample_rate = 0
     release = f"ledfx@{PROJECT_VERSION}"
 
-_LOGGER.info(
-    f"Sentry config\ndsn first ten: {sentry_dsn[8:18]}\nsample_rate: {sample_rate}\nrelease: {release}"
-)
+_LOGGER.info("Sentry Configuration:")
+_LOGGER.info(f"DSN (first ten): {sentry_dsn[8:18]}")
+_LOGGER.info(f"Sample rate: {sample_rate}")
+_LOGGER.info(f"LedFx release: {release}")
+
 sentry_sdk.init(
     sentry_dsn,
     traces_sample_rate=sample_rate,
