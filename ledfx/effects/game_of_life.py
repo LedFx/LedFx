@@ -118,7 +118,7 @@ class GameOfLifeVisualiser(Twod, GradientEffect):
 
         self.check_board_health(self.current_time)
         self.step_board_if_time_elapsed(self.current_time)
-        self.update_image_with_board_fast()
+        self.update_image_with_board()
 
     def check_board_health(self, current_time):
         """
