@@ -8,21 +8,13 @@ class MagnitudeAudioEffect(AudioReactiveEffect, GradientEffect):
     NAME = "Magnitude"
     CATEGORY = "Classic"
 
-    _power_funcs = {
-        "Beat": "beat_power",
-        "Bass": "bass_power",
-        "Lows (beat+bass)": "lows_power",
-        "Mids": "mids_power",
-        "High": "high_power",
-    }
-
     CONFIG_SCHEMA = vol.Schema(
         {
             vol.Optional(
                 "frequency_range",
                 description="Frequency range for the beat detection",
                 default="Lows (beat+bass)",
-            ): vol.In(list(_power_funcs.keys())),
+            ): vol.In(list(AudioReactiveEffect.POWER_FUNCS_MAPPING.keys())),
         }
     )
 
@@ -30,7 +22,9 @@ class MagnitudeAudioEffect(AudioReactiveEffect, GradientEffect):
         self.magnitude = 0
 
     def config_updated(self, config):
-        self.power_func = self._power_funcs[self._config["frequency_range"]]
+        self.power_func = self.POWER_FUNCS_MAPPING[
+            self._config["frequency_range"]
+        ]
 
     def audio_data_updated(self, data):
         self.magnitude = getattr(data, self.power_func)()

@@ -8,7 +8,6 @@ from functools import cached_property
 
 import numpy as np
 import voluptuous as vol
-import zeroconf
 
 from ledfx.color import parse_color
 from ledfx.effects import DummyEffect
@@ -211,7 +210,7 @@ class Virtual:
             or (start_pixel > end_pixel)
             or (end_pixel >= device.pixel_count)
         ):
-            msg = f"Invalid segment pixels: ({start_pixel}, {end_pixel}). Device '{self.name}' valid pixels between (0, {self.pixel_count-1})"
+            msg = f"Invalid segment pixels: ({start_pixel}, {end_pixel}). Device '{self.name}' valid pixels between (0, {self.pixel_count - 1})"
             valid = False
 
         if not valid:
@@ -618,7 +617,9 @@ class Virtual:
 
         # self.thread_function()
 
-        self._thread = threading.Thread(target=self.thread_function)
+        self._thread = threading.Thread(
+            name=f"Virtual: {self.id}", target=self.thread_function
+        )
         self._thread.start()
         self._ledfx.events.fire_event(VirtualPauseEvent(self.id))
         # self._task = self._ledfx.loop.create_task(self.thread_function())
@@ -897,23 +898,25 @@ class Virtual:
                 diff = abs(_config["frequency_max"] - _config["frequency_min"])
                 if diff < MIN_FREQ_DIFFERENCE:
                     _config["frequency_max"] += diff
-                # if they're changed, clear some cached properties
-                # so the changes take effect
-                if (
-                    (
+
+                if self._active_effect is not None:
+                    # if they're changed, clear some cached properties
+                    # so the changes take effect
+                    if (
                         _config["frequency_min"]
                         != self._config["frequency_min"]
                         or _config["frequency_max"]
                         != self._config["frequency_max"]
-                    )
-                    and (self._active_effect is not None)
-                    and (
+                    ) and (
                         hasattr(
                             self._active_effect, "clear_melbank_freq_props"
                         )
-                    )
-                ):
-                    self._active_effect.clear_melbank_freq_props()
+                    ):
+                        self._active_effect.clear_melbank_freq_props()
+
+                    if _config["rows"] != self._config["rows"]:
+                        if hasattr(self._active_effect, "set_init"):
+                            self._active_effect.set_init()
 
         setattr(self, "_config", _config)
 
@@ -940,7 +943,6 @@ class Virtuals:
 
         self._ledfx = ledfx
         self._ledfx.events.add_listener(cleanup_effects, Event.LEDFX_SHUTDOWN)
-        self._zeroconf = zeroconf.Zeroconf()
         self._virtuals = {}
 
     def create_from_config(self, config):

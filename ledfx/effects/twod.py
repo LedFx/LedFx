@@ -13,9 +13,15 @@ _LOGGER = logging.getLogger(__name__)
 
 @Effect.no_registration
 class Twod(AudioReactiveEffect):
-    start_time = timeit.default_timer()
+    EFFECT_START_TIME = timeit.default_timer()
     HIDDEN_KEYS = ["background_brightness", "mirror", "flip", "blur"]
-    ADVANCED_KEYS = ["dump", "diag", "test"]
+    ADVANCED_KEYS = [
+        "dump",
+        "diag",
+        "test",
+        "flip horizontal",
+        "flip vertical",
+    ]
 
     CONFIG_SCHEMA = vol.Schema(
         {
@@ -70,10 +76,10 @@ class Twod(AudioReactiveEffect):
         self.current_pixel = 0
         self.last_cycle_time = 20
         self.bar = 0
-        # TODO: Changes to this value from virtual config are only picked up
-        # on change of effect
         self.t_height = self._virtual.config["rows"]
         self.t_width = self.pixel_count // self.t_height
+        # initialise here so inherited can assume it exists
+        self.current_time = timeit.default_timer()
         self.init = True
 
     def config_updated(self, config):
@@ -101,10 +107,23 @@ class Twod(AudioReactiveEffect):
 
         self.init = True
 
+    def set_init(self):
+        """
+        Kick the init flag to True so that an effect can reconfigure itself
+        when running in its own context if it has a dependancy on the virtual
+        setting this flag keeps things atomic and ensures that the effect is not
+        reconfigured while it is being rendered or otherwise in use
+        """
+        self.init = True
+
     def do_once(self):
         # defer things that can't be done when pixel_count is not known
         # so therefore cannot be addressed in config_updated
-        self.init = False
+        # also triggered by config change in parent virtual
+        # presently only on row change
+
+        self.t_height = self._virtual.config["rows"]
+        self.t_width = self.pixel_count // self.t_height
 
         if self.rotate == 1 or self.rotate == 3:
             # swap width and height for render
@@ -114,8 +133,7 @@ class Twod(AudioReactiveEffect):
             self.r_width = self.t_width
             self.r_height = self.t_height
 
-        # initialise here so inherited can assume it exists
-        self.start = timeit.default_timer()
+        self.init = False
 
     def image_to_pixels(self):
         # image should be the right size to map in, at this point
@@ -142,10 +160,9 @@ class Twod(AudioReactiveEffect):
         self.pixels[:copy_length, :] = rgb_array[:copy_length, :]
 
     def log_sec(self):
-        self.start = timeit.default_timer()
         result = False
         if self.diag:
-            nowint = int(self.start)
+            nowint = int(self.current_time)
             # if now just rolled over a second boundary
             if nowint != self.lasttime:
                 self.fps = self.frame
@@ -158,7 +175,7 @@ class Twod(AudioReactiveEffect):
 
     def try_log(self):
         end = timeit.default_timer()
-        r_time = end - self.start
+        r_time = end - self.current_time
         self.r_total += r_time
         if self.log is True:
             if self.fps > 0:
@@ -166,7 +183,7 @@ class Twod(AudioReactiveEffect):
             else:
                 r_avg = 0.0
             _LOGGER.info(
-                f"FPS {self.fps} Render:{r_avg:0.6f} Cycle: {(end - self.last):0.6f} Sleep: {(self.start - self.last):0.6f}"
+                f"FPS {self.fps} Render:{r_avg:0.6f} Cycle: {(end - self.last):0.6f} Sleep: {(self.current_time - self.last):0.6f}"
             )
             self.r_total = 0.0
         self.last = end
@@ -213,8 +230,10 @@ class Twod(AudioReactiveEffect):
         pass
 
     def render(self):
+        self.current_time = timeit.default_timer()
         if self.init:
             self.do_once()
+        # Update the time every frame
 
         self.log_sec()
 

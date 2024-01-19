@@ -110,3 +110,49 @@ Windows have output devices and input devices. LedFx works processing an input d
 - And if you want to still listen to the audio on the digital output, you can use the set the "Listen" device on the "Recording" input (right-click -> properties):
 
 .. image:: ./_static/directing_audio_win10_4.png
+
+
+Webaudio
+=======
+.. warning::
+
+   This feature is still in alpha.
+
+.. rubric:: Enabling
+
+- Go to settings and enter "HackedByBlade!" and a window saying "dev mode activated" should appear.
+
+- Then in the same bar enter "BladeAlpha" and then click on the UI setting.
+
+- In the UI settings first enable expert mode and then you should see alpha mode, which you need to toggle on.
+
+- Open the alpha settings under client features and enable webaudio setting.
+
+.. rubric:: Usage
+
+- When your main LedFx instance (the one that is connected to all lights) is running, open another instance on another device (make sure webaudio is enabled on new instance).
+
+- In settings, under core settings, expand audio and you should see an icon that looks like this:
+
+.. image:: ./_static/webaudio_icon.png
+
+- Click on that icon and a small window should appear where you can enter the name for your device. Enter the name and click on the check mark.
+
+- In your browser you should get a pop-up which asks you to give permission to the site to use your microphone/other audio input, confirm it.
+
+- Refresh the webpage of the main LedFx instance and in the audio settings select your newly created device. Now your lights should be visualized from the audio of the other device.
+
+.. note::
+
+   If audio is not being sent or you were not able to allow microphone permission, it may be due to running LedFx without HTTPS.
+   In this case the solution is either to run LedFx as HTTPS or to allow media devices in your browser to be accessed without HTTPS. To fix this:
+
+   - Firefox: https://stackoverflow.com/questions/60957829/navigator-mediadevices-is-undefined/66605018#66605018
+
+   - Chrome: https://sites.google.com/a/chromium.org/dev/Home/chromium-security/deprecating-powerful-features-on-insecure-origins (specifically "Testing Powerful Features" section)
+
+.. rubric:: Type Setting
+
+When creating a new webaudio device, you may see, below the name entering field, an ability to choose between ws-v1 and ws-v2. Unless something does not work, you should always use ws-v2.
+The reason for that is ws-v2 using significantly less bandwidth. The ws-v1 setting sends audio data (which is float type) as plain text, meaning that for each number a byte is sent (can be up to 6 bytes per number), even though
+the audio data being sampled is only 16-bit. The ws-v2 setting instead sends the audio data as base64, which is a binary data encoding method, greatly reducing the used bandwidth.

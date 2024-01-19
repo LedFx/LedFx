@@ -19,6 +19,9 @@ class VirtualsEndpoint(RestEndpoint):
     async def get(self) -> web.Response:
         """
         Get info of all virtuals
+
+        Returns:
+            web.Response: The response containing the info of all virtuals
         """
         response = {"status": "success", "virtuals": {}}
         response["paused"] = self._ledfx.virtuals._paused
@@ -33,7 +36,7 @@ class VirtualsEndpoint(RestEndpoint):
                 "active": virtual.active,
                 "effect": {},
             }
-            # TODO: protect from DummyEffect, future consider side effects
+            # Protect from DummyEffect
             if virtual.active_effect and not isinstance(
                 virtual.active_effect, DummyEffect
             ):
@@ -47,7 +50,10 @@ class VirtualsEndpoint(RestEndpoint):
 
     async def put(self) -> web.Response:
         """
-        Toggle "paused" state of all virtuals
+        Get info of all virtuals
+
+        Returns:
+            web.Response: The response containing the paused virtuals.
         """
         self._ledfx.virtuals.pause_all()
 
@@ -55,12 +61,17 @@ class VirtualsEndpoint(RestEndpoint):
             "status": "success",
             "paused": self._ledfx.virtuals._paused,
         }
+        return await self.bare_request_success(response)
 
-        return web.json_response(data=response, status=200)
-
-    async def post(self, request) -> web.Response:
+    async def post(self, request: web.Request) -> web.Response:
         """
         Create a new virtual or update config of an existing one
+
+        Args:
+            request (web.Request): The request object containing the virtual `config` dict.
+
+        Returns:
+            web.Response: The response indicating the success or failure of the deletion.
         """
         try:
             data = await request.json()
@@ -69,23 +80,19 @@ class VirtualsEndpoint(RestEndpoint):
 
         virtual_config = data.get("config")
         if virtual_config is None:
-            response = {
-                "status": "failed",
-                "reason": 'Required attribute "config" was not provided',
-            }
-            return web.json_response(data=response, status=400)
-
+            return await self.invalid_request(
+                'Required attribute "config" was not provided'
+            )
+        # TODO: Validate the config schema against the virtuals config schema.
         virtual_id = data.get("id")
 
         # Update virtual config if id exists
         if virtual_id is not None:
             virtual = self._ledfx.virtuals.get(virtual_id)
             if virtual is None:
-                response = {
-                    "status": "failed",
-                    "reason": f"Virtual with ID {virtual_id} not found",
-                }
-                return web.json_response(data=response, status=400)
+                return await self.invalid_request(
+                    f"Virtual with ID {virtual_id} not found"
+                )
             # Update the virtual's configuration
             virtual.config = virtual_config
             _LOGGER.info(
@@ -101,7 +108,7 @@ class VirtualsEndpoint(RestEndpoint):
                 "status": "success",
                 "payload": {
                     "type": "success",
-                    "reason": f"Updated Virtual {virtual.id}",
+                    "reason": f"Updated Virtual {virtual.name}",
                 },
                 "virtual": {
                     "config": virtual.config,
@@ -153,5 +160,4 @@ class VirtualsEndpoint(RestEndpoint):
             config=self._ledfx.config,
             config_dir=self._ledfx.config_dir,
         )
-
-        return web.json_response(data=response, status=200)
+        return await self.bare_request_success(response)

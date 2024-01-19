@@ -1,5 +1,6 @@
 import logging
 import queue
+import threading
 import time
 from collections import deque
 from functools import cached_property, lru_cache
@@ -33,6 +34,7 @@ class AudioInputSource:
     _volume = -90
     _volume_filter = ExpFilter(-90, alpha_decay=0.99, alpha_rise=0.99)
     _subscriber_threshold = 0
+    _timer = None
 
     @staticmethod
     def device_index_validator(val):
@@ -133,10 +135,14 @@ class AudioInputSource:
         self._ledfx = ledfx
         self.update_config(config)
 
-        def deactivate(e):
-            self.deactivate()
+        def shutdown_event(e):
+            # We give the rest of LedFx a second to shutdown before we deactivate the audio subsystem.
+            # This is to prevent LedFx hanging on shutdown if the audio subsystem is still running while
+            # effects are being unloaded. This is a bit hacky but it works.
+            self._timer = threading.Timer(0.5, self.check_and_deactivate)
+            self._timer.start()
 
-        self._ledfx.events.add_listener(deactivate, Event.LEDFX_SHUTDOWN)
+        self._ledfx.events.add_listener(shutdown_event, Event.LEDFX_SHUTDOWN)
 
     def update_config(self, config):
         """Deactivate the audio, update the config, the reactivate"""
@@ -317,16 +323,33 @@ class AudioInputSource:
     def subscribe(self, callback):
         """Registers a callback with the input source"""
         self._callbacks.append(callback)
-
         if len(self._callbacks) > 0 and not self._is_activated:
             self.activate()
+        if self._timer is not None:
+            self._timer.cancel()
+            self._timer = None
 
     def unsubscribe(self, callback):
         """Unregisters a callback with the input source"""
         if callback in self._callbacks:
             self._callbacks.remove(callback)
+        if (
+            len(self._callbacks) <= self._subscriber_threshold
+            and self._is_activated
+        ):
+            if self._timer is not None:
+                self._timer.cancel()
+            self._timer = threading.Timer(5.0, self.check_and_deactivate)
+            self._timer.start()
 
-        if len(self._callbacks) <= self._subscriber_threshold:
+    def check_and_deactivate(self):
+        if self._timer is not None:
+            self._timer.cancel()
+        self._timer = None
+        if (
+            len(self._callbacks) <= self._subscriber_threshold
+            and self._is_activated
+        ):
             self.deactivate()
 
     def get_device_index_by_name(self, device_name: str):
@@ -747,6 +770,16 @@ class AudioReactiveEffect(Effect):
     subclasses. This can be expanded to do the common r/g/b filters.
     """
 
+    # this can be used by inheriting classes for power func selection in schema
+    # see magnitude or scan effect for examples
+    POWER_FUNCS_MAPPING = {
+        "Beat": "beat_power",
+        "Bass": "bass_power",
+        "Lows (beat+bass)": "lows_power",
+        "Mids": "mids_power",
+        "High": "high_power",
+    }
+
     def activate(self, channel):
         _LOGGER.info("Activating AudioReactiveEffect.")
         super().activate(channel)
@@ -892,4 +925,14 @@ class AudioReactiveEffect(Effect):
         mel_length = len(melbank)
         splits = tuple(map(lambda i: int(i * mel_length), [0.2, 0.5]))
 
+        # Check for NaN values in the melbank array
+        # Difficult to determine why this happens, but it seems to be related to
+        # the audio input device. If NaNs are present, replace them with 0
+        # TODO: Investigate why NaNs are present in the melbank array for some people/devices
+        if np.isnan(melbank).any():
+            _LOGGER.warning(
+                "NaN values detected in the melbank array and replaced with 0."
+            )
+            # Replace NaN values with 0
+            melbank = np.nan_to_num(melbank)
         return np.split(melbank, splits)

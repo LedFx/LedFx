@@ -1,10 +1,10 @@
 import logging
-import timeit
 
 import numpy as np
 import PIL.Image as Image
 import voluptuous as vol
 
+from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.gradient import GradientEffect
 from ledfx.effects.twod import Twod
 
@@ -20,21 +20,13 @@ class Plasmawled(Twod, GradientEffect):
     HIDDEN_KEYS = Twod.HIDDEN_KEYS + ["background_color", "gradient_roll"]
     ADVANCED_KEYS = Twod.ADVANCED_KEYS + []
 
-    _power_funcs = {
-        "Beat": "beat_power",
-        "Bass": "bass_power",
-        "Lows (beat+bass)": "lows_power",
-        "Mids": "mids_power",
-        "High": "high_power",
-    }
-
     CONFIG_SCHEMA = vol.Schema(
         {
             vol.Optional(
                 "frequency_range",
                 description="Frequency range for the beat detection",
                 default="Lows (beat+bass)",
-            ): vol.In(list(_power_funcs.keys())),
+            ): vol.In(list(AudioReactiveEffect.POWER_FUNCS_MAPPING.keys())),
             vol.Optional(
                 "speed",
                 description="Speed multiplier",
@@ -94,15 +86,17 @@ class Plasmawled(Twod, GradientEffect):
 
     def config_updated(self, config):
         super().config_updated(config)
-        self._speed = self._config["speed"]
+        self.configured_speed = self._config["speed"]
         self.h_stretch = self._config["h_stretch"]
         self.v_stretch = self._config["v_stretch"]
         self.speedx = self._config["speed x"]
         self.sizex = self._config["size x"]
-        self.power_func = self._power_funcs[self._config["frequency_range"]]
+        self.power_func = self.POWER_FUNCS_MAPPING[
+            self._config["frequency_range"]
+        ]
         self.speedb = 0
         self.sizeb = 0
-        self.time = 0
+        self.time_modifier = 0
 
     def do_once(self):
         super().do_once()
@@ -121,12 +115,12 @@ class Plasmawled(Twod, GradientEffect):
         data = np.zeros((self.r_height, self.r_width), dtype=np.uint8)
 
         if self.speedx > 0.0:
-            self.time += self.speedb
-            time_val = int(self.time * 1000)
+            self.time_modifier += self.speedb
+            time_val = int(self.time_modifier * 1000)
         else:
-            time_val = int((timeit.default_timer() - self.start_time) * 1000)
+            time_val = int(self.current_time * 1000)
 
-        a = time_val / (self._speed + 1)
+        a = time_val / (self.configured_speed + 1)
 
         h_stretch = max(
             0.01, self.h_stretch - (self.sizeb * self.h_stretch / 3)

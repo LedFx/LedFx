@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
 
 env:
-  DEFAULT_PYTHON: 3.8
+  DEFAULT_PYTHON: 3.12
 
 jobs:
   build-n-publish:
@@ -24,16 +24,24 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.DEFAULT_PYTHON }}
-      - name: Install build dependencies
+      - name: Install Poetry
         run: |
-          sudo apt-get update && sudo apt-get install -y \
-          gcc libatlas3-base portaudio19-dev
+          curl -sSL https://install.python-poetry.org | python3 -
+      - name: Create prod.env
+        run: |
+          echo "IS_RELEASE = true" >> prod.env
       - name: Build a binary wheel and source tarball
         run: |
-          python -m pip install --user -U pip wheel setuptools
-          python setup.py sdist bdist_wheel
+          poetry build
+      - name: Publish distribution to Test PyPI
+        if: github.event_name == 'workflow_dispatch'
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          user: __token__
+          password: ${{ secrets.PYPI_TEST_API_TOKEN }}
+          repository-url: https://test.pypi.org/legacy/
       - name: Publish distribution to PyPI
-        # if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
+        if: github.event_name == 'release' && startsWith(github.ref, 'refs/tags')
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           user: __token__

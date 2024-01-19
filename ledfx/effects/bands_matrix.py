@@ -66,7 +66,7 @@ class BandsMatrixAudioEffect(AudioReactiveEffect, GradientEffect):
                 out_split[i] = np.flip(out_split[i], axis=0)
 
         if self.flip_horizontal:
-            out_split = np.flip(out_split, axis=0)
+            out_split.reverse()
 
         self.pixels = np.vstack(out_split)
         self.roll_gradient()

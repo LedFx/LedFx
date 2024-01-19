@@ -1,5 +1,7 @@
 import asyncio
 import concurrent.futures
+import csv
+import datetime
 import importlib
 import inspect
 import ipaddress
@@ -16,10 +18,20 @@ from abc import ABC
 from collections import deque
 from collections.abc import MutableMapping
 from functools import lru_cache
+from importlib import metadata
 from itertools import chain
+from platform import (
+    processor,
+    python_build,
+    python_implementation,
+    python_version,
+    release,
+    system,
+)
 
 # from asyncio import coroutines, ensure_future
 from subprocess import PIPE, Popen
+from typing import Callable
 
 import numpy as np
 import PIL.Image as Image
@@ -1216,9 +1228,9 @@ def extract_positive_integers(s):
     return [int(num) for num in numbers if int(num) >= 0]
 
 
-def remove_values_above_limit(numbers, limit):
-    # Keep only values that are less than or equal to the limit
-    return [num for num in numbers if num <= limit]
+def clip_at_limit(numbers, limit):
+    # Keep only values that are less than the limit
+    return [num for num in numbers if num < limit]
 
 
 def open_gif(gif_path):
@@ -1231,18 +1243,18 @@ def open_gif(gif_path):
     Returns:
         Image: PIL Image object or None if failed to open
     """
-    current_directory = os.path.dirname(__file__)
-    absolute_directory = os.path.abspath(current_directory)
-    _LOGGER.debug(
-        f"open_gif cur: {current_directory} abs: {absolute_directory}"
-    )
-
+    _LOGGER.info(f"Attempting to open GIF: {gif_path}")
     try:
         if gif_path.startswith("http://") or gif_path.startswith("https://"):
             with urllib.request.urlopen(gif_path) as url:
-                return Image.open(url)
+                gif = Image.open(url)
+                _LOGGER.info("GIF downloaded and opened.")
+                return gif
+
         else:
-            return Image.open(gif_path)  # Directly open for local files
+            gif = Image.open(gif_path)  # Directly open for local files
+            _LOGGER.info("GIF opened.")
+            return gif
     except Exception as e:
         _LOGGER.warning(f"Failed to open gif : {gif_path} : {e}")
         return None
@@ -1293,3 +1305,196 @@ def get_font(font_list, size):
         except OSError:
             continue
     raise RuntimeError("None of the fonts are available on the system.")
+
+
+def generate_default_config(ledfx_effects, effect_id):
+    return ledfx_effects.get_class(effect_id).get_combined_default_schema()
+
+
+def inject_missing_default_keys(presets, defaults):
+    """Inject missing keys from defaults into presets
+    This happens when static or user presets are defined and there are
+    new keys added to the effect config schema later
+    Args:
+        presets (dict): The current presets.
+        defaults (dict): The current defaults.
+    Returns:
+        dict: The updated presets.
+    """
+    for preset in presets.values():
+        default_preset = defaults["reset"]["config"]
+        for key, value in default_preset.items():
+            if key not in preset["config"]:
+                preset["config"][key] = value
+    return presets
+
+
+def generate_defaults(ledfx_presets, ledfx_effects, effect_id):
+    """Generate default presets for an effect.
+    appends effect class defaults to presets
+    This is done at run time, as defaults may not reference all effects
+    So we have to just deal with it when used
+
+    Args:
+        ledfx_presets (dict): The current presets.
+        ledfx_effects (dict): The current effects.
+        effect_id (str): The ID of the effect.
+
+    Returns:
+        dict: The default presets for the effect.
+    """
+    if effect_id in ledfx_presets.keys():
+        presets = ledfx_presets[effect_id]
+    else:
+        presets = {}
+
+    default = {
+        "reset": {
+            "config": generate_default_config(ledfx_effects, effect_id),
+            "name": "reset",
+        }
+    }
+
+    presets = inject_missing_default_keys(presets, default)
+
+    default.update(presets)
+    return default
+
+
+def log_packages():
+    _LOGGER.debug(f"{system()} : {release()} : {processor()}")
+    _LOGGER.debug(
+        f"{python_version()} : {python_build()} : {python_implementation()}"
+    )
+    _LOGGER.debug("Packages")
+    dists = list(metadata.distributions())
+    dists.sort(key=lambda x: x.metadata["name"])
+    for dist in dists:
+        _LOGGER.debug(f"{dist.metadata['name']} : {dist.version}")
+
+
+def is_package_installed(package_name):
+    """
+    Check if a Python package is installed.
+
+    Args:
+        package_name (str): The name of the package to check.
+
+    Returns:
+        bool: True if the package is installed, False otherwise.
+    """
+    try:
+        metadata.distribution(package_name)
+        return True
+    except ModuleNotFoundError:
+        return False
+
+
+def check_optional_dependencies():
+    """
+    Check for optional dependencies and log if they are not installed.
+    """
+    dependencies = ["psutil", "python-mbedtls"]
+    for dependency in dependencies:
+        if is_package_installed(dependency):
+            _LOGGER.info(f"Optional dependency '{dependency}' installed.")
+        else:
+            _LOGGER.info(f"Optional dependency '{dependency}' not installed.")
+
+
+class PerformanceAnalysis:
+    """
+    A class for comparing the performance of two functions.
+    """
+
+    @staticmethod
+    def compare_functions(
+        original_function: Callable,
+        optimized_function: Callable,
+        num_runs: int = 1000,
+    ):
+        """
+        Compare the execution time of two functions.
+
+        Parameters:
+        original_function (Callable): The original function to be compared.
+        optimized_function (Callable): The optimized function to be compared.
+        num_runs (int, optional): The number of times each function should be run. Defaults to 1000.
+
+        Returns:
+        None
+        """
+        original_time = PerformanceAnalysis._timeit_wrapper(
+            original_function, num_runs
+        )
+        optimized_time = PerformanceAnalysis._timeit_wrapper(
+            optimized_function, num_runs
+        )
+
+        if original_time < optimized_time:
+            faster_method = "Original"
+            percent_faster = (
+                (optimized_time - original_time) / original_time
+            ) * 100
+        else:
+            faster_method = "Optimized"
+            percent_faster = (
+                (original_time - optimized_time) / optimized_time
+            ) * 100
+
+        PerformanceAnalysis._write_to_csv(
+            num_runs,
+            faster_method,
+            original_time,
+            optimized_time,
+            percent_faster,
+        )
+
+    @staticmethod
+    def _timeit_wrapper(func: Callable, num_runs: int) -> float:
+        """
+        Time a function over a number of runs.
+
+        Args:
+            func (Callable): The function to be timed.
+            num_runs (int): The number of times to run the function.
+
+        Returns:
+            float: The average time taken to run the function.
+
+        """
+        return timeit.timeit(func, number=num_runs)
+
+    @staticmethod
+    def _write_to_csv(
+        num_runs: int,
+        faster_method: str,
+        original_time: float,
+        optimized_time: float,
+        percent_faster: float,
+    ):
+        """
+        Write the function comparison results to a CSV file.
+
+        Parameters:
+        - num_runs (int): The number of runs performed for the function comparison.
+        - faster_method (str): The name of the faster method being compared.
+        - original_time (float): The execution time of the original method.
+        - optimized_time (float): The execution time of the optimized method.
+        - percent_faster (float): The percentage improvement in execution time of the optimized method compared to the original method.
+        """
+        with open("performance_analysis.csv", mode="a", newline="") as file:
+            writer = csv.writer(file)
+            timestamp = datetime.datetime.now().strftime(
+                "%Y-%m-%d %H:%M:%S.%f"
+            )
+            writer.writerow(
+                [
+                    timestamp,
+                    num_runs,
+                    faster_method,
+                    original_time,
+                    optimized_time,
+                    f"{percent_faster}%",
+                ]
+            )
