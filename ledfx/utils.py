@@ -1394,7 +1394,7 @@ def check_optional_dependencies():
     """
     Check for optional dependencies and log if they are not installed.
     """
-    dependencies = ["psutil", "mbedtls", "bokeh"]
+    dependencies = ["psutil", "python-mbedtls"]
     for dependency in dependencies:
         if is_package_installed(dependency):
             _LOGGER.info(f"Optional dependency '{dependency}' installed.")
