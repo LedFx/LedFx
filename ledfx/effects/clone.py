@@ -73,8 +73,8 @@ class Clone(Twod):
             return
 
         if self.sct is None:
-            self.sct = mss.mss()
             try:
+                self.sct = mss.mss()
                 # set up a grab dict to be used in the grab call
                 mon = self.sct.monitors[self.screen]
                 self.grab = {
