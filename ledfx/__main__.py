@@ -4,7 +4,7 @@ Entry point for LedFx.
 To run this script for development purposes use:
 
     poetry install
-    ledfx
+    poetry run ledfx
 
 """
 
@@ -24,7 +24,12 @@ except ImportError:
 import ledfx.config as config_helpers
 from ledfx.consts import PROJECT_VERSION
 from ledfx.core import LedFxCore
-from ledfx.utils import currently_frozen, get_icon_path
+from ledfx.utils import (
+    check_optional_dependencies,
+    currently_frozen,
+    get_icon_path,
+    log_packages,
+)
 
 
 def reset_logging():
@@ -194,29 +199,6 @@ def parse_args():
     return parser.parse_args()
 
 
-def log_packages():
-    from platform import (
-        processor,
-        python_build,
-        python_implementation,
-        python_version,
-        release,
-        system,
-    )
-
-    from pkg_resources import working_set
-
-    _LOGGER.debug(f"{system()} : {release()} : {processor()}")
-    _LOGGER.debug(
-        f"{python_version()} : {python_build()} : {python_implementation()}"
-    )
-    _LOGGER.debug("Packages")
-    dists = [d for d in working_set]
-    dists.sort(key=lambda x: x.project_name)
-    for dist in dists:
-        _LOGGER.debug(f"{dist.project_name} : {dist.version}")
-
-
 def main():
     """Main entry point allowing external calls"""
     args = parse_args()
@@ -224,6 +206,9 @@ def main():
     setup_logging(args.loglevel, config_dir=args.config)
     config_helpers.load_logger()
 
+    if _LOGGER.isEnabledFor(logging.DEBUG):
+        log_packages()
+    check_optional_dependencies()
     # Set some process priority optimisations
     if have_psutil:
         p = psutil.Process(os.getpid())
@@ -262,7 +247,6 @@ def main():
         except Exception as Error:
             msg = f"Error: Unable to virtual tray icon. Shutting down. Error: {Error}"
             _LOGGER.critical(msg)
-            raise Exception(msg)
             sys.exit(0)
 
         from PIL import Image
@@ -274,9 +258,6 @@ def main():
         )
     else:
         icon = None
-
-    if _LOGGER.isEnabledFor(logging.DEBUG):
-        log_packages()
 
     if icon:
         icon.run(setup=entry_point)
