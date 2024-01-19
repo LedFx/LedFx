@@ -1320,7 +1320,7 @@ six = "*"
 name = "python-mbedtls"
 version = "2.8.0"
 description = "hash, hmac, RSA, ECC, X.509, TLS, DTLS, handshakes, and secrets with an mbed TLS back end"
-optional = false
+optional = true
 python-versions = "*"
 files = [
     {file = "python-mbedtls-2.8.0.tar.gz", hash = "sha256:c3970eb1a2a81368f18ca1c990768213735ea8a450f8b94aae7c4f25180f1b74"},
@@ -1943,7 +1943,10 @@ files = [
 async-timeout = {version = ">=3.0.0", markers = "python_version < \"3.11\""}
 ifaddr = ">=0.1.7"
 
+[extras]
+hue = ["python-mbedtls"]
+
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "1884e7f4f1452ddbfba19aabc96a7f37560f74915dda7fdd9a8fedfad9231fc1"
+content-hash = "362797b87f945e8e0fe74ba85170f3675b6a0f3bb154a6216dead13ce283c6d2"
