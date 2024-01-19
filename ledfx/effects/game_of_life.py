@@ -45,20 +45,24 @@ class GameOfLifeVisualiser(Twod, GradientEffect):
 
     history = 5
     # need history plus one colors
-    dead_colors = [(180, 0, 0),
-                   (120, 0, 0),
-                   (60, 0, 0),
-                   (30, 0, 0),
-                   (15, 0, 0),
-                   (0, 0, 0)]
+    dead_colors = [
+        (180, 0, 0),
+        (120, 0, 0),
+        (60, 0, 0),
+        (30, 0, 0),
+        (15, 0, 0),
+        (0, 0, 0),
+    ]
 
     # need history plus one colors
-    live_colors = [(0, 180, 0),
-                   (0, 255, 0),
-                   (255, 255, 255),
-                   (200, 200, 200),
-                   (150, 150, 150),
-                   (100, 100, 100)]
+    live_colors = [
+        (0, 180, 0),
+        (0, 255, 0),
+        (255, 255, 255),
+        (200, 200, 200),
+        (150, 150, 150),
+        (100, 100, 100),
+    ]
 
     CONFIG_SCHEMA = vol.Schema(
         {
@@ -100,7 +104,9 @@ class GameOfLifeVisualiser(Twod, GradientEffect):
 
     def do_once(self):
         super().do_once()
-        self.game = GameOfLife(height=self.r_height, width=self.r_width, depth=self.history)
+        self.game = GameOfLife(
+            height=self.r_height, width=self.r_width, depth=self.history
+        )
 
     def audio_data_updated(self, data):
         if data.volume_beat_now():
@@ -149,7 +155,7 @@ class GameOfLifeVisualiser(Twod, GradientEffect):
         if current_time - self.last_game_step >= (1 / self.base_game_speed):
             self.game.step_board()
             self.last_game_step = current_time
-    
+
     def update_image_with_board(self):
         """
         Updates the image with the current game board.
@@ -157,19 +163,24 @@ class GameOfLifeVisualiser(Twod, GradientEffect):
         Args:
             None
 
-        """ 
+        """
         pixels = self.matrix.load()
         # TODO: Vectorize this loop
         for y in range(self.matrix.height):
             for x in range(self.matrix.width):
                 if self.game.board[y, x]:  # Cell is alive
                     alive_for = sum(
-                        1 for hist in reversed(self.game.board_history) if
-                        hist[y, x])
+                        1
+                        for hist in reversed(self.game.board_history)
+                        if hist[y, x]
+                    )
                     pixels[x, y] = self.live_colors[alive_for]
                 else:  # Cell is dead
-                    dead_for = sum(1 for hist in reversed(self.game.board_history) if
-                                   not hist[y, x])
+                    dead_for = sum(
+                        1
+                        for hist in reversed(self.game.board_history)
+                        if not hist[y, x]
+                    )
                     pixels[x, y] = self.dead_colors[dead_for]
 
 
