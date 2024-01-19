@@ -21,7 +21,7 @@ jobs:
       - name: Check out code from GitHub
         uses: actions/checkout@v4
       - name: Set up Python ${{ env.DEFAULT_PYTHON }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ env.DEFAULT_PYTHON }}
       - name: Install Poetry
