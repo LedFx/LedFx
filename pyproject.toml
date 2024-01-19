@@ -55,8 +55,12 @@ mss = "~=9.0.1"
 setuptools = "~=69.0.3"
 uvloop = {version = ">=0.16.0", markers = "sys_platform != 'win32'"}
 rpi-ws281x = {version = ">=4.3.0", platform = "linux"}
-python-mbedtls = {version = "^2.8.0", markers = "(sys_platform == 'linux' and platform_machine != 'aarch64' and platform_machine != 'armv7l') or sys_platform == 'win32' or sys_platform == 'darwin'"}
+python-mbedtls = {version = "^2.8.0", markers = "(sys_platform == 'linux' and platform_machine != 'aarch64' and platform_machine != 'armv7l') or sys_platform == 'win32' or sys_platform == 'darwin'", optional = true}
 stupidartnet = "^1.4.0"
+
+
+[tool.poetry.extras]
+hue = ["python-mbedtls"]
 
 [tool.poetry.group.dev]
 optional = true
