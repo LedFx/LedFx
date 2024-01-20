@@ -1,0 +1,20 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Cleanup Debug Config Folder",
+            "detail": "Remove the debug_config folder to ensure a clean start",
+            "type": "shell",
+            "command": "rm -rf ${workspaceFolder}/debug_config",
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "silent",
+                "focus": false,
+                "close": true,
+            },
+            "windows": {
+                "command": "Remove-Item -Recurse -Force '${workspaceFolder}\\debug_config'"
+            },
+        }
+    ]
+}
