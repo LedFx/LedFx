@@ -1498,35 +1498,3 @@ class PerformanceAnalysis:
                     f"{percent_faster}%",
                 ]
             )
-
-
-def update_effect_config(config, virtual_id, effect):
-    """
-    Update the configuration of a virtual effect.
-
-    This function is important for maintaining both the active effect and adding
-    to the collection of effects configs on the virtual
-
-    Args:
-        config (dict): The current config structure
-        virtual_id (str): The ID of the virtual effect.
-        effect (Effect): The effect object containing the updated configuration.
-
-    Returns:
-        None
-    """
-    # Store as both the active effect to protect existing code, and one of effects
-    virtual = next(
-        (item for item in config["virtuals"] if item["id"] == virtual_id),
-        None,
-    )
-    if virtual:
-        if not ("effects" in virtual):
-            virtual["effects"] = {}
-        virtual["effects"][effect.type] = {}
-        virtual["effects"][effect.type]["type"] = effect.type
-        virtual["effects"][effect.type]["config"] = effect.config
-        if not ("effect" in virtual):
-            virtual["effect"] = {}
-        virtual["effect"]["type"] = effect.type
-        virtual["effect"]["config"] = effect.config

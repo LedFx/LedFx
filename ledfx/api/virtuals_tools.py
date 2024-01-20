@@ -6,7 +6,7 @@ from aiohttp import web
 from ledfx.api import RestEndpoint
 from ledfx.color import parse_color, validate_color
 from ledfx.config import save_config
-from ledfx.utils import update_effect_config
+from ledfx.virtuals import update_effect_config
 
 _LOGGER = logging.getLogger(__name__)
 

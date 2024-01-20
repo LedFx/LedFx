@@ -10,8 +10,8 @@ from ledfx.utils import (
     generate_defaults,
     generate_id,
     inject_missing_default_keys,
-    update_effect_config,
 )
+from ledfx.virtuals import update_effect_config
 
 _LOGGER = logging.getLogger(__name__)
 
