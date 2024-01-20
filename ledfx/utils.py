@@ -1407,27 +1407,36 @@ class PerformanceAnalysis:
     A class for comparing the performance of two functions.
     """
 
+    _write_buffer = []
+    _write_buffer_limit = 100
+
     @staticmethod
     def compare_functions(
         original_function: Callable,
         optimized_function: Callable,
-        num_runs: int = 1000,
+        num_runs: int = 1,
     ):
         """
         Compare the execution time of two functions.
 
+        To use, import the PerformanceAnalysis using "from ledfx.utils import PerformanceAnalysis"
+        and then call PerformanceAnalysis.compare_functions(lambda: original_function(function arguments), lambda: optimized_function(function_arguments), num_runs).
+
+        For example:
+        PerformanceAnalysis.compare_functions(lambda: fill_rainbow(self.pixels, self._hue, hue_delta),lambda: fill_rainbow_slow(self.pixels, self._hue, hue_delta))
+
         Parameters:
-        original_function (Callable): The original function to be compared.
-        optimized_function (Callable): The optimized function to be compared.
-        num_runs (int, optional): The number of times each function should be run. Defaults to 1000.
+        original_function (Callable): The original function to be compared, wrapped in lambda to prevent it from being executed immediately.
+        optimized_function (Callable): The optimized function to be compared, wrapped in lambda to prevent it from being executed immediately.
+        num_runs (int, optional): The number of times each function should be run. Defaults to 1, since we usually use this inside loops.
 
         Returns:
         None
         """
-        original_time = PerformanceAnalysis._timeit_wrapper(
+        original_time = PerformanceAnalysis._timer_wrapper(
             original_function, num_runs
         )
-        optimized_time = PerformanceAnalysis._timeit_wrapper(
+        optimized_time = PerformanceAnalysis._timer_wrapper(
             optimized_function, num_runs
         )
 
@@ -1451,7 +1460,7 @@ class PerformanceAnalysis:
         )
 
     @staticmethod
-    def _timeit_wrapper(func: Callable, num_runs: int) -> float:
+    def _timer_wrapper(func: Callable, num_runs: int) -> float:
         """
         Time a function over a number of runs.
 
@@ -1463,7 +1472,12 @@ class PerformanceAnalysis:
             float: The average time taken to run the function.
 
         """
-        return timeit.timeit(func, number=num_runs)
+        start_time = time.perf_counter()
+        for _ in range(num_runs):
+            func()
+        end_time = time.perf_counter()
+
+        return (end_time - start_time) / num_runs
 
     @staticmethod
     def _write_to_csv(
@@ -1474,7 +1488,7 @@ class PerformanceAnalysis:
         percent_faster: float,
     ):
         """
-        Write the function comparison results to a CSV file.
+        Write the function comparison results to a CSV file - buffer 100 rows before writing to file to minimize disk writes and performance impact.
 
         Parameters:
         - num_runs (int): The number of runs performed for the function comparison.
@@ -1483,18 +1497,25 @@ class PerformanceAnalysis:
         - optimized_time (float): The execution time of the optimized method.
         - percent_faster (float): The percentage improvement in execution time of the optimized method compared to the original method.
         """
-        with open("performance_analysis.csv", mode="a", newline="") as file:
-            writer = csv.writer(file)
-            timestamp = datetime.datetime.now().strftime(
-                "%Y-%m-%d %H:%M:%S.%f"
-            )
-            writer.writerow(
-                [
-                    timestamp,
-                    num_runs,
-                    faster_method,
-                    original_time,
-                    optimized_time,
-                    f"{percent_faster}%",
-                ]
-            )
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
+        PerformanceAnalysis._write_buffer.append(
+            [
+                timestamp,
+                num_runs,
+                faster_method,
+                original_time,
+                optimized_time,
+                f"{percent_faster}%",
+            ]
+        )
+
+        if (
+            len(PerformanceAnalysis._write_buffer)
+            >= PerformanceAnalysis._write_buffer_limit
+        ):
+            with open(
+                "performance_analysis.csv", mode="a", newline=""
+            ) as file:
+                writer = csv.writer(file)
+                writer.writerows(PerformanceAnalysis._write_buffer)
+                PerformanceAnalysis._write_buffer.clear()
