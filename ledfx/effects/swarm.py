@@ -1,5 +1,3 @@
-import logging
-
 import numpy as np
 import voluptuous as vol
 
@@ -7,16 +5,11 @@ from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.hsv_effect import GradientEffect
 from ledfx.effects.twod import Twod
 
-_LOGGER = logging.getLogger(__name__)
-
-# copy this file and rename it into the effects folder
-# Anywhere you see template, replace it with your own class reference / name
-
 
 class Swarm(Twod, GradientEffect):
     NAME = "Swarm"
     CATEGORY = "Matrix"
-    # add keys you want hidden or in advanced here
+
     HIDDEN_KEYS = Twod.HIDDEN_KEYS + ["test", "diag", "dump", "rotate"]
     ADVANCED_KEYS = Twod.ADVANCED_KEYS + []
 
