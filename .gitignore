@@ -53,16 +53,12 @@ cover/*
 MANIFEST
 
 
-
-# Keyfile and pyupdater files for signing pyupdater
-keypack.pyu
-.pyupdater/
-pyu-data/
-# Sentry Data
-formatting_test.bat
-
 # LedFx helper functions leave these files behind
 performance_analysis.csv
+
+# Debugging task may leave this folder behind if it crashes
+debug_config
+
 
 # Misc
 .devcontainer/ledfx-config.yml
