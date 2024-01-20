@@ -202,7 +202,7 @@ def print_statistics(stats, total_runtime):
         stats (dict): A dictionary containing the performance statistics.
         total_runtime (float): The total runtime of the program in seconds.
     """
-    print(f"Performance Analysis\n")
+    print("Performance Analysis\n")
 
     # Count and Time Analysis
     print("Count and Time Analysis:")
@@ -219,7 +219,7 @@ def print_statistics(stats, total_runtime):
         f"Total Runtime savings: {stats['optimized_time_saved'] - stats['original_time_lost']} milliseconds."
     )
     print(
-        f"Decreased runtime by {round((stats['optimized_time_saved'] - stats['original_time_lost']) / (total_runtime * 1000) * 100,2)}%.\n"
+        f"Decreased runtime by {round((stats['optimized_time_saved'] - stats['original_time_lost']) / (total_runtime * 1000) * 100, 2)}%.\n"
     )
     # Average Percentage Analysis
     print("Average Percentage Analysis:")
@@ -319,8 +319,8 @@ def print_statistics(stats, total_runtime):
         print(
             "It's not clear which method is better. The performance depends on the specific use case."
         )
-    with open(f"performance_insights.txt", "w") as f:
-        f.write(f"Performance Analysis\n\n")
+    with open("performance_insights.txt", "w") as f:
+        f.write("Performance Analysis\n\n")
         f.write("Count and Time Analysis:\n")
         f.write(f"Profiled for {total_runtime} seconds.\n")
         f.write(
@@ -334,7 +334,7 @@ def print_statistics(stats, total_runtime):
             f"Total Runtime savings: {stats['optimized_time_saved'] - stats['original_time_lost']} milliseconds.\n"
         )
         f.write(
-            f"Decreased runtime by {round((stats['optimized_time_saved'] - stats['original_time_lost']) / (total_runtime * 1000) * 100,2)}%.\n\n"
+            f"Decreased runtime by {round((stats['optimized_time_saved'] - stats['original_time_lost']) / (total_runtime * 1000) * 100, 2)}%.\n\n"
         )
         f.write("Average Percentage Analysis:\n")
         f.write(
