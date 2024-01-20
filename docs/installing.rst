@@ -89,9 +89,9 @@ To install on macOS (Apple Silicon) first ensure you have at least Python 3.9 in
 
     .. code:: console
 
-    $ pip uninstall numpy aubio
-    $ pip install numpy --no-cache-dir
-    $ pip install aubio --no-cache-dir
+        $ pip uninstall numpy aubio
+        $ pip install numpy --no-cache-dir
+        $ pip install aubio --no-cache-dir
 
 #. Launch LedFx with the ``open-ui`` option to launch the browser:
 

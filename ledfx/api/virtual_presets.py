@@ -10,6 +10,7 @@ from ledfx.utils import (
     generate_defaults,
     generate_id,
     inject_missing_default_keys,
+    update_effect_config,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -59,37 +60,6 @@ class VirtualPresetsEndpoint(RestEndpoint):
             "custom_presets": custom,
         }
         return await self.bare_request_success(response)
-
-    def update_effect_config(self, virtual_id, effect):
-        """
-        Update the effect configuration for a virtual preset.
-
-        Args:
-            virtual_id (str): The ID of the virtual preset.
-            effect (Effect): The effect object containing the updated configuration.
-
-        Returns:
-            None
-        """
-        # Store as both the active effect to protect existing code, and one of effects
-        virtual = next(
-            (
-                item
-                for item in self._ledfx.config["virtuals"]
-                if item["id"] == virtual_id
-            ),
-            None,
-        )
-        if virtual:
-            if not ("effects" in virtual):
-                virtual["effects"] = {}
-            virtual["effects"][effect.type] = {}
-            virtual["effects"][effect.type]["type"] = effect.type
-            virtual["effects"][effect.type]["config"] = effect.config
-            if not ("effect" in virtual):
-                virtual["effect"] = {}
-            virtual["effect"]["type"] = effect.type
-            virtual["effect"]["config"] = effect.config
 
     async def put(self, virtual_id, request) -> web.Response:
         """Set active effect of virtual to a preset.
@@ -173,7 +143,7 @@ class VirtualPresetsEndpoint(RestEndpoint):
             _LOGGER.warning(error_message)
             return await self.internal_error("error", error_message)
 
-        self.update_effect_config(virtual_id, effect)
+        update_effect_config(self._ledfx.config, virtual_id, effect)
 
         save_config(
             config=self._ledfx.config,

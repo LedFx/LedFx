@@ -6,6 +6,7 @@ from ledfx.config import save_config
 
 from ledfx.api import RestEndpoint
 from ledfx.color import parse_color, validate_color
+from ledfx.utils import update_effect_config
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -140,12 +141,25 @@ class VirtualsToolsEndpoint(RestEndpoint):
                 return await self.invalid_request(
                     "Virtual copy failed, no active effect on source virtual"
                 )
-            effect = virtual.active_effect
-            for dest_virtual in target:
-                dest_virtual = self._ledfx.virtuals.get(dest_virtual)
+
+            for dest_virtual_id in target:
+                dest_virtual = self._ledfx.virtuals.get(dest_virtual_id)
                 if dest_virtual is None:
                     continue
-                dest_virtual.set_effect(effect)
+
+                try:
+                    effect = self._ledfx.effects.create(
+                        ledfx=self._ledfx, type=virtual.active_effect.type,
+                        config=virtual.active_effect.config
+                    )
+
+                    dest_virtual.set_effect(effect)
+                except (ValueError, RuntimeError) as msg:
+                    continue
+
+                update_effect_config(self._ledfx.config,
+                                     dest_virtual_id,
+                                     effect)
                 updated += 1
             
             if updated > 0:
