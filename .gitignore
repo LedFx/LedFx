@@ -63,6 +63,7 @@ formatting_test.bat
 
 # LedFx helper functions leave these files behind
 performance_analysis.csv
+performance_insights.txt
 
 # Misc
 .devcontainer/ledfx-config.yml
