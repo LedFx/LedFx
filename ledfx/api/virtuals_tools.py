@@ -2,10 +2,10 @@ import logging
 from json import JSONDecodeError
 
 from aiohttp import web
-from ledfx.config import save_config
 
 from ledfx.api import RestEndpoint
 from ledfx.color import parse_color, validate_color
+from ledfx.config import save_config
 from ledfx.utils import update_effect_config
 
 _LOGGER = logging.getLogger(__name__)
@@ -149,26 +149,29 @@ class VirtualsToolsEndpoint(RestEndpoint):
 
                 try:
                     effect = self._ledfx.effects.create(
-                        ledfx=self._ledfx, type=virtual.active_effect.type,
-                        config=virtual.active_effect.config
+                        ledfx=self._ledfx,
+                        type=virtual.active_effect.type,
+                        config=virtual.active_effect.config,
                     )
 
                     dest_virtual.set_effect(effect)
                 except (ValueError, RuntimeError) as msg:
                     continue
 
-                update_effect_config(self._ledfx.config,
-                                     dest_virtual_id,
-                                     effect)
+                update_effect_config(
+                    self._ledfx.config, dest_virtual_id, effect
+                )
                 updated += 1
-            
+
             if updated > 0:
                 save_config(
                     config=self._ledfx.config,
                     config_dir=self._ledfx.config_dir,
                 )
             else:
-                return await self.invalid_request("Virtual copy failed, no valid targets")
+                return await self.invalid_request(
+                    "Virtual copy failed, no valid targets"
+                )
 
         effect_response = {}
         effect_response["tool"] = tool

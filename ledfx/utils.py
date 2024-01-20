@@ -1517,11 +1517,7 @@ def update_effect_config(config, virtual_id, effect):
     """
     # Store as both the active effect to protect existing code, and one of effects
     virtual = next(
-        (
-            item
-            for item in config["virtuals"]
-            if item["id"] == virtual_id
-        ),
+        (item for item in config["virtuals"] if item["id"] == virtual_id),
         None,
     )
     if virtual:
