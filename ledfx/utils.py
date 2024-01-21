@@ -1227,7 +1227,7 @@ def extract_positive_integers(s):
     # Convert each found sequence to an integer
     # filter out non-positive numbers
     # make list unique values via set
-    return list(set([int(num) for num in numbers if int(num) >= 0]))
+    return list({int(num) for num in numbers if int(num) >= 0})
 
 
 def clip_at_limit(numbers, limit):
