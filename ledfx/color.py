@@ -69,6 +69,7 @@ class Gradient:
         self.mode = mode
         self.angle = angle
 
+
 def hsv_to_rgb(h, s, v):
     """
     Converts an array of HSV (Hue, Saturation, Value) values to RGB (Red, Green, Blue).
@@ -114,9 +115,9 @@ def hsv_to_rgb(h, s, v):
 
     # Assigning the red, green, and blue components based on the section of the
     # color wheel. 'np.choose' is used to efficiently select values for each pixel.
-    rgb[:, 0] = np.choose(i, [v, q, p, p, t, v], mode='wrap')
-    rgb[:, 1] = np.choose(i, [t, v, v, q, p, p], mode='wrap')
-    rgb[:, 2] = np.choose(i, [p, p, t, v, v, q], mode='wrap')
+    rgb[:, 0] = np.choose(i, [v, q, p, p, t, v], mode="wrap")
+    rgb[:, 1] = np.choose(i, [t, v, v, q, p, p], mode="wrap")
+    rgb[:, 2] = np.choose(i, [p, p, t, v, v, q], mode="wrap")
 
     # Scale the RGB values to the 0-255 range
     return rgb * 255

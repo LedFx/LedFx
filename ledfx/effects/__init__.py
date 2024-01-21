@@ -90,12 +90,15 @@ def fill_rainbow(pixels, initial_hue, delta_hue):
     # Create an array of hue values starting from 'initial_hue' and increasing
     # by 'delta_hue' for each pixel. The array length is initially set to be longer
     # than the number of pixels.
-    hues = np.arange(initial_hue, initial_hue + len(pixels) * delta_hue, delta_hue)
+    hues = np.arange(
+        initial_hue, initial_hue + len(pixels) * delta_hue, delta_hue
+    )
 
     # ensure each pixel has a corresponding hue value.
     hues = hues[: len(pixels)]
 
     return hsv_to_rgb(hues, sat, val)
+
 
 def blur_pixels(pixels, sigma):
     """
