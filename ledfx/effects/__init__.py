@@ -1,4 +1,3 @@
-import colorsys
 import logging
 import threading
 
@@ -8,7 +7,7 @@ from functools import lru_cache
 import numpy as np
 import voluptuous as vol
 
-from ledfx.color import parse_color, validate_color
+from ledfx.color import hsv_to_rgb, parse_color, validate_color
 from ledfx.utils import BaseRegistry, RegistryLoader
 
 _LOGGER = logging.getLogger(__name__)
@@ -87,14 +86,24 @@ def fill_rainbow(pixels, initial_hue, delta_hue):
     """
     sat = 0.95
     val = 1.0
-    hues = np.arange(
-        initial_hue, initial_hue + len(pixels) * delta_hue, delta_hue
+
+    # Create a range of initial hues for each pixel
+    initial_hues = np.linspace(
+        initial_hue, initial_hue + delta_hue * (len(pixels) - 1), len(pixels)
     )
-    hues = hues[: len(pixels)]  # Ensure hues has the same length as pixels
-    pixels = (
-        np.array([colorsys.hsv_to_rgb(hue, sat, val) for hue in hues]) * 255
-    )  # the array is 0-1, we need 0-255
-    return pixels
+
+    # Add delta_hue to the initial hues for each pixel and wrap around any values that exceed 1.0
+    hues = (initial_hues + delta_hue) % 1.0
+
+    # Create 2D arrays for saturation and value
+    saturation = np.full_like(hues, sat)
+    value = np.full_like(hues, val)
+
+    # Stack the hues, saturation, and value arrays along the second axis
+    hsv_array = np.stack((hues, saturation, value), axis=-1)
+
+    # Convert the HSV array to RGB and return it
+    return hsv_to_rgb(hsv_array)
 
 
 def blur_pixels(pixels, sigma):
