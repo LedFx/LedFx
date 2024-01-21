@@ -87,24 +87,15 @@ def fill_rainbow(pixels, initial_hue, delta_hue):
     sat = 0.95
     val = 1.0
 
-    # Create a range of initial hues for each pixel
-    initial_hues = np.linspace(
-        initial_hue, initial_hue + delta_hue * (len(pixels) - 1), len(pixels)
-    )
+    # Create an array of hue values starting from 'initial_hue' and increasing
+    # by 'delta_hue' for each pixel. The array length is initially set to be longer
+    # than the number of pixels.
+    hues = np.arange(initial_hue, initial_hue + len(pixels) * delta_hue, delta_hue)
 
-    # Add delta_hue to the initial hues for each pixel and wrap around any values that exceed 1.0
-    hues = (initial_hues + delta_hue) % 1.0
+    # ensure each pixel has a corresponding hue value.
+    hues = hues[: len(pixels)]
 
-    # Create 2D arrays for saturation and value
-    saturation = np.full_like(hues, sat)
-    value = np.full_like(hues, val)
-
-    # Stack the hues, saturation, and value arrays along the second axis
-    hsv_array = np.stack((hues, saturation, value), axis=-1)
-
-    # Convert the HSV array to RGB and return it
-    return hsv_to_rgb(hsv_array)
-
+    return hsv_to_rgb(hues, sat, val)
 
 def blur_pixels(pixels, sigma):
     """
