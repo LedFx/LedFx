@@ -2,6 +2,7 @@ import logging
 from collections import namedtuple
 
 import numpy as np
+from numpy.typing import NDArray
 from PIL import ImageColor
 
 _LOGGER = logging.getLogger(__name__)
@@ -70,54 +71,48 @@ class Gradient:
         self.angle = angle
 
 
-def hsv_to_rgb(h, s, v):
+def hsv_to_rgb(hue: NDArray, saturation: float, value: float) -> NDArray:
     """
-    Converts an array of HSV (Hue, Saturation, Value) values to RGB (Red, Green, Blue).
-
-    This function implements the algorithm for converting color representations from
-    HSV to RGB. It is designed to work on arrays of HSV values, efficiently converting
-    them to their RGB counterparts.
+    Converts an array of Hues using provided saturation and value properties to an RGB array.
 
     Args:
-        h (numpy.ndarray): Array of hue values (0 to 1).
-        s (numpy.ndarray): Array of saturation values (0 to 1).
-        v (numpy.ndarray): Array of value/brightness values (0 to 1).
+        hue (numpy.ndarray): Array of hue values (0 to 1).
+        saturation (float between 0 and 1): The saturation ("brightness") of the color.
+        value (float between 0 and 1): The value ("colorfulness") of the color.
 
     Returns:
         numpy.ndarray: An array of RGB values where each RGB value is in the range
                        0 to 255.
 
-    Note:
-        The function assumes that h, s, and v are numpy arrays of the same shape.
     """
 
     # The hue value is scaled by 6 to map it to one of the six sections of the
     # RGB color wheel.
-    h_i = h * 6
+    hue_i = hue * 6
 
     # The integer part of h_i determines the section of the color wheel the hue
     # belongs to.
-    i = np.floor(h_i).astype(int)
+    i = np.floor(hue_i).astype(int)
 
     # The fractional part of h_i.
-    f = h_i - i
+    f = hue_i - i
 
     # Intermediate values for the RGB conversion process.
-    p = v * (1 - s)
-    q = v * (1 - s * f)
-    t = v * (1 - s * (1 - f))
+    p = value * (1 - saturation)
+    q = value * (1 - saturation * f)
+    t = value * (1 - saturation * (1 - f))
 
     # Ensure that i values are within the range [0, 5].
     i = i % 6
 
     # Preparing an array for RGB values.
-    rgb = np.zeros((h.shape[0], 3))
+    rgb = np.zeros((hue.shape[0], 3))
 
     # Assigning the red, green, and blue components based on the section of the
     # color wheel. 'np.choose' is used to efficiently select values for each pixel.
-    rgb[:, 0] = np.choose(i, [v, q, p, p, t, v], mode="wrap")
-    rgb[:, 1] = np.choose(i, [t, v, v, q, p, p], mode="wrap")
-    rgb[:, 2] = np.choose(i, [p, p, t, v, v, q], mode="wrap")
+    rgb[:, 0] = np.choose(i, [value, q, p, p, t, value], mode="wrap")
+    rgb[:, 1] = np.choose(i, [t, value, value, q, p, p], mode="wrap")
+    rgb[:, 2] = np.choose(i, [p, p, t, value, value, q], mode="wrap")
 
     # Scale the RGB values to the 0-255 range
     return rgb * 255

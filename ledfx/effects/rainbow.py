@@ -11,10 +11,15 @@ class RainbowEffect(TemporalEffect):
     CONFIG_SCHEMA = vol.Schema(
         {
             vol.Optional(
+                "speed",
+                description="Speed of the effect",
+                default=1.0,
+            ): vol.All(vol.Coerce(float), vol.Range(min=0.1, max=20)),
+            vol.Optional(
                 "frequency",
                 description="Frequency of the effect curve",
                 default=1.0,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.1, max=10)),
+            ): vol.All(vol.Coerce(float), vol.Range(min=0.1, max=64)),
         }
     )
 
