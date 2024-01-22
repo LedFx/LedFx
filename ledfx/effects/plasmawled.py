@@ -33,22 +33,22 @@ class Plasmawled(Twod, GradientEffect):
                 default=128,
             ): vol.All(vol.Coerce(int), vol.Range(min=0, max=255)),
             vol.Optional(
-                "h_stretch",
+                "stretch_horizontal",
                 description="Smaller is less block in horizontal dimension",
                 default=128,
             ): vol.All(vol.Coerce(int), vol.Range(min=0, max=255)),
             vol.Optional(
-                "v_stretch",
+                "stretch_vertical",
                 description="Smaller is less block in vertical dimension",
                 default=128,
             ): vol.All(vol.Coerce(int), vol.Range(min=0, max=255)),
             vol.Optional(
-                "size x",
+                "size_multiplication",
                 description="Sound to size multiplier",
                 default=0.4,
             ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
             vol.Optional(
-                "speed x",
+                "speed_multiplication",
                 description="Sound to speed multiplier",
                 default=0.4,
             ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
@@ -87,10 +87,10 @@ class Plasmawled(Twod, GradientEffect):
     def config_updated(self, config):
         super().config_updated(config)
         self.configured_speed = self._config["speed"]
-        self.h_stretch = self._config["h_stretch"]
-        self.v_stretch = self._config["v_stretch"]
-        self.speedx = self._config["speed x"]
-        self.sizex = self._config["size x"]
+        self.stretch_horizontal = self._config["stretch_horizontal"]
+        self.stretch_vertical = self._config["stretch_vertical"]
+        self.speed_multiplication = self._config["speed_multiplication"]
+        self.size_multiplication = self._config["size_multiplication"]
         self.power_func = self.POWER_FUNCS_MAPPING[
             self._config["frequency_range"]
         ]
@@ -104,8 +104,8 @@ class Plasmawled(Twod, GradientEffect):
 
     def audio_data_updated(self, data):
         self.power = getattr(data, self.power_func)() * 2
-        self.sizeb = self.power * self.sizex
-        self.speedb = self.power * self.speedx
+        self.sizeb = self.power * self.size_multiplication
+        self.speedb = self.power * self.speed_multiplication
 
     def draw(self):
         if self.test:
@@ -114,7 +114,7 @@ class Plasmawled(Twod, GradientEffect):
         # create data, a numpy array of shape (self.r_width, self.r_height, 1)
         data = np.zeros((self.r_height, self.r_width), dtype=np.uint8)
 
-        if self.speedx > 0.0:
+        if self.speed_multiplication > 0.0:
             self.time_modifier += self.speedb
             time_val = int(self.time_modifier * 1000)
         else:
@@ -123,10 +123,13 @@ class Plasmawled(Twod, GradientEffect):
         a = time_val / (self.configured_speed + 1)
 
         h_stretch = max(
-            0.01, self.h_stretch - (self.sizeb * self.h_stretch / 3)
+            0.01,
+            self.stretch_horizontal
+            - (self.sizeb * self.stretch_horizontal / 3),
         )
         v_stretch = max(
-            0.01, self.v_stretch - (self.sizeb * self.v_stretch / 3)
+            0.01,
+            self.stretch_vertical - (self.sizeb * self.stretch_vertical / 3),
         )
 
         # original python code was as commented below

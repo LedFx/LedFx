@@ -22,7 +22,7 @@ class GifPlayer(Twod, GifBase):
     CONFIG_SCHEMA = vol.Schema(
         {
             vol.Optional(
-                "gif_path",
+                "image_location",
                 description="Load GIF from URL/local file",
                 default="",
             ): str,
@@ -32,7 +32,7 @@ class GifPlayer(Twod, GifBase):
                 default=False,
             ): bool,
             vol.Optional(
-                "GIF FPS", description="How fast to play the gif", default=10
+                "gif_fps", description="How fast to play the gif", default=10
             ): vol.All(vol.Coerce(int), vol.Range(min=1, max=60)),
         }
     )
@@ -42,7 +42,7 @@ class GifPlayer(Twod, GifBase):
 
     def config_updated(self, config):
         super().config_updated(config)
-        self.gif_fps = self._config["GIF FPS"]
+        self.gif_fps = self._config["gif_fps"]
         self.bounce = self._config["bounce"]
         self.frames = []
         self.current_frame = 0
@@ -55,7 +55,7 @@ class GifPlayer(Twod, GifBase):
     def do_once(self):
         super().do_once()
 
-        gif_path = self._config["gif_path"]
+        gif_path = self._config["image_location"]
         # If for some unknown reason the url_path is blank (someone saved a preset with no string)/
         if gif_path == "":
             # Show animated LedFx logo
