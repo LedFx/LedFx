@@ -78,7 +78,7 @@ class Keybeat2d(Twod, GifBase):
                 default=False,
             ): bool,
             vol.Optional(
-                "force_aspect_ratio",
+                "keep_aspect_ratio",
                 description="Preserve aspect ratio if force fit",
                 default=False,
             ): bool,
@@ -122,7 +122,7 @@ class Keybeat2d(Twod, GifBase):
         self.ping_pong = self._config["ping_pong"]
         self.ping_pong_skip = self._config["ping_pong_skip"]
         self.force_fit = self._config["force_fit"]
-        self.force_aspect = self._config["force_aspect_ratio"]
+        self.force_aspect = self._config["keep_aspect_ratio"]
         self.fake_beat = self._config["fake_beat"]
         self.deep_diag = self._config["deep_diag"]
         self.half_beat = self._config["half_beat"]
