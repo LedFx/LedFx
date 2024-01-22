@@ -14,7 +14,8 @@ _LOGGER = logging.getLogger(__name__)
 @Effect.no_registration
 class Twod(AudioReactiveEffect):
     EFFECT_START_TIME = timeit.default_timer()
-    HIDDEN_KEYS = ["background_brightness", "mirror", "flip", "blur"]
+    # hiding dump by default, a dev can turn it on explicitily via removal
+    HIDDEN_KEYS = ["background_brightness", "mirror", "flip", "blur", "dump"]
     ADVANCED_KEYS = [
         "dump",
         "diag",

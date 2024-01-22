@@ -1224,8 +1224,10 @@ def extract_positive_integers(s):
     # Use regular expression to find all sequences of digits
     numbers = re.findall(r"\d+", s)
 
-    # Convert each found sequence to an integer and filter out non-positive numbers
-    return [int(num) for num in numbers if int(num) >= 0]
+    # Convert each found sequence to an integer
+    # filter out non-positive numbers
+    # make list unique values via set
+    return list({int(num) for num in numbers if int(num) >= 0})
 
 
 def clip_at_limit(numbers, limit):
