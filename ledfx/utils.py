@@ -782,7 +782,21 @@ class BaseRegistry(ABC):
                     schema = schema.extend(c_schema.fget().schema)
                 else:
                     schema = schema.extend(c_schema.schema)
+        self.validate_schema_keys(schema)
 
+        return schema
+
+    @classmethod
+    def validate_schema_keys(self, schema):
+        """
+        Validates the keys in the given schema.
+
+        Args:
+            schema (vol.Schema): The schema to validate.
+
+        Raises:
+            ValueError: If any key in the schema do not match our naming conventions.
+        """
         # Check if all keys in the schema use snake_case
         for key in schema.schema.keys():
             # If key is a vol.Required or vol.Optional, get the schema from the key
@@ -797,14 +811,14 @@ class BaseRegistry(ABC):
                 if not is_snake_case(actual_key):
                     # Raise an error if the key is not snake_case - this is to prevent
                     # development of new effects/devices that have keys that are not snake_case
-                    _LOGGER.critical(
-                        f"Invalid key '{actual_key}' in {self.__name__}. Keys must use snake_case."
-                    )
-                    raise ValueError(
-                        f"Invalid key '{actual_key}' in {self.__name__}. Keys must use snake_case."
-                    )
-
-        return schema
+                    error_msg = f"Invalid key '{actual_key}' in {self.__name__}. Keys must use snake_case."
+                    _LOGGER.critical(error_msg)
+                    raise ValueError(error_msg)
+                # We search if the key contains the word "colour" and raise an error if it does, since we want to standardise on color
+                if "colour" in actual_key:
+                    error_msg = f"Invalid key '{actual_key}' in {self.__name__}. Keys must use 'color' instead of 'colour'."
+                    _LOGGER.critical(error_msg)
+                    raise ValueError(error_msg)
 
     @classmethod
     def registry(self):
