@@ -55,9 +55,9 @@ ledfx_presets = {
                 "multiplier": 1.0,
                 "peak_sensitivity": 0,
                 "rotate": 0,
-                "test": False
+                "test": False,
             },
-            "name": "Fireball"
+            "name": "Fireball",
         },
         "lazerfire": {
             "config": {
@@ -87,9 +87,9 @@ ledfx_presets = {
                 "multiplier": 1.0,
                 "peak_sensitivity": 0,
                 "rotate": 1,
-                "test": False
+                "test": False,
             },
-            "name": "Lazerfire 1"
+            "name": "Lazerfire 1",
         },
         "waterjets": {
             "config": {
@@ -119,9 +119,9 @@ ledfx_presets = {
                 "multiplier": 1.0,
                 "peak_sensitivity": 0,
                 "rotate": 1,
-                "test": False
+                "test": False,
             },
-            "name": "waterjets"
+            "name": "waterjets",
         },
         "niagara": {
             "config": {
@@ -152,11 +152,11 @@ ledfx_presets = {
                 "multiplier": 0.8,
                 "peak_sensitivity": 3,
                 "rotate": 0,
-                "test": False
+                "test": False,
             },
-            "name": "Niagara"
-        }
-    },    
+            "name": "Niagara",
+        },
+    },
     "equalizer2d": {
         "earth": {
             "config": {
