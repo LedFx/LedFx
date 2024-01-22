@@ -782,7 +782,21 @@ class BaseRegistry(ABC):
                     schema = schema.extend(c_schema.fget().schema)
                 else:
                     schema = schema.extend(c_schema.schema)
+        self.validate_schema_keys(schema)
 
+        return schema
+
+    @classmethod
+    def validate_schema_keys(self, schema):
+        """
+        Validates the keys in the given schema.
+
+        Args:
+            schema (vol.Schema): The schema to validate.
+
+        Raises:
+            ValueError: If any key in the schema do not match our naming conventions.
+        """
         # Check if all keys in the schema use snake_case
         for key in schema.schema.keys():
             # If key is a vol.Required or vol.Optional, get the schema from the key
@@ -805,8 +819,6 @@ class BaseRegistry(ABC):
                     error_msg = f"Invalid key '{actual_key}' in {self.__name__}. Keys must use 'color' instead of 'colour'."
                     _LOGGER.critical(error_msg)
                     raise ValueError(error_msg)
-
-        return schema
 
     @classmethod
     def registry(self):
