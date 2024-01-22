@@ -14,24 +14,25 @@ _LOGGER = logging.getLogger(__name__)
 @Effect.no_registration
 class Twod(AudioReactiveEffect):
     EFFECT_START_TIME = timeit.default_timer()
-    HIDDEN_KEYS = ["background_brightness", "mirror", "flip", "blur"]
+    # hiding dump by default, a dev can turn it on explicitily via removal
+    HIDDEN_KEYS = ["background_brightness", "mirror", "flip", "blur", "dump"]
     ADVANCED_KEYS = [
         "dump",
         "diag",
         "test",
-        "flip horizontal",
-        "flip vertical",
+        "flip_horizontal",
+        "flip_vertical",
     ]
 
     CONFIG_SCHEMA = vol.Schema(
         {
             vol.Optional(
-                "flip horizontal",
+                "flip_horizontal",
                 description="flip the image horizontally",
                 default=False,
             ): bool,
             vol.Optional(
-                "flip vertical",
+                "flip_vertical",
                 description="flip the image vertically",
                 default=False,
             ): bool,
@@ -91,8 +92,8 @@ class Twod(AudioReactiveEffect):
         # as well as a small performance boost
         # we need to accout for swapping vertical and horizotal for 90 / 270
 
-        self.flip = self._config["flip vertical"]
-        self.mirror = self._config["flip horizontal"]
+        self.flip = self._config["flip_vertical"]
+        self.mirror = self._config["flip_horizontal"]
 
         self.rotate = self._config["rotate"]
         self.rotate_t = 0

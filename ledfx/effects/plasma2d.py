@@ -26,7 +26,7 @@ class Plasma2d(Twod, GradientEffect):
                 default="Lows (beat+bass)",
             ): vol.In(list(AudioReactiveEffect.POWER_FUNCS_MAPPING.keys())),
             vol.Optional(
-                "v density",
+                "density_vertical",
                 description="Lets pretend its vertical density",
                 default=0.1,
             ): vol.All(vol.Coerce(float), vol.Range(min=0.01, max=0.3)),
@@ -63,9 +63,9 @@ class Plasma2d(Twod, GradientEffect):
         self.power_func = self.POWER_FUNCS_MAPPING[
             self._config["frequency_range"]
         ]
-        self.v_density = self._config["v density"]
+        self.density_vertical = self._config["density_vertical"]
         self.twist = self._config["twist"]
-        self.radius = self.config["radius"]
+        self.radius = self._config["radius"]
         super().config_updated(config)
 
     def do_once(self):
@@ -88,7 +88,7 @@ class Plasma2d(Twod, GradientEffect):
         # Calculate the plasma values
         plasma = (
             np.sin(x * 0.1 + time) * np.cos(y * 0.1 - time)
-            + np.sin((x * self.v_density + y * self.twist + time) * 2.5)
+            + np.sin((x * self.density_vertical + y * self.twist + time) * 2.5)
             + np.sin(np.sqrt(x**2 + y**2) * self.radius - time)
         ) * 128 + 128
 

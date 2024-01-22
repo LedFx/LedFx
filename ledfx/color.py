@@ -1,6 +1,8 @@
 import logging
 from collections import namedtuple
 
+import numpy as np
+from numpy.typing import NDArray
 from PIL import ImageColor
 
 _LOGGER = logging.getLogger(__name__)
@@ -9,15 +11,34 @@ RGB = namedtuple("RGB", ("red", "green", "blue"))
 
 
 class Gradient:
+    """
+    Represents a gradient with a list of colors and a mode.
+
+    Attributes:
+        colors (list): A list of tuples representing colors and their positions in the gradient.
+        mode (str): The mode of the gradient (e.g., "linear", "radial").
+        angle (str): The angle of the gradient (e.g., "90deg").
+
+    Methods:
+        from_string(cls, gradient_str: str) -> Gradient: Parses a gradient from a string.
+    """
+
     __slots__ = "colors", "mode", "angle"
 
     @classmethod
     def from_string(cls, gradient_str: str):
         """
-        Parses gradient from string of format eg.
+        Parses a gradient from a string of the format:
         "linear-gradient(90deg, rgb(100, 0, 255) 0%, #800000 50%, #ec77ab 100%)"
+        or
         "mode(angle, *colors)"
-        where each color is associated with a % value for its position in the gradient
+        where each color is associated with a % value for its position in the gradient.
+
+        Args:
+            gradient_str (str): The string representation of the gradient.
+
+        Returns:
+            Gradient: The parsed gradient object.
         """
         # If gradient is predefined, get the definition
         gradient_str = LEDFX_GRADIENTS.get(gradient_str, gradient_str)
@@ -50,7 +71,68 @@ class Gradient:
         self.angle = angle
 
 
+def hsv_to_rgb(hue: NDArray, saturation: float, value: float) -> NDArray:
+    """
+    Converts an array of Hues using provided saturation and value properties to an RGB array.
+
+    Args:
+        hue (numpy.ndarray): Array of hue values (0 to 1).
+        saturation (float between 0 and 1): The saturation ("brightness") of the color.
+        value (float between 0 and 1): The value ("colorfulness") of the color.
+
+    Returns:
+        numpy.ndarray: An array of RGB values where each RGB value is in the range
+                       0 to 255.
+
+    """
+
+    # The hue value is scaled by 6 to map it to one of the six sections of the
+    # RGB color wheel.
+    hue_i = hue * 6
+
+    # The integer part of h_i determines the section of the color wheel the hue
+    # belongs to.
+    i = np.floor(hue_i).astype(int)
+
+    # The fractional part of h_i.
+    f = hue_i - i
+
+    # Intermediate values for the RGB conversion process.
+    p = value * (1 - saturation)
+    q = value * (1 - saturation * f)
+    t = value * (1 - saturation * (1 - f))
+
+    # Ensure that i values are within the range [0, 5].
+    i = i % 6
+
+    # Preparing an array for RGB values.
+    rgb = np.zeros((hue.shape[0], 3))
+
+    # Assigning the red, green, and blue components based on the section of the
+    # color wheel. 'np.choose' is used to efficiently select values for each pixel.
+    rgb[:, 0] = np.choose(i, [value, q, p, p, t, value], mode="wrap")
+    rgb[:, 1] = np.choose(i, [t, value, value, q, p, p], mode="wrap")
+    rgb[:, 2] = np.choose(i, [p, p, t, value, value, q], mode="wrap")
+
+    # Scale the RGB values to the 0-255 range
+    return rgb * 255
+
+
 def parse_color(color: (str, list, tuple)) -> RGB:
+    """
+    Parses a color value and returns an RGB object.
+
+    Args:
+        color (str, list, tuple): The color value to be parsed. It can be a string representing a color name,
+                                 a list/tuple representing RGB values, or a string representing a HEX color code.
+
+    Returns:
+        RGB: An RGB object representing the parsed color.
+
+    Raises:
+        ValueError: If the color value is invalid or cannot be parsed.
+
+    """
     try:
         # If it's a list/tuple, interpret it as RGB(A removed)
         if isinstance(color, (list, tuple)):
@@ -77,7 +159,23 @@ def parse_color(color: (str, list, tuple)) -> RGB:
 
 
 def parse_gradient(gradient: str):
-    # Gradient can just be a color, or a full gradient
+    """
+    Parse a gradient string and return the corresponding gradient object.
+
+    The gradient can be either a color or a full gradient. The function tries to parse
+    the gradient using the `Gradient.from_string` and `parse_color` functions. If
+    successful, it returns the parsed gradient object. If parsing fails, an error message
+    is logged and a `ValueError` is raised.
+
+    Args:
+        gradient (str): The gradient string to parse.
+
+    Returns:
+        Gradient: The parsed gradient object.
+
+    Raises:
+        ValueError: If the gradient string is invalid.
+    """
     for func in Gradient.from_string, parse_color:
         try:
             return func(gradient)
@@ -90,10 +188,29 @@ def parse_gradient(gradient: str):
 
 
 def validate_color(color: str) -> str:
+    """
+    Validates and formats a color string.
+
+    Args:
+        color (str): The color string to validate.
+
+    Returns:
+        str: The validated and formatted color string.
+
+    """
     return "#%02x%02x%02x" % parse_color(color)
 
 
 def validate_gradient(gradient: str) -> str:
+    """
+    Validates the given gradient string.
+
+    Args:
+        gradient (str): The gradient string to be validated.
+
+    Returns:
+        str: The validated gradient string.
+    """
     parse_gradient(gradient)
     return gradient
 

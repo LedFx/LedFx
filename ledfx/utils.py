@@ -1,5 +1,7 @@
 import asyncio
 import concurrent.futures
+import csv
+import datetime
 import importlib
 import inspect
 import ipaddress
@@ -16,10 +18,20 @@ from abc import ABC
 from collections import deque
 from collections.abc import MutableMapping
 from functools import lru_cache
+from importlib import metadata
 from itertools import chain
+from platform import (
+    processor,
+    python_build,
+    python_implementation,
+    python_version,
+    release,
+    system,
+)
 
 # from asyncio import coroutines, ensure_future
 from subprocess import PIPE, Popen
+from typing import Callable
 
 import numpy as np
 import PIL.Image as Image
@@ -770,8 +782,43 @@ class BaseRegistry(ABC):
                     schema = schema.extend(c_schema.fget().schema)
                 else:
                     schema = schema.extend(c_schema.schema)
+        self.validate_schema_keys(schema)
 
         return schema
+
+    @classmethod
+    def validate_schema_keys(self, schema):
+        """
+        Validates the keys in the given schema.
+
+        Args:
+            schema (vol.Schema): The schema to validate.
+
+        Raises:
+            ValueError: If any key in the schema do not match our naming conventions.
+        """
+        # Check if all keys in the schema use snake_case
+        for key in schema.schema.keys():
+            # If key is a vol.Required or vol.Optional, get the schema from the key
+            # Otherwise, the key is the actual key
+            # This is to handle nested schemas
+            actual_key = (
+                key.schema
+                if isinstance(key, (vol.Required, vol.Optional))
+                else key
+            )
+            if isinstance(actual_key, str):  # Check if actual_key is a string
+                if not is_snake_case(actual_key):
+                    # Raise an error if the key is not snake_case - this is to prevent
+                    # development of new effects/devices that have keys that are not snake_case
+                    error_msg = f"Invalid key '{actual_key}' in {self.__name__}. Keys must use snake_case."
+                    _LOGGER.critical(error_msg)
+                    raise ValueError(error_msg)
+                # We search if the key contains the word "colour" and raise an error if it does, since we want to standardise on color
+                if "colour" in actual_key:
+                    error_msg = f"Invalid key '{actual_key}' in {self.__name__}. Keys must use 'color' instead of 'colour'."
+                    _LOGGER.critical(error_msg)
+                    raise ValueError(error_msg)
 
     @classmethod
     def registry(self):
@@ -1212,8 +1259,10 @@ def extract_positive_integers(s):
     # Use regular expression to find all sequences of digits
     numbers = re.findall(r"\d+", s)
 
-    # Convert each found sequence to an integer and filter out non-positive numbers
-    return [int(num) for num in numbers if int(num) >= 0]
+    # Convert each found sequence to an integer
+    # filter out non-positive numbers
+    # make list unique values via set
+    return list({int(num) for num in numbers if int(num) >= 0})
 
 
 def clip_at_limit(numbers, limit):
@@ -1299,6 +1348,24 @@ def generate_default_config(ledfx_effects, effect_id):
     return ledfx_effects.get_class(effect_id).get_combined_default_schema()
 
 
+def inject_missing_default_keys(presets, defaults):
+    """Inject missing keys from defaults into presets
+    This happens when static or user presets are defined and there are
+    new keys added to the effect config schema later
+    Args:
+        presets (dict): The current presets.
+        defaults (dict): The current defaults.
+    Returns:
+        dict: The updated presets.
+    """
+    for preset in presets.values():
+        default_preset = defaults["reset"]["config"]
+        for key, value in default_preset.items():
+            if key not in preset["config"]:
+                preset["config"][key] = value
+    return presets
+
+
 def generate_defaults(ledfx_presets, ledfx_effects, effect_id):
     """Generate default presets for an effect.
     appends effect class defaults to presets
@@ -1324,5 +1391,182 @@ def generate_defaults(ledfx_presets, ledfx_effects, effect_id):
             "name": "reset",
         }
     }
+
+    presets = inject_missing_default_keys(presets, default)
+
     default.update(presets)
     return default
+
+
+def log_packages():
+    _LOGGER.debug(f"{system()} : {release()} : {processor()}")
+    _LOGGER.debug(
+        f"{python_version()} : {python_build()} : {python_implementation()}"
+    )
+    _LOGGER.debug("Packages")
+    dists = list(metadata.distributions())
+    dists.sort(key=lambda x: x.metadata["name"])
+    for dist in dists:
+        _LOGGER.debug(f"{dist.metadata['name']} : {dist.version}")
+
+
+def is_package_installed(package_name):
+    """
+    Check if a Python package is installed.
+
+    Args:
+        package_name (str): The name of the package to check.
+
+    Returns:
+        bool: True if the package is installed, False otherwise.
+    """
+    try:
+        metadata.distribution(package_name)
+        return True
+    except ModuleNotFoundError:
+        return False
+
+
+def check_optional_dependencies():
+    """
+    Check for optional dependencies and log if they are not installed.
+    """
+    dependencies = ["psutil", "python-mbedtls"]
+    for dependency in dependencies:
+        if is_package_installed(dependency):
+            _LOGGER.info(f"Optional dependency '{dependency}' installed.")
+        else:
+            _LOGGER.info(f"Optional dependency '{dependency}' not installed.")
+
+
+class PerformanceAnalysis:
+    """
+    A class for comparing the performance of two functions.
+    """
+
+    _write_buffer = []
+    _write_buffer_limit = 100
+
+    @staticmethod
+    def compare_functions(
+        original_function: Callable,
+        optimized_function: Callable,
+        num_runs: int = 1,
+    ):
+        """
+        Compare the execution time of two functions.
+
+        To use, import the PerformanceAnalysis using "from ledfx.utils import PerformanceAnalysis"
+        and then call PerformanceAnalysis.compare_functions(lambda: original_function(function arguments), lambda: optimized_function(function_arguments), num_runs).
+
+        For example:
+        PerformanceAnalysis.compare_functions(lambda: fill_rainbow(self.pixels, self._hue, hue_delta),lambda: fill_rainbow_slow(self.pixels, self._hue, hue_delta))
+
+        Parameters:
+        original_function (Callable): The original function to be compared, wrapped in lambda to prevent it from being executed immediately.
+        optimized_function (Callable): The optimized function to be compared, wrapped in lambda to prevent it from being executed immediately.
+        num_runs (int, optional): The number of times each function should be run. Defaults to 1, since we usually use this inside loops.
+
+        Returns:
+        None
+        """
+        original_time = PerformanceAnalysis._timer_wrapper(
+            original_function, num_runs
+        )
+        optimized_time = PerformanceAnalysis._timer_wrapper(
+            optimized_function, num_runs
+        )
+
+        if original_time < optimized_time:
+            faster_method = "Original"
+            percent_faster = (
+                (optimized_time - original_time) / original_time
+            ) * 100
+        else:
+            faster_method = "Optimized"
+            percent_faster = (
+                (original_time - optimized_time) / optimized_time
+            ) * 100
+
+        PerformanceAnalysis._write_to_csv(
+            num_runs,
+            faster_method,
+            original_time,
+            optimized_time,
+            percent_faster,
+        )
+
+    @staticmethod
+    def _timer_wrapper(func: Callable, num_runs: int) -> float:
+        """
+        Time a function over a number of runs.
+
+        Args:
+            func (Callable): The function to be timed.
+            num_runs (int): The number of times to run the function.
+
+        Returns:
+            float: The average time taken to run the function.
+
+        """
+        start_time = time.perf_counter()
+        for _ in range(num_runs):
+            func()
+        end_time = time.perf_counter()
+
+        return (end_time - start_time) / num_runs
+
+    @staticmethod
+    def _write_to_csv(
+        num_runs: int,
+        faster_method: str,
+        original_time: float,
+        optimized_time: float,
+        percent_faster: float,
+    ):
+        """
+        Write the function comparison results to a CSV file - buffer 100 rows before writing to file to minimize disk writes and performance impact.
+
+        Parameters:
+        - num_runs (int): The number of runs performed for the function comparison.
+        - faster_method (str): The name of the faster method being compared.
+        - original_time (float): The execution time of the original method.
+        - optimized_time (float): The execution time of the optimized method.
+        - percent_faster (float): The percentage improvement in execution time of the optimized method compared to the original method.
+        """
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
+        PerformanceAnalysis._write_buffer.append(
+            [
+                timestamp,
+                num_runs,
+                faster_method,
+                original_time,
+                optimized_time,
+                f"{percent_faster}%",
+            ]
+        )
+
+        if (
+            len(PerformanceAnalysis._write_buffer)
+            >= PerformanceAnalysis._write_buffer_limit
+        ):
+            with open(
+                "performance_analysis.csv", mode="a", newline=""
+            ) as file:
+                writer = csv.writer(file)
+                writer.writerows(PerformanceAnalysis._write_buffer)
+                PerformanceAnalysis._write_buffer.clear()
+
+
+@lru_cache(maxsize=128)
+def is_snake_case(string) -> bool:
+    """
+    Check if a string is in snake_case format.
+
+    Args:
+        string (str): The string to be checked.
+
+    Returns:
+        bool: True if the string is in snake_case format, False otherwise.
+    """
+    return re.match("^[a-z][a-z_]*[a-z]$", string) is not None

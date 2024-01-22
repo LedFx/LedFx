@@ -64,5 +64,73 @@
                 "order": 1
             }
         },
+        {
+            "name": "LedFx (Temp Config)",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/ledfx/__main__.py",
+            "args": ["-c","debug_config", "-p","8887"],
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "windows": {
+                "program": "${workspaceFolder}\\ledfx\\__main__.py"
+            },
+            "presentation": {
+                "group": "Temp Config",
+                "order": 1
+            },
+            "postDebugTask": "Cleanup Debug Config Folder",
+        },
+        {
+            "name": "LedFx (Verbose Logging, Temp Config)",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/ledfx/__main__.py",
+            "args": ["-vv","-c","debug_config", "-p","8887"],
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "windows": {
+                "program": "${workspaceFolder}\\ledfx\\__main__.py"
+            },
+            "presentation": {
+                "group": "Temp Config",
+                "order": 2
+            },
+            "postDebugTask": "Cleanup Debug Config Folder"
+        },
+        {
+            "name": "LedFx (Verbose Logging, No Sentry, Temp Config)",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/ledfx/__main__.py",
+            "args": ["-vv", "--offline", "-c","debug_config", "-p","8887"],
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "windows": {
+                "program": "${workspaceFolder}\\ledfx\\__main__.py"
+            },
+            "presentation": {
+                "group": "Temp Config",
+                "order": 2
+            },
+            "postDebugTask": "Cleanup Debug Config Folder"
+        },
+        {
+            "name": "LedFx (No Sentry, Temp Config)",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/ledfx/__main__.py",
+            "args": ["--offline", "-c","debug_config", "-p","8887"],
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "windows": {
+                "program": "${workspaceFolder}\\ledfx\\__main__.py"
+            },
+            "presentation": {
+                "group": "Temp Config",
+                "order": 1
+            },
+            "postDebugTask": "Cleanup Debug Config Folder"
+        },
     ]
 }

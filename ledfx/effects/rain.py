@@ -28,6 +28,11 @@ class RainAudioEffect(AudioReactiveEffect):
                 default="white",
             ): validate_color,
             vol.Optional(
+                "pulse_strip",
+                description="Pulse the entire strip to the beat",
+                default="Off",
+            ): vol.In(["Off", "Lows", "Mids", "Highs"]),
+            vol.Optional(
                 "mids_color",
                 description="color for mid sounds, ie vocals",
                 default="red",
@@ -63,6 +68,7 @@ class RainAudioEffect(AudioReactiveEffect):
     def on_activate(self, pixel_count):
         self.drop_frames = np.zeros(self.pixel_count, dtype=int)
         self.drop_colors = np.zeros((3, self.pixel_count))
+        self.pulse_pixels = np.zeros((self.pixel_count, 3))
 
     def config_updated(self, config):
         self.drop_animation = load_droplet(config["raindrop_animation"])
@@ -103,6 +109,8 @@ class RainAudioEffect(AudioReactiveEffect):
         drop_indices = np.flatnonzero(self.drop_frames)
         # TODO vectorize this to remove for loop
         for index in drop_indices:
+            if self.drop_frames[index] >= len(self.drop_animation):
+                continue
             colored_frame = [
                 self.drop_animation[self.drop_frames[index]]
                 * self.drop_colors[color, index]
@@ -112,12 +120,24 @@ class RainAudioEffect(AudioReactiveEffect):
                 :, index : index + self.frame_width
             ] += colored_frame
 
-        np.clip(overlaid_frames, 0, 255, out=overlaid_frames)
         self.pixels = overlaid_frames[
             :,
             self.frame_side_lengths : self.frame_side_lengths
             + self.pixel_count,
         ].T
+        self.pixels += self.pulse_pixels
+        # Decay the pulse pixels
+        self.pulse_pixels = (self.pulse_pixels * 9) // 10
+
+    def strip_pulse(self, color):
+        """
+        Set the pulse pixels to a color
+        This color decays over time in render()
+
+        Args:
+            color: The color to pulse the strip
+        """
+        self.pulse_pixels = np.array([color])
 
     def audio_data_updated(self, data):
         # Calculate the low, mids, and high indexes scaling based on the pixel
@@ -132,25 +152,34 @@ class RainAudioEffect(AudioReactiveEffect):
             intensities[0] - self.filtered_intensities[0]
             > self._config["lows_sensitivity"]
         ):
-            self.new_drop(
-                randint(0, self.pixel_count - 1),
-                parse_color(self._config["lows_color"]),
-            )
+            if self._config["pulse_strip"] == "Lows":
+                self.strip_pulse(parse_color(self._config["lows_color"]))
+            else:
+                self.new_drop(
+                    randint(0, self.pixel_count - 1),
+                    parse_color(self._config["lows_color"]),
+                )
         if (
             intensities[1] - self.filtered_intensities[1]
             > self._config["mids_sensitivity"]
         ):
-            self.new_drop(
-                randint(0, self.pixel_count - 1),
-                parse_color(self._config["mids_color"]),
-            )
+            if self._config["pulse_strip"] == "Mids":
+                self.strip_pulse(parse_color(self._config["mids_color"]))
+            else:
+                self.new_drop(
+                    randint(0, self.pixel_count - 1),
+                    parse_color(self._config["mids_color"]),
+                )
         if (
             intensities[2] - self.filtered_intensities[2]
             > self._config["high_sensitivity"]
         ):
-            self.new_drop(
-                randint(0, self.pixel_count - 1),
-                parse_color(self._config["high_color"]),
-            )
+            if self._config["pulse_strip"] == "Highs":
+                self.strip_pulse(parse_color(self._config["high_color"]))
+            else:
+                self.new_drop(
+                    randint(0, self.pixel_count - 1),
+                    parse_color(self._config["high_color"]),
+                )
 
         self.filtered_intensities = self.intensity_filter.update(intensities)
