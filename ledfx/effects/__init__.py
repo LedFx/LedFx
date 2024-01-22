@@ -6,6 +6,7 @@ from functools import lru_cache
 
 import numpy as np
 import voluptuous as vol
+from numpy.typing import NDArray
 
 from ledfx.color import hsv_to_rgb, parse_color, validate_color
 from ledfx.utils import BaseRegistry, RegistryLoader
@@ -46,7 +47,7 @@ class DummyEffect:
         pass
 
 
-def mix_colors(color_1, color_2, ratio):
+def mix_colors(color_1: tuple, color_2: tuple, ratio: float) -> tuple:
     """
     Mixes two colors based on a given ratio.
 
@@ -72,7 +73,9 @@ def mix_colors(color_1, color_2, ratio):
         )
 
 
-def fill_rainbow(pixels, initial_hue, delta_hue):
+def fill_rainbow(
+    pixels: NDArray, initial_hue: float, delta_hue: float
+) -> NDArray:
     """
     Fills the given pixels with a rainbow effect.
 
@@ -87,26 +90,20 @@ def fill_rainbow(pixels, initial_hue, delta_hue):
     sat = 0.95
     val = 1.0
 
-    # Create a range of initial hues for each pixel
-    initial_hues = np.linspace(
-        initial_hue, initial_hue + delta_hue * (len(pixels) - 1), len(pixels)
+    # Create an array of hue values starting from 'initial_hue' and increasing
+    # by 'delta_hue' for each pixel. The array length is initially set to be longer
+    # than the number of pixels.
+    hues = np.arange(
+        initial_hue, initial_hue + len(pixels) * delta_hue, delta_hue
     )
 
-    # Add delta_hue to the initial hues for each pixel and wrap around any values that exceed 1.0
-    hues = (initial_hues + delta_hue) % 1.0
+    # ensure each pixel has a corresponding hue value.
+    hues = hues[: len(pixels)]
 
-    # Create 2D arrays for saturation and value
-    saturation = np.full_like(hues, sat)
-    value = np.full_like(hues, val)
-
-    # Stack the hues, saturation, and value arrays along the second axis
-    hsv_array = np.stack((hues, saturation, value), axis=-1)
-
-    # Convert the HSV array to RGB and return it
-    return hsv_to_rgb(hsv_array)
+    return hsv_to_rgb(hues, sat, val)
 
 
-def blur_pixels(pixels, sigma):
+def blur_pixels(pixels: NDArray, sigma: float) -> NDArray:
     """
     Applies a blur effect to the given pixels.
 
@@ -125,7 +122,7 @@ def blur_pixels(pixels, sigma):
 
 
 @lru_cache(maxsize=1024)
-def _gaussian_kernel1d(sigma, order, array_len):
+def _gaussian_kernel1d(sigma: float, order: int, array_len: int) -> NDArray:
     """
     Produces a 1D Gaussian or Gaussian-derivative filter kernel as a numpy array.
 
@@ -170,7 +167,7 @@ def _gaussian_kernel1d(sigma, order, array_len):
     return phi_x
 
 
-def fast_blur_pixels(pixels, sigma):
+def fast_blur_pixels(pixels: NDArray, sigma: float) -> NDArray:
     """
     Applies a fast blur effect to the given pixels using a Gaussian kernel.
 
@@ -193,7 +190,7 @@ def fast_blur_pixels(pixels, sigma):
     return pixels
 
 
-def fast_blur_array(array, sigma):
+def fast_blur_array(array: NDArray, sigma: float) -> NDArray:
     """
     Apply fast Gaussian blur to a 1-dimensional array.
 

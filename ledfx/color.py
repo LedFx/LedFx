@@ -2,6 +2,7 @@ import logging
 from collections import namedtuple
 
 import numpy as np
+from numpy.typing import NDArray
 from PIL import ImageColor
 
 _LOGGER = logging.getLogger(__name__)
@@ -70,79 +71,51 @@ class Gradient:
         self.angle = angle
 
 
-def hsv_to_rgb(hsv):
+def hsv_to_rgb(hue: NDArray, saturation: float, value: float) -> NDArray:
     """
-    Vectorized conversion of an entire pixel array from hsv colorspace to rgb colorspace.
-    Approx 3x faster than using colorsys.hsv_to_rgb on a single pixel, and performance improvement is exponential with the number of pixels.
+    Converts an array of Hues using provided saturation and value properties to an RGB array.
 
-    Algorithm from https://en.wikipedia.org/wiki/HSL_and_HSV#HSV_to_RGB
-
-    Parameters:
-    - hsv: numpy array of shape (n, 3) representing the HSV values of pixels
+    Args:
+        hue (numpy.ndarray): Array of hue values (0 to 1).
+        saturation (float between 0 and 1): The saturation ("brightness") of the color.
+        value (float between 0 and 1): The value ("colorfulness") of the color.
 
     Returns:
-    - rgb: numpy array of shape (n, 3) representing the RGB values of pixels
+        numpy.ndarray: An array of RGB values where each RGB value is in the range
+                       0 to 255.
+
     """
-    # Extract the hue, saturation, and value components from the HSV color space
-    hue, saturation, value = hsv[:, 0], hsv[:, 1], hsv[:, 2]
 
-    # Compute the chroma, which is the colorfulness relative to the brightness of another color that appears white under similar viewing conditions
-    chroma = value * saturation
+    # The hue value is scaled by 6 to map it to one of the six sections of the
+    # RGB color wheel.
+    hue_i = hue * 6
 
-    # Multiply the hue by 6 to map it to a sector number, as per the HSV to RGB conversion algorithm
-    # These six hue sectors represent the six transitions between primary and secondary colors on the color wheel
-    # The hue value is an angle between 0 and 360 degrees, so we need to multiply it by 6 to map it to a sector number
-    hue *= 6
+    # The integer part of h_i determines the section of the color wheel the hue
+    # belongs to.
+    i = np.floor(hue_i).astype(int)
 
-    # Compute the intermediate value used in the RGB conversion
-    intermediate_value = chroma * (1 - np.abs(hue % 2 - 1))
+    # The fractional part of h_i.
+    f = hue_i - i
 
-    # Initialize the RGB values array with zeros, having the same shape as the HSV input
-    rgb_values = np.zeros(hsv.shape)
+    # Intermediate values for the RGB conversion process.
+    p = value * (1 - saturation)
+    q = value * (1 - saturation * f)
+    t = value * (1 - saturation * (1 - f))
 
-    # For each sector of the hue, calculate the corresponding RGB values
-    # The RGB conversion algorithm is different for each sector of the hue
+    # Ensure that i values are within the range [0, 5].
+    i = i % 6
 
-    # Sector 0 to 1 (red to yellow)
-    mask = (0 <= hue) & (hue <= 1)
-    rgb_values[mask, 0] = chroma[mask]  # Red is dominant
-    rgb_values[mask, 1] = intermediate_value[mask]  # Green is increasing
+    # Preparing an array for RGB values.
+    rgb = np.zeros((hue.shape[0], 3))
 
-    # Sector 1 to 2 (yellow to green)
-    mask = (1 < hue) & (hue <= 2)
-    rgb_values[mask, 0] = intermediate_value[mask]  # Red is decreasing
-    rgb_values[mask, 1] = chroma[mask]  # Green is dominant
+    # Assigning the red, green, and blue components based on the section of the
+    # color wheel. 'np.choose' is used to efficiently select values for each pixel.
+    rgb[:, 0] = np.choose(i, [value, q, p, p, t, value], mode="wrap")
+    rgb[:, 1] = np.choose(i, [t, value, value, q, p, p], mode="wrap")
+    rgb[:, 2] = np.choose(i, [p, p, t, value, value, q], mode="wrap")
 
-    # Sector 2 to 3 (green to cyan)
-    mask = (2 < hue) & (hue <= 3)
-    rgb_values[mask, 1] = chroma[mask]  # Green is dominant
-    rgb_values[mask, 2] = intermediate_value[mask]  # Blue is increasing
-
-    # Sector 3 to 4 (cyan to blue)
-    mask = (3 < hue) & (hue <= 4)
-    rgb_values[mask, 1] = intermediate_value[mask]  # Green is decreasing
-    rgb_values[mask, 2] = chroma[mask]  # Blue is dominant
-
-    # Sector 4 to 5 (blue to magenta)
-    mask = (4 < hue) & (hue <= 5)
-    rgb_values[mask, 0] = intermediate_value[mask]  # Red is increasing
-    rgb_values[mask, 2] = chroma[mask]  # Blue is dominant
-
-    # Sector 5 to 6 (magenta to red)
-    mask = (5 < hue) & (hue <= 6)
-    rgb_values[mask, 0] = chroma[mask]  # Red is dominant
-    rgb_values[mask, 2] = intermediate_value[mask]  # Blue is decreasing
-
-    # Compute the match value to match the RGB values with the original value
-    match_value = value - chroma
-
-    # Add the match value to each RGB component to align it with the original value
-    rgb_values[:, 0] += match_value
-    rgb_values[:, 1] += match_value
-    rgb_values[:, 2] += match_value
-
-    # Return the RGB values, scaled to the range 0-255 as per the standard RGB color space
-    return rgb_values * 255
+    # Scale the RGB values to the 0-255 range
+    return rgb * 255
 
 
 def parse_color(color: (str, list, tuple)) -> RGB:
