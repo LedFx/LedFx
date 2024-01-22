@@ -313,6 +313,9 @@ class Effect(BaseRegistry):
                 description="Brightness of the background color",
                 default=1.0,
             ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
+            vol.Optional("background_mixing", default="additive"): vol.In(
+                ["additive", "replace"]
+            ),
         }
     )
 
@@ -452,8 +455,7 @@ class Effect(BaseRegistry):
                     pixels = np.concatenate(
                         (pixels[-1 + len(pixels) % -2 :: -2], pixels[::2])
                     )
-                if config["background_color"]:
-                    pixels += self._bg_color
+
                 if config["brightness"] is not None:
                     np.multiply(
                         pixels,
@@ -461,6 +463,33 @@ class Effect(BaseRegistry):
                         out=pixels,
                         casting="unsafe",
                     )
+                if config["background_color"]:
+                    # We need to keep _bg_color as a float - 0 and 1 are valid values but
+                    # numpy will cast them to int if we don't keep it as a float
+                    # This blows up later when we try to multiply the pixels by brightness, which is a float
+                    bg_color_array = np.tile(
+                        self._bg_color.astype(np.float64),
+                        (self.pixel_count, 1),
+                    )
+                    if config["background_mixing"] == "additive":
+                        pixels += bg_color_array
+                    elif config["background_mixing"] == "replace":
+                        # We use a static threshold here here because we want to replace any pixels that are
+                        # very close to black, but not exactly black, with the background color
+                        # This is because the blur effect can leave some pixels that are very
+                        # close to black, but not exactly black, and we want to replace those.
+                        # TODO: Figure out a better way to do this, since this is a bit of a hack
+                        black_threshold = 10
+                        # Find all pixels that have a combined R,G,B value of greater than than black_threshold
+                        # We will consider this to be a pixel that holds effect information
+                        effect_mask = np.any(
+                            pixels >= black_threshold, axis=-1
+                        )
+                        # apply the effect_mask to the background color array
+                        bg_color_array[effect_mask] = pixels[effect_mask]
+                        # Set the pixels to the background color array
+                        # which now contains the effect pixels and the background color
+                        pixels = bg_color_array
 
                 # If the configured blur is greater than 0 and pixel_count > 3, apply blur
                 # The matrix math requires > 3 pixels to work properly
@@ -484,8 +513,9 @@ class Effect(BaseRegistry):
                         pixels[:, 2], kernel, mode="same"
                     )  # B
                     # pixels[:, 3] = np.convolve(pixels[:, 3], kernel, mode="same") # W
-        self.lock.release()
-        return pixels
+
+                self.lock.release()
+                return pixels
 
     @property
     def is_active(self):

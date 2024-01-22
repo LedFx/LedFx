@@ -22,6 +22,7 @@ class Twod(AudioReactiveEffect):
         "test",
         "flip horizontal",
         "flip vertical",
+        "background_mixing",
     ]
 
     CONFIG_SCHEMA = vol.Schema(

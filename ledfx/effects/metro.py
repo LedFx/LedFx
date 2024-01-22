@@ -18,7 +18,12 @@ from ledfx.utils import Graph, bokeh_available
 class MetroEffect(AudioReactiveEffect):
     NAME = "Metro"
     CATEGORY = "Diagnostic"
-    HIDDEN_KEYS = ["background_brightness", "blur", "mirror"]
+    HIDDEN_KEYS = [
+        "background_brightness",
+        "blur",
+        "mirror",
+        "background_mixing",
+    ]
     if not bokeh_available:
         HIDDEN_KEYS.append("capture")
 
