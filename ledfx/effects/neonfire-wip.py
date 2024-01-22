@@ -227,7 +227,6 @@ class neonfire(Twod):
     def renderframe(self):
         tempbuffer = self.imagebuffer.copy()
         if self.usestepsize:
-
             # TODO: measure performance difference
             if self.subtractive:
                 # tempbuffer = ImageChops.overlay(tempbuffer.copy(), Image.new("RGBA", (self.renderwidth, self.renderheight),(0,0,0,self.stepsize)))
@@ -323,8 +322,10 @@ class neonfire(Twod):
                     collo1.paste(waterfallmove, (croptransform[0], 1))
 
             # TODO: performance and comparative visual testing
-                    
-            self.imagebuffer = Image.blend(collo1, collo2,0.5)  #appears to have the best interaction with current alpha blending setups
+
+            self.imagebuffer = Image.blend(
+                collo1, collo2, 0.5
+            )  # appears to have the best interaction with current alpha blending setups
 
             # self.imagebuffer = Image.alpha_composite(collo1, collo2)
             # self.imagebuffer = ImageChops.screen(collo1, collo2)
