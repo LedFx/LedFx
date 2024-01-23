@@ -135,6 +135,9 @@ def get_default_config_directory() -> str:
     )
     return os.path.join(base_dir, CONFIG_DIRECTORY)
 
+def get_default_config_path() -> str:
+    """Get the default fully qualified configuration file path"""
+    return os.path.join(get_default_config_directory(), CONFIG_FILE_NAME)
 
 def get_config_file(config_dir: str) -> str:
     """Finds a supported configuration file in the provided directory"""
@@ -585,16 +588,18 @@ def create_backup(config_dir, config_file, errortype):
         _LOGGER.warning(
             "Error loading configuration. Backup created, empty configuration used."
         )
-
-    if errortype == "VERSION":
+    elif errortype == "VERSION":
         _LOGGER.warning("Incompatible Configuration Detected. Backup Created.")
-
-    if errortype == "OSERROR":
+    elif errortype == "OSERROR":
         _LOGGER.warning(
             "Unable to Open Configuration. Backup Created, empty configuration used."
         )
-
-    _LOGGER.warning(f"Backup Located at: {backup_location}")
+    elif errortype == "IMPORT":
+        _LOGGER.warning("Attempting config import. Backup Created.")
+    elif errortype == "DELETE":
+        _LOGGER.warning("Attempting config deletion. Backup Created.")
+    else:
+        _LOGGER.error("Unknown Error. Backup Created.")
 
 
 def save_config(config: dict, config_dir: str) -> None:
