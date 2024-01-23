@@ -6,7 +6,17 @@ from aiohttp import web
 
 from ledfx.api import RestEndpoint
 from ledfx.api.utils import PERMITTED_KEYS
-from ledfx.config import CORE_CONFIG_SCHEMA, WLED_CONFIG_SCHEMA, save_config
+from ledfx.config import (
+    CORE_CONFIG_SCHEMA,
+    WLED_CONFIG_SCHEMA,
+    create_backup,
+    get_default_config_directory,
+    get_default_config_path,
+    migrate_config,
+    parse_version,
+    save_config,
+)
+from ledfx.consts import CONFIGURATION_VERSION
 from ledfx.effects.audio import AudioInputSource
 from ledfx.effects.melbank import Melbanks
 
@@ -80,6 +90,10 @@ class ConfigEndpoint(RestEndpoint):
         Returns:
             web.Response: The response indicating the success of the operation.
         """
+
+        create_backup(
+            get_default_config_directory(), get_default_config_path(), "DELETE"
+        )
         self._ledfx.config = CORE_CONFIG_SCHEMA({})
 
         save_config(
@@ -105,6 +119,33 @@ class ConfigEndpoint(RestEndpoint):
         """
         try:
             config = await request.json()
+
+            try:
+                assert parse_version(
+                    config["configuration_version"]
+                ) == parse_version(CONFIGURATION_VERSION)
+            except (KeyError, AssertionError):
+                _LOGGER.warning(
+                    f"LedFx config version: {CONFIGURATION_VERSION}, import config version: {config.get('configuration_version', 'UNDEFINED (old!)')}"
+                )
+                try:
+                    config = migrate_config(config)
+                except Exception as e:
+                    _LOGGER.exception(
+                        f"Failed to migrate import config to the new standard: {e}"
+                    )
+                    return await self.internal_error(
+                        "error",
+                        f"Failed to migrate import config to the new standard: {e}",
+                    )
+
+            # if we got this far, we are happy with and commiting to the import config
+            # so backup the old one
+            create_backup(
+                get_default_config_directory(),
+                get_default_config_path(),
+                "IMPORT",
+            )
 
             audio_config = AudioInputSource.AUDIO_CONFIG_SCHEMA.fget()(
                 config.pop("audio", {})
