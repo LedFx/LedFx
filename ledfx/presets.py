@@ -548,7 +548,8 @@ ledfx_presets = {
                 "force_fit": True,
                 "half_beat": False,
                 "image_location": os.path.join(
-                    LEDFX_ASSETS_PATH, "gifs", "saturday.webp"),
+                    LEDFX_ASSETS_PATH, "gifs", "saturday.webp"
+                ),
                 "keep_aspect_ratio": False,
                 "mirror": False,
                 "ping_pong": True,
@@ -558,9 +559,9 @@ ledfx_presets = {
                 "skip_frames": "",
                 "stretch_horizontal": 100,
                 "stretch_vertical": 100,
-                "test": False
+                "test": False,
             },
-            "name": "saturday"
+            "name": "saturday",
         },
         "snoopy": {
             "config": {
