@@ -6,7 +6,16 @@ from aiohttp import web
 
 from ledfx.api import RestEndpoint
 from ledfx.api.utils import PERMITTED_KEYS
-from ledfx.config import CORE_CONFIG_SCHEMA, WLED_CONFIG_SCHEMA, save_config, get_default_config_directory, get_default_config_path, create_backup, parse_version, migrate_config
+from ledfx.config import (
+    CORE_CONFIG_SCHEMA,
+    WLED_CONFIG_SCHEMA,
+    create_backup,
+    get_default_config_directory,
+    get_default_config_path,
+    migrate_config,
+    parse_version,
+    save_config,
+)
 from ledfx.consts import CONFIGURATION_VERSION
 from ledfx.effects.audio import AudioInputSource
 from ledfx.effects.melbank import Melbanks
@@ -82,7 +91,9 @@ class ConfigEndpoint(RestEndpoint):
             web.Response: The response indicating the success of the operation.
         """
 
-        create_backup(get_default_config_directory(), get_default_config_path(), "DELETE")
+        create_backup(
+            get_default_config_directory(), get_default_config_path(), "DELETE"
+        )
         self._ledfx.config = CORE_CONFIG_SCHEMA({})
 
         save_config(
@@ -130,7 +141,11 @@ class ConfigEndpoint(RestEndpoint):
 
             # if we got this far, we are happy with and commiting to the import config
             # so backup the old one
-            create_backup(get_default_config_directory(), get_default_config_path(), "IMPORT")
+            create_backup(
+                get_default_config_directory(),
+                get_default_config_path(),
+                "IMPORT",
+            )
 
             audio_config = AudioInputSource.AUDIO_CONFIG_SCHEMA.fget()(
                 config.pop("audio", {})

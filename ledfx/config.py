@@ -135,9 +135,11 @@ def get_default_config_directory() -> str:
     )
     return os.path.join(base_dir, CONFIG_DIRECTORY)
 
+
 def get_default_config_path() -> str:
     """Get the default fully qualified configuration file path"""
     return os.path.join(get_default_config_directory(), CONFIG_FILE_NAME)
+
 
 def get_config_file(config_dir: str) -> str:
     """Finds a supported configuration file in the provided directory"""
