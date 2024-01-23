@@ -7,6 +7,7 @@ from aiohttp import web
 
 from ledfx.api import RestEndpoint
 from ledfx.config import save_config
+from ledfx.virtuals import update_effect_config
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -40,37 +41,6 @@ class EffectsEndpoint(RestEndpoint):
             effect_response["type"] = virtual.active_effect.type
             response = {"effect": effect_response}
         return await self.bare_request_success(response)
-
-    def update_effect_config(self, virtual_id, effect):
-        """
-        Update the configuration of a virtual effect.
-
-        Args:
-            virtual_id (str): The ID of the virtual effect.
-            effect (Effect): The effect object containing the updated configuration.
-
-        Returns:
-            None
-        """
-        # Store as both the active effect to protect existing code, and one of effects
-        virtual = next(
-            (
-                item
-                for item in self._ledfx.config["virtuals"]
-                if item["id"] == virtual_id
-            ),
-            None,
-        )
-        if virtual:
-            if not ("effects" in virtual):
-                virtual["effects"] = {}
-            virtual["effects"][effect.type] = {}
-            virtual["effects"][effect.type]["type"] = effect.type
-            virtual["effects"][effect.type]["config"] = effect.config
-            if not ("effect" in virtual):
-                virtual["effect"] = {}
-            virtual["effect"]["type"] = effect.type
-            virtual["effect"]["config"] = effect.config
 
     async def put(self, virtual_id, request) -> web.Response:
         """
@@ -180,7 +150,7 @@ class EffectsEndpoint(RestEndpoint):
             _LOGGER.warning(error_message)
             return await self.internal_error("warning", error_message)
 
-        self.update_effect_config(virtual_id, effect)
+        update_effect_config(self._ledfx.config, virtual_id, effect)
 
         save_config(
             config=self._ledfx.config,
@@ -289,7 +259,7 @@ class EffectsEndpoint(RestEndpoint):
             _LOGGER.warning(error_message)
             return await self.internal_error("error", error_message)
 
-        self.update_effect_config(virtual_id, effect)
+        update_effect_config(self._ledfx.config, virtual_id, effect)
 
         save_config(
             config=self._ledfx.config,
