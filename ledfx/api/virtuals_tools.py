@@ -5,10 +5,12 @@ from aiohttp import web
 
 from ledfx.api import RestEndpoint
 from ledfx.color import parse_color, validate_color
+from ledfx.config import save_config
+from ledfx.virtuals import update_effect_config
 
 _LOGGER = logging.getLogger(__name__)
 
-TOOLS = ["force_color", "calibration", "highlight", "oneshot"]
+TOOLS = ["force_color", "calibration", "highlight", "oneshot", "copy"]
 
 
 class VirtualsToolsEndpoint(RestEndpoint):
@@ -120,6 +122,56 @@ class VirtualsToolsEndpoint(RestEndpoint):
             )
             if result is False:
                 return await self.invalid_request("oneshot failed")
+
+        if tool == "copy":
+            # copy the config of the specified virtual instance to all virtuals listed in the target payload
+            target = data.get("target")
+            # test if target is none or not a list
+
+            if target is None:
+                return await self.invalid_request(
+                    "Required attribute for copy, target was not provided"
+                )
+            if type(target) is not list:
+                return await self.invalid_request(
+                    "Required attribute for copy, target must be a list"
+                )
+            updated = 0
+            if virtual.active_effect is None:
+                return await self.invalid_request(
+                    "Virtual copy failed, no active effect on source virtual"
+                )
+
+            for dest_virtual_id in target:
+                dest_virtual = self._ledfx.virtuals.get(dest_virtual_id)
+                if dest_virtual is None:
+                    continue
+
+                try:
+                    effect = self._ledfx.effects.create(
+                        ledfx=self._ledfx,
+                        type=virtual.active_effect.type,
+                        config=virtual.active_effect.config,
+                    )
+
+                    dest_virtual.set_effect(effect)
+                except (ValueError, RuntimeError) as msg:
+                    continue
+
+                update_effect_config(
+                    self._ledfx.config, dest_virtual_id, effect
+                )
+                updated += 1
+
+            if updated > 0:
+                save_config(
+                    config=self._ledfx.config,
+                    config_dir=self._ledfx.config_dir,
+                )
+            else:
+                return await self.invalid_request(
+                    "Virtual copy failed, no valid targets"
+                )
 
         effect_response = {}
         effect_response["tool"] = tool

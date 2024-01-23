@@ -648,7 +648,7 @@ Extensible support for general tools towards a specified virtual
 
 .. rubric:: PUT
 
-Supports tool instances of force_color, calibration, highlight and oneshot others may be added in the future
+Supports tool instances of force_color, calibration, highlight, oneshot and copy, others may be added in the future
 
 **force_color**
 
@@ -792,6 +792,33 @@ The virtual must be active or an error will be returned
         "status": "failed",
         "reason": "virtual falcon1 is not active"
     }
+
+
+**copy**
+
+| Copy the active effect config of <virtual_id> to a list of other virtuals
+
+| target: A list of virtual ids to copy the active effect config to
+
+.. code-block:: json
+
+    {
+        "tool":"copy",
+        "target":["my_virtual1","my_virtual2","my_virtual3"]
+    }
+
+returns
+
+.. code-block:: json
+
+    {
+        "status": "success",
+        "tool": "copy"
+    }
+
+| The virtual must have an active or an error will be returned
+| target must be a list of virtual ids or an error will be returned
+| At least one virtual effect copy must be successful or an error will be returned
 
 /api/effects/<effect_id>/presets
 ===================================

@@ -66,6 +66,7 @@ Linux
 
     This assumes an apt based system such as ubuntu.
     If your system uses another package manager you should be able use it to get the required packages.
+
 #. Install poetry:
 
    .. code:: console
