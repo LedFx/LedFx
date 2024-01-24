@@ -10,8 +10,6 @@ from ledfx.color import parse_color, validate_color
 from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.twod import Twod
 
-# from ledfx.effects.hsv_effect import hsv_to_rgb
-
 _LOGGER = logging.getLogger(__name__)
 
 # copy this file and rename it into the effects folder
@@ -38,6 +36,10 @@ def clamp(n, smallest, largest):
 
 def ease(value):
     return 0.5 * np.sin(np.pi * (value - 0.5)) + 0.5
+
+def neonmod(self, h, s, v):
+    #colormodes
+    return "" 
 
 
 class neonfire(Twod):
@@ -98,6 +100,16 @@ class neonfire(Twod):
                 default=16,
             ): vol.All(vol.Coerce(int), vol.Range(min=0, max=255)),
             vol.Optional(
+                "peak_hue_shift",
+                description="value of alpha reduction on particles per frame",
+                default=0,
+            ): vol.All(vol.Coerce(float), vol.Range(min=-1.0, max=1.0)),
+            vol.Optional(
+                "intensity_hue_shift",
+                description="value of alpha reduction on particles per frame",
+                default=0,
+            ): vol.All(vol.Coerce(float), vol.Range(min=-1.0, max=1.0)),
+            vol.Optional(
                 "use_stepsize",
                 description="Wether to use alpha sepsize or decay speed",
                 default=False,
@@ -120,7 +132,7 @@ class neonfire(Twod):
             vol.Optional(
                 "clamp_peak",
                 description="Clip peak-detection values",
-                default=False,
+                default=True,
             ): bool,
         }
     )
@@ -183,6 +195,8 @@ class neonfire(Twod):
         self.configchanged = True
         self.multiplier = self._config["multiplier"]
         self.clamp_peak = self._config["clamp_peak"]
+        self.peak_hue_shift = self._config["peak_hue_shift"]
+        self.intensity_hue_shift = self._config["intensity_hue_shift"]
 
     def do_once(self):
         super().do_once()
@@ -215,9 +229,6 @@ class neonfire(Twod):
         if self.renderheight > 0:
             self.r = self.melbank(filtered=True, size=self.renderheight)
             self.prep_frame_vars()
-            # self.modifybuffer()
-
-        self.even = np.invert(self.even)
 
     def prep_frame_vars(self):
         out = np.tile(self.r, (3, 1)).T
@@ -226,11 +237,16 @@ class neonfire(Twod):
 
     def renderframe(self):
         tempbuffer = self.imagebuffer.copy()
+        
+        if self.mirroring:
+            rightlimit = int(0.5 * self.renderwidth)
+        else:
+            rightlimit = self.renderwidth
+        
         if self.usestepsize:
             # TODO: measure performance difference
             if self.subtractive:
                 # tempbuffer = ImageChops.overlay(tempbuffer.copy(), Image.new("RGBA", (self.renderwidth, self.renderheight),(0,0,0,self.stepsize)))
-                # tempbuffer = ImageChops.subtract(tempbuffer.copy(), Image.new("RGBA", (self.renderwidth, self.renderheight),(0,0,0,self.stepsize)))
                 tempbuffer = ImageChops.subtract(
                     tempbuffer.copy(),
                     Image.new(
@@ -246,9 +262,6 @@ class neonfire(Twod):
                 )
 
             else:
-                # tempbuffer = ImageChops.multiply(tempbuffer.copy(), Image.new("RGBA", (self.renderwidth, self.renderheight),(255,255,255,self.stepsize)))
-                # tempbuffer = ImageChops.screen(tempbuffer.copy(), Image.new("RGBA", (self.renderwidth, self.renderheight),(255,255,255,self.stepsize)))
-                # tempbuffer = Image.alpha_composite(tempbuffer.copy(), Image.new("RGBA", (self.renderwidth, self.renderheight),(0,0,0,self.stepsize)))
                 tempbuffer = Image.blend(
                     tempbuffer.copy(),
                     Image.new(
@@ -264,8 +277,6 @@ class neonfire(Twod):
                 tempbuffer.copy(), self.emptybuffer.copy(), self.decay
             )
 
-        # tempbuffer.convert("RGBa")
-
         if not self.diagmove:
             self.imagebuffer = Image.new(
                 "RGBA", (self.renderwidth, self.renderheight), (0, 0, 0, 0)
@@ -279,20 +290,14 @@ class neonfire(Twod):
 
             collo1 = self.imagebuffer.copy()
             collo2 = self.imagebuffer.copy()
-            # collo1.paste(tempbuffer, (1,0), tempbuffer)
             collo1.paste(tempbuffer, (1, 0))
 
             if self.even:
-                # collo2.paste(tempbuffer, (1,1), tempbuffer)
                 collo2.paste(tempbuffer, (1, 1))
             else:
                 collo2 = collo1.copy()
 
             if self.waterfall:
-                if self.mirroring:
-                    rightlimit = int(0.5 * self.renderwidth)
-                else:
-                    rightlimit = self.renderwidth
                 croptransform = tuple(
                     (
                         int(0.125 * self.renderwidth),
@@ -305,10 +310,6 @@ class neonfire(Twod):
                 waterfallmove = waterfallmove.crop(croptransform)
                 collo2.paste(waterfallmove, (croptransform[0], 1))
                 if self.even:
-                    if self.mirroring:
-                        rightlimit = int(0.5 * self.renderwidth)
-                    else:
-                        rightlimit = self.renderwidth
                     croptransform = tuple(
                         (
                             int(0.375 * self.renderwidth),
@@ -327,14 +328,6 @@ class neonfire(Twod):
                 collo1, collo2, 0.5
             )  # appears to have the best interaction with current alpha blending setups
 
-            # self.imagebuffer = Image.alpha_composite(collo1, collo2)
-            # self.imagebuffer = ImageChops.screen(collo1, collo2)
-            # self.imagebuffer = ImageChops.overlay(collo1, collo2)
-            # self.imagebuffer = ImageChops.multiply(collo1, collo2)
-            # self.imagebuffer = ImageChops.add_modulo(collo1, collo2)
-            # alphamask = Image.alpha_composite(collo1, collo2)
-            # alphamask = ImageChops.screen(collo1, collo2)
-            # self.imagebuffer = ImageChops.composite(collo1, collo2, alphamask)
 
         if len(self.out_split) >= self.renderheight:
             for i in range(self.renderheight):
@@ -344,20 +337,31 @@ class neonfire(Twod):
                 rgbvalue = self.color
 
                 if self.hsvcolor:
-                    h = i / self.renderheight
+                    h = self.peak_hue_shift*self.bar + self.intensity_hue_shift*vol + i / self.renderheight
                     s = 1
                     # s = self.bar
-                    if self.showpeaks:
-                        s = 1 - self.bar
                     v = vol
+                    if self.showpeaks:
+                        if self.clamp_peak:
+                            s = 1 - self.bar
+                        else:
+                            s = 0.25 - (ease(self.bar) - 0.5) * 2
+
+                    
 
                 else:
                     hsv = rgb2hsv(rgbvalue)
-                    h = hsv[0]
+                    h = self.peak_hue_shift*self.bar + self.intensity_hue_shift*vol + hsv[0]
                     s = hsv[1]
+                    v = vol*hsv[2]
                     if self.showpeaks:
-                        s = hsv[1] - self.bar
-                    v = vol
+                        
+                        if self.clamp_peak:
+                            s = hsv[1] - self.bar
+
+                        else:
+                            s = 0.25 - (ease(self.bar) - 0.5) * 2
+                    
 
                 if self.waterfall:
                     # s = s*1.5-0.5
@@ -432,3 +436,5 @@ class neonfire(Twod):
 
         if self.test:
             self.draw_test(self.m_draw)
+        
+        self.even = np.invert(self.even)
