@@ -19,7 +19,7 @@ from ledfx.color import hsv_to_rgb
 
 
 def hsv2rgb(h, s, v):
-    #return hsv_to_rgb(h, s, v)
+    # return hsv_to_rgb(h, s, v)
     return tuple(round(i * 255) for i in colorsys.hsv_to_rgb(h, s, v))
 
 
@@ -244,9 +244,9 @@ class neonfire(Twod):
     def renderframe(self):
         tempbuffer = self.imagebuffer.copy()
         pixelcolor = (255, 255, 255, 255)
-        #rgbvalue = self.color
-        #hsv = rgb2hsv(rgbvalue)
-        
+        # rgbvalue = self.color
+        # hsv = rgb2hsv(rgbvalue)
+
         if self.mirroring:
             rightlimit = int(0.5 * self.renderwidth)
         else:
@@ -337,13 +337,10 @@ class neonfire(Twod):
                 collo1, collo2, 0.5
             )  # appears to have the best interaction with current alpha blending setups
 
-
         if len(self.out_split) >= self.renderheight:
             for i in range(self.renderheight):
                 vol = self.out_split[i].max()
                 # pixelcolor = (int(self.color[0]*vol), int(self.color[1]*vol), int(self.color[2]*vol) , 255)
-                
-                
 
                 if self.hsvcolor:
                     h = (
@@ -361,9 +358,13 @@ class neonfire(Twod):
                             s = 0.25 - (ease(self.bar) - 0.5) * 2
 
                 else:
-                    h = self.peak_hue_shift*self.bar + self.intensity_hue_shift*vol + self.hsv[0]
+                    h = (
+                        self.peak_hue_shift * self.bar
+                        + self.intensity_hue_shift * vol
+                        + self.hsv[0]
+                    )
                     s = self.hsv[1]
-                    v = vol*self.hsv[2]
+                    v = vol * self.hsv[2]
                     if self.showpeaks:
                         if self.clamp_peak:
                             s = self.hsv[1] - self.bar
@@ -386,7 +387,7 @@ class neonfire(Twod):
                     v = 0.1 + (v * 0.9)
 
                 rgbvalue = hsv2rgb(h, s, v)
-                #rgbvalue = hsv_to_rgb(h, s, v)
+                # rgbvalue = hsv_to_rgb(h, s, v)
 
                 if self.peaksense > 0:
                     peakresult = int(
@@ -401,7 +402,7 @@ class neonfire(Twod):
                     rgbvalue[2],
                     peakresult,
                 )
-                
+
                 # TODO: move to paste array for writing to buffer at once.
                 self.imagebuffer.putpixel((0, i), pixelcolor)
 
