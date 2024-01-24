@@ -7,6 +7,7 @@ import requests
 import voluptuous as vol
 
 from ledfx.devices import NetworkedDevice
+from ledfx.sentry_config import suppress_sentry_breadcrumb
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -132,20 +133,21 @@ class NanoleafDevice(NetworkedDevice):
         for key, (r, g, b) in self.status.items():
             anim_data += f" {str(key)} 1 {r} {g} {b} 0 0"
 
-        response = requests.put(
-            self.url(self._config["auth_token"]) + "/effects",
-            json={
-                "write": {
-                    "command": "display",
-                    "animType": "custom",
-                    "loop": True,
-                    "palette": [],
-                    "animData": anim_data,
-                }
-            },
-        )
-        if response.status_code == 400:
-            raise Exception("Invalid effect dictionary")
+        with suppress_sentry_breadcrumb():
+            response = requests.put(
+                self.url(self._config["auth_token"]) + "/effects",
+                json={
+                    "write": {
+                        "command": "display",
+                        "animType": "custom",
+                        "loop": True,
+                        "palette": [],
+                        "animData": anim_data,
+                    }
+                },
+            )
+            if response.status_code == 400:
+                raise Exception("Invalid effect dictionary")
 
     def flush(self, data):
         for panel, col in zip(

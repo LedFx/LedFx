@@ -5,11 +5,49 @@ import sys
 import sentry_sdk
 from dotenv import load_dotenv
 from sentry_sdk.integrations.aiohttp import AioHttpIntegration
+from contextlib import contextmanager
 
 from ledfx.consts import PROJECT_VERSION
 from ledfx.utils import currently_frozen
 
 _LOGGER = logging.getLogger(__name__)
+
+
+@contextmanager
+def suppress_sentry_breadcrumb():
+    """
+    Context manager to suppress a breadcrumb from being sent to Sentry.
+    Use this to suppress a breadcrumb that is not relevant to the current
+    context, e.g. a HTTP request for driving specific devices
+    which otherwise spam a breadcrumb towards sentry at FPS rate!
+
+    example in the function where the http request is made:
+
+    with suppress_sentry_breadcrumb():
+        your http sending code here
+    """
+
+    # Set a flag in the current scope
+    with sentry_sdk.configure_scope() as scope:
+        scope.set_tag('suppress_breadcrumb', True)
+        yield
+        scope.remove_tag('suppress_breadcrumb')
+
+
+def before_breadcrumb(crumb, hint):
+    """
+    Sentry callback to filter breadcrumbs.
+    Use this to suppress a breadcrumb that is not relevant to the current
+    Existing plumbing is against the suppress_breadcrumb tag
+    Can be extended for specific logic or additional tags as required
+    """
+
+    # Check if the breadcrumb should be suppressed
+    if crumb['category'] == 'http' and sentry_sdk.get_current_scope().tags.get('suppress_breadcrumb'):
+        return None  # Skip this breadcrumb
+
+    return crumb
+
 
 # Load the prod.env - this does not exist by default, and will thus be false when run from source
 extDataDir = os.path.dirname(os.path.realpath(__file__))
@@ -58,4 +96,5 @@ sentry_sdk.init(
     traces_sample_rate=sample_rate,
     integrations=[AioHttpIntegration()],
     release=release,
+    before_breadcrumb=before_breadcrumb,
 )
