@@ -1,11 +1,11 @@
 import logging
 import os
 import sys
+from contextlib import contextmanager
 
 import sentry_sdk
 from dotenv import load_dotenv
 from sentry_sdk.integrations.aiohttp import AioHttpIntegration
-from contextlib import contextmanager
 
 from ledfx.consts import PROJECT_VERSION
 from ledfx.utils import currently_frozen
@@ -29,9 +29,9 @@ def suppress_sentry_breadcrumb():
 
     # Set a flag in the current scope
     with sentry_sdk.configure_scope() as scope:
-        scope.set_tag('suppress_breadcrumb', True)
+        scope.set_tag("suppress_breadcrumb", True)
         yield
-        scope.remove_tag('suppress_breadcrumb')
+        scope.remove_tag("suppress_breadcrumb")
 
 
 def before_breadcrumb(crumb, hint):
@@ -43,7 +43,9 @@ def before_breadcrumb(crumb, hint):
     """
 
     # Check if the breadcrumb should be suppressed
-    if crumb['category'] == 'http' and sentry_sdk.get_current_scope().tags.get('suppress_breadcrumb'):
+    if crumb["category"] == "http" and sentry_sdk.get_current_scope().tags.get(
+        "suppress_breadcrumb"
+    ):
         return None  # Skip this breadcrumb
 
     return crumb
