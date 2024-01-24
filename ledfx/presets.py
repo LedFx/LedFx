@@ -17,8 +17,6 @@ ledfx_presets = {
                 "flip": False,
                 "flip_horizontal": False,
                 "flip_vertical": False,
-                "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
-                "gradient_roll": 0.0,
                 "mirror": False,
                 "rotate": 0,
                 "test": True,
@@ -306,8 +304,6 @@ ledfx_presets = {
                 "image_location": os.path.join(
                     LEDFX_ASSETS_PATH, "gifs", "catfixed.gif"
                 ),
-                "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
-                "gradient_roll": 0.0,
                 "mirror": False,
                 "ping_pong": False,
                 "rotate": 0,
@@ -343,8 +339,6 @@ ledfx_presets = {
                 "image_location": os.path.join(
                     LEDFX_ASSETS_PATH, "gifs", "blade_small.gif"
                 ),
-                "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
-                "gradient_roll": 0.0,
                 "half_beat": True,
                 "mirror": False,
                 "ping_pong": False,
@@ -382,8 +376,6 @@ ledfx_presets = {
                 "image_location": os.path.join(
                     LEDFX_ASSETS_PATH, "gifs", "bruces1.gif"
                 ),
-                "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
-                "gradient_roll": 0.0,
                 "mirror": False,
                 "ping_pong": True,
                 "rotate": 0,
@@ -420,8 +412,6 @@ ledfx_presets = {
                 "image_location": os.path.join(
                     LEDFX_ASSETS_PATH, "gifs", "bumble.gif"
                 ),
-                "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
-                "gradient_roll": 0.0,
                 "mirror": False,
                 "ping_pong": True,
                 "ping_pong_skip": False,
@@ -457,8 +447,6 @@ ledfx_presets = {
                 "image_location": os.path.join(
                     LEDFX_ASSETS_PATH, "gifs", "caddy.gif"
                 ),
-                "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
-                "gradient_roll": 0,
                 "half_beat": False,
                 "mirror": False,
                 "ping_pong": True,
@@ -494,8 +482,6 @@ ledfx_presets = {
                 "image_location": os.path.join(
                     LEDFX_ASSETS_PATH, "gifs", "dancing.gif"
                 ),
-                "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
-                "gradient_roll": 0.0,
                 "mirror": False,
                 "ping_pong": False,
                 "rotate": 0,
@@ -531,8 +517,6 @@ ledfx_presets = {
                 "image_location": os.path.join(
                     LEDFX_ASSETS_PATH, "gifs", "pixelart", "dj_bird.gif"
                 ),
-                "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
-                "gradient_roll": 0.0,
                 "half_beat": False,
                 "mirror": False,
                 "ping_pong": False,
@@ -569,8 +553,6 @@ ledfx_presets = {
                 "image_location": os.path.join(
                     LEDFX_ASSETS_PATH, "gifs", "moonman.gif"
                 ),
-                "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
-                "gradient_roll": 0,
                 "mirror": False,
                 "ping_pong": True,
                 "ping_pong_skip": False,
@@ -606,8 +588,6 @@ ledfx_presets = {
                 "image_location": os.path.join(
                     LEDFX_ASSETS_PATH, "gifs", "cat-space.gif"
                 ),
-                "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
-                "gradient_roll": 0.0,
                 "mirror": False,
                 "ping_pong": False,
                 "rotate": 0,
@@ -644,8 +624,6 @@ ledfx_presets = {
                 "image_location": os.path.join(
                     LEDFX_ASSETS_PATH, "gifs", "phoebe.gif"
                 ),
-                "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
-                "gradient_roll": 0.0,
                 "mirror": False,
                 "ping_pong": True,
                 "ping_pong_skip": False,
@@ -658,6 +636,41 @@ ledfx_presets = {
                 "half_beat": False,
             },
             "name": "phoebe",
+        },
+        "saturday": {
+            "config": {
+                "advanced": False,
+                "background_brightness": 1.0,
+                "background_color": "#000000",
+                "beat_frames": "0 9 19 27 37 47 57 66 75 85 95 105 113 124 134 145 155 165 176 186 196 205 214 224 234 246 257 267 276",
+                "blur": 0.0,
+                "brightness": 1.0,
+                "center_horizontal": 0,
+                "center_vertical": 0,
+                "deep_diag": False,
+                "diag": False,
+                "dump": False,
+                "fake_beat": False,
+                "flip": False,
+                "flip_horizontal": False,
+                "flip_vertical": False,
+                "force_fit": True,
+                "half_beat": False,
+                "image_location": os.path.join(
+                    LEDFX_ASSETS_PATH, "gifs", "saturday.webp"
+                ),
+                "keep_aspect_ratio": False,
+                "mirror": False,
+                "ping_pong": True,
+                "ping_pong_skip": False,
+                "resize_method": "Slow",
+                "rotate": 0,
+                "skip_frames": "",
+                "stretch_horizontal": 100,
+                "stretch_vertical": 100,
+                "test": False,
+            },
+            "name": "saturday",
         },
         "snoopy": {
             "config": {
@@ -681,8 +694,6 @@ ledfx_presets = {
                 "image_location": os.path.join(
                     LEDFX_ASSETS_PATH, "gifs", "snoopy.gif"
                 ),
-                "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
-                "gradient_roll": 0.0,
                 "mirror": False,
                 "ping_pong": False,
                 "rotate": 0,
@@ -719,8 +730,6 @@ ledfx_presets = {
                 "image_location": os.path.join(
                     LEDFX_ASSETS_PATH, "gifs", "sponge.gif"
                 ),
-                "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
-                "gradient_roll": 0.0,
                 "mirror": False,
                 "ping_pong": False,
                 "rotate": 0,
@@ -757,8 +766,6 @@ ledfx_presets = {
                 "image_location": os.path.join(
                     LEDFX_ASSETS_PATH, "gifs", "zilla1.gif"
                 ),
-                "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
-                "gradient_roll": 0.0,
                 "mirror": False,
                 "ping_pong": False,
                 "rotate": 0,
@@ -882,12 +889,10 @@ ledfx_presets = {
                 "gradient_name": "Plasma",
                 "gradient": "linear-gradient(90deg, rgb(0, 0, 255) 0%, rgb(128, 0, 128) 25%, rgb(255, 0, 0) 50%, rgb(255, 40, 0) 75%, rgb(255, 200, 0) 100%)",
                 "solid_color": False,
-                "gradient": "linear-gradient(90deg, rgb(0, 0, 255) 0%, rgb(128, 0, 128) 25%, rgb(255, 0, 0) 50%, rgb(255, 40, 0) 75%, rgb(255, 200, 0) 100%)",
                 "gradient_repeat": 1,
                 "gradient_roll": 0,
                 "mirror": True,
                 "mode": "wipe",
-                "solid_color": False,
             },
             "name": "Plasma Cascade",
         },

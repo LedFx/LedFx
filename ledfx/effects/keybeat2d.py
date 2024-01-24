@@ -146,7 +146,7 @@ class Keybeat2d(Twod, GifBase):
             self.orig_frames = []
 
             for frame in iterator:
-                self.orig_frames.append(frame.copy())
+                self.orig_frames.append(frame.convert("RGB"))
             self.gif.close()
 
         self.last_gif = self.image_location
