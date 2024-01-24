@@ -37,9 +37,10 @@ def clamp(n, smallest, largest):
 def ease(value):
     return 0.5 * np.sin(np.pi * (value - 0.5)) + 0.5
 
+
 def neonmod(self, h, s, v):
-    #colormodes
-    return "" 
+    # colormodes
+    return ""
 
 
 class neonfire(Twod):
@@ -237,12 +238,12 @@ class neonfire(Twod):
 
     def renderframe(self):
         tempbuffer = self.imagebuffer.copy()
-        
+
         if self.mirroring:
             rightlimit = int(0.5 * self.renderwidth)
         else:
             rightlimit = self.renderwidth
-        
+
         if self.usestepsize:
             # TODO: measure performance difference
             if self.subtractive:
@@ -328,7 +329,6 @@ class neonfire(Twod):
                 collo1, collo2, 0.5
             )  # appears to have the best interaction with current alpha blending setups
 
-
         if len(self.out_split) >= self.renderheight:
             for i in range(self.renderheight):
                 vol = self.out_split[i].max()
@@ -337,7 +337,11 @@ class neonfire(Twod):
                 rgbvalue = self.color
 
                 if self.hsvcolor:
-                    h = self.peak_hue_shift*self.bar + self.intensity_hue_shift*vol + i / self.renderheight
+                    h = (
+                        self.peak_hue_shift * self.bar
+                        + self.intensity_hue_shift * vol
+                        + i / self.renderheight
+                    )
                     s = 1
                     # s = self.bar
                     v = vol
@@ -347,21 +351,21 @@ class neonfire(Twod):
                         else:
                             s = 0.25 - (ease(self.bar) - 0.5) * 2
 
-                    
-
                 else:
                     hsv = rgb2hsv(rgbvalue)
-                    h = self.peak_hue_shift*self.bar + self.intensity_hue_shift*vol + hsv[0]
+                    h = (
+                        self.peak_hue_shift * self.bar
+                        + self.intensity_hue_shift * vol
+                        + hsv[0]
+                    )
                     s = hsv[1]
-                    v = vol*hsv[2]
+                    v = vol * hsv[2]
                     if self.showpeaks:
-                        
                         if self.clamp_peak:
                             s = hsv[1] - self.bar
 
                         else:
                             s = 0.25 - (ease(self.bar) - 0.5) * 2
-                    
 
                 if self.waterfall:
                     # s = s*1.5-0.5
@@ -436,5 +440,5 @@ class neonfire(Twod):
 
         if self.test:
             self.draw_test(self.m_draw)
-        
+
         self.even = np.invert(self.even)
