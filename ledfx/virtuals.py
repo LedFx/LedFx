@@ -231,6 +231,18 @@ class Virtual:
                 delattr(self, prop)
 
     def update_segments(self, segments_config):
+        """
+        Update the segments of the virtual with the given configuration.
+
+        Args:
+            segments_config (list): A list of segment configurations.
+
+        Raises:
+            ValueError: If the new set of segments cannot be activated.
+
+        Returns:
+            None
+        """
         with self.lock:
             segments_config = [list(item) for item in segments_config]
             _segments = self.SEGMENTS_SCHEMA(segments_config)
@@ -252,10 +264,6 @@ class Virtual:
                 self._segments = _segments
 
                 self.invalidate_cached_props()
-
-                _LOGGER.debug(
-                    f"Virtual {self.id}: updated with {len(self._segments)} segments, totalling {self.pixel_count} pixels"
-                )
 
                 # Restart active effect if total pixel count has changed
                 # eg. devices might be reordered, but total pixel count is same
@@ -282,6 +290,15 @@ class Virtual:
             )
 
     def set_preset(self, preset_info):
+        """
+        Sets the preset for the virtual.
+
+        Args:
+            preset_info (tuple): A tuple containing the category, effect_id, and preset_id of the preset.
+
+        Returns:
+            None
+        """
         category, effect_id, preset_id = preset_info
 
         # Create the effect and add it to the virtual
@@ -382,17 +399,33 @@ class Virtual:
         self._active_effect = None
 
     def clear_frame(self):
+        """
+        Clears the frame by performing the following steps:
+        1. Clears the active effect.
+        2. Clears the transition effect.
+        3. If the virtual device is active:
+           - Clears all the pixel data by setting it to zeros.
+           - Flushes the assembled frame to the device.
+           - Fires a VirtualUpdateEvent to notify listeners of the updated frame.
+           - Releases the lock.
+           - Deactivates the virtual device.
+        """
         with self.lock:
             self.clear_active_effect()
             self.clear_transition_effect()
-            if self._active:
-                # Clear all the pixel data before deactivating the device
-                self.assembled_frame = np.zeros((self.pixel_count, 3))
-                self.flush(self.assembled_frame)
-                self._ledfx.events.fire_event(
-                    VirtualUpdateEvent(self.id, self.assembled_frame)
-                )
-                self.deactivate()
+            if not self._active:
+                # if we are not active, we don't need to clear the frame and we're done
+                return
+            # Clear all the pixel data before deactivating the device
+            self.assembled_frame = np.zeros((self.pixel_count, 3))
+            self.flush(self.assembled_frame)
+            self._ledfx.events.fire_event(
+                VirtualUpdateEvent(self.id, self.assembled_frame)
+            )
+            # Manually release the lock before deactivating the device
+            self.lock.release()
+            # Deactivate the device - this requires the thread lock
+            self.deactivate()
 
     def force_frame(self, color):
         """
