@@ -410,21 +410,28 @@ class Virtual:
            - Releases the lock.
            - Deactivates the virtual device.
         """
+        # Little tricky logic here - we need to clear the active effect and
+        # transition effect before we flush the frame, but we need to flush
+        # the frame before we deactivate the virtual device. We also need to
+        # make sure that we don't clear the frame if the virtual device is
+        # not active.
+        # All of this requires thread lock management that's a bit unwieldy
+        assembled_frame = None
         with self.lock:
             self.clear_active_effect()
             self.clear_transition_effect()
-            if not self._active:
-                # if we are not active, we don't need to clear the frame and we're done
-                return
-            # Clear all the pixel data before deactivating the device
-            self.assembled_frame = np.zeros((self.pixel_count, 3))
-            self.flush(self.assembled_frame)
-            self._ledfx.events.fire_event(
-                VirtualUpdateEvent(self.id, self.assembled_frame)
-            )
-            # Manually release the lock before deactivating the device
-            self.lock.release()
-            # Deactivate the device - this requires the thread lock
+            if self._active:
+                assembled_frame = np.zeros((self.pixel_count, 3))
+                self.flush(assembled_frame)
+                self._ledfx.events.fire_event(
+                    VirtualUpdateEvent(self.id, assembled_frame)
+                )
+
+        # Deactivate the device - this requires the thread lock
+        # Hence why we do it outside of the lock and after the frame is cleared
+        # This is because the deactivate method will join the thread
+        # and we don't want to call join while holding the lock
+        if assembled_frame is not None:
             self.deactivate()
 
     def force_frame(self, color):
