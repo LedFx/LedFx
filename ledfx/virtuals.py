@@ -152,7 +152,13 @@ class Virtual:
         self._hl_end = 0
         self._hl_step = 1
         self._os_active = False
-        self.lock = threading.Lock()
+        # We use an RLock here because we can have multiple threads accessing
+        # the same virtual at the same time. For example, the output thread
+        # will be updating the virtual while the UI thread is changing the
+        # configuration.
+        # An RLock allows us to lock multiple times from the same thread
+        # without blocking.
+        self.lock = threading.RLock()
 
         self.frequency_range = FrequencyRange(
             self._config["frequency_min"], self._config["frequency_max"]
@@ -253,10 +259,6 @@ class Virtual:
 
             self.invalidate_cached_props()
 
-            _LOGGER.debug(
-                f"Virtual {self.id}: updated with {len(self._segments)} segments, totalling {self.pixel_count} pixels"
-            )
-
             # Restart active effect if total pixel count has changed
             # eg. devices might be reordered, but total pixel count is same
             # so no need to restart the effect
@@ -271,7 +273,15 @@ class Virtual:
 
             mode = self._config["transition_mode"]
             self.frame_transitions = self.transitions[mode]
-
+            # Update internal config with new segment
+            for idx, item in enumerate(self._ledfx.config["virtuals"]):
+                if item["id"] == self.id:
+                    item["segments"] = self._segments
+                    self._ledfx.config["virtuals"][idx] = item
+                    break
+            _LOGGER.debug(
+                f"Virtual {self.id}: updated with {len(self._segments)} segments, totalling {self.pixel_count} pixels"
+            )
         self.lock.release()
 
     def set_preset(self, preset_info):
