@@ -28,29 +28,24 @@ class FindOpenRGBDevicesEndpoint(RestEndpoint):
         try:
             data = await request.json()
         except JSONDecodeError:
-            return await self.json_decode_error()
+            data = {}
 
-        if "server" in data.keys():
-            server = data["server"]
-        else:
-            server = "127.0.0.1"
+        server = data.get("server", "127.0.0.1")
+        port = data.get("port", "6742")
 
-        if "port" in data.keys():
-            try:
-                port = int(data["port"])
-            except ValueError:
-                error_message = f"Unable to convert {data['port']} to int."
-                _LOGGER.warning(error_message)
-                return await self.invalid_request(error_message)
-        else:
-            port = 6742
+        try:
+            port = int(port)
+        except ValueError:
+            error_message = f"Unable to convert {port} to int."
+            _LOGGER.warning(error_message)
+            return await self.invalid_request(error_message)
 
         try:
             client = OpenRGBClient(address=server, port=port)
         except Exception as e:
             _LOGGER.error(f"Failed to connect to OpenRGB server: {e}")
             return await self.request_success(
-                "info", "No OpenRGB server found at {server}:{port}"
+                "info", f"No OpenRGB server found at {server}:{port}"
             )
 
         devices = []
