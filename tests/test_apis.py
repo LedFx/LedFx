@@ -5,7 +5,12 @@ import pytest
 from tests.test_definitions.devices import device_tests
 from tests.test_definitions.effects import effect_tests
 from tests.test_definitions.proof_of_life import proof_of_life_tests
-from tests.test_utils import SERVER_PATH, EnvironmentCleanup, HTTPSession
+from tests.test_utils import (
+    BASE_PORT,
+    SERVER_PATH,
+    EnvironmentCleanup,
+    HTTPSession,
+)
 
 # Create a dictionary that contains all the tests - this will be used to dynamically create the test functions as we add more
 all_tests = {
@@ -28,7 +33,17 @@ def setup_and_teardown():
     EnvironmentCleanup.cleanup_test_config_folder(),
     # Start LedFx as a subprocess
     ledfx = subprocess.Popen(
-        ["poetry", "run", "ledfx", "--offline", "-c", "debug_config", "-vv"]
+        [
+            "poetry",
+            "run",
+            "ledfx",
+            "-p",
+            f"{BASE_PORT}",
+            "--offline",
+            "-c",
+            "debug_config",
+            "-vv",
+        ]
     )
     # Run tests
     yield

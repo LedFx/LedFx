@@ -1,8 +1,10 @@
 import os
+import random
 import shutil
 import sys
 import time
 from dataclasses import dataclass
+from http.server import HTTPServer, SimpleHTTPRequestHandler
 from typing import Any, Literal, Optional, Union
 
 import numpy as np
@@ -11,8 +13,25 @@ import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
+
+class PortPicker:
+    @staticmethod
+    def pick_port(max_tries=10):
+        for _ in range(max_tries):
+            port = random.randint(4000, 10000)
+            try:
+                server = HTTPServer(
+                    ("localhost", port), SimpleHTTPRequestHandler
+                )
+                server.server_close()
+                return port
+            except OSError:
+                continue
+        pytest.fail(f"Could not find an open port after {max_tries} tries.")
+
+
 BASE_URL = "127.0.0.1"
-BASE_PORT = 8888
+BASE_PORT = PortPicker.pick_port()
 SERVER_PATH = f"{BASE_URL}:{BASE_PORT}"
 
 
@@ -43,8 +62,8 @@ class APITestCase:
 class HTTPSession:
     def __init__(
         self,
-        retries=5,
-        backoff_factor=0.5,
+        retries=10,
+        backoff_factor=0.75,
         status_forcelist=(500, 502, 504),
         allowed_methods=frozenset(
             ["HEAD", "TRACE", "GET", "PUT", "POST", "OPTIONS", "DELETE"]
