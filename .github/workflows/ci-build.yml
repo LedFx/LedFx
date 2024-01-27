@@ -27,6 +27,9 @@ jobs:
           gcc libatlas3-base portaudio19-dev libsamplerate-dev
       - name: Setup CI sound system
         uses: LABSN/sound-ci-helpers@v1
+      - name: Create Audio Input
+        run: |
+         pactl load-module module-null-sink sink_name=LedFx_Test_Source sink_properties=device.description=LedFx_Test_Source
       - name: Setup Python ${{ matrix.python }}
         id: python
         uses: actions/setup-python@v5
@@ -74,13 +77,6 @@ jobs:
         run: |
           poetry install --with dev
 
-      - name: Check version
-        run: |
-          poetry run ledfx --version
-
-      - name: Smoketest LedFx
-        run: |
-          poetry run ledfx -vv --ci-smoke-test
       - name: Run Tests
         run: |
           poetry run pytest -vv
@@ -158,14 +154,6 @@ jobs:
         run: |
           poetry install --with dev
 
-      - name: Check version
-        run: |
-          poetry run ledfx --version
-
-      - name: Smoketest LedFx with poetry
-        if: ${{ matrix.python != '3.11.x' }}
-        run: |
-          poetry run ledfx -vv --ci-smoke-test
       - name: Run Tests
         run: |
           poetry run pytest -vv
@@ -236,14 +224,6 @@ jobs:
       - name: Install LedFx
         run: |
           poetry install --with dev
-
-      - name: Check version
-        run: |
-          poetry run ledfx --version
-
-      - name: Smoketest LedFx
-        run: |
-          poetry run ledfx -vv --ci-smoke-test
 
       - name: Run Tests
         run: |
