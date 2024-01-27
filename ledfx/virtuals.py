@@ -315,7 +315,17 @@ class Virtual:
         self.set_effect(effect)
 
     def set_effect(self, effect):
-        new_effect_set = False
+        """
+        Sets the active effect for the virtual device.
+
+        Args:
+            effect: The effect to set as the active effect.
+
+        Raises:
+            ValueError: If no configured device segments are available.
+            RuntimeError: If an error occurs while setting the active effect.
+
+        """
         with self.lock:
             if not self._devices:
                 error = f"Virtual {self.id}: Cannot activate, no configured device segments"
@@ -351,13 +361,11 @@ class Virtual:
                     self.id,
                 )
             )
-            new_effect_set = True
-        if new_effect_set:
-            try:
-                self.active = True
-            except RuntimeError:
-                self.active = False
-                raise
+        try:
+            self.active = True
+        except RuntimeError:
+            self.active = False
+            raise
 
     def transition_to_active(self):
         self._active_effect = self._transition_effect
