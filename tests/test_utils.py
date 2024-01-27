@@ -48,6 +48,7 @@ class APITestCase:
         payload_to_send (Dict[str, Any], optional): The payload to be sent with the API request.
         expected_response_keys (List[str], optional): The expected keys in the API response payload. You don't need to specify the entire payload, just the keys you want to check.
         expected_payload_values (List[Dict[str, Any]], optional): The expected values in the API response payload. You don't need to specify the entire payload, just the key:values you want to check.
+        sleep_after_test (float, optional): The number of seconds to sleep after the test is complete. Defaults to 0.0. This is useful for tests that require a delay before the next test can be run.
     """
 
     execution_order: int
@@ -57,6 +58,7 @@ class APITestCase:
     payload_to_send: dict[str, Any] = None
     expected_response_keys: list[str] = None
     expected_response_values: list[dict[str, Any]] = None
+    sleep_after_test: float = 0.0
 
 
 class HTTPSession:

@@ -47,6 +47,7 @@ effect_tests = {
         expected_response_values=[
             {"status": "success"},
         ],
+        sleep_after_test=0.1,
     ),
     "check_energy_set": APITestCase(
         execution_order=5,

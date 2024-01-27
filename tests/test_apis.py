@@ -1,4 +1,5 @@
 import subprocess
+import time
 
 import pytest
 
@@ -28,8 +29,8 @@ def http_session():
     return HTTPSession()
 
 
-@pytest.fixture(scope="module", autouse=True)
-def setup_and_teardown():
+@pytest.fixture(scope="session", autouse=True)
+def setup_and_teardown(request):
     EnvironmentCleanup.cleanup_test_config_folder(),
     # Start LedFx as a subprocess
     ledfx = subprocess.Popen(
@@ -45,13 +46,24 @@ def setup_and_teardown():
             "-vv",
         ]
     )
+
     # Run tests
     yield
-    # Use the API to shut down LedFx
-    EnvironmentCleanup.shutdown_ledfx()
-    # Terminate the program
-    ledfx.terminate()
-    ledfx.wait()
+    # Give LedFx time to respond to the last request
+    # This is a hack to make sure the last request is processed before we shut down LedFx
+    # I think this is needed because the last request can be in flight when the teardown function is called
+    # I don't know how to wait for the last request to finish, so I'm just waiting a few seconds
+    # TODO: Find a better way to do this
+    time.sleep(2)
+
+    def teardown():
+        # Use the API to shut down LedFx
+        EnvironmentCleanup.shutdown_ledfx()
+        # Terminate the program
+        ledfx.terminate()
+        ledfx.wait()
+
+    request.addfinalizer(teardown)
 
 
 def make_test(test_type, test_name, test_case, order):
@@ -98,6 +110,8 @@ def make_test(test_type, test_name, test_case, order):
                             key in response_dict
                             and response_dict[key] == value
                         ), f"Expected {key} to be {value}, but got {response_dict.get(key)}"
+        if test_case.sleep_after_test:
+            time.sleep(test_case.sleep_after_test)
 
     test_run_api_call.__name__ = f"test_{test_type}_{test_name}"
     return test_run_api_call
