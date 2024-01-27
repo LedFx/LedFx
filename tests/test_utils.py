@@ -1,7 +1,9 @@
+import sys
 import time
 from dataclasses import dataclass
 from typing import Any
 
+import numpy as np
 import pytest
 import requests
 
@@ -87,3 +89,31 @@ def shutdown_ledfx():
         except requests.exceptions.ConnectionError:
             print("LedFx shutdown complete.")
             break
+
+
+def calc_available_fps():
+    if (
+        sys.version_info[0] == 3 and sys.version_info[1] >= 11
+    ) or sys.version_info[0] >= 4:
+        clock_source = "perf_counter"
+    else:
+        clock_source = "monotonic"
+
+    sleep_res = time.get_clock_info(clock_source).resolution
+
+    if sleep_res < 0.001:
+        mult = int(0.001 / sleep_res)
+    else:
+        mult = 1
+
+    max_fps_target = 126
+    min_fps_target = 10
+
+    max_fps_ticks = np.ceil((1 / max_fps_target) / (sleep_res * mult)).astype(
+        int
+    )
+    min_fps_ticks = np.ceil((1 / min_fps_target) / (sleep_res * mult)).astype(
+        int
+    )
+    tick_range = reversed(range(max_fps_ticks, min_fps_ticks))
+    return {int(1 / (sleep_res * mult * i)): i * mult for i in tick_range}
