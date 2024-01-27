@@ -2,7 +2,7 @@
 sphinx<7.2.7
 sphinxcontrib-websupport==1.2.7
 sphinxcontrib-httpdomain==1.8.1
-sphinx-autodoc-typehints==1.25.2
+sphinx-autodoc-typehints==1.25.3
 sphinx-autodoc-annotation==1.0-1
 sphinx-autobuild
 sphinx_rtd_theme==2.0.0
