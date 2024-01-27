@@ -30,6 +30,9 @@ jobs:
       - name: Install poetry via Homebrew
         run: |
           brew install poetry
+      - name: Set poetry Python version
+        run: |
+          poetry env use python${{ matrix.python }}
       - name: Build LedFx wheel
         run: |
           poetry build
@@ -37,12 +40,20 @@ jobs:
         run: |
           export LDFLAGS="-L/opt/homebrew/opt/mbedtls@2/lib"
           export CPPFLAGS="-I/opt/homebrew/opt/mbedtls@2/include"
-          poetry install
+          poetry install --dev
       - name: Smoketest LedFx
         run: |
           source $(poetry env info -p)/bin/activate
           ledfx --ci-smoke-test
           if [ $? -ne 0 ]; then
             echo "LedFx launch failed: $?"
+            exit 1
+          fi
+      - name: Test LedFx
+        run: |
+          source $(poetry env info -p)/bin/activate
+          pytest -vv
+          if [ $? -ne 0 ]; then
+            echo "LedFx tests failed: $?"
             exit 1
           fi

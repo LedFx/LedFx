@@ -73,6 +73,8 @@ black = ">=24.1.0,<24.2.0"
 isort = ">=5.13.2,<5.14.0"
 pre-commit = ">=3.6.0,<3.7.0"
 bokeh = "^3.3.3"
+pytest = "^7.4.4"
+pytest-order = "^1.2.0"
 
 
 [tool.pytest.ini_options]
@@ -83,6 +85,8 @@ norecursedirs = [
     "build",
     ".tox",
 ]
+filterwarnings = "ignore::DeprecationWarning"
+
 
 [tool.black]
 line-length = 79
