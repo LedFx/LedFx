@@ -105,7 +105,7 @@ def requests_retry_session(
     """
     session = session or requests.Session()
     retry = Retry(
-        total=retries * 3,
+        total=None,
         read=retries,
         connect=retries,
         backoff_factor=backoff_factor,
@@ -141,6 +141,8 @@ def shutdown_ledfx():
             time.sleep(0.5)
         except requests.exceptions.ConnectionError:
             break
+    # Wait 1s for the logs to be written to the file and the file to be closed
+    time.sleep(1)
 
 
 def calc_available_fps():
@@ -177,7 +179,7 @@ def calc_available_fps():
     return {int(1 / (sleep_res * mult * i)): i * mult for i in tick_range}
 
 
-def move_log_file_to_tests_folder():
+def copy_log_file_to_tests_folder():
     """
     Moves the log file from the 'debug_config' folder to the current directory.
 
@@ -189,7 +191,7 @@ def move_log_file_to_tests_folder():
     ledfx_log_file = os.path.join(os.getcwd(), "debug_config", "LedFx.log")
     destination = os.path.join(current_dir, "LedFx.log")
     if os.path.exists(ledfx_log_file):
-        shutil.move(ledfx_log_file, destination)
+        shutil.copyfile(ledfx_log_file, destination)
 
 
 def cleanup_test_config_folder():
@@ -198,8 +200,17 @@ def cleanup_test_config_folder():
 
     This function removes the 'debug_config' folder and all its contents from the current working directory.
     If the folder does not exist, no action is taken.
+
+    Uses a retry loop to ensure that the folder is deleted - useful for rapid test cycles.
     """
     current_dir = os.getcwd()
     ci_test_dir = os.path.join(current_dir, "debug_config")
-    if os.path.exists(ci_test_dir):
-        shutil.rmtree(ci_test_dir)
+
+    for _ in range(10):
+        if os.path.exists(ci_test_dir):
+            try:
+                shutil.rmtree(ci_test_dir)
+                break  # If the directory was successfully deleted, break the loop
+            except Exception as e:
+                pass  # If the directory couldn't be deleted, try again
+        time.sleep(0.1)  # Wait for 100ms before the next attempt

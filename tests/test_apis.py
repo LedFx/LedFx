@@ -1,5 +1,4 @@
 import subprocess
-import time
 
 import pytest
 
@@ -31,9 +30,6 @@ def setup_and_teardown():
     program = subprocess.Popen(
         ["poetry", "run", "ledfx", "--offline", "-c", "debug_config", "-vv"]
     )
-    # Give it some time to start up
-    time.sleep(2)
-    # Call clear_config to make sure we're starting with a clean slate
     # Run tests
     yield
     # Use the API to shut down LedFx
@@ -46,8 +42,6 @@ def setup_and_teardown():
 def make_test(test_type, test_name, test_case, order):
     @pytest.mark.order(order)
     def test_run_api_call():
-        # We need to wait a bit between tests to make sure the server has time to process the previous request
-        time.sleep(0.5)
         url = f"http://{BASE_URL}:{BASE_PORT}{test_case.api_endpoint}"
         # check to see if we need to send a payload
         payload = (
