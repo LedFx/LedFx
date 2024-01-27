@@ -8,6 +8,7 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+
 jobs:
   build-ledfx-linux:
     name: Build LedFx (Ubuntu)
@@ -15,6 +16,7 @@ jobs:
     strategy:
       matrix:
         python: [3.9.x,3.10.x,3.11.x,3.12.x]
+      fail-fast: false
     steps:
       - name: Check out code from GitHub
         uses: actions/checkout@v4
@@ -88,6 +90,7 @@ jobs:
     strategy:
       matrix:
         python: [3.9.x,3.10.x,3.11.x,3.12.x]
+      fail-fast: false
     defaults:
       run:
         shell: bash -x {0}
@@ -166,6 +169,7 @@ jobs:
     strategy:
       matrix:
         python: [3.9.x,3.10.x,3.11.x,3.12.x]
+      fail-fast: false
     steps:
       - name: Check out code from GitHub
         uses: actions/checkout@v4

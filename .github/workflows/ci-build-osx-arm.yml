@@ -11,6 +11,7 @@ jobs:
     strategy:
       matrix:
         python: [3.10.x,3.11.x,3.12.x]
+      fail-fast: false
     steps:
       - name: Check out code from GitHub
         uses: actions/checkout@v4
