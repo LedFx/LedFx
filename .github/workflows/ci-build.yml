@@ -81,11 +81,11 @@ jobs:
         run: |
           poetry run pytest -vv
       - name: Attach LedFx test log
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: ledfx-log-linux-${{ matrix.python }}.log
-          path: LedFx.log
+          path: ~/debug_config/LedFx.log
   build-ledfx-windows:
     name: Build LedFx (Windows)
     runs-on: windows-latest
@@ -158,11 +158,11 @@ jobs:
         run: |
           poetry run pytest -vv
       - name: Attach LedFx test log
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: ledfx-log-windows-${{ matrix.python }}.log
-          path: LedFx.log
+          path: ~/debug_config/LedFx.log
   build-ledfx-osx:
     name: Build LedFx (OS X)
     runs-on: macos-latest
@@ -229,9 +229,9 @@ jobs:
         run: |
           poetry run pytest -vv
       - name: Attach LedFx test log
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: ledfx-log-osx-${{ matrix.python }}.log
-          path: LedFx.log
+          path: ~/debug_config/LedFx.log
 

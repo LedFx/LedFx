@@ -9,8 +9,6 @@ from tests.test_definitions.proof_of_life import proof_of_life_tests
 from tests.test_utils import (
     BASE_PORT,
     BASE_URL,
-    cleanup_test_config_folder,
-    move_log_file_to_tests_folder,
     send_test_api_request,
     shutdown_ledfx,
 )
@@ -41,11 +39,6 @@ def setup_and_teardown():
     # Terminate the program
     program.terminate()
     program.wait()
-    # grab the log file from ~/.ledfx/LedFx.log and move it to the base folder
-    # Wait for the log file to be written and closed
-    time.sleep(5)
-    move_log_file_to_tests_folder()
-    cleanup_test_config_folder()
 
 
 def make_test(test_type, test_name, test_case, order):
