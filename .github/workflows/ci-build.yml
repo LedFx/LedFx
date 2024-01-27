@@ -86,6 +86,7 @@ jobs:
           poetry run pytest -vv
       - name: Attach LedFx test log
         uses: actions/upload-artifact@v2
+        if: always()
         with:
           name: ledfx-log-linux-${{ matrix.python }}.log
           path: LedFx.log
@@ -170,6 +171,7 @@ jobs:
           poetry run pytest -vv
       - name: Attach LedFx test log
         uses: actions/upload-artifact@v2
+        if: always()
         with:
           name: ledfx-log-windows-${{ matrix.python }}.log
           path: LedFx.log
@@ -248,6 +250,7 @@ jobs:
           poetry run pytest -vv
       - name: Attach LedFx test log
         uses: actions/upload-artifact@v2
+        if: always()
         with:
           name: ledfx-log-osx-${{ matrix.python }}.log
           path: LedFx.log

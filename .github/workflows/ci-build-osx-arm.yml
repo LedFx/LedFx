@@ -60,6 +60,7 @@ jobs:
           fi
       - name: Attach LedFx test log
         uses: actions/upload-artifact@v2
+        if: always()
         with:
           name: ledfx-log-osx-arm-${{ matrix.python }}.log
           path: LedFx.log
