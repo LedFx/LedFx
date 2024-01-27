@@ -85,7 +85,7 @@ jobs:
         if: always()
         with:
           name: ledfx-log-linux-${{ matrix.python }}.log
-          path: ~/debug_config/LedFx.log
+          path: ${{ github.workspace }}/debug_config/LedFx.log
   build-ledfx-windows:
     name: Build LedFx (Windows)
     runs-on: windows-latest
@@ -162,7 +162,7 @@ jobs:
         if: always()
         with:
           name: ledfx-log-windows-${{ matrix.python }}.log
-          path: ~/debug_config/LedFx.log
+          path: ${{ github.workspace }}/debug_config/LedFx.log
   build-ledfx-osx:
     name: Build LedFx (OS X)
     runs-on: macos-latest
@@ -233,5 +233,5 @@ jobs:
         if: always()
         with:
           name: ledfx-log-osx-${{ matrix.python }}.log
-          path: ~/debug_config/LedFx.log
+          path: ${{ github.workspace }}/debug_config/LedFx.log
 

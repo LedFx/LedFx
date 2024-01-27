@@ -55,4 +55,4 @@ jobs:
         if: always()
         with:
           name: ledfx-log-osx-arm-${{ matrix.python }}.log
-          path: ~/debug_config/LedFx.log
+          path: ${{ github.workspace }}/debug_config/LedFx.log
