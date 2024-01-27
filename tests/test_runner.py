@@ -9,7 +9,7 @@ from tests.test_definitions.proof_of_life import proof_of_life_tests
 from tests.test_utils import (
     BASE_PORT,
     BASE_URL,
-    clear_config,
+    cleanup_test_config_folder,
     move_log_file_to_tests_folder,
     send_test_api_request,
     shutdown_ledfx,
@@ -28,11 +28,12 @@ test_order = ["proof_of_life_tests", "device_tests", "effect_tests"]
 @pytest.fixture(scope="module", autouse=True)
 def setup_and_teardown():
     # Start LedFx as a subprocess
-    program = subprocess.Popen(["poetry", "run", "ledfx", "--offline"])
+    program = subprocess.Popen(
+        ["poetry", "run", "ledfx", "--offline", "-c", "debug_config"]
+    )
     # Give it some time to start up
-    time.sleep(3)
+    time.sleep(2)
     # Call clear_config to make sure we're starting with a clean slate
-    clear_config()
     # Run tests
     yield
     # Use the API to shut down LedFx
@@ -40,10 +41,11 @@ def setup_and_teardown():
     # Terminate the program
     program.terminate()
     program.wait()
-    # grab the log file from ~/.ledfx/LedFx.log and move it to the tests folder
+    # grab the log file from ~/.ledfx/LedFx.log and move it to the base folder
     # Wait for the log file to be written and closed
-    time.sleep(3)
+    time.sleep(5)
     move_log_file_to_tests_folder()
+    cleanup_test_config_folder()
 
 
 def make_test(test_type, test_name, test_case, order):
@@ -89,6 +91,8 @@ def make_test(test_type, test_name, test_case, order):
                         ), f"Expected {key} to be {value}, but got {response_dict.get(key)}"
 
     test_run_api_call.__name__ = f"test_{test_type}_{test_name}"
+    # Sleep for 100ms between steps
+    time.sleep(0.1)
     return test_run_api_call
 
 

@@ -3,11 +3,13 @@ import shutil
 import sys
 import time
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Optional, Union
 
 import numpy as np
 import pytest
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 BASE_URL = "127.0.0.1"
 BASE_PORT = 8888
@@ -37,63 +39,117 @@ class APITestCase:
     expected_response_values: list[dict[str, Any]] = None
 
 
-def send_test_api_request(url, method, payload):
+def send_test_api_request(
+    url, method, payload: Optional[Union[str, dict]] = None, retries=5
+):
+    """
+    Sends a test API request to the specified URL using the specified HTTP method.
+
+    Args:
+        url (str): The URL to send the request to.
+        method (str): The HTTP method to use for the request (e.g., "GET", "POST", "PUT", "DELETE").
+        payload (Optional[Union[str, dict]]): The payload to include in the request (optional).
+        retries (int): The number of times to retry the request in case of failure (default is 5).
+
+    Returns:
+        requests.Response: The response object containing the server's response to the request.
+
+    Raises:
+        ValueError: If an invalid HTTP method is provided.
+
+    """
     headers = {"Content-Type": "application/json"}
+    session = requests_retry_session(retries=retries)
+
     try:
         if method == "GET":
-            response = requests.get(url, headers=headers)
+            response = session.get(url, headers=headers)
         elif method == "POST":
-            response = requests.post(url, json=payload, headers=headers)
+            response = session.post(url, json=payload, headers=headers)
         elif method == "PUT":
-            response = requests.put(url, json=payload, headers=headers)
+            response = session.put(url, json=payload, headers=headers)
         elif method == "DELETE":
-            response = requests.delete(url, json=payload, headers=headers)
+            response = session.delete(url, json=payload, headers=headers)
         else:
             raise ValueError(f"Invalid method: {method}")
     except Exception as e:
         pytest.fail(
             f"An error occurred while sending the API request: {str(e)}"
         )
+
     return response
 
 
-def clear_config():
-    print("Clearing configuration...")
-    _ = requests.delete(f"http://{BASE_URL}:{BASE_PORT}/api/config")
-    print("Waiting for LedFx to restart...")
-    time.sleep(3)
-    while True:
-        response = requests.get(
-            f"http://{BASE_URL}:{BASE_PORT}/api/info", timeout=1
-        )
-        print("LedFx still isn't awake...")
-        time.sleep(1)
-        if response.status_code == 200:
-            print("LedFx restarted, ready to test.")
-            break
+def requests_retry_session(
+    retries=5,
+    backoff_factor=0.5,
+    status_forcelist=(500, 502, 504),
+    allowed_methods=frozenset(
+        ["HEAD", "TRACE", "GET", "PUT", "POST", "OPTIONS", "DELETE"]
+    ),
+    session=None,
+):
+    """
+    Creates a session object with retry functionality for making HTTP requests.
+
+    Args:
+        retries (int): The number of times to retry the request in case of failure. Default is 5.
+        backoff_factor (float): The backoff factor for exponential backoff between retries. Default is 0.5.
+        status_forcelist (tuple): The HTTP status codes that should trigger a retry. Default is (500, 502, 504).
+        allowed_methods (frozenset): The set of allowed HTTP methods. Default is {'HEAD', 'TRACE', 'GET', 'PUT', 'POST', 'OPTIONS', 'DELETE'}.
+        session (requests.Session): An existing session object to use. If not provided, a new session will be created.
+
+    Returns:
+        requests.Session: The session object with retry functionality.
+
+    """
+    session = session or requests.Session()
+    retry = Retry(
+        total=retries * 3,
+        read=retries,
+        connect=retries,
+        backoff_factor=backoff_factor,
+        status_forcelist=status_forcelist,
+        allowed_methods=allowed_methods,
+        raise_on_status=False,
+        other=retries,
+    )
+    adapter = HTTPAdapter(max_retries=retry)
+    session.mount("http://", adapter)
+    session.mount("https://", adapter)
+    return session
 
 
 def shutdown_ledfx():
-    print("Shutting down LedFx...")
-    _ = requests.post(f"http://{BASE_URL}:{BASE_PORT}/api/power", json={})
-    print("Waiting for LedFx to shutdown...")
-    time.sleep(3)
+    """
+    Sends a POST request to the LeDFx server to shut it down and waits until the server is no longer accessible.
+
+    Returns:
+        None
+    """
+    _ = requests_retry_session().post(
+        f"http://{BASE_URL}:{BASE_PORT}/api/power", json={}
+    )
     while True:
         try:
-            response = requests.post(
+            response = requests.get(
                 f"http://{BASE_URL}:{BASE_PORT}/api/info", timeout=1
             )
-            print("LedFx still isn't shutdown...")
-            time.sleep(1)
+
             if response.status_code != 200:
-                print("LedFx shutdown complete.")
                 break
+            time.sleep(0.5)
         except requests.exceptions.ConnectionError:
-            print("LedFx shutdown complete.")
             break
 
 
 def calc_available_fps():
+    """
+    Calculate the available frames per second (fps) based on the system's clock resolution.
+
+    Returns:
+        dict: A dictionary where the keys represent the fps and the values represent the corresponding multiplier.
+    """
     if (
         sys.version_info[0] == 3 and sys.version_info[1] >= 11
     ) or sys.version_info[0] >= 4:
@@ -121,25 +177,29 @@ def calc_available_fps():
     return {int(1 / (sleep_res * mult * i)): i * mult for i in tick_range}
 
 
-def get_default_config_directory() -> str:
-    """Get the default configuration directory (which also has the log file, which is why we're here"""
-
-    base_dir = (
-        os.getenv("APPDATA") if os.name == "nt" else os.path.expanduser("~")
-    )
-    return os.path.join(base_dir, ".ledfx")
-
-
-def get_log_file_path():
-    """Get the log file from the default configuration directory"""
-    log_file = os.path.join(get_default_config_directory(), "LedFx.log")
-    return log_file
-
-
 def move_log_file_to_tests_folder():
-    """Move the log file from the default configuration directory to the tests folder"""
-    log_file = get_log_file_path()
+    """
+    Moves the log file from the 'debug_config' folder to the current directory.
+
+    This function checks if the log file exists in the 'debug_config' folder and
+    then moves it to the current directory.
+
+    """
     current_dir = os.getcwd()
+    ledfx_log_file = os.path.join(os.getcwd(), "debug_config", "LedFx.log")
     destination = os.path.join(current_dir, "LedFx.log")
-    if os.path.exists(log_file):
-        shutil.move(log_file, destination)
+    if os.path.exists(ledfx_log_file):
+        shutil.move(ledfx_log_file, destination)
+
+
+def cleanup_test_config_folder():
+    """
+    Deletes the debug_config folder and everything in it.
+
+    This function removes the 'debug_config' folder and all its contents from the current working directory.
+    If the folder does not exist, no action is taken.
+    """
+    current_dir = os.getcwd()
+    ci_test_dir = os.path.join(current_dir, "debug_config")
+    if os.path.exists(ci_test_dir):
+        shutil.rmtree(ci_test_dir)
