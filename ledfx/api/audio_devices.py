@@ -33,7 +33,7 @@ class AudioDevicesEndpoint(RestEndpoint):
         response[
             "devices"
         ] = AudioInputSource.input_devices()  # dict(enumerate(input_devices))
-        return await self.request_success(response)
+        return await self.bare_request_success(response)
 
     async def put(self, request: web.Request) -> web.Response:
         """
