@@ -2,6 +2,7 @@ import time
 from dataclasses import dataclass
 from typing import Any
 
+import pytest
 import requests
 
 BASE_URL = "127.0.0.1"
@@ -34,16 +35,21 @@ class APITestCase:
 
 def send_test_api_request(url, method, payload):
     headers = {"Content-Type": "application/json"}
-    if method == "GET":
-        response = requests.get(url, headers=headers)
-    elif method == "POST":
-        response = requests.post(url, json=payload, headers=headers)
-    elif method == "PUT":
-        response = requests.put(url, json=payload, headers=headers)
-    elif method == "DELETE":
-        response = requests.delete(url, json=payload, headers=headers)
-    else:
-        raise ValueError(f"Invalid method: {method}")
+    try:
+        if method == "GET":
+            response = requests.get(url, headers=headers)
+        elif method == "POST":
+            response = requests.post(url, json=payload, headers=headers)
+        elif method == "PUT":
+            response = requests.put(url, json=payload, headers=headers)
+        elif method == "DELETE":
+            response = requests.delete(url, json=payload, headers=headers)
+        else:
+            raise ValueError(f"Invalid method: {method}")
+    except Exception as e:
+        pytest.fail(
+            f"An error occurred while sending the API request: {str(e)}"
+        )
     return response
 
 
