@@ -3,7 +3,7 @@ import shutil
 import sys
 import time
 from dataclasses import dataclass
-from typing import Any, Optional, Union
+from typing import Any, Literal, Optional, Union
 
 import numpy as np
 import pytest
@@ -31,7 +31,7 @@ class APITestCase:
     """
 
     execution_order: int
-    method: str in ["GET", "POST", "PUT", "DELETE"]  # noqa: F821
+    method: Literal["GET", "POST", "PUT", "DELETE"]
     api_endpoint: str
     expected_return_code: int
     payload_to_send: dict[str, Any] = None
