@@ -809,10 +809,9 @@ class AudioReactiveEffect(Effect):
 
     def _audio_data_updated(self):
         self.melbank.cache_clear()
-        self.lock.acquire()
-        if self.is_active:
-            self.audio_data_updated(self.audio)
-        self.lock.release()
+        with self.lock:
+            if self.is_active:
+                self.audio_data_updated(self.audio)
 
     def audio_data_updated(self, data):
         """
