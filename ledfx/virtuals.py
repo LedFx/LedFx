@@ -231,50 +231,74 @@ class Virtual:
                 delattr(self, prop)
 
     def update_segments(self, segments_config):
-        self.lock.acquire()
-        segments_config = [list(item) for item in segments_config]
-        _segments = self.SEGMENTS_SCHEMA(segments_config)
+        """
+        Update the segments of the virtual with the given configuration.
 
-        _pixel_count = self.pixel_count
+        Args:
+            segments_config (list): A list of segment configurations.
 
-        if _segments != self._segments:
-            if self._active:
-                self.deactivate_segments()
-                # try to register this new set of segments
-                # if it fails, restore previous segments and raise the error
-                try:
-                    self.activate_segments(_segments)
-                except ValueError:
+        Raises:
+            ValueError: If the new set of segments cannot be activated.
+
+        Returns:
+            None
+        """
+        with self.lock:
+            segments_config = [list(item) for item in segments_config]
+            _segments = self.SEGMENTS_SCHEMA(segments_config)
+
+            _pixel_count = self.pixel_count
+
+            if _segments != self._segments:
+                if self._active:
                     self.deactivate_segments()
-                    self.activate_segments(self._segments)
-                    raise
+                    # try to register this new set of segments
+                    # if it fails, restore previous segments and raise the error
+                    try:
+                        self.activate_segments(_segments)
+                    except ValueError:
+                        self.deactivate_segments()
+                        self.activate_segments(self._segments)
+                        raise
 
-            self._segments = _segments
+                self._segments = _segments
 
-            self.invalidate_cached_props()
+                self.invalidate_cached_props()
 
+                # Restart active effect if total pixel count has changed
+                # eg. devices might be reordered, but total pixel count is same
+                # so no need to restart the effect
+                if self.pixel_count != _pixel_count:
+                    # chenging segments is a deep edit, just flush any transition
+                    self.clear_transition_effect()
+                    self.transitions = Transitions(self.pixel_count)
+                    if self._active_effect is not None:
+                        self._active_effect._deactivate()
+                        if self.pixel_count > 0:
+                            self._active_effect.activate(self)
+
+                mode = self._config["transition_mode"]
+                self.frame_transitions = self.transitions[mode]
+            # Update internal config with new segment
+            for idx, item in enumerate(self._ledfx.config["virtuals"]):
+                if item["id"] == self.id:
+                    item["segments"] = self._segments
+                    self._ledfx.config["virtuals"][idx] = item
+                    break
             _LOGGER.debug(
                 f"Virtual {self.id}: updated with {len(self._segments)} segments, totalling {self.pixel_count} pixels"
             )
 
-            # Restart active effect if total pixel count has changed
-            # eg. devices might be reordered, but total pixel count is same
-            # so no need to restart the effect
-            if self.pixel_count != _pixel_count:
-                # chenging segments is a deep edit, just flush any transition
-                self.clear_transition_effect()
-                self.transitions = Transitions(self.pixel_count)
-                if self._active_effect is not None:
-                    self._active_effect._deactivate()
-                    if self.pixel_count > 0:
-                        self._active_effect.activate(self)
-
-            mode = self._config["transition_mode"]
-            self.frame_transitions = self.transitions[mode]
-
-        self.lock.release()
-
     def set_preset(self, preset_info):
+        """
+        Sets the preset for the virtual.
+
+        Args:
+            preset_info (tuple): A tuple containing the category, effect_id, and preset_id of the preset.
+
+        Returns:
+            None
+        """
         category, effect_id, preset_id = preset_info
 
         # Create the effect and add it to the virtual
@@ -291,42 +315,52 @@ class Virtual:
         self.set_effect(effect)
 
     def set_effect(self, effect):
-        self.lock.acquire()
-        if not self._devices:
-            error = f"Virtual {self.id}: Cannot activate, no configured device segments"
-            _LOGGER.warning(error)
-            raise ValueError(error)
+        """
+        Sets the active effect for the virtual device.
 
-        if (
-            self._config["transition_mode"] != "None"
-            and self._config["transition_time"] > 0
-        ):
-            self.transition_frame_total = (
-                self.refresh_rate * self._config["transition_time"]
-            )
-            self.transition_frame_counter = 0
-            self.clear_transition_effect()
+        Args:
+            effect: The effect to set as the active effect.
 
-            if self._active_effect is None:
-                self._transition_effect = DummyEffect(self.pixel_count)
+        Raises:
+            ValueError: If no configured device segments are available.
+            RuntimeError: If an error occurs while setting the active effect.
+
+        """
+        with self.lock:
+            if not self._devices:
+                error = f"Virtual {self.id}: Cannot activate, no configured device segments"
+                _LOGGER.warning(error)
+                raise ValueError(error)
+
+            if (
+                self._config["transition_mode"] != "None"
+                and self._config["transition_time"] > 0
+            ):
+                self.transition_frame_total = (
+                    self.refresh_rate * self._config["transition_time"]
+                )
+                self.transition_frame_counter = 0
+                self.clear_transition_effect()
+
+                if self._active_effect is None:
+                    self._transition_effect = DummyEffect(self.pixel_count)
+                else:
+                    self._transition_effect = self._active_effect
             else:
-                self._transition_effect = self._active_effect
-        else:
-            # no transition effect to clean up, so clear the active effect now!
-            self.clear_active_effect()
-            self.clear_transition_effect()
+                # no transition effect to clean up, so clear the active effect now!
+                self.clear_active_effect()
+                self.clear_transition_effect()
 
-        self._active_effect = effect
-        self._active_effect.activate(self)
-        self._ledfx.events.fire_event(
-            EffectSetEvent(
-                self._active_effect.name,
-                self._active_effect.id,
-                self.active_effect.config,
-                self.id,
+            self._active_effect = effect
+            self._active_effect.activate(self)
+            self._ledfx.events.fire_event(
+                EffectSetEvent(
+                    self._active_effect.name,
+                    self._active_effect.id,
+                    self.active_effect.config,
+                    self.id,
+                )
             )
-        )
-        self.lock.release()
         try:
             self.active = True
         except RuntimeError:
@@ -342,29 +376,28 @@ class Virtual:
         self._active_effect = None
 
     def clear_effect(self):
-        self.lock.acquire()
-        self._ledfx.events.fire_event(EffectClearedEvent())
-        self.clear_transition_effect()
+        with self.lock:
+            self._ledfx.events.fire_event(EffectClearedEvent())
+            self.clear_transition_effect()
 
-        if (
-            self._config["transition_mode"] != "None"
-            and self._config["transition_time"] > 0
-        ):
-            self._transition_effect = self._active_effect
-            self._active_effect = DummyEffect(self.pixel_count)
+            if (
+                self._config["transition_mode"] != "None"
+                and self._config["transition_time"] > 0
+            ):
+                self._transition_effect = self._active_effect
+                self._active_effect = DummyEffect(self.pixel_count)
 
-            self.transition_frame_total = (
-                self.refresh_rate * self._config["transition_time"]
+                self.transition_frame_total = (
+                    self.refresh_rate * self._config["transition_time"]
+                )
+                self.transition_frame_counter = 0
+            else:
+                # no transition effect to clean up, so clear the active effect now!
+                self.clear_active_effect()
+
+            self._ledfx.loop.call_later(
+                self._config["transition_time"], self.clear_frame
             )
-            self.transition_frame_counter = 0
-        else:
-            # no transition effect to clean up, so clear the active effect now!
-            self.clear_active_effect()
-
-        self._ledfx.loop.call_later(
-            self._config["transition_time"], self.clear_frame
-        )
-        self.lock.release()
 
     def clear_transition_effect(self):
         if self._transition_effect is not None:
@@ -377,21 +410,40 @@ class Virtual:
         self._active_effect = None
 
     def clear_frame(self):
-        self.lock.acquire()
-        self.clear_active_effect()
-        self.clear_transition_effect()
+        """
+        Clears the frame by performing the following steps:
+        1. Clears the active effect.
+        2. Clears the transition effect.
+        3. If the virtual device is active:
+           - Clears all the pixel data by setting it to zeros.
+           - Flushes the assembled frame to the device.
+           - Fires a VirtualUpdateEvent to notify listeners of the updated frame.
+           - Releases the lock.
+           - Deactivates the virtual device.
+        """
+        # Little tricky logic here - we need to clear the active effect and
+        # transition effect before we flush the frame, but we need to flush
+        # the frame before we deactivate the virtual device. We also need to
+        # make sure that we don't clear the frame if the virtual device is
+        # not active.
+        # All of this requires thread lock management that's a bit unwieldy
+        assembled_frame = None
+        with self.lock:
+            self.clear_active_effect()
+            self.clear_transition_effect()
+            if self._active:
+                assembled_frame = np.zeros((self.pixel_count, 3))
+                self.flush(assembled_frame)
+                self._ledfx.events.fire_event(
+                    VirtualUpdateEvent(self.id, assembled_frame)
+                )
 
-        if self._active:
-            # Clear all the pixel data before deactivating the device
-            self.assembled_frame = np.zeros((self.pixel_count, 3))
-            self.flush(self.assembled_frame)
-            self._ledfx.events.fire_event(
-                VirtualUpdateEvent(self.id, self.assembled_frame)
-            )
-            self.lock.release()
+        # Deactivate the device - this requires the thread lock
+        # Hence why we do it outside of the lock and after the frame is cleared
+        # This is because the deactivate method will join the thread
+        # and we don't want to call join while holding the lock
+        if assembled_frame is not None:
             self.deactivate()
-        else:
-            self.lock.release()
 
     def force_frame(self, color):
         """
@@ -488,28 +540,27 @@ class Virtual:
             start_time = timeit.default_timer()
             # we need to lock before we test, or we could deactivate
             # between test and execution
-            self.lock.acquire()
-            if (
-                self._active_effect
-                and self._active_effect.is_active
-                and hasattr(self._active_effect, "pixels")
-            ):
-                # self.assembled_frame = await self._ledfx.loop.run_in_executor(
-                #     self._ledfx.thread_executor, self.assemble_frame
-                # )
-                self.assembled_frame = self.assemble_frame()
-                if self.assembled_frame is not None and not self._paused:
-                    if not self._config["preview_only"]:
-                        # self._ledfx.thread_executor.submit(self.flush)
-                        # await self._ledfx.loop.run_in_executor(
-                        #     self._ledfx.thread_executor, self.flush
-                        # )
-                        self.flush()
+            with self.lock:
+                if (
+                    self._active_effect
+                    and self._active_effect.is_active
+                    and hasattr(self._active_effect, "pixels")
+                ):
+                    # self.assembled_frame = await self._ledfx.loop.run_in_executor(
+                    #     self._ledfx.thread_executor, self.assemble_frame
+                    # )
+                    self.assembled_frame = self.assemble_frame()
+                    if self.assembled_frame is not None and not self._paused:
+                        if not self._config["preview_only"]:
+                            # self._ledfx.thread_executor.submit(self.flush)
+                            # await self._ledfx.loop.run_in_executor(
+                            #     self._ledfx.thread_executor, self.flush
+                            # )
+                            self.flush()
 
-                    self._ledfx.events.fire_event(
-                        VirtualUpdateEvent(self.id, self.assembled_frame)
-                    )
-            self.lock.release()
+                        self._ledfx.events.fire_event(
+                            VirtualUpdateEvent(self.id, self.assembled_frame)
+                        )
 
             # adjust for the frame assemble time, min allowed sleep 1 ms
             # this will be more frame accurate on high res sleep systems
