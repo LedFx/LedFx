@@ -9,6 +9,7 @@ from tests.test_definitions.proof_of_life import proof_of_life_tests
 from tests.test_utils import (
     BASE_PORT,
     BASE_URL,
+    cleanup_test_config_folder,
     send_test_api_request,
     shutdown_ledfx,
 )
@@ -25,9 +26,10 @@ test_order = ["proof_of_life_tests", "device_tests", "effect_tests"]
 
 @pytest.fixture(scope="module", autouse=True)
 def setup_and_teardown():
+    cleanup_test_config_folder(),
     # Start LedFx as a subprocess
     program = subprocess.Popen(
-        ["poetry", "run", "ledfx", "--offline", "-c", "debug_config"]
+        ["poetry", "run", "ledfx", "--offline", "-c", "debug_config", "-vv"]
     )
     # Give it some time to start up
     time.sleep(2)
@@ -44,7 +46,8 @@ def setup_and_teardown():
 def make_test(test_type, test_name, test_case, order):
     @pytest.mark.order(order)
     def test_run_api_call():
-        print(f"Running {test_type}: {test_name}")
+        # We need to wait a bit between tests to make sure the server has time to process the previous request
+        time.sleep(0.5)
         url = f"http://{BASE_URL}:{BASE_PORT}{test_case.api_endpoint}"
         # check to see if we need to send a payload
         payload = (
@@ -84,8 +87,6 @@ def make_test(test_type, test_name, test_case, order):
                         ), f"Expected {key} to be {value}, but got {response_dict.get(key)}"
 
     test_run_api_call.__name__ = f"test_{test_type}_{test_name}"
-    # Sleep for 100ms between steps
-    time.sleep(0.1)
     return test_run_api_call
 
 
