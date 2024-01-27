@@ -40,7 +40,7 @@ jobs:
         run: |
           export LDFLAGS="-L/opt/homebrew/opt/mbedtls@2/lib"
           export CPPFLAGS="-I/opt/homebrew/opt/mbedtls@2/include"
-          poetry install --dev
+          poetry install --with dev
       - name: Smoketest LedFx
         run: |
           source $(poetry env info -p)/bin/activate
