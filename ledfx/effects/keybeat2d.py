@@ -1,6 +1,7 @@
 import logging
 import os
 
+import PIL.ImageEnhance as ImageEnhance
 import PIL.ImageSequence as ImageSequence
 import voluptuous as vol
 
@@ -28,6 +29,7 @@ class Keybeat2d(Twod, GifBase):
         "fake_beat",
         "pp_skip",
         "resize_method",
+        "image_brightness",
     ]
 
     CONFIG_SCHEMA = vol.Schema(
@@ -102,6 +104,11 @@ class Keybeat2d(Twod, GifBase):
                 description="half the beat input impulse, slow things down",
                 default=False,
             ): bool,
+            vol.Optional(
+                "image_brightness",
+                description="Image brightness",
+                default=1.0,
+            ): vol.All(vol.Coerce(float), vol.Range(min=0.1, max=3.0)),
         }
     )
 
@@ -180,6 +187,12 @@ class Keybeat2d(Twod, GifBase):
 
         # strip out None frames
         self.post_frames = [img for img in self.post_frames if img is not None]
+        self.post_frames = [
+            ImageEnhance.Brightness(frame).enhance(
+                self._config["image_brightness"]
+            )
+            for frame in self.post_frames
+        ]
 
         if self.diag:
             _LOGGER.info(
