@@ -222,21 +222,30 @@ if no device is found will return an error
         "error": "Failed to find launchpad"
     }
 
-/api/find_openrgb/?server=1.2.3.4&port=5678
+/api/find_openrgb
 ===========================================
-
-.. rubric:: GET
-
-Optional Query parameters are supported as follows:
-
-'**server**' (optional): IP address of openRGB server, a default value of loacl host will be used
-'**port**' (optional): Port to be used for openRGB server. a default value of 6742 will be used
-
-In most cases these do not need to be defined as defaults of localhost and 6742 are used
 
 Returns all found openRGB devices registered with the openRGB server
 
-example:
+.. rubric:: GET
+
+The GET call uses default values of 127.0.0.1:6742 for the openRGB server
+
+.. rubric:: POST
+
+JSON parameters are supported as follows:
+
+| '**server**' (optional): IP address of openRGB server, a default value of 127.0.0.1 will be used
+| '**port**' (optional): Port to be used for openRGB server, a default value of 6742 will be used
+
+.. code-block:: json
+
+    {
+      "server": "1.2.3.4",
+      "port": 1234
+    }
+
+example reponse:
 
 .. code-block:: json
 
