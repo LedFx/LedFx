@@ -1,3 +1,5 @@
+import os
+import shutil
 import sys
 import time
 from dataclasses import dataclass
@@ -117,3 +119,27 @@ def calc_available_fps():
     )
     tick_range = reversed(range(max_fps_ticks, min_fps_ticks))
     return {int(1 / (sleep_res * mult * i)): i * mult for i in tick_range}
+
+
+def get_default_config_directory() -> str:
+    """Get the default configuration directory (which also has the log file, which is why we're here"""
+
+    base_dir = (
+        os.getenv("APPDATA") if os.name == "nt" else os.path.expanduser("~")
+    )
+    return os.path.join(base_dir, ".ledfx")
+
+
+def get_log_file_path():
+    """Get the log file from the default configuration directory"""
+    log_file = os.path.join(get_default_config_directory(), "LedFx.log")
+    return log_file
+
+
+def move_log_file_to_tests_folder():
+    """Move the log file from the default configuration directory to the tests folder"""
+    log_file = get_log_file_path()
+    current_dir = os.getcwd()
+    destination = os.path.join(current_dir, "LedFx.log")
+    if os.path.exists(log_file):
+        shutil.move(log_file, destination)

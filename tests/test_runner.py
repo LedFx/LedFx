@@ -10,6 +10,7 @@ from tests.test_utils import (
     BASE_PORT,
     BASE_URL,
     clear_config,
+    move_log_file_to_tests_folder,
     send_test_api_request,
     shutdown_ledfx,
 )
@@ -39,6 +40,10 @@ def setup_and_teardown():
     # Terminate the program
     program.terminate()
     program.wait()
+    # grab the log file from ~/.ledfx/LedFx.log and move it to the tests folder
+    # Wait for the log file to be written and closed
+    time.sleep(3)
+    move_log_file_to_tests_folder()
 
 
 def make_test(test_type, test_name, test_case, order):

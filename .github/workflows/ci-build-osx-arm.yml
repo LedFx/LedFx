@@ -58,3 +58,8 @@ jobs:
             echo "LedFx tests failed: $?"
             exit 1
           fi
+      - name: Attach LedFx test log
+        uses: actions/upload-artifact@v2
+        with:
+          name: ledfx-log-osx-arm-${{ matrix.python }}.log
+          path: LedFx.log
