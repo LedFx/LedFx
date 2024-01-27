@@ -315,6 +315,7 @@ class Virtual:
         self.set_effect(effect)
 
     def set_effect(self, effect):
+        new_effect_set = False
         with self.lock:
             if not self._devices:
                 error = f"Virtual {self.id}: Cannot activate, no configured device segments"
@@ -350,6 +351,8 @@ class Virtual:
                     self.id,
                 )
             )
+            new_effect_set = True
+        if new_effect_set:
             try:
                 self.active = True
             except RuntimeError:
