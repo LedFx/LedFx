@@ -25,11 +25,6 @@ jobs:
         run: |
           sudo apt-get update && sudo apt-get install -y \
           gcc libatlas3-base portaudio19-dev libsamplerate-dev
-      # - name: Setup CI sound system
-      #   uses: LABSN/sound-ci-helpers@v1
-      # - name: Create Audio Input
-      #   run: |
-      #    pactl load-module module-null-sink sink_name=LedFx_Test_Source sink_properties=device.description=LedFx_Test_Source
       - name: Setup Python ${{ matrix.python }}
         id: python
         uses: actions/setup-python@v5
@@ -76,18 +71,24 @@ jobs:
       - name: Install LedFx
         run: |
           poetry install --with dev
-      - name: Smoketest LedFx
+      - name: Setup CI sound system
+        uses: LABSN/sound-ci-helpers@v1
+
+      - name: Create Audio Input
         run: |
-          poetry run ledfx --ci-smoke-test -c debug_config
-      # - name: Run Tests
-      #   run: |
-      #     poetry run pytest -vv
+          pactl load-module module-null-sink sink_name=LedFx_Test_Source sink_properties=device.description=LedFx_Test_Source
+
+      - name: Run Tests
+        run: |
+          poetry run pytest -vv
+
       - name: Attach LedFx test log
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: ledfx-log-linux-${{ matrix.python }}.log
           path: ${{ github.workspace }}/debug_config/LedFx.log
+
   build-ledfx-windows:
     name: Build LedFx (Windows)
     runs-on: windows-latest
