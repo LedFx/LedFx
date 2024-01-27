@@ -1,8 +1,8 @@
 import logging
 import os
 
-import PIL.ImageSequence as ImageSequence
 import PIL.ImageEnhance as ImageEnhance
+import PIL.ImageSequence as ImageSequence
 import voluptuous as vol
 
 from ledfx.consts import LEDFX_ASSETS_PATH
@@ -189,7 +189,8 @@ class Keybeat2d(Twod, GifBase):
         self.post_frames = [img for img in self.post_frames if img is not None]
         self.post_frames = [
             ImageEnhance.Brightness(frame).enhance(
-                self._config["image_brightness"])
+                self._config["image_brightness"]
+            )
             for frame in self.post_frames
         ]
 
