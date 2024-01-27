@@ -8,6 +8,8 @@ from ledfx.utils import BaseRegistry, RegistryLoader
 
 _LOGGER = logging.getLogger(__name__)
 
+SNACKBAR_OPTIONS = ["success", "info", "warning", "error"]
+
 
 @BaseRegistry.no_registration
 class RestEndpoint(BaseRegistry):
@@ -73,6 +75,10 @@ class RestEndpoint(BaseRegistry):
         Returns:
             A web response with a JSON payload containing the error and a 500 status.
         """
+        if type not in SNACKBAR_OPTIONS:
+            raise ValueError(
+                "Snackbar type must be one of 'success', 'info', 'warning', 'error'."
+            )
         response = {
             "status": "failed",
             "payload": {"type": type, "reason": message},
@@ -87,12 +93,16 @@ class RestEndpoint(BaseRegistry):
 
         Args:
             reason (str): The reason for the invalid request. Defaults to 'Invalid request'.
-            type (str): The type of error. Defaults to 'error'. Options 'default','error', 'success', 'warning','info'.
+            type (str): The type of error. Defaults to 'error'.
             resp_code (int): The response code to be returned. Defaults to 200 so that snackbar works.
 
         Returns:
             web.Response: A JSON response with the status and reason for the invalid request.
         """
+        if type not in SNACKBAR_OPTIONS:
+            raise ValueError(
+                "Snackbar type must be one of 'success', 'info', 'warning', 'error'."
+            )
         response = {
             "status": "failed",
             "payload": {
@@ -121,6 +131,10 @@ class RestEndpoint(BaseRegistry):
             "status": "success",
         }
         if type and message is not None:
+            if type not in SNACKBAR_OPTIONS:
+                raise ValueError(
+                    "Snackbar type must be one of 'success', 'info', 'warning', 'error'"
+                )
             response["payload"] = {
                 "type": type,
                 "reason": message,
@@ -140,7 +154,7 @@ class RestEndpoint(BaseRegistry):
         """
         if payload is None:
             raise ValueError(
-                "Payload must be provided to the bare request_success method"
+                "Payload must be provided to the bare request_success method."
             )
         return web.json_response(data=payload, status=200)
 
