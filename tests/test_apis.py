@@ -5,13 +5,7 @@ import pytest
 from tests.test_definitions.devices import device_tests
 from tests.test_definitions.effects import effect_tests
 from tests.test_definitions.proof_of_life import proof_of_life_tests
-from tests.test_utils import (
-    BASE_PORT,
-    BASE_URL,
-    cleanup_test_config_folder,
-    send_test_api_request,
-    shutdown_ledfx,
-)
+from tests.test_utils import SERVER_PATH, EnvironmentCleanup, HTTPSession
 
 # Create a dictionary that contains all the tests - this will be used to dynamically create the test functions as we add more
 all_tests = {
@@ -23,32 +17,42 @@ all_tests = {
 test_order = ["proof_of_life_tests", "device_tests", "effect_tests"]
 
 
+@pytest.fixture
+def http_session():
+    # Create a new HTTPSession for each test
+    return HTTPSession()
+
+
 @pytest.fixture(scope="module", autouse=True)
 def setup_and_teardown():
-    cleanup_test_config_folder(),
+    EnvironmentCleanup.cleanup_test_config_folder(),
     # Start LedFx as a subprocess
-    program = subprocess.Popen(
+    ledfx = subprocess.Popen(
         ["poetry", "run", "ledfx", "--offline", "-c", "debug_config", "-vv"]
     )
     # Run tests
     yield
     # Use the API to shut down LedFx
-    shutdown_ledfx()
+    EnvironmentCleanup.shutdown_ledfx()
     # Terminate the program
-    program.terminate()
-    program.wait()
+    ledfx.terminate()
+    ledfx.wait()
 
 
 def make_test(test_type, test_name, test_case, order):
     @pytest.mark.order(order)
-    def test_run_api_call():
-        url = f"http://{BASE_URL}:{BASE_PORT}{test_case.api_endpoint}"
+    def test_run_api_call(http_session):
+        # Reminder, the api_endpoint contains a leading slash
+        url = f"http://{SERVER_PATH}{test_case.api_endpoint}"
         # check to see if we need to send a payload
         payload = (
             test_case.payload_to_send if test_case.payload_to_send else None
         )
-        response = send_test_api_request(
-            url=url, method=test_case.method, payload=payload
+        response = HTTPSession.send_test_api_request(
+            self=http_session,
+            url=url,
+            method=test_case.method,
+            payload=payload,
         )
         assert (
             response.status_code == test_case.expected_return_code

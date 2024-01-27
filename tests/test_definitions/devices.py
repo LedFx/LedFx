@@ -4,12 +4,8 @@
 # 3. Delete the device
 # 4. Check that the device no longer exists
 # 5. Recreate the device to allow it to be used in other tests
-from tests.test_utils import APITestCase, calc_available_fps
+from tests.test_utils import APITestCase, SystemInfo
 
-AVAILABLE_FPS = calc_available_fps()
-DEFAULT_FPS = next(
-    (f for f in AVAILABLE_FPS if f >= 60), list(AVAILABLE_FPS)[-1]
-)
 device_tests = {
     "create_test_device": APITestCase(
         execution_order=1,
@@ -21,7 +17,7 @@ device_tests = {
             "config": {
                 "icon_name": "mdi:led-strip",
                 "center_offset": 0,
-                "refresh_rate": DEFAULT_FPS,
+                "refresh_rate": SystemInfo.default_fps(),
                 "pixel_count": 100,
                 "port": 4048,
                 "name": "CI Test Jig",
@@ -37,7 +33,7 @@ device_tests = {
                     "config": {
                         "icon_name": "mdi:led-strip",
                         "center_offset": 0,
-                        "refresh_rate": DEFAULT_FPS,
+                        "refresh_rate": SystemInfo.default_fps(),
                         "pixel_count": 100,
                         "port": 4048,
                         "name": "CI Test Jig",
@@ -63,7 +59,7 @@ device_tests = {
                         "config": {
                             "icon_name": "mdi:led-strip",
                             "center_offset": 0,
-                            "refresh_rate": DEFAULT_FPS,
+                            "refresh_rate": SystemInfo.default_fps(),
                             "pixel_count": 100,
                             "port": 4048,
                             "name": "CI Test Jig",
@@ -106,7 +102,7 @@ device_tests = {
             "config": {
                 "icon_name": "mdi:led-strip",
                 "center_offset": 0,
-                "refresh_rate": DEFAULT_FPS,
+                "refresh_rate": SystemInfo.default_fps(),
                 "pixel_count": 100,
                 "port": 4048,
                 "name": "CI Test Jig",
@@ -122,7 +118,7 @@ device_tests = {
                     "config": {
                         "icon_name": "mdi:led-strip",
                         "center_offset": 0,
-                        "refresh_rate": DEFAULT_FPS,
+                        "refresh_rate": SystemInfo.default_fps(),
                         "pixel_count": 100,
                         "port": 4048,
                         "name": "CI Test Jig",
