@@ -153,7 +153,7 @@ class Virtual:
         self._hl_step = 1
         self._os_active = False
         self.lock = threading.Lock()
-        self.closing = True
+        self._closing = True
 
         self.frequency_range = FrequencyRange(
             self._config["frequency_min"], self._config["frequency_max"]
@@ -347,7 +347,10 @@ class Virtual:
                     self._transition_effect = DummyEffect(self.pixel_count)
                 else:
                     self._transition_effect = self._active_effect
-                self.closing = False
+                # we have just set a new effect while a transition is in progress
+                # we need to make sure that a pending clear_frame is cancelled
+                # when it arrives
+                self._closing = False
             else:
                 # no transition effect to clean up, so clear the active effect now!
                 self.clear_active_effect()
@@ -397,7 +400,10 @@ class Virtual:
                 # no transition effect to clean up, so clear the active effect now!
                 self.clear_active_effect()
 
-            self.closing = True
+            # set up a concellable flag to imply that we are closing the effect
+            # in due course. Setting a new effect while this is pending should
+            # clear the _closing flag
+            self._closing = True
             self._ledfx.loop.call_later(
                 self._config["transition_time"], self.clear_frame
             )
@@ -411,6 +417,10 @@ class Virtual:
         if self._active_effect is not None:
             self._active_effect._deactivate()
         self._active_effect = None
+
+    def force_clear_frame(self):
+        self._closing = True
+        self.clear_frame()
 
     def clear_frame(self):
         """
@@ -430,7 +440,10 @@ class Virtual:
         # make sure that we don't clear the frame if the virtual device is
         # not active.
         # All of this requires thread lock management that's a bit unwieldy
-        if self.closing:
+
+        # check that clear frame has not been cancelled by a new effect which
+        # would set _closing to False
+        if self._closing:
             assembled_frame = None
             with self.lock:
                 self.clear_active_effect()
@@ -1088,7 +1101,7 @@ class Virtuals:
 
     def clear_all_effects(self):
         for virtual in self.values():
-            virtual.clear_frame()
+            virtual.force_clear_frame()
 
     def pause_all(self):
         self._paused = not self._paused
