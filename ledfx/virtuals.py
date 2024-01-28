@@ -153,7 +153,7 @@ class Virtual:
         self._hl_step = 1
         self._os_active = False
         self.lock = threading.Lock()
-        self._closing = True
+        self.clear_handle = None
 
         self.frequency_range = FrequencyRange(
             self._config["frequency_min"], self._config["frequency_max"]
@@ -347,14 +347,12 @@ class Virtual:
                     self._transition_effect = DummyEffect(self.pixel_count)
                 else:
                     self._transition_effect = self._active_effect
-                # we have just set a new effect while a transition is in progress
-                # we need to make sure that a pending clear_frame is cancelled
-                # when it arrives
-                self._closing = False
             else:
                 # no transition effect to clean up, so clear the active effect now!
                 self.clear_active_effect()
                 self.clear_transition_effect()
+
+            self.flush_pending_clear_frame()
 
             self._active_effect = effect
             self._active_effect.activate(self)
@@ -400,13 +398,16 @@ class Virtual:
                 # no transition effect to clean up, so clear the active effect now!
                 self.clear_active_effect()
 
-            # set up a concellable flag to imply that we are closing the effect
-            # in due course. Setting a new effect while this is pending should
-            # clear the _closing flag
-            self._closing = True
-            self._ledfx.loop.call_later(
+            self.flush_pending_clear_frame()
+
+            self.clear_handle = self._ledfx.loop.call_later(
                 self._config["transition_time"], self.clear_frame
             )
+
+    def flush_pending_clear_frame(self):
+        if self.clear_handle is not None:
+            self.clear_handle.cancel()
+            self.clear_handle = None
 
     def clear_transition_effect(self):
         if self._transition_effect is not None:
@@ -417,10 +418,6 @@ class Virtual:
         if self._active_effect is not None:
             self._active_effect._deactivate()
         self._active_effect = None
-
-    def force_clear_frame(self):
-        self._closing = True
-        self.clear_frame()
 
     def clear_frame(self):
         """
@@ -441,26 +438,23 @@ class Virtual:
         # not active.
         # All of this requires thread lock management that's a bit unwieldy
 
-        # check that clear frame has not been cancelled by a new effect which
-        # would set _closing to False
-        if self._closing:
-            assembled_frame = None
-            with self.lock:
-                self.clear_active_effect()
-                self.clear_transition_effect()
-                if self._active:
-                    assembled_frame = np.zeros((self.pixel_count, 3))
-                    self.flush(assembled_frame)
-                    self._ledfx.events.fire_event(
-                        VirtualUpdateEvent(self.id, assembled_frame)
-                    )
+        assembled_frame = None
+        with self.lock:
+            self.clear_active_effect()
+            self.clear_transition_effect()
+            if self._active:
+                assembled_frame = np.zeros((self.pixel_count, 3))
+                self.flush(assembled_frame)
+                self._ledfx.events.fire_event(
+                    VirtualUpdateEvent(self.id, assembled_frame)
+                )
 
-            # Deactivate the device - this requires the thread lock
-            # Hence why we do it outside of the lock and after the frame is cleared
-            # This is because the deactivate method will join the thread
-            # and we don't want to call join while holding the lock
-            if assembled_frame is not None:
-                self.deactivate()
+        # Deactivate the device - this requires the thread lock
+        # Hence why we do it outside of the lock and after the frame is cleared
+        # This is because the deactivate method will join the thread
+        # and we don't want to call join while holding the lock
+        if assembled_frame is not None:
+            self.deactivate()
 
     def force_frame(self, color):
         """
@@ -1101,7 +1095,7 @@ class Virtuals:
 
     def clear_all_effects(self):
         for virtual in self.values():
-            virtual.force_clear_frame()
+            virtual.clear_frame()
 
     def pause_all(self):
         self._paused = not self._paused
