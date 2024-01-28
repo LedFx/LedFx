@@ -34,4 +34,5 @@ hiddenimports = [
     "mss",
     "PIL.Image",
     "PIL.ImageDraw",
+    "PIL.ImageEnhance",
 ]
