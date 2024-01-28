@@ -8,6 +8,7 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+
 jobs:
   build-ledfx-linux:
     name: Build LedFx (Ubuntu)
@@ -15,6 +16,7 @@ jobs:
     strategy:
       matrix:
         python: [3.9.x,3.10.x,3.11.x,3.12.x]
+      fail-fast: false
     steps:
       - name: Check out code from GitHub
         uses: actions/checkout@v4
@@ -23,7 +25,6 @@ jobs:
         run: |
           sudo apt-get update && sudo apt-get install -y \
           gcc libatlas3-base portaudio19-dev libsamplerate-dev
-
       - name: Setup Python ${{ matrix.python }}
         id: python
         uses: actions/setup-python@v5
@@ -69,15 +70,24 @@ jobs:
 
       - name: Install LedFx
         run: |
-          poetry install
+          poetry install --with dev
+      - name: Setup CI sound system
+        uses: LABSN/sound-ci-helpers@v1
 
-      - name: Check version
+      - name: Create Audio Input
         run: |
-          poetry run ledfx --version
+          pactl load-module module-null-sink sink_name=LedFx_Test_Source sink_properties=device.description=LedFx_Test_Source
 
-      - name: Smoketest LedFx
+      - name: Run Tests
         run: |
-          poetry run ledfx -vv --ci-smoke-test
+          poetry run pytest -v
+
+      - name: Attach LedFx test log
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ledfx-log-linux-${{ matrix.python }}.log
+          path: ${{ github.workspace }}/debug_config/LedFx.log
 
   build-ledfx-windows:
     name: Build LedFx (Windows)
@@ -85,13 +95,15 @@ jobs:
     strategy:
       matrix:
         python: [3.9.x,3.10.x,3.11.x,3.12.x]
+      fail-fast: false
     defaults:
       run:
         shell: bash -x {0}
     steps:
+      - name: Setup CI sound system
+        uses: LABSN/sound-ci-helpers@v1
       - name: Check out code from GitHub
         uses: actions/checkout@v4
-
       - name: Setup Python ${{ matrix.python }}
         id: python
         uses: actions/setup-python@v5
@@ -143,23 +155,24 @@ jobs:
 
       - name: Install LedFx
         run: |
-          poetry install
+          poetry install --with dev
 
-      - name: Check version
+      - name: Run Tests
         run: |
-          poetry run ledfx --version
-
-      - name: Smoketest LedFx with poetry
-        if: ${{ matrix.python != '3.11.x' }}
-        run: |
-          poetry run ledfx -vv --ci-smoke-test
-
+          poetry run pytest -v
+      - name: Attach LedFx test log
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ledfx-log-windows-${{ matrix.python }}.log
+          path: ${{ github.workspace }}/debug_config/LedFx.log
   build-ledfx-osx:
     name: Build LedFx (OS X)
     runs-on: macos-latest
     strategy:
       matrix:
         python: [3.9.x,3.10.x,3.11.x,3.12.x]
+      fail-fast: false
     steps:
       - name: Check out code from GitHub
         uses: actions/checkout@v4
@@ -213,13 +226,15 @@ jobs:
 
       - name: Install LedFx
         run: |
-          poetry install
+          poetry install --with dev
 
-      - name: Check version
+      - name: Check LedFx launches
         run: |
-          poetry run ledfx --version
-
-      - name: Smoketest LedFx
-        run: |
-          poetry run ledfx -vv --ci-smoke-test
+          poetry run ledfx --ci-smoke-test
+      - name: Attach LedFx test log
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ledfx-log-osx-${{ matrix.python }}.log
+          path: ${{ github.workspace }}/debug_config/LedFx.log
 

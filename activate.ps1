@@ -1,1 +1,0 @@
-..\Scripts\activate.ps1

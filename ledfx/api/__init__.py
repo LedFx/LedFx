@@ -1,5 +1,7 @@
 import inspect
 import logging
+import uuid
+from json import JSONDecodeError
 
 import aiohttp_cors
 from aiohttp import web
@@ -17,13 +19,28 @@ class RestEndpoint(BaseRegistry):
         self._ledfx = ledfx
 
     async def handler(self, request: web.Request):
+        short_uuid = str(uuid.uuid4())[:4]
+        _LOGGER.debug(
+            f"LedFx API Request {short_uuid}: {request.method} {request.path}"
+        )
+        body = None
+        if request.has_body:
+            try:
+                body = await request.json()
+            except JSONDecodeError:
+                body = await request.text()
+            finally:
+                _LOGGER.debug(
+                    f"LedFx API Request {short_uuid} payload: {body}"
+                )
+
         method = getattr(self, request.method.lower(), None)
         if not method:
             raise web.HTTPMethodNotAllowed("")
 
         wanted_args = list(inspect.signature(method).parameters.keys())
         available_args = request.match_info.copy()
-        available_args.update({"request": request})
+        available_args.update({"request": request, "body": body})
 
         unsatisfied_args = set(wanted_args) - set(available_args.keys())
         if unsatisfied_args:

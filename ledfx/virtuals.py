@@ -153,6 +153,7 @@ class Virtual:
         self._hl_step = 1
         self._os_active = False
         self.lock = threading.Lock()
+        self.clear_handle = None
 
         self.frequency_range = FrequencyRange(
             self._config["frequency_min"], self._config["frequency_max"]
@@ -351,6 +352,8 @@ class Virtual:
                 self.clear_active_effect()
                 self.clear_transition_effect()
 
+            self.flush_pending_clear_frame()
+
             self._active_effect = effect
             self._active_effect.activate(self)
             self._ledfx.events.fire_event(
@@ -395,9 +398,16 @@ class Virtual:
                 # no transition effect to clean up, so clear the active effect now!
                 self.clear_active_effect()
 
-            self._ledfx.loop.call_later(
+            self.flush_pending_clear_frame()
+
+            self.clear_handle = self._ledfx.loop.call_later(
                 self._config["transition_time"], self.clear_frame
             )
+
+    def flush_pending_clear_frame(self):
+        if self.clear_handle is not None:
+            self.clear_handle.cancel()
+            self.clear_handle = None
 
     def clear_transition_effect(self):
         if self._transition_effect is not None:
@@ -427,6 +437,7 @@ class Virtual:
         # make sure that we don't clear the frame if the virtual device is
         # not active.
         # All of this requires thread lock management that's a bit unwieldy
+
         assembled_frame = None
         with self.lock:
             self.clear_active_effect()

@@ -11,6 +11,7 @@ jobs:
     strategy:
       matrix:
         python: [3.10.x,3.11.x,3.12.x]
+      fail-fast: false
     steps:
       - name: Check out code from GitHub
         uses: actions/checkout@v4
@@ -30,6 +31,9 @@ jobs:
       - name: Install poetry via Homebrew
         run: |
           brew install poetry
+      - name: Set poetry Python version
+        run: |
+          poetry env use python${{ matrix.python }}
       - name: Build LedFx wheel
         run: |
           poetry build
@@ -37,12 +41,18 @@ jobs:
         run: |
           export LDFLAGS="-L/opt/homebrew/opt/mbedtls@2/lib"
           export CPPFLAGS="-I/opt/homebrew/opt/mbedtls@2/include"
-          poetry install
-      - name: Smoketest LedFx
+          poetry install --with dev
+      - name: Test LedFx
         run: |
           source $(poetry env info -p)/bin/activate
-          ledfx --ci-smoke-test
+          pytest -v
           if [ $? -ne 0 ]; then
-            echo "LedFx launch failed: $?"
+            echo "LedFx tests failed: $?"
             exit 1
           fi
+      - name: Attach LedFx test log
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ledfx-log-osx-arm-${{ matrix.python }}.log
+          path: ${{ github.workspace }}/debug_config/LedFx.log
