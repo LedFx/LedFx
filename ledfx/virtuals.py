@@ -153,6 +153,7 @@ class Virtual:
         self._hl_step = 1
         self._os_active = False
         self.lock = threading.Lock()
+        self.closing = True
 
         self.frequency_range = FrequencyRange(
             self._config["frequency_min"], self._config["frequency_max"]
@@ -346,6 +347,7 @@ class Virtual:
                     self._transition_effect = DummyEffect(self.pixel_count)
                 else:
                     self._transition_effect = self._active_effect
+                self.closing = False
             else:
                 # no transition effect to clean up, so clear the active effect now!
                 self.clear_active_effect()
@@ -395,6 +397,7 @@ class Virtual:
                 # no transition effect to clean up, so clear the active effect now!
                 self.clear_active_effect()
 
+            self.closing = True
             self._ledfx.loop.call_later(
                 self._config["transition_time"], self.clear_frame
             )
@@ -427,23 +430,24 @@ class Virtual:
         # make sure that we don't clear the frame if the virtual device is
         # not active.
         # All of this requires thread lock management that's a bit unwieldy
-        assembled_frame = None
-        with self.lock:
-            self.clear_active_effect()
-            self.clear_transition_effect()
-            if self._active:
-                assembled_frame = np.zeros((self.pixel_count, 3))
-                self.flush(assembled_frame)
-                self._ledfx.events.fire_event(
-                    VirtualUpdateEvent(self.id, assembled_frame)
-                )
+        if self.closing:
+            assembled_frame = None
+            with self.lock:
+                self.clear_active_effect()
+                self.clear_transition_effect()
+                if self._active:
+                    assembled_frame = np.zeros((self.pixel_count, 3))
+                    self.flush(assembled_frame)
+                    self._ledfx.events.fire_event(
+                        VirtualUpdateEvent(self.id, assembled_frame)
+                    )
 
-        # Deactivate the device - this requires the thread lock
-        # Hence why we do it outside of the lock and after the frame is cleared
-        # This is because the deactivate method will join the thread
-        # and we don't want to call join while holding the lock
-        if assembled_frame is not None:
-            self.deactivate()
+            # Deactivate the device - this requires the thread lock
+            # Hence why we do it outside of the lock and after the frame is cleared
+            # This is because the deactivate method will join the thread
+            # and we don't want to call join while holding the lock
+            if assembled_frame is not None:
+                self.deactivate()
 
     def force_frame(self, color):
         """
