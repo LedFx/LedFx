@@ -58,7 +58,8 @@ class APITestCase:
     payload_to_send: dict[str, Any] = None
     expected_response_keys: list[str] = None
     expected_response_values: list[dict[str, Any]] = None
-    sleep_after_test: float = 0.0
+    # Default sleep after each test to 50 milliseconds
+    sleep_after_test: float = 0.05
 
 
 class HTTPSession:
