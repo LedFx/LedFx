@@ -80,7 +80,7 @@ jobs:
 
       - name: Run Tests
         run: |
-          poetry run pytest -vv
+          poetry run pytest -v
 
       - name: Attach LedFx test log
         uses: actions/upload-artifact@v4
@@ -159,7 +159,7 @@ jobs:
 
       - name: Run Tests
         run: |
-          poetry run pytest -vv
+          poetry run pytest -v
       - name: Attach LedFx test log
         uses: actions/upload-artifact@v4
         if: always()
@@ -228,9 +228,9 @@ jobs:
         run: |
           poetry install --with dev
 
-      - name: Run Tests
+      - name: Check LedFx launches
         run: |
-          poetry run pytest -vv
+          poetry run ledfx --ci-smoke-test
       - name: Attach LedFx test log
         uses: actions/upload-artifact@v4
         if: always()

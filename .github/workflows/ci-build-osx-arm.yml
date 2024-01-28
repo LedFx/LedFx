@@ -45,7 +45,7 @@ jobs:
       - name: Test LedFx
         run: |
           source $(poetry env info -p)/bin/activate
-          pytest -vv
+          pytest -v
           if [ $? -ne 0 ]; then
             echo "LedFx tests failed: $?"
             exit 1
