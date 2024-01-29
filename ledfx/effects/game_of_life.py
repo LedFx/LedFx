@@ -1,5 +1,6 @@
 import logging
 import random
+
 from enum import Enum
 
 import numpy as np
@@ -7,6 +8,7 @@ import voluptuous as vol
 
 from ledfx.effects.gradient import GradientEffect
 from ledfx.effects.twod import Twod
+from PIL import Image
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -45,24 +47,24 @@ class GameOfLifeVisualiser(Twod, GradientEffect):
 
     history = 5
     # need history plus one colors
-    dead_colors = [
-        (180, 0, 0),
-        (120, 0, 0),
-        (60, 0, 0),
-        (30, 0, 0),
-        (15, 0, 0),
-        (0, 0, 0),
-    ]
 
-    # need history plus one colors
-    live_colors = [
-        (0, 180, 0),
-        (0, 255, 0),
-        (255, 255, 255),
-        (200, 200, 200),
-        (150, 150, 150),
-        (100, 100, 100),
-    ]
+    dead_colors = np.array([
+        [180, 0, 0],
+        [120, 0, 0],
+        [60, 0, 0],
+        [30, 0, 0],
+        [15, 0, 0],
+        [0, 0, 0],
+    ], dtype=np.uint8)
+
+    live_colors = np.array([
+        [0, 180, 0],
+        [0, 255, 0],
+        [255, 255, 255],
+        [200, 200, 200],
+        [150, 150, 150],
+        [100, 100, 100],
+    ], dtype=np.uint8)
 
     CONFIG_SCHEMA = vol.Schema(
         {
@@ -158,31 +160,34 @@ class GameOfLifeVisualiser(Twod, GradientEffect):
 
     def update_image_with_board(self):
         """
-        Updates the image with the current game board.
-
-        Args:
-            None
-
+        Updates the image with the current game board using vectorization for improved performance.
         """
-        pixels = self.matrix.load()
-        # TODO: Vectorize this loop
-        for y in range(self.matrix.height):
-            for x in range(self.matrix.width):
-                if self.game.board[y, x]:  # Cell is alive
-                    alive_for = sum(
-                        1
-                        for hist in reversed(self.game.board_history)
-                        if hist[y, x]
-                    )
-                    pixels[x, y] = self.live_colors[alive_for]
-                else:  # Cell is dead
-                    dead_for = sum(
-                        1
-                        for hist in reversed(self.game.board_history)
-                        if not hist[y, x]
-                    )
-                    pixels[x, y] = self.dead_colors[dead_for]
 
+        # Convert PIL image to NumPy array for processing
+        img_array = np.array(self.matrix)
+
+        # Convert game board and history to NumPy arrays
+        current_board = np.array(self.game.board)
+        history_stack = np.array(
+            [np.array(hist) for hist in self.game.board_history])
+
+        # Calculate alive and dead durations using vectorization
+        alive_durations = np.sum(history_stack[:, :, :] == True, axis=0)
+        dead_durations = np.sum(history_stack[:, :, :] == False, axis=0)
+
+        # Map durations to colors using vectorized operations
+        for duration in range(len(self.live_colors)):
+            alive_mask = np.logical_and(current_board,
+                                        alive_durations == duration)
+            img_array[alive_mask] = self.live_colors[duration]
+
+        for duration in range(len(self.dead_colors)):
+            dead_mask = np.logical_and(~current_board,
+                                       dead_durations == duration)
+            img_array[dead_mask] = self.dead_colors[duration]
+
+        # Convert the NumPy array back to PIL Image and update self.matrix
+        self.matrix = Image.fromarray(img_array)
 
 class GameOfLife:
     """
