@@ -3,7 +3,8 @@ name: CI Build LedFx
 on:
   push:
   pull_request:
-
+  release:
+    types: [created]
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -86,7 +87,7 @@ jobs:
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: ledfx-log-linux-${{ matrix.python }}.log
+          name: ledfx-log-${{ runner.os }}-${{ runner.arch }}-py${{ matrix.python }}.log
           path: ${{ github.workspace }}/debug_config/LedFx.log
 
   build-ledfx-windows:
@@ -164,7 +165,7 @@ jobs:
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: ledfx-log-windows-${{ matrix.python }}.log
+          name: ledfx-log-${{ runner.os }}-${{ runner.arch }}-py${{ matrix.python }}.log
           path: ${{ github.workspace }}/debug_config/LedFx.log
   build-ledfx-osx:
     name: Build LedFx (OS X)
@@ -235,7 +236,7 @@ jobs:
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: ledfx-log-osx-${{ matrix.python }}.log
+          name: ledfx-log-${{ runner.os }}-${{ runner.arch }}-py${{ matrix.python }}.log
           path: ${{ github.workspace }}/debug_config/LedFx.log
   build-ledfx-osx-m1:
     name: Build LedFx (OS X) (Apple Silicon)
@@ -307,7 +308,7 @@ jobs:
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: ledfx-log-osx-arm64-${{ matrix.python }}.log
+          name: ledfx-log-${{ runner.os }}-${{ runner.arch }}-py${{ matrix.python }}.log
           path: ${{ github.workspace }}/debug_config/LedFx.log
 
 
