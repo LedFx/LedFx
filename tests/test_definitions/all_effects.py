@@ -6,8 +6,7 @@ def get_ledfx_effects():
     effects_to_test = {}
     http_session = HTTPSession()
     try:
-        response = HTTPSession.send_test_api_request(
-            self=http_session,
+        response = http_session.send_test_api_request(
             url=f"http://{SERVER_PATH}/api/schema",
             method="GET",
         )
