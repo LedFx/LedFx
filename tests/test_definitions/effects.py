@@ -5,7 +5,7 @@
 # 4. Set "Energy" effect to device ci-test-jig
 # 5. Check that the effect is set
 # 6. Leave the effect set for other tests
-from tests.test_utils import APITestCase
+from tests.test_utilities.test_utils import APITestCase
 
 effect_tests = {
     "set_rainbow": APITestCase(
