@@ -249,7 +249,10 @@ class ConfigEndpoint(RestEndpoint):
                         "scan_on_startup",
                         "user_presets",
                         "transmission_mode",
-                        "visualisation_maxlen",
+                        # ToDo:
+                        # temporary let ledfx restart when visualisation_maxlen is changed
+                        # until backend can change the length of the pixel data sent via websocket
+                        # "visualisation_maxlen",
                     ]
                 )
                 and len(core_config) == 1
