@@ -58,6 +58,6 @@ class GetGifFramesEndpoint(RestEndpoint):
                 )
                 frames.append(encoded_frame)
 
-        response = {"frame_count": len(frames), "frames": frames}
+        response = {"status": "success", "frame_count": len(frames), "frames": frames}
 
-        return web.json_response(data=response, status=200)
+        return await self.bare_request_success(response)

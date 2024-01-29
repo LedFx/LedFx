@@ -1392,6 +1392,33 @@ def open_gif(gif_path):
         return None
 
 
+def open_image(image_path):
+    """
+    Open an image from a local file or url
+
+    Args:
+        image_path: str
+            path to image file or url
+    Returns:
+        Image: PIL Image object or None if failed to open
+    """
+    _LOGGER.info(f"Attempting to open image: {image_path}")
+    try:
+        if image_path.startswith("http://") or image_path.startswith("https://"):
+            with urllib.request.urlopen(image_path) as url:
+                image = Image.open(url)
+                _LOGGER.info("image downloaded and opened.")
+                return image
+
+        else:
+            image = Image.open(image_path)  # Directly open for local files
+            _LOGGER.info("Image opened.")
+            return image
+    except Exception as e:
+        _LOGGER.warning(f"Failed to open image : {image_path} : {e}")
+        return None
+
+
 def get_mono_font(size):
     """
     Get a monospace font from a list of fonts common across platforms
