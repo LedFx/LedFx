@@ -224,7 +224,8 @@ class LedFxCore:
         return self.exit_code
 
     async def async_start(self, open_ui=False):
-        _LOGGER.info("Starting LedFx")
+        _LOGGER.info(f"Starting LedFx, listening on {self.host}:{self.port}")
+
         await self.http.start(get_ssl_certs(config_dir=self.config_dir))
         if (
             self.icon is not None

@@ -1,10 +1,8 @@
 import os
-import random
 import shutil
 import sys
 import time
 from dataclasses import dataclass
-from http.server import HTTPServer, SimpleHTTPRequestHandler
 from typing import Any, Literal, Optional, Union
 
 import numpy as np
@@ -13,26 +11,7 @@ import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
-
-class PortPicker:
-    @staticmethod
-    def pick_port(max_tries=10):
-        for _ in range(max_tries):
-            port = random.randint(4000, 10000)
-            try:
-                server = HTTPServer(
-                    ("localhost", port), SimpleHTTPRequestHandler
-                )
-                server.server_close()
-                return port
-            except OSError:
-                continue
-        pytest.fail(f"Could not find an open port after {max_tries} tries.")
-
-
-BASE_URL = "127.0.0.1"
-BASE_PORT = PortPicker.pick_port()
-SERVER_PATH = f"{BASE_URL}:{BASE_PORT}"
+from tests.test_utilities.consts import SERVER_PATH
 
 
 @dataclass
@@ -182,7 +161,7 @@ class EnvironmentCleanup:
         If the folder cannot be removed, it waits for a short period of time and retries.
         The function will make up to 10 attempts before giving up.
 
-        The delay -> retry is used as LedFx takes a bit of time
+        The delay -> retry is used as LedFx can take a bit of time to shut down and release the
 
         Raises:
             Any exception that occurs during the removal of the folder.
@@ -190,14 +169,50 @@ class EnvironmentCleanup:
         """
         current_dir = os.getcwd()
         ci_test_dir = os.path.join(current_dir, "debug_config")
-        for _ in range(10):
-            if os.path.exists(ci_test_dir):
-                try:
-                    shutil.rmtree(ci_test_dir)
-                    break
-                except Exception as e:
-                    pass
-            time.sleep(0.1)
+
+        # If the directory doesn't exist, return immediately
+        if not os.path.exists(ci_test_dir):
+            return
+
+        for idx in range(10):
+            try:
+                shutil.rmtree(ci_test_dir)
+                break
+            except Exception as e:
+                time.sleep(idx / 10)
+        else:
+            pytest.fail("Unable to remove the test config folder.")
+
+    @staticmethod
+    def ledfx_is_alive():
+        """
+        Checks to see if LedFx is running by sending a GET request to the schema endpoint.
+
+        Returns:
+            bool: True if LedFx is running, False otherwise.
+        """
+        try:
+            response = requests.get(
+                f"http://{SERVER_PATH}/api/info", timeout=1
+            )
+            if response.status_code == 200:
+                # LedFx has returned a response, so it is running, but likely still hydrating the schema
+                # We will wait until it is fully hydrated
+                while True:
+                    old_schema = requests.get(
+                        f"http://{SERVER_PATH}/api/schema", timeout=1
+                    )
+                    time.sleep(0.1)
+                    new_schema = requests.get(
+                        f"http://{SERVER_PATH}/api/schema", timeout=1
+                    )
+                    if old_schema.json() == new_schema.json():
+                        break
+                time.sleep(2)
+                return True
+        except requests.exceptions.ConnectionError:
+            pass
+        return False
 
 
 class SystemInfo:

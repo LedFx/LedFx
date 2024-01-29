@@ -4,7 +4,7 @@
 # 3. Delete the device
 # 4. Check that the device no longer exists
 # 5. Recreate the device to allow it to be used in other tests
-from tests.test_utils import APITestCase, SystemInfo
+from tests.test_utilities.test_utils import APITestCase, SystemInfo
 
 device_tests = {
     "create_test_device": APITestCase(

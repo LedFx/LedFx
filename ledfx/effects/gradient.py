@@ -180,7 +180,7 @@ class GradientEffect(Effect):
 class TemporalGradientEffect(TemporalEffect, GradientEffect, ModulateEffect):
     """
     A simple effect that just applies a gradient to the channel. This
-    is essentually just the temporal exposure of gradients.
+    is essentially just the temporal exposure of gradients.
     """
 
     NAME = "Gradient"

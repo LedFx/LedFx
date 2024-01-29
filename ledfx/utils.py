@@ -374,9 +374,7 @@ class WLED:
 
         wled_nodes = response.json()
 
-        _LOGGER.debug(
-            f"WLED {self.ip_address}: Received config { wled_nodes }"
-        )
+        _LOGGER.debug(f"WLED {self.ip_address}: Received config {wled_nodes}")
 
         return wled_nodes
 

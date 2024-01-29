@@ -200,8 +200,9 @@ def create_default_config(config_dir: str) -> str:
         return config_path
 
     except OSError:
-        print(f"Unable to create default configuration file {config_path}.")
-
+        _LOGGER.critical(
+            f"Unable to create default configuration file {config_path}."
+        )
         return None
 
 
@@ -235,10 +236,8 @@ def ensure_config_directory(config_dir: str) -> None:
         try:
             os.mkdir(config_dir)
         except OSError:
-            print(
-                ("Error: Unable to create configuration directory {}").format(
-                    config_dir
-                )
+            _LOGGER.critical(
+                f"Error: Unable to create configuration directory at {config_dir}."
             )
             sys.exit(1)
 

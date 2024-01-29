@@ -1,4 +1,4 @@
-from tests.test_utils import APITestCase
+from tests.test_utilities.test_utils import APITestCase
 
 proof_of_life_tests = {
     "quick_health_check": APITestCase(
@@ -63,5 +63,15 @@ proof_of_life_tests = {
         api_endpoint="/api/scenes",
         expected_return_code=200,
         expected_response_keys=["status", "scenes"],
+    ),
+    # If we have a dirty config, clean up the test jig before we start
+    "cleanup_test_device": APITestCase(
+        execution_order=3,
+        method="DELETE",
+        api_endpoint="/api/virtuals/ci-test-jig",
+        expected_return_code=200,
+        expected_response_keys=[],
+        expected_response_values=[],
+        payload_to_send={},
     ),
 }

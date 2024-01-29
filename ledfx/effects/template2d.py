@@ -2,6 +2,7 @@ import logging
 
 import voluptuous as vol
 
+from ledfx.effects import Effect
 from ledfx.effects.twod import Twod
 
 _LOGGER = logging.getLogger(__name__)
@@ -10,6 +11,10 @@ _LOGGER = logging.getLogger(__name__)
 # Anywhere you see template, replace it with your own class reference / name
 
 
+# Remove the @Effect.no_registration line when you use this template
+# This is a decorator that prevents the effect from being registered
+# If you don't remove it, you will not be able to test your effect!
+@Effect.no_registration
 class Template2d(Twod):
     NAME = "Template2d"
     CATEGORY = "Matrix"
