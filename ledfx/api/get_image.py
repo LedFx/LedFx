@@ -14,7 +14,7 @@ _LOGGER = logging.getLogger(__name__)
 class GetImageEndpoint(RestEndpoint):
     ENDPOINT_PATH = "/api/get_image"
 
-    async def get(self, request: web.Request) -> web.Response:
+    async def post(self, request: web.Request) -> web.Response:
         """Open image and return as base64 encoded string
 
         Args:

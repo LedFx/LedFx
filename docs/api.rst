@@ -338,7 +338,7 @@ Endpoint Details
 Request
 -------
 
-- **Method**: GET
+- **Method**: POST
 - **Request Data**:
   - ``path_url`` (String): The URL or local file path of the GIF image from which frames are to be extracted.
 
@@ -437,7 +437,7 @@ Endpoint Details
 Request
 -------
 
-- **Method**: GET
+- **Method**: POST
 - **Request Data**:
   - ``path_url`` (String): The URL or local file path of the image from to be opened.
 

@@ -15,7 +15,7 @@ _LOGGER = logging.getLogger(__name__)
 class GetGifFramesEndpoint(RestEndpoint):
     ENDPOINT_PATH = "/api/get_gif_frames"
 
-    async def get(self, request: web.Request) -> web.Response:
+    async def post(self, request: web.Request) -> web.Response:
         """Open GIF resource and return frames
 
         Args:
