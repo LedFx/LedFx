@@ -82,4 +82,10 @@ class DevicesEndpoint(RestEndpoint):
                 "virtuals": device.virtuals,
             },
         }
+
+        if device.type == "wled":
+            nodes = await device.wled.get_nodes()
+            if "nodes" in nodes:
+                response["nodes"] = nodes["nodes"]
+
         return await self.bare_request_success(response)

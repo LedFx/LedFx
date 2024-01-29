@@ -361,6 +361,25 @@ class WLED:
 
         return wled_config
 
+    async def get_nodes(self):
+        """
+            Uses a JSON API call to pull WLED nodes from the known WLED instance
+        Returns:
+            nodes: dict, with all wled nodes info
+        """
+        _LOGGER.info(f"WLED {self.ip_address}: Attempting to get nodes...")
+        response = await WLED._wled_request(
+            requests.get, self.ip_address, "json/nodes"
+        )
+
+        wled_nodes = response.json()
+
+        _LOGGER.debug(
+            f"WLED {self.ip_address}: Received config { wled_nodes }"
+        )
+
+        return wled_nodes
+
     async def get_state(self):
         """
             Uses a JSON API call to determine the full WLED device state
