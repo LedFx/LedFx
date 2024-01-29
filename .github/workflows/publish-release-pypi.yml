@@ -45,7 +45,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build-test-wheel-and-sdist]
     steps:
-      - name: Get the wheel from the previous job
+      - name: Get the wheel
         uses: actions/download-artifact@v4
         with:
           name: LedFx-wheel
@@ -67,7 +67,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build-test-wheel-and-sdist]
     steps:
-      - name: Get the wheel from the previous job
+      - name: Get the sdist
         uses: actions/download-artifact@v4
         with:
           name: LedFx-sdist
@@ -89,12 +89,12 @@ jobs:
     needs: [install-from-wheel, install-from-sdist]
     runs-on: ubuntu-latest
     steps:
-      - name: Get the wheel from the previous job
+      - name: Get the wheel
         uses: actions/download-artifact@v4
         with:
           name: LedFx-wheel
           path: dist/
-      - name: Get the source tarball from the previous job
+      - name: Get the sdist
         uses: actions/download-artifact@v4
         with:
           name: LedFx-sdist
