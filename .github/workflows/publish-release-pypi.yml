@@ -85,7 +85,7 @@ jobs:
         run: |
           ledfx --ci-smoke-test -vv
   publish:
-    name: Publish Python distributions to PyPI
+    name: Publish
     needs: [install-from-wheel, install-from-sdist]
     runs-on: ubuntu-latest
     steps:
@@ -93,32 +93,23 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: LedFx-wheel
+          path: dist/
       - name: Get the source tarball from the previous job
         uses: actions/download-artifact@v4
         with:
           name: LedFx-sdist
-      - name: Move the wheel and source tarball to the root directory
-        run: |
-          mv ledfx-*.whl /dist/ledfx-*.whl
-          mv ledfx-*.tar.gz /dist/ledfx-*.tar.gz
-      - name: Publish distribution to Test PyPI
+          path: dist/
+      - name: Publish to Test PyPI
         if: github.event_name == 'workflow_dispatch'
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           user: __token__
           password: ${{ secrets.PYPI_TEST_API_TOKEN }}
           repository-url: https://test.pypi.org/legacy/
-      - name: Publish distribution to PyPI
+
+      - name: Publish to PyPI
         if: github.event_name == 'release' && startsWith(github.ref, 'refs/tags')
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           user: __token__
           password: ${{ secrets.PYPI_API_TOKEN }}
-      # - name: Trigger HomeAssistant Add-on
-      #   uses: benc-uk/workflow-dispatch@v1
-      #   with:
-      #     workflow: Builder
-      #     repo: YeonV/home-assistant-addons
-      #     ref: refs/heads/master
-      #     token: ${{ secrets.LEDFX_HOMEASSISTANT_ADDON }}
-      #     inputs: '{ "version": "${{ github.ref_name }}" }'
