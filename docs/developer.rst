@@ -56,7 +56,7 @@ Windows
 
    .. code:: console
 
-    $ ledfx --open-ui
+    $ poetry run ledfx --open-ui
 
 .. _linux-dev:
 
@@ -87,6 +87,7 @@ Linux
           libavformat58 \
           portaudio19-dev \
           pulseaudio \
+          cmake \
 
 #. Install LedFx and its requirements using poetry:
 
@@ -99,7 +100,7 @@ Linux
 
    .. code:: console
 
-    $ ledfx --open-ui
+    $ poetry run ledfx --open-ui
 
 .. _macos-dev:
 
@@ -128,7 +129,7 @@ macOS
 
    .. code:: console
 
-    $ ledfx --open-ui
+    $ poetry run ledfx --open-ui
 
 ------------------------------
 
