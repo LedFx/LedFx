@@ -4,18 +4,15 @@ on:
   release:
     types:
       - published
-  # push:
-  #   paths-ignore:
-  #     - 'docs/**'
-  #     - '.*/**'
+
   workflow_dispatch:
 
 env:
   DEFAULT_PYTHON: 3.12
 
 jobs:
-  build-n-publish:
-    name: Build and publish Python distributions to PyPI
+  build-test-wheel-and-sdist:
+    name: Build LedFx wheel/sdist
     runs-on: ubuntu-latest
     steps:
       - name: Check out code from GitHub
@@ -33,6 +30,71 @@ jobs:
       - name: Build a binary wheel and source tarball
         run: |
           poetry build
+      - name: Package the wheel
+        uses: actions/upload-artifact@v4
+        with:
+          name: LedFx-wheel
+          path: dist/ledfx-*.whl
+      - name: Package the sdist
+        uses: actions/upload-artifact@v4
+        with:
+          name: LedFx-sdist
+          path: dist/ledfx-*.tar.gz
+  install-from-wheel:
+    name: Install the LedFx wheel
+    runs-on: ubuntu-latest
+    needs: [build-test-wheel-and-sdist]
+    steps:
+      - name: Get the wheel from the previous job
+        uses: actions/download-artifact@v4
+        with:
+          name: LedFx-wheel
+      - name: Set up Python ${{ env.DEFAULT_PYTHON }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.DEFAULT_PYTHON }}
+      - name: Install the wheel
+        run: |
+          pip install ledfx-*.whl
+      - name: Run LedFx
+        run: |
+          ledfx --ci-smoke-test -vv
+  install-from-sdist:
+    name: Install the LedFx sdist
+    runs-on: ubuntu-latest
+    needs: [build-test-wheel-and-sdist]
+    steps:
+      - name: Get the wheel from the previous job
+        uses: actions/download-artifact@v4
+        with:
+          name: LedFx-sdist
+      - name: Set up Python ${{ env.DEFAULT_PYTHON }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.DEFAULT_PYTHON }}
+      - name: Install the wheel
+        run: |
+          pip install ledfx-*.tar.gz
+      - name: Run LedFx
+        run: |
+          ledfx --ci-smoke-test -vv
+  publish:
+    name: Publish Python distributions to PyPI
+    needs: [install-from-wheel, install-from-sdist]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get the wheel from the previous job
+        uses: actions/download-artifact@v4
+        with:
+          name: LedFx-wheel
+      - name: Get the source tarball from the previous job
+        uses: actions/download-artifact@v4
+        with:
+          name: LedFx-sdist
+      - name: Move the wheel and source tarball to the root directory
+        run: |
+          mv ledfx-*.whl /dist/ledfx-*.whl
+          mv ledfx-*.tar.gz /dist/ledfx-*.tar.gz
       - name: Publish distribution to Test PyPI
         if: github.event_name == 'workflow_dispatch'
         uses: pypa/gh-action-pypi-publish@release/v1
