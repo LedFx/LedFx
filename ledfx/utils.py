@@ -82,6 +82,14 @@ else:
 
 
 def calc_available_fps():
+    """
+        Calculates the available frames per second (FPS) based on the sleep resolution of the clock source.
+
+    Note: Used in tests/test_utils.py - if you change this method, please update the test function as well.
+
+        Returns:
+                dict: A dictionary where the keys represent the FPS and the values represent the corresponding multiplier.
+    """
     sleep_res = time.get_clock_info(clock_source).resolution
 
     if sleep_res < 0.001:
@@ -107,6 +115,15 @@ AVAILABLE_FPS = calc_available_fps()
 
 @lru_cache(maxsize=32)
 def fps_to_sleep_interval(fps):
+    """
+    Converts frames per second (fps) to a sleep interval in seconds.
+
+    Args:
+            fps (float): The desired frames per second.
+
+    Returns:
+            float: The sleep interval in seconds.
+    """
     sleep_res = time.get_clock_info(clock_source).resolution
     sleep_ticks = next(
         (t for f, t in AVAILABLE_FPS.items() if f >= fps),
@@ -153,7 +170,20 @@ def import_or_install(package):
 
 
 def async_fire_and_forget(coro, loop, exc_handler=None):
-    """Run some code in the core event loop without a result"""
+    """
+    Run some code in the core event loop without a result
+
+        Args:
+                coro: The coroutine to be executed.
+                loop: The event loop in which the coroutine should be executed.
+                exc_handler: Optional exception handler to be called when the coroutine completes with an exception.
+
+        Raises:
+                TypeError: If the coro parameter is not a coroutine object.
+
+        Returns:
+                None
+    """
 
     if not asyncio.coroutines.iscoroutine(coro):
         raise TypeError(("A coroutine object is required: {}").format(coro))
@@ -191,8 +221,18 @@ def get_local_ip():
 
 
 def async_fire_and_return(coro, callback, timeout=10):
-    """Run some async code in the core event loop with a callback to handle result"""
+    """
+    Run some async code in the core event loop with a callback to handle the result
 
+        Args:
+                coro (coroutine): The coroutine object to be executed.
+                callback (function): The callback function to handle the result of the coroutine.
+                timeout (float, optional): The maximum time to wait for the coroutine to complete. Defaults to 10.
+
+        Raises:
+                TypeError: If the provided coro is not a coroutine object.
+
+    """
     if not asyncio.coroutines.iscoroutine(coro):
         raise TypeError(("A coroutine object is required: {}").format(coro))
 
@@ -212,7 +252,17 @@ def async_fire_and_return(coro, callback, timeout=10):
 
 
 def async_callback(loop, callback, *args):
-    """Run a callback in the event loop with access to the result"""
+    """
+    Run a callback in the event loop with access to the result
+
+        Args:
+                loop (asyncio.AbstractEventLoop): The event loop to run the callback in.
+                callback (Callable): The callback function to be executed.
+                *args: Variable length argument list to be passed to the callback function.
+
+        Returns:
+                concurrent.futures.Future: A future object representing the result of the callback.
+    """
 
     future = concurrent.futures.Future()
 
@@ -575,7 +625,8 @@ def currently_frozen():
 
 
 def get_icon_path(icon_filename) -> str:
-    """Returns fully qualified path for the tray icon
+    """
+    Returns fully qualified path for the tray icon
     Assumes that the file is within ledfx_assets folder
 
 
@@ -597,18 +648,45 @@ def get_icon_path(icon_filename) -> str:
 
 
 def generate_id(name):
-    """Converts a name to a id"""
+    """
+    Converts a name to an ID.
+
+    Args:
+            name (str): The name to be converted.
+
+    Returns:
+            str: The converted ID.
+    """
     part1 = re.sub("[^a-zA-Z0-9]", " ", name).lower()
     return re.sub(" +", " ", part1).strip().replace(" ", "-")
 
 
 def generate_title(id):
-    """Converts an id to a more human readable title"""
+    """
+    Converts an id to a more human readable title.
+
+    Args:
+            id (str): The id to be converted.
+
+    Returns:
+            str: The human readable title.
+
+    """
     return re.sub("[^a-zA-Z0-9]", " ", id).title()
 
 
 def hasattr_explicit(cls, attr):
-    """Returns if the given object has explicitly declared an attribute"""
+    """
+    Returns True if the given object has explicitly declared an attribute,
+    False otherwise.
+
+    Args:
+            cls: The class or object to check for the attribute.
+            attr: The name of the attribute to check.
+
+    Returns:
+            bool: True if the attribute is explicitly declared, False otherwise.
+    """
     try:
         return getattr(cls, attr) != getattr(super(cls, cls), attr, None)
     except AttributeError:
@@ -616,13 +694,24 @@ def hasattr_explicit(cls, attr):
 
 
 def getattr_explicit(cls, attr, *default):
-    """Gets an explicit attribute from an object"""
+    """
+    Gets an explicit attribute from an object.
 
+    Args:
+            cls: The class or object to retrieve the attribute from.
+            attr: The name of the attribute to retrieve.
+            *default: Optional default value(s) to return if the attribute is not found.
+
+    Returns:
+            The value of the attribute if found, or the default value(s) if provided.
+
+    Raises:
+            AttributeError: If the attribute is not found and no default value is provided.
+            TypeError: If more than 3 arguments are provided as default values.
+    """
     if len(default) > 1:
         raise TypeError(
-            "getattr_explicit expected at most 3 arguments, got {}".format(
-                len(default) + 2
-            )
+            f"getattr_explicit expected at most 3 arguments, got {len(default) + 2}"
         )
 
     if hasattr_explicit(cls, attr):
@@ -640,7 +729,7 @@ class UserDefaultCollection(MutableMapping):
     A collection of default values and user defined values.
     User defined values are saved automatically in LedFx config.
     Items can be retrieved by name as if user and default values are a single dictionary.
-    Validator is a callable that returns sanitised value or raises ValueError if there's a problem
+    Validator is a callable that returns sanitized  value or raises ValueError if there's a problem
     Parser is a callable that translates config values into a valid form for ledfx to use
     """
 
@@ -717,6 +806,12 @@ class UserDefaultCollection(MutableMapping):
 
 
 class RollingQueueHandler(logging.handlers.QueueHandler):
+    """
+    A custom logging handler that extends the QueueHandler class.
+    This handler enqueues log records into a queue, and if the queue is full,
+    it removes the oldest record from the queue before enqueuing the new record.
+    """
+
     def enqueue(self, record):
         try:
             self.queue.put_nowait(record)
@@ -814,7 +909,7 @@ class BaseRegistry(ABC):
                     error_msg = f"Invalid key '{actual_key}' in {self.__name__}. Keys must use snake_case."
                     _LOGGER.critical(error_msg)
                     raise ValueError(error_msg)
-                # We search if the key contains the word "colour" and raise an error if it does, since we want to standardise on color
+                # We search if the key contains the word "colour" and raise an error if it does, since we want to standardize on color
                 if "colour" in actual_key:
                     error_msg = f"Invalid key '{actual_key}' in {self.__name__}. Keys must use 'color' instead of 'colour'."
                     _LOGGER.critical(error_msg)

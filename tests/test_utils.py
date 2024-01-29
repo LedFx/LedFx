@@ -64,13 +64,22 @@ class APITestCase:
 class HTTPSession:
     def __init__(
         self,
-        retries=10,
-        backoff_factor=0.75,
+        retries=5,
+        backoff_factor=0.25,
         status_forcelist=(500, 502, 504),
         allowed_methods=frozenset(
             ["HEAD", "TRACE", "GET", "PUT", "POST", "OPTIONS", "DELETE"]
         ),
     ):
+        """
+        Initialize the RetrySession object.
+
+        Args:
+            retries (int): The maximum number of retries for a request. Default is 5.
+            backoff_factor (float): The backoff factor between retries. Default is 0.25.
+            status_forcelist (tuple): The HTTP status codes that trigger a retry. Default is (500, 502, 504).
+            allowed_methods (frozenset): The set of allowed HTTP methods. Default is {"HEAD", "TRACE", "GET", "PUT", "POST", "OPTIONS", "DELETE"}.
+        """
         self.retries = retries
         self.backoff_factor = backoff_factor
         self.status_forcelist = status_forcelist
@@ -78,6 +87,12 @@ class HTTPSession:
         self.session = self.requests_retry_session()
 
     def requests_retry_session(self):
+        """
+        Creates a session object with retry functionality for making HTTP requests.
+
+        Returns:
+            requests.Session: A session object with retry functionality.
+        """
         session = requests.Session()
         retry = Retry(
             total=None,
@@ -97,6 +112,21 @@ class HTTPSession:
     def send_test_api_request(
         self, url, method, payload: Optional[Union[str, dict]] = None
     ):
+        """
+        Sends a test API request to the specified URL using the specified HTTP method.
+
+        Args:
+            url (str): The URL to send the request to.
+            method (str): The HTTP method to use for the request (GET, POST, PUT, DELETE).
+            payload (Optional[Union[str, dict]], optional): The payload to include in the request. Defaults to None.
+
+        Returns:
+            requests.Response: The response object containing the server's response to the request.
+
+        Raises:
+            ValueError: If an invalid HTTP method is provided.
+
+        """
         headers = {"Content-Type": "application/json"}
         try:
             if method == "GET":
@@ -123,6 +153,13 @@ class HTTPSession:
 class EnvironmentCleanup:
     @staticmethod
     def shutdown_ledfx():
+        """
+        Shuts down the LedFx server by sending a POST request to the power endpoint
+        and waits for the server to stop responding.
+
+        Returns:
+            None
+        """
         _ = requests.post(f"http://{SERVER_PATH}/api/power", json={})
         while True:
             try:
@@ -137,15 +174,20 @@ class EnvironmentCleanup:
         time.sleep(1)
 
     @staticmethod
-    def copy_log_file_to_tests_folder():
-        current_dir = os.getcwd()
-        ledfx_log_file = os.path.join(current_dir, "debug_config", "LedFx.log")
-        destination = os.path.join(current_dir, "LedFx.log")
-        if os.path.exists(ledfx_log_file):
-            shutil.copyfile(ledfx_log_file, destination)
-
-    @staticmethod
     def cleanup_test_config_folder():
+        """
+        Cleans up the test configuration folder by removing it if it exists.
+
+        This function checks if the 'debug_config' folder exists and attempts to remove it.
+        If the folder cannot be removed, it waits for a short period of time and retries.
+        The function will make up to 10 attempts before giving up.
+
+        The delay -> retry is used as LedFx takes a bit of time
+
+        Raises:
+            Any exception that occurs during the removal of the folder.
+
+        """
         current_dir = os.getcwd()
         ci_test_dir = os.path.join(current_dir, "debug_config")
         for _ in range(10):
@@ -161,6 +203,13 @@ class EnvironmentCleanup:
 class SystemInfo:
     @staticmethod
     def calc_available_fps():
+        """
+        Calculate the available frames per second (fps) based on the system's clock resolution.
+        Note: This comes from the ledfx/utils.py file
+
+        Returns:
+            dict: A dictionary where the keys represent the fps and the values represent the corresponding tick value.
+        """
         if (
             sys.version_info[0] == 3 and sys.version_info[1] >= 11
         ) or sys.version_info[0] >= 4:
