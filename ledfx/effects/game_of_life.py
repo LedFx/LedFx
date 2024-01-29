@@ -312,9 +312,9 @@ class GameOfLife:
         rows, cols = self.board_size
         start_row = np.random.randint(0, rows - 3)
         start_col = np.random.randint(0, cols - 3)
-        self.board[
-            start_row : start_row + 3, start_col : start_col + 3
-        ] = glider
+        self.board[start_row : start_row + 3, start_col : start_col + 3] = (
+            glider
+        )
         _LOGGER.debug(f"Added glider at: {start_row}x{start_col}")
 
     def add_blinker(self):
@@ -349,9 +349,9 @@ class GameOfLife:
         rows, cols = self.board_size
         start_row = np.random.randint(0, rows - 4)
         start_col = np.random.randint(0, cols - 4)
-        self.board[
-            start_row : start_row + 4, start_col : start_col + 4
-        ] = beacon
+        self.board[start_row : start_row + 4, start_col : start_col + 4] = (
+            beacon
+        )
         _LOGGER.debug(f"Added beacon at: {start_row}x{start_col}")
 
     def add_random_entity(self):

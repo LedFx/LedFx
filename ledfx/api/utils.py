@@ -1,4 +1,5 @@
 """Module to convert voluptuous schemas to dictionaries."""
+
 import collections
 
 import voluptuous as vol

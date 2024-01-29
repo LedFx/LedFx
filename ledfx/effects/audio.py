@@ -273,10 +273,10 @@ class AudioInputSource:
                     ch = 2
 
             if hostapis[device["hostapi"]]["name"] == "WEB AUDIO":
-                ledfx.api.websocket.ACTIVE_AUDIO_STREAM = (
-                    self._stream
-                ) = WebAudioStream(
-                    device["client"], self._audio_sample_callback
+                ledfx.api.websocket.ACTIVE_AUDIO_STREAM = self._stream = (
+                    WebAudioStream(
+                        device["client"], self._audio_sample_callback
+                    )
                 )
             else:
                 self._stream = self._audio.InputStream(
@@ -372,7 +372,7 @@ class AudioInputSource:
             processed_audio_sample = self.resampler.process(
                 raw_sample,
                 # MIC_RATE / self._stream.samplerate
-                out_sample_len / in_sample_len
+                out_sample_len / in_sample_len,
                 # end_of_input=True
             )
         else:

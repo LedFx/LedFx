@@ -151,9 +151,9 @@ class MetroEffect(AudioReactiveEffect):
                     for blocks in range(0, step_div):
                         start_pixel = blocks * chunk
                         end_pixel = start_pixel + int(chunk / 2)
-                        self.pixels[
-                            start_pixel : end_pixel - 1
-                        ] = self.flash_color
+                        self.pixels[start_pixel : end_pixel - 1] = (
+                            self.flash_color
+                        )
                 self.was_flash = True
 
         if self.graph_cpu is not None:
