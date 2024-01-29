@@ -1,6 +1,7 @@
 import subprocess
 import time
 
+import pytest
 from test_definitions.all_effects import get_ledfx_effects
 from test_utilities.test_utils import EnvironmentCleanup
 
@@ -22,21 +23,24 @@ def pytest_sessionstart(session):
     EnvironmentCleanup.cleanup_test_config_folder()
     # Start LedFx as a subprocess
     global ledfx
-    ledfx = subprocess.Popen(
-        [
-            "poetry",
-            "run",
-            "ledfx",
-            "-p",
-            f"{BASE_PORT}",
-            "--offline",
-            "-c",
-            "debug_config",
-            "-vv",
-        ],
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-    )
+    try:
+        ledfx = subprocess.Popen(
+            [
+                "poetry",
+                "run",
+                "ledfx",
+                "-p",
+                f"{BASE_PORT}",
+                "--offline",
+                "-c",
+                "debug_config",
+                "-vv",
+            ],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+    except Exception as e:
+        pytest.fail(f"An error occurred while starting LedFx: {str(e)}")
 
     time.sleep(
         2
@@ -62,7 +66,10 @@ def pytest_sessionfinish(session, exitstatus):
         None
     """
     # send LedFx a shutdown signal
-    EnvironmentCleanup.shutdown_ledfx()
+    try:
+        EnvironmentCleanup.shutdown_ledfx()
+    except Exception as e:
+        pytest.fail(f"An error occurred while shutting down LedFx: {str(e)}")
     # Wait for LedFx to terminate
     while ledfx.poll() is not None:
         time.sleep(0.5)
