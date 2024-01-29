@@ -171,11 +171,9 @@ class GameOfLifeVisualiser(Twod, GradientEffect):
         # Convert PIL image to NumPy array for processing
         img_array = np.array(self.matrix)
 
-        # Convert game board and history to NumPy arrays
-        current_board = np.array(self.game.board)
-        history_stack = np.array(
-            [np.array(hist) for hist in self.game.board_history]
-        )
+        # Use game board and history directly
+        current_board = self.game.board
+        history_stack = np.array(self.game.board_history)
 
         # Calculate alive and dead durations using vectorization
         alive_durations = np.sum(history_stack, axis=0)
@@ -223,7 +221,6 @@ class GameOfLife:
     """
 
     def __init__(self, height, width, depth):
-        self.board_history = []
         self.depth = depth
         self.board_size = [height, width]
         self.board = self.random_board()
@@ -238,14 +235,14 @@ class GameOfLife:
             numpy.ndarray: The random game board.
         """
         _LOGGER.info("Evolving life")
-        return np.random.choice([True, False], self.board_size)
+        return np.random.choice([True, False], size=self.board_size)
 
     def step_board(self):
         """
         Performs one step of the game simulation.
         """
-        # _LOGGER.debug("Stepping board")
-        self.board_history.append(self.board)
+        # Update board_history
+        self.board_history.append(np.copy(self.board))
         if len(self.board_history) > self.depth:
             self.board_history.pop(0)
 
@@ -303,9 +300,8 @@ class GameOfLife:
         Clears the board history.
         """
         _LOGGER.info("Erasing history of the universe")
-        self.empty_board = np.zeros(self.board_size, dtype=bool)
-        # append self.depth empty boards
-        self.board_history = [self.empty_board] * self.depth
+        self.board_history = [np.zeros(self.board_size, dtype=bool) for _ in
+                              range(self.depth)]
 
     def add_glider(self):
         """
