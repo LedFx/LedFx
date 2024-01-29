@@ -1,13 +1,17 @@
 import pytest
-import requests
-from test_utilities.test_utils import SERVER_PATH, APITestCase
+from test_utilities.test_utils import SERVER_PATH, APITestCase, HTTPSession
 
 
 def get_ledfx_effects():
     effects_to_test = {}
+    http_session = HTTPSession()
     try:
-        response = requests.get(f"http://{SERVER_PATH}/api/schema")
-    except requests.exceptions.ConnectionError:
+        response = HTTPSession.send_test_api_request(
+            self=http_session,
+            url=f"http://{SERVER_PATH}/api/schema",
+            method="GET",
+        )
+    except Exception as e:
         pytest.fail("Unable to get Schema from LedFx.")
     schema = response.json()
     execution_order = 1  # Start execution order from 1
