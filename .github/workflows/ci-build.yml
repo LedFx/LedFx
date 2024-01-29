@@ -230,7 +230,7 @@ jobs:
 
       - name: Check LedFx launches
         run: |
-          poetry run ledfx --ci-smoke-test
+          poetry run ledfx --ci-smoke-test -vv -c debug_config
       - name: Attach LedFx test log
         uses: actions/upload-artifact@v4
         if: always()
