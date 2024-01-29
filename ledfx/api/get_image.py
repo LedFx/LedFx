@@ -35,8 +35,6 @@ class GetImageEndpoint(RestEndpoint):
                 'Required attribute "path_url" was not provided'
             )
 
-        _LOGGER.info(f"GetImageEndpoint from {path_url}")
-
         image = open_image(path_url)
 
         if not image:

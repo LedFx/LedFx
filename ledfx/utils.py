@@ -1380,12 +1380,12 @@ def open_gif(gif_path):
         if gif_path.startswith("http://") or gif_path.startswith("https://"):
             with urllib.request.urlopen(gif_path) as url:
                 gif = Image.open(url)
-                _LOGGER.info("GIF downloaded and opened.")
+                _LOGGER.debug("Remote GIF downloaded and opened.")
                 return gif
 
         else:
             gif = Image.open(gif_path)  # Directly open for local files
-            _LOGGER.info("GIF opened.")
+            _LOGGER.debug("Local GIF opened.")
             return gif
     except Exception as e:
         _LOGGER.warning(f"Failed to open gif : {gif_path} : {e}")
@@ -1409,12 +1409,12 @@ def open_image(image_path):
         ):
             with urllib.request.urlopen(image_path) as url:
                 image = Image.open(url)
-                _LOGGER.info("image downloaded and opened.")
+                _LOGGER.debug("Remote image downloaded and opened.")
                 return image
 
         else:
             image = Image.open(image_path)  # Directly open for local files
-            _LOGGER.info("Image opened.")
+            _LOGGER.debug("Local Image opened.")
             return image
     except Exception as e:
         _LOGGER.warning(f"Failed to open image : {image_path} : {e}")
