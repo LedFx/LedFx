@@ -178,8 +178,8 @@ class GameOfLifeVisualiser(Twod, GradientEffect):
         )
 
         # Calculate alive and dead durations using vectorization
-        alive_durations = np.sum(history_stack[:, :, :] == True, axis=0)
-        dead_durations = np.sum(history_stack[:, :, :] == False, axis=0)
+        alive_durations = np.sum(history_stack, axis=0)
+        dead_durations = np.sum(~history_stack, axis=0)
 
         # Map durations to colors using vectorized operations
         for duration in range(len(self.live_colors)):
