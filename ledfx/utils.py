@@ -367,9 +367,7 @@ class WLED:
         Returns:
             nodes: dict, with all wled nodes info
         """
-        _LOGGER.info(
-            f"WLED {self.ip_address}: Attempting to get nodes..."
-        )
+        _LOGGER.info(f"WLED {self.ip_address}: Attempting to get nodes...")
         response = await WLED._wled_request(
             requests.get, self.ip_address, "json/nodes"
         )
