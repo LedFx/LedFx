@@ -1404,7 +1404,9 @@ def open_image(image_path):
     """
     _LOGGER.info(f"Attempting to open image: {image_path}")
     try:
-        if image_path.startswith("http://") or image_path.startswith("https://"):
+        if image_path.startswith("http://") or image_path.startswith(
+            "https://"
+        ):
             with urllib.request.urlopen(image_path) as url:
                 image = Image.open(url)
                 _LOGGER.info("image downloaded and opened.")
