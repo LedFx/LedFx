@@ -15,7 +15,7 @@ _LOGGER = logging.getLogger(__name__)
 class GetGifFramesEndpoint(RestEndpoint):
     ENDPOINT_PATH = "/api/get_gif_frames"
 
-    async def get(self, request: web.Request) -> web.Response:
+    async def post(self, request: web.Request) -> web.Response:
         """Open GIF resource and return frames
 
         Args:
@@ -35,8 +35,6 @@ class GetGifFramesEndpoint(RestEndpoint):
             return await self.invalid_request(
                 'Required attribute "path_url" was not provided'
             )
-
-        _LOGGER.info(f"GetGifFramesEndpoint from {path_url}")
 
         gif_image = open_gif(path_url)
 
@@ -58,6 +56,10 @@ class GetGifFramesEndpoint(RestEndpoint):
                 )
                 frames.append(encoded_frame)
 
-        response = {"frame_count": len(frames), "frames": frames}
+        response = {
+            "status": "success",
+            "frame_count": len(frames),
+            "frames": frames,
+        }
 
-        return web.json_response(data=response, status=200)
+        return await self.bare_request_success(response)

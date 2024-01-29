@@ -338,7 +338,7 @@ Endpoint Details
 Request
 -------
 
-- **Method**: GET
+- **Method**: POST
 - **Request Data**:
   - ``path_url`` (String): The URL or local file path of the GIF image from which frames are to be extracted.
 
@@ -398,6 +398,14 @@ Or, for a local file:
       "path_url": "/path/to/local/image.gif"
     }
 
+Windows example
+
+.. code-block:: json
+
+    {
+      "path_url": "C:\\path\\to\\local\\image.gif"
+    }
+
 Sample Response
 ^^^^^^^^^^^^^^^
 
@@ -411,6 +419,100 @@ A successful response with two extracted frames might look like this:
         "<base64-encoded JPEG data>",
         "<base64-encoded JPEG data>"
       ]
+    }
+
+/api/get_image
+===========================================
+
+Overview
+--------
+
+A RESTful endpoint designed for retrieving an image. Clients can request a file by providing either the URL or the local file path of the image resource. The image is returned in JPEG format for efficient data transmission.
+
+Endpoint Details
+----------------
+
+- **Endpoint Path**: ``/api/get_image``
+
+Request
+-------
+
+- **Method**: POST
+- **Request Data**:
+  - ``path_url`` (String): The URL or local file path of the image from to be opened.
+
+Response
+--------
+
+- **Success**:
+
+  - Status Code: 200
+
+  - Body:
+
+    - ``image`` (String): A base64 encoded image in JPEG format.
+
+- **Failure**:
+
+  - Status Code: 400 (Bad Request)
+
+    - When JSON decoding fails or the required attribute ``path_url`` is not provided.
+
+  - Status Code: 404 (Not Found)
+
+    - When the image at the specified URL or file path cannot be opened or processed.
+
+Error Handling
+--------------
+
+In case of an error, the endpoint returns a JSON object with the following structure:
+
+.. code-block:: json
+
+    {
+      "status": "failed",
+      "reason": "<error reason>"
+    }
+
+Usage Example
+-------------
+
+Requesting Image
+^^^^^^^^^^^^^^^^^^^^^
+
+To request an image, send a GET request with either the URL or local file path in the request data:
+
+.. code-block:: json
+
+    {
+      "path_url": "http://example.com/image.gif"
+    }
+
+Or, for a local file:
+
+.. code-block:: json
+
+    {
+      "path_url": "/path/to/local/image.gif"
+    }
+
+Windows example
+
+.. code-block:: json
+
+    {
+      "path_url": "C:\\path\\to\\local\\image.gif"
+    }
+
+Sample Response
+^^^^^^^^^^^^^^^
+
+A successful response with image data might look like this:
+
+.. code-block:: json
+
+    {
+      "image": "<base64-encoded JPEG data>"
     }
 
 /api/effects
