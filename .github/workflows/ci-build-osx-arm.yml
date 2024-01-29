@@ -15,44 +15,66 @@ jobs:
     steps:
       - name: Check out code from GitHub
         uses: actions/checkout@v4
+
       - name: Install build dependencies
         run: |
           brew install portaudio
-          brew install mbedtls@2
-          brew install libsamplerate
-      - name: Setup mbedtls path
-        run: |
-          echo 'export PATH="/opt/homebrew/opt/mbedtls@2/bin:$PATH"' >> /Users/runner/.bash_profile
+
       - name: Setup Python ${{ matrix.python }}
         id: python
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
-      - name: Install poetry via Homebrew
+
+      - name: Get full Python version
+        id: full-python-version
+        run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
+
+      - name: Install poetry
         run: |
-          brew install poetry
-      - name: Set poetry Python version
+          curl -sSL https://install.python-poetry.org | python - -y
+
+      - name: Update PATH
+        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Configure poetry
+        run: poetry config virtualenvs.in-project true
+
+      - name: Set up cache
+        uses: actions/cache@v4
+        id: cache
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/poetry.lock') }}
+
+      - name: Ensure cache is healthy
+        if: steps.cache.outputs.cache-hit == 'true'
         run: |
-          poetry env use python${{ matrix.python }}
-      - name: Build LedFx wheel
+          # `timeout` is not available on macOS, so we define a custom function.
+          [ "$(command -v timeout)" ] || function timeout() { perl -e 'alarm shift; exec @ARGV' "$@"; }
+
+          # Using `timeout` is a safeguard against the Poetry command hanging for some reason.
+          timeout 10s poetry run pip --version || rm -rf .venv
+
+      - name: Check lock file
+        run: poetry check --lock
+
+      - name: Build a binary wheel
         run: |
           poetry build
-      - name: Install LedFx from wheel
+
+      - name: Install LedFx
         run: |
-          export LDFLAGS="-L/opt/homebrew/opt/mbedtls@2/lib"
-          export CPPFLAGS="-I/opt/homebrew/opt/mbedtls@2/include"
           poetry install --with dev
-      - name: Test LedFx
+
+      - name: Check LedFx launches
         run: |
-          source $(poetry env info -p)/bin/activate
-          pytest -v
-          if [ $? -ne 0 ]; then
-            echo "LedFx tests failed: $?"
-            exit 1
-          fi
+          poetry run ledfx --ci-smoke-test -vv -c debug_config
       - name: Attach LedFx test log
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: ledfx-log-osx-arm-${{ matrix.python }}.log
+          name: ledfx-log-osx-arm64-${{ matrix.python }}.log
           path: ${{ github.workspace }}/debug_config/LedFx.log
+
+
