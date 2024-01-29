@@ -41,7 +41,7 @@ class GetImageEndpoint(RestEndpoint):
 
         if not image:
             return await self.invalid_request(
-                f"Failed to open GIF image from: {path_url}"
+                f"Failed to open image from: {path_url}"
             )
 
         with io.BytesIO() as output:
