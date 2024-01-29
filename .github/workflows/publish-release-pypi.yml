@@ -53,6 +53,9 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.DEFAULT_PYTHON }}
+      - name: Install portaudio
+        run: |
+         sudo apt-get update && sudo apt-get install -y portaudio19-dev
       - name: Install the wheel
         run: |
           pip install ledfx-*.whl
@@ -72,7 +75,10 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.DEFAULT_PYTHON }}
-      - name: Install the wheel
+      - name: Install portaudio
+        run: |
+         sudo apt-get update && sudo apt-get install -y portaudio19-dev
+      - name: Install the sdist
         run: |
           pip install ledfx-*.tar.gz
       - name: Run LedFx
