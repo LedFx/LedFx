@@ -36,6 +36,7 @@ class GradientEffect(Effect):
 
     _gradient_curve = None
     _gradient_roll_counter = 0
+    _buffer_index = 0
 
     def _comb(self, N, k):
         N = int(N)
@@ -115,14 +116,15 @@ class GradientEffect(Effect):
         self._gradient_curve = gradient.T
 
     def _assert_gradient(self):
-        if (
-            self._gradient_curve is None  # Uninitialized gradient
-            or len(self._gradient_curve[0])
-            != self.pixel_count  # Incorrect size
-        ):
+        if self._gradient_curve is None or len(  # Uninitialized gradient
+            self._gradient_curve[0]
+        ) != max(
+            self.pixel_count, 256
+        ):  # Incorrect size
             self._generate_gradient_curve(
                 self._config["gradient"],
-                self.pixel_count,
+                # Ensure at least 256 colors in the gradient
+                max(self.pixel_count, 256),
             )
 
     def roll_gradient(self):
@@ -145,27 +147,36 @@ class GradientEffect(Effect):
 
     def get_gradient_color(self, point):
         self._assert_gradient()
+        if self.pixel_count <= 256:
+            start = self._buffer_index
+            end = start + self.pixel_count
+            color_subsection = self._gradient_curve[:, start:end]
 
-        return self._gradient_curve[:, int((self.pixel_count - 1) * point)]
+            # "Scroll" the pixels within the larger gradient
+            self._buffer_index = (self._buffer_index + 1) % len(
+                self._gradient_curve[0]
+            )
 
-    def get_gradient_color_vectorized(self, points):
-        self._assert_gradient()
+            # Use the point to index into color_subsection instead of the entire gradient
+            index = int((self.pixel_count - 1) * point)
+            color = color_subsection[
+                :, index : index + 1
+            ]  # Always slice to return a 2D array
+        else:
+            # If there are more than 256 pixels, use the entire gradient
+            index = int((self.pixel_count - 1) * point)
+            color = self._gradient_curve[
+                :, index : index + 1
+            ]  # Always slice to return a 2D array
 
-        # Ensure points are within the valid range [0, 1]
-        points = np.clip(points, 0, 1)
-
-        # Calculate indices for the gradient lookup
-        indices = ((self.pixel_count - 1) * points).astype(int)
-
-        # Use advanced indexing to get colors for each point
-        colors = self._gradient_curve[:, indices]
-
-        # Transpose and reshape to get the correct shape (height, width, color_channels)
-        return colors.transpose(1, 2, 0)
+        return color
 
     def config_updated(self, config):
-        """Invalidate the gradient"""
+        """
+        Invalidate the gradient and reset the buffer index
+        """
         self._gradient_curve = None
+        # self._buffer_index = 0
 
     def apply_gradient(self, y):
         self._assert_gradient()
