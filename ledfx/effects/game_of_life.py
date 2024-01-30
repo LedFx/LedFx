@@ -305,8 +305,9 @@ class GameOfLife:
         Clears the board history.
         """
         _LOGGER.info("Erasing history of the universe")
-        self.board_history = [np.zeros(self.board_size, dtype=bool) for _ in
-                              range(self.depth)]
+        self.board_history = [
+            np.zeros(self.board_size, dtype=bool) for _ in range(self.depth)
+        ]
 
     def add_glider(self):
         """
