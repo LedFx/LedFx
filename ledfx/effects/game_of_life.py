@@ -187,6 +187,11 @@ class GameOfLifeVisualiser(Twod, GradientEffect):
             img_array[alive_mask] = self.live_colors[duration]
 
         for duration in range(len(self.dead_colors)):
+            # where pixel is long dead, don't draw black, allows any image
+            # behind to show through, and well as faster for all non plots
+            if duration == 5:
+                continue
+
             dead_mask = np.logical_and(
                 ~current_board, dead_durations == duration
             )
@@ -300,9 +305,8 @@ class GameOfLife:
         Clears the board history.
         """
         _LOGGER.info("Erasing history of the universe")
-        self.board_history = [
-            np.zeros(self.board_size, dtype=bool) for _ in range(self.depth)
-        ]
+        self.board_history = [np.zeros(self.board_size, dtype=bool) for _ in
+                              range(self.depth)]
 
     def add_glider(self):
         """
