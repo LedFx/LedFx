@@ -1,0 +1,217 @@
+name: CI Build LedFx
+
+on:
+    workflow_dispatch:
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+env:
+DEFAULT_PYTHON: 3.12
+
+jobs:
+  build-ledfx-windows:
+    name: Build LedFx (Windows)
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash -x {0}
+    steps:
+      - name: Setup CI sound system
+        uses: LABSN/sound-ci-helpers@v1
+      - name: Check out code from GitHub
+        uses: actions/checkout@v4
+      - name: Setup Python ${{ env.DEFAULT_PYTHON }}
+        id: python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.DEFAULT_PYTHON }}
+
+      - name: Get full Python version
+        id: full-python-version
+        run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
+
+      - name: Install poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python - -y
+
+      - name: Update Path for Windows
+        run: echo "$APPDATA\Python\Scripts" >> $GITHUB_PATH
+
+      - name: Enable long paths for git on Windows
+
+        # Enable handling long path names (+260 char) on the Windows platform
+        # https://docs.microsoft.com/en-us/windows/win32/fileio/naming-a-file#maximum-path-length-limitation
+        run: git config --system core.longpaths true
+
+      - name: Configure poetry
+        run: poetry config virtualenvs.in-project true
+
+      - name: Set up cache
+        uses: actions/cache@v4
+        id: cache
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ runner.arch }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/poetry.lock') }}
+
+      - name: Ensure cache is healthy
+        if: steps.cache.outputs.cache-hit == 'true'
+        run: |
+          # `timeout` is not available on macOS, so we define a custom function.
+          [ "$(command -v timeout)" ] || function timeout() { perl -e 'alarm shift; exec @ARGV' "$@"; }
+
+          # Using `timeout` is a safeguard against the Poetry command hanging for some reason.
+          timeout 10s poetry run pip --version || rm -rf .venv
+
+      - name: Check lock file
+        run: poetry check --lock
+
+      - name: Install LedFx
+        run: |
+          poetry install --with dev --extras hue
+
+      - name: Build Binary
+        run: |
+          poetry run pyinstaller win.spec
+      - name: Upload LedFx Binary
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: LedFx-${{ runner.os }}-${{ runner.arch }}.zip
+          path: ${{ github.workspace }}/dist/LedFx
+  build-ledfx-osx:
+    name: Build LedFx (OS X)
+    runs-on: macos-latest
+    steps:
+      - name: Check out code from GitHub
+        uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          brew install portaudio
+
+      - name: Setup Python ${{ env.DEFAULT_PYTHON }}
+        id: python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.DEFAULT_PYTHON }}
+
+      - name: Get full Python version
+        id: full-python-version
+        run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
+
+      - name: Install poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python - -y
+
+      - name: Update PATH
+        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Configure poetry
+        run: poetry config virtualenvs.in-project true
+
+      - name: Set up cache
+        uses: actions/cache@v4
+        id: cache
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ runner.arch }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/poetry.lock') }}
+
+      - name: Ensure cache is healthy
+        if: steps.cache.outputs.cache-hit == 'true'
+        run: |
+          # `timeout` is not available on macOS, so we define a custom function.
+          [ "$(command -v timeout)" ] || function timeout() { perl -e 'alarm shift; exec @ARGV' "$@"; }
+
+          # Using `timeout` is a safeguard against the Poetry command hanging for some reason.
+          timeout 10s poetry run pip --version || rm -rf .venv
+
+      - name: Check lock file
+        run: poetry check --lock
+
+      - name: Install LedFx
+        run: |
+          poetry install --with dev --extras hue
+
+      - name: Build Binary
+        run: |
+          poetry run pyinstaller osx-x64.spec
+      - name: Upload LedFx Binary
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: LedFx-${{ runner.os }}-${{ runner.arch }}.zip
+          path: ${{ github.workspace }}/dist/LedFx
+#   build-ledfx-osx-m1:
+#     name: Build LedFx (OS X) (Apple Silicon)
+#     # needs: [build-ledfx-linux, build-ledfx-windows, build-ledfx-osx]
+#     runs-on: flyci-macos-large-latest-m1
+#     strategy:
+#       matrix:
+#         python: [3.10.x,3.11.x,3.12.x]
+#       fail-fast: false
+#     steps:
+#       - name: Check out code from GitHub
+#         uses: actions/checkout@v4
+
+#       - name: Install build dependencies
+#         run: |
+#           brew install portaudio
+
+#       - name: Setup Python ${{ matrix.python }}
+#         id: python
+#         uses: actions/setup-python@v5
+#         with:
+#           python-version: ${{ matrix.python }}
+
+#       - name: Get full Python version
+#         id: full-python-version
+#         run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
+
+#       - name: Install poetry
+#         run: |
+#           curl -sSL https://install.python-poetry.org | python - -y
+
+#       - name: Update PATH
+#         run: echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+#       - name: Configure poetry
+#         run: poetry config virtualenvs.in-project true
+
+#       - name: Set up cache
+#         uses: actions/cache@v4
+#         id: cache
+#         with:
+#           path: .venv
+#           key: venv-${{ runner.os }}-${{ runner.arch }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/poetry.lock') }}
+
+#       - name: Ensure cache is healthy
+#         if: steps.cache.outputs.cache-hit == 'true'
+#         run: |
+#           # `timeout` is not available on macOS, so we define a custom function.
+#           [ "$(command -v timeout)" ] || function timeout() { perl -e 'alarm shift; exec @ARGV' "$@"; }
+
+#           # Using `timeout` is a safeguard against the Poetry command hanging for some reason.
+#           timeout 10s poetry run pip --version || rm -rf .venv
+
+#       - name: Check lock file
+#         run: poetry check --lock
+
+#       - name: Build a binary wheel
+#         run: |
+#           poetry build
+
+#       - name: Install LedFx
+#         run: |
+#           poetry install --with dev
+
+#       - name: Check LedFx launches
+#         run: |
+#           poetry run ledfx --ci-smoke-test -vv -c debug_config
+#       - name: Attach LedFx test log
+#         uses: actions/upload-artifact@v4
+#         if: always()
+#         with:
+#           name: ledfx-log-${{ runner.os }}-${{ runner.arch }}-py${{ matrix.python }}.log
+#           path: ${{ github.workspace }}/debug_config/LedFx.log
+
+
