@@ -24,9 +24,11 @@ class GameOfLifeVisualiser(Twod):
     CATEGORY = "Matrix"
     # add keys you want hidden or in advanced here
     HIDDEN_KEYS = Twod.HIDDEN_KEYS + ["gradient", "gradient_roll"]
-    ADVANCED_KEYS = Twod.ADVANCED_KEYS + ["health_check_interval",
-                                          "frequency_range",
-                                          "impulse_decay"]
+    ADVANCED_KEYS = Twod.ADVANCED_KEYS + [
+        "health_check_interval",
+        "frequency_range",
+        "impulse_decay",
+    ]
     HEALTH_CHECK_OPTIONS_VALUES = {
         HealthOptions.ALL.value: {
             HealthOptions.DEAD.value: True,
@@ -193,7 +195,11 @@ class GameOfLifeVisualiser(Twod):
         Returns:
             None
         """
-        if self.impulse > 0 and current_time - self.last_game_step >= 1 / self.impulse / self.base_game_speed:
+        if (
+            self.impulse > 0
+            and current_time - self.last_game_step
+            >= 1 / self.impulse / self.base_game_speed
+        ):
             self.game.step_board()
             self.last_game_step = current_time
 
