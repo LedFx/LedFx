@@ -9,8 +9,6 @@ from concurrent.futures import ThreadPoolExecutor
 import numpy as np
 import pybase64
 
-_LOGGING = logging.getLogger(__name__)
-
 from ledfx.color import (
     LEDFX_COLORS,
     LEDFX_GRADIENTS,
@@ -49,6 +47,7 @@ from ledfx.utils import (
 from ledfx.virtuals import Virtuals
 
 _LOGGER = logging.getLogger(__name__)
+
 if currently_frozen():
     warnings.filterwarnings("ignore")
 
@@ -68,8 +67,8 @@ class LedFxCore:
         self.config_dir = config_dir
 
         if clear_config:
-            _LOGGING.warning(
-                f"Clearing LedFx configuration, existing config.json will be backed up and deleted"
+            _LOGGER.warning(
+                "Clearing LedFx configuration, existing config.json will be backed up and deleted"
             )
             try_create_backup("DELETE")
 
