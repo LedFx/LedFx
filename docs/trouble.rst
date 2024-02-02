@@ -65,7 +65,9 @@ config_backup_YYYY-MM-DD_HH-MM-SS.json
 
 It will be in the .ledfx directory along with the ledfx.log instances
 
-.ledfx directory will be located in a number of possible locations according to OS
+Please note: This is a dotfile naming convention and may be hidden by default in your file manager.
+
+.ledfx directory will be located in a number of possible locations according to OS.
 
 Examples of being, but not limited to, the following locations
 
