@@ -46,7 +46,7 @@ Ledfx Configuration File Corruption Recovery
 If you are concerned that your ledfx config.json is corrupted.
 
 Everything was working and you changed an effect setting or similar, and now things no longer work,
-even if you restart / reboot / reinstall, it is likley that the config.json has persisted a configuration
+even if you restart / reboot / reinstall, it is likely that the config.json has persisted a configuration
 that is triggering a bug and causeing a crash from startup.
 
 We will be very interested in a copy of your config.json file, please share in discord with context, but to
