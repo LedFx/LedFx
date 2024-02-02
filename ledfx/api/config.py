@@ -9,9 +9,7 @@ from ledfx.api.utils import PERMITTED_KEYS
 from ledfx.config import (
     CORE_CONFIG_SCHEMA,
     WLED_CONFIG_SCHEMA,
-    create_backup,
-    get_default_config_directory,
-    get_default_config_path,
+    try_create_backup,
     migrate_config,
     parse_version,
     save_config,
@@ -90,10 +88,7 @@ class ConfigEndpoint(RestEndpoint):
         Returns:
             web.Response: The response indicating the success of the operation.
         """
-
-        create_backup(
-            get_default_config_directory(), get_default_config_path(), "DELETE"
-        )
+        try_create_backup("DELETE")
         self._ledfx.config = CORE_CONFIG_SCHEMA({})
 
         save_config(
@@ -141,11 +136,7 @@ class ConfigEndpoint(RestEndpoint):
 
             # if we got this far, we are happy with and commiting to the import config
             # so backup the old one
-            create_backup(
-                get_default_config_directory(),
-                get_default_config_path(),
-                "IMPORT",
-            )
+            try_create_backup("IMPORT")
 
             audio_config = AudioInputSource.AUDIO_CONFIG_SCHEMA.fget()(
                 config.pop("audio", {})
