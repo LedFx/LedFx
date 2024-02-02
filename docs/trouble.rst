@@ -49,7 +49,7 @@ Everything was working and you changed an effect setting or similar, and now thi
 even if you restart / reboot / reinstall, it is likley that the config.json has persisted a configuration
 that is triggering a bug and causeing a crash from startup.
 
-We will be very interested in copy of your config.json file, please share in discord with context, but to
+We will be very interested in a copy of your config.json file, please share in discord with context, but to
 recover, and confirm it is a corrupted config.json, you can delete the file and restart ledfx.
 
 Launch ledfx with the --clear-config option to backup the config.json file in the .ledfx directory and create
