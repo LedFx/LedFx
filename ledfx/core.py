@@ -8,7 +8,6 @@ from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
 import pybase64
-import logging
 
 _LOGGING = logging.getLogger(__name__)
 
@@ -27,7 +26,6 @@ from ledfx.config import (
     save_config,
     try_create_backup,
 )
-
 from ledfx.devices import Devices
 from ledfx.effects import Effects
 from ledfx.effects.math import interpolate_pixels
@@ -70,7 +68,9 @@ class LedFxCore:
         self.config_dir = config_dir
 
         if clear_config:
-            _LOGGING.warning(f"Clearing LedFx configuration, existing config.json will be backed up and deleted")
+            _LOGGING.warning(
+                f"Clearing LedFx configuration, existing config.json will be backed up and deleted"
+            )
             try_create_backup("DELETE")
             # exit(0)
         self.config = load_config(config_dir)
