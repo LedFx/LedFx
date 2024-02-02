@@ -291,7 +291,7 @@ def entry_point(icon=None):
             port_s=args.port_s,
             icon=icon,
             ci_testing=args.ci_smoke_test,
-            clear_config = args.clear_config,
+            clear_config=args.clear_config,
         )
 
         exit_code = ledfx.start(open_ui=args.open_ui)

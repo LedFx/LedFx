@@ -9,10 +9,10 @@ from ledfx.api.utils import PERMITTED_KEYS
 from ledfx.config import (
     CORE_CONFIG_SCHEMA,
     WLED_CONFIG_SCHEMA,
-    try_create_backup,
     migrate_config,
     parse_version,
     save_config,
+    try_create_backup,
 )
 from ledfx.consts import CONFIGURATION_VERSION
 from ledfx.effects.audio import AudioInputSource

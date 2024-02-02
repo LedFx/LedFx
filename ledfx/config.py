@@ -606,8 +606,9 @@ def create_backup(config_dir, config_file, errortype):
 def try_create_backup(error_type):
     if os.path.isfile(get_default_config_path()):
         create_backup(
-            get_default_config_directory(), get_default_config_path(),
-            error_type
+            get_default_config_directory(),
+            get_default_config_path(),
+            error_type,
         )
     else:
         _LOGGER.warning("No config file to backup")
