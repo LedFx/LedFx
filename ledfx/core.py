@@ -72,7 +72,7 @@ class LedFxCore:
         if clear_config:
             _LOGGING.warning(f"Clearing LedFx configuration, existing config.json will be backed up and deleted")
             try_create_backup("DELETE")
-            # exit(0)
+
         self.config = load_config(config_dir)
 
         self.config["ledfx_presets"] = ledfx_presets
