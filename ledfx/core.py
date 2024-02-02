@@ -73,7 +73,6 @@ class LedFxCore:
             try_create_backup("DELETE")
 
         self.config = load_config(config_dir)
-
         self.config["ledfx_presets"] = ledfx_presets
         self.host = host if host else self.config["host"]
         self.port = port if port else self.config["port"]
