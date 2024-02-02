@@ -40,6 +40,54 @@ Did you try host: 0.0.0.0 or host: your-ipv4 (i.e.: 192.168.1.10)? The 127 is yo
 running anything on that subnet will only be available from that device. Putting it on 0.0.0.0 or your host's
 LAN IP opens up the port, 8888 in our case, to other devices on your LAN from your host's IP.
 
+Ledfx Configuration File Corruption Recovery
+--------------------------------------------
+
+If you are concerned that your ledfx config.json is corrupted.
+
+Everything was working and you changed an effect setting or similar, and now things no longer work,
+even if you restart / reboot / reinstall, it is likley that the config.json has persisted a configuration
+that is triggering a bug and causeing a crash from startup.
+
+We will be very interested in copy of your config.json file, please share in discord with context, but to
+recover, and confirm it is a corrupted config.json, you can delete the file and restart ledfx.
+
+Launch ledfx with the --clear-config option to backup the config.json file in the .ledfx directory and create
+a fresh default config in its place
+
+   .. code:: console
+
+        ledfx --clear-config
+
+Note the backup json file will be named according to the following format
+
+config_backup_YYYY-MM-DD_HH-MM-SS.json
+
+It will be in the .ledfx directory along with the ledfx.log instances
+
+.ledfx directory will be located in a number of possible locations according to OS
+
+Examples of being, but not limited to, the following locations
+
+Windows:
+
+   .. code:: console
+
+        C:\Users\username\AppData\Roaming\.ledfx
+
+Linux:
+
+    .. code:: console
+
+        /home/username/.ledfx
+
+MacOS:
+
+   .. code:: console
+
+        /Users/username/.ledfx
+
+
 Speaker Sound
 -------------
 
