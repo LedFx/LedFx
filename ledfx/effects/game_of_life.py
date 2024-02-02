@@ -6,7 +6,7 @@ import numpy as np
 import voluptuous as vol
 from PIL import Image
 
-from ledfx.effects.gradient import GradientEffect
+from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.twod import Twod
 
 _LOGGER = logging.getLogger(__name__)
@@ -19,12 +19,16 @@ class HealthOptions(Enum):
     NONE = "None"
 
 
-class GameOfLifeVisualiser(Twod, GradientEffect):
+class GameOfLifeVisualiser(Twod):
     NAME = "Game of Life"
     CATEGORY = "Matrix"
     # add keys you want hidden or in advanced here
     HIDDEN_KEYS = Twod.HIDDEN_KEYS + ["gradient", "gradient_roll"]
-    ADVANCED_KEYS = Twod.ADVANCED_KEYS + ["health_check_interval"]
+    ADVANCED_KEYS = Twod.ADVANCED_KEYS + [
+        "health_check_interval",
+        "frequency_range",
+        "impulse_decay",
+    ]
     HEALTH_CHECK_OPTIONS_VALUES = {
         HealthOptions.ALL.value: {
             HealthOptions.DEAD.value: True,
@@ -88,6 +92,21 @@ class GameOfLifeVisualiser(Twod, GradientEffect):
                 description="Number of seconds between health checks",
                 default=5,
             ): vol.All(vol.Coerce(int), vol.Range(min=1, max=30)),
+            vol.Optional(
+                "frequency_range",
+                description="Frequency range for life generation impulse",
+                default="Lows (beat+bass)",
+            ): vol.In(list(AudioReactiveEffect.POWER_FUNCS_MAPPING.keys())),
+            vol.Optional(
+                "beat_inject",
+                description="Generate entities on beat",
+                default=True,
+            ): bool,
+            vol.Optional(
+                "impulse_decay",
+                description="Decay filter applied to the life generation impulse",
+                default=0.05,
+            ): vol.All(vol.Coerce(float), vol.Range(min=0.01, max=0.1)),
         }
     )
 
@@ -99,6 +118,7 @@ class GameOfLifeVisualiser(Twod, GradientEffect):
 
     def config_updated(self, config):
         super().config_updated(config)
+        self.inject = config["beat_inject"]
         self.health_check_options = self.HEALTH_CHECK_OPTIONS_VALUES[
             config["health_checks"]
         ]
@@ -108,6 +128,14 @@ class GameOfLifeVisualiser(Twod, GradientEffect):
             self.check_health = True
         else:
             self.check_health = False
+        self.power_func = self.POWER_FUNCS_MAPPING[
+            self._config["frequency_range"]
+        ]
+        self.decay = config["impulse_decay"]
+        self.impulse_filter = self.create_filter(
+            alpha_decay=self.decay, alpha_rise=0.99
+        )
+        self.impulse = 0.0
 
     def do_once(self):
         super().do_once()
@@ -116,8 +144,16 @@ class GameOfLifeVisualiser(Twod, GradientEffect):
         )
 
     def audio_data_updated(self, data):
-        if data.volume_beat_now():
+        if self.inject and data.volume_beat_now():
             self.game.add_random_entity()
+
+        # if decay is set to minimum, then just run generations at full rate
+        if self.decay == 0.01:
+            self.impulse = 1.0
+        else:
+            self.impulse = self.impulse_filter.update(
+                getattr(data, self.power_func)()
+            )
 
     def draw(self):
         if self.test:
@@ -159,7 +195,11 @@ class GameOfLifeVisualiser(Twod, GradientEffect):
         Returns:
             None
         """
-        if current_time - self.last_game_step >= (1 / self.base_game_speed):
+        if (
+            self.impulse > 0
+            and current_time - self.last_game_step
+            >= 1 / self.impulse / self.base_game_speed
+        ):
             self.game.step_board()
             self.last_game_step = current_time
 
