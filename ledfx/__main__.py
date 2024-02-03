@@ -196,6 +196,21 @@ def parse_args():
         action="store_true",
         help="Launch LedFx and then exit after 5 seconds to sanity check the install",
     )
+
+    parser.add_argument(
+        "--clear-config",
+        dest="clear_config",
+        action="store_true",
+        help="Launch LedFx, backup the config, clear the config, and continue with a clean startup",
+    )
+
+    parser.add_argument(
+        "--clear-effects",
+        dest="clear_effects",
+        action="store_true",
+        help="Launch LedFx, load the config, clear all active effects on all virtuals. Effect configurations are persisted, just turned off",
+    )
+
     return parser.parse_args()
 
 
@@ -283,6 +298,8 @@ def entry_point(icon=None):
             port_s=args.port_s,
             icon=icon,
             ci_testing=args.ci_smoke_test,
+            clear_config=args.clear_config,
+            clear_effects=args.clear_effects,
         )
 
         exit_code = ledfx.start(open_ui=args.open_ui)

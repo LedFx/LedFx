@@ -40,6 +40,83 @@ Did you try host: 0.0.0.0 or host: your-ipv4 (i.e.: 192.168.1.10)? The 127 is yo
 running anything on that subnet will only be available from that device. Putting it on 0.0.0.0 or your host's
 LAN IP opens up the port, 8888 in our case, to other devices on your LAN from your host's IP.
 
+Ledfx Configuration File Corruption Recovery
+--------------------------------------------
+
+If you are concerned that your ledfx config.json is corrupted.
+
+Everything was working and you changed an effect setting or similar, and now things no longer work,
+even if you restart / reboot / reinstall, it is likely that the config.json has persisted a configuration
+that is triggering a bug and causeing a crash from startup.
+
+We will be very interested in a copy of your config.json file, please share in discord with context.
+
+There are two methods which can be used to attempt recovery
+
+Clear all active effects
+++++++++++++++++++++++++
+
+Launch ledfx and clear all active effects from config.json
+
+   .. code:: console
+
+        ledfx --clear-effects
+
+If the issue is a poisoned configration of a specific effect, using this launch option all active effects are cleared leaving all virtuals and other configurations untouched.
+
+The effect configuration will still be present in your config, and if the specific effect is re-enabled, the crash will likely express again.
+
+However with this method, you can recover and continue using ledfx with the other effects, and all your existing configuration.
+
+You can also isolate which effect is poisoned by re-enabling them one by one, until the crash expresses.
+
+Then pass your config.json to the ledfx team for further investigation via #help_and_support on Discord.
+
+Backup and create clean config
+++++++++++++++++++++++++++++++
+
+Launch ledfx, backup and then create a clean config.json
+
+   .. code:: console
+
+        ledfx --clear-config
+
+This nuclear option will first backup, then completely clear your existing config.json, resolving any possible config poisoning.
+
+Note the backup json file will be named according to the following format
+
+config_backup_YYYY-MM-DD_HH-MM-SS.json
+
+It will be in the .ledfx directory along with the ledfx.log instances
+
+Please note: This is a dotfile naming convention and may be hidden by default in your file manager.
+
+.ledfx directory will be located in a number of possible locations according to OS.
+
+Examples of being, but not limited to, the following locations
+
+Windows:
+
+   .. code:: console
+
+        C:\Users\username\AppData\Roaming\.ledfx
+        %appdata%\.ledfx
+
+Linux:
+
+    .. code:: console
+
+        /home/username/.ledfx
+        ~/.ledfx
+
+MacOS:
+
+   .. code:: console
+
+        /Users/username/.ledfx
+        ~/.ledfx
+
+
 Speaker Sound
 -------------
 

@@ -17,7 +17,14 @@ from ledfx.color import (
     validate_color,
     validate_gradient,
 )
-from ledfx.config import Transmission, get_ssl_certs, load_config, save_config
+from ledfx.config import (
+    Transmission,
+    get_ssl_certs,
+    load_config,
+    remove_virtuals_active_effects,
+    save_config,
+    try_create_backup,
+)
 from ledfx.devices import Devices
 from ledfx.effects import Effects
 from ledfx.effects.math import interpolate_pixels
@@ -41,6 +48,7 @@ from ledfx.utils import (
 from ledfx.virtuals import Virtuals
 
 _LOGGER = logging.getLogger(__name__)
+
 if currently_frozen():
     warnings.filterwarnings("ignore")
 
@@ -54,10 +62,26 @@ class LedFxCore:
         port_s=None,
         icon=None,
         ci_testing=False,
+        clear_config=False,
+        clear_effects=False,
     ):
         self.icon = icon
         self.config_dir = config_dir
+
+        if clear_config:
+            _LOGGER.warning(
+                "Clearing LedFx configuration, existing config.json will be backed up and deleted"
+            )
+            try_create_backup("DELETE")
+
         self.config = load_config(config_dir)
+
+        if clear_effects:
+            _LOGGER.warning(
+                "Clearing LedFx active virtual effects, virtuals will be defaulted to off"
+            )
+            remove_virtuals_active_effects(self.config)
+
         self.config["ledfx_presets"] = ledfx_presets
         self.host = host if host else self.config["host"]
         self.port = port if port else self.config["port"]

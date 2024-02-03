@@ -603,6 +603,17 @@ def create_backup(config_dir, config_file, errortype):
         _LOGGER.error("Unknown Error. Backup Created.")
 
 
+def try_create_backup(error_type):
+    if os.path.isfile(get_default_config_path()):
+        create_backup(
+            get_default_config_directory(),
+            get_default_config_path(),
+            error_type,
+        )
+    else:
+        _LOGGER.warning("No config file to backup")
+
+
 def save_config(config: dict, config_dir: str) -> None:
     """Saves the configuration to the provided directory"""
 
@@ -634,3 +645,19 @@ def save_presets(config: dict, config_dir: str) -> None:
         json.dump(
             config_view, file, ensure_ascii=False, sort_keys=True, indent=4
         )
+
+
+def remove_virtuals_active_effects(config: dict) -> None:
+    """
+    Removes active effects from virtuals
+    All effects configs will remain in the virtuals, but the active effect will be removed
+    This allows for recovery from scenarios where an effect configuration is poisened
+    The user retains all their other settings.
+    The poisoned effect config will still be present in the virtuals effects list and will crash the app if it is selected
+    This may be addreessed by future fixes in the application or manual removal
+    of the effect from virtuals effects list once it is identified
+    This can only be identified via selective activation of effects to the point of crash
+    """
+
+    for virtual in config["virtuals"]:
+        virtual.pop("effect", None)
