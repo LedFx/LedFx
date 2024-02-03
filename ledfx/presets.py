@@ -299,7 +299,7 @@ ledfx_presets = {
                 "advanced": False,
                 "background_brightness": 1.0,
                 "background_color": "#000000",
-                "beat_frames": "8 18 29 41 50 60 70 80 90 106 114 125 135 150 160 170 180 190 197 207",
+                "beat_frames": "8 18 29 41 50 60 70 80 90 98 106 114 125 135 142 150 160 170 180 190 197 207",
                 "blur": 0.0,
                 "brightness": 1.0,
                 "center_horizontal": 0,
