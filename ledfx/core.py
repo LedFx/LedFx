@@ -21,9 +21,9 @@ from ledfx.config import (
     Transmission,
     get_ssl_certs,
     load_config,
+    remove_virtuals_active_effects,
     save_config,
     try_create_backup,
-    remove_virtuals_active_effects,
 )
 from ledfx.devices import Devices
 from ledfx.effects import Effects

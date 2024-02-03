@@ -646,6 +646,7 @@ def save_presets(config: dict, config_dir: str) -> None:
             config_view, file, ensure_ascii=False, sort_keys=True, indent=4
         )
 
+
 def remove_virtuals_active_effects(config: dict) -> None:
     """
     Removes active effects from virtuals
