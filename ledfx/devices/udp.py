@@ -9,7 +9,14 @@ from ledfx.devices import UDPDevice, packets
 _LOGGER = logging.getLogger(__name__)
 
 RGB_HYPERHDR_PACKET = "RGB (HyperHDR)"
-SUPPORTED_PACKETS = ["DRGB", "WARLS", "DRGBW", "DNRGB", "adaptive_smallest", RGB_HYPERHDR_PACKET]
+SUPPORTED_PACKETS = [
+    "DRGB",
+    "WARLS",
+    "DRGBW",
+    "DNRGB",
+    "adaptive_smallest",
+    RGB_HYPERHDR_PACKET,
+]
 
 
 class UDPRealtimeDevice(UDPDevice):
@@ -112,8 +119,11 @@ class UDPRealtimeDevice(UDPDevice):
             else:
                 udpData = packets.build_drgb_packet(data, timeout)
                 self.transmit_packet(udpData, frame_is_equal_to_last)
-        
-        elif self._config["udp_packet_type"] == RGB_HYPERHDR_PACKET and frame_size <= 500:
+
+        elif (
+            self._config["udp_packet_type"] == RGB_HYPERHDR_PACKET
+            and frame_size <= 500
+        ):
             udpData = packets.build_rgb_packet(data)
             self.transmit_packet(udpData, frame_is_equal_to_last)
 

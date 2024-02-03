@@ -58,6 +58,7 @@ def build_drgb_packet(data: np.ndarray, timeout: int):
     packet.extend(byteData.flatten().tobytes())
     return packet
 
+
 def build_rgb_packet(data: np.ndarray):
     """
     Generic RGB packet encoding (used by HyperHDR's "UDP raw receiver")
