@@ -23,6 +23,7 @@ from ledfx.config import (
     load_config,
     save_config,
     try_create_backup,
+    remove_virtuals_active_effects,
 )
 from ledfx.devices import Devices
 from ledfx.effects import Effects
@@ -62,6 +63,7 @@ class LedFxCore:
         icon=None,
         ci_testing=False,
         clear_config=False,
+        clear_effects=False,
     ):
         self.icon = icon
         self.config_dir = config_dir
@@ -73,6 +75,13 @@ class LedFxCore:
             try_create_backup("DELETE")
 
         self.config = load_config(config_dir)
+
+        if clear_effects:
+            _LOGGER.warning(
+                "Clearing LedFx active virtual effects, virtuals will be defaulted to off"
+            )
+            remove_virtuals_active_effects(self.config)
+
         self.config["ledfx_presets"] = ledfx_presets
         self.host = host if host else self.config["host"]
         self.port = port if port else self.config["port"]

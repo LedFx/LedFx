@@ -49,15 +49,39 @@ Everything was working and you changed an effect setting or similar, and now thi
 even if you restart / reboot / reinstall, it is likely that the config.json has persisted a configuration
 that is triggering a bug and causeing a crash from startup.
 
-We will be very interested in a copy of your config.json file, please share in discord with context, but to
-recover, and confirm it is a corrupted config.json, you can delete the file and restart ledfx.
+We will be very interested in a copy of your config.json file, please share in discord with context.
 
-Launch ledfx with the --clear-config option to backup the config.json file in the .ledfx directory and create
-a fresh default config in its place
+There are two methods which can be used to attempt recovery
+
+Clear all active effects
+++++++++++++++++++++++++
+
+Launch ledfx and clear all active effects from config.json
+
+   .. code:: console
+
+        ledfx --clear-effects
+
+If the issue is a poisoned configration of a specific effect, using this launch option all active effects are cleared leaving all virtuals and other configurations untouched.
+
+The effect configuration will still be present in your config, and if the specific effect is re-enabled, the crash will likely express again.
+
+However with this method, you can recover and continue using ledfx with the other effects, and all your existing configuration.
+
+You can also isolate which effect is poisoned by re-enabling them one by one, until the crash expresses.
+
+Then pass your config.json to the ledfx team for further investigation via #help_and_support on Discord.
+
+Backup and create clean config
+++++++++++++++++++++++++++++++
+
+Launch ledfx, backup and then create a clean config.json
 
    .. code:: console
 
         ledfx --clear-config
+
+This nuclear option will first backup, then completely clear your existing config.json, resolving any possible config poisoning.
 
 Note the backup json file will be named according to the following format
 
