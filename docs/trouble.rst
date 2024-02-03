@@ -100,18 +100,21 @@ Windows:
    .. code:: console
 
         C:\Users\username\AppData\Roaming\.ledfx
+        %appdata%\.ledfx
 
 Linux:
 
     .. code:: console
 
         /home/username/.ledfx
+        ~/.ledfx
 
 MacOS:
 
    .. code:: console
 
         /Users/username/.ledfx
+        ~/.ledfx
 
 
 Speaker Sound
