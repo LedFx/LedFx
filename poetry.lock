@@ -2155,13 +2155,13 @@ test = ["covdefaults (>=2.3)", "coverage (>=7.2.7)", "coverage-enable-subprocess
 
 [[package]]
 name = "voluptuous"
-version = "0.14.1"
+version = "0.14.2"
 description = "Python data validation library"
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.8"
 files = [
-    {file = "voluptuous-0.14.1-py3-none-any.whl", hash = "sha256:ab202b5164b4bbd2c9bf2d4f264efef6f0f30fc0f570be27f1332be4514eefe0"},
-    {file = "voluptuous-0.14.1.tar.gz", hash = "sha256:7b6e5f7553ce02461cce17fedb0e3603195496eb260ece9aca86cc4cc6625218"},
+    {file = "voluptuous-0.14.2-py3-none-any.whl", hash = "sha256:efc1dadc9ae32a30cc622602c1400a17b7bf8ee2770d64f70418144860739c3b"},
+    {file = "voluptuous-0.14.2.tar.gz", hash = "sha256:533e36175967a310f1b73170d091232bf881403e4ebe52a9b4ade8404d151f5d"},
 ]
 
 [[package]]
