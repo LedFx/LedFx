@@ -143,7 +143,9 @@ class GameOfLifeVisualiser(Twod):
             height=self.r_height, width=self.r_width, depth=self.history
         )
         if self.r_height <= 4 or self.r_width <= 4:
-            _LOGGER.info(f"Board too small at {self.game.board_size} disabling beat injection of entities")
+            _LOGGER.info(
+                f"Board too small at {self.game.board_size} disabling beat injection of entities"
+            )
             self.inject = False
 
     def audio_data_updated(self, data):
