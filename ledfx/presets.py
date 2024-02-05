@@ -206,7 +206,7 @@ ledfx_presets = {
                 "keep_aspect_ratio": True,
                 "force_fit": True,
                 "image_location": os.path.join(
-                    LEDFX_ASSETS_PATH, "gifs", "blade_small.gif"
+                    LEDFX_ASSETS_PATH, "gifs", "blade.webp"
                 ),
                 "half_beat": True,
                 "mirror": False,
