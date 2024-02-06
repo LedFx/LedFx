@@ -1,7 +1,7 @@
 {
   "files": {
     "main.css": "/static/css/main.e34b8a4d.css",
-    "main.js": "/static/js/main.c8ab36ce.js",
+    "main.js": "/static/js/main.f31e2d93.js",
     "static/js/522.ac59355a.chunk.js": "/static/js/522.ac59355a.chunk.js",
     "static/media/xmas.png": "/static/media/xmas.3e4e83405d14fb81488b.png",
     "static/media/materialdesignicons-webfont.woff": "/static/media/materialdesignicons-webfont.059ea00c378aeafc39fc.woff",
@@ -34,6 +34,6 @@
   },
   "entrypoints": [
     "static/css/main.e34b8a4d.css",
-    "static/js/main.c8ab36ce.js"
+    "static/js/main.f31e2d93.js"
   ]
 }
