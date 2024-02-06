@@ -36,7 +36,12 @@ class RestEndpoint(BaseRegistry):
 
         method = getattr(self, request.method.lower(), None)
         if not method:
-            raise web.HTTPMethodNotAllowed("")
+            allowed_methods = [
+                meth.upper()
+                for meth in ["get", "post", "put", "delete"]
+                if hasattr(self, meth)
+            ]
+            raise web.HTTPMethodNotAllowed("", allowed_methods=allowed_methods)
 
         wanted_args = list(inspect.signature(method).parameters.keys())
         available_args = request.match_info.copy()
