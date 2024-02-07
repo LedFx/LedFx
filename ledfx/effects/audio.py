@@ -780,6 +780,10 @@ class AudioReactiveEffect(Effect):
         "High": "high_power",
     }
 
+    def __init__(self, ledfx, config):
+        super().__init__(ledfx, config)
+        self.audio = None
+
     def activate(self, channel):
         _LOGGER.info("Activating AudioReactiveEffect.")
         super().activate(channel)
