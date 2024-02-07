@@ -38,7 +38,8 @@ if is_release == "false":
         exit_code = process.wait()
     # TODO: trap explicit exceptions if it becomes clear what they are
     except Exception as e:
-        commit_hash = "unknown"
+        commit_hash = os.getenv("GITHUB_SHA", "unknown")
+        commit_hash = commit_hash[:7].decode("utf-8")
         _LOGGER.warning(f"Failed to get git commit hash: {e}")
     release = f"ledfx@{PROJECT_VERSION}-{commit_hash}"
 else:
