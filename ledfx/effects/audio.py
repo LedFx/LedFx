@@ -782,6 +782,7 @@ class AudioReactiveEffect(Effect):
 
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
+        # protect against possible deactivate race condition
         self.audio = None
 
     def activate(self, channel):
