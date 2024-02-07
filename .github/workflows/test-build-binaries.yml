@@ -1,0 +1,529 @@
+name: Build Binaries
+
+on:
+  push:
+  workflow_dispatch:
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+env:
+  DEFAULT_PYTHON: 3.12
+
+jobs:
+  build-ledfx-windows:
+    name: Build LedFx (Windows)
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash -x {0}
+    steps:
+      - name: Setup CI sound system
+        uses: LABSN/sound-ci-helpers@v1
+      - name: Check out code from GitHub
+        uses: actions/checkout@v4
+      - name: Setup Python ${{ env.DEFAULT_PYTHON }}
+        id: python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.DEFAULT_PYTHON }}
+
+      - name: Get full Python version
+        id: full-python-version
+        run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
+
+      - name: Install poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python - -y
+
+      - name: Update Path for Windows
+        run: echo "$APPDATA\Python\Scripts" >> $GITHUB_PATH
+
+      - name: Enable long paths for git on Windows
+
+        # Enable handling long path names (+260 char) on the Windows platform
+        # https://docs.microsoft.com/en-us/windows/win32/fileio/naming-a-file#maximum-path-length-limitation
+        run: git config --system core.longpaths true
+
+      - name: Configure poetry
+        run: poetry config virtualenvs.in-project true
+
+      - name: Set up cache
+        uses: actions/cache@v4
+        id: cache
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ runner.arch }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/poetry.lock') }}
+
+      - name: Ensure cache is healthy
+        if: steps.cache.outputs.cache-hit == 'true'
+        run: |
+          # `timeout` is not available on macOS, so we define a custom function.
+          [ "$(command -v timeout)" ] || function timeout() { perl -e 'alarm shift; exec @ARGV' "$@"; }
+
+          # Using `timeout` is a safeguard against the Poetry command hanging for some reason.
+          timeout 10s poetry run pip --version || rm -rf .venv
+
+      - name: Check lock file
+        run: poetry check --lock
+      - name: Install LedFx
+        run: |
+          poetry install --with dev --extras hue
+      - name: Get LedFx Version and Upload to Artifacts for later use
+        id: ledfx-version
+      # Note - we remove the newline from the version string so that it can be used in the artifact name        id: ledfx-version
+        run: |
+          echo ledfx-version=$(python -c "import ledfx; print(ledfx.__version__, end='')") >> $GITHUB_OUTPUT
+          python -c "import ledfx; print(ledfx.__version__, end='')" | tr -d '\n' > ledfx_version.txt
+      - name: Upload LedFx Version
+        uses: actions/upload-artifact@v4
+        with:
+          name: ledfx_version.txt
+          path: ${{ github.workspace }}/ledfx_version.txt
+      - name: Build Binary
+        run: |
+          poetry run pyinstaller windows-binary.spec
+      - name: Remove packaged portaudio binary
+        run: |
+          rm dist/LedFx/_internal/_sounddevice_data/portaudio-binaries/libportaudio64bit.dll
+      - name: Move WASAPI loopback portaudio
+        run: |
+          mv loopback/libportaudio64bit.dll dist/LedFx/_internal/_sounddevice_data/portaudio-binaries/libportaudio64bit.dll
+      - name: Upload LedFx Binary
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: LedFx-${{ steps.ledfx-version.outputs.ledfx-version }}-windows-x64
+          path: ${{ github.workspace }}/dist/*
+  build-ledfx-osx:
+    name: Build LedFx (OS X)
+    runs-on: macos-latest
+    steps:
+      - name: Check out code from GitHub
+        uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          brew install portaudio
+
+      - name: Setup Python ${{ env.DEFAULT_PYTHON }}
+        id: python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.DEFAULT_PYTHON }}
+
+      - name: Get full Python version
+        id: full-python-version
+        run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
+
+      - name: Install poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python - -y
+
+      - name: Update PATH
+        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Configure poetry
+        run: poetry config virtualenvs.in-project true
+
+      - name: Set up cache
+        uses: actions/cache@v4
+        id: cache
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ runner.arch }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/poetry.lock') }}
+
+      - name: Ensure cache is healthy
+        if: steps.cache.outputs.cache-hit == 'true'
+        run: |
+          # `timeout` is not available on macOS, so we define a custom function.
+          [ "$(command -v timeout)" ] || function timeout() { perl -e 'alarm shift; exec @ARGV' "$@"; }
+
+          # Using `timeout` is a safeguard against the Poetry command hanging for some reason.
+          timeout 10s poetry run pip --version || rm -rf .venv
+
+      - name: Check lock file
+        run: poetry check --lock
+      - name: Install LedFx
+        run: |
+          poetry install --with dev --extras hue
+      - name: Get LedFx Version
+        id: ledfx-version
+        run: |
+          echo ledfx-version=$(python -c "import ledfx; print(ledfx.__version__)") >> $GITHUB_OUTPUT
+      - name: Build Binary
+        run: |
+          poetry run pyinstaller osx-binary.spec
+      - name: Make binary executable
+        run: |
+          chmod +x dist/LedFx/Contents/MacOS/LedFx
+      - name: Create .app from dist
+        run: |
+          mv dist/LedFx/ dist/LedFx.app
+      - name: Remove extended attributes
+        run: |
+          xattr -cr ./dist/LedFx.app
+      - name: Create LedFx tarball
+        run: |
+          tar -cvf LedFx-${{ steps.ledfx-version.outputs.ledfx-version }}-osx-intel.tar ./dist/LedFx.app
+      - name: Upload LedFx Binary
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: LedFx-${{ steps.ledfx-version.outputs.ledfx-version }}-osx-intel
+          path: ${{ github.workspace }}/dist/*
+  build-ledfx-osx-m1:
+    name: Build LedFx (OS X) (Apple Silicon)
+    runs-on: flyci-macos-large-latest-m1
+    steps:
+      - name: Check out code from GitHub
+        uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          brew install portaudio mbedtls@2
+
+      - name: Setup Python ${{ env.DEFAULT_PYTHON  }}
+        id: python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.DEFAULT_PYTHON  }}
+
+      - name: Get full Python version
+        id: full-python-version
+        run: echo version=$(python -c "import sys; print('-'.join(str(v) for v in sys.version_info))") >> $GITHUB_OUTPUT
+
+      - name: Install poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python - -y
+
+      - name: Update PATH
+        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Configure poetry
+        run: poetry config virtualenvs.in-project true
+
+      - name: Set up cache
+        uses: actions/cache@v4
+        id: cache
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ runner.arch }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/poetry.lock') }}
+
+      - name: Ensure cache is healthy
+        if: steps.cache.outputs.cache-hit == 'true'
+        run: |
+          # `timeout` is not available on macOS, so we define a custom function.
+          [ "$(command -v timeout)" ] || function timeout() { perl -e 'alarm shift; exec @ARGV' "$@"; }
+
+          # Using `timeout` is a safeguard against the Poetry command hanging for some reason.
+          timeout 10s poetry run pip --version || rm -rf .venv
+
+      - name: Check lock file
+        run: poetry check --lock
+      - name: Install LedFx
+        run: |
+          export PATH="/opt/homebrew/opt/mbedtls@2/bin:$PATH"
+          export LDFLAGS="-L/opt/homebrew/opt/mbedtls@2/lib"
+          export CPPFLAGS="-I/opt/homebrew/opt/mbedtls@2/include"
+          poetry install --with dev --extras hue
+      - name: Get LedFx Version
+        id: ledfx-version
+        run: |
+          echo ledfx-version=$(python -c "import ledfx; print(ledfx.__version__)") >> $GITHUB_OUTPUT
+      - name: Build Binary
+        run: |
+          poetry run pyinstaller osx-binary.spec
+      - name: Make binary executable
+        run: |
+          chmod +x ./dist/LedFx/Contents/MacOS/LedFx
+      - name: Create .app from dist
+        run: |
+          mv ./dist/LedFx ./dist/LedFx.app
+      - name: Remove extended attributes
+        run: |
+          xattr -cr ./dist/LedFx.app
+      - name: Create LedFx tarball
+        run: |
+          tar -cvf LedFx-${{ steps.ledfx-version.outputs.ledfx-version }}-osx-arm64.tar ./dist/LedFx.app
+      - name: Upload LedFx Binary
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: LedFx-${{ steps.ledfx-version.outputs.ledfx-version }}-osx-arm64
+          path: ${{ github.workspace }}/dist/*
+  run-ledfx-windows:
+    name: Test LedFx (Windows)
+    runs-on: windows-latest
+    needs: [build-ledfx-windows]
+    defaults:
+      run:
+        shell: bash -x {0}
+    steps:
+      - name: Setup CI sound system
+        uses: LABSN/sound-ci-helpers@v1
+      - name: Download LedFx Version
+        uses: actions/download-artifact@v4
+        with:
+          name: ledfx_version.txt
+      - name: Get LedFx Version
+        id: ledfx-version
+        run: |
+          echo ledfx-version=$(cat ledfx_version.txt) >> $GITHUB_OUTPUT
+      - name: Download LedFx Binary
+        uses: actions/download-artifact@v4
+        with:
+         name: LedFx-${{ steps.ledfx-version.outputs.ledfx-version }}-windows-x64
+      - name: Run LedFx
+        run: |
+          LedFx/LedFx.exe -vv --ci-smoke-test
+  run-ledfx-osx:
+    name: Test LedFx (OS X)
+    runs-on: macos-latest
+    needs: [build-ledfx-windows, build-ledfx-osx]
+    steps:
+      - name: Download LedFx Version
+        uses: actions/download-artifact@v4
+        with:
+          name: ledfx_version.txt
+      - name: Get LedFx Version
+        id: ledfx-version
+        run: |
+          echo ledfx-version=$(cat ledfx_version.txt) >> $GITHUB_OUTPUT
+      - name: Download LedFx Binary
+        uses: actions/download-artifact@v4
+        with:
+          name: LedFx-${{ steps.ledfx-version.outputs.ledfx-version }}-osx-intel
+      - name: Run LedFx
+        run: |
+          xattr -cr ./LedFx.app
+          chmod +x ./LedFx.app/Contents/MacOS/LedFx
+          ./LedFx.app/Contents/MacOS/LedFx -vv --ci-smoke-test
+  run-ledfx-osx-m1:
+    name: Test LedFx (OS X) (Apple Silicon)
+    runs-on: flyci-macos-large-latest-m1
+    needs: [build-ledfx-windows, build-ledfx-osx-m1]
+    steps:
+      - name: Download LedFx Version
+        uses: actions/download-artifact@v4
+        with:
+          name: ledfx_version.txt
+      - name: Get LedFx Version
+        id: ledfx-version
+        run: |
+          echo ledfx-version=$(cat ledfx_version.txt) >> $GITHUB_OUTPUT
+      - name: Download LedFx Binary
+        uses: actions/download-artifact@v4
+        with:
+          name: LedFx-${{ steps.ledfx-version.outputs.ledfx-version }}-osx-arm64
+      - name: Run LedFx
+        if: always()
+        run: |
+          xattr -cr ./LedFx.app
+          chmod +x ./LedFx.app/Contents/MacOS/LedFx
+          ./LedFx.app/Contents/MacOS/LedFx -vv --ci-smoke-test
+  create-release:
+    name: Create GitHub Release
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: macos-latest
+    needs: [run-ledfx-windows, run-ledfx-osx, run-ledfx-osx-m1, install-from-wheel, install-from-sdist]
+    steps:
+      - name: Check out code from GitHub
+        uses: actions/checkout@v4
+      - name: Download LedFx Version
+        uses: actions/download-artifact@v4
+        with:
+            name: ledfx_version.txt
+            path: dist/
+      - name: Get LedFx Version
+        id: ledfx-version
+        run: |
+          echo ledfx-version=$(cat dist/ledfx_version.txt) >> $GITHUB_OUTPUT
+          rm -rf dist/ledfx_version.txt
+      - name: Download OSX (intel) Binary
+        uses: actions/download-artifact@v4
+        with:
+          name: LedFx-${{ steps.ledfx-version.outputs.ledfx-version }}-osx-intel
+          path: dist/
+      - name: Package OS X (intel) archive
+        run: |
+          xattr -cr dist/LedFx.app
+          chmod +x dist/LedFx.app/Contents/MacOS/LedFx
+          mv dist/LedFx.app dist/LedFx-${{ steps.ledfx-version.outputs.ledfx-version }}.app
+          cd dist
+          tar c LedFx-${{ steps.ledfx-version.outputs.ledfx-version }}.app | gzip --best > ../LedFx-${{ steps.ledfx-version.outputs.ledfx-version }}-osx-intel.tar.gz
+          cd ..
+          rm -rf dist/*
+      - name: Download Windows (x64) Binary
+        uses: actions/download-artifact@v4
+        with:
+          name: LedFx-${{ steps.ledfx-version.outputs.ledfx-version }}-windows-x64
+          path: dist/
+      - name: Create zip for Windows (x64)
+        run: |
+          mv dist/LedFx dist/LedFx-${{ steps.ledfx-version.outputs.ledfx-version }}
+          cd dist
+          zip -r ../LedFx-${{ steps.ledfx-version.outputs.ledfx-version }}-win-x64.zip LedFx-${{ steps.ledfx-version.outputs.ledfx-version }}
+          cd ..
+          rm -rf dist/*
+      - name: Download OS X (arm64) Binary
+        uses: actions/download-artifact@v4
+        with:
+          name: LedFx-${{ steps.ledfx-version.outputs.ledfx-version }}-osx-arm64
+          path: dist/
+      - name: Package OS X (arm64) archive
+        run: |
+          xattr -cr dist/LedFx.app
+          chmod +x dist/LedFx.app/Contents/MacOS/LedFx
+          mv dist/LedFx.app dist/LedFx-${{ steps.ledfx-version.outputs.ledfx-version }}.app
+          cd dist
+          tar c LedFx-${{ steps.ledfx-version.outputs.ledfx-version }}.app | gzip --best > ../LedFx-${{ steps.ledfx-version.outputs.ledfx-version }}-osx-arm64.tar.gz
+          cd ..
+          rm -rf dist/*
+      - name: Generate release changelog
+        uses: varrcan/generate-pretty-changelog-action@v1
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            LedFx-${{ steps.ledfx-version.outputs.ledfx-version }}-win-x64.zip
+            LedFx-${{ steps.ledfx-version.outputs.ledfx-version }}-osx-intel.tar.gz
+            LedFx-${{ steps.ledfx-version.outputs.ledfx-version }}-osx-arm64.tar.gz
+          body_path: CHANGELOG.md
+          name: LedFx ${{ steps.ledfx-version.outputs.ledfx-version }}
+
+  build-test-wheel-and-sdist:
+    name: Build LedFx (PyPi)
+    runs-on: ubuntu-latest
+    needs: [build-ledfx-windows]
+    steps:
+      - name: Check out code from GitHub
+        uses: actions/checkout@v4
+      - name: Set up Python ${{ env.DEFAULT_PYTHON }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.DEFAULT_PYTHON }}
+      - name: Download LedFx Version
+        uses: actions/download-artifact@v4
+        with:
+         name: ledfx_version.txt
+      - name: Get LedFx Version
+        id: ledfx-version
+        run: |
+          echo ledfx-version=$(cat ledfx_version.txt) >> $GITHUB_OUTPUT
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+      - name: Create prod.env
+        run: |
+          echo "IS_RELEASE = true" >> prod.env
+      - name: Build a binary wheel and  sdist
+        run: |
+          poetry build
+      - name: Package the wheel
+        uses: actions/upload-artifact@v4
+        with:
+          name: LedFx-${{ steps.ledfx-version.outputs.ledfx-version }}-wheel
+          path: dist/ledfx-*.whl
+      - name: Package the sdist
+        uses: actions/upload-artifact@v4
+        with:
+          name: LedFx-${{ steps.ledfx-version.outputs.ledfx-version }}-sdist
+          path: dist/ledfx-*.tar.gz
+  install-from-wheel:
+    name: Test LedFx (PyPi wheel)
+    runs-on: ubuntu-latest
+    needs: [build-test-wheel-and-sdist]
+    steps:
+      - name: Download LedFx Version
+        uses: actions/download-artifact@v4
+        with:
+         name: ledfx_version.txt
+      - name: Get LedFx Version
+        id: ledfx-version
+        run: |
+          echo ledfx-version=$(cat ledfx_version.txt) >> $GITHUB_OUTPUT
+      - name: Get the wheel
+        uses: actions/download-artifact@v4
+        with:
+          name: LedFx-${{ steps.ledfx-version.outputs.ledfx-version }}-wheel
+      - name: Set up Python ${{ env.DEFAULT_PYTHON }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.DEFAULT_PYTHON }}
+      - name: Install portaudio
+        run: |
+         sudo apt-get update && sudo apt-get install -y portaudio19-dev
+      - name: Install the wheel
+        run: |
+          pip install ledfx-*.whl
+      - name: Run LedFx
+        run: |
+          ledfx -vv --ci-smoke-test
+  install-from-sdist:
+    name: Test LedFx (PyPi sdist)
+    runs-on: ubuntu-latest
+    needs: [build-test-wheel-and-sdist]
+    steps:
+      - name: Download LedFx Version
+        uses: actions/download-artifact@v4
+        with:
+         name: ledfx_version.txt
+      - name: Get LedFx Version
+        id: ledfx-version
+        run: |
+          echo ledfx-version=$(cat ledfx_version.txt) >> $GITHUB_OUTPUT
+      - name: Get the sdist
+        uses: actions/download-artifact@v4
+        with:
+          name: LedFx-${{ steps.ledfx-version.outputs.ledfx-version }}-sdist
+      - name: Set up Python ${{ env.DEFAULT_PYTHON }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.DEFAULT_PYTHON }}
+      - name: Install portaudio
+        run: |
+         sudo apt-get update && sudo apt-get install -y portaudio19-dev
+      - name: Install the sdist
+        run: |
+          pip install ledfx-*.tar.gz
+      - name: Run LedFx
+        run: |
+          ledfx --ci-smoke-test -vv
+  publish:
+    name: Publish LedFx to PyPi
+    needs: [install-from-wheel, install-from-sdist, run-ledfx-windows, run-ledfx-osx, run-ledfx-osx-m1]
+    if: github.event_name == 'workflow_dispatch' ||  startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download LedFx Version
+        uses: actions/download-artifact@v4
+        with:
+         name: ledfx_version.txt
+      - name: Get LedFx Version
+        id: ledfx-version
+        run: |
+          echo ledfx-version=$(cat ledfx_version.txt) >> $GITHUB_OUTPUT
+      - name: Get the wheel
+        uses: actions/download-artifact@v4
+        with:
+          name: LedFx-${{ steps.ledfx-version.outputs.ledfx-version }}-wheel
+          path: dist/
+      - name: Get the sdist
+        uses: actions/download-artifact@v4
+        with:
+          name: LedFx-${{ steps.ledfx-version.outputs.ledfx-version }}-sdist
+          path: dist/
+      - name: Publish to Test PyPI
+        if: github.event_name == 'workflow_dispatch'
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          user: __token__
+          password: ${{ secrets.PYPI_TEST_API_TOKEN }}
+          repository-url: https://test.pypi.org/legacy/
+
+      - name: Publish to PyPI
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          user: __token__
+          password: ${{ secrets.PYPI_API_TOKEN }}
