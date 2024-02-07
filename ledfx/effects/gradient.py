@@ -114,15 +114,20 @@ class GradientEffect(Effect):
 
         self._gradient_curve = gradient.T
 
+    @property
+    def gradient_pixel_count(self):
+        """Returns the number of pixels for the gradient"""
+        return max(self.pixel_count, 256)
+
     def _assert_gradient(self):
         if (
             self._gradient_curve is None  # Uninitialized gradient
             or len(self._gradient_curve[0])
-            != self.pixel_count  # Incorrect size
+            != self.gradient_pixel_count  # Incorrect size
         ):
             self._generate_gradient_curve(
                 self._config["gradient"],
-                self.pixel_count,
+                self.gradient_pixel_count,
             )
 
     def roll_gradient(self):
@@ -131,7 +136,12 @@ class GradientEffect(Effect):
 
         self._assert_gradient()
 
-        self._gradient_roll_counter += self._config["gradient_roll"]
+        increment = (
+            self._config["gradient_roll"]
+            / self.pixel_count
+            * self.gradient_pixel_count
+        )
+        self._gradient_roll_counter += increment
 
         if self._gradient_roll_counter >= 1.0:
             pixels_to_roll = np.floor(self._gradient_roll_counter)
@@ -143,25 +153,41 @@ class GradientEffect(Effect):
                 axis=1,
             )
 
-    def get_gradient_color(self, point):
-        self._assert_gradient()
-
-        return self._gradient_curve[:, int((self.pixel_count - 1) * point)]
-
-    def get_gradient_color_vectorized(self, points):
+    def _get_gradient_colors(self, points):
         self._assert_gradient()
 
         # Ensure points are within the valid range [0, 1]
         points = np.clip(points, 0, 1)
 
         # Calculate indices for the gradient lookup
-        indices = ((self.pixel_count - 1) * points).astype(int)
+        indices = ((self.gradient_pixel_count - 1) * points).astype(int)
 
         # Use advanced indexing to get colors for each point
-        colors = self._gradient_curve[:, indices]
+        return self._gradient_curve[:, indices]
+
+    def get_gradient_color(self, point):
+        return self._get_gradient_colors(point)
+
+    def get_gradient_color_vectorized(self, points):
+        colors = self._get_gradient_colors(points)
 
         # Transpose and reshape to get the correct shape (height, width, color_channels)
         return colors.transpose(1, 2, 0)
+
+    def get_gradient(self):
+        self._assert_gradient()
+
+        # For a single pixel, take the first value from the gradient
+        if self.pixel_count == 1:
+            return self._get_gradient_colors([0])
+
+        # For low pixel counts, downsample the gradient
+        if self.pixel_count < self.gradient_pixel_count:
+            points = np.arange(self.pixel_count) / (self.pixel_count - 1)
+            return self._get_gradient_colors(points)
+
+        # For large pixel counts, the gradient corresponds to the number of pixels
+        return self._gradient_curve
 
     def config_updated(self, config):
         """Invalidate the gradient"""
@@ -170,7 +196,7 @@ class GradientEffect(Effect):
     def apply_gradient(self, y):
         self._assert_gradient()
 
-        output = self._gradient_curve * y
+        output = self.get_gradient() * y
         # Apply and roll the gradient if necessary
         self.roll_gradient()
 
