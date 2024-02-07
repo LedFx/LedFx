@@ -24,7 +24,7 @@ ledfx = "ledfx.__main__:main"
 ledfx-loopback-install = "loopback.__main__:copy_lib"
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = ">=3.9,<3.13"
 numpy = "^1.26.2"
 cffi = ">=0.16.0"
 wheel = ">=0.36.2"
@@ -75,6 +75,7 @@ pre-commit = ">=3.6.0,<3.7.0"
 bokeh = "^3.3.3"
 pytest = "^8.0.0"
 pytest-order = "^1.2.0"
+pyinstaller = "^6.3.0"
 
 
 [tool.pytest.ini_options]
