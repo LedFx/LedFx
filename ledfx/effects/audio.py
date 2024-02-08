@@ -782,13 +782,10 @@ class AudioReactiveEffect(Effect):
 
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
-        # protect against possible deactivate race condition
-        self.audio = None
-
-    def activate(self, channel):
-        _LOGGER.info("Activating AudioReactiveEffect.")
-        super().activate(channel)
-
+        # Subscribe to the audio sources on class init rather than activation
+        # Speculative fix for audio source not being available when deactivating
+        # Impossible to not have an audio source when calling deactivate now.
+        # TODO: Figure out if this actually fixes the issue.
         if not self._ledfx.audio or id(AudioAnalysisSource) != id(
             self._ledfx.audio.__class__
         ):
@@ -797,10 +794,14 @@ class AudioReactiveEffect(Effect):
             )
 
         self.audio = self._ledfx.audio
-        self._ledfx.audio.subscribe(self._audio_data_updated)
+        self.audio.subscribe(self._audio_data_updated)
+
+    def activate(self, channel):
+        _LOGGER.debug("Activating AudioReactiveEffect base class.")
+        super().activate(channel)
 
     def deactivate(self):
-        _LOGGER.info("Deactivating AudioReactiveEffect.")
+        _LOGGER.debug("Deactivating AudioReactiveEffect base class.")
         if self.audio:
             self.audio.unsubscribe(self._audio_data_updated)
         super().deactivate()
