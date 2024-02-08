@@ -673,9 +673,11 @@ class AudioAnalysisSource(AudioInputSource):
 
     def get_freq_power(self, i, filtered=True):
         if filtered:
-            return self.freq_power_filter.value[i]
+            value = self.freq_power_filter.value[i]
         else:
-            return self.freq_power_raw[i]
+            value = self.freq_power_raw[i]
+
+        return value if not np.isnan(value) else 0.0
 
     def beat_power(self, filtered=True):
         """
