@@ -48,6 +48,11 @@ class Virtual:
                 description="Span: Effect spans all segments. Copy: Effect copied on each segment",
                 default="span",
             ): vol.In(["span", "copy"]),
+            vol.Required(
+                "grouping",
+                description="Number of physical pixels to combine into larger virtual pixel groups",
+                default=1,
+            ): vol.All(int, vol.Range(min=0)),
             vol.Optional(
                 "icon_name",
                 description="Icon for the device*",
@@ -231,6 +236,14 @@ class Virtual:
             if hasattr(self, prop):
                 delattr(self, prop)
 
+    def _reactivate_effect(self):
+        self.clear_transition_effect()
+        self.transitions = Transitions(self.effect_pixel_count)
+        if self._active_effect is not None:
+            self._active_effect._deactivate()
+            if self.pixel_count > 0:
+                self._active_effect.activate(self)
+
     def update_segments(self, segments_config):
         """
         Update the segments of the virtual with the given configuration.
@@ -271,12 +284,7 @@ class Virtual:
                 # so no need to restart the effect
                 if self.pixel_count != _pixel_count:
                     # chenging segments is a deep edit, just flush any transition
-                    self.clear_transition_effect()
-                    self.transitions = Transitions(self.pixel_count)
-                    if self._active_effect is not None:
-                        self._active_effect._deactivate()
-                        if self.pixel_count > 0:
-                            self._active_effect.activate(self)
+                    self._reactivate_effect()
 
                 mode = self._config["transition_mode"]
                 self.frame_transitions = self.transitions[mode]
@@ -344,7 +352,9 @@ class Virtual:
                 self.clear_transition_effect()
 
                 if self._active_effect is None:
-                    self._transition_effect = DummyEffect(self.pixel_count)
+                    self._transition_effect = DummyEffect(
+                        self.effect_pixel_count
+                    )
                 else:
                     self._transition_effect = self._active_effect
             else:
@@ -388,7 +398,7 @@ class Virtual:
                 and self._config["transition_time"] > 0
             ):
                 self._transition_effect = self._active_effect
-                self._active_effect = DummyEffect(self.pixel_count)
+                self._active_effect = DummyEffect(self.effect_pixel_count)
 
                 self.transition_frame_total = (
                     self.refresh_rate * self._config["transition_time"]
@@ -445,9 +455,7 @@ class Virtual:
             if self._active:
                 assembled_frame = np.zeros((self.pixel_count, 3))
                 self.flush(assembled_frame)
-                self._ledfx.events.fire_event(
-                    VirtualUpdateEvent(self.id, assembled_frame)
-                )
+                self._fire_update_event(assembled_frame)
 
         # Deactivate the device - this requires the thread lock
         # Hence why we do it outside of the lock and after the frame is cleared
@@ -461,10 +469,16 @@ class Virtual:
         Force all pixels in device to color
         Use for pre-clearing in calibration scenarios
         """
-        self.assembled_frame = np.full((self.pixel_count, 3), color)
+        self.assembled_frame = np.full((self.effect_pixel_count, 3), color)
         self.flush(self.assembled_frame)
+        self._fire_update_event()
+
+    def _fire_update_event(self, frame=None):
+        if frame is None:
+            frame = self.assembled_frame
+
         self._ledfx.events.fire_event(
-            VirtualUpdateEvent(self.id, self.assembled_frame)
+            VirtualUpdateEvent(self.id, self._effect_to_physical_pixels(frame))
         )
 
     def oneshot(self, color, ramp, hold, fade):
@@ -569,9 +583,7 @@ class Virtual:
                             # )
                             self.flush()
 
-                        self._ledfx.events.fire_event(
-                            VirtualUpdateEvent(self.id, self.assembled_frame)
-                        )
+                        self._fire_update_event()
 
             # adjust for the frame assemble time, min allowed sleep 1 ms
             # this will be more frame accurate on high res sleep systems
@@ -727,6 +739,10 @@ class Virtual:
         if self._os_active:
             self.oneshot_weight()
 
+        if self._config["mapping"] == "span":
+            # In span mode we can calculate the final pixels once for all segments
+            pixels = self._effect_to_physical_pixels(pixels)
+
         color_cycle = itertools.cycle(color_list)
 
         for device_id, segments in self._segments_by_device.items():
@@ -758,10 +774,19 @@ class Virtual:
                             device_start,
                             device_end,
                         ) in segments:
-                            target_len = device_end - device_start + 1
-                            seg = interpolate_pixels(pixels, target_len)[
+                            target_physical_len = device_end - device_start + 1
+                            target_effect_len = self._get_effect_pixel_count(
+                                target_physical_len
+                            )
+                            # In copy mode, we need to scale the effect and afterwards expand the
+                            # pixel groups separately for every segment, because pre-calculating once
+                            # and scaling would lead to incorrect pixel group lengths.
+                            seg = interpolate_pixels(pixels, target_effect_len)[
                                 ::step
                             ]
+                            seg = self._effect_to_physical_pixels(
+                                seg, target_physical_len
+                            )
                             if self._os_active:
                                 self.oneshot_apply(seg)
                             data.append((seg, device_start, device_end))
@@ -913,6 +938,7 @@ class Virtual:
             _config = new_config
 
         _config = self.CONFIG_SCHEMA(_config)
+        reactivate_effect = False
 
         if hasattr(self, "_config"):
             if _config["mapping"] != self._config["mapping"]:
@@ -980,6 +1006,10 @@ class Virtual:
                         if hasattr(self._active_effect, "set_init"):
                             self._active_effect.set_init()
 
+                    if _config["grouping"] != self._config["grouping"]:
+                        # The effect needs to be reactivated later after the config has been applied
+                        reactivate_effect = True
+
         setattr(self, "_config", _config)
 
         self.frequency_range = FrequencyRange(
@@ -989,6 +1019,46 @@ class Virtual:
         self._ledfx.events.fire_event(
             VirtualConfigUpdateEvent(self.id, self._config)
         )
+
+        if reactivate_effect:
+            self._reactivate_effect()
+
+    @property
+    def effect_pixel_count(self):
+        """The number of pixels to calculate by effects.
+
+        Can be less than the number of physical pixels (:attr:`~pixel_count`) when
+        pixel grouping (:attr:`~group_size`) is activated.
+        """
+        return self._get_effect_pixel_count(self.pixel_count)
+
+    @property
+    def group_size(self):
+        """The number of physical pixels to group into virtual effect pixels."""
+        grouping = self._config["grouping"]
+
+        if grouping is None or grouping < 1:
+            return 1
+
+        return grouping
+
+    def _get_effect_pixel_count(self, physical_pixel_count):
+        """Calculates the number of effect pixels for a given number of physical pixels, considering pixel grouping."""
+        return int(np.ceil(physical_pixel_count / self.group_size))
+
+    def _effect_to_physical_pixels(self, effect_pixels, pixel_count=None):
+        """Projects an array of effect pixels into an array of pixels for physical rendering, considering pixel grouping."""
+        if self.group_size <= 1:
+            return effect_pixels
+
+        if not pixel_count:
+            pixel_count = self.pixel_count
+
+        effect_pixels = np.repeat(effect_pixels, self.group_size, axis=0)[
+            :pixel_count, :
+        ]
+
+        return effect_pixels
 
 
 class Virtuals:
