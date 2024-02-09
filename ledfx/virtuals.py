@@ -781,9 +781,9 @@ class Virtual:
                             # In copy mode, we need to scale the effect and afterwards expand the
                             # pixel groups separately for every segment, because pre-calculating once
                             # and scaling would lead to incorrect pixel group lengths.
-                            seg = interpolate_pixels(pixels, target_effect_len)[
-                                ::step
-                            ]
+                            seg = interpolate_pixels(
+                                pixels, target_effect_len
+                            )[::step]
                             seg = self._effect_to_physical_pixels(
                                 seg, target_physical_len
                             )
