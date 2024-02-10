@@ -478,7 +478,9 @@ class Virtual:
             frame = self.assembled_frame
 
         self._ledfx.events.fire_event(
-            VirtualUpdateEvent(self.id, self._effective_to_physical_pixels(frame))
+            VirtualUpdateEvent(
+                self.id, self._effective_to_physical_pixels(frame)
+            )
         )
 
     def oneshot(self, color, ramp, hold, fade):
@@ -775,8 +777,10 @@ class Virtual:
                             device_end,
                         ) in segments:
                             target_physical_len = device_end - device_start + 1
-                            target_effect_len = self._get_effective_pixel_count(
-                                target_physical_len
+                            target_effect_len = (
+                                self._get_effective_pixel_count(
+                                    target_physical_len
+                                )
                             )
                             # In copy mode, we need to scale the effect and afterwards expand the
                             # pixel groups separately for every segment, because pre-calculating once
@@ -1046,7 +1050,9 @@ class Virtual:
         """Calculates the number of effective pixels for a given number of physical pixels, considering pixel grouping."""
         return int(np.ceil(physical_pixel_count / self.group_size))
 
-    def _effective_to_physical_pixels(self, effective_pixels, pixel_count=None):
+    def _effective_to_physical_pixels(
+        self, effective_pixels, pixel_count=None
+    ):
         """Projects an array of effective pixels into an array of pixels for physical rendering, considering pixel grouping."""
         if self.group_size <= 1:
             return effective_pixels
@@ -1054,9 +1060,9 @@ class Virtual:
         if not pixel_count:
             pixel_count = self.pixel_count
 
-        effective_pixels = np.repeat(effective_pixels, self.group_size, axis=0)[
-            :pixel_count, :
-        ]
+        effective_pixels = np.repeat(
+            effective_pixels, self.group_size, axis=0
+        )[:pixel_count, :]
 
         return effective_pixels
 
