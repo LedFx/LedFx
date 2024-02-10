@@ -69,6 +69,8 @@ class HSVEffect(GradientEffect):
         # Apply value (brightness) to colors
         pixels *= v
 
+        self.roll_gradient()
+
     def render_hsv(self):
         """
         To be defined by child class
@@ -158,23 +160,3 @@ class HSVEffect(GradientEffect):
         np.subtract(hue, 0.5, out=hue)
         np.divide(hue, 2, out=hue)
         self.array_sin(hue)
-
-    def _roll_hsv(self):
-        if self._config["gradient_roll"] == 0:
-            return
-
-        self._hsv_roll_counter += self._config["gradient_roll"]
-
-        if self._hsv_roll_counter >= 1.0:
-            pixels_to_roll = np.floor(self._hsv_roll_counter)
-            self._hsv_roll_counter -= pixels_to_roll
-
-            if "invert_roll" in self._config:
-                if self._config["invert_roll"]:
-                    pixels_to_roll *= -1
-
-            self.hsv = np.roll(
-                self.hsv,
-                int(pixels_to_roll),
-                axis=0,
-            )
