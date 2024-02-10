@@ -50,11 +50,6 @@ class BladePowerPlus(AudioReactiveEffect, HSVEffect):
                 description="Frequency range for the beat detection",
                 default="Lows (beat+bass)",
             ): vol.In(list(AudioReactiveEffect.POWER_FUNCS_MAPPING.keys())),
-            vol.Optional(
-                "invert_roll",
-                description="Invert the direction of the gradient roll",
-                default=False,
-            ): bool,
         }
     )
 
