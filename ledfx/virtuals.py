@@ -238,7 +238,7 @@ class Virtual:
 
     def _reactivate_effect(self):
         self.clear_transition_effect()
-        self.transitions = Transitions(self.effect_pixel_count)
+        self.transitions = Transitions(self.effective_pixel_count)
         if self._active_effect is not None:
             self._active_effect._deactivate()
             if self.pixel_count > 0:
@@ -353,7 +353,7 @@ class Virtual:
 
                 if self._active_effect is None:
                     self._transition_effect = DummyEffect(
-                        self.effect_pixel_count
+                        self.effective_pixel_count
                     )
                 else:
                     self._transition_effect = self._active_effect
@@ -398,7 +398,7 @@ class Virtual:
                 and self._config["transition_time"] > 0
             ):
                 self._transition_effect = self._active_effect
-                self._active_effect = DummyEffect(self.effect_pixel_count)
+                self._active_effect = DummyEffect(self.effective_pixel_count)
 
                 self.transition_frame_total = (
                     self.refresh_rate * self._config["transition_time"]
@@ -469,7 +469,7 @@ class Virtual:
         Force all pixels in device to color
         Use for pre-clearing in calibration scenarios
         """
-        self.assembled_frame = np.full((self.effect_pixel_count, 3), color)
+        self.assembled_frame = np.full((self.effective_pixel_count, 3), color)
         self.flush(self.assembled_frame)
         self._fire_update_event()
 
@@ -478,7 +478,7 @@ class Virtual:
             frame = self.assembled_frame
 
         self._ledfx.events.fire_event(
-            VirtualUpdateEvent(self.id, self._effect_to_physical_pixels(frame))
+            VirtualUpdateEvent(self.id, self._effective_to_physical_pixels(frame))
         )
 
     def oneshot(self, color, ramp, hold, fade):
@@ -741,7 +741,7 @@ class Virtual:
 
         if self._config["mapping"] == "span":
             # In span mode we can calculate the final pixels once for all segments
-            pixels = self._effect_to_physical_pixels(pixels)
+            pixels = self._effective_to_physical_pixels(pixels)
 
         color_cycle = itertools.cycle(color_list)
 
@@ -775,7 +775,7 @@ class Virtual:
                             device_end,
                         ) in segments:
                             target_physical_len = device_end - device_start + 1
-                            target_effect_len = self._get_effect_pixel_count(
+                            target_effect_len = self._get_effective_pixel_count(
                                 target_physical_len
                             )
                             # In copy mode, we need to scale the effect and afterwards expand the
@@ -784,7 +784,7 @@ class Virtual:
                             seg = interpolate_pixels(
                                 pixels, target_effect_len
                             )[::step]
-                            seg = self._effect_to_physical_pixels(
+                            seg = self._effective_to_physical_pixels(
                                 seg, target_physical_len
                             )
                             if self._os_active:
@@ -1024,13 +1024,13 @@ class Virtual:
             self._reactivate_effect()
 
     @property
-    def effect_pixel_count(self):
+    def effective_pixel_count(self):
         """The number of pixels to calculate by effects.
 
         Can be less than the number of physical pixels (:attr:`~pixel_count`) when
         pixel grouping (:attr:`~group_size`) is activated.
         """
-        return self._get_effect_pixel_count(self.pixel_count)
+        return self._get_effective_pixel_count(self.pixel_count)
 
     @property
     def group_size(self):
@@ -1042,23 +1042,23 @@ class Virtual:
 
         return grouping
 
-    def _get_effect_pixel_count(self, physical_pixel_count):
-        """Calculates the number of effect pixels for a given number of physical pixels, considering pixel grouping."""
+    def _get_effective_pixel_count(self, physical_pixel_count):
+        """Calculates the number of effective pixels for a given number of physical pixels, considering pixel grouping."""
         return int(np.ceil(physical_pixel_count / self.group_size))
 
-    def _effect_to_physical_pixels(self, effect_pixels, pixel_count=None):
-        """Projects an array of effect pixels into an array of pixels for physical rendering, considering pixel grouping."""
+    def _effective_to_physical_pixels(self, effective_pixels, pixel_count=None):
+        """Projects an array of effective pixels into an array of pixels for physical rendering, considering pixel grouping."""
         if self.group_size <= 1:
-            return effect_pixels
+            return effective_pixels
 
         if not pixel_count:
             pixel_count = self.pixel_count
 
-        effect_pixels = np.repeat(effect_pixels, self.group_size, axis=0)[
+        effective_pixels = np.repeat(effective_pixels, self.group_size, axis=0)[
             :pixel_count, :
         ]
 
-        return effect_pixels
+        return effective_pixels
 
 
 class Virtuals:

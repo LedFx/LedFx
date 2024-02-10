@@ -330,14 +330,14 @@ class Effect(BaseRegistry):
         """Attaches an output channel to the effect"""
         with self.lock:
             self._virtual = virtual
-            self.pixels = np.zeros((virtual.effect_pixel_count, 3))
+            self.pixels = np.zeros((virtual.effective_pixel_count, 3))
             # Iterate all the base classes and check to see if the base
             # class has an on_activate method. If so, call it
             valid_classes = list(type(self).__bases__)
             valid_classes.append(type(self))
             for base in valid_classes:
                 if hasattr(base, "on_activate"):
-                    base.on_activate(self, virtual.effect_pixel_count)
+                    base.on_activate(self, virtual.effective_pixel_count)
             self._active = True
             _LOGGER.info(f"Effect {self.NAME} activated.")
 
