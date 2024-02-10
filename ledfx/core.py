@@ -320,11 +320,6 @@ class LedFxCore:
 
         print("Stopping LedFx.")
         try:
-            # 1 = Error
-            # 2 = Direct User Input
-            # 3 = API Request (shutdown)
-            # 4 = Restart (stop then restart ledfx core)
-            # 5 = CI Testing
             _LOGGER.info(self.EXIT_CODES.get(exit_code, "Unknown exit code."))
             # Fire a shutdown event
             self.events.fire_event(LedFxShutdownEvent())
@@ -332,7 +327,6 @@ class LedFxCore:
             await self.http.stop()
 
             # Cancel all the remaining task and wait
-
             tasks = [
                 task
                 for task in asyncio.all_tasks()
