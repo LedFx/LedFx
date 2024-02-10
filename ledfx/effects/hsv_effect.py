@@ -160,4 +160,3 @@ class HSVEffect(GradientEffect):
         np.subtract(hue, 0.5, out=hue)
         np.divide(hue, 2, out=hue)
         self.array_sin(hue)
-
