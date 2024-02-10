@@ -54,6 +54,15 @@ if currently_frozen():
 
 
 class LedFxCore:
+
+    EXIT_CODES = {
+        1: "LedFx encountered an error - Shutting down.",
+        2: "Keyboard interrupt - Shutting down.",
+        3: "Shutdown request via API - Shutting down.",
+        4: "Restart request via API - Restarting.",
+        5: "Shutdown request via CI testing flag - Shutting down.",
+    }
+
     def __init__(
         self,
         config_dir,
@@ -223,9 +232,6 @@ class LedFxCore:
         root_logger = logging.getLogger()
         root_logger.addHandler(logqueue_handler)
 
-    async def flush_loop(self):
-        await asyncio.sleep(0)
-
     def start(self, open_ui=False):
         async_fire_and_forget(self.async_start(open_ui=open_ui), self.loop)
 
@@ -233,7 +239,7 @@ class LedFxCore:
             self.loop.run_forever()
         except KeyboardInterrupt:
             self.loop.call_soon(
-                self.loop.create_task, self.async_stop(exit_code=1)
+                self.loop.create_task, self.async_stop(exit_code=2)
             )
             self.loop.run_forever()
         except BaseException:
@@ -304,7 +310,6 @@ class LedFxCore:
         if self.ci_testing:
             await asyncio.sleep(5)
             self.stop(5)
-        await self.flush_loop()
 
     def stop(self, exit_code):
         async_fire_and_forget(self.async_stop(exit_code), self.loop)
@@ -314,43 +319,49 @@ class LedFxCore:
             return
 
         print("Stopping LedFx.")
+        try:
+            # 1 = Error
+            # 2 = Direct User Input
+            # 3 = API Request (shutdown)
+            # 4 = Restart (stop then restart ledfx core)
+            # 5 = CI Testing
+            _LOGGER.info(self.EXIT_CODES.get(exit_code, "Unknown exit code."))
+            # Fire a shutdown event
+            self.events.fire_event(LedFxShutdownEvent())
+            _LOGGER.info("Stopping HTTP Server...")
+            await self.http.stop()
 
-        # 1 = Error
-        # 2 = Direct User Input
-        # 3 = API Request (shutdown)
-        # 4 = Restart (stop then restart ledfx core)
+            # Cancel all the remaining task and wait
 
-        if exit_code == 1:
-            _LOGGER.info("LedFx encountered an error. Shutting Down.")
-        if exit_code == 2:
-            _LOGGER.info("LedFx Keyboard Interrupt. Shutting Down.")
-        if exit_code == 3:
-            _LOGGER.info("LedFx Shutdown Request via API. Shutting Down.")
-        if exit_code == 4:
-            _LOGGER.info("LedFx is restarting.")
-        if exit_code == 5:
-            _LOGGER.info("LedFx Shutdown via CI Testing Flag.")
-        # Fire a shutdown event and flush the loop
-        self.events.fire_event(LedFxShutdownEvent())
-        await asyncio.sleep(0)
-        _LOGGER.info("Stopping HttpServer...")
-        await self.http.stop()
+            tasks = [
+                task
+                for task in asyncio.all_tasks()
+                if task is not asyncio.current_task()
+            ]
+            if tasks:
+                _LOGGER.debug(
+                    f"Killing {len(tasks)} tasks prior to shutdown..."
+                )
+                # Cancel all tasks concurrently
+                group = asyncio.gather(*tasks, return_exceptions=True)
+                group.cancel()
+                # Wait for all tasks to be cancelled
+                try:
+                    await group
+                except asyncio.CancelledError:
+                    pass
+                _LOGGER.debug("All tasks killed.")
+            # Save the configuration before shutting down
+            save_config(config=self.config, config_dir=self.config_dir)
 
-        # Cancel all the remaining task and wait
-        _LOGGER.info("Killing remaining tasks...")
-        tasks = [
-            task
-            for task in asyncio.all_tasks()
-            if task is not asyncio.current_task()
-        ]
-        list(map(lambda task: task.cancel(), tasks))
+        except Exception as e:
+            _LOGGER.error(f"An error occurred while stopping: {e}")
+            self.exit_code = 1
 
-        # Save the configuration before shutting down
-        save_config(config=self.config, config_dir=self.config_dir)
-
-        _LOGGER.info("Flushing loop...")
-        await self.flush_loop()
-        self.thread_executor.shutdown()
-        self.exit_code = exit_code
-        self.loop.stop()
-        return exit_code
+        finally:
+            self.thread_executor.shutdown()
+            # Don't overwrite error exit code
+            if self.exit_code != 1:
+                self.exit_code = exit_code
+            self.loop.stop()
+            return exit_code
