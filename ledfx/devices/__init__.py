@@ -633,7 +633,7 @@ class Devices(RegistryLoader):
                     self._ledfx.loop, self._ledfx.thread_executor, device_ip
                 )
             except ValueError:
-                _LOGGER.error(f"Discarding device {device_ip}")
+                _LOGGER.warning(f"Discarding device {device_ip}")
                 return
 
             for existing_device in self._ledfx.devices.values():
