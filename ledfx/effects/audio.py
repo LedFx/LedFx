@@ -133,6 +133,7 @@ class AudioInputSource:
 
     def __init__(self, ledfx, config):
         self._ledfx = ledfx
+        self.lock = threading.Lock()
         self.update_config(config)
 
         def shutdown_event(e):
@@ -313,11 +314,12 @@ class AudioInputSource:
             open_audio_stream(default_device)
 
     def deactivate(self):
-        if self._stream:
-            self._stream.stop()
-            self._stream.close()
-            self._stream = None
-        self._is_activated = False
+        with self.lock:
+            if self._stream:
+                self._stream.stop()
+                self._stream.close()
+                self._stream = None
+            self._is_activated = False
         _LOGGER.info("Audio source closed.")
 
     def subscribe(self, callback):
