@@ -49,7 +49,6 @@ class HSVEffect(GradientEffect):
     def render(self):
         # update the timestep, converting ns to s
         self._dt = time.time_ns() - self._start_time
-        self._assert_gradient()
         self.render_hsv()
 
         hsv = np.copy(self.hsv_array)
@@ -64,12 +63,13 @@ class HSVEffect(GradientEffect):
         h *= self.pixel_count - 1
         h = h.astype(int)
         # Grab the colors from the gradient
-        self._assert_gradient()
-        pixels[:] = self._gradient_curve[:, h].T
+        pixels[:] = self.get_gradient()[:, h].T
         # Apply saturation to colors
         pixels += (np.max(pixels, axis=1).reshape(-1, 1) - pixels) * (1 - s)
         # Apply value (brightness) to colors
         pixels *= v
+
+        self.roll_gradient()
 
     def render_hsv(self):
         """
@@ -160,23 +160,3 @@ class HSVEffect(GradientEffect):
         np.subtract(hue, 0.5, out=hue)
         np.divide(hue, 2, out=hue)
         self.array_sin(hue)
-
-    def _roll_hsv(self):
-        if self._config["gradient_roll"] == 0:
-            return
-
-        self._hsv_roll_counter += self._config["gradient_roll"]
-
-        if self._hsv_roll_counter >= 1.0:
-            pixels_to_roll = np.floor(self._hsv_roll_counter)
-            self._hsv_roll_counter -= pixels_to_roll
-
-            if "invert_roll" in self._config:
-                if self._config["invert_roll"]:
-                    pixels_to_roll *= -1
-
-            self.hsv = np.roll(
-                self.hsv,
-                int(pixels_to_roll),
-                axis=0,
-            )

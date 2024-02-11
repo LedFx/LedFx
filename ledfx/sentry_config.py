@@ -27,7 +27,8 @@ is_release = os.getenv("IS_RELEASE", "false").lower()
 if is_release == "false":
     _LOGGER.debug("Running in development mode.")
     sentry_dsn = "https://b192934eebd517c86bf7e9c512b3888a@o482797.ingest.sentry.io/4506350241841152"
-    sample_rate = 1
+    # Change sample_rate to 1 to look at http calls, so all rest traffic stats
+    sample_rate = 0
 
     try:
         from subprocess import PIPE, Popen

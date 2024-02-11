@@ -673,9 +673,11 @@ class AudioAnalysisSource(AudioInputSource):
 
     def get_freq_power(self, i, filtered=True):
         if filtered:
-            return self.freq_power_filter.value[i]
+            value = self.freq_power_filter.value[i]
         else:
-            return self.freq_power_raw[i]
+            value = self.freq_power_raw[i]
+
+        return value if not np.isnan(value) else 0.0
 
     def beat_power(self, filtered=True):
         """
@@ -897,6 +899,18 @@ class AudioReactiveEffect(Effect):
         new = np.linspace(0, 1, size)
         return (new, old)
 
+    def melbank_no_nan(self, melbank):
+        # Check for NaN values in the melbank array, replace with 0 in place
+        # Difficult to determine why this happens, but it seems to be related to
+        # the audio input device.
+        # TODO: Investigate why NaNs are present in the melbank array for some people/devices
+        if np.isnan(melbank).any():
+            _LOGGER.warning(
+                "NaN values detected in the melbank array and replaced with 0."
+            )
+            # Replace NaN values with 0
+            np.nan_to_num(melbank, copy=False)
+
     @lru_cache(maxsize=None)
     def melbank(self, filtered=False, size=0):
         """
@@ -915,6 +929,9 @@ class AudioReactiveEffect(Effect):
             melbank = self.audio.melbanks.melbanks[self._selected_melbank][
                 self._melbank_min_idx : self._melbank_max_idx
             ]
+
+        self.melbank_no_nan(melbank)
+
         if size and (self._input_mel_length != size):
             return np.interp(*self._melbank_interp_linspaces(size), melbank)
         else:
@@ -929,14 +946,6 @@ class AudioReactiveEffect(Effect):
         mel_length = len(melbank)
         splits = tuple(map(lambda i: int(i * mel_length), [0.2, 0.5]))
 
-        # Check for NaN values in the melbank array
-        # Difficult to determine why this happens, but it seems to be related to
-        # the audio input device. If NaNs are present, replace them with 0
-        # TODO: Investigate why NaNs are present in the melbank array for some people/devices
-        if np.isnan(melbank).any():
-            _LOGGER.warning(
-                "NaN values detected in the melbank array and replaced with 0."
-            )
-            # Replace NaN values with 0
-            melbank = np.nan_to_num(melbank)
+        self.melbank_no_nan(melbank)
+
         return np.split(melbank, splits)
