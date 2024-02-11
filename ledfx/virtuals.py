@@ -233,7 +233,7 @@ class Virtual:
             "_devices",
             "_segments_by_device",
             "effective_pixel_count",
-            "group_size"
+            "group_size",
         ]:
             if hasattr(self, prop):
                 delattr(self, prop)
