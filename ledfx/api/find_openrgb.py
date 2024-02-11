@@ -30,7 +30,7 @@ class FindOpenRGBDevicesEndpoint(RestEndpoint):
             error_message = (
                 f"Unable to connect to OpenRGB server at localhost:6742, {e}."
             )
-            _LOGGER.error(error_message)
+            _LOGGER.warning(error_message)
             return await self.request_success(
                 "warning",
                 error_message,
@@ -83,7 +83,7 @@ class FindOpenRGBDevicesEndpoint(RestEndpoint):
             error_message = (
                 f"Unable to connect to OpenRGB server at {server}:{port}, {e}."
             )
-            _LOGGER.error(error_message)
+            _LOGGER.warning(error_message)
             return await self.request_success(
                 "warning",
                 error_message,
