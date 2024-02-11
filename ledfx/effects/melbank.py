@@ -451,6 +451,7 @@ class Melbanks:
         self._ledfx = ledfx
         self._audio = audio
         self.update_config(config)
+        self.dev_enabled = self._ledfx.dev_enabled()
 
     def update_config(self, config):
         # validate config
@@ -480,6 +481,7 @@ class Melbanks:
         self.melbanks_filtered = tuple(
             np.zeros(self.mel_len) for _ in range(self.mel_count)
         )
+        self.minimum_volume = self._audio._config["min_volume"]
 
     def __call__(self):
         # fastest way i could think of.
@@ -487,23 +489,26 @@ class Melbanks:
         # melbank function is given the data buffer to operate directly on
         # rather than returning and assigning the data.
         frequency_domain = self._audio._frequency_domain
-        volume = (
-            self._audio.volume(filtered=True)
-            > self._audio._config["min_volume"]
+        # Only do the melbank processing if the volume is above the threshold
+        volume_threshold = (
+            self._audio.volume(filtered=True) > self.minimum_volume
         )
 
-        for i, proc in enumerate(self.melbank_processors):
-            if volume:
+        if volume_threshold:
+            for i, proc in enumerate(self.melbank_processors):
                 proc(
                     frequency_domain,
                     self.melbanks[i],
                     self.melbanks_filtered[i],
                 )
-            else:
-                self.melbanks[i][:] = 0
-                self.melbanks_filtered[i][:] = 0
+        else:
+            for melbank in self.melbanks:
+                melbank[:] = 0
+            for melbank_filtered in self.melbanks_filtered:
+                melbank_filtered[:] = 0
 
-            if self._ledfx.dev_enabled():
+        if self.dev_enabled:
+            for i in range(len(self.melbank_processors)):
                 self._ledfx.events.fire_event(
                     GraphUpdateEvent(
                         f"melbank_{i}",
