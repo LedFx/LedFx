@@ -232,6 +232,8 @@ class Virtual:
             "refresh_rate",
             "_devices",
             "_segments_by_device",
+            "effective_pixel_count",
+            "group_size"
         ]:
             if hasattr(self, prop):
                 delattr(self, prop)
@@ -1013,6 +1015,7 @@ class Virtual:
                     if _config["grouping"] != self._config["grouping"]:
                         # The effect needs to be reactivated later after the config has been applied
                         reactivate_effect = True
+                        self.invalidate_cached_props()
 
         setattr(self, "_config", _config)
 
@@ -1027,7 +1030,7 @@ class Virtual:
         if reactivate_effect:
             self._reactivate_effect()
 
-    @property
+    @cached_property
     def effective_pixel_count(self):
         """The number of pixels to calculate by effects.
 
@@ -1036,7 +1039,7 @@ class Virtual:
         """
         return self._get_effective_pixel_count(self.pixel_count)
 
-    @property
+    @cached_property
     def group_size(self):
         """The number of physical pixels to group into virtual effect pixels."""
         grouping = self._config["grouping"]
