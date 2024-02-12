@@ -5,17 +5,18 @@ spec_root = os.path.abspath(SPECPATH)
 
 venv_root = os.path.abspath(os.path.join(SPECPATH, '..'))
 block_cipher = None
-print(venv_root)
 
-# if this is a release, create prod.env for the packaged binaries to read from
+
+# if this is a release, create prod.env for the packaged binaries to read from and hide the console
 github_ref = os.getenv('GITHUB_REF')
 if github_ref and 'refs/tags/' in github_ref:
     with open('prod.env', 'w') as file:
         file.write('IS_RELEASE = true')
+    SHOW_CONSOLE = False
 else:
     with open('prod.env', 'w') as file:
         file.write('IS_RELEASE = false')
-
+    SHOW_CONSOLE = True
 a = Analysis([f'{spec_root}\\ledfx\\__main__.py'],
              pathex=[f'{spec_root}', f'{spec_root}\\ledfx'],
              binaries=[],
@@ -39,7 +40,7 @@ exe = EXE(pyz,
           bootloader_ignore_signals=False,
           strip=False,
           upx=True,
-          console=False,
+          console=SHOW_CONSOLE,
           icon=f'{spec_root}\\ledfx_assets\\discord.ico')
 coll = COLLECT(exe,
                a.binaries,
