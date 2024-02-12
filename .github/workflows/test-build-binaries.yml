@@ -413,10 +413,15 @@ jobs:
       - name: Install Poetry
         run: |
           curl -sSL https://install.python-poetry.org | python3 -
-      - name: Create prod.env
+      - name: Create and populate ledfx.env
         run: |
-          echo "IS_RELEASE = true" >> prod.env
-      - name: Build a binary wheel and  sdist
+          echo "GITHUB_SHA = \"${{ github.sha }}\"" >> ledfx.env
+          if [[ "${{ startsWith(github.ref, 'refs/tags/') }}" == "true" ]]; then
+            echo "IS_RELEASE = true" >> ledfx.env
+          else
+            echo "IS_RELEASE = false" >> ledfx.env
+          fi
+      - name: Build a binary wheel and sdist
         run: |
           poetry build
       - name: Package the wheel

@@ -16,7 +16,7 @@ include = [
     "AUTHORS.rst",
     "CHANGELOG.rst",
     "LICENSE.txt",
-    "prod.env"
+    "ledfx.env"
 ]
 
 [tool.poetry.scripts]
