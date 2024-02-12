@@ -1,4 +1,5 @@
 import logging
+import os
 
 from aiohttp import web
 
@@ -22,6 +23,8 @@ class InfoEndpoint(RestEndpoint):
             "url": self._ledfx.http.base_url,
             "name": "LedFx Controller",
             "version": PROJECT_VERSION,
+            "github_sha": os.getenv("GITHUB_SHA", "unknown"),
+            "is_release": os.getenv("IS_RELEASE", "false").lower(),
             "developer_mode": self._ledfx.config["dev_mode"],
         }
         return await self.bare_request_success(response)
