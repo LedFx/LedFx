@@ -110,7 +110,7 @@ class AudioInputSource:
         default_device_index = AudioInputSource.default_device_index()
         valid_device_indexes = AudioInputSource.valid_device_indexes()
         input_devices = AudioInputSource.input_devices()
-
+        # melbanks = Melbanks.CONFIG_SCHEMA
         return vol.Schema(
             {
                 vol.Optional("sample_rate", default=60): int,
@@ -194,50 +194,26 @@ class AudioInputSource:
             )
             device_idx = default_device
 
-        # hostapis = self._audio.query_hostapis()
-        # devices = self._audio.query_devices()
-        # default_api = self._audio.default.hostapi
-
-        # Show device and api info in logger
-        # _LOGGER.debug("Audio Input Devices:")
-        # for api_idx, api in enumerate(hostapis):
-        #     _LOGGER.debug(
-        #         "Host API: {} {}".format(
-        #             api["name"],
-        #             "[DEFAULT]" if api_idx == default_api else "",
-        #         )
-        #     )
-        #     for idx in api["devices"]:
-        #         device = devices[idx]
-        #         if device["max_input_channels"] > 0:
-        #             _LOGGER.debug(
-        #                 "    [{}] {} {} {}".format(
-        #                     idx,
-        #                     device["name"],
-        #                     "[DEFAULT]" if idx == default_device else "",
-        #                     "[SELECTED]" if idx == device_idx else "",
-        #                 )
-        #             )
-
-        # old, do not use
-        # self.pre_emphasis.set_biquad(1., -self._config['pre_emphasis'], 0, 0, 0)
-
-        # USE THESE FOR SCOTT_MEL OR OTHERS
-        # self.pre_emphasis.set_biquad(1.3662, -1.9256, 0.5621, -1.9256, 0.9283)
-
-        # USE THESE FOR MATT_MEl
-        # weaker bass, good for vocals, highs
-        # self.pre_emphasis.set_biquad(0.87492, -1.74984, 0.87492, -1.74799, 0.75169)
-        # bass heavier overall more balanced
-        # self.pre_emphasis.set_biquad(
-        #     0.85870, -1.71740, 0.85870, -1.71605, 0.71874
-        # )
-
         # Setup a pre-emphasis filter to balance the input volume of lows to highs
         self.pre_emphasis = aubio.digital_filter(3)
-        self.pre_emphasis.set_biquad(0.8268, -1.6536, 0.8268, -1.6536, 0.6536)
+        # depending on the coeffs type, we need to use different pre_emphasis values to make em work better. allegedly.
+        selected_coeff = self._ledfx.config["melbanks"]["coeffs_type"]
+        if selected_coeff == "matt_mel":
+            _LOGGER.debug("Using matt_mel settings for pre-emphasis.")
+            self.pre_emphasis.set_biquad(
+                0.8268, -1.6536, 0.8268, -1.6536, 0.6536
+            )
+        elif selected_coeff == "scott_mel":
+            _LOGGER.debug("Using scott_mel settings for pre-emphasis.")
+            self.pre_emphasis.set_biquad(
+                1.3662, -1.9256, 0.5621, -1.9256, 0.9283
+            )
+        else:
+            _LOGGER.debug("Using generic settings for pre-emphasis")
+            self.pre_emphasis.set_biquad(
+                0.85870, -1.71740, 0.85870, -1.71605, 0.71874
+            )
 
-        # self.pre_emphasis = None,
         freq_domain_length = (self._config["fft_size"] // 2) + 1
 
         self._raw_audio_sample = np.zeros(
@@ -534,7 +510,7 @@ class AudioAnalysisSource(AudioInputSource):
         self.freq_mel_indexes = []
 
         for freq in self.freq_max_mels:
-            assert self.melbanks._config["max_frequencies"][2] >= freq
+            assert self.melbanks.melbanks_config["max_frequencies"][2] >= freq
 
             self.freq_mel_indexes.append(
                 next(
@@ -853,11 +829,11 @@ class AudioReactiveEffect(Effect):
             (
                 i
                 for i, x in enumerate(
-                    self.audio.melbanks._config["max_frequencies"]
+                    self.audio.melbanks.melbanks_config["max_frequencies"]
                 )
                 if x >= self._virtual.frequency_range.max
             ),
-            len(self.audio.melbanks._config["max_frequencies"]),
+            len(self.audio.melbanks.melbanks_config["max_frequencies"]),
         )
 
     @cached_property

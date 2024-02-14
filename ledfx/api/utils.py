@@ -22,6 +22,14 @@ PERMITTED_KEYS = {
     "melbanks": (
         "max_frequencies",
         "min_frequency",
+        "peak_isolation",
+        "coeffs_type",
+        "samples",
+    ),
+    "melbank_collection": (
+        "name",
+        "min_frequency",
+        "max_frequency",
     ),
     "wled_preferences": tuple(_default_wled_settings.keys()),
     "core": (
@@ -36,6 +44,7 @@ PERMITTED_KEYS = {
         "transmission_mode",
         "global_transitions",
         "global_brightness",
+        "melbank_collection",
     ),
 }
 

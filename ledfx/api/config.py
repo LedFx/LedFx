@@ -262,4 +262,6 @@ class ConfigEndpoint(RestEndpoint):
         except (KeyError, vol.MultipleInvalid) as msg:
             error_message = f"Error updating config: {msg}"
             _LOGGER.warning(error_message)
-            return await self.internal_error("error", error_message)
+            return await self.internal_error(
+                type="error", message=error_message
+            )

@@ -7,7 +7,7 @@ from ledfx.api import RestEndpoint
 from ledfx.api.utils import PERMITTED_KEYS, convertToJsonSchema
 from ledfx.config import CORE_CONFIG_SCHEMA, WLED_CONFIG_SCHEMA
 from ledfx.effects.audio import AudioInputSource
-from ledfx.effects.melbank import Melbanks
+from ledfx.effects.melbank import Melbank, Melbanks
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -22,6 +22,7 @@ class SchemaEndpoint(RestEndpoint):
         "virtuals",
         "audio",
         "melbanks",
+        "melbank_collection",
         "wled_preferences",
         "core",
     }
@@ -125,14 +126,6 @@ class SchemaEndpoint(RestEndpoint):
                         ),
                         **{"permitted_keys": PERMITTED_KEYS["audio"]},
                     }
-                    # | { "properties": {
-                    #     "audio_device": {
-                    #         "enum": {
-                    #             "1337": "Blade-WebAudio"
-                    #         }
-                    #     }
-                    # } }
-                    ,
                 }
 
             elif schema == "melbanks":
@@ -145,7 +138,20 @@ class SchemaEndpoint(RestEndpoint):
                         **{"permitted_keys": PERMITTED_KEYS["melbanks"]},
                     },
                 }
-
+            elif schema == "melbank_collection":
+                # Get melbank collection schema
+                response["melbank_collection"] = {
+                    "schema": {
+                        **convertToJsonSchema(
+                            Melbank.CONFIG_SCHEMA,
+                        ),
+                        **{
+                            "permitted_keys": PERMITTED_KEYS[
+                                "melbank_collection"
+                            ]
+                        },
+                    },
+                }
             elif schema == "wled_preferences":
                 # Get wled schema
                 response["wled_preferences"] = {
