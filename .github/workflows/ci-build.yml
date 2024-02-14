@@ -88,7 +88,7 @@ jobs:
         if: always()
         with:
           name: ledfx-log-${{ runner.os }}-${{ runner.arch }}-py${{ matrix.python }}.log
-          path: ${{ github.workspace }}/debug_config/LedFx.log
+          path: ${{ github.workspace }}/debug_config/ledfx.log
 
   build-ledfx-windows:
     name: Build LedFx (Windows)
@@ -166,7 +166,7 @@ jobs:
         if: always()
         with:
           name: ledfx-log-${{ runner.os }}-${{ runner.arch }}-py${{ matrix.python }}.log
-          path: ${{ github.workspace }}/debug_config/LedFx.log
+          path: ${{ github.workspace }}/debug_config/ledfx.log
   build-ledfx-osx:
     name: Build LedFx (OS X)
     runs-on: macos-latest
@@ -237,7 +237,7 @@ jobs:
         if: always()
         with:
           name: ledfx-log-${{ runner.os }}-${{ runner.arch }}-py${{ matrix.python }}.log
-          path: ${{ github.workspace }}/debug_config/LedFx.log
+          path: ${{ github.workspace }}/debug_config/ledfx.log
   build-ledfx-osx-m1:
     name: Build LedFx (OS X) (Apple Silicon)
     needs: [build-ledfx-linux, build-ledfx-windows, build-ledfx-osx]
@@ -309,6 +309,6 @@ jobs:
         if: always()
         with:
           name: ledfx-log-${{ runner.os }}-${{ runner.arch }}-py${{ matrix.python }}.log
-          path: ${{ github.workspace }}/debug_config/LedFx.log
+          path: ${{ github.workspace }}/debug_config/ledfx.log
 
 

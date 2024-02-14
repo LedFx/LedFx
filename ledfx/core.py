@@ -19,11 +19,11 @@ from ledfx.color import (
 )
 from ledfx.config import (
     Transmission,
+    create_backup,
     get_ssl_certs,
     load_config,
     remove_virtuals_active_effects,
     save_config,
-    try_create_backup,
 )
 from ledfx.devices import Devices
 from ledfx.effects import Effects
@@ -78,17 +78,13 @@ class LedFxCore:
         self.config_dir = config_dir
 
         if clear_config:
-            _LOGGER.warning(
-                "Clearing LedFx configuration, existing config.json will be backed up and deleted"
-            )
-            try_create_backup("DELETE")
+            _LOGGER.warning("Clearing LedFx config.")
+            create_backup(config_dir, "DELETE")
 
         self.config = load_config(config_dir)
 
         if clear_effects:
-            _LOGGER.warning(
-                "Clearing LedFx active virtual effects, virtuals will be defaulted to off"
-            )
+            _LOGGER.warning("Clearing active effects.")
             remove_virtuals_active_effects(self.config)
 
         self.config["ledfx_presets"] = ledfx_presets
@@ -156,7 +152,7 @@ class LedFxCore:
             webbrowser.get().open(url)
         except webbrowser.Error:
             _LOGGER.warning(
-                f"Failed to open default web browser. To access LedFx's web ui, open {url} in your browser. To prevent this error in future, configure a default browser for your system."
+                f"Failed to open default web browser. To access LedFx's web ui, open {url} in your browser."
             )
 
     def setup_icon_menu(self):

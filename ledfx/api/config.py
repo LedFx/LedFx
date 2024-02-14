@@ -9,10 +9,10 @@ from ledfx.api.utils import PERMITTED_KEYS
 from ledfx.config import (
     CORE_CONFIG_SCHEMA,
     WLED_CONFIG_SCHEMA,
+    create_backup,
     migrate_config,
     parse_version,
     save_config,
-    try_create_backup,
 )
 from ledfx.consts import CONFIGURATION_VERSION
 from ledfx.effects.audio import AudioInputSource
@@ -88,7 +88,7 @@ class ConfigEndpoint(RestEndpoint):
         Returns:
             web.Response: The response indicating the success of the operation.
         """
-        try_create_backup("DELETE")
+        create_backup(self._ledfx.config_dir, "DELETE")
         self._ledfx.config = CORE_CONFIG_SCHEMA({})
 
         save_config(
@@ -98,7 +98,7 @@ class ConfigEndpoint(RestEndpoint):
 
         self._ledfx.loop.call_soon_threadsafe(self._ledfx.stop, 4)
         return await self.request_success(
-            "success", "Config reset to default values"
+            "success", "Config reset to default values, LedFx restarting."
         )
 
     async def post(self, request: web.Request) -> web.Response:
@@ -134,9 +134,9 @@ class ConfigEndpoint(RestEndpoint):
                         f"Failed to migrate import config to the new standard: {e}",
                     )
 
-            # if we got this far, we are happy with and commiting to the import config
+            # if we got this far, we are happy with and committing to the import config
             # so backup the old one
-            try_create_backup("IMPORT")
+            create_backup(self._ledfx.config_dir, "IMPORT")
 
             audio_config = AudioInputSource.AUDIO_CONFIG_SCHEMA.fget()(
                 config.pop("audio", {})
