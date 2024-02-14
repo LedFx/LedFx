@@ -38,6 +38,7 @@ import PIL.Image as Image
 import PIL.ImageFont as ImageFont
 import requests
 import voluptuous as vol
+from dotenv import load_dotenv
 
 from ledfx.config import save_config
 from ledfx.consts import LEDFX_ASSETS_PATH
@@ -628,6 +629,37 @@ async def resolve_destination(
             # return dest[0][4][0]
         except socket.gaierror as e:
             raise ValueError(f"Failed to resolve destination {cleaned_dest}")
+
+
+def read_ledfx_dotenv():
+    """
+    Loads the environment variables from the ledfx.env file.
+
+    In normal development, this does not exist and thus does nothing.
+
+    During the CI build and release process, the ledfx.env file is created and populated with:
+
+    IS_RELEASE = [true|false]
+    GITHUB_SHA = [commit hash]
+
+    It is then packaged in the ledfx folder for distribution.
+
+    If the code is running from a frozen executable, it loads the .env file from the executable's directory.
+    Otherwise, it loads the .env file from the parent directory of the current script.
+
+
+    """
+    extDataDir = os.path.dirname(os.path.realpath(__file__))
+
+    if currently_frozen():
+        extDataDir = sys._MEIPASS
+        path_to_load = os.path.join(extDataDir, "ledfx.env")
+    else:
+        parent_dir = os.path.dirname(extDataDir)
+        path_to_load = os.path.join(parent_dir, "ledfx.env")
+    if os.path.exists(path_to_load):
+        load_dotenv(dotenv_path=path_to_load)
+        _LOGGER.debug(f"Loaded dotenv from {path_to_load}")
 
 
 def currently_frozen():

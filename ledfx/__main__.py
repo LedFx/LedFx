@@ -14,6 +14,8 @@ import os
 import sys
 from logging.handlers import RotatingFileHandler
 
+from ledfx.sentry_config import setup_sentry
+
 try:
     import psutil
 
@@ -29,6 +31,7 @@ from ledfx.utils import (
     currently_frozen,
     get_icon_path,
     log_packages,
+    read_ledfx_dotenv,
 )
 
 
@@ -216,11 +219,12 @@ def parse_args():
 
 def main():
     """Main entry point allowing external calls"""
+
     args = parse_args()
     config_helpers.ensure_config_directory(args.config)
     setup_logging(args.loglevel, config_dir=args.config)
     config_helpers.load_logger()
-
+    read_ledfx_dotenv()
     if _LOGGER.isEnabledFor(logging.DEBUG):
         log_packages()
     check_optional_dependencies()
@@ -248,7 +252,7 @@ def main():
             p.nice(15)
 
     if args.offline_mode is False:
-        import ledfx.sentry_config  # noqa: F401
+        setup_sentry()
 
     if args.sentry_test:
         """This will crash LedFx and submit a Sentry error if Sentry is configured"""
