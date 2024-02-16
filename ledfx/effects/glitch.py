@@ -95,7 +95,11 @@ class Glitch(AudioReactiveEffect, HSVEffect):
         np.multiply(s1, s2, out=s1)
         self.array_triangle(s1)
         np.subtract(1, s1, out=s1)
-        s1 = np.clip(s1, self.config["saturation_threshold"], 1)
+        # np.clip is slower than array slicing on large arrays
+        s1[s1 < self._config["saturation_threshold"]] = self._config[
+            "saturation_threshold"
+        ]
+        s1[s1 > 1] = 1
         self.hsv_array[:, 0] = h
         self.hsv_array[:, 1] = s1
         self.hsv_array[:, 2] = 1
