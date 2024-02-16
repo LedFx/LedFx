@@ -41,7 +41,7 @@ import voluptuous as vol
 from dotenv import load_dotenv
 
 from ledfx.config import save_config
-from ledfx.consts import LEDFX_ASSETS_PATH
+from ledfx.consts import LEDFX_ASSETS_PATH, PROJECT_VERSION
 
 # from asyncio import coroutines, ensure_future
 
@@ -1743,3 +1743,64 @@ def is_snake_case(string) -> bool:
         bool: True if the string is in snake_case format, False otherwise.
     """
     return re.match("^[a-z][a-z_]*[a-z]$", string) is not None
+
+
+class UpdateChecker:
+    _update_url = "https://api.github.com/repos/LedFx/LedFx/releases/latest"
+
+    _latest_version = None
+    _release_age = None
+    _release_url = None
+    _update_check_succeeded = None
+
+    @staticmethod
+    def get_release_information():
+        try:
+            response = requests.get(UpdateChecker._update_url)
+            response.raise_for_status()
+            data = response.json()
+            UpdateChecker._latest_version = data["tag_name"].replace("v", "")
+            UpdateChecker._release_age = (
+                datetime.datetime.now()
+                - datetime.datetime.strptime(
+                    data["published_at"], "%Y-%m-%dT%H:%M:%SZ"
+                )
+            ).days
+            UpdateChecker._release_url = data["html_url"]
+            UpdateChecker._update_check_succeeded = True
+        except requests.RequestException as e:
+            _LOGGER.info(f"Failed to check for updates: {e}")
+            UpdateChecker._update_check_succeeded = False
+            return False
+
+        return True
+
+    @staticmethod
+    def _get_attribute_if_update_succeeded(attribute):
+        if not UpdateChecker._update_check_succeeded:
+            return None
+        return attribute
+
+    @staticmethod
+    def get_latest_version():
+        return UpdateChecker._get_attribute_if_update_succeeded(
+            UpdateChecker._latest_version
+        )
+
+    @staticmethod
+    def get_release_age():
+        return UpdateChecker._get_attribute_if_update_succeeded(
+            UpdateChecker._release_age
+        )
+
+    @staticmethod
+    def get_release_url():
+        return UpdateChecker._get_attribute_if_update_succeeded(
+            UpdateChecker._release_url
+        )
+
+    @staticmethod
+    def update_available():
+        return UpdateChecker._get_attribute_if_update_succeeded(
+            PROJECT_VERSION != UpdateChecker.get_latest_version()
+        )

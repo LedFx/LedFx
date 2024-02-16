@@ -185,7 +185,7 @@ def parse_args():
         "--offline",
         dest="offline_mode",
         action="store_true",
-        help="Disable sentry crash logger",
+        help="Disable crash logger and auto update checks",
     )
     parser.add_argument(
         "--sentry-crash-test",
@@ -304,6 +304,7 @@ def entry_point(icon=None):
             ci_testing=args.ci_smoke_test,
             clear_config=args.clear_config,
             clear_effects=args.clear_effects,
+            offline_mode=args.offline_mode,
         )
 
         exit_code = ledfx.start(open_ui=args.open_ui)

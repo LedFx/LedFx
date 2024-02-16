@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import os
 import sys
 import time
 import warnings
@@ -26,6 +27,7 @@ from ledfx.config import (
     remove_virtuals_active_effects,
     save_config,
 )
+from ledfx.consts import PROJECT_VERSION
 from ledfx.devices import Devices
 from ledfx.effects import Effects
 from ledfx.effects.math import interpolate_pixels
@@ -42,6 +44,7 @@ from ledfx.presets import ledfx_presets
 from ledfx.scenes import Scenes
 from ledfx.utils import (
     RollingQueueHandler,
+    UpdateChecker,
     UserDefaultCollection,
     async_fire_and_forget,
     currently_frozen,
@@ -74,6 +77,7 @@ class LedFxCore:
         ci_testing=False,
         clear_config=False,
         clear_effects=False,
+        offline_mode=False,
     ):
 
         self.icon = icon
@@ -94,7 +98,7 @@ class LedFxCore:
         self.port = port if port else self.config["port"]
         self.port_s = port_s if port_s else self.config["port_s"]
         self.ci_testing = ci_testing
-
+        self.offline_mode = offline_mode
         if sys.platform == "win32":
             self.loop = asyncio.ProactorEventLoop()
         else:
@@ -126,6 +130,7 @@ class LedFxCore:
         self.http = HttpServer(
             ledfx=self, host=self.host, port=self.port, port_s=self.port_s
         )
+
         self.exit_code = None
 
     def handle_base_configuration_update(self, event):
@@ -177,7 +182,14 @@ class LedFxCore:
         import pystray
 
         self.icon.menu = pystray.Menu(
+            pystray.MenuItem(
+                f"LedFx - {PROJECT_VERSION}", None, enabled=False
+            ),
+            pystray.Menu.SEPARATOR,
             pystray.MenuItem("Open", self.open_ui, default=True),
+            pystray.MenuItem(
+                "Check for Update", self.check_and_notify_updates
+            ),
             pystray.MenuItem("Quit Ledfx", self.stop),
         )
 
@@ -251,6 +263,56 @@ class LedFxCore:
         logqueue_handler.addFilter(log_filter)
         root_logger = logging.getLogger()
         root_logger.addHandler(logqueue_handler)
+
+    def check_and_notify_updates(self, show_check_notification=None):
+        """
+        Checks for updates of LedFx and notifies the user if a new version is available.
+
+        Args:
+            show_check_notification (object): An optional parameter that is never called with any specific value.
+                When called via pystray, it is an icon object. This behavior is unintended but functional.
+
+        Returns:
+            None
+
+        Raises:
+            None
+        """
+
+        if show_check_notification:
+            if self.icon and self.icon.HAS_NOTIFICATION:
+                self.icon.notify("Checking for updates...", "LedFx")
+        is_release = os.getenv("IS_RELEASE", "false").lower()
+        if is_release == "false":
+            _LOGGER.info("Not checking for updates - not a release.")
+            return
+        _LOGGER.info("Checking for updates...")
+        if UpdateChecker.get_release_information():
+            if UpdateChecker.update_available():
+                latest_version = UpdateChecker.get_latest_version()
+                release_url = UpdateChecker.get_release_url()
+                _LOGGER.warning(
+                    f"New version of LedFx available: {latest_version} - {release_url}"
+                )
+
+                if self.icon and self.icon.HAS_NOTIFICATION:
+                    self.icon.notify(
+                        f"New version of LedFx available: {latest_version}",
+                        "LedFx",
+                    )
+                    try:
+                        webbrowser.get().open(release_url)
+                    except webbrowser.Error:
+                        pass
+            else:
+                _LOGGER.info("LedFx is up to date.")
+        else:
+            _LOGGER.warning("Unable to get update information.")
+            if show_check_notification:
+                if self.icon and self.icon.HAS_NOTIFICATION:
+                    self.icon.notify(
+                        "Unable to get update information", "LedFx"
+                    )
 
     def start(self, open_ui=False):
         async_fire_and_forget(self.async_start(open_ui=open_ui), self.loop)
@@ -330,6 +392,9 @@ class LedFxCore:
         if self.ci_testing:
             await asyncio.sleep(5)
             self.stop(5)
+
+        if not self.offline_mode:
+            self.check_and_notify_updates()
 
     def stop(self, exit_code):
         async_fire_and_forget(self.async_stop(exit_code), self.loop)
