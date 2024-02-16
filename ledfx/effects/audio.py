@@ -359,7 +359,7 @@ class AudioInputSource:
             processed_audio_sample = raw_sample
 
         if len(processed_audio_sample) != out_sample_len:
-            _LOGGER.warning(
+            _LOGGER.debug(
                 f"Discarded malformed audio frame - {len(processed_audio_sample)} samples, expected {out_sample_len}"
             )
             return
