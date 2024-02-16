@@ -23,6 +23,11 @@ class Glitch(AudioReactiveEffect, HSVEffect):
                 description="Audio Reactive modifier",
                 default=0.2,
             ): vol.All(vol.Coerce(float), vol.Range(min=0.00001, max=1.0)),
+            vol.Optional(
+                "saturation_threshold",
+                description="Ensure the saturation is above this value",
+                default=1,
+            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
         }
     )
 
@@ -90,7 +95,7 @@ class Glitch(AudioReactiveEffect, HSVEffect):
         np.multiply(s1, s2, out=s1)
         self.array_triangle(s1)
         np.subtract(1, s1, out=s1)
-
+        s1 = np.clip(s1, self.config["saturation_threshold"], 1)
         self.hsv_array[:, 0] = h
         self.hsv_array[:, 1] = s1
         self.hsv_array[:, 2] = 1
