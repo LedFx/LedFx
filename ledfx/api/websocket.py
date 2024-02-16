@@ -138,7 +138,6 @@ class WebsocketConnection:
 
         This method is an asynchronous write loop that pulls messages from the sender queue and sends them over the websocket connection.
         It continuously checks for new messages in the queue until the websocket connection is closed.
-        If a message is None, it breaks the loop and stops sending messages.
         If there is an error serializing the message to JSON, it logs an error message.
         If the websocket connection is closed by the client, it logs a message and breaks the loop.
         """
