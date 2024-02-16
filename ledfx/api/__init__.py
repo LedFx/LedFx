@@ -135,7 +135,7 @@ class RestEndpoint(BaseRegistry):
         return web.json_response(data=response, status=resp_code)
 
     async def request_success(
-        self, type=None, message=None, resp_code=200
+        self, type=None, message=None, data=None, resp_code=200
     ) -> web.Response:
         """
         Returns a JSON response indicating a successful request.
@@ -161,6 +161,8 @@ class RestEndpoint(BaseRegistry):
                 "type": type,
                 "reason": message,
             }
+        if data:
+            response["data"] = data
         return web.json_response(data=response, status=resp_code)
 
     async def bare_request_success(self, payload) -> web.Response:
