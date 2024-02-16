@@ -35,6 +35,21 @@ CONFIG_BACKUP_REASONS = {
     "DELETE": "Config deleted. Backup Created.",
 }
 
+# Some core config keys that don't need a restart to take effect - list them here to use elsewhere
+CORE_CONFIG_KEYS_NO_RESTART = [
+    "global_brightness",
+    "create_segments",
+    "scan_on_startup",
+    "user_presets",
+    "visualisation_maxlen",
+    "visualisation_fps",
+]
+# Collection of keys that are used for visualisation configuration - used to check if we need to restart the visualisation event listeners
+VISUALISATION_CONFIG_KEYS = [
+    "visualisation_fps",
+    "visualisation_maxlen",
+]
+
 
 # Transmission types for pixel visualisation on frontend
 class Transmission:
