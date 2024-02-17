@@ -25,6 +25,11 @@ BASE_MESSAGE_SCHEMA = vol.Schema(
     },
     extra=vol.ALLOW_EXTRA,
 )
+# Not all events are able to be subscribed to by the websocket
+# This dict show the events that are not subscribable and what event should be used instead
+NON_SUBSCRIBABLE_EVENTS = {
+    "device_update": "Use visualisation_update instead",
+}
 
 # TODO: Have a more well defined registration and a more componetized solution.
 # Could do something like have Device actually provide the handler for Device
@@ -52,9 +57,8 @@ class WebsocketEndpoint(RestEndpoint):
         try:
             return await WebsocketConnection(self._ledfx).handle(request)
         except ConnectionResetError:
-            _LOGGER.debug(
-                "Connection Reset Error on Websocket Connection - retrying."
-            )
+            _LOGGER.debug("Connection Reset Error on Websocket Connection.")
+            return self.internal_error("Connection Reset Error.")
 
 
 class WebsocketConnection:
@@ -67,18 +71,29 @@ class WebsocketConnection:
         self._sender_queue = asyncio.Queue(maxsize=MAX_PENDING_MESSAGES)
 
     def close(self):
-        """Closes the websocket connection"""
+        """
+        Closes the websocket connection.
+
+        This method cancels the receiver and sender tasks, if they exist, to close the websocket connection.
+        """
         if self._receiver_task:
             self._receiver_task.cancel()
         if self._sender_task:
             self._sender_task.cancel()
 
     def clear_subscriptions(self):
+        """
+        Clears all the subscriptions by calling the registered listener functions.
+        """
         for func in self._listeners.values():
             func()
 
     def send(self, message):
-        """Sends a message to the websocket connection"""
+        """Sends a message to the websocket connection
+
+        Args:
+            message (str): The message to be sent
+        """
 
         # If the queue is full, dump it and start again
         if self._sender_queue.qsize() == MAX_PENDING_MESSAGES:
@@ -93,7 +108,14 @@ class WebsocketConnection:
             self.close()
 
     def send_error(self, id, message):
-        """Sends an error string to the websocket connection"""
+        """Sends an error string to the websocket connection.
+
+        Args:
+            id (int): The ID of the error message.
+            message (str): The error message to be sent.
+
+
+        """
 
         return self.send(
             {
@@ -104,19 +126,29 @@ class WebsocketConnection:
         )
 
     def send_event(self, id, event):
-        """Sends an event notification to the websocket connection"""
+        """
+        Sends an event notification to the websocket connection.
+
+        Args:
+            id (str): The ID of the event.
+            event (Event): The event object to be sent.
+
+        """
 
         return self.send({"id": id, "type": "event", **event.to_dict()})
 
     async def _sender(self):
-        """Async write loop to pull from the queue and send"""
+        """
+        Async write loop to pull from the queue and send
 
-        _LOGGER.info("Starting sender")
+        This method is an asynchronous write loop that pulls messages from the sender queue and sends them over the websocket connection.
+        It continuously checks for new messages in the queue until the websocket connection is closed.
+        If there is an error serializing the message to JSON, it logs an error message.
+        If the websocket connection is closed by the client, it logs a message and breaks the loop.
+        """
+        _LOGGER.info("Starting websocket sender")
         while not self._socket.closed:
             message = await self._sender_queue.get()
-            if message is None:
-                break
-
             try:
                 # _LOGGER.debug("Sending websocket message")
                 await self._socket.send_json(message, dumps=json.dumps)
@@ -126,8 +158,11 @@ class WebsocketConnection:
                     err,
                     message,
                 )
+            except ConnectionResetError:
+                _LOGGER.info("Websocket connection closed by the client.")
+                break
 
-        _LOGGER.info("Stopping sender")
+        _LOGGER.info("Stopped websocket sender.")
 
     async def handle(self, request):
         """Handle the websocket connection"""
@@ -189,7 +224,7 @@ class WebsocketConnection:
                     websocket_handlers[message["type"]](self, message)
                 else:
                     _LOGGER.error(
-                        ("Received unknown command {}").format(message["type"])
+                        f"Received unknown command {message['type']}"
                     )
                     self.send_error(message["id"], "Unknown command type.")
 
@@ -233,10 +268,15 @@ class WebsocketConnection:
         def notify_websocket(event):
             self.send_event(message["id"], event)
 
+        # Some events are not subscribable - send an error message if the user tries to subscribe to one with a hint on what to use instead
+        if message.get("event_type") in NON_SUBSCRIBABLE_EVENTS.keys():
+            msg = f"Websocket cannot subscribe to {message.get('event_type')} events - use {NON_SUBSCRIBABLE_EVENTS[message.get('event_type')]} instead"
+            _LOGGER.warning(f"{msg}.")
+            self.send_error(message["id"], msg)
+            return
+
         _LOGGER.debug(
-            "Websocket subscribing to event {} with filter {}".format(
-                message.get("event_type"), message.get("event_filter")
-            )
+            f"Websocket subscribing to event {message.get('event_type')} with filter {message.get('event_filter')}"
         )
         self._listeners[message["id"]] = self._ledfx.events.add_listener(
             notify_websocket,
@@ -272,10 +312,7 @@ class WebsocketConnection:
     @websocket_handler("audio_stream_config")
     def audio_stream_config_handler(self, message):
         _LOGGER.info(
-            "WebAudioConfig from {}: {}".format(
-                message.get("client"),
-                message.get("data"),
-            )
+            f"WebAudioConfig from {message.get('client')}: {message.get('data')}"
         )
 
     @websocket_handler("audio_stream_data")
