@@ -67,7 +67,7 @@ class DevicesEndpoint(RestEndpoint):
         except ValueError as msg:
             error_message = f"Error creating device: {msg}"
             _LOGGER.warning(error_message)
-            return await self.internal_error(error_message)
+            return await self.invalid_request(error_message)
 
         response = {
             "status": "success",
