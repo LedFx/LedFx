@@ -9,6 +9,7 @@ _LOGGER = logging.getLogger(__name__)
 class Event:
     """Base for events"""
 
+    BASE_CONFIG_UPDATE = "base_config_update"
     LEDFX_SHUTDOWN = "shutdown"
     DEVICE_CREATED = "device_created"
     DEVICE_UPDATE = "device_update"
@@ -163,6 +164,16 @@ class VirtualConfigUpdateEvent(Event):
     def __init__(self, virtual_id, config):
         super().__init__(Event.VIRTUAL_CONFIG_UPDATE)
         self.virtual_id = virtual_id
+        self.config = config
+
+
+class BaseConfigUpdateEvent(Event):
+    """
+    Event emitted when an item in the base configuration is updated.
+    """
+
+    def __init__(self, config):
+        super().__init__(Event.BASE_CONFIG_UPDATE)
         self.config = config
 
 

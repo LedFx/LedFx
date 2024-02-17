@@ -7,6 +7,7 @@ from aiohttp import web
 from ledfx.api import RestEndpoint
 from ledfx.api.utils import PERMITTED_KEYS
 from ledfx.config import (
+    CORE_CONFIG_KEYS_NO_RESTART,
     CORE_CONFIG_SCHEMA,
     WLED_CONFIG_SCHEMA,
     create_backup,
@@ -17,6 +18,7 @@ from ledfx.config import (
 from ledfx.consts import CONFIGURATION_VERSION
 from ledfx.effects.audio import AudioInputSource
 from ledfx.effects.melbank import Melbanks
+from ledfx.events import BaseConfigUpdateEvent
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -181,85 +183,115 @@ class ConfigEndpoint(RestEndpoint):
         Returns:
             web.Response: The HTTP response object
         """
+
         try:
             config = await request.json()
-
-            audio_config = validate_and_trim_config(
-                config.pop("audio", {}),
-                AudioInputSource.AUDIO_CONFIG_SCHEMA.fget(),
-                "audio",
-            )
-            wled_config = validate_and_trim_config(
-                config.pop("wled_preferences", {}),
-                WLED_CONFIG_SCHEMA,
-                "wled_preferences",
-            )
-            melbanks_config = validate_and_trim_config(
-                config.pop("melbanks", {}), Melbanks.CONFIG_SCHEMA, "melbanks"
-            )
-            core_config = validate_and_trim_config(
-                config, CORE_CONFIG_SCHEMA, "core"
-            )
-
-            self._ledfx.config["audio"].update(audio_config)
-            self._ledfx.config["melbanks"].update(melbanks_config)
-            self._ledfx.config.update(core_config)
-
-            # handle special case wled_preferences nested dict
-            for key in wled_config:
-                if key in self._ledfx.config["wled_preferences"]:
-                    self._ledfx.config["wled_preferences"][key].update(
-                        wled_config[key]
-                    )
-                else:
-                    self._ledfx.config["wled_preferences"][key] = wled_config[
-                        key
-                    ]
-
-            # TODO
-            # Do something if wled preferences config is updated
-
-            if (
-                hasattr(self._ledfx, "audio")
-                and self._ledfx.audio is not None
-                and audio_config
-            ):
-                self._ledfx.audio.update_config(self._ledfx.config["audio"])
-
-            if hasattr(self._ledfx, "audio") and melbanks_config:
-                self._ledfx.audio.melbanks.update_config(
-                    self._ledfx.config["melbanks"]
-                )
-
-            if core_config and not (
-                any(
-                    key in core_config
-                    for key in [
-                        "global_brightness",
-                        "create_segments",
-                        "scan_on_startup",
-                        "user_presets",
-                        "transmission_mode",
-                        # ToDo:
-                        # temporary let ledfx restart when visualisation_maxlen is changed
-                        # until backend can change the length of the pixel data sent via websocket
-                        # "visualisation_maxlen",
-                    ]
-                )
-                and len(core_config) == 1
-            ):
-                self._ledfx.loop.call_soon_threadsafe(self._ledfx.stop, 4)
-
-            save_config(
-                config=self._ledfx.config,
-                config_dir=self._ledfx.config_dir,
-            )
-            return await self.request_success()
-
         except JSONDecodeError:
             return await self.json_decode_error()
+        except Exception as e:
+            return await self.generic_error(str(e))
 
+        try:
+            self.update_config(config)
+            self._ledfx.events.fire_event(BaseConfigUpdateEvent(config))
+            save_config(
+                config=self._ledfx.config, config_dir=self._ledfx.config_dir
+            )
+            need_restart = self.check_need_restart(config)
+            if need_restart:
+                # Ugly - return success to frontend before restarting
+                try:
+                    return await self.request_success(
+                        type="success",
+                        message="LedFx is restarting to apply the new configuration",
+                    )
+                finally:
+                    self._ledfx.loop.call_soon_threadsafe(self._ledfx.stop, 4)
+            return await self.request_success(
+                type="success", message="Configuration Updated"
+            )
         except (KeyError, vol.MultipleInvalid) as msg:
             error_message = f"Error updating config: {msg}"
             _LOGGER.warning(error_message)
-            return await self.internal_error("error", error_message)
+            return await self.invalid_request(error_message)
+        except Exception as e:
+            return await self.internal_error(str(e))
+
+    def update_config(self, config):
+        """
+        Updates the configuration of the LedFx instance with the provided config.
+
+        Args:
+            config (dict): The new configuration to be applied.
+
+        Returns:
+            None
+        """
+        audio_config = validate_and_trim_config(
+            config.pop("audio", {}),
+            AudioInputSource.AUDIO_CONFIG_SCHEMA.fget(),
+            "audio",
+        )
+        wled_config = validate_and_trim_config(
+            config.pop("wled_preferences", {}),
+            WLED_CONFIG_SCHEMA,
+            "wled_preferences",
+        )
+        melbanks_config = validate_and_trim_config(
+            config.pop("melbanks", {}), Melbanks.CONFIG_SCHEMA, "melbanks"
+        )
+        core_config = validate_and_trim_config(
+            config, CORE_CONFIG_SCHEMA, "core"
+        )
+
+        self._ledfx.config["audio"].update(audio_config)
+        self._ledfx.config["melbanks"].update(melbanks_config)
+        self._ledfx.config.update(core_config)
+
+        # handle special case wled_preferences nested dict
+        for key in wled_config:
+            if key in self._ledfx.config["wled_preferences"]:
+                self._ledfx.config["wled_preferences"][key].update(
+                    wled_config[key]
+                )
+            else:
+                self._ledfx.config["wled_preferences"][key] = wled_config[key]
+
+        if (
+            hasattr(self._ledfx, "audio")
+            and self._ledfx.audio is not None
+            and audio_config
+        ):
+            self._ledfx.audio.update_config(self._ledfx.config["audio"])
+
+        if hasattr(self._ledfx, "audio") and melbanks_config:
+            self._ledfx.audio.melbanks.update_config(
+                self._ledfx.config["melbanks"]
+            )
+
+        if core_config:
+            self._ledfx.events.fire_event(BaseConfigUpdateEvent(config))
+
+    def check_need_restart(self, config):
+        """
+        Checks if a restart is needed based on the provided configuration.
+
+        Args:
+            config (dict): The configuration to be checked.
+
+        Returns:
+            bool: True if a restart is needed, False otherwise.
+        """
+        core_config = validate_and_trim_config(
+            config, CORE_CONFIG_SCHEMA, "core"
+        )
+
+        # If core_config is empty, no restart is needed
+        if not core_config:
+            return False
+
+        need_restart = True
+        if any(key in core_config for key in CORE_CONFIG_KEYS_NO_RESTART):
+            need_restart = False
+
+        return need_restart
