@@ -25,6 +25,11 @@ BASE_MESSAGE_SCHEMA = vol.Schema(
     },
     extra=vol.ALLOW_EXTRA,
 )
+# Not all events are able to be subscribed to by the websocket
+# This dict show the events that are not subscribable and what event should be used instead
+NON_SUBSCRIBABLE_EVENTS = {
+    "device_update": "Use visualisation_update instead",
+}
 
 # TODO: Have a more well defined registration and a more componetized solution.
 # Could do something like have Device actually provide the handler for Device
@@ -262,6 +267,13 @@ class WebsocketConnection:
     def subscribe_event_handler(self, message):
         def notify_websocket(event):
             self.send_event(message["id"], event)
+
+        # Some events are not subscribable - send an error message if the user tries to subscribe to one with a hint on what to use instead
+        if message.get("event_type") in NON_SUBSCRIBABLE_EVENTS.keys():
+            msg = f"Websocket cannot subscribe to {message.get('event_type')} events - use {NON_SUBSCRIBABLE_EVENTS[message.get('event_type')]} instead"
+            _LOGGER.warning(f"{msg}.")
+            self.send_error(message["id"], msg)
+            return
 
         _LOGGER.debug(
             f"Websocket subscribing to event {message.get('event_type')} with filter {message.get('event_filter')}"
