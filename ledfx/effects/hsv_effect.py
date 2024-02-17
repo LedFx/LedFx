@@ -1,6 +1,7 @@
 import time
 
 import numpy as np
+import voluptuous as vol
 
 from ledfx.effects import Effect
 from ledfx.effects.gradient import GradientEffect
@@ -28,6 +29,16 @@ plt.plot(_triangle)
 
 @Effect.no_registration
 class HSVEffect(GradientEffect):
+    CONFIG_SCHEMA = vol.Schema(
+        {
+            vol.Optional(
+                "fix_hues",
+                description="Use perceptually even hue distribution",
+                default=True,
+            ): bool
+        }
+    )
+
     _start_time = time.time_ns()
     # 65.536 s expressed in ns
     _conversion_factor = 65.536 * 1e9
@@ -52,8 +63,11 @@ class HSVEffect(GradientEffect):
         self.render_hsv()
 
         hsv = np.copy(self.hsv_array)
+        if self._config["fix_hues"]:
+            h = self.fix_hue_fast(hsv[:, 0])
+        else:
+            h = hsv[:, 0]
 
-        h = hsv[:, 0]
         s = hsv[:, 1].reshape(-1, 1)
         v = hsv[:, 2].reshape(-1, 1)
         pixels = self.pixels
@@ -143,9 +157,8 @@ class HSVEffect(GradientEffect):
     # Perceptual hue utility - for better rainbows
 
     # The HSV model's hue parameter isn't linear to human perception of equidistant color.
-    # fix_hue() and fix_hue_fast() stretch reds and compresses greens and blues to produce a more even rainbow.
-    # fix_hue() makes better rainbows and is customizable, but fix_hue_fast() is faster
-
+    # fix_hue_fast() stretch reds and compresses greens and blues to produce a more even rainbow.
+    # There is an old fix_hue that is more accurate but slower and produced more blocky transitions.
     # See a more complete discussion and intense approaches at:
     # https://stackoverflow.com/questions/5162458/fade-through-more-more-natural-rainbow-spectrum-in-hsv-hsb
 
@@ -155,8 +168,10 @@ class HSVEffect(GradientEffect):
         Takes a "perceptual hue" (pH) that aspires to progress evenly across a human-perceived rainbow
         This simpler approach is 40% faster than fixH() but to my eyes, bright greens feel over-represented
         and deep blues are under-represented
+        We will let the user decide if they want to use it via an option for HSV effects.
         """
         np.mod(hue, 1, out=hue)
         np.subtract(hue, 0.5, out=hue)
         np.divide(hue, 2, out=hue)
         self.array_sin(hue)
+        return hue
