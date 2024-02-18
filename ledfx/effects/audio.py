@@ -948,6 +948,4 @@ class AudioReactiveEffect(Effect):
         mel_length = len(melbank)
         splits = tuple(map(lambda i: int(i * mel_length), [0.2, 0.5]))
 
-        self.melbank_no_nan(melbank)
-
         return np.split(melbank, splits)
