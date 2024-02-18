@@ -59,8 +59,8 @@ performance_insights.txt
 
 # Debugging task may leave this folder behind if it crashes
 debug_config
-
-
+# spec file build may leave the ledfx.env behind
+ledfx.env
 # Misc
 .devcontainer/ledfx-config.yml
 frontend/*.eslintcache

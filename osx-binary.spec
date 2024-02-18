@@ -7,21 +7,35 @@ spec_root = os.path.abspath(SPECPATH)
 venv_root = os.path.abspath(os.path.join(SPECPATH, '..'))
 block_cipher = None
 
+# Remove the ledfx.env file if it exists
+os.remove("ledfx.env") if os.path.exists("ledfx.env") else None
 
-# if this is a release, create prod.env for the packaged binaries to read from
+# Get environment variables
 github_ref = os.getenv('GITHUB_REF')
-if github_ref and 'refs/tags/' in github_ref:
-    with open('prod.env', 'w') as file:
-        file.write('IS_RELEASE = true')
-else:
-    with open('prod.env', 'w') as file:
-        file.write('IS_RELEASE = false')
+github_sha_value = os.getenv('GITHUB_SHA')
 
+# Initialize variables
+variables = [f"GITHUB_SHA = {github_sha_value}"]
+SHOW_CONSOLE = True
+
+# Check if this is a release
+if github_ref and 'refs/tags/' in github_ref:
+    # cleanup github_ref to remove /refs/tags/v and leave just the version
+    github_ref_cleaned = github_ref.replace('refs/tags/v', '')
+    assert PROJECT_VERSION == github_ref_cleaned, "Version and Tag do not match - aborting release."
+    variables.append('IS_RELEASE = true')
+    SHOW_CONSOLE = False
+else:
+    variables.append('IS_RELEASE = false')
+
+# Write to ledfx.env file
+with open('ledfx.env', 'a') as file:
+    file.write('\n'.join(variables))
 
 a = Analysis([f'{spec_root}/ledfx/__main__.py'],
              pathex=[f'{spec_root}', f'{spec_root}/ledfx'],
              binaries=[],
-             datas=[(f'{spec_root}/ledfx_frontend', 'ledfx_frontend/'), (f'{spec_root}/ledfx/', 'ledfx/'), (f'{spec_root}/ledfx_assets', 'ledfx_assets/'),(f'{spec_root}/ledfx_assets/tray.png','.'), (f'{spec_root}/prod.env','.')],
+             datas=[(f'{spec_root}/ledfx_frontend', 'ledfx_frontend/'), (f'{spec_root}/ledfx/', 'ledfx/'), (f'{spec_root}/ledfx_assets', 'ledfx_assets/'),(f'{spec_root}/ledfx_assets/tray.png','.'), (f'{spec_root}/ledfx.env','.')],
              hiddenimports=hiddenimports,
              hookspath=[f'{venv_root}/lib/site-packages/pyupdater/hooks'],
              runtime_hooks=[],
@@ -41,7 +55,7 @@ exe = EXE(pyz,
           bootloader_ignore_signals=False,
           strip=False,
           upx=True,
-          console=False,
+          console=SHOW_CONSOLE,
           icon=f'{spec_root}/ledfx_assets/discord.ico')
 
 app = BUNDLE(exe,
@@ -67,5 +81,5 @@ app = BUNDLE(exe,
               'com.apple.security.device.audio-input': True,
               'com.apple.security.device.microphone': True,
               })
-# Cleanup prod.env
-os.remove("prod.env")
+# Cleanup ledfx.env
+os.remove("ledfx.env")

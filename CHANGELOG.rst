@@ -56,7 +56,7 @@ What's new?
 
 - **Dark Mode:** Choose from a few different themes for the web interface.
 
-- **Logging:** View LedFx logs live from the web interface. Access full logs at  ``~/.ledfx/LedFx.log`` (Linux/ Mac) or ``%APPDATA%/.ledfx/LedFx.log`` (Windows)
+- **Logging:** View LedFx logs live from the web interface. Access full logs at  ``~/.ledfx/ledfx.log`` (Linux/ Mac) or ``%APPDATA%/.ledfx/ledfx.log`` (Windows)
 
 - **Bugfixes:** Chewing through them, slow and steady!
 
