@@ -62,7 +62,7 @@ class RestEndpoint(BaseRegistry):
             # _LOGGER.exception(e)
             reason = getattr(e, "args", None)
             if reason:
-                reason = str(reason[0]) if reason else str(e)
+                reason = str(reason[0])
             else:
                 reason = str(e)
 
