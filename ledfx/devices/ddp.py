@@ -64,14 +64,18 @@ class DDPDevice(UDPDevice):
                 self.frame_count,
             )
             if self.connection_warning:
-                _LOGGER.info(f"DDP connection reestablished to {self.config['name']}")
+                _LOGGER.info(
+                    f"DDP connection reestablished to {self.config['name']}"
+                )
                 self.connection_warning = False
         except AttributeError:
             self.activate()
         except OSError as e:
             # print warning only once until it clears
             if not self.connection_warning:
-                _LOGGER.warning(f"Error in DDP connection to {self.config['name']}: {e}")
+                _LOGGER.warning(
+                    f"Error in DDP connection to {self.config['name']}: {e}"
+                )
                 self.connection_warning = True
 
     @staticmethod
