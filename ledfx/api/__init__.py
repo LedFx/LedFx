@@ -62,10 +62,8 @@ class RestEndpoint(BaseRegistry):
             # _LOGGER.exception(e)
             reason = getattr(e, "args", None)  # Extract the args attribute
             if reason:
-                # Ensure reason is always a string, even if e.args is present
                 reason = str(reason[0]) if reason else str(e)
             else:
-                # Use str(e) to ensure reason is a string, which is always JSON-serializable
                 reason = str(e)
 
             response = {
