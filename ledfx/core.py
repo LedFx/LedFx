@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import os
 import sys
 import time
 import warnings
@@ -18,6 +19,7 @@ from ledfx.color import (
     validate_gradient,
 )
 from ledfx.config import (
+    VISUALISATION_CONFIG_KEYS,
     Transmission,
     create_backup,
     get_ssl_certs,
@@ -25,6 +27,7 @@ from ledfx.config import (
     remove_virtuals_active_effects,
     save_config,
 )
+from ledfx.consts import PROJECT_VERSION
 from ledfx.devices import Devices
 from ledfx.effects import Effects
 from ledfx.effects.math import interpolate_pixels
@@ -41,6 +44,7 @@ from ledfx.presets import ledfx_presets
 from ledfx.scenes import Scenes
 from ledfx.utils import (
     RollingQueueHandler,
+    UpdateChecker,
     UserDefaultCollection,
     async_fire_and_forget,
     currently_frozen,
@@ -73,7 +77,9 @@ class LedFxCore:
         ci_testing=False,
         clear_config=False,
         clear_effects=False,
+        offline_mode=False,
     ):
+
         self.icon = icon
         self.config_dir = config_dir
 
@@ -92,7 +98,7 @@ class LedFxCore:
         self.port = port if port else self.config["port"]
         self.port_s = port_s if port_s else self.config["port_s"]
         self.ci_testing = ci_testing
-
+        self.offline_mode = offline_mode
         if sys.platform == "win32":
             self.loop = asyncio.ProactorEventLoop()
         else:
@@ -118,10 +124,27 @@ class LedFxCore:
         self.setup_logqueue()
         self.events = Events(self)
         self.setup_visualisation_events()
+        self.events.add_listener(
+            self.handle_base_configuration_update, Event.BASE_CONFIG_UPDATE
+        )
         self.http = HttpServer(
             ledfx=self, host=self.host, port=self.port, port_s=self.port_s
         )
+
         self.exit_code = None
+
+    def handle_base_configuration_update(self, event):
+        """
+        Handles the update of the base configuration where there are specific things that need to be done.
+
+        Currently, only visualisation configuration is handled this way, since they require the creation of new event listeners.
+
+        Args:
+            event (Event): The event that triggered the update - this will always be a BaseConfigUpdateEvent.
+        """
+
+        if any(key in self.config for key in VISUALISATION_CONFIG_KEYS):
+            self.setup_visualisation_events()
 
     def dev_enabled(self):
         return self.config["dev_mode"]
@@ -159,7 +182,14 @@ class LedFxCore:
         import pystray
 
         self.icon.menu = pystray.Menu(
+            pystray.MenuItem(
+                f"LedFx - {PROJECT_VERSION}", None, enabled=False
+            ),
+            pystray.Menu.SEPARATOR,
             pystray.MenuItem("Open", self.open_ui, default=True),
+            pystray.MenuItem(
+                "Check for Update", self.check_and_notify_updates
+            ),
             pystray.MenuItem("Quit Ledfx", self.stop),
         )
 
@@ -168,6 +198,12 @@ class LedFxCore:
         creates event listeners to fire visualisation events at
         a given rate
         """
+        # Remove existing listeners if they exist
+        if hasattr(self, "visualisation_update_listener"):
+            self.visualisation_update_listener = None
+            self.virtual_listener()
+            self.device_listener()
+
         min_time_since = 1 / self.config["visualisation_fps"]
         time_since_last = {}
         max_len = self.config["visualisation_maxlen"]
@@ -208,13 +244,13 @@ class LedFxCore:
                 VisualisationUpdateEvent(is_device, vis_id, pixels)
             )
 
-        self.events.add_listener(
-            handle_visualisation_update,
+        self.visualisation_update_listener = handle_visualisation_update
+        self.virtual_listener = self.events.add_listener(
+            self.visualisation_update_listener,
             Event.VIRTUAL_UPDATE,
         )
-
-        self.events.add_listener(
-            handle_visualisation_update,
+        self.device_listener = self.events.add_listener(
+            self.visualisation_update_listener,
             Event.DEVICE_UPDATE,
         )
 
@@ -227,6 +263,56 @@ class LedFxCore:
         logqueue_handler.addFilter(log_filter)
         root_logger = logging.getLogger()
         root_logger.addHandler(logqueue_handler)
+
+    def check_and_notify_updates(self, show_check_notification=None):
+        """
+        Checks for updates of LedFx and notifies the user if a new version is available.
+
+        Args:
+            show_check_notification (object): An optional parameter that is never called with any specific value.
+                When called via pystray, it is an icon object. This behavior is unintended but functional.
+
+        Returns:
+            None
+
+        Raises:
+            None
+        """
+
+        if show_check_notification:
+            if self.icon and self.icon.HAS_NOTIFICATION:
+                self.icon.notify("Checking for updates...", "LedFx")
+        is_release = os.getenv("IS_RELEASE", "false").lower()
+        if is_release == "false":
+            _LOGGER.info("Not checking for updates - not a release.")
+            return
+        _LOGGER.info("Checking for updates...")
+        if UpdateChecker.get_release_information():
+            if UpdateChecker.update_available():
+                latest_version = UpdateChecker.get_latest_version()
+                release_url = UpdateChecker.get_release_url()
+                _LOGGER.warning(
+                    f"New version of LedFx available: {latest_version} - {release_url}"
+                )
+
+                if self.icon and self.icon.HAS_NOTIFICATION:
+                    self.icon.notify(
+                        f"New version of LedFx available: {latest_version}",
+                        "LedFx",
+                    )
+                    try:
+                        webbrowser.get().open(release_url)
+                    except webbrowser.Error:
+                        pass
+            else:
+                _LOGGER.info("LedFx is up to date.")
+        else:
+            _LOGGER.warning("Unable to get update information.")
+            if show_check_notification:
+                if self.icon and self.icon.HAS_NOTIFICATION:
+                    self.icon.notify(
+                        "Unable to get update information", "LedFx"
+                    )
 
     def start(self, open_ui=False):
         async_fire_and_forget(self.async_start(open_ui=open_ui), self.loop)
@@ -306,6 +392,9 @@ class LedFxCore:
         if self.ci_testing:
             await asyncio.sleep(5)
             self.stop(5)
+
+        if not self.offline_mode:
+            self.check_and_notify_updates()
 
     def stop(self, exit_code):
         async_fire_and_forget(self.async_stop(exit_code), self.loop)
