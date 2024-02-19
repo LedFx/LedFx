@@ -4,6 +4,7 @@ import serial
 import voluptuous as vol
 
 from ledfx.devices import SerialDevice, packets
+from ledfx.events import DevicesUpdatedEvent
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -48,7 +49,9 @@ class AdalightDevice(SerialDevice):
             )
 
         except serial.SerialException:
-            _LOGGER.critical(
+            # If we have lost connection, log it, go offline, and fire an event to the frontend
+            _LOGGER.warning(
                 "Serial Connection Interrupted. Please check connections and ensure your device is functioning correctly."
             )
             self.deactivate()
+            self._ledfx.events.fire_event(DevicesUpdatedEvent(self.id))
