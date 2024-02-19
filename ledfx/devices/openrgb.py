@@ -113,8 +113,6 @@ class OpenRGB(NetworkedDevice):
             self._ledfx.events.fire_event(DevicesUpdatedEvent(self.id))
             self._online = False
             self.deactivate()
-        except Exception as e:
-            _LOGGER.error(f"Error sending data to OpenRGB device: {e}")
 
     @staticmethod
     def send_out(sock: socket.socket, data: np.ndarray, device_id: int):
