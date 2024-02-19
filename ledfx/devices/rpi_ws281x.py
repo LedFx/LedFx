@@ -64,7 +64,7 @@ class RPI_WS281X(Device):
         try:
             from rpi_ws281x import PixelStrip
         except ImportError:
-            _LOGGER.critical(
+            _LOGGER.warning(
                 "Unable to load ws281x module - are you on a Raspberry Pi?"
             )
             self.deactivate()
