@@ -10,7 +10,12 @@ import serial.tools.list_ports
 import voluptuous as vol
 
 from ledfx.config import save_config
-from ledfx.events import DeviceCreatedEvent, DeviceUpdateEvent, Event
+from ledfx.events import (
+    DeviceCreatedEvent,
+    DevicesUpdatedEvent,
+    DeviceUpdateEvent,
+    Event,
+)
 from ledfx.utils import (
     AVAILABLE_FPS,
     WLED,
@@ -557,13 +562,15 @@ class SerialDevice(Device):
             self.serial = serial.Serial(self.com_port, self.baudrate)
             if self.serial.isOpen:
                 super().activate()
+                self._online = True
 
         except serial.SerialException:
-            _LOGGER.critical(
+            _LOGGER.warning(
                 "Serial Error: Please ensure your device is connected, functioning and the correct COM port is selected."
             )
-            # Todo: Trigger the UI to refresh after the clear effect call. Currently it still shows as active.
+            self._online = False
             self.deactivate()
+            self._ledfx.events.fire_event(DevicesUpdatedEvent(self.id))
 
     def deactivate(self):
         super().deactivate()

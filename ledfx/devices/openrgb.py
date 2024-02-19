@@ -3,6 +3,7 @@ import socket
 
 import numpy as np
 import voluptuous as vol
+from openrgb import OpenRGBClient
 
 from ledfx.devices import NetworkedDevice, packets
 from ledfx.events import DevicesUpdatedEvent
@@ -45,49 +46,38 @@ class OpenRGB(NetworkedDevice):
         self.ip_address = self._config["ip_address"]
         self.port = self._config["port"]
         self.openrgb_device_id = self._config["openrgb_id"]
-        self._online = True
 
     def activate(self):
         try:
-            from openrgb import OpenRGBClient
+            self.openrgb_device = OpenRGBClient(
+                self.ip_address,
+                self.port,
+                self.name,
+                3,  # protocol_version
+            )
+            self.openrgb_device = self.openrgb_device.devices[
+                self.openrgb_device_id
+            ]
 
-            try:
-                self.openrgb_device = OpenRGBClient(
-                    self.ip_address,
-                    self.port,
-                    self.name,
-                    3,  # protocol_version
-                )
-                self.openrgb_device = self.openrgb_device.devices[
-                    self.openrgb_device_id
-                ]
-                self._online = True
-            except (ConnectionRefusedError, TimeoutError):
-                _LOGGER.warning(
-                    f"{self.openrgb_device_id} not reachable. Is the api server running?"
-                )
-                self._online = False
-                return
-            # check for eedevice
-
-            device_supports_direct = False
-            for mode in self.openrgb_device.modes:
-                if mode.name.lower() == "direct":
-                    device_supports_direct = True
-            if not device_supports_direct:
-                raise ValueError()
-        except ImportError:
-            _LOGGER.critical("Unable to load openrgb library")
+        except (ConnectionRefusedError, TimeoutError):
+            _LOGGER.warning(
+                f"{self.openrgb_device_id} not reachable. Is OpenRGB server running?"
+            )
             self.deactivate()
         except IndexError:
-            _LOGGER.critical(
+            _LOGGER.warning(
                 f"Couldn't find OpenRGB device ID: {self.openrgb_device_id}"
             )
-            self._online = False
+
             self.deactivate()
-        except ValueError:
-            _LOGGER.critical(
-                f"{self.openrgb_device_id} doesn't support direct mode, and isn't suitable for streamed effects from LedFx"
+
+        device_supports_direct = False
+        for mode in self.openrgb_device.modes:
+            if mode.name.lower() == "direct":
+                device_supports_direct = True
+        if not device_supports_direct:
+            _LOGGER.warning(
+                f"{self.openrgb_device_id} doesn't support direct mode - not supported by LedFx"
             )
             self.deactivate()
         else:
@@ -95,6 +85,7 @@ class OpenRGB(NetworkedDevice):
             super().activate()
 
     def deactivate(self):
+
         super().deactivate()
 
     def flush(self, data):
@@ -108,7 +99,9 @@ class OpenRGB(NetworkedDevice):
         except AttributeError:
             self.activate()
         except ConnectionAbortedError:
+            # Unexpected device disconnect - deactivate and tell the frontend
             _LOGGER.warning(f"Device disconnected: {self.openrgb_device_id}")
+
             self._ledfx.events.fire_event(DevicesUpdatedEvent(self.id))
             self._online = False
             self.deactivate()

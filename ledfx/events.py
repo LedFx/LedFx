@@ -53,7 +53,9 @@ class DeviceCreatedEvent(Event):
 
 
 class DevicesUpdatedEvent(Event):
-    """Weird event emitted when OpenRGB device fails to connect"""
+    """
+    Event emitted when a device changes status due to something outside the users control - this is used to update the frontend
+    """
 
     def __init__(self, device_id: str):
         super().__init__(Event.DEVICES_UPDATED)
@@ -66,7 +68,6 @@ class VirtualUpdateEvent(Event):
     def __init__(self, virtual_id: str, pixels: np.ndarray):
         super().__init__(Event.VIRTUAL_UPDATE)
         self.virtual_id = virtual_id
-        # self.pixels = pixels.astype(np.uint8).T.tolist()
         self.pixels = pixels
 
 

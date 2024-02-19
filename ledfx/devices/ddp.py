@@ -5,6 +5,7 @@ import numpy as np
 import voluptuous as vol
 
 from ledfx.devices import UDPDevice
+from ledfx.events import DevicesUpdatedEvent
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -56,6 +57,7 @@ class DDPDevice(UDPDevice):
     def flush(self, data):
         self.frame_count += 1
         try:
+
             DDPDevice.send_out(
                 self._sock,
                 self.destination,
@@ -64,19 +66,24 @@ class DDPDevice(UDPDevice):
                 self.frame_count,
             )
             if self.connection_warning:
-                _LOGGER.info(
-                    f"DDP connection reestablished to {self.config['name']}"
-                )
+                # If we have reconnected, log it, come back online, and fire an event to the frontend
+                _LOGGER.info(f"DDP connection reestablished to {self.name}")
                 self.connection_warning = False
+                self._online = True
+                self._ledfx.events.fire_event(
+                    DevicesUpdatedEvent(self.id, online=True)
+                )
         except AttributeError:
             self.activate()
         except OSError as e:
             # print warning only once until it clears
+
             if not self.connection_warning:
-                _LOGGER.warning(
-                    f"Error in DDP connection to {self.config['name']}: {e}"
-                )
+                # If we have lost connection, log it, go offline, and fire an event to the frontend
+                _LOGGER.warning(f"Error in DDP connection to {self.name}: {e}")
                 self.connection_warning = True
+                self._online = False
+                self._ledfx.events.fire_event(DevicesUpdatedEvent(self.id))
 
     @staticmethod
     def send_out(sock, dest, port, data, frame_count):
