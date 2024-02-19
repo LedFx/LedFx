@@ -109,7 +109,8 @@ class OpenRGB(NetworkedDevice):
             self.activate()
         except (ConnectionAbortedError, ConnectionResetError) as e:
             _LOGGER.warning(
-                f"Device connection issue ({type(e).__name__}): {e}")
+                f"Device connection issue ({type(e).__name__}): {e}"
+            )
             self._ledfx.events.fire_event(DevicesUpdatedEvent(self.id))
             self._online = False
             self.deactivate()
