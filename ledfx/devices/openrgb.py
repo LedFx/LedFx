@@ -107,11 +107,14 @@ class OpenRGB(NetworkedDevice):
             )
         except AttributeError:
             self.activate()
-        except ConnectionAbortedError:
-            _LOGGER.warning(f"Device disconnected: {self.openrgb_device_id}")
+        except (ConnectionAbortedError, ConnectionResetError) as e:
+            _LOGGER.warning(
+                f"Device connection issue ({type(e).__name__}): {e}")
             self._ledfx.events.fire_event(DevicesUpdatedEvent(self.id))
             self._online = False
             self.deactivate()
+        except Exception as e:
+            _LOGGER.error(f"Error sending data to OpenRGB device: {e}")
 
     @staticmethod
     def send_out(sock: socket.socket, data: np.ndarray, device_id: int):
