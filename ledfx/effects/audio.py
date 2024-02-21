@@ -110,7 +110,8 @@ class AudioInputSource:
         default_device_index = AudioInputSource.default_device_index()
         valid_device_indexes = AudioInputSource.valid_device_indexes()
         input_devices = AudioInputSource.input_devices()
-        # melbanks = Melbanks.CONFIG_SCHEMA
+        melbanks = Melbanks.CONFIG_SCHEMA
+        audio_analysis = AudioAnalysisSource.CONFIG_SCHEMA
         return vol.Schema(
             {
                 vol.Optional("sample_rate", default=60): int,
@@ -165,6 +166,7 @@ class AudioInputSource:
                     self.input_devices()[self._config["audio_device"]]
                 )
             )
+        self._ledfx.config["audio"] = self._config
 
     def activate(self):
         if self._audio is None:
@@ -440,12 +442,46 @@ class AudioInputSource:
 
 
 class AudioAnalysisSource(AudioInputSource):
+    # https://aubio.org/doc/latest/pitch_8h.html
+    PITCH_METHODS = [
+        "yinfft",
+        "yin",
+        "yinfast",
+        "fcomb",
+        "mcomb",
+        "schmitt",
+        "specacf",
+    ]
+    # https://aubio.org/doc/latest/specdesc_8h.html
+    ONSET_METHODS = [
+        "energy",
+        "hfc",
+        "complex",
+        "phase",
+        "wphase",
+        "specdiff",
+        "kl",
+        "mkl",
+        "specflux",
+    ]
     CONFIG_SCHEMA = vol.Schema(
         {
-            vol.Optional("pitch_method", default="default"): str,
+            vol.Optional(
+                "pitch_method",
+                default="yinfft",
+                description="Method to detect pitch",
+            ): vol.In(PITCH_METHODS),
             vol.Optional("tempo_method", default="default"): str,
-            vol.Optional("onset_method", default="specflux"): str,
-            vol.Optional("pitch_tolerance", default=0.8): float,
+            vol.Optional(
+                "onset_method",
+                default="hfc",
+                description="Method used to detect onsets",
+            ): vol.In(ONSET_METHODS),
+            vol.Optional(
+                "pitch_tolerance",
+                default=0.8,
+                description="Pitch detection tolerance",
+            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=2)),
         },
         extra=vol.ALLOW_EXTRA,
     )

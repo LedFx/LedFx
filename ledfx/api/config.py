@@ -183,7 +183,6 @@ class ConfigEndpoint(RestEndpoint):
         """
         try:
             config = await request.json()
-
             audio_config = validate_and_trim_config(
                 config.pop("audio", {}),
                 AudioInputSource.AUDIO_CONFIG_SCHEMA.fget(),
@@ -200,7 +199,6 @@ class ConfigEndpoint(RestEndpoint):
             core_config = validate_and_trim_config(
                 config, CORE_CONFIG_SCHEMA, "core"
             )
-
             self._ledfx.config["audio"].update(audio_config)
             self._ledfx.config["melbanks"].update(melbanks_config)
             self._ledfx.config.update(core_config)
