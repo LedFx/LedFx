@@ -49,7 +49,7 @@ const User = () => {
   const [playlistName, setPlaylistName] = useState('')
   const [availableThemes, setAvailableThemes] = useState(0)
 
-  const [starred, setStarred] = useState({
+  const [starred] = useState({
     core: false,
     client: false,
     build: false,
@@ -150,8 +150,6 @@ const User = () => {
     setCloudPlaylists(res)
   }
 
-  const hasStarred = async () => {
-}
   const deleteCloudConfig = async (name: string, date: any) => {
     const existing = await cloud.get(
       `configs?user.username=${localStorage.getItem(
@@ -224,7 +222,6 @@ const User = () => {
       getCloudPlaylists()
       getCloudConfigs()
     }
-    hasStarred()
   }, [])
 
   useEffect(() => {
