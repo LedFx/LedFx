@@ -1,0 +1,115 @@
+@import url('https://fonts.googleapis.com/css2?family=Nunito&display=swap');
+
+html,
+body {
+  font-family: "Nunito", "Roboto", "Helvetica", sans-serif;
+  font-weight: 300;
+  min-height: 100%;
+  width: 100%;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  --webkit-scrollbar: {
+    background-color: #ffffff30;
+    width: 8px;
+    border-radius: 8px;
+  }
+  --webkit-scrollbar-track: {
+    background-color: #00000060;
+    border-radius: 8px;
+  }
+  --webkit-scrollbar-thumb: {
+    background-color: #555555;
+    border-radius: 8px;
+  }
+  --webkit-scrollbar-button: {
+    display: none;
+  }
+}
+
+#root {
+  height: 100%;
+  min-height: 100vh;
+  width: 100%;
+  padding-bottom: 56px;
+  overflow-x: hidden;
+}
+/* fallback */
+@font-face {
+  font-family: "Material Icons";
+  font-style: normal;
+  font-weight: 400;
+  src: local("Material Icons"), local("MaterialIcons-Regular"),
+    url(./assets/fonts/MaterialIcons-Regular.woff2) format("woff2");
+}
+
+.material-icons {
+  font-family: "Material Icons";
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px; /* Preferred icon size */
+  display: inline-block;
+  line-height: 1;
+  text-transform: none;
+  letter-spacing: normal;
+  word-wrap: normal;
+  white-space: nowrap;
+  direction: ltr;
+
+  /* Support for all WebKit browsers. */
+  -webkit-font-smoothing: antialiased;
+  /* Support for Safari and Chrome. */
+  text-rendering: optimizeLegibility;
+
+  /* Support for Firefox. */
+  -moz-osx-font-smoothing: grayscale;
+
+  /* Support for IE. */
+  font-feature-settings: "liga";
+}
+
+@font-face {
+  font-family: "Material Design Icons";
+  src: local("Material Design Icons"),
+    url("./assets/fonts/materialdesignicons-webfont.woff2") format("woff2"),
+    url("./assets/fonts/materialdesignicons-webfont.woff") format("woff");
+  font-weight: normal;
+  font-style: normal;
+}
+
+.showTablet {
+  display: none;
+}
+.showHd {
+  display: none !important;
+}
+@media screen and (max-width: 960px) {
+  .showTablet {
+    display: block;
+  }
+}
+@media screen and (max-width: 720px) {
+  #root {
+    padding-bottom: 120px;
+  }
+  .showHd {
+    display: flex !important;
+  }
+}
+
+
+@media screen and (max-width: 480px) {
+  .hideMobile {
+    display: none !important;
+  }
+}
+
+@media screen and (max-width: 960px) {
+  .hideTablet {
+    display: none !important;
+  }
+}
+@media screen and (max-width: 720px) {
+  .hideHd {
+    display: none !important;
+  }
+}

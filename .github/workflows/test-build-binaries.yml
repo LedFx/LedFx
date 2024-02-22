@@ -2,6 +2,8 @@ name: Build Binaries
 
 on:
   push:
+    paths-ignore:
+      - 'frontend/**'
   workflow_dispatch:
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

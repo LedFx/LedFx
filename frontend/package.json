@@ -1,0 +1,250 @@
+{
+  "name": "ledfx",
+  "version": "2.0.92",
+  "description": "LedFx v2 - BladeMOD",
+  "author": "YeonV aka Blade",
+  "private": true,
+  "main": "public/electron.js",
+  "homepage": ".",
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@electron/remote": "^2.0.9",
+    "@emotion/react": "^11.10.8",
+    "@emotion/styled": "^11.10.8",
+    "@mui/icons-material": "^5.14.19",
+    "@mui/material": "^5.14.20",
+    "@mui/styles": "^5.14.20",
+    "@mui/x-data-grid": "^6.19.2",
+    "@storybook/react": "^7.6.3",
+    "@testing-library/jest-dom": "^6.1.5",
+    "@testing-library/react": "^14.1.2",
+    "@types/qs": "^6.9.7",
+    "@types/reactour": "^1.18.1",
+    "axios": "^1.4.0",
+    "base32-decode": "^1.0.0",
+    "base32-encode": "1",
+    "chart.js": "4.4.1",
+    "color": "^4.2.3",
+    "crypto": "^1.0.1",
+    "deep-object-diff": "^1.1.9",
+    "electron-devtools-installer": "^3.2.0",
+    "electron-is-dev": "^2.0.0",
+    "electron-squirrel-startup": "^1.0.0",
+    "electron-store": "^8.1.0",
+    "eslint-config-react-app": "7.0.1",
+    "immer": "10.0.3",
+    "is-electron": "^2.2.2",
+    "notistack": "^3.0.1",
+    "oauth-pkce": "0.0.6",
+    "prop-types": "^15.8.1",
+    "qrcode": "^1.5.3",
+    "qs": "^6.11.2",
+    "react": "^18.1.0",
+    "react-chartjs-2": "5.2.0",
+    "react-dom": "^18.1.0",
+    "react-dropzone": "^14.2.3",
+    "react-easy-crop": "^5.0.2",
+    "react-gamepads": "^1.0.0",
+    "react-gcolor-picker": "^1.3.0",
+    "react-git-info": "^2.0.1",
+    "react-hotkeys-hook": "^4.4.0",
+    "react-otp-input": "^3.1.0",
+    "react-rnd": "^10.4.1",
+    "react-router-dom": "^6.20.1",
+    "react-scripts": "5.0.1",
+    "react-zoom-pan-pinch": "^3.1.0",
+    "reactour": "^1.19.0",
+    "sockette": "^2.0.6",
+    "styled-components": "^6.0.5",
+    "ts-deepmerge": "^6.1.0",
+    "typescript": "^5.3.3",
+    "universal-cookie": "^6.1.1",
+    "use-api-polling": "^0.1.4",
+    "use-debounce": "^10.0.0",
+    "use-indexeddb": "^2.0.2",
+    "use-long-press": "^3.2.0",
+    "web-vitals": "^3.3.1",
+    "webmidi": "^3.1.6",
+    "workbox-core": "^7.0.0",
+    "workbox-expiration": "^7.0.0",
+    "workbox-precaching": "^7.0.0",
+    "workbox-routing": "^7.0.0",
+    "workbox-strategies": "^7.0.0",
+    "zustand": "^4.4.7"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "run-script-os",
+    "build:win32": "set GENERATE_SOURCEMAP=false && react-scripts build",
+    "build:default": "GENERATE_SOURCEMAP=false react-scripts build",
+    "prebuild": "node -e \"let pkg=require('./package.json'); pkg.homepage='/'; require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2));\"",
+    "postbuild": "node -e \"let pkg=require('./package.json'); pkg.homepage='.'; require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2));\" && rm -rf build/app && rm -rf build/preload.js && rm -rf build/renderer.js && rm -rf build/electron.js",
+    "buildhass": "GENERATE_SOURCEMAP=false react-scripts build",
+    "prebuildhass": "node -e \"let pkg=require('./package.json'); pkg.homepage='./'; require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2));\"",
+    "postbuildhass": "node -e \"let pkg=require('./package.json'); pkg.homepage='.'; require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2));\" && rm -rf build/app && rm -rf build/preload.js && rm -rf build/renderer.js && rm -rf build/electron.js",
+    "buildgh": "GENERATE_SOURCEMAP=false PUBLIC_URL=/LedFx-Frontend-v2/ react-scripts build",
+    "prebuildgh": "node -e \"let pkg=require('./package.json'); pkg.homepage='/LedFx-Frontend-v2/'; require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2));\"",
+    "postbuildgh": "rm -rf build/app && rm -rf build/preload.js && rm -rf build/renderer.js && rm -rf build/electron.js",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject",
+    "predeploy": "yarn buildgh",
+    "deploy": "gh-pages -d build",
+    "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
+    "packs": "electron-builder --dir",
+    "dist": "run-script-os",
+    "predist": "node -e \"let pkg=require('./package.json'); pkg.homepage='.'; require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2));\"",
+    "dist:win32": "set GENERATE_SOURCEMAP=false && react-scripts build && electron-builder --config electron-builder.json -w zip -w portable -w nsis",
+    "dist:default": "GENERATE_SOURCEMAP=false react-scripts build && electron-builder --config electron-builder.json",
+    "distcc": "run-script-os",
+    "predistcc": "node -e \"let pkg=require('./package.json'); pkg.homepage='.'; require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2));\"",
+    "distcc:win32": "set GENERATE_SOURCEMAP=false && react-scripts build && electron-builder",
+    "distcc:default": "GENERATE_SOURCEMAP=false react-scripts build && electron-builder",
+    "distall": "run-script-os",
+    "predistall": "set PUBLIC_URL=. && node -e \"let pkg=require('./package.json'); pkg.homepage='.'; require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2));\"",
+    "distall:win32": "set GENERATE_SOURCEMAP=false && react-scripts build && electron-builder && electron-builder --config electron-builder.json -w zip -w portable -w nsis",
+    "distall:default": "GENERATE_SOURCEMAP=false react-scripts build && electron-builder && electron-builder --config electron-builder.json",
+    "dist-multi": "GENERATE_SOURCEMAP=false react-scripts build && electron-builder -mwl",
+    "dev": "concurrently \"cross-env BROWSER=none yarn start\" \"wait-on http://localhost:3000 && electron .\"",
+    "compile-electron": "run-script-os",
+    "compile-electron:win32": "copy app\\*.ts build\\*.js",
+    "compile-electron:default": "cp ./app/electron.ts ./build/electron.js && cp ./app/preload.ts ./build/preload.js && cp ./app/renderer.ts ./build/renderer.js && cp ./app/serviceWorker.ts ./build/serviceWorker.js",
+    "electron": "wait-on http://127.0.0.1:3000 && electron .",
+    "postinstall": "electron-builder install-app-deps",
+    "storybook": "storybook dev -p 6006 -s public",
+    "build-storybook": "storybook build -s public",
+    "prebuild-storybook": "run-script-os",
+    "prebuild-storybook:win32": "set PUBLIC_URL=/LedFx-Frontend-v2/docs",
+    "prebuild-storybook:default": "PUBLIC_URL=/LedFx-Frontend-v2/docs",
+    "build-storybookgh": "PUBLIC_URL=/LedFx-Frontend-v2/docs storybook build -s public",
+    "prebuild-storybookgh": "node -e \"let pkg=require('./package.json'); pkg.homepage='/LedFx-Frontend-v2/docs'; require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2));\""
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ],
+    "overrides": [
+      {
+        "files": [
+          "**/*.stories.*"
+        ],
+        "rules": {
+          "import/no-anonymous-default-export": "off"
+        }
+      }
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "devDependencies": {
+    "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
+    "@storybook/addon-actions": "^7.6.3",
+    "@storybook/addon-essentials": "^7.6.3",
+    "@storybook/addon-links": "^7.6.3",
+    "@storybook/addon-mdx-gfm": "7.6.3",
+    "@storybook/addons": "^7.6.3",
+    "@storybook/node-logger": "^7.6.3",
+    "@storybook/preset-create-react-app": "^7.6.3",
+    "@storybook/react-webpack5": "7.6.3",
+    "@storybook/theming": "^7.6.3",
+    "@types/chart.js": "^2.9.41",
+    "@types/color": "^3.0.6",
+    "@types/react": "^18.2.42",
+    "@types/react-dom": "^18.2.17",
+    "@types/react-router-dom": "^5.3.3",
+    "@types/styled-components": "^5.1.34",
+    "@typescript-eslint/eslint-plugin": "^6.13.2",
+    "@typescript-eslint/parser": "^6.13.2",
+    "concurrently": "^8.2.2",
+    "cross-env": "^7.0.3",
+    "electron": "^27.1.2",
+    "electron-builder": "^24.9.1",
+    "eslint": "8.55.0",
+    "eslint-config-airbnb": "19.0.4",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-import-resolver-typescript": "^3.6.0",
+    "eslint-plugin-flowtype": "^8.0.2",
+    "eslint-plugin-import": "2.29.0",
+    "eslint-plugin-jest": "^27.2.1",
+    "eslint-plugin-json": "^3.0.0",
+    "eslint-plugin-jsx-a11y": "6.8.0",
+    "eslint-plugin-prettier": "^5.0.0",
+    "eslint-plugin-react": "7.33.2",
+    "eslint-plugin-react-hooks": "4.6.0",
+    "gh-pages": "^6.1.0",
+    "prettier": "^3.0.2",
+    "react-is": "^18.1.0",
+    "run-script-os": "^1.1.6",
+    "storybook": "7.6.3",
+    "wait-on": "^7.0.1",
+    "webpack": "^5.82.0"
+  },
+  "build": {
+    "extraResources": [
+      {
+        "from": "./extraResources/",
+        "to": "extraResources",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "win": {
+      "icon": "build/icon.ico",
+      "artifactName": "LedFx_CC-v${version}--${os}.${ext}"
+    },
+    "portable": {
+      "artifactName": "LedFx_CC-v${version}--${os}-portable.${ext}"
+    },
+    "nsis": {
+      "artifactName": "LedFx_CC-v${version}--${os}-setup.${ext}"
+    },
+    "linux": {
+      "icon": "build/icon.png",
+      "artifactName": "LedFx_CC-v${version}--${os}.${ext}"
+    },
+    "appImage": {
+      "artifactName": "LedFx_CC-v${version}--${os}.${ext}"
+    },
+    "snap": {
+      "artifactName": "LedFx_CC-v${version}--${os}.${ext}"
+    },
+    "mac": {
+      "icon": "build/icon.png",
+      "artifactName": "LedFx_CC-v${version}--${os}-${arch}.${ext}"
+    },
+    "dmg": {
+      "background": "src/assets/DMG_BG.jpg",
+      "contents": [
+        {
+          "x": 135,
+          "y": 165
+        },
+        {
+          "x": 407,
+          "y": 165,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ],
+      "iconSize": 120,
+      "iconTextSize": 14,
+      "window": {
+        "height": 380
+      }
+    }
+  },
+  "packageManager": "yarn@1.22.1"
+}
