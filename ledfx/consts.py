@@ -1,7 +1,7 @@
 import ledfx_assets
 
 # TODO: Bump pyproject.toml if you bump this!
-PROJECT_VERSION = "2.0.93"
+PROJECT_VERSION = "2.0.94"
 PROJECT_NAME = "LedFx"
 PROJECT_AUTHOR = "LedFx Developers"
 PROJECT_LICENSE = "GPL-3.0"
