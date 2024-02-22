@@ -66,7 +66,7 @@ export default function App() {
     // eslint-disable-next-line no-console
     console.info(
       // eslint-disable-next-line no-useless-concat
-      '%c Ledfx ' + '%c\n ReactApp by Blade ',
+      '%c Ledfx Frontend' + '%c\n',
       'padding: 10px 40px; color: #ffffff; border-radius: 5px 5px 0 0; background-color: #800000;',
       'background: #fff; color: #800000; border-radius: 0 0 5px 5px;padding: 5px 0;'
     )
@@ -120,9 +120,9 @@ export default function App() {
     const handleWebsockets = (e: any) => {
       showSnackbar(e.detail.type, e.detail.message)
     }
-    document.addEventListener('YZNEW', handleWebsockets)
+    document.addEventListener('show_message', handleWebsockets)
     return () => {
-      document.removeEventListener('YZNEW', handleWebsockets)
+      document.removeEventListener('show_message', handleWebsockets)
     }
   }, [])
 

@@ -57,9 +57,11 @@ export default function Home() {
         }
       }
     }
-    document.addEventListener('YZ_device_created', handleWebsockets)
+
+    document.addEventListener('device_created', handleWebsockets)
+
     return () => {
-      document.removeEventListener('YZ_device_created', handleWebsockets)
+      document.removeEventListener('device_created', handleWebsockets)
     }
   }, [])
 

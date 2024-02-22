@@ -64,7 +64,7 @@ function createSocket() {
       onmessage: (event) => {
         if (JSON.parse(event.data).event_type === 'visualisation_update') {
           document.dispatchEvent(
-            new CustomEvent('YZ', {
+            new CustomEvent('visualisation_update', {
               detail: {
                 id: JSON.parse(event.data).vis_id,
                 pixels: JSON.parse(event.data).pixels
@@ -74,14 +74,14 @@ function createSocket() {
         }
         if (JSON.parse(event.data).event_type === 'devices_updated') {
           document.dispatchEvent(
-            new CustomEvent('YZold', {
+            new CustomEvent('devices_updated', {
               detail: 'devices_updated'
             })
           )
         }
         if (JSON.parse(event.data).event_type === 'device_created') {
           document.dispatchEvent(
-            new CustomEvent('YZ_device_created', {
+            new CustomEvent('device_created', {
               detail: {
                 id: 'device_created',
                 device_name: JSON.parse(event.data).device_name
@@ -91,7 +91,7 @@ function createSocket() {
         }
         if (JSON.parse(event.data).event_type === 'graph_update') {
           document.dispatchEvent(
-            new CustomEvent('YZoldDev', {
+            new CustomEvent('graph_update', {
               detail: JSON.parse(event.data)
             })
           )
