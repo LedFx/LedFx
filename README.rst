@@ -24,9 +24,7 @@ You can also join our `Discord`_ where community members show off their projects
 📑 Quick start guide and documentation📖
 ------------------------------------------
 
-Head over to `LedFx Builds`_ to get the latest releases for Windows, Mac and Linux.
-If you are in a hurry, grab the latest Core version for your operating system and off you go.
-For more info on what the different versions do, read the release description on the releases page
+Head over to `releases`_ to get the latest releases for Windows and Mac. For linux, use pip.
 
 **Bleeding edge (Experimental)**
 
@@ -34,7 +32,7 @@ If you want the absolute bleeding edge and are not afraid of using the terminal,
 
 **Documentation**
 
-Documentation for the LedFx-Builds can be found here: `Stable documentation`_
+Documentation for the latest release can be found here: `Stable documentation`_
 
 Documentation built against this repository can be found here: `Latest documentation`_
 
@@ -71,12 +69,11 @@ The below image describes a basic setup - LedFx running on PC, communicating wit
       - Test you can access the WLED web interface from your PC. If so, then you're good to go!
 
 #. **Install LedFx.**
-      - After you have WLED installed on your ESP device, download: `LedFx.exe`_ and install LedFx.
-      - For Mac and Linux `LedFx Builds`_, or see the `installation documentation`_ or `LedFx Guide`_.
+      - For PC and Mac, see our `releases`_, or see the `installation documentation`_ for more information.
+      - For linux, you can use pip to install ledfx - however you may need to install some dependencies first. See the `installation documentation`_ for more information.
 
 #. **Direct computer audio output to LedFx.**
-      - Follow guide, `How to: Enable Stereo Mix in Windows 10`_.
-      - Alternatively use `Voicemeeter`_. `Voicemeeter tutorial`_.
+      - By default on Windows LedFx will attempt to listen to your system audio.
       - More information for `Linux and macOS users here <https://ledfx.readthedocs.io/en/latest/directing_audio.html>`_.
       - Play some music in the background.
 
@@ -114,10 +111,10 @@ License
 
 
 .. _`GPL-3`: https://choosealicense.com/licenses/gpl-3.0/
-.. _`LedFx.exe`: https://github.com/YeonV/LedFx-Builds/releases/latest
+.. _`LedFx.exe`: https://github.com/LedFx/LedFx/releases/latest
 .. _`LedFx Guide`: https://ledfx.readthedocs.io/en/latest/index.html
 .. _`WLED`: https://kno.wled.ge
-.. _`LedFx Builds`: https://github.com/YeonV/LedFx-Builds/releases/latest
+.. _`releases`: https://github.com/LedFx/LedFx/releases/latest
 .. _`Installation documentation`: https://ledfx.readthedocs.io/en/latest/installing.html
 .. _`Stable documentation`: https://ledfx.readthedocs.io/en/stable/
 .. _`Latest documentation`: https://ledfx.readthedocs.io/en/latest/
@@ -125,8 +122,7 @@ License
 .. _`Discord`: https://discord.gg/xyyHEquZKQ
 .. _`Contributors-&-About`: https://ledfx.app/about/
 .. _`How to: Enable Stereo Mix in Windows 10`: https://thegeekpage.com/stereo-mix/
-.. _`Voicemeeter`: https://vb-audio.com/Voicemeeter/index.htm
-.. _`Voicemeeter tutorial`: https://youtu.be/ZXKDzYXS60o?start=27&end=163
+
 
 .. |Build Status| image:: https://github.com/LedFx/LedFx/actions/workflows/ci-build.yml/badge.svg
    :target: https://github.com/LedFx/LedFx/actions/workflows/ci-build.yml
