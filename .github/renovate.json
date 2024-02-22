@@ -1,5 +1,9 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:recommended", ":pinGitHubActionDigests", ":automergeMinor", ":automergeLinters",":automergeBranch"]
-
+  "extends": [
+    "config:recommended",
+    ":automergeMinor",
+    ":automergeLinters",
+    ":automergeBranch"
+]
 }
