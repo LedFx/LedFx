@@ -1,8 +1,8 @@
 {
   "short_name": "LedFx",
-  "name": "LedFx Client by Blade",
-  "description": "Connect to any LedFx-Instance",
-  "author": "Yeon (Blade)",
+  "name": "LedFx",
+  "description": "Connect to LedFx",
+  "author": "LedFx Developers",
   "protocol_handlers": [
     {
       "protocol": "web+ledfx",
@@ -10,8 +10,8 @@
     }
   ],
   "developer": {
-    "name": "Yeon",
-    "url": "https://github.com/YeonV"
+    "name": "LedFx",
+    "url": "https://github.com/LedFx/LedFx"
   },
   "icons": [
     {

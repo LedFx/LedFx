@@ -16,8 +16,8 @@ To install and run the LedFx Frontend, follow these steps:
 
 1. Clone the LedFx repository: `git clone https://github.com/ledfx/ledfx.git`
 2. Navigate to the frontend directory: `cd ledfx/frontend`
-3. Install the required dependencies: `npm install`
-4. Start the frontend server: `npm start`
+3. Install the required dependencies: `yarn install`
+4. Start the frontend server: `yarn start`
 5. Access the frontend in your browser at: `http://localhost:3000`
 
 ## Usage
