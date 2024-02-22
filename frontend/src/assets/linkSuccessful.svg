@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="300" height="100" viewBox="0 0 300 100">
+  <!-- App icon -->
+  <circle cx="50" cy="50" r="20" fill="#0073e6" />
+  <text x="40" y="55" font-size="20" fill="white">App</text>
+
+  <!-- Line 1 -->
+  <line x1="70" y1="50" x2="130" y2="50" stroke="#0073e6" stroke-width="2">
+    <animate attributeName="x2" from="70" to="150" dur="0.5s" begin="0.5s" fill="freeze" />
+  </line>
+
+  <!-- Checkmark in a circle -->
+  <circle cx="150" cy="50" r="20" fill="#4caf50" />
+  <path d="M140 45 L150 55 L170 35" stroke="#ffffff" stroke-width="2" fill="none">
+    <animate attributeName="stroke-dasharray" from="0 40 40" to="57 40 40" dur="0.5s" begin="1s" fill="freeze" />
+  </path>
+
+  <!-- Line 2 -->
+  <line x1="170" y1="50" x2="230" y2="50" stroke="#4caf50" stroke-width="2">
+    <animate attributeName="x1" from="170" to="250" dur="0.5s" begin="1.5s" fill="freeze" />
+  </line>
+
+  <!-- Service icon -->
+  <circle cx="250" cy="50" r="20" fill="#4caf50" />
+  <text x="240" y="55" font-size="20" fill="white">Service</text>
+</svg>

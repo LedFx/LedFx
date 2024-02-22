@@ -2,7 +2,11 @@ name: CI Build LedFx
 
 on:
   push:
+    paths-ignore:
+      - 'frontend/**'
   pull_request:
+    paths-ignore:
+      - 'frontend/**'
   release:
     types: [created]
 concurrency:

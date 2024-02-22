@@ -1379,13 +1379,13 @@ testing = ["pytest", "pytest-benchmark"]
 
 [[package]]
 name = "pre-commit"
-version = "3.6.1"
+version = "3.6.2"
 description = "A framework for managing and maintaining multi-language pre-commit hooks."
 optional = false
 python-versions = ">=3.9"
 files = [
-    {file = "pre_commit-3.6.1-py2.py3-none-any.whl", hash = "sha256:9fe989afcf095d2c4796ce7c553cf28d4d4a9b9346de3cda079bcf40748454a4"},
-    {file = "pre_commit-3.6.1.tar.gz", hash = "sha256:c90961d8aa706f75d60935aba09469a6b0bcb8345f127c3fbee4bdc5f114cf4b"},
+    {file = "pre_commit-3.6.2-py2.py3-none-any.whl", hash = "sha256:ba637c2d7a670c10daedc059f5c49b5bd0aadbccfcd7ec15592cf9665117532c"},
+    {file = "pre_commit-3.6.2.tar.gz", hash = "sha256:c3ef34f463045c88658c5b99f38c1e297abdcc0ff13f98d3370055fbbfabc67e"},
 ]
 
 [package.dependencies]
@@ -1791,37 +1791,37 @@ cli = ["click (>=5.0)"]
 
 [[package]]
 name = "python-mbedtls"
-version = "2.9.0"
+version = "2.9.2"
 description = "hash, hmac, RSA, ECC, X.509, TLS, DTLS, handshakes, and secrets with an mbed TLS back end"
 optional = true
 python-versions = "*"
 files = [
-    {file = "python-mbedtls-2.9.0.tar.gz", hash = "sha256:66b8510aaeebeee3088a8a5eed6b35ab252c8aa2f3c6936bc9a2fe5be116a786"},
-    {file = "python_mbedtls-2.9.0-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:af17209406736f1e94c9b20edc5647b31f2f9dcc1d4cc1e3ec404da5c907c79b"},
-    {file = "python_mbedtls-2.9.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:35af4e15e18f4de14845513a988eac95c8d1c82fa9c082efa4e841b1483654fd"},
-    {file = "python_mbedtls-2.9.0-cp310-cp310-musllinux_1_1_i686.whl", hash = "sha256:c3bfaac8025cb7b9fcdf44a15086b1913deadf681cba9f6de7dd1b5fd1569e1e"},
-    {file = "python_mbedtls-2.9.0-cp310-cp310-musllinux_1_1_x86_64.whl", hash = "sha256:64dba5a9a6e524f23e703f6c926d717eccdabc1e38f38cc17d3dd3d0cd04be73"},
-    {file = "python_mbedtls-2.9.0-cp310-cp310-win_amd64.whl", hash = "sha256:e00286f85c18227bb1db97b69d51e5e9cfeda51b0c138967cdbec7004f151d62"},
-    {file = "python_mbedtls-2.9.0-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:ababf976c97491a400375da737ea6bc42306c48968efa38f56c5c492718c1f12"},
-    {file = "python_mbedtls-2.9.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:d1dfb82ffedf0a7e11c641ad117df0bc8c0bcc1c975ba344cbea6386398aeebc"},
-    {file = "python_mbedtls-2.9.0-cp311-cp311-musllinux_1_1_i686.whl", hash = "sha256:a1510f4311999b53d6c3678f0450282c9677bb0f951c4dfab3ddf06019068354"},
-    {file = "python_mbedtls-2.9.0-cp311-cp311-musllinux_1_1_x86_64.whl", hash = "sha256:fe5094fb5e75d3dcb6fbe2136e23ea8e2c0f3e868a6b21c1f0c3dcef4a184e54"},
-    {file = "python_mbedtls-2.9.0-cp311-cp311-win_amd64.whl", hash = "sha256:e705d218eab572183a0a4b255fbcad7dbc2d5a2c01f309fe80d189b6cd5dd4e9"},
-    {file = "python_mbedtls-2.9.0-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:de6cae470dd5a4be4aabc0255e3237b4de23ca41e5ce65edd139ad2362856a2a"},
-    {file = "python_mbedtls-2.9.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:e2766d108e24750fa0e4de115bf31c1d95abcd8f638aa555be15ec3c5151261f"},
-    {file = "python_mbedtls-2.9.0-cp312-cp312-musllinux_1_1_i686.whl", hash = "sha256:573d2424074523e2f5308c2fbcb09b53c5e134d293a18b2f4de016353f4b6d64"},
-    {file = "python_mbedtls-2.9.0-cp312-cp312-musllinux_1_1_x86_64.whl", hash = "sha256:bb5cc4c81ede2c74d2393944335b9c68b44db2494e5094eddd862af65e24a868"},
-    {file = "python_mbedtls-2.9.0-cp312-cp312-win_amd64.whl", hash = "sha256:7738056ab4edd8002d8d5855226e809cd896362835b3b2c731a3189b2ca96f8e"},
-    {file = "python_mbedtls-2.9.0-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:755485c2b9e1c76744f103b33f9ee45fad9aa44fcaddcd19759089bb4ab97519"},
-    {file = "python_mbedtls-2.9.0-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:8ea22e356c686add7229f90fea8bf78009cc5b9ea66bb9fd657164e537418a76"},
-    {file = "python_mbedtls-2.9.0-cp38-cp38-musllinux_1_1_i686.whl", hash = "sha256:d53d8d4d0d94f2a6b2a579e32adcce71919950cc4e47c0074432e317c3d8fc20"},
-    {file = "python_mbedtls-2.9.0-cp38-cp38-musllinux_1_1_x86_64.whl", hash = "sha256:0cc6940e6cd93296f50597eacec1ecdf14089cfdcc261d7cfbc91180457959df"},
-    {file = "python_mbedtls-2.9.0-cp38-cp38-win_amd64.whl", hash = "sha256:92e739ee685d46118b58604496e1b2b12c41007ca99675b28b9499414f8dc449"},
-    {file = "python_mbedtls-2.9.0-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:2ddfeb37d24ad5e3de89dc46706be82bb98fc00c1d0b06f3c32198110fa99cc8"},
-    {file = "python_mbedtls-2.9.0-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:7a31b1c996de5367b509f3d45f2aa3d983a0d49c006f4964f4e48ad1b80daeb7"},
-    {file = "python_mbedtls-2.9.0-cp39-cp39-musllinux_1_1_i686.whl", hash = "sha256:1515d1cc5a4a6f4b152bc1e50f44b4964fcc3e323a5a43eacab362c15e39bf6f"},
-    {file = "python_mbedtls-2.9.0-cp39-cp39-musllinux_1_1_x86_64.whl", hash = "sha256:8a4fbef1b556be4bc2e0a8f1a312bca01a0f30c4bfc8538f81b170400deb633c"},
-    {file = "python_mbedtls-2.9.0-cp39-cp39-win_amd64.whl", hash = "sha256:7c71f2c9e755f3ac8352c077776c7cf1d19d1c071d522a13a6215ace63f68e3c"},
+    {file = "python-mbedtls-2.9.2.tar.gz", hash = "sha256:f541ccd23da2722724fd026c707a652883c497fe67340a8f1adb6ac73c487b31"},
+    {file = "python_mbedtls-2.9.2-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:323d2d0983872d613efcc273bf57bb9e8506747534fc528aa21e1da05e0a656f"},
+    {file = "python_mbedtls-2.9.2-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:afc54533baf73640173f06cd527ccce3cc0c67f7b57e4d30e12e18792ffaacd1"},
+    {file = "python_mbedtls-2.9.2-cp310-cp310-musllinux_1_1_i686.whl", hash = "sha256:d44b43e3c1b4ab60b535999626121ecc4861bad22defd87bfb78b64afc4d96d0"},
+    {file = "python_mbedtls-2.9.2-cp310-cp310-musllinux_1_1_x86_64.whl", hash = "sha256:cc5882e3c5b300f969eb8ef0bb8c037fe82fe339d99dae14d2da880b2dc33715"},
+    {file = "python_mbedtls-2.9.2-cp310-cp310-win_amd64.whl", hash = "sha256:75d42a156d4b07d2dfdaafbd6f33109f1be9be2b8a37fc8388841c6d44e3ddfb"},
+    {file = "python_mbedtls-2.9.2-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:2845256a02b00074be24b2f2019ad0902665405ed9a6023313047ed14cde9c2f"},
+    {file = "python_mbedtls-2.9.2-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:907822e55fd70dd708eea40154dffd06f68ce513a8c56ed9efff6727dc4797f4"},
+    {file = "python_mbedtls-2.9.2-cp311-cp311-musllinux_1_1_i686.whl", hash = "sha256:d52673ccfdeac5f224c9d85ea8497e516b7af648114e010df6f9dafe3045e150"},
+    {file = "python_mbedtls-2.9.2-cp311-cp311-musllinux_1_1_x86_64.whl", hash = "sha256:c9e53053a6761115f37b8f54a573e710e0484312b78049f068b9f75a23cb4e64"},
+    {file = "python_mbedtls-2.9.2-cp311-cp311-win_amd64.whl", hash = "sha256:bfe946fa90081e5e4c8b45e7949e540ce476d5e00fb5a689f0bab4de09b42dde"},
+    {file = "python_mbedtls-2.9.2-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:a0d4ebb63b2e8afd9577ad98a04c9447ee05d0d6803901d8ab1c59190acb713a"},
+    {file = "python_mbedtls-2.9.2-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:d6fb174f0ba6e2e43590ec821ad2be84268deb940380209a4427e998fdb8fef7"},
+    {file = "python_mbedtls-2.9.2-cp312-cp312-musllinux_1_1_i686.whl", hash = "sha256:47bef40919d0b18469c147089d937eb5f4f51658f72245e1b20d744d81435c9f"},
+    {file = "python_mbedtls-2.9.2-cp312-cp312-musllinux_1_1_x86_64.whl", hash = "sha256:d8d00a3790fc6784cf63e51ed89c861a05ce2b40020d0e35e30ca68c605e9289"},
+    {file = "python_mbedtls-2.9.2-cp312-cp312-win_amd64.whl", hash = "sha256:052c1a636654884ecce6764f4d1d738f0e432b30c52984f62b1428e353c2c171"},
+    {file = "python_mbedtls-2.9.2-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:d0e2651ca19144b1a3ad63a0e3fa3021bd23784973bc692eb2df0c5adc7da2b9"},
+    {file = "python_mbedtls-2.9.2-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:5cc80f6ac5491118c86428cfb90dafd85c046fbaf262afa57246fe4d681bd567"},
+    {file = "python_mbedtls-2.9.2-cp38-cp38-musllinux_1_1_i686.whl", hash = "sha256:ef593807041ffc4568bf3727938476d183b85999abd5645963e3f063875cbd30"},
+    {file = "python_mbedtls-2.9.2-cp38-cp38-musllinux_1_1_x86_64.whl", hash = "sha256:5ba69548cf13150bbea650be26ab8ee901004d0096737c20e071a2a754dba40e"},
+    {file = "python_mbedtls-2.9.2-cp38-cp38-win_amd64.whl", hash = "sha256:631bea08fe849275f6a915aa6041be4825052648c32cd5dbb295dbfceeed0c3f"},
+    {file = "python_mbedtls-2.9.2-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:70f0dda6dc4c4b0d03e4b30db20d066b27abcde97968d2ef4591e63984f4e0cc"},
+    {file = "python_mbedtls-2.9.2-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:7186403434b12dcbe3012a5633e19bcb51c5bc7a9dd2658cdf8358dee3db30f3"},
+    {file = "python_mbedtls-2.9.2-cp39-cp39-musllinux_1_1_i686.whl", hash = "sha256:a593359d48391e72a02b45bdcb9e10c5d85e1d137bf2b715e30b9367029cbda5"},
+    {file = "python_mbedtls-2.9.2-cp39-cp39-musllinux_1_1_x86_64.whl", hash = "sha256:005081d7ee28c3e11431e94c4b5907313879300dce6ab3e48cee3937629812ee"},
+    {file = "python_mbedtls-2.9.2-cp39-cp39-win_amd64.whl", hash = "sha256:038c8df7e95db34cec928fb41f00360a3cc0061909fb22b03a2ccf43146df939"},
 ]
 
 [package.dependencies]
@@ -2037,13 +2037,13 @@ numpy = "*"
 
 [[package]]
 name = "sentry-sdk"
-version = "1.40.4"
+version = "1.40.5"
 description = "Python client for Sentry (https://sentry.io)"
 optional = false
 python-versions = "*"
 files = [
-    {file = "sentry-sdk-1.40.4.tar.gz", hash = "sha256:657abae98b0050a0316f0873d7149f951574ae6212f71d2e3a1c4c88f62d6456"},
-    {file = "sentry_sdk-1.40.4-py2.py3-none-any.whl", hash = "sha256:ac5cf56bb897ec47135d239ddeedf7c1c12d406fb031a4c0caa07399ed014d7e"},
+    {file = "sentry-sdk-1.40.5.tar.gz", hash = "sha256:d2dca2392cc5c9a2cc9bb874dd7978ebb759682fe4fe889ee7e970ee8dd1c61e"},
+    {file = "sentry_sdk-1.40.5-py2.py3-none-any.whl", hash = "sha256:d188b407c9bacbe2a50a824e1f8fb99ee1aeb309133310488c570cb6d7056643"},
 ]
 
 [package.dependencies]
@@ -2069,7 +2069,7 @@ huey = ["huey (>=2)"]
 loguru = ["loguru (>=0.5)"]
 opentelemetry = ["opentelemetry-distro (>=0.35b0)"]
 opentelemetry-experimental = ["opentelemetry-distro (>=0.40b0,<1.0)", "opentelemetry-instrumentation-aiohttp-client (>=0.40b0,<1.0)", "opentelemetry-instrumentation-django (>=0.40b0,<1.0)", "opentelemetry-instrumentation-fastapi (>=0.40b0,<1.0)", "opentelemetry-instrumentation-flask (>=0.40b0,<1.0)", "opentelemetry-instrumentation-requests (>=0.40b0,<1.0)", "opentelemetry-instrumentation-sqlite3 (>=0.40b0,<1.0)", "opentelemetry-instrumentation-urllib (>=0.40b0,<1.0)"]
-pure-eval = ["asttokens", "executing", "pure_eval"]
+pure-eval = ["asttokens", "executing", "pure-eval"]
 pymongo = ["pymongo (>=3.1)"]
 pyspark = ["pyspark (>=2.4.4)"]
 quart = ["blinker (>=1.1)", "quart (>=0.16.1)"]

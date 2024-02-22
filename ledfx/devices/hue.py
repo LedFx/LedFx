@@ -206,7 +206,7 @@ class HueDevice(NetworkedDevice):
                 )
 
         if not handshake_success:
-            raise Exception(
+            _LOGGER.warning(
                 "Could not connect to the Bridge. Disconnect and reconnect it from power."
             )
 

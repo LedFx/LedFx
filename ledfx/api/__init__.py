@@ -62,9 +62,10 @@ class RestEndpoint(BaseRegistry):
             # _LOGGER.exception(e)
             reason = getattr(e, "args", None)
             if reason:
-                reason = reason[0]
+                reason = str(reason[0])
             else:
-                reason = repr(e)
+                reason = str(e)
+
             response = {
                 "status": "failed",
                 "payload": {

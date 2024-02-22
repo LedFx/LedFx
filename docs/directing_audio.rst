@@ -81,6 +81,7 @@ Windows
 =======
 Tested on Windows 10 (21H2)
 
+
 Windows have output devices and input devices. LedFx works processing an input device.
 
 .. rubric:: Stereo Mix (analog output)
@@ -120,7 +121,7 @@ Webaudio
 
 .. rubric:: Enabling
 
-- Go to settings and enter "HackedByBlade!" and a window saying "dev mode activated" should appear.
+- Go to settings and enter "AlphaMode!" and a window saying "dev mode activated" should appear.
 
 - Then in the same bar enter "BladeAlpha" and then click on the UI setting.
 
@@ -156,3 +157,5 @@ Webaudio
 When creating a new webaudio device, you may see, below the name entering field, an ability to choose between ws-v1 and ws-v2. Unless something does not work, you should always use ws-v2.
 The reason for that is ws-v2 using significantly less bandwidth. The ws-v1 setting sends audio data (which is float type) as plain text, meaning that for each number a byte is sent (can be up to 6 bytes per number), even though
 the audio data being sampled is only 16-bit. The ws-v2 setting instead sends the audio data as base64, which is a binary data encoding method, greatly reducing the used bandwidth.
+
+
