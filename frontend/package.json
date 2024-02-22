@@ -148,5 +148,5 @@
     "wait-on": "^7.0.1",
     "webpack": "^5.82.0"
   },
-  "packageManager": "yarn@1.22.1"
+  "packageManager": "yarn@1.22.21"
 }
