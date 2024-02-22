@@ -1,0 +1,74 @@
+{
+    "publish": {
+        "provider": "generic",
+        "url": "https://github.com/YeonV/LedFx-Frontend-v2"
+    },
+    "productName": "LedFx-Client",
+    "appId": "com.ledfx.app",
+    "directories": {
+        "buildResources": "buildResources",
+        "output": "dist"
+    },
+    "files": [
+        "src/",
+        "node_modules/",
+        "package.json"
+    ],
+    "protocols": [
+        {
+            "name": "LedFx",
+            "schemes": [
+                "ledfx"
+            ]
+        }
+    ],
+    "mac": {
+        "target": [
+            "dmg",
+            "zip"
+        ],
+        "icon": "build/icon.png",
+        "artifactName": "LedFx_client-v${version}--${os}-${arch}.${ext}"
+    },
+    "dmg": {
+        "background": "src/assets/DMG_BG.jpg",
+        "contents": [
+            {
+                "x": 135,
+                "y": 165
+            },
+            {
+                "x": 407,
+                "y": 165,
+                "type": "link",
+                "path": "/Applications"
+            }
+        ],
+        "iconSize": 120,
+        "iconTextSize": 14,
+        "window": {
+            "height": 380
+        }
+    },
+    "win": {
+        "target": [
+            "nsis",
+            "zip"
+        ],
+        "icon": "build/icon.ico",
+        "artifactName": "LedFx_client-v${version}--${os}.${ext}"
+    },
+    "portable": {
+        "artifactName": "LedFx_client-v${version}--${os}-portable.${ext}"
+    },
+    "nsis": {
+        "artifactName": "LedFx_client-v${version}--${os}-setup.${ext}"
+    },
+    "linux": {
+        "target": [
+            "AppImage",
+            "snap"
+        ],
+        "artifactName": "LedFx_client-v${version}--${os}.${ext}"
+    }
+}
