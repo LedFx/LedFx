@@ -1,12 +1,17 @@
 import timeit
 
 import numpy as np
-import psutil
 import voluptuous as vol
 
 from ledfx.color import parse_color, validate_color
 from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.utils import Graph, bokeh_available
+
+try:
+    import psutil
+    psutil_available = True
+except ImportError:
+    psutil_available = False
 
 # Metro intent is to flash a pattern on led strips so end users can look for
 # sync between separate light strips due to protocol, wifi conditions or other
@@ -19,7 +24,7 @@ class MetroEffect(AudioReactiveEffect):
     NAME = "Metro"
     CATEGORY = "Diagnostic"
     HIDDEN_KEYS = ["background_brightness", "blur", "mirror"]
-    if not bokeh_available:
+    if not bokeh_available or not psutil_available:
         HIDDEN_KEYS.append("capture")
 
     start_time = timeit.default_timer()

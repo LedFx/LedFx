@@ -7,6 +7,7 @@ import requests
 import voluptuous as vol
 
 from ledfx.devices import NetworkedDevice
+from requests import ConnectTimeout
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -77,13 +78,24 @@ class NanoleafDevice(NetworkedDevice):
             if self._config["model"] == LightPanelModel:
                 payload["write"]["extControlVersion"] = "v1"
 
-            response = requests.put(
-                self.url(self._config["auth_token"]) + "/effects",
-                json=payload,
-            )
+            try:
+                response = requests.put(
+                    self.url(self._config["auth_token"]) + "/effects",
+                    json=payload,
+                )
+            except ConnectTimeout:
+                _LOGGER.warning(
+                    f"{self.name} Connection Timeout. Is Nanoleaf powered?"
+                )
+                self.deactivate()
+                self._online = False
+                return
 
             if response.status_code == 400:
-                raise Exception("Invalid effect dictionary")
+                _LOGGER.warning(f"{self.name} Bad Request Response")
+                self.deactivate()
+                self._online = False
+                return
 
             self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             self._sock.connect(
@@ -144,8 +156,11 @@ class NanoleafDevice(NetworkedDevice):
                 }
             },
         )
+
         if response.status_code == 400:
-            raise Exception("Invalid effect dictionary")
+            _LOGGER.warning(f"{self.name} Bad Request Response")
+            self.deactivate()
+            self._online = False
 
     def flush(self, data):
         for panel, col in zip(
