@@ -151,19 +151,7 @@ const User = () => {
   }
 
   const hasStarred = async () => {
-    const r = await fetch(`https://api.github.com/users/${userName}/starred`)
-    const re = await r.json()
-    const repos = re.map((resp: any) => resp.full_name)
-    setStarred({
-      core: repos.includes('LedFx/LedFx'),
-      client: repos.includes('YeonV/LedFx-Frontend-v2'),
-      build: repos.includes('YeonV/LedFx-Builds'),
-      hass: repos.includes('YeonV/home-assistant-addons'),
-      wledman: repos.includes('YeonV/wled-manager'),
-      audiopipes: repos.includes('YeonV/audio-pipes'),
-      io: repos.includes('YeonV/io')
-    })
-  }
+}
   const deleteCloudConfig = async (name: string, date: any) => {
     const existing = await cloud.get(
       `configs?user.username=${localStorage.getItem(
