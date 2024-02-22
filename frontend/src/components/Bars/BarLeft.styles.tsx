@@ -1,7 +1,6 @@
 import { makeStyles } from '@mui/styles'
 import isElectron from 'is-electron'
 import { drawerWidth } from '../../utils/helpers'
-import ledfxmod from '../../assets/ledfxmod.svg'
 
 const useStyles = makeStyles(() => ({
   '@global': {
@@ -52,6 +51,10 @@ const useStyles = makeStyles(() => ({
     backgroundColor: 'transparent',
     '&,&:hover': {
       color: '#FFFFFF'
+    },
+    '&::before': {
+      content: '"LedFx"',
+      marginRight: '10px'
     }
   },
   logoImage: {
@@ -69,7 +72,6 @@ const useStyles = makeStyles(() => ({
     }
   },
   devbadge: {
-    backgroundImage: `url(${ledfxmod})`,
     color: '#fff',
     borderRadius: isElectron() ? 0 : '15px',
     width: '150px',
@@ -81,7 +83,16 @@ const useStyles = makeStyles(() => ({
     backgroundPosition: isElectron() ? '-66px 50%' : '-40px 50%',
     transform: 'scale(0.9)',
     marginRight: '-15px',
-    transformOrigin: 'left center'
+    transformOrigin: 'left center',
+    display: 'flex', // Add this line to make the devbadge a flex container
+    justifyContent: 'center', // Center the text horizontally
+    alignItems: 'center', // Center the text vertically
+    '&::before': {
+      content: '"LedFx"',
+      position: 'absolute', // Position the text absolutely within the devbadge element
+      color: '#FFFFFF',
+      fontSize: '25px'
+    }
   }
 }))
 export default useStyles
