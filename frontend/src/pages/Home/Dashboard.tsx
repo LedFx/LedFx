@@ -342,7 +342,7 @@ const Dashboard = () => {
             </Tooltip>
           </Stack>
           <Stack spacing={2} direction="row" justifyContent="center">
-            <Tooltip title="Github Core (python)">
+            <Tooltip title="LedFx Github">
               <Fab
                 aria-label="github"
                 onClick={() =>
@@ -366,31 +366,7 @@ const Dashboard = () => {
                 <GitHub />
               </Fab>
             </Tooltip>
-            <Tooltip title="Github Client (react)">
-              <Fab
-                aria-label="github"
-                onClick={() =>
-                  window.open(
-                    'https://github.com/YeonV/LedFx-Frontend-v2',
-                    '_blank',
-                    'noopener,noreferrer'
-                  )
-                }
-                style={{
-                  margin: '8px',
-                  zIndex: 0
-                }}
-                sx={{
-                  bgcolor: theme.palette.text.disabled,
-                  '&:hover': {
-                    bgcolor: theme.palette.primary.main
-                  }
-                }}
-              >
-                <GitHub />
-              </Fab>
-            </Tooltip>
-            <Tooltip title="Discord">
+            <Tooltip title="LedFx Discord">
               <Fab
                 aria-label="discord"
                 onClick={() =>
