@@ -1,16 +1,14 @@
 {
   "name": "ledfx",
   "version": "2.0.92",
-  "description": "LedFx v2 - BladeMOD",
-  "author": "YeonV aka Blade",
+  "description": "LedFx Frontend",
+  "author": "LedFx Developers",
   "private": true,
-  "main": "public/electron.js",
   "homepage": ".",
   "engines": {
     "node": ">=20"
   },
   "dependencies": {
-    "@electron/remote": "^2.0.9",
     "@emotion/react": "^11.10.8",
     "@emotion/styled": "^11.10.8",
     "@mui/icons-material": "^5.14.19",
@@ -29,10 +27,6 @@
     "color": "^4.2.3",
     "crypto": "^1.0.1",
     "deep-object-diff": "^1.1.9",
-    "electron-devtools-installer": "^3.2.0",
-    "electron-is-dev": "^2.0.0",
-    "electron-squirrel-startup": "^1.0.0",
-    "electron-store": "^8.1.0",
     "eslint-config-react-app": "7.0.1",
     "immer": "10.0.3",
     "is-electron": "^2.2.2",
@@ -57,6 +51,7 @@
     "react-zoom-pan-pinch": "^3.1.0",
     "reactour": "^1.19.0",
     "sockette": "^2.0.6",
+    "strip-ansi": "6.0.0",
     "styled-components": "^6.0.5",
     "ts-deepmerge": "^6.1.0",
     "typescript": "^5.3.3",
@@ -80,45 +75,11 @@
     "build:win32": "set GENERATE_SOURCEMAP=false && react-scripts build",
     "build:default": "GENERATE_SOURCEMAP=false react-scripts build",
     "prebuild": "node -e \"let pkg=require('./package.json'); pkg.homepage='/'; require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2));\"",
-    "postbuild": "node -e \"let pkg=require('./package.json'); pkg.homepage='.'; require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2));\" && rm -rf build/app && rm -rf build/preload.js && rm -rf build/renderer.js && rm -rf build/electron.js",
-    "buildhass": "GENERATE_SOURCEMAP=false react-scripts build",
-    "prebuildhass": "node -e \"let pkg=require('./package.json'); pkg.homepage='./'; require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2));\"",
-    "postbuildhass": "node -e \"let pkg=require('./package.json'); pkg.homepage='.'; require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2));\" && rm -rf build/app && rm -rf build/preload.js && rm -rf build/renderer.js && rm -rf build/electron.js",
-    "buildgh": "GENERATE_SOURCEMAP=false PUBLIC_URL=/LedFx-Frontend-v2/ react-scripts build",
-    "prebuildgh": "node -e \"let pkg=require('./package.json'); pkg.homepage='/LedFx-Frontend-v2/'; require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2));\"",
-    "postbuildgh": "rm -rf build/app && rm -rf build/preload.js && rm -rf build/renderer.js && rm -rf build/electron.js",
+    "postbuild": "node -e \"let pkg=require('./package.json'); pkg.homepage='.'; require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2));\"",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "predeploy": "yarn buildgh",
-    "deploy": "gh-pages -d build",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
-    "packs": "electron-builder --dir",
-    "dist": "run-script-os",
-    "predist": "node -e \"let pkg=require('./package.json'); pkg.homepage='.'; require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2));\"",
-    "dist:win32": "set GENERATE_SOURCEMAP=false && react-scripts build && electron-builder --config electron-builder.json -w zip -w portable -w nsis",
-    "dist:default": "GENERATE_SOURCEMAP=false react-scripts build && electron-builder --config electron-builder.json",
-    "distcc": "run-script-os",
-    "predistcc": "node -e \"let pkg=require('./package.json'); pkg.homepage='.'; require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2));\"",
-    "distcc:win32": "set GENERATE_SOURCEMAP=false && react-scripts build && electron-builder",
-    "distcc:default": "GENERATE_SOURCEMAP=false react-scripts build && electron-builder",
-    "distall": "run-script-os",
-    "predistall": "set PUBLIC_URL=. && node -e \"let pkg=require('./package.json'); pkg.homepage='.'; require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2));\"",
-    "distall:win32": "set GENERATE_SOURCEMAP=false && react-scripts build && electron-builder && electron-builder --config electron-builder.json -w zip -w portable -w nsis",
-    "distall:default": "GENERATE_SOURCEMAP=false react-scripts build && electron-builder && electron-builder --config electron-builder.json",
-    "dist-multi": "GENERATE_SOURCEMAP=false react-scripts build && electron-builder -mwl",
-    "dev": "concurrently \"cross-env BROWSER=none yarn start\" \"wait-on http://localhost:3000 && electron .\"",
-    "compile-electron": "run-script-os",
-    "compile-electron:win32": "copy app\\*.ts build\\*.js",
-    "compile-electron:default": "cp ./app/electron.ts ./build/electron.js && cp ./app/preload.ts ./build/preload.js && cp ./app/renderer.ts ./build/renderer.js && cp ./app/serviceWorker.ts ./build/serviceWorker.js",
-    "electron": "wait-on http://127.0.0.1:3000 && electron .",
-    "postinstall": "electron-builder install-app-deps",
-    "storybook": "storybook dev -p 6006 -s public",
-    "build-storybook": "storybook build -s public",
-    "prebuild-storybook": "run-script-os",
-    "prebuild-storybook:win32": "set PUBLIC_URL=/LedFx-Frontend-v2/docs",
-    "prebuild-storybook:default": "PUBLIC_URL=/LedFx-Frontend-v2/docs",
-    "build-storybookgh": "PUBLIC_URL=/LedFx-Frontend-v2/docs storybook build -s public",
-    "prebuild-storybookgh": "node -e \"let pkg=require('./package.json'); pkg.homepage='/LedFx-Frontend-v2/docs'; require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2));\""
+    "storybook": "storybook dev -p 6006 -s public"
   },
   "eslintConfig": {
     "extends": [
@@ -169,8 +130,6 @@
     "@typescript-eslint/parser": "^6.13.2",
     "concurrently": "^8.2.2",
     "cross-env": "^7.0.3",
-    "electron": "^27.1.2",
-    "electron-builder": "^24.9.1",
     "eslint": "8.55.0",
     "eslint-config-airbnb": "19.0.4",
     "eslint-config-prettier": "^9.1.0",
@@ -190,61 +149,6 @@
     "storybook": "7.6.3",
     "wait-on": "^7.0.1",
     "webpack": "^5.82.0"
-  },
-  "build": {
-    "extraResources": [
-      {
-        "from": "./extraResources/",
-        "to": "extraResources",
-        "filter": [
-          "**/*"
-        ]
-      }
-    ],
-    "win": {
-      "icon": "build/icon.ico",
-      "artifactName": "LedFx_CC-v${version}--${os}.${ext}"
-    },
-    "portable": {
-      "artifactName": "LedFx_CC-v${version}--${os}-portable.${ext}"
-    },
-    "nsis": {
-      "artifactName": "LedFx_CC-v${version}--${os}-setup.${ext}"
-    },
-    "linux": {
-      "icon": "build/icon.png",
-      "artifactName": "LedFx_CC-v${version}--${os}.${ext}"
-    },
-    "appImage": {
-      "artifactName": "LedFx_CC-v${version}--${os}.${ext}"
-    },
-    "snap": {
-      "artifactName": "LedFx_CC-v${version}--${os}.${ext}"
-    },
-    "mac": {
-      "icon": "build/icon.png",
-      "artifactName": "LedFx_CC-v${version}--${os}-${arch}.${ext}"
-    },
-    "dmg": {
-      "background": "src/assets/DMG_BG.jpg",
-      "contents": [
-        {
-          "x": 135,
-          "y": 165
-        },
-        {
-          "x": 407,
-          "y": 165,
-          "type": "link",
-          "path": "/Applications"
-        }
-      ],
-      "iconSize": 120,
-      "iconTextSize": 14,
-      "window": {
-        "height": 380
-      }
-    }
   },
   "packageManager": "yarn@1.22.1"
 }

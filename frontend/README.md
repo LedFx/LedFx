@@ -40,10 +40,6 @@ Contributions to the LedFx Frontend are welcome! If you'd like to contribute, pl
 4. Push your changes to your forked repository.
 5. Submit a pull request to the main LedFx repository.
 
-## License
-
-The LedFx Frontend is open source software licensed under the [MIT License](https://opensource.org/licenses/MIT). Feel free to use, modify, and distribute it as per the terms of the license.
-
 ## Contact
 
 If you have any questions or need support, you can reach out to the LedFx community through the following channels:
