@@ -49,7 +49,7 @@
     "react-zoom-pan-pinch": "^3.1.0",
     "reactour": "^1.19.0",
     "sockette": "^2.0.6",
-    "strip-ansi": "6.0.0",
+    "strip-ansi": "7.1.0",
     "styled-components": "^6.0.5",
     "ts-deepmerge": "^6.1.0",
     "typescript": "^5.3.3",
