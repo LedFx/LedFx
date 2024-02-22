@@ -18,7 +18,8 @@ const api = axios.create({
 export const Ledfx = async (
   path: string,
   method?: 'GET' | 'PUT' | 'POST' | 'DELETE',
-  body?: any
+  body?: any,
+  snackbar: boolean = true
 ): Promise<any> => {
   const { setState } = useStore
   try {
@@ -38,7 +39,7 @@ export const Ledfx = async (
         response = await api.get(path)
         break
     }
-    if (response.data && response.data.payload) {
+    if (response.data && response.data.payload && snackbar) {
       setState(
         produce((state: IStore) => {
           state.ui.snackbar = {
@@ -55,7 +56,7 @@ export const Ledfx = async (
         return response.data
       }
     }
-    if (response.payload) {
+    if (response.payload && snackbar) {
       setState(
         produce((state: IStore) => {
           state.ui.snackbar = {

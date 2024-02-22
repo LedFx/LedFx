@@ -38,7 +38,7 @@ import TourDevices from '../Tours/TourDevices'
 import TourIntegrations from '../Tours/TourIntegrations'
 import BladeIcon from '../Icons/BladeIcon/BladeIcon'
 import GlobalActionBar from '../GlobalActionBar'
-import pkg from '../../../package.json'
+
 import { Ledfx } from '../../api/ledfx'
 import TourHome from '../Tours/TourHome'
 
@@ -115,19 +115,17 @@ const LeftButtons = (
   return null
 }
 
-const Title = (pathname: string, latestTag: string, virtuals: any) => {
+const Title = (pathname: string, updateAvailable: boolean, virtuals: any) => {
   if (pathname === '/') {
     return (
       <>
-        {`LedFx v${pkg.version}`}
-        {latestTag !== `v${pkg.version}` ? (
+        LedFx
+        {updateAvailable ? (
           <Button
             color="error"
             variant="contained"
             onClick={() =>
-              window.open(
-                'https://github.com/YeonV/LedFx-Builds/releases/latest'
-              )
+              window.open('https://github.com/LedFx/LedFx/releases/latest')
             }
             sx={{ ml: 2 }}
           >
@@ -152,12 +150,11 @@ const TopBar = () => {
   // const classes = useStyles();
   const navigate = useNavigate()
   const theme = useTheme()
+  const [updateAvailable, setUpdateAvailable] = useState(false)
 
   const [loggingIn, setLogginIn] = useState(false)
 
   const open = useStore((state) => state.ui.bars && state.ui.bars?.leftBar.open)
-  const latestTag = useStore((state) => state.ui.latestTag)
-  const setLatestTag = useStore((state) => state.ui.setLatestTag)
   const setLeftBarOpen = useStore((state) => state.ui.setLeftBarOpen)
   // const darkMode = useStore((state) => state.ui.darkMode);
   // const setDarkMode = useStore((state) => state.ui.setDarkMode);
@@ -241,35 +238,38 @@ const TopBar = () => {
     setIsLogged(!!localStorage.getItem('jwt'))
   }, [pathname])
 
-  useEffect(() => {
-    if (latestTag !== `v${pkg.version}`) {
-      if (
-        Date.now() -
-          parseInt(
-            window.localStorage.getItem('last-update-notification') || '0',
-            10
-          ) >
-        updateNotificationInterval * 1000 * 60
-      ) {
-        Ledfx('/api/notify', 'PUT', {
-          title: 'Update available',
-          text: 'A new version of LedFx has been released'
-        })
-        window.localStorage.setItem('last-update-notification', `${Date.now()}`)
-      }
-    }
-  }, [updateNotificationInterval])
+  const getUpdateInfo = useStore((state) => state.getUpdateInfo)
 
   useEffect(() => {
-    const latest = async () => {
-      const res = await fetch(
-        'https://api.github.com/repos/YeonV/LedFx-Builds/releases/latest'
-      )
-      const resp = await res.json()
-      return resp.tag_name as string
+    const checkForUpdates = async () => {
+      const updateInfo = await getUpdateInfo(false)
+      if (
+        updateInfo.status === 'success' &&
+        updateInfo.payload.type === 'warning'
+      ) {
+        setUpdateAvailable(true)
+        if (
+          Date.now() -
+            parseInt(
+              window.localStorage.getItem('last-update-notification') || '0',
+              10
+            ) >
+          updateNotificationInterval * 1000 * 60
+        ) {
+          Ledfx('/api/notify', 'PUT', {
+            title: 'Update available',
+            text: 'A new version of LedFx has been released'
+          })
+          window.localStorage.setItem(
+            'last-update-notification',
+            `${Date.now()}`
+          )
+        }
+      }
     }
-    latest().then((r) => r !== latestTag && setLatestTag(r))
-  }, [])
+
+    checkForUpdates()
+  }, [updateNotificationInterval])
 
   useEffect(() => {
     const handleDisconnect = (e: any) => {
@@ -336,7 +336,7 @@ const TopBar = () => {
               {LeftButtons(pathname, history, open, handleLeftBarOpen)}
             </div>
             <Typography variant="h6" noWrap style={{ margin: '0 auto' }}>
-              {Title(pathname, latestTag, virtuals)}
+              {Title(pathname, updateAvailable, virtuals)}
             </Typography>
             <div
               style={{

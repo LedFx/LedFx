@@ -469,44 +469,6 @@ const User = () => {
                           core
                         </StepButton>
                       </Step>
-                      <Step key="client" completed={starred.client}>
-                        <StepButton
-                          onClick={() => {
-                            window.open(
-                              'https://github.com/YeonV/LedFx-Frontend-v2',
-                              '_blank'
-                            )
-                          }}
-                          sx={{
-                            textTransform: 'capitalize',
-                            color: starred.client
-                              ? theme.palette.primary.main
-                              : 'inherit'
-                          }}
-                          icon={starred.client ? <Star /> : <StarOutline />}
-                        >
-                          client
-                        </StepButton>
-                      </Step>
-                      <Step key="build" completed={starred.build}>
-                        <StepButton
-                          onClick={() => {
-                            window.open(
-                              'https://github.com/YeonV/LedFx-Builds',
-                              '_blank'
-                            )
-                          }}
-                          sx={{
-                            textTransform: 'capitalize',
-                            color: starred.build
-                              ? theme.palette.primary.main
-                              : 'inherit'
-                          }}
-                          icon={starred.build ? <Star /> : <StarOutline />}
-                        >
-                          build
-                        </StepButton>
-                      </Step>
                     </Stepper>
                   </Box>
                 </AccordionDetails>

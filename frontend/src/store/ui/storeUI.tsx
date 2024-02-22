@@ -1,7 +1,6 @@
 /* eslint-disable no-param-reassign */
 import { produce } from 'immer'
 import { VariantType } from 'notistack'
-import pkg from '../../../package.json'
 import type { IStore } from '../useStore'
 
 const storeUI = (set: any) => ({
@@ -31,15 +30,6 @@ const storeUI = (set: any) => ({
       }),
       false,
       'ui/mp'
-    ),
-  latestTag: pkg.version as string,
-  setLatestTag: (tag: string): void =>
-    set(
-      produce((state: IStore) => {
-        state.ui.latestTag = tag
-      }),
-      false,
-      'setLatestTag'
     ),
 
   darkMode: true,
