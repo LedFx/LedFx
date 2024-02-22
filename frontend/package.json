@@ -51,7 +51,7 @@
     "sockette": "^2.0.6",
     "strip-ansi": "7.1.0",
     "styled-components": "^6.0.5",
-    "ts-deepmerge": "^6.1.0",
+    "ts-deepmerge": "^7.0.0",
     "typescript": "^5.3.3",
     "universal-cookie": "^6.1.1",
     "use-api-polling": "^0.1.4",
