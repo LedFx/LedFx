@@ -51,9 +51,9 @@ const Devices = () => {
         getDevices()
       }
     }
-    document.addEventListener('YZold', handleWebsockets)
+    document.addEventListener('devices_updated', handleWebsockets)
     return () => {
-      document.removeEventListener('YZold', handleWebsockets)
+      document.removeEventListener('devices_updated', handleWebsockets)
     }
   }, [getDevices])
 
@@ -67,9 +67,9 @@ const Devices = () => {
       // console.log("Send");
       ;(ws as any).send(JSON.stringify(++req.id && req))
     }
-    document.addEventListener('YZold', handleWebsockets)
+    document.addEventListener('devices_updated', handleWebsockets)
     return () => {
-      document.removeEventListener('YZold', handleWebsockets)
+      document.removeEventListener('devices_updated', handleWebsockets)
     }
   }, [fPixels])
 

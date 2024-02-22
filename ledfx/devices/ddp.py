@@ -70,9 +70,7 @@ class DDPDevice(UDPDevice):
                 _LOGGER.info(f"DDP connection reestablished to {self.name}")
                 self.connection_warning = False
                 self._online = True
-                self._ledfx.events.fire_event(
-                    DevicesUpdatedEvent(self.id, online=True)
-                )
+                self._ledfx.events.fire_event(DevicesUpdatedEvent(self.id))
         except AttributeError:
             self.activate()
         except OSError as e:

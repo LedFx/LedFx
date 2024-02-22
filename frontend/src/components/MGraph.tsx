@@ -169,9 +169,9 @@ const MGraph = () => {
       }
       setData({ chartData, chartOptions })
     }
-    document.addEventListener('YZoldDev', handleWebsockets)
+    document.addEventListener('graph_update', handleWebsockets)
     return () => {
-      document.removeEventListener('YZoldDev', handleWebsockets)
+      document.removeEventListener('graph_update', handleWebsockets)
     }
   }, [animationDuration, fillOpacity, scaleType])
 

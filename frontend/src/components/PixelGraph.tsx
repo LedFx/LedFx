@@ -54,9 +54,9 @@ const PixelGraph = ({
         setPixels(e.detail.pixels);
       }
     };
-    document.addEventListener('YZ', handleWebsockets);
+    document.addEventListener('visualisation_update', handleWebsockets);
     return () => {
-      document.removeEventListener('YZ', handleWebsockets);
+      document.removeEventListener('visualisation_update', handleWebsockets);
     };
   }, [virtuals, pixelGraphs]);
 

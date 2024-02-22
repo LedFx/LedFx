@@ -78,7 +78,7 @@ export const common = {
   }
 }
 
-export const BladeDarkGreenTheme = {
+export const LedFxDarkGreenTheme = {
   palette: {
     mode: 'dark' as PaletteMode | undefined,
     primary: {
@@ -93,7 +93,7 @@ export const BladeDarkGreenTheme = {
   }
 }
 
-export const BladeDarkBlueTheme = createTheme({
+export const LedFxDarkBlueTheme = createTheme({
   palette: {
     mode: 'dark',
     text: {
@@ -118,7 +118,7 @@ export const BladeDarkBlueTheme = createTheme({
   }
 })
 
-export const BladeDarkTheme = createTheme({
+export const LedFxDarkTheme = createTheme({
   palette: {
     mode: 'dark',
     primary: {
@@ -137,7 +137,7 @@ export const BladeDarkTheme = createTheme({
   }
 })
 
-export const BladeDarkGreyTheme: Theme = createTheme({
+export const LedFxDarkGreyTheme: Theme = createTheme({
   palette: {
     mode: 'dark',
     primary: {
@@ -156,7 +156,7 @@ export const BladeDarkGreyTheme: Theme = createTheme({
   }
 })
 
-export const BladeDarkOrangeTheme = createTheme({
+export const LedFxDarkOrangeTheme = createTheme({
   palette: {
     mode: 'dark',
     primary: {
@@ -175,7 +175,7 @@ export const BladeDarkOrangeTheme = createTheme({
   }
 })
 
-export const BladeDarkPinkTheme = createTheme({
+export const LedFxDarkPinkTheme = createTheme({
   palette: {
     mode: 'dark',
     primary: {
@@ -194,7 +194,7 @@ export const BladeDarkPinkTheme = createTheme({
   }
 })
 
-export const BladeLightRedTheme = createTheme({
+export const LedFxLightRedTheme = createTheme({
   palette: {
     mode: 'light',
     primary: {
@@ -212,7 +212,7 @@ export const BladeLightRedTheme = createTheme({
     }
   }
 })
-export const BladeLightBlueTheme = createTheme({
+export const LedFxLightBlueTheme = createTheme({
   palette: {
     mode: 'light',
     primary: {
@@ -232,15 +232,15 @@ export const BladeLightBlueTheme = createTheme({
 })
 
 export const ledfxThemes = {
-  Dark: BladeDarkTheme,
-  DarkRed: BladeDarkTheme,
-  DarkOrange: BladeDarkOrangeTheme,
-  LightRed: BladeLightRedTheme,
-  LightBlue: BladeLightBlueTheme,
-  DarkGreen: BladeDarkGreenTheme,
-  DarkBlue: BladeDarkBlueTheme,
-  DarkGrey: BladeDarkGreyTheme,
-  DarkPink: BladeDarkPinkTheme
+  Dark: LedFxDarkTheme,
+  DarkRed: LedFxDarkTheme,
+  DarkOrange: LedFxDarkOrangeTheme,
+  LightRed: LedFxLightRedTheme,
+  LightBlue: LedFxLightBlueTheme,
+  DarkGreen: LedFxDarkGreenTheme,
+  DarkBlue: LedFxDarkBlueTheme,
+  DarkGrey: LedFxDarkGreyTheme,
+  DarkPink: LedFxDarkPinkTheme
 } as any
 
 /* eslint-disable @typescript-eslint/indent */
