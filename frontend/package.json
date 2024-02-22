@@ -53,7 +53,7 @@
     "styled-components": "^6.0.5",
     "ts-deepmerge": "^6.1.0",
     "typescript": "^5.3.3",
-    "universal-cookie": "^6.1.1",
+    "universal-cookie": "^7.0.0",
     "use-api-polling": "^0.1.4",
     "use-debounce": "^10.0.0",
     "use-indexeddb": "^2.0.2",
