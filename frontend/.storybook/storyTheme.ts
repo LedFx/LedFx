@@ -2,7 +2,7 @@ import { create } from '@storybook/theming';
 
 export default create({
   base: 'dark',
-  brandTitle: 'Blade\'s Storybook',
-  brandUrl: 'https://yeonv.com',
-  brandImage: 'https://user-images.githubusercontent.com/28861537/119760144-c5126680-bea9-11eb-991a-c08eedbc5929.png',
+  brandTitle: 'LedFx Storybook',
+  brandUrl: 'https://github.com/ledfx',
+  brandImage: 'https://raw.githubusercontent.com/LedFx/LedFx/main/ledfx_assets/discord_square.png',
 });

@@ -120,7 +120,7 @@ Webaudio
 
 .. rubric:: Enabling
 
-- Go to settings and enter "HackedByBlade!" and a window saying "dev mode activated" should appear.
+- Go to settings and enter "AlphaMode!" and a window saying "dev mode activated" should appear.
 
 - Then in the same bar enter "BladeAlpha" and then click on the UI setting.
 

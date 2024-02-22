@@ -235,7 +235,7 @@ export const SettingsRow = ({
           // ) :
           children ||
             (title === 'Beta Mode' ? (
-              <Tooltip title="AlphaMode: Smartbar -> HackedByBlade! -> OK -> BladeAlpha">
+              <Tooltip title="AlphaMode">
                 <SettingsSwitch
                   disabled={disabled}
                   checked={checked}
