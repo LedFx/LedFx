@@ -29,7 +29,7 @@ paths:
                 type: object
                 x-examples:
                   example-1:
-                    config: 'C:\\Users\\Blade'
+                    config: 'C:\\Users\\ledfx'
                     devices:
                       - config:
                           center_offset: 0

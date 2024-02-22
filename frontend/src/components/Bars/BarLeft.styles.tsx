@@ -1,7 +1,7 @@
 import { makeStyles } from '@mui/styles'
 import isElectron from 'is-electron'
 import { drawerWidth } from '../../utils/helpers'
-import blademod from '../../assets/blademod.svg'
+import ledfxmod from '../../assets/ledfxmod.svg'
 
 const useStyles = makeStyles(() => ({
   '@global': {
@@ -69,7 +69,7 @@ const useStyles = makeStyles(() => ({
     }
   },
   devbadge: {
-    backgroundImage: `url(${blademod})`,
+    backgroundImage: `url(${ledfxmod})`,
     color: '#fff',
     borderRadius: isElectron() ? 0 : '15px',
     width: '150px',

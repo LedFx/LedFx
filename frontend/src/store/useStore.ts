@@ -30,39 +30,33 @@ import storePad from './ui/storePad'
 const useStore = create(
   devtools(
     persist(
-      combine(
-        {
-          hackedBy: 'Blade'
-        },
-        (set: any) => ({
-          ui: storeUI(set),
-          spotify: storeSpotify(),
-          qlc: storeQLC(),
-          user: storeUser(set),
-          ...storePad(set),
-          ...storeNotifications(set),
-          ...storeTours(set),
-          ...storeSpotifyActions(set),
-          ...storeQLCActions(set),
-          ...storeGeneral(set),
-          ...storeDialogs(set),
-          ...storeFeatures(set),
-          ...storeWebAudio(set),
-          ...storeYoutube(set),
+      combine({}, (set: any) => ({
+        ui: storeUI(set),
+        spotify: storeSpotify(),
+        qlc: storeQLC(),
+        user: storeUser(set),
+        ...storePad(set),
+        ...storeNotifications(set),
+        ...storeTours(set),
+        ...storeSpotifyActions(set),
+        ...storeQLCActions(set),
+        ...storeGeneral(set),
+        ...storeDialogs(set),
+        ...storeFeatures(set),
+        ...storeWebAudio(set),
+        ...storeYoutube(set),
 
-          ...storeColors(set),
-          ...storeDevices(set),
-          ...storeVirtuals(set),
-          ...storeScenes(set),
-          ...storeIntegrations(set),
-          ...storePresets(set),
-          ...storeConfig(set),
-          ...storeActions(set),
-          ...storeIntegrationsSpotify(set),
-
-          ...storeCloud(set)
-        })
-      ),
+        ...storeColors(set),
+        ...storeDevices(set),
+        ...storeVirtuals(set),
+        ...storeScenes(set),
+        ...storeIntegrations(set),
+        ...storePresets(set),
+        ...storeConfig(set),
+        ...storeActions(set),
+        ...storeIntegrationsSpotify(set),
+        ...storeCloud(set)
+      })),
       {
         name: 'ledfx-storage',
         partialize: (state) =>

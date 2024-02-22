@@ -68,7 +68,7 @@ class ErrorBoundary extends Component<Props, State> {
               window.localStorage.removeItem('ledfx-theme')
               window.localStorage.removeItem('jwt')
               window.localStorage.removeItem('username')
-              window.localStorage.removeItem('BladeMod')
+              window.localStorage.removeItem('ledfxmod')
               window.location.reload()
             }}
           >

@@ -48,7 +48,7 @@ const LeftBar = () => {
             </div>
             <Box
               className={classes.devbadge}
-              onClick={() => window.localStorage.setItem('BladeMod', '0')}
+              onClick={() => window.localStorage.setItem('ledfxmod', '0')}
               sx={{
                 border: theme.palette.primary.main,
                 backgroundColor: isElectron()

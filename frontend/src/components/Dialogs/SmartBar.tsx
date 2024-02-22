@@ -67,7 +67,7 @@ const Bar = ({ handleClose, direct, maxWidth = 500, inputRef }: any) => {
           if (!direct) handleClose()
         }}
         onInputChange={(event, value) => {
-          if (value === 'HackedByBlade!') {
+          if (value === 'AlphaMode!') {
             // eslint-disable-next-line no-alert
             alert('DevMode activated!')
             setFeatures('dev', true)
@@ -97,7 +97,7 @@ const Bar = ({ handleClose, direct, maxWidth = 500, inputRef }: any) => {
               setFeatures('beta', false)
               setFeatures('alpha', false)
               window.localStorage.removeItem('ledfx-theme')
-              window.localStorage.setItem('BladeMod', '0')
+              window.localStorage.setItem('ledfxmod', '0')
               window.location.reload()
             }
             if (value === 'BladeCloud') {
