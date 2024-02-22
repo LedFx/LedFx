@@ -1,0 +1,23 @@
+.fxSvg {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+.fxPath {
+    stroke-dasharray: 5000;
+    stroke-dashoffset: 5000;
+    fill: transparent;
+    animation: dash 3s linear forwards;
+}
+@media (max-width: 580px) {
+    .fxSvg {
+        width: 120px;
+    }
+}
+@keyframes dash {
+    to {
+        stroke-dashoffset: 0;
+        fill: #ffffff;
+    }
+}
