@@ -39,7 +39,7 @@ const BladeScene = ({ onClick }: { onClick: () => void }) => {
     // if (noAuto) {
     large.map((v) => {
       setEffect(v, 'melt', {}, true)
-      return activatePreset(v, 'default_presets', 'melt', 'purple-red')
+      return activatePreset(v, 'ledfx_presets', 'melt', 'purple-red')
     })
     medium.map((v, _i) => {
       setEffect(v, 'blade_power_plus', {}, true)
@@ -47,7 +47,7 @@ const BladeScene = ({ onClick }: { onClick: () => void }) => {
       //   updateEffect(v, 'blade_power_plus', { flip: true }, false)
       return activatePreset(
         v,
-        'default_presets',
+        'ledfx_presets',
         'blade_power_plus',
         'purplered-bass'
       )
@@ -57,7 +57,7 @@ const BladeScene = ({ onClick }: { onClick: () => void }) => {
       setEffect(v, 'blade_power_plus', {}, true)
       return activatePreset(
         v,
-        'default_presets',
+        'ledfx_presets',
         'blade_power_plus',
         'orange-hi-hat'
       )
@@ -68,7 +68,7 @@ const BladeScene = ({ onClick }: { onClick: () => void }) => {
         (a, b) => virtuals[a].pixel_count - virtuals[b].pixel_count
       )[0]
       setEffect(v, 'blade_power_plus', {}, true)
-      activatePreset(v, 'default_presets', 'blade_power_plus', 'orange-hi-hat')
+      activatePreset(v, 'ledfx_presets', 'blade_power_plus', 'orange-hi-hat')
     }
     // Use medium as large
     if (Object.keys(large).length === 0 && Object.keys(medium).length > 2) {
@@ -76,7 +76,7 @@ const BladeScene = ({ onClick }: { onClick: () => void }) => {
         (a, b) => virtuals[a].pixel_count - virtuals[b].pixel_count
       )[Object.keys(medium).length - 1]
       setEffect(v, 'melt', {}, true)
-      activatePreset(v, 'default_presets', 'melt', 'purple-red')
+      activatePreset(v, 'ledfx_presets', 'melt', 'purple-red')
     }
 
     // Use large as smalls
@@ -85,7 +85,7 @@ const BladeScene = ({ onClick }: { onClick: () => void }) => {
         (a, b) => virtuals[a].pixel_count - virtuals[b].pixel_count
       )[0]
       setEffect(v, 'blade_power_plus', {}, true)
-      activatePreset(v, 'default_presets', 'blade_power_plus', 'orange-hi-hat')
+      activatePreset(v, 'ledfx_presets', 'blade_power_plus', 'orange-hi-hat')
     }
     // Use large as medium
     if (Object.keys(medium).length === 0 && Object.keys(large).length > 2) {
@@ -93,7 +93,7 @@ const BladeScene = ({ onClick }: { onClick: () => void }) => {
         (a, b) => virtuals[a].pixel_count - virtuals[b].pixel_count
       )[1]
       setEffect(v, 'blade_power_plus', {}, true)
-      activatePreset(v, 'default_presets', 'blade_power_plus', 'purplered-bass')
+      activatePreset(v, 'ledfx_presets', 'blade_power_plus', 'purplered-bass')
     }
     if (Object.keys(matrix).length > 0) {
       matrix.map((v) => {

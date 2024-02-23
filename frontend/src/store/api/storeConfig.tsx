@@ -30,8 +30,8 @@ export interface IPreset {
 }
 export interface IPresets {
   effect: string
-  default_presets: Record<string, IPreset>
-  custom_presets: Record<string, IPreset>
+  ledfx_presets: Record<string, IPreset>
+  user_presets: Record<string, IPreset>
 }
 
 export interface IDevice {
