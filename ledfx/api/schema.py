@@ -125,7 +125,10 @@ class SchemaEndpoint(RestEndpoint):
                 audio_analysis_schema = convertToJsonSchema(
                     AudioAnalysisSource.CONFIG_SCHEMA
                 )
-
+                # drop the tempo method from the audio input schema
+                # TODO: figure out a better way to handle this in the frontend
+                # permitted_keys isn't working
+                del audio_analysis_schema["properties"]["tempo_method"]
                 merged_schema = {**audio_input_schema, **audio_analysis_schema}
 
                 for key in (
