@@ -326,6 +326,7 @@ jobs:
   create-release:
     name: Create GitHub Release
     if: startsWith(github.ref, 'refs/tags/')
+    environment: production
     runs-on: macos-latest
     needs: [run-ledfx-windows, run-ledfx-osx, run-ledfx-osx-m1, install-from-wheel, install-from-sdist]
     steps:
@@ -498,7 +499,7 @@ jobs:
           ledfx --ci-smoke-test -vv
   publish:
     name: Publish LedFx to PyPi
-    needs: [install-from-wheel, install-from-sdist, run-ledfx-windows, run-ledfx-osx, run-ledfx-osx-m1]
+    needs: [install-from-wheel, install-from-sdist, create-release]
     if: github.event_name == 'workflow_dispatch' ||  startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     steps:
@@ -536,7 +537,7 @@ jobs:
           password: ${{ secrets.PYPI_API_TOKEN }}
   notify-sentry:
       name: Notify Sentry of Release
-      needs: [publish]
+      needs: [create-release]
       if: startsWith(github.ref, 'refs/tags/')
       runs-on: ubuntu-latest
       steps:
