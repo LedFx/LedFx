@@ -447,8 +447,9 @@ class AudioAnalysisSource(AudioInputSource):
         "yinfft",
         "yin",
         "yinfast",
-        "fcomb",
-        "mcomb",
+        # mcomb and fcomb appears to just explode something deeep in the aubio code, no logs, no errors, it just dies.
+        # "mcomb",
+        # "fcomb",
         "schmitt",
         "specacf",
     ]
