@@ -64,7 +64,7 @@ class QLCEndpoint(RestEndpoint):
         response["qlc_widgets"] = await integration.get_widgets()
 
         response["qlc_listeners"] = integration.data
-        return await self.request_success(response)
+        return await self.bare_request_success(response)
 
     async def put(self, integration_id, request) -> web.Response:
         """Toggle a QLC event listener
@@ -216,7 +216,11 @@ class QLCEndpoint(RestEndpoint):
             return await self.invalid_request(
                 f'Invalid filter "{event_filter}", should be dictionary eg. {{ "scene_id" : "my scene" }} '
             )
-
+        # check that the event to delete exists
+        if not integration.event_exists(event_type, event_filter):
+            return await self.invalid_request(
+                f"Could not find event with type {event_type} and filter {event_filter}"
+            )
         # Delete the listener and event from data
         integration.delete_event(event_type, event_filter)
 

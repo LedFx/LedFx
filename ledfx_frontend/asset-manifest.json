@@ -1,7 +1,7 @@
 {
   "files": {
     "main.css": "/static/css/main.6b47cc32.css",
-    "main.js": "/static/js/main.ab0e60f1.js",
+    "main.js": "/static/js/main.ecbf4552.js",
     "static/js/488.fc297c32.chunk.js": "/static/js/488.fc297c32.chunk.js",
     "static/media/xmas.png": "/static/media/xmas.3e4e83405d14fb81488b.png",
     "static/media/materialdesignicons-webfont.woff": "/static/media/materialdesignicons-webfont.059ea00c378aeafc39fc.woff",
@@ -31,11 +31,11 @@
     "static/media/bottom-snake.svg": "/static/media/bottom-snake.78d3ff38a38dc2bd342eecd568f83d83.svg",
     "static/media/left-snake-flip.svg": "/static/media/left-snake-flip.7df6e4e891339c3d2bd07da2ceca9810.svg",
     "main.6b47cc32.css.map": "/static/css/main.6b47cc32.css.map",
-    "main.ab0e60f1.js.map": "/static/js/main.ab0e60f1.js.map",
+    "main.ecbf4552.js.map": "/static/js/main.ecbf4552.js.map",
     "488.fc297c32.chunk.js.map": "/static/js/488.fc297c32.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.6b47cc32.css",
-    "static/js/main.ab0e60f1.js"
+    "static/js/main.ecbf4552.js"
   ]
 }
