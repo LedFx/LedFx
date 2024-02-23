@@ -49,7 +49,7 @@ def hertz_to_mel(freq):
     """
 
     # Convert frequency values in Hz to Mel-frequency values
-    return 3340.0 * np.log(1 + (freq / 250.0), 9)
+    return 3340.0 * (np.log(1 + (freq / 250.0)) / np.log(9))
 
 
 def mel_to_hertz(mel):

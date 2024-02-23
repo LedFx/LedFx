@@ -59,6 +59,9 @@ export interface ISystemConfig {
     mic_rate: number
     min_volume: number
     sample_rate: number
+    pitch_method: string
+    pitch_tolerance: number
+    onset_method: string
   }
   user_colors: Record<string, string>
   devices: undefined
