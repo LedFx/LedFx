@@ -9,6 +9,7 @@ from ledfx.utils import Graph, bokeh_available
 
 try:
     import psutil
+
     psutil_available = True
 except ImportError:
     psutil_available = False
