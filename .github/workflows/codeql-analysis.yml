@@ -1,18 +1,13 @@
 name: CodeQL Analysis
 
 on:
-  push:
-    branches:
-      - main
-    paths-ignore:
-      - '.*/**'
   pull_request:
     branches:
       - main
     paths-ignore:
       - '.*/**'
   schedule:
-    - cron: '0 8,20 * * *'
+    - cron: '0 20 * * *'
   workflow_dispatch:
 
 concurrency:
@@ -21,7 +16,7 @@ concurrency:
 
 env:
   CACHE_VERSION: 1
-  DEFAULT_PYTHON: 3.9
+  DEFAULT_PYTHON: 3.12
 
 jobs:
   analyze-python:
