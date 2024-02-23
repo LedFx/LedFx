@@ -50,7 +50,7 @@ const EditSceneDialog = () => {
   const [midiActivate, setMIDIActivate] = useState('')
   const [invalid, setInvalid] = useState(false)
   const [lp, setLp] = useState(undefined as any)
-  const [user_presets, setUp] = useState(undefined as any)
+  const [user_presets, setUp] = useState({} as any)
   const [disabledPSelector, setDisabledPSelector] = useState([] as string[])
   const [scVirtualsToIgnore, setScVirtualsToIgnore] = useState<string[]>([])
   const medium = useMediaQuery('(max-width: 920px )')
