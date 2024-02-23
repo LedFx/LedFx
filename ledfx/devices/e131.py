@@ -1,9 +1,9 @@
 import logging
+import threading
 
 import numpy as np
 import sacn
 import voluptuous as vol
-import threading
 
 from ledfx.devices import NetworkedDevice
 
@@ -102,7 +102,6 @@ class E131Device(NetworkedDevice):
 
             _LOGGER.info(f"sACN sender for {self.config['name']} started.")
             super().activate()
-
 
     def deactivate(self):
         super().deactivate()
