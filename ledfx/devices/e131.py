@@ -123,7 +123,7 @@ class E131Device(NetworkedDevice):
         """Flush the data to all the E1.31 channels account for spanning universes"""
 
         with self.device_lock:
-            if self._sacn != None:
+            if self._sacn is not None:
                 if data.size != self._config["channel_count"]:
                     raise Exception(
                         f"Invalid buffer size. {data.size} != {self._config['channel_count']}"
