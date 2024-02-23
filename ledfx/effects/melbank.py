@@ -14,6 +14,7 @@ import ledfx.effects.mel as mel
 from ledfx.effects import fast_blur_array
 from ledfx.effects.math import ExpFilter
 from ledfx.events import GraphUpdateEvent
+from ledfx.utils import generate_id
 
 # Since fft size and mic rate are tightly linked to melbank resolution,
 # they're defined here and imported into ledfx.audio
@@ -55,41 +56,40 @@ FREQUENCY_RANGES_SIMPLE = {
 }
 
 _LOGGER = logging.getLogger(__name__)
-
 MELBANK_COEFFS_TYPES = (
-    "triangle",
-    "bark",
-    "slaney",
-    "mel",
-    "htk",
-    "scott",
-    "scott_mel",
+    # matt_mel is our default, and seems to be the best so far with the other default options
     "matt_mel",
-    "fixed",
-    "fixed_simple",
+    # Triangle kinda sucks
+    "triangle",
+    # Bark looks like it might be OK - needs tinkering
+    "bark",
+    # Mel seems... fine?
+    "mel",
+    # htk is weak on the bass and high end
+    "htk",
+    # scott weak on bass and high end
+    "scott",
+    # scott_mel is weak high end and smeared midrange
+    "scott_mel",
+    # These 3 just flat out dont work with the changes to the codebase
+    # "slaney",
+    # "fixed",
+    # "fixed_simple",
 )
 
 
 class Melbank:
     """A single melbank"""
 
-    # This whole schema isn't really user accessible/editable. Might open it up in future.
-    MELBANK_CONFIG_SCHEMA = vol.Schema(
+    CONFIG_SCHEMA = vol.Schema(
         {
-            vol.Optional("samples", default=24): vol.All(
-                vol.Coerce(int), vol.Range(0, 100)
-            ),
+            vol.Optional("name"): str,
             vol.Optional("min_frequency", default=MIN_FREQ): vol.All(
                 vol.Coerce(int), vol.Range(MIN_FREQ, MAX_FREQ)
             ),
             vol.Optional("max_frequency", default=MAX_FREQ): vol.All(
                 vol.Coerce(int), vol.Range(MIN_FREQ, MAX_FREQ)
             ),
-            vol.Optional("peak_isolation", default=0.4): float,
-            vol.Optional("coeffs_type", default="matt_mel"): vol.In(
-                MELBANK_COEFFS_TYPES
-            ),
-            # vol.Optional("pre_emphasis", default=1.5): float,
         },
         extra=vol.ALLOW_EXTRA,
     )
@@ -97,8 +97,7 @@ class Melbank:
     def __init__(self, audio, config):
         """Initialize all the melbank related variables"""
         self._audio = audio
-        self._config = self.MELBANK_CONFIG_SCHEMA(config)
-
+        self._config = self.CONFIG_SCHEMA(config)
         # adjustable power (peak isolation) based on parameter a (0-1)
         # a=0    -> linear response (filter bank value maps to itself)
         # a=0.4  -> roughly equivalent to filter_banks ** 2.0
@@ -379,19 +378,6 @@ class Melbank:
         self.common_filter = ExpFilter(alpha_decay=0.99, alpha_rise=0.01)
         self.diff_filter = ExpFilter(alpha_decay=0.15, alpha_rise=0.99)
 
-        # # the simplest pre emphasis. clean and fast.
-        # if self._config["pre_emphasis"] != 0:
-        #     self.pre_emphasis = np.arange(self._config["samples"])
-        #     self.pre_emphasis = np.divide(
-        #         self.pre_emphasis, self._config["max_frequency"]
-        #     )
-        #     self.pre_emphasis += 1
-        #     self.pre_emphasis = np.log(self.pre_emphasis) / np.log(
-        #         self._config["pre_emphasis"]
-        #     )
-        # else:
-        #     self.pre_emphasis = np.ones(self._config["samples"])
-
     def __call__(self, frequency_domain, filter_banks, filter_banks_filtered):
         """
         computes the melbank curve for frequency domain .
@@ -434,6 +420,13 @@ class Melbanks:
             # melbank 1: [--------------]
             # melbank 2: [------------------------------]
             # melbank 3: [-------------------------------------------------]
+            vol.Optional("samples", default=24): vol.All(
+                vol.Coerce(int), vol.Range(0, 100)
+            ),
+            vol.Optional("peak_isolation", default=0.4): float,
+            vol.Optional("coeffs_type", default="matt_mel"): vol.In(
+                MELBANK_COEFFS_TYPES
+            ),
             vol.Optional("max_frequencies", default=MEL_MAX_FREQS): [
                 vol.All(vol.Coerce(int), vol.Range(0, MAX_FREQ))
             ],
@@ -444,8 +437,7 @@ class Melbanks:
         extra=vol.ALLOW_EXTRA,
     )
 
-    DEFAULT_MELBANK_CONFIG = Melbank.MELBANK_CONFIG_SCHEMA({})
-    # MELBANK_PRE_EMPHASIS = (0.0, 0.0, 0.0)  # 1.2, 2.0)
+    DEFAULT_MELBANK_CONFIG = Melbank.CONFIG_SCHEMA({})
 
     def __init__(self, ledfx, audio, config):
         self._ledfx = ledfx
@@ -455,24 +447,76 @@ class Melbanks:
 
     def update_config(self, config):
         # validate config
-        self._config = self.CONFIG_SCHEMA(config)
+        self.melbanks_config = config
+        if not self.melbanks_config:
+            self.melbanks_config = self.CONFIG_SCHEMA(config)
+        self.melbank_collection = self._ledfx.config.get(
+            "melbank_collection", []
+        )
         # set up the melbanks
-        self.melbank_processors = tuple(
-            Melbank(
-                self._audio,
-                {
+        self.melbank_processors = []
+
+        if not self.melbank_collection:  # if melbank_configs is empty
+            for i, freq in enumerate(self.melbanks_config["max_frequencies"]):
+                melbank_config = {
                     **self.DEFAULT_MELBANK_CONFIG,
                     **{
+                        "name": f"Melbank {i}",
                         "max_frequency": freq,
-                        # "pre_emphasis": self.MELBANK_PRE_EMPHASIS[i],
+                        "samples": self.melbanks_config["samples"],
+                        "peak_isolation": self.melbanks_config[
+                            "peak_isolation"
+                        ],
+                        "coeffs_type": self.melbanks_config["coeffs_type"],
                     },
+                }
+                melbank_id = generate_id(melbank_config["name"])
+                melbank = Melbank(self._audio, melbank_config)
+                self.melbank_processors.append(melbank)
+                self.melbank_collection.append(
+                    {"id": melbank_id, "config": melbank_config}
+                )
+                _LOGGER.debug(f"Melbank {i} created from default config.")
+        else:  # if melbank_configs is not empty
+            for melbank in self.melbank_collection:
+
+                melbank_id = melbank["id"]
+                # Load the individual melbank config
+                melbank_config = melbank["config"]
+                # Apply the global melbanks_config to the individual melbank_config
+                melbank_config["samples"] = self.melbanks_config["samples"]
+                melbank_config["peak_isolation"] = self.melbanks_config[
+                    "peak_isolation"
+                ]
+                melbank_config["coeffs_type"] = self.melbanks_config[
+                    "coeffs_type"
+                ]
+                melbank = Melbank(self._audio, melbank_config)
+                self.melbank_processors.append(melbank)
+                _LOGGER.debug(f"Melbank {melbank_id} loaded from config.")
+
+        # some things  we do not want to have in the config for the melbanks - they are not user editable at an individual melbank level
+        melbank_global_settings = ["samples", "peak_isolation", "coeffs_type"]
+        # remove these from the melbank_collection config
+        self.cleaned_melbank_collection = [
+            {
+                "id": melbank["id"],
+                "config": {
+                    k: v
+                    for k, v in melbank["config"].items()
+                    if k not in melbank_global_settings
                 },
-            )
-            for i, freq in enumerate(self._config["max_frequencies"])
+            }
+            for melbank in self.melbank_collection
+        ]
+
+        self._ledfx.config["melbank_collection"] = (
+            self.cleaned_melbank_collection
         )
+        self._ledfx.config["melbanks"] = self.melbanks_config
         # some useful info that will be accessed faster as variables
-        self.mel_count = len(self._config["max_frequencies"])
-        self.mel_len = self.DEFAULT_MELBANK_CONFIG["samples"]
+        self.mel_count = len(self.melbanks_config["max_frequencies"])
+        self.mel_len = self.melbanks_config["samples"]
         # set up melbank data buffers.
         # these are stored as numpy arrays in a tuple to allow direct access to the buffers
         self.melbanks = tuple(

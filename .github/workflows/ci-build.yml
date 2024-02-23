@@ -1,10 +1,16 @@
 name: CI Build LedFx
 
 on:
-  push:
   pull_request:
-  release:
-    types: [created]
+    branches:
+      - main
+    paths-ignore:
+      - 'frontend/**'
+      - 'docs/**'
+      - 'ledfx_frontend/**'
+  schedule:
+    - cron: '0 8 * * *'
+  workflow_dispatch:
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -231,7 +237,7 @@ jobs:
 
       - name: Check LedFx launches
         run: |
-          poetry run ledfx --ci-smoke-test -vv -c debug_config
+          poetry run ledfx --ci-smoke-test -vv -c debug_config --offline
       - name: Attach LedFx test log
         uses: actions/upload-artifact@v4
         if: always()
@@ -303,7 +309,7 @@ jobs:
 
       - name: Check LedFx launches
         run: |
-          poetry run ledfx --ci-smoke-test -vv -c debug_config
+          poetry run ledfx --ci-smoke-test -vv -c debug_config --offline
       - name: Attach LedFx test log
         uses: actions/upload-artifact@v4
         if: always()

@@ -133,83 +133,83 @@ macOS
 
 ------------------------------
 
-.. --------------------------
-..    Frontend Development
-.. --------------------------
+--------------------------
+   Frontend Development
+--------------------------
 
-.. Building the LedFx frontend is different from how the core backend is built. The frontend is based on React.js and thus
-.. uses NPM as the core package management.
+Building the LedFx frontend is different from how the core backend is built. The frontend is based on React.js and thus
+uses NPM as the core package management.
 
-.. .. note:: LedFx will need to be running in development mode for everything to work. To enable development mode,
-..           open the ``config.json`` file in the ``.ledfx`` folder and set ``dev_mode: true``)
+.. note:: LedFx will need to be running in development mode for everything to work. To enable development mode,
+          open the ``config.json`` file in the ``.ledfx`` folder and set ``dev_mode: true``)
 
-.. .. _linux-frontend:
+.. _linux-frontend:
 
-.. Linux
-.. -------
+Linux
+-------
 
-.. .. note:: The following instructions assume you have already followed the steps above to :ref:`install the LedFx dev environment <linux-dev>`
+.. note:: The following instructions assume you have already followed the steps above to :ref:`install the LedFx dev environment <linux-dev>`
 
-.. To get started, first install npm and all the requirements:
+To get started, first install yarn and all the requirements:
 
-.. **1.** Start in the LedFx repo directory:
+**1.** Start in the LedFx repo directory:
 
-.. .. code:: console
+.. code:: console
 
-..     $ pip install yarn
-..     $ cd frontend
-..     $ yarn
+    $ pip install yarn
+    $ cd frontend
+    $ yarn
 
-.. The easiest way to test and validate your changes is to run a watcher that will automatically rebuild as you save and then
-.. just leave LedFx running in a separate command window.
+The easiest way to test and validate your changes is to run a watcher that will automatically rebuild as you save and then
+just leave LedFx running in a separate command window.
 
-.. **2.** Start LedFx in development mode and start the watcher:
+**2.** Start LedFx in development mode and start the watcher:
 
-.. .. code:: console
+.. code:: console
 
-..     $ python3 ledfx
-..     $ yarn start
+    $ poetry shell ledfx
+    $ yarn start
 
-.. At that point any change you make to the frontend will be recompiled and after a browser refresh LedFx will pick up the
-.. new files. After development and testing you will need to run a full build to generate the appropriate distribution files
-.. prior to submitting any changes.
+At that point any change you make to the frontend will be recompiled and after a browser refresh LedFx will pick up the
+new files. After development and testing you will need to run a full build to generate the appropriate distribution files
+prior to submitting any changes.
 
-.. **3.** When you are finished with your changes, build the frontend:
+**3.** When you are finished with your changes, build the frontend:
 
-.. .. code:: console
+.. code:: console
 
-..     $ yarn build
+    $ yarn build
 
-.. .. _macos-frontend:
+.. _macos-frontend:
 
-.. macOS
-.. -------
+macOS
+-------
 
-.. .. note:: The following instructions assume you have already followed the steps above to :ref:`install the LedFx dev environment <macos-dev>`
+.. note:: The following instructions assume you have already followed the steps above to :ref:`install the LedFx dev environment <macos-dev>`
 
-.. **1.** Install nodejs and NPM requirements using `homebrew`_:
+**1.** Install nodejs and NPM requirements using `homebrew`_:
 
-.. .. code:: console
+.. code:: console
 
-..     $ brew install nodejs
-..     $ brew install yarn
-..     $ cd ~/frontend
-..     $ yarn
+    $ brew install nodejs
+    $ brew install yarn
+    $ cd ~/frontend
+    $ yarn
 
-.. **2.** Start LedFx in developer mode and start the NPM watcher:
+**2.** Start LedFx in developer mode and start the NPM watcher:
 
-.. .. code:: console
+.. code:: console
 
-..     $ python3 ledfx
-..     $ yarn start
+    $ poetry shell ledfx
+    $ yarn start
 
-.. **3.** When you are finished with your changes, build the frontend:
+**3.** When you are finished with your changes, build the frontend:
 
-.. .. code:: console
+.. code:: console
 
-..     $ yarn build
+    $ yarn build
 
-.. ------------------------------
+------------------------------
 
 .. include:: README.rst
 
