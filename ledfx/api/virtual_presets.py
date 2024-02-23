@@ -56,8 +56,8 @@ class VirtualPresetsEndpoint(RestEndpoint):
             "status": "success",
             "virtual": virtual_id,
             "effect": effect_id,
-            "default_presets": default,
-            "custom_presets": custom,
+            "ledfx_presets": default,
+            "user_presets": custom,
         }
         return await self.bare_request_success(response)
 
@@ -102,15 +102,10 @@ class VirtualPresetsEndpoint(RestEndpoint):
                 f'Required attributes {", ".join(missing_attributes)} were not provided'
             )
 
-        if category not in ["default_presets", "custom_presets"]:
+        if category not in ["ledfx_presets", "user_presets"]:
             return await self.invalid_request(
-                f'Category {category} is not "default_presets" or "custom_presets"'
+                f'Category {category} is not "ledfx_presets" or "user_presets"'
             )
-
-        if category == "default_presets":
-            category = "ledfx_presets"
-        else:
-            category = "user_presets"
 
         if category == "ledfx_presets" and preset_id == "reset":
             effect_config = generate_default_config(
@@ -160,7 +155,7 @@ class VirtualPresetsEndpoint(RestEndpoint):
 
     async def post(self, virtual_id, request) -> web.Response:
         """
-        Save configuration of active virtual effect as a custom preset.
+        Save configuration of active virtual effect as a user preset.
 
         Args:
             virtual_id (str): The ID of the virtual effect.
