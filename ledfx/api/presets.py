@@ -59,8 +59,8 @@ class PresetsEndpoint(RestEndpoint):
         response = {
             "status": "success",
             "effect": effect_id,
-            "default_presets": default,
-            "custom_presets": custom,
+            "ledfx_presets": default,
+            "user_presets": custom,
         }
         return await self.bare_request_success(response)
 

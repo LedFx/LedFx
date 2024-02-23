@@ -50,7 +50,7 @@ const EditSceneDialog = () => {
   const [midiActivate, setMIDIActivate] = useState('')
   const [invalid, setInvalid] = useState(false)
   const [lp, setLp] = useState(undefined as any)
-  // const [user_presets, setUp] = useState(undefined as any)
+  const [user_presets, setUp] = useState(undefined as any)
   const [disabledPSelector, setDisabledPSelector] = useState([] as string[])
   const [scVirtualsToIgnore, setScVirtualsToIgnore] = useState<string[]>([])
   const medium = useMediaQuery('(max-width: 920px )')
@@ -76,7 +76,7 @@ const EditSceneDialog = () => {
   const getImage = useStore((state) => state.getImage)
   const [imageData, setImageData] = useState(null)
 
-  // const getFullConfig = useStore((state) => state.getFullConfig)
+  const getFullConfig = useStore((state) => state.getFullConfig)
 
   const toggletSceneActiveTag = useStore(
     (state) => state.ui.toggletSceneActiveTag
@@ -216,16 +216,16 @@ const EditSceneDialog = () => {
   }
 
   useEffect(() => {
-    // if (open) getFullConfig()
+    if (open) getFullConfig()
 
     if (open)
       getLedFxPresets().then((ledfx_presets) => {
         setLp(ledfx_presets)
       })
-    if (open) getUserPresets()
-    // .then((u_presets) => {
-    //     // setUp(u_presets)
-    //   })
+    if (open)
+      getUserPresets().then((u_presets) => {
+        setUp(u_presets)
+      })
   }, [open])
   useEffect(() => {
     if (open) activateScene(data.name?.toLowerCase().replaceAll(' ', '-'))
@@ -260,8 +260,6 @@ const EditSceneDialog = () => {
     }
   }, [])
 
-  const { user_presets } = useStore((state) => state.config)
-
   const renderPresets = (ledfx_presets: any, dev: string, effectId: string) => {
     if (ledfx_presets) {
       const ledfxPreset =
@@ -295,7 +293,7 @@ const EditSceneDialog = () => {
         <Select
           defaultValue={ledfxPreset || userPreset}
           onChange={(e) => {
-            let category = 'default_presets'
+            let category = 'ledfx_presets'
             if (
               user_presets &&
               user_presets[effectId] &&
@@ -304,7 +302,7 @@ const EditSceneDialog = () => {
                 e.target.value
               )
             ) {
-              category = 'custom_presets'
+              category = 'user_presets'
             }
 
             return (
@@ -349,7 +347,7 @@ const EditSceneDialog = () => {
         <Select
           defaultValue="Not saved as Preset"
           onChange={(e) => {
-            let category = 'default_presets'
+            let category = 'ledfx_presets'
             if (
               user_presets &&
               user_presets[effectId] &&
@@ -358,7 +356,7 @@ const EditSceneDialog = () => {
                 e.target.value
               )
             ) {
-              category = 'custom_presets'
+              category = 'user_presets'
             }
 
             return (
