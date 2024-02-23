@@ -144,23 +144,32 @@ class NanoleafDevice(NetworkedDevice):
         for key, (r, g, b) in self.status.items():
             anim_data += f" {str(key)} 1 {r} {g} {b} 0 0"
 
-        response = requests.put(
-            self.url(self._config["auth_token"]) + "/effects",
-            json={
-                "write": {
-                    "command": "display",
-                    "animType": "custom",
-                    "loop": True,
-                    "palette": [],
-                    "animData": anim_data,
-                }
-            },
-        )
+        try:
+            response = requests.put(
+                self.url(self._config["auth_token"]) + "/effects",
+                json={
+                    "write": {
+                        "command": "display",
+                        "animType": "custom",
+                        "loop": True,
+                        "palette": [],
+                        "animData": anim_data,
+                    }
+                },
+            )
+        except ConnectTimeout:
+            _LOGGER.warning(
+                f"{self.name} Connection Timeout. Is Nanoleaf powered?"
+            )
+            self.deactivate()
+            self._online = False
+            return
 
         if response.status_code == 400:
             _LOGGER.warning(f"{self.name} Bad Request Response")
             self.deactivate()
             self._online = False
+            return
 
     def flush(self, data):
         for panel, col in zip(
