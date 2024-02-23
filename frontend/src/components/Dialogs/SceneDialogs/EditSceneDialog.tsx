@@ -947,7 +947,7 @@ const EditSceneDialog = () => {
                   <span style={{ width: 180, textAlign: 'right' }}>
                     {ledfx_presets &&
                       renderPresets(
-                        lp[
+                        ledfx_presets[
                           scenes[data.name?.toLowerCase().replaceAll(' ', '-')]
                             .virtuals[dev].type
                         ],
