@@ -4,6 +4,10 @@ on:
   push:
     paths-ignore:
       - 'frontend/**'
+      - 'docs/**'
+      - 'tests/**'
+      - '.github/ISSUE_TEMPLATE/**'
+      - '.vscode/**'
   workflow_dispatch:
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -277,7 +281,7 @@ jobs:
          name: LedFx-${{ steps.ledfx-version.outputs.ledfx-version }}-windows-x64
       - name: Run LedFx
         run: |
-          LedFx/LedFx.exe -vv --ci-smoke-test
+          LedFx/LedFx.exe -vv --ci-smoke-test --offline
   run-ledfx-osx:
     name: Test LedFx (OS X)
     runs-on: macos-latest
@@ -299,7 +303,7 @@ jobs:
         run: |
           xattr -cr ./LedFx.app
           chmod +x ./LedFx.app/Contents/MacOS/LedFx
-          ./LedFx.app/Contents/MacOS/LedFx -vv --ci-smoke-test
+          ./LedFx.app/Contents/MacOS/LedFx -vv --ci-smoke-test --offline
   run-ledfx-osx-m1:
     name: Test LedFx (OS X) (Apple Silicon)
     runs-on: flyci-macos-large-latest-m1
@@ -322,10 +326,11 @@ jobs:
         run: |
           xattr -cr ./LedFx.app
           chmod +x ./LedFx.app/Contents/MacOS/LedFx
-          ./LedFx.app/Contents/MacOS/LedFx -vv --ci-smoke-test
+          ./LedFx.app/Contents/MacOS/LedFx -vv --ci-smoke-test --offline
   create-release:
     name: Create GitHub Release
     if: startsWith(github.ref, 'refs/tags/')
+    environment: production
     runs-on: macos-latest
     needs: [run-ledfx-windows, run-ledfx-osx, run-ledfx-osx-m1, install-from-wheel, install-from-sdist]
     steps:
@@ -465,7 +470,7 @@ jobs:
           pip install ledfx-*.whl
       - name: Run LedFx
         run: |
-          ledfx -vv --ci-smoke-test
+          ledfx -vv --ci-smoke-test --offline
   install-from-sdist:
     name: Test LedFx (PyPi sdist)
     runs-on: ubuntu-latest
@@ -495,10 +500,10 @@ jobs:
           pip install ledfx-*.tar.gz
       - name: Run LedFx
         run: |
-          ledfx --ci-smoke-test -vv
+          ledfx --ci-smoke-test -vv --offline
   publish:
     name: Publish LedFx to PyPi
-    needs: [install-from-wheel, install-from-sdist, run-ledfx-windows, run-ledfx-osx, run-ledfx-osx-m1]
+    needs: [install-from-wheel, install-from-sdist, create-release]
     if: github.event_name == 'workflow_dispatch' ||  startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     steps:
@@ -536,7 +541,7 @@ jobs:
           password: ${{ secrets.PYPI_API_TOKEN }}
   notify-sentry:
       name: Notify Sentry of Release
-      needs: [publish]
+      needs: [create-release]
       if: startsWith(github.ref, 'refs/tags/')
       runs-on: ubuntu-latest
       steps:
@@ -562,4 +567,4 @@ jobs:
           SENTRY_PROJECT: ledfx-v2-rel
         with:
           environment: production
-          version: ${{ steps.ledfx-version.outputs.ledfx-version }}
+          version: ledfx@${{ steps.ledfx-version.outputs.ledfx-version }}

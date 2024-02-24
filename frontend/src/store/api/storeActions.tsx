@@ -11,7 +11,7 @@ import nameToIcon from '../../utils/nameToIcon'
 const storeActions = (set: any) => ({
   scanForOpenRgbDevices: async () => {
     const resp = await Ledfx('/api/find_openrgb', 'GET', {})
-    if (resp && resp.status === 'success') {
+    if (resp && resp.status === 'success' && resp.devices) {
       set(
         produce((state: IStore) => {
           state.openRgbDevices = resp.devices as IOpenRgbDevice[]
