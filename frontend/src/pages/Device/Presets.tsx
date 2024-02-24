@@ -187,7 +187,7 @@ const PresetsCard = ({ virtual, effectType, presets, style }: any) => {
     if (list && !Object.keys(list)?.length) {
       return (
         <Button style={{ margin: '1rem 0 0.5rem 1rem' }} size="medium" disabled>
-          No {CATEGORY === 'default_presets' ? '' : 'Custom'} Presets
+          No {CATEGORY === 'ledfx_presets' ? '' : 'Custom'} Presets
         </Button>
       )
     }
@@ -202,7 +202,7 @@ const PresetsCard = ({ virtual, effectType, presets, style }: any) => {
         //   console.log(preset, diff(virtual.effect.config, list[preset].config))
         return (
           <Grid item key={preset}>
-            {CATEGORY !== 'default_presets' ? (
+            {CATEGORY !== 'ledfx_presets' ? (
               <PresetButton
                 buttonColor={
                   JSON.stringify(virtual.effect.config) ===
@@ -254,7 +254,7 @@ const PresetsCard = ({ virtual, effectType, presets, style }: any) => {
       const promises = Object.keys(cloudEffects).flatMap((effect) => {
         return cloudEffects[effect].map((p: any, ind: number) => {
           return new Promise((resolve) => {
-            if (!presets.custom_presets[p.effect.ledfx_id]) {
+            if (!presets.user_presets[p.effect.ledfx_id]) {
               setTimeout(() => {
                 handleCloudPresets(p, true)
                 resolve(null)
@@ -290,11 +290,11 @@ const PresetsCard = ({ virtual, effectType, presets, style }: any) => {
       />
       <CardContent>
         <Grid spacing={2} container>
-          {renderPresetsButton(presets?.default_presets, 'default_presets')}
+          {renderPresetsButton(presets?.ledfx_presets, 'ledfx_presets')}
         </Grid>
         <Divider style={{ margin: '1rem 0' }} />
         <Grid spacing={2} container>
-          {renderPresetsButton(presets?.custom_presets, 'custom_presets')}
+          {renderPresetsButton(presets?.user_presets, 'user_presets')}
           <Grid item>
             <Popover
               popoverStyle={{ padding: '0.5rem' }}
@@ -307,25 +307,25 @@ const PresetsCard = ({ virtual, effectType, presets, style }: any) => {
                 <TextField
                   onKeyDown={(e: any) => e.key === 'Enter' && handleAddPreset()}
                   error={
-                    presets.default_presets &&
-                    (Object.keys(presets.default_presets).indexOf(name) > -1 ||
-                      Object.values(presets.default_presets).filter(
+                    presets.ledfx_presets &&
+                    (Object.keys(presets.ledfx_presets).indexOf(name) > -1 ||
+                      Object.values(presets.ledfx_presets).filter(
                         (p: any) => p.name === name
                       ).length > 0)
                   }
                   size="small"
                   id="presetNameInput"
                   label={
-                    presets.default_presets &&
-                    (Object.keys(presets.default_presets).indexOf(name) > -1 ||
-                      Object.values(presets.default_presets).filter(
+                    presets.ledfx_presets &&
+                    (Object.keys(presets.ledfx_presets).indexOf(name) > -1 ||
+                      Object.values(presets.ledfx_presets).filter(
                         (p: any) => p.name === name
                       ).length > 0)
                       ? 'Default presets are readonly'
-                      : presets.custom_presets &&
-                          (Object.keys(presets.custom_presets).indexOf(name) >
+                      : presets.user_presets &&
+                          (Object.keys(presets.user_presets).indexOf(name) >
                             -1 ||
-                            Object.values(presets.custom_presets).filter(
+                            Object.values(presets.user_presets).filter(
                               (p: any) => p.name === name
                             ).length > 0)
                         ? 'Preset already exsisting'
@@ -336,11 +336,11 @@ const PresetsCard = ({ virtual, effectType, presets, style }: any) => {
                   onChange={(e) => {
                     setName(e.target.value)
                     if (
-                      presets.custom_presets &&
-                      (Object.keys(presets.custom_presets).indexOf(
+                      presets.user_presets &&
+                      (Object.keys(presets.user_presets).indexOf(
                         e.target.value
                       ) > -1 ||
-                        Object.values(presets.custom_presets).filter(
+                        Object.values(presets.user_presets).filter(
                           (p: any) => p.name === e.target.value
                         ).length > 0)
                     ) {
@@ -363,9 +363,9 @@ const PresetsCard = ({ virtual, effectType, presets, style }: any) => {
               }
               confirmDisabled={
                 name.length === 0 ||
-                (presets.default_presets &&
-                  (Object.keys(presets.default_presets).indexOf(name) > -1 ||
-                    Object.values(presets.default_presets).filter(
+                (presets.ledfx_presets &&
+                  (Object.keys(presets.ledfx_presets).indexOf(name) > -1 ||
+                    Object.values(presets.ledfx_presets).filter(
                       (p: any) => p.name === name
                     ).length > 0)) ||
                 !valid

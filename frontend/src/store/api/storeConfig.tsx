@@ -30,8 +30,8 @@ export interface IPreset {
 }
 export interface IPresets {
   effect: string
-  default_presets: Record<string, IPreset>
-  custom_presets: Record<string, IPreset>
+  ledfx_presets: Record<string, IPreset>
+  user_presets: Record<string, IPreset>
 }
 
 export interface IDevice {
@@ -59,6 +59,9 @@ export interface ISystemConfig {
     mic_rate: number
     min_volume: number
     sample_rate: number
+    pitch_method: string
+    pitch_tolerance: number
+    onset_method: string
   }
   user_colors: Record<string, string>
   devices: undefined

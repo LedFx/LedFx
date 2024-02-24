@@ -49,8 +49,8 @@ const EditSceneDialog = () => {
   const [payload, setPayload] = useState('')
   const [midiActivate, setMIDIActivate] = useState('')
   const [invalid, setInvalid] = useState(false)
-  const [lp, setLp] = useState(undefined as any)
-  // const [user_presets, setUp] = useState(undefined as any)
+  const [ledfx_presets, setLedFxPresets] = useState({} as any)
+  const [user_presets, setUserPresets] = useState({} as any)
   const [disabledPSelector, setDisabledPSelector] = useState([] as string[])
   const [scVirtualsToIgnore, setScVirtualsToIgnore] = useState<string[]>([])
   const medium = useMediaQuery('(max-width: 920px )')
@@ -76,7 +76,7 @@ const EditSceneDialog = () => {
   const getImage = useStore((state) => state.getImage)
   const [imageData, setImageData] = useState(null)
 
-  // const getFullConfig = useStore((state) => state.getFullConfig)
+  const getFullConfig = useStore((state) => state.getFullConfig)
 
   const toggletSceneActiveTag = useStore(
     (state) => state.ui.toggletSceneActiveTag
@@ -216,16 +216,11 @@ const EditSceneDialog = () => {
   }
 
   useEffect(() => {
-    // if (open) getFullConfig()
-
-    if (open)
-      getLedFxPresets().then((ledfx_presets) => {
-        setLp(ledfx_presets)
-      })
-    if (open) getUserPresets()
-    // .then((u_presets) => {
-    //     // setUp(u_presets)
-    //   })
+    if (open) {
+      getFullConfig()
+      getLedFxPresets().then(setLedFxPresets)
+      getUserPresets().then(setUserPresets)
+    }
   }, [open])
   useEffect(() => {
     if (open) activateScene(data.name?.toLowerCase().replaceAll(' ', '-'))
@@ -260,17 +255,20 @@ const EditSceneDialog = () => {
     }
   }, [])
 
-  const { user_presets } = useStore((state) => state.config)
-
-  const renderPresets = (ledfx_presets: any, dev: string, effectId: string) => {
-    if (ledfx_presets) {
+  const renderPresets = (
+    current_ledfx_presets: any,
+    dev: string,
+    effectId: string
+  ) => {
+    if (current_ledfx_presets) {
       const ledfxPreset =
-        ledfx_presets &&
-        Object.keys(ledfx_presets).length > 0 &&
-        Object.keys(ledfx_presets).find(
+        current_ledfx_presets &&
+        Object.keys(current_ledfx_presets).length > 0 &&
+        Object.keys(current_ledfx_presets).find(
           (k) =>
-            JSON.stringify(ordered((ledfx_presets[k] as any).config)) ===
-            JSON.stringify(ordered(sVirtuals[dev].config))
+            JSON.stringify(
+              ordered((current_ledfx_presets[k] as any).config)
+            ) === JSON.stringify(ordered(sVirtuals[dev].config))
         )
       const userPresets =
         user_presets[effectId] &&
@@ -295,7 +293,7 @@ const EditSceneDialog = () => {
         <Select
           defaultValue={ledfxPreset || userPreset}
           onChange={(e) => {
-            let category = 'default_presets'
+            let category = 'ledfx_presets'
             if (
               user_presets &&
               user_presets[effectId] &&
@@ -304,7 +302,7 @@ const EditSceneDialog = () => {
                 e.target.value
               )
             ) {
-              category = 'custom_presets'
+              category = 'user_presets'
             }
 
             return (
@@ -327,9 +325,11 @@ const EditSceneDialog = () => {
               scVirtualsToIgnore.indexOf(dev) > -1 ? 'line-through' : ''
           }}
         >
-          {ledfx_presets && <ListSubheader>LedFx Presets</ListSubheader>}
-          {ledfx_presets &&
-            Object.keys(ledfx_presets)
+          {current_ledfx_presets && (
+            <ListSubheader>LedFx Presets</ListSubheader>
+          )}
+          {current_ledfx_presets &&
+            Object.keys(current_ledfx_presets)
               .sort((k) => (k === 'reset' ? -1 : 1))
               .map((ke, i) => (
                 <MenuItem key={ke + i} value={ke}>
@@ -349,7 +349,7 @@ const EditSceneDialog = () => {
         <Select
           defaultValue="Not saved as Preset"
           onChange={(e) => {
-            let category = 'default_presets'
+            let category = 'ledfx_presets'
             if (
               user_presets &&
               user_presets[effectId] &&
@@ -358,7 +358,7 @@ const EditSceneDialog = () => {
                 e.target.value
               )
             ) {
-              category = 'custom_presets'
+              category = 'user_presets'
             }
 
             return (
@@ -374,9 +374,11 @@ const EditSceneDialog = () => {
           disableUnderline
         >
           <MenuItem value="Not saved as Preset">Not saved as Preset</MenuItem>
-          {ledfx_presets && <ListSubheader>LedFx Presets</ListSubheader>}
-          {ledfx_presets &&
-            Object.keys(ledfx_presets)
+          {current_ledfx_presets && (
+            <ListSubheader>LedFx Presets</ListSubheader>
+          )}
+          {current_ledfx_presets &&
+            Object.keys(current_ledfx_presets)
               .sort((k) => (k === 'reset' ? -1 : 1))
               .map((ke, i) => (
                 <MenuItem key={ke + i} value={ke}>
@@ -943,9 +945,9 @@ const EditSceneDialog = () => {
                     dev
                   )}
                   <span style={{ width: 180, textAlign: 'right' }}>
-                    {lp &&
+                    {ledfx_presets &&
                       renderPresets(
-                        lp[
+                        ledfx_presets[
                           scenes[data.name?.toLowerCase().replaceAll(' ', '-')]
                             .virtuals[dev].type
                         ],

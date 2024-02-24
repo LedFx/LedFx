@@ -109,7 +109,7 @@ const SchemaForm = ({
               case 'string': {
                 const group: any = {}
                 let audio_groups: any = []
-                if (schema?.properties?.audio_device?.enum) {
+                if (s.id === 'audio_device') {
                   // eslint-disable-next-line
                 for (const [key, value] of Object.entries(schema.properties.audio_device?.enum)) {
                     if (typeof value === 'string') {
