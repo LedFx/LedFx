@@ -16,6 +16,7 @@ from ledfx.events import (
     DeviceUpdateEvent,
     Event,
 )
+
 from ledfx.utils import (
     AVAILABLE_FPS,
     WLED,
@@ -186,6 +187,11 @@ class Device(BaseRegistry):
         self._active = False
         # self.flush(np.zeros((self.pixel_count, 3)))
 
+    def set_offline(self):
+        self.deactivate()
+        self._online = False
+        self._ledfx.events.fire_event(DevicesUpdatedEvent(self.id))
+
     @abstractmethod
     def flush(self, data):
         """
@@ -246,9 +252,7 @@ class Device(BaseRegistry):
     @property
     def online(self):
         """
-        list of id of the virtuals active on this device.
-        it's a list bc there can be more than one virtual streaming
-        to a device.
+        bool indicator of online status
         """
         return self._online
 
@@ -568,9 +572,7 @@ class SerialDevice(Device):
             _LOGGER.warning(
                 "Serial Error: Please ensure your device is connected, functioning and the correct COM port is selected."
             )
-            self._online = False
-            self.deactivate()
-            self._ledfx.events.fire_event(DevicesUpdatedEvent(self.id))
+            self.set_offline()
 
     def deactivate(self):
         super().deactivate()
