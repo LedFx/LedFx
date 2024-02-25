@@ -128,13 +128,9 @@ class ConfigEndpoint(RestEndpoint):
                 try:
                     config = migrate_config(config)
                 except Exception as e:
-                    _LOGGER.exception(
-                        f"Failed to migrate import config to the new standard: {e}"
-                    )
-                    return await self.internal_error(
-                        "error",
-                        f"Failed to migrate import config to the new standard: {e}",
-                    )
+                    msg = f"Failed to migrate import config to the new standard: {e}"
+                    _LOGGER.exception(msg)
+                    return await self.internal_error(msg, "error")
 
             # if we got this far, we are happy with and committing to the import config
             # so backup the old one
@@ -171,7 +167,7 @@ class ConfigEndpoint(RestEndpoint):
         except vol.MultipleInvalid as msg:
             error_message = f"Error loading config: {msg}"
             _LOGGER.warning(error_message)
-            return await self.internal_error("error", error_message)
+            return await self.internal_error(error_message, "error")
 
     async def put(self, request: web.Request) -> web.Response:
         """

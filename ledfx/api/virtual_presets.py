@@ -136,7 +136,7 @@ class VirtualPresetsEndpoint(RestEndpoint):
                 f"Unable to set effect on virtual {virtual.id}: {msg}"
             )
             _LOGGER.warning(error_message)
-            return await self.internal_error("error", error_message)
+            return await self.internal_error(error_message, "error")
 
         update_effect_config(self._ledfx.config, virtual_id, effect)
 
