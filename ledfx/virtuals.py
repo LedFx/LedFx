@@ -217,7 +217,9 @@ class Virtual:
             or start_pixel >= device.pixel_count
             or end_pixel >= device.pixel_count
         ):
-            _LOGGER.warning(f"Invalid segment pixels in Virtual '{self.name}': segment('{device.name}' ({start_pixel}, {end_pixel})) valid pixels between (0, {device.pixel_count - 1})")
+            _LOGGER.warning(
+                f"Invalid segment pixels in Virtual '{self.name}': segment('{device.name}' ({start_pixel}, {end_pixel})) valid pixels between (0, {device.pixel_count - 1})"
+            )
             if start_pixel < 0:
                 start_pixel = 0
             if end_pixel < 0:
