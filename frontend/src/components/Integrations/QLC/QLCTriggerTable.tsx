@@ -46,11 +46,13 @@ export default function QLCTriggerTable() {
       const temp = integrations?.qlc?.data
       Object.keys(temp).map((key) => {
         const temp1 = temp[key]
-        const sceneName = temp1[1].scene_id
         const sceneId = temp1[1].scene_id
-        const triggerType = 'scene_activated'
+        const triggerType = temp1[0] // Assuming temp1[0] holds the event type
+        const sceneName = temp1[1].scene_id
+        const effectName = temp1[1].effect_name
+        const triggerName =
+          triggerType === 'scene_activated' ? sceneName : effectName
         const enabled = temp1[2]
-        const triggerName = temp1[1].scene_id
         const current_data = temp1[3]
         const arr_widgets: any = []
         const arr_values: any = []
@@ -84,7 +86,7 @@ export default function QLCTriggerTable() {
             sceneId,
             sceneName,
             enabled,
-            trigger: `${triggerType}: ${sceneName}`,
+            trigger: `${triggerType}: ${triggerName}`,
             qlc_string,
             qlc_value: csv_values
           })
@@ -97,9 +99,13 @@ export default function QLCTriggerTable() {
   }, [integrations])
 
   const deleteTriggerHandler = (paramsTemp: any) => {
+    const filterKey =
+      paramsTemp?.row?.triggerType === 'scene_activated'
+        ? 'scene_id'
+        : 'effect_name'
     deleteQLCTrigger({
       data: {
-        event_filter: { scene_id: paramsTemp?.row?.sceneId },
+        event_filter: { [filterKey]: paramsTemp?.row?.triggerName },
         event_type: paramsTemp?.row?.triggerType
       }
     }).then(() => getIntegrations())
@@ -147,8 +153,12 @@ export default function QLCTriggerTable() {
             color="primary"
             aria-label="Enable/Disable Trigger"
             onChange={() => {
+              const filterKey =
+                params?.row?.triggerType === 'scene_activated'
+                  ? 'scene_id'
+                  : 'effect_name'
               toggleQLCTrigger('qlc', {
-                event_filter: { scene_id: params?.row?.sceneId },
+                event_filter: { [filterKey]: params?.row?.triggerName },
                 event_type: params?.row?.triggerType
               }).then(() => getIntegrations())
             }}
@@ -156,6 +166,7 @@ export default function QLCTriggerTable() {
           <IconButton
             aria-label="Edit"
             color="inherit"
+            disabled
             // eslint-disable-next-line no-console
             onClick={() => console.error('coming soon...')}
           >

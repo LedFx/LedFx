@@ -85,6 +85,23 @@ class QLC(Integration):
         """
         return self._data
 
+    def event_exists(self, event_type, event_filter):
+        """
+        Check if an event with the specified event_type and event_filter exists.
+
+        Parameters:
+        event_type (str): The type of the event.
+        event_filter (str): The filter for the event.
+
+        Returns:
+        bool: True if an event with the specified event_type and event_filter exists, False otherwise.
+        """
+        for entry in self._data:
+            _event_type, _event_filter, _active, _qlc_payload = entry
+            if (_event_type == event_type) and (_event_filter == event_filter):
+                return True
+        return False
+
     def create_event(self, event_type, event_filter, active, qlc_payload):
         """Create or update event listener that sends a qlc payload on a specific event"""
         # If it exists, remove the existing listener and update data

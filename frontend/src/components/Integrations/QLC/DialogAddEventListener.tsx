@@ -55,7 +55,7 @@ function ConfirmationDialogRaw(props: any) {
   const [sliderValue, setSliderValue] = React.useState(0)
   const [formData, setformData] = React.useState({
     event_type: null,
-    event_filter: { scene_id: null },
+    event_filter: {},
     qlc_payload: null,
   })
   const [qlcData, setqlcData] = React.useState([])
@@ -69,6 +69,12 @@ function ConfirmationDialogRaw(props: any) {
     qlcInfo &&
     qlcInfo?.event_types &&
     qlcInfo?.event_types?.scene_activated?.event_filters?.scene_id
+
+  const EffectSet =
+    qlcInfo &&
+    qlcInfo?.event_types &&
+    qlcInfo?.event_types.effect_set?.event_filters?.effect_name
+
   const temp = (qlcInfo && qlcInfo?.qlc_widgets) || []
 
   const QLCWidgets =
@@ -135,17 +141,17 @@ function ConfirmationDialogRaw(props: any) {
         },
       }
       setformData(newSwitchState)
-    } else if (event.target.name === 'scene_id') {
-      value = JSON.parse(value)
+    } else if (event.target.name === 'scene_id' || event.target.name === 'effect_name') {
+      value = JSON.parse(value);
+      const filterKey = value?.event_type === 'scene_activated' ? 'scene_id' : 'effect_name';
       const newFormState = {
         ...formData,
         event_filter: {
-          ...formData.event_filter,
-          [event.target.name]: value?.event_name,
+          [filterKey]: value?.event_name,
         },
         event_type: value?.event_type,
-      }
-      setformData(newFormState)
+      };
+      setformData(newFormState);
     } else {
       const qlcDatanewArr: any = qlcData.slice()
       qlcDatanewArr[0][event.target.value[0]] = value
@@ -321,9 +327,8 @@ function ConfirmationDialogRaw(props: any) {
           <Select
             variant='outlined'
             id="grouped-select"
-            defaultValue={formData?.event_filter?.scene_id}
             placeholder='If THIS'
-            name="scene_id"
+            name={formData?.event_type === 'effect_set' ? 'effect_name' : 'scene_id'}
             onChange={handleEventChange}
             sx={{ minWidth: 250 }}
           >
@@ -340,11 +345,23 @@ function ConfirmationDialogRaw(props: any) {
                     event_type: 'scene_activated',
                     event_name: val,
                   })}
-                  //   name={val}
                 >
                   <option>{val}</option>
                 </MenuItem>
               ))}
+            <ListSubheader color="primary">Effect Set</ListSubheader>
+
+            {EffectSet && EffectSet.map((effect_name: string, idx: number) => (
+              <MenuItem
+                key={idx}
+                value={JSON.stringify({
+                  event_type: 'effect_set',
+                  event_name: effect_name,
+                })}
+              >
+                <option>{effect_name}</option>
+              </MenuItem>
+            ))}
           </Select>
         </FormControl>
         <FormHelperText>
