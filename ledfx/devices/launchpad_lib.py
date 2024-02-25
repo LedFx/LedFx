@@ -17,6 +17,7 @@ import time
 import timeit
 
 import rtmidi
+from rtmidi import SystemError as RtmidiSystemError
 from rtmidi.midiutil import open_midiinput, open_midioutput
 
 _LOGGER = logging.getLogger(__name__)
@@ -194,6 +195,7 @@ class LaunchpadBase:
         self.frame = 0
         self.fps = 0
         self.do_once = True
+        self.supported = False
 
     def flush(self, data, alpha, diag):
         if self.do_once:
@@ -201,6 +203,7 @@ class LaunchpadBase:
                 f"flush not implemented for {self.__class__.__name__}"
             )
             self.do_once = False
+        return False
 
     def __del__(self):
         self.Close()
@@ -719,6 +722,10 @@ class LaunchpadMk2(LaunchpadPro):
         ),
     ]
 
+    def __init__(self):
+        super().__init__()
+        self.supported = True
+
     # Overrides "LaunchpadPro" method
     def Open(self, number=0, name="Mk2"):
         return super().Open(number=number, name=name)
@@ -809,8 +816,13 @@ class LaunchpadMk2(LaunchpadPro):
                 pgm_mode_pos += 1
             self.midi.RawWriteSysEx(send_buffer)
 
-        except RuntimeError:
-            _LOGGER.error("Error in Launchpad Mk2 handling")
+        except RuntimeError as e:
+            _LOGGER.warning(f"Flush ({type(e).__name__}): {e}")
+            return False
+
+        except RtmidiSystemError as e:
+            _LOGGER.warning(f"Flush ({type(e).__name__}): {e}")
+            return False
 
         if diag:
             now = timeit.default_timer()
@@ -823,6 +835,8 @@ class LaunchpadMk2(LaunchpadPro):
                 self.frame += 1
             _LOGGER.info(f"Launchpad Mk2 flush {self.fps} : {now - start}")
             self.lasttime = nowint
+
+        return True
 
 
 # ==========================================================================
@@ -1324,6 +1338,10 @@ class LaunchpadLPX(LaunchpadPro):
 
     device_id = 12
 
+    def __init__(self):
+        super().__init__()
+        self.supported = True
+
     # -------------------------------------------------------------------------------------
     # Overrides "LaunchpadPro" method
     def Open(self, number=0, name="AUTO"):
@@ -1539,8 +1557,13 @@ class LaunchpadLPX(LaunchpadPro):
                 pgm_mode_pos += 1
             self.midi.RawWriteSysEx(send_buffer)
 
-        except RuntimeError:
-            _LOGGER.error("Error in LaunchpadLPX handling")
+        except RuntimeError as e:
+            _LOGGER.warning(f"Flush ({type(e).__name__}): {e}")
+            return False
+
+        except RtmidiSystemError as e:
+            _LOGGER.warning(f"Flush ({type(e).__name__}): {e}")
+            return False
 
         if diag:
             now = timeit.default_timer()
@@ -1553,6 +1576,8 @@ class LaunchpadLPX(LaunchpadPro):
                 self.frame += 1
             _LOGGER.info(f"Launchpad X flush {self.fps} : {now - start}")
             self.lasttime = nowint
+
+        return True
 
 
 # ==========================================================================
@@ -2013,6 +2038,10 @@ class LaunchpadS(LaunchpadPro):
 
     buffer0 = True
 
+    def __init__(self):
+        super().__init__()
+        self.supported = True
+
     def Open(self, number=0, name="Launchpad S"):
         retval = super().Open(number=number, name=name)
         if retval is True:
@@ -2074,30 +2103,39 @@ class LaunchpadS(LaunchpadPro):
 
         send_status = True
 
-        for index, map in enumerate(self.pixel_map2):
-            if (index % 2) == 0:
-                out1 = self.scolmap(data[map][0], data[map][1])
-            else:
-                out2 = self.scolmap(data[map][0], data[map][1])
-
-                if alpha:
-                    if send_status:
-                        self.midi.RawWrite(0x92, out1, out2)
-                        send_status = False
-                    else:
-                        self.midi.RawWriteTwo(out1, out2)
+        try:
+            for index, map in enumerate(self.pixel_map2):
+                if (index % 2) == 0:
+                    out1 = self.scolmap(data[map][0], data[map][1])
                 else:
-                    self.midi.RawWrite(0x92, out1, out2)
+                    out2 = self.scolmap(data[map][0], data[map][1])
 
-        if self.buffer0:
-            # Display buffer 0, and write to buffer 1
-            self.midi.RawWrite(0xB0, 0x00, 0x24)
-        else:
-            # Display buffer 1, and write to buffer 0
-            self.midi.RawWrite(0xB0, 0x00, 0x21)
+                    if alpha:
+                        if send_status:
+                            self.midi.RawWrite(0x92, out1, out2)
+                            send_status = False
+                        else:
+                            self.midi.RawWriteTwo(out1, out2)
+                    else:
+                        self.midi.RawWrite(0x92, out1, out2)
 
-        # and flip buffers
-        self.buffer0 = not self.buffer0
+            if self.buffer0:
+                # Display buffer 0, and write to buffer 1
+                self.midi.RawWrite(0xB0, 0x00, 0x24)
+            else:
+                # Display buffer 1, and write to buffer 0
+                self.midi.RawWrite(0xB0, 0x00, 0x21)
+
+            # and flip buffers
+            self.buffer0 = not self.buffer0
+
+        except RuntimeError as e:
+            _LOGGER.warning(f"Flush ({type(e).__name__}): {e}")
+            return False
+
+        except RtmidiSystemError as e:
+            _LOGGER.warning(f"Flush ({type(e).__name__}): {e}")
+            return False
 
         if diag:
             now = timeit.default_timer()
@@ -2110,3 +2148,5 @@ class LaunchpadS(LaunchpadPro):
                 self.frame += 1
             _LOGGER.info(f"Launchpad S flush {self.fps} : {now - start}")
             self.lasttime = nowint
+
+        return True

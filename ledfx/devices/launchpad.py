@@ -127,21 +127,37 @@ class LaunchpadDevice(MidiDevice):
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
         self.lp = None
+        self.lp_name = "unknown"
         _LOGGER.info("Launchpad device created")
 
     def flush(self, data):
-        self.lp.flush(
+        success = self.lp.flush(
             data, self._config["alpha_options"], self._config["diag"]
         )
+        if not success:
+            _LOGGER.warning(
+                f"Error in Launchpad {self.lp_name} flush, setting offline"
+            )
+            self.set_offline()
 
     def activate(self):
         self.set_class()
-        super().activate()
+        if self.lp is not None:
+            if self.lp.supported:
+                self._online = True
+                super().activate()
+            else:
+                _LOGGER.warning(
+                    "Launchpad variant not supported or not connected"
+                )
+                self.set_offline()
 
     def set_class(self):
         self.lp = launchpad.Launchpad()
-        self.validate_launchpad()
-        _LOGGER.info(f"Launchpad device class: {self.lp.__class__.__name__}")
+        self.lp_name = self.validate_launchpad()
+        _LOGGER.info(
+            f"Launchpad {self.lp_name} device class: {self.lp.__class__.__name__}"
+        )
 
     def deactivate(self):
         if self.lp is not None:
