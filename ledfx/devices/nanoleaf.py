@@ -5,7 +5,6 @@ from typing import Optional
 
 import requests
 import voluptuous as vol
-from requests import ConnectTimeout
 
 from ledfx.devices import NetworkedDevice
 
@@ -78,24 +77,13 @@ class NanoleafDevice(NetworkedDevice):
             if self._config["model"] == LightPanelModel:
                 payload["write"]["extControlVersion"] = "v1"
 
-            try:
-                response = requests.put(
-                    self.url(self._config["auth_token"]) + "/effects",
-                    json=payload,
-                )
-            except ConnectTimeout:
-                _LOGGER.warning(
-                    f"{self.name} Connection Timeout. Is Nanoleaf powered?"
-                )
-                self.deactivate()
-                self._online = False
-                return
+            response = requests.put(
+                self.url(self._config["auth_token"]) + "/effects",
+                json=payload,
+            )
 
             if response.status_code == 400:
-                _LOGGER.warning(f"{self.name} Bad Request Response")
-                self.deactivate()
-                self._online = False
-                return
+                raise Exception("Invalid effect dictionary")
 
             self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             self._sock.connect(
@@ -144,32 +132,20 @@ class NanoleafDevice(NetworkedDevice):
         for key, (r, g, b) in self.status.items():
             anim_data += f" {str(key)} 1 {r} {g} {b} 0 0"
 
-        try:
-            response = requests.put(
-                self.url(self._config["auth_token"]) + "/effects",
-                json={
-                    "write": {
-                        "command": "display",
-                        "animType": "custom",
-                        "loop": True,
-                        "palette": [],
-                        "animData": anim_data,
-                    }
-                },
-            )
-        except ConnectTimeout:
-            _LOGGER.warning(
-                f"{self.name} Connection Timeout. Is Nanoleaf powered?"
-            )
-            self.deactivate()
-            self._online = False
-            return
-
+        response = requests.put(
+            self.url(self._config["auth_token"]) + "/effects",
+            json={
+                "write": {
+                    "command": "display",
+                    "animType": "custom",
+                    "loop": True,
+                    "palette": [],
+                    "animData": anim_data,
+                }
+            },
+        )
         if response.status_code == 400:
-            _LOGGER.warning(f"{self.name} Bad Request Response")
-            self.deactivate()
-            self._online = False
-            return
+            raise Exception("Invalid effect dictionary")
 
     def flush(self, data):
         for panel, col in zip(
