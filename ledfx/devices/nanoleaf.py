@@ -82,7 +82,7 @@ class NanoleafDevice(NetworkedDevice):
                 response = requests.put(
                     self.url(self._config["auth_token"]) + "/effects",
                     json=payload,
-                    timeout = 2.0
+                    timeout=2.0,
                 )
             except (ConnectTimeout, ReadTimeout) as e:
                 _LOGGER.warning(
@@ -155,7 +155,7 @@ class NanoleafDevice(NetworkedDevice):
                         "animData": anim_data,
                     }
                 },
-                timeout=2.0
+                timeout=2.0,
             )
         except (ConnectTimeout, ReadTimeout) as e:
 
