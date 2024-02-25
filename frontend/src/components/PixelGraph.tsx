@@ -23,12 +23,18 @@ const PixelGraph = ({
   showMatrix?: boolean;
 }) => {
   const [pixels, setPixels] = useState<any>([]);
-  const pixelGraphs = useStore((state) => state.pixelGraphs);
-  const virtuals = useStore((state) => state.virtuals);
-  const devices = useStore((state) => state.devices);
-  const graphs = useStore((state) => state.graphs);
+
+  const { pixelGraphs, virtuals, devices, graphs, config, dialogs } = useStore((state) => ({
+    pixelGraphs: state.pixelGraphs,
+    virtuals: state.virtuals,
+    devices: state.devices,
+    graphs: state.graphs,
+    config: state.config,
+    dialogs: state.dialogs,
+  }));
+
+
   const rows = virtuals[virtId].is_device ? devices[virtuals[virtId].is_device]?.config?.rows || virtuals[virtId].config.rows || 1 : virtuals[virtId].config.rows || 1;
-  const config = useStore((state) => state.config)
 
   function hexColor(encodedString: string) {
     if (config.transmission_mode === 'uncompressed' || !encodedString) {
@@ -36,13 +42,12 @@ const PixelGraph = ({
     }
     const decodedString = atob(encodedString)
     const charCodes = Array.from(decodedString).map(char => char.charCodeAt(0))
-    const colors = []
-    for (let i = 0; i < charCodes.length; i += 3) {
-      const r = charCodes[i]
-      const g = charCodes[i + 1]
-      const b = charCodes[i + 2]
-      colors.push({r, g, b})
-    }
+    const colors = Array.from({length: charCodes.length / 3}, (_, i) => {
+      const r = charCodes[i * 3]
+      const g = charCodes[i * 3 + 1]
+      const b = charCodes[i * 3 + 2]
+      return {r, g, b}
+    })
     return colors
   }
 
