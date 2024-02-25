@@ -65,7 +65,7 @@ class DeviceEndpoint(RestEndpoint):
         except (voluptuous.Error, ValueError) as msg:
             error_message = f"Error updating device {device_id}: {msg}"
             _LOGGER.warning(error_message)
-            return await self.internal_error("error", error_message)
+            return await self.internal_error(error_message, "error")
         # Update and save the configuration
         for device in self._ledfx.config["devices"]:
             if device["id"] == device_id:
@@ -125,7 +125,7 @@ class DeviceEndpoint(RestEndpoint):
         except (voluptuous.Error, ValueError) as msg:
             error_message = f"Error creating device {device_id}: {msg}"
             _LOGGER.warning(error_message)
-            return await self.internal_error("error", error_message)
+            return await self.internal_error(error_message, "error")
 
         device.activate()
         return await self.bare_request_success(response)

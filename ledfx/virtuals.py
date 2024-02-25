@@ -211,13 +211,27 @@ class Virtual:
             valid = False
 
         if (
-            (start_pixel < 0)
-            or (end_pixel < 0)
-            or (start_pixel > end_pixel)
-            or (end_pixel >= device.pixel_count)
+            start_pixel < 0
+            or end_pixel < 0
+            or start_pixel > end_pixel
+            or start_pixel >= device.pixel_count
+            or end_pixel >= device.pixel_count
         ):
-            msg = f"Invalid segment pixels in Virtual '{self.name}': segment('{device.name}' ({start_pixel}, {end_pixel})) valid pixels between (0, {device.pixel_count - 1})"
-            valid = False
+            _LOGGER.warning(
+                f"Invalid segment pixels in Virtual '{self.name}': segment('{device.name}' ({start_pixel}, {end_pixel})) valid pixels between (0, {device.pixel_count - 1})"
+            )
+            if start_pixel < 0:
+                start_pixel = 0
+            if end_pixel < 0:
+                end_pixel = 0
+            if start_pixel > end_pixel:
+                start_pixel = end_pixel
+            if start_pixel >= device.pixel_count:
+                start_pixel = device.pixel_count - 1
+            if end_pixel >= device.pixel_count:
+                end_pixel = device.pixel_count - 1
+            segment = [device_id, start_pixel, end_pixel, invert]
+            _LOGGER.warning(f"Fixed to {segment}")
 
         if not valid:
             _LOGGER.error(msg)

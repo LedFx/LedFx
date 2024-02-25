@@ -148,7 +148,7 @@ class EffectsEndpoint(RestEndpoint):
         except (ValueError, RuntimeError) as msg:
             error_message = f"Unable to set effect: {msg}"
             _LOGGER.warning(error_message)
-            return await self.internal_error("warning", error_message)
+            return await self.internal_error(error_message, "warning")
 
         update_effect_config(self._ledfx.config, virtual_id, effect)
 
@@ -257,7 +257,7 @@ class EffectsEndpoint(RestEndpoint):
                 f"Unable to set effect {effect} on {virtual_id}: {msg}"
             )
             _LOGGER.warning(error_message)
-            return await self.internal_error("error", error_message)
+            return await self.internal_error(error_message, "error")
 
         update_effect_config(self._ledfx.config, virtual_id, effect)
 

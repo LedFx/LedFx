@@ -74,7 +74,7 @@ class VirtualEndpoint(RestEndpoint):
         except ValueError as msg:
             error_message = f"Unable to set virtual {virtual.id} status: {msg}"
             _LOGGER.warning(error_message)
-            return await self.internal_error("error", error_message)
+            return await self.internal_error(error_message, "error")
 
         # Update ledfx's config
         for idx, item in enumerate(self._ledfx.config["virtuals"]):
@@ -121,7 +121,7 @@ class VirtualEndpoint(RestEndpoint):
             )
             _LOGGER.warning(error_message)
             virtual.update_segments(old_segments)
-            return await self.internal_error("error", error_message)
+            return await self.internal_error(error_message, "error")
 
         # Update ledfx's config
         for idx, item in enumerate(self._ledfx.config["virtuals"]):
