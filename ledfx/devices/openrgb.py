@@ -6,7 +6,6 @@ import voluptuous as vol
 from openrgb import OpenRGBClient
 
 from ledfx.devices import NetworkedDevice, packets
-from ledfx.events import DevicesUpdatedEvent
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -89,16 +88,14 @@ class OpenRGB(NetworkedDevice):
             _LOGGER.warning(
                 f"{self.openrgb_device_id} not reachable. Is OpenRGB server running?"
             )
-            self.deactivate()
-            self._online = False
+            self.set_offline()
             return
 
         except IndexError:
             _LOGGER.warning(
                 f"Couldn't find OpenRGB device ID: {self.openrgb_device_id}"
             )
-            self.deactivate()
-            self._online = False
+            self.set_offline()
             return
 
         device_supports_direct = False
@@ -109,8 +106,7 @@ class OpenRGB(NetworkedDevice):
             _LOGGER.warning(
                 f"{self.openrgb_device_id} doesn't support direct mode - not supported by LedFx."
             )
-            self.deactivate()
-            self._online = False
+            self.set_offline()
             return
         else:
             self._online = True
@@ -155,9 +151,7 @@ class OpenRGB(NetworkedDevice):
             _LOGGER.warning(
                 f"Device {self.name} connection issue ({type(e).__name__}): {e}"
             )
-            self._ledfx.events.fire_event(DevicesUpdatedEvent(self.id))
-            self._online = False
-            self.deactivate()
+            self.set_offline()
 
     @staticmethod
     def send_out(sock: socket.socket, data: np.ndarray, device_id: int):
