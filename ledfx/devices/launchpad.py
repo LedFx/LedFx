@@ -132,10 +132,12 @@ class LaunchpadDevice(MidiDevice):
 
     def flush(self, data):
         success = self.lp.flush(
-                data, self._config["alpha_options"], self._config["diag"]
-            )
+            data, self._config["alpha_options"], self._config["diag"]
+        )
         if not success:
-            _LOGGER.warning(f"Error in Launchpad {self.lp_name} flush, setting offline")
+            _LOGGER.warning(
+                f"Error in Launchpad {self.lp_name} flush, setting offline"
+            )
             self.set_offline()
 
     def activate(self):
@@ -145,13 +147,17 @@ class LaunchpadDevice(MidiDevice):
                 self._online = True
                 super().activate()
             else:
-                _LOGGER.warning("Launchpad variant not supported or not connected")
+                _LOGGER.warning(
+                    "Launchpad variant not supported or not connected"
+                )
                 self.set_offline()
 
     def set_class(self):
         self.lp = launchpad.Launchpad()
         self.lp_name = self.validate_launchpad()
-        _LOGGER.info(f"Launchpad {self.lp_name} device class: {self.lp.__class__.__name__}")
+        _LOGGER.info(
+            f"Launchpad {self.lp_name} device class: {self.lp.__class__.__name__}"
+        )
 
     def deactivate(self):
         if self.lp is not None:

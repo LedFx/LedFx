@@ -17,8 +17,8 @@ import time
 import timeit
 
 import rtmidi
-from rtmidi.midiutil import open_midiinput, open_midioutput
 from rtmidi import SystemError as RtmidiSystemError
+from rtmidi.midiutil import open_midiinput, open_midioutput
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -1578,6 +1578,7 @@ class LaunchpadLPX(LaunchpadPro):
             self.lasttime = nowint
 
         return True
+
 
 # ==========================================================================
 # CLASS LaunchpadMiniMk3
