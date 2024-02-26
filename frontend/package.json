@@ -49,7 +49,7 @@
     "react-zoom-pan-pinch": "^3.1.0",
     "reactour": "^1.19.0",
     "sockette": "^2.0.6",
-    "strip-ansi": "7.1.0",
+    "strip-ansi": "6.0.1",
     "styled-components": "^6.0.5",
     "ts-deepmerge": "^7.0.0",
     "typescript": "^5.3.3",
@@ -68,6 +68,7 @@
     "zustand": "^4.4.7"
   },
   "scripts": {
+    "preinstall": "npx only-allow pnpm",
     "start": "react-scripts start",
     "build": "run-script-os",
     "build:win32": "set GENERATE_SOURCEMAP=false && react-scripts build",
@@ -118,8 +119,10 @@
     "@storybook/preset-create-react-app": "^7.6.3",
     "@storybook/react-webpack5": "7.6.17",
     "@storybook/theming": "^7.6.3",
+    "@types/babel__template": "^7.4.4",
     "@types/chart.js": "^2.9.41",
     "@types/color": "^3.0.6",
+    "@types/prop-types": "^15.7.11",
     "@types/react": "^18.2.42",
     "@types/react-dom": "^18.2.17",
     "@types/react-router-dom": "^5.3.3",
@@ -147,6 +150,5 @@
     "storybook": "7.6.17",
     "wait-on": "^7.0.1",
     "webpack": "^5.82.0"
-  },
-  "packageManager": "yarn@1.22.21"
+  }
 }
