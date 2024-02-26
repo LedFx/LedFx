@@ -14,8 +14,6 @@
     "@mui/material": "^5.14.20",
     "@mui/styles": "^5.14.20",
     "@mui/x-data-grid": "^6.19.2",
-    "@storybook/react": "^7.6.3",
-    "@testing-library/jest-dom": "^6.1.5",
     "@testing-library/react": "^14.1.2",
     "@types/qs": "^6.9.7",
     "@types/reactour": "^1.18.1",
@@ -77,23 +75,11 @@
     "add_frontend_linux": "rm -rf ../ledfx_frontend && react-scripts build && mv build ../ledfx_frontend",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
-    "storybook": "storybook dev -p 6006 -s public"
+    "lint": "eslint . --ext .js,.jsx,.ts,.tsx"
   },
   "eslintConfig": {
     "extends": [
-      "react-app",
-      "react-app/jest"
-    ],
-    "overrides": [
-      {
-        "files": [
-          "**/*.stories.*"
-        ],
-        "rules": {
-          "import/no-anonymous-default-export": "off"
-        }
-      }
+      "react-app"
     ]
   },
   "browserslist": {
@@ -110,15 +96,6 @@
   },
   "devDependencies": {
     "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
-    "@storybook/addon-actions": "^7.6.3",
-    "@storybook/addon-essentials": "^7.6.3",
-    "@storybook/addon-links": "^7.6.3",
-    "@storybook/addon-mdx-gfm": "7.6.17",
-    "@storybook/addons": "^7.6.3",
-    "@storybook/node-logger": "^7.6.3",
-    "@storybook/preset-create-react-app": "^7.6.3",
-    "@storybook/react-webpack5": "7.6.17",
-    "@storybook/theming": "^7.6.3",
     "@types/babel__template": "^7.4.4",
     "@types/chart.js": "^2.9.41",
     "@types/color": "^3.0.6",
@@ -137,7 +114,6 @@
     "eslint-import-resolver-typescript": "^3.6.0",
     "eslint-plugin-flowtype": "^8.0.2",
     "eslint-plugin-import": "2.29.1",
-    "eslint-plugin-jest": "^27.2.1",
     "eslint-plugin-json": "^3.0.0",
     "eslint-plugin-jsx-a11y": "6.8.0",
     "eslint-plugin-prettier": "^5.0.0",
@@ -147,7 +123,6 @@
     "prettier": "^3.0.2",
     "react-is": "^18.1.0",
     "run-script-os": "^1.1.6",
-    "storybook": "7.6.17",
     "wait-on": "^7.0.1",
     "webpack": "^5.82.0"
   }

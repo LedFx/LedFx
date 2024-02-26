@@ -26,10 +26,6 @@ import BladeIcon from '../../../components/Icons/BladeIcon/BladeIcon'
 import useStyle from './DeviceCard.styles'
 import { DeviceCardDefaults, DeviceCardProps } from './DeviceCard.interface'
 
-/**
- * Pixelgraphs will not connect via Websocket in Storybook
- *
- */
 const DeviceCard = ({
   deviceName,
   online,
