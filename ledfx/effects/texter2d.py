@@ -21,10 +21,13 @@ _LOGGER = logging.getLogger(__name__)
 # Find better fonts
 # Work out why value validation is going pop
 
-FONT_MAPPINGS = {"Robot Crush": os.path.join(LEDFX_ASSETS_PATH, "fonts", "Robot Crush.ttf"),
-                 "Robot Crush Italic": os.path.join(LEDFX_ASSETS_PATH, "fonts", "Robot Crush Italic.ttf"),
-                 "04b_30": os.path.join(LEDFX_ASSETS_PATH, "fonts", "04b_30__.ttf"),
-                 "8bitOperatorPlus8": os.path.join(LEDFX_ASSETS_PATH, "fonts", "8bitOperatorPlus8-Regular.ttf")}
+FONT_MAPPINGS = {
+    "Roboto Regular": os.path.join(LEDFX_ASSETS_PATH, "fonts", "Roboto-Regular.ttf"),
+    "Roboto Bold": os.path.join(LEDFX_ASSETS_PATH, "fonts", "Roboto-Bold.ttf"),
+    "Roboto Black": os.path.join(LEDFX_ASSETS_PATH, "fonts", "Roboto-Black.ttf"),
+    "Stop": os.path.join(LEDFX_ASSETS_PATH, "fonts", "Stop.ttf"),
+    "04b_30": os.path.join(LEDFX_ASSETS_PATH, "fonts", "04b_30__.ttf"),
+    "8bitOperatorPlus8": os.path.join(LEDFX_ASSETS_PATH, "fonts", "8bitOperatorPlus8-Regular.ttf")}
 
 class Textblock():
     # this class is intended to establish a pillow image object with rendered text within it
@@ -35,24 +38,20 @@ class Textblock():
     # the Textblock instance will be merged into the main display image outside of this class
     # so TextBlock has no idea of position which will be handled externally to this class
 
-    def __init__(self, text, font, size, color):
+    def __init__(self, text, font, color):
         self.text = text
         # open the font file
-        self.font_path = FONT_MAPPINGS[font]
-        self.size = size
         self.color = color
-        self.font = ImageFont.truetype(self.font_path, size)
-        self.ascent, self.descent = self.font.getmetrics()
-
+        self.ascent, self.descent = font.getmetrics()
         dummy_image = Image.new('RGB', (1, 1))
         dummy_draw = ImageDraw.Draw(dummy_image)
-        left, top, right, bottom = dummy_draw.textbbox((0,0), text, font=self.font)
+        left, top, right, bottom = dummy_draw.textbbox((0,0), text, font=font)
         self.width = right - left
-        self.height = bottom - top + self.descent
+        self.height = self.descent + self.ascent
         self.image = Image.new('RGBA', (self.width, self.height), "blue")
         self.draw = ImageDraw.Draw(self.image)
-        self.draw.text((0, 0), self.text, font=self.font, fill=color)
-        self.image.show()
+        self.draw.text((0, 0), self.text, font=font, fill=color)
+        # self.image.show()
 
 
 class Texter2d(Twod):
@@ -83,7 +82,7 @@ class Texter2d(Twod):
                 "height_percent",
                 description="Font size as a percentage of the display height",
                 default=75,
-            ): vol.All(vol.Coerce(int), vol.Range(min=10, max=100)),
+            ): vol.All(vol.Coerce(int), vol.Range(min=10, max=150)),
             vol.Optional(
                 "text_color",
                 description="Color of text",
@@ -105,10 +104,19 @@ class Texter2d(Twod):
         super().do_once()
         # self.r_width and self.r_height should be used for the (r)ender space
         # as the self.matrix will not exist yet
-        self.text1 = Textblock(self.config["text"],
-                               self.config["font"],
-                               int(self.r_height * self.config["height_percent"] / 100),
-                               parse_color(self.config["text_color"]))
+        self.font_path = FONT_MAPPINGS[self.config["font"]]
+        self.points = int(self.r_height * self.config["height_percent"] / 100)
+        self.font = ImageFont.truetype(self.font_path, self.points)
+
+        self.wordblocks = []
+        # tokenise the text into a list of words
+        # then iterate through the list, rendering each word
+        for word in self.config["text"].split():
+            wordblock = Textblock(word,
+                             self.font,
+                             parse_color(self.config["text_color"]))
+            self.wordblocks.append(wordblock)
+            _LOGGER.info(f"Wordblock {word} created")
 
     def audio_data_updated(self, data):
         # Grab your audio input here, such as bar oscillator
