@@ -6,7 +6,6 @@ import collections
 import dataclasses
 import enum
 import functools
-import logging
 import pathlib
 from collections.abc import Callable
 from typing import Any
@@ -16,6 +15,9 @@ import yaml
 from ledfx.libraries.lifxdev.colors import color
 from ledfx.libraries.lifxdev.devices import device, light, multizone, tile
 from ledfx.libraries.lifxdev.messages import device_messages, packet
+from ledfx.libraries.lifxdev import get_library_logger
+
+logger = get_library_logger()
 
 CONFIG_PATH = pathlib.Path.home() / ".lifx" / "devices.yaml"
 
@@ -225,7 +227,7 @@ class DeviceManager(device.LifxDevice):
             num_retries: (int) Number of GetService calls made.
         """
 
-        logging.info("Scanning for LIFX devices.")
+        logger.info("Scanning for LIFX devices.")
         state_service_dict: dict[str, packet.LifxResponse] = {}
         # Disabling the timeout speeds up discovery
         for _ in range(num_retries):
@@ -234,7 +236,7 @@ class DeviceManager(device.LifxDevice):
                 ip = response.addr[0]
                 state_service_dict[ip] = response
 
-        logging.info("Getting device info for discovered devices.")
+        logger.info("Getting device info for discovered devices.")
         device_dict: dict[str, ProductInfo] = {}
         for ip, state_service in state_service_dict.items():
             port = state_service.payload["port"]
@@ -242,7 +244,7 @@ class DeviceManager(device.LifxDevice):
                 label = self.get_label(ip, port=port)
                 product_dict = self.get_product_info(ip, port=port)
             except packet.NoResponsesError as e:
-                logging.error(e)
+                logger.error(e)
                 continue
 
             product_name = product_dict["name"]

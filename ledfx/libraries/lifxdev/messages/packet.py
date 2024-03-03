@@ -5,7 +5,6 @@ from __future__ import annotations
 import collections
 import dataclasses
 import enum
-import logging
 import os
 import re
 import selectors
@@ -14,10 +13,13 @@ import struct
 import sys
 from collections.abc import Callable
 from typing import Any, cast
+from ledfx.libraries.lifxdev import get_library_logger
 
 BUFFER_SIZE = 65535
 LIFX_PORT = 56700
 TIMEOUT_S = 1
+
+logger = get_library_logger()
 
 
 class NoResponsesError(Exception):
@@ -677,7 +679,7 @@ class PacketComm:
         """
         self._comm = comm
         self._comm.comm.setblocking(False)
-        self._log_func = logging.info if verbose else logging.debug
+        self._log_func = logger.info if verbose else logger.debug
         self._timeout = timeout
 
     @property
@@ -900,7 +902,7 @@ class PacketComm:
         Returns:
             Source identifier of the packet for responses
         """
-        log_func = logging.info if verbose else self._log_func
+        log_func = logger.info if verbose else self._log_func
         addr = (ip or self._comm.ip, port or self._comm.port)
         comm = comm or self._comm.comm
         kwargs["mac_addr"] = mac_addr or self._comm.mac_addr
@@ -920,7 +922,7 @@ class PacketComm:
         verbose: bool = False,
         **kwargs,
     ) -> list[LifxResponse]:
-        log_func = logging.info if verbose else self._log_func
+        log_func = logger.info if verbose else self._log_func
         comm = comm or self._comm.comm
         payload_name = kwargs["payload"].name
 
