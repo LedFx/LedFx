@@ -13,6 +13,7 @@ import struct
 import sys
 from collections.abc import Callable
 from typing import Any, cast
+
 from ledfx.libraries.lifxdev import get_library_logger
 
 BUFFER_SIZE = 65535
