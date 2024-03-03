@@ -1,5 +1,6 @@
 import logging
 import os
+import Enum
 
 import voluptuous as vol
 
@@ -21,6 +22,39 @@ FONT_MAPPINGS = {
     "Stop": os.path.join(LEDFX_ASSETS_PATH, "fonts", "Stop.ttf"),
     "04b_30": os.path.join(LEDFX_ASSETS_PATH, "fonts", "04b_30__.ttf"),
     "8bitOperatorPlus8": os.path.join(LEDFX_ASSETS_PATH, "fonts", "8bitOperatorPlus8-Regular.ttf")}
+
+class Mode(Enum):
+    HOLD = 1
+    BOUNCE = 2
+    HARD_ZERO = 3
+    DECELERATE = 4
+
+class Scalar():
+    def __init__(self, val, delta, target, target_2, mode):
+        self.val = val
+        self.delta = delta
+        self.target = target
+        self.target_2 = target_2
+        self.mode = mode
+
+    def update(self, passed_time):
+        self.val += self.delta * passed_time
+        if self.delta > 0:
+            self.val = min(self.val, self.target)
+        else:
+            self.val = max(self.val, self.target)
+        if self.val == self.target:
+            if self.mode == Mode.HOLD:
+                self.delta = 0
+            elif self.mode == Mode.BOUNCE:
+                self.delta = -self.delta
+                self.target, self.target_2 = self.target_2, self.target
+            elif self.mode == Mode.HARD_ZERO:
+                self.delta = 0
+                self.val = 0
+            elif self.mode == Mode.DECELERATE:
+                self.delta = self.delta * 0.5
+
 
 class Textblock():
     # this class is intended to establish a pillow image object with rendered text within it
@@ -46,24 +80,50 @@ class Textblock():
         self.draw.text((0, 0), self.text, font=font, fill=color)
         # self.image.show()
 
-    def set_pos_life(self, pos, vel, ang, size, life):
-        self.pos = pos
-        self.vel = vel
-        self.ang = ang
-        self.size = size
+    def set_pos_life(self, x, y,
+                     vector_linear, vector_linear_delta, vector_linear_target,
+                     vector_angular, vector_angular_delta, vectro_angular_target,
+                     rotation, rotation_delta, rotation_target,
+                     size, size_delta, size_target,
+                     life):
+        # pos is -1 to 1 for (x, y) tuple
+        self.x = x
+        self.y = y
+        self.vector_linear = Scalar()
+        self.vector_angular = Scalar()
+        self.rotation = Scalar()
+        self.size = Scalar()
         self.life = life
+
+    def update(self, passed_time):
+        self.life = max(self.life - passed_time, 0.0)
+        if self.life > 0.0:
+            self.vector_linear.update(passed_time)
+            self.vector_angular.update(passed_time)
+            # calculate new x and y using vector_linear and vector_angular
+            # self.vector_linear is a scalar for x and y in the range -1 to 1
+            # it must be applied along with self.vector_angular to get the new x and y
+
+            # I need to use a vector class to do this
+            # self.x,
+
+            self.x =
+
+
+            self.rotation.update(passed_time)
+            self.size.update(passed_time)
 
     def render(self, target):
         # first we will rotate and then size the image
         # ang is a rotation from 0 to 1 float to represent 0 to 360 degrees
         # size is a float from 0 to 1 to represent 0 to 100% size
-        resized = self.image.rotate(self.ang * 360, expand=True)
-        resized = resized.resize((int(resized.width * self.size), int(resized.height * self.size)))
+        resized = self.image.rotate(self.rotation.val * 360, expand=True)
+        resized = resized.resize((int(resized.width * self.size.val), int(resized.height * self.size.val)))
         # self.pos is a scalar for x and y in the range -1 to 1
         # the pos position is for the center of the image
         # here we will convert it to a pixel position within target which is a PIL image object
-        pos_xy = (int((self.pos[0] + 1) * target.width / 2 - resized.width / 2),
-                  int((self.pos[1] + 1) * target.height / 2 - resized.height / 2))
+        pos_xy = (int((self.x + 1) * target.width / 2 - resized.width / 2),
+                  int((self.y + 1) * target.height / 2 - resized.height / 2))
 
         target.paste(resized, pos_xy, resized)
 
@@ -101,6 +161,10 @@ class Sentence():
         for idx, word in enumerate(self.wordblocks):
             word.set_pos_life((-1 + idx * 0.2, -1 + idx * 0.2), (0, 0), 0.1 * idx, 0.2, 1)
             _LOGGER.info(f"{idx} {word.text} {word.width} {word.height} {word.pos} {word.vel} {word.ang} {word.size} {word.life}")
+
+    def update(self, passed_time):
+        for word in self.wordblocks:
+            word.update(passed_time)
 
     def render(self, target):
         for word in self.wordblocks:
