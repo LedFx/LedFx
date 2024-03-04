@@ -4,6 +4,6 @@
     "config:recommended",
     ":automergeMinor",
     ":automergeLinters",
-    ":automergeBranch"
+    ":automergeMonthly"
 ]
 }
