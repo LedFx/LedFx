@@ -6,6 +6,7 @@ import voluptuous as vol
 import math
 
 from ledfx.effects.twod import Twod
+from ledfx.effects.gradient import GradientEffect
 from ledfx.consts import LEDFX_ASSETS_PATH
 from ledfx.color import parse_color, validate_color
 from ledfx.effects.utils.pose import Pose
@@ -131,7 +132,7 @@ class Sentence():
             word.render(target, resize_method, values, values2)
 
 
-class Texter2d(Twod):
+class Texter2d(Twod, GradientEffect):
     NAME = "Texter"
     CATEGORY = "Matrix"
     # add keys you want hidden or in advanced here
@@ -177,6 +178,11 @@ class Texter2d(Twod):
                 description="Diagnostic overlayed on matrix",
                 default=False,
             ): bool,
+            vol.Optional(
+                "use_gradient",
+                description="Use gradient for word colors",
+                default=False,
+            ): bool,
         },
     )
 
@@ -189,6 +195,7 @@ class Texter2d(Twod):
         # copy over your configs here into variables
         self.a_switch = self._config["a_switch"]
         self.deep_diag = self._config["deep_diag"]
+        self.use_gradient = self._config["use_gradient"]
         self.resize_method = RESIZE_METHOD_MAPPING[self._config["resize_method"]]
 
         if self.deep_diag:
