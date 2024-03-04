@@ -172,7 +172,7 @@ dependencies:
     version: 7.0.0
   zustand:
     specifier: ^4.5.1
-    version: 4.5.1(@types/react@18.2.61)(immer@10.0.3)(react@18.2.0)
+    version: 4.5.2(@types/react@18.2.61)(immer@10.0.3)(react@18.2.0)
 
 devDependencies:
   '@babel/plugin-proposal-private-property-in-object':
@@ -12589,8 +12589,8 @@ packages:
     resolution: {integrity: sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==}
     engines: {node: '>=10'}
 
-  /zustand@4.5.1(@types/react@18.2.61)(immer@10.0.3)(react@18.2.0):
-    resolution: {integrity: sha512-XlauQmH64xXSC1qGYNv00ODaQ3B+tNPoy22jv2diYiP4eoDKr9LA+Bh5Bc3gplTrFdb6JVI+N4kc1DZ/tbtfPg==}
+  /zustand@4.5.2(@types/react@18.2.61)(immer@10.0.3)(react@18.2.0):
+    resolution: {integrity: sha512-2cN1tPkDVkwCy5ickKrI7vijSjPksFRfqS6237NzT0vqSsztTNnQdHw9mmN7uBdk3gceVXU0a+21jFzFzAc9+g==}
     engines: {node: '>=12.7.0'}
     peerDependencies:
       '@types/react': '>=16.8'
