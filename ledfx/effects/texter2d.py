@@ -3,11 +3,13 @@ import os
 from enum import Enum
 
 import voluptuous as vol
+import math
 
-from ledfx.utils import get_mono_font
 from ledfx.effects.twod import Twod
 from ledfx.consts import LEDFX_ASSETS_PATH
 from ledfx.color import parse_color, validate_color
+from ledfx.effects.utils.pose import Pose
+from ledfx.effects.utils.overlay import Overlay
 from collections import deque
 
 from PIL import Image, ImageDraw, ImageFont
@@ -24,12 +26,6 @@ FONT_MAPPINGS = {
     "04b_30": os.path.join(LEDFX_ASSETS_PATH, "fonts", "04b_30__.ttf"),
     "8bitOperatorPlus8": os.path.join(LEDFX_ASSETS_PATH, "fonts", "8bitOperatorPlus8-Regular.ttf")}
 
-class Mode(Enum):
-    HOLD = 1
-    BOUNCE = 2
-    HARD_ZERO = 3
-    DECELERATE = 4
-
 
 # These are different from gif resize methods, LANCZOS is not supported
 class ResizeMethods(Enum):
@@ -44,94 +40,6 @@ RESIZE_METHOD_MAPPING = {
     ResizeMethods.BICUBIC.value: Image.BICUBIC,
 }
 
-class Scalar():
-    def __init__(self, val, delta, target, target_2, mode):
-        self.val = val
-        self.delta = delta
-        self.target = target
-        self.target_2 = target_2
-        self.mode = mode
-
-    def update(self, passed_time):
-        self.val += self.delta * passed_time
-        if self.delta > 0:
-            self.val = min(self.val, self.target)
-        else:
-            self.val = max(self.val, self.target)
-        if self.val == self.target:
-            if self.mode == Mode.HOLD:
-                self.delta = 0
-            elif self.mode == Mode.BOUNCE:
-                self.delta = -self.delta
-                self.target, self.target_2 = self.target_2, self.target
-            elif self.mode == Mode.HARD_ZERO:
-                self.delta = 0
-                self.val = 0
-            elif self.mode == Mode.DECELERATE:
-                self.delta = self.delta * 0.5
-
-class Pose():
-    # we need a class to represent a 2d pose and all of its dynamics
-    # this class will be used to represent
-    #  life of the active render and manipulation of the pose in seconds
-    # vector values all of the range -1 to 1
-    #  pos (x,y), ang and size
-    # vector values of the range of 0 to 1\
-    #  alpha the blend alpha of the related object
-    # delta values of increase in vector values over time on a second unit
-    #  d_pos in a vector of direction and value per sec
-    #  d_rotation as a value per sec
-    #  d_size as a value per sec
-    #  d_alpha as a value per sec
-    # limit values of vector values and what happens when they ge there
-    #  position, rotation and size, alpha
-    # modifiers to the delta values over time
-    #  m_pos accel dec linear and angular
-    #  m_rotation rate of change of d_rotation
-    #  m_size rate of change of d_size
-    #  m_alpha rate of change of d_alpha
-
-    # we will start with an init class that just create the vector values
-    # all other deltas and modifiers will be added later, this will allow incremental implementation
-
-    def __init__(self, x, y, ang, size, life, alpha = 1.0):
-        self.x = x
-        self.y = y
-        self.ang = ang
-        self.size = size
-        self.life = life
-        self.alpha = alpha
-
-        self.d_pos = None
-        self.d_rotation = 0
-        self.d_size = None
-        self.m_pos = None
-        self.m_rotation = None
-        self.m_size = None
-        self.limit_pos = None
-        self.limit_rotation = None
-        self.limit_size = None
-
-    def set_vectors(self, x, y, ang, size, life, alpha = 1.0):
-        self.x = x
-        self.y = y
-        self.ang = ang
-        self.size = size
-        self.life = life
-        self.alpha = alpha
-
-    def set_deltas(self, d_pos, d_rotation, d_size):
-        self.d_pos = d_pos
-        self.d_rotation = d_rotation
-        self.d_size = d_size
-
-    def update(self, passed_time):
-        self.life -= passed_time
-        if self.life <= 0.0:
-            return False
-
-        self.ang = (((self.ang + 1 )+ self.d_rotation * passed_time ) % 2 ) - 1
-        return True
 
 class Textblock():
     # this class is intended to establish a pillow image object with rendered text within it
@@ -164,24 +72,19 @@ class Textblock():
         return active
 
     def render(self, target, resize_method, values, values2):
-        if self.pose.life > 0 and self.pose.x == 0.0:
-            # first we will rotate and then size the image
-            # ang is a rotation from 0 to 1 float to represent 0 to 360 degrees
-            # size is a float from 0 to 1 to represent 0 to 100% size
-            resized = self.image.rotate(self.pose.ang * 360, expand=True, resample=resize_method)
-            resized = resized.resize((int(resized.width * self.pose.size), int(resized.height * self.pose.size)), resample=resize_method)
-            # self.pos is a scalar for x and y in the range -1 to 1
-            # the pos position is for the center of the image
-            # here we will convert it to a pixel position within target which is a PIL image object
-            x = int(((self.pose.x + 1) * target.width / 2) - (resized.width / 2))
-            y = int(((self.pose.y + 1) * target.height / 2) - (resized.height / 2))
-            if self.pose.x == 0.0:
-                _LOGGER.info(
-                    f"Textblock {self.text} x: {self.pose.x:3.3f} y: {self.pose.y:3.3f} {x} {y} ang: {self.pose.ang:3.3f} size: {self.pose.size:3.3f}")
-                values.append(x)
-                values2.append(y)
-
-            target.paste(resized, (x, y), resized)
+        # first we will rotate and then size the image
+        # ang is a rotation from 0 to 1 float to represent 0 to 360 degrees
+        # size is a float from 0 to 1 to represent 0 to 100% size
+        resized = self.image.rotate(self.pose.ang * 360, expand=True, resample=resize_method)
+        resized = resized.resize((math.floor(resized.width * self.pose.size), math.floor(resized.height * self.pose.size)), resample=resize_method)
+        # self.pos is a scalar for x and y in the range -1 to 1
+        # the pos position is for the center of the image
+        # here we will convert it to a pixel position within target which is a PIL image object
+        x = math.floor(((self.pose.x + 1) * target.width / 2) - (resized.width / 2))
+        y = math.floor(((self.pose.y + 1) * target.height / 2) - (resized.height / 2))
+        # _LOGGER.info(
+        #     f"Textblock {self.text} x: {self.pose.x:3.3f} y: {self.pose.y:3.3f} {x} {y} ang: {self.pose.ang:3.3f} size: {self.pose.size:3.3f}")
+        target.paste(resized, (x, y), resized)
 
 
 class Sentence():
@@ -226,6 +129,7 @@ class Sentence():
     def render(self, target, resize_method, values, values2):
         for word in self.wordblocks:
             word.render(target, resize_method, values, values2)
+
 
 class Texter2d(Twod):
     NAME = "Texter"
@@ -288,7 +192,6 @@ class Texter2d(Twod):
         self.resize_method = RESIZE_METHOD_MAPPING[self._config["resize_method"]]
 
         if self.deep_diag:
-            self.diag_font = get_mono_font(10)
             self.values = deque(maxlen=1024)
             self.values2 = deque(maxlen=1024)
 
@@ -298,54 +201,22 @@ class Texter2d(Twod):
         # as the self.matrix will not exist yet
         self.sentence = Sentence(self.config["text"],
                                  self.config["font"],
-                                 int(self.r_height * self.config["height_percent"] / 100),
+                                 math.floor(self.r_height * self.config["height_percent"] / 100),
                                  self.config["text_color"])
+        if self.deep_diag:
+            self.overlay = Overlay(self.r_height, self.r_width)
 
     def audio_data_updated(self, data):
         # Grab your audio input here, such as bar oscillator
         self.bar = data.bar_oscillator()
-
-    def plot_range(self, values, color):
-        diag_string = "None"
-        if len(values) > 1:
-
-            graph_s = 9  # start pixel height under the diag text
-            graph_h = max(1, self.r_height - 9 - 1 ) # height of graph
-            v_min = min(values)
-            v_max = max(values)
-            if v_max == v_min:
-                v_min = min(0, v_min)
-                v_max = max(0, v_max)
-            v_range = v_max - v_min
-            x = 0
-            pixels = self.matrix.load()
-            for value in reversed(self.values):
-                value_norm = (value - v_min) / v_range
-                y = graph_s + graph_h - (value_norm * graph_h)
-                if y < self.matrix.height:
-                    if value == 0:
-                        pixels[x, y] = (0,0, 255)
-                    else:
-                        pixels[x, y] = color
-                x += 1
-                if x >= self.matrix.width:
-                    break
-
-            diag_string = f"{values[-1]} {v_min} {v_max} {v_range}"
-        return diag_string
-
-
-    def overlay(self, values, values2=None):
-        diag_string = self.plot_range(values, (0, 255, 0))
-        self.plot_range(values2, (255, 0, 0))
-        self.m_draw.text((0, 0), diag_string, fill='yellow', font=self.diag_font)
 
     def draw(self):
         if self.test:
             self.draw_test(self.m_draw)
 
         self.sentence.update(self.passed)
-        self.sentence.render(self.matrix, self.resize_method, self.values, self.values2)
+        self.sentence.render(self.matrix, self.resize_method,
+                             self.values, self.values2)
 
         if self.deep_diag:
-            self.overlay(self.values, self.values2)
+            self.overlay.render(self.matrix, self.m_draw, self.values, self.values2)
