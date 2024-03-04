@@ -10,7 +10,7 @@ from ledfx.effects.twod import Twod
 from ledfx.effects.gradient import GradientEffect
 from ledfx.consts import LEDFX_ASSETS_PATH
 from ledfx.color import parse_color, validate_color
-from ledfx.effects.utils.pose import Pose
+from ledfx.effects.utils.pose import Pose, interpolate_to_length
 from ledfx.effects.utils.overlay import Overlay
 from collections import deque
 
@@ -73,6 +73,9 @@ class Textblock():
         return active
 
     def render(self, target, resize_method, color=None, values=None, values2=None):
+        # TODO: Make this a no-op if the word will not be on the screen
+        # A gross algorithm to check for clipping will be enough to start
+
         # first we will rotate and then size the image
         # ang is a rotation from 0 to 1 float to represent 0 to 360 degrees
         # size is a float from 0 to 1 to represent 0 to 100% size
@@ -85,10 +88,16 @@ class Textblock():
         y = math.floor(((self.pose.y + 1) * target.height / 2) - (resized.height / 2))
         # _LOGGER.info(
         #     f"Textblock {self.text} x: {self.pose.x:3.3f} y: {self.pose.y:3.3f} {x} {y} ang: {self.pose.ang:3.3f} size: {self.pose.size:3.3f}")
+        if self.pose.alpha < 1.0:
+            img_array = np.array(resized)
+            modified_array = np.clip(img_array * self.pose.alpha, 0, 255).astype(np.uint8)
+            resized = Image.fromarray(modified_array, mode='L')
+
         if color is not None:
             color_img = Image.new("RGBA", resized.size, color)
             r, g, b, a = color_img.split()
             resized = Image.merge("RGBA", (r, g, b, resized))
+
         target.paste(resized, (x, y), resized)
 
 
@@ -118,14 +127,15 @@ class Sentence():
         space_block = Textblock(" ",
                                 self.font)
         self.space_width = space_block.width
+        self.wordcount = len(self.wordblocks)
         _LOGGER.info(f"Space width is {self.space_width}")
 
-        offset = 2 / len(self.wordblocks)
+        offset = 2 / self.wordcount
         for idx, word in enumerate(self.wordblocks):
             word.pose.set_vectors(-1 + idx * offset, -1 + idx * offset,
                                   -1 + idx * offset, 1, 10000 )
             word.pose.d_rotation = 0.1
-        self.color_points = np.array([idx / (len(self.wordblocks)-1) for idx in range(len(self.wordblocks))])
+        self.color_points = np.array([idx / (len(self.wordblocks)-1) for idx in range(self.wordcount)])
 
     def update(self, passed_time):
         for word in self.wordblocks:
@@ -199,6 +209,16 @@ class Texter2d(Twod, GradientEffect):
                 description="Use gradient for word colors",
                 default=False,
             ): bool,
+            vol.Optional(
+                "impulse_decay",
+                description="Decay filter applied to the impulse for development",
+                default=0.1,
+            ): vol.All(vol.Coerce(float), vol.Range(min=0.01, max=0.3)),
+            vol.Optional(
+                "multiplier",
+                description="general multiplier slider for development",
+                default=1,
+            ): vol.All(vol.Coerce(float), vol.Range(min=0.1, max=10)),
         },
     )
 
@@ -214,6 +234,20 @@ class Texter2d(Twod, GradientEffect):
         self.use_gradient = self._config["use_gradient"]
         self.text_color = self._config["text_color"]
         self.resize_method = RESIZE_METHOD_MAPPING[self._config["resize_method"]]
+        self.multiplier = self._config["multiplier"]
+
+        self.lows_impulse_filter = self.create_filter(
+            alpha_decay=self._config["impulse_decay"], alpha_rise=0.99)
+
+        self.mids_impulse_filter = self.create_filter(
+            alpha_decay=self._config["impulse_decay"], alpha_rise=0.99)
+
+        self.high_impulse_filter = self.create_filter(
+            alpha_decay=self._config["impulse_decay"], alpha_rise=0.99)
+
+        self.lows_impulse = 0
+        self.mids_impulse = 0
+        self.high_impulse = 0
 
         self.values = deque(maxlen=1024)
         self.values2 = deque(maxlen=1024)
@@ -232,9 +266,22 @@ class Texter2d(Twod, GradientEffect):
         # Grab your audio input here, such as bar oscillator
         self.bar = data.bar_oscillator()
 
+        self.lows_impulse = self.lows_impulse_filter.update(data.lows_power(filtered=False))
+        self.mids_impulse = self.mids_impulse_filter.update(data.mids_power(filtered=False))
+        self.high_impulse = self.high_impulse_filter.update(data.high_power(filtered=False))
+#        _LOGGER.info(f"lows: {self.lows_impulse:3.3f} mids: {self.mids_impulse:3.3f} high: {self.high_impulse:3.3f}")
+
     def draw(self):
         if self.test:
             self.draw_test(self.m_draw)
+
+
+        impulses = interpolate_to_length([self.lows_impulse, self.mids_impulse, self.high_impulse], self.sentence.wordcount)
+#        _LOGGER.info(f"impulses: {impulses}")
+        for idx, word in enumerate(self.sentence.wordblocks):
+            word.pose.d_rotation = impulses[idx] * self.multiplier
+            word.pose.size = 0.3 + impulses[idx] * self.multiplier
+            word.pose.alpha = min(1.0, 0.3 + impulses[idx] * self.multiplier)
 
         self.sentence.update(self.passed)
 

@@ -1,4 +1,5 @@
 from enum import Enum
+import numpy as np
 
 
 class Mode(Enum):
@@ -33,6 +34,36 @@ class Scalar():
                 self.val = 0
             elif self.mode == Mode.DECELERATE:
                 self.delta = self.delta * 0.5
+
+
+def interpolate_to_length(input_array, n):
+    """
+    Interpolates an input numpy array to a new array of length n.
+
+    Parameters:
+    - input_array: numpy array of arbitrary length.
+    - n: the length of the new interpolated array.
+
+    Returns:
+    - A new numpy array of length n with values interpolated from the input array.
+    """
+    # Initialize the new array with zeros
+    new_array = np.zeros(n)
+
+    # Indices in the new array where the original values will be placed
+    original_indices = np.linspace(0, n - 1, num=len(input_array), dtype=int)
+
+    # Place the original values at the computed indices
+    new_array[original_indices] = input_array
+
+    # Interpolate the values for the indices in between
+    for i in range(1, len(original_indices)):
+        start_idx, end_idx = original_indices[i - 1], original_indices[i]
+        new_array[start_idx:end_idx + 1] = np.linspace(input_array[i - 1],
+                                                       input_array[i],
+                                                       end_idx - start_idx + 1)
+
+    return new_array
 
 
 class Pose():
