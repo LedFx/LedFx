@@ -12,7 +12,7 @@
     },
     {
       "updateTypes": ["major"],
-      "schedule": ["every week"]
+      "schedule": ["every weekend"]
     }
   ]
 }
