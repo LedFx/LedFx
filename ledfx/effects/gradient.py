@@ -168,11 +168,17 @@ class GradientEffect(Effect):
     def get_gradient_color(self, point):
         return self._get_gradient_colors(point)
 
-    def get_gradient_color_vectorized(self, points):
+    def get_gradient_color_vectorized2d(self, points):
         colors = self._get_gradient_colors(points)
 
         # Transpose and reshape to get the correct shape (height, width, color_channels)
         return colors.transpose(1, 2, 0)
+
+    def get_gradient_color_vectorized1d(self, points):
+        colors = self._get_gradient_colors(points)
+
+        # Transpose and reshape to get the correct shape (height, width, color_channels)
+        return colors.transpose(1, 0)
 
     def get_gradient(self):
         self._assert_gradient()

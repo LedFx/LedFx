@@ -4,6 +4,7 @@ from enum import Enum
 
 import voluptuous as vol
 import math
+import numpy as np
 
 from ledfx.effects.twod import Twod
 from ledfx.effects.gradient import GradientEffect
@@ -56,23 +57,22 @@ class Textblock():
         # open the font file
         self.color = color
         self.ascent, self.descent = font.getmetrics()
-        dummy_image = Image.new('RGB', (1, 1))
+        dummy_image = Image.new('L', (1, 1))
         dummy_draw = ImageDraw.Draw(dummy_image)
         left, top, right, bottom = dummy_draw.textbbox((0,0), text, font=font)
         self.width = right - left
         self.height = self.descent + self.ascent
-        self.image = Image.new('RGBA', (self.width, self.height))
+        # word images are greyscale masks only
+        self.image = Image.new('L', (self.width, self.height))
         self.draw = ImageDraw.Draw(self.image)
         self.draw.text((0, 0), self.text, font=font, fill=color)
         self.pose = Pose(0, 0, 0, 1, 0, 1)
-        # self.image.show()
-
 
     def update(self, passed_time):
         active = self.pose.update(passed_time)
         return active
 
-    def render(self, target, resize_method, values, values2):
+    def render(self, target, resize_method, color=None, values=None, values2=None):
         # first we will rotate and then size the image
         # ang is a rotation from 0 to 1 float to represent 0 to 360 degrees
         # size is a float from 0 to 1 to represent 0 to 100% size
@@ -85,6 +85,10 @@ class Textblock():
         y = math.floor(((self.pose.y + 1) * target.height / 2) - (resized.height / 2))
         # _LOGGER.info(
         #     f"Textblock {self.text} x: {self.pose.x:3.3f} y: {self.pose.y:3.3f} {x} {y} ang: {self.pose.ang:3.3f} size: {self.pose.size:3.3f}")
+        if color is not None:
+            color_img = Image.new("RGBA", resized.size, color)
+            r, g, b, a = color_img.split()
+            resized = Image.merge("RGBA", (r, g, b, resized))
         target.paste(resized, (x, y), resized)
 
 
@@ -96,18 +100,17 @@ class Sentence():
         "SIDE_SCROLL"
     }
 
-    def __init__(self, text, font_name, points, start_color='white'):
+    def __init__(self, text, font_name, points):
         self.text = text
         self.font_path = FONT_MAPPINGS[font_name]
         self.points = points
-        self.start_color = parse_color(start_color)
+        self.start_color = parse_color('white')
         self.font = ImageFont.truetype(self.font_path, self.points)
         self.wordblocks = []
 
         for word in self.text.split():
             wordblock = Textblock(word,
-                             self.font,
-                             self.start_color)
+                             self.font)
             self.wordblocks.append(wordblock)
             _LOGGER.info(f"Wordblock {word} created")
             if DEBUG:
@@ -122,14 +125,27 @@ class Sentence():
             word.pose.set_vectors(-1 + idx * offset, -1 + idx * offset,
                                   -1 + idx * offset, 1, 10000 )
             word.pose.d_rotation = 0.1
+        self.color_points = np.array([idx / (len(self.wordblocks)-1) for idx in range(len(self.wordblocks))])
 
     def update(self, passed_time):
         for word in self.wordblocks:
             word.update(passed_time)
 
-    def render(self, target, resize_method, values, values2):
-        for word in self.wordblocks:
-            word.render(target, resize_method, values, values2)
+    def render(self, target, resize_method, color, values=None, values2=None):
+        if isinstance(color, list):  # Check if color is a list of color tuples
+            for word, clr in zip(self.wordblocks, color):
+                word.render(target, resize_method, clr, values, values2)
+        else:  # Color is a single color tuple
+            for word in self.wordblocks:
+                word.render(target, resize_method, color, values, values2)
+
+    def render(self, target, resize_method, color, values=None, values2=None):
+        if isinstance(color, np.ndarray):
+            for word, clr in zip(self.wordblocks, color):
+                word.render(target, resize_method, tuple(clr), values, values2)
+        else:  # Color is assumed to be a single RGB color tuple
+            for word in self.wordblocks:
+                word.render(target, resize_method, color, values, values2)
 
 
 class Texter2d(Twod, GradientEffect):
@@ -196,11 +212,11 @@ class Texter2d(Twod, GradientEffect):
         self.a_switch = self._config["a_switch"]
         self.deep_diag = self._config["deep_diag"]
         self.use_gradient = self._config["use_gradient"]
+        self.text_color = self._config["text_color"]
         self.resize_method = RESIZE_METHOD_MAPPING[self._config["resize_method"]]
 
-        if self.deep_diag:
-            self.values = deque(maxlen=1024)
-            self.values2 = deque(maxlen=1024)
+        self.values = deque(maxlen=1024)
+        self.values2 = deque(maxlen=1024)
 
     def do_once(self):
         super().do_once()
@@ -208,8 +224,7 @@ class Texter2d(Twod, GradientEffect):
         # as the self.matrix will not exist yet
         self.sentence = Sentence(self.config["text"],
                                  self.config["font"],
-                                 math.floor(self.r_height * self.config["height_percent"] / 100),
-                                 self.config["text_color"])
+                                 math.floor(self.r_height * self.config["height_percent"] / 100))
         if self.deep_diag:
             self.overlay = Overlay(self.r_height, self.r_width)
 
@@ -222,8 +237,16 @@ class Texter2d(Twod, GradientEffect):
             self.draw_test(self.m_draw)
 
         self.sentence.update(self.passed)
-        self.sentence.render(self.matrix, self.resize_method,
-                             self.values, self.values2)
+
+        if self.use_gradient:
+            color = self.get_gradient_color_vectorized1d(self.sentence.color_points).astype(np.uint8)
+        else:
+            color = self.text_color
+
+        self.sentence.render(self.matrix, self.resize_method, color,
+                             values=self.values, values2=self.values2)
+
+        self.roll_gradient()
 
         if self.deep_diag:
-            self.overlay.render(self.matrix, self.m_draw, self.values, self.values2)
+            self.overlay.render(self.matrix, self.m_draw, values=self.values, values2=self.values2)
