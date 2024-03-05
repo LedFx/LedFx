@@ -13,7 +13,6 @@ from ledfx.color import parse_color, validate_color
 from ledfx.effects.utils.pose import Pose, interpolate_to_length
 from ledfx.effects.utils.overlay import Overlay
 from collections import deque
-from itertools import cycle
 
 from PIL import Image, ImageDraw, ImageFont
 
@@ -74,32 +73,35 @@ class Textblock():
         return active
 
     def render(self, target, resize_method, color=None, values=None, values2=None):
-        # TODO: Make this a no-op if the word will not be on the screen
-        # A gross algorithm to check for clipping will be enough to start
+        if self.pose.life > 0:
+            # TODO: add a fast clipping algorithm to avoid rendering off screen
 
-        # first we will rotate and then size the image
-        # ang is a rotation from 0 to 1 float to represent 0 to 360 degrees
-        # size is a float from 0 to 1 to represent 0 to 100% size
-        resized = self.image.rotate(self.pose.ang * 360, expand=True, resample=resize_method)
-        resized = resized.resize((math.floor(resized.width * self.pose.size), math.floor(resized.height * self.pose.size)), resample=resize_method)
-        # self.pos is a scalar for x and y in the range -1 to 1
-        # the pos position is for the center of the image
-        # here we will convert it to a pixel position within target which is a PIL image object
-        x = math.floor(((self.pose.x + 1) * target.width / 2) - (resized.width / 2))
-        y = math.floor(((self.pose.y + 1) * target.height / 2) - (resized.height / 2))
-        # _LOGGER.info(
-        #     f"Textblock {self.text} x: {self.pose.x:3.3f} y: {self.pose.y:3.3f} {x} {y} ang: {self.pose.ang:3.3f} size: {self.pose.size:3.3f}")
-        if self.pose.alpha < 1.0:
-            img_array = np.array(resized)
-            modified_array = np.clip(img_array * self.pose.alpha, 0, 255).astype(np.uint8)
-            resized = Image.fromarray(modified_array, mode='L')
+            # first we will rotate and then size the image
+            # ang is a rotation from 0 to 1 float to represent 0 to 360 degrees
+            # size is a float from 0 to 1 to represent 0 to 100% size, clip to min 1 pixel
+            resized = self.image.rotate(self.pose.ang * 360, expand=True, resample=resize_method)
+            resized = resized.resize((max(1, math.floor(resized.width * self.pose.size)),
+                                       max(1, math.floor(resized.height * self.pose.size))),
+                                     resample=resize_method)
 
-        if color is not None:
-            color_img = Image.new("RGBA", resized.size, color)
-            r, g, b, a = color_img.split()
-            resized = Image.merge("RGBA", (r, g, b, resized))
+            # self.pos is a scalar for x and y in the range -1 to 1
+            # the pos position is for the center of the image
+            # here we will convert it to a pixel position within target which is a PIL image object
+            x = math.floor(((self.pose.x + 1) * target.width / 2) - (resized.width / 2))
+            y = math.floor(((self.pose.y + 1) * target.height / 2) - (resized.height / 2))
+            # _LOGGER.info(
+            #     f"Textblock {self.text} x: {self.pose.x:3.3f} y: {self.pose.y:3.3f} {x} {y} ang: {self.pose.ang:3.3f} size: {self.pose.size:3.3f}")
+            if self.pose.alpha < 1.0:
+                img_array = np.array(resized)
+                modified_array = np.clip(img_array * self.pose.alpha, 0, 255).astype(np.uint8)
+                resized = Image.fromarray(modified_array, mode='L')
 
-        target.paste(resized, (x, y), resized)
+            if color is not None:
+                color_img = Image.new("RGBA", resized.size, color)
+                r, g, b, a = color_img.split()
+                resized = Image.merge("RGBA", (r, g, b, resized))
+
+            target.paste(resized, (x, y), resized)
 
 
 class Sentence():
@@ -278,12 +280,12 @@ class Texter2d(Twod, GradientEffect):
 
         # TODO: Lets work clipping, then on a movement vector next
 
-        self.sentence.update(self.passed)
-
         if self.use_gradient:
             color = self.get_gradient_color_vectorized1d(self.sentence.color_points).astype(np.uint8)
         else:
             color = self.text_color
+
+        self.sentence.update(self.passed)
 
         self.sentence.render(self.matrix, self.resize_method, color,
                              values=self.values, values2=self.values2)

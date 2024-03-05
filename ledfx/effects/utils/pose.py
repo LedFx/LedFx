@@ -98,7 +98,7 @@ class Pose():
         self.life = life
         self.alpha = alpha
 
-        self.d_pos = None
+        self.d_pos = (0, 0)
         self.d_rotation = 0
         self.d_size = None
         self.m_pos = None
@@ -109,22 +109,48 @@ class Pose():
         self.limit_size = None
 
     def set_vectors(self, x, y, ang, size, life, alpha = 1.0):
+        # x and y are ranged values from -1 to 1 where
+        # 0,0 is the center of the matrix
+        # -1, 1 are the bounds
         self.x = x
         self.y = y
+        # and is a ranged value from -1 to 1 where
+        # 0 to 1 is 360 degrees anticlockwise
+        # 0 to -1 is 360 degrees clockwise
+        # 0 points to the right
         self.ang = ang
+        # size is a ranged value where 1 = 100% and 0 = 0%
         self.size = size
+        # life is the time in seconds the pose will be active
+        # object poses should only updated and rendered if there is life
         self.life = life
+        # alpha is the blend value of the object from 0 to 1 where
+        # 0 is fully transparent
+        # 1 is fully opaque
         self.alpha = alpha
 
     def set_deltas(self, d_pos, d_rotation, d_size):
+        # d_pos is a tuple of ( linear, angule ) where
+        # linear is the distance in x,y units per second
+        # angular is the angle in the -1 to 1 ( -360 to 360 ) range per second
         self.d_pos = d_pos
+        # d_rotation is change of ang per second with the same unit implications
         self.d_rotation = d_rotation
         self.d_size = d_size
 
-    def update(self, passed_time):
-        self.life -= passed_time
+    def apply_d_pos(self, dt):
+        lin, ang = self.d_pos
+        ang_radians = ang * -2 * np.pi
+        direction = np.array([np.cos(ang_radians), np.sin(ang_radians)])
+        movement_vector = direction * lin * dt
+        self.x += movement_vector[0]
+        self.y += movement_vector[1]
+
+    def update(self, dt):
+        self.life -= dt
         if self.life <= 0.0:
             return False
 
-        self.ang = (((self.ang + 1 )+ self.d_rotation * passed_time ) % 2 ) - 1
+        self.ang = (((self.ang + 1 ) + self.d_rotation * dt ) % 2 ) - 1
+        self.apply_d_pos(dt)
         return True
