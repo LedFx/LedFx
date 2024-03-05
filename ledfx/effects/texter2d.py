@@ -13,6 +13,7 @@ from ledfx.color import parse_color, validate_color
 from ledfx.effects.utils.pose import Pose, interpolate_to_length
 from ledfx.effects.utils.overlay import Overlay
 from collections import deque
+from itertools import cycle
 
 from PIL import Image, ImageDraw, ImageFont
 
@@ -129,33 +130,23 @@ class Sentence():
         self.space_width = space_block.width
         self.wordcount = len(self.wordblocks)
         _LOGGER.info(f"Space width is {self.space_width}")
+        self.color_points = np.array([idx / max(1, self.wordcount-1) for idx in range(self.wordcount)])
 
-        offset = 2 / self.wordcount
+        # the following block of code is hacking positions and other and should be replaced in due course
+        offset = 2 / (self.wordcount + 5)
         for idx, word in enumerate(self.wordblocks):
-            word.pose.set_vectors(-1 + idx * offset, -1 + idx * offset,
-                                  -1 + idx * offset, 1, 10000 )
-            word.pose.d_rotation = 0.1
-        self.color_points = np.array([idx / (len(self.wordblocks)-1) for idx in range(self.wordcount)])
+            word.pose.set_vectors(-1 + (idx+3) * offset, -1 + (idx+3) * offset,
+                                  0, 1, 10000 )
 
     def update(self, passed_time):
         for word in self.wordblocks:
             word.update(passed_time)
 
     def render(self, target, resize_method, color, values=None, values2=None):
-        if isinstance(color, list):  # Check if color is a list of color tuples
-            for word, clr in zip(self.wordblocks, color):
-                word.render(target, resize_method, clr, values, values2)
-        else:  # Color is a single color tuple
-            for word in self.wordblocks:
-                word.render(target, resize_method, color, values, values2)
-
-    def render(self, target, resize_method, color, values=None, values2=None):
-        if isinstance(color, np.ndarray):
-            for word, clr in zip(self.wordblocks, color):
-                word.render(target, resize_method, tuple(clr), values, values2)
-        else:  # Color is assumed to be a single RGB color tuple
-            for word in self.wordblocks:
-                word.render(target, resize_method, color, values, values2)
+        color_len = len(color)
+        for i, word in enumerate(self.wordblocks):
+            word.render(target, resize_method,
+                        tuple(color[i % color_len]), values, values2)
 
 
 class Texter2d(Twod, GradientEffect):
@@ -168,8 +159,8 @@ class Texter2d(Twod, GradientEffect):
     CONFIG_SCHEMA = vol.Schema(
         {
             vol.Optional(
-                "a_switch",
-                description="Does a boolean thing",
+                "alpha",
+                description="apply alpha effect to text",
                 default=False,
             ): bool,
             vol.Optional(
@@ -218,7 +209,7 @@ class Texter2d(Twod, GradientEffect):
                 "multiplier",
                 description="general multiplier slider for development",
                 default=1,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.1, max=10)),
+            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=10)),
         },
     )
 
@@ -229,10 +220,11 @@ class Texter2d(Twod, GradientEffect):
     def config_updated(self, config):
         super().config_updated(config)
         # copy over your configs here into variables
-        self.a_switch = self._config["a_switch"]
+        self.alpha = self._config["alpha"]
         self.deep_diag = self._config["deep_diag"]
         self.use_gradient = self._config["use_gradient"]
-        self.text_color = self._config["text_color"]
+        # putting text_color into a list so that it can be treated the same as a gradient list
+        self.text_color = [parse_color(self._config["text_color"])]
         self.resize_method = RESIZE_METHOD_MAPPING[self._config["resize_method"]]
         self.multiplier = self._config["multiplier"]
 
@@ -281,7 +273,10 @@ class Texter2d(Twod, GradientEffect):
         for idx, word in enumerate(self.sentence.wordblocks):
             word.pose.d_rotation = impulses[idx] * self.multiplier
             word.pose.size = 0.3 + impulses[idx] * self.multiplier
-            word.pose.alpha = min(1.0, 0.3 + impulses[idx] * self.multiplier)
+            if self.alpha:
+                word.pose.alpha = min(1.0, 0.1 + impulses[idx] * self.multiplier)
+
+        # TODO: Lets work clipping, then on a movement vector next
 
         self.sentence.update(self.passed)
 
