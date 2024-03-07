@@ -101,6 +101,7 @@ class Pose():
         self.d_pos = (0, 0)
         self.d_rotation = 0
         self.d_size = None
+        self.d_alpha = 0
         self.m_pos = None
         self.m_rotation = None
         self.m_size = None
@@ -146,6 +147,13 @@ class Pose():
         self.x += movement_vector[0]
         self.y += movement_vector[1]
 
+    def apply_d_alpha(self, dt):
+        delta = self.d_alpha * dt
+        self.alpha += delta
+        # note that alpha is capped in the render stage to allow it to go out
+        # of range for threshold testing
+
+
     def update(self, dt):
         self.life -= dt
         if self.life <= 0.0:
@@ -153,4 +161,5 @@ class Pose():
 
         self.ang = (((self.ang + 1 ) + self.d_rotation * dt ) % 2 ) - 1
         self.apply_d_pos(dt)
+        self.apply_d_alpha(dt)
         return True

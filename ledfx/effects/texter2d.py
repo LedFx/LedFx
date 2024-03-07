@@ -91,9 +91,10 @@ class Textblock():
             y = math.floor(((self.pose.y + 1) * target.height / 2) - (resized.height / 2))
             # _LOGGER.info(
             #     f"Textblock {self.text} x: {self.pose.x:3.3f} y: {self.pose.y:3.3f} {x} {y} ang: {self.pose.ang:3.3f} size: {self.pose.size:3.3f}")
-            if self.pose.alpha < 1.0:
+            capped_alpha = min(1.0, max(0.0, self.pose.alpha))
+            if capped_alpha < 1.0:
                 img_array = np.array(resized)
-                modified_array = np.clip(img_array * self.pose.alpha, 0, 255).astype(np.uint8)
+                modified_array = np.clip(img_array * capped_alpha, 0, 255).astype(np.uint8)
                 resized = Image.fromarray(modified_array, mode='L')
 
             if color is not None:
@@ -149,7 +150,6 @@ class Sentence():
             if word.pose.life <= 0:
                 word.pose.life = 10
                 word.pose.d_pos = (-word.pose.d_pos[0], word.pose.d_pos[1])
-
 
     def render(self, target, resize_method, color, values=None, values2=None):
         color_len = len(color)
