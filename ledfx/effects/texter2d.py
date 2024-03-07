@@ -73,7 +73,7 @@ class Textblock():
         return active
 
     def render(self, target, resize_method, color=None, values=None, values2=None):
-        if self.pose.life > 0:
+        if self.pose.life > 0 and self.pose.alpha > 0.0 and self.pose.size > 0.0:
             # TODO: add a fast clipping algorithm to avoid rendering off screen
 
             # first we will rotate and then size the image
@@ -135,6 +135,11 @@ class Sentence():
         _LOGGER.info(f"Space width is {self.space_width}")
         self.color_points = np.array([idx / max(1, self.wordcount-1) for idx in range(self.wordcount)])
 
+        self.word_focus_active = False
+        self.word_focus = -1
+        self.d_word_focus = 0
+        self.word_focus_callback = None
+
         # the following block of code is hacking positions and other and should be replaced in due course
         offset = 2 / (self.wordcount + 5)
         for idx, word in enumerate(self.wordblocks):
@@ -142,14 +147,23 @@ class Sentence():
                                   0, 1, 10)
             word.pose.d_pos = (0.2, 1 / self.wordcount * idx)
 
-    def update(self, passed_time):
+    def update(self, dt):
+        if self.word_focus_active:
+            # allow this to go out of range for theshold testing elsewhere
+            # clip at point of application
+            self.word_focus += self.d_word_focus * dt
+            # TODO: where should this callback be called?
+            # at word or sentence level, what should we allow it to do?
+            # update or render level?
+
         for word in self.wordblocks:
-            word.update(passed_time)
+            word.update(dt)
             # TODO: the following is hack code, and needs to go
             # TODO: investigate concept of callbacks on limit reached in modifiers to allow chaining of behaviors
             if word.pose.life <= 0:
                 word.pose.life = 10
                 word.pose.d_pos = (-word.pose.d_pos[0], word.pose.d_pos[1])
+
 
     def render(self, target, resize_method, color, values=None, values2=None):
         color_len = len(color)

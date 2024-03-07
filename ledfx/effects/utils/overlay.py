@@ -2,6 +2,14 @@ from ledfx.utils import get_mono_font
 
 
 class Overlay():
+    ###
+    # Overlay
+    # A class for drawing a graph of values over an image for diagnostic purposes.
+    # supports upto three distinct value inputs, which render in RGB
+    # auto ranges to available space
+    # top nine pixels are used for diag string, currently locally coded to last value of first values range
+    ###
+
     def __init__(self, r_height, r_width):
         self.r_height = r_height
         self.r_width = r_width

@@ -100,14 +100,15 @@ class Pose():
 
         self.d_pos = (0, 0)
         self.d_rotation = 0
-        self.d_size = None
+        self.d_size = 0
         self.d_alpha = 0
-        self.m_pos = None
-        self.m_rotation = None
-        self.m_size = None
-        self.limit_pos = None
-        self.limit_rotation = None
-        self.limit_size = None
+
+        # this will be a list of functions that will be called to modify the delta or vector values
+        # they will be of the form f( pose, dt ) -> None
+        # every registered modifier will run
+        # they can unregister themselves and register others
+        # we can build a lib of interesting modifiers
+        self.modifier_callbacks = []
 
     def set_vectors(self, x, y, ang, size, life, alpha = 1.0):
         # x and y are ranged values from -1 to 1 where
@@ -147,12 +148,6 @@ class Pose():
         self.x += movement_vector[0]
         self.y += movement_vector[1]
 
-    def apply_d_alpha(self, dt):
-        delta = self.d_alpha * dt
-        self.alpha += delta
-        # note that alpha is capped in the render stage to allow it to go out
-        # of range for threshold testing
-
 
     def update(self, dt):
         self.life -= dt
@@ -161,5 +156,15 @@ class Pose():
 
         self.ang = (((self.ang + 1 ) + self.d_rotation * dt ) % 2 ) - 1
         self.apply_d_pos(dt)
-        self.apply_d_alpha(dt)
+
+        # note that alpha and size are capped at application in the render
+        # stage to allow them to go out of range and be used as thresholds
+        # for behaviour
+        self.alpha += self.d_alpha * dt
+        self.size += self.d_size * dt
+
+        for modifier in self.modifier_callbacks:
+            modifier(self, dt)
+
         return True
+
