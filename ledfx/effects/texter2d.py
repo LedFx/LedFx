@@ -138,11 +138,18 @@ class Sentence():
         offset = 2 / (self.wordcount + 5)
         for idx, word in enumerate(self.wordblocks):
             word.pose.set_vectors(-1 + (idx+3) * offset, -1 + (idx+3) * offset,
-                                  0, 1, 10000 )
+                                  0, 1, 10)
+            word.pose.d_pos = (0.2, 1 / self.wordcount * idx)
 
     def update(self, passed_time):
         for word in self.wordblocks:
             word.update(passed_time)
+            # TODO: the following is hack code, and needs to go
+            # TODO: investigate concept of callbacks on limit reached in modifiers to allow chaining of behaviors
+            if word.pose.life <= 0:
+                word.pose.life = 10
+                word.pose.d_pos = (-word.pose.d_pos[0], word.pose.d_pos[1])
+
 
     def render(self, target, resize_method, color, values=None, values2=None):
         color_len = len(color)
