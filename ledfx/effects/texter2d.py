@@ -26,7 +26,9 @@ FONT_MAPPINGS = {
     "Roboto Black": os.path.join(LEDFX_ASSETS_PATH, "fonts", "Roboto-Black.ttf"),
     "Stop": os.path.join(LEDFX_ASSETS_PATH, "fonts", "Stop.ttf"),
     "04b_30": os.path.join(LEDFX_ASSETS_PATH, "fonts", "04b_30__.ttf"),
-    "8bitOperatorPlus8": os.path.join(LEDFX_ASSETS_PATH, "fonts", "8bitOperatorPlus8-Regular.ttf")}
+    "8bitOperatorPlus8": os.path.join(LEDFX_ASSETS_PATH, "fonts", "8bitOperatorPlus8-Regular.ttf"),
+    "Wayfarers Toy Box": os.path.join(LEDFX_ASSETS_PATH, "fonts", "WayfarersToyBoxRegular.ttf"),
+    "Press Start 2P": os.path.join(LEDFX_ASSETS_PATH, "fonts", "PressStart2P.ttf"),}
 
 
 # These are different from gif resize methods, LANCZOS is not supported
@@ -140,12 +142,6 @@ class Sentence():
         self.d_word_focus = 0
         self.word_focus_callback = None
 
-        # the following block of code is hacking positions and other and should be replaced in due course
-        offset = 2 / (self.wordcount + 5)
-        for idx, word in enumerate(self.wordblocks):
-            word.pose.set_vectors(-1 + (idx+3) * offset, -1 + (idx+3) * offset,
-                                  0, 1, 10)
-            word.pose.d_pos = (0.2, 1 / self.wordcount * idx)
 
     def update(self, dt):
         if self.word_focus_active:
@@ -158,12 +154,6 @@ class Sentence():
 
         for word in self.wordblocks:
             word.update(dt)
-            # TODO: the following is hack code, and needs to go
-            # TODO: investigate concept of callbacks on limit reached in modifiers to allow chaining of behaviors
-            if word.pose.life <= 0:
-                word.pose.life = 10
-                word.pose.d_pos = (-word.pose.d_pos[0], word.pose.d_pos[1])
-
 
     def render(self, target, resize_method, color, values=None, values2=None):
         color_len = len(color)
@@ -171,6 +161,14 @@ class Sentence():
             word.render(target, resize_method,
                         tuple(color[i % color_len]), values, values2)
 
+
+TEXT_EFFECT_MAPPING = {
+    "Side Scroll": {"init":"side_scroll_init", "func":"side_scroll_func"},
+    "Carousel": {"init":"carousel_init", "func":"carousel_func"},
+    "Wave": {"init":"wave_init", "func":"wave_func"},
+    "Pulse": {"init":"pulse_init", "func":"pulse_func"},
+    "Fade": {"init":"fade_init", "func":"fade_func"},
+}
 
 class Texter2d(Twod, GradientEffect):
     NAME = "Texter"
@@ -214,6 +212,11 @@ class Texter2d(Twod, GradientEffect):
                 [resize_method.value for resize_method in ResizeMethods]
             ),
             vol.Optional(
+                "text_effect",
+                description="Text effect to apply to configuration",
+                default="Side Scroll",
+            ): vol.In(list(TEXT_EFFECT_MAPPING.keys())),
+            vol.Optional(
                 "deep_diag",
                 description="Diagnostic overlayed on matrix",
                 default=False,
@@ -250,6 +253,7 @@ class Texter2d(Twod, GradientEffect):
         self.text_color = [parse_color(self._config["text_color"])]
         self.resize_method = RESIZE_METHOD_MAPPING[self._config["resize_method"]]
         self.multiplier = self._config["multiplier"]
+        self.text_effect_funcs = TEXT_EFFECT_MAPPING[self._config["text_effect"]]
 
         self.lows_impulse_filter = self.create_filter(
             alpha_decay=self._config["impulse_decay"], alpha_rise=0.99)
@@ -277,6 +281,8 @@ class Texter2d(Twod, GradientEffect):
         if self.deep_diag:
             self.overlay = Overlay(self.r_height, self.r_width)
 
+        getattr(self, self.text_effect_funcs["init"])()
+
     def audio_data_updated(self, data):
         # Grab your audio input here, such as bar oscillator
         self.bar = data.bar_oscillator()
@@ -290,21 +296,18 @@ class Texter2d(Twod, GradientEffect):
         if self.test:
             self.draw_test(self.m_draw)
 
-
-        impulses = interpolate_to_length([self.lows_impulse, self.mids_impulse, self.high_impulse], self.sentence.wordcount)
-#        _LOGGER.info(f"impulses: {impulses}")
-        for idx, word in enumerate(self.sentence.wordblocks):
-            word.pose.d_rotation = impulses[idx] * self.multiplier
-            word.pose.size = 0.3 + impulses[idx] * self.multiplier
-            if self.alpha:
-                word.pose.alpha = min(1.0, 0.1 + impulses[idx] * self.multiplier)
-
         # TODO: Lets work clipping, then on a movement vector next
 
         if self.use_gradient:
             color = self.get_gradient_color_vectorized1d(self.sentence.color_points).astype(np.uint8)
         else:
             color = self.text_color
+
+        self.impulses = interpolate_to_length(
+            [self.lows_impulse, self.mids_impulse, self.high_impulse],
+            self.sentence.wordcount)
+
+        getattr(self, self.text_effect_funcs["func"])()
 
         self.sentence.update(self.passed)
 
@@ -315,3 +318,78 @@ class Texter2d(Twod, GradientEffect):
 
         if self.deep_diag:
             self.overlay.render(self.matrix, self.m_draw, values=self.values, values2=self.values2)
+
+
+    ############################################################################
+    # side_scroll
+    ############################################################################
+
+    def side_scroll_init(self):
+        _LOGGER.info(f"side_scroll_init: {self.sentence.text} {self.passed}")
+        pass
+
+    def side_scroll_func(self):
+        _LOGGER.info(f"side_scroll_func: {self.sentence.text} {self.passed}")
+        pass
+
+    ############################################################################
+    # carousel
+    ############################################################################
+
+    def carousel_init(self):
+        _LOGGER.info(f"carousel_init: {self.sentence.text} {self.passed}")
+        pass
+
+    def carousel_func(self):
+        _LOGGER.info(f"carousel_func: {self.sentence.text} {self.passed}")
+        pass
+
+    ############################################################################
+    # wave
+    ############################################################################
+
+    def wave_init(self):
+        # _LOGGER.info(f"wave_init: {self.sentence.text} {self.passed}")
+        # wave is the temp home for any old spam effect
+        offset = 2 / (self.sentence.wordcount + 5)
+        for idx, word in enumerate(self.sentence.wordblocks):
+            word.pose.set_vectors(-1 + (idx+3) * offset, -1 + (idx+3) * offset,
+                                  0, 1, 10)
+            word.pose.d_pos = (0.2, 1 / self.sentence.wordcount * idx)
+
+    def wave_func(self):
+        # _LOGGER.info(f"wave_func: {self.sentence.text} {self.passed}")
+        for idx, word in enumerate(self.sentence.wordblocks):
+            word.pose.d_rotation = self.impulses[idx] * self.multiplier
+            word.pose.size = 0.3 + self.impulses[idx] * self.multiplier
+            if self.alpha:
+                word.pose.alpha = min(1.0,
+                                      0.1 + self.impulses[idx] * self.multiplier)
+            if word.pose.life <= 0:
+                word.pose.life = 10
+                word.pose.d_pos = (-word.pose.d_pos[0], word.pose.d_pos[1])
+
+    ############################################################################
+    # pulse
+    ############################################################################
+
+    def pulse_init(self):
+        _LOGGER.info(f"pulse_init: {self.sentence.text} {self.passed}")
+        pass
+
+    def pulse_func(self):
+        _LOGGER.info(f"pulse_func: {self.sentence.text} {self.passed}")
+        pass
+
+    ############################################################################
+    # fade
+    ############################################################################
+
+    def fade_init(self):
+        _LOGGER.info(f"fade_init: {self.sentence.text} {self.passed}")
+        pass
+
+    def fade_func(self):
+        _LOGGER.info(f"fade_func: {self.sentence.text} {self.passed}")
+        pass
+
