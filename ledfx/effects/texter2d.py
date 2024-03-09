@@ -54,7 +54,7 @@ class Textblock():
     # the Textblock instance will be merged into the main display image outside of this class
     # so TextBlock has no idea of position which will be handled externally to this class
 
-    def __init__(self, text, font, color='white'):
+    def __init__(self, text, font, disp_size, color='white'):
         self.text = text
         # open the font file
         self.color = color
@@ -64,8 +64,13 @@ class Textblock():
         left, top, right, bottom = dummy_draw.textbbox((0,0), text, font=font)
         self.width = right - left
         self.height = self.descent + self.ascent
+        self.w_width = self.width / (disp_size[0] / 2)
+        self.w_height = self.height / (disp_size[0] / 2)
+        self.h_width = self.width / (disp_size[1] / 2)
+        self.h_height = self.height / (disp_size[1] / 2)
+
         # word images are greyscale masks only
-        self.image = Image.new('L', (self.width, self.height))
+        self.image = Image.new('L', (self.width, self.height)) #, "grey")
         self.draw = ImageDraw.Draw(self.image)
         self.draw.text((0, 0), self.text, font=font, fill=color)
         self.pose = Pose(0, 0, 0, 1, 0, 1)
@@ -82,17 +87,19 @@ class Textblock():
             # ang is a rotation from 0 to 1 float to represent 0 to 360 degrees
             # size is a float from 0 to 1 to represent 0 to 100% size, clip to min 1 pixel
             resized = self.image.rotate(self.pose.ang * 360, expand=True, resample=resize_method)
-            resized = resized.resize((max(1, math.floor(resized.width * self.pose.size)),
-                                       max(1, math.floor(resized.height * self.pose.size))),
+            resized = resized.resize((max(1, round(resized.width * self.pose.size)),
+                                       max(1, round(resized.height * self.pose.size))),
                                      resample=resize_method)
 
             # self.pos is a scalar for x and y in the range -1 to 1
             # the pos position is for the center of the image
             # here we will convert it to a pixel position within target which is a PIL image object
-            x = math.floor(((self.pose.x + 1) * target.width / 2) - (resized.width / 2))
-            y = math.floor(((self.pose.y + 1) * target.height / 2) - (resized.height / 2))
+            x = round(((self.pose.x + 1) * target.width / 2) - (resized.width / 2))
+            y = round(((self.pose.y + 1) * target.height / 2) - (resized.height / 2))
+
             # _LOGGER.info(
             #     f"Textblock {self.text} x: {self.pose.x:3.3f} y: {self.pose.y:3.3f} {x} {y} ang: {self.pose.ang:3.3f} size: {self.pose.size:3.3f}")
+
             capped_alpha = min(1.0, max(0.0, self.pose.alpha))
             if capped_alpha < 1.0:
                 img_array = np.array(resized)
@@ -103,7 +110,6 @@ class Textblock():
                 color_img = Image.new("RGBA", resized.size, color)
                 r, g, b, a = color_img.split()
                 resized = Image.merge("RGBA", (r, g, b, resized))
-
             target.paste(resized, (x, y), resized)
 
 
@@ -111,11 +117,7 @@ class Sentence():
     # this class will construct and maintain a set of words,
     # spaces and animated dynamics for a sentence
 
-    ANIMATIONS = {
-        "SIDE_SCROLL"
-    }
-
-    def __init__(self, text, font_name, points):
+    def __init__(self, text, font_name, points, disp_size):
         self.text = text
         self.font_path = FONT_MAPPINGS[font_name]
         self.points = points
@@ -125,23 +127,20 @@ class Sentence():
 
         for word in self.text.split():
             wordblock = Textblock(word,
-                             self.font)
+                             self.font, disp_size)
             self.wordblocks.append(wordblock)
             _LOGGER.info(f"Wordblock {word} created")
             if DEBUG:
                 wordblock.image.show()
-        space_block = Textblock(" ",
-                                self.font)
-        self.space_width = space_block.width
+        self.space_block = Textblock(" ",
+                                self.font, disp_size)
         self.wordcount = len(self.wordblocks)
-        _LOGGER.info(f"Space width is {self.space_width}")
         self.color_points = np.array([idx / max(1, self.wordcount-1) for idx in range(self.wordcount)])
 
         self.word_focus_active = False
         self.word_focus = -1
         self.d_word_focus = 0
         self.word_focus_callback = None
-
 
     def update(self, dt):
         if self.word_focus_active:
@@ -182,6 +181,11 @@ class Texter2d(Twod, GradientEffect):
             vol.Optional(
                 "alpha",
                 description="apply alpha effect to text",
+                default=False,
+            ): bool,
+            vol.Optional(
+                "option_1",
+                description="Text effect specific option switch",
                 default=False,
             ): bool,
             vol.Optional(
@@ -236,6 +240,11 @@ class Texter2d(Twod, GradientEffect):
                 description="general multiplier slider for development",
                 default=1,
             ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=10)),
+            vol.Optional(
+                "speed_option_1",
+                description="general speed slider for text effects",
+                default=1,
+            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=2)),
         },
     )
 
@@ -247,6 +256,8 @@ class Texter2d(Twod, GradientEffect):
         super().config_updated(config)
         # copy over your configs here into variables
         self.alpha = self._config["alpha"]
+        self.option_1 = self._config["option_1"]
+        self.speed_option_1 = self._config["speed_option_1"]
         self.deep_diag = self._config["deep_diag"]
         self.use_gradient = self._config["use_gradient"]
         # putting text_color into a list so that it can be treated the same as a gradient list
@@ -277,7 +288,8 @@ class Texter2d(Twod, GradientEffect):
         # as the self.matrix will not exist yet
         self.sentence = Sentence(self.config["text"],
                                  self.config["font"],
-                                 math.floor(self.r_height * self.config["height_percent"] / 100))
+                                 round(self.r_height * self.config["height_percent"] / 100),
+                                 (self.r_width, self.r_height))
         if self.deep_diag:
             self.overlay = Overlay(self.r_height, self.r_width)
 
@@ -325,24 +337,42 @@ class Texter2d(Twod, GradientEffect):
     ############################################################################
 
     def side_scroll_init(self):
-        _LOGGER.info(f"side_scroll_init: {self.sentence.text} {self.passed}")
-        pass
+        # first we need to set every word to be in a position off screen
+        # each word will be offset by the word before and a space
+        # first we need the first word width in screen units
+
+        offset = 1
+        self.base_speed = self.speed_option_1
+
+        for idx, word in enumerate(self.sentence.wordblocks):
+            offset += word.w_width / 2
+            word.pose.set_vectors(offset, 0,
+                                  0, 1, 10000)
+            word.pose.d_pos = (self.base_speed, 0.5)
+            offset += word.w_width / 2
+            offset += self.sentence.space_block.w_width
 
     def side_scroll_func(self):
-        _LOGGER.info(f"side_scroll_func: {self.sentence.text} {self.passed}")
-        pass
+        if self.sentence.wordblocks[-1].pose.x + self.sentence.wordblocks[-1].w_width / 2 < -1:
+            self.side_scroll_init()
+        for word in self.sentence.wordblocks:
+            if self.option_1:
+                word.pose.d_pos = (self.base_speed + (self.lows_impulse * self.multiplier * self.base_speed), 0.5)
+            if self.alpha:
+                word.pose.alpha = min(1.0,
+                                      0.1 + self.lows_impulse * self.multiplier)
+
+        # _LOGGER.info(f"{self.sentence.wordblocks[0].pose.y:3.3f})")
 
     ############################################################################
     # carousel
     ############################################################################
 
     def carousel_init(self):
-        _LOGGER.info(f"carousel_init: {self.sentence.text} {self.passed}")
-        pass
+        self.wave_init()
 
     def carousel_func(self):
-        _LOGGER.info(f"carousel_func: {self.sentence.text} {self.passed}")
-        pass
+        self.wave_func()
 
     ############################################################################
     # wave
@@ -374,22 +404,17 @@ class Texter2d(Twod, GradientEffect):
     ############################################################################
 
     def pulse_init(self):
-        _LOGGER.info(f"pulse_init: {self.sentence.text} {self.passed}")
-        pass
+        self.wave_init()
 
     def pulse_func(self):
-        _LOGGER.info(f"pulse_func: {self.sentence.text} {self.passed}")
-        pass
+        self.wave_func()
 
     ############################################################################
     # fade
     ############################################################################
 
     def fade_init(self):
-        _LOGGER.info(f"fade_init: {self.sentence.text} {self.passed}")
-        pass
+        self.wave_init()
 
     def fade_func(self):
-        _LOGGER.info(f"fade_func: {self.sentence.text} {self.passed}")
-        pass
-
+        self.wave_func()
