@@ -1,7 +1,5 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
-# we want to start with a clean base
-yarn.lock
 
 # dependencies
 /node_modules
@@ -27,8 +25,6 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-/LedFx_core-*--win.exe
-/storybook-static
 /extraResources/*.app
 /extraResources/*.exe
 src/assets/DMG_BG.psd
