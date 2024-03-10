@@ -79,38 +79,71 @@ class Textblock():
         active = self.pose.update(passed_time)
         return active
 
+    def calculate_final_size(self):
+        angle = self.pose.ang * 360  # Convert from 0-1 range to degrees
+        angle_rad = math.radians(angle)  # Convert angle to radians
+        cos_angle = abs(math.cos(angle_rad))
+        sin_angle = abs(math.sin(angle_rad))
+
+        rotated_width = self.image.height * sin_angle + self.image.width * cos_angle
+        rotated_height = self.image.height * cos_angle + self.image.width * sin_angle
+
+        final_width = max(1, round(rotated_width * self.pose.size))
+        final_height = max(1, round(rotated_height * self.pose.size))
+
+        return final_width, final_height
+
     def render(self, target, resize_method, color=None, values=None, values2=None):
         if self.pose.life > 0 and self.pose.alpha > 0.0 and self.pose.size > 0.0:
             # TODO: add a fast clipping algorithm to avoid rendering off screen
+            c_width, c_height = self.calculate_final_size()
+            # we only need to check the closest corner to 0,0
+            # c_x = round(abs(self.pose.x * target.width / 2))
+            # Pre-calculate reusable values
+            half_width = target.width / 2
+            half_height = target.height / 2
+            pose_x = self.pose.x
+            pose_y = self.pose.y
+            c_x = round(abs(pose_x) * half_width)
+            c_y = round(abs(pose_y) * half_height)
+            e_x = c_x - c_width / 2
+            e_y = c_y - c_height / 2
+            # TODO: put this test on a switch and look for the exprience A/B
+            if e_x < half_width and e_y < half_height:
+               # _LOGGER.info(f"{self.text} {e_x} {e_y} {c_x} {c_y} {c_width} {c_height} {target.width} {target.height}")
+                # first caluclate the new width and height for rotation by pose.ang is 0 to 1 for 0 to 360 degrees
+                # first we will rotate and then size the image
+                # ang is a rotation from 0 to 1 float to represent 0 to 360 degrees
+                # size is a float from 0 to 1 to represent 0 to 100% size, clip to min 1 pixel
 
-            # first we will rotate and then size the image
-            # ang is a rotation from 0 to 1 float to represent 0 to 360 degrees
-            # size is a float from 0 to 1 to represent 0 to 100% size, clip to min 1 pixel
-            resized = self.image.rotate(self.pose.ang * 360, expand=True, resample=resize_method)
-            resized = resized.resize((max(1, round(resized.width * self.pose.size)),
-                                       max(1, round(resized.height * self.pose.size))),
-                                     resample=resize_method)
+                resized = self.image.rotate(self.pose.ang * 360, expand=True, resample=resize_method)
+                resized = resized.resize((max(1, round(resized.width * self.pose.size)),
+                                           max(1, round(resized.height * self.pose.size))),
+                                         resample=resize_method)
 
-            # self.pos is a scalar for x and y in the range -1 to 1
-            # the pos position is for the center of the image
-            # here we will convert it to a pixel position within target which is a PIL image object
-            x = round(((self.pose.x + 1) * target.width / 2) - (resized.width / 2))
-            y = round(((self.pose.y + 1) * target.height / 2) - (resized.height / 2))
+                # _LOGGER.info(f"ow: {self.image.width} oh: {self.image.height} rw: {resized.width} rh: {resized.height} cw: {c_width} ch: {c_height} ang: {self.pose.ang:3.3f} size: {self.pose.size:3.3f}")
+                values.append(resized.height)
+                values2.append(c_height)
+                # self.pos is a scalar for x and y in the range -1 to 1
+                # the pos position is for the center of the image
+                # here we will convert it to a pixel position within target which is a PIL image object
+                x = round(((pose_x + 1) * target.width / 2) - (resized.width / 2))
+                y = round(((pose_y + 1) * target.height / 2) - (resized.height / 2))
 
-            # _LOGGER.info(
-            #     f"Textblock {self.text} x: {self.pose.x:3.3f} y: {self.pose.y:3.3f} {x} {y} ang: {self.pose.ang:3.3f} size: {self.pose.size:3.3f}")
+                # _LOGGER.info(
+                #     f"Textblock {self.text} x: {self.pose.x:3.3f} y: {self.pose.y:3.3f} {x} {y} ang: {self.pose.ang:3.3f} size: {self.pose.size:3.3f}")
 
-            capped_alpha = min(1.0, max(0.0, self.pose.alpha))
-            if capped_alpha < 1.0:
-                img_array = np.array(resized)
-                modified_array = np.clip(img_array * capped_alpha, 0, 255).astype(np.uint8)
-                resized = Image.fromarray(modified_array, mode='L')
+                capped_alpha = min(1.0, max(0.0, self.pose.alpha))
+                if capped_alpha < 1.0:
+                    img_array = np.array(resized)
+                    modified_array = np.clip(img_array * capped_alpha, 0, 255).astype(np.uint8)
+                    resized = Image.fromarray(modified_array, mode='L')
 
-            if color is not None:
-                color_img = Image.new("RGBA", resized.size, color)
-                r, g, b, a = color_img.split()
-                resized = Image.merge("RGBA", (r, g, b, resized))
-            target.paste(resized, (x, y), resized)
+                if color is not None:
+                    color_img = Image.new("RGBA", resized.size, color)
+                    r, g, b, a = color_img.split()
+                    resized = Image.merge("RGBA", (r, g, b, resized))
+                target.paste(resized, (x, y), resized)
 
 
 class Sentence():
