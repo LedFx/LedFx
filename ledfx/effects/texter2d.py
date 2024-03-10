@@ -18,8 +18,6 @@ from PIL import Image, ImageDraw, ImageFont
 
 _LOGGER = logging.getLogger(__name__)
 
-DEBUG = False
-
 FONT_MAPPINGS = {
     "Roboto Regular": os.path.join(LEDFX_ASSETS_PATH, "fonts", "Roboto-Regular.ttf"),
     "Roboto Bold": os.path.join(LEDFX_ASSETS_PATH, "fonts", "Roboto-Bold.ttf"),
@@ -56,7 +54,6 @@ class Textblock():
 
     def __init__(self, text, font, disp_size, color='white'):
         self.text = text
-        # open the font file
         self.color = color
         self.ascent, self.descent = font.getmetrics()
         dummy_image = Image.new('L', (1, 1))
@@ -80,8 +77,9 @@ class Textblock():
         return active
 
     def calculate_final_size(self):
-        angle = self.pose.ang * 360  # Convert from 0-1 range to degrees
-        angle_rad = math.radians(angle)  # Convert angle to radians
+        # angle_rad = math.radians(self.pose.ang * 360)
+        angle_rad = self.pose.ang * 2 * math.pi
+
         cos_angle = abs(math.cos(angle_rad))
         sin_angle = abs(math.sin(angle_rad))
 
@@ -95,40 +93,25 @@ class Textblock():
 
     def render(self, target, resize_method, color=None, values=None, values2=None):
         if self.pose.life > 0 and self.pose.alpha > 0.0 and self.pose.size > 0.0:
-            # TODO: add a fast clipping algorithm to avoid rendering off screen
-            c_width, c_height = self.calculate_final_size()
-            # we only need to check the closest corner to 0,0
-            # c_x = round(abs(self.pose.x * target.width / 2))
-            # Pre-calculate reusable values
-            half_width = target.width / 2
-            half_height = target.height / 2
+            # pretty rambling calculation to get the rotated size of the image
+            # and clip it out if off the display
             pose_x = self.pose.x
             pose_y = self.pose.y
-            c_x = round(abs(pose_x) * half_width)
-            c_y = round(abs(pose_y) * half_height)
-            e_x = c_x - c_width / 2
-            e_y = c_y - c_height / 2
-            # TODO: put this test on a switch and look for the exprience A/B
+            c_width, c_height = self.calculate_final_size()
+            half_width = target.width / 2
+            half_height = target.height / 2
+            e_x = round(abs(pose_x) * half_width) - c_width / 2
+            e_y = round(abs(pose_y) * half_height) - c_height / 2
             if e_x < half_width and e_y < half_height:
-               # _LOGGER.info(f"{self.text} {e_x} {e_y} {c_x} {c_y} {c_width} {c_height} {target.width} {target.height}")
-                # first caluclate the new width and height for rotation by pose.ang is 0 to 1 for 0 to 360 degrees
-                # first we will rotate and then size the image
-                # ang is a rotation from 0 to 1 float to represent 0 to 360 degrees
-                # size is a float from 0 to 1 to represent 0 to 100% size, clip to min 1 pixel
-
                 resized = self.image.rotate(self.pose.ang * 360, expand=True, resample=resize_method)
                 resized = resized.resize((max(1, round(resized.width * self.pose.size)),
                                            max(1, round(resized.height * self.pose.size))),
                                          resample=resize_method)
-
-                # _LOGGER.info(f"ow: {self.image.width} oh: {self.image.height} rw: {resized.width} rh: {resized.height} cw: {c_width} ch: {c_height} ang: {self.pose.ang:3.3f} size: {self.pose.size:3.3f}")
-                values.append(resized.height)
-                values2.append(c_height)
                 # self.pos is a scalar for x and y in the range -1 to 1
                 # the pos position is for the center of the image
                 # here we will convert it to a pixel position within target which is a PIL image object
-                x = round(((pose_x + 1) * target.width / 2) - (resized.width / 2))
-                y = round(((pose_y + 1) * target.height / 2) - (resized.height / 2))
+                x = round(((pose_x + 1) * half_width) - (resized.width / 2))
+                y = round(((pose_y + 1) * half_height) - (resized.height / 2))
 
                 # _LOGGER.info(
                 #     f"Textblock {self.text} x: {self.pose.x:3.3f} y: {self.pose.y:3.3f} {x} {y} ang: {self.pose.ang:3.3f} size: {self.pose.size:3.3f}")
@@ -163,8 +146,6 @@ class Sentence():
                              self.font, disp_size)
             self.wordblocks.append(wordblock)
             _LOGGER.info(f"Wordblock {word} created")
-            if DEBUG:
-                wordblock.image.show()
         self.space_block = Textblock(" ",
                                 self.font, disp_size)
         self.wordcount = len(self.wordblocks)
@@ -222,9 +203,14 @@ class Texter2d(Twod, GradientEffect):
                 default=False,
             ): bool,
             vol.Optional(
+                "option_2",
+                description="Text effect specific option switch",
+                default=False,
+            ): bool,
+            vol.Optional(
                 "font",
                 description="Font to render text with",
-                default="8bitOperatorPlus8",
+                default="Press Start 2P",
             ): vol.In(list(FONT_MAPPINGS.keys())),
             vol.Optional(
                 "text",
@@ -234,7 +220,7 @@ class Texter2d(Twod, GradientEffect):
             vol.Optional(
                 "height_percent",
                 description="Font size as a percentage of the display height",
-                default=75,
+                default=100,
             ): vol.All(vol.Coerce(int), vol.Range(min=10, max=150)),
             vol.Optional(
                 "text_color",
@@ -290,6 +276,7 @@ class Texter2d(Twod, GradientEffect):
         # copy over your configs here into variables
         self.alpha = self._config["alpha"]
         self.option_1 = self._config["option_1"]
+        self.option_2 = self._config["option_2"]
         self.speed_option_1 = self._config["speed_option_1"]
         self.deep_diag = self._config["deep_diag"]
         self.use_gradient = self._config["use_gradient"]
@@ -341,12 +328,10 @@ class Texter2d(Twod, GradientEffect):
         if self.test:
             self.draw_test(self.m_draw)
 
-        # TODO: Lets work clipping, then on a movement vector next
-
         if self.use_gradient:
-            color = self.get_gradient_color_vectorized1d(self.sentence.color_points).astype(np.uint8)
+            color_array = self.get_gradient_color_vectorized1d(self.sentence.color_points).astype(np.uint8)
         else:
-            color = self.text_color
+            color_array = self.text_color
 
         self.impulses = interpolate_to_length(
             [self.lows_impulse, self.mids_impulse, self.high_impulse],
@@ -356,7 +341,7 @@ class Texter2d(Twod, GradientEffect):
 
         self.sentence.update(self.passed)
 
-        self.sentence.render(self.matrix, self.resize_method, color,
+        self.sentence.render(self.matrix, self.resize_method, color_array,
                              values=self.values, values2=self.values2)
 
         self.roll_gradient()
