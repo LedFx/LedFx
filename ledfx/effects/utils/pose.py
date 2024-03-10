@@ -1,4 +1,5 @@
 from enum import Enum
+
 import numpy as np
 
 
@@ -9,7 +10,7 @@ class Mode(Enum):
     DECELERATE = 4
 
 
-class Scalar():
+class Scalar:
     def __init__(self, val, delta, target, target_2, mode):
         self.val = val
         self.delta = delta
@@ -59,14 +60,14 @@ def interpolate_to_length(input_array, n):
     # Interpolate the values for the indices in between
     for i in range(1, len(original_indices)):
         start_idx, end_idx = original_indices[i - 1], original_indices[i]
-        new_array[start_idx:end_idx + 1] = np.linspace(input_array[i - 1],
-                                                       input_array[i],
-                                                       end_idx - start_idx + 1)
+        new_array[start_idx : end_idx + 1] = np.linspace(
+            input_array[i - 1], input_array[i], end_idx - start_idx + 1
+        )
 
     return new_array
 
 
-class Pose():
+class Pose:
     # we need a class to represent a 2d pose and all of its dynamics
     # this class will be used to represent
     #  life of the active render and manipulation of the pose in seconds
@@ -90,7 +91,7 @@ class Pose():
     # we will start with an init class that just create the vector values
     # all other deltas and modifiers will be added later, this will allow incremental implementation
 
-    def __init__(self, x, y, ang, size, life, alpha = 1.0):
+    def __init__(self, x, y, ang, size, life, alpha=1.0):
         self.x = x
         self.y = y
         self.ang = ang
@@ -110,7 +111,7 @@ class Pose():
         # we can build a lib of interesting modifiers
         self.modifier_callbacks = []
 
-    def set_vectors(self, x, y, ang, size, life, alpha = 1.0):
+    def set_vectors(self, x, y, ang, size, life, alpha=1.0):
         # x and y are ranged values from -1 to 1 where
         # 0,0 is the center of the matrix
         # -1, 1 are the bounds
@@ -148,13 +149,12 @@ class Pose():
         self.x += movement_vector[0]
         self.y += movement_vector[1]
 
-
     def update(self, dt):
         self.life -= dt
         if self.life <= 0.0:
             return False
 
-        self.ang = (((self.ang + 1 ) + self.d_rotation * dt ) % 2 ) - 1
+        self.ang = (((self.ang + 1) + self.d_rotation * dt) % 2) - 1
         self.apply_d_pos(dt)
 
         # note that alpha and size are capped at application in the render
@@ -167,4 +167,3 @@ class Pose():
             modifier(self, dt)
 
         return True
-

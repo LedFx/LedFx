@@ -155,8 +155,8 @@ class Plasmawled(Twod, GradientEffect):
         # Use advanced indexing to access lookup table values
         data = self.sin8(sin_cos_indices + sin_indices) / 255.0
 
-        color_mapped_plasma = self.get_gradient_color_vectorized2d(data).astype(
-            np.uint8
-        )
+        color_mapped_plasma = self.get_gradient_color_vectorized2d(
+            data
+        ).astype(np.uint8)
 
         self.matrix = Image.fromarray(color_mapped_plasma, "RGB")

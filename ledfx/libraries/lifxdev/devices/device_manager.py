@@ -16,7 +16,6 @@ from ledfx.libraries.lifxdev import get_library_logger
 from ledfx.libraries.lifxdev.colors import color
 from ledfx.libraries.lifxdev.devices import device, light, multizone, tile
 from ledfx.libraries.lifxdev.messages import device_messages, packet
-from ledfx.libraries.lifxdev import get_library_logger
 
 logger = get_library_logger()
 

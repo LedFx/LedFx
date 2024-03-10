@@ -13,7 +13,6 @@ import struct
 import sys
 from collections.abc import Callable
 from typing import Any, cast
-from ledfx.libraries.lifxdev import get_library_logger
 
 from ledfx.libraries.lifxdev import get_library_logger
 

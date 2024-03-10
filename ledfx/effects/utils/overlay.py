@@ -1,7 +1,7 @@
 from ledfx.utils import get_mono_font
 
 
-class Overlay():
+class Overlay:
     ###
     # Overlay
     # A class for drawing a graph of values over an image for diagnostic purposes.
@@ -51,4 +51,4 @@ class Overlay():
             self.plot_range(values2, (0, 255, 0))
         if values3 is not None:
             self.plot_range(values3, (0, 0, 255))
-        m_draw.text((0, 0), diag_string, fill='yellow', font=self.diag_font)
+        m_draw.text((0, 0), diag_string, fill="yellow", font=self.diag_font)
