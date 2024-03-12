@@ -19,8 +19,6 @@ from ledfx.libraries.lifxdev.messages import device_messages, packet
 
 logger = get_library_logger()
 
-logger = get_library_logger()
-
 CONFIG_PATH = pathlib.Path.home() / ".lifx" / "devices.yaml"
 
 
