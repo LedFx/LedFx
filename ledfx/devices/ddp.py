@@ -95,7 +95,13 @@ class DDPDevice(UDPDevice):
             data_start = i * DDPDevice.MAX_DATALEN
             data_end = data_start + DDPDevice.MAX_DATALEN
             DDPDevice.send_packet(
-                sock, dest, port, sequence, i, byteData[data_start:data_end], i == packets
+                sock,
+                dest,
+                port,
+                sequence,
+                i,
+                byteData[data_start:data_end],
+                i == packets,
             )
 
     @staticmethod
