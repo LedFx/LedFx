@@ -199,6 +199,7 @@ class Sentence:
 
     def render(self, target, resize_method, color, values=None, values2=None):
         color_len = len(color)
+        # TODO: We should observer the word in focus and render it last
         for i, word in enumerate(self.wordblocks):
             word.render(
                 target,
@@ -243,6 +244,11 @@ class Texter2d(Twod, GradientEffect):
                 default=False,
             ): bool,
             vol.Optional(
+                "value_option_1",
+                description="general value slider for text effects",
+                default=0.5,
+            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
+            vol.Optional(
                 "font",
                 description="Font to render text with",
                 default="Press Start 2P",
@@ -254,7 +260,7 @@ class Texter2d(Twod, GradientEffect):
             ): str,
             vol.Optional(
                 "height_percent",
-                description="Font size as a percentage of the display height",
+                description="Font size as a percentage of the display height, fonts are unpredictable!",
                 default=100,
             ): vol.All(vol.Coerce(int), vol.Range(min=10, max=150)),
             vol.Optional(
@@ -313,6 +319,7 @@ class Texter2d(Twod, GradientEffect):
         self.option_1 = self._config["option_1"]
         self.option_2 = self._config["option_2"]
         self.speed_option_1 = self._config["speed_option_1"]
+        self.value_option_1 = self._config["value_option_1"]
         self.deep_diag = self._config["deep_diag"]
         self.use_gradient = self._config["use_gradient"]
         # putting text_color into a list so that it can be treated the same as a gradient list
@@ -455,6 +462,15 @@ class Texter2d(Twod, GradientEffect):
 
     ############################################################################
     # carousel
+    #
+    # this will be the sentence distributed around a circle that can be tilted
+    # The circle size will be based on the sentence length and text size and
+    # often significantly off screen.
+    # The word in focus will be at size 1.0 all others will be at some reduced factor
+    # The word in focus will be drawn last to attempt to preserve some z order,
+    # this might need a new machinsim in render
+    # Value slider will allow the tilting of the carosel
+    #
     ############################################################################
 
     def carousel_init(self):
