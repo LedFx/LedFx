@@ -95,28 +95,28 @@ class DDPDevice(UDPDevice):
             data_start = i * DDPDevice.MAX_DATALEN
             data_end = data_start + DDPDevice.MAX_DATALEN
             DDPDevice.send_packet(
-                sock, dest, port, sequence, i, byteData[data_start:data_end]
+                sock,
+                dest,
+                port,
+                sequence,
+                i,
+                byteData[data_start:data_end],
+                i == packets,
             )
 
     @staticmethod
-    def send_packet(sock, dest, port, sequence, packet_count, data):
+    def send_packet(sock, dest, port, sequence, packet_count, data, last):
         bytes_length = len(data)
         udpData = bytearray()
         header = struct.pack(
             "!BBBBLH",
-            DDPDevice.VER1
-            | (
-                DDPDevice.VER1
-                if (bytes_length == DDPDevice.MAX_DATALEN)
-                else DDPDevice.PUSH
-            ),
+            DDPDevice.VER1 | (DDPDevice.PUSH if last else 0),
             sequence,
             DDPDevice.DATATYPE,
             DDPDevice.SOURCE,
             packet_count * DDPDevice.MAX_DATALEN,
             bytes_length,
         )
-
         udpData.extend(header)
         udpData.extend(data)
 
