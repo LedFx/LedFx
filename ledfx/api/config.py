@@ -16,7 +16,7 @@ from ledfx.config import (
     save_config,
 )
 from ledfx.consts import CONFIGURATION_VERSION
-from ledfx.effects.audio import AudioInputSource
+from ledfx.effects.audio import AudioAnalysisSource, AudioInputSource
 from ledfx.effects.melbank import Melbanks
 from ledfx.events import BaseConfigUpdateEvent
 
@@ -223,9 +223,17 @@ class ConfigEndpoint(RestEndpoint):
         Returns:
             None
         """
+        audio_config = config.pop("audio", {})
+
         audio_config = validate_and_trim_config(
-            config.pop("audio", {}),
+            audio_config,
             AudioInputSource.AUDIO_CONFIG_SCHEMA.fget(),
+            "audio",
+        )
+
+        audio_config = validate_and_trim_config(
+            audio_config,
+            AudioAnalysisSource.CONFIG_SCHEMA,
             "audio",
         )
         wled_config = validate_and_trim_config(
