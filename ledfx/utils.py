@@ -114,7 +114,6 @@ def calc_available_fps():
 AVAILABLE_FPS = calc_available_fps()
 
 
-@lru_cache(maxsize=32)
 def fps_to_sleep_interval(fps):
     """
     Converts frames per second (fps) to a sleep interval in seconds.

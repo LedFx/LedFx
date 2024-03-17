@@ -577,6 +577,8 @@ class Virtual:
         return self._active_effect
 
     def thread_function(self):
+        # Calculate the desired frametime to reach the specified refresh rate - doing it here to avoid recalculating it every loop
+        desired_frametime = fps_to_sleep_interval(self.refresh_rate)
         while True:
             if not self._active:
                 break
@@ -589,34 +591,27 @@ class Virtual:
                     and self._active_effect.is_active
                     and hasattr(self._active_effect, "pixels")
                 ):
-                    # self.assembled_frame = await self._ledfx.loop.run_in_executor(
-                    #     self._ledfx.thread_executor, self.assemble_frame
-                    # )
                     self.assembled_frame = self.assemble_frame()
                     if self.assembled_frame is not None and not self._paused:
                         if not self._config["preview_only"]:
-                            # self._ledfx.thread_executor.submit(self.flush)
-                            # await self._ledfx.loop.run_in_executor(
-                            #     self._ledfx.thread_executor, self.flush
-                            # )
                             self.flush()
 
                         self._fire_update_event()
 
-            # adjust for the frame assemble time, min allowed sleep 1 ms
-            # this will be more frame accurate on high res sleep systems
             run_time = timeit.default_timer() - start_time
-            sleep_time = max(
-                0.001, fps_to_sleep_interval(self.refresh_rate) - run_time
-            )
-            time.sleep(sleep_time)
-
-            # use an aggressive check for did we sleep against expected min clk
-            # for all high res scenarios this will be passive
-            # for unexpected high res sleep on windows scenarios it will adapt
-            pass_time = timeit.default_timer() - start_time
-            if pass_time < (self._min_time / 2):
-                time.sleep(max(0.001, self._min_time - pass_time))
+            # We sleep if we have time to kill, but we do nothing if we're behind
+            if run_time <= desired_frametime:
+                sleep_time = desired_frametime - run_time
+                time.sleep(sleep_time)
+                # Looking to see what the thread_function is doing?
+                # Uncomment the following lines to get some debug info
+                # Commented out as it slows down the thread and is just noise in the logs - don't commit it uncommented please :)
+                # delivered_fps = 1.0 / (run_time + sleep_time)
+                # _LOGGER.debug(f"{self.name} Desired FPS: {self.refresh_rate}")
+                # _LOGGER.debug(f"{self.name} Desired frametime: {desired_frametime}")
+                # _LOGGER.debug(f"{self.name} Run time: {run_time}")
+                # _LOGGER.debug(f"{self.name} Sleep time: {sleep_time}")
+                # _LOGGER.debug(f"{self.name} Delivered fps: {delivered_fps}")
 
     def assemble_frame(self):
         """
