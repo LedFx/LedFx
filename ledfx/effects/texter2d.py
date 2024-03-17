@@ -197,7 +197,9 @@ class Sentence:
             # update or render level?
             if self.word_focus >= 1.0:
                 # move onto next word and restart counters
-                self.word_focused_on = ( self.word_focused_on + 1) % self.wordcount
+                self.word_focused_on = (
+                    self.word_focused_on + 1
+                ) % self.wordcount
                 self.word_focus %= 1.0
 
         for word in self.wordblocks:
@@ -413,8 +415,11 @@ class Texter2d(Twod, GradientEffect):
         else:
             color_array = self.text_color
 
-        self.impulses3 = [self.lows_impulse, self.mids_impulse,
-                          self.high_impulse]
+        self.impulses3 = [
+            self.lows_impulse,
+            self.mids_impulse,
+            self.high_impulse,
+        ]
         self.impulses = interpolate_to_length(
             self.impulses3,
             self.sentence.wordcount,
@@ -519,7 +524,9 @@ class Texter2d(Twod, GradientEffect):
     def wave_func(self):
         # _LOGGER.info(f"wave_func: {self.sentence.text} {self.passed}")
         for idx, word in enumerate(self.sentence.wordblocks):
-            word.pose.d_rotation = self.impulses[idx] * self.multiplier * word.pose.lefty_righty
+            word.pose.d_rotation = (
+                self.impulses[idx] * self.multiplier * word.pose.lefty_righty
+            )
 
             word.pose.size = 0.3 + self.impulses[idx] * self.multiplier
             if self.alpha:
@@ -548,7 +555,9 @@ class Texter2d(Twod, GradientEffect):
 
     def spokes_init(self):
         self.spoke_spin = 0
-        self.spokes = np.linspace(0, 2 * math.pi, self.sentence.wordcount +1)[:-1]
+        self.spokes = np.linspace(0, 2 * math.pi, self.sentence.wordcount + 1)[
+            :-1
+        ]
 
         for idx, word in enumerate(self.sentence.wordblocks):
             # random seed angle between 0 and 1 so words dan't artificially line up in spin space
@@ -578,9 +587,7 @@ class Texter2d(Twod, GradientEffect):
             word.pose.life = 1
             word.pose.size = 0.3 + impulse
             if self.alpha:
-                word.pose.alpha = min(
-                    1.0, 0.1 + impulse
-                )
+                word.pose.alpha = min(1.0, 0.1 + impulse)
 
         # when a word goes into focus we can use the life counter to control its migration in and out of the center
         # twean the new calculated value to the center values in some manner
@@ -596,12 +603,18 @@ class Texter2d(Twod, GradientEffect):
 
         # _LOGGER.info(f"focus_word: {self.sentence.word_focused_on} text ({focus_word.text}) {self.sentence.word_focus:3.3f} transition: {transition:3.3f}")
 
-        focus_word.pose.size = tween( focus_word.pose.size, 0.8 + (self.lows_impulse * self.multiplier / 2), transition)
-        focus_word.pose.x = tween( focus_word.pose.x, 0, transition)
-        focus_word.pose.y = tween( focus_word.pose.y, 0, transition)
-        focus_word.pose.ang = tween( focus_word.pose.ang, 0, transition)
-        focus_word.pose.d_rotation = tween( focus_word.pose.d_rotation, 0, transition)
-        focus_word.pose.alpha = tween( focus_word.pose.alpha, 1.0, transition)
+        focus_word.pose.size = tween(
+            focus_word.pose.size,
+            0.8 + (self.lows_impulse * self.multiplier / 2),
+            transition,
+        )
+        focus_word.pose.x = tween(focus_word.pose.x, 0, transition)
+        focus_word.pose.y = tween(focus_word.pose.y, 0, transition)
+        focus_word.pose.ang = tween(focus_word.pose.ang, 0, transition)
+        focus_word.pose.d_rotation = tween(
+            focus_word.pose.d_rotation, 0, transition
+        )
+        focus_word.pose.alpha = tween(focus_word.pose.alpha, 1.0, transition)
 
     ############################################################################
     # pulse
