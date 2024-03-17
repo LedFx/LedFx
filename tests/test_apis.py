@@ -3,7 +3,7 @@ import time
 import pytest
 
 # Remember to import the test groups here if you add a new one
-from conftest import all_effects
+from conftest import all_effects, audio_configs
 
 from tests.test_definitions.devices import device_tests
 from tests.test_definitions.effects import effect_tests
@@ -30,6 +30,7 @@ test_groups = [
     ("device_tests", device_tests),
     ("effect_tests", effect_tests),
     ("all_effects", all_effects),
+    ("audio_configs", audio_configs),
 ]
 
 # Define a list of all test cases
