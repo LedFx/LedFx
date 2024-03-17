@@ -1,6 +1,7 @@
 import logging
 import math
 import os
+import random
 from collections import deque
 from enum import Enum
 
@@ -13,7 +14,7 @@ from ledfx.consts import LEDFX_ASSETS_PATH
 from ledfx.effects.gradient import GradientEffect
 from ledfx.effects.twod import Twod
 from ledfx.effects.utils.overlay import Overlay
-from ledfx.effects.utils.pose import Pose, interpolate_to_length
+from ledfx.effects.utils.pose import Pose, interpolate_to_length, tween
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -173,7 +174,7 @@ class Sentence:
         for word in self.text.split():
             wordblock = Textblock(word, self.font, disp_size)
             self.wordblocks.append(wordblock)
-            _LOGGER.info(f"Wordblock {word} created")
+            _LOGGER.debug(f"Wordblock {word} created")
         self.space_block = Textblock(" ", self.font, disp_size)
         self.wordcount = len(self.wordblocks)
         self.color_points = np.array(
@@ -182,7 +183,8 @@ class Sentence:
 
         self.word_focus_active = False
         self.word_focus = -1
-        self.d_word_focus = 0
+        self.word_focused_on = -1
+        self.d_word_focus = 1
         self.word_focus_callback = None
 
     def update(self, dt):
@@ -193,6 +195,10 @@ class Sentence:
             # TODO: where should this callback be called?
             # at word or sentence level, what should we allow it to do?
             # update or render level?
+            if self.word_focus >= 1.0:
+                # move onto next word and restart counters
+                self.word_focused_on = ( self.word_focused_on + 1) % self.wordcount
+                self.word_focus %= 1.0
 
         for word in self.wordblocks:
             word.update(dt)
@@ -201,10 +207,23 @@ class Sentence:
         color_len = len(color)
         # TODO: We should observer the word in focus and render it last
         for i, word in enumerate(self.wordblocks):
-            word.render(
+            if self.word_focus_active and i == self.word_focused_on:
+                focus_color = tuple(color[i % color_len])
+            else:
+                word.render(
+                    target,
+                    resize_method,
+                    tuple(color[i % color_len]),
+                    values,
+                    values2,
+                )
+
+        # draw the focus word last
+        if self.word_focus_active:
+            self.wordblocks[self.word_focused_on].render(
                 target,
                 resize_method,
-                tuple(color[i % color_len]),
+                focus_color,
                 values,
                 values2,
             )
@@ -212,6 +231,7 @@ class Sentence:
 
 TEXT_EFFECT_MAPPING = {
     "Side Scroll": {"init": "side_scroll_init", "func": "side_scroll_func"},
+    "Spokes": {"init": "spokes_init", "func": "spokes_func"},
     "Carousel": {"init": "carousel_init", "func": "carousel_func"},
     "Wave": {"init": "wave_init", "func": "wave_func"},
     "Pulse": {"init": "pulse_init", "func": "pulse_func"},
@@ -393,8 +413,10 @@ class Texter2d(Twod, GradientEffect):
         else:
             color_array = self.text_color
 
+        self.impulses3 = [self.lows_impulse, self.mids_impulse,
+                          self.high_impulse]
         self.impulses = interpolate_to_length(
-            [self.lows_impulse, self.mids_impulse, self.high_impulse],
+            self.impulses3,
             self.sentence.wordcount,
         )
 
@@ -492,11 +514,13 @@ class Texter2d(Twod, GradientEffect):
                 -1 + (idx + 3) * offset, -1 + (idx + 3) * offset, 0, 1, 10
             )
             word.pose.d_pos = (0.2, 1 / self.sentence.wordcount * idx)
+            word.pose.lefty_righty = 1 if idx % 2 == 0 else -1
 
     def wave_func(self):
         # _LOGGER.info(f"wave_func: {self.sentence.text} {self.passed}")
         for idx, word in enumerate(self.sentence.wordblocks):
-            word.pose.d_rotation = self.impulses[idx] * self.multiplier
+            word.pose.d_rotation = self.impulses[idx] * self.multiplier * word.pose.lefty_righty
+
             word.pose.size = 0.3 + self.impulses[idx] * self.multiplier
             if self.alpha:
                 word.pose.alpha = min(
@@ -505,6 +529,79 @@ class Texter2d(Twod, GradientEffect):
             if word.pose.life <= 0:
                 word.pose.life = 10
                 word.pose.d_pos = (-word.pose.d_pos[0], word.pose.d_pos[1])
+
+    ############################################################################
+    # spokes
+    ############################################################################
+
+    # wave will be a spoke based effect with the word index dictacting how far
+    # round the circle to calculate base positions
+    # each base posiiton will be calculated from scratch every frame allowing
+    # rotation of the overall spokes to be applied, its an alternative way to
+    # deal with animation of positions over than deltas
+    # work rotation will still be delta based
+    # base positions will be mapped every third to lows, mids, highs, for word
+    # size and radius
+
+    # option 1 switch, flip flop rotation directions
+    # value option 1, will be used to set the number of seconds a words stays in focus until we have a mechanic for that
+
+    def spokes_init(self):
+        self.spoke_spin = 0
+        self.spokes = np.linspace(0, 2 * math.pi, self.sentence.wordcount +1)[:-1]
+
+        for idx, word in enumerate(self.sentence.wordblocks):
+            # random seed angle between 0 and 1 so words dan't artificially line up in spin space
+            word.pose.ang = random.random()
+
+        # set up word focus basics
+        self.sentence.word_focus_active = True
+        self.sentence.word_focused_on = 0
+        self.sentence.word_focus = 0
+        # this should set how long it takes word_focus to get from 0 to 1
+        self.sentence.d_word_focus = 1 / (self.value_option_1 * 5)
+
+    def spokes_func(self):
+        self.spoke_spin += self.lows_impulse * self.multiplier * 0.01
+        self.spoke_spin %= 2 * np.pi
+        for idx, word in enumerate(self.sentence.wordblocks):
+            impulse = self.impulses3[idx % 3] * self.multiplier
+            if self.option_1 and idx % 2 == 0:
+                spoke_spin = -self.spoke_spin
+                word.pose.d_rotation = -impulse
+            else:
+                spoke_spin = self.spoke_spin
+                word.pose.d_rotation = impulse
+            angle = self.spokes[idx] + spoke_spin
+            word.pose.x = math.cos(angle) * (1 * impulse + 0.3)
+            word.pose.y = math.sin(angle) * (1 * impulse + 0.3)
+            word.pose.life = 1
+            word.pose.size = 0.3 + impulse
+            if self.alpha:
+                word.pose.alpha = min(
+                    1.0, 0.1 + impulse
+                )
+
+        # when a word goes into focus we can use the life counter to control its migration in and out of the center
+        # twean the new calculated value to the center values in some manner
+        # TODO: consider overriding color for word in focus, expensive
+
+        focus_word = self.sentence.wordblocks[self.sentence.word_focused_on]
+        if self.sentence.word_focus < 0.2:
+            transition = 5 * self.sentence.word_focus
+        elif self.sentence.word_focus > 0.8:
+            transition = 5 * (1 - self.sentence.word_focus)
+        else:
+            transition = 1
+
+        # _LOGGER.info(f"focus_word: {self.sentence.word_focused_on} text ({focus_word.text}) {self.sentence.word_focus:3.3f} transition: {transition:3.3f}")
+
+        focus_word.pose.size = tween( focus_word.pose.size, 0.8 + (self.lows_impulse * self.multiplier / 2), transition)
+        focus_word.pose.x = tween( focus_word.pose.x, 0, transition)
+        focus_word.pose.y = tween( focus_word.pose.y, 0, transition)
+        focus_word.pose.ang = tween( focus_word.pose.ang, 0, transition)
+        focus_word.pose.d_rotation = tween( focus_word.pose.d_rotation, 0, transition)
+        focus_word.pose.alpha = tween( focus_word.pose.alpha, 1.0, transition)
 
     ############################################################################
     # pulse

@@ -67,6 +67,11 @@ def interpolate_to_length(input_array, n):
     return new_array
 
 
+def tween( a, b, t ):
+    # t is a value from 0 to 1
+    # a and b are the values to tween between
+    return a + (b - a) * t
+
 class Pose:
     # we need a class to represent a 2d pose and all of its dynamics
     # this class will be used to represent
