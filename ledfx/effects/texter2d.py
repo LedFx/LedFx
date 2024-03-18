@@ -559,7 +559,7 @@ class Texter2d(Twod, GradientEffect):
         self.sentence.word_focused_on = 0
         self.sentence.word_focus = 0
         # this should set how long it takes word_focus to get from 0 to 1
-        self.sentence.d_word_focus = 1 / (self.value_option_1 * 5)
+        self.sentence.d_word_focus = 1 / (max(0.01, self.value_option_1) * 5)
 
     def spokes_func(self):
         self.spoke_spin += self.lows_impulse * self.multiplier * 0.01
