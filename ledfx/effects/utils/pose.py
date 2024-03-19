@@ -1,40 +1,9 @@
-from enum import Enum
-
 import numpy as np
 
 
-class Mode(Enum):
-    HOLD = 1
-    BOUNCE = 2
-    HARD_ZERO = 3
-    DECELERATE = 4
-
-
-class Scalar:
-    def __init__(self, val, delta, target, target_2, mode):
-        self.val = val
-        self.delta = delta
-        self.target = target
-        self.target_2 = target_2
-        self.mode = mode
-
-    def update(self, passed_time):
-        self.val += self.delta * passed_time
-        if self.delta > 0:
-            self.val = min(self.val, self.target)
-        else:
-            self.val = max(self.val, self.target)
-        if self.val == self.target:
-            if self.mode == Mode.HOLD:
-                self.delta = 0
-            elif self.mode == Mode.BOUNCE:
-                self.delta = -self.delta
-                self.target, self.target_2 = self.target_2, self.target
-            elif self.mode == Mode.HARD_ZERO:
-                self.delta = 0
-                self.val = 0
-            elif self.mode == Mode.DECELERATE:
-                self.delta = self.delta * 0.5
+def biased_round(value):
+    bias = 1e-10 if value > 0 else -1e-10
+    return round(value + bias)
 
 
 def interpolate_to_length(input_array, n):
