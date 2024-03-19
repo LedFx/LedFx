@@ -27,7 +27,7 @@ FONT_MAPPINGS = {
         LEDFX_ASSETS_PATH, "fonts", "Roboto-Black.ttf"
     ),
     "Stop": os.path.join(LEDFX_ASSETS_PATH, "fonts", "Stop.ttf"),
-    "04b_30": os.path.join(LEDFX_ASSETS_PATH, "fonts", "04b_30__.ttf"),
+    "Technique": os.path.join(LEDFX_ASSETS_PATH, "fonts", "technique.ttf"),
     "8bitOperatorPlus8": os.path.join(
         LEDFX_ASSETS_PATH, "fonts", "8bitOperatorPlus8-Regular.ttf"
     ),
