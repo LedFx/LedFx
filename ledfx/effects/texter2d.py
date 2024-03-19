@@ -31,9 +31,6 @@ FONT_MAPPINGS = {
     "8bitOperatorPlus8": os.path.join(
         LEDFX_ASSETS_PATH, "fonts", "8bitOperatorPlus8-Regular.ttf"
     ),
-    "Wayfarers Toy Box": os.path.join(
-        LEDFX_ASSETS_PATH, "fonts", "WayfarersToyBoxRegular.ttf"
-    ),
     "Press Start 2P": os.path.join(
         LEDFX_ASSETS_PATH, "fonts", "PressStart2P.ttf"
     ),
@@ -140,6 +137,7 @@ class Textblock:
                 # here we will convert it to a pixel position within target which is a PIL image object
                 x = round(((pose_x + 1) * half_width) - (resized.width / 2))
                 y = round(((pose_y + 1) * half_height) - (resized.height / 2))
+                _LOGGER.info(f"y: {y}")
 
                 # _LOGGER.info(
                 #     f"Textblock {self.text} x: {self.pose.x:3.3f} y: {self.pose.y:3.3f} {x} {y} ang: {self.pose.ang:3.3f} size: {self.pose.size:3.3f}")
@@ -207,7 +205,9 @@ class Sentence:
 
     def render(self, target, resize_method, color, values=None, values2=None):
         color_len = len(color)
-        # TODO: We should observer the word in focus and render it last
+
+        # TODO: allow focus color override
+
         for i, word in enumerate(self.wordblocks):
             if self.word_focus_active and i == self.word_focused_on:
                 focus_color = tuple(color[i % color_len])
