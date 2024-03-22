@@ -76,7 +76,9 @@ class VuMeterAudioEffect(AudioReactiveEffect):
         # grab the raw volume from the audio driver
         self.volume = max(0, min(1, self.audio.volume(filtered=False)))
         self.volume_peak = self.volume_peak_filter.update(self.volume)
-        self.volume_min_peak = self.volume_min_peak_filter.update(1 - self.volume)
+        self.volume_min_peak = self.volume_min_peak_filter.update(
+            1 - self.volume
+        )
         self.volume_min = self.audio._config["min_volume"]
 
     def render(self):
@@ -105,6 +107,19 @@ class VuMeterAudioEffect(AudioReactiveEffect):
                 self.pixel_count,
             )
             self.pixels[peak_start:peak_end] = self.color_peak
-            min_peak_start = max(0, min(int(self.pixel_count * (1 - self.volume_min_peak)), self.pixel_count))
-            min_peak_end = max(0, min(min_peak_start - int(self.peak_percent * (self.pixel_count / 100.0)), self.pixel_count))
+            min_peak_start = max(
+                0,
+                min(
+                    int(self.pixel_count * (1 - self.volume_min_peak)),
+                    self.pixel_count,
+                ),
+            )
+            min_peak_end = max(
+                0,
+                min(
+                    min_peak_start
+                    - int(self.peak_percent * (self.pixel_count / 100.0)),
+                    self.pixel_count,
+                ),
+            )
             self.pixels[min_peak_end:min_peak_start] = self.color_peak
