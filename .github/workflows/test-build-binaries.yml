@@ -386,17 +386,15 @@ jobs:
           tar c LedFx-${{ steps.ledfx-version.outputs.ledfx-version }}.app | gzip --best > ../LedFx-${{ steps.ledfx-version.outputs.ledfx-version }}-osx-arm64.tar.gz
           cd ..
           rm -rf dist/*
-      - name: Generate release changelog
-        uses: varrcan/generate-pretty-changelog-action@v1
       - name: Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: |
             LedFx-${{ steps.ledfx-version.outputs.ledfx-version }}-win-x64.zip
             LedFx-${{ steps.ledfx-version.outputs.ledfx-version }}-osx-intel.tar.gz
             LedFx-${{ steps.ledfx-version.outputs.ledfx-version }}-osx-arm64.tar.gz
-          body_path: CHANGELOG.md
           name: LedFx ${{ steps.ledfx-version.outputs.ledfx-version }}
+          generate_release_notes: true
 
   build-test-wheel-and-sdist:
     name: Build LedFx (PyPi)

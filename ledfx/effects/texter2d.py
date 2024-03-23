@@ -15,7 +15,10 @@ from ledfx.effects.gradient import GradientEffect
 from ledfx.effects.twod import Twod
 from ledfx.effects.utils.overlay import Overlay
 from ledfx.effects.utils.pose import (
-    Pose, interpolate_to_length, tween, biased_round
+    Pose,
+    biased_round,
+    interpolate_to_length,
+    tween,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -143,8 +146,12 @@ class Textblock:
                 # the end user this prevents text jumping up a line
                 # unexpoectedly it does just move the issue, but FAR less likely
                 # to express
-                x = biased_round(((pose_x + 1) * half_width) - (resized.width / 2))
-                y = biased_round(((pose_y + 1) * half_height) - (resized.height / 2))
+                x = biased_round(
+                    ((pose_x + 1) * half_width) - (resized.width / 2)
+                )
+                y = biased_round(
+                    ((pose_y + 1) * half_height) - (resized.height / 2)
+                )
 
                 # _LOGGER.info(
                 #     f"Textblock {self.text} x: {self.pose.x:3.3f} y: {self.pose.y:3.3f} {x} {y} ang: {self.pose.ang:3.3f} size: {self.pose.size:3.3f}")

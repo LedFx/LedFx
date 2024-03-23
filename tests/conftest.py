@@ -5,6 +5,7 @@ import pytest
 from test_definitions.all_effects import get_ledfx_effects
 from test_utilities.test_utils import EnvironmentCleanup
 
+from tests.test_definitions.audio_configs import get_ledfx_audio_configs
 from tests.test_utilities.consts import BASE_PORT
 
 
@@ -51,6 +52,8 @@ def pytest_sessionstart(session):
     # This is a hack to get around the fact that pytest doesn't support dynamic imports
     global all_effects
     all_effects = get_ledfx_effects()
+    global audio_configs
+    audio_configs = get_ledfx_audio_configs()
     # To add another test group, add it here, and then in test_apis.py
 
 
