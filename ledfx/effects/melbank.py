@@ -446,10 +446,7 @@ class Melbanks:
         self.dev_enabled = self._ledfx.dev_enabled()
 
     def update_config(self, config):
-        # validate config
-        self.melbanks_config = config
-        if not self.melbanks_config:
-            self.melbanks_config = self.CONFIG_SCHEMA(config)
+        self.melbanks_config = self.CONFIG_SCHEMA(config)
         self.melbank_collection = self._ledfx.config.get(
             "melbank_collection", []
         )
