@@ -1,15 +1,13 @@
 import logging
-import os
 import math
-import numpy as np
+import os
 
+import numpy as np
 from PIL import Image, ImageDraw, ImageFont
+
 from ledfx.color import parse_color
 from ledfx.consts import LEDFX_ASSETS_PATH
-from ledfx.effects.utils.pose import (
-    Pose,
-    biased_round,
-)
+from ledfx.effects.utils.pose import Pose, biased_round
 
 _LOGGER = logging.getLogger(__name__)
 

@@ -41,7 +41,7 @@ class Overlay:
             for value in reversed(values):
                 value_norm = (value - v_min) / v_range
                 y = graph_s + graph_h - (value_norm * graph_h)
-                if y < self.r_height and y >=0:
+                if y < self.r_height and y >= 0:
                     if value == 0:
                         pixels[x, y] = (0, 255, 255)
                     else:
@@ -50,7 +50,9 @@ class Overlay:
                 if x >= self.r_width:
                     break
 
-            diag_string = f"{values[-1]:0.4f} {v_min:0.4f} {v_max:0.4f} {v_range:0.4f}"
+            diag_string = (
+                f"{values[-1]:0.4f} {v_min:0.4f} {v_max:0.4f} {v_range:0.4f}"
+            )
         return diag_string
 
     def render(self, m_image, m_draw, values, values2=None, values3=None):

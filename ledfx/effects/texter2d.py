@@ -1,21 +1,19 @@
 import logging
 import math
 import random
+from collections import deque
+from enum import Enum
+
 import numpy as np
 import voluptuous as vol
-
 from PIL import Image
-from enum import Enum
-from collections import deque
+
 from ledfx.color import parse_color, validate_color
 from ledfx.effects.gradient import GradientEffect
 from ledfx.effects.twod import Twod
 from ledfx.effects.utils.overlay import Overlay
-from ledfx.effects.utils.pose import (
-    interpolate_to_length,
-    tween,
-)
-from ledfx.effects.utils.words import Sentence, FONT_MAPPINGS
+from ledfx.effects.utils.pose import interpolate_to_length, tween
+from ledfx.effects.utils.words import FONT_MAPPINGS, Sentence
 
 _LOGGER = logging.getLogger(__name__)
 
