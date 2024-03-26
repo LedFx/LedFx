@@ -148,6 +148,11 @@ class Sentence:
     # this class will construct and maintain a set of words,
     # spaces and animated dynamics for a sentence
 
+    # TODO: Sentence render needs to be able to render in order from the focused
+    # word backwards. Do this via walking outwards from the focus index to avoid
+    # sorting costs
+    # Focus word should be placed vertically according to slider
+
     def __init__(self, text, font_name, points, disp_size):
         self.text = text
         self.font_path = FONT_MAPPINGS[font_name]

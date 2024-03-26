@@ -33,6 +33,8 @@ RESIZE_METHOD_MAPPING = {
 }
 
 
+# TODO: currently only Side Scroll, Spokes and Wave are unique effects
+# all other are copy of wave
 TEXT_EFFECT_MAPPING = {
     "Side Scroll": {"init": "side_scroll_init", "func": "side_scroll_func"},
     "Spokes": {"init": "spokes_init", "func": "spokes_func"},
@@ -310,6 +312,8 @@ class Texter2d(Twod, GradientEffect):
 
     ############################################################################
     # wave
+    #
+    # this is more of a default effect for testing primitives at this point
     ############################################################################
 
     def wave_init(self):
@@ -343,11 +347,11 @@ class Texter2d(Twod, GradientEffect):
     # spokes
     ############################################################################
 
-    # wave will be a spoke based effect with the word index dictacting how far
+    # A spoke based effect with the word index dictacting how far
     # round the circle to calculate base positions
     # each base posiiton will be calculated from scratch every frame allowing
     # rotation of the overall spokes to be applied, its an alternative way to
-    # deal with animation of positions over than deltas
+    # deal with animation of positions other than deltas
     # work rotation will still be delta based
     # base positions will be mapped every third to lows, mids, highs, for word
     # size and radius
