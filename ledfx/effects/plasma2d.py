@@ -106,7 +106,7 @@ class Plasma2d(Twod, GradientEffect):
             self.r_width, self.r_height, self.current_time, self.bar
         )
 
-        color_mapped_plasma = self.get_gradient_color_vectorized(
+        color_mapped_plasma = self.get_gradient_color_vectorized2d(
             plasma_array
         ).astype(np.uint8)
 

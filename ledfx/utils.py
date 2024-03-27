@@ -1742,7 +1742,7 @@ def is_snake_case(string) -> bool:
     Returns:
         bool: True if the string is in snake_case format, False otherwise.
     """
-    return re.match("^[a-z][a-z_]*[a-z]$", string) is not None
+    return re.match("^[a-z][a-z0-9_]*[a-z0-9]$", string) is not None
 
 
 class UpdateChecker:
