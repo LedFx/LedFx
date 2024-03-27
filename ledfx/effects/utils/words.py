@@ -40,6 +40,21 @@ class Textblock:
     # so TextBlock has no idea of position which will be handled externally to this class
 
     def __init__(self, text, font, disp_size, color="white"):
+        """
+        Create a new Textblock object
+
+        Parameters
+        ----------
+        text : str
+            The text to render
+        font : ImageFont
+            The font to render the text in
+        disp_size : tuple
+            The size of the display, used to guestimate a reasonable point size
+            for the prerendered word blocks
+        color : str
+            The color of the text
+        """
         self.text = text
         self.color = color
         self.ascent, self.descent = font.getmetrics()
@@ -59,11 +74,30 @@ class Textblock:
         self.draw.text((0, 0), self.text, font=font, fill=color)
         self.pose = Pose(0, 0, 0, 1, 0, 1)
 
-    def update(self, passed_time):
-        active = self.pose.update(passed_time)
+    def update(self, dt):
+        """
+        Update the Textblock object characteristics proportional to the time delta
+
+        Parameters
+        ----------
+        dt : float
+            Seconds time delta since the last update
+        """
+
+        active = self.pose.update(dt)
         return active
 
     def calculate_final_size(self):
+        """
+        Calculate the final size of the rendered text block
+        Used to determine if the text block is off the display and can be clipped
+
+        Returns
+        -------
+        tuple
+            The final width and height of the rendered text block
+        """
+
         # angle_rad = math.radians(self.pose.ang * 360)
         angle_rad = self.pose.ang * 2 * math.pi
 
@@ -85,6 +119,22 @@ class Textblock:
     def render(
         self, target, resize_method, color=None, values=None, values2=None
     ):
+        """
+        Render the Textblock object to the target image
+
+        Parameters
+        ----------
+        target : Image
+            The target image to render the text block to
+        resize_method : int
+            The resampling method to use when resizing the text block
+        color : tuple
+            The color to render the text block in
+        values : list
+        values2: list
+            Diagnostic value lists that can be populated with values for debugging
+            TO BE REMOVED
+        """
         if (
             self.pose.life > 0
             and self.pose.alpha > 0.0
@@ -154,6 +204,21 @@ class Sentence:
     # Focus word should be placed vertically according to slider
 
     def __init__(self, text, font_name, points, disp_size):
+        """
+        Create a new Sentence object
+
+        Parameters
+        ----------
+        text : str
+            The text from which to construct the sentence object
+        font_name : str
+            The name of the font to use
+        points : int
+            The point size of the font
+        disp_size : tuple
+            The size of the display, used to guestimate a reasonable point size
+            for the prerendered word blocks
+        """
         self.text = text
         self.font_path = FONT_MAPPINGS[font_name]
         self.points = points
@@ -178,6 +243,15 @@ class Sentence:
         self.word_focus_callback = None
 
     def update(self, dt):
+        """
+        Update the Sentence object characteristics proportional to the time delta
+
+        Parameters
+        ----------
+        dt : float
+            Seconds time delta since the last update
+        """
+
         if self.word_focus_active:
             # allow this to go out of range for theshold testing elsewhere
             # clip at point of application
@@ -196,6 +270,22 @@ class Sentence:
             word.update(dt)
 
     def render(self, target, resize_method, color, values=None, values2=None):
+        """
+        Render the Sentence object to the target image
+
+        Parameters
+        ----------
+        target : Image
+            The target image to render the sentence to
+        resize_method : int
+            The resampling method to use when resizing the text block
+        color : list
+            The colors to render the text blocks in
+        values : list
+        values2: list
+            Diagnostic value lists that can be populated with values for debugging
+            TO BE REMOVED
+        """
         color_len = len(color)
 
         # TODO: allow focus color override

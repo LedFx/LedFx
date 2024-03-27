@@ -2,6 +2,10 @@ import numpy as np
 
 
 def biased_round(value):
+    """
+    Rounds a value to the nearest integer, with a bias to displace off the cusp
+    and prevent common oscillation errors
+    """
     bias = 1e-10 if value > 0 else -1e-10
     return round(value + bias)
 
@@ -37,8 +41,14 @@ def interpolate_to_length(input_array, n):
 
 
 def tween(a, b, t):
-    # t is a value from 0 to 1
-    # a and b are the values to tween between
+    """
+    Tweens between two values a and b by a factor t.
+
+    Parameters:
+    - a: the starting value.
+    - b: the ending value.
+    - t: the factor to tween between a and b.
+    """
     return a + (b - a) * t
 
 
@@ -67,6 +77,17 @@ class Pose:
     # all other deltas and modifiers will be added later, this will allow incremental implementation
 
     def __init__(self, x, y, ang, size, life, alpha=1.0):
+        """
+        Initialize a new pose object.
+
+        Parameters:
+        - x: the x position of the pose.
+        - y: the y position of the pose.
+        - ang: the angle of the pose.
+        - size: the size of the pose.
+        - life: the lifetime of the pose.
+        - alpha: the alpha value of the pose.
+        """
         self.x = x
         self.y = y
         self.ang = ang
@@ -87,6 +108,17 @@ class Pose:
         self.modifier_callbacks = []
 
     def set_vectors(self, x, y, ang, size, life, alpha=1.0):
+        """
+        Set the vector values of the pose.
+
+        Parameters:
+        - x: the x position of the pose.
+        - y: the y position of the pose.
+        - ang: the angle of the pose.
+        - size: the size of the pose.
+        - life: the lifetime of the pose.
+        - alpha: the alpha value of the pose.
+        """
         # x and y are ranged values from -1 to 1 where
         # 0,0 is the center of the matrix
         # -1, 1 are the bounds
@@ -108,6 +140,14 @@ class Pose:
         self.alpha = alpha
 
     def set_deltas(self, d_pos, d_rotation, d_size):
+        """
+        Set the delta values of the pose per second
+
+        Parameters:
+        - d_pos: the delta position of the pose.
+        - d_rotation: the delta rotation of the pose.
+        - d_size: the delta size of the pose.
+        """
         # d_pos is a tuple of ( linear, angule ) where
         # linear is the distance in x,y units per second
         # angular is the angle in the -1 to 1 ( -360 to 360 ) range per second
@@ -117,6 +157,12 @@ class Pose:
         self.d_size = d_size
 
     def apply_d_pos(self, dt):
+        """
+        Apply the delta position to the pose.
+
+        Parameters:
+        - dt: the time in seconds since the last update.
+        """
         lin, ang = self.d_pos
         ang_radians = ang * -2 * np.pi
         direction = np.array([np.cos(ang_radians), np.sin(ang_radians)])
@@ -125,6 +171,12 @@ class Pose:
         self.y += movement_vector[1]
 
     def update(self, dt):
+        """
+        Update the pose with the given time delta.
+
+        Parameters:
+        - dt: the time in seconds since the last update.
+        """
         self.life -= dt
         if self.life <= 0.0:
             return False
