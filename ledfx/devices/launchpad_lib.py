@@ -102,7 +102,8 @@ class RtmidiWrap:
                 self.devOut, self.nameOut = open_midioutput(
                     midi_id, interactive=False
                 )
-            except Exception:
+            except Exception as e:
+                _LOGGER.warning(f"{e}")
                 self.devOut = None
                 self.nameOut = None
                 return False
