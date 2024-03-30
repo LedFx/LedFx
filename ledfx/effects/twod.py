@@ -67,6 +67,7 @@ class Twod(AudioReactiveEffect):
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
         self.lasttime = 0
+        self.passed = 0
         self.frame = 0
         self.fps = 0
         self.last = 0
@@ -231,7 +232,9 @@ class Twod(AudioReactiveEffect):
         pass
 
     def render(self):
+        was = self.current_time
         self.current_time = timeit.default_timer()
+        self.passed = self.current_time - was
         if self.init:
             self.do_once()
         # Update the time every frame
