@@ -10,7 +10,17 @@ from ledfx.virtuals import update_effect_config
 
 _LOGGER = logging.getLogger(__name__)
 
-TOOLS = ["force_color", "calibration", "highlight", "oneshot", "copy", "add_words", "del_words", "new_words", "focus_words"]
+TOOLS = [
+    "force_color",
+    "calibration",
+    "highlight",
+    "oneshot",
+    "copy",
+    "add_words",
+    "del_words",
+    "new_words",
+    "focus_words",
+]
 
 
 class VirtualsToolsEndpoint(RestEndpoint):
@@ -174,7 +184,9 @@ class VirtualsToolsEndpoint(RestEndpoint):
                 )
 
         if tool == "new_words":
-            _LOGGER.info(f"new words: {virtual.name} effect is {virtual.active_effect.name}")
+            _LOGGER.info(
+                f"new words: {virtual.name} effect is {virtual.active_effect.name}"
+            )
             if virtual.active_effect.name != "Texter":
                 return await self.invalid_request(
                     "Virtual new_words failed, active effect is not texter2d"
@@ -200,7 +212,9 @@ class VirtualsToolsEndpoint(RestEndpoint):
                 )
 
         if tool == "add_words":
-            _LOGGER.info(f"add words: {virtual.name} effect is {virtual.active_effect.name}")
+            _LOGGER.info(
+                f"add words: {virtual.name} effect is {virtual.active_effect.name}"
+            )
             if virtual.active_effect.name != "Texter":
                 return await self.invalid_request(
                     "Virtual add_words failed, active effect is not texter2d"
@@ -226,7 +240,9 @@ class VirtualsToolsEndpoint(RestEndpoint):
                 )
 
         if tool == "del_words":
-            _LOGGER.info(f"del words: {virtual.name} effect is {virtual.active_effect.name}")
+            _LOGGER.info(
+                f"del words: {virtual.name} effect is {virtual.active_effect.name}"
+            )
             if virtual.active_effect.name != "Texter":
                 return await self.invalid_request(
                     "Virtual del_words failed, active effect is not texter"
@@ -253,7 +269,8 @@ class VirtualsToolsEndpoint(RestEndpoint):
 
         if tool == "focus_words":
             _LOGGER.info(
-                f"focus words: {virtual.name} effect is {virtual.active_effect.name}")
+                f"focus words: {virtual.name} effect is {virtual.active_effect.name}"
+            )
             if virtual.active_effect.name != "Texter":
                 return await self.invalid_request(
                     "Virtual focus_words failed, active effect is not texter"
