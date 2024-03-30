@@ -10,7 +10,7 @@ from ledfx.virtuals import update_effect_config
 
 _LOGGER = logging.getLogger(__name__)
 
-TOOLS = ["force_color", "calibration", "highlight", "oneshot", "copy"]
+TOOLS = ["force_color", "calibration", "highlight", "oneshot", "copy", "add_words", "del_words", "new_words", "focus_words"]
 
 
 class VirtualsToolsEndpoint(RestEndpoint):
@@ -171,6 +171,111 @@ class VirtualsToolsEndpoint(RestEndpoint):
             else:
                 return await self.invalid_request(
                     "Virtual copy failed, no valid targets"
+                )
+
+        if tool == "new_words":
+            _LOGGER.info(f"new words: {virtual.name} effect is {virtual.active_effect.name}")
+            if virtual.active_effect.name != "Texter":
+                return await self.invalid_request(
+                    "Virtual new_words failed, active effect is not texter2d"
+                )
+
+            words = data.get("words")
+
+            if words is None:
+                return await self.invalid_request(
+                    "Required attribute for new_words, words was not provided"
+                )
+
+            if type(words) is not str or len(words) < 1:
+                return await self.invalid_request(
+                    "new_words words parameter must be a string with at least one character"
+                )
+
+            result = virtual.active_effect.add_words(words, True)
+
+            if result is not None:
+                return await self.invalid_request(
+                    f"new_words failed: {result}"
+                )
+
+        if tool == "add_words":
+            _LOGGER.info(f"add words: {virtual.name} effect is {virtual.active_effect.name}")
+            if virtual.active_effect.name != "Texter":
+                return await self.invalid_request(
+                    "Virtual add_words failed, active effect is not texter2d"
+                )
+
+            words = data.get("words")
+
+            if words is None:
+                return await self.invalid_request(
+                    "Required attribute for add_words, words was not provided"
+                )
+
+            if type(words) is not str or len(words) < 1:
+                return await self.invalid_request(
+                    "add_words words parameter must be a string with at least one character"
+                )
+
+            result = virtual.active_effect.add_words(words, False)
+
+            if result is not None:
+                return await self.invalid_request(
+                    f"add_words failed: {result}"
+                )
+
+        if tool == "del_words":
+            _LOGGER.info(f"del words: {virtual.name} effect is {virtual.active_effect.name}")
+            if virtual.active_effect.name != "Texter":
+                return await self.invalid_request(
+                    "Virtual del_words failed, active effect is not texter"
+                )
+
+            count = data.get("count")
+
+            if count is None:
+                return await self.invalid_request(
+                    "Required attribute for del_words, count was not provided"
+                )
+
+            if type(count) is not int or count < 1:
+                return await self.invalid_request(
+                    "del_words count parameter must be an integer greater than 0"
+                )
+
+            result = virtual.active_effect.del_words(count)
+
+            if result is not None:
+                return await self.invalid_request(
+                    f"del_words failed: {result}"
+                )
+
+        if tool == "focus_words":
+            _LOGGER.info(
+                f"focus words: {virtual.name} effect is {virtual.active_effect.name}")
+            if virtual.active_effect.name != "Texter":
+                return await self.invalid_request(
+                    "Virtual focus_words failed, active effect is not texter"
+                )
+
+            index = data.get("index")
+
+            if index is None:
+                return await self.invalid_request(
+                    "Required attribute for focus_words, index was not provided"
+                )
+
+            if type(index) is not int or index < 0:
+                return await self.invalid_request(
+                    "focus_words index parameter must be an integer 0 or greater"
+                )
+
+            result = virtual.active_effect.focus_words(index)
+
+            if result is not None:
+                return await self.invalid_request(
+                    f"focus_words failed: {result}"
                 )
 
         effect_response = {}

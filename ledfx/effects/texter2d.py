@@ -177,6 +177,28 @@ class Texter2d(Twod, GradientEffect):
         self.values = deque(maxlen=1024)
         self.values2 = deque(maxlen=1024)
 
+    def del_words(self, count):
+        _LOGGER.info(f"del words: count {count}")
+        _LOGGER.info(f"existing wordblocks: {self.sentence.wordcount}")
+
+    def add_words(self, words, clear=False):
+        _LOGGER.info(f"add words: {words}")
+        _LOGGER.info(f"clear: {clear}")
+        _LOGGER.info(f"existing wordblocks: {self.sentence.wordcount}")
+
+    def focus_words(self, index):
+        _LOGGER.info(f"focus words: {index}")
+        _LOGGER.info(f"existing wordblocks: {self.sentence.wordcount}")
+        if index > self.sentence.wordcount:
+            error = f"focus index {index} out of range {self.sentence.wordcount}"
+            _LOGGER.warning(error)
+            return error
+        if not self.sentence.word_focus_active:
+            error = f"word focus not active in {self._config["text_effect"]}"
+            return error
+        self.sentence.word_focused_on = index
+        self.sentence.word_focus = 0
+
     def do_once(self):
         super().do_once()
         # self.r_width and self.r_height should be used for the (r)ender space
