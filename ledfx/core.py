@@ -142,8 +142,11 @@ class LedFxCore:
         Args:
             event (Event): The event that triggered the update - this will always be a BaseConfigUpdateEvent.
         """
-
-        if any(key in self.config for key in VISUALISATION_CONFIG_KEYS):
+        _LOGGER.debug("Handling base configuration update.")
+        if any(key in event.config for key in VISUALISATION_CONFIG_KEYS):
+            _LOGGER.debug(
+                "Visualisation configuration updated - resetting visualisation event listeners."
+            )
             self.setup_visualisation_events()
 
     def dev_enabled(self):
@@ -200,6 +203,9 @@ class LedFxCore:
         """
         # Remove existing listeners if they exist
         if hasattr(self, "visualisation_update_listener"):
+            _LOGGER.debug(
+                "Removing existing visualisation event handler and event listeners."
+            )
             self.visualisation_update_listener = None
             self.virtual_listener()
             self.device_listener()
@@ -244,11 +250,14 @@ class LedFxCore:
                 VisualisationUpdateEvent(is_device, vis_id, pixels)
             )
 
+        _LOGGER.debug("Setting up visualisation event handler.")
         self.visualisation_update_listener = handle_visualisation_update
+        _LOGGER.debug("Adding virtual update event listener.")
         self.virtual_listener = self.events.add_listener(
             self.visualisation_update_listener,
             Event.VIRTUAL_UPDATE,
         )
+        _LOGGER.debug("Adding device update event listener.")
         self.device_listener = self.events.add_listener(
             self.visualisation_update_listener,
             Event.DEVICE_UPDATE,
