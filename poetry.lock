@@ -2131,13 +2131,13 @@ numpy = ["NumPy"]
 
 [[package]]
 name = "stupidartnet"
-version = "1.4.0"
+version = "1.5.0"
 description = "(Very) Simple implementation of the Art-Net protocol"
 optional = false
 python-versions = ">=3.6"
 files = [
-    {file = "stupidArtnet-1.4.0-py3-none-any.whl", hash = "sha256:bbdb2eaa4e3bed01ad31040830f5ee82048f32e94dd289041018f171b5850a51"},
-    {file = "stupidArtnet-1.4.0.tar.gz", hash = "sha256:6aaf096d1ebb41053200de76373645453c0e81ab0699a938823e375151556923"},
+    {file = "stupidArtnet-1.5.0-py3-none-any.whl", hash = "sha256:531616893a88f6db7084049b9a5d9af1f4b3a2da75b64b2b0cf2d681943e28cd"},
+    {file = "stupidArtnet-1.5.0.tar.gz", hash = "sha256:7262530620c553c13a8a186b2a26d54f36af6073421ba2d88a11cd18c3828217"},
 ]
 
 [[package]]
