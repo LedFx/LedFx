@@ -1756,7 +1756,7 @@ class UpdateChecker:
     @staticmethod
     def get_release_information():
         try:
-            response = requests.get(UpdateChecker._update_url)
+            response = requests.get(UpdateChecker._update_url, timeout=0.5)
             response.raise_for_status()
             data = response.json()
             UpdateChecker._latest_version = data["tag_name"].replace("v", "")

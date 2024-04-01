@@ -189,7 +189,6 @@ class ConfigEndpoint(RestEndpoint):
 
         try:
             self.update_config(config)
-            self._ledfx.events.fire_event(BaseConfigUpdateEvent(config))
             save_config(
                 config=self._ledfx.config, config_dir=self._ledfx.config_dir
             )
@@ -273,8 +272,7 @@ class ConfigEndpoint(RestEndpoint):
                 self._ledfx.config["melbanks"]
             )
 
-        if core_config:
-            self._ledfx.events.fire_event(BaseConfigUpdateEvent(config))
+        self._ledfx.events.fire_event(BaseConfigUpdateEvent(config))
 
     def check_need_restart(self, config):
         """
