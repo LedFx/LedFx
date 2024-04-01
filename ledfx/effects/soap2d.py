@@ -16,6 +16,8 @@ _LOGGER = logging.getLogger(__name__)
 def random16():
     return random.randint(0, 65535)
 
+def scale_uint16_to_01(value):
+    return value / 65535.0
 
 class Soap2d(Twod):
     NAME = "Soap"
@@ -100,12 +102,19 @@ class Soap2d(Twod):
             ioffset = np.int32(self.scale32_x * (i - cols // 2))
             for j in range(rows):
                 joffset = np.int32(self.scale32_y * (j - rows // 2))
-                noise_val = noise.pnoise3(self.noise32_x + ioffset,
-                                          self.noise32_y + joffset,
-                                          self.noise32_z )
+                _LOGGER.info(f"ioffset: {ioffset}, joffset: {joffset}")
+                _LOGGER.info(f"noise32_x: {self.noise32_x}, noise32_y: {self.noise32_y}, noise32_z: {self.noise32_z}")
+
+                noise_val = noise.pnoise3(scale_uint16_to_01(self.noise32_x + ioffset),
+                                          scale_uint16_to_01(self.noise32_y + joffset),
+                                          scale_uint16_to_01(self.noise32_z) )
                 data = np.uint8((noise_val + 1) * 127.5)
                 _LOGGER.info(f"noise_val: {noise_val}, data: {data}")
 
+                self.noise3d[i,j] = data
+                # noise3d[XY(i, j)] = scale8(noise3d[XY(i, j)],
+                #                            smoothness) + scale8(data,
+                #                                                 255 - smoothness);
 
         # stuff pixels with
         # self.matrix.putpixel((x, y), (r, g, b))
