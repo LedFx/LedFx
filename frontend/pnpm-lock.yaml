@@ -57,8 +57,8 @@ dependencies:
     specifier: 7.0.1
     version: 7.0.1(@babel/plugin-syntax-flow@7.24.1)(@babel/plugin-transform-react-jsx@7.23.4)(eslint-import-resolver-typescript@3.6.1)(eslint@8.57.0)(jest@27.5.1)(typescript@5.3.3)
   immer:
-    specifier: 10.0.3
-    version: 10.0.3
+    specifier: 10.0.4
+    version: 10.0.4
   is-electron:
     specifier: ^2.2.2
     version: 2.2.2
@@ -172,7 +172,7 @@ dependencies:
     version: 7.0.0
   zustand:
     specifier: ^4.5.1
-    version: 4.5.2(@types/react@18.2.61)(immer@10.0.3)(react@18.2.0)
+    version: 4.5.2(@types/react@18.2.61)(immer@10.0.4)(react@18.2.0)
 
 devDependencies:
   '@babel/plugin-proposal-private-property-in-object':
@@ -7272,8 +7272,8 @@ packages:
     resolution: {integrity: sha512-5Fytz/IraMjqpwfd34ke28PTVMjZjJG2MPn5t7OE4eUCUNf8BAa7b5WUS9/Qvr6mwOQS7Mk6vdsMno5he+T8Xw==}
     engines: {node: '>= 4'}
 
-  /immer@10.0.3:
-    resolution: {integrity: sha512-pwupu3eWfouuaowscykeckFmVTpqbzW+rXFCX8rQLkZzM9ftBmU/++Ra+o+L27mz03zJTlyV4UUr+fdKNffo4A==}
+  /immer@10.0.4:
+    resolution: {integrity: sha512-cuBuGK40P/sk5IzWa9QPUaAdvPHjkk1c+xYsd9oZw+YQQEV+10G0P5uMpGctZZKnyQ+ibRO08bD25nWLmYi2pw==}
     dev: false
 
   /immer@9.0.21:
@@ -12761,7 +12761,7 @@ packages:
     resolution: {integrity: sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==}
     engines: {node: '>=10'}
 
-  /zustand@4.5.2(@types/react@18.2.61)(immer@10.0.3)(react@18.2.0):
+  /zustand@4.5.2(@types/react@18.2.61)(immer@10.0.4)(react@18.2.0):
     resolution: {integrity: sha512-2cN1tPkDVkwCy5ickKrI7vijSjPksFRfqS6237NzT0vqSsztTNnQdHw9mmN7uBdk3gceVXU0a+21jFzFzAc9+g==}
     engines: {node: '>=12.7.0'}
     peerDependencies:
@@ -12777,7 +12777,7 @@ packages:
         optional: true
     dependencies:
       '@types/react': 18.2.61
-      immer: 10.0.3
+      immer: 10.0.4
       react: 18.2.0
       use-sync-external-store: 1.2.0(react@18.2.0)
     dev: false
