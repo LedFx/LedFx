@@ -91,7 +91,7 @@ dependencies:
     version: 14.2.3(react@18.2.0)
   react-easy-crop:
     specifier: ^5.0.5
-    version: 5.0.5(react-dom@18.2.0)(react@18.2.0)
+    version: 5.0.6(react-dom@18.2.0)(react@18.2.0)
   react-gamepads:
     specifier: ^1.0.0
     version: 1.0.0(react@18.2.0)
@@ -10241,8 +10241,8 @@ packages:
       react: 18.2.0
     dev: false
 
-  /react-easy-crop@5.0.5(react-dom@18.2.0)(react@18.2.0):
-    resolution: {integrity: sha512-GH7Jw3898ytSaN4i4Oxi7j3BKzapZ2pVgnKIl+gFIUjA+NsDgdBSIpiBQUrPFIvHzSnPmz0kGCpX95X6NgsDzA==}
+  /react-easy-crop@5.0.6(react-dom@18.2.0)(react@18.2.0):
+    resolution: {integrity: sha512-LV8te8NGC72k3l8uAqPAw73D2i9AbRlZqyo1Xz8VetwiMfkSKYgyqE3IFEwf5h+1g7AS1nMxBKk6ZPdhvLw6MQ==}
     peerDependencies:
       react: '>=16.4.0'
       react-dom: '>=16.4.0'
