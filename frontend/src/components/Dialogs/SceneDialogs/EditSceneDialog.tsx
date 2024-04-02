@@ -260,7 +260,7 @@ const EditSceneDialog = () => {
     dev: string,
     effectId: string
   ) => {
-    if (current_ledfx_presets) {
+    if (current_ledfx_presets || user_presets) {
       const ledfxPreset =
         current_ledfx_presets &&
         Object.keys(current_ledfx_presets).length > 0 &&
