@@ -3,8 +3,9 @@ import noise
 import random
 import voluptuous as vol
 
-from ledfx.effects import Effect
+from ledfx.effects.gradient import GradientEffect
 from ledfx.effects.twod import Twod
+from PIL import Image
 import numpy as np
 
 _LOGGER = logging.getLogger(__name__)
@@ -19,7 +20,13 @@ def random16():
 def scale_uint16_to_01(value):
     return value / 65535.0
 
-class Soap2d(Twod):
+def scale_uint8_to_01(value):
+    return value / 255.0
+
+def scale8(i, scale):
+    return i * ( scale / 256 )
+
+class Soap2d(Twod, GradientEffect):
     NAME = "Soap"
     CATEGORY = "Matrix"
     # add keys you want hidden or in advanced here
@@ -43,6 +50,12 @@ class Soap2d(Twod):
                 description="intensity of the effect",
                 default=128,
             ): vol.All(vol.Coerce(int), vol.Range(min=0, max=255)),
+            vol.Optional(
+                "stretch",
+                description="Stretch of the effect",
+                default = 1,
+            ): vol.All(vol.Coerce(float), vol.Range(min=0.5, max=1.5)
+            )
         }
     )
 
@@ -56,6 +69,7 @@ class Soap2d(Twod):
         self.a_switch = self._config["a_switch"]
         self.speed = self._config["speed"]
         self.intensity = self._config["intensity"]
+        self.stretch = self._config["stretch"]
 
     def do_once(self):
         super().do_once()
@@ -69,6 +83,9 @@ class Soap2d(Twod):
         self.scale32_y = np.uint32(160000 // rows)
         self.mov = min(cols, rows)*(self.speed + 2)/2
         self.smoothness = min(250, self.intensity)
+        self.noise3d = np.zeros((cols, rows), dtype=np.uint8)
+        self.seed_image = Image.new("RGB", (self.r_width, self.r_height))
+        self.seed_matrix = True
 
     def audio_data_updated(self, data):
         # Grab your audio input here, such as bar oscillator
@@ -96,25 +113,43 @@ class Soap2d(Twod):
 
         cols = self.r_width
         rows = self.r_height
-        self.noise3d = np.zeros((rows, cols), dtype=np.uint8)
 
+        pixels = self.seed_image.load()
+        log = False
         for i in range(cols):
             ioffset = np.int32(self.scale32_x * (i - cols // 2))
             for j in range(rows):
                 joffset = np.int32(self.scale32_y * (j - rows // 2))
-                _LOGGER.info(f"ioffset: {ioffset}, joffset: {joffset}")
-                _LOGGER.info(f"noise32_x: {self.noise32_x}, noise32_y: {self.noise32_y}, noise32_z: {self.noise32_z}")
+                if log:
+                    _LOGGER.info(f"i: {i}, j: {j}")
+                    _LOGGER.info(f"ioffset: {ioffset}, joffset: {joffset}")
+                    _LOGGER.info(f"noise32_x: {self.noise32_x}, noise32_y: {self.noise32_y}, noise32_z: {self.noise32_z}")
 
                 noise_val = noise.pnoise3(scale_uint16_to_01(self.noise32_x + ioffset),
                                           scale_uint16_to_01(self.noise32_y + joffset),
                                           scale_uint16_to_01(self.noise32_z) )
-                data = np.uint8((noise_val + 1) * 127.5)
-                _LOGGER.info(f"noise_val: {noise_val}, data: {data}")
+                # scale -1 to 0 into 0 to 255
+                data = self.stretch * noise_val
+                data = min(1.0, max(-1.0, data))
+                data = np.uint8((data + 1) * 127.5)
 
                 self.noise3d[i,j] = data
-                # noise3d[XY(i, j)] = scale8(noise3d[XY(i, j)],
-                #                            smoothness) + scale8(data,
-                #                                                 255 - smoothness);
+                # scale8(self.noise3d[i,j], self.smoothness) + scale8(data, 255 - self.smoothness)
+                if log:
+                    _LOGGER.info(f"noise_val: {noise_val}, data: {data} noise3d: {self.noise3d[i,j]}")
+                if True:
+                    index = scale_uint8_to_01(self.noise3d[i,j])
+                    if log:
+                        _LOGGER.info(f"index: {index}")
+                    color = self.get_gradient_color(index).astype(np.uint8)
+                    if log:
+                        _LOGGER.info(f"color: {color}")
+                    pixels[i, j] = (color[0], color[1], color[2])
+            #_LOGGER.info(f"min {np.min(self.noise3d)}, max {np.max(self.noise3d)}")
+        self.seed_matrix = False
+
+        self.matrix.paste(self.seed_image, (0, 0))
+
 
         # stuff pixels with
         # self.matrix.putpixel((x, y), (r, g, b))
