@@ -1,5 +1,6 @@
 import logging
 import noise
+import vnoise
 import timeit
 import opensimplex
 import random
@@ -93,6 +94,7 @@ class Soap2d(Twod, GradientEffect):
         self.smoothness = min(250, self.intensity)
         self.seed_image = Image.new("RGB", (self.r_width, self.r_height))
         self.seed_matrix = True
+        self.noise = vnoise.Noise()
 
     def audio_data_updated(self, data):
         # Grab your audio input here, such as bar oscillator
@@ -126,22 +128,26 @@ class Soap2d(Twod, GradientEffect):
         y_array = np.linspace(self.noise_y, self.noise_y + self.scale_y * rows, rows)
         z_array = np.array([self.noise_z])
         next1 = timeit.default_timer()
-        _LOGGER.info(f"array generation time: {next1 - start}")
+        if log:
+            _LOGGER.info(f"array generation time: {next1 - start}")
 
         # This is where the magic happens, calling the lib of choice to get the noise plane
-        self.simple_3d = opensimplex.noise3array(x_array, y_array, z_array)
+#        self.noise_3d = opensimplex.noise3array(x_array, y_array, z_array)
+        self.noise_3d = self.noise.noise3(x_array, y_array, z_array)
         next2 = timeit.default_timer()
-        _LOGGER.info(f"simple noise time: {next2 - next1}")
+        if log:
+            _LOGGER.info(f"simple noise time: {next2 - next1}")
 
         # if the lib happens to return in a 3 dimensionsal, even though Z is depth of 1, then squeeze it down
-        self.noise_squeezed = np.squeeze(self.simple_3d)
+        self.noise_squeezed = np.squeeze(self.noise_3d)
         # apply the stetch param to expand the range of the color space, as noise is likely not full -1 to 1
         # TODO: look at what color mapping does with out of range values, do we need to cap here
         self.noise_stretched = self.noise_squeezed * self.stretch
         # normalise the noise from -1,1 range to 0,1
         self.noise_normalised = (self.noise_stretched + 1) / 2
         next3 = timeit.default_timer()
-        _LOGGER.info(f"simple squeeze time: {next3 - next2}")
+        if log:
+            _LOGGER.info(f"simple squeeze time: {next3 - next2}")
 
         # _LOGGER.info(f"x_array: {x_array}")
         # _LOGGER.info(f"y_array: {y_array}")
@@ -153,56 +159,14 @@ class Soap2d(Twod, GradientEffect):
         # map from 0,1 space into the gradient color space via our nicely vecotrised function
         self.color_array = self.get_gradient_color_vectorized2d(self.noise_normalised).astype(np.uint8)
         next4 = timeit.default_timer()
-        _LOGGER.info(f"color array time: {next4 - next3}")
+        if log:
+            _LOGGER.info(f"color array time: {next4 - next3}")
 
         # _LOGGER.info(f"color_array: {self.color_array}")
 
         # transform the numpy array into a PIL image in one easy step
         self.matrix = Image.fromarray(self.color_array, "RGB")
         next5 = timeit.default_timer()
-        _LOGGER.info(f"image from array time: {next5 - next4}")
+        if log:
+            _LOGGER.info(f"image from array time: {next5 - next4}")
 
-
-        # for i in range(cols):
-        #     ioffset = self.scale_x * i
-        #     for j in range(rows):
-        #         joffset = self.scale_y * j
-        #         if log:
-        #             _LOGGER.info(f"i: {i}, j: {j}")
-        #             _LOGGER.info(f"ioffset: {ioffset}, joffset: {joffset}")
-        #             _LOGGER.info(f"noise32_x: {self.noise_x}, noise32_y: {self.noise_y}, noise32_z: {self.noise_z}")
-        #
-        #         noise_val = noise.pnoise3(self.noise_x + ioffset,
-        #                                   self.noise_y + joffset,
-        #                                   self.noise_z)
-        #         # scale -1 to 0 into 0 to 255
-        #         data = self.stretch * noise_val
-        #         data = min(1.0, max(-1.0, data))
-        #         data = (data + 1) / 2
-        #
-        #         self.noise3d[i,j] = data
-        #         # WE ARE CURRENLY IGNORING SMOOTHNESS DURING CURRENT DEVELOPMENT
-        #
-        #         # scale8(self.noise3d[i,j], self.smoothness) + scale8(data, 255 - self.smoothness)
-        #         if log:
-        #             _LOGGER.info(f"noise_val: {noise_val}, data: {data} noise3d: {self.noise3d[i,j]}")
-        #         if True:
-        #             index = self.noise3d[i,j]
-        #             if log:
-        #                 _LOGGER.info(f"index: {index}")
-        #             color = self.get_gradient_color(index).astype(np.uint8)
-        #             if log:
-        #                 _LOGGER.info(f"color: {color}")
-        #             pixels[i, j] = (color[0], color[1], color[2])
-        #     #_LOGGER.info(f"min {np.min(self.noise3d)}, max {np.max(self.noise3d)}")
-        # self.seed_matrix = False
-        #
-        # self.matrix.paste(self.seed_image, (0, 0))
-
-
-        # stuff pixels with
-        # self.matrix.putpixel((x, y), (r, g, b))
-        # or
-        # pixels = self.matrix.load()
-        # pixels[x, y] = (r, g, b)
-        #   iterate
