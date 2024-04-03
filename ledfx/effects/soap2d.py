@@ -54,8 +54,12 @@ class Soap2d(Twod, GradientEffect):
                 "stretch",
                 description="Stretch of the effect",
                 default = 1,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.5, max=1.5)
-            )
+            ): vol.All(vol.Coerce(float), vol.Range(min=0.5, max=1.5)),
+            vol.Optional(
+                "zoom",
+                description="zoom density",
+                default=5,
+            ): vol.All(vol.Coerce(float), vol.Range(min=0.5, max=20)),
         }
     )
 
@@ -70,20 +74,21 @@ class Soap2d(Twod, GradientEffect):
         self.speed = self._config["speed"]
         self.intensity = self._config["intensity"]
         self.stretch = self._config["stretch"]
+        self.zoom = self._config["zoom"]
 
+    # prior to rework at 32 x 32 with int / float mix and brute force 80 ms / frame
     def do_once(self):
         super().do_once()
         cols = self.r_width
         rows = self.r_height
-        self.noise3d = np.zeros((rows, cols), dtype=np.uint8)
-        self.noise32_x = np.uint32(random16())
-        self.noise32_y = np.uint32(random16())
-        self.noise32_z = np.uint32(random16())
-        self.scale32_x = np.uint32(160000 // cols)
-        self.scale32_y = np.uint32(160000 // rows)
-        self.mov = min(cols, rows)*(self.speed + 2)/2
+        self.noise3d = np.zeros((rows, cols), dtype=np.float64)
+        self.noise_x = random.random()
+        self.noise_y = random.random()
+        self.noise_z = random.random()
+        self.scale_x = self.zoom/cols
+        self.scale_y = self.zoom/rows
+        self.mov = min(cols, rows)*(self.speed + 2)/2/65535
         self.smoothness = min(250, self.intensity)
-        self.noise3d = np.zeros((cols, rows), dtype=np.uint8)
         self.seed_image = Image.new("RGB", (self.r_width, self.r_height))
         self.seed_matrix = True
 
@@ -107,9 +112,9 @@ class Soap2d(Twod, GradientEffect):
         if self.test:
             self.draw_test(self.m_draw)
 
-        self.noise32_x += self.mov
-        self.noise32_y += self.mov
-        self.noise32_z += self.mov
+        self.noise_x += self.mov
+        self.noise_y += self.mov
+        self.noise_z += self.mov
 
         cols = self.r_width
         rows = self.r_height
@@ -117,28 +122,30 @@ class Soap2d(Twod, GradientEffect):
         pixels = self.seed_image.load()
         log = False
         for i in range(cols):
-            ioffset = np.int32(self.scale32_x * (i - cols // 2))
+            ioffset = self.scale_x * i
             for j in range(rows):
-                joffset = np.int32(self.scale32_y * (j - rows // 2))
+                joffset = self.scale_y * j
                 if log:
                     _LOGGER.info(f"i: {i}, j: {j}")
                     _LOGGER.info(f"ioffset: {ioffset}, joffset: {joffset}")
-                    _LOGGER.info(f"noise32_x: {self.noise32_x}, noise32_y: {self.noise32_y}, noise32_z: {self.noise32_z}")
+                    _LOGGER.info(f"noise32_x: {self.noise_x}, noise32_y: {self.noise_y}, noise32_z: {self.noise_z}")
 
-                noise_val = noise.pnoise3(scale_uint16_to_01(self.noise32_x + ioffset),
-                                          scale_uint16_to_01(self.noise32_y + joffset),
-                                          scale_uint16_to_01(self.noise32_z) )
+                noise_val = noise.pnoise3(self.noise_x + ioffset,
+                                          self.noise_y + joffset,
+                                          self.noise_z)
                 # scale -1 to 0 into 0 to 255
                 data = self.stretch * noise_val
                 data = min(1.0, max(-1.0, data))
-                data = np.uint8((data + 1) * 127.5)
+                data = (data + 1) / 2
 
                 self.noise3d[i,j] = data
+                # WE ARE CURRENLY IGNORING SMOOTHNESS DURING CURRENT DEVELOPMENT
+
                 # scale8(self.noise3d[i,j], self.smoothness) + scale8(data, 255 - self.smoothness)
                 if log:
                     _LOGGER.info(f"noise_val: {noise_val}, data: {data} noise3d: {self.noise3d[i,j]}")
                 if True:
-                    index = scale_uint8_to_01(self.noise3d[i,j])
+                    index = self.noise3d[i,j]
                     if log:
                         _LOGGER.info(f"index: {index}")
                     color = self.get_gradient_color(index).astype(np.uint8)
