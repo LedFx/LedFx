@@ -99,45 +99,47 @@ class Soap2d(Twod, GradientEffect):
         self.bar = data.bar_oscillator()
 
     def draw(self):
-        # this is where you pixel mash, it will be a black image object each call
-        # a draw object is already attached
-        # self.matrix is the Image object
-        # self.m_draw is the attached draw object
 
-        # all rotation abstraction is done for you
-        # you can use image dimensions now
-        # self.matrix.height
-        # self.matrix.width
-
-        # look in this function for basic lines etc, use pillow primitives
-        # for regular shapes
         if self.test:
             self.draw_test(self.m_draw)
 
+        # move the plane through the noise space
+        # this is a candidate for audio reaction
         self.noise_x += self.mov
         self.noise_y += self.mov
         self.noise_z += self.mov
 
+        # TODO: this is currently done to make following code more readable and will be removed later
         cols = self.r_width
         rows = self.r_height
 
+        # if we are pixel stuffing into a seed image, setup here
         # pixels = self.seed_image.load()
+
         log = False
 
-        # to move to simple noise we need to generate X, Y and Z arrays
-        # we will then use simplenoise to generate the 3d noise
+        # generate arrays of the X adn Y axis of our plane, with a singular Z
+        # this should allow libs to use any internal acceleration for unrolling across all points
+
         start = timeit.default_timer()
         x_array = np.linspace(self.noise_x, self.noise_x + self.scale_x * cols, cols)
         y_array = np.linspace(self.noise_y, self.noise_y + self.scale_y * rows, rows)
         z_array = np.array([self.noise_z])
         next1 = timeit.default_timer()
         _LOGGER.info(f"array generation time: {next1 - start}")
+
+        # This is where the magic happens, calling the lib of choice to get the noise plane
         self.simple_3d = opensimplex.noise3array(x_array, y_array, z_array)
         next2 = timeit.default_timer()
         _LOGGER.info(f"simple noise time: {next2 - next1}")
-        self.simple_squeezed_3d = np.squeeze(self.simple_3d)
-        self.simple_stretch_3d = self.simple_squeezed_3d * self.stretch
-        self.simple_normalised_3d = ( self.simple_stretch_3d + 1 ) / 2
+
+        # if the lib happens to return in a 3 dimensionsal, even though Z is depth of 1, then squeeze it down
+        self.noise_squeezed = np.squeeze(self.simple_3d)
+        # apply the stetch param to expand the range of the color space, as noise is likely not full -1 to 1
+        # TODO: look at what color mapping does with out of range values, do we need to cap here
+        self.noise_stretched = self.noise_squeezed * self.stretch
+        # normalise the noise from -1,1 range to 0,1
+        self.noise_normalised = (self.noise_stretched + 1) / 2
         next3 = timeit.default_timer()
         _LOGGER.info(f"simple squeeze time: {next3 - next2}")
 
@@ -148,12 +150,14 @@ class Soap2d(Twod, GradientEffect):
         # _LOGGER.info(f"shape: {self.simple_n3d.shape}")
         # _LOGGER.info(f"min {np.min(self.simple_n3d)}, max {np.max(self.simple_n3d)}")
 
-        self.color_array = self.get_gradient_color_vectorized2d(self.simple_normalised_3d).astype(np.uint8)
+        # map from 0,1 space into the gradient color space via our nicely vecotrised function
+        self.color_array = self.get_gradient_color_vectorized2d(self.noise_normalised).astype(np.uint8)
         next4 = timeit.default_timer()
         _LOGGER.info(f"color array time: {next4 - next3}")
 
         # _LOGGER.info(f"color_array: {self.color_array}")
 
+        # transform the numpy array into a PIL image in one easy step
         self.matrix = Image.fromarray(self.color_array, "RGB")
         next5 = timeit.default_timer()
         _LOGGER.info(f"image from array time: {next5 - next4}")
