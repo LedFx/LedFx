@@ -78,7 +78,6 @@ class Soap2d(Twod, GradientEffect):
     def config_updated(self, config):
         super().config_updated(config)
         # copy over your configs here into variables
-        self.a_switch = self._config["a_switch"]
         self.speed = self._config["speed"]
         self.intensity = self._config["intensity"]
         self.stretch = self._config["stretch"]
