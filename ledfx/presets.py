@@ -27,9 +27,9 @@ ledfx_presets = {
                 "speed": 1.0,
                 "stretch": 1.5,
                 "test": False,
-                "zoom": 2.0
+                "zoom": 2.0,
             },
-            "name": "acid"
+            "name": "acid",
         },
         "blood": {
             "config": {
@@ -54,9 +54,9 @@ ledfx_presets = {
                 "speed": 1.0,
                 "stretch": 1.5,
                 "test": False,
-                "zoom": 2.0
+                "zoom": 2.0,
             },
-            "name": "blood"
+            "name": "blood",
         },
         "rgb": {
             "config": {
@@ -81,9 +81,9 @@ ledfx_presets = {
                 "speed": 1.0,
                 "stretch": 1.5,
                 "test": False,
-                "zoom": 2.0
+                "zoom": 2.0,
             },
-            "name": "RGB"
+            "name": "RGB",
         },
     },
     "template2d": {
