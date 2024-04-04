@@ -3,6 +3,89 @@ import os
 from ledfx.consts import LEDFX_ASSETS_PATH
 
 ledfx_presets = {
+    "soap2d": {
+        "acid": {
+            "config": {
+                "advanced": False,
+                "background_brightness": 1.0,
+                "background_color": "#000000",
+                "blur": 0.0,
+                "brightness": 1.0,
+                "diag": False,
+                "dump": False,
+                "flip": False,
+                "flip_horizontal": False,
+                "flip_vertical": False,
+                "gradient": "linear-gradient(90deg, #000000 45.00%,#1aff00 57.00%,#000000 70.00%)",
+                "gradient_roll": 0.0,
+                "impulse_decay": 0.06,
+                "intensity": 128,
+                "mirror": False,
+                "multiplier": 2.0,
+                "rotate": 0,
+                "soap": False,
+                "speed": 1.0,
+                "stretch": 1.5,
+                "test": False,
+                "zoom": 2.0
+            },
+            "name": "acid"
+        },
+        "blood": {
+            "config": {
+                "advanced": False,
+                "background_brightness": 1.0,
+                "background_color": "#000000",
+                "blur": 0.0,
+                "brightness": 1.0,
+                "diag": False,
+                "dump": False,
+                "flip": False,
+                "flip_horizontal": False,
+                "flip_vertical": False,
+                "gradient": "linear-gradient(90deg, #000000 20.00%,#ff2800 41.00%,#000000 68.00%,#ff0000 100.00%)",
+                "gradient_roll": 0.0,
+                "impulse_decay": 0.06,
+                "intensity": 128,
+                "mirror": False,
+                "multiplier": 2.0,
+                "rotate": 0,
+                "soap": False,
+                "speed": 1.0,
+                "stretch": 1.5,
+                "test": False,
+                "zoom": 2.0
+            },
+            "name": "blood"
+        },
+        "rgb": {
+            "config": {
+                "advanced": False,
+                "background_brightness": 1.0,
+                "background_color": "#000000",
+                "blur": 0.0,
+                "brightness": 1.0,
+                "diag": False,
+                "dump": False,
+                "flip": False,
+                "flip_horizontal": False,
+                "flip_vertical": False,
+                "gradient": "linear-gradient(90deg, #000000 20.00%,#0016ff 31.00%,#000000 43.00%,#f60202 55.00%,#000000 66.00%,#1afc01 77.00%,#000000 87.00%)",
+                "gradient_roll": 0.0,
+                "impulse_decay": 0.06,
+                "intensity": 128,
+                "mirror": False,
+                "multiplier": 2.0,
+                "rotate": 0,
+                "soap": False,
+                "speed": 1.0,
+                "stretch": 1.5,
+                "test": False,
+                "zoom": 2.0
+            },
+            "name": "RGB"
+        },
+    },
     "template2d": {
         "test": {
             "config": {
