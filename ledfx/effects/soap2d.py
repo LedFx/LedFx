@@ -1,13 +1,14 @@
 import logging
-import vnoise
-import timeit
 import random
+import timeit
+
+import numpy as np
+import vnoise
 import voluptuous as vol
+from PIL import Image
 
 from ledfx.effects.gradient import GradientEffect
 from ledfx.effects.twod import Twod
-from PIL import Image
-import numpy as np
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -19,7 +20,12 @@ class Soap2d(Twod, GradientEffect):
     NAME = "Noise"
     CATEGORY = "Matrix"
     # add keys you want hidden or in advanced here
-    HIDDEN_KEYS = Twod.HIDDEN_KEYS + ["background_color", "gradient_roll", "intensity", "soap"]
+    HIDDEN_KEYS = Twod.HIDDEN_KEYS + [
+        "background_color",
+        "gradient_roll",
+        "intensity",
+        "soap",
+    ]
     ADVANCED_KEYS = Twod.ADVANCED_KEYS + []
 
     CONFIG_SCHEMA = vol.Schema(
@@ -27,7 +33,7 @@ class Soap2d(Twod, GradientEffect):
             vol.Optional(
                 "speed",
                 description="Speed of the effect",
-                default = 1,
+                default=1,
             ): vol.All(vol.Coerce(float), vol.Range(min=0, max=5)),
             vol.Optional(
                 "intensity",
@@ -37,7 +43,7 @@ class Soap2d(Twod, GradientEffect):
             vol.Optional(
                 "stretch",
                 description="Stretch of the effect",
-                default = 1,
+                default=1,
             ): vol.All(vol.Coerce(float), vol.Range(min=0.5, max=1.5)),
             vol.Optional(
                 "zoom",
@@ -82,12 +88,14 @@ class Soap2d(Twod, GradientEffect):
 
     def do_once(self):
         super().do_once()
-        self.noise3d = np.zeros((self.r_height, self.r_width), dtype=np.float64)
+        self.noise3d = np.zeros(
+            (self.r_height, self.r_width), dtype=np.float64
+        )
         self.noise_x = random.random()
         self.noise_y = random.random()
         self.noise_z = random.random()
-        self.scale_x = self.zoom/self.r_width
-        self.scale_y = self.zoom/self.r_height
+        self.scale_x = self.zoom / self.r_width
+        self.scale_y = self.zoom / self.r_height
 
         self.smoothness = min(250, self.intensity)
         self.seed_image = Image.new("RGB", (self.r_width, self.r_height))
@@ -128,11 +136,15 @@ class Soap2d(Twod, GradientEffect):
         scale_x = self.scale_x + bass_x
         scale_y = self.scale_y + bass_y
 
-        noise_x = self.noise_x - ( scale_x * self.r_height / 2)
-        noise_y = self.noise_y - ( scale_y * self.r_width / 2)
+        noise_x = self.noise_x - (scale_x * self.r_height / 2)
+        noise_y = self.noise_y - (scale_y * self.r_width / 2)
 
-        x_array = np.linspace(noise_x, noise_x + scale_x * self.r_height, self.r_height)
-        y_array = np.linspace(noise_y, noise_y + scale_y * self.r_width, self.r_width)
+        x_array = np.linspace(
+            noise_x, noise_x + scale_x * self.r_height, self.r_height
+        )
+        y_array = np.linspace(
+            noise_y, noise_y + scale_y * self.r_width, self.r_width
+        )
         z_array = np.array([self.noise_z])
         if log:
             next1 = timeit.default_timer()
@@ -141,10 +153,12 @@ class Soap2d(Twod, GradientEffect):
         ###################################################################################
         # This is where the magic happens, calling the lib of choice to get the noise plane
         ###################################################################################
-# opensimplex at 128x128 on dev machine is 200 ms per frame - Unusable
-#        self.noise_3d = opensimplex.noise3array(x_array, y_array, z_array)
-# vnoise at 128x128 on dev machine is 2.5 ms per frame - Current best candidate
-        self.noise_3d = self.noise.noise3(x_array, y_array, z_array, grid_mode=True)
+        # opensimplex at 128x128 on dev machine is 200 ms per frame - Unusable
+        #        self.noise_3d = opensimplex.noise3array(x_array, y_array, z_array)
+        # vnoise at 128x128 on dev machine is 2.5 ms per frame - Current best candidate
+        self.noise_3d = self.noise.noise3(
+            x_array, y_array, z_array, grid_mode=True
+        )
 
         if log:
             next2 = timeit.default_timer()
@@ -170,7 +184,9 @@ class Soap2d(Twod, GradientEffect):
         # _LOGGER.info(f"min {np.min(self.simple_n3d)}, max {np.max(self.simple_n3d)}")
 
         # map from 0,1 space into the gradient color space via our nicely vecotrised function
-        self.color_array = self.get_gradient_color_vectorized2d(self.noise_normalised).astype(np.uint8)
+        self.color_array = self.get_gradient_color_vectorized2d(
+            self.noise_normalised
+        ).astype(np.uint8)
 
         if log:
             next4 = timeit.default_timer()
@@ -182,4 +198,3 @@ class Soap2d(Twod, GradientEffect):
         if log:
             next5 = timeit.default_timer()
             _LOGGER.info(f"image from array time: {next5 - next4}")
-
