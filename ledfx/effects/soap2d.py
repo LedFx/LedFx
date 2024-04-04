@@ -43,22 +43,22 @@ class Soap2d(Twod, GradientEffect):
             vol.Optional(
                 "stretch",
                 description="Stretch of the effect",
-                default=1,
+                default=1.5,
             ): vol.All(vol.Coerce(float), vol.Range(min=0.5, max=1.5)),
             vol.Optional(
                 "zoom",
                 description="zoom density",
-                default=5,
+                default=2,
             ): vol.All(vol.Coerce(float), vol.Range(min=0.5, max=20)),
             vol.Optional(
                 "impulse_decay",
                 description="Decay filter applied to the impulse for development",
-                default=0.1,
+                default=0.06,
             ): vol.All(vol.Coerce(float), vol.Range(min=0.01, max=0.3)),
             vol.Optional(
                 "multiplier",
                 description="audio injection multiplier, 0 is none",
-                default=1.0,
+                default=2.0,
             ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=4.0)),
             vol.Optional(
                 "soap",
@@ -94,12 +94,13 @@ class Soap2d(Twod, GradientEffect):
         self.noise_x = random.random()
         self.noise_y = random.random()
         self.noise_z = random.random()
+
         self.scale_x = self.zoom / self.r_width
         self.scale_y = self.zoom / self.r_height
 
         self.smoothness = min(250, self.intensity)
-        self.seed_image = Image.new("RGB", (self.r_width, self.r_height))
-        self.seed_matrix = True
+        # self.seed_image = Image.new("RGB", (self.r_width, self.r_height))
+        # self.seed_matrix = True
         self.noise = vnoise.Noise()
 
     def audio_data_updated(self, data):
