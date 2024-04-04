@@ -3,7 +3,7 @@ import os
 from ledfx.consts import LEDFX_ASSETS_PATH
 
 ledfx_presets = {
-    "soap2d": {
+    "noise2d": {
         "acid": {
             "config": {
                 "advanced": False,
