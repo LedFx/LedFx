@@ -1,8 +1,6 @@
 import logging
-import noise
 import vnoise
 import timeit
-import opensimplex
 import random
 import voluptuous as vol
 
@@ -17,23 +15,11 @@ _LOGGER = logging.getLogger(__name__)
 # https://github.com/Aircoookie/WLED/blob/f513cae66eecb2c9b4e8198bd0eb52d209ee281f/wled00/FX.cpp#L7472
 
 
-def random16():
-    return random.randint(0, 65535)
-
-def scale_uint16_to_01(value):
-    return value / 65535.0
-
-def scale_uint8_to_01(value):
-    return value / 255.0
-
-def scale8(i, scale):
-    return i * ( scale / 256 )
-
 class Soap2d(Twod, GradientEffect):
-    NAME = "Soap"
+    NAME = "Noise"
     CATEGORY = "Matrix"
     # add keys you want hidden or in advanced here
-    HIDDEN_KEYS = Twod.HIDDEN_KEYS + []
+    HIDDEN_KEYS = Twod.HIDDEN_KEYS + ["background_color", "gradient_roll", "intensity", "soap"]
     ADVANCED_KEYS = Twod.ADVANCED_KEYS + []
 
     CONFIG_SCHEMA = vol.Schema(
@@ -68,12 +54,16 @@ class Soap2d(Twod, GradientEffect):
                 description="audio injection multiplier, 0 is none",
                 default=1.0,
             ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=4.0)),
+            vol.Optional(
+                "soap",
+                description="Add soap smear to noise",
+                default=False,
+            ): bool,
         }
     )
 
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
-        self.bar = 0
 
     def config_updated(self, config):
         super().config_updated(config)
@@ -83,23 +73,21 @@ class Soap2d(Twod, GradientEffect):
         self.stretch = self._config["stretch"]
         self.zoom = self._config["zoom"]
         self.multiplier = self._config["multiplier"]
+        self.soap = self._config["soap"]
 
         self.lows_impulse_filter = self.create_filter(
             alpha_decay=self._config["impulse_decay"], alpha_rise=0.99
         )
         self.lows_impulse = 0
 
-    # prior to rework at 32 x 32 with int / float mix and brute force 80 ms / frame
     def do_once(self):
         super().do_once()
-        cols = self.r_width
-        rows = self.r_height
-        self.noise3d = np.zeros((rows, cols), dtype=np.float64)
+        self.noise3d = np.zeros((self.r_height, self.r_width), dtype=np.float64)
         self.noise_x = random.random()
         self.noise_y = random.random()
         self.noise_z = random.random()
-        self.scale_x = self.zoom/cols
-        self.scale_y = self.zoom/rows
+        self.scale_x = self.zoom/self.r_width
+        self.scale_y = self.zoom/self.r_height
 
         self.smoothness = min(250, self.intensity)
         self.seed_image = Image.new("RGB", (self.r_width, self.r_height))
@@ -123,13 +111,10 @@ class Soap2d(Twod, GradientEffect):
         self.noise_y += self.mov
         self.noise_z += self.mov
 
-        # TODO: this is currently done to make following code more readable and will be removed later
-        cols = self.r_width
-        rows = self.r_height
-
         # if we are pixel stuffing into a seed image, setup here
         # pixels = self.seed_image.load()
 
+        # temp logging switching, will all be removed in due course
         log = False
 
         # generate arrays of the X adn Y axis of our plane, with a singular Z
@@ -143,11 +128,11 @@ class Soap2d(Twod, GradientEffect):
         scale_x = self.scale_x + bass_x
         scale_y = self.scale_y + bass_y
 
-        noise_x = self.noise_x - ( scale_x * rows / 2)
-        noise_y = self.noise_y - ( scale_y * rows / 2)
+        noise_x = self.noise_x - ( scale_x * self.r_height / 2)
+        noise_y = self.noise_y - ( scale_y * self.r_width / 2)
 
-        x_array = np.linspace(noise_x, noise_x + scale_x * rows, rows)
-        y_array = np.linspace(noise_y, noise_y + scale_y * cols, cols)
+        x_array = np.linspace(noise_x, noise_x + scale_x * self.r_height, self.r_height)
+        y_array = np.linspace(noise_y, noise_y + scale_y * self.r_width, self.r_width)
         z_array = np.array([self.noise_z])
         if log:
             next1 = timeit.default_timer()
@@ -190,8 +175,6 @@ class Soap2d(Twod, GradientEffect):
         if log:
             next4 = timeit.default_timer()
             _LOGGER.info(f"color array time: {next4 - next3}")
-
-        # _LOGGER.info(f"color_array: {self.color_array}")
 
         # transform the numpy array into a PIL image in one easy step
         self.matrix = Image.fromarray(self.color_array, "RGB")
