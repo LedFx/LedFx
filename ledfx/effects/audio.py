@@ -184,7 +184,8 @@ class AudioInputSource:
         valid_device_indexes = self.valid_device_indexes()
         device_idx = self._config["audio_device"]
 
-        if device_idx > max(valid_device_indexes):
+#        if device_idx > max(valid_device_indexes):
+        if device_idx > max(valid_device_indexes) or device_idx < 0:
             _LOGGER.warning(
                 f"Invalid audio device index: {device_idx}. Reverting to default input device."
             )
@@ -195,6 +196,11 @@ class AudioInputSource:
                 f"Audio device {input_devices[device_idx]['name']} has no input channels. Reverting to default input device."
             )
             device_idx = default_device
+
+
+        if device_idx == -1:
+            _LOGGER.warning(f"No valid default device, setting to first valid {valid_device_indexes[0]}")
+            device_idx = valid_device_indexes[0]
 
         # Setup a pre-emphasis filter to balance the input volume of lows to highs
         self.pre_emphasis = aubio.digital_filter(3)
