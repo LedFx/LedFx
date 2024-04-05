@@ -69,6 +69,8 @@ class Noise2d(Twod, GradientEffect):
     )
 
     def __init__(self, ledfx, config):
+        self.first_run = True
+        self.last_rotate = 0
         super().__init__(ledfx, config)
 
     def config_updated(self, config):
@@ -86,14 +88,23 @@ class Noise2d(Twod, GradientEffect):
         )
         self.lows_impulse = 0
 
+        if self.last_rotate != self._config["rotate"]:
+            # as rotate could be non symetrical we better reseed everything
+            self.first_run = True
+            self.last_rotate = self._config["rotate"]
+
     def do_once(self):
         super().do_once()
-        self.noise3d = np.zeros(
-            (self.r_height, self.r_width), dtype=np.float64
-        )
-        self.noise_x = random.random()
-        self.noise_y = random.random()
-        self.noise_z = random.random()
+
+        if self.first_run:
+            self.noise3d = np.zeros(
+                (self.r_height, self.r_width), dtype=np.float64
+            )
+            self.noise_x = random.random()
+            self.noise_y = random.random()
+            self.noise_z = random.random()
+            self.noise = vnoise.Noise()
+            self.first_run = False
 
         self.scale_x = self.zoom / self.r_width
         self.scale_y = self.zoom / self.r_height
@@ -101,7 +112,6 @@ class Noise2d(Twod, GradientEffect):
         self.smoothness = min(250, self.intensity)
         # self.seed_image = Image.new("RGB", (self.r_width, self.r_height))
         # self.seed_matrix = True
-        self.noise = vnoise.Noise()
 
     def audio_data_updated(self, data):
         self.lows_impulse = self.lows_impulse_filter.update(
