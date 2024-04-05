@@ -185,7 +185,7 @@ class AudioInputSource:
         device_idx = self._config["audio_device"]
 
 #        if device_idx > max(valid_device_indexes):
-        if device_idx > max(valid_device_indexes) or device_idx < 0:
+        if device_idx > max(valid_device_indexes):
             _LOGGER.warning(
                 f"Invalid audio device index: {device_idx}. Reverting to default input device."
             )
