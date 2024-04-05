@@ -198,7 +198,7 @@ class AudioInputSource:
 
         if device_idx == -1:
             _LOGGER.warning(
-                f"No valid default device, setting to first valid {valid_device_indexes[0]}"
+                f"No valid default device, setting to first valid input device {valid_device_indexes[0]}"
             )
             device_idx = valid_device_indexes[0]
 
