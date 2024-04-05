@@ -1,8 +1,11 @@
 import logging
 import struct
+from socket import socket
+from typing import Union
 
 import numpy as np
 import voluptuous as vol
+from numpy import ndarray
 
 from ledfx.devices import UDPDevice
 from ledfx.events import DevicesUpdatedEvent
@@ -53,21 +56,32 @@ class DDPDevice(UDPDevice):
         self._device_type = "DDP"
         self.frame_count = 0
         self.connection_warning = False
+        self.destination_port = self._config["port"]
 
-    def flush(self, data):
+    def flush(self, data: ndarray) -> None:
+        """
+        Flushes LED data to the DDP device.
+
+        Args:
+            data (ndarray): The LED data to be flushed.
+
+        Raises:
+            AttributeError: If an attribute error occurs during the flush.
+            OSError: If an OS error occurs during the flush.
+        """
         self.frame_count += 1
         try:
 
             DDPDevice.send_out(
                 self._sock,
                 self.destination,
-                self._config["port"],
+                self.destination_port,
                 data,
                 self.frame_count,
             )
             if self.connection_warning:
                 # If we have reconnected, log it, come back online, and fire an event to the frontend
-                _LOGGER.info(f"DDP connection reestablished to {self.name}")
+                _LOGGER.info(f"DDP connection to {self.name} re-established.")
                 self.connection_warning = False
                 self._online = True
                 self._ledfx.events.fire_event(DevicesUpdatedEvent(self.id))
@@ -75,7 +89,6 @@ class DDPDevice(UDPDevice):
             self.activate()
         except OSError as e:
             # print warning only once until it clears
-
             if not self.connection_warning:
                 # If we have lost connection, log it, go offline, and fire an event to the frontend
                 _LOGGER.warning(f"Error in DDP connection to {self.name}: {e}")
@@ -84,9 +97,24 @@ class DDPDevice(UDPDevice):
                 self._ledfx.events.fire_event(DevicesUpdatedEvent(self.id))
 
     @staticmethod
-    def send_out(sock, dest, port, data, frame_count):
+    def send_out(
+        sock: socket, dest: str, port: int, data: ndarray, frame_count: int
+    ) -> None:
+        """
+        Sends out data packets over a socket using the DDP protocol.
+
+        Args:
+            sock (socket): The socket to send the packet over.
+            dest (str): The destination IP address.
+            port (int): The destination port number.
+            data (ndarray): The data to be sent in the packet.
+            frame_count(int): The count of frames.
+
+        Returns:
+        None
+        """
         sequence = frame_count % 15 + 1
-        byteData = data.astype(np.uint8).flatten().tobytes()
+        byteData = memoryview(data.astype(np.uint8).ravel())
         packets, remainder = divmod(len(byteData), DDPDevice.MAX_DATALEN)
         if remainder == 0:
             packets -= 1  # divmod returns 1 when len(byteData) fits evenly in DDPDevice.MAX_DATALEN
@@ -105,9 +133,31 @@ class DDPDevice(UDPDevice):
             )
 
     @staticmethod
-    def send_packet(sock, dest, port, sequence, packet_count, data, last):
+    def send_packet(
+        sock: socket,
+        dest: str,
+        port: int,
+        sequence: int,
+        packet_count: int,
+        data: Union[bytes, memoryview],
+        last: bool,
+    ) -> None:
+        """
+        Sends a DDP packet over a socket to a specified destination.
+
+        Args:
+            sock (socket): The socket to send the packet over.
+            dest (str): The destination IP address.
+            port (int): The destination port number.
+            sequence (int): The sequence number of the packet.
+            packet_count (int): The total number of packets.
+            data (bytes or memoryview): The data to be sent in the packet.
+            last (bool): Indicates if this is the last packet in the sequence.
+
+        Returns:
+            None
+        """
         bytes_length = len(data)
-        udpData = bytearray()
         header = struct.pack(
             "!BBBBLH",
             DDPDevice.VER1 | (DDPDevice.PUSH if last else 0),
@@ -117,10 +167,9 @@ class DDPDevice(UDPDevice):
             packet_count * DDPDevice.MAX_DATALEN,
             bytes_length,
         )
-        udpData.extend(header)
-        udpData.extend(data)
+        udpData = header + bytes(data)
 
         sock.sendto(
-            bytes(udpData),
+            udpData,
             (dest, port),
         )
