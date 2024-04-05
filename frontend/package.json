@@ -13,7 +13,7 @@
     "@mui/icons-material": "^5.15.11",
     "@mui/material": "^5.15.11",
     "@mui/styles": "^5.15.11",
-    "@mui/x-data-grid": "^6.19.5",
+    "@mui/x-data-grid": "^7.0.0",
     "@testing-library/react": "^14.2.1",
     "@types/qs": "^6.9.11",
     "@types/reactour": "^1.18.5",
