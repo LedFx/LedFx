@@ -16,7 +16,7 @@ _LOGGER = logging.getLogger(__name__)
 # https://github.com/Aircoookie/WLED/blob/f513cae66eecb2c9b4e8198bd0eb52d209ee281f/wled00/FX.cpp#L7472
 
 
-class Soap2d(Twod, GradientEffect):
+class Noise2d(Twod, GradientEffect):
     NAME = "Noise"
     CATEGORY = "Matrix"
     # add keys you want hidden or in advanced here

@@ -37,4 +37,5 @@ hiddenimports = [
     "sentry_sdk.integrations.argv",
     "sentry_sdk.integrations.logging",
     "sentry_sdk.integrations.threading",
+    "vnoise",
 ]
