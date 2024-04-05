@@ -68,12 +68,33 @@ class AudioInputSource:
             f"{device_list[default_output_device]['name']} [Loopback]"
         )
         # We need to run over the device list looking for the target device
+        # NOTE: Some sound drivers truncate the device name, so we may not find a match
         for device_index, device in enumerate(device_list):
             if device["name"] == target_device:
                 # Return the loopback device index
+                _LOGGER.debug(
+                    f"Default audio loopback device found: {device['name']}"
+                )
                 return device_index
-        # No Loopback device matching output found - return the default input device index
-        return sd.default.device["input"]
+        # If we don't match a Loopback device matching output found - return the default input device index
+        default_input_device_idx = sd.default.device["input"]
+        # The default input device index is not always valid (i.e no default input devices)
+        if default_input_device_idx in AudioInputSource.valid_device_indexes():
+            _LOGGER.debug(
+                "No default audio loopback device found. Using default input device."
+            )
+            return default_input_device_idx
+        else:
+            # Return the first valid input device index if we can't find a valid default input device
+            if len(AudioInputSource.valid_device_indexes()) > 0:
+                _LOGGER.debug(
+                    "No valid default audio input device found. Using first valid input device."
+                )
+                return next(iter(AudioInputSource.valid_device_indexes()))
+            else:
+                _LOGGER.warning(
+                    "No valid audio input devices found. Unable to use audio reactive effects."
+                )
 
     @staticmethod
     def query_hostapis():
