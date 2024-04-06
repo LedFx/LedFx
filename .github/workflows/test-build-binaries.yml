@@ -104,15 +104,14 @@ jobs:
     name: Build LedFx (OS X)
     runs-on: macos-latest
     steps:
-      - name: Setup CI sound system
-        uses: LABSN/sound-ci-helpers@v1
       - name: Check out code from GitHub
         uses: actions/checkout@v4
 
       - name: Install build dependencies
         run: |
           brew install portaudio
-
+      - name: Setup CI sound system
+        uses: LABSN/sound-ci-helpers@v1
       - name: Setup Python ${{ env.DEFAULT_PYTHON }}
         id: python
         uses: actions/setup-python@v5
