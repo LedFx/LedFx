@@ -261,7 +261,11 @@ def main():
 
     # Check if there are any audio input devices and quit if there are none.
     # TODO: Review the sentry hits for this logger statement and see if it's worth supporting without a mic.
-    if AudioAnalysisSource.audio_input_device_exists() is False:
+    # NOTE: We don't do this in CI - some runners don't have audio devices.
+    if (
+        AudioAnalysisSource.audio_input_device_exists() is False
+        and args.ci_smoke_test is False
+    ):
         _LOGGER.critical(
             "No audio input devices found. Please connect a microphone or input device and restart LedFx."
         )
