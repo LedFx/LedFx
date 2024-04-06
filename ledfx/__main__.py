@@ -190,6 +190,12 @@ def parse_args():
         help="Disable crash logger and auto update checks",
     )
     parser.add_argument(
+        "--sentry-crash-test",
+        dest="sentry_test",
+        action="store_true",
+        help="This crashes LedFx to test the sentry crash logger",
+    )
+    parser.add_argument(
         "--ci-smoke-test",
         dest="ci_smoke_test",
         action="store_true",
@@ -241,28 +247,35 @@ def main():
                 p.ionice(psutil.IOPRIO_CLASS_RT, value=7)
             except psutil.Error:
                 _LOGGER.info(
-                    "Unable to set priority, please run as root or sudo if you are experiencing frame rate issues",
+                    "Unable to set priority, please run as root or use sudo if you are experiencing frame rate issues",
                 )
         else:
             p.nice(15)
-    # Setup Sentry
+
     if args.offline_mode is False:
         setup_sentry()
+
+    if args.sentry_test:
+        _LOGGER.warning("Steering LedFx into a brick wall.")
+        div_by_zero = 1 / 0
+
     # Check if there are any audio input devices and quit if there are none.
     # TODO: Review the sentry hits for this logger statement and see if it's worth supporting without a mic.
     if AudioAnalysisSource.audio_input_device_exists() is False:
         _LOGGER.critical(
             "No audio input devices found. Please connect a microphone or input device and restart LedFx."
         )
-        sys.exit(0)
+        # Exit with code 2 to indicate that there are no audio input devices.
+        sys.exit(2)
     if (args.tray or currently_frozen()) and not args.no_tray:
         # If pystray is imported on a device that can't display it, it explodes. Catch it
         try:
             import pystray
         except Exception as Error:
-            msg = f"Error: Unable to virtual tray icon. Shutting down. Error: {Error}"
+            msg = f"Unable to create tray icon. Error: {Error}. Try launching LedFx via --no-tray option."
             _LOGGER.critical(msg)
-            sys.exit(0)
+            # Exit with code 3 to indicate that there was an error creating the tray icon.
+            sys.exit(3)
 
         from PIL import Image
 
