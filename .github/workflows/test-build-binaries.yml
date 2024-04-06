@@ -104,6 +104,8 @@ jobs:
     name: Build LedFx (OS X)
     runs-on: macos-latest
     steps:
+      - name: Setup CI sound system
+        uses: LABSN/sound-ci-helpers@v1
       - name: Check out code from GitHub
         uses: actions/checkout@v4
 
