@@ -14,6 +14,7 @@ import os
 import sys
 from logging.handlers import RotatingFileHandler
 
+from ledfx.effects.audio import AudioAnalysisSource
 from ledfx.sentry_config import setup_sentry
 
 try:
@@ -189,12 +190,6 @@ def parse_args():
         help="Disable crash logger and auto update checks",
     )
     parser.add_argument(
-        "--sentry-crash-test",
-        dest="sentry_test",
-        action="store_true",
-        help="This crashes LedFx to test the sentry crash logger",
-    )
-    parser.add_argument(
         "--ci-smoke-test",
         dest="ci_smoke_test",
         action="store_true",
@@ -232,7 +227,6 @@ def main():
     # Set some process priority optimisations
     if have_psutil:
         p = psutil.Process(os.getpid())
-
         if psutil.WINDOWS:
             try:
                 p.nice(psutil.HIGH_PRIORITY_CLASS)
@@ -251,15 +245,16 @@ def main():
                 )
         else:
             p.nice(15)
-
+    # Setup Sentry
     if args.offline_mode is False:
         setup_sentry()
-
-    if args.sentry_test:
-        """This will crash LedFx and submit a Sentry error if Sentry is configured"""
-        _LOGGER.warning("Steering LedFx into a brick wall")
-        div_by_zero = 1 / 0
-
+    # Check if there are any audio input devices and quit if there are none.
+    # TODO: Review the sentry hits for this logger statement and see if it's worth supporting without a mic.
+    if AudioAnalysisSource.audio_input_device_exists() is False:
+        _LOGGER.critical(
+            "No audio input devices found. Please connect a microphone or input device and restart LedFx."
+        )
+        sys.exit(0)
     if (args.tray or currently_frozen()) and not args.no_tray:
         # If pystray is imported on a device that can't display it, it explodes. Catch it
         try:
