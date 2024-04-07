@@ -54,6 +54,13 @@ class AudioInputSource:
         return tuple(AudioInputSource.input_devices().keys())
 
     @staticmethod
+    def audio_input_device_exists():
+        """
+        Returns True if there are valid input devices
+        """
+        return len(AudioInputSource.valid_device_indexes()) > 0
+
+    @staticmethod
     def default_device_index():
         """
         Finds the WASAPI loopback device index of the default output device if it exists
@@ -68,12 +75,34 @@ class AudioInputSource:
             f"{device_list[default_output_device]['name']} [Loopback]"
         )
         # We need to run over the device list looking for the target device
+        # NOTE: Some sound drivers truncate the device name, so we may not find a match
         for device_index, device in enumerate(device_list):
             if device["name"] == target_device:
                 # Return the loopback device index
+                _LOGGER.debug(
+                    f"Default audio loopback device found: {device['name']}"
+                )
                 return device_index
-        # No Loopback device matching output found - return the default input device index
-        return sd.default.device["input"]
+        # If we don't match a Loopback device matching output found - return the default input device index
+        default_input_device_idx = sd.default.device["input"]
+        # The default input device index is not always valid (i.e no default input devices)
+        if default_input_device_idx in AudioInputSource.valid_device_indexes():
+            _LOGGER.debug(
+                "No default audio loopback device found. Using default input device."
+            )
+            return default_input_device_idx
+        else:
+            # Return the first valid input device index if we can't find a valid default input device
+            if len(AudioInputSource.valid_device_indexes()) > 0:
+                _LOGGER.debug(
+                    "No valid default audio input device found. Using first valid input device."
+                )
+                return next(iter(AudioInputSource.valid_device_indexes()))
+            else:
+                _LOGGER.warning(
+                    "No valid audio input devices found. Unable to use audio reactive effects."
+                )
+                return None
 
     @staticmethod
     def query_hostapis():
@@ -181,6 +210,15 @@ class AudioInputSource:
         input_devices = self.query_devices()
         hostapis = self.query_hostapis()
         default_device = self.default_device_index()
+        if default_device is None:
+            # There are no valid audio input devices, so we can't activate the audio source.
+            # We should never get here, as we check for devices on start-up.
+            # This likely just captures if a device is removed after start-up.
+            _LOGGER.warning(
+                "Audio input device not found. Unable to activate audio source. Deactivating."
+            )
+            self.deactivate()
+            return
         valid_device_indexes = self.valid_device_indexes()
         device_idx = self._config["audio_device"]
 
