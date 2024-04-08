@@ -27,7 +27,10 @@ COLOR_ORDERS = {
     "BGR": ColorOrder.BGR,
 }
 
-
+# This device is currently not working and never known to work
+# Disable to avoid accidental selection and crashing as seen in sentry
+# To re-enable, just remove the following decorator
+@Device.no_registration
 class RPI_WS281X(Device):
     """RPi WS281X device support"""
 
