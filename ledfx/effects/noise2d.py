@@ -177,6 +177,10 @@ class Noise2d(Twod, GradientEffect):
 
         # if the lib happens to return in a 3 dimensionsal, even though Z is depth of 1, then squeeze it down
         self.noise_squeezed = np.squeeze(self.noise_3d)
+
+        if self.noise_squeezed.ndim == 1:
+            self.noise_squeezed = self.noise_squeezed.reshape(1, -1)
+
         # apply the stetch param to expand the range of the color space, as noise is likely not full -1 to 1
         # TODO: look at what color mapping does with out of range values, do we need to cap here
         self.noise_stretched = self.noise_squeezed * self.stretch
