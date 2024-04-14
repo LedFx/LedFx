@@ -6,6 +6,12 @@ To run this script for development purposes use:
     poetry install
     poetry run ledfx
 
+WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
+WARNING                                                         WARNING
+WARNING  ⚠️⚠️⚠️ DO NOT USE SOUNDDEVICE WITHIN MAIN.PY ⚠️⚠️⚠️ WARNING
+WARNING                                                         WARNING
+WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
+
 """
 
 import argparse
@@ -219,7 +225,9 @@ def parse_args():
 
 
 def main():
-    """Main entry point allowing external calls"""
+    """
+    Main entry point allowing external calls
+    """
 
     args = parse_args()
     config_helpers.ensure_config_directory(args.config)
