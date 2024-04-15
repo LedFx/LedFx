@@ -27,9 +27,9 @@ ledfx_presets = {
                 "run_seconds": 3.0,
                 "tail": 40,
                 "test": False,
-                "width": 3
+                "width": 3,
             },
-            "name": "Matrix Fat"
+            "name": "Matrix Fat",
         },
         "matrix-tint": {
             "config": {
@@ -54,9 +54,9 @@ ledfx_presets = {
                 "run_seconds": 2.0,
                 "tail": 39,
                 "test": False,
-                "width": 3
+                "width": 3,
             },
-            "name": "matrix  tint"
+            "name": "matrix  tint",
         },
         "rainbow": {
             "config": {
@@ -81,9 +81,9 @@ ledfx_presets = {
                 "run_seconds": 3.0,
                 "tail": 50,
                 "test": False,
-                "width": 15
+                "width": 15,
             },
-            "name": "rainbow"
+            "name": "rainbow",
         },
         "rgb": {
             "config": {
@@ -108,9 +108,9 @@ ledfx_presets = {
                 "run_seconds": 3.0,
                 "tail": 50,
                 "test": False,
-                "width": 3
+                "width": 3,
             },
-            "name": "RGB"
+            "name": "RGB",
         },
         "snowfield": {
             "config": {
@@ -135,10 +135,10 @@ ledfx_presets = {
                 "run_seconds": 3.0,
                 "tail": 30,
                 "test": False,
-                "width": 30
+                "width": 30,
             },
-            "name": "snowfield"
-        }
+            "name": "snowfield",
+        },
     },
     "noise2d": {
         "acid": {
