@@ -18,10 +18,11 @@ class Line():
         self.speed = speed
         self.tail = 0.5
         self.offset = offset
+        self.impulse_index = int(offset * 3)
 
-    def update(self, run_seconds, passed, tail):
+    def update(self, run_seconds, passed, tail, impulse):
         # calculate how much to move
-        movement = passed / run_seconds
+        movement = passed / run_seconds * (1 + impulse[self.impulse_index])
         self.tail = tail
         # adjust for the code lines own speed
         self.ny += movement * self.speed
@@ -35,16 +36,23 @@ class Line():
         y = int(self.ny * image.height)
         line_width = max(1, int(image.width * (width / 100.0)))
         tail_length = int(image.height * self.tail)
+
         # _LOGGER.info(f"w {width} iw: {image.width} cw {int(image.width * (width / 100.0))} {line_width}")
 
-        draw.line(
-            (
-                x, y,
-                x, y - tail_length
-            ),
-            width=line_width,
-            fill=tuple(self.color.astype(int))
-        )
+        segment = (tail_length - line_width) / 10.0
+        for i in range(10):
+            y_start = y - (line_width - 1) - segment * i
+            y_end = y_start - segment
+            # _LOGGER.info(f"seg: {segment} y:start: {y_start} y:end {y_end}")
+
+            draw.line(
+                (
+                    x, y_start,
+                    x, y_end
+                ),
+                width=line_width,
+                fill= tuple((self.color * (1.0 - i * 0.09)).astype(int))
+            )
 
         beat_roll = beat_osc + self.offset
         beat_roll = beat_roll - np.floor(beat_roll)
@@ -62,7 +70,7 @@ class Matrix2d(Twod, GradientEffect):
     NAME = "Digital Rain"
     CATEGORY = "Matrix"
     # add keys you want hidden or in advanced here
-    HIDDEN_KEYS = Twod.HIDDEN_KEYS + []
+    HIDDEN_KEYS = Twod.HIDDEN_KEYS + ["background_color", "gradient_roll"]
     ADVANCED_KEYS = Twod.ADVANCED_KEYS + []
 
     CONFIG_SCHEMA = vol.Schema(
@@ -97,6 +105,16 @@ class Matrix2d(Twod, GradientEffect):
                 description="Code line tail length as a % of the matrix",
                 default = 50,
             ): vol.All(vol.Coerce(int), vol.Range(min=1, max=100)),
+            vol.Optional(
+                "impulse_decay",
+                description="Decay filter applied to the impulse for development",
+                default=0.1,
+            ): vol.All(vol.Coerce(float), vol.Range(min=0.01, max=0.3)),
+            vol.Optional(
+                "multiplier",
+                description="audio injection multiplier, 0 is none",
+                default=1,
+            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=10)),
         }
     )
 
@@ -105,6 +123,7 @@ class Matrix2d(Twod, GradientEffect):
         self.bar = 0
         self.lines = []
         self.beat_osc = 0.0
+        self.impulse = [0, 0, 0]
 
     def config_updated(self, config):
         super().config_updated(config)
@@ -115,6 +134,23 @@ class Matrix2d(Twod, GradientEffect):
         self.width = self._config["width"]
         self.run_seconds = self._config["run_seconds"]
         self.tail = self._config["tail"] / 100.0
+        self.multiplier = self._config["multiplier"]
+
+        self.lows_impulse_filter = self.create_filter(
+            alpha_decay=self._config["impulse_decay"], alpha_rise=0.99
+        )
+
+        self.mids_impulse_filter = self.create_filter(
+            alpha_decay=self._config["impulse_decay"], alpha_rise=0.99
+        )
+
+        self.high_impulse_filter = self.create_filter(
+            alpha_decay=self._config["impulse_decay"], alpha_rise=0.99
+        )
+
+        self.lows_impulse = 0
+        self.mids_impulse = 0
+        self.high_impulse = 0
 
     def do_once(self):
         super().do_once()
@@ -124,16 +160,28 @@ class Matrix2d(Twod, GradientEffect):
         # Grab your audio input here, such as bar oscillator
         self.beat_osc = data.beat_oscillator()
 
+        self.lows_impulse = self.lows_impulse_filter.update(
+            data.lows_power(filtered=False) * self.multiplier
+        )
+        self.mids_impulse = self.mids_impulse_filter.update(
+            data.mids_power(filtered=False) * self.multiplier
+        )
+        self.high_impulse = self.high_impulse_filter.update(
+            data.high_power(filtered=False) * self.multiplier
+        )
+        self.impulse = [self.lows_impulse, self.mids_impulse, self.high_impulse]
+
     def add_line(self):
         # let aging deal with how many lines
         # maybe revisit later
         # _LOGGER.info(f"current: {len(self.lines)} count: {self.count}")
         if len(self.lines) < self.count:
-            color = self.get_gradient_color(random.random())
+            line_random = random.random()
+            color = self.get_gradient_color(line_random)
             self.lines.append(Line(random.random(),
                                    color,
-                                   random.random(),
-                                   0.1 + random.random() * 0.9))
+                                   line_random,
+                                   0.1 + line_random * 0.9))
 
     def draw(self):
 
@@ -148,7 +196,7 @@ class Matrix2d(Twod, GradientEffect):
 
         # olderst lines are first which suits z order
         for line in self.lines[:]:
-            if not line.update(self.run_seconds, self.passed, self.tail):
+            if not line.update(self.run_seconds, self.passed, self.tail, self.impulse):
                 self.lines.remove(line)
             line.draw(self.m_draw, self.matrix, self.width, self.beat_osc)
 

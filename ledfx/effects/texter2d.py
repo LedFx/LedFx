@@ -123,7 +123,7 @@ class Texter2d(Twod, GradientEffect):
             ): vol.All(vol.Coerce(float), vol.Range(min=0.01, max=0.3)),
             vol.Optional(
                 "multiplier",
-                description="general multiplier slider for development",
+                description="multiplier of audio effect injection",
                 default=1,
             ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=10)),
             vol.Optional(
