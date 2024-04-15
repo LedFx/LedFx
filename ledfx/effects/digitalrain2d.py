@@ -6,6 +6,7 @@ import numpy as np
 
 from ledfx.effects.twod import Twod
 from ledfx.effects.gradient import GradientEffect
+from ledfx.color import validate_gradient
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -26,7 +27,6 @@ class Line():
         self.tail = tail
         # adjust for the code lines own speed
         self.ny += movement * self.speed
-        # _LOGGER.info(f"{self.color} {self.ny:.4f} {self.ny:.4f} {self.speed:.4f} {movement:.4f}")
         if self.ny > (1 + self.tail):
             return False
         return True
@@ -37,13 +37,10 @@ class Line():
         line_width = max(1, int(image.width * (width / 100.0)))
         tail_length = int(image.height * self.tail)
 
-        # _LOGGER.info(f"w {width} iw: {image.width} cw {int(image.width * (width / 100.0))} {line_width}")
-
         segment = (tail_length - line_width) / 10.0
         for i in range(10):
             y_start = y - (line_width - 1) - segment * i
             y_end = y_start - segment
-            # _LOGGER.info(f"seg: {segment} y:start: {y_start} y:end {y_end}")
 
             draw.line(
                 (
@@ -76,20 +73,20 @@ class Matrix2d(Twod, GradientEffect):
     CONFIG_SCHEMA = vol.Schema(
         {
             vol.Optional(
+                "gradient",
+                description="Color gradient to display",
+                default="linear-gradient(90deg, rgb(0, 199, 140) 0%, rgb(0, 255, 50) 100%)",
+            ): validate_gradient,
+            vol.Optional(
                 "count",
                 description="Number of code lines in the matrix as a multiplier of matrix pixel width",
-                default=1.0,
+                default=1.9,
             ): vol.All(vol.Coerce(float), vol.Range(min=0.01, max=4.0)),
             vol.Optional(
                 "add_speed",
                 description="Number of code lines to add per second",
-                default=5.0,
+                default=30.0,
             ): vol.All(vol.Coerce(float), vol.Range(min=0.1, max=30.0)),
-            vol.Optional(
-                "a_switch",
-                description="Does a boolean thing",
-                default=False,
-            ): bool,
             vol.Optional(
                 "width",
                 description="Width of code lines as % of matrix",
@@ -98,22 +95,22 @@ class Matrix2d(Twod, GradientEffect):
             vol.Optional(
                 "run_seconds",
                 description="Minimum number of seconds for a code line to run from top to bottom",
-                default=5.0,
+                default=2.0,
             ): vol.All(vol.Coerce(float), vol.Range(min=1, max=10.0)),
             vol.Optional(
                 "tail",
                 description="Code line tail length as a % of the matrix",
-                default = 50,
+                default = 67,
             ): vol.All(vol.Coerce(int), vol.Range(min=1, max=100)),
             vol.Optional(
                 "impulse_decay",
                 description="Decay filter applied to the impulse for development",
-                default=0.1,
+                default=0.01,
             ): vol.All(vol.Coerce(float), vol.Range(min=0.01, max=0.3)),
             vol.Optional(
                 "multiplier",
                 description="audio injection multiplier, 0 is none",
-                default=1,
+                default=10,
             ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=10)),
         }
     )
@@ -128,7 +125,6 @@ class Matrix2d(Twod, GradientEffect):
     def config_updated(self, config):
         super().config_updated(config)
         # copy over your configs here into variables
-        self.a_switch = self._config["a_switch"]
         self.add_speed = self._config["add_speed"]
         self.last_added = 0.0
         self.width = self._config["width"]
@@ -172,9 +168,8 @@ class Matrix2d(Twod, GradientEffect):
         self.impulse = [self.lows_impulse, self.mids_impulse, self.high_impulse]
 
     def add_line(self):
-        # let aging deal with how many lines
-        # maybe revisit later
-        # _LOGGER.info(f"current: {len(self.lines)} count: {self.count}")
+        # let off screen deal with line removal
+        # only add here
         if len(self.lines) < self.count:
             line_random = random.random()
             color = self.get_gradient_color(line_random)
@@ -184,11 +179,9 @@ class Matrix2d(Twod, GradientEffect):
                                    0.1 + line_random * 0.9))
 
     def draw(self):
-
         if self.test:
             self.draw_test(self.m_draw)
 
-        # _LOGGER.info(f"FRAME")
         self.last_added += self.passed
         while self.last_added >= 1.0 / self.add_speed:
             self.last_added -= 1.0 / self.add_speed
