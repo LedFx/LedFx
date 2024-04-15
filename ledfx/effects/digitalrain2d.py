@@ -1,15 +1,16 @@
 import logging
-
-import voluptuous as vol
 import random
-import numpy as np
 
-from ledfx.effects.twod import Twod
+import numpy as np
+import voluptuous as vol
+
 from ledfx.effects.gradient import GradientEffect
+from ledfx.effects.twod import Twod
 
 _LOGGER = logging.getLogger(__name__)
 
-class Line():
+
+class Line:
     def __init__(self, nx, color, offset, speed):
         self.nx = nx
         self.ny = 0
@@ -46,25 +47,24 @@ class Line():
             # _LOGGER.info(f"seg: {segment} y:start: {y_start} y:end {y_end}")
 
             draw.line(
-                (
-                    x, y_start,
-                    x, y_end
-                ),
+                (x, y_start, x, y_end),
                 width=line_width,
-                fill= tuple((self.color * (1.0 - i * 0.09)).astype(int))
+                fill=tuple((self.color * (1.0 - i * 0.09)).astype(int)),
             )
 
         beat_roll = beat_osc + self.offset
         beat_roll = beat_roll - np.floor(beat_roll)
 
         draw.line(
-            (
-                x, y,
-                x, y - (line_width - 1)
-            ),
+            (x, y, x, y - (line_width - 1)),
             width=line_width,
-            fill=tuple((np.array([255, 255, 255]) * (0.5 + beat_roll * 0.5)).astype(int))
+            fill=tuple(
+                (np.array([255, 255, 255]) * (0.5 + beat_roll * 0.5)).astype(
+                    int
+                )
+            ),
         )
+
 
 class Matrix2d(Twod, GradientEffect):
     NAME = "Digital Rain"
@@ -103,7 +103,7 @@ class Matrix2d(Twod, GradientEffect):
             vol.Optional(
                 "tail",
                 description="Code line tail length as a % of the matrix",
-                default = 50,
+                default=50,
             ): vol.All(vol.Coerce(int), vol.Range(min=1, max=100)),
             vol.Optional(
                 "impulse_decay",
@@ -169,7 +169,11 @@ class Matrix2d(Twod, GradientEffect):
         self.high_impulse = self.high_impulse_filter.update(
             data.high_power(filtered=False) * self.multiplier
         )
-        self.impulse = [self.lows_impulse, self.mids_impulse, self.high_impulse]
+        self.impulse = [
+            self.lows_impulse,
+            self.mids_impulse,
+            self.high_impulse,
+        ]
 
     def add_line(self):
         # let aging deal with how many lines
@@ -178,10 +182,14 @@ class Matrix2d(Twod, GradientEffect):
         if len(self.lines) < self.count:
             line_random = random.random()
             color = self.get_gradient_color(line_random)
-            self.lines.append(Line(random.random(),
-                                   color,
-                                   line_random,
-                                   0.1 + line_random * 0.9))
+            self.lines.append(
+                Line(
+                    random.random(),
+                    color,
+                    line_random,
+                    0.1 + line_random * 0.9,
+                )
+            )
 
     def draw(self):
 
@@ -196,7 +204,8 @@ class Matrix2d(Twod, GradientEffect):
 
         # olderst lines are first which suits z order
         for line in self.lines[:]:
-            if not line.update(self.run_seconds, self.passed, self.tail, self.impulse):
+            if not line.update(
+                self.run_seconds, self.passed, self.tail, self.impulse
+            ):
                 self.lines.remove(line)
             line.draw(self.m_draw, self.matrix, self.width, self.beat_osc)
-
