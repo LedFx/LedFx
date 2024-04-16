@@ -12,6 +12,22 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class Line:
+    """
+    The Line class represents a line in the digital rain effect.
+
+    Attributes:
+        nx (float): The normalized x-coordinate of the line.
+        ny (float): The normalized y-coordinate of the line.
+        color (nparray): The color of the line in RGB format
+        speed (float): speed modifier from normal
+        tail (float): The length of the line's tail.
+        offset (float): The offset of the beat pulse
+        impulse_index (int): The index into the bass, mid, high array.
+
+    Methods:
+        update(run_seconds: float, passed: float, tail: float, impulse: list): Updates the line's position.
+        draw(draw, image, width, beat_osc): Draws the line on the image.
+    """
     def __init__(self, nx, color, offset, speed):
         self.nx = nx
         self.ny = 0
@@ -23,6 +39,19 @@ class Line:
         self.impulse_index = int(offset * 3)
 
     def update(self, run_seconds, passed, tail, impulse):
+        ###
+        # Update the line's position
+        #
+        # Args:
+        #   run_seconds (float): The number of seconds for a line to run from top to bottom.
+        #   passed (float): The number of seconds since the last update.
+        #   tail (float): The length of the line's tail.
+        #   impulse (list): The impulse array from the audio data.
+        #
+        # Returns:
+        #   bool: True if the line is still visible, False otherwise.
+        ###
+
         # calculate how much to move
         movement = passed / run_seconds * (1 + impulse[self.impulse_index])
         self.tail = tail
@@ -33,6 +62,16 @@ class Line:
         return True
 
     def draw(self, draw, image, width, beat_osc):
+        ###
+        # Draw the line on the image
+        #
+        # Args:
+        #   draw: The ImageDraw object to draw on.
+        #   image: The image to draw on.
+        #   width: The width of the line.
+        #   beat_osc: The beat oscillator value.
+        ###
+
         x = int(self.nx * image.width)
         y = int(self.ny * image.height)
         line_width = max(1, int(image.width * (width / 100.0)))
@@ -63,7 +102,7 @@ class Line:
         )
 
 
-class Matrix2d(Twod, GradientEffect):
+class DigitalRain2d(Twod, GradientEffect):
     NAME = "Digital Rain"
     CATEGORY = "Matrix"
     # add keys you want hidden or in advanced here
@@ -172,8 +211,11 @@ class Matrix2d(Twod, GradientEffect):
         ]
 
     def add_line(self):
+        ###
+        # Add a new code line to the matrix
         # let off screen deal with line removal
-        # only add here
+        ###
+
         if len(self.lines) < self.count:
             line_random = random.random()
             color = self.get_gradient_color(line_random)
