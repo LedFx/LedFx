@@ -56,7 +56,7 @@ ledfx_presets = {
                 "test": False,
                 "width": 3,
             },
-            "name": "matrix  tint",
+            "name": "Matrix Tint",
         },
         "rainbow": {
             "config": {
