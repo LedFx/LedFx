@@ -133,7 +133,7 @@ ledfx_presets = {
                 "multiplier": 4.0,
                 "rotate": 0,
                 "run_seconds": 3.0,
-                "tail": 30,
+                "tail": 50,
                 "test": False,
                 "width": 30,
             },
