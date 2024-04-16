@@ -28,6 +28,7 @@ class Line:
         update(run_seconds: float, passed: float, tail: float, impulse: list): Updates the line's position.
         draw(draw, image, width, beat_osc): Draws the line on the image.
     """
+
     def __init__(self, nx, color, offset, speed):
         self.nx = nx
         self.ny = 0
