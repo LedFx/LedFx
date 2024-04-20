@@ -1,6 +1,5 @@
 import logging
 import random
-import timeit
 
 import numpy as np
 import vnoise
@@ -133,13 +132,8 @@ class Noise2d(Twod, GradientEffect):
         # if we are pixel stuffing into a seed image, setup here
         # pixels = self.seed_image.load()
 
-        # temp logging switching, will all be removed in due course
-        log = False
-
         # generate arrays of the X adn Y axis of our plane, with a singular Z
         # this should allow libs to use any internal acceleration for unrolling across all points
-        if log:
-            start = timeit.default_timer()
 
         bass_x = self.scale_x * self.lows_impulse
         bass_y = self.scale_y * self.lows_impulse
@@ -157,9 +151,6 @@ class Noise2d(Twod, GradientEffect):
             noise_y, noise_y + scale_y * self.r_width, self.r_width
         )
         z_array = np.array([self.noise_z])
-        if log:
-            next1 = timeit.default_timer()
-            _LOGGER.info(f"array generation time: {next1 - start}")
 
         ###################################################################################
         # This is where the magic happens, calling the lib of choice to get the noise plane
@@ -171,45 +162,19 @@ class Noise2d(Twod, GradientEffect):
             x_array, y_array, z_array, grid_mode=True
         )
 
-        if log:
-            next2 = timeit.default_timer()
-            _LOGGER.info(f"simple noise time: {next2 - next1}")
-
-        # if the lib happens to return in a 3 dimensionsal, even though Z is depth of 1, then squeeze it down
-        self.noise_squeezed = np.squeeze(self.noise_3d)
-
-        if self.noise_squeezed.ndim == 1:
-            self.noise_squeezed = self.noise_squeezed.reshape(1, -1)
+        # slice out the unwanted dimension
+        self.noise_sliced = self.noise_3d[..., 0]
 
         # apply the stetch param to expand the range of the color space, as noise is likely not full -1 to 1
         # TODO: look at what color mapping does with out of range values, do we need to cap here
-        self.noise_stretched = self.noise_squeezed * self.stretch
+        self.noise_stretched = self.noise_sliced * self.stretch
         # normalise the noise from -1,1 range to 0,1
         self.noise_normalised = (self.noise_stretched + 1) / 2
-
-        if log:
-            next3 = timeit.default_timer()
-            _LOGGER.info(f"simple squeeze time: {next3 - next2}")
-
-        # _LOGGER.info(f"x_array: {x_array}")
-        # _LOGGER.info(f"y_array: {y_array}")
-        # _LOGGER.info(f"z_array: {z_array}")
-        # _LOGGER.info(f"simple_noise3d: {self.simple_n3d}")
-        # _LOGGER.info(f"shape: {self.simple_n3d.shape}")
-        # _LOGGER.info(f"min {np.min(self.simple_n3d)}, max {np.max(self.simple_n3d)}")
 
         # map from 0,1 space into the gradient color space via our nicely vecotrised function
         self.color_array = self.get_gradient_color_vectorized2d(
             self.noise_normalised
         ).astype(np.uint8)
 
-        if log:
-            next4 = timeit.default_timer()
-            _LOGGER.info(f"color array time: {next4 - next3}")
-
         # transform the numpy array into a PIL image in one easy step
         self.matrix = Image.fromarray(self.color_array, "RGB")
-
-        if log:
-            next5 = timeit.default_timer()
-            _LOGGER.info(f"image from array time: {next5 - next4}")
