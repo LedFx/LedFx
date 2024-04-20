@@ -126,17 +126,16 @@ class Noise2d(Twod, GradientEffect):
         self.mov = 0.5 * self.speed * self.passed
 
         self.noise_x += self.mov
-        self.noise_y += self.mov
+        # handle y only if we are a matrix
         self.noise_z += self.mov
 
-        # if we are pixel stuffing into a seed image, setup here
-        # pixels = self.seed_image.load()
-
-        # generate arrays of the X adn Y axis of our plane, with a singular Z
-        # this should allow libs to use any internal acceleration for unrolling across all points
-
-        bass_x = self.scale_x * self.lows_impulse
-        bass_y = self.scale_y * self.lows_impulse
+        if self.r_height > 1:
+            self.noise_y += self.mov
+            bass_x = self.scale_x * self.lows_impulse
+            bass_y = self.scale_y * self.lows_impulse
+        else:
+            bass_x = 0
+            bass_y = self.scale_y * self.lows_impulse * (1 / self.r_width)
 
         scale_x = self.scale_x + bass_x
         scale_y = self.scale_y + bass_y
@@ -144,6 +143,8 @@ class Noise2d(Twod, GradientEffect):
         noise_x = self.noise_x - (scale_x * self.r_height / 2)
         noise_y = self.noise_y - (scale_y * self.r_width / 2)
 
+        # generate arrays of the X adn Y axis of our plane, with a singular Z
+        # this should allow libs to use any internal acceleration for unrolling across all points
         x_array = np.linspace(
             noise_x, noise_x + scale_x * self.r_height, self.r_height
         )
