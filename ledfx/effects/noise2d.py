@@ -129,7 +129,6 @@ class Noise2d(Twod, GradientEffect):
         # handle y only if we are a matrix
         self.noise_z += self.mov
 
-
         if self.r_height > 1:
             self.noise_y += self.mov
             bass_x = self.scale_x * self.lows_impulse
