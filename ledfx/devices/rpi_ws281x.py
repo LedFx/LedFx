@@ -27,6 +27,14 @@ COLOR_ORDERS = {
     "BGR": ColorOrder.BGR,
 }
 
+# These pins implement hardware PWM which results in a more responsive
+# experience. However, these pins require root privileges.
+HARDWARE_PWM_PINS = [12, 13, 18, 19]
+
+# These pins are software-based and rely on the timing of the Linux Kernel. This
+# results in noticeable glitches and delays.
+SPI_PINS = [21, 10]
+
 
 class RPI_WS281X(Device):
     """RPi WS281X device support"""
@@ -44,7 +52,7 @@ class RPI_WS281X(Device):
                 vol.Required(
                     "gpio_pin",
                     description="Raspberry Pi GPIO pin your LEDs are connected to",
-                ): vol.In(list([21, 31])),
+                ): vol.In(list(HARDWARE_PWM_PINS + SPI_PINS)),
                 vol.Required(
                     "color_order", description="Color order", default="RGB"
                 ): vol.In(list(COLOR_ORDERS.keys())),
@@ -62,23 +70,42 @@ class RPI_WS281X(Device):
 
     def activate(self):
         try:
-            from rpi_ws281x import PixelStrip
+            from rpi_ws281x import PixelStrip, ws
         except ImportError:
             _LOGGER.warning(
                 "Unable to load ws281x module - are you on a Raspberry Pi?"
             )
             self.deactivate()
+        
+        pin = self.config["gpio_pin"]
+        if pin in HARDWARE_PWM_PINS:
+            _LOGGER.WARNING("Pin %d is a PWM pin and requires root privileges. If the program crashes with permission errors, try running with 'sudo'.")
+
+        strip_types = {
+            ColorOrder.RGB: ws.WS2811_STRIP_RGB,
+            ColorOrder.RBG: ws.WS2811_STRIP_RBG,
+            ColorOrder.GRB: ws.WS2811_STRIP_GRB,
+            ColorOrder.BRG: ws.WS2811_STRIP_BRG,
+            ColorOrder.GBR: ws.WS2811_STRIP_GBR,
+            ColorOrder.BGR: ws.WS2811_STRIP_BGR,
+        }
+        strip_type = strip_types[self.color_order]
 
         self.strip = PixelStrip(
-            self.pixel_count,
-            self.config["gpio_pin"],
-            self.LED_FREQ_HZ,
-            self.LED_DMA,
-            self.LED_INVERT,
-            self.LED_BRIGHTNESS,
-            self.LED_CHANNEL,
+            num=self.pixel_count,
+            pin=self.config["gpio_pin"],
+            freq_hz=self.LED_FREQ_HZ,
+            dma=self.LED_DMA,
+            invert=self.LED_INVERT,
+            brightness=self.LED_BRIGHTNESS,
+            channel=self.LED_CHANNEL,
+            strip_type=strip_type,
         )
         self.strip.begin()
+
+        # We must call the parent active() method to finish setting up this
+        # device.
+        super().activate()
 
     def deactivate(self):
         super().deactivate()
@@ -87,38 +114,14 @@ class RPI_WS281X(Device):
         """Flush LED data to the strip"""
         byteData = data.astype(np.dtype("B"))
 
-        i = 3
+        pixel = 0
         for rgb in byteData:
-            i += 3
             rgb_bytes = rgb.tobytes()
-            self.buffer[i], self.buffer[i + 1], self.buffer[i + 2] = (
+            self.strip.setPixelColor(
+                pixel,
                 rgb_bytes[0],
                 rgb_bytes[1],
                 rgb_bytes[2],
             )
-
-            if self.color_order == ColorOrder.RGB:
-                continue
-            elif self.color_order == ColorOrder.GRB:
-                self.swap(self.buffer, i, i + 1)
-            elif self.color_order == ColorOrder.BGR:
-                self.swap(self.buffer, i, i + 2)
-            elif self.color_order == ColorOrder.RBG:
-                self.swap(self.buffer, i + 1, i + 2)
-            elif self.color_order == ColorOrder.BRG:
-                self.swap(self.buffer, i, i + 1)
-                self.swap(self.buffer, i + 1, i + 2)
-            elif self.color_order == ColorOrder.GBR:
-                self.swap(self.buffer, i, i + 1)
-                self.swap(self.buffer, i, i + 2)
-            for led in len(self.pixel_count):
-                self.strip.setPixelColor(
-                    led,
-                    self.buffer[led],
-                    self.buffer[led + 1],
-                    self.buffer[led + 2],
-                )
-            self.strip.show()
-
-    def swap(self, array, pos1, pos2):
-        array[pos1], array[pos2] = array[pos2], array[pos1]
+            pixel += 1
+        self.strip.show()
