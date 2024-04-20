@@ -179,4 +179,3 @@ class Noise2d(Twod, GradientEffect):
 
         # transform the numpy array into a PIL image in one easy step
         self.matrix = Image.fromarray(self.color_array, "RGB")
-
