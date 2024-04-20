@@ -1,6 +1,5 @@
 import logging
 import random
-import timeit
 
 import numpy as np
 import vnoise
