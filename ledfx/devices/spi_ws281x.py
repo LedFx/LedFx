@@ -64,6 +64,7 @@ class SPI_WS281X(Device):
             )
             _LOGGER.error(described)
             self.deactivate()
+
             raise described from e
         self.spi.mode = 0
         self.spi.max_speed_hz = int(
@@ -78,8 +79,7 @@ class SPI_WS281X(Device):
 
     def flush(self, data):
         """Flush LED data to the strip"""
-        byteData = data.astype(np.dtype("B"))
-        self.spi_write(self.get_ordered_pixel_data(byteData))
+        self.spi_write(self.get_ordered_pixel_data(data))
 
     def get_ordered_pixel_data(self, data):
         return data[:, self.get_rgb_indices()]
