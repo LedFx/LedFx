@@ -63,11 +63,9 @@ vnoise = "^0.1.0"
 spidev = {version = ">=3.5.0", markers = "sys_platform == 'linux'", optional = true}
 
 
-
 [tool.poetry.extras]
 hue = ["python-mbedtls"]
 spi = ["spidev"]
-
 
 [tool.poetry.group.dev]
 optional = true
