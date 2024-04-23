@@ -45,7 +45,7 @@ class SPI_WS281X(Device):
             import spidev
         except ImportError as e:
             described = ImportError("Unable to load spidev module. If you are on a raspberry pi, or another SPI capable linux device, "
-                                    "you can install spidev with 'python -m pip install spidev'.")
+                                    "you can install spidev with 'pip install spidev' inside the ledfx venv.")
             _LOGGER.error(described)
             self.deactivate()
             raise described from e
