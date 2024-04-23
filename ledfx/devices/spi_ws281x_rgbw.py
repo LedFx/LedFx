@@ -21,16 +21,18 @@ class SPI_WS281X_RBGW(SPI_WS281X):
                 vol.Required(
                     "white_mode",
                     description="Whether the white channel should replace the RGB channels' white or should be added to it. "
-                                "After the white value is extracted from the RGB values, in 'Replace' mode "
-                                "the RGB channels' values are reduced by the white amount. In 'Add' mode the RGB values stay the same and "
-                                "the the RGB channels will display the white on top of the White LED. "
-                                "If you select 'Add', please make sure your setup is designed to handle the power consumption and heat dissipation of"
-                                "all four RGBW channels at maximum brightness.",
+                    "After the white value is extracted from the RGB values, in 'Replace' mode "
+                    "the RGB channels' values are reduced by the white amount. In 'Add' mode the RGB values stay the same and "
+                    "the the RGB channels will display the white on top of the White LED. "
+                    "If you select 'Add', please make sure your setup is designed to handle the power consumption and heat dissipation of"
+                    "all four RGBW channels at maximum brightness.",
                     default="Replace",
                 ): vol.In(list(e.value for e in WhiteMode)),
                 vol.Required(
                     "color_order", description="Color order", default="RGBW"
-                ): vol.In("".join(p) for p in list(itertools.permutations("RGBW"))),
+                ): vol.In(
+                    "".join(p) for p in list(itertools.permutations("RGBW"))
+                ),
             }
         )
 

@@ -31,7 +31,9 @@ class SPI_WS281X(Device):
                 ): vol.In([0, 1]),
                 vol.Required(
                     "color_order", description="Color order", default="RGB"
-                ): vol.In(list("".join(p) for p in itertools.permutations("RGB"))),
+                ): vol.In(
+                    list("".join(p) for p in itertools.permutations("RGB"))
+                ),
             }
         )
 
@@ -44,8 +46,10 @@ class SPI_WS281X(Device):
         try:
             import spidev
         except ImportError as e:
-            described = ImportError("Unable to load spidev module. If you are on a raspberry pi, or another SPI capable linux device, "
-                                    "you can install spidev with 'pip install spidev' inside the ledfx venv.")
+            described = ImportError(
+                "Unable to load spidev module. If you are on a raspberry pi, or another SPI capable linux device, "
+                "you can install spidev with 'pip install spidev' inside the ledfx venv."
+            )
             _LOGGER.error(described)
             self.deactivate()
             raise described from e
@@ -54,13 +58,17 @@ class SPI_WS281X(Device):
         try:
             self.spi.open(self._config["spi_bus"], self.SPI_DEVICE)
         except OSError as e:
-            described = OSError("Unable to open SPI device. If you are on a raspberry pi, "
-                                "you may need to enable SPI in 'sudo raspi-config'. Otherwise make sure the device is not used by another process.")
+            described = OSError(
+                "Unable to open SPI device. If you are on a raspberry pi, "
+                "you may need to enable SPI in 'sudo raspi-config'. Otherwise make sure the device is not used by another process."
+            )
             _LOGGER.error(described)
             self.deactivate()
             raise described from e
         self.spi.mode = 0
-        self.spi.max_speed_hz = int(4 * self.LED_FREQ_HZ)  # 4 SPI bits for one period
+        self.spi.max_speed_hz = int(
+            4 * self.LED_FREQ_HZ
+        )  # 4 SPI bits for one period
         super().activate()
 
     def deactivate(self):
@@ -84,9 +92,14 @@ class SPI_WS281X(Device):
         d = np.asarray(data).ravel()
         tx = np.zeros(len(d) * 4, dtype=np.uint8)
         for ibit in range(4):
-            tx[3 - ibit::4] = ((d >> (2 * ibit + 1)) & 1) * 0x60 + \
-                              ((d >> (2 * ibit + 0)) & 1) * 0x06 + 0x88
-        self.spi.writebytes2(tx)  # This doesn't convert to a python list, so it's faster than xfer or writebytes
+            tx[3 - ibit :: 4] = (
+                ((d >> (2 * ibit + 1)) & 1) * 0x60
+                + ((d >> (2 * ibit + 0)) & 1) * 0x06
+                + 0x88
+            )
+        self.spi.writebytes2(
+            tx
+        )  # This doesn't convert to a python list, so it's faster than xfer or writebytes
 
     def get_rgb_indices(self):
         color_order = self._config["color_order"]
