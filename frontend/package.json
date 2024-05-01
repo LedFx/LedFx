@@ -28,7 +28,7 @@
     "immer": "10.0.4",
     "is-electron": "^2.2.2",
     "notistack": "^3.0.1",
-    "oauth-pkce": "0.0.6",
+    "oauth-pkce": "0.0.7",
     "prop-types": "^15.8.1",
     "qrcode": "^1.5.3",
     "qs": "^6.11.2",
