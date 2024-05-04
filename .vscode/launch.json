@@ -3,7 +3,7 @@
     "configurations": [
         {
             "name": "LedFx",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "program": "${workspaceFolder}/ledfx/__main__.py",
             "console": "integratedTerminal",
@@ -18,7 +18,7 @@
         },
         {
             "name": "LedFx (Verbose Logging)",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "program": "${workspaceFolder}/ledfx/__main__.py",
             "args": ["-vv"],
@@ -34,7 +34,7 @@
         },
         {
             "name": "LedFx (Verbose Logging, No Sentry)",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "program": "${workspaceFolder}/ledfx/__main__.py",
             "args": ["-vv", "--offline"],
@@ -50,7 +50,7 @@
         },
         {
             "name": "LedFx (No Sentry)",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "program": "${workspaceFolder}/ledfx/__main__.py",
             "args": ["--offline"],
@@ -66,7 +66,7 @@
         },
         {
             "name": "LedFx (Temp Config)",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "program": "${workspaceFolder}/ledfx/__main__.py",
             "args": ["-c","debug_config", "-p","8887"],
@@ -83,7 +83,7 @@
         },
         {
             "name": "LedFx (Verbose Logging, Temp Config)",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "program": "${workspaceFolder}/ledfx/__main__.py",
             "args": ["-vv","-c","debug_config", "-p","8887"],
@@ -100,7 +100,7 @@
         },
         {
             "name": "LedFx (Verbose Logging, No Sentry, Temp Config)",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "program": "${workspaceFolder}/ledfx/__main__.py",
             "args": ["-vv", "--offline", "-c","debug_config", "-p","8887"],
@@ -117,7 +117,7 @@
         },
         {
             "name": "LedFx (No Sentry, Temp Config)",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "program": "${workspaceFolder}/ledfx/__main__.py",
             "args": ["--offline", "-c","debug_config", "-p","8887"],
