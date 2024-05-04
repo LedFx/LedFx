@@ -641,7 +641,9 @@ class Devices(RegistryLoader):
                     self._ledfx.loop, self._ledfx.thread_executor, device_ip
                 )
             except ValueError:
-                _LOGGER.warning(f"Discarding device {device_ip}")
+                _LOGGER.warning(
+                    f"Discarding device {device_ip} as it could not be resolved."
+                )
                 return
 
             for existing_device in self._ledfx.devices.values():
@@ -649,8 +651,8 @@ class Devices(RegistryLoader):
                     existing_device.config["ip_address"] == device_ip
                     or existing_device.config["ip_address"] == resolved_dest
                 ):
-                    if device_type == "e131":
-                        # check the universes for e131, it might still be okay at a shared ip_address
+                    if device_type in ["e131", "artnet"]:
+                        # check the universes for e131 and artnet, it might still be okay at a shared ip_address
                         # eg. for multi output controllers
                         if (
                             device_config["universe"]
