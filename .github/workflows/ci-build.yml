@@ -175,7 +175,7 @@ jobs:
           path: ${{ github.workspace }}/debug_config/ledfx.log
   build-ledfx-osx:
     name: Build LedFx (OS X)
-    runs-on: macos-13
+    runs-on: macos-14
     strategy:
       matrix:
         python: [3.9.x,3.10.x,3.11.x,3.12.x]
