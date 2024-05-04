@@ -70,7 +70,7 @@ optional = true
 
 [tool.poetry.group.dev.dependencies]
 flake8 = ">=7.0.0,<7.1.0"
-black = ">=24.3.0,<24.4.0"
+black = ">=24.4.2,<24.5.0"
 isort = ">=5.13.2,<5.14.0"
 pre-commit = ">=3.7.0,<3.8.0"
 bokeh = "^3.3.3"
