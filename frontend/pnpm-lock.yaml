@@ -118,7 +118,7 @@ dependencies:
     version: 3.4.4(react-dom@18.2.0)(react@18.2.0)
   reactour:
     specifier: ^1.19.2
-    version: 1.19.3(@types/react@18.2.74)(react-dom@18.2.0)(react-is@18.2.0)(react@18.2.0)(styled-components@6.1.8)
+    version: 1.19.3(@types/react@18.2.74)(react-dom@18.2.0)(react-is@18.2.0)(react@18.2.0)(styled-components@6.1.9)
   sockette:
     specifier: ^2.0.6
     version: 2.0.6
@@ -127,7 +127,7 @@ dependencies:
     version: 7.1.0
   styled-components:
     specifier: ^6.1.8
-    version: 6.1.8(react-dom@18.2.0)(react@18.2.0)
+    version: 6.1.9(react-dom@18.2.0)(react@18.2.0)
   ts-deepmerge:
     specifier: ^7.0.0
     version: 7.0.0
@@ -2240,10 +2240,6 @@ packages:
       '@emotion/utils': 1.2.1
       '@types/react': 18.2.74
       react: 18.2.0
-    dev: false
-
-  /@emotion/unitless@0.8.0:
-    resolution: {integrity: sha512-VINS5vEYAscRl2ZUDiT3uMPlrFQupiKgHz5AA4bCH1miKBg4qtwkim1qPmJj/4WG6TreYMY111rEFsjupcOKHw==}
     dev: false
 
   /@emotion/unitless@0.8.1:
@@ -10003,7 +9999,7 @@ packages:
     dependencies:
       nanoid: 3.3.7
       picocolors: 1.0.0
-      source-map-js: 1.0.2
+      source-map-js: 1.2.0
     dev: false
 
   /postcss@8.4.35:
@@ -10012,7 +10008,7 @@ packages:
     dependencies:
       nanoid: 3.3.7
       picocolors: 1.0.0
-      source-map-js: 1.0.2
+      source-map-js: 1.2.0
     dev: false
 
   /prelude-ls@1.1.2:
@@ -10556,7 +10552,7 @@ packages:
       loose-envify: 1.4.0
     dev: false
 
-  /reactour@1.19.3(@types/react@18.2.74)(react-dom@18.2.0)(react-is@18.2.0)(react@18.2.0)(styled-components@6.1.8):
+  /reactour@1.19.3(@types/react@18.2.74)(react-dom@18.2.0)(react-is@18.2.0)(react@18.2.0)(styled-components@6.1.9):
     resolution: {integrity: sha512-a2/j+xmbGlPMQhMy/zdpSmJN1STc0PcLUxhJbAC+bOcYdWHStFR02j6dhNuF/+IeqpX/d44PvlrRXSTt4LGk6w==}
     peerDependencies:
       react: ^16.3.0 || ^17.0.0-0 || ^18.0.0-0
@@ -10575,7 +10571,7 @@ packages:
       react-is: 18.2.0
       scroll-smooth: 1.1.1
       scrollparent: 2.0.1
-      styled-components: 6.1.8(react-dom@18.2.0)(react@18.2.0)
+      styled-components: 6.1.9(react-dom@18.2.0)(react@18.2.0)
     transitivePeerDependencies:
       - '@types/react'
     dev: false
@@ -11146,8 +11142,8 @@ packages:
     resolution: {integrity: sha512-qnQ7gVMxGNxsiL4lEuJwe/To8UnK7fAnmbGEEH8RpLouuKbeEm0lhbQVFIrNSuB+G7tVrAlVsZgETT5nljf+Iw==}
     dev: false
 
-  /source-map-js@1.0.2:
-    resolution: {integrity: sha512-R0XvVJ9WusLiqTCEiGCmICCMplcCkIwwR11mOSD9CR5u+IXYdiseeEuXCVAjS54zqwkLcPNnmU4OeJ6tUrWhDw==}
+  /source-map-js@1.2.0:
+    resolution: {integrity: sha512-itJW8lvSA0TXEphiRoawsCksnlf8SyvmFzIhltqAHluXd88pkCd+cXJVHTDwdCr0IzwptSm035IHQktUu1QUMg==}
     engines: {node: '>=0.10.0'}
     dev: false
 
@@ -11159,7 +11155,7 @@ packages:
     dependencies:
       abab: 2.0.6
       iconv-lite: 0.6.3
-      source-map-js: 1.0.2
+      source-map-js: 1.2.0
       webpack: 5.91.0
     dev: false
 
@@ -11436,15 +11432,15 @@ packages:
       webpack: 5.91.0
     dev: false
 
-  /styled-components@6.1.8(react-dom@18.2.0)(react@18.2.0):
-    resolution: {integrity: sha512-PQ6Dn+QxlWyEGCKDS71NGsXoVLKfE1c3vApkvDYS5KAK+V8fNWGhbSUEo9Gg2iaID2tjLXegEW3bZDUGpofRWw==}
+  /styled-components@6.1.9(react-dom@18.2.0)(react@18.2.0):
+    resolution: {integrity: sha512-aBOqs0uMsYufFXSE4q6cA6Ty1fwZuMk4BJRHfiGSna59F1otnxiDelwhN4fEwmBtIymmF0ZqXHnpSigr2ps9Cg==}
     engines: {node: '>= 16'}
     peerDependencies:
       react: '>= 16.8.0'
       react-dom: '>= 16.8.0'
     dependencies:
       '@emotion/is-prop-valid': 1.2.1
-      '@emotion/unitless': 0.8.0
+      '@emotion/unitless': 0.8.1
       '@types/stylis': 4.2.0
       css-to-react-native: 3.2.0
       csstype: 3.1.2
