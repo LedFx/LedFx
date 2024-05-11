@@ -63,7 +63,9 @@ class RPI_NEOPIXEL(Device):
 
     def flush(self, data):
         """Flush LED data to the strip"""
-        dtype = [('r', np.float64), ('g', np.float64), ('b', np.float64)]            
-        pixelData = data.view(dtype=dtype).reshape(-1)    #Convert each row to a tuple. In Neopixel library, colors for each pixel are stored as tuples.
+        dtype = [("r", np.float64), ("g", np.float64), ("b", np.float64)]
+        pixelData = data.view(dtype=dtype).reshape(
+            -1
+        )  # Convert each row to a tuple. In Neopixel library, colors for each pixel are stored as tuples.
         self.strip[:] = pixelData[:]
         self.strip.show()
