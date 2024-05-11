@@ -8,14 +8,13 @@ from ledfx.devices import Device
 
 _LOGGER = logging.getLogger(__name__)
 
-#class ColorOrder(Enum):
+# class ColorOrder(Enum):
 #    RGB = 1
 
 
-
-#COLOR_ORDERS = {
+# COLOR_ORDERS = {
 #    "RGB": ColorOrder.RGB,
-#}
+# }
 
 
 class RPI_NEOPIXEL(Device):
@@ -30,14 +29,14 @@ class RPI_NEOPIXEL(Device):
                     "pixel_count",
                     description="Number of individual pixels",
                     default=144,
-                ): vol.All(int, vol.Range(min=1)),                 
-                #vol.Required( #Uncomment to test this list in the frontend. PIN is hardcoded later anyway... 
-                    #"gpio_pin",
-                    #description="Raspberry Pi GPIO pin your LEDs are connected to",
-                #): vol.In(list([17, 18, 19])), # [18, 17, 19] Frontend doesn't allow to create a device if the first element in the list is selected
-                #vol.Required( 
+                ): vol.All(int, vol.Range(min=1)),
+                # vol.Required( #Uncomment to test this list in the frontend. PIN is hardcoded later anyway...
+                # "gpio_pin",
+                # description="Raspberry Pi GPIO pin your LEDs are connected to",
+                # ): vol.In(list([17, 18, 19])), # [18, 17, 19] Frontend doesn't allow to create a device if the first element in the list is selected
+                # vol.Required(
                 #    "color_order", description="Color order", default="RGB"
-                #): vol.In(list(COLOR_ORDERS.keys())),
+                # ): vol.In(list(COLOR_ORDERS.keys())),
             }
         )
 
@@ -46,24 +45,26 @@ class RPI_NEOPIXEL(Device):
 
     def activate(self):
         try:
-            import neopixel #Adafruit-circuitpython-neopixel library
             import board
+            import neopixel  # Adafruit-circuitpython-neopixel library
         except ImportError:
             _LOGGER.warning(
                 "Unable to load Neopixel module - are you on a Raspberry Pi?"
             )
             self.deactivate()
         self.strip = neopixel.NeoPixel(
-            board.D18, #Raspberry Pi GPIO PIN 18, hardcoded
-            self.pixel_count, #Number of pixels
-        )     
+            board.D18,  # Raspberry Pi GPIO PIN 18, hardcoded
+            self.pixel_count,  # Number of pixels
+        )
         super().activate()
 
     def deactivate(self):
         super().deactivate()
 
     def flush(self, data):
-        """Flush LED data to the strip"""    
-        pixelData = [tuple(led) for led in data.tolist()] #Convert each row to a tuple. In Neopixel library, colors for each pixel are stored as tuples.
+        """Flush LED data to the strip"""
+        pixelData = [
+            tuple(led) for led in data.tolist()
+        ]  # Convert each row to a tuple. In Neopixel library, colors for each pixel are stored as tuples.
         self.strip[:] = pixelData[:]
         self.strip.show()
