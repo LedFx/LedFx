@@ -1137,6 +1137,12 @@ class Virtuals:
                     )
                 except RuntimeError:
                     pass
+
+            # This adds support for configs that are configured as paused
+            # via the active key if it exists. Let the setter deal with it
+            if "active" in virtual and not virtual["active"]:
+                self._ledfx.virtuals.get(virtual["id"]).active = False
+
             self._ledfx.events.fire_event(
                 VirtualConfigUpdateEvent(virtual["id"], virtual["config"])
             )
