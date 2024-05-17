@@ -147,7 +147,7 @@ class AudioInputSource:
                 vol.Optional("mic_rate", default=44100): int,
                 vol.Optional("fft_size", default=FFT_SIZE): int,
                 vol.Optional("min_volume", default=0.2): vol.All(
-                    vol.Coerce(float), vol.Range(min=0.0, max=10.0)
+                    vol.Coerce(float), vol.Range(min=0.0, max=1.0)
                 ),
                 vol.Optional(
                     "audio_device", default=default_device_index
