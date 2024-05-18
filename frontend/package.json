@@ -56,7 +56,7 @@
     "use-debounce": "^10.0.0",
     "use-indexeddb": "^2.0.2",
     "use-long-press": "^3.2.0",
-    "web-vitals": "^3.5.2",
+    "web-vitals": "^4.0.0",
     "webmidi": "^3.1.8",
     "workbox-core": "^7.0.0",
     "workbox-expiration": "^7.0.0",
