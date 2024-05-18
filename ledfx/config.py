@@ -722,6 +722,13 @@ def migrate_config(old_config):
             "name": scenes[scene_id]["name"],
         }
 
+    # if audio:min_volume is present and greater than 1 then set to a default of
+    # 0.2, old range was 0 to 10, but effective range is only 0 to 1, anything
+    # >= 1 will just squelch all audio, source of error for some users while
+    # trying to make audio work and blindly pushing sliders
+    if new_config.get("audio", {}).get("min_volume", 0) > 1:
+        new_config["audio"]["min_volume"] = 0.2
+
     _LOGGER.warning("Finished migrating config.")
     return new_config
 
