@@ -233,8 +233,8 @@ devDependencies:
     specifier: 2.29.1
     version: 2.29.1(@typescript-eslint/parser@7.5.0)(eslint-import-resolver-typescript@3.6.1)(eslint@8.57.0)
   eslint-plugin-json:
-    specifier: ^3.1.0
-    version: 3.1.0
+    specifier: ^4.0.0
+    version: 4.0.0
   eslint-plugin-jsx-a11y:
     specifier: 6.8.0
     version: 6.8.0(eslint@8.57.0)
@@ -6256,9 +6256,9 @@ packages:
       - typescript
     dev: false
 
-  /eslint-plugin-json@3.1.0:
-    resolution: {integrity: sha512-MrlG2ynFEHe7wDGwbUuFPsaT2b1uhuEFhJ+W1f1u+1C2EkXmTYJp4B1aAdQQ8M+CC3t//N/oRKiIVw14L2HR1g==}
-    engines: {node: '>=12.0'}
+  /eslint-plugin-json@4.0.0:
+    resolution: {integrity: sha512-l/P3WTzl2HI8PbwsbDIrZ+6jvwQI4TGuz20ReJkG3Y+gZS5ZurTgx+gBmuLpOgiqMyDJWyJ7+GCjevWtNYQcUg==}
+    engines: {node: '>=18.0'}
     dependencies:
       lodash: 4.17.21
       vscode-json-languageservice: 4.2.1
