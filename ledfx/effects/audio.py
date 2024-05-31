@@ -288,6 +288,8 @@ class AudioInputSource:
             if hostapis[device["hostapi"]]["name"] == "Windows WASAPI":
                 if "Loopback" in device["name"]:
                     ch = 2
+                if "SteelSeries Sonar" in device["name"]:
+                    ch = 8
 
             if hostapis[device["hostapi"]]["name"] == "WEB AUDIO":
                 ledfx.api.websocket.ACTIVE_AUDIO_STREAM = self._stream = (
