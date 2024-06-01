@@ -42,8 +42,8 @@ dependencies:
     specifier: ^2.0.0
     version: 2.0.0
   chart.js:
-    specifier: 4.4.2
-    version: 4.4.2
+    specifier: 4.4.3
+    version: 4.4.3
   color:
     specifier: ^4.2.3
     version: 4.2.3
@@ -82,7 +82,7 @@ dependencies:
     version: 18.2.0
   react-chartjs-2:
     specifier: 5.2.0
-    version: 5.2.0(chart.js@4.4.2)(react@18.2.0)
+    version: 5.2.0(chart.js@4.4.3)(react@18.2.0)
   react-dom:
     specifier: ^18.2.0
     version: 18.2.0(react@18.2.0)
@@ -4732,8 +4732,8 @@ packages:
     engines: {node: '>=12.20'}
     dev: false
 
-  /chart.js@4.4.2:
-    resolution: {integrity: sha512-6GD7iKwFpP5kbSD4MeRRRlTnQvxfQREy36uEtm1hzHzcOqwWx0YEHuspuoNlslu+nciLIB7fjjsHkUv/FzFcOg==}
+  /chart.js@4.4.3:
+    resolution: {integrity: sha512-qK1gkGSRYcJzqrrzdR6a+I0vQ4/R+SoODXyAjscQ/4mzuNzySaMCd+hyVxitSY1+L2fjPD1Gbn+ibNqRmwQeLw==}
     engines: {pnpm: '>=8'}
     dependencies:
       '@kurkle/color': 0.3.2
@@ -10259,13 +10259,13 @@ packages:
       whatwg-fetch: 3.6.20
     dev: false
 
-  /react-chartjs-2@5.2.0(chart.js@4.4.2)(react@18.2.0):
+  /react-chartjs-2@5.2.0(chart.js@4.4.3)(react@18.2.0):
     resolution: {integrity: sha512-98iN5aguJyVSxp5U3CblRLH67J8gkfyGNbiK3c+l1QI/G4irHMPQw44aEPmjVag+YKTyQ260NcF82GTQ3bdscA==}
     peerDependencies:
       chart.js: ^4.1.1
       react: ^16.8.0 || ^17.0.0 || ^18.0.0
     dependencies:
-      chart.js: 4.4.2
+      chart.js: 4.4.3
       react: 18.2.0
     dev: false
 
