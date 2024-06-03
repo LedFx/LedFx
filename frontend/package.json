@@ -14,7 +14,7 @@
     "@mui/material": "^5.15.11",
     "@mui/styles": "^5.15.11",
     "@mui/x-data-grid": "^6.19.5",
-    "@testing-library/react": "^14.2.1",
+    "@testing-library/react": "^16.0.0",
     "@types/qs": "^6.9.11",
     "@types/reactour": "^1.18.5",
     "axios": "^1.6.7",
