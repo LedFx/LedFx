@@ -61,9 +61,9 @@ class Strobe(AudioReactiveEffect, GradientEffect):
         self.brightness = (
             ((-o % (1 / self.freq)) * self.freq) ** self.strobe_decay
         ) * (1 - o) ** self.beat_decay
-        
+
         bar_idx = int(bar)
-        strobe_mask = int(self.strobe_pattern[bar_idx]=="*")
+        strobe_mask = int(self.strobe_pattern[bar_idx] == "*")
         self.brightness *= strobe_mask
 
     def render(self):
