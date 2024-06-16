@@ -25,7 +25,7 @@ ledfx-loopback-install = "loopback.__main__:copy_lib"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<3.13"
-numpy = "^1.26.2"
+numpy = "^2.0.0"
 cffi = ">=0.16.0"
 wheel = ">=0.36.2"
 aiohttp = "^3.9.1"
