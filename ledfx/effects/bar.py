@@ -38,7 +38,12 @@ class BarAudioEffect(AudioReactiveEffect, GradientEffect):
                 default=1,
             ): vol.In(
                 list([1, 2])
-            ),  # if add 4, to skip every bar, a bit of extra work is required in audio.py
+            ),
+            vol.Optional(
+                "delay_beats",
+                description="Delay effect by x amount of beats",
+                default=0,
+            ): vol.All(vol.Coerce(int), vol.Range(min=0, max=8)),
         }
     )
 
@@ -49,13 +54,49 @@ class BarAudioEffect(AudioReactiveEffect, GradientEffect):
         self.color_idx = 0
         self.bar_len = 0.3
         self.beat_count = 0
+        self.beat_count_before = 0
+        self.delayed = False
+        self.first_beat = True
+        self.has_beat_once = False
+        self.beats_since_active = 0
         self.last_beat = 0.0
+
+
 
     def audio_data_updated(self, data):
         # Run linear beat oscillator through easing method
         self.beat_oscillator = data.beat_oscillator()
         self.beat_now = data.bpm_beat_now()
-        self.beat_count = data.beat_counter
+
+        # Skips first beat after activation to sync up all segments
+        if self.first_beat:
+            self.beat_count_before = data.beat_counter
+            self.beat_count = data.beat_counter
+            self.first_beat = False
+        else:
+            self.beat_count_before = self.beat_count
+            self.beat_count = data.beat_counter
+
+        # Fixes a bug where delay would be out of sync when music is not playing on effect activation
+        if not self.has_beat_once:
+            if self.beat_count_before != self.beat_count:
+                self.has_beat_once = True
+                return
+            else:
+                return
+            
+        # Counts the beats since activation of effect; Unblocks render function when specified amount of beats is reached
+        if self._config["delay_beats"] > 0 and not self.delayed:
+            print(str(self.beat_count_before) + " " + str(self.beat_count) + " " + str(self.beats_since_active))
+            if self.beat_count_before == 3 and self.beat_count == 0:
+                self.beats_since_active += 1
+            else:
+                self.beats_since_active += (self.beat_count - self.beat_count_before)
+
+            if self.beats_since_active >= self._config["delay_beats"]:
+                self.delayed = True
+            else:
+                return
 
         # color change and phase
         if self.last_beat > 0.2 and self.beat_oscillator < 0.1:
@@ -68,6 +109,10 @@ class BarAudioEffect(AudioReactiveEffect, GradientEffect):
         self.last_beat = self.beat_oscillator
 
     def render(self):
+        # Blocks render function until specified amount of beats since activation is reached
+        if self._config["delay_beats"] > 0 and not self.delayed:
+            return
+        
         if self._config["ease_method"] == "ease_in_out":
             x = 0.5 * np.sin(np.pi * (self.beat_oscillator - 0.5)) + 0.5
         elif self._config["ease_method"] == "ease_in":
