@@ -36,9 +36,7 @@ class BarAudioEffect(AudioReactiveEffect, GradientEffect):
                 "skip_every",
                 description="If skipping beats, skip every",
                 default=1,
-            ): vol.In(
-                list([1, 2])
-            ),
+            ): vol.In(list([1, 2])),
             vol.Optional(
                 "delay_beats",
                 description="Delay effect by x amount of beats",
@@ -61,8 +59,6 @@ class BarAudioEffect(AudioReactiveEffect, GradientEffect):
         self.beats_since_active = 0
         self.last_beat = 0.0
 
-
-
     def audio_data_updated(self, data):
         # Run linear beat oscillator through easing method
         self.beat_oscillator = data.beat_oscillator()
@@ -84,14 +80,22 @@ class BarAudioEffect(AudioReactiveEffect, GradientEffect):
                 return
             else:
                 return
-            
+
         # Counts the beats since activation of effect; Unblocks render function when specified amount of beats is reached
         if self._config["delay_beats"] > 0 and not self.delayed:
-            print(str(self.beat_count_before) + " " + str(self.beat_count) + " " + str(self.beats_since_active))
+            print(
+                str(self.beat_count_before)
+                + " "
+                + str(self.beat_count)
+                + " "
+                + str(self.beats_since_active)
+            )
             if self.beat_count_before == 3 and self.beat_count == 0:
                 self.beats_since_active += 1
             else:
-                self.beats_since_active += (self.beat_count - self.beat_count_before)
+                self.beats_since_active += (
+                    self.beat_count - self.beat_count_before
+                )
 
             if self.beats_since_active >= self._config["delay_beats"]:
                 self.delayed = True
@@ -112,7 +116,7 @@ class BarAudioEffect(AudioReactiveEffect, GradientEffect):
         # Blocks render function until specified amount of beats since activation is reached
         if self._config["delay_beats"] > 0 and not self.delayed:
             return
-        
+
         if self._config["ease_method"] == "ease_in_out":
             x = 0.5 * np.sin(np.pi * (self.beat_oscillator - 0.5)) + 0.5
         elif self._config["ease_method"] == "ease_in":
