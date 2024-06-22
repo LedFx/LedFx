@@ -9,7 +9,6 @@ from ledfx.effects import DummyEffect
 from ledfx.events import SceneActivatedEvent
 from ledfx.utils import generate_id
 
-
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -225,7 +224,9 @@ class ScenesEndpoint(RestEndpoint):
                         effect["config"] = virtual.active_effect.config
                         # effect['name'] = virtual.active_effect.name
                     else:
-                        _LOGGER.debug(f"Skipping DummyEffect for virtual {virtual.id}")
+                        _LOGGER.debug(
+                            f"Skipping DummyEffect for virtual {virtual.id}"
+                        )
                 scene_config["virtuals"][virtual.id] = effect
         else:
             virtuals = data.get("virtuals")
