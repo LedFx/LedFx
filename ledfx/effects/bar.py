@@ -1,3 +1,5 @@
+import logging
+
 import numpy as np
 import voluptuous as vol
 
@@ -58,7 +60,9 @@ class BarAudioEffect(AudioReactiveEffect, GradientEffect):
     def audio_data_updated(self, data):
         # Run linear beat oscillator through easing method
         self.beat_oscillator = data.beat_oscillator()
-        self.beat_oscillator = (self.beat_oscillator + self._config["beat_offset"]) % 1.0
+        self.beat_oscillator = (
+            self.beat_oscillator + self._config["beat_offset"]
+        ) % 1.0
         self.beat_count = data.beat_counter
 
         # color change and phase
