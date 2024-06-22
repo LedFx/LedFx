@@ -1,8 +1,11 @@
 import numpy as np
 import voluptuous as vol
+import logging
 
 from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.gradient import GradientEffect
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class BarAudioEffect(AudioReactiveEffect, GradientEffect):
@@ -33,6 +36,11 @@ class BarAudioEffect(AudioReactiveEffect, GradientEffect):
                 default="none",
             ): vol.In(list(["none", "odds", "even"])),
             vol.Optional(
+                "beat_offset",
+                description="Offset the beat",
+                default=0,
+            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
+            vol.Optional(
                 "skip_every",
                 description="If skipping beats, skip every",
                 default=1,
@@ -44,7 +52,6 @@ class BarAudioEffect(AudioReactiveEffect, GradientEffect):
 
     def on_activate(self, pixel_count):
         self.beat_oscillator = 0
-        self.beat_now = False
         self.phase = 0
         self.color_idx = 0
         self.bar_len = 0.3
@@ -54,7 +61,7 @@ class BarAudioEffect(AudioReactiveEffect, GradientEffect):
     def audio_data_updated(self, data):
         # Run linear beat oscillator through easing method
         self.beat_oscillator = data.beat_oscillator()
-        self.beat_now = data.bpm_beat_now()
+        self.beat_oscillator = (self.beat_oscillator + self._config["beat_offset"]) % 1.0
         self.beat_count = data.beat_counter
 
         # color change and phase
