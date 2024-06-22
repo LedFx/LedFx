@@ -1,11 +1,8 @@
 import numpy as np
 import voluptuous as vol
-import logging
 
 from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.gradient import GradientEffect
-
-_LOGGER = logging.getLogger(__name__)
 
 
 class BarAudioEffect(AudioReactiveEffect, GradientEffect):
