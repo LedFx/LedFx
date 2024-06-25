@@ -42,7 +42,7 @@ class BarAudioEffect(AudioReactiveEffect, GradientEffect):
             vol.Optional(
                 "invert",
                 description="Inverts the phase of the effect.",
-                default=False
+                default=False,
             ): bool,
         }
     )
@@ -83,7 +83,9 @@ class BarAudioEffect(AudioReactiveEffect, GradientEffect):
             x = self.beat_oscillator
 
         # Inverts the current phase when required; introducing a new variable to not mess with program flow
-        real_phase = self.phase if not self._config["invert"] else 1 - self.phase
+        real_phase = (
+            self.phase if not self._config["invert"] else 1 - self.phase
+        )
 
         # Compute position of bar start and stop
         if self._config["mode"] == "wipe":
