@@ -9,7 +9,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class DummyDevice(Device):
-    """Dummy device for brower render only"""
+    """Dummy device for browser render only"""
 
     CONFIG_SCHEMA = vol.Schema(
         {
