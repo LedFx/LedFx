@@ -2005,13 +2005,13 @@ files = [
 
 [[package]]
 name = "sacn"
-version = "1.9.0"
+version = "1.10.0"
 description = "sACN / E1.31 module for easy handling of DMX data over ethernet"
 optional = false
 python-versions = ">=3.6"
 files = [
-    {file = "sacn-1.9.0-py3-none-any.whl", hash = "sha256:17bd6b68474569c3088c6523ba71b7d28dfab389d2475c21dd9ac9b59a98f9f6"},
-    {file = "sacn-1.9.0.tar.gz", hash = "sha256:2e2980d08f32d6d763164db8e225af2898f4471dce11a60e48826d8ab447878a"},
+    {file = "sacn-1.10.0-py3-none-any.whl", hash = "sha256:358ce929479d44b5d86204af4a29f7ec6cab9bcfa8a17b7d9d9d241d538954c8"},
+    {file = "sacn-1.10.0.tar.gz", hash = "sha256:6764ddfed75761f43dfd0bccd4d793fce810fd361adc242d5a8f0ed43977f80a"},
 ]
 
 [[package]]
