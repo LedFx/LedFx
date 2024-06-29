@@ -70,39 +70,45 @@ class AudioInputSource:
         """
         device_list = sd.query_devices()
         default_output_device = sd.default.device["output"]
-        # target device should be the name of the default_output device plus " [Loopback]"
-        target_device = (
-            f"{device_list[default_output_device]['name']} [Loopback]"
-        )
-        # We need to run over the device list looking for the target device
-        # NOTE: Some sound drivers truncate the device name, so we may not find a match
-        for device_index, device in enumerate(device_list):
-            if device["name"] == target_device:
-                # Return the loopback device index
-                _LOGGER.debug(
-                    f"Default audio loopback device found: {device['name']}"
-                )
-                return device_index
-        # If we don't match a Loopback device matching output found - return the default input device index
-        default_input_device_idx = sd.default.device["input"]
-        # The default input device index is not always valid (i.e no default input devices)
-        if default_input_device_idx in AudioInputSource.valid_device_indexes():
-            _LOGGER.debug(
-                "No default audio loopback device found. Using default input device."
-            )
-            return default_input_device_idx
+        if len(device_list) == 0 or default_output_device == -1:
+            _LOGGER.warn("No audio output devices found.")
         else:
-            # Return the first valid input device index if we can't find a valid default input device
-            if len(AudioInputSource.valid_device_indexes()) > 0:
+            # target device should be the name of the default_output device plus " [Loopback]"
+            target_device = (
+                f"{device_list[default_output_device]['name']} [Loopback]"
+            )
+            # We need to run over the device list looking for the target device
+            # NOTE: Some sound drivers truncate the device name, so we may not find a match
+            for device_index, device in enumerate(device_list):
+                if device["name"] == target_device:
+                    # Return the loopback device index
+                    _LOGGER.debug(
+                        f"Default audio loopback device found: {device['name']}"
+                    )
+                    return device_index
+            # If we don't match a Loopback device matching output found - return the default input device index
+            default_input_device_idx = sd.default.device["input"]
+
+        # The default input device index is not always valid (i.e no default input devices)
+        valid_device_indexes = AudioInputSource.valid_device_indexes()
+        if len(valid_device_indexes) == 0:
+            _LOGGER.warning(
+                "No valid audio input devices found. Unable to use audio reactive effects."
+            )
+            return None
+        else:
+            if default_input_device_idx in valid_device_indexes:
                 _LOGGER.debug(
-                    "No valid default audio input device found. Using first valid input device."
+                    "No default audio loopback device found. Using default input device."
                 )
-                return next(iter(AudioInputSource.valid_device_indexes()))
+                return default_input_device_idx
             else:
-                _LOGGER.warning(
-                    "No valid audio input devices found. Unable to use audio reactive effects."
-                )
-                return None
+                # Return the first valid input device index if we can't find a valid default input device
+                if len(valid_device_indexes) > 0:
+                    _LOGGER.debug(
+                        "No valid default audio input device found. Using first valid input device."
+                    )
+                    return next(iter(valid_device_indexes))
 
     @staticmethod
     def query_hostapis():
