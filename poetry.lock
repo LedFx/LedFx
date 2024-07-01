@@ -1793,37 +1793,37 @@ cli = ["click (>=5.0)"]
 
 [[package]]
 name = "python-mbedtls"
-version = "2.9.2"
+version = "2.10.1"
 description = "hash, hmac, RSA, ECC, X.509, TLS, DTLS, handshakes, and secrets with an mbed TLS back end"
 optional = true
 python-versions = "*"
 files = [
-    {file = "python-mbedtls-2.9.2.tar.gz", hash = "sha256:f541ccd23da2722724fd026c707a652883c497fe67340a8f1adb6ac73c487b31"},
-    {file = "python_mbedtls-2.9.2-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:323d2d0983872d613efcc273bf57bb9e8506747534fc528aa21e1da05e0a656f"},
-    {file = "python_mbedtls-2.9.2-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:afc54533baf73640173f06cd527ccce3cc0c67f7b57e4d30e12e18792ffaacd1"},
-    {file = "python_mbedtls-2.9.2-cp310-cp310-musllinux_1_1_i686.whl", hash = "sha256:d44b43e3c1b4ab60b535999626121ecc4861bad22defd87bfb78b64afc4d96d0"},
-    {file = "python_mbedtls-2.9.2-cp310-cp310-musllinux_1_1_x86_64.whl", hash = "sha256:cc5882e3c5b300f969eb8ef0bb8c037fe82fe339d99dae14d2da880b2dc33715"},
-    {file = "python_mbedtls-2.9.2-cp310-cp310-win_amd64.whl", hash = "sha256:75d42a156d4b07d2dfdaafbd6f33109f1be9be2b8a37fc8388841c6d44e3ddfb"},
-    {file = "python_mbedtls-2.9.2-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:2845256a02b00074be24b2f2019ad0902665405ed9a6023313047ed14cde9c2f"},
-    {file = "python_mbedtls-2.9.2-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:907822e55fd70dd708eea40154dffd06f68ce513a8c56ed9efff6727dc4797f4"},
-    {file = "python_mbedtls-2.9.2-cp311-cp311-musllinux_1_1_i686.whl", hash = "sha256:d52673ccfdeac5f224c9d85ea8497e516b7af648114e010df6f9dafe3045e150"},
-    {file = "python_mbedtls-2.9.2-cp311-cp311-musllinux_1_1_x86_64.whl", hash = "sha256:c9e53053a6761115f37b8f54a573e710e0484312b78049f068b9f75a23cb4e64"},
-    {file = "python_mbedtls-2.9.2-cp311-cp311-win_amd64.whl", hash = "sha256:bfe946fa90081e5e4c8b45e7949e540ce476d5e00fb5a689f0bab4de09b42dde"},
-    {file = "python_mbedtls-2.9.2-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:a0d4ebb63b2e8afd9577ad98a04c9447ee05d0d6803901d8ab1c59190acb713a"},
-    {file = "python_mbedtls-2.9.2-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:d6fb174f0ba6e2e43590ec821ad2be84268deb940380209a4427e998fdb8fef7"},
-    {file = "python_mbedtls-2.9.2-cp312-cp312-musllinux_1_1_i686.whl", hash = "sha256:47bef40919d0b18469c147089d937eb5f4f51658f72245e1b20d744d81435c9f"},
-    {file = "python_mbedtls-2.9.2-cp312-cp312-musllinux_1_1_x86_64.whl", hash = "sha256:d8d00a3790fc6784cf63e51ed89c861a05ce2b40020d0e35e30ca68c605e9289"},
-    {file = "python_mbedtls-2.9.2-cp312-cp312-win_amd64.whl", hash = "sha256:052c1a636654884ecce6764f4d1d738f0e432b30c52984f62b1428e353c2c171"},
-    {file = "python_mbedtls-2.9.2-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:d0e2651ca19144b1a3ad63a0e3fa3021bd23784973bc692eb2df0c5adc7da2b9"},
-    {file = "python_mbedtls-2.9.2-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:5cc80f6ac5491118c86428cfb90dafd85c046fbaf262afa57246fe4d681bd567"},
-    {file = "python_mbedtls-2.9.2-cp38-cp38-musllinux_1_1_i686.whl", hash = "sha256:ef593807041ffc4568bf3727938476d183b85999abd5645963e3f063875cbd30"},
-    {file = "python_mbedtls-2.9.2-cp38-cp38-musllinux_1_1_x86_64.whl", hash = "sha256:5ba69548cf13150bbea650be26ab8ee901004d0096737c20e071a2a754dba40e"},
-    {file = "python_mbedtls-2.9.2-cp38-cp38-win_amd64.whl", hash = "sha256:631bea08fe849275f6a915aa6041be4825052648c32cd5dbb295dbfceeed0c3f"},
-    {file = "python_mbedtls-2.9.2-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:70f0dda6dc4c4b0d03e4b30db20d066b27abcde97968d2ef4591e63984f4e0cc"},
-    {file = "python_mbedtls-2.9.2-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:7186403434b12dcbe3012a5633e19bcb51c5bc7a9dd2658cdf8358dee3db30f3"},
-    {file = "python_mbedtls-2.9.2-cp39-cp39-musllinux_1_1_i686.whl", hash = "sha256:a593359d48391e72a02b45bdcb9e10c5d85e1d137bf2b715e30b9367029cbda5"},
-    {file = "python_mbedtls-2.9.2-cp39-cp39-musllinux_1_1_x86_64.whl", hash = "sha256:005081d7ee28c3e11431e94c4b5907313879300dce6ab3e48cee3937629812ee"},
-    {file = "python_mbedtls-2.9.2-cp39-cp39-win_amd64.whl", hash = "sha256:038c8df7e95db34cec928fb41f00360a3cc0061909fb22b03a2ccf43146df939"},
+    {file = "python-mbedtls-2.10.1.tar.gz", hash = "sha256:a1f8ac8a6e810f80d3e8d26561e787d04047c2d098e9ce21b9266174f124e00c"},
+    {file = "python_mbedtls-2.10.1-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:4cde7a4c3d468d29acef9503befd901af47d812dd6fd3752aac318a09c1e24e9"},
+    {file = "python_mbedtls-2.10.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:dcc2c7ad83d9de6a029f5fe1452881a7652503f150e694e89344aadf67e25a00"},
+    {file = "python_mbedtls-2.10.1-cp310-cp310-musllinux_1_1_i686.whl", hash = "sha256:2dcb285807712ae28b065f4db0423044a97faa8f8265098182f527212fb22451"},
+    {file = "python_mbedtls-2.10.1-cp310-cp310-musllinux_1_1_x86_64.whl", hash = "sha256:7f92b5356d3ca6f13ae323b155a75b93c3e03848bf81c7f965584acaf58b5c97"},
+    {file = "python_mbedtls-2.10.1-cp310-cp310-win_amd64.whl", hash = "sha256:29155fdf680a99827227dec2631b8d48488fec9bd4d74ce05da77ab0c911f22b"},
+    {file = "python_mbedtls-2.10.1-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:5175e620a415c4142e29f0041656425cddfcc1b551bf6309d01402de4ce3b6ff"},
+    {file = "python_mbedtls-2.10.1-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:3f2316a1ba4909e35d378a2d7ab957bd67b98501f8f6c875160aeb76de306981"},
+    {file = "python_mbedtls-2.10.1-cp311-cp311-musllinux_1_1_i686.whl", hash = "sha256:1f70b096ce8b8110ecd92e64f721a4ea8782bd5eba3f132fb6907c5b3ad8e1e0"},
+    {file = "python_mbedtls-2.10.1-cp311-cp311-musllinux_1_1_x86_64.whl", hash = "sha256:6d80fd3cb6437aa5500a1981fc69a8c26fffd3f2ba2cab00d2ca5c523e49dad9"},
+    {file = "python_mbedtls-2.10.1-cp311-cp311-win_amd64.whl", hash = "sha256:b8576cc3bc12291d2dcdf15f1ee37649cfd3590528a4b9a729aada5aed5a1635"},
+    {file = "python_mbedtls-2.10.1-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:2dccf478a00762d60033bc11a202dfc5f3f1da4921cb793f6741a29c3ab34771"},
+    {file = "python_mbedtls-2.10.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:38fe76bcd959c4a3ae575df6d5957bbf2005b5a1119d1625bc0e3da889212b16"},
+    {file = "python_mbedtls-2.10.1-cp312-cp312-musllinux_1_1_i686.whl", hash = "sha256:c9ad78bee9e7460d8291b78451d309debd49cdf82faeee2d2a378c6947dd5477"},
+    {file = "python_mbedtls-2.10.1-cp312-cp312-musllinux_1_1_x86_64.whl", hash = "sha256:00af93c71fc408f4d886070b436449afa0e53ad5e5b98eb382ad91358c2c33ef"},
+    {file = "python_mbedtls-2.10.1-cp312-cp312-win_amd64.whl", hash = "sha256:274dfe1e5712c6a8a07cf3a092a2b43967d83ff23e1534b46b0aa6b41a52ddd0"},
+    {file = "python_mbedtls-2.10.1-cp38-cp38-macosx_11_0_arm64.whl", hash = "sha256:99de3af3265a931b89ad490ef8d262b024ccf1111dd88bbeeeb1d8050d2e18ee"},
+    {file = "python_mbedtls-2.10.1-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:a1ecaef4235a58411b6faf623b4e3f64e5aa2bb74f61b68806167c738367edc7"},
+    {file = "python_mbedtls-2.10.1-cp38-cp38-musllinux_1_1_i686.whl", hash = "sha256:fd2bac338882221b46fee8c1c98ed10e848cd6d6db2ee71c95d38d67abfe1715"},
+    {file = "python_mbedtls-2.10.1-cp38-cp38-musllinux_1_1_x86_64.whl", hash = "sha256:23be9a587adcd84fa119b2753eafe24b9b7130ef4092cb2f34fa5faeec8cfc59"},
+    {file = "python_mbedtls-2.10.1-cp38-cp38-win_amd64.whl", hash = "sha256:66a5e36694cad3011f35857ff3cb1dc23e36d8b9a7e9e6e30a26f1fd628d5928"},
+    {file = "python_mbedtls-2.10.1-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:b9dd25824dd4f8a78e84f9c2d91ad18fbd13395a36c1e9169656e91392e9addc"},
+    {file = "python_mbedtls-2.10.1-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:994e4f3c4fece1fb93ba40b0daa5844ffa32dbef74097e30f944faa0239888cf"},
+    {file = "python_mbedtls-2.10.1-cp39-cp39-musllinux_1_1_i686.whl", hash = "sha256:04d8bd56d5bcf41b64296be7bcaaf2cac3d0d6bf9134934a0a221b0898321589"},
+    {file = "python_mbedtls-2.10.1-cp39-cp39-musllinux_1_1_x86_64.whl", hash = "sha256:9e00a0812ed0864b70dfb43979d881885f875525db5c001db541ba96907eb1db"},
+    {file = "python_mbedtls-2.10.1-cp39-cp39-win_amd64.whl", hash = "sha256:2ad116a169bfaf9d37ffd9b2b96799c9aa844e08119290be20db6a7ede5822f0"},
 ]
 
 [package.dependencies]
