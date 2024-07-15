@@ -50,7 +50,7 @@ class VirtualsEndpoint(RestEndpoint):
 
     async def put(self) -> web.Response:
         """
-        Get info of all virtuals
+        Toggles a global pause on all virtuals
 
         Returns:
             web.Response: The response containing the paused virtuals.
