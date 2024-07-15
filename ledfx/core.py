@@ -324,7 +324,9 @@ class LedFxCore:
                     )
 
     def start(self, open_ui=False, pause_all=False):
-        async_fire_and_forget(self.async_start(open_ui=open_ui, pause_all=pause_all), self.loop)
+        async_fire_and_forget(
+            self.async_start(open_ui=open_ui, pause_all=pause_all), self.loop
+        )
 
         try:
             self.loop.run_forever()
@@ -383,7 +385,9 @@ class LedFxCore:
         await self.devices.async_initialize_devices()
 
         self.zeroconf = ZeroConfRunner(ledfx=self)
-        self.virtuals.create_from_config(self.config["virtuals"], pause_all=pause_all)
+        self.virtuals.create_from_config(
+            self.config["virtuals"], pause_all=pause_all
+        )
         self.integrations.create_from_config(self.config["integrations"])
 
         if self.config["scan_on_startup"]:
