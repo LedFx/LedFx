@@ -247,7 +247,7 @@ jobs:
   build-ledfx-osx-m1:
     name: Build LedFx (OS X) (Apple Silicon)
     needs: [build-ledfx-linux, build-ledfx-windows, build-ledfx-osx]
-    runs-on: flyci-macos-large-latest-m1
+    runs-on: flyci-macos-14-m2
     strategy:
       matrix:
         python: [3.10.x,3.11.x,3.12.x]
