@@ -2296,12 +2296,13 @@ setuptools = "*"
 
 [[package]]
 name = "voluptuous"
-version = "0.15.1"
+version = "0.15.2"
 description = "Python data validation library"
 optional = false
 python-versions = ">=3.9"
 files = [
-    {file = "voluptuous-0.15.1.tar.gz", hash = "sha256:4ba7f38f624379ecd02666e87e99cb24b6f5997a28258d3302c761d1a2c35d00"},
+    {file = "voluptuous-0.15.2-py3-none-any.whl", hash = "sha256:016348bc7788a9af9520b1764ebd4de0df41fe2138ebe9e06fa036bf86a65566"},
+    {file = "voluptuous-0.15.2.tar.gz", hash = "sha256:6ffcab32c4d3230b4d2af3a577c87e1908a714a11f6f95570456b1849b0279aa"},
 ]
 
 [[package]]
