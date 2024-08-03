@@ -1,6 +1,6 @@
 # docutils<0.18 # No longer needed
 sphinx<7.3.8
-sphinxcontrib-websupport==1.2.7
+sphinxcontrib-websupport==2.0.0
 sphinxcontrib-httpdomain==1.8.1
 sphinx-autodoc-typehints==2.0.0
 sphinx-autodoc-annotation==1.0-1
