@@ -173,7 +173,7 @@ jobs:
         with:
           name: ledfx-log-${{ runner.os }}-${{ runner.arch }}-py${{ matrix.python }}.log
           path: ${{ github.workspace }}/debug_config/ledfx.log
-  build-ledfx-osx:
+  build-ledfx-osx-intel:
     name: Build LedFx (OS X)
     runs-on: macos-13
     strategy:
@@ -247,7 +247,7 @@ jobs:
   build-ledfx-osx-m1:
     name: Build LedFx (OS X) (Apple Silicon)
     needs: [build-ledfx-linux, build-ledfx-windows, build-ledfx-osx]
-    runs-on: flyci-macos-14-m2
+    runs-on: macos-latest
     strategy:
       matrix:
         python: [3.10.x,3.11.x,3.12.x]
