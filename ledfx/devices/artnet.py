@@ -35,6 +35,11 @@ class ArtNetDevice(NetworkedDevice):
                 default=0,
             ): vol.All(int, vol.Range(min=0)),
             vol.Optional(
+                "offset_stuff",
+                description="value to stuff into channels skipped by the offset value",
+                default=0,
+            ): vol.All(int, vol.Range(min=0)),
+            vol.Optional(
                 "even_packet_size",
                 description="Whether to use even packet size",
                 default=True,
@@ -46,9 +51,13 @@ class ArtNetDevice(NetworkedDevice):
         super().__init__(ledfx, config)
         self._artnet = None
 
+        self.channel_offset = max(0, self._config["channel_offset"])
+        self.offset_stuff = max(0, self._config["offset_stuff"])
+        self.offset_stuff = min(255, self.offset_stuff)
+
         # This assumes RGB - for RGBW devices this isn't gonna work.
         # TODO: Fix this when/if we ever want to move to RGBW outputs for devices
-        self.channel_count = (
+        self.channel_count = self.channel_offset + (
             self._config["pixel_count"] * 3  # 4 for RGBW devices
         )
         self.packet_size = self._config["packet_size"]
@@ -91,6 +100,9 @@ class ArtNetDevice(NetworkedDevice):
             self.activate()
 
         data = data.flatten()
+        if self.channel_offset > 0:
+            stuff_data = np.full(self.channel_offset, self.offset_stuff)
+            data = np.append(stuff_data, data)
         # TODO: Handle the data transformation outside of the loop and just use loop to set universe and send packets
         for i in range(self.universe_count):
             start = i * self.packet_size
