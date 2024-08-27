@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import socket
+import threading
 from abc import abstractmethod
 from functools import cached_property, partial
 
@@ -8,7 +9,6 @@ import numpy as np
 import serial
 import serial.tools.list_ports
 import voluptuous as vol
-import threading
 
 from ledfx.config import save_config
 from ledfx.events import (

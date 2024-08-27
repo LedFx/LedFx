@@ -115,9 +115,9 @@ class ArtNetDevice(NetworkedDevice):
                 start = i * self.packet_size
                 end = start + self.packet_size
                 packet = np.zeros(self.packet_size, dtype=np.uint8)
-                packet[: min(self.packet_size, self.channel_count - start)] = data[
-                    start:end
-                ]
+                packet[: min(self.packet_size, self.channel_count - start)] = (
+                    data[start:end]
+                )
                 self._artnet.set_universe(i + self._config["universe"])
                 self._artnet.set(packet)
                 self._artnet.show()
