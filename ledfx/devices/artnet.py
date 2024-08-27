@@ -50,7 +50,14 @@ class ArtNetDevice(NetworkedDevice):
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
         self._artnet = None
+        self.config_use(config)
 
+    def config_updated(self, config):
+        self.config_use(config)
+        self.deactivate()
+        self.activate()
+
+    def config_use(self, config):
         self.channel_offset = max(0, self._config["channel_offset"])
         self.offset_stuff = max(0, self._config["offset_stuff"])
         self.offset_stuff = min(255, self.offset_stuff)
@@ -94,23 +101,23 @@ class ArtNetDevice(NetworkedDevice):
         _LOGGER.info(f"Art-Net sender for {self.config['name']} stopped.")
 
     def flush(self, data):
-        """Flush the data to all the Art-Net channels"""
+        with self.lock:
+            """Flush the data to all the Art-Net channels"""
+            if not self._artnet:
+                self.activate()
 
-        if not self._artnet:
-            self.activate()
-
-        data = data.flatten()
-        if self.channel_offset > 0:
-            stuff_data = np.full(self.channel_offset, self.offset_stuff)
-            data = np.append(stuff_data, data)
-        # TODO: Handle the data transformation outside of the loop and just use loop to set universe and send packets
-        for i in range(self.universe_count):
-            start = i * self.packet_size
-            end = start + self.packet_size
-            packet = np.zeros(self.packet_size, dtype=np.uint8)
-            packet[: min(self.packet_size, self.channel_count - start)] = data[
-                start:end
-            ]
-            self._artnet.set_universe(i + self._config["universe"])
-            self._artnet.set(packet)
-            self._artnet.show()
+            data = data.flatten()
+            if self.channel_offset > 0:
+                stuff_data = np.full(self.channel_offset, self.offset_stuff)
+                data = np.append(stuff_data, data)
+            # TODO: Handle the data transformation outside of the loop and just use loop to set universe and send packets
+            for i in range(self.universe_count):
+                start = i * self.packet_size
+                end = start + self.packet_size
+                packet = np.zeros(self.packet_size, dtype=np.uint8)
+                packet[: min(self.packet_size, self.channel_count - start)] = data[
+                    start:end
+                ]
+                self._artnet.set_universe(i + self._config["universe"])
+                self._artnet.set(packet)
+                self._artnet.show()
