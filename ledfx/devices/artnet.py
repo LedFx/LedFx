@@ -3,12 +3,9 @@ import logging
 import numpy as np
 import voluptuous as vol
 from stupidArtnet import StupidArtnet
-from ledfx.utils import (
-    clip_at_limit,
-    extract_uint8_seq,
-)
 
 from ledfx.devices import NetworkedDevice
+from ledfx.utils import clip_at_limit, extract_uint8_seq
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -63,13 +60,20 @@ class ArtNetDevice(NetworkedDevice):
 
     def config_use(self, config):
         # get the preamble string, stip it and convert to np.arry of unint8
-        self.pre_amble = np.array(extract_uint8_seq(config.get("pre_amble", "")), dtype=np.uint8)
-        self.post_amble = np.array(extract_uint8_seq(config.get("post_amble", "")), dtype=np.uint8)
+        self.pre_amble = np.array(
+            extract_uint8_seq(config.get("pre_amble", "")), dtype=np.uint8
+        )
+        self.post_amble = np.array(
+            extract_uint8_seq(config.get("post_amble", "")), dtype=np.uint8
+        )
         # This assumes RGB - for RGBW devices this isn't gonna work.
         # TODO: Fix this when/if we ever want to move to RGBW outputs for devices
         # warning magic number 3 for RGB
-        self.channel_count = self.pre_amble.size + (
-            self._config["pixel_count"] * 3 ) + self.post_amble.size
+        self.channel_count = (
+            self.pre_amble.size
+            + (self._config["pixel_count"] * 3)
+            + self.post_amble.size
+        )
         self.packet_size = self._config["packet_size"]
         self.universe_count = (
             self.channel_count + self.packet_size - 1
