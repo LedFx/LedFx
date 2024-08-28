@@ -5,7 +5,7 @@ import voluptuous as vol
 from stupidArtnet import StupidArtnet
 
 from ledfx.devices import NetworkedDevice
-from ledfx.utils import clip_at_limit, extract_uint8_seq
+from ledfx.utils import extract_uint8_seq
 
 _LOGGER = logging.getLogger(__name__)
 
