@@ -170,6 +170,8 @@ class AudioInputSource:
     def __init__(self, ledfx, config):
         self._ledfx = ledfx
         self.lock = threading.Lock()
+        # We must not inherit legacy _callbacks from prior instances
+        self._callbacks = []
         self.update_config(config)
 
         def shutdown_event(e):
