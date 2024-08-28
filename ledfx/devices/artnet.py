@@ -37,7 +37,7 @@ class ArtNetDevice(NetworkedDevice):
             ): str,
             vol.Optional(
                 "post_amble",
-                description="Channel bytes to insert after the RGB bata",
+                description="Channel bytes to insert after the RGB data",
                 default="",
             ): str,
             vol.Optional(
