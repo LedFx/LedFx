@@ -59,7 +59,7 @@ class ArtNetDevice(NetworkedDevice):
         self.activate()
 
     def config_use(self, config):
-        # get the preamble string, stip it and convert to np.arry of unint8
+        # get the preamble string, strip it and convert to np.arry of unint8
         self.pre_amble = np.array(
             extract_uint8_seq(config.get("pre_amble", "")), dtype=np.uint8
         )
