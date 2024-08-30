@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import socket
+import threading
 from abc import abstractmethod
 from functools import cached_property, partial
 
@@ -82,42 +83,46 @@ class Device(BaseRegistry):
         self._silence_start = None
         self._device_type = ""
         self._online = True
+        self.lock = threading.Lock()
 
     def __del__(self):
         if self._active:
             self.deactivate()
 
     def update_config(self, config):
-        # TODO: Sync locks to ensure everything is thread safe
-        if self._config is not None:
-            config = {**self._config, **config}
+        with self.lock:
+            # TODO: Sync locks to ensure everything is thread safe
+            # self.lock has been added, but is not used presently outside of
+            # artnet
+            if self._config is not None:
+                config = {**self._config, **config}
 
-        validated_config = type(self).schema()(config)
-        self._config = validated_config
+            validated_config = type(self).schema()(config)
+            self._config = validated_config
 
-        # Iterate all the base classes and check to see if there is a custom
-        # implementation of config updates. If to notify the base class.
-        valid_classes = list(type(self).__bases__)
-        valid_classes.append(type(self))
-        for base in valid_classes:
-            if hasattr(base, "config_updated"):
-                if base.config_updated != super(base, base).config_updated:
-                    base.config_updated(self, validated_config)
+            # Iterate all the base classes and check to see if there is a custom
+            # implementation of config updates. If to notify the base class.
+            valid_classes = list(type(self).__bases__)
+            valid_classes.append(type(self))
+            for base in valid_classes:
+                if hasattr(base, "config_updated"):
+                    if base.config_updated != super(base, base).config_updated:
+                        base.config_updated(self, validated_config)
 
-        _LOGGER.info(
-            f"Device {self.name} config updated to {validated_config}."
-        )
+            _LOGGER.info(
+                f"Device {self.name} config updated to {validated_config}."
+            )
 
-        for virtual_id in self._ledfx.virtuals:
-            virtual = self._ledfx.virtuals.get(virtual_id)
-            if virtual.is_device == self.id:
-                segments = [[self.id, 0, self.pixel_count - 1, False]]
-                virtual.update_segments(segments)
-                virtual.invalidate_cached_props()
+            for virtual_id in self._ledfx.virtuals:
+                virtual = self._ledfx.virtuals.get(virtual_id)
+                if virtual.is_device == self.id:
+                    segments = [[self.id, 0, self.pixel_count - 1, False]]
+                    virtual.update_segments(segments)
+                    virtual.invalidate_cached_props()
 
-        for virtual in self._virtuals_objs:
-            virtual.deactivate_segments()
-            virtual.activate_segments(virtual._segments)
+            for virtual in self._virtuals_objs:
+                virtual.deactivate_segments()
+                virtual.activate_segments(virtual._segments)
 
     def config_updated(self, config):
         """
