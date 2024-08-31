@@ -178,7 +178,7 @@ jobs:
           path: ${{ github.workspace }}/dist/*
   build-ledfx-osx-m1:
     name: Build LedFx (OS X) (Apple Silicon)
-    runs-on: flyci-macos-14-m2
+    runs-on: macos-latest
     steps:
       - name: Check out code from GitHub
         uses: actions/checkout@v4
@@ -304,8 +304,8 @@ jobs:
           chmod +x ./LedFx.app/Contents/MacOS/LedFx
           ./LedFx.app/Contents/MacOS/LedFx -vv --ci-smoke-test --offline
   run-ledfx-osx-m1:
-    name: Test LedFx (OS X) (Apple Silicon)
-    runs-on: flyci-macos-14-m2
+    name: Test LedFx (OS X [ARM64])
+    runs-on: macos-latest
     needs: [build-ledfx-windows, build-ledfx-osx-m1]
     steps:
       - name: Download LedFx Version
