@@ -165,4 +165,3 @@ class ArtNetDevice(NetworkedDevice):
                 self._artnet.set_universe(i + self._config["universe"])
                 self._artnet.set(packet)
                 self._artnet.show()
-                _LOGGER.debug(f"devices_data:\n{devices_data}")
