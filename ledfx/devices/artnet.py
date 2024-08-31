@@ -78,7 +78,8 @@ class ArtNetDevice(NetworkedDevice):
         # warning magic number 3 for RGB
 
         # treat a default value of zero in device_repeat as all pixels in one device
-        if self.device_repeat == 0:
+        # also protect against greater than pixel_count
+        if self.device_repeat == 0 or self.device_repeat > self.pixel_count:
             self.device_repeat = self.pixel_count
 
         # if the user has not set enough pixels to fully fill the last device
