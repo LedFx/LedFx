@@ -131,13 +131,15 @@ class ArtNetDevice(NetworkedDevice):
             if not self._artnet:
                 self.activate()
 
-            data = data.flatten()[:self.data_max * 3]
+            data = data.flatten()[: self.data_max * 3]
 
             # pre allocate the space
             devices_data = np.empty(self.channel_count, dtype=np.uint8)
 
             # Reshape the data into (self.devices, self.device_repeat * 3)
-            reshaped_data = data.reshape((self.devices, self.device_repeat * 3))
+            reshaped_data = data.reshape(
+                (self.devices, self.device_repeat * 3)
+            )
 
             # Create the pre_amble and post_amble arrays to match the device count
             pre_amble_repeated = np.tile(self.pre_amble, (self.devices, 1))
@@ -145,7 +147,8 @@ class ArtNetDevice(NetworkedDevice):
 
             # Concatenate the pre_amble, reshaped data, and post_amble along the second axis
             full_device_data = np.concatenate(
-                (pre_amble_repeated, reshaped_data, post_amble_repeated), axis=1
+                (pre_amble_repeated, reshaped_data, post_amble_repeated),
+                axis=1,
             )
 
             devices_data[:] = full_device_data.ravel()
