@@ -41,6 +41,11 @@ class ArtNetDevice(NetworkedDevice):
                 default="",
             ): str,
             vol.Optional(
+                "device_repeat",
+                description="numer of pixels to consume per device and repeat pre and post ambles, 0 default will use all pixels in one instance",
+                default=0,
+            ): vol.All(int, vol.Range(min=0)),
+            vol.Optional(
                 "even_packet_size",
                 description="Whether to use even packet size",
                 default=True,
@@ -66,14 +71,28 @@ class ArtNetDevice(NetworkedDevice):
         self.post_amble = np.array(
             extract_uint8_seq(config.get("post_amble", "")), dtype=np.uint8
         )
+        self.device_repeat = config.get("device_repeat", 0)
+
         # This assumes RGB - for RGBW devices this isn't gonna work.
         # TODO: Fix this when/if we ever want to move to RGBW outputs for devices
         # warning magic number 3 for RGB
+
+        # treat a default value of zero in device_repeat as all pixels in one device
+        # also protect against greater than pixel_count
+        if self.device_repeat == 0 or self.device_repeat > self.pixel_count:
+            self.device_repeat = self.pixel_count
+
+        # if the user has not set enough pixels to fully fill the last device
+        # it is modded away, we will not support partial devices, saves runtime
+        self.devices = self.pixel_count // self.device_repeat
+        self.data_max = self.devices * self.device_repeat
+
         self.channel_count = (
             self.pre_amble.size
-            + (self._config["pixel_count"] * 3)
+            + (self.device_repeat * 3)
             + self.post_amble.size
-        )
+        ) * self.devices
+
         self.packet_size = self._config["packet_size"]
         self.universe_count = (
             self.channel_count + self.packet_size - 1
@@ -113,15 +132,36 @@ class ArtNetDevice(NetworkedDevice):
             if not self._artnet:
                 self.activate()
 
-            data = data.flatten()
-            data = np.concatenate((self.pre_amble, data, self.post_amble))
+            data = data.flatten()[: self.data_max * 3]
+
+            # pre allocate the space
+            devices_data = np.empty(self.channel_count, dtype=np.uint8)
+
+            # Reshape the data into (self.devices, self.device_repeat * 3)
+            reshaped_data = data.reshape(
+                (self.devices, self.device_repeat * 3)
+            )
+
+            # Create the pre_amble and post_amble arrays to match the device count
+            pre_amble_repeated = np.tile(self.pre_amble, (self.devices, 1))
+            post_amble_repeated = np.tile(self.post_amble, (self.devices, 1))
+
+            # Concatenate the pre_amble, reshaped data, and post_amble along the second axis
+            full_device_data = np.concatenate(
+                (pre_amble_repeated, reshaped_data, post_amble_repeated),
+                axis=1,
+            )
+
+            devices_data[:] = full_device_data.ravel()
+
             # TODO: Handle the data transformation outside of the loop and just use loop to set universe and send packets
+
             for i in range(self.universe_count):
                 start = i * self.packet_size
                 end = start + self.packet_size
                 packet = np.zeros(self.packet_size, dtype=np.uint8)
                 packet[: min(self.packet_size, self.channel_count - start)] = (
-                    data[start:end]
+                    devices_data[start:end]
                 )
                 self._artnet.set_universe(i + self._config["universe"])
                 self._artnet.set(packet)
