@@ -135,8 +135,16 @@ class ArtNetDevice(NetworkedDevice):
             devices_data = np.array([], dtype=np.uint8)
 
             for i in range(self.devices):
-                device_data = data[i * self.device_repeat * 3 : (i + 1) * self.device_repeat * 3]
-                device_data = np.concatenate((self.pre_amble, device_data, self.post_amble))
+                device_data = data[
+                    i
+                    * self.device_repeat
+                    * 3 : (i + 1)
+                    * self.device_repeat
+                    * 3
+                ]
+                device_data = np.concatenate(
+                    (self.pre_amble, device_data, self.post_amble)
+                )
                 devices_data = np.concatenate((devices_data, device_data))
 
             # TODO: Handle the data transformation outside of the loop and just use loop to set universe and send packets
