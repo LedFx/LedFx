@@ -84,6 +84,7 @@ class ArtNetDevice(NetworkedDevice):
         # if the user has not set enough pixels to fully fill the last device
         # it is modded away, we will not support partial devices, saves runtime
         self.devices = self.pixel_count // self.device_repeat
+        self.data_max = self.devices * self.device_repeat
 
         self.channel_count = (
             self.pre_amble.size
@@ -130,14 +131,24 @@ class ArtNetDevice(NetworkedDevice):
             if not self._artnet:
                 self.activate()
 
-            data = data.flatten()
-            # make devices_data an empty np_array of bytes
-            devices_data = np.array([], dtype=np.uint8)
+            data = data.flatten()[:self.data_max * 3]
 
-            for i in range(self.devices):
-                device_data = data[i * self.device_repeat * 3 : (i + 1) * self.device_repeat * 3]
-                device_data = np.concatenate((self.pre_amble, device_data, self.post_amble))
-                devices_data = np.concatenate((devices_data, device_data))
+            # pre allocate the space
+            devices_data = np.empty(self.channel_count, dtype=np.uint8)
+
+            # Reshape the data into (self.devices, self.device_repeat * 3)
+            reshaped_data = data.reshape((self.devices, self.device_repeat * 3))
+
+            # Create the pre_amble and post_amble arrays to match the device count
+            pre_amble_repeated = np.tile(self.pre_amble, (self.devices, 1))
+            post_amble_repeated = np.tile(self.post_amble, (self.devices, 1))
+
+            # Concatenate the pre_amble, reshaped data, and post_amble along the second axis
+            full_device_data = np.concatenate(
+                (pre_amble_repeated, reshaped_data, post_amble_repeated), axis=1
+            )
+
+            devices_data[:] = full_device_data.ravel()
 
             # TODO: Handle the data transformation outside of the loop and just use loop to set universe and send packets
 
