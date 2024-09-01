@@ -123,7 +123,7 @@
     "prettier": "^3.2.5",
     "react-is": "^18.2.0",
     "run-script-os": "^1.1.6",
-    "wait-on": "^7.2.0",
+    "wait-on": "^8.0.0",
     "webpack": "^5.90.3"
   }
 }
