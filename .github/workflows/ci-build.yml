@@ -305,6 +305,7 @@ jobs:
 
       - name: Install LedFx
         run: |
+          export CFLAGS="-Wno-incompatible-function-pointer-types"
           poetry install --with dev
 
       - name: Check LedFx launches
