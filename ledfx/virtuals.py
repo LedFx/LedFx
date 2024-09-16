@@ -700,11 +700,11 @@ class Virtual:
             f"Virtual {self.id}: Activating with segments {self._segments}"
         )
         if not self._active:
+            self._active = True
             try:
                 self.activate_segments(self._segments)
             except ValueError as e:
                 _LOGGER.error(e)
-            self._active = True
             self._os_active = False
 
         # self.thread_function()
