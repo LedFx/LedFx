@@ -213,7 +213,13 @@ class Device(BaseRegistry):
 
     @property
     def refresh_rate(self):
-        return self.priority_virtual.refresh_rate
+        if self.priority_virtual:
+            return self.priority_virtual.refresh_rate
+        else:
+            _LOGGER.warning(
+                f"refresh_rate() set 30 as {self.id} has no priority_virtual"
+            )
+            return 30
 
     @cached_property
     def priority_virtual(self):
@@ -295,15 +301,24 @@ class Device(BaseRegistry):
         self.invalidate_cached_props()
 
     def clear_virtual_segments(self, virtual_id):
-        self._segments = [
-            segment for segment in self._segments if segment[0] != virtual_id
-        ]
+        new_segments = []
+        for segment in self._segments:
+            if segment[0] != virtual_id:
+                new_segments.append(segment)
+            else:
+                if self._pixels is not None:
+                    self._pixels[segment[1] : segment[2] + 1] = np.zeros(
+                        (segment[2] - segment[1] + 1, 3)
+                    )
+        self._segments = new_segments
+
         if self.priority_virtual:
             if virtual_id == self.priority_virtual.id:
                 self.invalidate_cached_props()
 
     def clear_segments(self):
         self._segments = []
+        self.invalidate_cached_props()
 
     def invalidate_cached_props(self):
         # invalidate cached properties
