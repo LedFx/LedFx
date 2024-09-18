@@ -44,7 +44,7 @@ CORE_CONFIG_KEYS_NO_RESTART = [
     "visualisation_maxlen",
     "visualisation_fps",
     "flush_on_deactivate",
-    "wled_on_deactivate"
+    "wled_on_deactivate",
 ]
 # Collection of keys that are used for visualisation configuration - used to check if we need to restart the visualisation event listeners
 VISUALISATION_CONFIG_KEYS = [
