@@ -230,6 +230,7 @@ jobs:
           export PATH="/opt/homebrew/opt/mbedtls@2/bin:$PATH"
           export LDFLAGS="-L/opt/homebrew/opt/mbedtls@2/lib"
           export CPPFLAGS="-I/opt/homebrew/opt/mbedtls@2/include"
+          export CFLAGS="-Wno-incompatible-function-pointer-types"
           poetry install --with dev --extras hue
       - name: Get LedFx Version
         id: ledfx-version
