@@ -43,6 +43,8 @@ CORE_CONFIG_KEYS_NO_RESTART = [
     "user_presets",
     "visualisation_maxlen",
     "visualisation_fps",
+    "flush_on_deactivate",
+    "wled_on_deactivate"
 ]
 # Collection of keys that are used for visualisation configuration - used to check if we need to restart the visualisation event listeners
 VISUALISATION_CONFIG_KEYS = [
@@ -134,6 +136,8 @@ CORE_CONFIG_SCHEMA = vol.Schema(
         vol.Optional("user_gradients", default={}): dict,
         vol.Optional("scan_on_startup", default=False): bool,
         vol.Optional("create_segments", default=False): bool,
+        vol.Optional("flush_on_deactivate", default=False): bool,
+        vol.Optional("wled_on_deactivate", default=True): bool,
         vol.Optional("wled_preferences", default={}): dict,
         vol.Optional(
             "configuration_version", default=CONFIGURATION_VERSION

@@ -307,9 +307,10 @@ class Device(BaseRegistry):
                 new_segments.append(segment)
             else:
                 if self._pixels is not None:
-                    self._pixels[segment[1] : segment[2] + 1] = np.zeros(
-                        (segment[2] - segment[1] + 1, 3)
-                    )
+                    if self._ledfx.config.get("flush_on_deactivate", False):
+                        self._pixels[segment[1] : segment[2] + 1] = np.zeros(
+                            (segment[2] - segment[1] + 1, 3)
+                        )
         self._segments = new_segments
 
         if self.priority_virtual:
