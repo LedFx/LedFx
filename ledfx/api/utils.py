@@ -52,6 +52,8 @@ PERMITTED_KEYS = {
         "global_transitions",
         "global_brightness",
         "melbank_collection",
+        "flush_on_deactivate",
+        "wled_on_deactivate",
     ),
 }
 
