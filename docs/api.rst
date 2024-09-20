@@ -52,7 +52,6 @@ You may instead ask for any number of the config keys:
 - *user_presets*
 - *ledfx_presets*
 - *flush_on_deactivate*
-- *wled_on_deactivate*
 
 example: Get LedFx audio configuration
 
