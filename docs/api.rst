@@ -728,12 +728,14 @@ returns
 | Intended to allow integration of instantaneous game effects over all active virtual
 | Repeated oneshot will overwrite the previous oneshot if has not finished
 
-| color: The color to which we wish to fill the virtual, any format supported
+| color: The color to which we wish to fill the virtual, any format supported, default is white
 | ramp: The time in ms over which to ramp the color from zero to full weight over the active effect
 | hold: The time in ms to hold the color to full weight over the active effect
 | fade: The time in ms to fade the color from full weight to zero over the active effect
 
-At least one of ramp, hold or fade must be specified
+If all values for ramp, hold and fade are zero, which is default, any exisiting oneshot will be cleared
+
+A bare call to onsshot will result in a hard disable of any existing oneshot that is executing
 
 .. code-block:: json
 
@@ -871,12 +873,14 @@ returns
 | Intended to allow integration of instantaneous game effects over any active virtual
 | Repeated oneshot to a virtual will overwrite the previous oneshot if has not finished
 
-| color: The color to which we wish to fill the virtual, any format supported
+| color: The color to which we wish to fill the virtual, any format supported, default is white
 | ramp: The time in ms over which to ramp the color from zero to full weight over the active effect
 | hold: The time in ms to hold the color to full weight over the active effect
 | fade: The time in ms to fade the color from full weight to zero over the active effect
 
-At least one of ramp, hold or fade must be specified
+If all values for ramp, hold and fade are zero, which is default, any exisiting oneshot will be cleared
+
+A bare call to onsshot will result in a hard disable of any existing oneshot that is executing
 
 .. code-block:: json
 

@@ -48,20 +48,14 @@ class VirtualToolsEndpoint(RestEndpoint):
                     virtual.force_frame(parse_color(validate_color(color)))
 
         if tool == "oneshot":
-            color = data.get("color")
-            if color is None:
-                return await self.invalid_request(
-                    "Required attribute for oneshot, color was not provided"
-                )
+            color = data.get("color", "white")
 
             ramp = data.get("ramp", 0)
             hold = data.get("hold", 0)
             fade = data.get("fade", 0)
 
-            if ramp == 0 and hold == 0 and fade == 0:
-                return await self.invalid_request(
-                    "At least one of ramp, hold or fade must be greater than 0"
-                )
+            # if all values are zero, we will now just ensure any current
+            # oneshot are cancelled
 
             # iterate through all virtuals and apply oneshot
             for virtual_id in self._ledfx.virtuals:
