@@ -505,9 +505,9 @@ class Virtual:
         Following calls will override any active one shot
 
         Parameters:
-            ramp time from 0% to 100% in ms
-            hold time at 100% in ms
-            fade time from 100% to 0% in ms
+            ramp time from in ms
+            hold time in ms
+            fade time in ms
         Returns:
             True if oneshot was activated, False if not
         """
@@ -520,7 +520,13 @@ class Virtual:
             self._os_hold_end = self._os_ramp + self._os_hold
             self._os_fade_end = self._os_ramp + self._os_hold + self._os_fade
             self._os_weight = 0.0
-            self._os_active = True
+
+            # if all total timings are zero, treat as a hard off
+            if self._os_fade_end == 0:
+                self._os_active = False
+            else:
+                self._os_active = True
+
             result = True
         else:
             result = False
