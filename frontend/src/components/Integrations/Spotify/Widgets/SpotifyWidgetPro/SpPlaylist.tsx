@@ -5,6 +5,7 @@ import {
   DataGrid,
   GridColDef,
   GridRowParams,
+  GridValueGetterParams,
 } from '@mui/x-data-grid';
 
 import { Card, Grid, IconButton , Stack, useTheme } from '@mui/material';
@@ -77,7 +78,7 @@ export default function SpPlaylist() {
       sortable: false,
       filterable: false,
       disableColumnMenu: true,
-      valueGetter: (params: GridRowParams<any>) =>
+      valueGetter: (params: GridValueGetterParams<any, any>) =>
         `${params?.row?.track?.artists?.[0]?.name || ''} - ${
           params?.row?.track?.name || ''
         }`,
