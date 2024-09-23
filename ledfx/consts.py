@@ -1,13 +1,13 @@
 import ledfx_assets
 
 # TODO: Bump pyproject.toml if you bump this!
-PROJECT_VERSION = "2.0.98"
+PROJECT_VERSION = "2.0.101"
 PROJECT_NAME = "LedFx"
 PROJECT_AUTHOR = "LedFx Developers"
 PROJECT_LICENSE = "GPL-3.0"
 CONFIG_MAJOR_VERSION = 2
 CONFIG_MINOR_VERSION = 3
-CONFIG_MICRO_VERSION = 1
+CONFIG_MICRO_VERSION = 3
 
 # Dev turns sentry logging on and off
 DEV = 0

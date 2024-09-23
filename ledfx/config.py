@@ -43,6 +43,7 @@ CORE_CONFIG_KEYS_NO_RESTART = [
     "user_presets",
     "visualisation_maxlen",
     "visualisation_fps",
+    "flush_on_deactivate",
 ]
 # Collection of keys that are used for visualisation configuration - used to check if we need to restart the visualisation event listeners
 VISUALISATION_CONFIG_KEYS = [
@@ -134,6 +135,7 @@ CORE_CONFIG_SCHEMA = vol.Schema(
         vol.Optional("user_gradients", default={}): dict,
         vol.Optional("scan_on_startup", default=False): bool,
         vol.Optional("create_segments", default=False): bool,
+        vol.Optional("flush_on_deactivate", default=False): bool,
         vol.Optional("wled_preferences", default={}): dict,
         vol.Optional(
             "configuration_version", default=CONFIGURATION_VERSION
@@ -721,6 +723,13 @@ def migrate_config(old_config):
             "virtuals": new_virtuals,
             "name": scenes[scene_id]["name"],
         }
+
+    # if audio:min_volume is present and greater than 1 then set to a default of
+    # 0.2, old range was 0 to 10, but effective range is only 0 to 1, anything
+    # >= 1 will just squelch all audio, source of error for some users while
+    # trying to make audio work and blindly pushing sliders
+    if new_config.get("audio", {}).get("min_volume", 0) > 1:
+        new_config["audio"]["min_volume"] = 0.2
 
     _LOGGER.warning("Finished migrating config.")
     return new_config

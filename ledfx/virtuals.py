@@ -505,9 +505,9 @@ class Virtual:
         Following calls will override any active one shot
 
         Parameters:
-            ramp time from 0% to 100% in ms
-            hold time at 100% in ms
-            fade time from 100% to 0% in ms
+            ramp time from in ms
+            hold time in ms
+            fade time in ms
         Returns:
             True if oneshot was activated, False if not
         """
@@ -520,7 +520,13 @@ class Virtual:
             self._os_hold_end = self._os_ramp + self._os_hold
             self._os_fade_end = self._os_ramp + self._os_hold + self._os_fade
             self._os_weight = 0.0
-            self._os_active = True
+
+            # if all total timings are zero, treat as a hard off
+            if self._os_fade_end == 0:
+                self._os_active = False
+            else:
+                self._os_active = True
+
             result = True
         else:
             result = False
@@ -700,11 +706,11 @@ class Virtual:
             f"Virtual {self.id}: Activating with segments {self._segments}"
         )
         if not self._active:
+            self._active = True
             try:
                 self.activate_segments(self._segments)
             except ValueError as e:
                 _LOGGER.error(e)
-            self._active = True
             self._os_active = False
 
         # self.thread_function()
@@ -1100,7 +1106,7 @@ class Virtuals:
         self._ledfx.events.add_listener(cleanup_effects, Event.LEDFX_SHUTDOWN)
         self._virtuals = {}
 
-    def create_from_config(self, config):
+    def create_from_config(self, config, pause_all=False):
         for virtual in config:
             _LOGGER.debug(f"Loading virtual from config: {virtual}")
             self._ledfx.virtuals.create(
@@ -1137,6 +1143,16 @@ class Virtuals:
                     )
                 except RuntimeError:
                     pass
+
+            # This adds support for configs that are configured as paused
+            # via the active key if it exists. Let the setter deal with it
+            if "active" in virtual and not virtual["active"]:
+                self._ledfx.virtuals.get(virtual["id"]).active = False
+
+            # global pause is handled differently to virtual pause
+            if pause_all:
+                self._ledfx.virtuals.get(virtual["id"])._paused = True
+
             self._ledfx.events.fire_event(
                 VirtualConfigUpdateEvent(virtual["id"], virtual["config"])
             )

@@ -175,7 +175,7 @@ jobs:
           path: ${{ github.workspace }}/debug_config/ledfx.log
   build-ledfx-osx:
     name: Build LedFx (OS X)
-    runs-on: macos-latest
+    runs-on: macos-13
     strategy:
       matrix:
         python: [3.9.x,3.10.x,3.11.x,3.12.x]
@@ -247,7 +247,7 @@ jobs:
   build-ledfx-osx-m1:
     name: Build LedFx (OS X) (Apple Silicon)
     needs: [build-ledfx-linux, build-ledfx-windows, build-ledfx-osx]
-    runs-on: flyci-macos-large-latest-m1
+    runs-on: macos-latest
     strategy:
       matrix:
         python: [3.10.x,3.11.x,3.12.x]
@@ -305,6 +305,7 @@ jobs:
 
       - name: Install LedFx
         run: |
+          export CFLAGS="-Wno-incompatible-function-pointer-types"
           poetry install --with dev
 
       - name: Check LedFx launches

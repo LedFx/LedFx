@@ -14,6 +14,7 @@
    configuring
    directing_audio
    osc
+   artnet
 
 .. toctree::
    :maxdepth: 2

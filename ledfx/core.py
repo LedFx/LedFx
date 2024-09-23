@@ -323,8 +323,10 @@ class LedFxCore:
                         "Unable to get update information", "LedFx"
                     )
 
-    def start(self, open_ui=False):
-        async_fire_and_forget(self.async_start(open_ui=open_ui), self.loop)
+    def start(self, open_ui=False, pause_all=False):
+        async_fire_and_forget(
+            self.async_start(open_ui=open_ui, pause_all=pause_all), self.loop
+        )
 
         try:
             self.loop.run_forever()
@@ -344,7 +346,7 @@ class LedFxCore:
 
         return self.exit_code
 
-    async def async_start(self, open_ui=False):
+    async def async_start(self, open_ui=False, pause_all=False):
         _LOGGER.info(f"Starting LedFx, listening on {self.host}:{self.port}")
 
         await self.http.start(get_ssl_certs(config_dir=self.config_dir))
@@ -383,7 +385,9 @@ class LedFxCore:
         await self.devices.async_initialize_devices()
 
         self.zeroconf = ZeroConfRunner(ledfx=self)
-        self.virtuals.create_from_config(self.config["virtuals"])
+        self.virtuals.create_from_config(
+            self.config["virtuals"], pause_all=pause_all
+        )
         self.integrations.create_from_config(self.config["integrations"])
 
         if self.config["scan_on_startup"]:
@@ -404,6 +408,10 @@ class LedFxCore:
 
         if not self.offline_mode:
             self.check_and_notify_updates()
+
+        if pause_all:
+            # pause at the virtuals level
+            self.virtuals.pause_all()
 
     def stop(self, exit_code):
         async_fire_and_forget(self.async_stop(exit_code), self.loop)

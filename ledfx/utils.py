@@ -1409,6 +1409,13 @@ def extract_positive_integers(s):
     return list({int(num) for num in numbers if int(num) >= 0})
 
 
+def extract_uint8_seq(s):
+    # Use regular expression to find all sequences of digits
+    numbers = re.findall(r"\d+", s)
+    # discard anything outside of uint8 range
+    return [int(num) for num in numbers if 0 <= int(num) <= 255]
+
+
 def clip_at_limit(numbers, limit):
     # Keep only values that are less than the limit
     return [num for num in numbers if num < limit]

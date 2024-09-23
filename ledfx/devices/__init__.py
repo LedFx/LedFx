@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import socket
+import threading
 from abc import abstractmethod
 from functools import cached_property, partial
 
@@ -82,42 +83,46 @@ class Device(BaseRegistry):
         self._silence_start = None
         self._device_type = ""
         self._online = True
+        self.lock = threading.Lock()
 
     def __del__(self):
         if self._active:
             self.deactivate()
 
     def update_config(self, config):
-        # TODO: Sync locks to ensure everything is thread safe
-        if self._config is not None:
-            config = {**self._config, **config}
+        with self.lock:
+            # TODO: Sync locks to ensure everything is thread safe
+            # self.lock has been added, but is not used presently outside of
+            # artnet
+            if self._config is not None:
+                config = {**self._config, **config}
 
-        validated_config = type(self).schema()(config)
-        self._config = validated_config
+            validated_config = type(self).schema()(config)
+            self._config = validated_config
 
-        # Iterate all the base classes and check to see if there is a custom
-        # implementation of config updates. If to notify the base class.
-        valid_classes = list(type(self).__bases__)
-        valid_classes.append(type(self))
-        for base in valid_classes:
-            if hasattr(base, "config_updated"):
-                if base.config_updated != super(base, base).config_updated:
-                    base.config_updated(self, validated_config)
+            # Iterate all the base classes and check to see if there is a custom
+            # implementation of config updates. If to notify the base class.
+            valid_classes = list(type(self).__bases__)
+            valid_classes.append(type(self))
+            for base in valid_classes:
+                if hasattr(base, "config_updated"):
+                    if base.config_updated != super(base, base).config_updated:
+                        base.config_updated(self, validated_config)
 
-        _LOGGER.info(
-            f"Device {self.name} config updated to {validated_config}."
-        )
+            _LOGGER.info(
+                f"Device {self.name} config updated to {validated_config}."
+            )
 
-        for virtual_id in self._ledfx.virtuals:
-            virtual = self._ledfx.virtuals.get(virtual_id)
-            if virtual.is_device == self.id:
-                segments = [[self.id, 0, self.pixel_count - 1, False]]
-                virtual.update_segments(segments)
-                virtual.invalidate_cached_props()
+            for virtual_id in self._ledfx.virtuals:
+                virtual = self._ledfx.virtuals.get(virtual_id)
+                if virtual.is_device == self.id:
+                    segments = [[self.id, 0, self.pixel_count - 1, False]]
+                    virtual.update_segments(segments)
+                    virtual.invalidate_cached_props()
 
-        for virtual in self._virtuals_objs:
-            virtual.deactivate_segments()
-            virtual.activate_segments(virtual._segments)
+            for virtual in self._virtuals_objs:
+                virtual.deactivate_segments()
+                virtual.activate_segments(virtual._segments)
 
     def config_updated(self, config):
         """
@@ -208,7 +213,13 @@ class Device(BaseRegistry):
 
     @property
     def refresh_rate(self):
-        return self.priority_virtual.refresh_rate
+        if self.priority_virtual:
+            return self.priority_virtual.refresh_rate
+        else:
+            _LOGGER.warning(
+                f"refresh_rate() set 30 as {self.id} has no priority_virtual"
+            )
+            return 30
 
     @cached_property
     def priority_virtual(self):
@@ -290,15 +301,25 @@ class Device(BaseRegistry):
         self.invalidate_cached_props()
 
     def clear_virtual_segments(self, virtual_id):
-        self._segments = [
-            segment for segment in self._segments if segment[0] != virtual_id
-        ]
+        new_segments = []
+        for segment in self._segments:
+            if segment[0] != virtual_id:
+                new_segments.append(segment)
+            else:
+                if self._pixels is not None:
+                    if self._ledfx.config.get("flush_on_deactivate", False):
+                        self._pixels[segment[1] : segment[2] + 1] = np.zeros(
+                            (segment[2] - segment[1] + 1, 3)
+                        )
+        self._segments = new_segments
+
         if self.priority_virtual:
             if virtual_id == self.priority_virtual.id:
                 self.invalidate_cached_props()
 
     def clear_segments(self):
         self._segments = []
+        self.invalidate_cached_props()
 
     def invalidate_cached_props(self):
         # invalidate cached properties
@@ -641,7 +662,9 @@ class Devices(RegistryLoader):
                     self._ledfx.loop, self._ledfx.thread_executor, device_ip
                 )
             except ValueError:
-                _LOGGER.warning(f"Discarding device {device_ip}")
+                _LOGGER.warning(
+                    f"Discarding device {device_ip} as it could not be resolved."
+                )
                 return
 
             for existing_device in self._ledfx.devices.values():
@@ -649,8 +672,8 @@ class Devices(RegistryLoader):
                     existing_device.config["ip_address"] == device_ip
                     or existing_device.config["ip_address"] == resolved_dest
                 ):
-                    if device_type == "e131":
-                        # check the universes for e131, it might still be okay at a shared ip_address
+                    if device_type in ["e131", "artnet"]:
+                        # check the universes for e131 and artnet, it might still be okay at a shared ip_address
                         # eg. for multi output controllers
                         if (
                             device_config["universe"]
