@@ -308,7 +308,9 @@ class AudioInputSource:
                     ch = 2
                 if "Logitech G560" in device["name"]:
                     ch = 8
-                    _LOGGER.warning("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Special Logitech clause triggered")
+                    _LOGGER.warning(
+                        "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Special Logitech clause triggered"
+                    )
 
             if hostapis[device["hostapi"]]["name"] == "WEB AUDIO":
                 ledfx.api.websocket.ACTIVE_AUDIO_STREAM = self._stream = (
