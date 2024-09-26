@@ -2,6 +2,7 @@ import logging
 import queue
 import threading
 import time
+import json
 from collections import deque
 from functools import cached_property, lru_cache
 
@@ -216,6 +217,11 @@ class AudioInputSource:
         # Enumerate all of the input devices and find the one matching the
         # configured host api and device name
         input_devices = self.query_devices()
+
+        _LOGGER.debug("********************************************")
+        _LOGGER.debug(f"Sound Device query_devices: {json.dumps(input_devices, indent=4)}")
+        _LOGGER.debug("********************************************")
+
         hostapis = self.query_hostapis()
         default_device = self.default_device_index()
         if default_device is None:
@@ -229,6 +235,8 @@ class AudioInputSource:
             return
         valid_device_indexes = self.valid_device_indexes()
         device_idx = self._config["audio_device"]
+        _LOGGER.debug(f"default_device: {default_device}")
+        _LOGGER.debug(f"config_device: {device_idx}")
 
         if device_idx > max(valid_device_indexes):
             _LOGGER.warning(
@@ -241,7 +249,7 @@ class AudioInputSource:
                 f"Audio device {input_devices[device_idx]['name']} has no input channels. Reverting to default input device."
             )
             device_idx = default_device
-
+        _LOGGER.debug(f"final id: {device_idx}")
         # Setup a pre-emphasis filter to balance the input volume of lows to highs
         self.pre_emphasis = aubio.digital_filter(3)
         # depending on the coeffs type, we need to use different pre_emphasis values to make em work better. allegedly.
