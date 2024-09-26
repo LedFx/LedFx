@@ -1,8 +1,8 @@
+import json
 import logging
 import queue
 import threading
 import time
-import json
 from collections import deque
 from functools import cached_property, lru_cache
 
@@ -219,7 +219,9 @@ class AudioInputSource:
         input_devices = self.query_devices()
 
         _LOGGER.debug("********************************************")
-        _LOGGER.debug(f"Sound Device query_devices: {json.dumps(input_devices, indent=4)}")
+        _LOGGER.debug(
+            f"Sound Device query_devices: {json.dumps(input_devices, indent=4)}"
+        )
         _LOGGER.debug("********************************************")
 
         hostapis = self.query_hostapis()
