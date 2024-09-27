@@ -25,7 +25,7 @@ MAX_MIDI = 108
 
 
 class AudioInputSource:
-    _is_activated = False
+    _audio_stream_active = False
     _audio = None
     _stream = None
     _callbacks = []
@@ -74,13 +74,11 @@ class AudioInputSource:
         if len(device_list) == 0 or default_output_device_idx == -1:
             _LOGGER.warning("No audio output devices found.")
         else:
-            # target device should be the name of the default_output device plus " [Loopback]"
             default_output_device_name = device_list[
                 default_output_device_idx
             ]["name"]
 
-            # We need to run over the device list looking for the target device
-            # NOTE: Some sound drivers truncate the device name, so we may not find a match
+            # We need to run over the device list looking for the target devices name
             _LOGGER.debug(
                 f"Looking for audio loopback device for default output device at index {default_output_device_idx}: {default_output_device_name}"
             )
@@ -197,7 +195,7 @@ class AudioInputSource:
         if hasattr(self, "_config"):
             old_input_device = self._config["audio_device"]
 
-        if self._is_activated:
+        if self._audio_stream_active:
             self.deactivate()
         self._config = self.AUDIO_CONFIG_SCHEMA.fget()(config)
         if len(self._callbacks) != 0:
@@ -313,6 +311,18 @@ class AudioInputSource:
             self.delay_queue = None
 
         def open_audio_stream(device_idx):
+            """
+            Opens an audio stream for the specified input device.
+            Parameters:
+            device_idx (int): The index of the input device to open the audio stream for.
+            Behavior:
+            - Detects if the device is a Windows WASAPI Loopback device and logs its name and channel count.
+            - If the device is a WEB AUDIO device, initializes a WebAudioStream and sets it as the active audio stream.
+            - For other devices, initializes an InputStream with the device's default sample rate and other parameters.
+            - Initializes a resampler with the "sinc_fastest" algorithm that downmixes the source to a single-channel.
+            - Logs the name of the opened audio source.
+            - Starts the audio stream and sets the audio stream active flag to True.
+            """
             device = input_devices[device_idx]
             if hostapis[device["hostapi"]]["name"] == "Windows WASAPI":
                 if "Loopback" in device["name"]:
@@ -334,10 +344,6 @@ class AudioInputSource:
                     callback=self._audio_sample_callback,
                     dtype=np.float32,
                     latency="low",
-                    blocksize=int(
-                        device["default_samplerate"]
-                        / self._config["sample_rate"]
-                    ),
                 )
 
             self.resampler = samplerate.Resampler("sinc_fastest", channels=1)
@@ -347,10 +353,10 @@ class AudioInputSource:
             )
 
             self._stream.start()
+            self._audio_stream_active = True
 
         try:
             open_audio_stream(device_idx)
-            self._is_activated = True
         except OSError as e:
             _LOGGER.critical(
                 f"Unable to open Audio Device: {e} - please retry."
@@ -366,13 +372,13 @@ class AudioInputSource:
                 self._stream.stop()
                 self._stream.close()
                 self._stream = None
-            self._is_activated = False
+            self._audio_stream_active = False
         _LOGGER.info("Audio source closed.")
 
     def subscribe(self, callback):
         """Registers a callback with the input source"""
         self._callbacks.append(callback)
-        if len(self._callbacks) > 0 and not self._is_activated:
+        if len(self._callbacks) > 0 and not self._audio_stream_active:
             self.activate()
         if self._timer is not None:
             self._timer.cancel()
@@ -384,7 +390,7 @@ class AudioInputSource:
             self._callbacks.remove(callback)
         if (
             len(self._callbacks) <= self._subscriber_threshold
-            and self._is_activated
+            and self._audio_stream_active
         ):
             if self._timer is not None:
                 self._timer.cancel()
@@ -397,7 +403,7 @@ class AudioInputSource:
         self._timer = None
         if (
             len(self._callbacks) <= self._subscriber_threshold
-            and self._is_activated
+            and self._audio_stream_active
         ):
             self.deactivate()
 
