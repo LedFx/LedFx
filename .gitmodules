@@ -1,3 +1,4 @@
 [submodule "frontend"]
 	path = frontend
 	url = https://github.com/YeonV/LedFx-Frontend-v2
+	brach = main
