@@ -75,16 +75,17 @@ class AudioInputSource:
             _LOGGER.warn("No audio output devices found.")
         else:
             # target device should be the name of the default_output device plus " [Loopback]"
-            target_device = (
-                f"{device_list[default_output_device]['name']} [Loopback]"
-            )
+            target_device = device_list[default_output_device]['name']
+
             # We need to run over the device list looking for the target device
             # NOTE: Some sound drivers truncate the device name, so we may not find a match
+            _LOGGER.debug(f"Looking for default audio loopback device: {default_output_device} {target_device}")
             for device_index, device in enumerate(device_list):
-                if device["name"] == target_device:
+                # sometimes the audio device name string is truncated, so we need to match what we have and Loopback but otherwise be sloppy
+                if target_device in device["name"] and "[Loopback]" in device["name"]:
                     # Return the loopback device index
                     _LOGGER.debug(
-                        f"Default audio loopback device found: {device['name']}"
+                        f"Default audio loopback device found: {device_index} {device['name']}"
                     )
                     return device_index
             # If we don't match a Loopback device matching output found - return the default input device index
@@ -100,16 +101,16 @@ class AudioInputSource:
         else:
             if default_input_device_idx in valid_device_indexes:
                 _LOGGER.debug(
-                    "No default audio loopback device found. Using default input device."
+                    f"No default audio loopback device found. Using default input device: {default_input_device_idx}"
                 )
                 return default_input_device_idx
             else:
                 # Return the first valid input device index if we can't find a valid default input device
                 if len(valid_device_indexes) > 0:
+                    first_valid = next(iter(valid_device_indexes))
                     _LOGGER.debug(
-                        "No valid default audio input device found. Using first valid input device."
-                    )
-                    return next(iter(valid_device_indexes))
+                        f"No valid default audio input device found. Using first valid input device: {first_valid}")
+                    return first_valid
 
     @staticmethod
     def query_hostapis():
@@ -218,12 +219,6 @@ class AudioInputSource:
         # configured host api and device name
         input_devices = self.query_devices()
 
-        _LOGGER.debug("********************************************")
-        _LOGGER.debug(
-            f"Sound Device query_devices: {json.dumps(input_devices, indent=4)}"
-        )
-        _LOGGER.debug("********************************************")
-
         hostapis = self.query_hostapis()
         default_device = self.default_device_index()
         if default_device is None:
@@ -236,22 +231,28 @@ class AudioInputSource:
             self.deactivate()
             return
         valid_device_indexes = self.valid_device_indexes()
+
+        _LOGGER.debug("********************************************\nvalid_devices")
+        for index in valid_device_indexes:
+            _LOGGER.debug(
+                f"Audio Device {index}\t{hostapis[input_devices[index]["hostapi"]]["name"]}\t{input_devices[index]['name']}\tinput_channels: {input_devices[index]['max_input_channels']}")
+        _LOGGER.debug("********************************************")
+
         device_idx = self._config["audio_device"]
-        _LOGGER.debug(f"default_device: {default_device}")
-        _LOGGER.debug(f"config_device: {device_idx}")
+        _LOGGER.debug(f"default_device: {default_device} config_device: {device_idx}")
 
         if device_idx > max(valid_device_indexes):
             _LOGGER.warning(
-                f"Invalid audio device index: {device_idx}. Reverting to default input device."
+                f"Audio device out of range: {device_idx}. Reverting to default input device: {default_device}"
             )
             device_idx = default_device
 
         elif device_idx not in valid_device_indexes:
             _LOGGER.warning(
-                f"Audio device {input_devices[device_idx]['name']} has no input channels. Reverting to default input device."
+                f"Audio device {input_devices[device_idx]['name']} not in valid_device_indexes. Reverting to default input device: {default_device}"
             )
             device_idx = default_device
-        _LOGGER.debug(f"final id: {device_idx}")
+
         # Setup a pre-emphasis filter to balance the input volume of lows to highs
         self.pre_emphasis = aubio.digital_filter(3)
         # depending on the coeffs type, we need to use different pre_emphasis values to make em work better. allegedly.
@@ -305,12 +306,13 @@ class AudioInputSource:
             ch = 1
             if hostapis[device["hostapi"]]["name"] == "Windows WASAPI":
                 if "Loopback" in device["name"]:
-                    ch = 2
-                if "Logitech G560" in device["name"]:
-                    ch = 8
-                    _LOGGER.warning(
-                        "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Special Logitech clause triggered"
-                    )
+                    ch = device["max_input_channels"]
+                    _LOGGER.info(f"Loopback device detected: {device['name']} setting channels to {ch}")
+
+                    if ch != 2:
+                        _LOGGER.warning(
+                            f"Loopback device {device['name']} has {ch} input channels. Channels other than 2 may lead to a memory exception crash."
+                        )
 
             if hostapis[device["hostapi"]]["name"] == "WEB AUDIO":
                 ledfx.api.websocket.ACTIVE_AUDIO_STREAM = self._stream = (
