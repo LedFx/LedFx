@@ -72,7 +72,7 @@ class AudioInputSource:
         default_output_device_idx = sd.default.device["output"]
         default_input_device_idx = sd.default.device["input"]
         if len(device_list) == 0 or default_output_device_idx == -1:
-            _LOGGER.warn("No audio output devices found.")
+            _LOGGER.warning("No audio output devices found.")
         else:
             # target device should be the name of the default_output device plus " [Loopback]"
             default_output_device_name = device_list[
@@ -237,15 +237,16 @@ class AudioInputSource:
             self.deactivate()
             return
         valid_device_indexes = self.valid_device_indexes()
-
         _LOGGER.debug("********************************************")
         _LOGGER.debug("Valid audio input devices:")
         for index in valid_device_indexes:
+            hostapi_name = hostapis[input_devices[index]["hostapi"]]["name"]
+            device_name = input_devices[index]["name"]
+            input_channels = input_devices[index]["max_input_channels"]
             _LOGGER.debug(
-                f"Audio Device {index}\t{hostapis[input_devices[index]["hostapi"]]["name"]}\t{input_devices[index]['name']}\tinput_channels: {input_devices[index]['max_input_channels']}"
+                f"Audio Device {index}\t{hostapi_name}\t{device_name}\tinput_channels: {input_channels}"
             )
         _LOGGER.debug("********************************************")
-
         device_idx = self._config["audio_device"]
         _LOGGER.debug(
             f"default_device: {default_device} config_device: {device_idx}"
