@@ -69,31 +69,32 @@ class AudioInputSource:
             integer: the sounddevice device index to use for audio input
         """
         device_list = sd.query_devices()
-        default_output_device = sd.default.device["output"]
-        if len(device_list) == 0 or default_output_device == -1:
+        default_output_device_idx = sd.default.device["output"]
+        default_input_device_idx = sd.default.device["input"]
+        if len(device_list) == 0 or default_output_device_idx == -1:
             _LOGGER.warn("No audio output devices found.")
         else:
             # target device should be the name of the default_output device plus " [Loopback]"
-            target_device = device_list[default_output_device]["name"]
+            default_output_device_name = device_list[
+                default_output_device_idx
+            ]["name"]
 
             # We need to run over the device list looking for the target device
             # NOTE: Some sound drivers truncate the device name, so we may not find a match
             _LOGGER.debug(
-                f"Looking for default audio loopback device: {default_output_device} {target_device}"
+                f"Looking for audio loopback device for default output device at index {default_output_device_idx}: {default_output_device_name}"
             )
             for device_index, device in enumerate(device_list):
                 # sometimes the audio device name string is truncated, so we need to match what we have and Loopback but otherwise be sloppy
                 if (
-                    target_device in device["name"]
+                    default_output_device_name in device["name"]
                     and "[Loopback]" in device["name"]
                 ):
                     # Return the loopback device index
                     _LOGGER.debug(
-                        f"Default audio loopback device found: {device_index} {device['name']}"
+                        f"Found audio loopback device for default output device at index {device_index}: {device['name']}"
                     )
                     return device_index
-            # If we don't match a Loopback device matching output found - return the default input device index
-            default_input_device_idx = sd.default.device["input"]
 
         # The default input device index is not always valid (i.e no default input devices)
         valid_device_indexes = AudioInputSource.valid_device_indexes()
@@ -105,17 +106,17 @@ class AudioInputSource:
         else:
             if default_input_device_idx in valid_device_indexes:
                 _LOGGER.debug(
-                    f"No default audio loopback device found. Using default input device: {default_input_device_idx}"
+                    f"No audio loopback device found for default output device. Using default input device at index {default_input_device_idx}: {device_list[default_input_device_idx]['name']}"
                 )
                 return default_input_device_idx
             else:
                 # Return the first valid input device index if we can't find a valid default input device
                 if len(valid_device_indexes) > 0:
-                    first_valid = next(iter(valid_device_indexes))
+                    first_valid_idx = next(iter(valid_device_indexes))
                     _LOGGER.debug(
-                        f"No valid default audio input device found. Using first valid input device: {first_valid}"
+                        f"No valid default audio input device found. Using first valid input device at index {first_valid_idx}: {device_list[first_valid_idx]['name']}"
                     )
-                    return first_valid
+                    return first_valid_idx
 
     @staticmethod
     def query_hostapis():
@@ -237,9 +238,8 @@ class AudioInputSource:
             return
         valid_device_indexes = self.valid_device_indexes()
 
-        _LOGGER.debug(
-            "********************************************\nvalid_devices"
-        )
+        _LOGGER.debug("********************************************")
+        _LOGGER.debug("Valid audio input devices:")
         for index in valid_device_indexes:
             _LOGGER.debug(
                 f"Audio Device {index}\t{hostapis[input_devices[index]["hostapi"]]["name"]}\t{input_devices[index]['name']}\tinput_channels: {input_devices[index]['max_input_channels']}"
@@ -313,18 +313,12 @@ class AudioInputSource:
 
         def open_audio_stream(device_idx):
             device = input_devices[device_idx]
-            ch = 1
             if hostapis[device["hostapi"]]["name"] == "Windows WASAPI":
                 if "Loopback" in device["name"]:
                     ch = device["max_input_channels"]
                     _LOGGER.info(
-                        f"Loopback device detected: {device['name']} setting channels to {ch}"
+                        f"Loopback device detected: {device['name']} with {ch} channels"
                     )
-
-                    if ch != 2:
-                        _LOGGER.warning(
-                            f"Loopback device {device['name']} has {ch} input channels. Channels other than 2 may lead to a memory exception crash."
-                        )
 
             if hostapis[device["hostapi"]]["name"] == "WEB AUDIO":
                 ledfx.api.websocket.ACTIVE_AUDIO_STREAM = self._stream = (
@@ -336,7 +330,6 @@ class AudioInputSource:
                 self._stream = self._audio.InputStream(
                     samplerate=int(device["default_samplerate"]),
                     device=device_idx,
-                    channels=ch,
                     callback=self._audio_sample_callback,
                     dtype=np.float32,
                     latency="low",
