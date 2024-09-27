@@ -806,9 +806,8 @@ class AudioAnalysisSource(AudioInputSource):
             oscillator = (
                 1 - (self.beat_period - time_since_beat) / self.beat_period
             ) + self.beat_counter
-            # ensure it's between 0 and 1. useful when audio cuts
-            oscillator = min(4, oscillator)
-            oscillator = max(0, oscillator)
+            # ensure it's between [0 and 4). useful when audio cuts
+            oscillator = oscillator % 4
         return oscillator
 
     def beat_oscillator(self):
