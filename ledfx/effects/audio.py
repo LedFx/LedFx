@@ -336,6 +336,7 @@ class AudioInputSource:
         except sd.PortAudioError as e:
             _LOGGER.error(f"{e}, Reverting to default input device")
             open_audio_stream(default_device)
+            self._is_activated = True
 
     def deactivate(self):
         with self.lock:
