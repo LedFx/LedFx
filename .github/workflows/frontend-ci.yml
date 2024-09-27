@@ -35,15 +35,15 @@ jobs:
     - name: Install npmjs packages
       run: |
         cd frontend
-        pnpm install
+        yarn install
 
     - name: Cache node modules
       uses: actions/cache@v4
       with:
         path: '**/node_modules'
-        key: ${{ runner.os }}-modules-${{ hashFiles('**/pnpm-lock.yaml') }}
+        key: ${{ runner.os }}-modules-${{ hashFiles('**/yarn-lock.yaml') }}
 
     - name: Build project
       run: |
         cd frontend
-        pnpm build
+        yarn build
