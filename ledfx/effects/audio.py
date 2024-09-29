@@ -327,7 +327,7 @@ class AudioInputSource:
             if hostapis[device["hostapi"]]["name"] == "Windows WASAPI":
                 if "Loopback" in device["name"]:
                     _LOGGER.info(
-                        f"Loopback device detected: {device['name']} with {device["max_input_channels"]} channels"
+                        f"Loopback device detected: {device['name']} with {device['max_input_channels']} channels"
                     )
 
             if hostapis[device["hostapi"]]["name"] == "WEB AUDIO":
