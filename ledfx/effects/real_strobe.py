@@ -61,7 +61,10 @@ class Strobe(AudioReactiveEffect, GradientEffect):
         self.onsets_queue = queue.Queue()
 
     def deactivate(self):
-        empty_queue(self.onsets_queue)
+        # Sometimes we lose the queue? No idea why.
+        # Second protection from sentry sighting
+        if self.onsets_queue is not None:
+            empty_queue(self.onsets_queue)
         self.onsets_queue = None
         return super().deactivate()
 
