@@ -8,7 +8,6 @@ from ledfx.effects import smooth
 from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.hsv_effect import HSVEffect
 from ledfx.effects.math import triangle
-from ledfx.utils import empty_queue
 
 
 class MeltSparkle(AudioReactiveEffect, HSVEffect):
