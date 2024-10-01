@@ -79,11 +79,6 @@ class MeltSparkle(AudioReactiveEffect, HSVEffect):
         self.strobe_overlay = np.zeros(self.pixel_count)
         self.onsets_queue = queue.Queue()
 
-    def deactivate(self):
-        empty_queue(self.onsets_queue)
-        self.onsets_queue = None
-        return super().deactivate()
-
     def config_updated(self, config):
         # lows power seems to be on a 0-1 scale
         self._lows_power = 0
@@ -130,6 +125,7 @@ class MeltSparkle(AudioReactiveEffect, HSVEffect):
             data.onset()
             and currentTime - self.last_strobe_time > self.strobe_wait_time
             and intensities[2] > self.strobe_cutoff
+            and self.onsets_queue is not None
         ):
             self.onsets_queue.put(True)
             self.last_strobe_time = currentTime

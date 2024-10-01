@@ -60,14 +60,6 @@ class Strobe(AudioReactiveEffect, GradientEffect):
         self.bass_strobe_overlay = np.zeros(np.shape(self.pixels))
         self.onsets_queue = queue.Queue()
 
-    def deactivate(self):
-        # Sometimes we lose the queue? No idea why.
-        # Second protection from sentry sighting
-        if self.onsets_queue is not None:
-            empty_queue(self.onsets_queue)
-        self.onsets_queue = None
-        return super().deactivate()
-
     def config_updated(self, config):
         self.color_shift_step = self._config["color_step"]
 
