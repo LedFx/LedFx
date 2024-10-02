@@ -7,7 +7,6 @@ import voluptuous as vol
 from ledfx.color import parse_color, validate_color, validate_gradient
 from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.gradient import GradientEffect
-from ledfx.utils import empty_queue
 
 
 class Strobe(AudioReactiveEffect, GradientEffect):
@@ -55,15 +54,14 @@ class Strobe(AudioReactiveEffect, GradientEffect):
         }
     )
 
+    def __init__(self, ledfx, config):
+        super().__init__(ledfx, config)
+        self.onsets_queue = queue.Queue()
+
     def on_activate(self, pixel_count):
         self.strobe_overlay = np.zeros(np.shape(self.pixels))
         self.bass_strobe_overlay = np.zeros(np.shape(self.pixels))
         self.onsets_queue = queue.Queue()
-
-    def deactivate(self):
-        empty_queue(self.onsets_queue)
-        self.onsets_queue = None
-        return super().deactivate()
 
     def config_updated(self, config):
         self.color_shift_step = self._config["color_step"]
