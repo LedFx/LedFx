@@ -44,6 +44,7 @@ class RPI_WS281X(Device):
                 vol.Required(
                     "gpio_pin",
                     description="Raspberry Pi GPIO pin your LEDs are connected to",
+                    default=21,
                 ): vol.In(list([21, 31])),
                 vol.Required(
                     "color_order", description="Color order", default="RGB"
