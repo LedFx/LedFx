@@ -9,7 +9,15 @@ from ledfx.devices import Device
 _LOGGER = logging.getLogger(__name__)
 
 try:
-    from rpi_ws281x import PixelStrip, WS2811_STRIP_RGB, WS2811_STRIP_RBG, WS2811_STRIP_GRB, WS2811_STRIP_GBR, WS2811_STRIP_BRG, WS2811_STRIP_BGR
+    from rpi_ws281x import (
+        WS2811_STRIP_BGR,
+        WS2811_STRIP_BRG,
+        WS2811_STRIP_GBR,
+        WS2811_STRIP_GRB,
+        WS2811_STRIP_RBG,
+        WS2811_STRIP_RGB,
+        PixelStrip,
+    )
 
     COLOR_ORDERS = {
         "RGB": WS2811_STRIP_RGB,
@@ -32,6 +40,7 @@ except ImportError:
     }
     rpi_supported = False
 
+
 class RPI_WS281X(Device):
     """RPi WS281X device support"""
 
@@ -49,7 +58,7 @@ class RPI_WS281X(Device):
                     "gpio_pin",
                     description="Raspberry Pi GPIO pin your LEDs are connected to",
                     default=10,
-                ): vol.In(list([10,12,13,18,21])),
+                ): vol.In(list([10, 12, 13, 18, 21])),
                 vol.Required(
                     "color_order", description="Color order", default="RGB"
                 ): vol.In(list(COLOR_ORDERS.keys())),
@@ -108,6 +117,6 @@ class RPI_WS281X(Device):
         for idx, rgb in enumerate(data):
             self.strip.setPixelColor(
                 idx,
-                (round(rgb[0]) << 16) | (round(rgb[1]) << 8) | round(rgb[2])
+                (round(rgb[0]) << 16) | (round(rgb[1]) << 8) | round(rgb[2]),
             )
         self.strip.show()
