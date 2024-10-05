@@ -324,14 +324,15 @@ class AudioInputSource:
             - Starts the audio stream and sets the audio stream active flag to True.
             """
             # table of devices that require channel overrides
-            channel_overrides = {"a_device_name": 2}
 
             device = input_devices[device_idx]
-            if hostapis[device["hostapi"]]["name"] == "Windows WASAPI":
-                if "Loopback" in device["name"]:
-                    _LOGGER.info(
-                        f"Loopback device detected: {device['name']} with {device['max_input_channels']} channels"
-                    )
+            channels = None
+            if hostapis[device["hostapi"]]["name"] == "Windows WASAPI" and "Loopback" in device["name"]:
+                _LOGGER.info(
+                    f"Loopback device detected: {device['name']} with {device['max_input_channels']} channels"
+                )
+            else:
+                channels = 1
 
             if hostapis[device["hostapi"]]["name"] == "WEB AUDIO":
                 ledfx.api.websocket.ACTIVE_AUDIO_STREAM = self._stream = (
@@ -340,11 +341,6 @@ class AudioInputSource:
                     )
                 )
             else:
-                channels = None
-
-                if device["name"] in channel_overrides:
-                    channels = channel_overrides[device["name"]]
-
                 self._stream = self._audio.InputStream(
                     samplerate=int(device["default_samplerate"]),
                     device=device_idx,
