@@ -348,7 +348,6 @@ class AudioInputSource:
                 self._stream = self._audio.InputStream(
                     samplerate=int(device["default_samplerate"]),
                     device=device_idx,
-                    channels=device["max_input_channels"],
                     callback=self._audio_sample_callback,
                     dtype=np.float32,
                     latency="low",
