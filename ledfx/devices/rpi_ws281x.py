@@ -1,7 +1,4 @@
 import logging
-from enum import Enum
-
-import numpy as np
 import voluptuous as vol
 
 from ledfx.devices import Device
@@ -23,8 +20,8 @@ try:
         "RGB": WS2811_STRIP_RGB,
         "RBG": WS2811_STRIP_RBG,
         "GRB": WS2811_STRIP_GRB,
-        "BRG": WS2811_STRIP_GBR,
-        "GBR": WS2811_STRIP_BRG,
+        "BRG": WS2811_STRIP_BRG,
+        "GBR": WS2811_STRIP_GBR,
         "BGR": WS2811_STRIP_BGR,
     }
     rpi_supported = True
@@ -44,26 +41,24 @@ except ImportError:
 class RPI_WS281X(Device):
     """RPi WS281X device support"""
 
-    @staticmethod
-    @property
-    def CONFIG_SCHEMA():
-        return vol.Schema(
-            {
-                vol.Required(
-                    "pixel_count",
-                    description="Number of individual pixels",
-                    default=1,
-                ): vol.All(int, vol.Range(min=1)),
-                vol.Required(
-                    "gpio_pin",
-                    description="Raspberry Pi GPIO pin your LEDs are connected to",
-                    default=10,
-                ): vol.In(list([10, 12, 13, 18, 21])),
-                vol.Required(
-                    "color_order", description="Color order", default="RGB"
-                ): vol.In(list(COLOR_ORDERS.keys())),
-            }
-        )
+    CONFIG_SCHEMA = vol.Schema(
+        {
+            vol.Required(
+                "pixel_count",
+                description="Number of individual pixels",
+                default=1,
+            ): vol.All(int, vol.Range(min=1)),
+            vol.Required(
+                "gpio_pin",
+                description="Raspberry Pi GPIO pin your LEDs are connected to",
+                default=10,
+            ): vol.In(list([10, 12, 13, 18, 21])),
+            vol.Required(
+                "color_order", description="Color order",
+                default="RGB"
+            ): vol.In(list(COLOR_ORDERS.keys())),
+        }
+    )
 
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
