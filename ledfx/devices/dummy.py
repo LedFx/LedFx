@@ -4,11 +4,17 @@ import voluptuous as vol
 from numpy import ndarray
 
 from ledfx.devices import Device
+from ledfx.utils import BaseRegistry
 
 _LOGGER = logging.getLogger(__name__)
 
 
-class DummyDevice(Device):
+@BaseRegistry.no_registration
+class DeviceWrapper(Device):
+    pass
+
+
+class DummyDevice(DeviceWrapper):
     """Dummy device for browser render only"""
 
     CONFIG_SCHEMA = vol.Schema(

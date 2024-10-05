@@ -2,6 +2,7 @@ import logging
 import voluptuous as vol
 
 from ledfx.devices import Device
+from ledfx.utils import BaseRegistry
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -38,7 +39,12 @@ except ImportError:
     rpi_supported = False
 
 
-class RPI_WS281X(Device):
+@BaseRegistry.no_registration
+class DeviceWrapper(Device):
+    pass
+
+
+class RPI_WS281X(DeviceWrapper):
     """RPi WS281X device support"""
 
     CONFIG_SCHEMA = vol.Schema(
