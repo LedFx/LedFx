@@ -86,7 +86,6 @@ class RPI_WS281X(DeviceWrapper):
                 "Unable to load ws281x module - are you on a Raspberry Pi?"
             )
             self.set_offline()
-            _LOGGER.warning(f"You chose {self.color_order}")
             return
 
         self.buffer = bytearray(self.pixel_count * 4)
