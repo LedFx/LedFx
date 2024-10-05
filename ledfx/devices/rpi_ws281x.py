@@ -1,4 +1,5 @@
 import logging
+
 import voluptuous as vol
 
 from ledfx.devices import Device
@@ -60,8 +61,7 @@ class RPI_WS281X(DeviceWrapper):
                 default=10,
             ): vol.In(list([10, 12, 13, 18, 21])),
             vol.Required(
-                "color_order", description="Color order",
-                default="RGB"
+                "color_order", description="Color order", default="RGB"
             ): vol.In(list(COLOR_ORDERS.keys())),
         }
     )
