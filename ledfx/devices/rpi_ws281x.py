@@ -90,8 +90,6 @@ class RPI_WS281X(DeviceWrapper):
             self.set_offline()
             return
 
-        self.buffer = bytearray(self.pixel_count * 4)
-
         # following configuration is based on the example from the rpi-ws281x library
         # https://github.com/rpi-ws281x/rpi-ws281x-python/blob/50cc48bbb5d6ab2d205e58606892514a29571f5e/examples/strandtest.py#L20
         if self.config["gpio_pin"] == 13:
