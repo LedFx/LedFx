@@ -324,7 +324,7 @@ class AudioInputSource:
             - Starts the audio stream and sets the audio stream active flag to True.
             """
             # table of devices that require channel overrides
-            channel_overrides = { "a_device_name":2}
+            channel_overrides = {"a_device_name": 2}
 
             device = input_devices[device_idx]
             if hostapis[device["hostapi"]]["name"] == "Windows WASAPI":
@@ -354,8 +354,9 @@ class AudioInputSource:
                     latency="low",
                     blocksize=int(
                         device["default_samplerate"]
-                        / self._config["sample_rate"]),
-                    **({"channels": channels} if channels is not None else {})
+                        / self._config["sample_rate"]
+                    ),
+                    **({"channels": channels} if channels is not None else {}),
                 )
 
             self.resampler = samplerate.Resampler("sinc_fastest", channels=1)
