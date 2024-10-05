@@ -323,7 +323,6 @@ class AudioInputSource:
             - Logs the name of the opened audio source.
             - Starts the audio stream and sets the audio stream active flag to True.
             """
-            # table of devices that require channel overrides
 
             device = input_devices[device_idx]
             channels = None
