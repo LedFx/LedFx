@@ -26,8 +26,13 @@ You should get this animation which is basically a warnign that the currently re
 
 To test a valid GIF path lets try a preset, in this case Caddyshack as per (1)
 
-.. image:: /_static/howto/keybeat/keybeat3.png
-   :alt: Example preset Caddyshack selected
+.. raw:: html
+
+   <video width="640" height="360" controls>
+      <source src="../_static/howto/keybeat/keybeat3.mp4" type="video/mp4">
+      Your browser does not support the video tag.
+   </video>
+
 
 We should see the GIF animation playing to the music beat, and a valid file path in the "image location" in this case on a windows host taken from the ledfx install files at C:\Users\your_user_name\PycharmProjects\ledfx\LedFx\ledfx_assets\gifs\caddy.gif
 
