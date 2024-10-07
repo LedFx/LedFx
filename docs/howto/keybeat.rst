@@ -19,7 +19,7 @@ On opening our new device, select the keybeat effect and then hit the matrix dis
 .. image:: /_static/howto/keybeat/keybeat1.png
    :alt: Select keybeat and turn on the matrix display
 
-You should get this animation which is basically a warnign that the currently referenced GIF listed in "image location" which at this point is empty is not valid
+You should get this animation which is basically a warning that the currently referenced GIF listed in "image location" which at this point is empty is not valid
 
 .. image:: /_static/howto/keybeat/keybeat2.png
    :alt: This shows we have an invalid image location
