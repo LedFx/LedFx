@@ -39,6 +39,7 @@
    :caption: Help
 
    /trouble
+   /howto/report
 
 License
 -------
