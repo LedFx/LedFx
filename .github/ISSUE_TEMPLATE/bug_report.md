@@ -8,7 +8,7 @@ assignees: ''
 ---
 **Check the latest guidance**
 
-Ledfx Docs [How to: Report an issue](https://docs.ledfx.app/en/latest/howto/report.html) 
+Ledfx Docs [How to: Report an issue](https://docs.ledfx.app/en/latest/howto/report.html)
 
 **Describe the bug**
 
@@ -36,7 +36,7 @@ If applicable, add the traceback log that LedFx outputs when it encounters an er
 Usually starts with "Traceback (most recent call last):"
 
 **LedFx Host Information (please complete the following information):**
- 
+
  - OS: [e.g. iOS]
  - Installation Method: [e.g. Anaconda, Python, Windows EXE, pip]
  - LedFx Version:  [e.g. 0.8.9 - use ledfx --version to find out]
