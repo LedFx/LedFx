@@ -4,21 +4,22 @@ How to: Report an issue
 
 This page is intended to give guidance on reporting an issue to the ledfx community.
 
-If you are having an issue, then you probably want to just get answers, and all this reading and stuff is overhead.
+If you are having an issue, then you probably want to just get answers, and all this reading and stuff feels like overhead.
 
-Just spamming cryptic woe into the discord general channel, will quickly tire our own front office drones.
+Just spamming cryptic woe into the discord #general channel, will quickly tire out our front office drones.
 
 The community needs clues on how to help.
 
-What is obvious to you, is likely unknown to others, your setup and usage likely close to unique, so to give the code droids, kept in the darkest dungeons of castle ledfx, a chance, please work through this guide, and try to provide as much infomration as you can upfront.
+What is obvious to you, is likely unknown to others, your setup and usage likely close to unique, so to give the code droids, kept in the darkest dungeons of techno-castle ledfx, a chance, please work through this guide, and try to provide as much infomration as you can upfront.
 
 If a code droid is successful, sometimes we might even recharge their batteries a little above critical and turn the lights on in their cell for a short time. Please, think of the code droids...
 
 A well structured issue report is far more likely to get a quick and accurate response than a vague chain of tech babble. Invest in solving your problems so that the community can invest in helping you.
 
+A screenshot or even a video of your interaction, if you can reproduce the issue does wonders for the logic circuits of our code droids, well, reduces the chance of burnout, and we are all out of spare cards.
+
 .. image:: /_static/howto/report/ledfxdroid.png
    :alt: A ledfx issue droid. No really, this is a webcam, just wait and see it move...
-   :width: 600px
 
 Discord or Github?
 ------------------
@@ -34,7 +35,7 @@ Issue template
 
 When you open an issue via github, you will automatically get a template to fill in. Please fill in as much as you can.
 
-If you are using discord, then please try to follow the same structure, just hit the copy button here...
+If you are using discord, `Please read this before posting <https://discord.com/channels/469985374052286474/1142309460946198648>`_ then please try to follow the same structure, just hit the copy button here...
 
 .. code-block:: text
 
