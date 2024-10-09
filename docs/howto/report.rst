@@ -49,17 +49,17 @@ If you are using discord, then please try to follow the same structure, just hit
 
     Expected behavior:
 
-    A clear and concise description of what you expected to happen.
+      A clear and concise description of what you expected to happen.
 
     Screenshots:
 
-    If applicable, add screenshots to help explain your problem.
+      If applicable, add screenshots to help explain your problem.
 
     Traceback:
 
-    If applicable, add the traceback log that LedFx outputs when it encounters an error.
+      If applicable, add the traceback log that LedFx outputs when it encounters an error.
 
-    Usually starts with "Traceback (most recent call last):"
+      Usually starts with "Traceback (most recent call last):"
 
     LedFx Host Information (please complete the following information):
 
@@ -69,7 +69,9 @@ If you are using discord, then please try to follow the same structure, just hit
 
     Additional context:
 
-    Add any other context about the problem here.
+      Add any other context about the problem here.
+
+      Please add a config.yaml and a ledfx.log as described in the documentation
 
 
 

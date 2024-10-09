@@ -45,3 +45,5 @@ Usually starts with "Traceback (most recent call last):"
 **Additional context**
 
 Add any other context about the problem here.
+
+Please add a config.yaml and a ledfx.log as described in the documentation
