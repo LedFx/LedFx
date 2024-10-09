@@ -73,5 +73,31 @@ If you are using discord, then please try to follow the same structure, just hit
 
       Please add a config.yaml and a ledfx.log as described in the documentation
 
+How to launch with the -vv option
+----------------------------------
+
+Launching ledfx with the -vv option will give you more verbose output in the logs, which can be useful for debugging.
+
+If you are launching from the command line, you can add the -vv option to the command.
+
+Open a terminal and run the following command:
+
+.. code-block:: bash
+
+    .\ledfx -vv --open-ui
+
+If you are launching from the desktop shortcut, you can add the -vv option to the command in the shortcut.
+
+Right click it and select properties, then add -vv to the end of the target field. In this example we also have --open-ui which is useful to get straight to the user interface.
+
+.. image:: /_static/howto/report/shortcut.png
+   :alt: Desktop shortcut
+
+How to find the config.yaml and ledfx.log
+-----------------------------------------
+
+Now you have your logging verbose, and have relauched and reproduced your issue in ledfx, we need to find the assets and place copies of them in your issue report.
+
+
 
 
