@@ -57,7 +57,9 @@ If you are using discord, then please try to follow the same structure, just hit
 
     Traceback:
 
-    If applicable, add the traceback log that LedFx outputs when it encounters an error. Usually starts with "Traceback (most recent call last):"
+    If applicable, add the traceback log that LedFx outputs when it encounters an error.
+
+    Usually starts with "Traceback (most recent call last):"
 
     LedFx Host Information (please complete the following information):
 
