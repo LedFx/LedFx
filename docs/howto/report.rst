@@ -98,6 +98,37 @@ How to find the config.yaml and ledfx.log
 
 Now you have your logging verbose, and have relauched and reproduced your issue in ledfx, we need to find the assets and place copies of them in your issue report.
 
+They live in the .ledfx directory, which is often a hidden directory in your user home directory.
 
+The exact location is OS dependant.
 
+Examples being, but not limited to, the following locations
+
+Windows:
+
+   .. code:: console
+
+        C:\Users\username\AppData\Roaming\.ledfx
+        %appdata%\.ledfx
+
+Linux:
+
+    .. code:: console
+
+        /home/username/.ledfx
+        ~/.ledfx
+
+MacOS:
+
+   .. code:: console
+
+        /Users/username/.ledfx
+        ~/.ledfx
+
+The config.yaml and ledfx.log files are the most important files to include in your issue report.
+
+If you have read this far, the humble code droids thank you, and look forward to their brief respite from the darkness, should they be able to solve your problems...
+
+.. image:: /_static/howto/report/thankyou.png
+   :alt: 10% and 10 minutes, and they should be thankful for that...
 
