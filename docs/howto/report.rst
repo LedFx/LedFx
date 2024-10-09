@@ -29,6 +29,45 @@ If you are using `Discord <https://discord.gg/4hQdAw5H5T>`_, PLEASE use the `#he
 
 If you are using Github then please raise an issue in `Ledfx issues <https://github.com/LedFx/LedFx/issues>`_
 
+Issue template
+--------------
+
+When you open an issue via github, you will automatically get a template to fill in. Please fill in as much as you can.
+
+If you are using discord, then please try to follow the same structure, just hit the copy button here...
+
+.. code-block:: text
+
+    Describe the bug A clear and concise description of what the bug is.
+
+    To Reproduce Steps to reproduce the behavior:
+
+    - Go to '...'
+    - Click on '....'
+    - Scroll down to '....'
+    - See error
+
+    Expected behavior:
+
+    A clear and concise description of what you expected to happen.
+
+    Screenshots:
+
+    If applicable, add screenshots to help explain your problem.
+
+    Traceback:
+
+    If applicable, add the traceback log that LedFx outputs when it encounters an error. Usually starts with "Traceback (most recent call last):"
+
+    LedFx Host Information (please complete the following information):
+
+    - OS: [e.g. iOS]
+    - Installation Method: [e.g. Anaconda, Python, Windows EXE, pip]
+    - LedFx Version: [e.g. 2.0.104 - use ledfx --version to find out]
+
+    Additional context:
+
+    Add any other context about the problem here.
 
 
 
