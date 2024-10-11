@@ -4,6 +4,51 @@ How to: Create and Edit Virtuals
 
 This page is intended to give guidance on how to use virtuals.
 
+TLDR;
+-----
+
+Scan Virtual
+^^^^^^^^^^^^
+
+One effect on the virtual spread across multiple segments on multiple devices, note in this example there are significant difference in pixel counts between devices. Effects are copied ratio'd to the segments pixel counts.
+
+.. image:: /_static/howto/virtuals/span3.png
+   :alt: Span Segments Config
+
+
+.. raw:: html
+
+   <picture>
+      <source srcset="../_static/howto/virtuals/span1.gif" type="image/webp">
+      <img src="../_static/howto/virtuals/span1.gif" alt="Active Segment">
+   </picture>
+   <br><br>
+
+.. raw:: html
+
+   <picture>
+      <source srcset="../_static/howto/virtuals/span2.gif" type="image/webp">
+      <img src="../_static/howto/virtuals/span2.gif" alt="Active Segment">
+   </picture>
+   <br><br>
+
+Copy Virtual
+^^^^^^^^^^^^
+
+
+One effect on the vitual copied to multiple segments on multiple devices irrespective of pixel count
+
+.. raw:: html
+
+   <picture>
+      <source srcset="../_static/howto/virtuals/virtuals6.gif" type="image/webp">
+      <img src="../_static/howto/virtuals/virtuals6.gif" alt="Active Segment">
+   </picture>
+   <br><br>
+
+So you want to know more?
+-------------------------
+
 Virtuals are a way to create a "virtual" device that can be assigned its own active effects. The virtual is then mapped into other devices.
 
 With virtuals it is possible to
@@ -99,6 +144,7 @@ It is white as this is the current segment being edited.
       <source srcset="../_static/howto/virtuals/virtuals6.gif" type="image/webp">
       <img src="../_static/howto/virtuals/virtuals6.gif" alt="Active Segment">
    </picture>
+   <br><br>
 
 If we now set the start and end values by dragging the blue blobs, we can change the range for this segment
 
@@ -113,3 +159,5 @@ The live physical device will also update the white wash pattern to indicate the
       <source srcset="../_static/howto/virtuals/virtuals8.gif" type="image/webp">
       <img src="../_static/howto/virtuals/virtuals8.gif" alt="Active Segment">
    </picture>
+   <br><br>
+
