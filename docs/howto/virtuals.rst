@@ -123,8 +123,8 @@ Thats a lot of options!!! Don't worry, we can ignore most of them, but lets go o
 
 Once all of these have been configured, the next step is to add and setup the segments that make up the virtual. So press the button handily marked as **Add and Setup Segments**
 
-Adding Segments
----------------
+Adding a First Segment
+----------------------
 
 .. image:: /_static/howto/virtuals/virtuals3.png
    :alt: Add and Setup Segments
@@ -139,11 +139,9 @@ Hit the drop down and a list of all devices will appear, select the device from 
 .. image:: /_static/howto/virtuals/virtuals5.png
    :alt: Our first segment setup
 
-In this case we have selected a relatively large WLED based matrix that is 32x32 = 1024 pixels. By default, all the pixels on the device have been added.
+Our first added device happens to have 400 pixels, and we can see all are selected by default.
 
-The live physical device will show an animated white pattern with a dark bar moving through it, this is an aid to adjusting where you want the virtual segment to be by observing the changes live.
-
-It is white as this is the current segment being edited.
+The currently selected segment under edit is animated live with a white wash pattern, with a dark bar showing the direction of effect mapping. This is displayed on the physical device, so you can directly see where you are building your virtual layout in the real world.
 
 .. raw:: html
 
@@ -152,6 +150,9 @@ It is white as this is the current segment being edited.
       <img src="../_static/howto/virtuals/virtuals6.gif" alt="Active Segment">
    </picture>
    <br><br>
+
+Adjusting the Segment
+---------------------
 
 If we now set the start and end values by dragging the blue blobs, we can change the range for this segment
 
@@ -167,4 +168,96 @@ The live physical device will also update the white wash pattern to indicate the
       <img src="../_static/howto/virtuals/virtuals8.gif" alt="Active Segment">
    </picture>
    <br><br>
+
+Adding a Second Segment
+-----------------------
+
+Now lets get tricky and add a second segment, on the same device. Using the sliders and watching the live wash, we will match them to fill the device. Note the active segment under edit is rendered in white, other segments in the virtual are cycled between red, green and blue, again with the wash implying the direction of render.
+
+You SHOULD NOT save if your segments overlap, the UI will warn you if you try, however, if you leave the browser while in an overlapping configuration, you can generate a bad virtual config, which you will have to re-edit. Overlapping segments lead to undefined behaviour!
+
+If we now set the start and end values by dragging the blue blobs, we can change the range for this segment
+
+.. image:: /_static/howto/virtuals/virtuals9.png
+   :alt: Adding a segment in the same device
+
+Note how the last edited segment is now white, and the other segment is one of red, green, blue, cycling to show direction
+
+.. raw:: html
+
+   <picture>
+      <source srcset="../_static/howto/virtuals/virtuals10.gif" type="image/webp">
+      <img src="../_static/howto/virtuals/virtuals10.gif" alt="Active Segment">
+   </picture>
+   <br><br>
+
+Let's hit the flip button on one of those segments to show the changing of the render direction
+
+.. image:: /_static/howto/virtuals/virtuals11.png
+   :alt: Flipping a segment
+
+You can see the Flip button is now active and the impact on the live wash pattern
+
+.. raw:: html
+
+   <picture>
+      <source srcset="../_static/howto/virtuals/virtuals12.gif" type="image/webp">
+      <img src="../_static/howto/virtuals/virtuals12.gif" alt="Active Segment">
+   </picture>
+   <br><br>
+
+Adding a Few More Segments
+--------------------------
+
+Let's add a few more segments on the other devices
+
+.. image:: /_static/howto/virtuals/virtuals13.png
+   :alt: Adding segments on other devices
+
+Note again in the live wash pattern, the last edited segment is white.
+
+.. raw:: html
+
+   <picture>
+      <source srcset="../_static/howto/virtuals/virtuals14.gif" type="image/webp">
+      <img src="../_static/howto/virtuals/virtuals14.gif" alt="Active Segment">
+   </picture>
+   <br><br>
+
+Now we are done, hit the back button. It is here that the UI would warn you if you had overlapping segments, so if you see a warning, go back and adjust the segments.
+
+Using the pixels effect on the new virtual, we can see the effect spread across all the segments we have just created
+
+.. raw:: html
+
+   <picture>
+      <source srcset="../_static/howto/virtuals/virtuals15.gif" type="image/webp">
+      <img src="../_static/howto/virtuals/virtuals15.gif" alt="Active Segment">
+   </picture>
+   <br><br>
+
+Now you can add any effect to the virtual, and it will be spread across all the segments you have created. Or in this case we changed the virtual from a span to a copy, so the effect is copied to each segment, while observing the flip switch for directionality.
+
+.. raw:: html
+
+   <picture>
+      <source srcset="../_static/howto/virtuals/virtuals16.gif" type="image/webp">
+      <img src="../_static/howto/virtuals/virtuals16.gif" alt="Active Segment">
+   </picture>
+   <br><br>
+
+...Profit
+---------
+
+Segments can be changed in order, by using the up and down arrows, and deleted by using the trash can icon.
+
+Segments are a very powerful tool to create complex virtuals to control your physical devices from a single effect dialog.
+
+Remember that segments can also be used to stack matrix together in one dimension.
+
+To build a larger matrix from smaller matrix blocks, ensure you stack them rather than tile.
+
+For a 64x64 end matrix made up of 4 devices, you should configure into 4 devices of 16x64, not 4 of 32x32.
+
+As we can only stack in one dimension, putting the 4 devices of 16x64 together via virtuals will allow you to achieve a 64x64 matrix controlled by a single virutal in ledfx.
 
