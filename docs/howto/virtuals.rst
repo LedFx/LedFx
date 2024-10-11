@@ -35,14 +35,21 @@ One effect on the virtual spread across multiple segments on multiple devices, n
 Copy Virtual
 ^^^^^^^^^^^^
 
-
 One effect on the vitual copied to multiple segments on multiple devices irrespective of pixel count
 
 .. raw:: html
 
    <picture>
-      <source srcset="../_static/howto/virtuals/virtuals6.gif" type="image/webp">
-      <img src="../_static/howto/virtuals/virtuals6.gif" alt="Active Segment">
+      <source srcset="../_static/howto/virtuals/copy1.gif" type="image/webp">
+      <img src="../_static/howto/virtuals/copy1.gif" alt="Active Segment">
+   </picture>
+   <br><br>
+
+.. raw:: html
+
+   <picture>
+      <source srcset="../_static/howto/virtuals/copy2.gif" type="image/webp">
+      <img src="../_static/howto/virtuals/copy2.gif" alt="Active Segment">
    </picture>
    <br><br>
 
