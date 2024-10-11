@@ -1,5 +1,5 @@
 ================================
-How to: Create and edit virtuals
+How to: Create and Edit Virtuals
 ================================
 
 This page is intended to give guidance on how to use virtuals.
