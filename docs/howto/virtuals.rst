@@ -4,13 +4,13 @@ How to: Create and edit virtuals
 
 This page is intended to give guidance on how to use virtuals.
 
-Virtuals are a way to create a "virtual" device that can be assigned its own active effects. The virtual is then mapped into other virtuals or devices.
+Virtuals are a way to create a "virtual" device that can be assigned its own active effects. The virtual is then mapped into other devices.
 
 With virtuals it is possible to
 
 - Have multiple physical devices running exectly the same effect, fully synchonised, irrespective of led count
 - Spread a single effect across multiple physical devices to slice that effect up into portions that are displayed on different devices
-- Use multiple matrix to make one large matrix, as long as they are vertically stacked
+- Use multiple strips or matrix blocks to make one large matrix, as long as they are vertically stacked
 
 Devices vs Virtuals
 -------------------
@@ -39,7 +39,7 @@ This will open the **Add Virtual Device** dialog
    :alt: Add Virtual Device dialog
 
 
-Thats a lot of options!!! Don't worry, we can ignore most of them, but lets go them all anyway first.
+Thats a lot of options!!! Don't worry, we can ignore most of them, but lets go over them all anyway first.
 
 1. **Name** - Give the virtual a name, this is what you will see in the UI, make it meaningful, once you have a hand full of physical devices, and your own virtuals on top, you want to be able to find what you are looking for.
 
@@ -51,7 +51,7 @@ Thats a lot of options!!! Don't worry, we can ignore most of them, but lets go t
 
    - **copy** - A copy of the active effect will be displayed on each segment that makes up the virtual
 
-4. **icon name** - This is the icon that will be displayed in the UI, select something that makes sense to you. It is string entry field, supported icons and their string mappings can be found at `Material Design Icons <https://pictogrammers.com/library/mdi/>`_
+4. **icon name** - This is the icon that will be displayed in the UI, select something that makes sense to you. It is a string entry field, supported icons and their string mappings can be found at `Material Design Icons <https://pictogrammers.com/library/mdi/>`_
 
 5. **Max Brightness** - This is the maximum brightness that the virtual will display at, from 0 to 1. Generally leave at 1
 
@@ -59,7 +59,7 @@ Thats a lot of options!!! Don't worry, we can ignore most of them, but lets go t
 
 7. **Preview Only** - Preview the effect wihout updating the real devices. Generally leave off.
 
-8. **Transition Time** - Lenght of transition when switching between effects.
+8. **Transition Time** - Length of transition when switching between effects.
 
 9. **Transition Mode** - How to blend between old and new effects during transition. Modes are Add, Dissolve, Push, Slide, Iris, Through White, Through Black, None. Default is Add.
 
