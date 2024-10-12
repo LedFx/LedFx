@@ -27,6 +27,7 @@
 
    /howto/dummy_matrix
    /howto/keybeat
+   /howto/virtuals
 
 .. toctree::
    :maxdepth: 2
