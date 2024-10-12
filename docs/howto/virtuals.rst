@@ -109,7 +109,7 @@ Thats a lot of options!!! Don't worry, we can ignore most of them, but lets go o
 
 6. **Center Offset** - Pixel count by which to offset the center of the virtual when applying effects. Generally leave at 0
 
-7. **Preview Only** - Preview the effect wihout updating the real devices. Generally leave off.
+7. **Preview Only** - Preview the effect without updating the real devices. Generally leave off.
 
 8. **Transition Time** - Length of transition when switching between effects.
 
