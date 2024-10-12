@@ -176,8 +176,6 @@ Now lets get tricky and add a second segment, on the same device. Using the slid
 
 You SHOULD NOT save if your segments overlap, the UI will warn you if you try, however, if you leave the browser while in an overlapping configuration, you can generate a bad virtual config, which you will have to re-edit. Overlapping segments lead to undefined behaviour!
 
-If we now set the start and end values by dragging the blue blobs, we can change the range for this segment
-
 .. image:: /_static/howto/virtuals/virtuals9.png
    :alt: Adding a segment in the same device
 
