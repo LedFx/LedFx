@@ -1,9 +1,10 @@
 import logging
+
 import numpy as np
 import voluptuous as vol
 
-from ledfx.effects import Effect
 from ledfx.color import parse_color, validate_color
+from ledfx.effects import Effect
 from ledfx.effects.audio import AudioReactiveEffect
 
 _LOGGER = logging.getLogger(__name__)
@@ -14,6 +15,7 @@ _LOGGER = logging.getLogger(__name__)
 # IMPORTANT IMPORTANT IMPORTANT
 
 # no really, this is important
+
 
 # Remove the @Effect.no_registration line when you use this template
 # This is a decorator that prevents the effect from being registered
@@ -85,7 +87,9 @@ class Template1d(AudioReactiveEffect):
         self.bar = 0
         self.beat = 0
         # if you are going to log something, use the logger
-        _LOGGER.info(f"This is effect logging spam, but only visible if running in verbose mode due to the info() method\ncolor_beat is {self.color_beat} and the string_value is: {self.string_value}")
+        _LOGGER.info(
+            f"This is effect logging spam, but only visible if running in verbose mode due to the info() method\ncolor_beat is {self.color_beat} and the string_value is: {self.string_value}"
+        )
 
     def audio_data_updated(self, data):
         # this function is called every time the audio frame is available
@@ -114,6 +118,5 @@ class Template1d(AudioReactiveEffect):
         beat_progress = self.beat * self.pixel_count / 4
         bar_progress = self.bar * self.pixel_count / 4
 
-        self.pixels[:int(bar_progress)] = self.color_bar
-        self.pixels[:int(beat_progress)] = self.color_beat
-
+        self.pixels[: int(bar_progress)] = self.color_bar
+        self.pixels[: int(beat_progress)] = self.color_beat
