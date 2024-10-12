@@ -19,7 +19,7 @@ _LOGGER = logging.getLogger(__name__)
 # This is a decorator that prevents the effect from being registered
 # If you don't remove it, you will not be able to test your effect!
 @Effect.no_registration
-class template1d(AudioReactiveEffect):
+class Template1d(AudioReactiveEffect):
     NAME = "template1d"
     # CATEGORY defines where in the UI the effect will be displayed in the effects list
     # "Classic" is a good default to start with, you can have anything here, but don't go
@@ -57,11 +57,11 @@ class template1d(AudioReactiveEffect):
             vol.Optional(
                 "int_value",
                 description="A value picked from an int range",
-                default=1.0,
+                default=1,
             ): vol.All(vol.Coerce(int), vol.Range(min=0, max=10)),
             vol.Optional(
                 "string_value",
-                description="A sting input box",
+                description="A string input box",
                 default="Hey look, I'm a string!",
             ): str,
         }
@@ -92,14 +92,14 @@ class template1d(AudioReactiveEffect):
         # there are many ways to interact with the audio data, various filters, beat detection and fft's
         # see other effects for examples
         # try not to do heavy lifting here, get the runtime back to the audio thread that has called this callback
-        # beware concurrancy, this can be called while your render function is running
+        # beware concurrency, this can be called while your render function is running
         # so don't go changing things your render depends on non atomically
         self.bar = data.bar_oscillator()
         self.beat = data.beat_oscillator()
 
     def render(self):
         # this is where your magic happens
-        # though your magic render into self.pixles which is an np array of length pixels_count
+        # though your magic render into self.pixels which is an np array of length pixels_count
         # if you are doing python loops, try to refactor to vectorised numpy operations, remember chatgpt is your friend
         # the overall performance of ledfx lives and dies by your efforts in here!
 
@@ -108,9 +108,9 @@ class template1d(AudioReactiveEffect):
         # clear the pixels to black
         self.pixels = np.zeros(np.shape(self.pixels))
 
-        # scale for number of pixels]
+        # scale for number of pixels
         # the /4 is because I only want beat to cover one quarter of the pixels range
-        # and for bar, becuase we know it progresses from 0 to 4
+        # and for bar, because we know it progresses from 0 to 4
         beat_progress = self.beat * self.pixel_count / 4
         bar_progress = self.bar * self.pixel_count / 4
 
