@@ -265,3 +265,12 @@ macOS
 
 .. _`pip documentation`: https://pip.pypa.io/en/latest/reference/pip_install/#editable-installs
 .. _`homebrew`: https://docs.brew.sh/Installation
+
+------------
+How it works
+------------
+
+Well enough for discussional purposes. This diagram specifically illustrates audio reactive effects, temporal are similar but have their own thread loop independant of audio framing.
+
+.. image:: /_static/main_loop.png
+   :alt: Do you want to buy a bridge?
