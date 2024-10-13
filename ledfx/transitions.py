@@ -1,4 +1,7 @@
 import numpy as np
+import logging
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class IterClass(type):
@@ -28,6 +31,12 @@ class Transitions(metaclass=IterClass):
     def _validate(x1, x2, weight):
         assert np.shape(x1) == np.shape(x2)
         assert 0 <= weight <= 1
+
+    def pre_validate(self, x1, x2):
+        if np.shape(x1) != () and np.shape(x2) != () and np.shape(x1) != np.shape(x2):
+            _LOGGER.error(f"Transitions.pre_validate: Shapes of x1 and x2 do not match: {np.shape(x1)} != {np.shape(x2)}")
+            return False
+        return True
 
     def add(self, x1, x2, weight):
         """
