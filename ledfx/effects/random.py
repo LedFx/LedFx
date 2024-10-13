@@ -21,7 +21,7 @@ class RandomEffect(TemporalEffect):
             vol.Optional(
                 'hit_color',
                 description="Hit color",
-                default='#111111'
+                default='#FFFFFF'
             ): validate_color,
             vol.Optional(
                 'hit_duration',
