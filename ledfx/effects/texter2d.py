@@ -50,7 +50,7 @@ class Texter2d(Twod, GradientEffect):
     CATEGORY = "Matrix"
     # add keys you want hidden or in advanced here
     HIDDEN_KEYS = Twod.HIDDEN_KEYS + []
-    ADVANCED_KEYS = Twod.ADVANCED_KEYS + ['resize_method', 'deep_diag']
+    ADVANCED_KEYS = Twod.ADVANCED_KEYS + ["resize_method", "deep_diag"]
 
     CONFIG_SCHEMA = vol.Schema(
         {
