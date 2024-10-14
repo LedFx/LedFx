@@ -108,6 +108,8 @@ class EffectsEndpoint(RestEndpoint):
                         val = random.randint(lower, upper)
                 effect_config[setting.schema] = val
 
+        fallback = data.get("fallback", False)
+
         # See if virtual's active effect type matches this effect type,
         # if so update the effect config
         # otherwise, create a new effect and add it to the virtual
@@ -133,7 +135,7 @@ class EffectsEndpoint(RestEndpoint):
                             **effect_config,
                         },
                     )
-                    virtual.set_effect(effect)
+                    virtual.set_effect(effect, fallback=fallback)
                 else:
                     effect = virtual.active_effect
                     virtual.active_effect.update_config(effect_config)
@@ -143,7 +145,7 @@ class EffectsEndpoint(RestEndpoint):
                 effect = self._ledfx.effects.create(
                     ledfx=self._ledfx, type=effect_type, config=effect_config
                 )
-                virtual.set_effect(effect)
+                virtual.set_effect(effect, fallback=fallback)
 
         except (ValueError, RuntimeError) as msg:
             error_message = f"Unable to set effect: {msg}"
@@ -250,8 +252,11 @@ class EffectsEndpoint(RestEndpoint):
         effect = self._ledfx.effects.create(
             ledfx=self._ledfx, type=effect_type, config=effect_config
         )
+
+        fallback = data.get("fallback", False)
+
         try:
-            virtual.set_effect(effect)
+            virtual.set_effect(effect, fallback=fallback)
         except (ValueError, RuntimeError) as msg:
             error_message = (
                 f"Unable to set effect {effect} on {virtual_id}: {msg}"

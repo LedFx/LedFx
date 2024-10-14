@@ -159,6 +159,9 @@ class Virtual:
         self._os_active = False
         self.lock = threading.Lock()
         self.clear_handle = None
+        self.fallback_effect_type = None
+        self.fallback_fire = False
+        self.fallback_config = None
 
         self.frequency_range = FrequencyRange(
             self._config["frequency_min"], self._config["frequency_max"]
@@ -339,7 +342,23 @@ class Virtual:
         )
         self.set_effect(effect)
 
-    def set_effect(self, effect):
+    def set_fallback(self):
+        """
+        Sets the active effect to the stored fallback effect if available.
+        """
+        if self.fallback_effect_type is not None:
+
+            effect = self._ledfx.effects.create(
+                ledfx=self._ledfx,
+                type=self.fallback_effect_type,
+                config=self.fallback_config,
+            )
+            self.set_effect(effect, fallback=False)
+
+            # make sure fallback is disabled
+            self.fallback_effect_type = None
+
+    def set_effect(self, effect, fallback=False):
         """
         Sets the active effect for the virtual device.
 
@@ -356,6 +375,27 @@ class Virtual:
                 error = f"Virtual {self.id}: Cannot activate, no configured device segments"
                 _LOGGER.warning(error)
                 raise ValueError(error)
+
+            if fallback:
+                _LOGGER.warning("Fallback requested")
+                if self._active_effect is not None:
+                    if self.fallback_effect_type is None:
+                        self.fallback_effect_type = self._active_effect.type
+                        self.fallback_config = self._active_effect.config
+                        _LOGGER.info(
+                            f"Setting fallback to {self.fallback_effect_type}"
+                        )
+                    else:
+                        # don't let new fallbacks override old ones, we don't want text falling back to text
+                        _LOGGER.info(
+                            f"There is already a fallback registered {self.fallback_effect_type}"
+                        )
+                else:
+                    _LOGGER.info("No current _active_effect to fallback to")
+                    self.fallback_effect_type = None
+            else:
+                # any effect being set without fallback will clear the fallback
+                self.fallback_effect_type = None
 
             if (
                 self._config["transition_mode"] != "None"
@@ -587,6 +627,11 @@ class Virtual:
             if not self._active:
                 break
             start_time = timeit.default_timer()
+
+            if self.fallback_fire:
+                self.set_fallback()
+                self.fallback_fire = False
+
             # we need to lock before we test, or we could deactivate
             # between test and execution
             with self.lock:
