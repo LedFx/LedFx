@@ -1,5 +1,5 @@
 import random
-import time
+import timeit
 
 import numpy as np
 import voluptuous as vol
@@ -34,14 +34,14 @@ class RandomEffect(TemporalEffect):
             vol.Optional(
                 "hit_relative_size",
                 description="Hit size relative to LED strip",
-                default=0.2,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.1, max=1.0)),
+                default=10,
+            ): vol.All(vol.Coerce(int), vol.Range(min=1, max=100)),
         }
     )
 
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
-        self.seconds_since_last_hit = 0
+        self.last_time = timeit.default_timer()
 
     def config_updated(self, config):
         self.hit_color = np.array(
@@ -55,34 +55,31 @@ class RandomEffect(TemporalEffect):
         )
 
     def on_activate(self, pixel_count):
-        self.seconds_since_last_hit = 0
+        self.last_time = timeit.default_timer()
 
     def effect_loop(self):
-        hit_absolute_size = int(self.pixel_count * self.hit_relative_size)
-        self.__update_duration_since_last_hit()
+        hit_absolute_size = int(self.pixel_count * self.hit_relative_size/100)
 
-        hit_is_still_active = self.seconds_since_last_hit < self.hit_duration
+        # handle time variant
+        now = timeit.default_timer()
+        time_passed = now - self.last_time
+
+        hit_is_still_active = time_passed < self.hit_duration
         if not hit_is_still_active:
             # Create a base frame of all-off (black) pixels
-            frame = np.zeros((self.pixel_count, 3), dtype=np.float64)
+            self.pixels = np.zeros((self.pixel_count, 3), dtype=np.float64)
 
             is_hit = np.random.random() < self.probability_per_sec
             if is_hit:
                 # assign pixel hit at random position
                 random_pos = random.randrange(
-                    self.pixel_count - hit_absolute_size
+                    self.pixel_count - hit_absolute_size + 1
                 )
-                # frame slice based of random_pos will be hited
-                frame[random_pos : random_pos + hit_absolute_size, :] = (
+                # frame slice based of random_pos will be hit
+                self.pixels[random_pos : random_pos + hit_absolute_size] = (
                     np.tile(self.hit_color, (hit_absolute_size, 1))
                 )
-                # frame = np.tile(self.hit_color, (self.pixel_count, 1))
-                self.seconds_since_last_hit = 0
-            self.pixels = frame
-
-    def __update_duration_since_last_hit(self):
-        # NOTE: speed 0.1 is 1 update per sec
-        self.seconds_since_last_hit += 1 / (10 * self.speed)
+                self.last_time = timeit.default_timer()
 
     def __balance_hit_probability_based_on_speed(self) -> float:
         runs_per_sec = self.speed * 10
