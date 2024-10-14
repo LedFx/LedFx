@@ -344,7 +344,7 @@ class Virtual:
 
     def set_fallback(self):
         """
-        Sets the active effect to the last effect that was active before the current effect.
+        Sets the active effect to the stored fallback effect if available.
         """
         if self.fallback_effect_type is not None:
 
