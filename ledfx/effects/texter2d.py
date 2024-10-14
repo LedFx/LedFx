@@ -50,7 +50,7 @@ class Texter2d(Twod, GradientEffect):
     CATEGORY = "Matrix"
     # add keys you want hidden or in advanced here
     HIDDEN_KEYS = Twod.HIDDEN_KEYS + []
-    ADVANCED_KEYS = Twod.ADVANCED_KEYS + []
+    ADVANCED_KEYS = Twod.ADVANCED_KEYS + ['resize_method', 'deep_diag']
 
     CONFIG_SCHEMA = vol.Schema(
         {
@@ -130,7 +130,7 @@ class Texter2d(Twod, GradientEffect):
                 "speed_option_1",
                 description="general speed slider for text effects",
                 default=1,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=2)),
+            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=3)),
         },
     )
 
