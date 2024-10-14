@@ -356,7 +356,7 @@ class Virtual:
             self.set_effect(effect, fallback=False)
 
             # make sure fallback is disabled
-            self.last_effect_name = None
+            self.fallback_effect_type = None
 
     def set_effect(self, effect, fallback=False):
         """
