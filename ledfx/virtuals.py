@@ -676,9 +676,12 @@ class Virtual:
                         / self.transition_frame_total
                     )
 
-                self.frame_transitions(
-                    self.transitions, frame, transition_frame, weight
-                )
+                # we will pre validate the transition, which will generate a sentry report if it fails and return False
+                if self.transitions.pre_validate(frame, transition_frame):
+                    # only call the transition effect if it will not crash
+                    self.frame_transitions(
+                        self.transitions, frame, transition_frame, weight
+                    )
                 if (
                     self.transition_frame_counter
                     == self.transition_frame_total
