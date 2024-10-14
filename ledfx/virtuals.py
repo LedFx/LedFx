@@ -367,7 +367,7 @@ class Virtual:
             # make sure fallback is disabled
             self.last_effect_name = None
 
-    def set_effect(self, effect, fallback = False):
+    def set_effect(self, effect, fallback=False):
         """
         Sets the active effect for the virtual device.
 
