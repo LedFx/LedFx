@@ -24,7 +24,7 @@ class RandomEffect(TemporalEffect):
             vol.Optional(
                 "hit_duration",
                 description="Hit duration",
-                default=0.1,
+                default=0.5,
             ): vol.All(vol.Coerce(float), vol.Range(min=0.1, max=5.0)),
             vol.Optional(
                 "hit_probability_per_sec",
@@ -42,6 +42,7 @@ class RandomEffect(TemporalEffect):
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
         self.last_time = timeit.default_timer()
+        self.last_hit_pixels = None
 
     def config_updated(self, config):
         self.hit_color = np.array(
@@ -67,8 +68,11 @@ class RandomEffect(TemporalEffect):
         time_passed = now - self.last_time
 
         hit_is_still_active = time_passed < self.hit_duration
-        if not hit_is_still_active:
-            # Create a base frame of all-off (black) pixels
+        if hit_is_still_active and self.last_hit_pixels is not None:
+            # fade
+            self.pixels = self.last_hit_pixels * (1 - time_passed / self.hit_duration)
+
+        else:
             self.pixels = np.zeros((self.pixel_count, 3), dtype=np.float64)
 
             is_hit = np.random.random() < self.probability_per_sec
@@ -81,6 +85,7 @@ class RandomEffect(TemporalEffect):
                 self.pixels[random_pos : random_pos + hit_absolute_size] = (
                     np.tile(self.hit_color, (hit_absolute_size, 1))
                 )
+                self.last_hit_pixels = self.pixels
                 self.last_time = timeit.default_timer()
 
     def __balance_hit_probability_based_on_speed(self) -> float:
