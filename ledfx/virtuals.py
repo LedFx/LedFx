@@ -161,6 +161,7 @@ class Virtual:
         self.clear_handle = None
         self.fallback_effect_type = None
         self.fallback_fire = False
+        self.fallback_config = None
 
         self.frequency_range = FrequencyRange(
             self._config["frequency_min"], self._config["frequency_max"]
@@ -346,25 +347,11 @@ class Virtual:
         Sets the active effect to the last effect that was active before the current effect.
         """
         if self.fallback_effect_type is not None:
-            effect_config = {}
-            virt_cfg = next(
-                (
-                    item
-                    for item in self._ledfx.config["virtuals"]
-                    if item["id"] == self.id
-                ),
-                None,
-            )
-            if virt_cfg and "effects" in virt_cfg:
-                if self.fallback_effect_type in virt_cfg["effects"]:
-                    effect_config = virt_cfg["effects"][
-                        self.fallback_effect_type
-                    ]["config"]
 
             effect = self._ledfx.effects.create(
                 ledfx=self._ledfx,
                 type=self.fallback_effect_type,
-                config=effect_config,
+                config=self.fallback_config,
             )
             self.set_effect(effect, fallback=False)
 
@@ -394,6 +381,7 @@ class Virtual:
                 if self._active_effect is not None:
                     if self.fallback_effect_type is None:
                         self.fallback_effect_type = self._active_effect.type
+                        self.fallback_config = self._active_effect.config
                         _LOGGER.info(
                             f"Setting fallback to {self.fallback_effect_type}"
                         )
