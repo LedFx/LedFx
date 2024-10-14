@@ -357,10 +357,14 @@ class Virtual:
             )
             if virt_cfg and "effects" in virt_cfg:
                 if self.fallback_effect_type in virt_cfg["effects"]:
-                    effect_config = virt_cfg["effects"][self.fallback_effect_type]["config"]
+                    effect_config = virt_cfg["effects"][
+                        self.fallback_effect_type
+                    ]["config"]
 
             effect = self._ledfx.effects.create(
-                ledfx=self._ledfx, type=self.fallback_effect_type, config=effect_config
+                ledfx=self._ledfx,
+                type=self.fallback_effect_type,
+                config=effect_config,
             )
             self.set_effect(effect, fallback=False)
 
@@ -390,10 +394,14 @@ class Virtual:
                 if self._active_effect is not None:
                     if self.fallback_effect_type is None:
                         self.fallback_effect_type = self._active_effect.type
-                        _LOGGER.info(f"Setting fallback to {self.fallback_effect_type}")
+                        _LOGGER.info(
+                            f"Setting fallback to {self.fallback_effect_type}"
+                        )
                     else:
                         # don't let new fallbacks override old ones, we don't want text falling back to text
-                        _LOGGER.info(f"There is already a fallback registered {self.fallback_effect_type}")
+                        _LOGGER.info(
+                            f"There is already a fallback registered {self.fallback_effect_type}"
+                        )
                 else:
                     _LOGGER.info("No current _active_effect to fallback to")
                     self.fallback_effect_type = None
