@@ -27,6 +27,7 @@ FONT_MAPPINGS = {
     "Press Start 2P": os.path.join(
         LEDFX_ASSETS_PATH, "fonts", "PressStart2P.ttf"
     ),
+    "Blade-5x8": os.path.join(LEDFX_ASSETS_PATH, "fonts", "Blade-5x8.ttf"),
 }
 
 
