@@ -58,7 +58,9 @@ class RandomEffect(TemporalEffect):
         self.last_time = timeit.default_timer()
 
     def effect_loop(self):
-        hit_absolute_size = int(self.pixel_count * self.hit_relative_size/100)
+        hit_absolute_size = int(
+            self.pixel_count * self.hit_relative_size / 100
+        )
 
         # handle time variant
         now = timeit.default_timer()
