@@ -159,7 +159,7 @@ class Virtual:
         self._os_active = False
         self.lock = threading.Lock()
         self.clear_handle = None
-        self.last_active_effect_type = None
+        self.fallback_effect_type = None
         self.fallback_fire = False
 
         self.frequency_range = FrequencyRange(
@@ -345,7 +345,7 @@ class Virtual:
         """
         Sets the active effect to the last effect that was active before the current effect.
         """
-        if self.last_active_effect_type is not None:
+        if self.fallback_effect_type is not None:
             effect_config = {}
             virt_cfg = next(
                 (
@@ -356,11 +356,11 @@ class Virtual:
                 None,
             )
             if virt_cfg and "effects" in virt_cfg:
-                if self.last_active_effect_type in virt_cfg["effects"]:
-                    effect_config = virt_cfg["effects"][self.last_active_effect_type]["config"]
+                if self.fallback_effect_type in virt_cfg["effects"]:
+                    effect_config = virt_cfg["effects"][self.fallback_effect_type]["config"]
 
             effect = self._ledfx.effects.create(
-                ledfx=self._ledfx, type=self.last_active_effect_type, config=effect_config
+                ledfx=self._ledfx, type=self.fallback_effect_type, config=effect_config
             )
             self.set_effect(effect, fallback=False)
 
@@ -388,19 +388,18 @@ class Virtual:
             if fallback:
                 _LOGGER.warning("Fallback requested")
                 if self._active_effect is not None:
-                    if self.last_active_effect_type is None:
-                        self.last_active_effect_type = self._active_effect.type
-                        _LOGGER.warning(f"Setting fallback to {self.last_active_effect_type}")
+                    if self.fallback_effect_type is None:
+                        self.fallback_effect_type = self._active_effect.type
+                        _LOGGER.info(f"Setting fallback to {self.fallback_effect_type}")
                     else:
-                        # TODO: this will be a problem, how do you clear a fallback that has not triggered, needs some thought
-                        _LOGGER.warning(f"There is already a fallback registered {self.last_active_effect_type}")
+                        # don't let new fallbacks override old ones, we don't want text falling back to text
+                        _LOGGER.info(f"There is already a fallback registered {self.fallback_effect_type}")
                 else:
-                    _LOGGER.warning("No current _active_effect to fallback to")
-                    self.last_active_effect_type = None
+                    _LOGGER.info("No current _active_effect to fallback to")
+                    self.fallback_effect_type = None
             else:
-                self.last_active_effect_type = None
-
-            _LOGGER.warning(f"New: {effect.name} {effect.id} Caching up self.last_effect_type :{self.last_active_effect_type} for later")
+                # any effect being set without fallback will clear the fallback
+                self.fallback_effect_type = None
 
             if (
                 self._config["transition_mode"] != "None"
