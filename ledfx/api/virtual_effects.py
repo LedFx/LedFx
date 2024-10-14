@@ -250,8 +250,11 @@ class EffectsEndpoint(RestEndpoint):
         effect = self._ledfx.effects.create(
             ledfx=self._ledfx, type=effect_type, config=effect_config
         )
+
+        fallback = data.get("fallback", False)
+
         try:
-            virtual.set_effect(effect)
+            virtual.set_effect(effect, fallback=fallback)
         except (ValueError, RuntimeError) as msg:
             error_message = (
                 f"Unable to set effect {effect} on {virtual_id}: {msg}"

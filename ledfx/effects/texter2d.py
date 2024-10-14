@@ -277,6 +277,8 @@ class Texter2d(Twod, GradientEffect):
             < -1
         ):
             self.side_scroll_init()
+            # call the set_fallback function of the parent virtual as we completed a cycle
+            self._virtual.fallback_fire = True
         for word in self.sentence.wordblocks:
             if self.option_1:
                 word.pose.d_pos = (
