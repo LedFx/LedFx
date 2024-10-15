@@ -10,6 +10,7 @@ import numpy as np
 import voluptuous as vol
 
 from ledfx.color import parse_color
+from ledfx.config import save_config
 from ledfx.effects import DummyEffect
 from ledfx.effects.math import interpolate_pixels, make_pattern
 from ledfx.effects.melbank import (
@@ -354,6 +355,11 @@ class Virtual:
                 config=self.fallback_config,
             )
             self.set_effect(effect, fallback=False)
+            update_effect_config(self._ledfx.config, self.id, effect)
+            save_config(
+                config=self._ledfx.config,
+                config_dir=self._ledfx.config_dir,
+            )
 
             # make sure fallback is disabled
             self.fallback_effect_type = None
@@ -1148,6 +1154,7 @@ class Virtuals:
         # super().__init__(ledfx, Virtual, self.PACKAGE_NAME)
 
         def cleanup_effects(e):
+            self.fire_all_fallbacks()
             self.clear_all_effects()
 
         self._ledfx = ledfx
@@ -1253,6 +1260,10 @@ class Virtuals:
     def clear_all_effects(self):
         for virtual in self.values():
             virtual.clear_frame()
+
+    def fire_all_fallbacks(self):
+        for virtual in self.values():
+            virtual.set_fallback()
 
     def pause_all(self):
         self._paused = not self._paused
