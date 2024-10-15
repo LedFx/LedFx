@@ -262,7 +262,7 @@ class Texter2d(Twod, GradientEffect):
 
         self.base_speed = self.speed_option_1
 
-        if self.speed_option_1 != 0:
+        if self.base_speed != 0:
             offset = 1
         else:
             # we want to center the text, so we need to know the overall sentence size
@@ -292,7 +292,7 @@ class Texter2d(Twod, GradientEffect):
             # call the set_fallback function of the parent virtual as we completed a cycle
             self._virtual.fallback_fire = True
         for word in self.sentence.wordblocks:
-            if self.option_1 and self.speed_option_1 != 0:
+            if self.option_1 and self.base_speed != 0:
                 word.pose.d_pos = (
                     self.base_speed
                     + (self.lows_impulse * self.multiplier * self.base_speed),
