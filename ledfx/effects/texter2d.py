@@ -260,8 +260,20 @@ class Texter2d(Twod, GradientEffect):
         # each word will be offset by the word before and a space
         # first we need the first word width in screen units
 
-        offset = 1
         self.base_speed = self.speed_option_1
+
+        if self.speed_option_1 != 0:
+            offset = 1
+        else:
+            # we want to center the text, so we need to know the overall sentence size
+            # we can then calculate the offset to center the text
+            sentence_width = 0
+            for idx, word in enumerate(self.sentence.wordblocks):
+                sentence_width += word.w_width
+                sentence_width += self.sentence.space_block.w_width
+            # remove the trailing space implication
+            sentence_width -= self.sentence.space_block.w_width
+            offset = -sentence_width / 2
 
         for idx, word in enumerate(self.sentence.wordblocks):
             offset += word.w_width / 2
@@ -280,7 +292,7 @@ class Texter2d(Twod, GradientEffect):
             # call the set_fallback function of the parent virtual as we completed a cycle
             self._virtual.fallback_fire = True
         for word in self.sentence.wordblocks:
-            if self.option_1:
+            if self.option_1 and self.speed_option_1 != 0:
                 word.pose.d_pos = (
                     self.base_speed
                     + (self.lows_impulse * self.multiplier * self.base_speed),
