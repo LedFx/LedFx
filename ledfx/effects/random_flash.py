@@ -53,14 +53,17 @@ class RandomFlashEffect(TemporalEffect):
         )
         self.hit_relative_size = self._config["hit_relative_size"]
         self.hit_duration = self._config["hit_duration"]
-        self.probability_per_sec = self.__balance_hit_probability_based_on_speed()
-
+        self.probability_per_sec = (
+            self.__balance_hit_probability_based_on_speed()
+        )
 
     def on_activate(self, pixel_count):
         self.last_time = timeit.default_timer()
 
     def effect_loop(self):
-        hit_absolute_size = int(self.pixel_count * self.hit_relative_size / 100)
+        hit_absolute_size = int(
+            self.pixel_count * self.hit_relative_size / 100
+        )
 
         # handle time variant
         now = timeit.default_timer()
@@ -69,7 +72,9 @@ class RandomFlashEffect(TemporalEffect):
         hit_is_still_active = time_passed < self.hit_duration
         if hit_is_still_active and self.last_hit_pixels is not None:
             # fade
-            self.pixels = self.last_hit_pixels * (1 - time_passed / self.hit_duration)
+            self.pixels = self.last_hit_pixels * (
+                1 - time_passed / self.hit_duration
+            )
 
         else:
             self.pixels = np.zeros((self.pixel_count, 3), dtype=np.float64)
@@ -77,9 +82,13 @@ class RandomFlashEffect(TemporalEffect):
             is_hit = np.random.random() < self.probability_per_sec
             if is_hit:
                 # assign pixel hit at random position
-                random_pos = random.randrange(self.pixel_count - hit_absolute_size + 1)
+                random_pos = random.randrange(
+                    self.pixel_count - hit_absolute_size + 1
+                )
                 # frame slice based of random_pos will be hit
-                self.pixels[random_pos : random_pos + hit_absolute_size] = np.tile(self.hit_color, (hit_absolute_size, 1))
+                self.pixels[random_pos : random_pos + hit_absolute_size] = (
+                    np.tile(self.hit_color, (hit_absolute_size, 1))
+                )
 
                 self.last_hit_pixels = self.pixels
                 self.last_time = timeit.default_timer()
@@ -87,4 +96,6 @@ class RandomFlashEffect(TemporalEffect):
     def __balance_hit_probability_based_on_speed(self) -> float:
         runs_per_sec = self._config["speed"] * 10
         # this is the probability per effect run
-        return 1 - (1 - self._config["hit_probability_per_sec"]) ** (1 / runs_per_sec)
+        return 1 - (1 - self._config["hit_probability_per_sec"]) ** (
+            1 / runs_per_sec
+        )
