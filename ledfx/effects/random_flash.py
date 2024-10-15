@@ -16,6 +16,8 @@ class RandomFlashEffect(TemporalEffect):
     NAME = "Random Flash"
     CATEGORY = "Non-Reactive"
     HIDDEN_KEYS = ["flip", "mirror", "speed"]
+    # based on fixed speed of 5.0
+    RUNS_PER_SEC = 50.0
 
     CONFIG_SCHEMA = vol.Schema(
         {
@@ -94,8 +96,7 @@ class RandomFlashEffect(TemporalEffect):
                 self.last_time = timeit.default_timer()
 
     def __balance_hit_probability_based_on_speed(self) -> float:
-        runs_per_sec = self._config["speed"] * 10
         # this is the probability per effect run
         return 1 - (1 - self._config["hit_probability_per_sec"]) ** (
-            1 / runs_per_sec
+            1 / self.RUNS_PER_SEC
         )
