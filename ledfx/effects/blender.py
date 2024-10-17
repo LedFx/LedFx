@@ -30,7 +30,6 @@ class Blender(AudioReactiveEffect):
     # the parent class, where you don't make use of them. So it does not confuse the user.
     HIDDEN_KEYS = ["background_color", "background_brightness", "blur"]
 
-
     CONFIG_SCHEMA = vol.Schema(
         {
             vol.Optional(
@@ -85,22 +84,32 @@ class Blender(AudioReactiveEffect):
         # all virtual grabs are try as they might not exist yet, but may on the next frame
 
         try:
-            mask_pixels = self._ledfx.virtuals._virtuals.get(self.mask).assembled_frame
+            mask_pixels = self._ledfx.virtuals._virtuals.get(
+                self.mask
+            ).assembled_frame
         except:
             mask_pixels = np.zeros(np.shape(self.pixels))
             _LOGGER.info(f"Mask virtual not found: {self.mask} set to black")
 
         try:
-            foreground_pixels = self._ledfx.virtuals._virtuals.get(self.foreground).assembled_frame
+            foreground_pixels = self._ledfx.virtuals._virtuals.get(
+                self.foreground
+            ).assembled_frame
         except:
             foreground_pixels = np.zeros(np.shape(self.pixels))
-            _LOGGER.info(f"Foreground virtual not found: {self.foreground} set to black")
+            _LOGGER.info(
+                f"Foreground virtual not found: {self.foreground} set to black"
+            )
 
         try:
-            background_pixels = self._ledfx.virtuals._virtuals.get(self.background).assembled_frame
+            background_pixels = self._ledfx.virtuals._virtuals.get(
+                self.background
+            ).assembled_frame
         except:
             background_pixels = np.zeros(np.shape(self.pixels))
-            _LOGGER.info(f"Background virtual not found: {self.background} set to black")
+            _LOGGER.info(
+                f"Background virtual not found: {self.background} set to black"
+            )
 
         if self.bias_black:
             # Create a boolean mask where white pixels ([255.0, 255.0, 255.0]) are True, and black pixels are False
