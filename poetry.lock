@@ -2111,13 +2111,13 @@ numpy = "*"
 
 [[package]]
 name = "sentry-sdk"
-version = "2.14.0"
+version = "2.17.0"
 description = "Python client for Sentry (https://sentry.io)"
 optional = false
 python-versions = ">=3.6"
 files = [
-    {file = "sentry_sdk-2.14.0-py2.py3-none-any.whl", hash = "sha256:b8bc3dc51d06590df1291b7519b85c75e2ced4f28d9ea655b6d54033503b5bf4"},
-    {file = "sentry_sdk-2.14.0.tar.gz", hash = "sha256:1e0e2eaf6dad918c7d1e0edac868a7bf20017b177f242cefe2a6bcd47955961d"},
+    {file = "sentry_sdk-2.17.0-py2.py3-none-any.whl", hash = "sha256:625955884b862cc58748920f9e21efdfb8e0d4f98cca4ab0d3918576d5b606ad"},
+    {file = "sentry_sdk-2.17.0.tar.gz", hash = "sha256:dd0a05352b78ffeacced73a94e86f38b32e2eae15fff5f30ca5abb568a72eacf"},
 ]
 
 [package.dependencies]
@@ -2140,6 +2140,7 @@ falcon = ["falcon (>=1.4)"]
 fastapi = ["fastapi (>=0.79.0)"]
 flask = ["blinker (>=1.1)", "flask (>=0.11)", "markupsafe"]
 grpcio = ["grpcio (>=1.21.1)", "protobuf (>=3.8.0)"]
+http2 = ["httpcore[http2] (==1.*)"]
 httpx = ["httpx (>=0.16.0)"]
 huey = ["huey (>=2)"]
 huggingface-hub = ["huggingface-hub (>=0.22)"]
