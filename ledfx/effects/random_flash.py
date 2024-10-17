@@ -63,9 +63,7 @@ class RandomFlashEffect(TemporalEffect):
         self.last_time = timeit.default_timer()
 
     def effect_loop(self):
-        hit_absolute_size = int(
-            self.pixel_count * self.hit_relative_size / 100
-        )
+        hit_absolute_size = int(self.pixel_count * self.hit_relative_size / 100)
 
         # handle time variant
         now = timeit.default_timer()
@@ -88,9 +86,7 @@ class RandomFlashEffect(TemporalEffect):
                     self.pixel_count - hit_absolute_size + 1
                 )
                 # frame slice based of random_pos will be hit
-                self.pixels[random_pos : random_pos + hit_absolute_size] = (
-                    np.tile(self.hit_color, (hit_absolute_size, 1))
-                )
+                self.pixels[random_pos : random_pos + hit_absolute_size] = self.hit_color
 
                 self.last_hit_pixels = self.pixels
                 self.last_time = timeit.default_timer()
