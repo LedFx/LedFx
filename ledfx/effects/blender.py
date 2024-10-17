@@ -3,23 +3,11 @@ import logging
 import numpy as np
 import voluptuous as vol
 
-from ledfx.color import parse_color, validate_color
-from ledfx.effects import Effect
 from ledfx.effects.audio import AudioReactiveEffect
 
 _LOGGER = logging.getLogger(__name__)
 
-# copy this file and rename it into the effects folder
-# Anywhere you see template1d, replace it with your own class reference / name
 
-# IMPORTANT IMPORTANT IMPORTANT
-
-# no really, this is important
-
-
-# Remove the @Effect.no_registration line when you use this template
-# This is a decorator that prevents the effect from being registered
-# If you don't remove it, you will not be able to test your effect!
 class Blender(AudioReactiveEffect):
     NAME = "Blender"
     # CATEGORY defines where in the UI the effect will be displayed in the effects list
