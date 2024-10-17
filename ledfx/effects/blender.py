@@ -86,19 +86,19 @@ class Blender(AudioReactiveEffect):
 
         try:
             mask_pixels = self._ledfx.virtuals._virtuals.get(self.mask).assembled_frame
-        except:
+        except Exception:
             mask_pixels = np.zeros(np.shape(self.pixels))
             _LOGGER.info(f"Mask virtual not found: {self.mask} set to black")
 
         try:
             foreground_pixels = self._ledfx.virtuals._virtuals.get(self.foreground).assembled_frame
-        except:
+        except Exception:
             foreground_pixels = np.zeros(np.shape(self.pixels))
             _LOGGER.info(f"Foreground virtual not found: {self.foreground} set to black")
 
         try:
             background_pixels = self._ledfx.virtuals._virtuals.get(self.background).assembled_frame
-        except:
+        except Exception:
             background_pixels = np.zeros(np.shape(self.pixels))
             _LOGGER.info(f"Background virtual not found: {self.background} set to black")
 
