@@ -9,9 +9,7 @@ from ledfx.effects.audio import AudioReactiveEffect
 _LOGGER = logging.getLogger(__name__)
 
 
-def stretch_2d_full(
-    source_pixels, target_rows, target_columns, source_rows, source_columns
-):
+def stretch_2d_full(source_pixels, target_rows, target_columns, source_rows, source_columns):
     if target_rows == source_rows and target_columns == source_columns:
         return source_pixels
 
@@ -22,39 +20,28 @@ def stretch_2d_full(
     row_scale = np.linspace(0, source_rows - 1, target_rows)
     col_scale = np.linspace(0, source_columns - 1, target_columns)
 
-    # Initialize the stretched pixel array
-    stretched_pixels = np.zeros((target_rows, target_columns, 3))
+    # Get the floor and ceiling indices for the scaled positions
+    row_floor = np.floor(row_scale).astype(int)
+    row_ceil = np.minimum(np.ceil(row_scale).astype(int), source_rows - 1)
+    col_floor = np.floor(col_scale).astype(int)
+    col_ceil = np.minimum(np.ceil(col_scale).astype(int), source_columns - 1)
 
-    # Perform interpolation for each channel (RGB)
-    for i in range(3):  # Iterate over the RGB channels
-        for row_idx, row in enumerate(row_scale):
-            for col_idx, col in enumerate(col_scale):
-                # Get the floor and ceiling of the scaled positions
-                row_floor = int(np.floor(row))
-                row_ceil = min(int(np.ceil(row)), source_rows - 1)
-                col_floor = int(np.floor(col))
-                col_ceil = min(int(np.ceil(col)), source_columns - 1)
+    # Get the fractional parts for interpolation
+    row_frac = row_scale - row_floor
+    col_frac = col_scale - col_floor
 
-                # Get the fractional parts for interpolation
-                row_frac = row - row_floor
-                col_frac = col - col_floor
+    # Perform bilinear interpolation using broadcasting
+    top_left = source_pixels[np.ix_(row_floor, col_floor)]
+    top_right = source_pixels[np.ix_(row_floor, col_ceil)]
+    bottom_left = source_pixels[np.ix_(row_ceil, col_floor)]
+    bottom_right = source_pixels[np.ix_(row_ceil, col_ceil)]
 
-                # Bilinear interpolation
-                top_left = source_pixels[row_floor, col_floor, i]
-                top_right = source_pixels[row_floor, col_ceil, i]
-                bottom_left = source_pixels[row_ceil, col_floor, i]
-                bottom_right = source_pixels[row_ceil, col_ceil, i]
-
-                top = top_left * (1 - col_frac) + top_right * col_frac
-                bottom = bottom_left * (1 - col_frac) + bottom_right * col_frac
-                value = top * (1 - row_frac) + bottom * row_frac
-
-                # Assign the interpolated value to the stretched array
-                stretched_pixels[row_idx, col_idx, i] = value
+    top = top_left * (1 - col_frac[:, None]) + top_right * col_frac[:, None]
+    bottom = bottom_left * (1 - col_frac[:, None]) + bottom_right * col_frac[:, None]
+    interpolated = top * (1 - row_frac[:, None, None]) + bottom * row_frac[:, None, None]
 
     # Reshape to a 2D array with shape (target_rows * target_columns, 3)
-    return stretched_pixels.reshape((target_rows * target_columns, 3))
-
+    return interpolated.reshape((target_rows * target_columns, 3))
 
 def stretch_2d_repeat(
     source_pixels, target_rows, target_columns, source_rows, source_columns
