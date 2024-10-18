@@ -1,8 +1,8 @@
 import logging
+import timeit
 
 import numpy as np
 import voluptuous as vol
-import timeit
 
 from ledfx.effects.audio import AudioReactiveEffect
 
