@@ -8,7 +8,9 @@ from ledfx.effects.audio import AudioReactiveEffect
 _LOGGER = logging.getLogger(__name__)
 
 
-def stretch_2d_full(source_pixels, target_rows, target_columns, source_rows, source_columns):
+def stretch_2d_full(
+    source_pixels, target_rows, target_columns, source_rows, source_columns
+):
     if target_rows == source_rows and target_columns == source_columns:
         return source_pixels
 
@@ -52,15 +54,22 @@ def stretch_2d_full(source_pixels, target_rows, target_columns, source_rows, sou
     # Reshape to a 2D array with shape (target_rows * target_columns, 3)
     return stretched_pixels.reshape((target_rows * target_columns, 3))
 
-def stretch_2d_repeat(source_pixels, target_rows, target_columns, source_rows, source_columns):
+
+def stretch_2d_repeat(
+    source_pixels, target_rows, target_columns, source_rows, source_columns
+):
     _LOGGER.warning("Stretch 1d repeat not implemented")
 
 
-def stretch_1d_vertical(source_pixels, target_rows, target_columns, source_rows, source_columns):
+def stretch_1d_vertical(
+    source_pixels, target_rows, target_columns, source_rows, source_columns
+):
     _LOGGER.warning("Stretch 1d vertical not implemented")
 
 
-def stretch_1d_horizontal(source_pixels, target_rows, target_columns, source_rows, source_columns):
+def stretch_1d_horizontal(
+    source_pixels, target_rows, target_columns, source_rows, source_columns
+):
     _LOGGER.warning("Stretch 1d horizontal not implemented")
 
 
@@ -164,8 +173,13 @@ class Blender(AudioReactiveEffect):
             mask_pixels = self._ledfx.virtuals._virtuals.get(
                 self.mask
             ).assembled_frame
-            mask_rows = self._ledfx.virtuals._virtuals.get(self.mask).config["rows"]
-            mask_columns = int(self._ledfx.virtuals._virtuals.get(self.mask).pixel_count / mask_rows)
+            mask_rows = self._ledfx.virtuals._virtuals.get(self.mask).config[
+                "rows"
+            ]
+            mask_columns = int(
+                self._ledfx.virtuals._virtuals.get(self.mask).pixel_count
+                / mask_rows
+            )
         except Exception:
             mask_pixels = np.zeros(np.shape(self.pixels))
             mask_rows = self.rows
@@ -176,8 +190,13 @@ class Blender(AudioReactiveEffect):
             foreground_pixels = self._ledfx.virtuals._virtuals.get(
                 self.foreground
             ).assembled_frame
-            foreground_rows = self._ledfx.virtuals._virtuals.get(self.foreground).config["rows"]
-            foreground_columns = int(self._ledfx.virtuals._virtuals.get(self.foreground).pixel_count / foreground_rows)
+            foreground_rows = self._ledfx.virtuals._virtuals.get(
+                self.foreground
+            ).config["rows"]
+            foreground_columns = int(
+                self._ledfx.virtuals._virtuals.get(self.foreground).pixel_count
+                / foreground_rows
+            )
         except Exception:
             foreground_pixels = np.zeros(np.shape(self.pixels))
             foreground_rows = self.rows
@@ -190,8 +209,13 @@ class Blender(AudioReactiveEffect):
             background_pixels = self._ledfx.virtuals._virtuals.get(
                 self.background
             ).assembled_frame
-            background_rows = self._ledfx.virtuals._virtuals.get(self.background).config["rows"]
-            background_columns = int(self._ledfx.virtuals._virtuals.get(self.background).pixel_count / background_rows)
+            background_rows = self._ledfx.virtuals._virtuals.get(
+                self.background
+            ).config["rows"]
+            background_columns = int(
+                self._ledfx.virtuals._virtuals.get(self.background).pixel_count
+                / background_rows
+            )
         except Exception:
             background_pixels = np.zeros(np.shape(self.pixels))
             background_rows = self.rows
@@ -200,9 +224,23 @@ class Blender(AudioReactiveEffect):
                 f"Background virtual not found: {self.background} set to black"
             )
 
-        mask_pixels = self.mask_stretch_func(mask_pixels, self.rows, self.columns, mask_rows, mask_columns)
-        foreground_pixels = self.foreground_stretch_func(foreground_pixels, self.rows, self.columns, foreground_rows, foreground_columns)
-        background_pixels = self.background_stretch_func(background_pixels, self.rows, self.columns, background_rows, background_columns)
+        mask_pixels = self.mask_stretch_func(
+            mask_pixels, self.rows, self.columns, mask_rows, mask_columns
+        )
+        foreground_pixels = self.foreground_stretch_func(
+            foreground_pixels,
+            self.rows,
+            self.columns,
+            foreground_rows,
+            foreground_columns,
+        )
+        background_pixels = self.background_stretch_func(
+            background_pixels,
+            self.rows,
+            self.columns,
+            background_rows,
+            background_columns,
+        )
 
         if self.bias_black:
             # Create a boolean mask where white pixels ([255.0, 255.0, 255.0]) are True, and black pixels are False
