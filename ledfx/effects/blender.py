@@ -9,7 +9,9 @@ from ledfx.effects.audio import AudioReactiveEffect
 _LOGGER = logging.getLogger(__name__)
 
 
-def stretch_2d_full(source_pixels, target_rows, target_columns, source_rows, source_columns):
+def stretch_2d_full(
+    source_pixels, target_rows, target_columns, source_rows, source_columns
+):
     if target_rows == source_rows and target_columns == source_columns:
         return source_pixels
 
@@ -37,11 +39,17 @@ def stretch_2d_full(source_pixels, target_rows, target_columns, source_rows, sou
     bottom_right = source_pixels[np.ix_(row_ceil, col_ceil)]
 
     top = top_left * (1 - col_frac[:, None]) + top_right * col_frac[:, None]
-    bottom = bottom_left * (1 - col_frac[:, None]) + bottom_right * col_frac[:, None]
-    interpolated = top * (1 - row_frac[:, None, None]) + bottom * row_frac[:, None, None]
+    bottom = (
+        bottom_left * (1 - col_frac[:, None])
+        + bottom_right * col_frac[:, None]
+    )
+    interpolated = (
+        top * (1 - row_frac[:, None, None]) + bottom * row_frac[:, None, None]
+    )
 
     # Reshape to a 2D array with shape (target_rows * target_columns, 3)
     return interpolated.reshape((target_rows * target_columns, 3))
+
 
 def stretch_2d_repeat(
     source_pixels, target_rows, target_columns, source_rows, source_columns
