@@ -11,11 +11,14 @@ _LOGGER = logging.getLogger(__name__)
 def stretch_2d_full(source, target):
     _LOGGER.warning("Stretch 2d full not implemented")
 
+
 def stretch_2d_repeat(source, target):
     _LOGGER.warning("Stretch 1d repeat not implemented")
 
+
 def stretch_1d_vertical(source, target):
     _LOGGER.warning("Stretch 1d vertical not implemented")
+
 
 def stretch_1d_horizontal(source, target):
     _LOGGER.warning("Stretch 1d horizontal not implemented")
