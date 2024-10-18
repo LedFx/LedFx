@@ -102,9 +102,15 @@ class Blender(AudioReactiveEffect):
         self.invert_mask = self._config["invert_mask"]
         self.bias_black = self._config["bias_black"]
 
-        self.mask_stretch_func = STRETCH_FUNCS_MAPPING[self._config["mask_stretch"]]
-        self.foreground_stretch_func = STRETCH_FUNCS_MAPPING[self._config["foreground_stretch"]]
-        self.background_stretch_func = STRETCH_FUNCS_MAPPING[self._config["background_stretch"]]
+        self.mask_stretch_func = STRETCH_FUNCS_MAPPING[
+            self._config["mask_stretch"]
+        ]
+        self.foreground_stretch_func = STRETCH_FUNCS_MAPPING[
+            self._config["foreground_stretch"]
+        ]
+        self.background_stretch_func = STRETCH_FUNCS_MAPPING[
+            self._config["background_stretch"]
+        ]
 
     def audio_data_updated(self, data):
         pass
@@ -151,9 +157,9 @@ class Blender(AudioReactiveEffect):
         if self.invert_mask:
             mask = ~mask
 
-        #self.mask_stretch_func(1,2)
-        #self.foreground_stretch_func(1,2)
-        #self.background_stretch_func(1,2)
+        # self.mask_stretch_func(1,2)
+        # self.foreground_stretch_func(1,2)
+        # self.background_stretch_func(1,2)
 
         # Initialize result with zeros (black) of the size of background_pixels
         # TODO: Move all sizing to a stretch model with user options
@@ -168,5 +174,3 @@ class Blender(AudioReactiveEffect):
 
         # Assign the final result
         self.pixels = blending_pixels
-
-
