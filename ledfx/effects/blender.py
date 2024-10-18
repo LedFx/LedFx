@@ -148,9 +148,9 @@ class Blender(AudioReactiveEffect):
         if self.invert_mask:
             mask = ~mask
 
-        self.mask_stretch_func(1,2)
-        self.foreground_stretch_func(1,2)
-        self.background_stretch_func(1,2)
+        #self.mask_stretch_func(1,2)
+        #self.foreground_stretch_func(1,2)
+        #self.background_stretch_func(1,2)
 
         # Initialize result with zeros (black) of the size of background_pixels
         # TODO: Move all sizing to a stretch model with user options
