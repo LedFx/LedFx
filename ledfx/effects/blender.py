@@ -84,7 +84,28 @@ def stretch_2d_full(blend_virtual):
 
 
 def stretch_2d_tile(blend_virtual):
-    _LOGGER.warning("Stretch 1d tile not implemented")
+    if blend_virtual.matching:
+        return blend_virtual.pixels
+
+    # Reshape the 1D array into a 2D array (rows, columns, 3)
+    source_pixels = blend_virtual.pixels.reshape(
+        (blend_virtual.rows, blend_virtual.columns, 3)
+    )
+
+    # Calculate how many times each row and column should be repeated to fill the target size
+    row_repeats = blend_virtual.target_rows // blend_virtual.rows + 1
+    col_repeats = blend_virtual.target_columns // blend_virtual.columns + 1
+
+    # Tile the pixels by repeating the array in both row and column dimensions
+    tiled_pixels = np.tile(source_pixels, (row_repeats, col_repeats, 1))
+
+    # Slice the tiled pixels to match the exact target shape
+    tiled_pixels = tiled_pixels[:blend_virtual.target_rows, :blend_virtual.target_columns, :]
+
+    # Reshape to a 2D array with shape (target_rows * target_columns, 3)
+    return tiled_pixels.reshape(
+        (blend_virtual.target_rows * blend_virtual.target_columns, 3)
+    )
 
 
 def stretch_1d_vertical(blend_virtual):
