@@ -17,9 +17,7 @@ class BlendVirtual:
             virtual = _virtuals.get(virtual_id)
             self.pixels = virtual.assembled_frame
             self.rows = virtual.config["rows"]
-            self.columns = int(
-                virtual.pixel_count / self.rows
-            )
+            self.columns = int(virtual.pixel_count / self.rows)
             self.matching = (
                 self.rows == fallback_shape[0]
                 and self.columns == fallback_shape[1]
