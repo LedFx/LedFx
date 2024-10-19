@@ -98,7 +98,9 @@ def stretch_2d_tile(blend_virtual):
     tiled_pixels = np.tile(source_pixels, (row_repeats, col_repeats, 1))
 
     # Slice the tiled pixels to match the exact target shape
-    tiled_pixels = tiled_pixels[:blend_virtual.target_rows, :blend_virtual.target_columns, :]
+    tiled_pixels = tiled_pixels[
+        : blend_virtual.target_rows, : blend_virtual.target_columns, :
+    ]
 
     # Reshape to a 2D array with shape (target_rows * target_columns, 3)
     return tiled_pixels.reshape(
