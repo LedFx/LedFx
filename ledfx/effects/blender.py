@@ -16,8 +16,13 @@ class BlendVirtual:
         try:
             self.pixels = _virtuals.get(virtual_id).assembled_frame
             self.rows = _virtuals.get(virtual_id).config["rows"]
-            self.columns = int(_virtuals.get(virtual_id).pixel_count / self.rows)
-            self.matching = self.rows == fallback_shape[0] and self.columns == fallback_shape[1]
+            self.columns = int(
+                _virtuals.get(virtual_id).pixel_count / self.rows
+            )
+            self.matching = (
+                self.rows == fallback_shape[0]
+                and self.columns == fallback_shape[1]
+            )
         except Exception:
             self.pixels = np.zeros(pixels_shape)
             self.rows = fallback_shape[0]
@@ -30,17 +35,27 @@ def stretch_2d_full(blend_virtual):
         return blend_virtual.pixels
 
     # Reshape the 1D array into a 2D array (rows, columns, 3)
-    source_pixels = blend_virtual.pixels.reshape((blend_virtual.rows, blend_virtual.columns, 3))
+    source_pixels = blend_virtual.pixels.reshape(
+        (blend_virtual.rows, blend_virtual.columns, 3)
+    )
 
     # Create target grid for the new pixel positions
-    row_scale = np.linspace(0, blend_virtual.rows - 1, blend_virtual.target_rows)
-    col_scale = np.linspace(0, blend_virtual.columns - 1, blend_virtual.target_columns)
+    row_scale = np.linspace(
+        0, blend_virtual.rows - 1, blend_virtual.target_rows
+    )
+    col_scale = np.linspace(
+        0, blend_virtual.columns - 1, blend_virtual.target_columns
+    )
 
     # Get the floor and ceiling indices for the scaled positions
     row_floor = np.floor(row_scale).astype(int)
-    row_ceil = np.minimum(np.ceil(row_scale).astype(int), blend_virtual.rows - 1)
+    row_ceil = np.minimum(
+        np.ceil(row_scale).astype(int), blend_virtual.rows - 1
+    )
     col_floor = np.floor(col_scale).astype(int)
-    col_ceil = np.minimum(np.ceil(col_scale).astype(int), blend_virtual.columns - 1)
+    col_ceil = np.minimum(
+        np.ceil(col_scale).astype(int), blend_virtual.columns - 1
+    )
 
     # Get the fractional parts for interpolation
     row_frac = row_scale - row_floor
@@ -62,7 +77,9 @@ def stretch_2d_full(blend_virtual):
     )
 
     # Reshape to a 2D array with shape (target_rows * target_columns, 3)
-    return interpolated.reshape((blend_virtual.target_rows * blend_virtual.target_columns, 3))
+    return interpolated.reshape(
+        (blend_virtual.target_rows * blend_virtual.target_columns, 3)
+    )
 
 
 def stretch_2d_tile(blend_virtual):
@@ -226,9 +243,24 @@ class Blender(AudioReactiveEffect):
         self.log_sec()
 
         # all virtual grabs are try as they might not exist yet, but may on the next frame
-        blend_mask = BlendVirtual(self.mask, self._ledfx.virtuals._virtuals, (self.rows, self.columns), self.pixels_shape)
-        blend_fore = BlendVirtual(self.foreground, self._ledfx.virtuals._virtuals, (self.rows, self.columns), self.pixels_shape)
-        blend_back = BlendVirtual(self.background, self._ledfx.virtuals._virtuals, (self.rows, self.columns), self.pixels_shape)
+        blend_mask = BlendVirtual(
+            self.mask,
+            self._ledfx.virtuals._virtuals,
+            (self.rows, self.columns),
+            self.pixels_shape,
+        )
+        blend_fore = BlendVirtual(
+            self.foreground,
+            self._ledfx.virtuals._virtuals,
+            (self.rows, self.columns),
+            self.pixels_shape,
+        )
+        blend_back = BlendVirtual(
+            self.background,
+            self._ledfx.virtuals._virtuals,
+            (self.rows, self.columns),
+            self.pixels_shape,
+        )
 
         mask_pixels = self.mask_stretch_func(blend_mask)
         foreground_pixels = self.foreground_stretch_func(blend_fore)
