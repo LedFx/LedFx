@@ -232,7 +232,6 @@ class Blender(AudioReactiveEffect):
             mask_pixels = np.zeros(np.shape(self.pixels))
             mask_rows = self.rows
             mask_columns = self.columns
-            _LOGGER.info(f"Mask virtual not found: {self.mask} set to black")
 
         try:
             foreground_pixels = self._ledfx.virtuals._virtuals.get(
@@ -249,9 +248,6 @@ class Blender(AudioReactiveEffect):
             foreground_pixels = np.zeros(np.shape(self.pixels))
             foreground_rows = self.rows
             foreground_columns = self.columns
-            _LOGGER.info(
-                f"Foreground virtual not found: {self.foreground} set to black"
-            )
 
         try:
             background_pixels = self._ledfx.virtuals._virtuals.get(
@@ -268,9 +264,6 @@ class Blender(AudioReactiveEffect):
             background_pixels = np.zeros(np.shape(self.pixels))
             background_rows = self.rows
             background_columns = self.columns
-            _LOGGER.info(
-                f"Background virtual not found: {self.background} set to black"
-            )
 
         mask_pixels = self.mask_stretch_func(
             mask_pixels, self.rows, self.columns, mask_rows, mask_columns
