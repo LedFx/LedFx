@@ -9,24 +9,38 @@ from ledfx.effects.audio import AudioReactiveEffect
 _LOGGER = logging.getLogger(__name__)
 
 
-def stretch_2d_full(
-    source_pixels, target_rows, target_columns, source_rows, source_columns
-):
-    if target_rows == source_rows and target_columns == source_columns:
-        return source_pixels
+class BlendVirtual:
+    def __init__(self, virtual_id, _virtuals, fallback_shape, pixels_shape):
+        self.target_rows = fallback_shape[0]
+        self.target_columns = fallback_shape[1]
+        try:
+            self.pixels = _virtuals.get(virtual_id).assembled_frame
+            self.rows = _virtuals.get(virtual_id).config["rows"]
+            self.columns = int(_virtuals.get(virtual_id).pixel_count / self.rows)
+            self.matching = self.rows == fallback_shape[0] and self.columns == fallback_shape[1]
+        except Exception:
+            self.pixels = np.zeros(pixels_shape)
+            self.rows = fallback_shape[0]
+            self.columns = fallback_shape[1]
+            self.matching = True
+
+
+def stretch_2d_full(blend_virtual):
+    if blend_virtual.matching:
+        return blend_virtual.pixels
 
     # Reshape the 1D array into a 2D array (rows, columns, 3)
-    source_pixels = source_pixels.reshape((source_rows, source_columns, 3))
+    source_pixels = blend_virtual.pixels.reshape((blend_virtual.rows, blend_virtual.columns, 3))
 
     # Create target grid for the new pixel positions
-    row_scale = np.linspace(0, source_rows - 1, target_rows)
-    col_scale = np.linspace(0, source_columns - 1, target_columns)
+    row_scale = np.linspace(0, blend_virtual.rows - 1, blend_virtual.target_rows)
+    col_scale = np.linspace(0, blend_virtual.columns - 1, blend_virtual.target_columns)
 
     # Get the floor and ceiling indices for the scaled positions
     row_floor = np.floor(row_scale).astype(int)
-    row_ceil = np.minimum(np.ceil(row_scale).astype(int), source_rows - 1)
+    row_ceil = np.minimum(np.ceil(row_scale).astype(int), blend_virtual.rows - 1)
     col_floor = np.floor(col_scale).astype(int)
-    col_ceil = np.minimum(np.ceil(col_scale).astype(int), source_columns - 1)
+    col_ceil = np.minimum(np.ceil(col_scale).astype(int), blend_virtual.columns - 1)
 
     # Get the fractional parts for interpolation
     row_frac = row_scale - row_floor
@@ -48,30 +62,24 @@ def stretch_2d_full(
     )
 
     # Reshape to a 2D array with shape (target_rows * target_columns, 3)
-    return interpolated.reshape((target_rows * target_columns, 3))
+    return interpolated.reshape((blend_virtual.target_rows * blend_virtual.target_columns, 3))
 
 
-def stretch_2d_repeat(
-    source_pixels, target_rows, target_columns, source_rows, source_columns
-):
-    _LOGGER.warning("Stretch 1d repeat not implemented")
+def stretch_2d_tile(blend_virtual):
+    _LOGGER.warning("Stretch 1d tile not implemented")
 
 
-def stretch_1d_vertical(
-    source_pixels, target_rows, target_columns, source_rows, source_columns
-):
+def stretch_1d_vertical(blend_virtual):
     _LOGGER.warning("Stretch 1d vertical not implemented")
 
 
-def stretch_1d_horizontal(
-    source_pixels, target_rows, target_columns, source_rows, source_columns
-):
+def stretch_1d_horizontal(blend_virtual):
     _LOGGER.warning("Stretch 1d horizontal not implemented")
 
 
 STRETCH_FUNCS_MAPPING = {
     "2d full": stretch_2d_full,
-    "2d repeat": stretch_2d_repeat,
+    "2d tile": stretch_2d_tile,
     "1d vertical": stretch_1d_vertical,
     "1d horizontal": stretch_1d_horizontal,
 }
@@ -143,8 +151,10 @@ class Blender(AudioReactiveEffect):
 
     # things you want to do on activation, when pixel count is known
     def on_activate(self, pixel_count):
+        # TODO: refactor to shape tuples instead of rows and columns
         self.rows = self._virtual.config["rows"]
         self.columns = int(self.pixel_count / self.rows)
+        self.pixels_shape = np.shape(self.pixels)
         self.lasttime = 0
         self.frame = 0
         self.fps = 0
@@ -157,7 +167,7 @@ class Blender(AudioReactiveEffect):
     # the first time through this function pixel_count is not known!
     def config_updated(self, config):
         # TODO: Ensure virtual names are mangled the same as during virtual creation,
-        # for now rely on exactness
+        # for now rely on exactness from user or front end
         self.mask = self._config["mask"]
         self.foreground = self._config["foreground"]
         self.background = self._config["background"]
@@ -216,72 +226,13 @@ class Blender(AudioReactiveEffect):
         self.log_sec()
 
         # all virtual grabs are try as they might not exist yet, but may on the next frame
+        blend_mask = BlendVirtual(self.mask, self._ledfx.virtuals._virtuals, (self.rows, self.columns), self.pixels_shape)
+        blend_fore = BlendVirtual(self.foreground, self._ledfx.virtuals._virtuals, (self.rows, self.columns), self.pixels_shape)
+        blend_back = BlendVirtual(self.background, self._ledfx.virtuals._virtuals, (self.rows, self.columns), self.pixels_shape)
 
-        try:
-            mask_pixels = self._ledfx.virtuals._virtuals.get(
-                self.mask
-            ).assembled_frame
-            mask_rows = self._ledfx.virtuals._virtuals.get(self.mask).config[
-                "rows"
-            ]
-            mask_columns = int(
-                self._ledfx.virtuals._virtuals.get(self.mask).pixel_count
-                / mask_rows
-            )
-        except Exception:
-            mask_pixels = np.zeros(np.shape(self.pixels))
-            mask_rows = self.rows
-            mask_columns = self.columns
-
-        try:
-            foreground_pixels = self._ledfx.virtuals._virtuals.get(
-                self.foreground
-            ).assembled_frame
-            foreground_rows = self._ledfx.virtuals._virtuals.get(
-                self.foreground
-            ).config["rows"]
-            foreground_columns = int(
-                self._ledfx.virtuals._virtuals.get(self.foreground).pixel_count
-                / foreground_rows
-            )
-        except Exception:
-            foreground_pixels = np.zeros(np.shape(self.pixels))
-            foreground_rows = self.rows
-            foreground_columns = self.columns
-
-        try:
-            background_pixels = self._ledfx.virtuals._virtuals.get(
-                self.background
-            ).assembled_frame
-            background_rows = self._ledfx.virtuals._virtuals.get(
-                self.background
-            ).config["rows"]
-            background_columns = int(
-                self._ledfx.virtuals._virtuals.get(self.background).pixel_count
-                / background_rows
-            )
-        except Exception:
-            background_pixels = np.zeros(np.shape(self.pixels))
-            background_rows = self.rows
-            background_columns = self.columns
-
-        mask_pixels = self.mask_stretch_func(
-            mask_pixels, self.rows, self.columns, mask_rows, mask_columns
-        )
-        foreground_pixels = self.foreground_stretch_func(
-            foreground_pixels,
-            self.rows,
-            self.columns,
-            foreground_rows,
-            foreground_columns,
-        )
-        background_pixels = self.background_stretch_func(
-            background_pixels,
-            self.rows,
-            self.columns,
-            background_rows,
-            background_columns,
-        )
+        mask_pixels = self.mask_stretch_func(blend_mask)
+        foreground_pixels = self.foreground_stretch_func(blend_fore)
+        background_pixels = self.background_stretch_func(blend_back)
 
         if self.bias_black:
             # Create a boolean mask where white pixels ([255.0, 255.0, 255.0]) are True, and black pixels are False
