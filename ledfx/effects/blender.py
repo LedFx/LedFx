@@ -120,8 +120,8 @@ def stretch_1d_horizontal(blend_virtual):
 STRETCH_FUNCS_MAPPING = {
     "2d full": stretch_2d_full,
     "2d tile": stretch_2d_tile,
-    "1d vertical": stretch_1d_vertical,
-    "1d horizontal": stretch_1d_horizontal,
+    # "1d vertical": stretch_1d_vertical, TODO Implement
+    # "1d horizontal": stretch_1d_horizontal, TODO: Implement
 }
 
 
