@@ -96,7 +96,7 @@ class Blender(AudioReactiveEffect, LogSec):
     NAME = "Blender"
     CATEGORY = "Matrix"
     HIDDEN_KEYS = ["background_color", "background_brightness", "blur"]
-    ADVANCED_KEYS = LogSec.ADVANCED_KEYS + ["bias_black"]
+    ADVANCED_KEYS = LogSec.ADVANCED_KEYS + []
 
     CONFIG_SCHEMA = vol.Schema(
         {
