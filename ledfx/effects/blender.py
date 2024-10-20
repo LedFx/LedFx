@@ -196,7 +196,7 @@ class Blender(AudioReactiveEffect, LogSec):
         back_image = self.background_stretch_func(blend_back)
 
         if self.mask_cutoff < 1.0:
-            cutoff = int(255 * (1- self.mask_cutoff))
+            cutoff = int(255 * (1 - self.mask_cutoff))
             mask_image = mask_image.point(lambda p: 255 if p > cutoff else 0)
 
         if self.invert_mask:
