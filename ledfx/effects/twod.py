@@ -180,6 +180,10 @@ class Twod(AudioReactiveEffect, LogSec):
             width=1,
         )
 
+    def get_matrix(self):
+        with self.lock:
+            return self.matrix.copy()
+
     def draw(self):
         # this should be implemented in the child class
         # should render into self.matrix at the final size
