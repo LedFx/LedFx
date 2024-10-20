@@ -7,6 +7,7 @@ from ledfx.effects import Effect
 
 _LOGGER = logging.getLogger(__name__)
 
+
 @Effect.no_registration
 class LogSec(Effect):
 
