@@ -7,18 +7,18 @@ from PIL import Image, ImageDraw
 
 from ledfx.effects import Effect
 from ledfx.effects.audio import AudioReactiveEffect
+from ledfx.effects.utils.logsec import LogSec
 
 _LOGGER = logging.getLogger(__name__)
 
 
 @Effect.no_registration
-class Twod(AudioReactiveEffect):
+class Twod(AudioReactiveEffect, LogSec):
     EFFECT_START_TIME = timeit.default_timer()
     # hiding dump by default, a dev can turn it on explicitily via removal
     HIDDEN_KEYS = ["background_brightness", "mirror", "flip", "blur", "dump"]
-    ADVANCED_KEYS = [
+    ADVANCED_KEYS = LogSec.ADVANCED_KEYS + [
         "dump",
-        "diag",
         "test",
         "flip_horizontal",
         "flip_vertical",
@@ -42,18 +42,8 @@ class Twod(AudioReactiveEffect):
                 default=0,
             ): vol.All(vol.Coerce(int), vol.Range(min=0, max=3)),
             vol.Optional(
-                "advanced",
-                description="enable advanced options",
-                default=False,
-            ): bool,
-            vol.Optional(
                 "test",
                 description="ignore audio input",
-                default=False,
-            ): bool,
-            vol.Optional(
-                "diag",
-                description="diagnostic enable",
                 default=False,
             ): bool,
             vol.Optional(
@@ -66,12 +56,6 @@ class Twod(AudioReactiveEffect):
 
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
-        self.lasttime = 0
-        self.passed = 0
-        self.frame = 0
-        self.fps = 0
-        self.last = 0
-        self.r_total = 0.0
         self.last_dump = self._config["dump"]
 
     def on_activate(self, pixel_count):
@@ -80,12 +64,9 @@ class Twod(AudioReactiveEffect):
         self.bar = 0
         self.t_height = max(1, self._virtual.config["rows"])
         self.t_width = self.pixel_count // self.t_height
-        # initialise here so inherited can assume it exists
-        self.current_time = timeit.default_timer()
         self.init = True
 
     def config_updated(self, config):
-        self.diag = self._config["diag"]
         self.test = self._config["test"]
 
         # We will render in to native image size of the matrix on rotation
@@ -108,6 +89,10 @@ class Twod(AudioReactiveEffect):
             self.flip, self.mirror = self.mirror, self.flip
 
         self.init = True
+
+        # the walker will not call config_updated for multiple inherited classes
+        # so if you a making a sub class you have to call this yourself
+        LogSec.config_updated(self, config)
 
     def set_init(self):
         """
@@ -161,36 +146,6 @@ class Twod(AudioReactiveEffect):
         copy_length = min(self.pixels.shape[0], rgb_array.shape[0])
         self.pixels[:copy_length, :] = rgb_array[:copy_length, :]
 
-    def log_sec(self):
-        result = False
-        if self.diag:
-            nowint = int(self.current_time)
-            # if now just rolled over a second boundary
-            if nowint != self.lasttime:
-                self.fps = self.frame
-                self.frame = 0
-                result = True
-            else:
-                self.frame += 1
-            self.lasttime = nowint
-        self.log = result
-
-    def try_log(self):
-        end = timeit.default_timer()
-        r_time = end - self.current_time
-        self.r_total += r_time
-        if self.log is True:
-            if self.fps > 0:
-                r_avg = self.r_total / self.fps
-            else:
-                r_avg = 0.0
-            _LOGGER.info(
-                f"FPS {self.fps} Render:{r_avg:0.6f} Cycle: {(end - self.last):0.6f} Sleep: {(self.current_time - self.last):0.6f}"
-            )
-            self.r_total = 0.0
-        self.last = end
-        return self.log
-
     def try_dump(self):
         if self.last_dump != self._config["dump"]:
             self.last_dump = self._config["dump"]
@@ -232,12 +187,8 @@ class Twod(AudioReactiveEffect):
         pass
 
     def render(self):
-        was = self.current_time
-        self.current_time = timeit.default_timer()
-        self.passed = self.current_time - was
         if self.init:
             self.do_once()
-        # Update the time every frame
 
         self.log_sec()
 

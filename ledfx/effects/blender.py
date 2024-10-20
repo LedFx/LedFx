@@ -5,6 +5,7 @@ import numpy as np
 import voluptuous as vol
 
 from ledfx.effects.audio import AudioReactiveEffect
+from ledfx.effects.utils.logsec import LogSec
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -13,6 +14,7 @@ class BlendVirtual:
     def __init__(self, virtual_id, _virtuals, fallback_shape, pixels_shape):
         self.target_rows = fallback_shape[0]
         self.target_columns = fallback_shape[1]
+        # all virtual grabs are try as they might not exist yet, but may on the next frame
         try:
             virtual = _virtuals.get(virtual_id)
             self.pixels = virtual.assembled_frame
@@ -124,14 +126,11 @@ STRETCH_FUNCS_MAPPING = {
 }
 
 
-class Blender(AudioReactiveEffect):
+class Blender(AudioReactiveEffect, LogSec):
     NAME = "Blender"
-    # CATEGORY defines where in the UI the effect will be displayed in the effects list
-    # "Classic" is a good default to start with, you can have anything here, but don't go
-    # creating new categories without a good reason!
     CATEGORY = "Matrix"
     HIDDEN_KEYS = ["background_color", "background_brightness", "blur"]
-    ADVANCED_KEYS = ["diag", "bias_black"]
+    ADVANCED_KEYS = LogSec.ADVANCED_KEYS + ["bias_black"]
 
     CONFIG_SCHEMA = vol.Schema(
         {
@@ -175,35 +174,15 @@ class Blender(AudioReactiveEffect):
                 description="Treat anything below white as black for mask, default is anything above black is white",
                 default=False,
             ): bool,
-            vol.Optional(
-                "diag",
-                description="diagnostic enable",
-                default=False,
-            ): bool,
-            vol.Optional(
-                "advanced",
-                description="enable advanced options",
-                default=False,
-            ): bool,
         }
     )
 
-    # things you want to do on activation, when pixel count is known
     def on_activate(self, pixel_count):
         # TODO: refactor to shape tuples instead of rows and columns
         self.rows = self._virtual.config["rows"]
         self.columns = int(self.pixel_count / self.rows)
         self.pixels_shape = np.shape(self.pixels)
-        self.lasttime = 0
-        self.frame = 0
-        self.fps = 0
-        self.last = 0
-        self.r_total = 0.0
-        self.passed = 0
-        self.current_time = timeit.default_timer()
 
-    # things you want to happen when ever the config is updated
-    # the first time through this function pixel_count is not known!
     def config_updated(self, config):
         # TODO: Ensure virtual names are mangled the same as during virtual creation,
         # for now rely on exactness from user or front end
@@ -222,49 +201,14 @@ class Blender(AudioReactiveEffect):
         self.background_stretch_func = STRETCH_FUNCS_MAPPING[
             self._config["background_stretch"]
         ]
-        self.diag = self._config["diag"]
-
-    def log_sec(self):
-        result = False
-        if self.diag:
-            nowint = int(self.current_time)
-            # if now just rolled over a second boundary
-            if nowint != self.lasttime:
-                self.fps = self.frame
-                self.frame = 0
-                result = True
-            else:
-                self.frame += 1
-            self.lasttime = nowint
-        self.log = result
-
-    def try_log(self):
-        end = timeit.default_timer()
-        r_time = end - self.current_time
-        self.r_total += r_time
-        if self.log is True:
-            if self.fps > 0:
-                r_avg = self.r_total / self.fps
-            else:
-                r_avg = 0.0
-            _LOGGER.warning(
-                f"FPS {self.fps} Render:{r_avg:0.6f} Cycle: {(end - self.last):0.6f} Sleep: {(self.current_time - self.last):0.6f}"
-            )
-            self.r_total = 0.0
-        self.last = end
-        return self.log
 
     def audio_data_updated(self, data):
         pass
 
     def render(self):
 
-        was = self.current_time
-        self.current_time = timeit.default_timer()
-        self.passed = self.current_time - was
         self.log_sec()
 
-        # all virtual grabs are try as they might not exist yet, but may on the next frame
         blend_mask = BlendVirtual(
             self.mask,
             self._ledfx.virtuals._virtuals,
