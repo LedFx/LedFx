@@ -31,7 +31,9 @@ class BlendVirtual:
                 self.matrix = virtual.active_effect.get_matrix()
             else:
                 # Reshape the 1D pixel array into (height, width, 3) for RGB
-                reshaped_pixels = virtual.assembled_frame.reshape((self.rows, self.columns, 3))
+                reshaped_pixels = virtual.assembled_frame.reshape(
+                    (self.rows, self.columns, 3)
+                )
                 # Convert the numpy array back into a Pillow image
                 self.matrix = Image.fromarray(
                     reshaped_pixels.astype(np.uint8), "RGB"
