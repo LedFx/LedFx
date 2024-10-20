@@ -9,8 +9,6 @@ from ledfx.effects.utils.logsec import LogSec
 
 _LOGGER = logging.getLogger(__name__)
 
-# TODO:look at better alpha blend options on the mask
-# TODO: slider for mask
 # 1d horizontal stetch
 
 
@@ -138,10 +136,10 @@ class Blender(AudioReactiveEffect, LogSec):
                 default=False,
             ): bool,
             vol.Optional(
-                "bias_black",
-                description="Treat anything below white as black for mask, default is anything above black is white",
-                default=False,
-            ): bool,
+                "mask_cutoff",
+                description="1 default = luminance as alpha, anything below 1 is mask cutoff",
+                default=1.0,
+            ): vol.All(vol.Coerce(float), vol.Range(min=0.01, max=1.0)),
         }
     )
 
@@ -158,7 +156,7 @@ class Blender(AudioReactiveEffect, LogSec):
         self.foreground = self._config["foreground"]
         self.background = self._config["background"]
         self.invert_mask = self._config["invert_mask"]
-        self.bias_black = self._config["bias_black"]
+        self.mask_cutoff = self._config["mask_cutoff"]
 
         self.mask_stretch_func = STRETCH_FUNCS_MAPPING[
             self._config["mask_stretch"]
@@ -197,13 +195,9 @@ class Blender(AudioReactiveEffect, LogSec):
         fore_image = self.foreground_stretch_func(blend_fore)
         back_image = self.background_stretch_func(blend_back)
 
-        # TODO: replace with a slider now we have pillow in the mix
-        # if self.bias_black:
-        #     # Create a boolean mask where white pixels ([255.0, 255.0, 255.0]) are True, and black pixels are False
-        #     mask = (mask_pixels == 255.0).all(axis=-1)
-        # else:
-        #     # Create a boolean mask where any pixel that is not black ([0, 0, 0]) is True, and black pixels are False
-        #     mask = (mask_pixels != 0).any(axis=-1)
+        if self.mask_cutoff < 1.0:
+            cutoff = int(255 * (1- self.mask_cutoff))
+            mask_image = mask_image.point(lambda p: 255 if p > cutoff else 0)
 
         if self.invert_mask:
             mask_image = ImageOps.invert(mask_image)
