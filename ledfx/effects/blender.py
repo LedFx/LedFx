@@ -2,8 +2,8 @@ import logging
 
 import numpy as np
 import voluptuous as vol
-
 from PIL import Image, ImageOps
+
 from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.utils.logsec import LogSec
 
@@ -12,6 +12,7 @@ _LOGGER = logging.getLogger(__name__)
 # TODO:look at better alpha blend options on the mask
 # TODO: slider for mask
 # 1d horizontal stetch
+
 
 class BlendVirtual:
     def __init__(self, virtual_id, _virtuals, fallback_shape):
@@ -32,10 +33,12 @@ class BlendVirtual:
                 # Reshape the 1D pixel array into (height, width, 3) for RGB
                 reshaped_pixels = virtual.assembled_frame.reshape((self.rows, self.columns, 3))
                 # Convert the numpy array back into a Pillow image
-                self.matrix = Image.fromarray(reshaped_pixels.astype(np.uint8), 'RGB')
+                self.matrix = Image.fromarray(
+                    reshaped_pixels.astype(np.uint8), "RGB"
+                )
         except Exception as e:
             _LOGGER.warning(f"Virtual {virtual_id} {e}")
-            self.matrix = Image.new('RGB', fallback_shape, (0, 0, 0))
+            self.matrix = Image.new("RGB", fallback_shape, (0, 0, 0))
             self.rows = fallback_shape[0]
             self.columns = fallback_shape[1]
             self.matching = True
@@ -60,7 +63,9 @@ def stretch_2d_tile(blend_virtual):
     src_width, src_height = blend_virtual.matrix.size
 
     # Create a new image with the target dimensions
-    target_image = Image.new('RGB', (blend_virtual.target_columns, blend_virtual.target_rows))
+    target_image = Image.new(
+        "RGB", (blend_virtual.target_columns, blend_virtual.target_rows)
+    )
 
     # Tile the source image to fill the new image
     for i in range(0, blend_virtual.target_columns, src_width):
@@ -186,7 +191,7 @@ class Blender(AudioReactiveEffect, LogSec):
             (self.rows, self.columns),
         )
 
-        mask_image = self.mask_stretch_func(blend_mask).convert('L')
+        mask_image = self.mask_stretch_func(blend_mask).convert("L")
         fore_image = self.foreground_stretch_func(blend_fore)
         back_image = self.background_stretch_func(blend_back)
 
