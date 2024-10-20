@@ -14,7 +14,7 @@ _LOGGER = logging.getLogger(__name__)
 # 1d horizontal stetch
 
 class BlendVirtual:
-    def __init__(self, virtual_id, _virtuals, fallback_shape, pixels_shape):
+    def __init__(self, virtual_id, _virtuals, fallback_shape):
         self.target_rows = fallback_shape[0]
         self.target_columns = fallback_shape[1]
         # all virtual grabs are try as they might not exist yet, but may on the next frame
@@ -30,7 +30,7 @@ class BlendVirtual:
                 self.matrix = virtual.active_effect.get_matrix()
             else:
                 # Reshape the 1D pixel array into (height, width, 3) for RGB
-                reshaped_pixels = virtual.assembled_frame.reshape((1, virtual.pixel_count, 3))
+                reshaped_pixels = virtual.assembled_frame.reshape((self.rows, self.columns, 3))
                 # Convert the numpy array back into a Pillow image
                 self.matrix = Image.fromarray(reshaped_pixels.astype(np.uint8), 'RGB')
         except Exception as e:
@@ -174,19 +174,16 @@ class Blender(AudioReactiveEffect, LogSec):
             self.mask,
             self._ledfx.virtuals._virtuals,
             (self.rows, self.columns),
-            self.pixels_shape,
         )
         blend_fore = BlendVirtual(
             self.foreground,
             self._ledfx.virtuals._virtuals,
             (self.rows, self.columns),
-            self.pixels_shape,
         )
         blend_back = BlendVirtual(
             self.background,
             self._ledfx.virtuals._virtuals,
             (self.rows, self.columns),
-            self.pixels_shape,
         )
 
         mask_image = self.mask_stretch_func(blend_mask).convert('L')
