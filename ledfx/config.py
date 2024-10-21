@@ -44,6 +44,7 @@ CORE_CONFIG_KEYS_NO_RESTART = [
     "visualisation_maxlen",
     "visualisation_fps",
     "flush_on_deactivate",
+    "ui_brightness_boost"
 ]
 # Collection of keys that are used for visualisation configuration - used to check if we need to restart the visualisation event listeners
 VISUALISATION_CONFIG_KEYS = [
@@ -141,6 +142,9 @@ CORE_CONFIG_SCHEMA = vol.Schema(
             "configuration_version", default=CONFIGURATION_VERSION
         ): str,
         vol.Optional("global_brightness", default=1.0): vol.All(
+            vol.Coerce(float), vol.Range(0, 1.0)
+        ),
+        vol.Optional("ui_brightness_boost", default=0.0): vol.All(
             vol.Coerce(float), vol.Range(0, 1.0)
         ),
     },
