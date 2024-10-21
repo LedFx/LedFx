@@ -37,7 +37,7 @@ class BlendVirtual:
                     reshaped_pixels.astype(np.uint8), "RGB"
                 )
         except Exception as e:
-            _LOGGER.warning(f"Virtual {virtual_id} {e}")
+            _LOGGER.info(f"Virtual {virtual_id} {e}")
             self.matrix = Image.new("RGB", fallback_shape, (0, 0, 0))
             self.rows = fallback_shape[0]
             self.columns = fallback_shape[1]
@@ -107,12 +107,12 @@ class Blender(AudioReactiveEffect, LogSec):
             ): vol.In(list(STRETCH_FUNCS_MAPPING.keys())),
             vol.Optional(
                 "background_stretch",
-                description="How to stretch the mask source pixles to the effect pixels",
+                description="How to stretch the background source pixles to the effect pixels",
                 default="2d full",
             ): vol.In(list(STRETCH_FUNCS_MAPPING.keys())),
             vol.Optional(
                 "foreground_stretch",
-                description="How to stretch the mask source pixles to the effect pixels",
+                description="How to stretch the foreground source pixles to the effect pixels",
                 default="2d full",
             ): vol.In(list(STRETCH_FUNCS_MAPPING.keys())),
             vol.Optional(
