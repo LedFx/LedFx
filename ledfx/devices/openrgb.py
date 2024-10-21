@@ -54,6 +54,7 @@ class OpenRGB(NetworkedDevice):
             openrgb_device_id (int): The ID of the OpenRGB device.
         """
         super().__init__(ledfx, config)
+        self._device_type = "OpenRGB"
         self._ledfx = ledfx
         self.ip_address = self._config["ip_address"]
         self.port = self._config["port"]
