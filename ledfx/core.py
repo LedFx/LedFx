@@ -236,32 +236,14 @@ class LedFxCore:
 
             if len(pixels) > max_len:
                 pixels = interpolate_pixels(pixels, max_len)
-
+                        
             if ( self.config["ui_brightness_boost"] != 0):
-                # do some magic here
-                # np.multiply(pixels, self._ledfx.config["global_brightness"],
-                #            pixels)
-
-                # def apply_brightness_boost(pixel_array, brightness_boost):
-                #     # Define the target range for the brightness boost
-                #     min_value = 150 * brightness_boost  # Example: When boost is 1, minimum becomes 150
-                #     max_value = 255  # Always 255 as the maximum
-                #
-                #     # Apply compression to the pixel values
-                #     # Normalize original pixel values from 0 to 255, then scale to new range
-                #     pixel_array = np.clip(pixel_array, 0,
-                #                           255)  # Ensure values are within the valid range
-                #     boosted_pixels = min_value + (pixel_array / 255.0) * (
-                #                 max_value - min_value)
-                #
-                #     return boosted_pixels
-                #
-                # # Example usage
-                # pixels = np.array([[12.0, 48.0, 255.0], [100.0, 90.0, 12.0]])
-                # brightness_boost = 0.5  # Example boost value
-                # boosted_pixels = apply_brightness_boost(pixels,
-                #                                         brightness_boost)
-
+                # Define the target range for the brightness boost
+                min_value = 150 * self.config["ui_brightness_boost"]
+                # Apply compression to the pixel values
+                pixels = np.where(pixels > 0, 
+                              min_value + (pixels / 255.0) * (255 - min_value), 
+                              pixels)                            
             if (
                 self.config["transmission_mode"]
                 == Transmission.BASE64_COMPRESSED
