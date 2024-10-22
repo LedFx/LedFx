@@ -6,6 +6,7 @@ import time
 import warnings
 import webbrowser
 from concurrent.futures import ThreadPoolExecutor
+from ledfx.utils import pixels_boost
 
 import numpy as np
 import pybase64
@@ -238,14 +239,7 @@ class LedFxCore:
                 pixels = interpolate_pixels(pixels, max_len)
 
             if self.config["ui_brightness_boost"] != 0:
-                # Define the target range for the brightness boost
-                min_value = 150 * self.config["ui_brightness_boost"]
-                # Apply compression to the pixel values
-                pixels = np.where(
-                    pixels > 0,
-                    min_value + (pixels / 255.0) * (255 - min_value),
-                    pixels,
-                )
+                pixels = pixels_boost(pixels, self.config["ui_brightness_boost"], 200)
             if (
                 self.config["transmission_mode"]
                 == Transmission.BASE64_COMPRESSED

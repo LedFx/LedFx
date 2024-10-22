@@ -1811,3 +1811,28 @@ class UpdateChecker:
         return UpdateChecker._get_attribute_if_update_succeeded(
             PROJECT_VERSION != UpdateChecker.get_latest_version()
         )
+
+def pixels_boost(pixels, boost, max_floor):
+    # Define the target range for the brightness boost
+    min_value = max_floor * boost
+    # Apply compression to the pixel values
+    boosted = np.where(
+        pixels > 0,
+        min_value + (pixels / 255.0) * (255 - min_value),
+        pixels,
+    )
+
+    return boosted
+
+
+def apply_log_floor_compression(pixel_array, compression_factor, max_floor):
+    # Compute the new floor based on the compression factor
+    floor = max_floor * compression_factor
+
+    # Logarithmic compression: map pixel_array from [0, 255] to [floor, 255]
+    log_compressed = floor + (np.log1p(pixel_array) / np.log(256)) * (255 - floor)
+
+    # Blend between the original pixel values and the compressed ones
+    boosted = (1 - compression_factor) * pixel_array + compression_factor * log_compressed
+
+    return boosted
