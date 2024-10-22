@@ -47,6 +47,7 @@ class NanoleafDevice(NetworkedDevice):
 
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
+        self._device_type = "Nanoleaf"
         self.status = {}
 
     def config_updated(self, config):

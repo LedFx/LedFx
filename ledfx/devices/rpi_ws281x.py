@@ -76,6 +76,7 @@ class RPI_WS281X(DeviceWrapper):
         self.LED_INVERT = False
         self.LED_CHANNEL = 0
         self.color_order = COLOR_ORDERS[self._config["color_order"]]
+        self._device_type = "RPi_WS281X"
 
     def config_updated(self, config):
         self.color_order = COLOR_ORDERS[self._config["color_order"]]

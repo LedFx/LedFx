@@ -44,6 +44,7 @@ class HueDevice(NetworkedDevice):
 
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
+        self._device_type = "Hue"
         if not MBEDTLS_AVAILABLE:
             raise Exception(
                 "You need to install the python-mbedtls package for Hue to work."

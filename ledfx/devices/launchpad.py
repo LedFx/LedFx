@@ -128,6 +128,7 @@ class LaunchpadDevice(MidiDevice):
         super().__init__(ledfx, config)
         self.lp = None
         self.lp_name = "unknown"
+        self._device_type = "Launchpad"
         _LOGGER.info("Launchpad device created")
 
     def flush(self, data):
