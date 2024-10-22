@@ -12,7 +12,7 @@
  */
 
 /*!
- * Chart.js v4.4.4
+ * Chart.js v4.4.5
  * https://www.chartjs.org
  * (c) 2024 Chart.js Contributors
  * Released under the MIT License
@@ -301,6 +301,14 @@ PERFORMANCE OF THIS SOFTWARE.
  *
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+/**
+ * @mui/styled-engine v6.1.4
+ *
+ * @license MIT
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
