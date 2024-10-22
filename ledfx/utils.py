@@ -1811,3 +1811,28 @@ class UpdateChecker:
         return UpdateChecker._get_attribute_if_update_succeeded(
             PROJECT_VERSION != UpdateChecker.get_latest_version()
         )
+
+
+# pre stuff this to prevent per frame
+log_256 = np.log(256)
+
+
+def pixels_boost(pixels, compression_factor, max_floor):
+    # Compute the new floor based on the compression factor
+    floor = max_floor * compression_factor
+
+    # Precompute constants and reduce repeated computations
+    factor = 255 - floor
+    blend_factor = 1 - compression_factor
+
+    # Logarithmic compression: map pixel_array from [0, 255] to [floor, 255]
+    log_compressed = floor + (np.log1p(pixels) / log_256) * factor
+
+    # Apply the blend only where pixels are greater than 1, else leave unchanged
+    boosted = np.where(
+        pixels > 1,
+        blend_factor * pixels + compression_factor * log_compressed,
+        pixels,
+    )
+
+    return boosted
