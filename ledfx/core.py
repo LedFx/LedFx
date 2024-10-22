@@ -239,7 +239,8 @@ class LedFxCore:
                 pixels = interpolate_pixels(pixels, max_len)
 
             if self.config["ui_brightness_boost"] != 0:
-                pixels = pixels_boost(pixels, self.config["ui_brightness_boost"], 200)
+                pixels = pixels_boost(pixels, self.config["ui_brightness_boost"], 100)
+
             if (
                 self.config["transmission_mode"]
                 == Transmission.BASE64_COMPRESSED
