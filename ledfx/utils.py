@@ -1812,8 +1812,10 @@ class UpdateChecker:
             PROJECT_VERSION != UpdateChecker.get_latest_version()
         )
 
+
 # pre stuff this to prevent per frame
 log_256 = np.log(256)
+
 
 def pixels_boost(pixels, compression_factor, max_floor):
     # Compute the new floor based on the compression factor
@@ -1827,6 +1829,10 @@ def pixels_boost(pixels, compression_factor, max_floor):
     log_compressed = floor + (np.log1p(pixels) / log_256) * factor
 
     # Apply the blend only where pixels are greater than 1, else leave unchanged
-    boosted = np.where(pixels > 1, blend_factor * pixels + compression_factor * log_compressed, pixels)
+    boosted = np.where(
+        pixels > 1,
+        blend_factor * pixels + compression_factor * log_compressed,
+        pixels,
+    )
 
     return boosted

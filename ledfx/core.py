@@ -6,7 +6,6 @@ import time
 import warnings
 import webbrowser
 from concurrent.futures import ThreadPoolExecutor
-from ledfx.utils import pixels_boost
 
 import numpy as np
 import pybase64
@@ -49,6 +48,7 @@ from ledfx.utils import (
     UserDefaultCollection,
     async_fire_and_forget,
     currently_frozen,
+    pixels_boost,
 )
 from ledfx.virtuals import Virtuals
 
@@ -239,7 +239,9 @@ class LedFxCore:
                 pixels = interpolate_pixels(pixels, max_len)
 
             if self.config["ui_brightness_boost"] != 0:
-                pixels = pixels_boost(pixels, self.config["ui_brightness_boost"], 100)
+                pixels = pixels_boost(
+                    pixels, self.config["ui_brightness_boost"], 100
+                )
 
             if (
                 self.config["transmission_mode"]
