@@ -184,7 +184,9 @@ class Twod(AudioReactiveEffect, LogSec):
         with self.lock:
             result = self.matrix.copy()
             if brightness and self.brightness != 1.0:
-                result = ImageEnhance.Brightness(result).enhance(self.brightness)
+                result = ImageEnhance.Brightness(result).enhance(
+                    self.brightness
+                )
             return result
 
     def draw(self):
