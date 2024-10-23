@@ -391,6 +391,11 @@ class Effect(BaseRegistry):
                 * self._config["background_brightness"]
             )
 
+            self.flip = self._config["flip"]
+            self.mirror = self._config["mirror"]
+            self.background_color = self._config["background_color"]
+            self.brightness = self._config["brightness"]
+
             def inherited(cls, method):
                 if hasattr(cls, method) and hasattr(super(cls, cls), method):
                     return cls.foo == super(cls).foo
@@ -448,18 +453,18 @@ class Effect(BaseRegistry):
                     config = self._config
 
                     # Apply some of the base output filters if necessary
-                    if config["flip"]:
+                    if self.flip:
                         pixels = np.flipud(pixels)
-                    if config["mirror"]:
+                    if self.mirror:
                         pixels = np.concatenate(
                             (pixels[-1 + len(pixels) % -2 :: -2], pixels[::2])
                         )
-                    if config["background_color"]:
+                    if self.background_color:
                         pixels += self._bg_color
-                    if config["brightness"] is not None:
+                    if self.brightness is not None:
                         np.multiply(
                             pixels,
-                            config["brightness"],
+                            self.brightness,
                             out=pixels,
                             casting="unsafe",
                         )
