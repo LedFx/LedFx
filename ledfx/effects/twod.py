@@ -3,7 +3,7 @@ import timeit
 
 import numpy as np
 import voluptuous as vol
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageEnhance
 
 from ledfx.effects import Effect
 from ledfx.effects.audio import AudioReactiveEffect
@@ -180,9 +180,14 @@ class Twod(AudioReactiveEffect, LogSec):
             width=1,
         )
 
-    def get_matrix(self):
+    def get_matrix(self, brightness=True):
         with self.lock:
-            return self.matrix.copy()
+            result = self.matrix.copy()
+            if brightness and self.brightness != 1.0:
+                result = ImageEnhance.Brightness(result).enhance(
+                    self.brightness
+                )
+            return result
 
     def draw(self):
         # this should be implemented in the child class
