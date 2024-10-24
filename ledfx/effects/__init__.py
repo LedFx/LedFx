@@ -393,7 +393,9 @@ class Effect(BaseRegistry):
 
             self.flip = self._config["flip"]
             self.mirror = self._config["mirror"]
-            self.background_color = parse_color(self._config["background_color"])
+            self.background_color = parse_color(
+                self._config["background_color"]
+            )
             self.brightness = self._config["brightness"]
 
             def inherited(cls, method):
