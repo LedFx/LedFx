@@ -393,7 +393,9 @@ class Effect(BaseRegistry):
 
             self.flip = self._config["flip"]
             self.mirror = self._config["mirror"]
-            self.background_color = self._config["background_color"]
+            self.background_color = parse_color(
+                self._config["background_color"]
+            )
             self.brightness = self._config["brightness"]
 
             def inherited(cls, method):
@@ -459,7 +461,7 @@ class Effect(BaseRegistry):
                         pixels = np.concatenate(
                             (pixels[-1 + len(pixels) % -2 :: -2], pixels[::2])
                         )
-                    if self.background_color:
+                    if self.background_color is not None:
                         pixels += self._bg_color
                     if self.brightness is not None:
                         np.multiply(
