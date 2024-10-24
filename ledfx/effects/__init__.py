@@ -8,7 +8,7 @@ import numpy as np
 import voluptuous as vol
 from numpy.typing import NDArray
 
-from ledfx.color import hsv_to_rgb, parse_color, validate_color, LEDFX_COLORS
+from ledfx.color import LEDFX_COLORS, hsv_to_rgb, parse_color, validate_color
 from ledfx.utils import BaseRegistry, RegistryLoader
 
 _LOGGER = logging.getLogger(__name__)
@@ -392,8 +392,7 @@ class Effect(BaseRegistry):
 
             if self.bg_color_use:
                 self._bg_color = (
-                    np.array(bg_color)
-                    * self._config["background_brightness"]
+                    np.array(bg_color) * self._config["background_brightness"]
                 )
 
             self.flip = self._config["flip"]
