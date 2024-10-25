@@ -541,7 +541,9 @@ class Virtual:
 
         self._ledfx.events.fire_event(
             VirtualUpdateEvent(
-                self.id, self._effective_to_physical_pixels(frame), self._config["rows"]
+                self.id,
+                self._effective_to_physical_pixels(frame),
+                self._config["rows"],
             )
         )
 

@@ -1,11 +1,11 @@
 import asyncio
 import logging
+import math
 import os
 import sys
 import time
 import warnings
 import webbrowser
-import math
 from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
@@ -49,8 +49,8 @@ from ledfx.utils import (
     UserDefaultCollection,
     async_fire_and_forget,
     currently_frozen,
-    pixels_boost,
     dump_pixels,
+    pixels_boost,
     resize_pixels,
 )
 from ledfx.virtuals import Virtuals
@@ -61,6 +61,7 @@ if currently_frozen():
     warnings.filterwarnings("ignore")
 
 counter = 0
+
 
 class LedFxCore:
 
@@ -240,14 +241,17 @@ class LedFxCore:
             rows = getattr(event, "rows")
             pixels = event.pixels
             pixels_len = len(pixels)
-            shape = ( rows, int(pixels_len / rows))
+            shape = (rows, int(pixels_len / rows))
 
             if pixels_len > max_len:
                 if shape[0] > 1:
                     reduction_ratio = math.sqrt(pixels_len / max_len)
-                    new_shape = (int(shape[0] / reduction_ratio), int(shape[1] / reduction_ratio))
+                    new_shape = (
+                        int(shape[0] / reduction_ratio),
+                        int(shape[1] / reduction_ratio),
+                    )
                 else:
-                    new_shape = (1, max_len)        
+                    new_shape = (1, max_len)
                 pixels = resize_pixels(pixels, shape, new_shape)
                 shape = new_shape
 
