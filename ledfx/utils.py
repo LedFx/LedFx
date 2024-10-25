@@ -1888,4 +1888,5 @@ def resize_pixels(pixels, old_shape, new_shape):
     resized_pixel_matrix = np.array(resized_image)
 
     # Flatten the resized pixel matrix back to 1D
-    return resized_pixel_matrix.flatten()
+    return resized_pixel_matrix.reshape(-1, 3)
+    

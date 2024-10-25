@@ -246,10 +246,18 @@ class LedFxCore:
                     pixels_len = shape[0] * shape[1]
                     pixels = pixels[:pixels_len]
                     reduction_ratio = math.sqrt(pixels_len / max_len)
-                    new_shape = (
-                        max(1, int(shape[0] / reduction_ratio)),
-                        max(1, int(shape[1] / reduction_ratio)),
-                    )
+                    new_rows = shape[0] / reduction_ratio
+                    new_cols = shape[1] / reduction_ratio
+                    # protect from less than 1 values
+                    if new_rows < 1.0:
+                        new_shape = (1, max_len)
+                    elif new_cols < 1.0:
+                        new_shape = (max_len, 1)
+                    else:
+                        new_shape = (
+                            int(new_rows),
+                            int(new_cols),
+                        )
                 else:
                     # this is a 1d visualisation
                     new_shape = (1, max_len)
