@@ -1861,7 +1861,9 @@ def dump_pixels(pixels, shape):
 
 def resize_pixels(pixels, old_shape, new_shape):
     """
-    Resizes a 1D pixel array that represents a 2D image by interpolating it in 2D space using PIL.
+    Resizes a 1D pixel array that represents a for 1D or 2D image by interpolating it in 2D space using PIL.
+
+    Profiled as at least as good as or better than interpolate_pixels() for performance even with the overhead of creating a PIL image.
 
     Parameters:
     - pixels: 1D array of concatenated RGB pixel values
