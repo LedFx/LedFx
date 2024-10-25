@@ -5,6 +5,7 @@ import sys
 import time
 import warnings
 import webbrowser
+import math
 from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
@@ -49,6 +50,8 @@ from ledfx.utils import (
     async_fire_and_forget,
     currently_frozen,
     pixels_boost,
+    dump_pixels,
+    resize_pixels,
 )
 from ledfx.virtuals import Virtuals
 
@@ -57,6 +60,7 @@ _LOGGER = logging.getLogger(__name__)
 if currently_frozen():
     warnings.filterwarnings("ignore")
 
+counter = 0
 
 class LedFxCore:
 
@@ -233,10 +237,19 @@ class LedFxCore:
 
             time_since_last[vis_id] = time_now
 
+            rows = getattr(event, "rows")
             pixels = event.pixels
+            pixels_len = len(pixels)
+            shape = ( rows, int(pixels_len / rows))
 
-            if len(pixels) > max_len:
-                pixels = interpolate_pixels(pixels, max_len)
+            if pixels_len > max_len:
+                if shape[0] > 1:
+                    reduction_ratio = math.sqrt(pixels_len / max_len)
+                    new_shape = (int(shape[0] / reduction_ratio), int(shape[1] / reduction_ratio))
+                else:
+                    new_shape = (1, max_len)        
+                pixels = resize_pixels(pixels, shape, new_shape)
+                shape = new_shape
 
             if self.config["ui_brightness_boost"] != 0:
                 pixels = pixels_boost(
@@ -253,7 +266,7 @@ class LedFxCore:
                 pixels = pixels.astype(np.uint8).T.tolist()
 
             self.events.fire_event(
-                VisualisationUpdateEvent(is_device, vis_id, pixels)
+                VisualisationUpdateEvent(is_device, vis_id, pixels, shape)
             )
 
         _LOGGER.debug("Setting up visualisation event handler.")

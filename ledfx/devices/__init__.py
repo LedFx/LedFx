@@ -163,7 +163,7 @@ class Device(BaseRegistry):
                 # _LOGGER.debug(f"Device {self.id} flushed by Virtual {virtual_id}")
 
                 self._ledfx.events.fire_event(
-                    DeviceUpdateEvent(self.id, frame)
+                    DeviceUpdateEvent(self.id, frame, self._ledfx.virtuals._virtuals[self.id]._config["rows"])
                 )
         else:
             _LOGGER.warning(
