@@ -13,6 +13,7 @@ from aiohttp import web
 from ledfx.api import RestEndpoint
 from ledfx.events import Event
 from ledfx.utils import empty_queue
+from ledfx.dedupequeue import VisDeduplicateQ
 
 _LOGGER = logging.getLogger(__name__)
 MAX_PENDING_MESSAGES = 256
@@ -68,7 +69,7 @@ class WebsocketConnection:
         self._listeners = {}
         self._receiver_task = None
         self._sender_task = None
-        self._sender_queue = asyncio.Queue(maxsize=MAX_PENDING_MESSAGES)
+        self._sender_queue = VisDeduplicateQ(maxsize=MAX_PENDING_MESSAGES)
 
     def close(self):
         """
