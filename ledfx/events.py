@@ -37,11 +37,12 @@ class Event:
 class DeviceUpdateEvent(Event):
     """Event emitted when a device's pixels are updated"""
 
-    def __init__(self, device_id: str, pixels: np.ndarray):
+    def __init__(self, device_id: str, pixels: np.ndarray, rows: int):
         super().__init__(Event.DEVICE_UPDATE)
         self.device_id = device_id
         # self.pixels = pixels.astype(np.uint8).T.tolist()
         self.pixels = pixels
+        self.rows = rows
 
 
 class DeviceCreatedEvent(Event):
@@ -65,10 +66,11 @@ class DevicesUpdatedEvent(Event):
 class VirtualUpdateEvent(Event):
     """Event emitted when a virtual's pixels are updated"""
 
-    def __init__(self, virtual_id: str, pixels: np.ndarray):
+    def __init__(self, virtual_id: str, pixels: np.ndarray, rows: int):
         super().__init__(Event.VIRTUAL_UPDATE)
         self.virtual_id = virtual_id
         self.pixels = pixels
+        self.rows = rows
 
 
 class GlobalPauseEvent(Event):
@@ -118,11 +120,13 @@ class VisualisationUpdateEvent(Event):
         is_device: bool,  # true if device, false if virtual
         vis_id: str,  # id of device/virtual
         pixels: np.ndarray,
+        shape: tuple,
     ):
         super().__init__(Event.VISUALISATION_UPDATE)
         self.is_device = is_device
         self.vis_id = vis_id
         self.pixels = pixels
+        self.shape = shape
 
 
 class EffectSetEvent(Event):

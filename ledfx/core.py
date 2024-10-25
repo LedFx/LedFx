@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import math
 import os
 import sys
 import time
@@ -30,7 +31,6 @@ from ledfx.config import (
 from ledfx.consts import PROJECT_VERSION
 from ledfx.devices import Devices
 from ledfx.effects import Effects
-from ledfx.effects.math import interpolate_pixels
 from ledfx.events import (
     Event,
     Events,
@@ -49,6 +49,7 @@ from ledfx.utils import (
     async_fire_and_forget,
     currently_frozen,
     pixels_boost,
+    resize_pixels,
 )
 from ledfx.virtuals import Virtuals
 
@@ -233,10 +234,28 @@ class LedFxCore:
 
             time_since_last[vis_id] = time_now
 
+            rows = getattr(event, "rows")
             pixels = event.pixels
+            pixels_len = len(pixels)
+            shape = (rows, int(pixels_len / rows))
 
-            if len(pixels) > max_len:
-                pixels = interpolate_pixels(pixels, max_len)
+            if pixels_len > max_len:
+                if shape[0] > 1:
+                    # this is a 2d visualisation
+                    # clip array to actual needed to prevent image resize from exploding
+                    pixels_len = shape[0] * shape[1]
+                    pixels = pixels[:pixels_len]
+                    reduction_ratio = math.sqrt(pixels_len / max_len)
+                    new_shape = (
+                        int(shape[0] / reduction_ratio),
+                        int(shape[1] / reduction_ratio),
+                    )
+                else:
+                    # this is a 1d visualisation
+                    new_shape = (1, max_len)
+
+                pixels = resize_pixels(pixels, shape, new_shape)
+                shape = new_shape
 
             if self.config["ui_brightness_boost"] != 0:
                 pixels = pixels_boost(
@@ -253,7 +272,7 @@ class LedFxCore:
                 pixels = pixels.astype(np.uint8).T.tolist()
 
             self.events.fire_event(
-                VisualisationUpdateEvent(is_device, vis_id, pixels)
+                VisualisationUpdateEvent(is_device, vis_id, pixels, shape)
             )
 
         _LOGGER.debug("Setting up visualisation event handler.")
