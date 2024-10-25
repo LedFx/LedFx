@@ -50,7 +50,6 @@ from ledfx.utils import (
     async_fire_and_forget,
     currently_frozen,
     pixels_boost,
-    dump_pixels,
     resize_pixels,
 )
 from ledfx.virtuals import Virtuals
@@ -60,7 +59,6 @@ _LOGGER = logging.getLogger(__name__)
 if currently_frozen():
     warnings.filterwarnings("ignore")
 
-counter = 0
 
 class LedFxCore:
 
@@ -244,10 +242,16 @@ class LedFxCore:
 
             if pixels_len > max_len:
                 if shape[0] > 1:
+                    # this is a 2d visualisation
+                    # clip array to actual needed to prevent image resize from exploding
+                    pixels_len = shape[0] * shape[1]
+                    pixels = pixels[:pixels_len]
                     reduction_ratio = math.sqrt(pixels_len / max_len)
                     new_shape = (int(shape[0] / reduction_ratio), int(shape[1] / reduction_ratio))
                 else:
-                    new_shape = (1, max_len)        
+                    # this is a 1d visualisation
+                    new_shape = (1, max_len)  
+
                 pixels = resize_pixels(pixels, shape, new_shape)
                 shape = new_shape
 
