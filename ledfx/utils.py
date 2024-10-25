@@ -1889,4 +1889,3 @@ def resize_pixels(pixels, old_shape, new_shape):
 
     # Flatten the resized pixel matrix back to 1D
     return resized_pixel_matrix.reshape(-1, 3)
-    
