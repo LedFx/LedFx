@@ -31,7 +31,6 @@ from ledfx.config import (
 from ledfx.consts import PROJECT_VERSION
 from ledfx.devices import Devices
 from ledfx.effects import Effects
-from ledfx.effects.math import interpolate_pixels
 from ledfx.events import (
     Event,
     Events,
