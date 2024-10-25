@@ -17,7 +17,7 @@ class VisDeduplicateQ(asyncio.Queue):
             # check if it is a duplicate and just return without queing if it is
             if any(self.is_similar(item, existing_item) for existing_item in self._queue):
                 # TODO: remove this logging
-                _LOGGER.warning(f"Queue: {id(self)} discarding, qsize {self.qsize()}")
+                _LOGGER.warning(f"Queue: {hex(id(self))} discarding, qsize {self.qsize()}")
                 return
         super().put_nowait(item)
 
