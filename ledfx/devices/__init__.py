@@ -83,6 +83,9 @@ class Device(BaseRegistry):
         self._silence_start = None
         self._device_type = ""
         self._online = True
+        # rows default until updated by virtual
+        # this is not a device config, to keep the source of truth in the virtual
+        self._rows = 1 
         self.lock = threading.Lock()
 
     def __del__(self):
@@ -166,9 +169,7 @@ class Device(BaseRegistry):
                     DeviceUpdateEvent(
                         self.id,
                         frame,
-                        self._ledfx.virtuals._virtuals[self.id]._config[
-                            "rows"
-                        ],
+                        self._rows
                     )
                 )
         else:
@@ -459,6 +460,9 @@ class Device(BaseRegistry):
             }
         )
 
+    def set_rows(self, rows):
+        # used by virtual to update the rows of the device
+        self._rows = rows
 
 @BaseRegistry.no_registration
 class MidiDevice(Device):

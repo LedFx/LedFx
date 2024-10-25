@@ -1011,6 +1011,14 @@ class Virtual:
     def update_config(self, config):
         self.config = config
 
+    def try_set_devices_row(self, rows):
+        # find which device and update its rows param
+        # as it needs to know rows for VisualisationEvents
+        device_id = self.is_device
+        device = self._ledfx.devices.get(device_id)
+        if device is not None:
+            device.set_rows(rows)
+
     @config.setter
     def config(self, new_config):
         """Updates the config for an object"""
@@ -1023,6 +1031,9 @@ class Virtual:
         reactivate_effect = False
 
         if hasattr(self, "_config"):
+            if _config["rows"] != self._config["rows"] and self.is_device:
+                self.try_set_devices_row(_config["rows"])
+
             if _config["mapping"] != self._config["mapping"]:
                 self.invalidate_cached_props()
             if (
@@ -1241,6 +1252,9 @@ class Virtuals:
         setattr(obj, "_id", id)
         setattr(obj, "is_device", _is_device)
         setattr(obj, "auto_generated", _auto_generated)
+
+        if _is_device:
+            obj.try_set_devices_row(_config["rows"])
 
         # Store the object into the internal list and return it
         self._virtuals[id] = obj
