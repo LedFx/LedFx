@@ -11,9 +11,9 @@ import voluptuous as vol
 from aiohttp import web
 
 from ledfx.api import RestEndpoint
+from ledfx.dedupequeue import VisDeduplicateQ
 from ledfx.events import Event
 from ledfx.utils import empty_queue
-from ledfx.dedupequeue import VisDeduplicateQ
 
 _LOGGER = logging.getLogger(__name__)
 MAX_PENDING_MESSAGES = 256
