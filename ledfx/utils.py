@@ -1837,42 +1837,42 @@ def pixels_boost(pixels, compression_factor, max_floor):
 
     return boosted
 
+
 def dump_pixels(pixels, shape):
-    
+
     # Reshape the 1D pixel array into (height, width, 3) for RGB
-    reshaped_pixels = pixels.reshape(
-        (shape[0], shape[1], 3)
-    )
+    reshaped_pixels = pixels.reshape((shape[0], shape[1], 3))
     # Convert the numpy array back into a Pillow image
-    image = Image.fromarray(
-        reshaped_pixels.astype(np.uint8), "RGB"
-    )
+    image = Image.fromarray(reshaped_pixels.astype(np.uint8), "RGB")
 
     image.show()
+
 
 def resize_pixels(pixels, old_shape, new_shape):
     """
     Resizes a 1D pixel array that represents a 2D image by interpolating it in 2D space using PIL.
-    
+
     Parameters:
     - pixels: 1D array of concatenated RGB pixel values
     - old_shape: tuple, the original shape of the 2D image (height, width)
     - new_shape: tuple, the desired shape of the resized 2D image (height, width)
-    
+
     Returns:
     - A resized 1D pixel array
     """
     # Reshape the 1D array into a 2D image (height, width, 3)
-    pixel_matrix = pixels.reshape((old_shape[0], old_shape[1], 3)).astype(np.uint8)
-    
+    pixel_matrix = pixels.reshape((old_shape[0], old_shape[1], 3)).astype(
+        np.uint8
+    )
+
     # Create a PIL image from the pixel data
     image = Image.fromarray(pixel_matrix)
-    
+
     # Resize the image using PIL (bilinear interpolation is default)
     resized_image = image.resize((new_shape[1], new_shape[0]), Image.BILINEAR)
-    
+
     # Convert the resized image back to a numpy array
     resized_pixel_matrix = np.array(resized_image)
-    
+
     # Flatten the resized pixel matrix back to 1D
     return resized_pixel_matrix.flatten()

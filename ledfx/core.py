@@ -1,11 +1,11 @@
 import asyncio
 import logging
+import math
 import os
 import sys
 import time
 import warnings
 import webbrowser
-import math
 from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
@@ -58,6 +58,7 @@ _LOGGER = logging.getLogger(__name__)
 
 if currently_frozen():
     warnings.filterwarnings("ignore")
+
 
 
 class LedFxCore:
@@ -238,7 +239,7 @@ class LedFxCore:
             rows = getattr(event, "rows")
             pixels = event.pixels
             pixels_len = len(pixels)
-            shape = ( rows, int(pixels_len / rows))
+            shape = (rows, int(pixels_len / rows))
 
             if pixels_len > max_len:
                 if shape[0] > 1:
@@ -247,7 +248,10 @@ class LedFxCore:
                     pixels_len = shape[0] * shape[1]
                     pixels = pixels[:pixels_len]
                     reduction_ratio = math.sqrt(pixels_len / max_len)
-                    new_shape = (int(shape[0] / reduction_ratio), int(shape[1] / reduction_ratio))
+                    new_shape = (
+                        int(shape[0] / reduction_ratio),
+                        int(shape[1] / reduction_ratio),
+                    )
                 else:
                     # this is a 1d visualisation
                     new_shape = (1, max_len)  
