@@ -1839,6 +1839,17 @@ def pixels_boost(pixels, compression_factor, max_floor):
 
 
 def dump_pixels(pixels, shape):
+    """
+    Dump a RGB pixels np array into a PIL image and launch a window to display it.
+    This is for adhoc debug only
+
+    Parameters:
+    - pixels: 1D array of concatenated RGB pixel values
+    - shape: tuple, the desired shape of the 2D image (height, width)
+
+    Returns:
+    - none
+    """
 
     # Reshape the 1D pixel array into (height, width, 3) for RGB
     reshaped_pixels = pixels.reshape((shape[0], shape[1], 3))
