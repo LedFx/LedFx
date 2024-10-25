@@ -60,7 +60,6 @@ if currently_frozen():
     warnings.filterwarnings("ignore")
 
 
-
 class LedFxCore:
 
     EXIT_CODES = {
@@ -254,7 +253,7 @@ class LedFxCore:
                     )
                 else:
                     # this is a 1d visualisation
-                    new_shape = (1, max_len)  
+                    new_shape = (1, max_len)
 
                 pixels = resize_pixels(pixels, shape, new_shape)
                 shape = new_shape
