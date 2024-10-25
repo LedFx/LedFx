@@ -85,7 +85,7 @@ class Device(BaseRegistry):
         self._online = True
         # rows default until updated by virtual
         # this is not a device config, to keep the source of truth in the virtual
-        self._rows = 1 
+        self._rows = 1
         self.lock = threading.Lock()
 
     def __del__(self):
@@ -166,11 +166,7 @@ class Device(BaseRegistry):
                 # _LOGGER.debug(f"Device {self.id} flushed by Virtual {virtual_id}")
 
                 self._ledfx.events.fire_event(
-                    DeviceUpdateEvent(
-                        self.id,
-                        frame,
-                        self._rows
-                    )
+                    DeviceUpdateEvent(self.id, frame, self._rows)
                 )
         else:
             _LOGGER.warning(
@@ -463,6 +459,7 @@ class Device(BaseRegistry):
     def set_rows(self, rows):
         # used by virtual to update the rows of the device
         self._rows = rows
+
 
 @BaseRegistry.no_registration
 class MidiDevice(Device):
