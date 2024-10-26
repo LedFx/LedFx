@@ -22,6 +22,7 @@ _LOGGER = logging.getLogger(__name__)
 # Known issues
 #
 
+
 class Govee(NetworkedDevice):
     """
     Support for Govee devices with local API control
@@ -140,4 +141,3 @@ class Govee(NetworkedDevice):
         }
 
         self.update_config(config)
-        
