@@ -51,6 +51,7 @@ class SocketSingleton:
             self.udp_server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             # disable CodeQL warning. We will filter against active instances on receipt of packets
             # Active instance endpoints can be added at any time post bind.
+            # nosem: py/bind-socket-all-network-interfaces
             self.udp_server.bind(("", self.recv_port))
 
     def close_socket(self):
