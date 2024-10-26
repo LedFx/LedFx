@@ -1,9 +1,9 @@
 import asyncio
 import logging
 
-_LOGGER = logging.getLogger(__name__)
-
 from ledfx.events import Event
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class VisDeduplicateQ(asyncio.Queue):
