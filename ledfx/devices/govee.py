@@ -1,15 +1,15 @@
-import logging
-import socket
 import base64
 import json
+import logging
+import socket
 import time
-import numpy as np
 
+import numpy as np
 import voluptuous as vol
 
 from ledfx.devices import NetworkedDevice
-from ledfx.utils import AVAILABLE_FPS
 from ledfx.devices.__init__ import fps_validator
+from ledfx.utils import AVAILABLE_FPS
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -46,7 +46,7 @@ class Govee(NetworkedDevice):
         self._device_type = "Govee"
         self.status = {}
         self.port = 4003  # Control Port
-        self.multicast_group = '239.255.255.250'  # Multicast Address
+        self.multicast_group = "239.255.255.250"  # Multicast Address
         self.send_response_port = 4001  # Send Scanning
         self.recv_port = 4002  # Responses
         self.udp_server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -54,60 +54,44 @@ class Govee(NetworkedDevice):
         # self.udp_server.bind(('', self.recv_port))
 
     def send_udp(self, message, port=4003):
-        data = json.dumps(message).encode('utf-8')
+        data = json.dumps(message).encode("utf-8")
         self.udp_server.sendto(data, (self._config["ip_address"], port))
 
     # Set Light Brightness
     def set_brightness(self, value):
-        self.send_udp({
-            "msg": {
-                "cmd": "brightness",
-                "data": {"value": value}
-            }
-        })
+        self.send_udp({"msg": {"cmd": "brightness", "data": {"value": value}}})
 
     def activate(self):
         _LOGGER.info(f"Govee {self.name} Activating UDP stream mode...")
-        self.send_udp({
-            "msg": {
-                "cmd": "razer",
-                "data": {"pt": "uwABsQEK"}
-            }
-        })
-        time.sleep(.1)
+        self.send_udp({"msg": {"cmd": "razer", "data": {"pt": "uwABsQEK"}}})
+        time.sleep(0.1)
         self.set_brightness(100)
-        time.sleep(.1)
+        time.sleep(0.1)
         super().activate()
 
     def deactivate(self):
         _LOGGER.info(f"Govee {self.name} deactivate")
-        self.send_udp({
-            "msg": {
-                "cmd": "razer",
-                "data": {"pt": "uwABsQAL"}
-            }
-        })
+        self.send_udp({"msg": {"cmd": "razer", "data": {"pt": "uwABsQAL"}}})
 
         super().deactivate()
-    
+
     @staticmethod
     def calculate_xor_checksum_fast(packet):
         return np.bitwise_xor.reduce(packet)
-    
+
     def create_dream_view_packet(self, colors):
-        header = np.array([0xBB, 0x00, 250, 0xB0, 0x00, len(colors) // 3], dtype=np.uint8)
+        header = np.array(
+            [0xBB, 0x00, 250, 0xB0, 0x00, len(colors) // 3], dtype=np.uint8
+        )
         full_packet = np.concatenate((header, colors))
-        full_packet = np.append(full_packet, self.calculate_xor_checksum_fast(full_packet))
+        full_packet = np.append(
+            full_packet, self.calculate_xor_checksum_fast(full_packet)
+        )
         return full_packet
 
     def send_encoded_packet(self, packet):
-        command = base64.b64encode(packet.tobytes()).decode('utf-8')
-        self.send_udp({
-            "msg": {
-                "cmd": "razer",
-                "data": {"pt": command}
-            }
-        })
+        command = base64.b64encode(packet.tobytes()).decode("utf-8")
+        self.send_udp({"msg": {"cmd": "razer", "data": {"pt": command}}})
 
     def flush(self, data):
         rgb_data = data.flatten().astype(np.uint8)
@@ -116,12 +100,7 @@ class Govee(NetworkedDevice):
 
     # Get Device Status
     def get_device_status(self):
-        self.send_udp({
-            "msg": {
-                "cmd": "devStatus",
-                "data": {}
-            }
-        })
+        self.send_udp({"msg": {"cmd": "devStatus", "data": {}}})
         self.udp_server.settimeout(1.0)
         try:
             # Receive Response from the device
@@ -130,7 +109,6 @@ class Govee(NetworkedDevice):
 
         except socket.timeout:
             return "No response received within the timeout period."
-
 
     async def async_initialize(self):
         await super().async_initialize()
@@ -146,4 +124,3 @@ class Govee(NetworkedDevice):
         }
 
         self.update_config(config)
-
