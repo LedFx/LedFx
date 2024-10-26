@@ -10,9 +10,17 @@ import voluptuous as vol
 from ledfx.devices import NetworkedDevice
 from ledfx.utils import AVAILABLE_FPS
 from ledfx.devices.__init__ import fps_validator
+from ledfx.devices.utils.socket_singleton import SocketSingleton
 
 _LOGGER = logging.getLogger(__name__)
 
+# this is very much a prototype implementation
+# no current known documentation on the protocol
+# may be a variant of razer if we cannot find any other info
+# use with caution.
+#
+# Known issues
+# 
 
 class Govee(NetworkedDevice):
     """
@@ -49,13 +57,11 @@ class Govee(NetworkedDevice):
         self.multicast_group = '239.255.255.250'  # Multicast Address
         self.send_response_port = 4001  # Send Scanning
         self.recv_port = 4002  # Responses
-        self.udp_server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        # this might be a problem when using multiple devices, disabling for now
-        # self.udp_server.bind(('', self.recv_port))
+        self.upd_server = None
 
     def send_udp(self, message, port=4003):
         data = json.dumps(message).encode('utf-8')
-        self.udp_server.sendto(data, (self._config["ip_address"], port))
+        self.udp_server.send_data(data, (self._config["ip_address"], port))
 
     # Set Light Brightness
     def set_brightness(self, value):
@@ -68,6 +74,19 @@ class Govee(NetworkedDevice):
 
     def activate(self):
         _LOGGER.info(f"Govee {self.name} Activating UDP stream mode...")
+        
+        self.udp_server = SocketSingleton(recv_port=self.recv_port)
+
+        _LOGGER.warning(f"Fetching govee {self.name} device info...")
+
+        status, active = self.get_device_status()
+
+        _LOGGER.warning(f"{self.name} active: {active} {status}")
+
+        if not active:
+            self.set_offline()
+            return
+
         self.send_udp({
             "msg": {
                 "cmd": "razer",
@@ -88,6 +107,7 @@ class Govee(NetworkedDevice):
             }
         })
 
+        self.udp_server.close_socket()
         super().deactivate()
     
     @staticmethod
@@ -125,19 +145,15 @@ class Govee(NetworkedDevice):
         self.udp_server.settimeout(1.0)
         try:
             # Receive Response from the device
-            response, addr = self.udp_server.recvfrom(1024)
-            return f"{response.decode('utf-8')}"
+            response, addr = self.udp_server.receive_data(1024)
+            return f"{response.decode('utf-8')}", True
 
         except socket.timeout:
-            return "No response received within the timeout period."
+            return "No response received within the timeout period.", False
 
 
     async def async_initialize(self):
         await super().async_initialize()
-
-        _LOGGER.info(f"Fetching govee {self.name} device info...")
-
-        _LOGGER.info(self.get_device_status())
 
         config = {
             "name": self.config["name"],
