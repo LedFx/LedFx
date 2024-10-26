@@ -50,8 +50,8 @@ class Govee(NetworkedDevice):
         self.send_response_port = 4001  # Send Scanning
         self.recv_port = 4002  # Responses
         self.udp_server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        # this might be a problem when using multiple devices
-        self.udp_server.bind(('', self.recv_port))
+        # this might be a problem when using multiple devices, disabling for now
+        # self.udp_server.bind(('', self.recv_port))
 
     def send_udp(self, message, port=4003):
         data = json.dumps(message).encode('utf-8')
