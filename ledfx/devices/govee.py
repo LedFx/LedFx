@@ -73,10 +73,11 @@ class Govee(NetworkedDevice):
 
         self.udp_server = SocketSingleton(recv_port=self.recv_port)
 
+        # enquiry to status is current used only to check if the device is responding adn set offline if not
+        # the response information is of little use
+        # example: {"msg":{"cmd":"devStatus","data":{"onOff":1,"brightness":100,"color":{"r":255,"g":255,"b":255},"colorTemInKelvin":0}}}
         _LOGGER.info(f"Fetching govee {self.name} device info...")
-
         status, active = self.get_device_status()
-
         _LOGGER.info(f"{self.name} active: {active} {status}")
 
         if not active:
@@ -103,6 +104,9 @@ class Govee(NetworkedDevice):
         return np.bitwise_xor.reduce(packet)
 
     def create_dream_view_packet(self, colors):
+        # this header is reverse engineered and fuzzed to functional
+        # byye 5 set as 1 was seen to spread pixels, maybe a blur or streatch value
+        # corrected by setting to 0x00 as below
         header = np.array(
             [0xBB, 0x00, 250, 0xB0, 0x00, len(colors) // 3], dtype=np.uint8
         )
@@ -128,7 +132,10 @@ class Govee(NetworkedDevice):
         try:
             # Receive Response from the device
             response, addr = self.udp_server.receive_data(1024)
-            return f"{response.decode('utf-8')}", True
+            if self._config["ip_address"] == addr[0]:
+                return f"{response.decode('utf-8')}", True
+            else:
+                return f"Discarding packet from unknown {addr[0]} on port {addr[1]}", False
 
         except socket.timeout:
             return "No response received within the timeout period.", False

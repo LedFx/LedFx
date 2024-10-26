@@ -49,6 +49,8 @@ class SocketSingleton:
         """Creates a new socket and binds it to the specified port."""
         if not hasattr(self, "udp_server"):
             self.udp_server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            # disable CodeQL warning. We will filter against active instances on receipt of packets
+            # Active instance endpoints can be added at any time post bind.
             self.udp_server.bind(("", self.recv_port))
 
     def close_socket(self):
