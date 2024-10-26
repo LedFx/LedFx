@@ -58,7 +58,7 @@ class Govee(NetworkedDevice):
         self.multicast_group = "239.255.255.250"  # Multicast Address
         self.send_response_port = 4001  # Send Scanning
         self.recv_port = 4002  # Responses
-        self.upd_server = None
+        self.udp_server = None
 
     def send_udp(self, message, port=4003):
         data = json.dumps(message).encode("utf-8")
@@ -91,9 +91,9 @@ class Govee(NetworkedDevice):
 
     def deactivate(self):
         _LOGGER.info(f"Govee {self.name} deactivate")
-        self.send_udp({"msg": {"cmd": "razer", "data": {"pt": "uwABsQAL"}}})
-
-        self.udp_server.close_socket()
+        if self.udp_server is not None:
+            self.send_udp({"msg": {"cmd": "razer", "data": {"pt": "uwABsQAL"}}})
+            self.udp_server.close_socket()
         super().deactivate()
 
     @staticmethod
