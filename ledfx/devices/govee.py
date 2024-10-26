@@ -135,7 +135,10 @@ class Govee(NetworkedDevice):
             if self._config["ip_address"] == addr[0]:
                 return f"{response.decode('utf-8')}", True
             else:
-                return f"Discarding packet from unknown {addr[0]} on port {addr[1]}", False
+                return (
+                    f"Discarding packet from unknown {addr[0]} on port {addr[1]}",
+                    False,
+                )
 
         except socket.timeout:
             return "No response received within the timeout period.", False
