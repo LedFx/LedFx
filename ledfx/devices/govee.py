@@ -20,7 +20,8 @@ _LOGGER = logging.getLogger(__name__)
 # use with caution.
 #
 # Known issues
-# 
+#
+
 
 class Govee(NetworkedDevice):
     """
@@ -60,7 +61,7 @@ class Govee(NetworkedDevice):
         self.upd_server = None
 
     def send_udp(self, message, port=4003):
-        data = json.dumps(message).encode('utf-8')
+        data = json.dumps(message).encode("utf-8")
         self.udp_server.send_data(data, (self._config["ip_address"], port))
 
     # Set Light Brightness
@@ -69,7 +70,7 @@ class Govee(NetworkedDevice):
 
     def activate(self):
         _LOGGER.info(f"Govee {self.name} Activating UDP stream mode...")
-        
+
         self.udp_server = SocketSingleton(recv_port=self.recv_port)
 
         _LOGGER.info(f"Fetching govee {self.name} device info...")
@@ -82,25 +83,15 @@ class Govee(NetworkedDevice):
             self.set_offline()
             return
 
-        self.send_udp({
-            "msg": {
-                "cmd": "razer",
-                "data": {"pt": "uwABsQEK"}
-            }
-        })
-        time.sleep(.1)
+        self.send_udp({"msg": {"cmd": "razer", "data": {"pt": "uwABsQEK"}}})
+        time.sleep(0.1)
         self.set_brightness(100)
         time.sleep(0.1)
         super().activate()
 
     def deactivate(self):
         _LOGGER.info(f"Govee {self.name} deactivate")
-        self.send_udp({
-            "msg": {
-                "cmd": "razer",
-                "data": {"pt": "uwABsQAL"}
-            }
-        })
+        self.send_udp({"msg": {"cmd": "razer", "data": {"pt": "uwABsQAL"}}})
 
         self.udp_server.close_socket()
         super().deactivate()
@@ -139,7 +130,6 @@ class Govee(NetworkedDevice):
 
         except socket.timeout:
             return "No response received within the timeout period.", False
-
 
     async def async_initialize(self):
         await super().async_initialize()

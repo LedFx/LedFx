@@ -1,6 +1,7 @@
 import socket
 from threading import Lock
 
+
 class SocketSingleton:
     """_summary_
 
@@ -26,11 +27,11 @@ class SocketSingleton:
                 # Create the new instance if it doesn't exist
                 instance = super().__new__(cls)
                 cls._instances[recv_port] = {
-                    'instance': instance,
-                    'ref_count': 0
+                    "instance": instance,
+                    "ref_count": 0,
                 }
             # Return the existing instance for the specified port
-            return cls._instances[recv_port]['instance']
+            return cls._instances[recv_port]["instance"]
 
     def __init__(self, recv_port):
         """Creates and adds reference count
@@ -42,20 +43,23 @@ class SocketSingleton:
         self._create_socket()
 
         # Increment reference count
-        SocketSingleton._instances[self.recv_port]['ref_count'] += 1
+        SocketSingleton._instances[self.recv_port]["ref_count"] += 1
 
     def _create_socket(self):
         """Creates a new socket and binds it to the specified port."""
-        if not hasattr(self, 'udp_server'):
+        if not hasattr(self, "udp_server"):
             self.udp_server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            self.udp_server.bind(('', self.recv_port))
+            self.udp_server.bind(("", self.recv_port))
 
     def close_socket(self):
         """Decrements the reference count and closes the socket if no more references exist."""
         with SocketSingleton._lock:
             if self.recv_port in SocketSingleton._instances:
-                SocketSingleton._instances[self.recv_port]['ref_count'] -= 1
-                if SocketSingleton._instances[self.recv_port]['ref_count'] <= 0:
+                SocketSingleton._instances[self.recv_port]["ref_count"] -= 1
+                if (
+                    SocketSingleton._instances[self.recv_port]["ref_count"]
+                    <= 0
+                ):
                     # Close the socket and remove the instance
                     self.udp_server.close()
                     del SocketSingleton._instances[self.recv_port]
@@ -65,6 +69,6 @@ class SocketSingleton:
 
     def receive_data(self, buffer_size=1024):
         return self.udp_server.recvfrom(buffer_size)
-    
+
     def settimeout(self, timeout):
         self.udp_server.settimeout(timeout)
