@@ -77,11 +77,11 @@ class Govee(NetworkedDevice):
         
         self.udp_server = SocketSingleton(recv_port=self.recv_port)
 
-        _LOGGER.warning(f"Fetching govee {self.name} device info...")
+        _LOGGER.info(f"Fetching govee {self.name} device info...")
 
         status, active = self.get_device_status()
 
-        _LOGGER.warning(f"{self.name} active: {active} {status}")
+        _LOGGER.info(f"{self.name} active: {active} {status}")
 
         if not active:
             self.set_offline()
