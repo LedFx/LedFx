@@ -92,7 +92,9 @@ class Govee(NetworkedDevice):
     def deactivate(self):
         _LOGGER.info(f"Govee {self.name} deactivate")
         if self.udp_server is not None:
-            self.send_udp({"msg": {"cmd": "razer", "data": {"pt": "uwABsQAL"}}})
+            self.send_udp(
+                {"msg": {"cmd": "razer", "data": {"pt": "uwABsQAL"}}}
+            )
             self.udp_server.close_socket()
         super().deactivate()
 
