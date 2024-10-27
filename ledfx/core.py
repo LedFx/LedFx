@@ -240,7 +240,9 @@ class LedFxCore:
             pixels_len = len(pixels)
             shape = (rows, int(pixels_len / rows))
             if pixels_len > max_len:
-                new_shape, pixels_len = shape_to_fit_len(max_len, shape, pixels_len)
+                new_shape, pixels_len = shape_to_fit_len(
+                    max_len, shape, pixels_len
+                )
                 pixels = resize_pixels(pixels[:pixels_len], shape, new_shape)
                 shape = new_shape
 
