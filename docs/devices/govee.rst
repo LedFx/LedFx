@@ -22,7 +22,7 @@ Input number of segments as seen in the Govee app in the Pixels Count field.
 
 Input the IP address of the device in the IP Address field.
 
-Currently the default refresh rate is set to 40 on govee devices. This is from very limited testing, users are encouraged to test and provide feedback on the optimal refresh rate for their devices. 
+Currently the default refresh rate is set to 40 on govee devices. This is from very limited testing, users are encouraged to test and provide feedback on the optimal refresh rate for their devices.
 
 
 .. image:: /_static/devices/add_govee.png
