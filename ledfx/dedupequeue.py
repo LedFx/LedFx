@@ -10,7 +10,7 @@ class VisDeduplicateQ(asyncio.Queue):
     """
     Deduplicate queue for visualisation updates
 
-    Queues carrying visualisation updates to devices and virtual 
+    Queues carrying visualisation updates to devices and virtual
     in the front end can lag hard if the front end is struggling.
 
     Although the backend forces a queue flush if the depth gets to 256
