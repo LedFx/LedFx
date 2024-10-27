@@ -11,6 +11,7 @@ import voluptuous as vol
 from aiohttp import web
 
 from ledfx.api import RestEndpoint
+from ledfx.dedupequeue import VisDeduplicateQ
 from ledfx.events import Event
 from ledfx.utils import empty_queue
 
@@ -68,7 +69,7 @@ class WebsocketConnection:
         self._listeners = {}
         self._receiver_task = None
         self._sender_task = None
-        self._sender_queue = asyncio.Queue(maxsize=MAX_PENDING_MESSAGES)
+        self._sender_queue = VisDeduplicateQ(maxsize=MAX_PENDING_MESSAGES)
 
     def close(self):
         """
