@@ -236,7 +236,7 @@ class LedFxCore:
 
             # sniff up into the virtual that will work for both device and virtual events
             rows = self.virtuals.get(vis_id)._config["rows"]
-            
+
             pixels = event.pixels
             pixels_len = len(pixels)
             shape = (rows, int(pixels_len / rows))
