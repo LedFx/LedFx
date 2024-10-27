@@ -20,6 +20,7 @@
 
    /devices/artnet
    /devices/osc
+   /devices/govee
 
 .. toctree::
    :maxdepth: 1
