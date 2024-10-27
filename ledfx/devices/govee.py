@@ -79,15 +79,19 @@ class Govee(NetworkedDevice):
         _LOGGER.info(f"Fetching govee {self.name} device info...")
         status, active = self.get_device_status()
         _LOGGER.info(f"{self.name} active: {active} {status}")
-
         if not active:
             self.set_offline()
             return
-
-        self.send_udp({"msg": {"cmd": "razer", "data": {"pt": "uwABsQEK"}}})
-        time.sleep(0.1)
+        
+        # the ordering and delay in this implementation is derived through trial and error only
+        # incorrect order can lead to flickering of devices tested if wake from sleep
+        # we have not other information as to best practice here
+        delay = 0.1
+        time.sleep(delay)
         self.set_brightness(100)
-        time.sleep(0.1)
+        time.sleep(delay)
+        self.send_udp({"msg": {"cmd": "razer", "data": {"pt": "uwABsQEK"}}})
+
         super().activate()
 
     def deactivate(self):
