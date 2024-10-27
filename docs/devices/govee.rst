@@ -76,7 +76,7 @@ Currently the default refresh rate is set to 40 on govee devices. This is from v
    :alt: Adding a device
 
 
-Hit add and ... profit ...
+Hit add and, your Govee device should now be available in the devices view.
 
 
 
