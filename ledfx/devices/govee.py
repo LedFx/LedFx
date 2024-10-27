@@ -82,7 +82,7 @@ class Govee(NetworkedDevice):
         if not active:
             self.set_offline()
             return
-        
+
         # the ordering and delay in this implementation is derived through trial and error only
         # incorrect order can lead to flickering of devices tested if wake from sleep
         # we have not other information as to best practice here
