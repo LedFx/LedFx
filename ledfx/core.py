@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import math
 import os
 import sys
 import time
@@ -50,6 +49,7 @@ from ledfx.utils import (
     currently_frozen,
     pixels_boost,
     resize_pixels,
+    shape_to_fit_len,
 )
 from ledfx.virtuals import Virtuals
 
@@ -239,31 +239,9 @@ class LedFxCore:
             pixels = event.pixels
             pixels_len = len(pixels)
             shape = (rows, int(pixels_len / rows))
-
             if pixels_len > max_len:
-                if shape[0] > 1:
-                    # this is a 2d visualisation
-                    # clip array to actual needed to prevent image resize from exploding
-                    pixels_len = shape[0] * shape[1]
-                    pixels = pixels[:pixels_len]
-                    reduction_ratio = math.sqrt(pixels_len / max_len)
-                    new_rows = shape[0] / reduction_ratio
-                    new_cols = shape[1] / reduction_ratio
-                    # protect from less than 1 values
-                    if new_rows < 1.0:
-                        new_shape = (1, max_len)
-                    elif new_cols < 1.0:
-                        new_shape = (max_len, 1)
-                    else:
-                        new_shape = (
-                            int(new_rows),
-                            int(new_cols),
-                        )
-                else:
-                    # this is a 1d visualisation
-                    new_shape = (1, max_len)
-
-                pixels = resize_pixels(pixels, shape, new_shape)
+                new_shape, pixels_len = shape_to_fit_len(max_len, shape, pixels_len)
+                pixels = resize_pixels(pixels[:pixels_len], shape, new_shape)
                 shape = new_shape
 
             if self.config["ui_brightness_boost"] != 0:

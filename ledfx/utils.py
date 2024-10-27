@@ -6,6 +6,7 @@ import importlib
 import inspect
 import ipaddress
 import logging
+import math
 import os
 import pkgutil
 import re
@@ -1889,3 +1890,41 @@ def resize_pixels(pixels, old_shape, new_shape):
 
     # Flatten the resized pixel matrix back to 1D
     return resized_pixel_matrix.reshape(-1, 3)
+
+
+def shape_to_fit_len(max_len, shape, pixels_len):
+    """_summary_
+
+    Args:
+        max_len : The maximum number of pixels allowed in the final visualisation
+        shape : The current shape of the visualisation before resizing
+        pixels_len : The number of pixels in the current visualisation
+
+    Returns:
+        new_shape : The shape calculated to use in resizing
+        pixels_len : The number of pixels implied in the new_shape
+    """
+
+    if shape[0] > 1:
+        # this is a 2d visualisation
+        pixels_len = shape[0] * shape[1]
+        reduction_ratio = math.sqrt(pixels_len / max_len)
+        new_rows = shape[0] / reduction_ratio
+        new_cols = shape[1] / reduction_ratio
+
+        # protect from less than 1 values
+        if new_rows < 1.0:
+            new_shape = (1, max_len)
+        elif new_cols < 1.0:
+            new_shape = (max_len, 1)
+        else:
+            new_shape = (
+                int(new_rows),
+                int(new_cols),
+            )
+    else:
+        # this is a 1d visualisation
+        # pixels_len will be unchanged
+        new_shape = (1, max_len)
+
+    return new_shape, pixels_len
