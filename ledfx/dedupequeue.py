@@ -7,6 +7,20 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class VisDeduplicateQ(asyncio.Queue):
+    """
+    Deduplicate queue for visualisation updates
+
+    Queues carrying visualisation updates to devices and virtual 
+    in the front end can lag hard if the front end is struggling.
+
+    Although the backend forces a queue flush if the depth gets to 256
+    any visualisation update in in the queue is just old data
+    it is better not to queue an update if one is already in the queue
+    rather than let 10s of old updates build up
+
+    Uses private access to  _queue to check for duplicates
+    """
+
     def __init__(self, maxsize=0):
         super().__init__(maxsize)
 
