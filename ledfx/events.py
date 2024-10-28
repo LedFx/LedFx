@@ -118,11 +118,13 @@ class VisualisationUpdateEvent(Event):
         is_device: bool,  # true if device, false if virtual
         vis_id: str,  # id of device/virtual
         pixels: np.ndarray,
+        shape: tuple,
     ):
         super().__init__(Event.VISUALISATION_UPDATE)
         self.is_device = is_device
         self.vis_id = vis_id
         self.pixels = pixels
+        self.shape = shape
 
 
 class EffectSetEvent(Event):

@@ -1082,7 +1082,7 @@ class Virtual:
                     ):
                         self._active_effect.clear_melbank_freq_props()
 
-                    if _config["rows"] != self._config["rows"]:
+                    if _config["rows"] != self.rows:
                         if hasattr(self._active_effect, "set_init"):
                             self._active_effect.set_init()
 
@@ -1142,6 +1142,27 @@ class Virtual:
         )[:pixel_count, :]
 
         return effective_pixels
+
+    @property
+    def rows(self) -> int:
+        """
+        Property that returns the number of rows from the configuration.
+        Returns:
+            int: The number of rows specified in the configuration.
+        """
+        return self._config["rows"]
+
+    @rows.setter
+    def rows(self, rows: int) -> None:
+        """
+        Sets the number of rows in the configuration.
+
+        If the number of rows passed is less than 1, it will be set to 1.
+
+        Args:
+            rows (int): The number of rows to set in the configuration.
+        """
+        self._config["rows"] = max(1, rows)
 
 
 class Virtuals:
