@@ -43,7 +43,7 @@
             "label": "Install Docs Dependencies",
             "type": "shell",
             "command": "poetry",
-            "args": ["install", "--with", "docs"],
+            "args": ["install", "--only", "docs"],
             "options": {
                 "cwd": "${workspaceFolder}",
                 "statusbar": {

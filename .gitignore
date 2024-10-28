@@ -49,7 +49,7 @@ dist/*
 sdist/*
 docs/api/*
 docs/_build/*
-docs/build
+docs/build/*
 cover/*
 MANIFEST
 
