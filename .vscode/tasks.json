@@ -24,8 +24,8 @@
         {
             "label": "Build Docs",
             "type": "shell",
-            "command": "./make",
-            "args": ["html"],
+            "command": "poetry",
+            "args": ["run", "make", "html"],
             "group": {
                 "kind": "build",
                 "isDefault": true
@@ -36,15 +36,16 @@
                     "hide": true
                 }
             },
-            "problemMatcher": []
+            "problemMatcher": [],
+            "dependsOn": "Install Docs Dependencies"
         },
         {
             "label": "Install Docs Dependencies",
             "type": "shell",
-            "command": "pip",
-            "args": ["install", "-r", "./requirements-docs.txt"],
+            "command": "poetry",
+            "args": ["install", "--with", "docs"],
             "options": {
-                "cwd": "${workspaceFolder}/docs",
+                "cwd": "${workspaceFolder}",
                 "statusbar": {
                     "hide": true
                 }
@@ -52,10 +53,14 @@
             "problemMatcher": []
         },
         {
-            "label": "Open Docs",
+            "label": "Build and Open Docs",
             "type": "shell",
             "command": "cmd",
             "args": ["/c", "start", "${workspaceFolder}/docs/build/html/index.html"],
+            "windows": {
+                "command": "cmd",
+                "args": ["/c", "start", "${workspaceFolder}/docs/build/html/index.html"]
+            },
             "linux": {
                 "command": "xdg-open",
                 "args": ["${workspaceFolder}/docs/build/html/index.html"]
@@ -66,7 +71,6 @@
             },
             "problemMatcher": [],
             "dependsOn": "Build Docs"
-        }
         }
     ]
 }
