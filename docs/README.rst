@@ -20,7 +20,7 @@ To build the documentation, run the following commands
 
 .. code:: console
 
-    $ poerty shell
+    $ poetry shell
     $ cd docs
     $ ./make html
 
