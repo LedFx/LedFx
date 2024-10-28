@@ -22,8 +22,7 @@ build:
         if [ "$READTHEDOCS_VERSION_TYPE" = "external" ] && git diff --quiet origin/main -- docs/ .readthedocs.yml README.rst; then
           exit 183;
         fi
-    pre_build:
-      #- curl -sSL https://install.python-poetry.org | python3 -
+    post_install:
       # Install dependencies with 'docs' dependency group
       # https://python-poetry.org/docs/managing-dependencies/#dependency-groups
       # VIRTUAL_ENV needs to be set manually for now.
