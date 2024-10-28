@@ -78,6 +78,20 @@ pytest = "^8.0.0"
 pytest-order = "^1.2.0"
 pyinstaller = "^6.3.0"
 
+[tool.poetry.group.docs]
+optional = true
+
+[tool.poetry.group.docs.dependencies]
+sphinx = "<8.1.4"
+sphinxcontrib-websupport = "2.0.0"
+sphinxcontrib-httpdomain = "1.8.1"
+sphinx-autodoc-typehints = "2.5.0"
+sphinx-autodoc-annotation = "1.0-1"
+sphinx-autobuild = "*"
+sphinx_rtd_theme = "3.0.1"
+sphinx-toolbox = "3.8.1"
+rstcheck = "6.2.4"
+sphinx-copybutton = "0.5.2"
 
 [tool.pytest.ini_options]
 addopts = "tests"
