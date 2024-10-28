@@ -21,8 +21,7 @@ build:
     pre_build:
       - curl -sSL https://install.python-poetry.org | python3 -
       - poetry install --with docs
-    build:
-      - poetry run make -C docs html
+      - poetry shell
 
 # Build documentation in the docs/ directory with Sphinx
 sphinx:
