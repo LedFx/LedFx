@@ -78,5 +78,17 @@ Currently the default refresh rate is set to 40 on govee devices. This is from v
 
 Hit add and, your Govee device should now be available in the devices view.
 
+Connection refresh
+------------------
+
+If a Govee device does not respond to a device status enquirey at ledfx startup, it will be marked offline.
+
+If the device is powered on, or otherwise made available after startup, pressing the refresh button on the device will attempt to reconnect to the Govee device.
+
+
+.. image:: /_static/devices/govee/refresh.png
+   :alt: Refesh connection
+
+
 
 
