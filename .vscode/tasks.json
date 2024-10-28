@@ -10,14 +10,14 @@
             "presentation": {
                 "reveal": "silent",
                 "focus": false,
-                "close": true,
+                "close": true
             },
             "windows": {
                 "command": "Remove-Item -Recurse -Force '${workspaceFolder}\\debug_config'"
             },
             "options": {
                 "statusbar": {
-                "hide" : true
+                    "hide": true
                 }
             }
         },
