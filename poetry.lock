@@ -1193,13 +1193,13 @@ files = [
 
 [[package]]
 name = "openrgb-python"
-version = "0.3.1"
+version = "0.3.2"
 description = "A python client for the OpenRGB SDK"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "openrgb-python-0.3.1.tar.gz", hash = "sha256:873b8b35b32e1782d1f1f912e81c942dd177eea6302fdb2669500fd86d84f94b"},
-    {file = "openrgb_python-0.3.1-py3-none-any.whl", hash = "sha256:001a19877f7552e0a8735b54627da074114526e072b20ddb28d7d72697c2069c"},
+    {file = "openrgb-python-0.3.2.tar.gz", hash = "sha256:7ae59ca2de8e7c6392cee780dc1e0bde1f86d86bfded96548924c005087c9127"},
+    {file = "openrgb_python-0.3.2-py3-none-any.whl", hash = "sha256:777999c2f2ea6ac7fc600ca470826b76ae6d0f28b2bb7a85855801abf1021905"},
 ]
 
 [[package]]
