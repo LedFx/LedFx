@@ -1009,27 +1009,6 @@ class Virtual:
     def update_config(self, config):
         self.config = config
 
-    @property
-    def rows(self) -> int:
-        """
-        Property that returns the number of rows from the configuration.
-        Returns:
-            int: The number of rows specified in the configuration.
-        """
-        return self._config["rows"]
-
-    @rows.setter
-    def rows(self, rows: int) -> None:
-        """
-        Sets the number of rows in the configuration.
-
-        If the number of rows passed is less than 1, it will be set to 1.
-
-        Args:
-            rows (int): The number of rows to set in the configuration.
-        """
-        self._config["rows"] = max(1, rows)
-
     @config.setter
     def config(self, new_config):
         """Updates the config for an object"""
@@ -1164,7 +1143,27 @@ class Virtual:
 
         return effective_pixels
 
+    @property
+    def rows(self) -> int:
+        """
+        Property that returns the number of rows from the configuration.
+        Returns:
+            int: The number of rows specified in the configuration.
+        """
+        return self._config["rows"]
 
+    @rows.setter
+    def rows(self, rows: int) -> None:
+        """
+        Sets the number of rows in the configuration.
+
+        If the number of rows passed is less than 1, it will be set to 1.
+
+        Args:
+            rows (int): The number of rows to set in the configuration.
+        """
+        self._config["rows"] = max(1, rows)
+        
 class Virtuals:
     """Thin wrapper around the device registry that manages virtuals"""
 
