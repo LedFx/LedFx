@@ -41,7 +41,7 @@ formats: []
 
 # Set the version of Python and requirements required to build your docs
 python:
-  version: 3.10
+  version: "3.10"
 
 # Use system packages
 system_packages: false
