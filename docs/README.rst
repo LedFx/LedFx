@@ -6,28 +6,39 @@ The documentation is written in reStructuredText. Once you are finished
 making changes, you must build the documentation. To build the LedFx
 documentation follow the steps outlined below:
 
-.. note:: Alternatively, you may run ``make livehtml`` in place of ``make html`` to open a browser and view your changes in
-          realtime.
+We have now migrated document dependancy management and build to poetry based.
 
+Building should be the same for all platforms. These instructions assume you already have a poetry environment setup, as per normal development.
 
-Linux
--------
-
-.. code:: console
-
-    $ cd ~/ledfx/docs
-    $ pip install -r requirements-docs.txt
-    $ make html
-
-macOS
--------
+The docs dependancies are managed in the `pyproject.toml` file. To install the docs dependancies, run the following command:
 
 .. code:: console
 
-    $ source ~/ledfx-venv/bin/activate
-    $ cd ~/ledfx/docs
-    $ pip install -r requirements-docs.txt
-    $ make html
+    $ poetry install --only docs
+
+To build the documentation, run the following commands
+
+.. code:: console
+
+    $ poerty shell
+    $ cd docs
+    $ ./make html
+
+Docs in vscode
+--------------
+
+Tasks have been added to the .vscode file to make building docs smoother and removing any excuse not to improve them ( hint hint ).
+
+Although there are seperate tasks defined in .vscode/tasks.json for dependancy install, build and open in browser, they are configured such that it should be just a case of launching the task **Build and Open Docs**
+
+This should ensure dependancies are in place, build the docs and open the index.html in your default browser.
+
+Error detection in the build process to prevent the browser open is not yet implemented. This is a future enhancement.
+
+Find vscode tasks through ctrl+shift+p and type "Tasks: Run Task" and select the task **Build and Open Docs**
+
+Or better, install the Tasks extension by actboy168 into vscode and run the task from the bottom control bar. All tasks except "Build and Open Docs" are hidden to reduce clutter.
+
 
 
 .. Extensions used by sphinx
