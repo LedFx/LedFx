@@ -1,6 +1,7 @@
 {
     "version": "0.2.0",
     "configurations": [
+    
         {
             "name": "LedFx",
             "type": "debugpy",
@@ -62,6 +63,70 @@
             "presentation": {
                 "group": "Sentry Disabled",
                 "order": 1
+            }
+        },
+        {
+            "name": "LedFx (Verbose Logging, No Sentry, Open UI)",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/ledfx/__main__.py",
+            "args": ["-vv", "--offline", "--open-ui"],
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "windows": {
+                "program": "${workspaceFolder}\\ledfx\\__main__.py"
+            },
+            "presentation": {
+                "group": "Sentry Disabled",
+                "order": 2
+            }
+        },
+        {
+            "name": "LedFx (No Sentry, Open UI)",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/ledfx/__main__.py",
+            "args": ["--offline", "--open-ui"],
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "windows": {
+                "program": "${workspaceFolder}\\ledfx\\__main__.py"
+            },
+            "presentation": {
+                "group": "Sentry Disabled",
+                "order": 1
+            }
+        },
+        {
+            "name": "LedFx (Verbose Logging) (Clear Effects)",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/ledfx/__main__.py",
+            "args": ["-vv", "--clear-effects"],
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "windows": {
+                "program": "${workspaceFolder}\\ledfx\\__main__.py"
+            },
+            "presentation": {
+                "group": "Sentry Enabled",
+                "order": 2
+            }
+        },
+        {
+            "name": "LedFx (Verbose Logging) (Clear Config)",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/ledfx/__main__.py",
+            "args": ["-vv", "--clear-config"],
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "windows": {
+                "program": "${workspaceFolder}\\ledfx\\__main__.py"
+            },
+            "presentation": {
+                "group": "Sentry Enabled",
+                "order": 2
             }
         },
         {

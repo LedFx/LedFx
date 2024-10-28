@@ -15,6 +15,49 @@
             "windows": {
                 "command": "Remove-Item -Recurse -Force '${workspaceFolder}\\debug_config'"
             },
+            "options": {
+                "statusbar": {
+                "hide" : true
+                }
+            }
+        },
+        {
+            "label": "Build Docs",
+            "type": "shell",
+            "command": "./make",
+            "args": ["html"],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "options": {
+                "cwd": "${workspaceFolder}/docs",
+                "statusbar": {
+                    "hide": true
+                }
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Install Docs Dependencies",
+            "type": "shell",
+            "command": "pip",
+            "args": ["install", "-r", "./requirements-docs.txt"],
+            "options": {
+                "cwd": "${workspaceFolder}/docs",
+                "statusbar": {
+                    "hide": true
+                }
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Open Docs",
+            "type": "shell",
+            "command": "cmd",
+            "args": ["/c", "start", "${workspaceFolder}/docs/build/html/index.html"],
+            "problemMatcher": [],
+            "dependsOn": "Build Docs"
         }
     ]
 }
