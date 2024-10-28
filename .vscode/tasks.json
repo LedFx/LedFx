@@ -56,8 +56,17 @@
             "type": "shell",
             "command": "cmd",
             "args": ["/c", "start", "${workspaceFolder}/docs/build/html/index.html"],
+            "linux": {
+                "command": "xdg-open",
+                "args": ["${workspaceFolder}/docs/build/html/index.html"]
+            },
+            "osx": {
+                "command": "open",
+                "args": ["${workspaceFolder}/docs/build/html/index.html"]
+            },
             "problemMatcher": [],
             "dependsOn": "Build Docs"
+        }
         }
     ]
 }
