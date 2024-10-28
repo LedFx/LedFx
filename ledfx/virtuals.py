@@ -1163,7 +1163,8 @@ class Virtual:
             rows (int): The number of rows to set in the configuration.
         """
         self._config["rows"] = max(1, rows)
-        
+
+
 class Virtuals:
     """Thin wrapper around the device registry that manages virtuals"""
 
