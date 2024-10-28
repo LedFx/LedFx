@@ -82,16 +82,16 @@ pyinstaller = "^6.3.0"
 optional = true
 
 [tool.poetry.group.docs.dependencies]
-sphinx = "<8.1.4"
-sphinxcontrib-websupport = "2.0.0"
-sphinxcontrib-httpdomain = "1.8.1"
-sphinx-autodoc-typehints = "2.5.0"
-sphinx-autodoc-annotation = "1.0-1"
-sphinx-autobuild = "*"
-sphinx_rtd_theme = "3.0.1"
-sphinx-toolbox = "3.8.1"
-rstcheck = "6.2.4"
-sphinx-copybutton = "0.5.2"
+sphinx = {version = "<8.1.4", python = ">=3.10"}
+sphinxcontrib-websupport = {version = "2.0.0", python = ">=3.10"}
+sphinxcontrib-httpdomain = {version = "1.8.1", python = ">=3.10"}
+sphinx-autodoc-typehints = {version = "2.5.0", python = ">=3.10"}
+sphinx-autodoc-annotation = {version = "1.0-1", python = ">=3.10"}
+sphinx-autobuild = {version = "*", python = ">=3.10"}
+sphinx_rtd_theme = {version = "3.0.1", python = ">=3.10"}
+sphinx-toolbox = {version = "3.8.1", python = ">=3.10"}
+rstcheck = {version = "6.2.4", python = ">=3.10"}
+sphinx-copybutton = {version = "0.5.2", python = ">=3.10"}
 
 [tool.pytest.ini_options]
 addopts = "tests"
