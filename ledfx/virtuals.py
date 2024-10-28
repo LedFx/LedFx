@@ -1010,7 +1010,7 @@ class Virtual:
         self.config = config
 
     @property
-    def rows(self):
+    def rows(self) -> int:
         """
         Property that returns the number of rows from the configuration.
         Returns:
@@ -1019,7 +1019,7 @@ class Virtual:
         return self._config["rows"]
 
     @rows.setter
-    def rows(self, rows):
+    def rows(self, rows: int) -> None:
         """
         Sets the number of rows in the configuration.
 
