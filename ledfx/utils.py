@@ -1952,7 +1952,6 @@ class Teleplot:
         """
 
         try:
-            Teleplot.sock.sendto(string.encode(), ("127.0.0.1",47269))
+            Teleplot.sock.sendto(string.encode(), ("127.0.0.1", 47269))
         except Exception as e:
-            _LOGGER.error(f"Failed to send data to teleplot: {e}")    
-    
+            _LOGGER.error(f"Failed to send data to teleplot: {e}")
