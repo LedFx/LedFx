@@ -7,12 +7,21 @@
   ],
   "packageRules": [
     {
-      "updateTypes": ["minor", "patch"],
-      "schedule": ["every month"]
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
+      "schedule": [
+        "every month"
+      ]
     },
     {
-      "updateTypes": ["major"],
-      "schedule": ["every weekend"]
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "schedule": [
+        "every weekend"
+      ]
     }
   ]
 }
