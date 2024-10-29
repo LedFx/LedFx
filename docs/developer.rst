@@ -279,6 +279,9 @@ Well enough for discussional purposes. This diagram specifically illustrates aud
 Useful Tools
 ------------
 
+VSCode extensions
+-----------------
+
 For backend development, vscode is the IDE of choice. 
 
 There are many extensions that are of use to developers, including but not limited to
@@ -294,6 +297,19 @@ There are many extensions that are of use to developers, including but not limit
 * Python Poetry
 * Tasks
 * Teleplot
+
+Tasks
+-----
+
+A simple extension to run tasks from the vscode taskbar at the bottom of the window.
+
+`Tasks by actboy168 <https://marketplace.visualstudio.com/items?itemName=actboy168.tasks>`_
+
+Currently only the Build and Open Docs task is exposed. This task will install dependancies, build the docs and open in your browser, all with a single click!
+
+.. image:: /_static/howto/taskbar.png
+   :alt: Build and Open Docs, do it!
+
 
 Teleplot
 --------
