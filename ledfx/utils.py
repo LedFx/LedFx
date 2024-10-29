@@ -1928,3 +1928,31 @@ def shape_to_fit_len(max_len, shape, pixels_len):
         new_shape = (1, max_len)
 
     return new_shape, pixels_len
+
+
+class Teleplot:
+    """
+    Helper class for the use of vscode Teleplot extension
+
+    import and inline call
+    Teleplot.send("variable_name:value")
+    """
+
+    # only one socket for all instances
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+    @staticmethod
+    def send(string):
+        """Send string to teleplot
+
+        https://github.com/nesnes/teleplot
+
+        Args:
+            string: The string carrying the teleplot data of the format as per link above
+        """
+
+        try:
+            Teleplot.sock.sendto(string.encode(), ("127.0.0.1",47269))
+        except Exception as e:
+            _LOGGER.error(f"Failed to send data to teleplot: {e}")    
+    
