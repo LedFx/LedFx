@@ -279,7 +279,7 @@ Well enough for discussional purposes. This diagram specifically illustrates aud
 Useful Tools
 ------------
 
-For backend development, vscode is the IDE of choice. 
+For backend development, vscode is the IDE of choice.
 
 There are many extensions that are of use to developers, including but not limited to
 
@@ -289,7 +289,7 @@ There are many extensions that are of use to developers, including but not limit
 * GitLens
 * Prettier
 * Pylance
-* Python 
+* Python
 * Python Debugger
 * Python Poetry
 * Tasks
@@ -311,7 +311,7 @@ simply import the class and use it as follows
 .. code:: python
 
     from ledfx.utils import Teleplot
-    
+
     Teleplot.send(f"my_var_name:{my_var_value}")
 
 .. image:: /_static/howto/teleplot.png
