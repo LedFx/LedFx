@@ -1300,8 +1300,8 @@ class Virtuals:
     def check_and_deactivate_devices(self):
         """
         Checks all active virtuals and segments to compile a list of active devices,
-        then deactivates any active devices not in that list. 
-        
+        then deactivates any active devices not in that list.
+
         This process ensures that devices are only deactivated if no virtual or segment
         is using them, which is especially relevant during virtual or segment deactivation
         or reconfiguration.
