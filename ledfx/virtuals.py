@@ -1296,18 +1296,18 @@ class Virtuals:
 
     def get(self, *args):
         return self._virtuals.get(*args)
-    
+
     def check_and_deactivate_devices(self):
         """
         Checks all active virtuals and segments to compile a list of active devices,
-        then deactivates any active devices not in that list. This process ensures that devices 
+        then deactivates any active devices not in that list. This process ensures that devices
         are only deactivated if no virtual or segment is using them, which is especially
         relevant during virtual or segment deactivation or reconfiguration.
 
-        Note: This is a relatively expensive operation but only runs when a virtual 
+        Note: This is a relatively expensive operation but only runs when a virtual
         is deactivated or segments are modified.
         """
-        
+
         active_devices = set()
         for virtual in self.values():
             if virtual.active:
@@ -1315,7 +1315,9 @@ class Virtuals:
                     active_devices.add(device_id)
         for device in self._ledfx.devices.values():
             if device.id not in active_devices and device.is_active():
-                _LOGGER.info(f"Deactivating device {device.id} as it is not in use by any active virtuals")
+                _LOGGER.info(
+                    f"Deactivating device {device.id} as it is not in use by any active virtuals"
+                )
                 device.deactivate()
 
 
