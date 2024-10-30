@@ -317,7 +317,7 @@ class Virtual:
             _LOGGER.debug(
                 f"Virtual {self.id}: updated with {len(self._segments)} segments, totalling {self.pixel_count} pixels"
             )
-            self._ledfx.virtuals.check_and_deactivate_devices
+            self._ledfx.virtuals.check_and_deactivate_devices()
 
     def set_preset(self, preset_info):
         """
