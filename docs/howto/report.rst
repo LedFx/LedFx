@@ -10,7 +10,7 @@ Just spamming cryptic woe into the discord #general channel, will quickly tire o
 
 The community needs clues on how to help.
 
-What is obvious to you, is likely unknown to others, your setup and usage likely close to unique, so to give the code droids, kept in the darkest dungeons of techno-castle ledfx, a chance, please work through this guide, and try to provide as much infomration as you can upfront.
+What is obvious to you, is likely unknown to others, your setup and usage likely close to unique, so to give the code droids, kept in the darkest dungeons of techno-castle ledfx, a chance, please work through this guide, and try to provide as much information as you can upfront.
 
 If a code droid is successful, sometimes we might even recharge their batteries a little above critical and turn the lights on in their cell for a short time. Please, think of the code droids...
 
@@ -132,4 +132,3 @@ If you have read this far, the humble code droids thank you, and look forward to
 
 .. image:: /_static/howto/report/thankyou.png
    :alt: 10% and 10 minutes, and they should be thankful for that...
-

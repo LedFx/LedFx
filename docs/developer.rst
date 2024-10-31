@@ -333,4 +333,3 @@ simply import the class and use it as follows
 .. image:: /_static/howto/teleplot.png
    :alt: A simple graph from audio volume
 
-----------------
