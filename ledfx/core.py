@@ -234,8 +234,13 @@ class LedFxCore:
 
             time_since_last[vis_id] = time_now
 
-            # sniff up into the virtual that will work for both device and virtual events
-            rows = self.virtuals.get(vis_id).rows
+            # grab rows from up in virtual land
+            virtual = self.virtuals.get(vis_id)
+            # protect against deleted virtuals
+            if virtual:
+                rows = virtual.rows
+            else:
+                rows = 1
 
             pixels = event.pixels
             pixels_len = len(pixels)
