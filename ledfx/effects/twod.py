@@ -74,19 +74,19 @@ class Twod(AudioReactiveEffect, LogSec):
         # as well as a small performance boost
         # we need to accout for swapping vertical and horizotal for 90 / 270
 
-        self.flip = self._config["flip_vertical"]
-        self.mirror = self._config["flip_horizontal"]
+        self.flip2d = self._config["flip_vertical"]
+        self.mirror2d = self._config["flip_horizontal"]
 
         self.rotate = self._config["rotate"]
         self.rotate_t = 0
         if self.rotate == 1:
             self.rotate_t = Image.Transpose.ROTATE_90
-            self.flip, self.mirror = self.mirror, self.flip
+            self.flip2d, self.mirror2d = self.mirror2d, self.flip2d
         if self.rotate == 2:
             self.rotate_t = Image.Transpose.ROTATE_180
         if self.rotate == 3:
             self.rotate_t = Image.Transpose.ROTATE_270
-            self.flip, self.mirror = self.mirror, self.flip
+            self.flip2d, self.mirror2d = self.mirror2d, self.flip2d
 
         self.init = True
 
@@ -124,11 +124,11 @@ class Twod(AudioReactiveEffect, LogSec):
 
     def image_to_pixels(self):
         # image should be the right size to map in, at this point
-        if self.flip:
+        if self.flip2d:
             self.matrix = self.matrix.transpose(
                 Image.Transpose.FLIP_TOP_BOTTOM
             )
-        if self.mirror:
+        if self.mirror2d:
             self.matrix = self.matrix.transpose(
                 Image.Transpose.FLIP_LEFT_RIGHT
             )
@@ -152,7 +152,7 @@ class Twod(AudioReactiveEffect, LogSec):
             # show image on screen
             self.matrix.show()
             _LOGGER.info(
-                f"dump {self.t_width}x{self.t_height} R: {self.rotate_t} F: {self.flip} M: {self.mirror}"
+                f"dump {self.t_width}x{self.t_height} R: {self.rotate_t} F: {self.flip2d} M: {self.mirror2d}"
             )
 
     def draw_test(self, rgb_draw):
