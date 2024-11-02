@@ -10,11 +10,67 @@
             "presentation": {
                 "reveal": "silent",
                 "focus": false,
-                "close": true,
+                "close": true
             },
             "windows": {
                 "command": "Remove-Item -Recurse -Force '${workspaceFolder}\\debug_config'"
             },
+            "options": {
+                "statusbar": {
+                    "hide": true
+                }
+            }
+        },
+        {
+            "label": "Build Docs",
+            "type": "shell",
+            "command": "poetry",
+            "args": ["run", "make", "html"],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "options": {
+                "cwd": "${workspaceFolder}/docs",
+                "statusbar": {
+                    "hide": true
+                }
+            },
+            "problemMatcher": [],
+            "dependsOn": "Install Docs Dependencies"
+        },
+        {
+            "label": "Install Docs Dependencies",
+            "type": "shell",
+            "command": "poetry",
+            "args": ["install", "--only", "docs"],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "statusbar": {
+                    "hide": true
+                }
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Build and Open Docs",
+            "type": "shell",
+            "command": "cmd",
+            "args": ["/c", "start", "${workspaceFolder}/docs/build/html/index.html"],
+            "windows": {
+                "command": "cmd",
+                "args": ["/c", "start", "${workspaceFolder}/docs/build/html/index.html"]
+            },
+            "linux": {
+                "command": "xdg-open",
+                "args": ["${workspaceFolder}/docs/build/html/index.html"]
+            },
+            "osx": {
+                "command": "open",
+                "args": ["${workspaceFolder}/docs/build/html/index.html"]
+            },
+            "problemMatcher": [],
+            "dependsOn": "Build Docs"
         }
     ]
 }

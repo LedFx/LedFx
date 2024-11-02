@@ -54,6 +54,7 @@ class E131Device(NetworkedDevice):
         #     self._config["universe_size"] = 510
         # Allow for configuring in terms of "pixels" or "channels"
 
+        self._device_type = "e131"
         if "pixel_count" in self._config:
             self._config["channel_count"] = self._config["pixel_count"] * 3
         else:

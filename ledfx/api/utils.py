@@ -53,6 +53,7 @@ PERMITTED_KEYS = {
         "global_brightness",
         "melbank_collection",
         "flush_on_deactivate",
+        "ui_brightness_boost",
     ),
 }
 

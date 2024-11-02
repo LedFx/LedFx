@@ -783,6 +783,7 @@ class Devices(RegistryLoader):
         virtual_config = {
             "name": device.name,
             "icon_name": device_config["icon_name"],
+            "rows": device_config.get("rows", 1),
         }
 
         if device_type == "wled":

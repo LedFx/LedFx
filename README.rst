@@ -17,9 +17,7 @@ LedFx real-time LED strip music visualization effect controller using is a netwo
 Demos
 -------
 
-Visit `our website`_ to see LedFx in action!
-
-You can also join our `Discord`_ where community members show off their projects. Check out the #projects or #showcase channels.
+Visit and join our `Discord`_ where community members show off their projects. Check out the #projects or #show-and-tell channels.
 
 📑 Quick start guide and documentation📖
 ------------------------------------------

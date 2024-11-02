@@ -4,29 +4,45 @@
    :maxdepth: 2
    :caption: Installation & Development
 
-   installing
-   developer
+   /installing
+   /developer
 
 .. toctree::
    :maxdepth: 2
    :caption: Configuration
 
-   configuring
-   directing_audio
-   osc
-   artnet
+   /configuring
+   /directing_audio
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Devices
+
+   /devices/artnet
+   /devices/osc
+   /devices/govee
+
+.. toctree::
+   :maxdepth: 1
+   :caption: How To
+
+   /howto/dummy_matrix
+   /howto/keybeat
+   /howto/virtuals
+   /howto/reorder
 
 .. toctree::
    :maxdepth: 2
    :caption: LedFx API
 
-   api
+   /api
 
 .. toctree::
    :maxdepth: 2
    :caption: Help
 
-   trouble
+   /trouble
+   /howto/report
 
 License
 -------

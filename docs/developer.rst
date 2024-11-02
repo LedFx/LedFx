@@ -265,3 +265,71 @@ macOS
 
 .. _`pip documentation`: https://pip.pypa.io/en/latest/reference/pip_install/#editable-installs
 .. _`homebrew`: https://docs.brew.sh/Installation
+
+------------
+How it works
+------------
+
+Well enough for discussional purposes. This diagram specifically illustrates audio reactive effects, temporal are similar but have their own thread loop independant of audio framing.
+
+.. image:: /_static/main_loop.png
+   :alt: Do you want to buy a bridge?
+
+------------
+Useful Tools
+------------
+
+VSCode extensions
+-----------------
+
+For backend development, vscode is the IDE of choice.
+
+There are many extensions that are of use to developers, including but not limited to
+
+* Github Copilot
+* Github Pull Requests
+* autoDocsting
+* GitLens
+* Prettier
+* Pylance
+* Python
+* Python Debugger
+* Python Poetry
+* Tasks
+* Teleplot
+
+Tasks
+-----
+
+A simple extension to run tasks from the vscode taskbar at the bottom of the window.
+
+`Tasks by actboy168 <https://marketplace.visualstudio.com/items?itemName=actboy168.tasks>`_
+
+Currently only the Build and Open Docs task is exposed. This task will install dependancies, build the docs and open in your browser, all with a single click!
+
+.. image:: /_static/howto/taskbar.png
+   :alt: Build and Open Docs, do it!
+
+
+Teleplot
+--------
+
+Teleplot is a great tool for visualizing data in real time, that can be the graphing equivalent of print()
+
+It is used during development to quickly graph, and then thrown away, do not submit teleplot code to the main branch.
+
+General documentation along with rich examples is at `Teleplot Github <https://github.com/nesnes/teleplot>`_
+
+A helper Class has been added to the LedFx codebase to make it easier to use, and is available at ledfx/utils.py
+
+simply import the class and use it as follows
+
+.. code:: python
+
+    from ledfx.utils import Teleplot
+
+    Teleplot.send(f"my_var_name:{my_var_value}")
+
+.. image:: /_static/howto/teleplot.png
+   :alt: A simple graph from audio volume
+

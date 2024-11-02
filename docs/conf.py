@@ -59,6 +59,7 @@ extensions = [
     "sphinxcontrib.httpdomain",
     "sphinx_rtd_theme",
     "sphinx_toolbox.collapse",
+    "sphinx_copybutton",
 ]
 
 # The suffix(es) of source filenames.
@@ -98,7 +99,6 @@ linkcheck_timeout = 2
 # a list of builtin themes.
 #
 html_theme = "sphinx_rtd_theme"
-html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 
 
 def setup(app):

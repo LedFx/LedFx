@@ -10,6 +10,7 @@ import numpy as np
 import voluptuous as vol
 
 from ledfx.color import parse_color
+from ledfx.config import save_config
 from ledfx.effects import DummyEffect
 from ledfx.effects.math import interpolate_pixels, make_pattern
 from ledfx.effects.melbank import (
@@ -159,6 +160,9 @@ class Virtual:
         self._os_active = False
         self.lock = threading.Lock()
         self.clear_handle = None
+        self.fallback_effect_type = None
+        self.fallback_fire = False
+        self.fallback_config = None
 
         self.frequency_range = FrequencyRange(
             self._config["frequency_min"], self._config["frequency_max"]
@@ -313,6 +317,7 @@ class Virtual:
             _LOGGER.debug(
                 f"Virtual {self.id}: updated with {len(self._segments)} segments, totalling {self.pixel_count} pixels"
             )
+            self._ledfx.virtuals.check_and_deactivate_devices()
 
     def set_preset(self, preset_info):
         """
@@ -339,7 +344,28 @@ class Virtual:
         )
         self.set_effect(effect)
 
-    def set_effect(self, effect):
+    def set_fallback(self):
+        """
+        Sets the active effect to the stored fallback effect if available.
+        """
+        if self.fallback_effect_type is not None:
+
+            effect = self._ledfx.effects.create(
+                ledfx=self._ledfx,
+                type=self.fallback_effect_type,
+                config=self.fallback_config,
+            )
+            self.set_effect(effect, fallback=False)
+            update_effect_config(self._ledfx.config, self.id, effect)
+            save_config(
+                config=self._ledfx.config,
+                config_dir=self._ledfx.config_dir,
+            )
+
+            # make sure fallback is disabled
+            self.fallback_effect_type = None
+
+    def set_effect(self, effect, fallback=False):
         """
         Sets the active effect for the virtual device.
 
@@ -356,6 +382,27 @@ class Virtual:
                 error = f"Virtual {self.id}: Cannot activate, no configured device segments"
                 _LOGGER.warning(error)
                 raise ValueError(error)
+
+            if fallback:
+                _LOGGER.warning("Fallback requested")
+                if self._active_effect is not None:
+                    if self.fallback_effect_type is None:
+                        self.fallback_effect_type = self._active_effect.type
+                        self.fallback_config = self._active_effect.config
+                        _LOGGER.info(
+                            f"Setting fallback to {self.fallback_effect_type}"
+                        )
+                    else:
+                        # don't let new fallbacks override old ones, we don't want text falling back to text
+                        _LOGGER.info(
+                            f"There is already a fallback registered {self.fallback_effect_type}"
+                        )
+                else:
+                    _LOGGER.info("No current _active_effect to fallback to")
+                    self.fallback_effect_type = None
+            else:
+                # any effect being set without fallback will clear the fallback
+                self.fallback_effect_type = None
 
             if (
                 self._config["transition_mode"] != "None"
@@ -587,6 +634,11 @@ class Virtual:
             if not self._active:
                 break
             start_time = timeit.default_timer()
+
+            if self.fallback_fire:
+                self.set_fallback()
+                self.fallback_fire = False
+
             # we need to lock before we test, or we could deactivate
             # between test and execution
             with self.lock:
@@ -676,9 +728,12 @@ class Virtual:
                         / self.transition_frame_total
                     )
 
-                self.frame_transitions(
-                    self.transitions, frame, transition_frame, weight
-                )
+                # we will pre validate the transition, which will generate a sentry report if it fails and return False
+                if self.transitions.pre_validate(frame, transition_frame):
+                    # only call the transition effect if it will not crash
+                    self.frame_transitions(
+                        self.transitions, frame, transition_frame, weight
+                    )
                 if (
                     self.transition_frame_counter
                     == self.transition_frame_total
@@ -730,6 +785,7 @@ class Virtual:
             self._thread.join()
         self.deactivate_segments()
         self._ledfx.events.fire_event(VirtualPauseEvent(self.id))
+        self._ledfx.virtuals.check_and_deactivate_devices()
 
     # @lru_cache(maxsize=32)
     # def _normalized_linspace(self, size):
@@ -1028,7 +1084,7 @@ class Virtual:
                     ):
                         self._active_effect.clear_melbank_freq_props()
 
-                    if _config["rows"] != self._config["rows"]:
+                    if _config["rows"] != self.rows:
                         if hasattr(self._active_effect, "set_init"):
                             self._active_effect.set_init()
 
@@ -1089,6 +1145,27 @@ class Virtual:
 
         return effective_pixels
 
+    @property
+    def rows(self) -> int:
+        """
+        Property that returns the number of rows from the configuration.
+        Returns:
+            int: The number of rows specified in the configuration.
+        """
+        return self._config["rows"]
+
+    @rows.setter
+    def rows(self, rows: int) -> None:
+        """
+        Sets the number of rows in the configuration.
+
+        If the number of rows passed is less than 1, it will be set to 1.
+
+        Args:
+            rows (int): The number of rows to set in the configuration.
+        """
+        self._config["rows"] = max(1, rows)
+
 
 class Virtuals:
     """Thin wrapper around the device registry that manages virtuals"""
@@ -1100,6 +1177,7 @@ class Virtuals:
         # super().__init__(ledfx, Virtual, self.PACKAGE_NAME)
 
         def cleanup_effects(e):
+            self.fire_all_fallbacks()
             self.clear_all_effects()
 
         self._ledfx = ledfx
@@ -1206,6 +1284,10 @@ class Virtuals:
         for virtual in self.values():
             virtual.clear_frame()
 
+    def fire_all_fallbacks(self):
+        for virtual in self.values():
+            virtual.set_fallback()
+
     def pause_all(self):
         self._paused = not self._paused
         for virtual in self.values():
@@ -1214,6 +1296,31 @@ class Virtuals:
 
     def get(self, *args):
         return self._virtuals.get(*args)
+
+    def check_and_deactivate_devices(self):
+        """
+        Checks all active virtuals and segments to compile a list of active devices,
+        then deactivates any active devices not in that list.
+
+        This process ensures that devices are only deactivated if no virtual or segment
+        is using them, which is especially relevant during virtual or segment deactivation
+        or reconfiguration.
+
+        Note: This is a relatively expensive operation but only runs when a virtual
+        is deactivated or segments are modified.
+        """
+
+        active_devices = set()
+        for virtual in self.values():
+            if virtual.active:
+                for device_id, _, _, _ in virtual.segments:
+                    active_devices.add(device_id)
+        for device in self._ledfx.devices.values():
+            if device.id not in active_devices and device.is_active():
+                _LOGGER.info(
+                    f"Deactivating device {device.id} as it is not in use by any active virtuals"
+                )
+                device.deactivate()
 
 
 def update_effect_config(config, virtual_id, effect):

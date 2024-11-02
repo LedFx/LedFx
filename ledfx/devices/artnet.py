@@ -56,6 +56,7 @@ class ArtNetDevice(NetworkedDevice):
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
         self._artnet = None
+        self._device_type = "ArtNet"
         self.config_use(config)
 
     def config_updated(self, config):

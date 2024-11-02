@@ -55,6 +55,7 @@ class OSCServerDevice(NetworkedDevice):
 
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
+        self._device_type = "OSC"
         self.last_frame = np.full((config["pixel_count"], 3), -1)
 
     def config_updated(self, config):

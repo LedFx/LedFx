@@ -30,7 +30,6 @@ from ledfx.config import (
 from ledfx.consts import PROJECT_VERSION
 from ledfx.devices import Devices
 from ledfx.effects import Effects
-from ledfx.effects.math import interpolate_pixels
 from ledfx.events import (
     Event,
     Events,
@@ -48,6 +47,9 @@ from ledfx.utils import (
     UserDefaultCollection,
     async_fire_and_forget,
     currently_frozen,
+    pixels_boost,
+    resize_pixels,
+    shape_to_fit_len,
 )
 from ledfx.virtuals import Virtuals
 
@@ -232,10 +234,28 @@ class LedFxCore:
 
             time_since_last[vis_id] = time_now
 
-            pixels = event.pixels
+            # grab rows from up in virtual land
+            virtual = self.virtuals.get(vis_id)
+            # protect against deleted virtuals
+            if virtual:
+                rows = virtual.rows
+            else:
+                rows = 1
 
-            if len(pixels) > max_len:
-                pixels = interpolate_pixels(pixels, max_len)
+            pixels = event.pixels
+            pixels_len = len(pixels)
+            shape = (rows, int(pixels_len / rows))
+            if pixels_len > max_len:
+                new_shape, pixels_len = shape_to_fit_len(
+                    max_len, shape, pixels_len
+                )
+                pixels = resize_pixels(pixels[:pixels_len], shape, new_shape)
+                shape = new_shape
+
+            if self.config["ui_brightness_boost"] != 0:
+                pixels = pixels_boost(
+                    pixels, self.config["ui_brightness_boost"], 100
+                )
 
             if (
                 self.config["transmission_mode"]
@@ -247,7 +267,7 @@ class LedFxCore:
                 pixels = pixels.astype(np.uint8).T.tolist()
 
             self.events.fire_event(
-                VisualisationUpdateEvent(is_device, vis_id, pixels)
+                VisualisationUpdateEvent(is_device, vis_id, pixels, shape)
             )
 
         _LOGGER.debug("Setting up visualisation event handler.")

@@ -6,6 +6,7 @@ import importlib
 import inspect
 import ipaddress
 import logging
+import math
 import os
 import pkgutil
 import re
@@ -1811,3 +1812,146 @@ class UpdateChecker:
         return UpdateChecker._get_attribute_if_update_succeeded(
             PROJECT_VERSION != UpdateChecker.get_latest_version()
         )
+
+
+# pre stuff this to prevent per frame
+log_256 = np.log(256)
+
+
+def pixels_boost(pixels, compression_factor, max_floor):
+    # Compute the new floor based on the compression factor
+    floor = max_floor * compression_factor
+
+    # Precompute constants and reduce repeated computations
+    factor = 255 - floor
+    blend_factor = 1 - compression_factor
+
+    # Logarithmic compression: map pixel_array from [0, 255] to [floor, 255]
+    log_compressed = floor + (np.log1p(pixels) / log_256) * factor
+
+    # Apply the blend only where pixels are greater than 1, else leave unchanged
+    boosted = np.where(
+        pixels > 1,
+        blend_factor * pixels + compression_factor * log_compressed,
+        pixels,
+    )
+
+    return boosted
+
+
+def dump_pixels(pixels, shape):
+    """
+    Dump a RGB pixels np array into a PIL image and launch a window to display it.
+    This is for adhoc debug only
+
+    Parameters:
+    - pixels: 1D array of concatenated RGB pixel values
+    - shape: tuple, the desired shape of the 2D image (height, width)
+
+    Returns:
+    - none
+    """
+
+    # Reshape the 1D pixel array into (height, width, 3) for RGB
+    reshaped_pixels = pixels.reshape((shape[0], shape[1], 3))
+    # Convert the numpy array back into a Pillow image
+    image = Image.fromarray(reshaped_pixels.astype(np.uint8), "RGB")
+
+    image.show()
+
+
+def resize_pixels(pixels, old_shape, new_shape):
+    """
+    Resizes a 1D pixel array that represents a for 1D or 2D image by interpolating it in 2D space using PIL.
+
+    Profiled as at least as good as or better than interpolate_pixels() for performance even with the overhead of creating a PIL image.
+
+    Parameters:
+    - pixels: 1D array of concatenated RGB pixel values
+    - old_shape: tuple, the original shape of the 2D image (height, width)
+    - new_shape: tuple, the desired shape of the resized 2D image (height, width)
+
+    Returns:
+    - A resized 1D pixel array
+    """
+    # Reshape the 1D array into a 2D image (height, width, 3)
+    pixel_matrix = pixels.reshape((old_shape[0], old_shape[1], 3)).astype(
+        np.uint8
+    )
+
+    # Create a PIL image from the pixel data
+    image = Image.fromarray(pixel_matrix)
+
+    # Resize the image using PIL (bilinear interpolation is default)
+    resized_image = image.resize((new_shape[1], new_shape[0]), Image.BILINEAR)
+
+    # Convert the resized image back to a numpy array
+    resized_pixel_matrix = np.array(resized_image)
+
+    # Flatten the resized pixel matrix back to 1D
+    return resized_pixel_matrix.reshape(-1, 3)
+
+
+def shape_to_fit_len(max_len, shape, pixels_len):
+    """_summary_
+
+    Args:
+        max_len : The maximum number of pixels allowed in the final visualisation
+        shape : The current shape of the visualisation before resizing
+        pixels_len : The number of pixels in the current visualisation
+
+    Returns:
+        new_shape : The shape calculated to use in resizing
+        pixels_len : The number of pixels implied in the new_shape
+    """
+
+    if shape[0] > 1:
+        # this is a 2d visualisation
+        pixels_len = shape[0] * shape[1]
+        reduction_ratio = math.sqrt(pixels_len / max_len)
+        new_rows = shape[0] / reduction_ratio
+        new_cols = shape[1] / reduction_ratio
+
+        # protect from less than 1 values
+        if new_rows < 1.0:
+            new_shape = (1, max_len)
+        elif new_cols < 1.0:
+            new_shape = (max_len, 1)
+        else:
+            new_shape = (
+                int(new_rows),
+                int(new_cols),
+            )
+    else:
+        # this is a 1d visualisation
+        # pixels_len will be unchanged
+        new_shape = (1, max_len)
+
+    return new_shape, pixels_len
+
+
+class Teleplot:
+    """
+    Helper class for the use of vscode Teleplot extension
+
+    import and inline call
+    Teleplot.send("variable_name:value")
+    """
+
+    # only one socket for all instances
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+    @staticmethod
+    def send(string):
+        """Send string to teleplot
+
+        https://github.com/nesnes/teleplot
+
+        Args:
+            string: The string carrying the teleplot data of the format as per link above
+        """
+
+        try:
+            Teleplot.sock.sendto(string.encode(), ("127.0.0.1", 47269))
+        except Exception as e:
+            _LOGGER.error(f"Failed to send data to teleplot: {e}")

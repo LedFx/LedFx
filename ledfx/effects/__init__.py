@@ -8,7 +8,7 @@ import numpy as np
 import voluptuous as vol
 from numpy.typing import NDArray
 
-from ledfx.color import hsv_to_rgb, parse_color, validate_color
+from ledfx.color import LEDFX_COLORS, hsv_to_rgb, parse_color, validate_color
 from ledfx.utils import BaseRegistry, RegistryLoader
 
 _LOGGER = logging.getLogger(__name__)
@@ -386,10 +386,18 @@ class Effect(BaseRegistry):
             else:
                 self._config = validated_config
 
-            self._bg_color = (
-                np.array(parse_color(self._config["background_color"]))
-                * self._config["background_brightness"]
-            )
+            bg_color = parse_color(self._config["background_color"])
+            # if bg color is black then we don't need to do anything with it
+            self.bg_color_use = bg_color != parse_color(LEDFX_COLORS["black"])
+
+            if self.bg_color_use:
+                self._bg_color = (
+                    np.array(bg_color) * self._config["background_brightness"]
+                )
+
+            self.flip = self._config["flip"]
+            self.mirror = self._config["mirror"]
+            self.brightness = self._config["brightness"]
 
             def inherited(cls, method):
                 if hasattr(cls, method) and hasattr(super(cls, cls), method):
@@ -448,18 +456,18 @@ class Effect(BaseRegistry):
                     config = self._config
 
                     # Apply some of the base output filters if necessary
-                    if config["flip"]:
+                    if self.flip:
                         pixels = np.flipud(pixels)
-                    if config["mirror"]:
+                    if self.mirror:
                         pixels = np.concatenate(
                             (pixels[-1 + len(pixels) % -2 :: -2], pixels[::2])
                         )
-                    if config["background_color"]:
+                    if self.bg_color_use:
                         pixels += self._bg_color
-                    if config["brightness"] is not None:
+                    if self.brightness is not None:
                         np.multiply(
                             pixels,
-                            config["brightness"],
+                            self.brightness,
                             out=pixels,
                             casting="unsafe",
                         )
