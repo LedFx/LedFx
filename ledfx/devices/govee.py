@@ -47,6 +47,12 @@ class Govee(NetworkedDevice):
                     list(AVAILABLE_FPS)[-1],
                 ),
             ): fps_validator,
+            vol.Optional(
+                "byte1", description="injection 1", default=0xB0
+            ): vol.All(vol.Coerce(int), vol.Range(min=0, max=255)),
+            vol.Optional(
+                "byte2", description="injection 2", default=0x00
+            ): vol.All(vol.Coerce(int), vol.Range(min=0, max=255)),
         }
     )
 
@@ -59,6 +65,23 @@ class Govee(NetworkedDevice):
         self.send_response_port = 4001  # Send Scanning
         self.recv_port = 4002  # Responses
         self.udp_server = None
+        
+        # this header is reverse engineered and fuzzed to functional
+        # byye 5 set as 1 was seen to spread pixels, maybe a blur or streatch value
+        # corrected by setting to 0x00 as below
+        self.pre_dreams = [0xBB, 0x00, 0xFA, 0xB0, 0x00]
+        self.pre_chroma = [0xBB, 0x00, 0x0E, 0xB0, 0x00]
+        # 0 0xbb - unknown 
+        # 1 0x00 - unknown
+        # 2 0x0e - unknown
+        # 3 0xb0 - unknown
+        # 4 0x00 - unknown
+        # 5 0x01 - 0 = segments, 1 = stretch
+        # 6 0x04 - color triples to follow
+        # Header to here                     | 4 RGB triples        |                        |                       | CHK
+        # 0xbb, 0x00, 0x0e, 0xb0, 0x01, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+        # 0xbb, 0x00, 0x0e, 0xb0, 0x01, 0x04, 0xfe, 0x00, 0x05, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xfb
+        # 0xbb, 0x00, 0x0e, 0xb0, 0x01, 0x04, 0xfe, 0x00, 0x26, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xfe, 0x00, 0x26, 0x00
 
     def send_udp(self, message, port=4003):
         data = json.dumps(message).encode("utf-8")
@@ -67,6 +90,45 @@ class Govee(NetworkedDevice):
     # Set Light Brightness
     def set_brightness(self, value):
         self.send_udp({"msg": {"cmd": "brightness", "data": {"value": value}}})
+
+    def send_devstatus_enquiry(self):
+        self.send_udp({"msg": {"cmd": "devStatus", "data": {}}})
+
+    def send_activate(self):
+        # BB 00 01 B1 01 0A
+        self.send_udp({"msg": {"cmd": "razer", "data": {"pt": "uwABsQEK"}}})
+
+    def send_deactivate(self):
+        # BB 00 01 B1 00 0B
+        self.send_udp({"msg": {"cmd": "razer", "data": {"pt": "uwABsQAL"}}})
+
+    def send_encoded_packet(self, packet):
+        command = base64.b64encode(packet.tobytes()).decode("utf-8")
+        self.send_udp({"msg": {"cmd": "razer", "data": {"pt": command}}})
+
+    def create_dream_view_packet(self, colors):
+        header = np.array(self.pre_dreams[len(colors) // 3], dtype=np.uint8)
+        full_packet = np.concatenate((header, colors))
+        full_packet = np.append(
+            full_packet, self.calculate_xor_checksum_fast(full_packet)
+        )
+        return full_packet
+    
+    def create_chroma_packet(self, colors):
+        header = np.array(self.pre_chroma 
+                          + [len(colors) // 3], dtype=np.uint8)
+        full_packet = np.concatenate((header, colors))
+        full_packet = np.append(
+            full_packet, self.calculate_xor_checksum_fast(full_packet)
+        )
+        return full_packet
+        
+    def deactivate(self):
+        _LOGGER.info(f"Govee {self.name} deactivate")
+        if self.udp_server is not None:
+            self.send_deactivate()
+            self.udp_server.close_socket()
+        super().deactivate()
 
     def activate(self):
         _LOGGER.info(f"Govee {self.name} Activating UDP stream mode...")
@@ -90,48 +152,23 @@ class Govee(NetworkedDevice):
         time.sleep(delay)
         self.set_brightness(100)
         time.sleep(delay)
-        self.send_udp({"msg": {"cmd": "razer", "data": {"pt": "uwABsQEK"}}})
+        self.send_activate()
 
         super().activate()
-
-    def deactivate(self):
-        _LOGGER.info(f"Govee {self.name} deactivate")
-        if self.udp_server is not None:
-            self.send_udp(
-                {"msg": {"cmd": "razer", "data": {"pt": "uwABsQAL"}}}
-            )
-            self.udp_server.close_socket()
-        super().deactivate()
 
     @staticmethod
     def calculate_xor_checksum_fast(packet):
         return np.bitwise_xor.reduce(packet)
 
-    def create_dream_view_packet(self, colors):
-        # this header is reverse engineered and fuzzed to functional
-        # byye 5 set as 1 was seen to spread pixels, maybe a blur or streatch value
-        # corrected by setting to 0x00 as below
-        header = np.array(
-            [0xBB, 0x00, 250, 0xB0, 0x00, len(colors) // 3], dtype=np.uint8
-        )
-        full_packet = np.concatenate((header, colors))
-        full_packet = np.append(
-            full_packet, self.calculate_xor_checksum_fast(full_packet)
-        )
-        return full_packet
-
-    def send_encoded_packet(self, packet):
-        command = base64.b64encode(packet.tobytes()).decode("utf-8")
-        self.send_udp({"msg": {"cmd": "razer", "data": {"pt": command}}})
-
     def flush(self, data):
         rgb_data = data.flatten().astype(np.uint8)
-        packet = self.create_dream_view_packet(rgb_data)
+        # packet = self.create_dream_view_packet(rgb_data)
+        packet = self.create_chroma_packet(rgb_data)
         self.send_encoded_packet(packet)
 
     # Get Device Status
     def get_device_status(self):
-        self.send_udp({"msg": {"cmd": "devStatus", "data": {}}})
+        self.send_devstatus_enquiry()
         self.udp_server.settimeout(1.0)
         try:
             # Receive Response from the device
