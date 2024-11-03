@@ -67,10 +67,28 @@ class Govee(NetworkedDevice):
         self.udp_server = None
 
         # this header is reverse engineered and fuzzed to functional
-        self.pre_dreams = [0xBB, 0x00, 0xFA, 0xB0, 0x00] # original header captured by Schifty but modified stretch to 0
-        self.pre_chroma = [0xBB, 0x00, 0x0E, 0xB0, 0x00] # captured from razer chroma but modified stetch to 0
-        self.pre_goveee = [0xBB, 0x00, 0x20, 0xB0, 0x00] # captured from govee screen edge direct control
-        # 0 0xbb - unknown 
+        self.pre_dreams = [
+            0xBB,
+            0x00,
+            0xFA,
+            0xB0,
+            0x00,
+        ]  # original header captured by Schifty but modified stretch to 0
+        self.pre_chroma = [
+            0xBB,
+            0x00,
+            0x0E,
+            0xB0,
+            0x00,
+        ]  # captured from razer chroma but modified stetch to 0
+        self.pre_goveee = [
+            0xBB,
+            0x00,
+            0x20,
+            0xB0,
+            0x00,
+        ]  # captured from govee screen edge direct control
+        # 0 0xbb - unknown
         # 1 0x00 - unknown
         # 2 0x0e - unknown
         # 3 0xb0 - unknown
@@ -79,7 +97,6 @@ class Govee(NetworkedDevice):
         # 6 0x04 - color triples to follow
         # Header to here  ST  CN | RGB trip |           |           |           | CHK
         # bb, 00, 0e, b0, 01, 04, fe, 00, 05, 00, 00, 00, 00, 00, 00, 00, 00, 00, fb
-
 
     def send_udp(self, message, port=4003):
         data = json.dumps(message).encode("utf-8")
@@ -103,10 +120,9 @@ class Govee(NetworkedDevice):
     def send_encoded_packet(self, packet):
         command = base64.b64encode(packet.tobytes()).decode("utf-8")
         self.send_udp({"msg": {"cmd": "razer", "data": {"pt": command}}})
-    
+
     def create_razer_packet(self, colors):
-        header = np.array(self.pre_goveee
-                          + [len(colors) // 3], dtype=np.uint8)
+        header = np.array(self.pre_goveee + [len(colors) // 3], dtype=np.uint8)
         full_packet = np.concatenate((header, colors))
         full_packet = np.append(
             full_packet, self.calculate_xor_checksum_fast(full_packet)
