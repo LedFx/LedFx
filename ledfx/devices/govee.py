@@ -65,13 +65,13 @@ class Govee(NetworkedDevice):
         self.send_response_port = 4001  # Send Scanning
         self.recv_port = 4002  # Responses
         self.udp_server = None
-        
+
         # this header is reverse engineered and fuzzed to functional
         # byye 5 set as 1 was seen to spread pixels, maybe a blur or streatch value
         # corrected by setting to 0x00 as below
         self.pre_dreams = [0xBB, 0x00, 0xFA, 0xB0, 0x00]
         self.pre_chroma = [0xBB, 0x00, 0x0E, 0xB0, 0x00]
-        # 0 0xbb - unknown 
+        # 0 0xbb - unknown
         # 1 0x00 - unknown
         # 2 0x0e - unknown
         # 3 0xb0 - unknown
@@ -113,16 +113,15 @@ class Govee(NetworkedDevice):
             full_packet, self.calculate_xor_checksum_fast(full_packet)
         )
         return full_packet
-    
+
     def create_chroma_packet(self, colors):
-        header = np.array(self.pre_chroma 
-                          + [len(colors) // 3], dtype=np.uint8)
+        header = np.array(self.pre_chroma + [len(colors) // 3], dtype=np.uint8)
         full_packet = np.concatenate((header, colors))
         full_packet = np.append(
             full_packet, self.calculate_xor_checksum_fast(full_packet)
         )
         return full_packet
-        
+
     def deactivate(self):
         _LOGGER.info(f"Govee {self.name} deactivate")
         if self.udp_server is not None:
