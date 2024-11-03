@@ -67,10 +67,9 @@ class Govee(NetworkedDevice):
         self.udp_server = None
         
         # this header is reverse engineered and fuzzed to functional
-        # byye 5 set as 1 was seen to spread pixels, maybe a blur or streatch value
-        # corrected by setting to 0x00 as below
-        self.pre_dreams = [0xBB, 0x00, 0xFA, 0xB0, 0x00]
-        self.pre_chroma = [0xBB, 0x00, 0x0E, 0xB0, 0x00]
+        self.pre_dreams = [0xBB, 0x00, 0xFA, 0xB0, 0x00] # original header captured by Schifty but modified stretch to 0
+        self.pre_chroma = [0xBB, 0x00, 0x0E, 0xB0, 0x00] # captured from razer chroma but modified stetch to 0
+        self.pre_goveee = [0xBB, 0x00, 0x20, 0xB0, 0x00] # captured from govee screen edge direct control
         # 0 0xbb - unknown 
         # 1 0x00 - unknown
         # 2 0x0e - unknown
@@ -78,10 +77,9 @@ class Govee(NetworkedDevice):
         # 4 0x00 - unknown
         # 5 0x01 - 0 = segments, 1 = stretch
         # 6 0x04 - color triples to follow
-        # Header to here                     | 4 RGB triples        |                        |                       | CHK
-        # 0xbb, 0x00, 0x0e, 0xb0, 0x01, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-        # 0xbb, 0x00, 0x0e, 0xb0, 0x01, 0x04, 0xfe, 0x00, 0x05, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xfb
-        # 0xbb, 0x00, 0x0e, 0xb0, 0x01, 0x04, 0xfe, 0x00, 0x26, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xfe, 0x00, 0x26, 0x00
+        # Header to here  ST  CN | RGB trip |           |           |           | CHK
+        # bb, 00, 0e, b0, 01, 04, fe, 00, 05, 00, 00, 00, 00, 00, 00, 00, 00, 00, fb
+
 
     def send_udp(self, message, port=4003):
         data = json.dumps(message).encode("utf-8")
@@ -105,17 +103,9 @@ class Govee(NetworkedDevice):
     def send_encoded_packet(self, packet):
         command = base64.b64encode(packet.tobytes()).decode("utf-8")
         self.send_udp({"msg": {"cmd": "razer", "data": {"pt": command}}})
-
-    def create_dream_view_packet(self, colors):
-        header = np.array(self.pre_dreams[len(colors) // 3], dtype=np.uint8)
-        full_packet = np.concatenate((header, colors))
-        full_packet = np.append(
-            full_packet, self.calculate_xor_checksum_fast(full_packet)
-        )
-        return full_packet
     
-    def create_chroma_packet(self, colors):
-        header = np.array(self.pre_chroma 
+    def create_razer_packet(self, colors):
+        header = np.array(self.pre_goveee
                           + [len(colors) // 3], dtype=np.uint8)
         full_packet = np.concatenate((header, colors))
         full_packet = np.append(
@@ -162,8 +152,7 @@ class Govee(NetworkedDevice):
 
     def flush(self, data):
         rgb_data = data.flatten().astype(np.uint8)
-        # packet = self.create_dream_view_packet(rgb_data)
-        packet = self.create_chroma_packet(rgb_data)
+        packet = self.create_razer_packet(rgb_data)
         self.send_encoded_packet(packet)
 
     # Get Device Status
