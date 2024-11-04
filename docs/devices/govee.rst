@@ -81,7 +81,7 @@ Hit add and, your Govee device should now be available in the devices view.
 Connection refresh
 ------------------
 
-If a Govee device does not respond to a device status enquirey at ledfx startup, it will be marked offline.
+If Ignore Status is set to the default Off, If Govee device does not respond to a device status enquirey at ledfx startup, it will be marked offline.
 
 If the device is powered on, or otherwise made available after startup, pressing the refresh button on the device will attempt to reconnect to the Govee device.
 
@@ -89,6 +89,4 @@ If the device is powered on, or otherwise made available after startup, pressing
 .. image:: /_static/devices/govee/refresh.png
    :alt: Refesh connection
 
-
-
-
+If you have firewall issues blocking Port 4002 the status check can be disabled by setting Ignore Status to On. Ledfx will assume that the devices is available.

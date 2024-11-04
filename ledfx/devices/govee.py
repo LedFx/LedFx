@@ -48,6 +48,11 @@ class Govee(NetworkedDevice):
                 ),
             ): fps_validator,
             vol.Optional(
+                "ignore_status",
+                description="Bypass check for device status check response on port 4003",
+                default=False,
+            ): bool,
+            vol.Optional(
                 "byte1", description="injection 1", default=0xB0
             ): vol.All(vol.Coerce(int), vol.Range(min=0, max=255)),
             vol.Optional(
@@ -126,15 +131,18 @@ class Govee(NetworkedDevice):
 
         self.udp_server = SocketSingleton(recv_port=self.recv_port)
 
-        # enquiry to status is current used only to check if the device is responding adn set offline if not
-        # the response information is of little use
-        # example: {"msg":{"cmd":"devStatus","data":{"onOff":1,"brightness":100,"color":{"r":255,"g":255,"b":255},"colorTemInKelvin":0}}}
-        _LOGGER.info(f"Fetching govee {self.name} device info...")
-        status, active = self.get_device_status()
-        _LOGGER.info(f"{self.name} active: {active} {status}")
-        if not active:
-            self.set_offline()
-            return
+        if not self._config["ignore_status"]:
+            # enquiry to status is current used only to check if the device is responding adn set offline if not
+            # the response information is of little use
+            # example: {"msg":{"cmd":"devStatus","data":{"onOff":1,"brightness":100,"color":{"r":255,"g":255,"b":255},"colorTemInKelvin":0}}}
+            _LOGGER.info(f"Fetching govee {self.name} device info...")
+            status, active = self.get_device_status()
+            _LOGGER.info(f"{self.name} active: {active} {status}")
+            if not active:
+                self.set_offline()
+                return
+        else:
+            _LOGGER.info(f"Ignoring Govee status check for {self.name}")
 
         # the ordering and delay in this implementation is derived through trial and error only
         # incorrect order can lead to flickering of devices tested if wake from sleep
