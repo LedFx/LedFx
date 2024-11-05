@@ -53,6 +53,11 @@ class Govee(NetworkedDevice):
                 default=False,
             ): bool,
             vol.Optional(
+                "stretch_to_fit",
+                description="Some archane setting to make the pixel pattern stretch to fit the device",
+                default=False,
+            ): bool,
+            vol.Optional(
                 "byte1", description="injection 1", default=0xB0
             ): vol.All(vol.Coerce(int), vol.Range(min=0, max=255)),
             vol.Optional(
@@ -75,9 +80,9 @@ class Govee(NetworkedDevice):
         # this header is reverse engineered and fuzzed to functional
         self.pre_dreams = [0xBB, 0x00, 0xFA, 0xB0, 0x00]  # original header captured by Schifty but modified stretch to 0
         self.pre_chroma = [0xBB, 0x00, 0x0E, 0xB0, 0x00]  # captured from razer chroma but modified stetch to 0
-        self.pre_goveee = [0xBB, 0x00, 0x20, 0xB0, 0x00]  # captured from govee screen edge direct control
+        self.pre__govee = [0xBB, 0x00, 0x20, 0xB0, 0x00]  # captured from govee screen edge direct control
         # fmt : on
-
+        self.pre_active = self.pre__govee
         # 0 0xbb - unknown
         # 1 0x00 - unknown
         # 2 0x0e - unknown
@@ -90,7 +95,7 @@ class Govee(NetworkedDevice):
 
     def send_udp(self, message, port=4003):
         data = json.dumps(message).encode("utf-8")
-        self.udp_server.send_data(data, (self._config["ip_address"], port))
+        self.udp_server.sendto(data, (self._config["ip_address"], port))
 
     # Set Light Brightness
     def set_brightness(self, value):
@@ -112,7 +117,7 @@ class Govee(NetworkedDevice):
         self.send_udp({"msg": {"cmd": "razer", "data": {"pt": command}}})
 
     def create_razer_packet(self, colors):
-        header = np.array(self.pre_goveee + [len(colors) // 3], dtype=np.uint8)
+        header = np.array(self.pre_active + [len(colors) // 3], dtype=np.uint8)
         full_packet = np.concatenate((header, colors))
         full_packet = np.append(
             full_packet, self.calculate_xor_checksum_fast(full_packet)
@@ -123,13 +128,22 @@ class Govee(NetworkedDevice):
         _LOGGER.info(f"Govee {self.name} deactivate")
         if self.udp_server is not None:
             self.send_deactivate()
-            self.udp_server.close_socket()
+            self.udp_server.close()
         super().deactivate()
 
     def activate(self):
         _LOGGER.info(f"Govee {self.name} Activating UDP stream mode...")
 
-        self.udp_server = SocketSingleton(recv_port=self.recv_port)
+        # TBD: improve this to not recv_port if not neede due to ignore_status
+        try:
+            if self._config["ignore_status"]:
+                self.udp_server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            else:
+                self.udp_server = SocketSingleton(recv_port=self.recv_port)
+        except Exception as e:
+            _LOGGER.error(f"Error creating UDP socket, try ignore status device setting {e}")
+            self.set_offline()
+            return
 
         if not self._config["ignore_status"]:
             # enquiry to status is current used only to check if the device is responding adn set offline if not
@@ -144,6 +158,10 @@ class Govee(NetworkedDevice):
         else:
             _LOGGER.info(f"Ignoring Govee status check for {self.name}")
 
+        if self._config['stretch_to_fit']:
+            self.pre_active[4] = 0x01
+        else:
+            self.pre_active[4] = 0x00
         # the ordering and delay in this implementation is derived through trial and error only
         # incorrect order can lead to flickering of devices tested if wake from sleep
         # we have not other information as to best practice here
@@ -170,7 +188,7 @@ class Govee(NetworkedDevice):
         self.udp_server.settimeout(1.0)
         try:
             # Receive Response from the device
-            response, addr = self.udp_server.receive_data(1024)
+            response, addr = self.udp_server.recvfrom(1024)
             if self._config["ip_address"] == addr[0]:
                 return f"{response.decode('utf-8')}", True
             else:
