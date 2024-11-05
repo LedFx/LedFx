@@ -137,11 +137,15 @@ class Govee(NetworkedDevice):
         # TBD: improve this to not recv_port if not neede due to ignore_status
         try:
             if self._config["ignore_status"]:
-                self.udp_server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                self.udp_server = socket.socket(
+                    socket.AF_INET, socket.SOCK_DGRAM
+                )
             else:
                 self.udp_server = SocketSingleton(recv_port=self.recv_port)
         except Exception as e:
-            _LOGGER.error(f"Error creating UDP socket, try ignore status device setting {e}")
+            _LOGGER.error(
+                f"Error creating UDP socket, try ignore status device setting {e}"
+            )
             self.set_offline()
             return
 
@@ -158,7 +162,7 @@ class Govee(NetworkedDevice):
         else:
             _LOGGER.info(f"Ignoring Govee status check for {self.name}")
 
-        if self._config['stretch_to_fit']:
+        if self._config["stretch_to_fit"]:
             self.pre_active[4] = 0x01
         else:
             self.pre_active[4] = 0x00
