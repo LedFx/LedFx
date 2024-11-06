@@ -66,6 +66,17 @@ class Govee(NetworkedDevice):
         }
     )
 
+   # testug plan
+        # try all three leading string with 10, 20, 30, 50, 80, 120, 200, 255
+        # with stretch 0 and 1
+        # look at the response
+        # look at the color
+        # automate the process
+        # look at last rgb and see if it is white to run the next cycle
+        # we can the flip the stetch bit without activation cycle
+        # to change led count, we will need to stop and start the effect
+        #    
+
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
         self._device_type = "Govee"
@@ -134,7 +145,6 @@ class Govee(NetworkedDevice):
     def activate(self):
         _LOGGER.info(f"Govee {self.name} Activating UDP stream mode...")
 
-        # TBD: improve this to not recv_port if not neede due to ignore_status
         try:
             if self._config["ignore_status"]:
                 self.udp_server = socket.socket(
