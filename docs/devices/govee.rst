@@ -43,7 +43,7 @@ Currently investigated matrix lights include:
 +--------+--------------------+------+-------+--------+----------------------------------+
 | Device | Description        | LEDs | Govee | Chroma | Notes                            |
 +========+====================+======+=======+========+==================================+
-| H7081  | Curtain Lights     | 520  | 6     | 4      | TBD Best experimental values ABC |
+| H70B1  | Curtain Lights     | 520  | 6     | 4      | TBD Best experimental values ABC |
 +--------+--------------------+------+-------+--------+----------------------------------+
 | H6811  | Net Lights         | 480  | NA    | NA     | TBD Best experimental values     |
 +--------+--------------------+------+-------+--------+----------------------------------+
