@@ -91,7 +91,7 @@ class Govee(NetworkedDevice):
         # this header is reverse engineered and fuzzed to functional
         self.pre_dreams = [0xBB, 0x00, 0xFA, 0xB0, 0x00]  # original header captured by Schifty but modified stretch to 0
         self.pre_chroma = [0xBB, 0x00, 0x0E, 0xB0, 0x00]  # captured from razer chroma but modified stetch to 0
-        self.pre__govee = [0xBB, 0x00, 0x20, 0xB0, 0x00]  # captured from govee screen edge direct control
+        self.pre__govee = [0xBB, 0x00, 0x20, 0xB0, 0x00]  # captured from Govee Desktoip DreamView which is mapped to screen edge colors
         # fmt : on
         self.pre_active = self.pre__govee
         # 0 0xbb - unknown

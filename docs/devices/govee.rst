@@ -9,7 +9,16 @@ At the time of writing compatible Govee products were listed at this link under 
 
 It is not known exhaustively, which of these are truly functional against ledfx current integration.
 
-Known working examples include:
+**Be aware:** An active session from LedFx towards a Govee device may prevent the Govee Desktop app from opening correctly, it may appear within Task manager but no substantiate its UI window. Stop LedFx, close Govee Desktop from within Task Manager, and relaunch Govee Desktop.
+
+----------------------
+Known working examples
+----------------------
+
+Standard Lights
+^^^^^^^^^^^^^^^
+
+Known working with **Stretch To Fit** set to off
 
 * H6061 Glide Hexa Light Panels
 * H6167 Govee TV Backlight For 40-50 inch TVs
@@ -18,6 +27,30 @@ Known working examples include:
 * H615C RGB LED Strip Light 50 FT
 * TBD: add more here on discovery...
 
+Matrix Lights
+^^^^^^^^^^^^^
+
+There is currently no good story around Govee matrix lights such as curtains.
+
+The majority of Govee effects appear to be driven local, not via the LAN interface.
+
+When looking at the Govee LAN interface towards some products, it can be see that a very low segment count is used and the **Stretch To Fit** option is set to on.
+
+All examples from Chroma so far captured are also **Stetch to Fit** and even lower segment count of 4
+
+Currently investigated matrix lights include:
+
++--------+--------------------+------+-------+--------+----------------------------------+
+| Device | Description        | LEDs | Govee | Chroma | Notes                            |
++========+====================+======+=======+========+==================================+
+| H7081  | Curtain Lights     | 520  | 6     | 4      | TBD Best experimental values ABC |
++--------+--------------------+------+-------+--------+----------------------------------+
+| H6811  | Net Lights         | 480  | NA    | NA     | TBD Best experimental values     |
++--------+--------------------+------+-------+--------+----------------------------------+
+| TBD    | Add more here...   | TBD  | TBD   | TBD    | TBD                              |
++--------+--------------------+------+-------+--------+----------------------------------+
+
+--------------------------
 Govee Device Configuration
 --------------------------
 
@@ -54,6 +87,7 @@ You also need the device segment count from the Light Panel Layout page, which i
    :alt: Adding a device
 
 
+--------------------------
 Ledfx Device Configuration
 --------------------------
 
