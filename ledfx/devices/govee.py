@@ -126,7 +126,6 @@ class Govee(NetworkedDevice):
         super().deactivate()
 
     def activate(self):
-        super().activate()
         _LOGGER.info(f"Govee {self.name} Activating UDP stream mode...")
 
         try:
@@ -168,6 +167,8 @@ class Govee(NetworkedDevice):
         self.set_brightness(100)
         time.sleep(delay)
         self.send_activate()
+        super().activate()
+
 
     @staticmethod
     def calculate_xor_checksum_fast(packet):
