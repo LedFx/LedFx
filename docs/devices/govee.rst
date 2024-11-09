@@ -45,10 +45,27 @@ Currently investigated matrix lights include:
 +========+====================+======+=======+========+==================================+
 | H70B1  | Curtain Lights     | 520  | 6     | 4      | TBD Best experimental values ABC |
 +--------+--------------------+------+-------+--------+----------------------------------+
-| H6811  | Net Lights         | 480  | NA    | NA     | TBD Best experimental values     |
+| H6811  | Net Lights         | 480  | NA    | NA     | Only first 224 pixels @82 seg    |
 +--------+--------------------+------+-------+--------+----------------------------------+
 | TBD    | Add more here...   | TBD  | TBD   | TBD    | TBD                              |
 +--------+--------------------+------+-------+--------+----------------------------------+
+
+H70B1 Curtain Lights 520
+------------------------
+
+TBD
+
+H6811 Net Lights 480
+--------------------
+
+NOT RECOMMENDED FOR USE WITH LEDFX
+
+No apparent effect from the strech bit, all colors sent are stretched across the first 224 pixels using a correct header. No apparent way to use the last 256 pixels.
+
+82 is the max pixel value to use before pixel stretching to 224 breaks down.
+
+Not supported by Govee app or Razer Chroma for any LAN relevant effects.
+
 
 --------------------------
 Govee Device Configuration

@@ -93,14 +93,13 @@ class Govee(NetworkedDevice):
         self.pre_chroma = [0xBB, 0x00, 0x0E, 0xB0, 0x00]  # captured from razer chroma but modified stetch to 0
         self.pre__govee = [0xBB, 0x00, 0x20, 0xB0, 0x00]  # captured from Govee Desktoip DreamView which is mapped to screen edge colors
         # fmt : on
-        self.pre_active = self.pre__govee
-        # 0 0xbb - unknown
-        # 1 0x00 - unknown
-        # 2 0x0e - unknown
+        self.pre_active = self.pre_dreams
+        # 0 0xbb - unknown - rotating just breaks
+        # 1 0x00 - unknown - No impact rotating from 0 to 255
+        # 2 0xFA - unknown - related to segment count in some manner, use pre_dreams format 
         # 3 0xb0 - unknown
-        # 4 0x00 - unknown
-        # 5 0x01 - 0 = segments, 1 = stretch
-        # 6 0x04 - color triples to follow
+        # 4 0x01 - 0 = segments, 1 = stretch on some devices only
+        # 5 0x04 - color triples to follow
         # Header to here  ST  CN | RGB trip |           |           |           | CHK
         # bb, 00, 0e, b0, 01, 04, fe, 00, 05, 00, 00, 00, 00, 00, 00, 00, 00, 00, fb
 
@@ -129,6 +128,9 @@ class Govee(NetworkedDevice):
 
     def create_razer_packet(self, colors):
         header = np.array(self.pre_active + [len(colors) // 3], dtype=np.uint8)
+        
+#        header[4] = header[4] + self.fuzz
+
         full_packet = np.concatenate((header, colors))
         full_packet = np.append(
             full_packet, self.calculate_xor_checksum_fast(full_packet)
@@ -187,6 +189,9 @@ class Govee(NetworkedDevice):
 
         super().activate()
 
+        self.fuzz = 0
+        self.count = 0
+
     @staticmethod
     def calculate_xor_checksum_fast(packet):
         return np.bitwise_xor.reduce(packet)
@@ -195,6 +200,12 @@ class Govee(NetworkedDevice):
         rgb_data = data.flatten().astype(np.uint8)
         packet = self.create_razer_packet(rgb_data)
         self.send_encoded_packet(packet)
+
+        self.count += 1
+        if self.count > 1 * 30:
+            self.count = 0
+            self.fuzz += 1
+            _LOGGER.warning(f"Flushing {self.name} {self.fuzz}")
 
     # Get Device Status
     def get_device_status(self):
