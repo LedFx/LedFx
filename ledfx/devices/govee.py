@@ -16,12 +16,7 @@ _LOGGER = logging.getLogger(__name__)
 
 # this is very much a prototype implementation
 # no current known documentation on the protocol
-# may be a variant of razer if we cannot find any other info
 # use with caution.
-#
-# Known issues
-#
-
 
 class Govee(NetworkedDevice):
     """
@@ -57,25 +52,8 @@ class Govee(NetworkedDevice):
                 description="Some archane setting to make the pixel pattern stretch to fit the device",
                 default=False,
             ): bool,
-            vol.Optional(
-                "byte1", description="injection 1", default=0xB0
-            ): vol.All(vol.Coerce(int), vol.Range(min=0, max=255)),
-            vol.Optional(
-                "byte2", description="injection 2", default=0x00
-            ): vol.All(vol.Coerce(int), vol.Range(min=0, max=255)),
         }
     )
-
-    # testug plan
-    # try all three leading string with 10, 20, 30, 50, 80, 120, 200, 255
-    # with stretch 0 and 1
-    # look at the response
-    # look at the color
-    # automate the process
-    # look at last rgb and see if it is white to run the next cycle
-    # we can the flip the stetch bit without activation cycle
-    # to change led count, we will need to stop and start the effect
-    #
 
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
@@ -129,8 +107,6 @@ class Govee(NetworkedDevice):
     def create_razer_packet(self, colors):
         header = np.array(self.pre_active + [len(colors) // 3], dtype=np.uint8)
         
-#        header[4] = header[4] + self.fuzz
-
         full_packet = np.concatenate((header, colors))
         full_packet = np.append(
             full_packet, self.calculate_xor_checksum_fast(full_packet)
@@ -189,9 +165,6 @@ class Govee(NetworkedDevice):
 
         super().activate()
 
-        self.fuzz = 0
-        self.count = 0
-
     @staticmethod
     def calculate_xor_checksum_fast(packet):
         return np.bitwise_xor.reduce(packet)
@@ -200,12 +173,6 @@ class Govee(NetworkedDevice):
         rgb_data = data.flatten().astype(np.uint8)
         packet = self.create_razer_packet(rgb_data)
         self.send_encoded_packet(packet)
-
-        self.count += 1
-        if self.count > 1 * 30:
-            self.count = 0
-            self.fuzz += 1
-            _LOGGER.warning(f"Flushing {self.name} {self.fuzz}")
 
     # Get Device Status
     def get_device_status(self):

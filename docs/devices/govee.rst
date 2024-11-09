@@ -27,23 +27,21 @@ Known working with **Stretch To Fit** set to off
 * H615C RGB LED Strip Light 50 FT
 * TBD: add more here on discovery...
 
-Matrix Lights
-^^^^^^^^^^^^^
+Matrix Govee - AVOID
+^^^^^^^^^^^^^^^^^^^^
 
 There is currently no good story around Govee matrix lights such as curtains.
 
-The majority of Govee effects appear to be driven local, not via the LAN interface.
+The majority of Govee effects appear to be driven local to the controller, not via the LAN interface.
 
-When looking at the Govee LAN interface towards some products, it can be see that a very low segment count is used and the **Stretch To Fit** option is set to on.
-
-All examples from Chroma so far captured are also **Stetch to Fit** and even lower segment count of 4
+Even Govee Desktop app and Razer Chroma where supported is very limited.
 
 Currently investigated matrix lights include:
 
 +--------+--------------------+------+-------+--------+----------------------------------+
 | Device | Description        | LEDs | Govee | Chroma | Notes                            |
 +========+====================+======+=======+========+==================================+
-| H70B1  | Curtain Lights     | 520  | 6     | 4      | TBD Best experimental values ABC |
+| H70B1  | Curtain Lights     | 520  | 6     | 4      | Max 20 as per vertical drops     |
 +--------+--------------------+------+-------+--------+----------------------------------+
 | H6811  | Net Lights         | 480  | NA    | NA     | Only first 224 pixels @82 seg    |
 +--------+--------------------+------+-------+--------+----------------------------------+
@@ -53,19 +51,22 @@ Currently investigated matrix lights include:
 H70B1 Curtain Lights 520
 ------------------------
 
-TBD
+DO NOT PURCHASE FOR LEDFX - No Matrix support
+
+Reasonable 1d effects, one segment per vertical drop for a total of 20
+
+Ceases to work about 20
 
 H6811 Net Lights 480
 --------------------
 
-NOT RECOMMENDED FOR USE WITH LEDFX
+STRONGLY NOT RECOMMENDED FOR USE WITH LEDFX - Considered incompatible
 
 No apparent effect from the strech bit, all colors sent are stretched across the first 224 pixels using a correct header. No apparent way to use the last 256 pixels.
 
 82 is the max pixel value to use before pixel stretching to 224 breaks down.
 
 Not supported by Govee app or Razer Chroma for any LAN relevant effects.
-
 
 --------------------------
 Govee Device Configuration
