@@ -18,6 +18,7 @@ _LOGGER = logging.getLogger(__name__)
 # no current known documentation on the protocol
 # use with caution.
 
+
 class Govee(NetworkedDevice):
     """
     Support for Govee devices with local API control
@@ -106,7 +107,7 @@ class Govee(NetworkedDevice):
 
     def create_razer_packet(self, colors):
         header = np.array(self.pre_active + [len(colors) // 3], dtype=np.uint8)
-        
+
         full_packet = np.concatenate((header, colors))
         full_packet = np.append(
             full_packet, self.calculate_xor_checksum_fast(full_packet)
