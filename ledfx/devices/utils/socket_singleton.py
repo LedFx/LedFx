@@ -54,7 +54,7 @@ class SocketSingleton:
             # nosem: py/bind-socket-all-network-interfaces
             self.udp_server.bind(("", self.recv_port))
 
-    def close_socket(self):
+    def close(self):
         """Decrements the reference count and closes the socket if no more references exist."""
         with SocketSingleton._lock:
             if self.recv_port in SocketSingleton._instances:
@@ -67,10 +67,10 @@ class SocketSingleton:
                     self.udp_server.close()
                     del SocketSingleton._instances[self.recv_port]
 
-    def send_data(self, data, address):
+    def sendto(self, data, address):
         self.udp_server.sendto(data, address)
 
-    def receive_data(self, buffer_size=1024):
+    def recvfrom(self, buffer_size=1024):
         return self.udp_server.recvfrom(buffer_size)
 
     def settimeout(self, timeout):

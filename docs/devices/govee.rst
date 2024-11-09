@@ -9,7 +9,16 @@ At the time of writing compatible Govee products were listed at this link under 
 
 It is not known exhaustively, which of these are truly functional against ledfx current integration.
 
-Known working examples include:
+**Be aware:** An active session from LedFx towards a Govee device may prevent the Govee Desktop app from opening correctly, it may appear within Task manager but no substantiate its UI window. Stop LedFx, close Govee Desktop from within Task Manager, and relaunch Govee Desktop.
+
+----------------------
+Known working examples
+----------------------
+
+Standard Lights
+^^^^^^^^^^^^^^^
+
+Known working with **Stretch To Fit** set to off
 
 * H6061 Glide Hexa Light Panels
 * H6167 Govee TV Backlight For 40-50 inch TVs
@@ -18,6 +27,48 @@ Known working examples include:
 * H615C RGB LED Strip Light 50 FT
 * TBD: add more here on discovery...
 
+Matrix Govee - AVOID
+^^^^^^^^^^^^^^^^^^^^
+
+There is currently no good story around Govee matrix lights such as curtains.
+
+The majority of Govee effects appear to be driven local to the controller, not via the LAN interface.
+
+Even Govee Desktop app and Razer Chroma where supported is very limited.
+
+Currently investigated matrix lights include:
+
++--------+--------------------+------+-------+--------+----------------------------------+
+| Device | Description        | LEDs | Govee | Chroma | Notes                            |
++========+====================+======+=======+========+==================================+
+| H70B1  | Curtain Lights     | 520  | 6     | 4      | Max 20 as per vertical drops     |
++--------+--------------------+------+-------+--------+----------------------------------+
+| H6811  | Net Lights         | 480  | NA    | NA     | Only first 224 pixels @82 seg    |
++--------+--------------------+------+-------+--------+----------------------------------+
+| TBD    | Add more here...   | TBD  | TBD   | TBD    | TBD                              |
++--------+--------------------+------+-------+--------+----------------------------------+
+
+H70B1 Curtain Lights 520
+------------------------
+
+DO NOT PURCHASE FOR LEDFX - No Matrix support
+
+Reasonable 1d effects, one segment per vertical drop for a total of 20
+
+Ceases to work about 20
+
+H6811 Net Lights 480
+--------------------
+
+STRONGLY NOT RECOMMENDED FOR USE WITH LEDFX - Considered incompatible
+
+No apparent effect from the strech bit, all colors sent are stretched across the first 224 pixels using a correct header. No apparent way to use the last 256 pixels.
+
+82 is the max pixel value to use before pixel stretching to 224 breaks down.
+
+Not supported by Govee app or Razer Chroma for any LAN relevant effects.
+
+--------------------------
 Govee Device Configuration
 --------------------------
 
@@ -54,6 +105,7 @@ You also need the device segment count from the Light Panel Layout page, which i
    :alt: Adding a device
 
 
+--------------------------
 Ledfx Device Configuration
 --------------------------
 
@@ -81,7 +133,7 @@ Hit add and, your Govee device should now be available in the devices view.
 Connection refresh
 ------------------
 
-If a Govee device does not respond to a device status enquirey at ledfx startup, it will be marked offline.
+If Ignore Status is set to the default Off, If Govee device does not respond to a device status enquirey at ledfx startup, it will be marked offline.
 
 If the device is powered on, or otherwise made available after startup, pressing the refresh button on the device will attempt to reconnect to the Govee device.
 
@@ -89,6 +141,4 @@ If the device is powered on, or otherwise made available after startup, pressing
 .. image:: /_static/devices/govee/refresh.png
    :alt: Refesh connection
 
-
-
-
+If you have firewall issues blocking Port 4002 the status check can be disabled by setting Ignore Status to On. Ledfx will assume that the devices is available.
