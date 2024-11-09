@@ -169,7 +169,6 @@ class Govee(NetworkedDevice):
         self.send_activate()
         super().activate()
 
-
     @staticmethod
     def calculate_xor_checksum_fast(packet):
         return np.bitwise_xor.reduce(packet)
