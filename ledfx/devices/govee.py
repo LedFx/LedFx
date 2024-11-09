@@ -83,7 +83,11 @@ class Govee(NetworkedDevice):
 
     def send_udp(self, message, port=4003):
         data = json.dumps(message).encode("utf-8")
-        self.udp_server.sendto(data, (self._config["ip_address"], port))
+        try:
+            self.udp_server.sendto(data, (self._config["ip_address"], port))
+        except Exception as e:
+            # we don't need this noise in sentry, and don't flood a standard log
+            _LOGGER.info(f"govee:send_udp:Error sending UDP message {e}")
 
     # Set Light Brightness
     def set_brightness(self, value):
@@ -121,6 +125,7 @@ class Govee(NetworkedDevice):
         super().deactivate()
 
     def activate(self):
+        super().activate()
         _LOGGER.info(f"Govee {self.name} Activating UDP stream mode...")
 
         try:
@@ -162,8 +167,6 @@ class Govee(NetworkedDevice):
         self.set_brightness(100)
         time.sleep(delay)
         self.send_activate()
-
-        super().activate()
 
     @staticmethod
     def calculate_xor_checksum_fast(packet):
