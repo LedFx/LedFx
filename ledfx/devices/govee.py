@@ -74,7 +74,7 @@ class Govee(NetworkedDevice):
         self.pre_active = self.pre_dreams
         # 0 0xbb - unknown - rotating just breaks
         # 1 0x00 - unknown - No impact rotating from 0 to 255
-        # 2 0xFA - unknown - related to segment count in some manner, use pre_dreams format 
+        # 2 0xFA - unknown - related to segment count in some manner, use pre_dreams format
         # 3 0xb0 - unknown
         # 4 0x01 - 0 = segments, 1 = stretch on some devices only
         # 5 0x04 - color triples to follow
