@@ -370,7 +370,6 @@ class Virtual:
             self.fallback_suppress_transition = False
             _LOGGER.info(f"set_fallback: suppress = False")
 
-
     def fallback_clear(self):
         self.fallback_effect_type = None
         if self.fallback_timer is not None:
@@ -378,7 +377,7 @@ class Virtual:
             self.fallback_timer = None
         self.fallback_suppress_transition = False
         _LOGGER.info(f"fallback_clear: suppress = False")
-    
+
     def fallback_start(self, fallback: float):
         self.fallback_suppress_transition = True
         _LOGGER.info(f"fallback_start: suppress = True")
@@ -386,7 +385,7 @@ class Virtual:
         if self.fallback_timer is not None:
             self.fallback_timer.cancel()
         _LOGGER.info(f"Setting fallback timer for {fallback} seconds")
-        self.fallback_timer = threading.Timer(fallback, self.fallback_fire_set)  
+        self.fallback_timer = threading.Timer(fallback, self.fallback_fire_set)
         self.fallback_timer.start()
 
     def fallback_fire_set(self):

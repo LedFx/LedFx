@@ -11,7 +11,7 @@ from ledfx.virtuals import update_effect_config
 
 _LOGGER = logging.getLogger(__name__)
 
-# set up a long default time for fallback, this is to prevent 
+# set up a long default time for fallback, this is to prevent
 # getting stuck in a temporary effect if the caller forgets to
 # set a time and the effect has not self triggered exit
 fallback_default_time = 300.0
@@ -123,8 +123,7 @@ class EffectsEndpoint(RestEndpoint):
         elif isinstance(fallback, (int, float)) and fallback > 0:
             pass
         else:
-            fallback = None 
-            
+            fallback = None
 
         # See if virtual's active effect type matches this effect type,
         # if so update the effect config
@@ -279,7 +278,7 @@ class EffectsEndpoint(RestEndpoint):
         elif isinstance(fallback, (int, float)) and fallback > 0:
             pass
         else:
-            fallback = None 
+            fallback = None
 
         try:
             virtual.set_effect(effect, fallback=fallback)
