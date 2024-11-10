@@ -368,7 +368,7 @@ class Virtual:
             # make sure fallback is disabled
             self.fallback_effect_type = None
             self.fallback_suppress_transition = False
-            _LOGGER.info(f"set_fallback: suppress = False")
+            _LOGGER.info(f"{self.name} set_fallback: suppress = False")
 
     def fallback_clear(self):
         self.fallback_effect_type = None
@@ -376,11 +376,11 @@ class Virtual:
             self.fallback_timer.cancel()
             self.fallback_timer = None
         self.fallback_suppress_transition = False
-        _LOGGER.info(f"fallback_clear: suppress = False")
+        _LOGGER.info(f"{self.name} fallback_clear: suppress = False")
 
     def fallback_start(self, fallback: float):
         self.fallback_suppress_transition = True
-        _LOGGER.info(f"fallback_start: suppress = True")
+        _LOGGER.info(f"{self.name} fallback_start: suppress = True")
 
         if self.fallback_timer is not None:
             self.fallback_timer.cancel()

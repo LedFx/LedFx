@@ -115,9 +115,9 @@ class EffectsEndpoint(RestEndpoint):
 
         fallback = data.get("fallback", None)
         if isinstance(fallback, bool):
-            if fallback == False:
+            if fallback is False:
                 fallback = None
-            elif fallback == True:
+            elif fallback is True:
                 # lets default to a time value so we never get stuck in a temproary effect
                 fallback = fallback_default_time
         elif isinstance(fallback, (int, float)) and fallback > 0:
@@ -270,9 +270,9 @@ class EffectsEndpoint(RestEndpoint):
 
         fallback = data.get("fallback", None)
         if isinstance(fallback, bool):
-            if fallback == False:
+            if fallback is False:
                 fallback = None
-            elif fallback == True:
+            elif fallback is True:
                 # lets default to a time value so we never get stuck in a temproary effect
                 fallback = fallback_default_time
         elif isinstance(fallback, (int, float)) and fallback > 0:
