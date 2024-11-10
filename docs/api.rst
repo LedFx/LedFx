@@ -667,7 +667,7 @@ Optional param "type" (Optional[str]) can be added to DELETE to clear the stored
         "type": "energy2"
     }
 
-If there is a type parma provided the stored configuration for that effect will be cleared.
+If there is a type param provided the stored configuration for that effect will be cleared if present.
 
 If that effect type is the active effect, the active effect will be cleared.
 
