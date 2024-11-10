@@ -37,6 +37,10 @@ class EffectsEndpoint(RestEndpoint):
         except JSONDecodeError as e:
             return await self.json_decode_error()
         effect_type = data.get("type", None)
+        if effect_type is None:
+            return await self.invalid_request(
+                "Required attribute 'type' was not provided"
+            )
 
         _LOGGER.info(f"Deleting effect {effect_type} for virtual {virtual_id}")
 

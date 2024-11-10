@@ -191,7 +191,7 @@ class EffectsEndpoint(RestEndpoint):
         effect_type = data.get("type")
         if effect_type is None:
             return await self.invalid_request(
-                'Required attribute "type" was not provided'
+                "Required attribute 'type' was not provided"
             )
 
         effect_config = data.get("config")
