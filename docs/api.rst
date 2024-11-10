@@ -657,9 +657,14 @@ Set the virtual to a new effect based on the provided JSON configuration
 
 .. rubric:: DELETE
 
-If there is no type param provided, the active effect will be cleared.
+Clear the active effect of a virtual
 
-Optional param "type" (Optional[str]) can be added to DELETE to clear the stored configuration for a specific effect.
+/api/virtuals/{virtual_id}/effects/delete
+=========================================
+
+.. rubric:: POST
+
+Endpoint to remove a specific effect type from the virtual stored configurations
 
 .. code-block:: json
 
@@ -667,9 +672,11 @@ Optional param "type" (Optional[str]) can be added to DELETE to clear the stored
         "type": "energy2"
     }
 
-If there is a type param provided the stored configuration for that effect will be cleared if present.
+The effect contained in the param provided will be removed from the configuration for the virtual.
 
-If that effect type is the active effect, the active effect will be cleared.
+If that effect type is the active effect on the virtual, the active effect will also be cleared.
+
+If the provide effect type is not present, no change will occur, and a success message will be returned.
 
 /api/virtuals/<virtual_id>/presets
 ====================================

@@ -285,7 +285,6 @@ class EffectsEndpoint(RestEndpoint):
 
         Args:
             virtual_id (str): The ID of the virtual effect to delete.
-            request (web.Request): The request object containing the effect `type` (optional).
 
         Returns:
             web.Response: The response indicating the success or failure of the deletion.
