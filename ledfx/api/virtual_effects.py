@@ -327,7 +327,10 @@ class EffectsEndpoint(RestEndpoint):
                 ),
                 None,
             )
-            if virtual.active_effect and virtual.active_effect.type == effect_type:
+            if (
+                virtual.active_effect
+                and virtual.active_effect.type == effect_type
+            ):
                 virtual.clear_effect()
                 virtual_cfg.pop("effect", None)
             if virtual_cfg and "effects" in virtual_cfg:
