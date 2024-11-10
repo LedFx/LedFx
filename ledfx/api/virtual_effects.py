@@ -304,7 +304,9 @@ class EffectsEndpoint(RestEndpoint):
                 return await self.json_decode_error()
             effect_type = data.get("type", None)
 
-        _LOGGER.warning(f"Deleting effect {effect_type} for virtual {virtual_id}")
+        _LOGGER.warning(
+            f"Deleting effect {effect_type} for virtual {virtual_id}"
+        )
 
         if effect_type is None:
             # top level active effect clear
@@ -317,7 +319,14 @@ class EffectsEndpoint(RestEndpoint):
                         break
         else:
             # clearing specific effect from history
-            virtual_cfg = next((v for v in self._ledfx.config["virtuals"] if v["id"] == virtual_id), None)
+            virtual_cfg = next(
+                (
+                    v
+                    for v in self._ledfx.config["virtuals"]
+                    if v["id"] == virtual_id
+                ),
+                None,
+            )
             if virtual_cfg.active_effect.type == effect_type:
                 virtual.clear_effect()
                 virtual_cfg.pop("effect", None)
