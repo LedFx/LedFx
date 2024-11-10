@@ -279,12 +279,13 @@ class EffectsEndpoint(RestEndpoint):
         response = {"status": "success", "effect": effect_response}
         return await self.bare_request_success(response)
 
-    async def delete(self, virtual_id) -> web.Response:
+    async def delete(self, virtual_id, request) -> web.Response:
         """
         Deletes a virtual effect with the given ID.
 
         Args:
             virtual_id (str): The ID of the virtual effect to delete.
+            request (web.Request): The request object containing the effect `type` (optional).
 
         Returns:
             web.Response: The response indicating the success or failure of the deletion.
@@ -295,14 +296,32 @@ class EffectsEndpoint(RestEndpoint):
                 f"Virtual with ID {virtual_id} not found"
             )
 
-        # Clear the effect
-        virtual.clear_effect()
+        try:
+            data = await request.json()
+        except JSONDecodeError:
+            return await self.json_decode_error()
+        effect_type = data.get("type", None)
 
-        for virtual in self._ledfx.config["virtuals"]:
-            if virtual["id"] == virtual_id:
-                if "effect" in virtual:
-                    del virtual["effect"]
-                    break
+        _LOGGER.warning(f"Deleting effect {effect_type} for virtual {virtual_id}")
+
+        if effect_type is None:
+            # top level active effect clear
+            virtual.clear_effect()
+
+            for virtual_cfg in self._ledfx.config["virtuals"]:
+                if virtual_cfg["id"] == virtual_id:
+                    if "effect" in virtual_cfg:
+                        del virtual_cfg["effect"]
+                        break
+        else:
+            # clearing specific effect from history
+            virtual_cfg = next((v for v in self._ledfx.config["virtuals"] if v["id"] == virtual_id), None)
+            if virtual_cfg.active_effect.type == effect_type:
+                virtual.clear_effect()
+                virtual_cfg.pop("effect", None)
+            if virtual_cfg and "effects" in virtual_cfg:
+                virtual_cfg["effects"].pop(effect_type, None)
+
         save_config(
             config=self._ledfx.config,
             config_dir=self._ledfx.config_dir,
