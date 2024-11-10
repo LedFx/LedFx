@@ -657,7 +657,19 @@ Set the virtual to a new effect based on the provided JSON configuration
 
 .. rubric:: DELETE
 
-Clear the active effect of a virtual
+If there is no type param provided, the active effect will be cleared.
+
+Optional param "type" (Optional[str]) can be added to DELETE to clear the stored configuration for a specific effect.
+
+.. code-block:: json
+
+    {
+        "type": "energy2"
+    }
+
+If there is a type parma provided the stored configuration for that effect will be cleared.
+
+If that effect type is the active effect, the active effect will be cleared.
 
 /api/virtuals/<virtual_id>/presets
 ====================================
