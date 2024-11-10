@@ -38,9 +38,7 @@ class EffectsEndpoint(RestEndpoint):
             return await self.json_decode_error()
         effect_type = data.get("type", None)
 
-        _LOGGER.info(
-            f"Deleting effect {effect_type} for virtual {virtual_id}"
-        )
+        _LOGGER.info(f"Deleting effect {effect_type} for virtual {virtual_id}")
 
         # clearing specific effect from history
         virtual_cfg = next(
@@ -51,10 +49,7 @@ class EffectsEndpoint(RestEndpoint):
             ),
             None,
         )
-        if (
-            virtual.active_effect
-            and virtual.active_effect.type == effect_type
-        ):
+        if virtual.active_effect and virtual.active_effect.type == effect_type:
             virtual.clear_effect()
             virtual_cfg.pop("effect", None)
         if virtual_cfg and "effects" in virtual_cfg:
