@@ -5,6 +5,7 @@ import threading
 import time
 import timeit
 from functools import cached_property
+from typing import Optional
 
 import numpy as np
 import voluptuous as vol
@@ -163,6 +164,8 @@ class Virtual:
         self.fallback_effect_type = None
         self.fallback_fire = False
         self.fallback_config = None
+        self.fallback_timer = None
+        self.fallback_suppress_transition = False
 
         self.frequency_range = FrequencyRange(
             self._config["frequency_min"], self._config["frequency_max"]
@@ -355,7 +358,7 @@ class Virtual:
                 type=self.fallback_effect_type,
                 config=self.fallback_config,
             )
-            self.set_effect(effect, fallback=False)
+            self.set_effect(effect, fallback=None)
             update_effect_config(self._ledfx.config, self.id, effect)
             save_config(
                 config=self._ledfx.config,
@@ -364,13 +367,40 @@ class Virtual:
 
             # make sure fallback is disabled
             self.fallback_effect_type = None
+            self.fallback_suppress_transition = False
+            _LOGGER.info(f"set_fallback: suppress = False")
 
-    def set_effect(self, effect, fallback=False):
+
+    def fallback_clear(self):
+        self.fallback_effect_type = None
+        if self.fallback_timer is not None:
+            self.fallback_timer.cancel()
+            self.fallback_timer = None
+        self.fallback_suppress_transition = False
+        _LOGGER.info(f"fallback_clear: suppress = False")
+    
+    def fallback_start(self, fallback: float):
+        self.fallback_suppress_transition = True
+        _LOGGER.info(f"fallback_start: suppress = True")
+
+        if self.fallback_timer is not None:
+            self.fallback_timer.cancel()
+        _LOGGER.info(f"Setting fallback timer for {fallback} seconds")
+        self.fallback_timer = threading.Timer(fallback, self.fallback_fire_set)  
+        self.fallback_timer.start()
+
+    def fallback_fire_set(self):
+        _LOGGER.info("Fallback timer expired")
+        self.fallback_fire = True
+        self.fallback_timer = None
+
+    def set_effect(self, effect, fallback: Optional[float] = None):
         """
         Sets the active effect for the virtual device.
 
         Args:
             effect: The effect to set as the active effect.
+            fallback: If True, the current active effect is set as the fallback effect
 
         Raises:
             ValueError: If no configured device segments are available.
@@ -383,12 +413,13 @@ class Virtual:
                 _LOGGER.warning(error)
                 raise ValueError(error)
 
-            if fallback:
+            if fallback is not None:
                 _LOGGER.info("Fallback requested")
                 if self._active_effect is not None:
                     if self.fallback_effect_type is None:
                         self.fallback_effect_type = self._active_effect.type
                         self.fallback_config = self._active_effect.config
+                        self.fallback_start(fallback)
                         _LOGGER.info(
                             f"Setting fallback to {self.fallback_effect_type}"
                         )
@@ -397,16 +428,15 @@ class Virtual:
                         _LOGGER.info(
                             f"There is already a fallback registered {self.fallback_effect_type}"
                         )
+                        self.fallback_start(fallback)
                 else:
                     _LOGGER.info("No current _active_effect to fallback to")
                     self.fallback_effect_type = None
-            else:
-                # any effect being set without fallback will clear the fallback
-                self.fallback_effect_type = None
 
             if (
                 self._config["transition_mode"] != "None"
                 and self._config["transition_time"] > 0
+                and not self.fallback_suppress_transition
             ):
                 self.transition_frame_total = (
                     self.refresh_rate * self._config["transition_time"]
@@ -424,6 +454,11 @@ class Virtual:
                 # no transition effect to clean up, so clear the active effect now!
                 self.clear_active_effect()
                 self.clear_transition_effect()
+
+            if fallback is None:
+                # any effect being set without fallback will clear the fallback
+                # remove suppression of transitions
+                self.fallback_clear()
 
             self.flush_pending_clear_frame()
 
