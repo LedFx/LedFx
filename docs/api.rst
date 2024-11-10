@@ -659,6 +659,25 @@ Set the virtual to a new effect based on the provided JSON configuration
 
 Clear the active effect of a virtual
 
+/api/virtuals/{virtual_id}/effects/delete
+=========================================
+
+.. rubric:: POST
+
+Endpoint to remove a specific effect type from the virtual stored configurations
+
+.. code-block:: json
+
+    {
+        "type": "energy2"
+    }
+
+The effect contained in the param provided will be removed from the configuration for the virtual.
+
+If that effect type is the active effect on the virtual, the active effect will also be cleared.
+
+If the provide effect type is not present, no change will occur, and a success message will be returned.
+
 /api/virtuals/<virtual_id>/presets
 ====================================
 

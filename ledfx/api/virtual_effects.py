@@ -191,7 +191,7 @@ class EffectsEndpoint(RestEndpoint):
         effect_type = data.get("type")
         if effect_type is None:
             return await self.invalid_request(
-                'Required attribute "type" was not provided'
+                "Required attribute 'type' was not provided"
             )
 
         effect_config = data.get("config")
@@ -295,14 +295,14 @@ class EffectsEndpoint(RestEndpoint):
                 f"Virtual with ID {virtual_id} not found"
             )
 
-        # Clear the effect
         virtual.clear_effect()
 
-        for virtual in self._ledfx.config["virtuals"]:
-            if virtual["id"] == virtual_id:
-                if "effect" in virtual:
-                    del virtual["effect"]
+        for virtual_cfg in self._ledfx.config["virtuals"]:
+            if virtual_cfg["id"] == virtual_id:
+                if "effect" in virtual_cfg:
+                    del virtual_cfg["effect"]
                     break
+
         save_config(
             config=self._ledfx.config,
             config_dir=self._ledfx.config_dir,
