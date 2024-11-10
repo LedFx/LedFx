@@ -384,7 +384,7 @@ class Virtual:
                 raise ValueError(error)
 
             if fallback:
-                _LOGGER.warning("Fallback requested")
+                _LOGGER.info("Fallback requested")
                 if self._active_effect is not None:
                     if self.fallback_effect_type is None:
                         self.fallback_effect_type = self._active_effect.type
