@@ -296,11 +296,13 @@ class EffectsEndpoint(RestEndpoint):
                 f"Virtual with ID {virtual_id} not found"
             )
 
-        try:
-            data = await request.json()
-        except JSONDecodeError:
-            return await self.json_decode_error()
-        effect_type = data.get("type", None)
+        effect_type = None
+        if request.content_length:
+            try:
+                data = await request.json()
+            except JSONDecodeError as e:
+                return await self.json_decode_error()
+            effect_type = data.get("type", None)
 
         _LOGGER.warning(f"Deleting effect {effect_type} for virtual {virtual_id}")
 
