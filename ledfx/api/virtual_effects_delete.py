@@ -1,5 +1,4 @@
 import logging
-import random
 from json import JSONDecodeError
 
 import voluptuous as vol
@@ -55,7 +54,8 @@ class EffectsEndpoint(RestEndpoint):
         )
         if virtual.active_effect and virtual.active_effect.type == effect_type:
             virtual.clear_effect()
-            virtual_cfg.pop("effect", None)
+            if virtual_cfg:
+                virtual_cfg.pop("effect", None)
         if virtual_cfg and "effects" in virtual_cfg:
             virtual_cfg["effects"].pop(effect_type, None)
 
