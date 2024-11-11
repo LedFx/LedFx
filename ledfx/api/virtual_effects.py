@@ -13,13 +13,16 @@ _LOGGER = logging.getLogger(__name__)
 
 
 def process_fallback(fallback):
-    """_summary_
+    """converts the fallback param to a sanitized value
 
     Args:
         fallback (None, Bool, float, int): Fallback behaviour
+            - None: No fallback
+            - Bool: True uses a default fallback time, False no fallback
+            - float/int: fallback time in seconds
 
     Returns:
-        Sanitized falback time or None
+        float:None: Sanitized falback time or None
     """
     if isinstance(fallback, bool):
         if fallback is False:
