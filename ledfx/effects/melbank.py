@@ -550,10 +550,15 @@ class Melbanks:
 
         if self.dev_enabled:
             for i in range(len(self.melbank_processors)):
-                self._ledfx.events.fire_event(
-                    GraphUpdateEvent(
-                        f"melbank_{i}",
-                        self.melbanks_filtered[i],
-                        self.melbank_processors[i].melbank_frequencies,
-                    )
+                self.send_melbank_event(i)
+        else:
+            self.send_melbank_event(len(self.melbank_processors) - 1)
+
+    def send_melbank_event(self, i):
+        self._ledfx.events.fire_event(
+                GraphUpdateEvent(
+                    f"melbank_{i}",
+                    self.melbanks_filtered[i],
+                    self.melbank_processors[i].melbank_frequencies,
                 )
+            )
