@@ -364,13 +364,14 @@ class Virtual:
                 config=self._ledfx.config,
                 config_dir=self._ledfx.config_dir,
             )
-
             # make sure fallback is disabled
             self.fallback_effect_type = None
             self.fallback_suppress_transition = False
             _LOGGER.info(f"{self.name} set_fallback: suppress = False")
 
     def fallback_clear(self):
+        """clear any down all fallback behaviours, normally called after a fallback has completed
+        """
         self.fallback_effect_type = None
         if self.fallback_timer is not None:
             self.fallback_timer.cancel()
@@ -379,6 +380,11 @@ class Virtual:
         _LOGGER.info(f"{self.name} fallback_clear: suppress = False")
 
     def fallback_start(self, fallback: float):
+        """Suppress transitions, clear and start the fallback timer
+
+        Args:
+            fallback (float): Time in seconds to wait before firing the fallback
+        """
         self.fallback_suppress_transition = True
         _LOGGER.info(f"{self.name} fallback_start: suppress = True")
 
@@ -389,9 +395,13 @@ class Virtual:
         self.fallback_timer.start()
 
     def fallback_fire_set(self):
-        _LOGGER.info("Fallback timer expired")
+        """clear fallback timers and trigger the fallback to enact
+        """
+        _LOGGER.info(f"{self.name} fallback_fire_set")
+        if self.fallback_timer is not None:
+            self.fallback_timer.cancel()
+            self.fallback_timer = None
         self.fallback_fire = True
-        self.fallback_timer = None
 
     def set_effect(self, effect, fallback: Optional[float] = None):
         """
