@@ -638,10 +638,6 @@ Deletes a virtual with the matching *virtual_id*
 
 Endpoint linking virtuals to effects with the matching *virtual_id* as JSON
 
-A new optional param has been added to PUT and POST "fallback": (true / false). If true, the current running effect on the virtual will be set as the fallback.
-Fallback is currently only triggered by the completed scoll of texter2d with side scroll.
-This is intended for use cases such as temporarily displaying a track name before returning to the prior effect configuration.
-
 .. rubric:: GET
 
 Returns the active effect config of a virtual
@@ -658,6 +654,23 @@ Set the virtual to a new effect based on the provided JSON configuration
 .. rubric:: DELETE
 
 Clear the active effect of a virtual
+
+Fallback effects
+----------------
+
+/api/virtuals/{virtual_id}/effects has been extended for PUT and POST with an optional fallback parameter
+
+"fallback": (true / false / seconds) 
+
+If true ( 300 seconds ) or a value in float seconds, the current running effect on the virtual will be set as the fallback.
+
+Fallback is auto triggered by the completed scoll of texter2d with side scroll or the timer expiring
+
+This is intended for use cases such as temporarily displaying a track name before returning to the prior effect configuration.
+
+Additionally a running temporary effect can be cancelled by triggering the fallback via a call to /api/virtuals/{virtual_id}/fallback
+
+This can be used for interactive scenarios such as releasing a button that triggered the temporary effect.
 
 /api/virtuals/{virtual_id}/fallback
 ===================================
