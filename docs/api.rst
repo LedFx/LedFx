@@ -660,7 +660,7 @@ Fallback effects
 
 /api/virtuals/{virtual_id}/effects has been extended for PUT and POST with an optional fallback parameter
 
-"fallback": (true / false / seconds) 
+"fallback": (true / false / seconds)
 
 If true ( 300 seconds ) or a value in float seconds, the current running effect on the virtual will be set as the fallback.
 
