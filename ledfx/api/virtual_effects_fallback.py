@@ -8,7 +8,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class EffectsEndpoint(RestEndpoint):
-    ENDPOINT_PATH = "/api/virtuals/{virtual_id}/cancel_fallback"
+    ENDPOINT_PATH = "/api/virtuals/{virtual_id}/fallback"
 
     async def get(self, virtual_id) -> web.Response:
         """

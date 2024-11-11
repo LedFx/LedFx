@@ -659,6 +659,15 @@ Set the virtual to a new effect based on the provided JSON configuration
 
 Clear the active effect of a virtual
 
+/api/virtuals/{virtual_id}/fallback
+===================================
+
+.. rubric:: GET
+
+Cancel the temporary effect on virtual_id and force the fallback to trigger, removes any fallback timers
+
+Use for a button release to clear the fallback effect cycle
+
 /api/virtuals/{virtual_id}/effects/delete
 =========================================
 
