@@ -556,9 +556,9 @@ class Melbanks:
 
     def send_melbank_event(self, i):
         self._ledfx.events.fire_event(
-                GraphUpdateEvent(
-                    f"melbank_{i}",
-                    self.melbanks_filtered[i],
-                    self.melbank_processors[i].melbank_frequencies,
-                )
+            GraphUpdateEvent(
+                f"melbank_{i}",
+                self.melbanks_filtered[i],
+                self.melbank_processors[i].melbank_frequencies,
             )
+        )
