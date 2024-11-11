@@ -370,8 +370,7 @@ class Virtual:
             _LOGGER.info(f"{self.name} set_fallback: suppress = False")
 
     def fallback_clear(self):
-        """clear any down all fallback behaviours, normally called after a fallback has completed
-        """
+        """clear any down all fallback behaviours, normally called after a fallback has completed"""
         self.fallback_effect_type = None
         if self.fallback_timer is not None:
             self.fallback_timer.cancel()
@@ -395,8 +394,7 @@ class Virtual:
         self.fallback_timer.start()
 
     def fallback_fire_set(self):
-        """clear fallback timers and trigger the fallback to enact
-        """
+        """clear fallback timers and trigger the fallback to enact"""
         _LOGGER.info(f"{self.name} fallback_fire_set")
         if self.fallback_timer is not None:
             self.fallback_timer.cancel()

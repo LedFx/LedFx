@@ -35,6 +35,7 @@ def process_fallback(fallback):
         fallback = None
     return fallback
 
+
 class EffectsEndpoint(RestEndpoint):
     ENDPOINT_PATH = "/api/virtuals/{virtual_id}/effects"
 
