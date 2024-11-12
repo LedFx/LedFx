@@ -380,6 +380,7 @@ class Virtual:
 
     def fallback_start(self, fallback: float):
         """Suppress transitions, clear and start the fallback timer
+        This funciton should only be called from within the virtual lock
 
         Args:
             fallback (float): Time in seconds to wait before firing the fallback
@@ -394,12 +395,14 @@ class Virtual:
         self.fallback_timer.start()
 
     def fallback_fire_set(self):
-        """clear fallback timers and trigger the fallback to enact"""
-        _LOGGER.info(f"{self.name} fallback_fire_set")
-        if self.fallback_timer is not None:
-            self.fallback_timer.cancel()
-            self.fallback_timer = None
-        self.fallback_fire = True
+        """clear fallback timers and trigger the fallback to enact
+        Called from api context and effects so protect with lock"""
+        with self.lock:
+            _LOGGER.info(f"{self.name} fallback_fire_set")
+            if self.fallback_timer is not None:
+                self.fallback_timer.cancel()
+                self.fallback_timer = None
+            self.fallback_fire = True
 
     def set_effect(self, effect, fallback: Optional[float] = None):
         """
