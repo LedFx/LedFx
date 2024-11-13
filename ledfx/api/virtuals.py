@@ -7,6 +7,7 @@ from ledfx.api import RestEndpoint
 from ledfx.config import save_config
 from ledfx.effects import DummyEffect
 from ledfx.utils import generate_id
+from ledfx.api.virtual import make_virtual_response
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -26,25 +27,7 @@ class VirtualsEndpoint(RestEndpoint):
         response = {"status": "success", "virtuals": {}}
         response["paused"] = self._ledfx.virtuals._paused
         for virtual in self._ledfx.virtuals.values():
-            response["virtuals"][virtual.id] = {
-                "config": virtual.config,
-                "id": virtual.id,
-                "is_device": virtual.is_device,
-                "auto_generated": virtual.auto_generated,
-                "segments": virtual.segments,
-                "pixel_count": virtual.pixel_count,
-                "active": virtual.active,
-                "effect": {},
-            }
-            # Protect from DummyEffect
-            if virtual.active_effect and not isinstance(
-                virtual.active_effect, DummyEffect
-            ):
-                effect_response = {}
-                effect_response["config"] = virtual.active_effect.config
-                effect_response["name"] = virtual.active_effect.name
-                effect_response["type"] = virtual.active_effect.type
-                response["virtuals"][virtual.id]["effect"] = effect_response
+            response["virtuals"][virtual.id] = make_virtual_response(virtual)
 
         return web.json_response(data=response, status=200)
 

@@ -166,6 +166,7 @@ class Virtual:
         self.fallback_config = None
         self.fallback_timer = None
         self.fallback_suppress_transition = False
+        self._streaming = False
 
         self.frequency_range = FrequencyRange(
             self._config["frequency_min"], self._config["frequency_max"]
@@ -824,6 +825,7 @@ class Virtual:
         self._ledfx.events.fire_event(VirtualPauseEvent(self.id))
         # self._task = self._ledfx.loop.create_task(self.thread_function())
         # self._task.add_done_callback(lambda task: task.result())
+        self._ledfx.virtuals.check_and_deactivate_devices()
 
     def deactivate(self):
         self._active = False
@@ -964,6 +966,10 @@ class Virtual:
     def active(self):
         return self._active
 
+    @property
+    def streaming(self):
+        return self._streaming
+    
     @active.setter
     def active(self, active):
         active = bool(active)
@@ -1353,6 +1359,8 @@ class Virtuals:
         is using them, which is especially relevant during virtual or segment deactivation
         or reconfiguration.
 
+        It also walks through all virtuals, if they are in the active devices list, but not active, they will be marked as streaming
+
         Note: This is a relatively expensive operation but only runs when a virtual
         is deactivated or segments are modified.
         """
@@ -1362,13 +1370,28 @@ class Virtuals:
             if virtual.active:
                 for device_id, _, _, _ in virtual.segments:
                     active_devices.add(device_id)
+        
         for device in self._ledfx.devices.values():
             if device.id not in active_devices and device.is_active():
                 _LOGGER.info(
                     f"Deactivating device {device.id} as it is not in use by any active virtuals"
                 )
                 device.deactivate()
+        
+        # go through each device in the registry and work out its streaming state
+        # if it has segments, but its paired virtual is not active, then it should it must be streaming
+        _LOGGER.warning("-------------------------------------------------------------------------------")
+        _LOGGER.warning("Virtual                       is_device                    Active    Streaming ")
+        _LOGGER.warning("-------------------------------------------------------------------------------")
 
+        for virtual_id in self._ledfx.virtuals:
+            virtual = self._ledfx.virtuals.get(virtual_id)
+            
+            virtual._streaming = (virtual_id in active_devices and not virtual.active)
+            
+            _LOGGER.warning(f"{virtual_id:<29} {str(virtual.is_device):<29}{str(virtual.active):<10}{str(virtual.streaming):<10}")
+        _LOGGER.warning(f"Active Devices: {active_devices}")
+           
 
 def update_effect_config(config, virtual_id, effect):
     """
