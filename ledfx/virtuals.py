@@ -969,7 +969,7 @@ class Virtual:
     @property
     def streaming(self):
         return self._streaming
-    
+
     @active.setter
     def active(self, active):
         active = bool(active)
@@ -1370,28 +1370,38 @@ class Virtuals:
             if virtual.active:
                 for device_id, _, _, _ in virtual.segments:
                     active_devices.add(device_id)
-        
+
         for device in self._ledfx.devices.values():
             if device.id not in active_devices and device.is_active():
                 _LOGGER.info(
                     f"Deactivating device {device.id} as it is not in use by any active virtuals"
                 )
                 device.deactivate()
-        
+
         # go through each device in the registry and work out its streaming state
         # if it has segments, but its paired virtual is not active, then it should it must be streaming
-        _LOGGER.warning("-------------------------------------------------------------------------------")
-        _LOGGER.warning("Virtual                       is_device                    Active    Streaming ")
-        _LOGGER.warning("-------------------------------------------------------------------------------")
+        _LOGGER.warning(
+            "-------------------------------------------------------------------------------"
+        )
+        _LOGGER.warning(
+            "Virtual                       is_device                    Active    Streaming "
+        )
+        _LOGGER.warning(
+            "-------------------------------------------------------------------------------"
+        )
 
         for virtual_id in self._ledfx.virtuals:
             virtual = self._ledfx.virtuals.get(virtual_id)
-            
-            virtual._streaming = (virtual_id in active_devices and not virtual.active)
-            
-            _LOGGER.warning(f"{virtual_id:<29} {str(virtual.is_device):<29}{str(virtual.active):<10}{str(virtual.streaming):<10}")
+
+            virtual._streaming = (
+                virtual_id in active_devices and not virtual.active
+            )
+
+            _LOGGER.warning(
+                f"{virtual_id:<29} {str(virtual.is_device):<29}{str(virtual.active):<10}{str(virtual.streaming):<10}"
+            )
         _LOGGER.warning(f"Active Devices: {active_devices}")
-           
+
 
 def update_effect_config(config, virtual_id, effect):
     """

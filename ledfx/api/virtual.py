@@ -10,6 +10,7 @@ from ledfx.effects import DummyEffect
 
 _LOGGER = logging.getLogger(__name__)
 
+
 def make_virtual_response(virtual):
     virtual_response = {
         "config": virtual.config,
@@ -51,7 +52,7 @@ class VirtualEndpoint(RestEndpoint):
 
         response = {"status": "success"}
         response[virtual.id] = make_virtual_response(virtual)
-        
+
         return await self.bare_request_success(response)
 
     async def put(self, virtual_id, request) -> web.Response:
