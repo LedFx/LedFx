@@ -6,7 +6,6 @@ from aiohttp import web
 from ledfx.api import RestEndpoint
 from ledfx.api.virtual import make_virtual_response
 from ledfx.config import save_config
-from ledfx.effects import DummyEffect
 from ledfx.utils import generate_id
 
 _LOGGER = logging.getLogger(__name__)
