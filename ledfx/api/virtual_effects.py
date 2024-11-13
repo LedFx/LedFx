@@ -296,9 +296,6 @@ class EffectsEndpoint(RestEndpoint):
                 error_message, "error", resp_code=409
             )
 
-        # See if virtual's active effect type matches this effect type,
-        # if so update the effect config
-        # otherwise, create a new effect and add it to the virtual
         try:
             virtual.set_effect(effect, fallback=fallback)
         except (ValueError, RuntimeError) as msg:
