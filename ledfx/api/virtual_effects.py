@@ -137,8 +137,8 @@ class EffectsEndpoint(RestEndpoint):
 
         fallback = process_fallback(data.get("fallback", None))
 
-        if fallback is not None and not virtual.active:
-            error_message = f"Unable to set effect: Virtual {virtual_id} is off or being streamed to"
+        if fallback is not None and virtual.streaming:
+            error_message = f"Unable to set effect: Virtual {virtual_id} being streamed to"
             _LOGGER.warning(error_message)
             return await self.invalid_request(
                 error_message, "error", resp_code=409
@@ -289,8 +289,8 @@ class EffectsEndpoint(RestEndpoint):
 
         fallback = process_fallback(data.get("fallback", None))
 
-        if fallback is not None and not virtual.active:
-            error_message = f"Unable to set effect: Virtual {virtual_id} is off or being streamed to"
+        if fallback is not None and virtual.streaming:
+            error_message = f"Unable to set effect: Virtual {virtual_id} is being streamed to"
             _LOGGER.warning(error_message)
             return await self.invalid_request(
                 error_message, "error", resp_code=409
