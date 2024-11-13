@@ -410,7 +410,9 @@ class Virtual:
 
         Args:
             effect: The effect to set as the active effect.
-            fallback: If True, the current active effect is set as the fallback effect
+            fallback: If not None, the current active effect is set as the fallback effect 
+                      and a fallback timer triggered for fallback seconds
+                      If None, the new effect is set and any existing fallback timer is cleared
 
         Raises:
             ValueError: If no configured device segments are available.
