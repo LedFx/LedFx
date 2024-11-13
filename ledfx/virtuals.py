@@ -29,7 +29,6 @@ from ledfx.events import (
     VirtualPauseEvent,
     VirtualUpdateEvent,
 )
-
 from ledfx.transitions import Transitions
 from ledfx.utils import fps_to_sleep_interval
 
@@ -539,8 +538,14 @@ class Virtual:
 
             self.flush_pending_clear_frame()
 
-            delay = 0 if self.fallback_suppress_transition else self._config["transition_time"]
-            self.clear_handle = self._ledfx.loop.call_later(delay, self.clear_frame)
+            delay = (
+                0
+                if self.fallback_suppress_transition
+                else self._config["transition_time"]
+            )
+            self.clear_handle = self._ledfx.loop.call_later(
+                delay, self.clear_frame
+            )
 
     def flush_pending_clear_frame(self):
         if self.clear_handle is not None:
