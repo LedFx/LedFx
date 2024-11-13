@@ -12,6 +12,33 @@ from ledfx.virtuals import update_effect_config
 _LOGGER = logging.getLogger(__name__)
 
 
+def process_fallback(fallback):
+    """converts the fallback param to a sanitized value
+
+    Args:
+        fallback (None, Bool, float, int): Fallback behaviour
+            - None: No fallback
+            - Bool: True uses a default fallback time, False no fallback
+            - float/int: fallback time in seconds
+
+    Returns:
+        float:None: Sanitized falback time or None
+    """
+    if isinstance(fallback, bool):
+        if fallback is False:
+            fallback = None
+        elif fallback is True:
+            # set up a long default time for fallback, this is to prevent
+            # getting stuck in a temporary effect if the caller forgets to
+            # set a time and the effect has not self triggered exit
+            fallback = 300.0
+    elif isinstance(fallback, (int, float)) and fallback > 0:
+        pass
+    else:
+        fallback = None
+    return fallback
+
+
 class EffectsEndpoint(RestEndpoint):
     ENDPOINT_PATH = "/api/virtuals/{virtual_id}/effects"
 
@@ -108,7 +135,14 @@ class EffectsEndpoint(RestEndpoint):
                         val = random.randint(lower, upper)
                 effect_config[setting.schema] = val
 
-        fallback = data.get("fallback", False)
+        fallback = process_fallback(data.get("fallback", None))
+
+        if fallback is not None and not virtual.active:
+            error_message = f"Unable to set effect: Virtual {virtual_id} is off or being streamed to"
+            _LOGGER.warning(error_message)
+            return await self.invalid_request(
+                error_message, "error", resp_code=409
+            )
 
         # See if virtual's active effect type matches this effect type,
         # if so update the effect config
@@ -253,7 +287,14 @@ class EffectsEndpoint(RestEndpoint):
             ledfx=self._ledfx, type=effect_type, config=effect_config
         )
 
-        fallback = data.get("fallback", False)
+        fallback = process_fallback(data.get("fallback", None))
+
+        if fallback is not None and not virtual.active:
+            error_message = f"Unable to set effect: Virtual {virtual_id} is off or being streamed to"
+            _LOGGER.warning(error_message)
+            return await self.invalid_request(
+                error_message, "error", resp_code=409
+            )
 
         try:
             virtual.set_effect(effect, fallback=fallback)
