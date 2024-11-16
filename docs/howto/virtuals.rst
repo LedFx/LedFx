@@ -7,7 +7,7 @@ This page is intended to give guidance on how to use virtuals.
 TLDR;
 -----
 
-Scan Virtual
+Span Virtual
 ^^^^^^^^^^^^
 
 One effect on the virtual spread across multiple segments on multiple devices, note in this example there are significant difference in pixel counts between devices. Effects are copied ratio'd to the segments pixel counts.
