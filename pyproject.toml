@@ -52,7 +52,7 @@ pillow = ">=10.1.0"
 flux-led = ">=1.0.4"
 python-osc = ">=1.8.3"
 pybase64 = "~=1.4.0"
-mss = "~=9.0.1"
+mss = "~=10.0.0"
 setuptools = "~=75.3.0"
 uvloop = {version = ">=0.16.0", markers = "sys_platform != 'win32'"}
 rpi-ws281x = {version = ">=4.3.0", platform = "linux"}
