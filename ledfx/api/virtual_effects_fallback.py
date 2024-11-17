@@ -28,6 +28,6 @@ class EffectsEndpoint(RestEndpoint):
 
         _LOGGER.info(f"Fire fallback for virtual {virtual_id}")
 
-        virtual.fallback_fire_set()
+        virtual.fallback_fire_set_with_lock()
         response = {"status": "success"}
         return await self.bare_request_success(response)

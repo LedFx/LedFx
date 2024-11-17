@@ -11,6 +11,30 @@ from ledfx.effects import DummyEffect
 _LOGGER = logging.getLogger(__name__)
 
 
+def make_virtual_response(virtual):
+    virtual_response = {
+        "config": virtual.config,
+        "id": virtual.id,
+        "is_device": virtual.is_device,
+        "auto_generated": virtual.auto_generated,
+        "segments": virtual.segments,
+        "pixel_count": virtual.pixel_count,
+        "active": virtual.active,
+        "streaming": virtual.streaming,
+        "effect": {},
+    }
+    # Protect from DummyEffect
+    if virtual.active_effect and not isinstance(
+        virtual.active_effect, DummyEffect
+    ):
+        effect_response = {}
+        effect_response["config"] = virtual.active_effect.config
+        effect_response["name"] = virtual.active_effect.name
+        effect_response["type"] = virtual.active_effect.type
+        virtual_response["effect"] = effect_response
+    return virtual_response
+
+
 class VirtualEndpoint(RestEndpoint):
     """REST end-point for querying and managing virtuals"""
 
@@ -27,25 +51,8 @@ class VirtualEndpoint(RestEndpoint):
             )
 
         response = {"status": "success"}
-        response[virtual.id] = {
-            "config": virtual.config,
-            "id": virtual.id,
-            "is_device": virtual.is_device,
-            "auto_generated": virtual.auto_generated,
-            "segments": virtual.segments,
-            "pixel_count": virtual.pixel_count,
-            "active": virtual.active,
-            "effect": {},
-        }
-        # Protect from DummyEffect
-        if virtual.active_effect and not isinstance(
-            virtual.active_effect, DummyEffect
-        ):
-            effect_response = {}
-            effect_response["config"] = virtual.active_effect.config
-            effect_response["name"] = virtual.active_effect.name
-            effect_response["type"] = virtual.active_effect.type
-            response[virtual.id]["effect"] = effect_response
+        response[virtual.id] = make_virtual_response(virtual)
+
         return await self.bare_request_success(response)
 
     async def put(self, virtual_id, request) -> web.Response:

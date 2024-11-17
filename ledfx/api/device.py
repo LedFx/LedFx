@@ -5,6 +5,7 @@ import voluptuous
 from aiohttp import web
 
 from ledfx.api import RestEndpoint
+from ledfx.api.virtual import make_virtual_response
 from ledfx.config import save_config
 
 _LOGGER = logging.getLogger(__name__)
@@ -103,24 +104,9 @@ class DeviceEndpoint(RestEndpoint):
             response = {"status": "success", "virtuals": {}}
             response["paused"] = self._ledfx.virtuals._paused
             for virtual in self._ledfx.virtuals.values():
-                response["virtuals"][virtual.id] = {
-                    "config": virtual.config,
-                    "id": virtual.id,
-                    "is_device": virtual.is_device,
-                    "auto_generated": virtual.auto_generated,
-                    "segments": virtual.segments,
-                    "pixel_count": virtual.pixel_count,
-                    "active": virtual.active,
-                    "effect": {},
-                }
-                if virtual.active_effect:
-                    effect_response = {}
-                    effect_response["config"] = virtual.active_effect.config
-                    effect_response["name"] = virtual.active_effect.name
-                    effect_response["type"] = virtual.active_effect.type
-                    response["virtuals"][virtual.id][
-                        "effect"
-                    ] = effect_response
+                response["virtuals"][virtual.id] = make_virtual_response(
+                    virtual
+                )
 
         except (voluptuous.Error, ValueError) as msg:
             error_message = f"Error creating device {device_id}: {msg}"
