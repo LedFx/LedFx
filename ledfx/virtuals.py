@@ -410,14 +410,18 @@ class Virtual:
         self.fallback_timer = threading.Timer(fallback, self.fallback_fire_set)
         self.fallback_timer.start()
 
-    def fallback_fire_set(self):
-        """clear fallback timers and trigger the fallback to enact
-        Called from api context and effects so protect with lock"""
+    def fallback_fire_set_with_lock(self):
+        """Use this function to trigger a fallback from an external source such as api calls"""
         with self.lock:
+            self.fallback_fire_set()
+
+    def fallback_fire_set(self):
+        """clear fallback timers and trigger the fallback to enact"""
+        if self.fallback_timer is not None:
+            self.fallback_timer.cancel()
+            self.fallback_timer = None
+        if self.fallback_effect_type is not None:
             _LOGGER.info(f"{self.name} fallback_fire_set")
-            if self.fallback_timer is not None:
-                self.fallback_timer.cancel()
-                self.fallback_timer = None
             self.fallback_fire = True
 
     def set_effect(self, effect, fallback: Optional[float] = None):
