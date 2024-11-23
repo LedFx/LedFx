@@ -92,6 +92,8 @@ sphinx_rtd_theme = {version = "3.0.1", python = ">=3.10"}
 sphinx-toolbox = {version = "3.8.1", python = ">=3.10"}
 rstcheck = {version = "6.2.4", python = ">=3.10"}
 sphinx-copybutton = {version = "0.5.2", python = ">=3.10"}
+myst-parser = {version = "4.0.0", python = ">=3.10"}
+linkify-it-py = {version = "1.0.3", python = ">=3.10"}
 
 [tool.pytest.ini_options]
 addopts = "tests"
