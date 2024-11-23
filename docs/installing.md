@@ -17,9 +17,7 @@ Here is a list of tested ESP8266 firmware that works with LedFx:
 >     lots of great firmware effects (ESP32/ESP8266)
 > -   [ESPixelStick](https://github.com/forkineye/ESPixelStick) is a
 >     great E1.31 based firmware
-> -   [Scott\'s Audio Reactive
->     Firmware](https://github.com/scottlawsonbc/audio-reactive-led-strip)
->     which inspired this project!
+> -   [Scott's Audio Reactive ESP8266](https://github.com/scottlawsonbc/Reactive-LED) is another option
 
 ## Windows Installation
 
@@ -106,23 +104,17 @@ Python 3.9 installed.
 
 ## Raspberry Pi Installation
 
-:::: warning
-::: title
-Warning
-:::
-
-This installation method is still in development. Use at your
+<!-- Warning Box -->
+<div style="border: 2px solid red; padding: 10px; background-color: #f8d7da; color: #721c24; border-radius: 5px;">
+  <strong>Warning!</strong> This installation method is still in development. Use at your
 discretion.
-::::
-
-:::: note
-::: title
-Note
-:::
-
-To use LedFx on a pi you will need a USB audio card.
-::::
-
+</div>
+<br>
+<!-- Note Box -->
+<div style="border: 2px solid blue; padding: 10px; background-color: #d1ecf1; color: #0c5460; border-radius: 5px;">
+  <strong>Note:</strong> To use LedFx on a pi you will need a USB audio card.
+</div>
+<br>
 Verify you have Python 3.9 or greater by running `python3 --version`
 
 **1.** Modify /usr/share/alsa/alsa.conf:
@@ -184,3 +176,5 @@ ESP8266/ESP32 device that works with LedFx.
 >     >     -   ESP32
 >     >     -   `Configuration Settings </configuring>`{.interpreted-text
 >     >         role="doc"}
+
+

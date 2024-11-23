@@ -44,11 +44,11 @@ Even Govee Desktop app and Razer Chroma where supported is very limited.
 
 Currently investigated matrix lights include:
 
-| Device | Description      | LEDs | Govee Segments | Chroma Segments | Notes                              |
+| Device | Description      | LEDs | Govee Seg | Chroma Seg | Notes                              |
 |--------|------------------|------|----------------|-----------------|------------------------------------|
-| H70B1  | Curtain Lights   | 520  | 6              | 4               | Max 20 as per vertical drops       |
-| H6811  | Net Lights       | 480  | NA             | NA              | Only first 224 pixels @82 seg      |
-| TBD    | Add more here... | TBD  | TBD            | TBD             | TBD                                |
+| H70B1  | Curtain Lights   | 520  | 6         | 4          | Max 20 as per vertical drops       |
+| H6811  | Net Lights       | 480  | NA        | NA         | Only first 224 pixels @82 seg      |
+| TBD    | Add more here... | TBD  | TBD       | TBD        | TBD                                |
 
 #### H70B1 Curtain Lights 520
 
