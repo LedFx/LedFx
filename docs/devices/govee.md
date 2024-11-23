@@ -54,7 +54,7 @@ Currently investigated matrix lights include:
                                                     seg
 
   TBD      Add more         TBD    TBD     TBD      TBD
-           here\...                                 
+           here\...
   ----------------------------------------------------------------------------
 
 #### H70B1 Curtain Lights 520

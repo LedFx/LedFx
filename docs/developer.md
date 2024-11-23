@@ -34,7 +34,7 @@ these instructions.
     > -   When asked for Workloads, select \"Desktop development with
     >     C++\"
     >
-    > -   
+    > -
     >
     >     Included
     >
@@ -42,7 +42,7 @@ these instructions.
     >         -   C++ 2022 Redistributable Update
     >         -   C++ Core desktop features
     >
-    > -   
+    > -
     >
     >     Optional
     >

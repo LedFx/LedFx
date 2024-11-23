@@ -583,7 +583,7 @@ example:
 
 This would end up with a virtual appearing on the devices as so:
 
-``` 
+```
 [---first 50px of effect---][---last 50px of effect---] [---------------middle 100px of effect----------------]
 [-------------------my_device (100px)-----------------] [---------------my_other_device (100px)---------------]
 ```
@@ -602,7 +602,7 @@ another example:
 
 This would end up with a virtual appearing on the devices as so:
 
-``` 
+```
 [ 10px ]    [------ 60px of effect ------]     [ 10px ]
 [-------------------my_device (100px)-----------------]
 ```
@@ -1096,7 +1096,7 @@ Expand for specified Virtuals Example
 ```
 :::
 
-| 
+|
 
 **DELETE**
 

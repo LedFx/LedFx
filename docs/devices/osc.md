@@ -30,7 +30,7 @@ where LedFx will send to. The last address is [address + pixel_count -
 
 Now at the \'Send Type\' setting you choose between:
 
-> -   
+> -
 >
 >     One Argument
 >
@@ -38,19 +38,19 @@ Now at the \'Send Type\' setting you choose between:
 >
 >         -   Path: [\<addr\> \[R, G, B\]]{.title-ref}
 >
->         -   
+>         -
 >
 >             Pro\'s:
 >
 >             :   -   Works good
 >
->         -   
+>         -
 >
 >             Cons:
 >
 >             :   -   Not all servers support it
 >
-> -   
+> -
 >
 >     Three Arguments
 >
@@ -58,19 +58,19 @@ Now at the \'Send Type\' setting you choose between:
 >
 >         -   Path: [\<addr\> R G B]{.title-ref}
 >
->         -   
+>         -
 >
 >             Pro\'s:
 >
 >             :   -   Works everywhere
 >
->         -   
+>         -
 >
 >             Cons:
 >
 >             :   -   None
 >
-> -   
+> -
 >
 >     Three Addresses (least recommended, since it has to send a lot which creates a lot of lag)
 >
@@ -80,13 +80,13 @@ Now at the \'Send Type\' setting you choose between:
 >         -   Paths: [\<addr\> R]{.title-ref}, [\<addr+1\>
 >             G]{.title-ref}, [\<addr+2\> B]{.title-ref}
 >
->         -   
+>         -
 >
 >             Pro\'s:
 >
 >             :   -   Works with QLC+ with the \'Generic RGB\' fixture
 >
->         -   
+>         -
 >
 >             Cons:
 >
@@ -94,7 +94,7 @@ Now at the \'Send Type\' setting you choose between:
 >                 -   Can slow down the result (will result into
 >                     \'latency\' at your receiving server)
 >
-> -   
+> -
 >
 >     All To One (recommended, but requires a custom server)
 >
@@ -103,14 +103,14 @@ Now at the \'Send Type\' setting you choose between:
 >         -   Path: [\<addr\> \[\[R, G, B\],\[R, G, B\],\[R, G,
 >             B\]\]]{.title-ref}
 >
->         -   
+>         -
 >
 >             Pro\'s:
 >
 >             :   -   Sends all the data in one message
 >                 -   No slowing down
 >
->         -   
+>         -
 >
 >             Cons:
 >

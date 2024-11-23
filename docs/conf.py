@@ -9,6 +9,7 @@
 
 import os
 import sys
+
 import sphinx_rtd_theme
 
 sys.path.insert(0, os.path.abspath(".."))
@@ -55,14 +56,14 @@ extensions = [
     "sphinx_rtd_theme",
     "sphinx_toolbox.collapse",
     "sphinx_copybutton",
-    'myst_parser',
+    "myst_parser",
 ]
 
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
 source_suffix = {
-    '.rst': 'restructuredtext',
-    '.md': 'markdown',
+    ".rst": "restructuredtext",
+    ".md": "markdown",
 }
 
 # The master toctree document.
@@ -95,7 +96,7 @@ linkcheck_timeout = 2
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'sphinx_rtd_theme'
+html_theme = "sphinx_rtd_theme"
 
 
 def setup(app):

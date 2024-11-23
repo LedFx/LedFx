@@ -22,7 +22,7 @@ device using the following configuration based on your firmware:
 >
 > -   [WLED](https://github.com/Aircoookie/WLED)
 >
-> > -   
+> > -
 > >
 > >     Auto-configuration of WLED Devices:
 > >
@@ -34,11 +34,11 @@ device using the following configuration based on your firmware:
 > >             you may need to manually change the supported protocol
 > >             on the WLED device to DDP or fall back to UDP on ledfx.
 > >
-> > -   
+> > -
 > >
 > >     Manual Configuration:
 > >
-> >     :   -   
+> >     :   -
 > >
 > >             Add WLED as UDP Device:
 > >
@@ -50,11 +50,11 @@ device using the following configuration based on your firmware:
 > >                     Prefix\".
 > >                 -   Click Submit.
 > >
-> >         -   
+> >         -
 > >
 > >             Add WLED as E1.31 Device:
 > >
-> >             :   -   
+> >             :   -
 > >
 > >                     If your WLED version is prior to 0.13:
 > >
@@ -62,7 +62,7 @@ device using the following configuration based on your firmware:
 > >                             Settings\' page on the WLED
 > >                             web-interface and reboot WLED.
 > >
-> >                 -   
+> >                 -
 > >
 > >                     For all versions:
 > >
@@ -70,11 +70,11 @@ device using the following configuration based on your firmware:
 > >                         -   Enter the total number of pixels.
 > >                         -   Click Submit.
 > >
-> >         -   
+> >         -
 > >
 > >             Add WLED as DDP Device:
 > >
-> >             :   -   
+> >             :   -
 > >
 > >                     If your WLED version is prior to 0.13:
 > >
@@ -82,7 +82,7 @@ device using the following configuration based on your firmware:
 > >                             Settings\' page on the WLED
 > >                             web-interface and reboot WLED.
 > >
-> >                 -   
+> >                 -
 > >
 > >                     For all versions:
 > >
