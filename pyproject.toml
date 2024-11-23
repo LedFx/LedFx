@@ -69,14 +69,12 @@ hue = ["python-mbedtls"]
 optional = true
 
 [tool.poetry.group.dev.dependencies]
-flake8 = ">=7.1.1,<7.2.0"
-black = ">=24.10.0,<24.11.0"
-isort = ">=5.13.2,<5.14.0"
 pre-commit = ">=4.0.0,<4.1.0"
 bokeh = "^3.3.3"
 pytest = "^8.0.0"
 pytest-order = "^1.2.0"
 pyinstaller = "^6.3.0"
+ruff = "^0.8.0"
 
 [tool.poetry.group.docs]
 optional = true

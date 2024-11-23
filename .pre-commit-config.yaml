@@ -9,8 +9,8 @@ repos:
   # Ruff version.
   rev: v0.8.0
   hooks:
-    # Run the linter.
+    # Run the linter, isort and fix issues
     - id: ruff
-      args: [ --fix ]
+      args: [ "--select", "I", "--fix" ]
     # Run the formatter.
     - id: ruff-format
