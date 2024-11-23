@@ -1,5 +1,10 @@
 import pytest
-from test_utilities.test_utils import SERVER_PATH, APITestCase, HTTPSession
+
+from tests.test_utilities.test_utils import (
+    SERVER_PATH,
+    APITestCase,
+    HTTPSession,
+)
 
 
 def get_ledfx_effects():

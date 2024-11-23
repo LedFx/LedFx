@@ -3,8 +3,7 @@ import time
 import pytest
 
 # Remember to import the test groups here if you add a new one
-from conftest import all_effects, audio_configs
-
+from tests.conftest import all_effects, audio_configs
 from tests.test_definitions.devices import device_tests
 from tests.test_definitions.effects import effect_tests
 from tests.test_definitions.proof_of_life import proof_of_life_tests

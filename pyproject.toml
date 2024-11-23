@@ -1,100 +1,99 @@
-[tool.poetry]
+[project]
+authors = [
+    {name = "LedFx Developers"},
+]
+license = {text = "GPL-3.0 License"}
+requires-python = ">=3.9,<3.13"
+dependencies = [
+    "numpy>=1.26.2,<2.0.0",
+    "cffi>=0.16.0",
+    "wheel>=0.36.2",
+    "aiohttp>=3.9.1,<4.0.0",
+    "aiohttp-cors>=0.7.0",
+    "aubio>=0.4.9",
+    "cython>=3.0.7",
+    "certifi>=2023.11.17",
+    "multidict>=6.0.4",
+    "openrgb-python>=0.2.15",
+    "paho-mqtt>=1.6.1",
+    "psutil>=5.9.7",
+    "pyserial>=3.5",
+    "pystray>=0.19.5",
+    "python-rtmidi>=1.5.8",
+    "requests>=2.31.0",
+    "sacn>=1.9.0",
+    "sentry-sdk>=1.40.4",
+    "sounddevice>=0.4.6",
+    "samplerate>=0.2.1",
+    "icmplib>=3.0.4",
+    "voluptuous>=0.14.1",
+    "zeroconf>=0.131.0",
+    "pillow>=10.1.0",
+    "flux-led>=1.0.4",
+    "python-osc>=1.8.3",
+    "pybase64~=1.4.0",
+    "mss~=10.0.0",
+    "setuptools~=75.3.0",
+    "uvloop>=0.16.0; sys_platform != \"win32\"",
+    "rpi-ws281x>=4.3.0; sys_platform == \"linux\"",
+    "stupidartnet>=1.4.0,<2.0.0,",
+    "python-dotenv>=1.0.0,<2.0.0",
+    "vnoise>=0.1.0,<1.0.0",
+]
 name = "LedFx"
 version = "2.0.105"
 description = "A network based light effect controller"
-authors = ["LedFx Developers"]
-license = "GPL-3.0 License"
 readme = "README.rst"
-packages = [
-	{include = "ledfx"},
-	{include = "ledfx_frontend"},
-    {include = "ledfx_assets"},
-    {include = "loopback"},
+
+[dependency-groups]
+dev = [
+    "flake8<7.2.0,>=7.1.1",
+    "black<24.11.0,>=24.10.0",
+    "isort<5.14.0,>=5.13.2",
+    "pre-commit<4.1.0,>=4.0.0",
+    "bokeh<4.0.0,>=3.3.3",
+    "pytest<9.0.0,>=8.0.0",
+    "pytest-order<2.0.0,>=1.2.0",
+    "pyinstaller<7.0.0,>=6.3.0",
 ]
-include = [
+docs = [
+    "sphinx<8.1.4; python_version >= \"3.10\"",
+    "sphinxcontrib-websupport==2.0.0; python_version >= \"3.10\"",
+    "sphinxcontrib-httpdomain==1.8.1; python_version >= \"3.10\"",
+    "sphinx-autodoc-typehints==2.5.0; python_version >= \"3.10\"",
+    "sphinx-autodoc-annotation==1.0-1; python_version >= \"3.10\"",
+    "sphinx-autobuild; python_version >= \"3.10\"",
+    "sphinx-rtd-theme==3.0.1; python_version >= \"3.10\"",
+    "sphinx-toolbox==3.8.1; python_version >= \"3.10\"",
+    "rstcheck==6.2.4; python_version >= \"3.10\"",
+    "sphinx-copybutton==0.5.2; python_version >= \"3.10\"",
+]
+
+[tool.pdm.build]
+includes = [
+    "ledfx",
+    "ledfx_frontend",
+    "ledfx_assets",
+    "loopback",
     "README.rst",
     "AUTHORS.rst",
     "CHANGELOG.rst",
     "LICENSE.txt",
-    "ledfx.env"
+    "ledfx.env",
+]
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
+
+
+[project.optional-dependencies]
+hue = [
+    "python-mbedtls==2.9.2; (platform_machine != \"aarch64\" and platform_machine != \"armv7l\") and sys_platform == \"linux\" or sys_platform == \"win32\" or sys_platform == \"darwin\"",
 ]
 
-[tool.poetry.scripts]
+[project.scripts]
 ledfx = "ledfx.__main__:main"
 ledfx-loopback-install = "loopback.__main__:copy_lib"
-
-[tool.poetry.dependencies]
-python = ">=3.9,<3.13"
-numpy = "^1.26.2"
-cffi = ">=0.16.0"
-wheel = ">=0.36.2"
-aiohttp = "^3.9.1"
-aiohttp-cors = ">=0.7.0"
-aubio = ">=0.4.9"
-cython = ">=3.0.7"
-certifi = ">=2023.11.17"
-multidict = ">=6.0.4"
-openrgb-python = ">=0.2.15"
-paho-mqtt = ">=1.6.1"
-psutil = ">=5.9.7"
-pyserial = ">=3.5"
-pystray = ">=0.19.5"
-python-rtmidi = ">=1.5.8"
-requests = ">=2.31.0"
-sacn = ">=1.9.0"
-sentry-sdk = ">=1.40.4"
-sounddevice = ">=0.4.6"
-samplerate = ">=0.2.1"
-icmplib = ">=3.0.4"
-voluptuous = ">=0.14.1"
-zeroconf = ">=0.131.0"
-pillow = ">=10.1.0"
-flux-led = ">=1.0.4"
-python-osc = ">=1.8.3"
-pybase64 = "~=1.4.0"
-mss = "~=10.0.0"
-setuptools = "~=75.3.0"
-uvloop = {version = ">=0.16.0", markers = "sys_platform != 'win32'"}
-rpi-ws281x = {version = ">=4.3.0", platform = "linux"}
-python-mbedtls = {version = "==2.9.2", markers = "(sys_platform == 'linux' and platform_machine != 'aarch64' and platform_machine != 'armv7l') or sys_platform == 'win32' or sys_platform == 'darwin'", optional = true}
-stupidartnet = "^1.4.0"
-python-dotenv = "^1.0.0"
-vnoise = "^0.1.0"
-
-
-[tool.poetry.extras]
-hue = ["python-mbedtls"]
-
-[tool.poetry.group.dev]
-optional = true
-
-[tool.poetry.group.dev.dependencies]
-flake8 = ">=7.1.1,<7.2.0"
-black = ">=24.10.0,<24.11.0"
-isort = ">=5.13.2,<5.14.0"
-pre-commit = ">=4.0.0,<4.1.0"
-bokeh = "^3.3.3"
-pytest = "^8.0.0"
-pytest-order = "^1.2.0"
-pyinstaller = "^6.3.0"
-
-[tool.poetry.group.docs]
-optional = true
-
-[tool.poetry.group.docs.dependencies]
-sphinx = {version = "<8.1.4", python = ">=3.10"}
-sphinxcontrib-websupport = {version = "2.0.0", python = ">=3.10"}
-sphinxcontrib-httpdomain = {version = "1.8.1", python = ">=3.10"}
-sphinx-autodoc-typehints = {version = "2.5.0", python = ">=3.10"}
-sphinx-autodoc-annotation = {version = "1.0-1", python = ">=3.10"}
-sphinx-autobuild = {version = "*", python = ">=3.10"}
-sphinx_rtd_theme = {version = "3.0.2", python = ">=3.10"}
-sphinx-toolbox = {version = "3.8.1", python = ">=3.10"}
-rstcheck = {version = "6.2.4", python = ">=3.10"}
-sphinx-copybutton = {version = "0.5.2", python = ">=3.10"}
-myst-parser = {version = "4.0.0", python = ">=3.10"}
-linkify-it-py = {version = "1.0.3", python = ">=3.10"}
-
 [tool.pytest.ini_options]
 addopts = "tests"
 testpaths = "tests"
@@ -104,6 +103,12 @@ norecursedirs = [
     ".tox",
 ]
 filterwarnings = "ignore::DeprecationWarning"
+
+[tool.uv]
+# We want to use copy here, since symlink mode means we can't use our own portaudio dll
+# A bit slower, but it works for our use case
+link-mode = "copy"
+default-groups = []
 
 
 [tool.black]
@@ -118,7 +123,3 @@ line_length = 79
 # force_grid_wrap = 0
 # use_parentheses = True
 # ensure_newline_before_comments = True
-
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
