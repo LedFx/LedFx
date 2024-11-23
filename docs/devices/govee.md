@@ -30,7 +30,7 @@ Known working with **Stretch To Fit** set to off
 -   H61BA Govee RGBICW LED Strip Light 16.4 ft
 -   H61D5 Neon Rope Light 2 16.4 FT
 -   H615C RGB LED Strip Light 50 FT
--   TBD: add more here on discovery\...
+-   TBD: add more here on discovery...
 
 ### Matrix Govee - AVOID
 
@@ -44,18 +44,11 @@ Even Govee Desktop app and Razer Chroma where supported is very limited.
 
 Currently investigated matrix lights include:
 
-  ----------------------------------------------------------------------------
-  Device   Description      LEDs   Govee   Chroma   Notes
-  -------- ---------------- ------ ------- -------- --------------------------
-  H70B1    Curtain Lights   520    6       4        Max 20 as per vertical
-                                                    drops
-
-  H6811    Net Lights       480    NA      NA       Only first 224 pixels \@82
-                                                    seg
-
-  TBD      Add more         TBD    TBD     TBD      TBD
-           here\...
-  ----------------------------------------------------------------------------
+| Device | Description      | LEDs | Govee Segments | Chroma Segments | Notes                              |
+|--------|------------------|------|----------------|-----------------|------------------------------------|
+| H70B1  | Curtain Lights   | 520  | 6              | 4               | Max 20 as per vertical drops       |
+| H6811  | Net Lights       | 480  | NA             | NA              | Only first 224 pixels @82 seg      |
+| TBD    | Add more here... | TBD  | TBD            | TBD             | TBD                                |
 
 #### H70B1 Curtain Lights 520
 
