@@ -24,8 +24,8 @@
         {
             "label": "Build Docs",
             "type": "shell",
-            "command": "poetry",
-            "args": ["run", "make", "html"],
+            "command": "uv",
+            "args": ["run", "sphinx-build","-a", "-b", "dirhtml", ".", "build"],
             "group": {
                 "kind": "build",
                 "isDefault": true
@@ -42,8 +42,8 @@
         {
             "label": "Install Docs Dependencies",
             "type": "shell",
-            "command": "poetry",
-            "args": ["install", "--only", "docs"],
+            "command": "uv",
+            "args": ["sync", "--group", "docs"],
             "options": {
                 "cwd": "${workspaceFolder}",
                 "statusbar": {
@@ -59,7 +59,7 @@
             "args": ["/c", "start", "${workspaceFolder}/docs/build/html/index.html"],
             "windows": {
                 "command": "cmd",
-                "args": ["/c", "start", "${workspaceFolder}/docs/build/html/index.html"]
+                "args": ["/c", "start", "${workspaceFolder}\\docs\\build\\html\\index.html"]
             },
             "linux": {
                 "command": "xdg-open",

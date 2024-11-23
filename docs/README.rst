@@ -6,15 +6,15 @@ The documentation is written in reStructuredText. Once you are finished
 making changes, you must build the documentation. To build the LedFx
 documentation follow the steps outlined below:
 
-We have now migrated document dependancy management and build to poetry based.
+We have now migrated document dependancy management and build to uv based.
 
-Building should be the same for all platforms. These instructions assume you already have a poetry environment setup, as per normal development.
+Building should be the same for all platforms. These instructions assume you already have uv installed, as per normal development.
 
 The docs dependancies are managed in the `pyproject.toml` file. To install the docs dependancies, run the following command:
 
 .. code:: console
 
-    $ poetry install --only docs
+    $ uv install --only docs
 
 To build the documentation, run the following commands
 
