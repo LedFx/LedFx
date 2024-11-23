@@ -196,12 +196,12 @@ class VirtualPresetsEndpoint(RestEndpoint):
 
         # Update the preset if it already exists, else create it
         self._ledfx.config["user_presets"][effect_id][preset_id] = {}
-        self._ledfx.config["user_presets"][effect_id][preset_id][
-            "name"
-        ] = preset_name
-        self._ledfx.config["user_presets"][effect_id][preset_id][
-            "config"
-        ] = virtual.active_effect.config
+        self._ledfx.config["user_presets"][effect_id][preset_id]["name"] = (
+            preset_name
+        )
+        self._ledfx.config["user_presets"][effect_id][preset_id]["config"] = (
+            virtual.active_effect.config
+        )
 
         save_config(
             config=self._ledfx.config,

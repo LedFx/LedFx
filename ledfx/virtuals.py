@@ -351,7 +351,6 @@ class Virtual:
         Sets the active effect to the stored fallback effect if available.
         """
         if self.fallback_effect_type is not None:
-
             effect = self._ledfx.effects.create(
                 ledfx=self._ledfx,
                 type=self.fallback_effect_type,
@@ -1450,12 +1449,12 @@ def update_effect_config(config, virtual_id, effect):
         None,
     )
     if virtual:
-        if not ("effects" in virtual):
+        if "effects" not in virtual:
             virtual["effects"] = {}
         virtual["effects"][effect.type] = {}
         virtual["effects"][effect.type]["type"] = effect.type
         virtual["effects"][effect.type]["config"] = effect.config
-        if not ("effect" in virtual):
+        if "effect" not in virtual:
             virtual["effect"] = {}
         virtual["effect"]["type"] = effect.type
         virtual["effect"]["config"] = effect.config

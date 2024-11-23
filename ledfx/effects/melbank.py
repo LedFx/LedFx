@@ -476,7 +476,6 @@ class Melbanks:
                 _LOGGER.debug(f"Melbank {i} created from default config.")
         else:  # if melbank_configs is not empty
             for melbank in self.melbank_collection:
-
                 melbank_id = melbank["id"]
                 # Load the individual melbank config
                 melbank_config = melbank["config"]

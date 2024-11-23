@@ -149,10 +149,8 @@ class AudioInputSource:
     @property
     def AUDIO_CONFIG_SCHEMA():
         default_device_index = AudioInputSource.default_device_index()
-        valid_device_indexes = AudioInputSource.valid_device_indexes()
-        input_devices = AudioInputSource.input_devices()
-        melbanks = Melbanks.CONFIG_SCHEMA
-        audio_analysis = AudioAnalysisSource.CONFIG_SCHEMA
+        AudioInputSource.valid_device_indexes()
+        AudioInputSource.input_devices()
         return vol.Schema(
             {
                 vol.Optional("sample_rate", default=60): int,

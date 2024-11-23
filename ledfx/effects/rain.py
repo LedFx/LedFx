@@ -116,9 +116,9 @@ class RainAudioEffect(AudioReactiveEffect):
                 * self.drop_colors[color, index]
                 for color in range(3)
             ]
-            overlaid_frames[
-                :, index : index + self.frame_width
-            ] += colored_frame
+            overlaid_frames[:, index : index + self.frame_width] += (
+                colored_frame
+            )
 
         self.pixels = overlaid_frames[
             :,

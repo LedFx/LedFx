@@ -71,7 +71,6 @@ class DDPDevice(UDPDevice):
         """
         self.frame_count += 1
         try:
-
             DDPDevice.send_out(
                 self._sock,
                 self.destination,

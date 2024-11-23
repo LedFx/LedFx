@@ -10,7 +10,6 @@ _LOGGER = logging.getLogger(__name__)
 
 @Effect.no_registration
 class LogSec(Effect):
-
     ADVANCED_KEYS = ["diag"]
 
     CONFIG_SCHEMA = vol.Schema(

@@ -10,7 +10,7 @@ def get_ledfx_effects():
             url=f"http://{SERVER_PATH}/api/schema",
             method="GET",
         )
-    except Exception as e:
+    except Exception:
         pytest.fail("Unable to get Schema from LedFx.")
     schema = response.json()
     execution_order = 1  # Start execution order from 1

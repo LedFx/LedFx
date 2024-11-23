@@ -149,7 +149,7 @@ class VirtualsToolsEndpoint(RestEndpoint):
                     )
 
                     dest_virtual.set_effect(effect)
-                except (ValueError, RuntimeError) as msg:
+                except (ValueError, RuntimeError):
                     continue
 
                 update_effect_config(

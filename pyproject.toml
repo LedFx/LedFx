@@ -102,20 +102,10 @@ norecursedirs = [
     ".tox",
 ]
 filterwarnings = "ignore::DeprecationWarning"
-
-
-[tool.black]
+[tool.ruff]
+# Set the maximum line length to 79.
 line-length = 79
 
-[tool.isort]
-profile = "black"
-line_length = 79
-# The following are the default values applied when profile="black"
-# multi_line_output = 3
-# include_trailing_comma = True
-# force_grid_wrap = 0
-# use_parentheses = True
-# ensure_newline_before_comments = True
 
 [build-system]
 requires = ["poetry-core"]
