@@ -60,7 +60,6 @@ if currently_frozen():
 
 
 class LedFxCore:
-
     EXIT_CODES = {
         1: "LedFx encountered an error - Shutting down.",
         2: "Keyboard interrupt - Shutting down.",
@@ -81,7 +80,6 @@ class LedFxCore:
         clear_effects=False,
         offline_mode=False,
     ):
-
         self.icon = icon
         self.config_dir = config_dir
 
@@ -109,7 +107,7 @@ class LedFxCore:
 
                 self.loop = uvloop.new_event_loop()
                 _LOGGER.info("Using uvloop for asyncio loop")
-            except ImportError as error:
+            except ImportError:
                 self.loop = asyncio.get_event_loop()
                 _LOGGER.info("Reverting to asyncio loop")
         asyncio.set_event_loop(self.loop)

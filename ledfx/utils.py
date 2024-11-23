@@ -355,7 +355,7 @@ class WLED:
 
         wled_config = response.json()
 
-        if not wled_config["brand"] in "WLED":
+        if wled_config["brand"] not in "WLED":
             msg = f"WLED {self.ip_address}: Not a compatible WLED brand '{wled_config['brand']}'"
             raise ValueError(msg)
 
@@ -628,7 +628,7 @@ async def resolve_destination(
             return dest
             # dest = await loop.getaddrinfo(cleaned_dest, port)
             # return dest[0][4][0]
-        except socket.gaierror as e:
+        except socket.gaierror:
             raise ValueError(f"Failed to resolve destination {cleaned_dest}")
 
 

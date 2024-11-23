@@ -178,7 +178,7 @@ class EnvironmentCleanup:
             try:
                 shutil.rmtree(ci_test_dir)
                 break
-            except Exception as e:
+            except Exception:
                 time.sleep(idx / 10)
         else:
             pytest.fail("Unable to remove the test config folder.")

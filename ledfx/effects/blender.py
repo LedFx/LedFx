@@ -172,7 +172,6 @@ class Blender(AudioReactiveEffect, LogSec):
         pass
 
     def render(self):
-
         self.log_sec()
 
         blend_mask = BlendVirtual(

@@ -159,7 +159,6 @@ class NanoleafDevice(NetworkedDevice):
                 timeout=2.0,
             )
         except (ConnectTimeout, ReadTimeout) as e:
-
             _LOGGER.warning(
                 f"{self.name} WriteTCP failure, Is Nanoleaf powered? {e}"
             )

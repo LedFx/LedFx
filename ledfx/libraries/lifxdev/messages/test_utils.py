@@ -8,12 +8,14 @@ import enum
 import socket
 
 # These are needed to populate the packet internal responses
-from ledfx.libraries.lifxdev.messages import device_messages  # noqa: F401
-from ledfx.libraries.lifxdev.messages import firmware_effects  # noqa: F401
-from ledfx.libraries.lifxdev.messages import light_messages  # noqa: F401
-from ledfx.libraries.lifxdev.messages import multizone_messages  # noqa: F401
-from ledfx.libraries.lifxdev.messages import tile_messages  # noqa: F401
-from ledfx.libraries.lifxdev.messages import packet
+from ledfx.libraries.lifxdev.messages import (
+    device_messages,  # noqa: F401
+    firmware_effects,  # noqa: F401
+    light_messages,  # noqa: F401
+    multizone_messages,  # noqa: F401
+    packet,
+    tile_messages,  # noqa: F401
+)
 
 # Number of read attempts on the read socket
 _N_READS = 16

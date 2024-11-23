@@ -90,8 +90,8 @@ class MetroEffect(AudioReactiveEffect):
             parse_color(self._config["flash_color"]), dtype=float
         )
 
-        self.cycle_threshold = self._config["pulse_period"] * (
-            self._config["pulse_ratio"]
+        self.cycle_threshold = (
+            self._config["pulse_period"] * (self._config["pulse_ratio"])
         )
         if self._config["capture"] and self.graph_callbacks is None:
             # start a capture sequence, generate base graphs

@@ -274,7 +274,6 @@ class MQTT_HASS(Integration):
                     "cmd_t": "~/set",
                     "stat_t": "~/state",
                     "icon": "mdi:volume-high",
-                    "entity_category": "diagnostic",
                     "options": [*AudioInputSource.input_devices().values()],
                     "entity_category": "config",
                     "device": hass_device,

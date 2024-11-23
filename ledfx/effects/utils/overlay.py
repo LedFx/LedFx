@@ -19,7 +19,6 @@ class Overlay:
     def plot_range(self, values, color):
         diag_string = "None"
         if len(values) > 1:
-
             graph_s = 9  # start pixel height under the diag text
             graph_h = max(1, self.r_height - 9 - 1)  # height of graph
 

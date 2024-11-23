@@ -118,7 +118,6 @@ class Noise2d(Twod, GradientEffect):
         )
 
     def draw(self):
-
         if self.test:
             self.draw_test(self.m_draw)
 

@@ -16,7 +16,7 @@ def get_ledfx_audio_configs():
             url=f"http://{SERVER_PATH}/api/schema",
             method="GET",
         )
-    except Exception as e:
+    except Exception:
         pytest.fail("Unable to get Schema from LedFx.")
     schema = response.json()
     # drop any keys that are not in config_keys_to_test
