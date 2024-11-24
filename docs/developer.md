@@ -1,6 +1,6 @@
 # Development Setup
 
-## Backend Development {#backend-dev}
+## Backend Development
 
 :::: warning
 ::: title
@@ -28,31 +28,23 @@ these instructions.
 
 2.  Install [git](https://gitforwindows.org/).
 
-3.  Install [Build Tools for Visual Studio
-    2022](https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2022)
+3.  Install [Build Tools for Visual Studio 2022](https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2022)
 
-    > -   When asked for Workloads, select \"Desktop development with
-    >     C++\"
-    >
-    > -
-    >
-    >     Included
-    >
-    >     :   -   C++ Build Tools core features
-    >         -   C++ 2022 Redistributable Update
-    >         -   C++ Core desktop features
-    >
-    > -
-    >
-    >     Optional
-    >
-    >     :   -   MSVC v143 - VS 2022 C++ x64/x86 build tools (vXX,XX)
-    >         -   Windows SDK
-    >         -   C++ CMake tools for Windows
-    >         -   Testing tools core features - Build Tools
-    >         -   C++ AddressSanitizer
-    >
-    > -   The default install options are appropriate.
+    - When asked for Workloads, select "Desktop development with C++"
+
+    - Included:
+        - C++ Build Tools core features
+        - C++ 2022 Redistributable Update
+        - C++ Core desktop features
+
+    - Optional:
+        - MSVC v143 - VS 2022 C++ x64/x86 build tools (vXX,XX)
+        - Windows SDK
+        - C++ CMake tools for Windows
+        - Testing tools core features - Build Tools
+        - C++ AddressSanitizer
+
+    - The default install options are appropriate.
 
 4.  Reboot
 
@@ -169,9 +161,7 @@ Note
 :::
 
 The following instructions assume you have already followed the steps
-above to
-`install the LedFx dev environment <backend-dev>`{.interpreted-text
-role="ref"} and have the backend running. If you have not done so,
+above to <a href="developer.html#backend-development">install the LedFx dev environment</a> and have the backend running. If you have not done so,
 please do so before continuing.
 ::::
 
@@ -182,10 +172,10 @@ Note
 
 LedFx will need to be running in development mode for everything to
 work. To enable development mode, open the `config.json` file in the
-`.ledfx` folder and set `dev_mode: true`)
+`.ledfx` folder and set `dev_mode: true`
 ::::
 
-### Windows {#windows-frontend}
+### Windows
 
 **1.** Install Node.js and pnpm:
 
@@ -222,7 +212,7 @@ the appropriate distribution files prior to submitting any changes.
 $ pnpm build
 ```
 
-### Linux {#linux-frontend}
+### Linux
 
 **1.** Install Node.js:
 

@@ -128,7 +128,7 @@ feedback on the optimal refresh rate for their devices.
 Hit add and, your Govee device should now be available in the devices
 view.
 
-### Connection refresh
+## Connection refresh
 
 If Ignore Status is set to the default Off, If Govee device does not
 respond to a device status enquirey at ledfx startup, it will be marked

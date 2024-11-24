@@ -18,15 +18,13 @@ Tested on Ubuntu 20.10 64-bit
 -   In the LedFx UI under \"Settings\" -\> \"Audio Input\", choose
     \"pulse\" as the current device
 
-![image](./_static/direct_audio_linux_1.png){.align-center
-width="100.0%"}
+![image](./_static/direct_audio_linux_1.png)
 
 -   In PulseAudio Volume Control under \"Recording\", choose \"ALSA
     plug-in\" and set \"Capture from\" to the audio stream you want to
     capture (e.g. \"Monitor of Built-in Audio Analog Stereo\")
 
-![image](./_static/direct_audio_linux_2.png){.align-center
-width="100.0%"}
+![image](./_static/direct_audio_linux_2.png)
 
 ## macOS
 
@@ -41,20 +39,17 @@ Tested on macOS Catalina 10.15.7
 -   In Audio MIDI Setup, create a [Multi Output
     Device](https://github.com/ExistentialAudio/BlackHole/wiki/Multi-Output-Device)
 
-![image](./_static/directing_audio_macos_1.png){.align-center
-width="100.0%"}
+![image](./_static/directing_audio_macos_1.png)
 
 -   In Audio MIDI Setup, choose \"BlackHole 2ch\" and set it as
     \"Input\"
 
-![image](./_static/directing_audio_macos_2.png){.align-center
-width="100.0%"}
+![image](./_static/directing_audio_macos_2.png)
 
 -   In the LedFx UI under \"Settings\" -\> \"Audio Input\", choose
     \"BlackHole 2ch\" as the current device
 
-![image](./_static/directing_audio_macos_3.png){.align-center
-width="100.0%"}
+![image](./_static/directing_audio_macos_3.png)
 
 **Alternatives**
 

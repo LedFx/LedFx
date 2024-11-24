@@ -30,99 +30,46 @@ where LedFx will send to. The last address is [address + pixel_count -
 
 Now at the \'Send Type\' setting you choose between:
 
-> -
->
->     One Argument
->
->     :   -   Will send an array to the specified address.
->
->         -   Path: [\<addr\> \[R, G, B\]]{.title-ref}
->
->         -
->
->             Pro\'s:
->
->             :   -   Works good
->
->         -
->
->             Cons:
->
->             :   -   Not all servers support it
->
-> -
->
->     Three Arguments
->
->     :   -   Will send 3 arguments to the specified address.
->
->         -   Path: [\<addr\> R G B]{.title-ref}
->
->         -
->
->             Pro\'s:
->
->             :   -   Works everywhere
->
->         -
->
->             Cons:
->
->             :   -   None
->
-> -
->
->     Three Addresses (least recommended, since it has to send a lot which creates a lot of lag)
->
->     :   -   Will send the RGB data on 3 seperate addresses starting
->             from the specified address.
->
->         -   Paths: [\<addr\> R]{.title-ref}, [\<addr+1\>
->             G]{.title-ref}, [\<addr+2\> B]{.title-ref}
->
->         -
->
->             Pro\'s:
->
->             :   -   Works with QLC+ with the \'Generic RGB\' fixture
->
->         -
->
->             Cons:
->
->             :   -   Sends a lot of data
->                 -   Can slow down the result (will result into
->                     \'latency\' at your receiving server)
->
-> -
->
->     All To One (recommended, but requires a custom server)
->
->     :   -   Will send ALL the RGB data to ONE path.
->
->         -   Path: [\<addr\> \[\[R, G, B\],\[R, G, B\],\[R, G,
->             B\]\]]{.title-ref}
->
->         -
->
->             Pro\'s:
->
->             :   -   Sends all the data in one message
->                 -   No slowing down
->
->         -
->
->             Cons:
->
->             :   -   Requires a custom server to handle
->                 -   Might become an issue if you\'re having too much
->                     pixels (possibly)
+- **One Argument**
+  - Will send an array to the specified address.
+  - Path: [\<addr\> \[R, G, B\]]{.title-ref}
+  - **Pro\'s:**
+    - Works good
+  - **Cons:**
+    - Not all servers support it
+
+- **Three Arguments**
+  - Will send 3 arguments to the specified address.
+  - Path: [\<addr\> R G B]{.title-ref}
+  - **Pro\'s:**
+    - Works everywhere
+  - **Cons:**
+    - None
+
+- **Three Addresses (least recommended, since it has to send a lot which creates a lot of lag)**
+  - Will send the RGB data on 3 seperate addresses starting from the specified address.
+  - Paths: [\<addr\> R], [\<addr+1\> G], [\<addr+2\> B]
+  - **Pro\'s:**
+    - Works with QLC+ with the \'Generic RGB\' fixture
+  - **Cons:**
+    - Sends a lot of data
+    - Can slow down the result (will result into \'latency\' at your receiving server)
+
+- **All To One (recommended, but requires a custom server)**
+  - Will send ALL the RGB data to ONE path.
+  - Path: [\<addr\> \[\[R, G, B\],\[R, G, B\],\[R, G, B\]\]]
+  - **Pro\'s:**
+    - Sends all the data in one message
+    - No slowing down
+  - Cons:
+    - Requires a custom server to handle
+    - Might become an issue if you\'re having too much pixels (possibly)
 
 Then you have to set the \'Pixel Count\' option. You should see this as
 \'Address/Channel Count\', since it represents the amount of addresses
 your server is listening on using the selected send type. This means
 that if you choose \'Three Addresses\' as send type, then if you have 9
-addresses listening in the order like [R,G,B,R,G,B,R,G,B]{.title-ref},
+addresses listening in the order like *R,G,B,R,G,B,R,G,B,*
 then you should set this setting to **3** since you are having 3
 \'pixels\' on which your server is listening
 
@@ -130,13 +77,13 @@ Then you can set the Port and IP Address to which your OSC Server is
 listening. Then you can click Save.
 
 Here is an configuration for a fixture sending to the path
-[/0/dmx/{address}]{.title-ref} (DMX mapping to universe 0) with starting
+*/0/dmx/{address}* (DMX mapping to universe 0) with starting
 address also at 0 and having 90 addresses where it is like R, G, B, R,
 G, B, etc. which makes the send type to be \'3 addresses\' and the pixel
 count to 30. The server whichs handles the fixture is listening at
-\`localhost:9000\`:
+*\`localhost:9000\`:*
 
-![image](/_static/osc_sample_setup.png){.align-center width="100.0%"}
+![image](/_static/osc_sample_setup.png)
 
 ## What it does
 
