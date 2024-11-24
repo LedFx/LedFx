@@ -6,7 +6,7 @@ synchronize your favorite gif or webp animations with the music beat
 ## First we need a matrix device
 
 If you don\'t already have one, follow this guide to create a dummy
-matrix device: `/howto/dummy_matrix`{.interpreted-text role="doc"}
+matrix device: <a href="dummy_matrix.html">How to: Create a Keybeat gif</a>
 
 64 x 64 is the maximum size that can currently be correct displayed in
 the browser UI due to the limit of 4096 pixels communicated to the front
@@ -37,7 +37,7 @@ per (1)
 We should see the GIF animation playing to the music beat, and a valid
 file path in the \"image location\" in this case on a windows host taken
 from the ledfx install files at
-C:Usersyour_user_namePycharmProjectsledfxLedFxledfx_assetsgifscaddy.gif
+C:\Users\your_user_name\PycharmProjects\ledfx\LedFx\ledfx_assets\gifs\caddy.gif
 
 ## Choosing your own GIF
 
@@ -145,7 +145,7 @@ Play music, make that bear earn those dollars, make it rain\....
 Remember you can play local gifs and webp just as easily as remote URLs
 with the local OS path format, for example
 
-C:Usersyour_user_nameDownloadsduck.gif
+C:\Users\your_user_name\Downloads\duck.gif
 
 Also remember that there are a lot of glitchy GIFs out there, before
 balming LEDFX convince yourself using 3rd party software the animation
