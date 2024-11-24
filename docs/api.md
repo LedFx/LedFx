@@ -726,7 +726,7 @@ Extensible support for general tools towards ALL virtuals in one call
 Supports tool instances of currently only force_color and oneshot,
 others may be added in the future
 
-**force_color**
+### force_color
 
 Move all pixels in a virtual to specific color, will be overwritten by
 active effect Use during configuration / calibration
@@ -754,23 +754,18 @@ returns
 }
 ```
 
-**oneshot**
+### oneshot
 
-| Fill all active virtuals with a single color in a defined envelope of
-  timing
-| Intended to allow integration of instantaneous game effects over all
-  active virtual
-| Repeated oneshot will overwrite the previous oneshot if has not
-  finished
+Fill all active virtuals with a single color in a defined envelope of timing
 
-| color: The color to which we wish to fill the virtual, any format
-  supported, default is white
-| ramp: The time in ms over which to ramp the color from zero to full
-  weight over the active effect
-| hold: The time in ms to hold the color to full weight over the active
-  effect
-| fade: The time in ms to fade the color from full weight to zero over
-  the active effect
+Intended to allow integration of instantaneous game effects over all active virtual
+
+Repeated oneshot will overwrite the previous oneshot if has not finished
+
+- color: The color to which we wish to fill the virtual, any format supported, default is white
+- ramp: The time in ms over which to ramp the color from zero to full weight over the active  effect
+- hold: The time in ms to hold the color to full weight over the active effect
+- fade: The time in ms to fade the color from full weight to zero over the active effect
 
 If all values for ramp, hold and fade are zero, which is default, any
 exisiting oneshot will be cleared
@@ -806,7 +801,7 @@ Extensible support for general tools towards a specified virtual
 Supports tool instances of force_color, calibration, highlight, oneshot
 and copy, others may be added in the future
 
-**force_color**
+### force_color
 
 Move all pixels in a virtual to specific color, will be overwritten by
 active effect Use during configuration / calibration
@@ -834,16 +829,16 @@ returns
 }
 ```
 
-**calibration**
+### calibration
 
-| Force virtual into calibration mode
-| All segments will be switched to solid color rotation of RGBCMY on the
-  final devices
-| Device backgrounds will be set to black
-| Changes to virtual segments in edit virtual will be displayed on
-  browser second tab if open on devices view and physical devices live
-| Setting is not persistant. Shutting down ledfx while in calibration
-  mode will leave virtual in normal effect settings in next cycle
+Force virtual into calibration mode
+
+All segments will be switched to solid color rotation of RGBCMY on the final devices
+Device backgrounds will be set to black.
+
+Changes to virtual segments in edit virtual will be displayed on browser second tab if open on devices view and physical devices live.
+
+Setting is not persistant. Shutting down ledfx while in calibration mode will leave virtual in normal effect settings in next cycle.
 
 Enter calibration mode with
 
@@ -872,19 +867,17 @@ returns
 }
 ```
 
-**highlight**
+### highlight
 
-| Highlight a segment of a virtual with white, use for editing of
-  virtual segmentations in calibration mode
-| Intended to highlight the last edited segment, or last reordered
-  segment
+Highlight a segment of a virtual with white, use for editing of virtual segmentations in calibration mode
 
-| state: defaults to true, explicity send False to turn off highlight
-| device: device id of the device which the segment is to be highlighted
-  on, forced to lower case
-| start: index of led start on device for highlight
-| stop: index of led stop on device for highlight
-| flip: render order inversion, default to false
+Intended to highlight the last edited segment, or last reordered segment
+
+- state: defaults to true, explicity send False to turn off highlight
+- device: device id of the device which the segment is to be highlighted on, forced to lower case
+- start: index of led start on device for highlight
+- stop: index of led stop on device for highlight
+- flip: render order inversion, default to false
 
 ``` json
 {
@@ -914,29 +907,22 @@ returns
 }
 ```
 
-**oneshot**
+### oneshot
 
-| Fill the specified virtual with a single color in a defined envelope
-  of timing
-| Intended to allow integration of instantaneous game effects over any
-  active virtual
-| Repeated oneshot to a virtual will overwrite the previous oneshot if
-  has not finished
+Fill the specified virtual with a single color in a defined envelope of timing
 
-| color: The color to which we wish to fill the virtual, any format
-  supported, default is white
-| ramp: The time in ms over which to ramp the color from zero to full
-  weight over the active effect
-| hold: The time in ms to hold the color to full weight over the active
-  effect
-| fade: The time in ms to fade the color from full weight to zero over
-  the active effect
+Intended to allow integration of instantaneous game effects over any active virtual
 
-If all values for ramp, hold and fade are zero, which is default, any
-exisiting oneshot will be cleared
+Repeated oneshot to a virtual will overwrite the previous oneshot if has not finished
 
-A bare call to onsshot will result in a hard disable of any existing
-oneshot that is executing
+- color: The color to which we wish to fill the virtual, any format supported, default is white
+- ramp: The time in ms over which to ramp the color from zero to full weight over the active effect
+- hold: The time in ms to hold the color to full weight over the active effect
+- fade: The time in ms to fade the color from full weight to zero over the active effect
+
+If all values for ramp, hold and fade are zero, which is default, any exisiting oneshot will be cleared
+
+A bare call to onsshot will result in a hard disable of any existing oneshot that is executing
 
 ``` json
 {
@@ -966,12 +952,11 @@ The virtual must be active or an error will be returned
 }
 ```
 
-**copy**
+### copy
 
-| Copy the active effect config of \<virtual_id\> to a list of other
-  virtuals
+Copy the active effect config of \<virtual_id\> to a list of other virtuals
 
-| target: A list of virtual ids to copy the active effect config to
+- target: A list of virtual ids to copy the active effect config to
 
 ``` json
 {
