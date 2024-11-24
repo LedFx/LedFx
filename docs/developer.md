@@ -289,7 +289,7 @@ $ pnpm build
 
 ## Document Development
 
-The documentation is written in reStructuredText. Once you are finished
+The documentation is written in Markdown format. Once you are finished
 making changes, you must build the documentation. To build the LedFx
 documentation follow the steps outlined below:
 

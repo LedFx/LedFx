@@ -10,11 +10,11 @@ based.
 Building should be the same for all platforms. These instructions assume
 you already have a poetry environment setup, as per normal development.
 
-The docs dependancies are managed in the [pyproject.toml]{.title-ref}
+The docs dependancies are managed in the `pyproject.toml`
 file. To install the docs dependancies, run the following command:
 
 ``` console
-$ poetry install --only docs
+poetry install --only docs
 ```
 
 To build the documentation, run the following commands

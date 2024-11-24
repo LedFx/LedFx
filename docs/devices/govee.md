@@ -91,7 +91,7 @@ Then throw the LAN Control swith to on.
 
 ![Wifi Settings and LAN switch](/_static/devices/govee/LAN_switch.jpg)
 
-While in this page, if you haven\'t already, take not of the device MAC
+While in this page, if you haven't already, take note of the device MAC
 address and ensure it is reserved in your router DHCP settings to a
 fixed IP address.
 
