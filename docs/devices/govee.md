@@ -71,6 +71,18 @@ down.
 
 Not supported by Govee app or Razer Chroma for any LAN relevant effects.
 
+Power supply 5V 5A Raintight
+
+Pin out from controller, button face up, noting there is no specific marking on the individual wires
+
+![Device page](/_static/devices/govee/H6811.png)
+
+| Wire   | Description      |
+|--------|------------------|
+| Left   | Data             |
+| Middle | GND              |
+| Right  | 5 Volt           |
+
 ## Govee Device Configuration
 
 By default compatible Govee devices are not enabled for LAN control.
