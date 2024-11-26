@@ -341,8 +341,9 @@ class WLED:
         """
             Uses a JSON API call to determine if the device is WLED or WLED compatible
             and return its config.
-            Specifically searches for "WLED" in the brand json - currently all major
-            branches/forks of WLED contain WLED in the branch data.
+            As of WLED 0.15 brand is now being used to indicate specific variants of WLED
+            The brand field can no longer be depended on to indicate a compatible device
+            We now only check that brand exists as a field in the config
         Returns:
             config: dict, with all wled configuration info
         """
@@ -355,11 +356,12 @@ class WLED:
 
         wled_config = response.json()
 
-        if not wled_config["brand"] in "WLED":
-            msg = f"WLED {self.ip_address}: Not a compatible WLED brand '{wled_config['brand']}'"
-            raise ValueError(msg)
+        if "brand" not in wled_config:
+            raise ValueError(
+                f"WLED {self.ip_address}: Device is not WLED compatible"
+            )
 
-        _LOGGER.info(f"WLED {self.ip_address}: Received config")
+        _LOGGER.info(f"WLED {self.ip_address}: Received config {wled_config}")
 
         return wled_config
 
