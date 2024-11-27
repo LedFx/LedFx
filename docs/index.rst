@@ -5,6 +5,7 @@
    :caption: Installation & Development
 
    /installing
+   /launch
    /developer
 
 .. toctree::
