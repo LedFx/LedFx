@@ -1,4 +1,4 @@
-# Command Line Launch Options
+# Command Line Options
 
 When launching Ledfx from the command line, or by editing properties of a desktop shortcut it is possible to add various launch options explained below.
 
