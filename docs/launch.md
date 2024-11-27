@@ -1,15 +1,15 @@
 # Command Line Options
 
-When launching Ledfx from the command line, or by editing properties of a desktop shortcut it is possible to add various launch options explained below.
+When launching LedFx from the command line, or by editing properties of a desktop shortcut it is possible to add various launch options explained below.
 
 - `--version`: Display the current version of LedFx.
 - `-c, --config <directory>`: Specify the directory that contains the configuration files. Defaults to .ledfx in the user data directory according to host OS
 - `--open-ui`: Automatically open the web interface
 - `-v, --verbose`: Set log level to INFO.
 - `-vv, --very-verbose`: Set log level to DEBUG.
-- `-p, --port <port>`: Specify the web interface port (HTTP).
-- `-p_s, --port_secure <port>`: Specify the web interface port (HTTPS).
-- `--host <address>`: Specify the address to host the LedFx web interface.
+- `-p, --port <port>`: Specify the web interface port (HTTP). Default 8888
+- `-p_s, --port_secure <port>`: Specify the web interface port (HTTPS). Default 8443 SSL certs must be present in the ledfx config directory
+- `--host <address>`: Specify the address to host the LedFx web interface. Default localhost, 127.0.0.1
 - `--tray`: Force LedFx system tray icon.
 - `--no-tray`: Force no LedFx system tray icon.
 - `--offline`: Disable crash logger and auto update checks.
@@ -17,7 +17,7 @@ When launching Ledfx from the command line, or by editing properties of a deskto
 - `--ci-smoke-test`: Launch LedFx and then exit after 5 seconds to sanity check the install.
 - `--clear-config`: Launch LedFx, backup the config, clear the config, and continue with a clean startup.
 - `--clear-effects`: Launch LedFx, load the config, clear all active effects on all virtuals. Effect configurations are persisted, just turned off.
-- `--pause-all`: Start Ledfx with all virtuals paused. This is a global pause and can be toggled via the UI, or via a rest PUT to /api/virtuals
+- `--pause-all`: Start LedFx with all virtuals paused. This is a global pause and can be toggled via the UI, or via a rest PUT to /api/virtuals
 
 
 ## Adding Command-Line Options to LedFx Launch
