@@ -19,7 +19,7 @@ When launching Ledfx from the command line, or by editing properties of a deskto
 - `--clear-effects`: Launch LedFx, load the config, clear all active effects on all virtuals. Effect configurations are persisted, just turned off.
 - `--pause-all`: Start Ledfx with all virtuals paused. This is a global pause and can be toggled via the UI, or via a rest PUT to /api/virtuals
 
-  
+
 ## Adding Command-Line Options to LedFx Launch
 
 This guide explains how to add command-line options to the launch of `ledfx` across **Windows**, **Linux**, and **macOS**, including instructions for both creating new shortcuts and editing pre-existing ones.
