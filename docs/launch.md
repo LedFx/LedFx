@@ -121,6 +121,16 @@ This guide explains how to add command-line options to the launch of `ledfx` acr
 
 ### macOS
 
+:::: warning
+::: title
+Warning
+:::
+
+This section needs updating by those who understand the ways of Mac OS
+::::
+
+
+
 #### Adding Options via Terminal
 
 1. Open the **Terminal**.
