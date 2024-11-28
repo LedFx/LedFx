@@ -361,7 +361,7 @@ class WLED:
                 f"WLED {self.ip_address}: Device is not WLED compatible"
             )
 
-        _LOGGER.info(f"WLED compatible device brand:{wled_config["brand"]} at {self.ip_address} configuration received")
+        _LOGGER.info(f"WLED compatible device brand:{wled_config['brand']} at {self.ip_address} configuration received")
 
         return wled_config
 
