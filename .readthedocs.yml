@@ -16,5 +16,5 @@ build:
     - asdf global uv latest
     - uv sync --only-group docs --frozen
     - cd docs
-    - make html
+    - make
     - mv dirhtml _readthedocs/html
