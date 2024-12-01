@@ -374,9 +374,6 @@ jobs:
           name: LedFx-${{ steps.ledfx-version.outputs.ledfx-version }}-wheel
       - name: Install uv
         uses: astral-sh/setup-uv@v3
-        with:
-          enable-cache: true
-          cache-dependency-glob: "uv.lock"
       - name: Install build dependencies
         run: |
           sudo apt-get update && sudo apt-get install -y portaudio19-dev
@@ -406,9 +403,6 @@ jobs:
           name: LedFx-${{ steps.ledfx-version.outputs.ledfx-version }}-sdist
       - name: Install uv
         uses: astral-sh/setup-uv@v3
-        with:
-          enable-cache: true
-          cache-dependency-glob: "uv.lock"
       - name: Install build dependencies
         run: |
           sudo apt-get update && sudo apt-get install -y portaudio19-dev
