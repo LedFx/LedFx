@@ -27,11 +27,6 @@ jobs:
         uses: LABSN/sound-ci-helpers@v1
       - name: Check out code from GitHub
         uses: actions/checkout@v4
-      - name: Setup Python ${{ env.DEFAULT_PYTHON }}
-        id: python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.DEFAULT_PYTHON }}
 
       - name: Install uv
         uses: astral-sh/setup-uv@v3
@@ -47,7 +42,7 @@ jobs:
 
       - name: Install LedFx
         run: |
-          uv sync --all-extras --dev
+          uv sync --python ${{ env.DEFAULT_PYTHON }} --group hue --dev
 
       - name: Get LedFx Version and Upload to Artifacts for later use
         id: ledfx-version
@@ -96,7 +91,7 @@ jobs:
 
       - name: Install LedFx
         run: |
-          uv sync --all-extras --dev
+          uv sync --python ${{ env.DEFAULT_PYTHON }} --group hue --dev
       - name: Get LedFx Version
         id: ledfx-version
         run: |
@@ -149,7 +144,7 @@ jobs:
           export LDFLAGS="-L/opt/homebrew/opt/mbedtls@2/lib"
           export CPPFLAGS="-I/opt/homebrew/opt/mbedtls@2/include"
           export CFLAGS="-Wno-incompatible-function-pointer-types"
-          uv sync --all-extras --dev
+          uv sync --python ${{ env.DEFAULT_PYTHON }} --group hue --dev
       - name: Get LedFx Version
         id: ledfx-version
         run: |
@@ -377,19 +372,20 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: LedFx-${{ steps.ledfx-version.outputs.ledfx-version }}-wheel
-      - name: Setup Python ${{ env.DEFAULT_PYTHON }}
-        uses: actions/setup-python@v5
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
         with:
-          python-version: ${{ env.DEFAULT_PYTHON }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
       - name: Install build dependencies
         run: |
           sudo apt-get update && sudo apt-get install -y portaudio19-dev
       - name: Install the wheel
         run: |
-          pip install ledfx-*.whl
+          uv --pip install ledfx-*.whl
       - name: Run LedFx
         run: |
-          ledfx -vv --ci-smoke-test --offline
+          uv run ledfx -vv --ci-smoke-test --offline
 
   install-from-sdist:
     name: Test LedFx (PyPi sdist)
@@ -408,19 +404,20 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: LedFx-${{ steps.ledfx-version.outputs.ledfx-version }}-sdist
-      - name: Setup Python ${{ env.DEFAULT_PYTHON }}
-        uses: actions/setup-python@v5
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
         with:
-          python-version: ${{ env.DEFAULT_PYTHON }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
       - name: Install build dependencies
         run: |
           sudo apt-get update && sudo apt-get install -y portaudio19-dev
       - name: Install the sdist
         run: |
-          pip install ledfx-*.tar.gz
+          uv pip install ledfx-*.tar.gz
       - name: Run LedFx
         run: |
-          ledfx --ci-smoke-test -vv --offline
+          uv run ledfx --ci-smoke-test -vv --offline
 
   publish:
     name: Publish LedFx to PyPi
