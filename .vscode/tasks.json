@@ -56,18 +56,18 @@
             "label": "Build and Open Docs",
             "type": "shell",
             "command": "cmd",
-            "args": ["/c", "start", "${workspaceFolder}/docs/build/html/index.html"],
+            "args": ["/c", "start", "${workspaceFolder}/docs/build/index.html"],
             "windows": {
                 "command": "cmd",
-                "args": ["/c", "start", "${workspaceFolder}\\docs\\build\\html\\index.html"]
+                "args": ["/c", "start", "${workspaceFolder}\\docs\\build\\index.html"]
             },
             "linux": {
                 "command": "xdg-open",
-                "args": ["${workspaceFolder}/docs/build/html/index.html"]
+                "args": ["${workspaceFolder}/docs/build/index.html"]
             },
             "osx": {
                 "command": "open",
-                "args": ["${workspaceFolder}/docs/build/html/index.html"]
+                "args": ["${workspaceFolder}/docs/build/index.html"]
             },
             "problemMatcher": [],
             "dependsOn": "Build Docs"

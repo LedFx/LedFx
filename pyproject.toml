@@ -67,6 +67,8 @@ docs = [
     "sphinx-toolbox==3.8.1; python_version >= \"3.10\"",
     "rstcheck==6.2.4; python_version >= \"3.10\"",
     "sphinx-copybutton==0.5.2; python_version >= \"3.10\"",
+    "myst-parser>=3.0.1",
+    "linkify-it-py>=2.0.3",
 ]
 
 [tool.pdm.build]
