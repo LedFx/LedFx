@@ -4,31 +4,32 @@ The documentation is written in markdown. Once you are finished
 making changes, you must build the documentation. To build the LedFx
 documentation follow the steps outlined below:
 
-We have now migrated document dependancy management and build to poetry
+We have now migrated document dependancy management and build to uv
 based.
 
-Building should be the same for all platforms. These instructions assume
-you already have a poetry environment setup, as per normal development.
+Building should be the same for all platforms. These instructions assume you already have a poetry environment setup, as per normal development.
+
+This is most simply built via vscode as per [Docs in VScode](#docs-in-vscode) but instructions are provided below if you work in some other environment.
 
 The docs dependancies are managed in the `pyproject.toml`
 file. To install the docs dependancies, run the following command:
 
 ``` console
-poetry install --only docs
+uv sync --group docs
 ```
 
 To build the documentation, run the following commands
 
 ``` console
-$ poetry shell
 $ cd docs
-$ ./make html
+$ uv run sphinx-build -a -b html . build
 ```
 
-## Docs in vscode
+The built docs can be checked in the docs/build directory by opening the index.html file.
 
-Tasks have been added to the .vscode file to make building docs smoother
-and removing any excuse not to improve them ( hint hint ).
+## Docs in VScode
+
+Tasks have been added to the .vscode file to make building docs smoother and removing any excuse not to improve them ( hint hint ).
 
 Although there are seperate tasks defined in .vscode/tasks.json for
 dependancy install, build and open in browser, they are configured such

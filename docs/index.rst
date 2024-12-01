@@ -7,6 +7,7 @@
    /installing
    /launch
    /developer
+   /README
 
 .. toctree::
    :maxdepth: 2
