@@ -377,9 +377,12 @@ jobs:
       - name: Install build dependencies
         run: |
           sudo apt-get update && sudo apt-get install -y portaudio19-dev
+      - name: Create venv
+        run: |
+          uv venv
       - name: Install the wheel
         run: |
-          uv --pip install ledfx-*.whl
+          uv pip install ledfx-*.whl
       - name: Run LedFx
         run: |
           uv run ledfx -vv --ci-smoke-test --offline
@@ -406,6 +409,9 @@ jobs:
       - name: Install build dependencies
         run: |
           sudo apt-get update && sudo apt-get install -y portaudio19-dev
+      - name: Create venv
+        run: |
+          uv venv
       - name: Install the sdist
         run: |
           uv pip install ledfx-*.tar.gz
