@@ -1,4 +1,4 @@
-name: Build Binaries (UV)
+name: Build Frozen Binaries for Distribution
 
 on:
   push:
@@ -70,8 +70,8 @@ jobs:
           name: LedFx-${{ steps.ledfx-version.outputs.ledfx-version }}-windows-x64
           path: ${{ github.workspace }}/dist/*
 
-  build-ledfx-osx:
-    name: Build LedFx (OS X)
+  build-ledfx-osx-x64:
+    name: Build LedFx (OS X [x64])
     runs-on: macos-13
     steps:
       - name: Check out code from GitHub
@@ -118,8 +118,8 @@ jobs:
           name: LedFx-${{ steps.ledfx-version.outputs.ledfx-version }}-osx-intel
           path: ${{ github.workspace }}/dist/*
 
-  build-ledfx-osx-m1:
-    name: Build LedFx (OS X) (Apple Silicon)
+  build-ledfx-osx-arm64:
+    name: Build LedFx (OS X) (ARM64)
     runs-on: macos-latest
     steps:
       - name: Check out code from GitHub
@@ -196,10 +196,10 @@ jobs:
       - name: Run LedFx
         run: |
           LedFx/LedFx.exe -vv --ci-smoke-test --offline
-  run-ledfx-osx:
-    name: Test LedFx (OS X)
+  run-ledfx-osx-x64:
+    name: Test LedFx (OS X [x64])
     runs-on: macos-13
-    needs: [build-ledfx-windows, build-ledfx-osx]
+    needs: [build-ledfx-windows, build-ledfx-osx-x64]
     steps:
       - name: Download LedFx Version
         uses: actions/download-artifact@v4
@@ -218,10 +218,10 @@ jobs:
           xattr -cr ./LedFx.app
           chmod +x ./LedFx.app/Contents/MacOS/LedFx
           ./LedFx.app/Contents/MacOS/LedFx -vv --ci-smoke-test --offline
-  run-ledfx-osx-m1:
-    name: Test LedFx (OS X [ARM64])
+  run-ledfx-osx-arm64:
+    name: Test LedFx (OS X [arm64])
     runs-on: macos-latest
-    needs: [build-ledfx-windows, build-ledfx-osx-m1]
+    needs: [build-ledfx-windows, build-ledfx-osx-arm64]
     steps:
       - name: Download LedFx Version
         uses: actions/download-artifact@v4
@@ -245,7 +245,7 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/')
     environment: production
     runs-on: macos-13
-    needs: [run-ledfx-windows, run-ledfx-osx, run-ledfx-osx-m1]
+    needs: [run-ledfx-windows, run-ledfx-osx-x64, run-ledfx-osx-arm64]
     steps:
       - name: Check out code from GitHub
         uses: actions/checkout@v4
