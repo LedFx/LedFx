@@ -8,10 +8,6 @@
 # -- Path setup --------------------------------------------------------------
 
 import os
-
-# If extensions (or modules to document with autodoc) are in another directory,
-# add these directories to sys.path here. If the directory is relative to the
-# documentation root, use os.path.abspath to make it absolute, like shown here.
 import sys
 
 import sphinx_rtd_theme
@@ -60,13 +56,15 @@ extensions = [
     "sphinx_rtd_theme",
     "sphinx_toolbox.collapse",
     "sphinx_copybutton",
+    "myst_parser",
 ]
 
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
-#
-# source_suffix = ['.rst', '.md']
-source_suffix = ".rst"
+source_suffix = {
+    ".rst": "restructuredtext",
+    ".md": "markdown",
+}
 
 # The master toctree document.
 master_doc = "index"
@@ -223,3 +221,21 @@ texinfo_documents = [
 
 
 # -- Extension configuration -------------------------------------------------
+
+# -- Options for myst_parser -------------------------------------------------
+
+myst_enable_extensions = [
+    "dollarmath",
+    "amsmath",
+    "deflist",
+    "html_admonition",
+    "html_image",
+    "colon_fence",
+    "smartquotes",
+    "replacements",
+    "linkify",
+    "substitution",
+    "tasklist",
+]
+
+myst_heading_anchors = 3
