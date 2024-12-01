@@ -15,4 +15,4 @@ build:
     - asdf install uv latest
     - asdf global uv latest
     - uv sync --only-group docs --frozen
-    - uv run sphinx -T -b html -d docs/_build/doctrees -D language=en docs $READTHEDOCS_OUTPUT/html
+    - .venv/bin/python -m sphinx -T -b html -d docs/_build/doctrees -D language=en docs $READTHEDOCS_OUTPUT/html
