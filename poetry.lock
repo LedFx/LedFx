@@ -3122,13 +3122,13 @@ urllib3 = "*"
 
 [[package]]
 name = "sphinx-rtd-theme"
-version = "3.0.1"
+version = "3.0.2"
 description = "Read the Docs theme for Sphinx"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "sphinx_rtd_theme-3.0.1-py2.py3-none-any.whl", hash = "sha256:921c0ece75e90633ee876bd7b148cfaad136b481907ad154ac3669b6fc957916"},
-    {file = "sphinx_rtd_theme-3.0.1.tar.gz", hash = "sha256:a4c5745d1b06dfcb80b7704fe532eb765b44065a8fad9851e4258c8804140703"},
+    {file = "sphinx_rtd_theme-3.0.2-py2.py3-none-any.whl", hash = "sha256:422ccc750c3a3a311de4ae327e82affdaf59eb695ba4936538552f3b00f4ee13"},
+    {file = "sphinx_rtd_theme-3.0.2.tar.gz", hash = "sha256:b7457bc25dda723b20b086a670b9953c859eab60a2a03ee8eb2bb23e176e5f85"},
 ]
 
 [package.dependencies]
@@ -4043,4 +4043,4 @@ hue = ["python-mbedtls"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<3.13"
-content-hash = "a65c787cfeb3f1d573ef5ad5b637fa680097bb6923c63631aaba8d62da978204"
+content-hash = "b4834fb6f485176fc8d5232aedab8582a7cd39dbcfc73cee445ba07fe48fcd93"
