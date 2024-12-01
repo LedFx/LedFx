@@ -88,7 +88,7 @@ sphinxcontrib-httpdomain = {version = "1.8.1", python = ">=3.10"}
 sphinx-autodoc-typehints = {version = "2.5.0", python = ">=3.10"}
 sphinx-autodoc-annotation = {version = "1.0-1", python = ">=3.10"}
 sphinx-autobuild = {version = "*", python = ">=3.10"}
-sphinx_rtd_theme = {version = "3.0.1", python = ">=3.10"}
+sphinx_rtd_theme = {version = "3.0.2", python = ">=3.10"}
 sphinx-toolbox = {version = "3.8.1", python = ">=3.10"}
 rstcheck = {version = "6.2.4", python = ">=3.10"}
 sphinx-copybutton = {version = "0.5.2", python = ">=3.10"}
