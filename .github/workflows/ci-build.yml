@@ -112,7 +112,7 @@ jobs:
 
       - name: Install build dependencies
         run: |
-          brew install portaudio
+          brew install portaudio mbedtls@2
 
       - name: Install uv
         uses: astral-sh/setup-uv@v3
@@ -121,7 +121,13 @@ jobs:
           cache-dependency-glob: "uv.lock"
       - name: Set up Python ${{ matrix.python-version }}
         run: uv python install ${{ matrix.python-version }}
-
+      - name: Setup environment variables
+        run: |
+          export CFLAGS="-Wno-incompatible-function-pointer-types"
+          export PATH="/opt/homebrew/opt/mbedtls@2/bin:$PATH"
+          export LDFLAGS="-L/opt/homebrew/opt/mbedtls@2/lib"
+          export CPPFLAGS="-I/opt/homebrew/opt/mbedtls@2/include"
+          export CFLAGS="-Wno-incompatible-function-pointer-types"
       - name: Install LedFx
         run: |
           uv sync --all-extras --dev
@@ -138,7 +144,6 @@ jobs:
 
   build-ledfx-osx-m1:
     name: Build LedFx (OS X) (Apple Silicon)
-    needs: [build-ledfx-linux, build-ledfx-windows, build-ledfx-osx]
     runs-on: macos-latest
     strategy:
       matrix:
@@ -150,7 +155,7 @@ jobs:
 
       - name: Install build dependencies
         run: |
-          brew install portaudio
+          brew install portaudio mbedtls@2
 
       - name: Install uv
         uses: astral-sh/setup-uv@v3
@@ -159,10 +164,15 @@ jobs:
           cache-dependency-glob: "uv.lock"
       - name: Set up Python ${{ matrix.python-version }}
         run: uv python install ${{ matrix.python-version }}
-
-      - name: Install LedFx
+      - name: Setup environment variables
         run: |
           export CFLAGS="-Wno-incompatible-function-pointer-types"
+          export PATH="/opt/homebrew/opt/mbedtls@2/bin:$PATH"
+          export LDFLAGS="-L/opt/homebrew/opt/mbedtls@2/lib"
+          export CPPFLAGS="-I/opt/homebrew/opt/mbedtls@2/include"
+          export CFLAGS="-Wno-incompatible-function-pointer-types"
+      - name: Install LedFx
+        run: |
           uv sync --all-extras --dev
 
       - name: Check LedFx launches
