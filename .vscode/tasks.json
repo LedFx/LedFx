@@ -25,7 +25,7 @@
             "label": "Build Docs",
             "type": "shell",
             "command": "uv",
-            "args": ["run", "sphinx-build","-a", "-b", "dirhtml", ".", "build"],
+            "args": ["run", "sphinx-build","-a", "-b", "html", ".", "build"],
             "group": {
                 "kind": "build",
                 "isDefault": true
