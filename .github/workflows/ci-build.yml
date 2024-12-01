@@ -123,6 +123,8 @@ jobs:
         run: uv python install ${{ matrix.python-version }}
       - name: Setup environment variables
         run: |
+          export PKG_CONFIG_PATH="/opt/homebrew/opt/mbedtls@2/lib/pkgconfig"
+          echo 'export PATH="/opt/homebrew/opt/mbedtls@2/bin:$PATH"' >> /Users/runner/.bash_profile
           export CFLAGS="-Wno-incompatible-function-pointer-types"
           export PATH="/opt/homebrew/opt/mbedtls@2/bin:$PATH"
           export LDFLAGS="-L/opt/homebrew/opt/mbedtls@2/lib"
@@ -166,6 +168,8 @@ jobs:
         run: uv python install ${{ matrix.python-version }}
       - name: Setup environment variables
         run: |
+          export PKG_CONFIG_PATH="/opt/homebrew/opt/mbedtls@2/lib/pkgconfig"
+          echo 'export PATH="/opt/homebrew/opt/mbedtls@2/bin:$PATH"' >> /Users/runner/.bash_profile
           export CFLAGS="-Wno-incompatible-function-pointer-types"
           export PATH="/opt/homebrew/opt/mbedtls@2/bin:$PATH"
           export LDFLAGS="-L/opt/homebrew/opt/mbedtls@2/lib"
