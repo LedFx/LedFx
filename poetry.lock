@@ -1152,13 +1152,13 @@ i18n = ["Babel (>=2.7)"]
 
 [[package]]
 name = "linkify-it-py"
-version = "1.0.3"
+version = "2.0.3"
 description = "Links recognition library with FULL unicode support."
 optional = false
-python-versions = ">=3.6"
+python-versions = ">=3.7"
 files = [
-    {file = "linkify-it-py-1.0.3.tar.gz", hash = "sha256:2b3f168d5ce75e3a425e34b341a6b73e116b5d9ed8dbbbf5dc7456843b7ce2ee"},
-    {file = "linkify_it_py-1.0.3-py3-none-any.whl", hash = "sha256:11e29f00150cddaa8f434153f103c14716e7e097a8fd372d9eb1ed06ed91524d"},
+    {file = "linkify-it-py-2.0.3.tar.gz", hash = "sha256:68cda27e162e9215c17d786649d1da0021a451bdc436ef9e0fa0ba5234b9b048"},
+    {file = "linkify_it_py-2.0.3-py3-none-any.whl", hash = "sha256:6bcbc417b0ac14323382aef5c5192c0075bf8a9d6b41820a2b66371eac6b6d79"},
 ]
 
 [package.dependencies]
@@ -1166,7 +1166,7 @@ uc-micro-py = "*"
 
 [package.extras]
 benchmark = ["pytest", "pytest-benchmark"]
-dev = ["black", "flake8", "isort", "pre-commit"]
+dev = ["black", "flake8", "isort", "pre-commit", "pyproject-flake8"]
 doc = ["myst-parser", "sphinx", "sphinx-book-theme"]
 test = ["coverage", "pytest", "pytest-cov"]
 
@@ -4127,4 +4127,4 @@ hue = ["python-mbedtls"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<3.13"
-content-hash = "b4834fb6f485176fc8d5232aedab8582a7cd39dbcfc73cee445ba07fe48fcd93"
+content-hash = "5504ddd908cc0e7b7e829c7ba772cd912ee92c37110d4320d86074848ddb04d9"
