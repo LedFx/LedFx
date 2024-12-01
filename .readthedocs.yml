@@ -15,5 +15,4 @@ build:
     - asdf install uv latest
     - asdf global uv latest
     - uv sync --only-group docs --frozen
-    - uv run sphinx-build -b html docs docs/_build/html
-    - mv docs/_build/html $READTHEDOCS_OUTPUT/html
+    - uv run sphinx -T -b html -d docs/_build/doctrees -D language=en docs $READTHEDOCS_OUTPUT/html
