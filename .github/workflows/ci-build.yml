@@ -124,12 +124,11 @@ jobs:
       - name: Setup environment variables
         run: |
           export PKG_CONFIG_PATH="/opt/homebrew/opt/mbedtls@2/lib/pkgconfig"
-          echo 'export PATH="/opt/homebrew/opt/mbedtls@2/bin:$PATH"' >> /Users/runner/.bash_profile
           export CFLAGS="-Wno-incompatible-function-pointer-types"
           export PATH="/opt/homebrew/opt/mbedtls@2/bin:$PATH"
           export LDFLAGS="-L/opt/homebrew/opt/mbedtls@2/lib"
           export CPPFLAGS="-I/opt/homebrew/opt/mbedtls@2/include"
-          export CFLAGS="-Wno-incompatible-function-pointer-types"
+          export DYLD_FALLBACK_LIBRARY_PATH="/opt/homebrew/lib"
       - name: Install LedFx
         run: |
           uv sync --all-extras --dev
@@ -169,12 +168,11 @@ jobs:
       - name: Setup environment variables
         run: |
           export PKG_CONFIG_PATH="/opt/homebrew/opt/mbedtls@2/lib/pkgconfig"
-          echo 'export PATH="/opt/homebrew/opt/mbedtls@2/bin:$PATH"' >> /Users/runner/.bash_profile
           export CFLAGS="-Wno-incompatible-function-pointer-types"
           export PATH="/opt/homebrew/opt/mbedtls@2/bin:$PATH"
           export LDFLAGS="-L/opt/homebrew/opt/mbedtls@2/lib"
           export CPPFLAGS="-I/opt/homebrew/opt/mbedtls@2/include"
-          export CFLAGS="-Wno-incompatible-function-pointer-types"
+          export DYLD_FALLBACK_LIBRARY_PATH="/opt/homebrew/lib"
       - name: Install LedFx
         run: |
           uv sync --all-extras --dev
