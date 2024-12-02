@@ -1,6 +1,5 @@
 import os
 import shutil
-import subprocess
 from pathlib import Path
 from sys import platform
 
@@ -28,13 +27,8 @@ def copy_lib():
 
     # If not in site-packages, means it's a poetry build, so get env path from
     if not lib_path:
-        env_path = (
-            subprocess.check_output(["poetry", "env", "info", "--path"])
-            .decode("utf-8")
-            .strip()
-        )
         lib_path = os.path.join(
-            env_path,
+            ".venv",
             "Lib",
             "site-packages",
             "_sounddevice_data",

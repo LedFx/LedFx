@@ -2,11 +2,11 @@ import subprocess
 import time
 
 import pytest
-from test_definitions.all_effects import get_ledfx_effects
-from test_utilities.test_utils import EnvironmentCleanup
 
+from tests.test_definitions.all_effects import get_ledfx_effects
 from tests.test_definitions.audio_configs import get_ledfx_audio_configs
 from tests.test_utilities.consts import BASE_PORT
+from tests.test_utilities.test_utils import EnvironmentCleanup
 
 
 def pytest_sessionstart(session):
@@ -27,7 +27,7 @@ def pytest_sessionstart(session):
     try:
         ledfx = subprocess.Popen(
             [
-                "poetry",
+                "uv",
                 "run",
                 "ledfx",
                 "-p",
