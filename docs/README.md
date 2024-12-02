@@ -9,7 +9,14 @@ based.
 
 Building should be the same for all platforms. These instructions assume you already have a poetry environment setup, as per normal development.
 
-This is most simply built via vscode as per [Docs in VScode](#docs-in-vscode) but instructions are provided below if you work in some other environment.
+:::: note
+::: title
+Note
+:::
+
+This is most simply built via VScode tasks as per [Docs in VScode](#docs-in-vscode) but instructions are provided below if you work in some other environment.
+
+::::
 
 The docs dependancies are managed in the `pyproject.toml`
 file. To install the docs dependancies, run the following command:

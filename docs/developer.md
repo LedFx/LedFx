@@ -2,104 +2,73 @@
 
 ## Backend Development
 
-:::: warning
-::: title
-Warning
-:::
+### Common Steps
 
-Always be aware of piping commands to any shell - this is the
-recommended method for poetry but there are [other
-options](https://python-poetry.org/docs/#installation).
-::::
+1. Install [python](https://www.python.org/downloads/) version 3.9 or above. 3.12 is the current preferred python release for general development.
 
-### Windows
+2. Install [git](https://git-scm.com/).
+
+3. Install uv:
+
+    ```console
+    $ pip install uv
+    ```
+
+4. Clone the main branch from the LedFx Github repository:
+
+    ```console
+    $ git clone https://github.com/LedFx/LedFx.git
+    ```
+
+5. Using uv, create a virtual environment, install all dependencies, and launch ledfx:
+
+    ```console
+    $ cd LedFx
+    $ uv run ledfx
+    ```
+
+    uv can be used to launch ledfx at any time against the established venv.
+
+### Windows Specific Steps
 
 :::: note
 ::: title
 Note
 :::
 
-Do not install python from the Windows Store - it will not work with
-these instructions.
+Do not install python from the Windows Store - it will not work with these instructions.
 ::::
 
-1.  Install [python](https://www.python.org/downloads/windows/) version
-    3.9 or above.
-
-2.  Install [git](https://gitforwindows.org/).
-
-3.  Install [Build Tools for Visual Studio 2022](https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2022)
+1. Install [Build Tools for Visual Studio 2022](https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2022)
 
     - When asked for Workloads, select "Desktop development with C++"
-
     - Included:
         - C++ Build Tools core features
         - C++ 2022 Redistributable Update
         - C++ Core desktop features
-
     - Optional:
         - MSVC v143 - VS 2022 C++ x64/x86 build tools (vXX,XX)
         - Windows SDK
         - C++ CMake tools for Windows
         - Testing tools core features - Build Tools
         - C++ AddressSanitizer
-
     - The default install options are appropriate.
 
-4.  Reboot
+2. Reboot
 
-5.  Install poetry using PowerShell:
-
-    ``` console
-    $ (Invoke-WebRequest -Uri https://install.python-poetry.org -UseBasicParsing).Content | py -
-    ```
-
-6.  Clone the main branch from the LedFx Github repository:
-
-    ``` console
-    $ git clone https://github.com/LedFx/LedFx.git
-    ```
-
-7.  Install LedFx and its requirements using poetry:
-
-    ``` console
-    $ cd LedFx
-    $ poetry install
-    ```
-
-8.  This will let you run LedFx directly from the cloned repository via:
-
-    ``` console
-    $ poetry run ledfx --open-ui
-    ```
-
-### Linux {#linux-dev}
+### Linux Specific Steps {#linux-dev}
 
 :::: note
 ::: title
 Note
 :::
 
-This assumes an apt based system such as ubuntu. If your system uses
-another package manager you should be able use it to get the required
-packages.
+This assumes an apt based system such as ubuntu. If your system uses another package manager you should be able use it to get the required packages.
 ::::
 
-1.  Install poetry:
+1. Install system dependencies via `apt install`:
 
-    ``` console
-    $ curl -sSL https://install.python-poetry.org | python3 -
-    ```
-
-2.  Clone the main branch from the LedFx Github repository:
-
-    ``` console
-    $ git clone https://github.com/LedFx/LedFx.git
-    ```
-
-3.  Install system dependencies via `apt install`:
-
-    ``` console
+    ```console
     $ sudo apt install libatlas3-base \
           libavformat58 \
           portaudio19-dev \
@@ -107,45 +76,9 @@ packages.
           cmake \
     ```
 
-4.  Install LedFx and its requirements using poetry:
+### macOS Specific Steps {#macos-dev}
 
-    ``` console
-    $ cd LedFx
-    $ poetry install
-    ```
-
-5.  This will let you run LedFx directly from your local copy via:
-
-    ``` console
-    $ poetry run ledfx --open-ui
-    ```
-
-### macOS {#macos-dev}
-
-1.  Install poetry:
-
-    ``` console
-    $ curl -sSL https://install.python-poetry.org | python3 -
-    ```
-
-2.  Clone the main branch from the LedFx Github repository:
-
-    ``` console
-    $ git clone https://github.com/LedFx/LedFx.git
-    ```
-
-3.  Install LedFx and its requirements using poetry:
-
-    ``` console
-    $ cd LedFx
-    $ poetry install
-    ```
-
-4.  This will let you run LedFx directly from your local copy via:
-
-    ``` console
-    $ poetry run ledfx --open-ui
-    ```
+No additional steps required.
 
 ------------------------------------------------------------------------
 
@@ -228,7 +161,7 @@ $ sudo apt-get install nodejs
 **2.** Install pnpm:
 
 ``` console
-$ curl -fsSL https://get.pnpm.io/install.sh | sh -
+$ curl -fsSL https://get.pnpm.io/install.sh | sh - 
 ```
 
 **3.** Navigate to the frontend directory and install the dependencies:
@@ -289,53 +222,7 @@ $ pnpm build
 
 ## Document Development
 
-The documentation is written in Markdown format. Once you are finished
-making changes, you must build the documentation. To build the LedFx
-documentation follow the steps outlined below:
-
-We have now migrated document dependancy management and build to poetry
-based.
-
-Building should be the same for all platforms. These instructions assume
-you already have a poetry environment setup, as per normal development.
-
-The docs dependancies are managed in the [pyproject.toml]{.title-ref}
-file. To install the docs dependancies, run the following command:
-
-``` console
-$ poetry install --only docs
-```
-
-To build the documentation, run the following commands
-
-``` console
-$ poetry shell
-$ cd docs
-$ ./make html
-```
-
-### Docs in vscode
-
-Tasks have been added to the .vscode file to make building docs smoother
-and removing any excuse not to improve them ( hint hint ).
-
-Although there are seperate tasks defined in .vscode/tasks.json for
-dependancy install, build and open in browser, they are configured such
-that it should be just a case of launching the task **Build and Open
-Docs**
-
-This should ensure dependancies are in place, build the docs and open
-the index.html in your default browser.
-
-Error detection in the build process to prevent the browser open is not
-yet implemented. This is a future enhancement.
-
-Find vscode tasks through ctrl+shift+p and type \"Tasks: Run Task\" and
-select the task **Build and Open Docs**
-
-Or better, install the Tasks extension by actboy168 into vscode and run
-the task from the bottom control bar. All tasks except \"Build and Open
-Docs\" are hidden to reduce clutter.
+See the [Documents Development](README.md) for more information.
 
 ## How it works
 
