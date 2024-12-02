@@ -161,7 +161,7 @@ $ sudo apt-get install nodejs
 **2.** Install pnpm:
 
 ``` console
-$ curl -fsSL https://get.pnpm.io/install.sh | sh -
+$ curl -fsSL https://get.pnpm.io/install.sh | sh - 
 ```
 
 **3.** Navigate to the frontend directory and install the dependencies:
