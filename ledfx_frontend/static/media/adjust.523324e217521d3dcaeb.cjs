@@ -1,0 +1,1 @@
+import{processImages}from"./processImages.cjs";async function adjust(s,a,e=128,o=0,t=0,c=0,r=0,m){const p=await s();processImages(a,p,e,o,t,c,r,m)}export default adjust;
