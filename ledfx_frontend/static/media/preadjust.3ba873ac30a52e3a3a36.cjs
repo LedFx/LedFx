@@ -1,1 +1,0 @@
-import{wled}from"../pixelUtils.cjs";async function preadjust(){await wled({on:!0}),await wled({seg:{on:!0,col:[[255,0,0],[255,0,0],[255,0,0]]}})}export default preadjust;

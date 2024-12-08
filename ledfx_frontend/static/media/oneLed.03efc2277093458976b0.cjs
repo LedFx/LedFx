@@ -1,1 +1,0 @@
-import wled from"./wled.cjs";import wledGet from"./wledGet.cjs";const oneLed=async e=>{const t=(await wledGet("state")).seg;let o=0;for(const d of t){const e={seg:{id:d.id,i:[0,d.len,"000000"]}};await wled(e)}for(const d of t)if(o+=d.len,o>=e){const t=e-(o-d.len),s={seg:{id:d.id,i:[t,t+1,"FFFFFF"]}};await wled(s);break}};export default oneLed;
