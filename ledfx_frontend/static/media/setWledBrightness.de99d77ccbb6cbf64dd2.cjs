@@ -1,0 +1,1 @@
+import wled from"./wled.cjs";const setWledBrightness=async(e=255)=>{await wled({bri:e})};export default setWledBrightness;
