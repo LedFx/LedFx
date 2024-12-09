@@ -1111,7 +1111,11 @@ class Virtual:
         Returns:
             effect config or empty dict {}
         """
-        return self.virtual_cfg.get("effects", {}).get(effect_type, {}).get("config", {})
+        return (
+            self.virtual_cfg.get("effects", {})
+            .get(effect_type, {})
+            .get("config", {})
+        )
 
     @staticmethod
     def schema() -> vol.Schema:
@@ -1311,9 +1315,7 @@ class Virtuals:
             )
             if "segments" in virtual_cfg:
                 try:
-                    new_virtual.update_segments(
-                        virtual_cfg["segments"]
-                    )
+                    new_virtual.update_segments(virtual_cfg["segments"])
                 except vol.MultipleInvalid:
                     _LOGGER.warning(
                         "Virtual Segment Changed. Not restoring segment"
@@ -1351,7 +1353,9 @@ class Virtuals:
                 new_virtual._paused = True
 
             self._ledfx.events.fire_event(
-                VirtualConfigUpdateEvent(virtual_cfg["id"], virtual_cfg["config"])
+                VirtualConfigUpdateEvent(
+                    virtual_cfg["id"], virtual_cfg["config"]
+                )
             )
 
     def schema(self):
@@ -1468,6 +1472,3 @@ class Virtuals:
                 f"{virtual_id:<29} {str(virtual.is_device):<29}{str(virtual.active):<10}{str(virtual.streaming):<10}"
             )
         _LOGGER.info(f"Active Devices: {active_devices}")
-
-    
-    
