@@ -83,7 +83,9 @@ class VirtualEndpoint(RestEndpoint):
                     effect_config = virtual.get_effects_config(last_effect)
                     if effect_config:
                         effect = self._ledfx.effects.create(
-                            ledfx=self._ledfx, type=last_effect, config=effect_config
+                            ledfx=self._ledfx,
+                            type=last_effect,
+                            config=effect_config,
                         )
                         virtual.set_effect(effect)
         try:
