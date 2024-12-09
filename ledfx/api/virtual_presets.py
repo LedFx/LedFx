@@ -11,7 +11,6 @@ from ledfx.utils import (
     generate_id,
     inject_missing_default_keys,
 )
-from ledfx.virtuals import update_effect_config
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -138,7 +137,7 @@ class VirtualPresetsEndpoint(RestEndpoint):
             _LOGGER.warning(error_message)
             return await self.internal_error(error_message, "error")
 
-        update_effect_config(self._ledfx.config, virtual_id, effect)
+        virtual.update_effect_config(effect)
 
         save_config(
             config=self._ledfx.config,

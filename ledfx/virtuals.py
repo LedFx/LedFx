@@ -358,7 +358,7 @@ class Virtual:
                 config=self.fallback_config,
             )
             self.set_effect(effect, fallback=None)
-            update_effect_config(self._ledfx.config, self.id, effect)
+            self.update_effect_config(effect)
             save_config(
                 config=self._ledfx.config,
                 config_dir=self._ledfx.config_dir,
@@ -496,7 +496,6 @@ class Virtual:
             self.flush_pending_clear_frame()
 
             self._active_effect = effect
-            self.last_effect = effect.type
             self._active_effect.activate(self)
             self._ledfx.events.fire_event(
                 EffectSetEvent(
@@ -1078,6 +1077,42 @@ class Virtual:
             else:
                 return 0
 
+    def update_effect_config(self, effect):
+        """
+        Update the effect configuration of a virtual
+        Handle both an active effect and the effects history
+
+        Args:
+            effect (Effect): The effect object containing the updated configuration.
+
+        Returns:
+            None
+        """
+        # Store as both the active effect to protect existing code, and one of effects
+        self.virtual_cfg.setdefault("effects", {})
+        self.virtual_cfg["effects"][effect.type] = {
+            "type": effect.type,
+            "config": effect.config,
+        }
+        self.virtual_cfg.setdefault("effect", {})
+        self.virtual_cfg["effect"] = {
+            "type": effect.type,
+            "config": effect.config,
+        }
+        self.virtual_cfg["last_effect"] = effect.type
+
+    def get_effects_config(self, effect_type):
+        """
+        Search the virtuals effects config backing store and return its config if found
+
+        Args:
+            effect_type: String name for effect to recover
+
+        Returns:
+            effect config or empty dict {}
+        """
+        return self.virtual_cfg.get("effects", {}).get(effect_type, {}).get("config", {})
+
     @staticmethod
     def schema() -> vol.Schema:
         """returns the schema for the object"""
@@ -1265,20 +1300,19 @@ class Virtuals:
         self._virtuals = {}
 
     def create_from_config(self, config, pause_all=False):
-        for virtual in config:
-            _LOGGER.debug(f"Loading virtual from config: {virtual}")
-            self._ledfx.virtuals.create(
-                id=virtual["id"],
-                config=virtual["config"],
-                is_device=virtual["is_device"],
-                auto_generated=virtual["auto_generated"],
-                last_effect=virtual.get("last_effect", None),
+        for virtual_cfg in config:
+            _LOGGER.debug(f"Loading virtual from config: {virtual_cfg}")
+            new_virtual = self._ledfx.virtuals.create(
+                id=virtual_cfg["id"],
+                config=virtual_cfg["config"],
+                is_device=virtual_cfg["is_device"],
+                auto_generated=virtual_cfg["auto_generated"],
                 ledfx=self._ledfx,
             )
-            if "segments" in virtual:
+            if "segments" in virtual_cfg:
                 try:
-                    self._ledfx.virtuals.get(virtual["id"]).update_segments(
-                        virtual["segments"]
+                    new_virtual.update_segments(
+                        virtual_cfg["segments"]
                     )
                 except vol.MultipleInvalid:
                     _LOGGER.warning(
@@ -1288,14 +1322,14 @@ class Virtuals:
                 except RuntimeError:
                     pass
 
-            if "effect" in virtual:
+            if "effect" in virtual_cfg:
                 try:
                     effect = self._ledfx.effects.create(
                         ledfx=self._ledfx,
-                        type=virtual["effect"]["type"],
-                        config=virtual["effect"]["config"],
+                        type=virtual_cfg["effect"]["type"],
+                        config=virtual_cfg["effect"]["config"],
                     )
-                    self._ledfx.virtuals.get(virtual["id"]).set_effect(effect)
+                    new_virtual.set_effect(effect)
                 except vol.MultipleInvalid:
                     _LOGGER.warning(
                         "Effect schema changed. Not restoring effect"
@@ -1303,17 +1337,21 @@ class Virtuals:
                 except RuntimeError:
                     pass
 
+            # set the virtual up to have a reference into the cfg directly, so elsewhere we do not have to discover it
+            # used for effect, effects, last_effect etc
+            new_virtual.virtual_cfg = virtual_cfg
+
             # This adds support for configs that are configured as paused
             # via the active key if it exists. Let the setter deal with it
-            if "active" in virtual and not virtual["active"]:
-                self._ledfx.virtuals.get(virtual["id"]).active = False
+            if "active" in virtual_cfg and not virtual_cfg["active"]:
+                new_virtual.active = False
 
             # global pause is handled differently to virtual pause
             if pause_all:
-                self._ledfx.virtuals.get(virtual["id"])._paused = True
+                new_virtual._paused = True
 
             self._ledfx.events.fire_event(
-                VirtualConfigUpdateEvent(virtual["id"], virtual["config"])
+                VirtualConfigUpdateEvent(virtual_cfg["id"], virtual_cfg["config"])
             )
 
     def schema(self):
@@ -1333,7 +1371,6 @@ class Virtuals:
         _config = kwargs.pop("config", None)
         _is_device = kwargs.pop("is_device", False)
         _auto_generated = kwargs.pop("auto_generated", False)
-        _last_effect = kwargs.pop("last_effect", None)
 
         if _config is not None:
             _config = Virtual.CONFIG_SCHEMA(_config)
@@ -1345,7 +1382,6 @@ class Virtuals:
         setattr(obj, "_id", id)
         setattr(obj, "is_device", _is_device)
         setattr(obj, "auto_generated", _auto_generated)
-        setattr(obj, "last_effect", _last_effect)
 
         # Store the object into the internal list and return it
         self._virtuals[id] = obj
@@ -1433,58 +1469,5 @@ class Virtuals:
             )
         _LOGGER.info(f"Active Devices: {active_devices}")
 
-
-def update_effect_config(config, virtual_id, effect):
-    """
-    Update the configuration of a virtual effect.
-
-    This function is important for maintaining both the active effect and adding
-    to the collection of effects configs on the virtual
-
-    Args:
-        config (dict): The current config structure
-        virtual_id (str): The ID of the virtual effect.
-        effect (Effect): The effect object containing the updated configuration.
-
-    Returns:
-        None
-    """
-    # Store as both the active effect to protect existing code, and one of effects
-    virtual = next(
-        (item for item in config["virtuals"] if item["id"] == virtual_id),
-        None,
-    )
-    if virtual:
-        if not ("effects" in virtual):
-            virtual["effects"] = {}
-        virtual["effects"][effect.type] = {}
-        virtual["effects"][effect.type]["type"] = effect.type
-        virtual["effects"][effect.type]["config"] = effect.config
-        if not ("effect" in virtual):
-            virtual["effect"] = {}
-        virtual["effect"]["type"] = effect.type
-        virtual["effect"]["config"] = effect.config
-        virtual["last_effect"] = effect.type
-
-
-def get_effects_config(config, virtual_id, effect_type):
-    effect_config = {}
-
-    virtual = next(
-        (
-            item
-            for item in config["virtuals"]
-            if item["id"] == virtual_id
-        ),
-        None,
-    )
-
-    if virtual:
-        effects = virtual.get("effects")
-        if effects:
-            try_config = effects.get(effect_type)["config"]
-            if try_config:
-                effect_config = try_config    
-    return effect_config
     
     
