@@ -1471,11 +1471,7 @@ def get_effects_config(config, virtual_id, effect_type):
     effect_config = {}
 
     virtual = next(
-        (
-            item
-            for item in config["virtuals"]
-            if item["id"] == virtual_id
-        ),
+        (item for item in config["virtuals"] if item["id"] == virtual_id),
         None,
     )
 
@@ -1484,7 +1480,5 @@ def get_effects_config(config, virtual_id, effect_type):
         if effects:
             try_config = effects.get(effect_type)["config"]
             if try_config:
-                effect_config = try_config    
+                effect_config = try_config
     return effect_config
-    
-    

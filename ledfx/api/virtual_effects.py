@@ -7,7 +7,7 @@ from aiohttp import web
 
 from ledfx.api import RestEndpoint
 from ledfx.config import save_config
-from ledfx.virtuals import update_effect_config, get_effects_config
+from ledfx.virtuals import get_effects_config, update_effect_config
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -232,7 +232,9 @@ class EffectsEndpoint(RestEndpoint):
 
         effect_config = data.get("config")
         if effect_config is None:
-            effect_config = get_effects_config(self._ledfx.config, virtual_id, effect_type)
+            effect_config = get_effects_config(
+                self._ledfx.config, virtual_id, effect_type
+            )
         elif effect_config == "RANDOMIZE":
             # Parse and break down schema for effect, in order to generate
             # acceptable random values

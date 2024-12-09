@@ -80,10 +80,14 @@ class VirtualEndpoint(RestEndpoint):
         if active:
             if not virtual._active_effect:
                 if virtual.last_effect:
-                    effect_config = get_effects_config(self._ledfx.config, virtual.id, virtual.last_effect)
+                    effect_config = get_effects_config(
+                        self._ledfx.config, virtual.id, virtual.last_effect
+                    )
                     if effect_config:
                         effect = self._ledfx.effects.create(
-                            ledfx=self._ledfx, type=virtual.last_effect, config=effect_config
+                            ledfx=self._ledfx,
+                            type=virtual.last_effect,
+                            config=effect_config,
                         )
                         virtual.set_effect(effect)
         try:
