@@ -496,6 +496,7 @@ class Virtual:
             self.flush_pending_clear_frame()
 
             self._active_effect = effect
+            self.last_effect = effect.type
             self._active_effect.activate(self)
             self._ledfx.events.fire_event(
                 EffectSetEvent(
@@ -1271,6 +1272,7 @@ class Virtuals:
                 config=virtual["config"],
                 is_device=virtual["is_device"],
                 auto_generated=virtual["auto_generated"],
+                last_effect=virtual.get("last_effect", None),
                 ledfx=self._ledfx,
             )
             if "segments" in virtual:
@@ -1331,6 +1333,8 @@ class Virtuals:
         _config = kwargs.pop("config", None)
         _is_device = kwargs.pop("is_device", False)
         _auto_generated = kwargs.pop("auto_generated", False)
+        _last_effect = kwargs.pop("last_effect", None)
+
         if _config is not None:
             _config = Virtual.CONFIG_SCHEMA(_config)
             obj = Virtual(config=_config, *args, **kwargs)
@@ -1341,6 +1345,7 @@ class Virtuals:
         setattr(obj, "_id", id)
         setattr(obj, "is_device", _is_device)
         setattr(obj, "auto_generated", _auto_generated)
+        setattr(obj, "last_effect", _last_effect)
 
         # Store the object into the internal list and return it
         self._virtuals[id] = obj
@@ -1459,3 +1464,27 @@ def update_effect_config(config, virtual_id, effect):
             virtual["effect"] = {}
         virtual["effect"]["type"] = effect.type
         virtual["effect"]["config"] = effect.config
+        virtual["last_effect"] = effect.type
+
+
+def get_effects_config(config, virtual_id, effect_type):
+    effect_config = {}
+
+    virtual = next(
+        (
+            item
+            for item in config["virtuals"]
+            if item["id"] == virtual_id
+        ),
+        None,
+    )
+
+    if virtual:
+        effects = virtual.get("effects")
+        if effects:
+            try_config = effects.get(effect_type)["config"]
+            if try_config:
+                effect_config = try_config    
+    return effect_config
+    
+    
