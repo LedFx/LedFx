@@ -452,7 +452,7 @@ class Device(BaseRegistry):
                 "auto_generated": True,
             }
         )
-        
+
         virtual.virtual_cfg = self._ledfx.config["virtuals"][-1]
 
 
@@ -817,9 +817,9 @@ class Devices(RegistryLoader):
                 "auto_generated": virtual.auto_generated,
             }
         )
-        
+
         virtual.virtual_cfg = self._ledfx.config["virtuals"][-1]
-        
+
         self._ledfx.events.fire_event(DeviceCreatedEvent(device.name))
         await device.add_postamble()
 
