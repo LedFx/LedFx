@@ -7,7 +7,6 @@ from aiohttp import web
 
 from ledfx.api import RestEndpoint
 from ledfx.config import save_config
-from ledfx.virtuals import update_effect_config
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -188,7 +187,7 @@ class EffectsEndpoint(RestEndpoint):
             _LOGGER.warning(error_message)
             return await self.internal_error(error_message, "warning")
 
-        update_effect_config(self._ledfx.config, virtual_id, effect)
+        virtual.update_effect_config(effect)
 
         save_config(
             config=self._ledfx.config,
@@ -232,19 +231,7 @@ class EffectsEndpoint(RestEndpoint):
 
         effect_config = data.get("config")
         if effect_config is None:
-            effect_config = {}
-            # if we already have this effect in effects then load it up
-            virt_cfg = next(
-                (
-                    item
-                    for item in self._ledfx.config["virtuals"]
-                    if item["id"] == virtual_id
-                ),
-                None,
-            )
-            if virt_cfg and "effects" in virt_cfg:
-                if effect_type in virt_cfg["effects"]:
-                    effect_config = virt_cfg["effects"][effect_type]["config"]
+            effect_config = virtual.get_effects_config(effect_type)
         elif effect_config == "RANDOMIZE":
             # Parse and break down schema for effect, in order to generate
             # acceptable random values
@@ -307,7 +294,7 @@ class EffectsEndpoint(RestEndpoint):
             _LOGGER.warning(error_message)
             return await self.internal_error(error_message, "error")
 
-        update_effect_config(self._ledfx.config, virtual_id, effect)
+        virtual.update_effect_config(effect)
 
         save_config(
             config=self._ledfx.config,
