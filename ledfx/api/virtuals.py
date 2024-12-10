@@ -123,6 +123,8 @@ class VirtualsEndpoint(RestEndpoint):
                 }
             )
 
+            virtual.virtual_cfg = self._ledfx.config["virtuals"][-1]
+
             response = {
                 "status": "success",
                 "payload": {
