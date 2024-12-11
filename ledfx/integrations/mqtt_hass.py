@@ -562,15 +562,10 @@ class MQTT_HASS(Integration):
                 except (ValueError, RuntimeError) as msg:
                     _LOGGER.warning(msg)
 
-                # Save to config
-                for idx, item in enumerate(self._ledfx.config["virtuals"]):
-                    if item["id"] == virtual.id:
-                        item["active"] = virtual.active
-                        item["effect"] = {}
-                        item["effect"]["type"] = "singleColor"
-                        item["effect"]["config"] = {"color": color}
-                        self._ledfx.config["virtuals"][idx] = item
-                        break
+                virtual.virtual_cfg["active"] = virtual.active
+                virtual.virtual_cfg["effect"] = {}
+                virtual.virtual_cfg["effect"]["type"] = "singleColor"
+                virtual.virtual_cfg["effect"]["config"] = {"color": color}
 
                 save_config(
                     config=self._ledfx.config,

@@ -95,12 +95,7 @@ class VirtualEndpoint(RestEndpoint):
             _LOGGER.warning(error_message)
             return await self.internal_error(error_message, "error")
 
-        # Update ledfx's config
-        for idx, item in enumerate(self._ledfx.config["virtuals"]):
-            if item["id"] == virtual.id:
-                item["active"] = virtual.active
-                self._ledfx.config["virtuals"][idx] = item
-                break
+        virtual.virtual_cfg["active"] = virtual.active
 
         save_config(
             config=self._ledfx.config,
@@ -142,12 +137,7 @@ class VirtualEndpoint(RestEndpoint):
             virtual.update_segments(old_segments)
             return await self.internal_error(error_message, "error")
 
-        # Update ledfx's config
-        for idx, item in enumerate(self._ledfx.config["virtuals"]):
-            if item["id"] == virtual.id:
-                item["segments"] = virtual.segments
-                self._ledfx.config["virtuals"][idx] = item
-                break
+        virtual.virtual_cfg["segments"] = virtual.segments
 
         save_config(
             config=self._ledfx.config,

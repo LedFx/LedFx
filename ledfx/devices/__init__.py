@@ -361,12 +361,7 @@ class Device(BaseRegistry):
                 auto_generated_virtuals_to_destroy.append(virtual.id)
                 continue
 
-            # Update ledfx's config
-            for idx, item in enumerate(self._ledfx.config["virtuals"]):
-                if item["id"] == virtual.id:
-                    item["segments"] = virtual.segments
-                    self._ledfx.config["virtuals"][idx] = item
-                    break
+            virtual.virtual_cfg["segments"] = virtual.segments
 
             if active:
                 virtual.activate()

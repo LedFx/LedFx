@@ -80,12 +80,9 @@ class VirtualsEndpoint(RestEndpoint):
             _LOGGER.info(
                 f"Updated virtual {virtual.id} config to {virtual_config}"
             )
-            # Update ledfx's config
-            for idx, item in enumerate(self._ledfx.config["virtuals"]):
-                if item["id"] == virtual.id:
-                    item["config"] = virtual.config
-                    self._ledfx.config["virtuals"][idx] = item
-                    break
+            
+            virtual.virtual_cfg["config"] = virtual.config
+
             response = {
                 "status": "success",
                 "payload": {
