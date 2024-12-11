@@ -80,7 +80,7 @@ class VirtualsEndpoint(RestEndpoint):
             _LOGGER.info(
                 f"Updated virtual {virtual.id} config to {virtual_config}"
             )
-            
+
             virtual.virtual_cfg["config"] = virtual.config
 
             response = {
