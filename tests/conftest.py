@@ -74,5 +74,5 @@ def pytest_sessionfinish(session, exitstatus):
     except Exception as e:
         pytest.fail(f"An error occurred while shutting down LedFx: {str(e)}")
     # Wait for LedFx to terminate
-    while ledfx.poll() is not None:
+    while ledfx.poll() is None:
         time.sleep(0.5)
