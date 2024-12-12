@@ -235,11 +235,8 @@ class VirtualPresetsEndpoint(RestEndpoint):
         # Clear the effect
         virtual.clear_effect()
 
-        for virtual in self._ledfx.config["virtuals"]:
-            if virtual["id"] == virtual_id:
-                if "effect" in virtual:
-                    del virtual["effect"]
-                    break
+        virtual.virtual_cfg.pop("effect", None)
+
         save_config(
             config=self._ledfx.config,
             config_dir=self._ledfx.config_dir,

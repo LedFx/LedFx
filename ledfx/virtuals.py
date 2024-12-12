@@ -310,12 +310,10 @@ class Virtual:
 
                 mode = self._config["transition_mode"]
                 self.frame_transitions = self.transitions[mode]
-            # Update internal config with new segment
-            for idx, item in enumerate(self._ledfx.config["virtuals"]):
-                if item["id"] == self.id:
-                    item["segments"] = self._segments
-                    self._ledfx.config["virtuals"][idx] = item
-                    break
+            # Update internal config with new segment if it exists, device creation only substantiates this later, so we need the test
+            if hasattr(self, 'virtual_cfg') and self.virtual_cfg is not None:
+                self.virtual_cfg["segments"] = self._segments
+            
             _LOGGER.debug(
                 f"Virtual {self.id}: updated with {len(self._segments)} segments, totalling {self.pixel_count} pixels"
             )
@@ -374,11 +372,9 @@ class Virtual:
             self.fallback_effect_type = None
             self.fallback_suppress_transition = False
 
+            _LOGGER.error(f"{self.name} set_fallback: no fallback effect to set")
             # and make sure we save the config with the effect removed
-            for virtual_cfg in self._ledfx.config["virtuals"]:
-                if virtual_cfg["id"] == self.id:
-                    virtual_cfg.pop("effect", None)
-                    break
+            self.virtual_cfg.pop("effect", None)
 
             save_config(
                 config=self._ledfx.config,
@@ -1313,6 +1309,11 @@ class Virtuals:
                 auto_generated=virtual_cfg["auto_generated"],
                 ledfx=self._ledfx,
             )
+
+            # set the virtual up to have a reference into the cfg directly, so elsewhere we do not have to discover it
+            # used for effect, effects, last_effect etc
+            new_virtual.virtual_cfg = virtual_cfg
+
             if "segments" in virtual_cfg:
                 try:
                     new_virtual.update_segments(virtual_cfg["segments"])
@@ -1338,10 +1339,6 @@ class Virtuals:
                     )
                 except RuntimeError:
                     pass
-
-            # set the virtual up to have a reference into the cfg directly, so elsewhere we do not have to discover it
-            # used for effect, effects, last_effect etc
-            new_virtual.virtual_cfg = virtual_cfg
 
             # This adds support for configs that are configured as paused
             # via the active key if it exists. Let the setter deal with it

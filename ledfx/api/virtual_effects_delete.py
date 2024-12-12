@@ -42,20 +42,10 @@ class EffectsEndpoint(RestEndpoint):
         _LOGGER.info(f"Deleting effect {effect_type} for virtual {virtual_id}")
 
         # clearing specific effect from history
-        virtual_cfg = next(
-            (
-                v
-                for v in self._ledfx.config["virtuals"]
-                if v["id"] == virtual_id
-            ),
-            None,
-        )
         if virtual.active_effect and virtual.active_effect.type == effect_type:
             virtual.clear_effect()
-            if virtual_cfg:
-                virtual_cfg.pop("effect", None)
-        if virtual_cfg and "effects" in virtual_cfg:
-            virtual_cfg["effects"].pop(effect_type, None)
+            virtual.virtual_cfg.pop("effect", None)
+        virtual.virtual_cfg.get("effects", {}).pop(effect_type, None)
 
         save_config(
             config=self._ledfx.config,
