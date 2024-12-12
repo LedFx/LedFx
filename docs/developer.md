@@ -136,8 +136,11 @@ packages.
 
 3.  Install LedFx and its requirements using poetry:
 
+> **Note:** There is problem with installing aubio on python3.12 extra `CFLAGS` is needed
+
     ``` console
     $ cd LedFx
+    $ export CFLAGS="-Wno-incompatible-function-pointer-types"
     $ poetry install
     ```
 

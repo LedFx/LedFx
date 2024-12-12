@@ -80,25 +80,30 @@ Python 3.9 installed.
     venv](https://docs.python.org/3/tutorial/venv.html):
 
     ``` console
-    $ brew install python@3.9
+    $ brew install python@3.12
     $ brew install portaudio --HEAD
     $ brew install virtualenv
-    $ virtualenv -p python3.9 ~/ledfx-venv
+    $ virtualenv -p python3.12 ~/ledfx-venv
     $ source ~/ledfx-venv/bin/activate
+    $ pip install numpy~=1.23 --no-cache-dir
+    $ export CFLAGS="-Wno-incompatible-function-pointer-types"
+    $ pip install aubio==0.4.9 --no-cache-dir
     $ pip install --force-reinstall ledfx
+    $ ledfx --open-ui
     ```
 
 2.  If you get a numpy/aubio error please do the following:
 
     ``` console
     $ pip uninstall numpy aubio
-    $ pip install numpy --no-cache-dir
-    $ pip install aubio --no-cache-dir
+    $ pip install numpy~=1.23 --no-cache-dir
+    $ pip install aubio==0.4.9 --no-cache-dir
     ```
 
 3.  Launch LedFx with the `open-ui` option to launch the browser:
 
     ``` console
+    $ source ~/ledfx-venv/bin/activate 
     $ ledfx --open-ui
     ```
 
