@@ -111,7 +111,7 @@ Python 3.9 installed.
 3.  Launch LedFx with the `open-ui` option to launch the browser:
 
     ``` console
-    $ source ~/ledfx-venv/bin/activate 
+    $ source ~/ledfx-venv/bin/activate
     $ ledfx --open-ui
     ```
 
