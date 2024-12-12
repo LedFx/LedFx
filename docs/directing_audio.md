@@ -15,16 +15,40 @@ Tested on Ubuntu 20.10 64-bit
 
 **Instructions**
 
--   In the LedFx UI under \"Settings\" -\> \"Audio Input\", choose
-    \"pulse\" as the current device
+-   In the LedFx UI under \"Settings\" -\> \"Audio\", choose
+    \"pulse\" as the audio device
 
-![image](./_static/direct_audio_linux_1.png)
+![image](./_static/direct_audio_linux_new.png)
 
 -   In PulseAudio Volume Control under \"Recording\", choose \"ALSA
     plug-in\" and set \"Capture from\" to the audio stream you want to
     capture (e.g. \"Monitor of Built-in Audio Analog Stereo\")
 
 ![image](./_static/direct_audio_linux_2.png)
+
+## Linux CLI
+
+Tested on Ubuntu 20.10 64-bit, Raspberry Pi OS (32 and 64-Bit)
+
+**Requirements**
+
+-   [PulseAudio](https://www.freedesktop.org/wiki/Software/PulseAudio/?)
+-   [Pulsemixer](https://github.com/GeorgeFilipkin/pulsemixer/)
+
+**Instructions**
+
+-   In the LedFx UI under \"Settings\" -\> \"Audio\", choose
+    \"pulse\" as the audio device
+
+![image](./_static/direct_audio_linux_new.png)
+
+-   In **Pulsemixer** under **"F1 Output",** choose your audio application and move it to output stream you want to listen on (e.g."Built-in Audio Digital Stereo")
+
+![image](./_static/direct_audio_linux_cli_out.png)
+
+-   In **Pulsemixer** under **"F2 Input"**, choose "python" and move it to the audio stream you want to capture (e.g. "Monitor of Built-in Audio Digital Stereo")
+
+![image](./_static/direct_audio_linux_cli_in.png)
 
 ## macOS
 
