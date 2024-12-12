@@ -311,9 +311,9 @@ class Virtual:
                 mode = self._config["transition_mode"]
                 self.frame_transitions = self.transitions[mode]
             # Update internal config with new segment if it exists, device creation only substantiates this later, so we need the test
-            if hasattr(self, 'virtual_cfg') and self.virtual_cfg is not None:
+            if hasattr(self, "virtual_cfg") and self.virtual_cfg is not None:
                 self.virtual_cfg["segments"] = self._segments
-            
+
             _LOGGER.debug(
                 f"Virtual {self.id}: updated with {len(self._segments)} segments, totalling {self.pixel_count} pixels"
             )
@@ -372,7 +372,9 @@ class Virtual:
             self.fallback_effect_type = None
             self.fallback_suppress_transition = False
 
-            _LOGGER.error(f"{self.name} set_fallback: no fallback effect to set")
+            _LOGGER.error(
+                f"{self.name} set_fallback: no fallback effect to set"
+            )
             # and make sure we save the config with the effect removed
             self.virtual_cfg.pop("effect", None)
 
