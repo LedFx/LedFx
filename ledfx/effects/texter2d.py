@@ -291,12 +291,18 @@ class Texter2d(Twod, GradientEffect):
             offset += direction * self.sentence.space_block.w_width
 
     def side_scroll_func(self):
-        is_off_screen = (self.sentence.wordblocks[-1].pose.x
-            -self.sentence.wordblocks[-1].w_width / 2
-            > 1) if self.rtl_direction else (
-              self.sentence.wordblocks[-1].pose.x
-            +self.sentence.wordblocks[-1].w_width / 2
-            < -1
+        is_off_screen = (
+            (
+                self.sentence.wordblocks[-1].pose.x
+                - self.sentence.wordblocks[-1].w_width / 2
+                > 1
+            )
+            if self.rtl_direction
+            else (
+                self.sentence.wordblocks[-1].pose.x
+                + self.sentence.wordblocks[-1].w_width / 2
+                < -1
+            )
         )
 
         if is_off_screen:
@@ -467,4 +473,3 @@ class Texter2d(Twod, GradientEffect):
 
     def fade_func(self):
         self.wave_func()
-
