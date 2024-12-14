@@ -131,6 +131,11 @@ class Texter2d(Twod, GradientEffect):
                 description="general speed slider for text effects",
                 default=1,
             ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=3)),
+            vol.Optional(
+                "rtl_direction",
+                description="Enable right-to-left text display for languages like Arabic and Hebrew",
+                default=False,
+            ): bool,
         },
     )
 
@@ -148,6 +153,7 @@ class Texter2d(Twod, GradientEffect):
         self.value_option_1 = self._config["value_option_1"]
         self.deep_diag = self._config["deep_diag"]
         self.use_gradient = self._config["use_gradient"]
+        self.rtl_direction = self._config["rtl_direction"]
         # putting text_color into a list so that it can be treated the same as a gradient list
         self.text_color = [parse_color(self._config["text_color"])]
         self.resize_method = RESIZE_METHOD_MAPPING[
@@ -263,7 +269,7 @@ class Texter2d(Twod, GradientEffect):
         self.base_speed = self.speed_option_1
 
         if self.base_speed != 0:
-            offset = 1
+            offset = -1 if self.rtl_direction else 1
         else:
             # we want to center the text, so we need to know the overall sentence size
             # we can then calculate the offset to center the text
@@ -275,19 +281,25 @@ class Texter2d(Twod, GradientEffect):
             sentence_width -= self.sentence.space_block.w_width
             offset = -sentence_width / 2
 
+        direction = 1 if not self.rtl_direction else -1
+        speed = self.base_speed if not self.rtl_direction else -self.base_speed
         for idx, word in enumerate(self.sentence.wordblocks):
-            offset += word.w_width / 2
+            offset += direction * word.w_width / 2
             word.pose.set_vectors(offset, 0, 0, 1, 10000)
-            word.pose.d_pos = (self.base_speed, 0.5)
-            offset += word.w_width / 2
-            offset += self.sentence.space_block.w_width
+            word.pose.d_pos = (speed, 0.5)
+            offset += direction * word.w_width / 2
+            offset += direction * self.sentence.space_block.w_width
 
     def side_scroll_func(self):
-        if (
-            self.sentence.wordblocks[-1].pose.x
-            + self.sentence.wordblocks[-1].w_width / 2
+        is_off_screen = (self.sentence.wordblocks[-1].pose.x
+            -self.sentence.wordblocks[-1].w_width / 2
+            > 1) if self.rtl_direction else (
+              self.sentence.wordblocks[-1].pose.x
+            +self.sentence.wordblocks[-1].w_width / 2
             < -1
-        ):
+        )
+
+        if is_off_screen:
             self.side_scroll_init()
             # call the set_fallback function of the parent virtual as we completed a cycle
             self._virtual.fallback_fire_set()
@@ -455,3 +467,4 @@ class Texter2d(Twod, GradientEffect):
 
     def fade_func(self):
         self.wave_func()
+
