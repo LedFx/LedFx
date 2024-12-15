@@ -314,7 +314,7 @@ class Virtual:
             # Update internal config with new segment if it exists, device creation only substantiates this later, so we need the test
             if hasattr(self, "virtual_cfg") and self.virtual_cfg is not None:
                 self.virtual_cfg["segments"] = self._segments
-            
+
             _LOGGER.debug(
                 f"Virtual {self.id}: updated with {len(self._segments)} segments, totalling {self.pixel_count} pixels"
             )
