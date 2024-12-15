@@ -111,7 +111,7 @@ virtual_config_tests = {
                         "config": {
                             "icon_name": "mdi:led-strip",
                             "center_offset": 0,
-                            "refresh_rate": 62,
+                            "refresh_rate": SystemInfo.default_fps(),
                             "pixel_count": 64,
                             "name": "test dummy",
                         },
@@ -125,7 +125,7 @@ virtual_config_tests = {
                         "config": {
                             "icon_name": "mdi:led-strip",
                             "center_offset": 0,
-                            "refresh_rate": 62,
+                            "refresh_rate": SystemInfo.default_fps(),
                             "pixel_count": 128,
                             "name": "test dummy 2",
                         },
