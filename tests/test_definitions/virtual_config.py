@@ -822,7 +822,7 @@ virtual_config_tests = {
         expected_response_keys=[],
         expected_response_values=[],
         payload_to_send={},
-        sleep_after_test=1.0
+        sleep_after_test=1.0,
     ),
     "cleanup_dummy_device_2": APITestCase(
         execution_order=31,
@@ -832,7 +832,7 @@ virtual_config_tests = {
         expected_response_keys=[],
         expected_response_values=[],
         payload_to_send={},
-        sleep_after_test=1.0
+        sleep_after_test=1.0,
     ),
     "cleanup_dummy_device_3": APITestCase(
         execution_order=32,
@@ -842,6 +842,6 @@ virtual_config_tests = {
         expected_response_keys=[],
         expected_response_values=[],
         payload_to_send={},
-        sleep_after_test=1.0
+        sleep_after_test=1.0,
     ),
 }
