@@ -892,16 +892,14 @@ virtual_config_tests = {
             }
         ],
     ),   
-    
-    # 
-    # "cleanup_dummy_device_2": APITestCase(
-    #     execution_order=15,
-    #     method="DELETE",
-    #     api_endpoint="/api/virtuals/test-dummy-2",
-    #     expected_return_code=200,
-    #     expected_response_keys=[],
-    #     expected_response_values=[],
-    #     payload_to_send={},
-    #     sleep_after_test=1.0
-    # ),
+    "cleanup_dummy_device_2": APITestCase(
+        execution_order=30,
+        method="DELETE",
+        api_endpoint="/api/virtuals/test-dummy-2",
+        expected_return_code=200,
+        expected_response_keys=[],
+        expected_response_values=[],
+        payload_to_send={},
+        sleep_after_test=1.0
+    ),
 }
