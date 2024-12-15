@@ -218,6 +218,8 @@ class VirtualPresetsEndpoint(RestEndpoint):
         return await self.bare_request_success(response)
 
     async def delete(self, virtual_id) -> web.Response:
+        # TODO: This API is not currently used, and is not functional
+        # TODO: https://github.com/LedFx/LedFx/issues/1231
         """Delete a virtual preset.
 
         Args:
@@ -235,6 +237,7 @@ class VirtualPresetsEndpoint(RestEndpoint):
         # Clear the effect
         virtual.clear_effect()
 
+        # TODO: Add a unit test for deleting a virtual preset effect, once fixed / removed
         virtual.virtual_cfg.pop("effect", None)
 
         save_config(

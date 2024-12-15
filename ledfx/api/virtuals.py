@@ -53,7 +53,7 @@ class VirtualsEndpoint(RestEndpoint):
             request (web.Request): The request object containing the virtual `config` dict.
 
         Returns:
-            web.Response: The response indicating the success or failure of the deletion.
+            web.Response: The response indicating the success or failure of the creation.
         """
         try:
             data = await request.json()

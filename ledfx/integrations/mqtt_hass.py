@@ -562,6 +562,7 @@ class MQTT_HASS(Integration):
                 except (ValueError, RuntimeError) as msg:
                     _LOGGER.warning(msg)
 
+                # TODO: Stare at this to convince self, not writing unit test for this
                 virtual.virtual_cfg["active"] = virtual.active
                 virtual.virtual_cfg["effect"] = {}
                 virtual.virtual_cfg["effect"]["type"] = "singleColor"
