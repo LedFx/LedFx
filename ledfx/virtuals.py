@@ -443,7 +443,9 @@ class Virtual:
                 elif not self.fallback_active:
                     self.fallback_effect_type = self._active_effect.type
                     self.fallback_config = self._active_effect.config
-                    _LOGGER.info(f"Setting fallback to {self.fallback_effect_type}")
+                    _LOGGER.info(
+                        f"Setting fallback to {self.fallback_effect_type}"
+                    )
                 # else: don't let new fallbacks override active fallbacks, just bump the timer
                 self.fallback_start(fallback)
 
