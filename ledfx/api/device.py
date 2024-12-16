@@ -134,7 +134,9 @@ class DeviceEndpoint(RestEndpoint):
             _LOGGER.info(error_message)
             return await self.invalid_request(error_message)
 
-        device.clear_effect()
+        # TODO: this function does not exist, no one calls this API!
+        # TODO: see https://github.com/LedFx/LedFx/issues/1226
+        # device.clear_effect()
         await device.remove_from_virtuals()
         self._ledfx.devices.destroy(device_id)
 

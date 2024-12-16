@@ -39,23 +39,24 @@ class EffectsEndpoint(RestEndpoint):
                 "Required attribute 'type' was not provided"
             )
 
-        _LOGGER.info(f"Deleting effect {effect_type} for virtual {virtual_id}")
+        _LOGGER.info(
+            f"Deleting effect {effect_type} for virtual {virtual_id} from effects"
+        )
 
         # clearing specific effect from history
-        virtual_cfg = next(
-            (
-                v
-                for v in self._ledfx.config["virtuals"]
-                if v["id"] == virtual_id
-            ),
-            None,
-        )
-        if virtual.active_effect and virtual.active_effect.type == effect_type:
-            virtual.clear_effect()
-            if virtual_cfg:
-                virtual_cfg.pop("effect", None)
-        if virtual_cfg and "effects" in virtual_cfg:
-            virtual_cfg["effects"].pop(effect_type, None)
+        try:
+            if (
+                virtual.active_effect
+                and virtual.active_effect.type == effect_type
+            ):
+                virtual.clear_effect()
+                virtual.virtual_cfg.pop("effect", None)
+        except Exception as e:
+            _LOGGER.error(
+                f"Error clearing active effect in effects delete: {e}"
+            )
+
+        virtual.virtual_cfg.get("effects", {}).pop(effect_type, None)
 
         save_config(
             config=self._ledfx.config,

@@ -6,7 +6,6 @@ from aiohttp import web
 from ledfx.api import RestEndpoint
 from ledfx.color import parse_color, validate_color
 from ledfx.config import save_config
-from ledfx.virtuals import update_effect_config
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -152,9 +151,7 @@ class VirtualsToolsEndpoint(RestEndpoint):
                 except (ValueError, RuntimeError) as msg:
                     continue
 
-                update_effect_config(
-                    self._ledfx.config, dest_virtual_id, effect
-                )
+                dest_virtual.update_effect_config(effect)
                 updated += 1
 
             if updated > 0:

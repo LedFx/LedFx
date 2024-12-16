@@ -76,6 +76,18 @@ class VirtualEndpoint(RestEndpoint):
             )
 
         # Update the virtual's configuration
+        if active:
+            if not virtual._active_effect:
+                last_effect = virtual.virtual_cfg.get("last_effect", None)
+                if last_effect:
+                    effect_config = virtual.get_effects_config(last_effect)
+                    if effect_config:
+                        effect = self._ledfx.effects.create(
+                            ledfx=self._ledfx,
+                            type=last_effect,
+                            config=effect_config,
+                        )
+                        virtual.set_effect(effect)
         try:
             virtual.active = active
         except ValueError as msg:
@@ -83,12 +95,7 @@ class VirtualEndpoint(RestEndpoint):
             _LOGGER.warning(error_message)
             return await self.internal_error(error_message, "error")
 
-        # Update ledfx's config
-        for idx, item in enumerate(self._ledfx.config["virtuals"]):
-            if item["id"] == virtual.id:
-                item["active"] = virtual.active
-                self._ledfx.config["virtuals"][idx] = item
-                break
+        virtual.virtual_cfg["active"] = virtual.active
 
         save_config(
             config=self._ledfx.config,
@@ -130,12 +137,7 @@ class VirtualEndpoint(RestEndpoint):
             virtual.update_segments(old_segments)
             return await self.internal_error(error_message, "error")
 
-        # Update ledfx's config
-        for idx, item in enumerate(self._ledfx.config["virtuals"]):
-            if item["id"] == virtual.id:
-                item["segments"] = virtual.segments
-                self._ledfx.config["virtuals"][idx] = item
-                break
+        virtual.virtual_cfg["segments"] = virtual.segments
 
         save_config(
             config=self._ledfx.config,

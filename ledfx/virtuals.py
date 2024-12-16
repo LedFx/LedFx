@@ -160,6 +160,7 @@ class Virtual:
         self.lock = threading.Lock()
         self.clear_handle = None
         self.fallback_effect_type = None
+        self.fallback_active = False
         self.fallback_fire = False
         self.fallback_config = None
         self.fallback_timer = None
@@ -310,12 +311,10 @@ class Virtual:
 
                 mode = self._config["transition_mode"]
                 self.frame_transitions = self.transitions[mode]
-            # Update internal config with new segment
-            for idx, item in enumerate(self._ledfx.config["virtuals"]):
-                if item["id"] == self.id:
-                    item["segments"] = self._segments
-                    self._ledfx.config["virtuals"][idx] = item
-                    break
+            # Update internal config with new segment if it exists, device creation only substantiates this later, so we need the test
+            if hasattr(self, "virtual_cfg") and self.virtual_cfg is not None:
+                self.virtual_cfg["segments"] = self._segments
+
             _LOGGER.debug(
                 f"Virtual {self.id}: updated with {len(self._segments)} segments, totalling {self.pixel_count} pixels"
             )
@@ -350,40 +349,29 @@ class Virtual:
         """
         Sets the active effect to the stored fallback effect if available.
         """
-        if self.fallback_effect_type is not None:
 
-            effect = self._ledfx.effects.create(
-                ledfx=self._ledfx,
-                type=self.fallback_effect_type,
-                config=self.fallback_config,
-            )
-            self.set_effect(effect, fallback=None)
-            update_effect_config(self._ledfx.config, self.id, effect)
-            save_config(
-                config=self._ledfx.config,
-                config_dir=self._ledfx.config_dir,
-            )
-            # make sure fallback is disabled
-            self.fallback_effect_type = None
-            self.fallback_suppress_transition = False
-            _LOGGER.info(f"{self.name} set_fallback: suppress = False")
-        else:
-            # there was no active effect when the fallback effect started
-            self.clear_effect()
-            # make sure fallback is disabled
-            self.fallback_effect_type = None
-            self.fallback_suppress_transition = False
+        if self.fallback_active:
+            if self.fallback_effect_type is not None:
 
-            # and make sure we save the config with the effect removed
-            for virtual_cfg in self._ledfx.config["virtuals"]:
-                if virtual_cfg["id"] == self.id:
-                    virtual_cfg.pop("effect", None)
-                    break
+                effect = self._ledfx.effects.create(
+                    ledfx=self._ledfx,
+                    type=self.fallback_effect_type,
+                    config=self.fallback_config,
+                )
+                self.set_effect(effect, fallback=None)
+                self.update_effect_config(effect)
+                _LOGGER.info(f"{self.name} set_fallback: suppress = False")
+            else:
+                # there was no active effect when the fallback effect started
+                self.clear_effect()
+                # and make sure we save the config with the effect removed
+                self.virtual_cfg.pop("effect", None)
 
             save_config(
                 config=self._ledfx.config,
                 config_dir=self._ledfx.config_dir,
             )
+            self.fallback_clear()
 
     def fallback_clear(self):
         """clear down all fallback behaviours, normally called after a fallback has completed"""
@@ -392,6 +380,7 @@ class Virtual:
             self.fallback_timer.cancel()
             self.fallback_timer = None
         self.fallback_suppress_transition = False
+        self.fallback_active = False
         _LOGGER.info(f"{self.name} fallback_clear: suppress = False")
 
     def fallback_start(self, fallback: float):
@@ -409,6 +398,7 @@ class Virtual:
         _LOGGER.info(f"Setting fallback timer for {fallback} seconds")
         self.fallback_timer = threading.Timer(fallback, self.fallback_fire_set)
         self.fallback_timer.start()
+        self.fallback_active = True
 
     def fallback_fire_set_with_lock(self):
         """Use this function to trigger a fallback from an external source such as api calls"""
@@ -420,7 +410,7 @@ class Virtual:
         if self.fallback_timer is not None:
             self.fallback_timer.cancel()
             self.fallback_timer = None
-        if self.fallback_effect_type is not None:
+        if self.fallback_active:
             _LOGGER.info(f"{self.name} fallback_fire_set")
             self.fallback_fire = True
 
@@ -447,24 +437,17 @@ class Virtual:
 
             if fallback is not None:
                 _LOGGER.info("Fallback requested")
-                if self._active_effect is not None:
-                    if self.fallback_effect_type is None:
-                        self.fallback_effect_type = self._active_effect.type
-                        self.fallback_config = self._active_effect.config
-                        self.fallback_start(fallback)
-                        _LOGGER.info(
-                            f"Setting fallback to {self.fallback_effect_type}"
-                        )
-                    else:
-                        # don't let new fallbacks override old ones, we don't want text falling back to text
-                        _LOGGER.info(
-                            f"There is already a fallback registered {self.fallback_effect_type}"
-                        )
-                        self.fallback_start(fallback)
-                else:
+                if self._active_effect is None:
                     _LOGGER.info("No current _active_effect to fallback to")
                     self.fallback_effect_type = None
-                    self.fallback_start(fallback)
+                elif not self.fallback_active:
+                    self.fallback_effect_type = self._active_effect.type
+                    self.fallback_config = self._active_effect.config
+                    _LOGGER.info(
+                        f"Setting fallback to {self.fallback_effect_type}"
+                    )
+                # else: don't let new fallbacks override active fallbacks, just bump the timer
+                self.fallback_start(fallback)
 
             if (
                 self._config["transition_mode"] != "None"
@@ -1077,6 +1060,46 @@ class Virtual:
             else:
                 return 0
 
+    def update_effect_config(self, effect):
+        """
+        Update the effect configuration of a virtual
+        Handle both an active effect and the effects history
+
+        Args:
+            effect (Effect): The effect object containing the updated configuration.
+
+        Returns:
+            None
+        """
+        # Store as both the active effect to protect existing code, and one of effects
+        self.virtual_cfg.setdefault("effects", {})
+        self.virtual_cfg["effects"][effect.type] = {
+            "type": effect.type,
+            "config": effect.config,
+        }
+        self.virtual_cfg.setdefault("effect", {})
+        self.virtual_cfg["effect"] = {
+            "type": effect.type,
+            "config": effect.config,
+        }
+        self.virtual_cfg["last_effect"] = effect.type
+
+    def get_effects_config(self, effect_type):
+        """
+        Search the virtuals effects config backing store and return its config if found
+
+        Args:
+            effect_type: String name for effect to recover
+
+        Returns:
+            effect config or empty dict {}
+        """
+        return (
+            self.virtual_cfg.get("effects", {})
+            .get(effect_type, {})
+            .get("config", {})
+        )
+
     @staticmethod
     def schema() -> vol.Schema:
         """returns the schema for the object"""
@@ -1264,20 +1287,23 @@ class Virtuals:
         self._virtuals = {}
 
     def create_from_config(self, config, pause_all=False):
-        for virtual in config:
-            _LOGGER.debug(f"Loading virtual from config: {virtual}")
-            self._ledfx.virtuals.create(
-                id=virtual["id"],
-                config=virtual["config"],
-                is_device=virtual["is_device"],
-                auto_generated=virtual["auto_generated"],
+        for virtual_cfg in config:
+            _LOGGER.debug(f"Loading virtual from config: {virtual_cfg}")
+            new_virtual = self._ledfx.virtuals.create(
+                id=virtual_cfg["id"],
+                config=virtual_cfg["config"],
+                is_device=virtual_cfg["is_device"],
+                auto_generated=virtual_cfg["auto_generated"],
                 ledfx=self._ledfx,
             )
-            if "segments" in virtual:
+
+            # set the virtual up to have a reference into the cfg directly, so elsewhere we do not have to discover it
+            # used for effect, effects, last_effect etc
+            new_virtual.virtual_cfg = virtual_cfg
+
+            if "segments" in virtual_cfg:
                 try:
-                    self._ledfx.virtuals.get(virtual["id"]).update_segments(
-                        virtual["segments"]
-                    )
+                    new_virtual.update_segments(virtual_cfg["segments"])
                 except vol.MultipleInvalid:
                     _LOGGER.warning(
                         "Virtual Segment Changed. Not restoring segment"
@@ -1286,14 +1312,14 @@ class Virtuals:
                 except RuntimeError:
                     pass
 
-            if "effect" in virtual:
+            if "effect" in virtual_cfg:
                 try:
                     effect = self._ledfx.effects.create(
                         ledfx=self._ledfx,
-                        type=virtual["effect"]["type"],
-                        config=virtual["effect"]["config"],
+                        type=virtual_cfg["effect"]["type"],
+                        config=virtual_cfg["effect"]["config"],
                     )
-                    self._ledfx.virtuals.get(virtual["id"]).set_effect(effect)
+                    new_virtual.set_effect(effect)
                 except vol.MultipleInvalid:
                     _LOGGER.warning(
                         "Effect schema changed. Not restoring effect"
@@ -1303,15 +1329,17 @@ class Virtuals:
 
             # This adds support for configs that are configured as paused
             # via the active key if it exists. Let the setter deal with it
-            if "active" in virtual and not virtual["active"]:
-                self._ledfx.virtuals.get(virtual["id"]).active = False
+            if "active" in virtual_cfg and not virtual_cfg["active"]:
+                new_virtual.active = False
 
             # global pause is handled differently to virtual pause
             if pause_all:
-                self._ledfx.virtuals.get(virtual["id"])._paused = True
+                new_virtual._paused = True
 
             self._ledfx.events.fire_event(
-                VirtualConfigUpdateEvent(virtual["id"], virtual["config"])
+                VirtualConfigUpdateEvent(
+                    virtual_cfg["id"], virtual_cfg["config"]
+                )
             )
 
     def schema(self):
@@ -1331,6 +1359,7 @@ class Virtuals:
         _config = kwargs.pop("config", None)
         _is_device = kwargs.pop("is_device", False)
         _auto_generated = kwargs.pop("auto_generated", False)
+
         if _config is not None:
             _config = Virtual.CONFIG_SCHEMA(_config)
             obj = Virtual(config=_config, *args, **kwargs)
@@ -1427,35 +1456,3 @@ class Virtuals:
                 f"{virtual_id:<29} {str(virtual.is_device):<29}{str(virtual.active):<10}{str(virtual.streaming):<10}"
             )
         _LOGGER.info(f"Active Devices: {active_devices}")
-
-
-def update_effect_config(config, virtual_id, effect):
-    """
-    Update the configuration of a virtual effect.
-
-    This function is important for maintaining both the active effect and adding
-    to the collection of effects configs on the virtual
-
-    Args:
-        config (dict): The current config structure
-        virtual_id (str): The ID of the virtual effect.
-        effect (Effect): The effect object containing the updated configuration.
-
-    Returns:
-        None
-    """
-    # Store as both the active effect to protect existing code, and one of effects
-    virtual = next(
-        (item for item in config["virtuals"] if item["id"] == virtual_id),
-        None,
-    )
-    if virtual:
-        if not ("effects" in virtual):
-            virtual["effects"] = {}
-        virtual["effects"][effect.type] = {}
-        virtual["effects"][effect.type]["type"] = effect.type
-        virtual["effects"][effect.type]["config"] = effect.config
-        if not ("effect" in virtual):
-            virtual["effect"] = {}
-        virtual["effect"]["type"] = effect.type
-        virtual["effect"]["config"] = effect.config

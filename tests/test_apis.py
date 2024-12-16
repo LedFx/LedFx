@@ -8,6 +8,7 @@ from conftest import all_effects, audio_configs
 from tests.test_definitions.devices import device_tests
 from tests.test_definitions.effects import effect_tests
 from tests.test_definitions.proof_of_life import proof_of_life_tests
+from tests.test_definitions.virtual_config import virtual_config_tests
 from tests.test_utilities.consts import SERVER_PATH
 from tests.test_utilities.test_utils import HTTPSession
 
@@ -31,6 +32,7 @@ test_groups = [
     ("effect_tests", effect_tests),
     ("all_effects", all_effects),
     ("audio_configs", audio_configs),
+    ("virtual_config_tests", virtual_config_tests),
 ]
 
 # Define a list of all test cases

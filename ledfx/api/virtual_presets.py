@@ -11,7 +11,6 @@ from ledfx.utils import (
     generate_id,
     inject_missing_default_keys,
 )
-from ledfx.virtuals import update_effect_config
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -138,7 +137,7 @@ class VirtualPresetsEndpoint(RestEndpoint):
             _LOGGER.warning(error_message)
             return await self.internal_error(error_message, "error")
 
-        update_effect_config(self._ledfx.config, virtual_id, effect)
+        virtual.update_effect_config(effect)
 
         save_config(
             config=self._ledfx.config,
@@ -219,6 +218,8 @@ class VirtualPresetsEndpoint(RestEndpoint):
         return await self.bare_request_success(response)
 
     async def delete(self, virtual_id) -> web.Response:
+        # TODO: This API is not currently used, and is not functional
+        # TODO: https://github.com/LedFx/LedFx/issues/1231
         """Delete a virtual preset.
 
         Args:
@@ -236,11 +237,9 @@ class VirtualPresetsEndpoint(RestEndpoint):
         # Clear the effect
         virtual.clear_effect()
 
-        for virtual in self._ledfx.config["virtuals"]:
-            if virtual["id"] == virtual_id:
-                if "effect" in virtual:
-                    del virtual["effect"]
-                    break
+        # TODO: Add a unit test for deleting a virtual preset effect, once fixed / removed
+        virtual.virtual_cfg.pop("effect", None)
+
         save_config(
             config=self._ledfx.config,
             config_dir=self._ledfx.config_dir,

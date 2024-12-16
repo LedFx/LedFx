@@ -53,7 +53,7 @@ class VirtualsEndpoint(RestEndpoint):
             request (web.Request): The request object containing the virtual `config` dict.
 
         Returns:
-            web.Response: The response indicating the success or failure of the deletion.
+            web.Response: The response indicating the success or failure of the creation.
         """
         try:
             data = await request.json()
@@ -80,12 +80,9 @@ class VirtualsEndpoint(RestEndpoint):
             _LOGGER.info(
                 f"Updated virtual {virtual.id} config to {virtual_config}"
             )
-            # Update ledfx's config
-            for idx, item in enumerate(self._ledfx.config["virtuals"]):
-                if item["id"] == virtual.id:
-                    item["config"] = virtual.config
-                    self._ledfx.config["virtuals"][idx] = item
-                    break
+
+            virtual.virtual_cfg["config"] = virtual.config
+
             response = {
                 "status": "success",
                 "payload": {
@@ -122,6 +119,8 @@ class VirtualsEndpoint(RestEndpoint):
                     "auto_generated": virtual.auto_generated,
                 }
             )
+
+            virtual.virtual_cfg = self._ledfx.config["virtuals"][-1]
 
             response = {
                 "status": "success",
