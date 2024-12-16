@@ -437,23 +437,15 @@ class Virtual:
 
             if fallback is not None:
                 _LOGGER.info("Fallback requested")
-                if self._active_effect is not None:
-                    if not self.fallback_active:
-                        self.fallback_effect_type = self._active_effect.type
-                        self.fallback_config = self._active_effect.config
-                        _LOGGER.info(
-                            f"Setting fallback to {self.fallback_effect_type}"
-                        )
-                    else:
-                        # don't let new fallbacks override old ones, we don't want text falling back to text
-                        _LOGGER.info(
-                            f"There is already a fallback active {self.fallback_effect_type}"
-                        )
-                    self.fallback_start(fallback)
-                else:
+                if self._active_effect is None:
                     _LOGGER.info("No current _active_effect to fallback to")
                     self.fallback_effect_type = None
-                    self.fallback_start(fallback)
+                elif not self.fallback_active:
+                    self.fallback_effect_type = self._active_effect.type
+                    self.fallback_config = self._active_effect.config
+                    _LOGGER.info(f"Setting fallback to {self.fallback_effect_type}")
+                # else: don't let new fallbacks override active fallbacks, just bump the timer
+                self.fallback_start(fallback)
 
             if (
                 self._config["transition_mode"] != "None"
