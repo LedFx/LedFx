@@ -100,7 +100,7 @@ lets go over them all anyway first.
         segment that makes up the virtual
 4.  **icon name** - This is the icon that will be displayed in the UI,
     select something that makes sense to you. It is a string entry
-    field, from MDI ( Material Design Icons ) or MUI ( Material UI Icons ) 
+    field, from MDI ( Material Design Icons ) or MUI ( Material UI Icons )
 
     If using MDI the string should be preceeded by mdi:
     -   "mdi: \<icon-name-in-kebab-case\>"
