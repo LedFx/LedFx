@@ -152,6 +152,33 @@ packages.
 
 ------------------------------------------------------------------------
 
+### Local pytest
+
+There are a collection of system level tests run as a test clamp around the rest api's.
+
+These are run as part of the CI actions when raising a PR and must run clean green before a PR is merged.
+
+To run these local and / or develop more tests
+
+1) Ensure you have installed the developer tool dependancies with
+
+    ``` console
+    $ poetry install --with dev
+    ```
+
+2) Ensure you have local loopback installed, or you may hit failures once audio effects are under test
+
+    ``` console
+    $  ledfx-loopback-install
+    ```
+
+3) launch the suite of tests with
+
+
+    ``` console
+    $ poetry run pytest -vv
+    ```
+
 ## Frontend Development
 
 Building the LedFx frontend is different from how the core backend is
