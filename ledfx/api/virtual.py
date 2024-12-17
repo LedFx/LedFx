@@ -34,7 +34,7 @@ def make_virtual_response(virtual):
             "type": virtual.active_effect.type,
         }
         virtual_response["effect"] = effect_response
-    
+
     return virtual_response
 
 
