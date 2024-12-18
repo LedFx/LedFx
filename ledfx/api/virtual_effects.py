@@ -64,7 +64,7 @@ class EffectsEndpoint(RestEndpoint):
             virtual.active_effect, DummyEffect
         ):
             response = {
-                "effect":{
+                "effect": {
                     "config": virtual.active_effect.config,
                     "name": virtual.active_effect.name,
                     "type": virtual.active_effect.type,
@@ -72,7 +72,7 @@ class EffectsEndpoint(RestEndpoint):
             }
         else:
             response = {"effect": {}}
-                    
+
         return await self.bare_request_success(response)
 
     async def put(self, virtual_id, request) -> web.Response:
