@@ -408,7 +408,7 @@ virtual_config_tests = {
         expected_response_keys=["status", "effect"],
         expected_response_values=[{"status": "success"}, {"effect": {}}],
         # explicity to test DummyEffect protection as a transition is playing out
-        sleep_after_test=0
+        sleep_after_test=0,
     ),
     # need to run this test before delete from effects, or will fail.
     "set_effect_to_last_active": APITestCase(
@@ -455,7 +455,7 @@ virtual_config_tests = {
         expected_response_keys=["status", "effect"],
         expected_response_values=[{"status": "success"}, {"effect": {}}],
         # explicity to ensure tranistion has completed to off
-        sleep_after_test=1.0
+        sleep_after_test=1.0,
     ),
     # need to run this test before delete from effects, or will fail.
     "set_effect_to_last_active_again": APITestCase(
