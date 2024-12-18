@@ -21,17 +21,20 @@ def make_virtual_response(virtual):
         "pixel_count": virtual.pixel_count,
         "active": virtual.active,
         "streaming": virtual.streaming,
+        "last_effect": virtual.virtual_cfg.get("last_effect", None),
         "effect": {},
     }
     # Protect from DummyEffect
     if virtual.active_effect and not isinstance(
         virtual.active_effect, DummyEffect
     ):
-        effect_response = {}
-        effect_response["config"] = virtual.active_effect.config
-        effect_response["name"] = virtual.active_effect.name
-        effect_response["type"] = virtual.active_effect.type
+        effect_response = {
+            "config": virtual.active_effect.config,
+            "name": virtual.active_effect.name,
+            "type": virtual.active_effect.type,
+        }
         virtual_response["effect"] = effect_response
+
     return virtual_response
 
 
@@ -77,7 +80,9 @@ class VirtualEndpoint(RestEndpoint):
 
         # Update the virtual's configuration
         if active:
-            if not virtual._active_effect:
+            if not virtual._active_effect or isinstance(
+                virtual.active_effect, DummyEffect
+            ):
                 last_effect = virtual.virtual_cfg.get("last_effect", None)
                 if last_effect:
                     effect_config = virtual.get_effects_config(last_effect)

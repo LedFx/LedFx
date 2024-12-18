@@ -7,6 +7,7 @@ from aiohttp import web
 
 from ledfx.api import RestEndpoint
 from ledfx.config import save_config
+from ledfx.effects import DummyEffect
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -58,14 +59,20 @@ class EffectsEndpoint(RestEndpoint):
                 f"Virtual with ID {virtual_id} not found"
             )
 
-        # Get the active effect
-        response = {"effect": {}}
-        if virtual.active_effect:
-            effect_response = {}
-            effect_response["config"] = virtual.active_effect.config
-            effect_response["name"] = virtual.active_effect.name
-            effect_response["type"] = virtual.active_effect.type
-            response = {"effect": effect_response}
+        # Protect from DummyEffect
+        if virtual.active_effect and not isinstance(
+            virtual.active_effect, DummyEffect
+        ):
+            response = {
+                "effect": {
+                    "config": virtual.active_effect.config,
+                    "name": virtual.active_effect.name,
+                    "type": virtual.active_effect.type,
+                }
+            }
+        else:
+            response = {"effect": {}}
+
         return await self.bare_request_success(response)
 
     async def put(self, virtual_id, request) -> web.Response:

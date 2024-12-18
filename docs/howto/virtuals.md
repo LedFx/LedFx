@@ -100,8 +100,16 @@ lets go over them all anyway first.
         segment that makes up the virtual
 4.  **icon name** - This is the icon that will be displayed in the UI,
     select something that makes sense to you. It is a string entry
-    field, supported icons and their string mappings can be found at
-    [Material Design Icons](https://pictogrammers.com/library/mdi/)
+    field, from MDI ( Material Design Icons ) or MUI ( Material UI Icons )
+
+    If using MDI the string should be preceeded by mdi:
+    -   "mdi: \<icon-name-in-kebab-case\>"
+    -   [Material Design Icons](https://pictogrammers.com/library/mdi/)
+
+    If using MUI the string should be just the icon name with out a prefix
+    -   "\<iconNameInCamelCase\>"
+    -   [Material UI Icons](https://mui.com/material-ui/material-icons/)
+
 5.  **Max Brightness** - This is the maximum brightness that the virtual
     will display at, from 0 to 1. Generally leave at 1
 6.  **Center Offset** - Pixel count by which to offset the center of the
