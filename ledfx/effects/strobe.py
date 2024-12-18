@@ -67,9 +67,11 @@ class Strobe(AudioReactiveEffect, GradientEffect):
         self.strobe_brightness *= strobe_mask
 
     def render(self):
-        # brightness is now locally calculated and applied, as the original 
-        # implementation overrode self.brightness which then was used in the 
+        # brightness is now locally calculated and applied, as the original
+        # implementation overrode self.brightness which then was used in the
         # get_pixels method of the base class, it was effectively applied twice
         # To get the same effect, now with self.brightness at 1, we have to apply
         # strobe_brightness here twice.
-        self.pixels[:] = self.color * self.strobe_brightness * self.strobe_brightness
+        self.pixels[:] = (
+            self.color * self.strobe_brightness * self.strobe_brightness
+        )
