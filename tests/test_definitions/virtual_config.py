@@ -405,7 +405,7 @@ virtual_config_tests = {
         payload_to_send={},
         expected_response_keys=["status", "effect"],
         expected_response_values=[{"status": "success"}, {"effect": {}}],
-        sleep_after_test=1.0
+        sleep_after_test=1.0,
     ),
     # need to run this test before delete from effects, or will fail.
     "set_effect_to_last_active": APITestCase(
