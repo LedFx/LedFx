@@ -1,8 +1,10 @@
 from tests.test_utilities.test_utils import APITestCase, SystemInfo
 
+test_count = 1
+
 virtual_config_tests = {
     "cleanup_ci-test-device": APITestCase(
-        execution_order=1,
+        execution_order=(test_count := test_count + 1),
         method="DELETE",
         api_endpoint="/api/virtuals/ci-test-jig",
         expected_return_code=200,
@@ -11,7 +13,7 @@ virtual_config_tests = {
         payload_to_send={},
     ),
     "create_dummy_device": APITestCase(
-        execution_order=2,
+        execution_order=(test_count := test_count + 1),
         method="POST",
         api_endpoint="/api/devices",
         expected_return_code=200,
@@ -45,7 +47,7 @@ virtual_config_tests = {
         ],
     ),
     "create_dummy_device_2": APITestCase(
-        execution_order=3,
+        execution_order=(test_count := test_count + 1),
         method="POST",
         api_endpoint="/api/devices",
         expected_return_code=200,
@@ -79,7 +81,7 @@ virtual_config_tests = {
         ],
     ),
     "modify_dummy_device": APITestCase(
-        execution_order=4,
+        execution_order=(test_count := test_count + 1),
         method="PUT",
         api_endpoint="/api/devices/test-dummy",
         expected_return_code=200,
@@ -97,7 +99,7 @@ virtual_config_tests = {
         expected_response_values=[{"status": "success"}],
     ),
     "check_devices": APITestCase(
-        execution_order=5,
+        execution_order=(test_count := test_count + 1),
         method="GET",
         api_endpoint="/api/devices",
         expected_return_code=200,
@@ -140,7 +142,7 @@ virtual_config_tests = {
         ],
     ),
     "create_first_virtual": APITestCase(
-        execution_order=6,
+        execution_order=(test_count := test_count + 1),
         method="POST",
         api_endpoint="/api/virtuals",
         expected_return_code=200,
@@ -187,7 +189,7 @@ virtual_config_tests = {
         ],
     ),
     "modify_first_virtual": APITestCase(
-        execution_order=7,
+        execution_order=(test_count := test_count + 1),
         method="POST",
         api_endpoint="/api/virtuals",
         expected_return_code=200,
@@ -235,7 +237,7 @@ virtual_config_tests = {
         ],
     ),
     "add_first_segment": APITestCase(
-        execution_order=8,
+        execution_order=(test_count := test_count + 1),
         method="POST",
         api_endpoint="/api/virtuals/first-virt",
         expected_return_code=200,
@@ -246,7 +248,7 @@ virtual_config_tests = {
         ],
     ),
     "add_second_segment": APITestCase(
-        execution_order=9,
+        execution_order=(test_count := test_count + 1),
         method="POST",
         api_endpoint="/api/virtuals/first-virt",
         expected_return_code=200,
@@ -268,7 +270,7 @@ virtual_config_tests = {
         ],
     ),
     "delete_dummy_device": APITestCase(
-        execution_order=10,
+        execution_order=(test_count := test_count + 1),
         method="DELETE",
         api_endpoint="/api/virtuals/test-dummy",
         expected_return_code=200,
@@ -277,7 +279,7 @@ virtual_config_tests = {
         payload_to_send={},
     ),
     "check_segments_after_device_delete": APITestCase(
-        execution_order=11,
+        execution_order=(test_count := test_count + 1),
         method="GET",
         api_endpoint="/api/virtuals",
         expected_return_code=200,
@@ -341,7 +343,7 @@ virtual_config_tests = {
         ],
     ),
     "set_effect_to_virtual": APITestCase(
-        execution_order=12,
+        execution_order=(test_count := test_count + 1),
         method="POST",
         api_endpoint="/api/virtuals/test-dummy-2/effects",
         expected_return_code=200,
@@ -368,7 +370,7 @@ virtual_config_tests = {
         ],
     ),
     "modify_effect_to_virtual": APITestCase(
-        execution_order=13,
+        execution_order=(test_count := test_count + 1),
         method="PUT",
         api_endpoint="/api/virtuals/test-dummy-2/effects",
         expected_return_code=200,
@@ -398,18 +400,19 @@ virtual_config_tests = {
         ],
     ),
     "delete_effect_from_virtual": APITestCase(
-        execution_order=14,
+        execution_order=(test_count := test_count + 1),
         method="DELETE",
         api_endpoint="/api/virtuals/test-dummy-2/effects",
         expected_return_code=200,
         payload_to_send={},
         expected_response_keys=["status", "effect"],
         expected_response_values=[{"status": "success"}, {"effect": {}}],
-        sleep_after_test=1.0
+        # explicity to test DummyEffect protection as a transition is playing out
+        sleep_after_test=0
     ),
     # need to run this test before delete from effects, or will fail.
     "set_effect_to_last_active": APITestCase(
-        execution_order=15,
+        execution_order=(test_count := test_count + 1),
         method="PUT",
         api_endpoint="/api/virtuals/test-dummy-2",
         expected_return_code=200,
@@ -418,7 +421,54 @@ virtual_config_tests = {
         expected_response_values=[{"status": "success"}, {"active": True}],
     ),
     "check_effect_is_last_effect": APITestCase(
-        execution_order=16,
+        execution_order=(test_count := test_count + 1),
+        method="GET",
+        api_endpoint="/api/virtuals/test-dummy-2/effects",
+        expected_return_code=200,
+        payload_to_send={},
+        expected_response_keys=["effect"],
+        expected_response_values=[
+            {
+                "effect": {
+                    "config": {
+                        "background_brightness": 1.0,
+                        "background_color": "#000000",
+                        "blur": 0.0,
+                        "brightness": 1.0,
+                        "flip": True,
+                        "frequency": 1.0,
+                        "mirror": True,
+                        "speed": 3.0,
+                    },
+                    "name": "Rainbow",
+                    "type": "rainbow",
+                }
+            }
+        ],
+    ),
+    "delete_effect_from_virtual_again": APITestCase(
+        execution_order=(test_count := test_count + 1),
+        method="DELETE",
+        api_endpoint="/api/virtuals/test-dummy-2/effects",
+        expected_return_code=200,
+        payload_to_send={},
+        expected_response_keys=["status", "effect"],
+        expected_response_values=[{"status": "success"}, {"effect": {}}],
+        # explicity to ensure tranistion has completed to off
+        sleep_after_test=1.0
+    ),
+    # need to run this test before delete from effects, or will fail.
+    "set_effect_to_last_active_again": APITestCase(
+        execution_order=(test_count := test_count + 1),
+        method="PUT",
+        api_endpoint="/api/virtuals/test-dummy-2",
+        expected_return_code=200,
+        payload_to_send={"active": True},
+        expected_response_keys=["status", "active"],
+        expected_response_values=[{"status": "success"}, {"active": True}],
+    ),
+    "check_effect_is_last_effect_again": APITestCase(
+        execution_order=(test_count := test_count + 1),
         method="GET",
         api_endpoint="/api/virtuals/test-dummy-2/effects",
         expected_return_code=200,
@@ -444,7 +494,7 @@ virtual_config_tests = {
         ],
     ),
     "delete_effect_from_effects_from_virtual": APITestCase(
-        execution_order=17,
+        execution_order=(test_count := test_count + 1),
         method="POST",
         api_endpoint="/api/virtuals/test-dummy-2/effects/delete",
         expected_return_code=200,
@@ -455,7 +505,7 @@ virtual_config_tests = {
         ],
     ),
     "set_preset_effect_to_virtual": APITestCase(
-        execution_order=18,
+        execution_order=(test_count := test_count + 1),
         method="PUT",
         api_endpoint="/api/virtuals/test-dummy-2/presets",
         expected_return_code=200,
@@ -486,7 +536,7 @@ virtual_config_tests = {
         ],
     ),
     "set_user_preset_to_current": APITestCase(
-        execution_order=19,
+        execution_order=(test_count := test_count + 1),
         method="POST",
         api_endpoint="/api/virtuals/test-dummy-2/presets",
         expected_return_code=200,
@@ -514,7 +564,7 @@ virtual_config_tests = {
         ],
     ),
     "set_user_preset_effect_to_virtual": APITestCase(
-        execution_order=20,
+        execution_order=(test_count := test_count + 1),
         method="PUT",
         api_endpoint="/api/virtuals/test-dummy-2/presets",
         expected_return_code=200,
@@ -545,7 +595,7 @@ virtual_config_tests = {
         ],
     ),
     "set_effect_to_virtual_with_fallback": APITestCase(
-        execution_order=21,
+        execution_order=(test_count := test_count + 1),
         method="POST",
         api_endpoint="/api/virtuals/test-dummy-2/effects",
         expected_return_code=200,
@@ -579,7 +629,7 @@ virtual_config_tests = {
         sleep_after_test=1.0,
     ),
     "get_effect_from_virtual_before_fallback": APITestCase(
-        execution_order=22,
+        execution_order=(test_count := test_count + 1),
         method="GET",
         api_endpoint="/api/virtuals/test-dummy-2/effects",
         expected_return_code=200,
@@ -612,7 +662,7 @@ virtual_config_tests = {
         sleep_after_test=1.0,
     ),
     "get_effect_from_virtual_after_fallack": APITestCase(
-        execution_order=23,
+        execution_order=(test_count := test_count + 1),
         method="GET",
         api_endpoint="/api/virtuals/test-dummy-2/effects",
         expected_return_code=200,
@@ -638,7 +688,7 @@ virtual_config_tests = {
         ],
     ),
     "create_dummy_device_again": APITestCase(
-        execution_order=24,
+        execution_order=(test_count := test_count + 1),
         method="POST",
         api_endpoint="/api/devices",
         expected_return_code=200,
@@ -672,7 +722,7 @@ virtual_config_tests = {
         ],
     ),
     "create_dummy_device_3": APITestCase(
-        execution_order=25,
+        execution_order=(test_count := test_count + 1),
         method="POST",
         api_endpoint="/api/devices",
         expected_return_code=200,
@@ -706,7 +756,7 @@ virtual_config_tests = {
         ],
     ),
     "set_effect_to_virtual_again": APITestCase(
-        execution_order=26,
+        execution_order=(test_count := test_count + 1),
         method="POST",
         api_endpoint="/api/virtuals/test-dummy-2/effects",
         expected_return_code=200,
@@ -733,7 +783,7 @@ virtual_config_tests = {
         ],
     ),
     "copy_effects_to_virtuals": APITestCase(
-        execution_order=27,
+        execution_order=(test_count := test_count + 1),
         method="PUT",
         api_endpoint="/api/virtuals_tools/test-dummy-2",
         expected_return_code=200,
@@ -748,7 +798,7 @@ virtual_config_tests = {
         ],
     ),
     "get_effect_for_dummy_1": APITestCase(
-        execution_order=28,
+        execution_order=(test_count := test_count + 1),
         method="GET",
         api_endpoint="/api/virtuals/test-dummy/effects",
         expected_return_code=200,
@@ -774,7 +824,7 @@ virtual_config_tests = {
         ],
     ),
     "get_effect_for_dummy_2": APITestCase(
-        execution_order=29,
+        execution_order=(test_count := test_count + 1),
         method="GET",
         api_endpoint="/api/virtuals/test-dummy-2/effects",
         expected_return_code=200,
@@ -800,7 +850,7 @@ virtual_config_tests = {
         ],
     ),
     "get_effect_for_dummy_3": APITestCase(
-        execution_order=30,
+        execution_order=(test_count := test_count + 1),
         method="GET",
         api_endpoint="/api/virtuals/test-dummy-3/effects",
         expected_return_code=200,
@@ -826,7 +876,7 @@ virtual_config_tests = {
         ],
     ),
     "cleanup_dummy_device": APITestCase(
-        execution_order=31,
+        execution_order=(test_count := test_count + 1),
         method="DELETE",
         api_endpoint="/api/virtuals/test-dummy",
         expected_return_code=200,
@@ -836,7 +886,7 @@ virtual_config_tests = {
         sleep_after_test=1.0,
     ),
     "cleanup_dummy_device_2": APITestCase(
-        execution_order=32,
+        execution_order=(test_count := test_count + 1),
         method="DELETE",
         api_endpoint="/api/virtuals/test-dummy-2",
         expected_return_code=200,
@@ -846,7 +896,7 @@ virtual_config_tests = {
         sleep_after_test=1.0,
     ),
     "cleanup_dummy_device_3": APITestCase(
-        execution_order=33,
+        execution_order=(test_count := test_count + 1),
         method="DELETE",
         api_endpoint="/api/virtuals/test-dummy-3",
         expected_return_code=200,

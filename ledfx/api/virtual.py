@@ -80,7 +80,7 @@ class VirtualEndpoint(RestEndpoint):
 
         # Update the virtual's configuration
         if active:
-            if not virtual._active_effect:
+            if not virtual._active_effect or isinstance(virtual.active_effect, DummyEffect):
                 last_effect = virtual.virtual_cfg.get("last_effect", None)
                 if last_effect:
                     effect_config = virtual.get_effects_config(last_effect)
