@@ -405,6 +405,7 @@ virtual_config_tests = {
         payload_to_send={},
         expected_response_keys=["status", "effect"],
         expected_response_values=[{"status": "success"}, {"effect": {}}],
+        sleep_after_test=1.0
     ),
     # need to run this test before delete from effects, or will fail.
     "set_effect_to_last_active": APITestCase(
@@ -429,12 +430,12 @@ virtual_config_tests = {
                     "config": {
                         "background_brightness": 1.0,
                         "background_color": "#000000",
-                        "blur": 7.7,
+                        "blur": 0.0,
                         "brightness": 1.0,
-                        "flip": False,
-                        "frequency": 0.32,
+                        "flip": True,
+                        "frequency": 1.0,
                         "mirror": True,
-                        "speed": 0.3,
+                        "speed": 3.0,
                     },
                     "name": "Rainbow",
                     "type": "rainbow",
@@ -442,21 +443,6 @@ virtual_config_tests = {
             }
         ],
     ),
-    # /api/effects
-    # "effect": {
-    #     "config": {
-    #         "background_brightness": 1.0,
-    #         "background_color": "#000000",
-    #         "blur": 0.0,
-    #         "brightness": 1.0,
-    #         "flip": True,
-    #         "frequency": 1.0,
-    #         "mirror": True,
-    #         "speed": 3.0,
-    #     },
-    #     "name": "Rainbow",
-    #     "type": "rainbow",
-    # }
     "delete_effect_from_effects_from_virtual": APITestCase(
         execution_order=17,
         method="POST",
