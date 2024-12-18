@@ -414,10 +414,7 @@ virtual_config_tests = {
         expected_return_code=200,
         payload_to_send={"active": True},
         expected_response_keys=["status", "active"],
-        expected_response_values=[
-            {"status": "success"},
-            {"active": True}
-        ],
+        expected_response_values=[{"status": "success"}, {"active": True}],
     ),
     "check_effect_is_last_effect": APITestCase(
         execution_order=16,
@@ -445,23 +442,21 @@ virtual_config_tests = {
             }
         ],
     ),
-
-#/api/effects
-                    # "effect": {
-                #     "config": {
-                #         "background_brightness": 1.0,
-                #         "background_color": "#000000",
-                #         "blur": 0.0,
-                #         "brightness": 1.0,
-                #         "flip": True,
-                #         "frequency": 1.0,
-                #         "mirror": True,
-                #         "speed": 3.0,
-                #     },
-                #     "name": "Rainbow",
-                #     "type": "rainbow",
-                # }
-
+    # /api/effects
+    # "effect": {
+    #     "config": {
+    #         "background_brightness": 1.0,
+    #         "background_color": "#000000",
+    #         "blur": 0.0,
+    #         "brightness": 1.0,
+    #         "flip": True,
+    #         "frequency": 1.0,
+    #         "mirror": True,
+    #         "speed": 3.0,
+    #     },
+    #     "name": "Rainbow",
+    #     "type": "rainbow",
+    # }
     "delete_effect_from_effects_from_virtual": APITestCase(
         execution_order=17,
         method="POST",
