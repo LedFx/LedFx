@@ -45,7 +45,7 @@ class Strobe(AudioReactiveEffect, GradientEffect):
 
     def on_activate(self, pixel_count):
         self.color = self.get_gradient_color(0)
-        self.brightness = 0
+        self.strobe_brightness = 0
 
     def config_updated(self, config):
         self.freq = self.MAPPINGS[self._config["strobe_frequency"]]
@@ -58,13 +58,20 @@ class Strobe(AudioReactiveEffect, GradientEffect):
         bar = data.bar_oscillator()
         self.color = self.get_gradient_color(bar / 4)
 
-        self.brightness = (
+        self.strobe_brightness = (
             ((-o % (1 / self.freq)) * self.freq) ** self.strobe_decay
         ) * (1 - o) ** self.beat_decay
 
         bar_idx = int(bar)
         strobe_mask = int(self.strobe_pattern[bar_idx] == "*")
-        self.brightness *= strobe_mask
+        self.strobe_brightness *= strobe_mask
 
     def render(self):
-        self.pixels[:] = self.color * self.brightness
+        # brightness is now locally calculated and applied, as the original
+        # implementation overrode self.brightness which then was used in the
+        # get_pixels method of the base class, it was effectively applied twice
+        # To get the same effect, now with self.brightness at 1, we have to apply
+        # strobe_brightness here twice.
+        self.pixels[:] = (
+            self.color * self.strobe_brightness * self.strobe_brightness
+        )
