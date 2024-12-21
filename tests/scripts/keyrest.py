@@ -1,8 +1,12 @@
 import os
 
-import keyboard
-import requests
-
+try:
+    import keyboard
+    import requests
+except ImportError as e:
+    print(f"Required package not found: {e}")
+    print("Please install required packages: pip install keyboard requests")
+    exit(1)
 # this test script will on the pressing of the space bar send a request to the ledfx server
 # to change the effect of a virtual to my_effect with the fallback value of 20 seconds
 # On release of the space bar it will cancel the effect and fallback to the previous effect
