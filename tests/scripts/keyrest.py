@@ -2,6 +2,10 @@ import keyboard
 import requests
 import os
 
+# this test script will on the pressing of the space bar send a request to the ledfx server 
+# to change the effect of a virtual to my_effect with the fallback value of 20 seconds
+# On release of the space bar it will cancel the effect and fallback to the previous effect
+# exit by pressing X. the terminal does not need to be in focus for this to work
 
 my_virtual = "wled19-32x32"
 my_effect = "noise2d"
