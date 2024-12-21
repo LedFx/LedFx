@@ -81,14 +81,20 @@ Python 3.9 installed.
 
     ``` console
     $ brew install python@3.12
+    $ brew install python@3.12
     $ brew install portaudio --HEAD
     $ brew install virtualenv
+    $ virtualenv -p python3.12 ~/ledfx-venv
     $ virtualenv -p python3.12 ~/ledfx-venv
     $ source ~/ledfx-venv/bin/activate
     $ pip install numpy~=1.23 --no-cache-dir
     $ export CFLAGS="-Wno-incompatible-function-pointer-types"
     $ pip install aubio==0.4.9 --no-cache-dir
+    $ pip install numpy~=1.23 --no-cache-dir
+    $ export CFLAGS="-Wno-incompatible-function-pointer-types"
+    $ pip install aubio==0.4.9 --no-cache-dir
     $ pip install --force-reinstall ledfx
+    $ ledfx --open-ui
     $ ledfx --open-ui
     ```
 
@@ -96,6 +102,8 @@ Python 3.9 installed.
 
     ``` console
     $ pip uninstall numpy aubio
+    $ pip install numpy~=1.23 --no-cache-dir
+    $ pip install aubio==0.4.9 --no-cache-dir
     $ pip install numpy~=1.23 --no-cache-dir
     $ pip install aubio==0.4.9 --no-cache-dir
     ```

@@ -32,35 +32,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      - name: Install system dependencies
-        run:  |
-          sudo apt-get update && sudo apt-get install -y portaudio19-dev libatlas3-base
-      - name: Set up Python ${{ env.DEFAULT_PYTHON }}
-        id: python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.DEFAULT_PYTHON }}
-      - name: Restore Python virtual environment
-        id: cache-venv
-        uses: actions/cache@v4
-        with:
-          path: venv
-          key: >-
-            ${{ env.CACHE_VERSION }}-${{ runner.os }}-base-venv-${{
-            steps.python.outputs.python-version }}-${{
-            hashFiles('requirements-dev.txt') }}
-          restore-keys: |
-            ${{ env.CACHE_VERSION }}-${{ runner.os }}-base-venv-${{ steps.python.outputs.python-version }}-${{hashFiles('requirements-dev.txt') }}-
-            ${{ env.CACHE_VERSION }}-${{ runner.os }}-base-venv-${{ steps.python.outputs.python-version }}-
-      - name: Create Python virtual environment
-        if: steps.cache-venv.outputs.cache-hit != 'true'
-        run: |
-          python -m venv venv
-          . venv/bin/activate
-          pipx install poetry
-          poetry install --no-root --with dev
-          echo "CODEQL_PYTHON=$(which python)" >> $GITHUB_ENV
-
       # Initializes the CodeQL tools for scanning
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
@@ -69,38 +40,6 @@ jobs:
           # Override the default behavior so that the action doesn't attempt
           # to auto-install Python dependencies
           setup-python-dependencies: false
-      - name: Autobuild
-        uses: github/codeql-action/autobuild@v3
-
-      - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
-
-  analyze-javascript:
-    name: Analyze Javascript
-    runs-on: ubuntu-latest
-
-    strategy:
-      fail-fast: false
-      matrix:
-        language: [ 'javascript' ]
-        # CodeQL supports [ 'cpp', 'csharp', 'go', 'java', 'javascript', 'python' ]
-        # Learn more...
-        # https://docs.github.com/en/github/finding-security-vulnerabilities-and-errors-in-your-code/configuring-code-scanning#overriding-automatic-language-detection
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      # Initializes the CodeQL tools for scanning.
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
-        with:
-          languages: ${{ matrix.language }}
-
-      # Autobuild attempts to build any compiled languages  (C/C++, C#, or Java).
-      # If this step fails, then you should remove it and run the build manually (see below)
-      - name: Autobuild
-        uses: github/codeql-action/autobuild@v3
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3

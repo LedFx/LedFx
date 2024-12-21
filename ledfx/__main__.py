@@ -1,10 +1,6 @@
 #!/usr/bin/env python
 """
 Entry point for LedFx.
-To run this script for development purposes use:
-
-    poetry install
-    poetry run ledfx
 
 WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
 WARNING                                                         WARNING
