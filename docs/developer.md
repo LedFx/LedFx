@@ -8,11 +8,9 @@
 
 2. Install [git](https://git-scm.com/).
 
-3. Install uv:
+3. Install [uv](https://docs.astral.sh/uv/getting-started/installation/)
+    - We suggest using the standalone installer to make updates easier while uv is rapidly changing
 
-    ```console
-    $ pip install uv
-    ```
 
 4. Clone the main branch from the LedFx Github repository:
 
@@ -157,7 +155,7 @@ $ pnpm install
 **3.** Start LedFx in developer mode and start the pnpm watcher:
 
 ``` console
-$ poetry shell ledfx
+$ uv run ledfx
 $ pnpm start
 ```
 
@@ -205,7 +203,7 @@ running in a separate command window.
 **4.** Start LedFx in development mode and start the watcher:
 
 ``` console
-$ poetry shell ledfx
+$ uv run ledfx
 $ pnpm start
 ```
 
@@ -235,7 +233,7 @@ $ pnpm install
 **2.** Start LedFx in developer mode and start the NPM watcher:
 
 ``` console
-$ poetry shell ledfx
+$ uv run ledfx
 $ pnpm start
 ```
 
@@ -276,7 +274,6 @@ not limited to
 -   Pylance
 -   Python
 -   Python Debugger
--   Python Poetry
 -   Tasks
 -   Teleplot
 

@@ -25,7 +25,7 @@ def copy_lib():
             )
             break
 
-    # If not in site-packages, means it's a poetry build, so get env path from
+    # If not in site-packages, means it's a development environment, so get env path from the .venv
     if not lib_path:
         lib_path = os.path.join(
             ".venv",

@@ -7,7 +7,7 @@ documentation follow the steps outlined below:
 We have now migrated document dependancy management and build to uv
 based.
 
-Building should be the same for all platforms. These instructions assume you already have a poetry environment setup, as per normal development.
+Building should be the same for all platforms. These instructions assume you already have a uv environment setup, as per normal development.
 
 :::: note
 ::: title
