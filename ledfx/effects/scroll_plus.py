@@ -1,12 +1,14 @@
-import numpy as np
-import timeit
-import voluptuous as vol
 import logging
+import timeit
+
+import numpy as np
+import voluptuous as vol
 
 from ledfx.color import parse_color, validate_color
 from ledfx.effects.audio import AudioReactiveEffect
 
 _LOGGER = logging.getLogger(__name__)
+
 
 class ScrollAudioEffect(AudioReactiveEffect):
     NAME = "Scroll+"
@@ -25,7 +27,9 @@ class ScrollAudioEffect(AudioReactiveEffect):
                 default=True,
             ): bool,
             vol.Optional(
-                "scroll_per_sec", description="Device width to scroll per second", default=0.3
+                "scroll_per_sec",
+                description="Device width to scroll per second",
+                default=0.3,
             ): vol.All(vol.Coerce(float), vol.Range(min=0.001, max=2)),
             vol.Optional(
                 "decay_per_sec",
@@ -115,15 +119,15 @@ class ScrollAudioEffect(AudioReactiveEffect):
         pixels_shift = int(self.pixels_incremental)
         self.pixels_incremental -= pixels_shift
 
-       #  _LOGGER.error(f"tp: {time_passed} sf: {speed_factor}, df: {decay_factor} ps: {pixels_shift} inc: {self.pixels_incremental}")
+        #  _LOGGER.error(f"tp: {time_passed} sf: {speed_factor}, df: {decay_factor} ps: {pixels_shift} inc: {self.pixels_incremental}")
 
         # Roll the effect and apply the decay
 
         pixels_shift = pixels_shift * 3
         if pixels_shift > 0:
             self.pixels[pixels_shift:, :] = self.pixels[:-pixels_shift, :]
-        
-        self.pixels *= ( 1 - decay_factor)
+
+        self.pixels *= 1 - decay_factor
 
         if pixels_shift > 0:
             self.pixels[:pixels_shift] = self.lows_color * self.intensities[0]
