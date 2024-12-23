@@ -1,5 +1,7 @@
 import numpy as np
+import timeit
 import voluptuous as vol
+
 
 from ledfx.color import parse_color, validate_color
 from ledfx.effects.audio import AudioReactiveEffect
@@ -22,13 +24,13 @@ class ScrollAudioEffect(AudioReactiveEffect):
                 default=True,
             ): bool,
             vol.Optional(
-                "speed", description="Speed of the effect", default=3
-            ): vol.All(vol.Coerce(int), vol.Range(min=1, max=10)),
+                "scroll_per_sec", description="how much to scroll per second", default=0.3
+            ): vol.All(vol.Coerce(float), vol.Range(min=0.01, max=1)),
             vol.Optional(
-                "decay",
-                description="Decay rate of the scroll",
-                default=0.97,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.8, max=1.0)),
+                "decay_per_sec",
+                description="Decay rate of the scroll per second",
+                default=0.5,
+            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
             vol.Optional(
                 "threshold",
                 description="Cutoff for quiet sounds. Higher -> only loud sounds are detected",
@@ -54,6 +56,8 @@ class ScrollAudioEffect(AudioReactiveEffect):
 
     def on_activate(self, pixel_count):
         self.intensities = np.zeros(3)
+        self.last_frame_time = timeit.default_timer()
+        self.pixels_incremental = 0
 
     def config_updated(self, config):
         # TODO: Determine how buffers based on the pixels should be
@@ -74,6 +78,8 @@ class ScrollAudioEffect(AudioReactiveEffect):
         self.lows_cutoff = self._config["threshold"] / 10
         self.mids_cutoff = self._config["threshold"] / 8
         self.high_cutoff = self._config["threshold"] / 7
+        self.speed = self._config["scroll_per_sec"]
+        self.decay = self.config["decay_per_sec"]
 
     def audio_data_updated(self, data):
         # Divide the melbank into lows, mids and highs
@@ -90,11 +96,26 @@ class ScrollAudioEffect(AudioReactiveEffect):
             self.intensities[2] = 0
 
     def render(self):
-        # Roll the effect and apply the decay
-        speed = self.config["speed"]
-        self.pixels[speed:, :] = self.pixels[:-speed, :]
-        self.pixels *= self.config["decay"]
+        # How much time has passed since the last frame
+        now = timeit.default_timer()
+        time_passed = now - self.last_frame_time
+        self.last_frame_time = now
+        # as an amount of the speed setting for seconds for 1 full shift
+        speed_factor = time_passed * self.speed
+        decay_factor = time_passed * self.decay
 
-        self.pixels[:speed] = self.lows_color * self.intensities[0]
-        self.pixels[:speed] += self.mids_color * self.intensities[1]
-        self.pixels[:speed] += self.high_color * self.intensities[2]
+        # increment and split out whole pixels to act on
+        self.pixels_incremental += speed_factor * self.pixel_count
+        pixels_shift = int(self.pixels_incremental)
+        self.pixels_incremental -= pixels_shift
+
+        # Roll the effect and apply the decay
+        if pixels_shift > 0:
+            self.pixels[pixels_shift:, :] = self.pixels[:-pixels_shift, :]
+        
+        self.pixels *= ( 1 - decay_factor)
+
+        if pixels_shift > 0:
+            self.pixels[:pixels_shift] = self.lows_color * self.intensities[0]
+            self.pixels[:pixels_shift] += self.mids_color * self.intensities[1]
+            self.pixels[:pixels_shift] += self.high_color * self.intensities[2]
