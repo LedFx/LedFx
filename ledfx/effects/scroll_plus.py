@@ -30,7 +30,7 @@ class ScrollAudioEffect(AudioReactiveEffect):
                 "scroll_per_sec",
                 description="Device width to scroll per second",
                 default=0.3,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.001, max=2)),
+            ): vol.All(vol.Coerce(float), vol.Range(min=0.01, max=2)),
             vol.Optional(
                 "decay_per_sec",
                 description="Decay rate of the scroll per second",
@@ -112,7 +112,7 @@ class ScrollAudioEffect(AudioReactiveEffect):
         self.last_frame_time = now
         # as an amount of the speed setting for seconds for 1 full shift
         speed_factor = time_passed * self.speed
-        decay_factor = time_passed * self.decay
+        decay_factor = time_passed * self.decay * 3
 
         # increment and split out whole pixels to act on
         self.pixels_incremental += speed_factor * self.pixel_count
@@ -123,11 +123,12 @@ class ScrollAudioEffect(AudioReactiveEffect):
 
         # Roll the effect and apply the decay
 
-        pixels_shift = pixels_shift * 3
+        pixels_shift = min( pixels_shift, self.pixel_count)
+
         if pixels_shift > 0:
             self.pixels[pixels_shift:, :] = self.pixels[:-pixels_shift, :]
 
-        self.pixels *= 1 - decay_factor
+        self.pixels *= max(0, 1 - decay_factor)
 
         if pixels_shift > 0:
             self.pixels[:pixels_shift] = self.lows_color * self.intensities[0]
