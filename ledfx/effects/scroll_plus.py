@@ -118,7 +118,7 @@ class ScrollAudioEffect(AudioReactiveEffect):
 
         # Roll the effect and apply the decay
 
-        pixels_shift = min( pixels_shift, self.pixel_count)
+        pixels_shift = min(pixels_shift, self.pixel_count)
 
         if pixels_shift > 0:
             self.pixels[pixels_shift:, :] = self.pixels[:-pixels_shift, :]
