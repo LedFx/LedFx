@@ -56,11 +56,6 @@ class ScrollAudioEffect(AudioReactiveEffect):
                 description="Color of high sounds",
                 default="#0000FF",
             ): validate_color,
-            vol.Optional(
-                "new_alg",
-                description="Use new algorithm",
-                default=False,
-            ): bool,
         }
     )
 
