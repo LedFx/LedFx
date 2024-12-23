@@ -98,3 +98,4 @@ class ScrollAudioEffect(AudioReactiveEffect):
         self.pixels[:speed] = self.lows_color * self.intensities[0]
         self.pixels[:speed] += self.mids_color * self.intensities[1]
         self.pixels[:speed] += self.high_color * self.intensities[2]
+
