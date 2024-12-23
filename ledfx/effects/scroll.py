@@ -1,7 +1,7 @@
-import numpy as np
 import timeit
-import voluptuous as vol
 
+import numpy as np
+import voluptuous as vol
 
 from ledfx.color import parse_color, validate_color
 from ledfx.effects.audio import AudioReactiveEffect
@@ -24,7 +24,9 @@ class ScrollAudioEffect(AudioReactiveEffect):
                 default=True,
             ): bool,
             vol.Optional(
-                "scroll_per_sec", description="how much to scroll per second", default=0.3
+                "scroll_per_sec",
+                description="how much to scroll per second",
+                default=0.3,
             ): vol.All(vol.Coerce(float), vol.Range(min=0.01, max=1)),
             vol.Optional(
                 "decay_per_sec",
@@ -112,8 +114,8 @@ class ScrollAudioEffect(AudioReactiveEffect):
         # Roll the effect and apply the decay
         if pixels_shift > 0:
             self.pixels[pixels_shift:, :] = self.pixels[:-pixels_shift, :]
-        
-        self.pixels *= ( 1 - decay_factor)
+
+        self.pixels *= 1 - decay_factor
 
         if pixels_shift > 0:
             self.pixels[:pixels_shift] = self.lows_color * self.intensities[0]
