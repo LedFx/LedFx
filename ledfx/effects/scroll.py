@@ -1,5 +1,3 @@
-import timeit
-
 import numpy as np
 import voluptuous as vol
 
