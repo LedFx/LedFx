@@ -111,8 +111,8 @@ class ScrollAudioEffect(AudioReactiveEffect):
 
         if pixels_shift > 0:
             self.pixels[pixels_shift:, :] = self.pixels[:-pixels_shift, :]
-
-        self.pixels *= max(0, 1 - decay_factor)
+        
+        self.pixels *= min(1, max(0, 1 - decay_factor))
 
         if pixels_shift > 0:
             self.pixels[:pixels_shift] = self.lows_color * self.intensities[0]
