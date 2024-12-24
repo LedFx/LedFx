@@ -461,7 +461,7 @@ class Effect(BaseRegistry):
 
                     if self.mirror:
                         # different composition for odd vs even which is not easy to formulate so, just if else...
-                        # preserver symetrical mirroring so
+                        # preserve symmetrical mirroring so
                         # [1,2,3,4,5,6] becomes [5,3,1,1,3,5]
                         # [1,2,3,4,5] becomes [5,3,1,3,4]
                         if self.pixel_count % 2 == 0:
