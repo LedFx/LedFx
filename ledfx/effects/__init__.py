@@ -461,14 +461,18 @@ class Effect(BaseRegistry):
 
                     if self.mirror:
                         # different composition for odd vs even which is not easy to formulate so, just if else...
-                        # preserver symetrical mirroring so 
+                        # preserver symetrical mirroring so
                         # [1,2,3,4,5,6] becomes [5,3,1,1,3,5]
                         # [1,2,3,4,5] becomes [5,3,1,3,4]
                         if self.pixel_count % 2 == 0:
-                            pixels = np.concatenate((pixels[-2 :: -2], pixels[::2]))
+                            pixels = np.concatenate(
+                                (pixels[-2::-2], pixels[::2])
+                            )
                         else:
-                            pixels = np.concatenate((pixels[-1 :1: -2], pixels[::2]))
-                        
+                            pixels = np.concatenate(
+                                (pixels[-1:1:-2], pixels[::2])
+                            )
+
                     if self.bg_color_use:
                         pixels += self._bg_color
                     if self.brightness is not None:
