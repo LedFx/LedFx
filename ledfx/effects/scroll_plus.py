@@ -76,7 +76,7 @@ class ScrollAudioEffect(AudioReactiveEffect):
         self.mids_cutoff = self._config["threshold"] / 8
         self.high_cutoff = self._config["threshold"] / 7
         self.speed = self._config["scroll_per_sec"]
-        self.decay = self.config["decay_per_sec"]
+        self.decay = self._config["decay_per_sec"]
 
     def audio_data_updated(self, data):
         # Divide the melbank into lows, mids and highs
