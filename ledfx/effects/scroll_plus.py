@@ -62,11 +62,6 @@ class ScrollAudioEffect(AudioReactiveEffect):
         self.pixels_incremental = 0
 
     def config_updated(self, config):
-        # TODO: Determine how buffers based on the pixels should be
-        # allocated. Technically there is no guarantee that the effect
-        # is bound to a device while the config gets updated. Might need
-        # to move to a model where effects are created for a device and
-        # must be destroyed and recreated to be moved to another device.
         self.lows_color = np.array(
             parse_color(self._config["color_lows"]), dtype=float
         )
@@ -111,10 +106,7 @@ class ScrollAudioEffect(AudioReactiveEffect):
         pixels_shift = int(self.pixels_incremental)
         self.pixels_incremental -= pixels_shift
 
-        #  _LOGGER.error(f"tp: {time_passed} sf: {speed_factor}, df: {decay_factor} ps: {pixels_shift} inc: {self.pixels_incremental}")
-
         # Roll the effect and apply the decay
-
         pixels_shift = min(pixels_shift, self.pixel_count)
 
         if pixels_shift > 0:
