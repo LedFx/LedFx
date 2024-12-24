@@ -26,11 +26,11 @@ class ScrollAudioEffect(AudioReactiveEffect):
             vol.Optional(
                 "scroll_per_sec",
                 description="Device width to scroll per second",
-                default=0.3,
+                default=0.7,
             ): vol.All(vol.Coerce(float), vol.Range(min=0.01, max=2)),
             vol.Optional(
                 "decay_per_sec",
-                description="Decay rate of the scroll per second",
+                description="Decay rate of the scroll per second, kind of",
                 default=0.5,
             ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=2.0)),
             vol.Optional(
