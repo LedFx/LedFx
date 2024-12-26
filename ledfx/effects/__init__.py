@@ -460,18 +460,15 @@ class Effect(BaseRegistry):
                         pixels = np.flipud(pixels)
 
                     if self.mirror:
-                        # different composition for odd vs even which is not easy to formulate so, just if else...
-                        # preserve symmetrical mirroring so
-                        # [1,2,3,4,5,6] becomes [5,3,1,1,3,5]
-                        # [1,2,3,4,5] becomes [5,3,1,3,4]
-                        if self.pixel_count % 2 == 0:
-                            pixels = np.concatenate(
-                                (pixels[-2::-2], pixels[::2])
-                            )
-                        else:
-                            pixels = np.concatenate(
-                                (pixels[-1:1:-2], pixels[::2])
-                            )
+                        # concatenate the pixels for mirror, then take the max of adjacent pixels
+                        # prevents average dimming and is best compromise, removes flicker
+                        # inherently symetrical
+                        mirrored_pixels = np.concatenate(
+                            (pixels[::-1], pixels)
+                        )
+                        pixels = np.maximum(
+                            mirrored_pixels[::2], mirrored_pixels[1::2]
+                        )
 
                     if self.bg_color_use:
                         pixels += self._bg_color
