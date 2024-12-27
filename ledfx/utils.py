@@ -1900,7 +1900,7 @@ def shape_to_fit_len(max_len, shape, pixels_len):
     """Converts the shape of a visualisation to obey constraints
        The max_len pixels which is a system variable a user can change
        Additionally a max dimension of 64 in rows or columns is enforced
-       As the shape has already been reduced to max pixels, both CANNOT 
+       As the shape has already been reduced to max pixels, both CANNOT
        be greate than 64
 
     Args:
@@ -1925,12 +1925,12 @@ def shape_to_fit_len(max_len, shape, pixels_len):
         if new_rows > 64:
             reduction_ratio = 64 / new_rows
             new_rows = 64
-            new_cols =  new_cols * reduction_ratio
+            new_cols = new_cols * reduction_ratio
         elif new_cols > 64:
             reduction_ratio = 64 / new_cols
             new_cols = 64
             new_rows = new_rows * reduction_ratio
-        
+
         # protect from less than 1 values
         if new_rows < 1.0:
             new_shape = (1, new_cols)
