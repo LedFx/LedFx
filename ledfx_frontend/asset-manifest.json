@@ -1,8 +1,8 @@
 {
   "files": {
     "main.css": "/static/css/main.b8337dab.css",
-    "main.js": "/static/js/main.d494113b.js",
-    "static/js/685.98137b60.chunk.js": "/static/js/685.98137b60.chunk.js",
+    "main.js": "/static/js/main.e50fd21c.js",
+    "static/js/685.db35d3c0.chunk.js": "/static/js/685.db35d3c0.chunk.js",
     "static/media/xmas.png": "/static/media/xmas.3e4e83405d14fb81488b.png",
     "static/media/materialdesignicons-webfont.woff": "/static/media/materialdesignicons-webfont.059ea00c378aeafc39fc.woff",
     "static/media/fireworks.jpg": "/static/media/fireworks.b0378f4b56783c9e58d1.jpg",
@@ -39,6 +39,6 @@
   },
   "entrypoints": [
     "static/css/main.b8337dab.css",
-    "static/js/main.d494113b.js"
+    "static/js/main.e50fd21c.js"
   ]
 }
