@@ -2,7 +2,7 @@
 
 It is now quite simple to setup a dummy device endpoint for a 1d strip
 display, so you can add diagnostic effects such as VuMeter in the browser front end and use
-this to triage audio input. 
+this to triage audio input.
 
 The VuMeter is an audio power indicator taken from the audio input before normalisation by ledfx, so represents the absolute audio input level.
 
@@ -26,9 +26,9 @@ So lets add a device using the bottom icon
 
 ![Adding a device](/_static/howto/matrix/matrix3.png)
 
-1)  Select Dummy device type, which is a device type that will only 
+1)  Select Dummy device type, which is a device type that will only
 render to the browser front end and is intended for testing
-2)  Give the device a name, in this case we are looking to imply that 
+2)  Give the device a name, in this case we are looking to imply that
 this is a VuMeter for testing
 3)  Set the number of required pixels, 128 is plenty for the VuMeter
 4)  hit ADD
@@ -59,7 +59,7 @@ The activated Vumeter has several characteristics and settings.
 
 Color Min: is the color used to indicate the range upto the min volume setting from the audio configuration under Settings / Audio below which no effects are generated. The default value is 0.2 and will be displayed in this case in blue.
 
-Color Mid: is the range which is considered healthy for the absolute input, though it is an arbitrary range set to be upto Max Volume from the slider within the effect. 
+Color Mid: is the range which is considered healthy for the absolute input, though it is an arbitrary range set to be upto Max Volume from the slider within the effect.
 In this case displayed in green.
 
 Color Max: is the color used to indicate when the audio input is above the Max Volume. In this case set to 0.8
