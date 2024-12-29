@@ -80,7 +80,7 @@ lets tweak a few more things before you finish.
 
 ![Post tweaks, everything oriented correctly](/_static/howto/matrix/matrix11.png)
 
-<video width="640" height="360" controls>
+<video width="640" height="360" controls loop>
    <source src="../_static/howto/matrix/matrix12.mp4" type="video/mp4">
    Your browser does not support the video tag.
 </video>

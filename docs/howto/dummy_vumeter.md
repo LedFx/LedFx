@@ -76,3 +76,8 @@ Max Volume: Sets the level at which the VuMeter displayes Color Max, in this cas
 This dummy device can be used to monitor audio input level without taking up a physical device and interrupting your light show.
 
 VuMeter can be run on any physical device should it be desired.
+
+<video width="640" height="360" controls loop>
+   <source src="../_static/howto/vumeter/vumeter6.mp4" type="video/mp4">
+   Your browser does not support the video tag.
+</video>
