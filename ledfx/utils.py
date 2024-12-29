@@ -1446,13 +1446,13 @@ def open_gif(gif_path):
         else:
             gif = Image.open(gif_path)  # Directly open for local files
             _LOGGER.debug("Local image source opened.")
-        
+
         # protect against single frame image like png, jpg
         if not hasattr(gif, "n_frames"):
             gif.n_frames = 1
 
         return gif
-    
+
     except Exception as e:
         _LOGGER.warning(f"Failed to open gif : {gif_path} : {e}")
         return None
