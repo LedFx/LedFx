@@ -84,10 +84,12 @@ lets tweak a few more things before you finish.
    <source src="../_static/howto/matrix/matrix12.mp4" type="video/mp4">
    Your browser does not support the video tag.
 </video>
-
+<br><br>
 Note if you set this switch in Settings / Device / Show Matrix on Device
 page, as per (1) then you main device dashboard will always show matrix.
+
 This can get a bit crowded if you have multiple devices.
+
 
 ![Show matrix on devices page by default](/_static/howto/matrix/matrix13.png)
 

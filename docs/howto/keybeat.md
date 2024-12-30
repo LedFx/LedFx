@@ -6,9 +6,9 @@ synchronize your favorite gif or webp animations with the music beat
 ## First we need a matrix device
 
 If you don\'t already have one, follow this guide to create a dummy
-matrix device: <a href="dummy_matrix.html">How to: Create a Keybeat gif</a>
+matrix device: <a href="dummy_matrix.html">How to: Create a Dummy Matrix</a>
 
-64 x 64 is the maximum size that can currently be correct displayed in
+64 x 64 is the maximum size that can currently be correctly displayed in
 the browser UI due to the limit of 4096 pixels communicated to the front
 end. However, any size can be used with physical devices, development
 and test is generally done on a 128 x 128 panel at 16K pixels
@@ -33,28 +33,32 @@ per (1)
    <source src="../_static/howto/keybeat/keybeat3.mp4" type="video/mp4">
    Your browser does not support the video tag.
 </video>
-
+<br><br>
 We should see the GIF animation playing to the music beat, and a valid
 file path in the \"image location\" in this case on a windows host taken
-from the ledfx install files at
-C:\Users\your_user_name\PycharmProjects\ledfx\LedFx\ledfx_assets\gifs\caddy.gif
+from the ledfx install files, noting your location will be different.
+<br><br>
+C:\Users\your_user_name\LedFx\ledfx_assets\gifs\caddy.gif
+<br><br>
 
 ## Choosing your own GIF
 
 But it could be any path on the system, with the relevant OS path syntax
 OR a valid URL to the internets
 
+It should be noted that the PIL image loader is capable of handling many formats, including, but not limited to, gif, webp, bmp, png, jpg etc. It does not need to be a multi frame animation, static images will also work.
+
 So now lets do that and choose a random webp ( more effiient than a GIF
 ) from the great wild west of content. Noting this particular URL may
 not be valid in due course, but the method will be valid
-
+<br><br>
 <https://media4.giphy.com/media/v1.Y2lkPTc5MGI3NjExam56cng1bjcyZWRpMzlsb2M1MG5yb3VvaTZxZTI5aDV4Nm81cXFpcCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/c76IJLufpNwSULPk77/giphy.webp>
 
 <picture>
    <source srcset="../_static/howto/keybeat/keybeat4.webp" type="image/webp">
    <img src="../_static/howto/keybeat/keybeat4.webp" alt="Example animation">
 </picture>
-
+<br><br>
 Paste the URL into (1)
 
 Ensure that (2) is true to force stretch the image to the display ( or
@@ -148,7 +152,7 @@ with the local OS path format, for example
 C:\Users\your_user_name\Downloads\duck.gif
 
 Also remember that there are a lot of glitchy GIFs out there, before
-balming LEDFX convince yourself using 3rd party software the animation
+blaming LEDFX convince yourself using 3rd party software the animation
 is otherwise good. If you are sure the file is good and LEDFX is at
 fault then raise a #help_and_support
 
