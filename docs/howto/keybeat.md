@@ -8,7 +8,7 @@ synchronize your favorite gif or webp animations with the music beat
 If you don\'t already have one, follow this guide to create a dummy
 matrix device: <a href="dummy_matrix.html">How to: Create a Dummy Matrix</a>
 
-64 x 64 is the maximum size that can currently be correct displayed in
+64 x 64 is the maximum size that can currently be correctly displayed in
 the browser UI due to the limit of 4096 pixels communicated to the front
 end. However, any size can be used with physical devices, development
 and test is generally done on a 128 x 128 panel at 16K pixels
