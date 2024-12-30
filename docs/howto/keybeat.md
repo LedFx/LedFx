@@ -6,7 +6,7 @@ synchronize your favorite gif or webp animations with the music beat
 ## First we need a matrix device
 
 If you don\'t already have one, follow this guide to create a dummy
-matrix device: <a href="dummy_matrix.html">How to: Create a Keybeat gif</a>
+matrix device: <a href="dummy_matrix.html">How to: Create a Dummy Matrix</a>
 
 64 x 64 is the maximum size that can currently be correct displayed in
 the browser UI due to the limit of 4096 pixels communicated to the front
