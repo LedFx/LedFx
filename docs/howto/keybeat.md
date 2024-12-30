@@ -36,8 +36,9 @@ per (1)
 <br><br>
 We should see the GIF animation playing to the music beat, and a valid
 file path in the \"image location\" in this case on a windows host taken
-from the ledfx install files at
-C:\Users\your_user_name\PycharmProjects\ledfx\LedFx\ledfx_assets\gifs\caddy.gif
+from the ledfx install files, noting your location will be different.
+<br><br>
+C:\Users\your_user_name\LedFx\ledfx_assets\gifs\caddy.gif
 <br><br>
 
 ## Choosing your own GIF
@@ -151,7 +152,7 @@ with the local OS path format, for example
 C:\Users\your_user_name\Downloads\duck.gif
 
 Also remember that there are a lot of glitchy GIFs out there, before
-balming LEDFX convince yourself using 3rd party software the animation
+blaming LEDFX convince yourself using 3rd party software the animation
 is otherwise good. If you are sure the file is good and LEDFX is at
 fault then raise a #help_and_support
 
