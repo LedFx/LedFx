@@ -296,7 +296,7 @@ PERFORMANCE OF THIS SOFTWARE.
  */
 
 /**
- * @mui/styled-engine v6.2.0
+ * @mui/styled-engine v6.3.0
  *
  * @license MIT
  * This source code is licensed under the MIT license found in the
@@ -605,7 +605,7 @@ PERFORMANCE OF THIS SOFTWARE.
  */
 
 /**
- * react-router v7.0.2
+ * react-router v7.1.1
  *
  * Copyright (c) Remix Software Inc.
  *
