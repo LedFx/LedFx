@@ -41,6 +41,7 @@ import requests
 import voluptuous as vol
 from dotenv import load_dotenv
 
+from ledfx.color import LEDFX_GRADIENTS
 from ledfx.config import save_config
 from ledfx.consts import LEDFX_ASSETS_PATH, PROJECT_VERSION
 
@@ -1535,7 +1536,18 @@ def get_font(font_list, size):
 
 
 def generate_default_config(ledfx_effects, effect_id):
-    return ledfx_effects.get_class(effect_id).get_combined_default_schema()
+    """
+    Generate config out of the schema for an effect to use as a defualt
+
+    Any manipulations must be made in here, such as expanding gradient strings to fully defined gradients
+    """
+    config = ledfx_effects.get_class(effect_id).get_combined_default_schema()
+    gradient = config.get("gradient", None)
+    gradient_str = LEDFX_GRADIENTS.get(gradient, None)
+    if gradient_str:
+        config["gradient"] = gradient_str
+        config["gradient_name"] = gradient
+    return config
 
 
 def inject_missing_default_keys(presets, defaults):
