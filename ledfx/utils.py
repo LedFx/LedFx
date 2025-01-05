@@ -41,10 +41,9 @@ import requests
 import voluptuous as vol
 from dotenv import load_dotenv
 
+from ledfx.color import LEDFX_GRADIENTS
 from ledfx.config import save_config
 from ledfx.consts import LEDFX_ASSETS_PATH, PROJECT_VERSION
-from ledfx.color import LEDFX_GRADIENTS
-
 
 # from asyncio import coroutines, ensure_future
 
