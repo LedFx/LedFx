@@ -8,8 +8,7 @@ import voluptuous as vol
 from ledfx.consts import LEDFX_ASSETS_PATH
 from ledfx.effects.gifbase import GifBase
 from ledfx.effects.twod import Twod
-from ledfx.utils import (
-#    Teleplot,
+from ledfx.utils import (  # Teleplot,
     clip_at_limit,
     extract_positive_integers,
     get_mono_font,
@@ -483,7 +482,7 @@ class Keybeat2d(Twod, GifBase):
             self.last_beat_t = self.current_time
 
         self.last_beat = self.beat
-        
+
         # latch if we find a min vol in the beat window
         if self.above_min_vol:
             self.min_vol_found_in_last_beat = True
