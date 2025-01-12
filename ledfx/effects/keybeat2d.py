@@ -370,7 +370,7 @@ class Keybeat2d(Twod, GifBase):
         else:
             self.beat = data.beat_oscillator()
         vol = max(0, min(1, self.audio.volume(filtered=False)))
-        self.above_min_vol = True if vol >= self.min_vol else False
+        self.above_min_vol = vol >= self.min_vol
 
         # Teleplot.send(f"beat:{self.beat}")
         # Teleplot.send(f"vol:{vol}")
