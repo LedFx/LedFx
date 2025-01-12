@@ -9,7 +9,7 @@ from ledfx.consts import LEDFX_ASSETS_PATH
 from ledfx.effects.gifbase import GifBase
 from ledfx.effects.twod import Twod
 from ledfx.utils import (
-    Teleplot,
+#    Teleplot,
     clip_at_limit,
     extract_positive_integers,
     get_mono_font,
@@ -118,6 +118,7 @@ class Keybeat2d(Twod, GifBase):
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
         self.min_vol = 0
+        self.min_vol_found_in_last_beat = False
 
     def config_updated(self, config):
         super().config_updated(config)
@@ -307,6 +308,8 @@ class Keybeat2d(Twod, GifBase):
             self.center_v, self.center_h = self.center_h, self.center_v
 
         self.suppress_beat = False
+        self.min_vol_found_in_last_beat = False
+        self.above_min_vol = False
 
     def do_once(self):
         super().do_once()
@@ -366,12 +369,16 @@ class Keybeat2d(Twod, GifBase):
             self.beat = (data.bar_oscillator() % 2) / 2
         else:
             self.beat = data.beat_oscillator()
-        Teleplot.send(f"beat:{self.beat}")
         vol = max(0, min(1, self.audio.volume(filtered=False)))
-        Teleplot.send(f"vol:{vol}")
-        Teleplot.send(f"beatnow:{1 if data.bpm_beat_now() else 0}")
-        self.below_min_vol = True if vol < self.min_vol else False
-        Teleplot.send(f"suppress:{1 if self.suppress_beat else 0}")
+        self.above_min_vol = True if vol >= self.min_vol else False
+
+        # Teleplot.send(f"beat:{self.beat}")
+        # Teleplot.send(f"vol:{vol}")
+        # Teleplot.send(f"min_vol:{self.min_vol}")
+        # Teleplot.send(f"beatnow:{1 if data.bpm_beat_now() else 0}")
+        # Teleplot.send(f"suppress:{1 if self.suppress_beat else 0}")
+        # Teleplot.send(f"above_min_vol:{1 if self.above_min_vol else 0}")
+        # Teleplot.send(f"min_found:{1 if self.min_vol_found_in_last_beat else 0}")
 
     def overlay(self, beat_kick, skip_beat):
         # add beat timestamps to the rolling window beat_list
@@ -456,7 +463,9 @@ class Keybeat2d(Twod, GifBase):
                     )
             else:
                 beat_kick = True
-                if self.below_min_vol:
+                # if there was no minimum volume for the duration since the last beat
+                # then suppress beat progression
+                if not self.min_vol_found_in_last_beat:
                     self.suppress_beat = True
                 else:
                     self.suppress_beat = False
@@ -469,10 +478,15 @@ class Keybeat2d(Twod, GifBase):
                         self.beat_idx = (
                             self.beat_idx + 1
                         ) % self.num_beat_frames
+                self.min_vol_found_in_last_beat = False
 
             self.last_beat_t = self.current_time
 
         self.last_beat = self.beat
+        
+        # latch if we find a min vol in the beat window
+        if self.above_min_vol:
+            self.min_vol_found_in_last_beat = True
 
         if self.num_beat_frames > 0:
             if not self.suppress_beat:
