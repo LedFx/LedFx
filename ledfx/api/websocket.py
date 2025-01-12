@@ -276,6 +276,7 @@ class WebsocketConnection:
             self.send_error(message["id"], msg)
             return
 
+        _LOGGER.debug(f"  sub Q: {hex(id(self))} {str(message)[:80]}")
         _LOGGER.debug(
             f"Websocket subscribing to event {message.get('event_type')} with filter {message.get('event_filter')}"
         )
@@ -287,11 +288,14 @@ class WebsocketConnection:
 
     @websocket_handler("unsubscribe_event")
     def unsubscribe_event_handler(self, message):
+        _LOGGER.debug(f"unsub Q: {hex(id(self))} {str(message)[:80]}")
         subscription_id = message["id"]
 
         _LOGGER.debug(f"Websocket unsubscribing event id {subscription_id}")
         if subscription_id in self._listeners:
             self._listeners.pop(subscription_id)()
+        else:
+            _LOGGER.warning(f"Unsubscibe unknown subscription ID {subscription_id}")
 
     @websocket_handler("audio_stream_start")
     def audio_stream_start_handler(self, message):

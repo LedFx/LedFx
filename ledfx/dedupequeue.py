@@ -25,20 +25,27 @@ class VisDeduplicateQ(asyncio.Queue):
         super().__init__(maxsize)
 
     def put_nowait(self, item):
-        # Check if is a visualisation update message
-        if (
-            item.get("event_type") == Event.DEVICE_UPDATE
-            or item.get("event_type") == Event.VISUALISATION_UPDATE
-        ):
-            # check if it is a duplicate and just return without queing if it is
-            if any(
-                self.is_similar(item, existing_item)
-                for existing_item in self._queue
+
+        # to debug depth of queues and queue leakage enable teleplot below
+        # from ledfx.utils import Teleplot
+        # Teleplot.send(f"{hex(id(self))}:{self.qsize()}")
+
+        # protect against None item flushing during socket closure
+        if item:
+            # Check if is a visualisation update message      
+            if (
+                item.get("event_type") == Event.DEVICE_UPDATE
+                or item.get("event_type") == Event.VISUALISATION_UPDATE
             ):
-                _LOGGER.info(
-                    f"Queue: {hex(id(self))} discarding, qsize {self.qsize()}"
-                )
-                return
+                # check if it is a duplicate and just return without queing if it is
+                if any(
+                    self.is_similar(item, existing_item)
+                    for existing_item in self._queue
+                ):
+                    _LOGGER.info(
+                        f"Queue: {hex(id(self))} discarding, qsize {self.qsize()}"
+                    )
+                    return
         super().put_nowait(item)
 
     def is_similar(self, new, queued):
