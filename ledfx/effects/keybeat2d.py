@@ -9,11 +9,11 @@ from ledfx.consts import LEDFX_ASSETS_PATH
 from ledfx.effects.gifbase import GifBase
 from ledfx.effects.twod import Twod
 from ledfx.utils import (
+    Teleplot,
     clip_at_limit,
     extract_positive_integers,
     get_mono_font,
     open_gif,
-    Teleplot
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -361,7 +361,6 @@ class Keybeat2d(Twod, GifBase):
         self.last_beat_t = self.current_time
         self.min_vol = self.audio._config["min_volume"]
 
-
     def audio_data_updated(self, data):
         if self.half_beat:
             self.beat = (data.bar_oscillator() % 2) / 2
@@ -373,7 +372,6 @@ class Keybeat2d(Twod, GifBase):
         Teleplot.send(f"beatnow:{1 if data.bpm_beat_now() else 0}")
         self.below_min_vol = True if vol < self.min_vol else False
         Teleplot.send(f"suppress:{1 if self.suppress_beat else 0}")
-
 
     def overlay(self, beat_kick, skip_beat):
         # add beat timestamps to the rolling window beat_list
@@ -468,7 +466,9 @@ class Keybeat2d(Twod, GifBase):
                             self.frame_c + 1
                         ) % self.framecount
                     else:
-                        self.beat_idx = (self.beat_idx + 1) % self.num_beat_frames
+                        self.beat_idx = (
+                            self.beat_idx + 1
+                        ) % self.num_beat_frames
 
             self.last_beat_t = self.current_time
 
