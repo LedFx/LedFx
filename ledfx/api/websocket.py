@@ -295,7 +295,9 @@ class WebsocketConnection:
         if subscription_id in self._listeners:
             self._listeners.pop(subscription_id)()
         else:
-            _LOGGER.warning(f"Unsubscibe unknown subscription ID {subscription_id}")
+            _LOGGER.warning(
+                f"Unsubscibe unknown subscription ID {subscription_id}"
+            )
 
     @websocket_handler("audio_stream_start")
     def audio_stream_start_handler(self, message):

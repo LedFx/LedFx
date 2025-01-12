@@ -32,7 +32,7 @@ class VisDeduplicateQ(asyncio.Queue):
 
         # protect against None item flushing during socket closure
         if item:
-            # Check if is a visualisation update message      
+            # Check if is a visualisation update message
             if (
                 item.get("event_type") == Event.DEVICE_UPDATE
                 or item.get("event_type") == Event.VISUALISATION_UPDATE
