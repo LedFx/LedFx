@@ -118,6 +118,7 @@ class Keybeat2d(Twod, GifBase):
         super().__init__(ledfx, config)
         self.min_vol = 0
         self.min_vol_found_in_last_beat = False
+        self.above_min_vol = False
 
     def config_updated(self, config):
         super().config_updated(config)
