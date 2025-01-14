@@ -41,7 +41,7 @@ dependencies = [
     "vnoise>=0.1.0,<1.0.0",
 ]
 name = "LedFx"
-version = "2.0.106"
+version = "2.0.107"
 description = "A network based light effect controller"
 readme = "README.rst"
 
