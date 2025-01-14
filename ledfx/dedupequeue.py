@@ -51,8 +51,14 @@ class VisDeduplicateQ(asyncio.Queue):
     def is_similar(self, new, queued):
         # We know we are already one of the correct types, but is it the same as queued
         # then check if it is for the same device
+        
+        # Protect against None events
+        if new is None or queued is None:
+            return False
+        
         if new.get("event_type") == queued.get("event_type") and new.get(
             "vis_id"
         ) == queued.get("vis_id"):
             return True
+        
         return False
