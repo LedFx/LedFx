@@ -1,10 +1,11 @@
 {
   "files": {
     "main.css": "/static/css/main.b8337dab.css",
-    "main.js": "/static/js/main.51cfb8ed.js",
-    "static/js/864.5e412a40.chunk.js": "/static/js/864.5e412a40.chunk.js",
-    "static/js/956.361d0fc9.chunk.js": "/static/js/956.361d0fc9.chunk.js",
-    "static/js/575.361d0fc9.chunk.js": "/static/js/575.361d0fc9.chunk.js",
+    "main.js": "/static/js/main.3fb92f62.js",
+    "static/js/904.090f0346.chunk.js": "/static/js/904.090f0346.chunk.js",
+    "static/js/865.b62d6362.chunk.js": "/static/js/865.b62d6362.chunk.js",
+    "static/js/703.745a3616.chunk.js": "/static/js/703.745a3616.chunk.js",
+    "static/js/84.745a3616.chunk.js": "/static/js/84.745a3616.chunk.js",
     "static/js/685.db35d3c0.chunk.js": "/static/js/685.db35d3c0.chunk.js",
     "static/media/xmas.png": "/static/media/xmas.3e4e83405d14fb81488b.png",
     "static/media/materialdesignicons-webfont.woff": "/static/media/materialdesignicons-webfont.059ea00c378aeafc39fc.woff",
@@ -42,6 +43,6 @@
   },
   "entrypoints": [
     "static/css/main.b8337dab.css",
-    "static/js/main.51cfb8ed.js"
+    "static/js/main.3fb92f62.js"
   ]
 }
