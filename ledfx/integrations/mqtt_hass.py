@@ -370,17 +370,17 @@ class MQTT_HASS(Integration):
         for virtual in self._ledfx.virtuals.values():
             name = virtual.config["name"]
             if (
-                name.startswith("gap-") or
-                name.endswith("-background") or
-                name.endswith("-mask") or
-                name.endswith("-foreground")
+                name.startswith("gap-")
+                or name.endswith("-background")
+                or name.endswith("-mask")
+                or name.endswith("-foreground")
             ):
                 continue
 
             if virtual.config["icon_name"].startswith("mdi:"):
                 icon = virtual.config["icon_name"]
             else:
-                icon = "mdi:led-strip"          
+                icon = "mdi:led-strip"
             client.publish(
                 f"{self._config['topic']}/light/{virtual.id}/config",
                 json.dumps(
