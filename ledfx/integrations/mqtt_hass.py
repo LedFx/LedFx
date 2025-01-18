@@ -368,16 +368,25 @@ class MQTT_HASS(Integration):
 
         # Create Virtuals as Light in HomeAssistant
         for virtual in self._ledfx.virtuals.values():
+            name = virtual.config["name"]
+            if (
+                name.startswith("gap-") or
+                name.endswith("-background") or
+                name.endswith("-mask") or
+                name.endswith("-foreground")
+            ):
+                continue
+
             if virtual.config["icon_name"].startswith("mdi:"):
                 icon = virtual.config["icon_name"]
             else:
-                icon = "mdi:led-strip"
+                icon = "mdi:led-strip"          
             client.publish(
                 f"{self._config['topic']}/light/{virtual.id}/config",
                 json.dumps(
                     {
                         "~": f"{self._config['topic']}/light/{virtual.id}",
-                        "name": "⮑ " + virtual.config["name"],
+                        "name": "⮑ " + name,
                         "unique_id": virtual.id,
                         "cmd_t": "~/set",
                         "stat_t": "~/state",
