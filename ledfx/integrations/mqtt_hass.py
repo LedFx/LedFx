@@ -522,7 +522,7 @@ class MQTT_HASS(Integration):
 
         # React to Scene-Selector
         elif virtualid == "ledfxsceneselect":
-            self._ledfx.scenes.activate(payload)
+            self._ledfx.scenes.activate(str(payload))
 
         # React to Audio-Selector
         elif virtualid == "ledfxaudio":
