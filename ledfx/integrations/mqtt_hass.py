@@ -564,7 +564,8 @@ class MQTT_HASS(Integration):
                     )
                     try:
                         virtual.set_effect(effect)
-                        virtual.active = payload["state"] == "on"
+                        virtual.active = payload.get("state", "off") == "on"  
+
                     except (ValueError, RuntimeError) as msg:
                         _LOGGER.warning(msg)
                 else:
