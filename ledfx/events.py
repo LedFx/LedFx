@@ -1,8 +1,8 @@
 import logging
+import timeit
 from typing import Callable
 
 import numpy as np
-import timeit
 
 _LOGGER = logging.getLogger(__name__)
 
