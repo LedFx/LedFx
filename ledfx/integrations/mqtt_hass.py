@@ -11,7 +11,6 @@ from ledfx.consts import PROJECT_VERSION
 from ledfx.effects.audio import AudioInputSource
 from ledfx.events import Event
 from ledfx.integrations import Integration
-from ledfx.utils import generate_defaults
 
 _LOGGER = logging.getLogger(__name__)
 
