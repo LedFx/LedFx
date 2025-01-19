@@ -11,7 +11,7 @@ from ledfx.consts import PROJECT_VERSION
 from ledfx.effects.audio import AudioInputSource
 from ledfx.events import Event
 from ledfx.integrations import Integration
-from ledfx.utils import generate_defaults, inject_missing_default_keys
+from ledfx.utils import generate_defaults
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -608,10 +608,10 @@ class MQTT_HASS(Integration):
                         # If a preset is selected, apply it
                         ledfx_presets = self._ledfx.config.get(
                             "ledfx_presets", {}
-                        ).get(virtual.active_effect.type, {})
+                        ).get(getattr(virtual.active_effect, 'type', ''), {})
                         user_presets = self._ledfx.config.get(
                             "user_presets", {}
-                        ).get(virtual.active_effect.type, {})
+                        ).get(getattr(virtual.active_effect, 'type', ''), {})
                         preset_config = ledfx_presets.get(
                             selected_effect_or_preset
                         ) or user_presets.get(selected_effect_or_preset)
