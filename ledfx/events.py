@@ -2,6 +2,7 @@ import logging
 from typing import Callable
 
 import numpy as np
+import timeit
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -125,6 +126,7 @@ class VisualisationUpdateEvent(Event):
         self.vis_id = vis_id
         self.pixels = pixels
         self.shape = shape
+        self.timestamp = timeit.default_timer()
 
 
 class EffectSetEvent(Event):
