@@ -608,10 +608,10 @@ class MQTT_HASS(Integration):
                         # If a preset is selected, apply it
                         ledfx_presets = self._ledfx.config.get(
                             "ledfx_presets", {}
-                        ).get(getattr(virtual.active_effect, 'type', ''), {})
+                        ).get(getattr(virtual.active_effect, "type", ""), {})
                         user_presets = self._ledfx.config.get(
                             "user_presets", {}
-                        ).get(getattr(virtual.active_effect, 'type', ''), {})
+                        ).get(getattr(virtual.active_effect, "type", ""), {})
                         preset_config = ledfx_presets.get(
                             selected_effect_or_preset
                         ) or user_presets.get(selected_effect_or_preset)
