@@ -26,6 +26,8 @@ command_template = """{
     {%- endif -%}
 }
 """
+
+
 def extract_ip():
     st = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     try:
@@ -405,7 +407,9 @@ class MQTT_HASS(Integration):
                         "icon": icon,
                         "effect": True,
                         # "effect_list": list(COLORS.keys()),
-                        "effect_list": list(self._ledfx.effects.classes().keys()),
+                        "effect_list": list(
+                            self._ledfx.effects.classes().keys()
+                        ),
                         "device": hass_device,
                     }
                 ),
@@ -571,17 +575,29 @@ class MQTT_HASS(Integration):
                     #     config={"color": "orange"},
                     # )
 
-
                 # Handle effect selection
                 selected_effect_or_preset = payload.get("effect")
                 if selected_effect_or_preset:
                     if selected_effect_or_preset == "back":
-                        effect_list = list(self._ledfx.effects.classes().keys())
-                    elif selected_effect_or_preset in self._ledfx.effects.classes().keys():
+                        effect_list = list(
+                            self._ledfx.effects.classes().keys()
+                        )
+                    elif (
+                        selected_effect_or_preset
+                        in self._ledfx.effects.classes().keys()
+                    ):
                         # If an effect is selected, show its presets
-                        ledfx_presets = self._ledfx.config.get("ledfx_presets", {}).get(selected_effect_or_preset, {})
-                        user_presets = self._ledfx.config.get("user_presets", {}).get(selected_effect_or_preset, {})
-                        effect_list = ['back'] + list(ledfx_presets.keys()) + list(user_presets.keys())
+                        ledfx_presets = self._ledfx.config.get(
+                            "ledfx_presets", {}
+                        ).get(selected_effect_or_preset, {})
+                        user_presets = self._ledfx.config.get(
+                            "user_presets", {}
+                        ).get(selected_effect_or_preset, {})
+                        effect_list = (
+                            ["back"]
+                            + list(ledfx_presets.keys())
+                            + list(user_presets.keys())
+                        )
                         effect = self._ledfx.effects.create(
                             ledfx=self._ledfx,
                             type=selected_effect_or_preset,
@@ -590,10 +606,20 @@ class MQTT_HASS(Integration):
                         virtual.set_effect(effect)
                     else:
                         # If a preset is selected, apply it
-                        ledfx_presets = self._ledfx.config.get("ledfx_presets", {}).get(virtual.active_effect.type, {})
-                        user_presets = self._ledfx.config.get("user_presets", {}).get(virtual.active_effect.type, {})
-                        preset_config = ledfx_presets.get(selected_effect_or_preset) or user_presets.get(selected_effect_or_preset)
-                        effect_list = ['back'] + list(ledfx_presets.keys()) + list(user_presets.keys())
+                        ledfx_presets = self._ledfx.config.get(
+                            "ledfx_presets", {}
+                        ).get(virtual.active_effect.type, {})
+                        user_presets = self._ledfx.config.get(
+                            "user_presets", {}
+                        ).get(virtual.active_effect.type, {})
+                        preset_config = ledfx_presets.get(
+                            selected_effect_or_preset
+                        ) or user_presets.get(selected_effect_or_preset)
+                        effect_list = (
+                            ["back"]
+                            + list(ledfx_presets.keys())
+                            + list(user_presets.keys())
+                        )
                         if preset_config:
                             effect = self._ledfx.effects.create(
                                 ledfx=self._ledfx,
@@ -652,8 +678,6 @@ class MQTT_HASS(Integration):
                             }
                         ),
                     )
-                    
-                        
 
                 # TODO: Stare at this to convince self, not writing unit test for this
                 virtual.virtual_cfg["active"] = virtual.active
