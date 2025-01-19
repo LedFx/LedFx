@@ -15,6 +15,18 @@ from ledfx.integrations import Integration
 _LOGGER = logging.getLogger(__name__)
 
 
+command_template = """{
+    "state": "on"
+    {%- if red is defined and green is defined and blue is defined -%}
+    , "color": [{{ red }}, {{ green }}, {{ blue }}]
+    {%- endif -%}
+    {%- if effect is defined -%}
+    , "effect": "{{ effect }}"
+    {%- endif -%}
+}
+"""
+
+
 def extract_ip():
     st = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     try:
@@ -355,17 +367,6 @@ class MQTT_HASS(Integration):
             ),
         )
 
-        command_template = """{
-    "state": "on"
-    {%- if red is defined and green is defined and blue is defined -%}
-    , "color": [{{ red }}, {{ green }}, {{ blue }}]
-    {%- endif -%}
-    {%- if effect is defined -%}
-    , "effect": "{{ effect }}"
-    {%- endif -%}
-}
-"""
-
         # Create Virtuals as Light in HomeAssistant
         for virtual in self._ledfx.virtuals.values():
             name = virtual.config["name"]
@@ -405,7 +406,9 @@ class MQTT_HASS(Integration):
                         "icon": icon,
                         "effect": True,
                         # "effect_list": list(COLORS.keys()),
-                        # "effect_list": list(self._ledfx.effects.keys()),
+                        "effect_list": list(
+                            self._ledfx.effects.classes().keys()
+                        ),
                         "device": hass_device,
                     }
                 ),
@@ -558,18 +561,123 @@ class MQTT_HASS(Integration):
                         type="singleColor",
                         config={"color": color},
                     )
+                    try:
+                        virtual.set_effect(effect)
+                        virtual.active = payload.get("state", "off") == "on"
+
+                    except (ValueError, RuntimeError) as msg:
+                        _LOGGER.warning(msg)
                 else:
                     _LOGGER.debug("COLOR: %s", color)
-                    effect = self._ledfx.effects.create(
-                        ledfx=self._ledfx,
-                        type="singleColor",
-                        config={"color": "orange"},
+                    # effect = self._ledfx.effects.create(
+                    #     ledfx=self._ledfx,
+                    #     type="singleColor",
+                    #     config={"color": "orange"},
+                    # )
+
+                # Handle effect selection
+                selected_effect_or_preset = payload.get("effect")
+                if selected_effect_or_preset:
+                    if selected_effect_or_preset == "back":
+                        effect_list = list(
+                            self._ledfx.effects.classes().keys()
+                        )
+                    elif (
+                        selected_effect_or_preset
+                        in self._ledfx.effects.classes().keys()
+                    ):
+                        # If an effect is selected, show its presets
+                        ledfx_presets = self._ledfx.config.get(
+                            "ledfx_presets", {}
+                        ).get(selected_effect_or_preset, {})
+                        user_presets = self._ledfx.config.get(
+                            "user_presets", {}
+                        ).get(selected_effect_or_preset, {})
+                        effect_list = (
+                            ["back"]
+                            + list(ledfx_presets.keys())
+                            + list(user_presets.keys())
+                        )
+                        effect = self._ledfx.effects.create(
+                            ledfx=self._ledfx,
+                            type=selected_effect_or_preset,
+                            config=payload.get("effect_config", {}),
+                        )
+                        virtual.set_effect(effect)
+                    else:
+                        # If a preset is selected, apply it
+                        ledfx_presets = self._ledfx.config.get(
+                            "ledfx_presets", {}
+                        ).get(getattr(virtual.active_effect, "type", ""), {})
+                        user_presets = self._ledfx.config.get(
+                            "user_presets", {}
+                        ).get(getattr(virtual.active_effect, "type", ""), {})
+                        preset_config = ledfx_presets.get(
+                            selected_effect_or_preset
+                        ) or user_presets.get(selected_effect_or_preset)
+                        effect_list = (
+                            ["back"]
+                            + list(ledfx_presets.keys())
+                            + list(user_presets.keys())
+                        )
+                        if preset_config:
+                            effect = self._ledfx.effects.create(
+                                ledfx=self._ledfx,
+                                type=virtual.active_effect.type,
+                                config=preset_config["config"],
+                            )
+                            virtual.set_effect(effect)
+                        return
+                    name = virtual.config["name"]
+                    if (
+                        name.startswith("gap-")
+                        or name.endswith("-background")
+                        or name.endswith("-mask")
+                        or name.endswith("-foreground")
+                    ):
+                        return
+
+                    if virtual.config["icon_name"].startswith("mdi:"):
+                        icon = virtual.config["icon_name"]
+                    else:
+                        icon = "mdi:led-strip"
+                    hass_device = {
+                        "identifiers": ["yzlights"],
+                        "configuration_url": f"http://{extract_ip()}:{self._ledfx.port}/#/Integrations",
+                        "name": "LedFx",
+                        "model": "BladeMOD",
+                        "manufacturer": "Yeon",
+                        "sw_version": f"{PROJECT_VERSION}",
+                    }
+                    client.publish(
+                        f"{self._config['topic']}/light/{virtual.id}/config",
+                        json.dumps(
+                            {
+                                "~": f"{self._config['topic']}/light/{virtual.id}",
+                                "name": "⮑ " + name,
+                                "unique_id": virtual.id,
+                                "cmd_t": "~/set",
+                                "stat_t": "~/state",
+                                "state_template": "{{ value_json.state | lower }}",
+                                "state_value_template": "{{ value_json.state | lower }}",
+                                "schema": "template",
+                                "brightness": False,
+                                "enabled_by_default": True,
+                                "command_on_template": command_template,
+                                "command_off_template": '{"state": "off"}',
+                                "red_template": "{{ value_json.color[0] }}",
+                                "green_template": "{{ value_json.color[1] }}",
+                                "blue_template": "{{ value_json.color[2] }}",
+                                "effect_template": "{{ value_json.effect }}",
+                                "json_attributes_topic": "~/meta",
+                                "icon": icon,
+                                "effect": True,
+                                # "effect_list": list(COLORS.keys()),
+                                "effect_list": effect_list,
+                                "device": hass_device,
+                            }
+                        ),
                     )
-                try:
-                    virtual.set_effect(effect)
-                    virtual.active = payload["state"] == "on"
-                except (ValueError, RuntimeError) as msg:
-                    _LOGGER.warning(msg)
 
                 # TODO: Stare at this to convince self, not writing unit test for this
                 virtual.virtual_cfg["active"] = virtual.active
