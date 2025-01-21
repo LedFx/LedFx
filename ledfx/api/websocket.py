@@ -41,6 +41,7 @@ websocket_handlers = {}
 
 updated_lists = {}
 
+
 def websocket_handler(type):
     def function(func):
         websocket_handlers[type] = func
@@ -301,12 +302,13 @@ class WebsocketConnection:
                 f"Unsubscibe unknown subscription ID {subscription_id}"
             )
 
-
     @websocket_handler("event")
     def visualisation_updated_event_handler(self, message):
         global updated_lists
-        _LOGGER.debug(f"updated: id: {message['id']} vis_id {message['vis_id']} {timeit.default_timer() - message['timestamp']:0.6f}")
-        
+        _LOGGER.debug(
+            f"updated: id: {message['id']} vis_id {message['vis_id']} {timeit.default_timer() - message['timestamp']:0.6f}"
+        )
+
     @websocket_handler("audio_stream_start")
     def audio_stream_start_handler(self, message):
         client = message.get("client")
