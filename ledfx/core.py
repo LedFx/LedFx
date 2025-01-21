@@ -286,7 +286,7 @@ class LedFxCore:
             self.visualisation_update_listener,
             Event.DEVICE_UPDATE,
         )
-        
+
         _LOGGER.debug("Adding visualisation updated event listener.")
         self.visualisation_updated_listener = self.events.add_listener(
             handle_visualisation_updated,
