@@ -17,6 +17,7 @@ class Event:
     DEVICES_UPDATED = "devices_updated"
     VIRTUAL_UPDATE = "virtual_update"
     VISUALISATION_UPDATE = "visualisation_update"
+    VISUALISATION_UPDATED = "visualisation_updated"
     GRAPH_UPDATE = "graph_update"
     EFFECT_SET = "effect_set"
     EFFECT_CLEARED = "effect_cleared"

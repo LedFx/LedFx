@@ -3,6 +3,7 @@ import binascii
 import json
 import logging
 import struct
+import timeit
 from concurrent import futures
 
 import numpy as np
@@ -222,8 +223,12 @@ class WebsocketConnection:
                 message = BASE_MESSAGE_SCHEMA(message)
 
                 if message["type"] in websocket_handlers:
+                    _LOGGER.info(f"Received {message['event_type']} message")
                     websocket_handlers[message["type"]](self, message)
                 else:
+                    # if message["event_type"] == "visualisation_updated":
+                    #     _LOGGER.info(f"vis_id {message['vis_id']} {timeit.default_timer() - message['timestamp']:0.4f}")
+                    # else:
                     _LOGGER.error(
                         f"Received unknown command {message['type']}"
                     )
