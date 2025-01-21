@@ -209,7 +209,6 @@ class LedFxCore:
                 "Removing existing visualisation event handler and event listeners."
             )
             self.visualisation_udpate_listener = None
-            self.visualisation_updated_listener = None
             self.virtual_listener()
             self.device_listener()
 
@@ -271,9 +270,6 @@ class LedFxCore:
                 VisualisationUpdateEvent(is_device, vis_id, pixels, shape)
             )
 
-        def handle_visualisation_updated(event):
-            _LOGGER.debug(f"Visualitation updated {event}")
-
         _LOGGER.debug("Setting up visualisation event handler.")
         self.visualisation_update_listener = handle_visualisation_update
         _LOGGER.debug("Adding virtual update event listener.")
@@ -285,12 +281,6 @@ class LedFxCore:
         self.device_listener = self.events.add_listener(
             self.visualisation_update_listener,
             Event.DEVICE_UPDATE,
-        )
-
-        _LOGGER.debug("Adding visualisation updated event listener.")
-        self.visualisation_updated_listener = self.events.add_listener(
-            handle_visualisation_updated,
-            Event.VISUALISATION_UPDATED,
         )
 
     def setup_logqueue(self):

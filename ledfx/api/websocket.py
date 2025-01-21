@@ -39,6 +39,7 @@ NON_SUBSCRIBABLE_EVENTS = {
 # events.
 websocket_handlers = {}
 
+updated_lists = {}
 
 def websocket_handler(type):
     def function(func):
@@ -223,12 +224,8 @@ class WebsocketConnection:
                 message = BASE_MESSAGE_SCHEMA(message)
 
                 if message["type"] in websocket_handlers:
-                    _LOGGER.info(f"Received {message['event_type']} message")
                     websocket_handlers[message["type"]](self, message)
                 else:
-                    # if message["event_type"] == "visualisation_updated":
-                    #     _LOGGER.info(f"vis_id {message['vis_id']} {timeit.default_timer() - message['timestamp']:0.4f}")
-                    # else:
                     _LOGGER.error(
                         f"Received unknown command {message['type']}"
                     )
@@ -304,6 +301,12 @@ class WebsocketConnection:
                 f"Unsubscibe unknown subscription ID {subscription_id}"
             )
 
+
+    @websocket_handler("event")
+    def visualisation_updated_event_handler(self, message):
+        global updated_lists
+        _LOGGER.debug(f"updated: id: {message['id']} vis_id {message['vis_id']} {timeit.default_timer() - message['timestamp']:0.6f}")
+        
     @websocket_handler("audio_stream_start")
     def audio_stream_start_handler(self, message):
         client = message.get("client")
