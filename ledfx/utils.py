@@ -1991,3 +1991,71 @@ class Teleplot:
             Teleplot.sock.sendto(string.encode(), ("127.0.0.1", 47269))
         except Exception as e:
             _LOGGER.error(f"Failed to send data to teleplot: {e}")
+
+class DiagAverageDict:
+    def __init__(self):
+        """
+        Initialize the DiagAverageDict instance.
+        """
+        self.diags = {}
+
+    def add_value(self, name, value):
+        """
+        Add a value to the running total for a specific key.
+
+        :param name: The key to add the value to.
+        :param value: The value to add.
+        """
+        if name not in self.diags:
+            self.diags[name] = DiagAverage(name, 60)
+
+        self.diags[name].add_value(value)
+
+
+class DiagAverage:
+    def __init__(self, name, max_count):
+        """
+        Initialize the DiagAverage instance.
+
+        :param name: Name of the instance, used in logging outputs.
+        """
+        self.name = name
+        self.max_count = max_count
+        self.total = 0.0
+        self.count = 0
+        self.min_value = float('inf')
+        self.max_value = float('-inf')
+
+    def add_value(self, value):
+        """
+        Add a value to the running total. Logs min, max, and average after max_count values.
+
+        :param value: The value to add.
+        """
+        self.total += value
+        self.count += 1
+        self.min_value = min(self.min_value, value)
+        self.max_value = max(self.max_value, value)
+
+        if self.count >= self.max_count:
+            self.log_statistics()
+            self.reset()
+
+    def log_statistics(self):
+        """
+        Log the min, max, and average of the recorded values.
+        """
+        if self.count == 0:
+            return
+
+        average = self.total / self.count
+        logging.info(f"{self.name[:10]:<10} Avg: {average:.4f} Min: {self.min_value:.4f} Max: {self.max_value:.4f}")
+
+    def reset(self):
+        """
+        Reset the internal values and count.
+        """
+        self.total = 0
+        self.count = 0
+        self.min_value = float('inf')
+        self.max_value = float('-inf')

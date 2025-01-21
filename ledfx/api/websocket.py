@@ -14,7 +14,7 @@ from aiohttp import web
 from ledfx.api import RestEndpoint
 from ledfx.dedupequeue import VisDeduplicateQ
 from ledfx.events import Event
-from ledfx.utils import empty_queue
+from ledfx.utils import empty_queue, DiagAverageDict
 
 _LOGGER = logging.getLogger(__name__)
 MAX_PENDING_MESSAGES = 256
@@ -39,7 +39,6 @@ NON_SUBSCRIBABLE_EVENTS = {
 # events.
 websocket_handlers = {}
 
-updated_lists = {}
 
 def websocket_handler(type):
     def function(func):
@@ -72,6 +71,7 @@ class WebsocketConnection:
         self._receiver_task = None
         self._sender_task = None
         self._sender_queue = VisDeduplicateQ(maxsize=MAX_PENDING_MESSAGES)
+        self.diags = DiagAverageDict()
 
     def close(self):
         """
@@ -304,8 +304,9 @@ class WebsocketConnection:
 
     @websocket_handler("event")
     def visualisation_updated_event_handler(self, message):
-        global updated_lists
-        _LOGGER.debug(f"updated: id: {message['id']} vis_id {message['vis_id']} {timeit.default_timer() - message['timestamp']:0.6f}")
+        self.diags.add_value(message["vis_id"], timeit.default_timer() - message["timestamp"])
+
+        # _LOGGER.debug(f"updated: id: {message['id']} vis_id {message['vis_id']} {timeit.default_timer() - message['timestamp']:0.6f}")
         
     @websocket_handler("audio_stream_start")
     def audio_stream_start_handler(self, message):
