@@ -301,7 +301,6 @@ class WebsocketConnection:
                 f"Unsubscibe unknown subscription ID {subscription_id}"
             )
 
-
     @websocket_handler("event")
     def visualisation_updated_event_handler(self, message):
         self.diags.add_value(message["vis_id"], timeit.default_timer() - message["timestamp"])
