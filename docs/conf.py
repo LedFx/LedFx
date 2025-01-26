@@ -11,6 +11,7 @@ import os
 import sys
 
 import sphinx_rtd_theme
+import datetime
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -25,7 +26,7 @@ from ledfx.consts import PROJECT_AUTHOR, PROJECT_NAME, PROJECT_VERSION
 
 PROJECT_PACKAGE_NAME = PROJECT_NAME
 PROJECT_AUTHOR = PROJECT_AUTHOR
-PROJECT_COPYRIGHT = f" 2018-2023, {PROJECT_AUTHOR}"
+PROJECT_COPYRIGHT = f" 2018-{datetime.datetime.now().year}, {PROJECT_AUTHOR}"
 PROJECT_SHORT_DESCRIPTION = "LedFx is an open-source effect controller"
 PROJECT_LONG_DESCRIPTION = (
     "LedFx is an open-source effect controller "
