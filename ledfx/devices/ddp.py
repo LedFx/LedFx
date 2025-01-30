@@ -92,7 +92,12 @@ class DDPDevice(UDPDevice):
                 if len(data2) < (32 * 3):
                     # add RGB data to 32 pixels
                     data2 = np.concatenate(
-                        (data2, np.zeros((32 - len(data2) // 3, 3), dtype=np.uint8))
+                        (
+                            data2,
+                            np.zeros(
+                                (32 - len(data2) // 3, 3), dtype=np.uint8
+                            ),
+                        )
                     )
 
             DDPDevice.send_out(
@@ -124,7 +129,13 @@ class DDPDevice(UDPDevice):
 
     @staticmethod
     def send_out(
-        sock: socket, dest: str, port: int, data: ndarray, frame_count: int, pad: bool, dump: bool
+        sock: socket,
+        dest: str,
+        port: int,
+        data: ndarray,
+        frame_count: int,
+        pad: bool,
+        dump: bool,
     ) -> None:
         """
         Sends out data packets over a socket using the DDP protocol.
@@ -157,7 +168,7 @@ class DDPDevice(UDPDevice):
                 byteData[data_start:data_end],
                 i == packets,
                 pad,
-                dump
+                dump,
             )
 
     @staticmethod
@@ -170,7 +181,7 @@ class DDPDevice(UDPDevice):
         data: Union[bytes, memoryview],
         last: bool,
         pad: bool,
-        dump: bool
+        dump: bool,
     ) -> None:
         """
         Sends a DDP packet over a socket to a specified destination.
@@ -201,20 +212,20 @@ class DDPDevice(UDPDevice):
 
         if pad:
             udpData = udpData + b"\x00" * (32 * 3 - len(data))
-        
+
         if dump:
             # debug the content of updData as hex bytes with 16 bytes to a line
             # First 12 bytes on a single line
             if len(udpData) > 0:
-                first_chunk = udpData[:10].hex(' ')
+                first_chunk = udpData[:10].hex(" ")
                 _LOGGER.error(f"h : {first_chunk}")
 
             # Remaining bytes in chunks of 24 bytes per line
             for i in range(10, len(udpData), 24):
-                hex_chunk = udpData[i:i+24].hex(' ')
+                hex_chunk = udpData[i : i + 24].hex(" ")
                 _LOGGER.error(f"{int((i-10)/3):02d}: {hex_chunk}")
             _LOGGER.error("end")
-        
+
         sock.sendto(
             udpData,
             (dest, port),
