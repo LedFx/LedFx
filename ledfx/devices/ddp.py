@@ -48,6 +48,21 @@ class DDPDevice(UDPDevice):
                 description="Port for the UDP device",
                 default=4048,
             ): vol.All(int, vol.Range(min=1, max=65535)),
+            vol.Optional(
+                "stuff_to_32",
+                description="Test Only: stuff the data to 32 pixels.",
+                default=False,
+            ): bool,
+            vol.Optional(
+                "pixel_to_32",
+                description="Test Only: stuff the data to 32 pixels",
+                default=False,
+            ): bool,
+            vol.Optional(
+                "dump",
+                description="dump packets",
+                default=False,
+            ): bool,
         }
     )
 
@@ -71,14 +86,25 @@ class DDPDevice(UDPDevice):
         """
         self.frame_count += 1
         try:
+            data2 = data.copy()
+
+            if self.config.get("pixel_to_32", False):
+                if len(data2) < (32 * 3):
+                    # add RGB data to 32 pixels
+                    data2 = np.concatenate(
+                        (data2, np.zeros((32 - len(data2) // 3, 3), dtype=np.uint8))
+                    )
 
             DDPDevice.send_out(
                 self._sock,
                 self.destination,
                 self.destination_port,
-                data,
+                data2,
                 self.frame_count,
+                self.config.get("stuff_to_32", False),
+                self.config.get("dump", False),
             )
+
             if self.connection_warning:
                 # If we have reconnected, log it, come back online, and fire an event to the frontend
                 _LOGGER.info(f"DDP connection to {self.name} re-established.")
@@ -98,7 +124,7 @@ class DDPDevice(UDPDevice):
 
     @staticmethod
     def send_out(
-        sock: socket, dest: str, port: int, data: ndarray, frame_count: int
+        sock: socket, dest: str, port: int, data: ndarray, frame_count: int, pad: bool, dump: bool
     ) -> None:
         """
         Sends out data packets over a socket using the DDP protocol.
@@ -130,6 +156,8 @@ class DDPDevice(UDPDevice):
                 i,
                 byteData[data_start:data_end],
                 i == packets,
+                pad,
+                dump
             )
 
     @staticmethod
@@ -141,6 +169,8 @@ class DDPDevice(UDPDevice):
         packet_count: int,
         data: Union[bytes, memoryview],
         last: bool,
+        pad: bool,
+        dump: bool
     ) -> None:
         """
         Sends a DDP packet over a socket to a specified destination.
@@ -169,6 +199,22 @@ class DDPDevice(UDPDevice):
         )
         udpData = header + bytes(data)
 
+        if pad:
+            udpData = udpData + b"\x00" * (32 * 3 - len(data))
+        
+        if dump:
+            # debug the content of updData as hex bytes with 16 bytes to a line
+            # First 12 bytes on a single line
+            if len(udpData) > 0:
+                first_chunk = udpData[:10].hex(' ')
+                _LOGGER.error(f"h : {first_chunk}")
+
+            # Remaining bytes in chunks of 24 bytes per line
+            for i in range(10, len(udpData), 24):
+                hex_chunk = udpData[i:i+24].hex(' ')
+                _LOGGER.error(f"{int((i-10)/3):02d}: {hex_chunk}")
+            _LOGGER.error("end")
+        
         sock.sendto(
             udpData,
             (dest, port),
