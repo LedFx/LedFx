@@ -84,7 +84,7 @@ class DDPDevice(UDPDevice):
             AttributeError: If an attribute error occurs during the flush.
             OSError: If an OS error occurs during the flush.
         """
-        
+
         self.frame_count += 1
         try:
             data2 = data.copy()
@@ -93,7 +93,7 @@ class DDPDevice(UDPDevice):
                 if len(data2) < (32 * 3):
                     pixel_val = [0xFF, 0x00, 0xFF]
                     for _ in range(32 - len(data2)):
-                        data2 = np.append(data2, pixel_val) 
+                        data2 = np.append(data2, pixel_val)
 
             DDPDevice.send_out(
                 self._sock,
@@ -125,7 +125,14 @@ class DDPDevice(UDPDevice):
 
     @staticmethod
     def send_out(
-        sock: socket, dest: str, port: int, data: ndarray, frame_count: int, stuff: bool, pixels: bool, dump: bool
+        sock: socket,
+        dest: str,
+        port: int,
+        data: ndarray,
+        frame_count: int,
+        stuff: bool,
+        pixels: bool,
+        dump: bool,
     ) -> None:
         """
         Sends out data packets over a socket using the DDP protocol.
@@ -159,7 +166,7 @@ class DDPDevice(UDPDevice):
                 i == packets,
                 stuff,
                 pixels,
-                dump
+                dump,
             )
 
     @staticmethod
@@ -173,7 +180,7 @@ class DDPDevice(UDPDevice):
         last: bool,
         stuff: bool,
         pixels: bool,
-        dump: bool
+        dump: bool,
     ) -> None:
         """
         Sends a DDP packet over a socket to a specified destination.
@@ -204,7 +211,7 @@ class DDPDevice(UDPDevice):
 
         if stuff:
             udpData = udpData + b"\x55" * (32 * 3 - len(data))
-        
+
         if dump:
             if stuff:
                 st = "S"
@@ -219,7 +226,7 @@ class DDPDevice(UDPDevice):
             # debug the content of updData as hex bytes with 16 bytes to a line
             # First 12 bytes on a single line
             if len(udpData) > 0:
-                first_chunk = udpData[:10].hex(' ')
+                first_chunk = udpData[:10].hex(" ")
                 _LOGGER.error(f"{st}{px}: {first_chunk}")
 
             # Remaining bytes in chunks of 24 bytes per line
