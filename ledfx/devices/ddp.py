@@ -224,10 +224,10 @@ class DDPDevice(UDPDevice):
 
             # Remaining bytes in chunks of 24 bytes per line
             for i in range(10, len(udpData), 24):
-                hex_chunk = udpData[i:i+24].hex(' ')
+                hex_chunk = udpData[i : i + 24].hex(" ")
                 _LOGGER.error(f"{int((i-10)/3):02d}: {hex_chunk}")
             _LOGGER.error("end")
-        
+
         sock.sendto(
             udpData,
             (dest, port),
