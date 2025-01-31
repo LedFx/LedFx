@@ -50,12 +50,12 @@ class DDPDevice(UDPDevice):
             ): vol.All(int, vol.Range(min=1, max=65535)),
             vol.Optional(
                 "stuff_to_32",
-                description="Test Only: stuff the data to 32 pixels.",
+                description="Test Only: stuff the data only to 32 pixels.",
                 default=False,
             ): bool,
             vol.Optional(
                 "pixel_to_32",
-                description="Test Only: stuff the data to 32 pixels",
+                description="Test Only: stuff to 32 pixels",
                 default=False,
             ): bool,
             vol.Optional(
@@ -84,16 +84,16 @@ class DDPDevice(UDPDevice):
             AttributeError: If an attribute error occurs during the flush.
             OSError: If an OS error occurs during the flush.
         """
+        
         self.frame_count += 1
         try:
             data2 = data.copy()
 
             if self.config.get("pixel_to_32", False):
                 if len(data2) < (32 * 3):
-                    # add RGB data to 32 pixels
-                    data2 = np.concatenate(
-                        (data2, np.zeros((32 - len(data2) // 3, 3), dtype=np.uint8))
-                    )
+                    pixel_val = [0xFF, 0x00, 0xFF]
+                    for _ in range(32 - len(data2)):
+                        data2 = np.append(data2, pixel_val) 
 
             DDPDevice.send_out(
                 self._sock,
@@ -102,6 +102,7 @@ class DDPDevice(UDPDevice):
                 data2,
                 self.frame_count,
                 self.config.get("stuff_to_32", False),
+                self.config.get("pixel_to_32", False),
                 self.config.get("dump", False),
             )
 
@@ -124,7 +125,7 @@ class DDPDevice(UDPDevice):
 
     @staticmethod
     def send_out(
-        sock: socket, dest: str, port: int, data: ndarray, frame_count: int, pad: bool, dump: bool
+        sock: socket, dest: str, port: int, data: ndarray, frame_count: int, stuff: bool, pixels: bool, dump: bool
     ) -> None:
         """
         Sends out data packets over a socket using the DDP protocol.
@@ -156,7 +157,8 @@ class DDPDevice(UDPDevice):
                 i,
                 byteData[data_start:data_end],
                 i == packets,
-                pad,
+                stuff,
+                pixels,
                 dump
             )
 
@@ -169,7 +171,8 @@ class DDPDevice(UDPDevice):
         packet_count: int,
         data: Union[bytes, memoryview],
         last: bool,
-        pad: bool,
+        stuff: bool,
+        pixels: bool,
         dump: bool
     ) -> None:
         """
@@ -199,15 +202,25 @@ class DDPDevice(UDPDevice):
         )
         udpData = header + bytes(data)
 
-        if pad:
-            udpData = udpData + b"\x00" * (32 * 3 - len(data))
+        if stuff:
+            udpData = udpData + b"\x55" * (32 * 3 - len(data))
         
         if dump:
+            if stuff:
+                st = "S"
+            else:
+                st = "."
+
+            if pixels:
+                px = "P"
+            else:
+                px = "."
+
             # debug the content of updData as hex bytes with 16 bytes to a line
             # First 12 bytes on a single line
             if len(udpData) > 0:
                 first_chunk = udpData[:10].hex(' ')
-                _LOGGER.error(f"h : {first_chunk}")
+                _LOGGER.error(f"{st}{px}: {first_chunk}")
 
             # Remaining bytes in chunks of 24 bytes per line
             for i in range(10, len(udpData), 24):
