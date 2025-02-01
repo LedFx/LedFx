@@ -941,11 +941,11 @@ wheels = [
 
 [[package]]
 name = "isort"
-version = "5.13.2"
+version = "6.0.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/87/f9/c1eb8635a24e87ade2efce21e3ce8cd6b8630bb685ddc9cdaca1349b2eb5/isort-5.13.2.tar.gz", hash = "sha256:48fdfcb9face5d58a4f6dde2e72a1fb8dcaf8ab26f95ab49fab84c2ddefb0109", size = 175303 }
+sdist = { url = "https://files.pythonhosted.org/packages/1c/28/b382d1656ac0ee4cef4bf579b13f9c6c813bff8a5cb5996669592c8c75fa/isort-6.0.0.tar.gz", hash = "sha256:75d9d8a1438a9432a7d7b54f2d3b45cad9a4a0fdba43617d9873379704a8bdf1", size = 828356 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/d1/b3/8def84f539e7d2289a02f0524b944b15d7c75dab7628bedf1c4f0992029c/isort-5.13.2-py3-none-any.whl", hash = "sha256:8ca5e72a8d85860d5a3fa69b8745237f2939afe12dbf656afbcb47fe72d947a6", size = 92310 },
+    { url = "https://files.pythonhosted.org/packages/76/c7/d6017f09ae5b1206fbe531f7af3b6dac1f67aedcbd2e79f3b386c27955d6/isort-6.0.0-py3-none-any.whl", hash = "sha256:567954102bb47bb12e0fae62606570faacddd441e45683968c8d1734fb1af892", size = 94053 },
 ]
 
 [[package]]
@@ -962,7 +962,7 @@ wheels = [
 
 [[package]]
 name = "ledfx"
-version = "2.0.106"
+version = "2.0.107"
 source = { editable = "." }
 dependencies = [
     { name = "aiohttp" },
@@ -1079,7 +1079,7 @@ dev = [
     { name = "black", specifier = ">=24.10.0,<24.11.0" },
     { name = "bokeh", specifier = ">=3.3.3,<4.0.0" },
     { name = "flake8", specifier = ">=7.1.1,<7.2.0" },
-    { name = "isort", specifier = ">=5.13.2,<5.14.0" },
+    { name = "isort", specifier = ">=6.0.0,<6.0.1" },
     { name = "pre-commit", specifier = ">=4.0.0,<4.1.0" },
     { name = "pyinstaller", specifier = ">=6.3.0,<7.0.0" },
     { name = "pytest", specifier = ">=8.0.0,<9.0.0" },
