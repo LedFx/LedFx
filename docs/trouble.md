@@ -177,15 +177,15 @@ weaknesses in WiFi. To minimize this, we reccomend:
 All current builds should be able to be accessed from LAN - please
 ensure that you allow traffic from port 8888 from the host machine.
 
-## I only get something less that 480 leds in WLED
+## I only get something less than 480 LEDs in WLED
 
 With a long led strip, of greater than 480 pixels, ledfx only seems to drive 480 or less.
 
-### Maybe its the network interface MTU
+### Maybe it's the network interface MTU
 
 If the MTU of the networking interface on your host PC is not set to the common default 1500 bytes, fragmentation of the UDP packets that DDP is transported on, may cause issue with WLED at consumption of the DDP protocol
 
-By default ledfx splits up seperate DDP packets at 480 pixel boundaries. So for example in a 1024 pixels device, it will take 3 DDP over UDP packets to transmit a single frame of data. Each packet will have a max UDP size of 1492 bytes made up of headers plus 3 x 480 bytes for RGB data
+By default, LedFx splits up seperate DDP packets at 480 pixel boundaries. So for example in a 1024 pixels device, it will take 3 DDP over UDP packets to transmit a single frame of data. Each packet will have a max UDP size of 1492 bytes made up of headers plus 3 x 480 bytes for RGB data
 
 If the MTU of the network interface is less that 1500, the UDP packets will get fragmented, and its possible that WLED will only service the first fragment and ignore the remaining fragement and all folllowing DDP packets until the next frame cycle.
 
@@ -206,7 +206,7 @@ Get-NetIPInterface | Select-Object InterfaceAlias, AddressFamily, NlMtu
 ip link show
 ```
 
-#### On Mac OSX
+#### On macOS
 
 ```console
 ifconfig | grep mtu
