@@ -713,7 +713,10 @@ def generate_id(name):
             str: The converted ID.
     """
     part1 = re.sub("[^a-zA-Z0-9]", " ", name).lower()
-    return re.sub(" +", " ", part1).strip().replace(" ", "-")
+    result = re.sub(" +", " ", part1).strip().replace(" ", "-")
+    if result == "":
+        result = "default"
+    return result
 
 
 def generate_title(id):
