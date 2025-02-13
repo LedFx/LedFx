@@ -202,7 +202,19 @@ class ScenesEndpoint(RestEndpoint):
 
             return await self.invalid_request(error_message)
 
-        scene_id = generate_id(scene_name)
+        scene_id = data.get("id")
+
+        if not scene_id:
+            # this is a create, make sure it is deduped
+            dupe_id = generate_id(scene_name)
+            dupe_index = 1
+            scene_id = dupe_id
+            while scene_id in self._ledfx.config["scenes"].keys():
+                scene_id = f"{dupe_id}-{dupe_index}"
+                dupe_index = dupe_index + 1
+        else:
+            # this is an overwrite scenario, just sanitize scene_id
+            scene_id = generate_id(scene_id)
 
         scene_config = {}
         scene_config["name"] = scene_name
