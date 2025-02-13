@@ -37,7 +37,7 @@ class ScenesEndpoint(RestEndpoint):
         except JSONDecodeError:
             return await self.json_decode_error()
 
-        scene_id = data.get("id")
+        scene_id = generate_id(data.get("id"))
         if scene_id is None:
             return await self.invalid_request(
                 'Required attribute "id" was not provided'
@@ -83,7 +83,7 @@ class ScenesEndpoint(RestEndpoint):
         if action not in ["activate", "activate_in", "deactivate", "rename"]:
             return await self.invalid_request(f'Invalid action "{action}"')
 
-        scene_id = data.get("id")
+        scene_id = generate_id(data.get("id"))
         if scene_id is None:
             return await self.invalid_request(
                 'Required attribute "id" was not provided'
