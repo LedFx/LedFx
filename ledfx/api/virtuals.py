@@ -126,7 +126,7 @@ class VirtualsEndpoint(RestEndpoint):
                 "status": "success",
                 "payload": {
                     "type": "success",
-                    "reason": f"Created Virtual {virtual_id}",
+                    "reason": f"Created Virtual {virtual.id}",
                 },
                 "virtual": {
                     "config": virtual.config,
