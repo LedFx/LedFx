@@ -479,7 +479,7 @@ jobs:
           echo ledfx-version=$(cat dist/ledfx_version.txt) >> $GITHUB_OUTPUT
           rm -rf dist/ledfx_version.txt
       - name: Create Sentry release
-        uses: getsentry/action-release@v1
+        uses: getsentry/action-release@v2
         env:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN_V2 }}
           SENTRY_ORG: ledfx-org
