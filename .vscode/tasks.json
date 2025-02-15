@@ -71,6 +71,19 @@
             },
             "problemMatcher": [],
             "dependsOn": "Build Docs"
-        }
+        },
+        {
+            "label": "Init Frontend submodule",
+            "type": "shell",
+            "command": "git",
+            "args": ["pull", "--recurse-submodules"],
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "statusbar": {
+                    "hide": true
+                }
+            },
+            "problemMatcher": []
+        },
     ]
 }
