@@ -40,6 +40,9 @@ class HttpServer:
         )
         self.app.router.add_route("get", "/manifest.json", self.manifest)
         self.app.router.add_route(
+            "get", "/frontend_config.json", self.frontend_config
+        )
+        self.app.router.add_route(
             "get", "/serviceWorker.js", self.service_worker
         )
         self.app.router.add_route(
@@ -57,6 +60,11 @@ class HttpServer:
     async def index(self, response):
         return web.FileResponse(
             path=ledfx_frontend.where() + "/index.html", status=200
+        )
+
+    async def frontend_config(self, response):
+        return web.FileResponse(
+            path=ledfx_frontend.where() + "/frontend_config.json", status=200
         )
 
     async def manifest(self, response):
