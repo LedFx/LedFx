@@ -20,7 +20,7 @@ RENDER_MAPPINGS = {
 
 class Bleeper:
 
-    def __init__(self, shape, scroll_time, colors, points, points_linear):
+    def __init__(self, shape, scroll_time, colors, points, points_linear, mirror, render_func):
         self.points = points
         self.points_linear = points_linear
         self.coords = np.zeros((self.points, 2))
@@ -34,6 +34,8 @@ class Bleeper:
         self.last_time = timeit.default_timer()
         self.progress = 0.0
         self.step_time = self.scroll_time / self.points
+        self.mirror = mirror
+        self.render_func = render_func
 
     def update(self, power):
         now = timeit.default_timer()
@@ -47,17 +49,14 @@ class Bleeper:
             self.amplitudes[0] = power
         self.last_time = now
 
-    def render(self, pixel_data, render_func, mirror):
+    def render(self, pixel_data, colors):
 
-        if render_func not in RENDER_MAPPINGS.values():
-            _LOGGER.error(f"Invalid render function: {render_func}")
-            return
+        getattr(self, self.render_func)(pixel_data, colors)
 
-        getattr(self, render_func)(pixel_data, mirror)
-
-    def points_render(self, pixel_data, mirror):
+    def points_render(self, pixel_data, colors):
         plot_coords = self.coords.copy()
-        if mirror:
+
+        if self.mirror:
             plot_coords_top = plot_coords.copy()
             plot_coords_bottom = plot_coords.copy()
             plot_coords_top[:, 1] += self.amplitudes / 2
@@ -68,27 +67,23 @@ class Bleeper:
             plot_coords_top = np.round(
                 plot_coords_top * self.norm_shape
             ).astype(int)
-            pixel_data[plot_coords_top[:, 1], plot_coords_top[:, 0]] = (
-                self.colors
-            )
+            pixel_data[plot_coords_top[:, 1], plot_coords_top[:, 0]] = colors
             plot_coords_bot = np.round(
                 plot_coords_bot * self.norm_shape
             ).astype(int)
-            pixel_data[plot_coords_bot[:, 1], plot_coords_bot[:, 0]] = (
-                self.colors
-            )
+            pixel_data[plot_coords_bot[:, 1], plot_coords_bot[:, 0]] = colors
         else:
             plot_coords[:, 1] += -0.5 + self.amplitudes
             plot_coords = np.clip(plot_coords, 0, 1)
             plot_coords = np.round(plot_coords * self.norm_shape).astype(int)
-            pixel_data[plot_coords[:, 1], plot_coords[:, 0]] = self.colors
+            pixel_data[plot_coords[:, 1], plot_coords[:, 0]] = colors
 
-    def lines_render(self, pixel_data, mirror):
+    def lines_render(self, pixel_data, colors):
         plot_coords = self.coords.copy()
         _LOGGER.error("Lines not implemented yet")
         pass
 
-    def fill_render(self, pixel_data, mirror):
+    def fill_render(self, pixel_data, colors):
         plot_coords = self.coords.copy()
         _LOGGER.error("Fill not implemented yet")
         pass
@@ -98,7 +93,7 @@ class Bleep(Twod, GradientEffect):
     NAME = "Bleep"
     CATEGORY = "Matrix"
     # add keys you want hidden or in advanced here
-    HIDDEN_KEYS = Twod.HIDDEN_KEYS + []
+    HIDDEN_KEYS = Twod.HIDDEN_KEYS + ["gradient_roll"]
     ADVANCED_KEYS = Twod.ADVANCED_KEYS + []
 
     CONFIG_SCHEMA = vol.Schema(
@@ -106,6 +101,11 @@ class Bleep(Twod, GradientEffect):
             vol.Optional(
                 "mirror_effect",
                 description="mirror effect",
+                default=False,
+            ): bool,
+            vol.Optional(
+                "grad_power",
+                description="Use gradient in power dimension instead of time",
                 default=False,
             ): bool,
             vol.Optional(
@@ -135,6 +135,7 @@ class Bleep(Twod, GradientEffect):
     def config_updated(self, config):
         super().config_updated(config)
         self.mirror_effect = self._config["mirror_effect"]
+        self.grad_power = self._config["grad_power"]
         self.scroll_time = self._config["scroll_time"]
         self.power_func = self.POWER_FUNCS_MAPPING[
             self._config["frequency_range"]
@@ -154,6 +155,8 @@ class Bleep(Twod, GradientEffect):
             colors,
             self.points,
             self.points_linear,
+            self.mirror_effect,
+            self.render_func
         )
 
     def audio_data_updated(self, data):
@@ -181,6 +184,11 @@ class Bleep(Twod, GradientEffect):
         self.bleeper.update(self.power)
         pixel_data = np.array(self.matrix)
 
-        self.bleeper.render(pixel_data, self.render_func, self.mirror_effect)
+        if self.grad_power:
+            colors = self.get_gradient_color_vectorized1d(self.bleeper.amplitudes)
+        else:
+            colors = self.bleeper.colors
+
+        self.bleeper.render(pixel_data, colors)
 
         self.matrix = Image.fromarray(pixel_data)
