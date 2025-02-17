@@ -7,7 +7,6 @@ from PIL import Image
 
 from ledfx.effects import Effect
 from ledfx.effects.audio import AudioReactiveEffect
-from PIL import Image
 
 _LOGGER = logging.getLogger(__name__)
 
