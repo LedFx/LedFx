@@ -20,7 +20,16 @@ RENDER_MAPPINGS = {
 
 class Bleeper:
 
-    def __init__(self, shape, scroll_time, colors, points, points_linear, mirror, render_func):
+    def __init__(
+        self,
+        shape,
+        scroll_time,
+        colors,
+        points,
+        points_linear,
+        mirror,
+        render_func,
+    ):
         self.points = points
         self.points_linear = points_linear
         self.coords = np.zeros((self.points, 2))
@@ -156,7 +165,7 @@ class Bleep(Twod, GradientEffect):
             self.points,
             self.points_linear,
             self.mirror_effect,
-            self.render_func
+            self.render_func,
         )
 
     def audio_data_updated(self, data):
@@ -185,7 +194,9 @@ class Bleep(Twod, GradientEffect):
         pixel_data = np.array(self.matrix)
 
         if self.grad_power:
-            colors = self.get_gradient_color_vectorized1d(self.bleeper.amplitudes)
+            colors = self.get_gradient_color_vectorized1d(
+                self.bleeper.amplitudes
+            )
         else:
             colors = self.bleeper.colors
 
