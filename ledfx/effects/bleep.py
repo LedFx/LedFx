@@ -4,12 +4,10 @@ import timeit
 import voluptuous as vol
 import numpy as np
 
-from ledfx.effects import Effect
 from ledfx.effects.twod import Twod
 from ledfx.effects.gradient import GradientEffect
 from ledfx.effects.audio import AudioReactiveEffect
 from PIL import Image
-from enum import Enum
 
 _LOGGER = logging.getLogger(__name__)
 
