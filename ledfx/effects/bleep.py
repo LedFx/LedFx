@@ -5,9 +5,9 @@ import numpy as np
 import voluptuous as vol
 from PIL import Image
 
-from ledfx.effects import Effect
 from ledfx.effects.audio import AudioReactiveEffect
-from PIL import Image
+from ledfx.effects.gradient import GradientEffect
+from ledfx.effects.twod import Twod
 
 _LOGGER = logging.getLogger(__name__)
 
