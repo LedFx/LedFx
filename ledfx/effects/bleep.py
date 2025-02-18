@@ -134,6 +134,7 @@ class Bleeper:
     def fill_render(
         self, m_draw, list_plot_coords_top, list_plot_coords_bot, colors
     ):
+        # TODO: Color by power makes no sense currently
         if self.mirror:
             for (x0, y0), (x1, y1), (x2, y2), (x3, y3), color in zip(
                 list_plot_coords_top,
@@ -200,7 +201,6 @@ class Bleep(Twod, GradientEffect):
 
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
-        self.bar = 0
         self.power = 0
 
     def config_updated(self, config):
@@ -232,9 +232,6 @@ class Bleep(Twod, GradientEffect):
         )
 
     def audio_data_updated(self, data):
-        # Grab your audio input here, such as bar oscillator
-        self.bar = data.bar_oscillator()
-        # grab the audio level
         self.power = getattr(data, self.power_func)()
 
     def draw(self):
