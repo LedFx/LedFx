@@ -58,45 +58,74 @@ class Bleeper:
             self.amplitudes[0] = power
         self.last_time = now
 
-    def render(self, pixel_data, colors):
+    def render(self, m_draw, colors):
+        list_plot_coords_top = None
+        list_plot_coords_bot = None
 
-        getattr(self, self.render_func)(pixel_data, colors)
-
-    def points_render(self, pixel_data, colors):
-        plot_coords = self.coords.copy()
-
+        plot_coords_top = self.coords.copy()
         if self.mirror:
-            plot_coords_top = plot_coords.copy()
-            plot_coords_bottom = plot_coords.copy()
+            plot_coords_bot = plot_coords_top.copy()
             plot_coords_top[:, 1] += self.amplitudes / 2
-            plot_coords_bottom[:, 1] -= self.amplitudes / 2
+            plot_coords_bot[:, 1] -= self.amplitudes / 2
 
             plot_coords_top = np.clip(plot_coords_top, 0, 1)
-            plot_coords_bot = np.clip(plot_coords_bottom, 0, 1)
-            plot_coords_top = np.round(
-                plot_coords_top * self.norm_shape
-            ).astype(int)
-            pixel_data[plot_coords_top[:, 1], plot_coords_top[:, 0]] = colors
-            plot_coords_bot = np.round(
-                plot_coords_bot * self.norm_shape
-            ).astype(int)
-            pixel_data[plot_coords_bot[:, 1], plot_coords_bot[:, 0]] = colors
+            plot_coords_bot = np.clip(plot_coords_bot, 0, 1)
+            plot_coords_top = np.round(plot_coords_top * self.norm_shape).astype(int)
+            plot_coords_bot = np.round(plot_coords_bot * self.norm_shape).astype(int)
+            list_plot_coords_top = [tuple(c) for c in plot_coords_top]
+            list_plot_coords_bot = [tuple(c) for c in plot_coords_bot]
         else:
-            plot_coords[:, 1] += -0.5 + self.amplitudes
-            plot_coords = np.clip(plot_coords, 0, 1)
-            plot_coords = np.round(plot_coords * self.norm_shape).astype(int)
-            pixel_data[plot_coords[:, 1], plot_coords[:, 0]] = colors
+            plot_coords_top[:, 1] += -0.5 + self.amplitudes
+            plot_coords_top = np.clip(plot_coords_top, 0, 1)
+            plot_coords_top = np.round(plot_coords_top * self.norm_shape).astype(int)
+            list_plot_coords_top = [tuple(c) for c in plot_coords_top]
 
-    def lines_render(self, pixel_data, colors):
-        plot_coords = self.coords.copy()
-        _LOGGER.error("Lines not implemented yet")
-        pass
+        getattr(self, self.render_func)(m_draw, 
+                                        list_plot_coords_top, 
+                                        list_plot_coords_bot, 
+                                        colors)
 
-    def fill_render(self, pixel_data, colors):
-        plot_coords = self.coords.copy()
-        _LOGGER.error("Fill not implemented yet")
-        pass
+    def points_render(self, m_draw, list_plot_coords_top, list_plot_coords_bot, colors):
+        if self.mirror:
+            for xy, color in zip(list_plot_coords_top, [tuple(c) for c in colors]):
+                m_draw.point(xy, fill=color)
+            for xy, color in zip(list_plot_coords_bot, [tuple(c) for c in colors]):
+                m_draw.point(xy, fill=color)
+        else:
+            for xy, color in zip(list_plot_coords_top, [tuple(c) for c in colors]):
+                m_draw.point(xy, fill=color)
 
+    def lines_render(self, m_draw, list_plot_coords_top, list_plot_coords_bot, colors):        
+        if self.mirror:
+            for start, end, color in zip(list_plot_coords_top,
+                                         list_plot_coords_top[1:], 
+                                         [tuple(c) for c in colors]):
+                m_draw.line([start, end], fill=color, width=1)
+            for start, end, color in zip(list_plot_coords_bot,
+                                         list_plot_coords_bot[1:], 
+                                         [tuple(c) for c in colors]):
+                m_draw.line([start, end], fill=color, width=1)
+        else:
+            for start, end, color in zip([tuple(c) for c in list_plot_coords_top],
+                                         [tuple(c) for c in list_plot_coords_top[1:]], 
+                                         [tuple(c) for c in colors]):
+                m_draw.line([start, end], fill=color, width=1)
+
+
+    def fill_render(self, m_draw, list_plot_coords_top, list_plot_coords_bot, colors):
+        if self.mirror:
+            for (x0, y0), (x1, y1), (x2, y2), (x3, y3), color in zip(
+                                                 list_plot_coords_top,
+                                                 list_plot_coords_bot,
+                                                 list_plot_coords_bot[1:], 
+                                                 list_plot_coords_top[1:], 
+                                                 [tuple(c) for c in colors]):
+                m_draw.polygon([(x0, y0), (x1, y1), (x2, y2), (x3, y3)], fill=color)
+        else:
+            for (x0, y0), (x1, y1), color in zip(list_plot_coords_top,
+                                         list_plot_coords_top[1:], 
+                                         [tuple(c) for c in colors]):
+                m_draw.polygon([(x0, 0), (x1, 0), (x1, y1), (x0, y0)], fill=color)
 
 class Bleep(Twod, GradientEffect):
     NAME = "Bleep"
@@ -132,17 +161,22 @@ class Bleep(Twod, GradientEffect):
                 description="How to plot the data",
                 default="Points",
             ): vol.In(list(RENDER_MAPPINGS.keys())),
+            vol.Optional(
+                "points",
+                description="How many historical points to capture",
+                default=64,
+            ): vol.All(vol.Coerce(int), vol.Range(min=2, max=64))
         }
     )
 
     def __init__(self, ledfx, config):
-        self.points = 64
         super().__init__(ledfx, config)
         self.bar = 0
         self.power = 0
 
     def config_updated(self, config):
         super().config_updated(config)
+        self.points = self._config["points"]
         self.mirror_effect = self._config["mirror_effect"]
         self.grad_power = self._config["grad_power"]
         self.scroll_time = self._config["scroll_time"]
@@ -175,23 +209,13 @@ class Bleep(Twod, GradientEffect):
         self.power = getattr(data, self.power_func)()
 
     def draw(self):
-        # this is where you pixel mash, it will be a black image object each call
-        # a draw object is already attached
         # self.matrix is the Image object
         # self.m_draw is the attached draw object
 
-        # all rotation abstraction is done for you
-        # you can use image dimensions now
-        # self.matrix.height
-        # self.matrix.width
-
-        # look in this function for basic lines etc, use pillow primitives
-        # for regular shapes
         if self.test:
             self.draw_test(self.m_draw)
 
         self.bleeper.update(self.power)
-        pixel_data = np.array(self.matrix)
 
         if self.grad_power:
             colors = self.get_gradient_color_vectorized1d(
@@ -200,6 +224,5 @@ class Bleep(Twod, GradientEffect):
         else:
             colors = self.bleeper.colors
 
-        self.bleeper.render(pixel_data, colors)
-
-        self.matrix = Image.fromarray(pixel_data)
+        colors = np.clip(colors, 0, 255).astype(int)
+        self.bleeper.render(self.m_draw, colors)
