@@ -19,7 +19,11 @@ RENDER_MAPPINGS = {
 
 
 class Bleeper:
-
+    """
+    The Bleeper class supports the rolling window of values and mask render 
+    modes associated with the bleep effect. It could be used to support 
+    multiple bleepers in one effect, though currently implemented as only one
+    """
     def __init__(
         self,
         shape,
@@ -29,6 +33,15 @@ class Bleeper:
         mirror,
         render_func,
     ):
+        """
+        Args:
+            shape (tuple): The shape of the mask image
+            scroll_time (float): The time to scroll the bleep full width
+            points (int): The number of historical points to capture
+            points_linear (np.array): The linear space of the points
+            mirror (bool): Mirror the bleep at render time
+            render_func (str): The render function to use
+        """
         self.points = points
         self.points_linear = points_linear
         self.coords = np.zeros((self.points, 2))
@@ -45,6 +58,11 @@ class Bleeper:
         self.render_func = render_func
 
     def update(self, power):
+        """
+        time invariant handling of the rolling points and update 
+        with latest power value
+
+        """
         now = timeit.default_timer()
         delta_t = now - self.last_time
         self.progress = self.progress + delta_t
@@ -57,6 +75,17 @@ class Bleeper:
         self.last_time = now
 
     def render(self, m_draw):
+        """
+        Prepare mask image
+        Set up common render lists, account for mirror
+        Call the currently active render_func
+
+        args:
+            m_draw (ImageDraw): The draw object to use for rendering
+
+        returns:
+            Image: The mask image to be merged with the gradient
+        """
         mask_image = Image.new("L", self.shape, 0)
         mask_draw = ImageDraw.Draw(mask_image)
 
@@ -95,6 +124,14 @@ class Bleeper:
     def points_render(
         self, m_draw, list_plot_coords_top, list_plot_coords_bot
     ):
+        """
+        Points style render of the bleep effect
+
+        args:
+            m_draw (ImageDraw): The draw object to use for rendering
+            list_plot_coords_top (list): The list of top point coords
+            list_plot_coords_bot (list): The list of bottom point coords
+        """
         if self.mirror:
             for xy in list_plot_coords_top:
                 m_draw.point(xy, fill=255)
@@ -105,6 +142,14 @@ class Bleeper:
                 m_draw.point(xy, fill=255)
 
     def lines_render(self, m_draw, list_plot_coords_top, list_plot_coords_bot):
+        """
+        Lines style render of the bleep effect
+
+        args:
+            m_draw (ImageDraw): The draw object to use for rendering
+            list_plot_coords_top (list): The list of top point coords
+            list_plot_coords_bot (list): The list of bottom point coords
+        """
         if self.mirror:
             for start, end in zip(
                 list_plot_coords_top, list_plot_coords_top[1:]
@@ -123,6 +168,14 @@ class Bleeper:
                 m_draw.line([start, end], fill=255, width=1)
 
     def fill_render(self, m_draw, list_plot_coords_top, list_plot_coords_bot):
+        """
+        Filled Polygon style render of the bleep effect
+
+        args:
+            m_draw (ImageDraw): The draw object to use for rendering
+            list_plot_coords_top (list): The list of top point coords
+            list_plot_coords_bot (list): The list of bottom point coords
+        """
         if self.mirror:
             for (x0, y0), (x1, y1), (x2, y2), (x3, y3) in zip(
                 list_plot_coords_top,
@@ -201,6 +254,11 @@ class Bleep(Twod, GradientEffect):
         self.render_func = RENDER_MAPPINGS[self._config["draw"]]
 
     def do_once(self):
+        """
+        Initalise vars for the bleep effect that are constants to a config change
+        Done here as we need r_width and r_height to be set, which is not available in 
+        config_updated()
+        """
         super().do_once()
         # self.r_width and self.r_height should be used for the (r)ender space
         # as the self.matrix will not exist yet
@@ -258,6 +316,7 @@ class Bleep(Twod, GradientEffect):
 
     def audio_data_updated(self, data):
         self.power = getattr(data, self.power_func)()
+        self.bleeper.update(self.power)
 
     def draw(self):
         # self.matrix is the Image object
@@ -265,8 +324,6 @@ class Bleep(Twod, GradientEffect):
 
         if self.test:
             self.draw_test(self.m_draw)
-
-        self.bleeper.update(self.power)
 
         mask = self.bleeper.render(self.m_draw)
         self.matrix = Image.composite(self.gradient_image, self.matrix, mask)
