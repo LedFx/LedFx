@@ -96,12 +96,12 @@ class Bleeper:
         self, m_draw, list_plot_coords_top, list_plot_coords_bot
     ):
         if self.mirror:
-            for xy in zip(list_plot_coords_top):
+            for xy in list_plot_coords_top:
                 m_draw.point(xy, fill=255)
-            for xy in zip(list_plot_coords_bot):
+            for xy in list_plot_coords_bot:
                 m_draw.point(xy, fill=255)
         else:
-            for xy in zip(list_plot_coords_top):
+            for xy in list_plot_coords_top:
                 m_draw.point(xy, fill=255)
 
     def lines_render(self, m_draw, list_plot_coords_top, list_plot_coords_bot):
