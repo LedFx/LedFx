@@ -3,12 +3,11 @@ import timeit
 
 import numpy as np
 import voluptuous as vol
+from PIL import Image, ImageDraw
 
 from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.gradient import GradientEffect
 from ledfx.effects.twod import Twod
-
-from PIL import Image, ImageDraw
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -57,7 +56,7 @@ class Bleeper:
             self.amplitudes[0] = power
         self.last_time = now
 
-    def render(self, m_draw):        
+    def render(self, m_draw):
         mask_image = Image.new("L", self.shape, 0)
         mask_draw = ImageDraw.Draw(mask_image)
 
@@ -88,10 +87,14 @@ class Bleeper:
             ).astype(int)
             list_plot_coords_top = [tuple(c) for c in plot_coords_top]
 
-        getattr(self, self.render_func)(mask_draw, list_plot_coords_top, list_plot_coords_bot)
+        getattr(self, self.render_func)(
+            mask_draw, list_plot_coords_top, list_plot_coords_bot
+        )
         return mask_image
 
-    def points_render(self, m_draw, list_plot_coords_top, list_plot_coords_bot):
+    def points_render(
+        self, m_draw, list_plot_coords_top, list_plot_coords_bot
+    ):
         if self.mirror:
             for xy in zip(list_plot_coords_top):
                 m_draw.point(xy, fill=255)
@@ -104,8 +107,7 @@ class Bleeper:
     def lines_render(self, m_draw, list_plot_coords_top, list_plot_coords_bot):
         if self.mirror:
             for start, end in zip(
-                list_plot_coords_top,
-                list_plot_coords_top[1:]
+                list_plot_coords_top, list_plot_coords_top[1:]
             ):
                 m_draw.line([start, end], fill=255, width=1)
             for start, end in zip(
@@ -204,7 +206,7 @@ class Bleep(Twod, GradientEffect):
         # as the self.matrix will not exist yet
         # note that self.t_width and self.t_height are the physical dimensions
         self.points_linear = np.linspace(0, 1, self.points)
-        
+
         lin_horizontal = np.linspace(0, 1, self.r_width)
         if self.mirror_effect:
             if self.r_height % 2 == 0:
@@ -213,8 +215,10 @@ class Bleep(Twod, GradientEffect):
                 lin_mirrored = np.concatenate((half_height, half_height[::-1]))
             else:
                 # odd case
-                half_height = np.linspace(1, 0, (self.r_height // 2)+1)
-                lin_mirrored = np.concatenate((half_height, half_height[::-1][1:]))
+                half_height = np.linspace(1, 0, (self.r_height // 2) + 1)
+                lin_mirrored = np.concatenate(
+                    (half_height, half_height[::-1][1:])
+                )
             lin_vertical = lin_mirrored
         else:
             lin_vertical = np.linspace(0, 1, self.r_height)
@@ -231,15 +235,27 @@ class Bleep(Twod, GradientEffect):
         # make the gradient image that we will mask against
         self.gradient_image = Image.new("RGB", (self.r_width, self.r_height))
         self.gradient_draw = ImageDraw.Draw(self.gradient_image)
-        if self.grad_power:                
-            colors = self.get_gradient_color_vectorized1d(lin_vertical).astype(int)
+        if self.grad_power:
+            colors = self.get_gradient_color_vectorized1d(lin_vertical).astype(
+                int
+            )
             for y in range(self.r_height):
-                self.gradient_draw.line([(0, y), (self.r_width-1, y)], fill=tuple(colors[y]), width=1)
+                self.gradient_draw.line(
+                    [(0, y), (self.r_width - 1, y)],
+                    fill=tuple(colors[y]),
+                    width=1,
+                )
         else:
-            colors = self.get_gradient_color_vectorized1d(lin_horizontal).astype(int)
+            colors = self.get_gradient_color_vectorized1d(
+                lin_horizontal
+            ).astype(int)
             for x in range(self.r_width):
-                self.gradient_draw.line([(x, 0), (x, self.r_height-1)], fill=tuple(colors[x]), width=1)
-   
+                self.gradient_draw.line(
+                    [(x, 0), (x, self.r_height - 1)],
+                    fill=tuple(colors[x]),
+                    width=1,
+                )
+
     def audio_data_updated(self, data):
         self.power = getattr(data, self.power_func)()
 
@@ -250,7 +266,7 @@ class Bleep(Twod, GradientEffect):
         if self.test:
             self.draw_test(self.m_draw)
 
-        self.bleeper.update(self.power)        
-        
+        self.bleeper.update(self.power)
+
         mask = self.bleeper.render(self.m_draw)
         self.matrix = Image.composite(self.gradient_image, self.matrix, mask)
