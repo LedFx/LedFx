@@ -20,10 +20,11 @@ RENDER_MAPPINGS = {
 
 class Bleeper:
     """
-    The Bleeper class supports the rolling window of values and mask render 
-    modes associated with the bleep effect. It could be used to support 
+    The Bleeper class supports the rolling window of values and mask render
+    modes associated with the bleep effect. It could be used to support
     multiple bleepers in one effect, though currently implemented as only one
     """
+
     def __init__(
         self,
         shape,
@@ -59,7 +60,7 @@ class Bleeper:
 
     def update(self, power):
         """
-        time invariant handling of the rolling points and update 
+        time invariant handling of the rolling points and update
         with latest power value
 
         """
@@ -256,7 +257,7 @@ class Bleep(Twod, GradientEffect):
     def do_once(self):
         """
         Initalise vars for the bleep effect that are constants to a config change
-        Done here as we need r_width and r_height to be set, which is not available in 
+        Done here as we need r_width and r_height to be set, which is not available in
         config_updated()
         """
         super().do_once()
