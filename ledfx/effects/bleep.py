@@ -33,6 +33,7 @@ class Bleeper:
         points_linear,
         mirror,
         render_func,
+        size
     ):
         """
         Args:
@@ -42,6 +43,7 @@ class Bleeper:
             points_linear (np.array): The linear space of the points
             mirror (bool): Mirror the bleep at render time
             render_func (str): The render function to use
+            size (int): line width
         """
         self.points = points
         self.points_linear = points_linear
@@ -57,6 +59,7 @@ class Bleeper:
         self.step_time = self.scroll_time / self.points
         self.mirror = mirror
         self.render_func = render_func
+        self.size = size
 
     def update(self, power):
         """
@@ -155,18 +158,18 @@ class Bleeper:
             for start, end in zip(
                 list_plot_coords_top, list_plot_coords_top[1:]
             ):
-                m_draw.line([start, end], fill=255, width=1)
+                m_draw.line([start, end], fill=255, width=self.size)
             for start, end in zip(
                 list_plot_coords_bot,
                 list_plot_coords_bot[1:],
             ):
-                m_draw.line([start, end], fill=255, width=1)
+                m_draw.line([start, end], fill=255, width=self.size)
         else:
             for start, end in zip(
                 [tuple(c) for c in list_plot_coords_top],
                 [tuple(c) for c in list_plot_coords_top[1:]],
             ):
-                m_draw.line([start, end], fill=255, width=1)
+                m_draw.line([start, end], fill=255, width=self.size)
 
     def fill_render(self, m_draw, list_plot_coords_top, list_plot_coords_bot):
         """
@@ -236,6 +239,11 @@ class Bleep(Twod, GradientEffect):
                 description="How many historical points to capture",
                 default=64,
             ): vol.All(vol.Coerce(int), vol.Range(min=2, max=64)),
+            vol.Optional(
+                "size",
+                description="Line width only",
+                default=1,
+            ): vol.All(vol.Coerce(int), vol.Range(min=1, max=8)),
         }
     )
 
@@ -253,11 +261,12 @@ class Bleep(Twod, GradientEffect):
             self._config["frequency_range"]
         ]
         self.render_func = RENDER_MAPPINGS[self._config["draw"]]
+        self.size = self._config["size"]
 
     def do_once(self):
         """
         Initalise vars for the bleep effect that are constants to a config change
-        Done here as we need r_width and r_height to be set, which is not available in
+        Done here as we need r_width and r_height to be set, which is not available in 
         config_updated()
         """
         super().do_once()
@@ -289,6 +298,7 @@ class Bleep(Twod, GradientEffect):
             self.points_linear,
             self.mirror_effect,
             self.render_func,
+            self.size,
         )
 
         # make the gradient image that we will mask against
