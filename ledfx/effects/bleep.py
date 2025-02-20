@@ -33,7 +33,7 @@ class Bleeper:
         points_linear,
         mirror,
         render_func,
-        size
+        size,
     ):
         """
         Args:
@@ -266,7 +266,7 @@ class Bleep(Twod, GradientEffect):
     def do_once(self):
         """
         Initalise vars for the bleep effect that are constants to a config change
-        Done here as we need r_width and r_height to be set, which is not available in 
+        Done here as we need r_width and r_height to be set, which is not available in
         config_updated()
         """
         super().do_once()
