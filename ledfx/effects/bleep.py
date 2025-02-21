@@ -27,7 +27,7 @@ class Bleeper:
 
     def __init__(self):
         """
-        Initialise the bleeper with a single amplitude value 
+        Initialise the bleeper with a single amplitude value
         so that further init cycles can copy forward
         """
         self.amplitudes = np.zeros(1)
@@ -45,7 +45,7 @@ class Bleeper:
         """
         Moved to a seperate init function to allow for re-init of the bleeper
         with out losing current amplitude data
-        
+
         Args:
             shape (tuple): The shape of the mask image
             scroll_time (float): The time to scroll the bleep full width
@@ -60,7 +60,7 @@ class Bleeper:
         self.coords = np.zeros((self.points, 2))
         self.coords[:, 0] = self.points_linear
         self.coords[:, 1] = 0.5
-        
+
         # copy the old amplitudes into the new amplitudes, deal with mismatch lengths
         old_amplitudes = self.amplitudes.copy()
         self.amplitudes = np.zeros(self.points)
