@@ -25,7 +25,14 @@ class Bleeper:
     multiple bleepers in one effect, though currently implemented as only one
     """
 
-    def __init__(
+    def __init__(self):
+        """
+        Initialise the bleeper with a single amplitude value
+        so that further init cycles can copy forward
+        """
+        self.amplitudes = np.zeros(1)
+
+    def init(
         self,
         shape,
         scroll_time,
@@ -36,6 +43,9 @@ class Bleeper:
         size,
     ):
         """
+        Moved to a seperate init function to allow for re-init of the bleeper
+        with out losing current amplitude data
+
         Args:
             shape (tuple): The shape of the mask image
             scroll_time (float): The time to scroll the bleep full width
@@ -50,7 +60,13 @@ class Bleeper:
         self.coords = np.zeros((self.points, 2))
         self.coords[:, 0] = self.points_linear
         self.coords[:, 1] = 0.5
+
+        # copy the old amplitudes into the new amplitudes, deal with mismatch lengths
+        old_amplitudes = self.amplitudes.copy()
         self.amplitudes = np.zeros(self.points)
+        length = min(len(self.amplitudes), len(old_amplitudes))
+        self.amplitudes[:length] = old_amplitudes[:length]
+
         self.shape = shape
         self.norm_shape = (self.shape[0] - 1, self.shape[1] - 1)
         self.scroll_time = scroll_time
@@ -249,7 +265,7 @@ class Bleep(Twod, GradientEffect):
 
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
-        self.power = 0
+        self.bleeper = Bleeper()
 
     def config_updated(self, config):
         super().config_updated(config)
@@ -291,7 +307,7 @@ class Bleep(Twod, GradientEffect):
         else:
             lin_vertical = np.linspace(0, 1, self.r_height)
 
-        self.bleeper = Bleeper(
+        self.bleeper.init(
             (self.r_width, self.r_height),
             self.scroll_time,
             self.points,
@@ -326,9 +342,7 @@ class Bleep(Twod, GradientEffect):
                 )
 
     def audio_data_updated(self, data):
-        self.power = getattr(data, self.power_func)()
-        if not self.init:
-            self.bleeper.update(self.power)
+        self.bleeper.update(getattr(data, self.power_func)())
 
     def draw(self):
         # self.matrix is the Image object
