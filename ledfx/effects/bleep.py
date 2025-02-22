@@ -342,7 +342,8 @@ class Bleep(Twod, GradientEffect):
                 )
 
     def audio_data_updated(self, data):
-        self.bleeper.update(getattr(data, self.power_func)())
+        if not self.init:
+            self.bleeper.update(getattr(data, self.power_func)())
 
     def draw(self):
         # self.matrix is the Image object
