@@ -1140,16 +1140,18 @@ class Virtual:
                         if virtual_id == self.id:
                             continue
                         virtual = self._ledfx.virtuals.get(virtual_id)
-                        virtual.frame_transitions = virtual.transitions[
-                            _config["transition_mode"]
-                        ]
-                        virtual._config["transition_time"] = _config[
-                            "transition_time"
-                        ]
-                        virtual._config["transition_mode"] = _config[
-                            "transition_mode"
-                        ]
-
+                        if hasattr(virtual, "frame_transitions"):
+                            virtual.frame_transitions = virtual.transitions[
+                                _config["transition_mode"]
+                            ]
+                            virtual._config["transition_time"] = _config[
+                                "transition_time"
+                            ]
+                            virtual._config["transition_mode"] = _config[
+                                "transition_mode"
+                            ]
+                        else:
+                            _LOGGER.info(f"virtual of {virtual_id} has no transitions")
             if (
                 "frequency_min" in _config.keys()
                 or "frequency_max" in _config.keys()
