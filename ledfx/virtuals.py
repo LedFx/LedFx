@@ -1151,7 +1151,9 @@ class Virtual:
                                 "transition_mode"
                             ]
                         else:
-                            _LOGGER.info(f"virtual of {virtual_id} has no transitions")
+                            _LOGGER.info(
+                                f"virtual of {virtual_id} has no transitions"
+                            )
             if (
                 "frequency_min" in _config.keys()
                 or "frequency_max" in _config.keys()
