@@ -433,10 +433,10 @@ class Keybeat2d(Twod, GifBase):
             color = (255, 255, 0)
 
         if beat_kick:
-            diag_string = "\u25CF\u25CF\u25CF\u25CF"  # filled circle char
+            diag_string = "\u25cf\u25cf\u25cf\u25cf"  # filled circle char
             color = (255, 255, 255)
         else:
-            diag_string = "\u25CB" * int(self.beat * 4) + " " * (
+            diag_string = "\u25cb" * int(self.beat * 4) + " " * (
                 4 - int(self.beat * 4)
             )
 
