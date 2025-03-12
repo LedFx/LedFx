@@ -50,11 +50,7 @@ class ArtNetDevice(NetworkedDevice):
                 description="Whether to use even packet size",
                 default=True,
             ): bool,
-            vol.Optional(
-                "port", 
-                description="port", 
-                default=6454
-            ): int,
+            vol.Optional("port", description="port", default=6454): int,
         }
     )
 
