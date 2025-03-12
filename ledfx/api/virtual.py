@@ -93,6 +93,7 @@ class VirtualEndpoint(RestEndpoint):
                             config=effect_config,
                         )
                         virtual.set_effect(effect)
+                        virtual.update_effect_config(effect)
         try:
             virtual.active = active
         except ValueError as msg:
