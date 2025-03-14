@@ -62,7 +62,9 @@ class VirtualToolsEndpoint(RestEndpoint):
             for virtual_id in self._ledfx.virtuals:
                 virtual = self._ledfx.virtuals.get(virtual_id)
                 if virtual is not None:
-                    virtual.add_oneshot(Flash(color, ramp, hold, fade, brightness))
+                    virtual.add_oneshot(
+                        Flash(color, ramp, hold, fade, brightness)
+                    )
 
         effect_response = {}
         effect_response["tool"] = tool

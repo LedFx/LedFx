@@ -111,7 +111,9 @@ class VirtualsToolsEndpoint(RestEndpoint):
             # if all values are zero, we will now just ensure any current
             # oneshot are cancelled
 
-            result = virtual.add_oneshot(Flash(color, ramp, hold, fade, brightness))
+            result = virtual.add_oneshot(
+                Flash(color, ramp, hold, fade, brightness)
+            )
 
             if result is False:
                 return await self.invalid_request("oneshot failed")

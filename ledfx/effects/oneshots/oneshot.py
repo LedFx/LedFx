@@ -1,6 +1,7 @@
-from abc import ABC, abstractmethod
-import numpy as np
 import timeit
+from abc import ABC, abstractmethod
+
+import numpy as np
 
 
 class Oneshot(ABC):
@@ -38,6 +39,7 @@ class Oneshot(ABC):
     def pixel_count(self, pixel_count):
         self._pixel_count = pixel_count
 
+
 class Flash(Oneshot):
 
     def __init__(self, color, ramp, hold, fade, brightness):
@@ -65,7 +67,7 @@ class Flash(Oneshot):
 
     def init(self):
         return
-        
+
     def update(self):
         passed = timeit.default_timer() - self._start
         if passed <= self._ramp:
@@ -82,4 +84,3 @@ class Flash(Oneshot):
         blend = np.multiply(self._color, self._weight)
         np.multiply(seg, 1 - self._weight, seg)
         np.add(seg, blend, seg)
-

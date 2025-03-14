@@ -5,7 +5,7 @@ import threading
 import time
 import timeit
 from functools import cached_property
-from typing import Optional, List
+from typing import List, Optional
 
 import numpy as np
 import voluptuous as vol
@@ -13,7 +13,6 @@ import voluptuous as vol
 from ledfx.color import parse_color
 from ledfx.config import save_config
 from ledfx.effects import DummyEffect
-from ledfx.effects.oneshots.oneshot import Oneshot
 from ledfx.effects.math import interpolate_pixels, make_pattern
 from ledfx.effects.melbank import (
     MAX_FREQ,
@@ -21,6 +20,7 @@ from ledfx.effects.melbank import (
     MIN_FREQ_DIFFERENCE,
     FrequencyRange,
 )
+from ledfx.effects.oneshots.oneshot import Oneshot
 from ledfx.events import (
     EffectClearedEvent,
     EffectSetEvent,
@@ -157,7 +157,7 @@ class Virtual:
         self._hl_start = 0
         self._hl_end = 0
         self._hl_step = 1
-        self._oneshots: List[Oneshot] = []
+        self._oneshots: list[Oneshot] = []
         self._os_active = False
         self.lock = threading.Lock()
         self.clear_handle = None
