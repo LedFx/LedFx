@@ -101,18 +101,17 @@ class VirtualsToolsEndpoint(RestEndpoint):
                 )
 
         if tool == "oneshot":
-            color = data.get("color", "white")
-
+            color = parse_color(validate_color(data.get("color", "white")))
             ramp = data.get("ramp", 0)
             hold = data.get("hold", 0)
             fade = data.get("fade", 0)
+            brightness = data.get("brightness", 0)
 
             # if all values are zero, we will now just ensure any current
             # oneshot are cancelled
 
-            result = virtual.oneshot(
-                parse_color(validate_color(color)), ramp, hold, fade
-            )
+            result = virtual.add_oneshot(Flash(color, ramp, hold, fade, brightness))
+
             if result is False:
                 return await self.invalid_request("oneshot failed")
 
