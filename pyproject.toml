@@ -33,7 +33,7 @@ dependencies = [
     "python-osc>=1.8.3",
     "pybase64~=1.4.0",
     "mss~=10.0.0",
-    "setuptools~=75.6.0",
+    "setuptools~=76.0.0",
     "uvloop>=0.16.0; sys_platform != \"win32\"",
     "rpi-ws281x>=4.3.0; sys_platform == \"linux\"",
     "stupidartnet>=1.6.0,<2.0.0",
@@ -49,7 +49,7 @@ readme = "README.rst"
 dev = [
     "flake8<7.2.0,>=7.1.1",
     "black<25.1.1,>=25.1.0",
-    "isort<5.14.0,>=5.13.2",
+    "isort<6.0.2,>=6.0.1",
     "pre-commit<4.1.1,>=4.1.0",
     "bokeh<4.0.0,>=3.3.3",
     "pytest<9.0.0,>=8.0.0",
