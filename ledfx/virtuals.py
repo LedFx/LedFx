@@ -922,7 +922,7 @@ class Virtual:
             )
             data.append((pattern, self._hl_start, self._hl_end))
 
-    def add_oneshot(self, oneshot):
+    def add_oneshot(self, oneshot: Oneshot):
         if not self._active:
             return False
         oneshot.pixel_count = self.pixel_count
