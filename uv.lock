@@ -2809,7 +2809,7 @@ wheels = [
 
 [[package]]
 name = "stupidartnet"
-version = "1.5.0"
+version = "1.6.0"
 source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/a6/52/5d91f6782b5b4da3e5e7c60436609cc44239e007b95c94b2bcbc6e8c1d99/stupidArtnet-1.5.0.tar.gz", hash = "sha256:7262530620c553c13a8a186b2a26d54f36af6073421ba2d88a11cd18c3828217", size = 14606 }
 wheels = [
