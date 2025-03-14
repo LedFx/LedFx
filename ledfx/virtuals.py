@@ -5,7 +5,7 @@ import threading
 import time
 import timeit
 from functools import cached_property
-from typing import List, Optional
+from typing import Optional
 
 import numpy as np
 import voluptuous as vol
@@ -157,7 +157,7 @@ class Virtual:
         self._hl_start = 0
         self._hl_end = 0
         self._hl_step = 1
-        self._oneshots: list[Oneshot] = []
+        self._oneshots = []
         self._os_active = False
         self.lock = threading.Lock()
         self.clear_handle = None
@@ -826,10 +826,14 @@ class Virtual:
             pixels = self.assembled_frame
 
         # Where we update oneshots
-        for oneshot in self._oneshots:
+        oneshot_index = 0
+        while oneshot_index < len(self._oneshots):
+            oneshot = self._oneshots[oneshot_index]
             oneshot.update()
             if not oneshot.active:
                 self._oneshots.remove(oneshot)
+            else:
+                oneshot_index += 1
 
         if self._config["mapping"] == "span":
             # In span mode we can calculate the final pixels once for all segments
