@@ -779,7 +779,8 @@ oneshot that is executing
     "color":"white",
     "ramp":10,
     "hold":200,
-    "fade":2000
+    "fade":2000,
+    "brightness":1
 }
 ```
 
@@ -930,7 +931,8 @@ A bare call to onsshot will result in a hard disable of any existing oneshot tha
     "color":"white",
     "ramp":10,
     "hold":200,
-    "fade":2000
+    "fade":2000,
+    "brightness":1
 }
 ```
 
