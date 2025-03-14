@@ -5,6 +5,7 @@ from aiohttp import web
 
 from ledfx.api import RestEndpoint
 from ledfx.color import parse_color, validate_color
+from ledfx.effects.oneshots.oneshot import Flash
 
 _LOGGER = logging.getLogger(__name__)
 TOOLS = ["force_color", "oneshot"]
