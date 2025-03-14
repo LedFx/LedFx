@@ -1744,7 +1744,7 @@ wheels = [
 
 [[package]]
 name = "pybase64"
-version = "1.4.0"
+version = "1.4.1"
 source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/e9/3b/10fe20bd63304550914f077bac75710a7da9d668b9e9b5a74571dd0f4990/pybase64-1.4.0.tar.gz", hash = "sha256:714f021c3eaa287c1097ced68f2df4c5b2ecd2504551c2e71c843f54365aca03", size = 136347 }
 wheels = [
