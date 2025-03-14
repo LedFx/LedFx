@@ -6,7 +6,7 @@
 version: 2
 updates:
   - package-ecosystem: "uv" # See documentation for possible values
-    directory: "/" 
+    directory: "/"
     schedule:
       interval: "weekly"
   - package-ecosystem: "github-actions" # GHA updates
