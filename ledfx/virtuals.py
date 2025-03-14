@@ -5,7 +5,7 @@ import threading
 import time
 import timeit
 from functools import cached_property
-from typing import Optional
+from typing import Optional, List
 
 import numpy as np
 import voluptuous as vol
@@ -13,6 +13,7 @@ import voluptuous as vol
 from ledfx.color import parse_color
 from ledfx.config import save_config
 from ledfx.effects import DummyEffect
+from ledfx.effects.oneshots.oneshot import Oneshot
 from ledfx.effects.math import interpolate_pixels, make_pattern
 from ledfx.effects.melbank import (
     MAX_FREQ,
@@ -156,6 +157,7 @@ class Virtual:
         self._hl_start = 0
         self._hl_end = 0
         self._hl_step = 1
+        self._oneshots: List[Oneshot] = []
         self._os_active = False
         self.lock = threading.Lock()
         self.clear_handle = None
@@ -603,57 +605,6 @@ class Virtual:
             )
         )
 
-    def oneshot(self, color, ramp, hold, fade):
-        """
-        Force all pixels in virtual to color over a time envelope defined in ms
-        Following calls will override any active one shot
-
-        Parameters:
-            ramp time from in ms
-            hold time in ms
-            fade time in ms
-        Returns:
-            True if oneshot was activated, False if not
-        """
-        if self.active:
-            self._os_color = np.array(color, dtype=float)
-            self._os_ramp = ramp / 1000.0
-            self._os_hold = hold / 1000.0
-            self._os_fade = fade / 1000.0
-            self._os_start = timeit.default_timer()
-            self._os_hold_end = self._os_ramp + self._os_hold
-            self._os_fade_end = self._os_ramp + self._os_hold + self._os_fade
-            self._os_weight = 0.0
-
-            # if all total timings are zero, treat as a hard off
-            if self._os_fade_end == 0:
-                self._os_active = False
-            else:
-                self._os_active = True
-
-            result = True
-        else:
-            result = False
-        return result
-
-    def oneshot_weight(self):
-        passed = timeit.default_timer() - self._os_start
-        if passed <= self._os_ramp:
-            self._os_weight = passed / self._os_ramp
-        elif passed <= self._os_hold_end:
-            self._os_weight = 1.0
-        elif passed <= self._os_fade_end:
-            self._os_weight = (self._os_fade_end - passed) / self._os_fade
-        else:
-            self._os_active = False
-            self._os_weight = 0.0
-        # _LOGGER.info(f"oneshot_state: {passed} {self._os_ramp} {self._os_hold_end} {self._os_fade_end} {self._os_active} {self._os_weight}")
-
-    def oneshot_apply(self, seg):
-        blend = np.multiply(self._os_color, self._os_weight)
-        np.multiply(seg, 1 - self._os_weight, seg)
-        np.add(seg, blend, seg)
-
     def set_calibration(self, calibration):
         self._calibration = calibration
 
@@ -874,8 +825,11 @@ class Virtual:
         if pixels is None:
             pixels = self.assembled_frame
 
-        if self._os_active:
-            self.oneshot_weight()
+        # Where we update oneshots
+        for oneshot in self._oneshots:
+            oneshot.update()
+            if not oneshot.active:
+                self._oneshots.remove(oneshot)
 
         if self._config["mapping"] == "span":
             # In span mode we can calculate the final pixels once for all segments
@@ -901,8 +855,9 @@ class Virtual:
                             device_end,
                         ) in segments:
                             seg = pixels[start:stop:step]
-                            if self._os_active:
-                                self.oneshot_apply(seg)
+                            # Where we override segment
+                            for oneshot in self._oneshots:
+                                oneshot.apply(seg, start, stop)
                             data.append((seg, device_start, device_end))
                     elif self._config["mapping"] == "copy":
                         for (
@@ -963,6 +918,14 @@ class Virtual:
             )
             data.append((pattern, self._hl_start, self._hl_end))
 
+    def add_oneshot(self, oneshot):
+        if not self._active:
+            return False
+        oneshot.pixel_count = self.pixel_count
+        oneshot.init()
+        self._oneshots.append(oneshot)
+        return True
+
     @property
     def name(self):
         return self._config["name"]
@@ -996,6 +959,10 @@ class Virtual:
     @property
     def segments(self):
         return self._segments
+
+    @property
+    def oneshots(self):
+        return self._oneshots
 
     @cached_property
     def _segments_by_device(self):
