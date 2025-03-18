@@ -766,6 +766,7 @@ Repeated oneshot will overwrite the previous oneshot if has not finished
 - ramp: The time in ms over which to ramp the color from zero to full weight over the active  effect
 - hold: The time in ms to hold the color to full weight over the active effect
 - fade: The time in ms to fade the color from full weight to zero over the active effect
+- brightness: The brightness of the oneshot at the beginning. Defaults to 1.0 which is maximum brightness
 
 If all values for ramp, hold and fade are zero, which is default, any
 exisiting oneshot will be cleared
@@ -920,6 +921,7 @@ Repeated oneshot to a virtual will overwrite the previous oneshot if has not fin
 - ramp: The time in ms over which to ramp the color from zero to full weight over the active effect
 - hold: The time in ms to hold the color to full weight over the active effect
 - fade: The time in ms to fade the color from full weight to zero over the active effect
+- brightness: The brightness of the oneshot at the beginning. Defaults to 1.0 which is maximum brightness
 
 If all values for ramp, hold and fade are zero, which is default, any exisiting oneshot will be cleared
 
