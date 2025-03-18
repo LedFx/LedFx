@@ -29,6 +29,7 @@
    :caption: How To
 
    /howto/dummy_matrix
+   /howto/dummy_vumeter
    /howto/keybeat
    /howto/virtuals
    /howto/reorder

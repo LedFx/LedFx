@@ -29,7 +29,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v3
+        uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
           cache-dependency-glob: "uv.lock"
@@ -81,7 +81,7 @@ jobs:
         run: |
           brew install portaudio
       - name: Install uv
-        uses: astral-sh/setup-uv@v3
+        uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
           cache-dependency-glob: "uv.lock"
@@ -130,7 +130,7 @@ jobs:
           brew install portaudio mbedtls@2
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v3
+        uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
           cache-dependency-glob: "uv.lock"
@@ -329,7 +329,7 @@ jobs:
         run: |
           echo ledfx-version=$(cat ledfx_version.txt) >> $GITHUB_OUTPUT
       - name: Install uv
-        uses: astral-sh/setup-uv@v3
+        uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
           cache-dependency-glob: "uv.lock"
@@ -373,7 +373,7 @@ jobs:
         with:
           name: LedFx-${{ steps.ledfx-version.outputs.ledfx-version }}-wheel
       - name: Install uv
-        uses: astral-sh/setup-uv@v3
+        uses: astral-sh/setup-uv@v5
       - name: Install build dependencies
         run: |
           sudo apt-get update && sudo apt-get install -y portaudio19-dev
@@ -405,7 +405,7 @@ jobs:
         with:
           name: LedFx-${{ steps.ledfx-version.outputs.ledfx-version }}-sdist
       - name: Install uv
-        uses: astral-sh/setup-uv@v3
+        uses: astral-sh/setup-uv@v5
       - name: Install build dependencies
         run: |
           sudo apt-get update && sudo apt-get install -y portaudio19-dev
@@ -479,7 +479,7 @@ jobs:
           echo ledfx-version=$(cat dist/ledfx_version.txt) >> $GITHUB_OUTPUT
           rm -rf dist/ledfx_version.txt
       - name: Create Sentry release
-        uses: getsentry/action-release@v1
+        uses: getsentry/action-release@v3
         env:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN_V2 }}
           SENTRY_ORG: ledfx-org

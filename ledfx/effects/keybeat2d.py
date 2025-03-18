@@ -8,7 +8,7 @@ import voluptuous as vol
 from ledfx.consts import LEDFX_ASSETS_PATH
 from ledfx.effects.gifbase import GifBase
 from ledfx.effects.twod import Twod
-from ledfx.utils import (
+from ledfx.utils import (  # Teleplot,
     clip_at_limit,
     extract_positive_integers,
     get_mono_font,
@@ -116,6 +116,9 @@ class Keybeat2d(Twod, GifBase):
 
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
+        self.min_vol = 0
+        self.min_vol_found_in_last_beat = False
+        self.above_min_vol = False
 
     def config_updated(self, config):
         super().config_updated(config)
@@ -304,6 +307,10 @@ class Keybeat2d(Twod, GifBase):
             self.stretch_v, self.stretch_h = self.stretch_h, self.stretch_v
             self.center_v, self.center_h = self.center_h, self.center_v
 
+        self.suppress_beat = False
+        self.min_vol_found_in_last_beat = False
+        self.above_min_vol = False
+
     def do_once(self):
         super().do_once()
         # defer things that can't be done when pixel_count is not known
@@ -355,12 +362,23 @@ class Keybeat2d(Twod, GifBase):
             self.begin_time = self.current_time
 
         self.last_beat_t = self.current_time
+        self.min_vol = self.audio._config["min_volume"]
 
     def audio_data_updated(self, data):
         if self.half_beat:
             self.beat = (data.bar_oscillator() % 2) / 2
         else:
             self.beat = data.beat_oscillator()
+        vol = max(0, min(1, self.audio.volume(filtered=False)))
+        self.above_min_vol = vol >= self.min_vol
+
+        # Teleplot.send(f"beat:{self.beat}")
+        # Teleplot.send(f"vol:{vol}")
+        # Teleplot.send(f"min_vol:{self.min_vol}")
+        # Teleplot.send(f"beatnow:{1 if data.bpm_beat_now() else 0}")
+        # Teleplot.send(f"suppress:{1 if self.suppress_beat else 0}")
+        # Teleplot.send(f"above_min_vol:{1 if self.above_min_vol else 0}")
+        # Teleplot.send(f"min_found:{1 if self.min_vol_found_in_last_beat else 0}")
 
     def overlay(self, beat_kick, skip_beat):
         # add beat timestamps to the rolling window beat_list
@@ -415,10 +433,10 @@ class Keybeat2d(Twod, GifBase):
             color = (255, 255, 0)
 
         if beat_kick:
-            diag_string = "\u25CF\u25CF\u25CF\u25CF"  # filled circle char
+            diag_string = "\u25cf\u25cf\u25cf\u25cf"  # filled circle char
             color = (255, 255, 255)
         else:
-            diag_string = "\u25CB" * int(self.beat * 4) + " " * (
+            diag_string = "\u25cb" * int(self.beat * 4) + " " * (
                 4 - int(self.beat * 4)
             )
 
@@ -445,26 +463,40 @@ class Keybeat2d(Twod, GifBase):
                     )
             else:
                 beat_kick = True
-                if self.num_beat_frames == 0:
-                    # let's just advance one frame per beat when there are no key frames
-                    self.frame_s = self.frame_c = (
-                        self.frame_c + 1
-                    ) % self.framecount
+                # if there was no minimum volume for the duration since the last beat
+                # then suppress beat progression
+                if not self.min_vol_found_in_last_beat:
+                    self.suppress_beat = True
                 else:
-                    self.beat_idx = (self.beat_idx + 1) % self.num_beat_frames
+                    self.suppress_beat = False
+                    if self.num_beat_frames == 0:
+                        # let's just advance one frame per beat when there are no key frames
+                        self.frame_s = self.frame_c = (
+                            self.frame_c + 1
+                        ) % self.framecount
+                    else:
+                        self.beat_idx = (
+                            self.beat_idx + 1
+                        ) % self.num_beat_frames
+                self.min_vol_found_in_last_beat = False
 
             self.last_beat_t = self.current_time
 
         self.last_beat = self.beat
 
+        # latch if we find a min vol in the beat window
+        if self.above_min_vol:
+            self.min_vol_found_in_last_beat = True
+
         if self.num_beat_frames > 0:
-            # Using the self.beat progress, we can interpolate between frames
-            frame_progress = self.beat / self.beat_incs[self.beat_idx]
-            self.frame_c = (
-                int(frame_progress) + self.beat_frames[self.beat_idx]
-            )
-            self.frame_s = self.frame_c
-            self.frame_c %= self.framecount
+            if not self.suppress_beat:
+                # Using the self.beat progress, we can interpolate between frames
+                frame_progress = self.beat / self.beat_incs[self.beat_idx]
+                self.frame_c = (
+                    int(frame_progress) + self.beat_frames[self.beat_idx]
+                )
+                self.frame_s = self.frame_c
+                self.frame_c %= self.framecount
         else:
             frame_progress = 0.0
 

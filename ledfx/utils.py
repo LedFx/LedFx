@@ -41,6 +41,7 @@ import requests
 import voluptuous as vol
 from dotenv import load_dotenv
 
+from ledfx.color import LEDFX_GRADIENTS
 from ledfx.config import save_config
 from ledfx.consts import LEDFX_ASSETS_PATH, PROJECT_VERSION
 
@@ -712,7 +713,10 @@ def generate_id(name):
             str: The converted ID.
     """
     part1 = re.sub("[^a-zA-Z0-9]", " ", name).lower()
-    return re.sub(" +", " ", part1).strip().replace(" ", "-")
+    result = re.sub(" +", " ", part1).strip().replace(" ", "-")
+    if result == "":
+        result = "default"
+    return result
 
 
 def generate_title(id):
@@ -1432,7 +1436,8 @@ def open_gif(gif_path):
 
     Args:
         gif_path: str
-            path to gif file or url
+            path to gif, webp, png or jpg file or url
+            Can handle any image source that PIL is capable of, not just gif
     Returns:
         Image: PIL Image object or None if failed to open
     """
@@ -1441,13 +1446,17 @@ def open_gif(gif_path):
         if gif_path.startswith("http://") or gif_path.startswith("https://"):
             with urllib.request.urlopen(gif_path) as url:
                 gif = Image.open(url)
-                _LOGGER.debug("Remote GIF downloaded and opened.")
-                return gif
-
+                _LOGGER.debug("Remote image source downloaded and opened.")
         else:
             gif = Image.open(gif_path)  # Directly open for local files
-            _LOGGER.debug("Local GIF opened.")
-            return gif
+            _LOGGER.debug("Local image source opened.")
+
+        # protect against single frame image like png, jpg
+        if not hasattr(gif, "n_frames"):
+            gif.n_frames = 1
+
+        return gif
+
     except Exception as e:
         _LOGGER.warning(f"Failed to open gif : {gif_path} : {e}")
         return None
@@ -1530,7 +1539,18 @@ def get_font(font_list, size):
 
 
 def generate_default_config(ledfx_effects, effect_id):
-    return ledfx_effects.get_class(effect_id).get_combined_default_schema()
+    """
+    Generate config out of the schema for an effect to use as a defualt
+
+    Any manipulations must be made in here, such as expanding gradient strings to fully defined gradients
+    """
+    config = ledfx_effects.get_class(effect_id).get_combined_default_schema()
+    gradient = config.get("gradient", None)
+    gradient_str = LEDFX_GRADIENTS.get(gradient, None)
+    if gradient_str:
+        config["gradient"] = gradient_str
+        config["gradient_name"] = gradient
+    return config
 
 
 def inject_missing_default_keys(presets, defaults):
@@ -1897,7 +1917,11 @@ def resize_pixels(pixels, old_shape, new_shape):
 
 
 def shape_to_fit_len(max_len, shape, pixels_len):
-    """_summary_
+    """Converts the shape of a visualisation to obey constraints
+       The max_len pixels which is a system variable a user can change
+       Additionally a max dimension of 64 in rows or columns is enforced
+       As the shape has already been reduced to max pixels, both CANNOT
+       be greate than 64
 
     Args:
         max_len : The maximum number of pixels allowed in the final visualisation
@@ -1916,11 +1940,22 @@ def shape_to_fit_len(max_len, shape, pixels_len):
         new_rows = shape[0] / reduction_ratio
         new_cols = shape[1] / reduction_ratio
 
+        # protect against extreme shapes
+        # see function description for magic number 64
+        if new_rows > 64:
+            reduction_ratio = 64 / new_rows
+            new_rows = 64
+            new_cols = new_cols * reduction_ratio
+        elif new_cols > 64:
+            reduction_ratio = 64 / new_cols
+            new_cols = 64
+            new_rows = new_rows * reduction_ratio
+
         # protect from less than 1 values
         if new_rows < 1.0:
-            new_shape = (1, max_len)
+            new_shape = (1, new_cols)
         elif new_cols < 1.0:
-            new_shape = (max_len, 1)
+            new_shape = (new_rows, 1)
         else:
             new_shape = (
                 int(new_rows),

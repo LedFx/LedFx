@@ -18,4 +18,6 @@ Developers:
 
 * `Chris Reese <https://github.com/THATDONFC>`_
 
+* `bigredfrog <https://github.com/bigredfrog>`
+
 Special thanks to our `community developers! <https://github.com/LedFx/LedFx/graphs/contributors>`_

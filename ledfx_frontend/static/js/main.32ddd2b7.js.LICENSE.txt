@@ -5,14 +5,14 @@
 */
 
 /*!
- * @kurkle/color v0.3.2
+ * @kurkle/color v0.3.4
  * https://github.com/kurkle/color#readme
- * (c) 2023 Jukka Kurkela
+ * (c) 2024 Jukka Kurkela
  * Released under the MIT License
  */
 
 /*!
- * Chart.js v4.4.5
+ * Chart.js v4.4.7
  * https://www.chartjs.org
  * (c) 2024 Chart.js Contributors
  * Released under the MIT License
@@ -237,19 +237,9 @@ PERFORMANCE OF THIS SOFTWARE.
 
 /**
  * @license React
- * react-dom.production.min.js
+ * react-dom-client.production.js
  *
- * Copyright (c) Facebook, Inc. and its affiliates.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
- */
-
-/**
- * @license React
- * react-is.production.min.js
- *
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -257,19 +247,9 @@ PERFORMANCE OF THIS SOFTWARE.
 
 /**
  * @license React
- * react-jsx-runtime.production.min.js
+ * react-dom.production.js
  *
- * Copyright (c) Facebook, Inc. and its affiliates.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
- */
-
-/**
- * @license React
- * react.production.min.js
- *
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -277,19 +257,9 @@ PERFORMANCE OF THIS SOFTWARE.
 
 /**
  * @license React
- * scheduler.production.min.js
+ * react-jsx-runtime.production.js
  *
- * Copyright (c) Facebook, Inc. and its affiliates.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
- */
-
-/**
- * @license React
- * use-sync-external-store-shim.production.min.js
- *
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -297,9 +267,9 @@ PERFORMANCE OF THIS SOFTWARE.
 
 /**
  * @license React
- * use-sync-external-store-shim/with-selector.production.min.js
+ * react.production.js
  *
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -307,31 +277,30 @@ PERFORMANCE OF THIS SOFTWARE.
 
 /**
  * @license React
- * use-sync-external-store-with-selector.production.min.js
+ * scheduler.production.js
  *
- * Copyright (c) Facebook, Inc. and its affiliates.
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
 /**
- * @mui/styled-engine v6.1.4
+ * @license React
+ * use-sync-external-store-with-selector.production.js
+ *
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+/**
+ * @mui/styled-engine v6.3.1
  *
  * @license MIT
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
- */
-
-/**
- * @remix-run/router v1.20.0
- *
- * Copyright (c) Remix Software Inc.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE.md file in the root directory of this source tree.
- *
- * @license MIT
  */
 
 /**
@@ -355,28 +324,6 @@ PERFORMANCE OF THIS SOFTWARE.
  * @return {boolean} True if the event is supported.
  * @internal
  * @license Modernizr 3.0.0pre (Custom Build) | MIT
- */
-
-/**
- * React Router DOM v6.27.0
- *
- * Copyright (c) Remix Software Inc.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE.md file in the root directory of this source tree.
- *
- * @license MIT
- */
-
-/**
- * React Router v6.27.0
- *
- * Copyright (c) Remix Software Inc.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE.md file in the root directory of this source tree.
- *
- * @license MIT
  */
 
 /**
@@ -655,6 +602,17 @@ PERFORMANCE OF THIS SOFTWARE.
  *
  * @extends EventEmitter
  * @license Apache-2.0
+ */
+
+/**
+ * react-router v7.1.1
+ *
+ * Copyright (c) Remix Software Inc.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE.md file in the root directory of this source tree.
+ *
+ * @license MIT
  */
 
 /** @license React v16.13.1

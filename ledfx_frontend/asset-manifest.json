@@ -1,8 +1,12 @@
 {
   "files": {
     "main.css": "/static/css/main.b8337dab.css",
-    "main.js": "/static/js/main.d494113b.js",
-    "static/js/685.98137b60.chunk.js": "/static/js/685.98137b60.chunk.js",
+    "main.js": "/static/js/main.32ddd2b7.js",
+    "static/js/904.090f0346.chunk.js": "/static/js/904.090f0346.chunk.js",
+    "static/js/865.b62d6362.chunk.js": "/static/js/865.b62d6362.chunk.js",
+    "static/js/703.745a3616.chunk.js": "/static/js/703.745a3616.chunk.js",
+    "static/js/84.745a3616.chunk.js": "/static/js/84.745a3616.chunk.js",
+    "static/js/685.db35d3c0.chunk.js": "/static/js/685.db35d3c0.chunk.js",
     "static/media/xmas.png": "/static/media/xmas.3e4e83405d14fb81488b.png",
     "static/media/materialdesignicons-webfont.woff": "/static/media/materialdesignicons-webfont.059ea00c378aeafc39fc.woff",
     "static/media/fireworks.jpg": "/static/media/fireworks.b0378f4b56783c9e58d1.jpg",
@@ -39,6 +43,6 @@
   },
   "entrypoints": [
     "static/css/main.b8337dab.css",
-    "static/js/main.d494113b.js"
+    "static/js/main.32ddd2b7.js"
   ]
 }

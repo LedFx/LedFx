@@ -33,24 +33,24 @@ dependencies = [
     "python-osc>=1.8.3",
     "pybase64~=1.4.0",
     "mss~=10.0.0",
-    "setuptools~=75.3.0",
+    "setuptools~=76.0.0",
     "uvloop>=0.16.0; sys_platform != \"win32\"",
     "rpi-ws281x>=4.3.0; sys_platform == \"linux\"",
-    "stupidartnet>=1.4.0,<2.0.0",
+    "stupidartnet>=1.6.0,<2.0.0",
     "python-dotenv>=1.0.0,<2.0.0",
     "vnoise>=0.1.0,<1.0.0",
 ]
 name = "LedFx"
-version = "2.0.105"
+version = "2.0.108"
 description = "A network based light effect controller"
 readme = "README.rst"
 
 [dependency-groups]
 dev = [
     "flake8<7.2.0,>=7.1.1",
-    "black<24.11.0,>=24.10.0",
-    "isort<5.14.0,>=5.13.2",
-    "pre-commit<4.1.0,>=4.0.0",
+    "black<25.1.1,>=25.1.0",
+    "isort<6.0.2,>=6.0.1",
+    "pre-commit<4.1.1,>=4.1.0",
     "bokeh<4.0.0,>=3.3.3",
     "pytest<9.0.0,>=8.0.0",
     "pytest-order<2.0.0,>=1.2.0",
@@ -63,7 +63,7 @@ docs = [
     "sphinx-autodoc-typehints==2.5.0; python_version >= \"3.10\"",
     "sphinx-autodoc-annotation==1.0-1; python_version >= \"3.10\"",
     "sphinx-autobuild; python_version >= \"3.10\"",
-    "sphinx-rtd-theme==3.0.1; python_version >= \"3.10\"",
+    "sphinx-rtd-theme==3.0.2; python_version >= \"3.10\"",
     "sphinx-toolbox==3.8.1; python_version >= \"3.10\"",
     "rstcheck==6.2.4; python_version >= \"3.10\"",
     "sphinx-copybutton==0.5.2; python_version >= \"3.10\"",

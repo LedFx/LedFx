@@ -458,10 +458,18 @@ class Effect(BaseRegistry):
                     # Apply some of the base output filters if necessary
                     if self.flip:
                         pixels = np.flipud(pixels)
+
                     if self.mirror:
-                        pixels = np.concatenate(
-                            (pixels[-1 + len(pixels) % -2 :: -2], pixels[::2])
+                        # concatenate the pixels for mirror, then take the max of adjacent pixels
+                        # prevents average dimming and is best compromise, removes flicker
+                        # inherently symetrical
+                        mirrored_pixels = np.concatenate(
+                            (pixels[::-1], pixels)
                         )
+                        pixels = np.maximum(
+                            mirrored_pixels[::2], mirrored_pixels[1::2]
+                        )
+
                     if self.bg_color_use:
                         pixels += self._bg_color
                     if self.brightness is not None:
