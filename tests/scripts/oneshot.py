@@ -63,23 +63,23 @@ def on_b_release():
 
 
 def send_oneshot(color, ramp, hold, fade, brightness):
-        payload = {
-            "tool":"oneshot",
-            "color":color,
-            "ramp":ramp,
-            "hold":hold,
-            "fade":fade,
-            "brightness":brightness
-        }
+    payload = {
+        "tool": "oneshot",
+        "color": color,
+        "ramp": ramp,
+        "hold": hold,
+        "fade": fade,
+        "brightness": brightness,
+    }
 
-        try:
-            response = requests.put(
-                f"http://127.0.0.1:8888/api/virtuals_tools",
-                json=payload,
-            )
-            print(f"Response: {response.status_code} - {response.text}")
-        except Exception as e:
-            print(f"Request failed: {e}")
+    try:
+        response = requests.put(
+            f"http://127.0.0.1:8888/api/virtuals_tools",
+            json=payload,
+        )
+        print(f"Response: {response.status_code} - {response.text}")
+    except Exception as e:
+        print(f"Request failed: {e}")
 
 
 def press_x():
