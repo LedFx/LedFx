@@ -74,7 +74,7 @@ def send_oneshot(color, ramp, hold, fade, brightness):
 
     try:
         response = requests.put(
-            f"http://127.0.0.1:8888/api/virtuals_tools",
+            "http://127.0.0.1:8888/api/virtuals_tools",
             json=payload,
         )
         print(f"Response: {response.status_code} - {response.text}")
