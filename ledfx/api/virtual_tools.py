@@ -53,7 +53,7 @@ class VirtualToolsEndpoint(RestEndpoint):
             ramp = data.get("ramp", 0)
             hold = data.get("hold", 0)
             fade = data.get("fade", 0)
-            brightness = data.get("brightness", 1)
+            brightness = min(1, max(0, data.get("brightness", 1)))
 
             # if all values are zero, we will now just ensure any current
             # oneshot are cancelled
