@@ -81,7 +81,10 @@ class ArtNetDevice(NetworkedDevice):
 
         # treat a default value of zero in pixels_per_device as all pixels in one device
         # also protect against greater than pixel_count
-        if self.pixels_per_device == 0 or self.pixels_per_device > self.pixel_count:
+        if (
+            self.pixels_per_device == 0
+            or self.pixels_per_device > self.pixel_count
+        ):
             self.pixels_per_device = self.pixel_count
 
         # if the user has not set enough pixels to fully fill the last device
@@ -147,7 +150,9 @@ class ArtNetDevice(NetworkedDevice):
 
             # Create the pre_amble and post_amble arrays to match the device count
             pre_amble_repeated = np.tile(self.pre_amble, (self.num_devices, 1))
-            post_amble_repeated = np.tile(self.post_amble, (self.num_devices, 1))
+            post_amble_repeated = np.tile(
+                self.post_amble, (self.num_devices, 1)
+            )
 
             # Concatenate the pre_amble, reshaped data, and post_amble along the second axis
             full_device_data = np.concatenate(
