@@ -41,8 +41,8 @@ class ArtNetDevice(NetworkedDevice):
                 default="",
             ): str,
             vol.Optional(
-                "device_repeat",
-                description="numer of pixels to consume per device and repeat pre and post ambles, 0 default will use all pixels in one instance",
+                ("pixels_per_device", "device_repeat"),
+                description="Number of pixels to consume per device. Pre and post ambles are repeated per device. By default (0) all pixels will be used by one instance",
                 default=0,
             ): vol.All(int, vol.Range(min=0)),
             vol.Optional(
@@ -73,27 +73,27 @@ class ArtNetDevice(NetworkedDevice):
         self.post_amble = np.array(
             extract_uint8_seq(config.get("post_amble", "")), dtype=np.uint8
         )
-        self.device_repeat = config.get("device_repeat", 0)
+        self.pixels_per_device = config.get("pixels_per_device", 0)
 
         # This assumes RGB - for RGBW devices this isn't gonna work.
         # TODO: Fix this when/if we ever want to move to RGBW outputs for devices
         # warning magic number 3 for RGB
 
-        # treat a default value of zero in device_repeat as all pixels in one device
+        # treat a default value of zero in pixels_per_device as all pixels in one device
         # also protect against greater than pixel_count
-        if self.device_repeat == 0 or self.device_repeat > self.pixel_count:
-            self.device_repeat = self.pixel_count
+        if self.pixels_per_device == 0 or self.pixels_per_device > self.pixel_count:
+            self.pixels_per_device = self.pixel_count
 
         # if the user has not set enough pixels to fully fill the last device
         # it is modded away, we will not support partial devices, saves runtime
-        self.devices = self.pixel_count // self.device_repeat
-        self.data_max = self.devices * self.device_repeat
+        self.num_devices = self.pixel_count // self.pixels_per_device
+        self.data_max = self.num_devices * self.pixels_per_device
 
         self.channel_count = (
             self.pre_amble.size
-            + (self.device_repeat * 3)
+            + (self.pixels_per_device * 3)
             + self.post_amble.size
-        ) * self.devices
+        ) * self.num_devices
 
         self.packet_size = self._config["packet_size"]
         self.universe_count = (
@@ -140,14 +140,14 @@ class ArtNetDevice(NetworkedDevice):
             # pre allocate the space
             devices_data = np.empty(self.channel_count, dtype=np.uint8)
 
-            # Reshape the data into (self.devices, self.device_repeat * 3)
+            # Reshape the data into (self.num_devices, self.pixels_per_device * 3)
             reshaped_data = data.reshape(
-                (self.devices, self.device_repeat * 3)
+                (self.num_devices, self.pixels_per_device * 3)
             )
 
             # Create the pre_amble and post_amble arrays to match the device count
-            pre_amble_repeated = np.tile(self.pre_amble, (self.devices, 1))
-            post_amble_repeated = np.tile(self.post_amble, (self.devices, 1))
+            pre_amble_repeated = np.tile(self.pre_amble, (self.num_devices, 1))
+            post_amble_repeated = np.tile(self.post_amble, (self.num_devices, 1))
 
             # Concatenate the pre_amble, reshaped data, and post_amble along the second axis
             full_device_data = np.concatenate(
