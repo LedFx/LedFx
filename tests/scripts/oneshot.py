@@ -7,6 +7,7 @@ except ImportError as e:
     print(f"Required package not found: {e}")
     print("Please install required packages: pip install keyboard requests")
     exit(1)
+
 # this test script will on the pressing of the space bar send a request to the ledfx server
 # to Fire onshot on a profile across all virtuals
 # multiple presses will override any active oneshot
@@ -104,6 +105,9 @@ def main():
     keyboard.add_hotkey("x", lambda: press_x())
     keyboard.add_hotkey("X", lambda: press_x())
 
+    print("press SPACE for stobe white with no hard off on release")
+    print("press V for long red ramp, hold, fade, hard off on release")
+    print("press B for long blue ramp, hold, fade, no hard off on release")
     # Block the program and keep it running
     keyboard.wait()
 

@@ -14,6 +14,7 @@ class Oneshot(ABC):
     def __init__(self):
         self._active: bool = True
         self._pixel_count: int = 0
+        self._total_time: int = 0
 
     @abstractmethod
     def init(self):
@@ -34,6 +35,10 @@ class Oneshot(ABC):
     @property
     def pixel_count(self):
         return self._pixel_count
+
+    @property
+    def total_time(self):
+        return self._total_time
 
     @pixel_count.setter
     def pixel_count(self, pixel_count):
@@ -64,6 +69,7 @@ class Flash(Oneshot):
         self._hold_end = self._ramp + self._hold
         self._fade_end = self._ramp + self._hold + self._fade
         self._weight = 0.0
+        self._total_time = self._fade_end
 
     def init(self):
         return

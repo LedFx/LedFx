@@ -886,8 +886,8 @@ class Virtual:
                             seg = self._effective_to_physical_pixels(
                                 seg, target_physical_len
                             )
-                            if self._os_active:
-                                self.oneshot_apply(seg)
+                            for oneshot in self._oneshots:
+                                oneshot.apply(seg, start, stop)
                             data.append((seg, device_start, device_end))
                     device.update_pixels(self.id, data)
 
@@ -925,10 +925,22 @@ class Virtual:
     def add_oneshot(self, oneshot: Oneshot):
         if not self._active:
             return False
+
+        # a oneshot intialised with zero time is used to clear ALL active oneshots
+        if oneshot.total_time == 0:
+            self.cancel_oneshot()
+            return False
+
         oneshot.pixel_count = self.pixel_count
         oneshot.init()
-        self._oneshots.append(oneshot)
+        with self.lock:
+            self._oneshots.append(oneshot)
         return True
+
+    def cancel_oneshot(self):
+        # simply clearing the list will prevent any further oneshot processing
+        with self.lock:
+            self._oneshots = []
 
     @property
     def name(self):
