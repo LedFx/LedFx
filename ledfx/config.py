@@ -588,6 +588,8 @@ def migrate_config(old_config):
                 "FXMatrix devices are no longer supported. Add it as plain UDP or WLED."
             )
             continue
+        if device["type"].lower() == "artnet":
+            device["pixels_per_device"] = device.get("device_repeat", 0)
         device.pop("effect", None)
         new_config["devices"].append(device)
 

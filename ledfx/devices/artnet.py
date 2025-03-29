@@ -41,7 +41,7 @@ class ArtNetDevice(NetworkedDevice):
                 default="",
             ): str,
             vol.Optional(
-                ("pixels_per_device", "device_repeat"),
+                "pixels_per_device",
                 description="Number of pixels to consume per device. Pre and post ambles are repeated per device. By default (0) all pixels will be used by one instance",
                 default=0,
             ): vol.All(int, vol.Range(min=0)),
