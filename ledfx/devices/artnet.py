@@ -6,6 +6,7 @@ import voluptuous as vol
 from stupidArtnet import StupidArtnet
 
 from ledfx.devices import NetworkedDevice
+from ledfx.devices.utils.rgbw_conversion import WhiteChannelComputation, rgb_to_rgbw
 from ledfx.utils import extract_uint8_seq
 
 _LOGGER = logging.getLogger(__name__)
@@ -56,6 +57,25 @@ class ArtNetDevice(NetworkedDevice):
                 description="Whether to use even packet size",
                 default=True,
             ): bool,
+            vol.Optional(
+                "output_rgbw",
+                description="Weather to output RGBW instead of RGB data",
+                default=False,
+            ): bool,
+            vol.Required(
+                "white_channel_computation",
+                description="If output_RGBW is True, how to compute the white channel",
+                default=WhiteChannelComputation.ACCURATE,
+            ): vol.All(
+                str,
+                vol.In(
+                    [
+                        WhiteChannelComputation.NONE,
+                        WhiteChannelComputation.ACCURATE,
+                        WhiteChannelComputation.BRIGHTER,
+                    ]
+                ),
+            ),
             vol.Optional("port", description="port", default=6454): int,
         }
     )
@@ -83,9 +103,8 @@ class ArtNetDevice(NetworkedDevice):
         # first byte in dmx is 1, but we are zero based
         self.dmx_start_address = config.get("dmx_start_address", 1) - 1
 
-        # This assumes RGB - for RGBW devices this isn't gonna work.
-        # TODO: Fix this when/if we ever want to move to RGBW outputs for devices
-        # warning magic number 3 for RGB
+        self.channels_per_pixel = 4 if config.get("output_rgbw", False) else 3
+        self.white_channel_computation = config.get("white_channel_computation", WhiteChannelComputation.ACCURATE)
 
         # treat a default value of zero in pixels_per_device as all pixels in one device
         # also protect against greater than pixel_count
@@ -104,7 +123,7 @@ class ArtNetDevice(NetworkedDevice):
             self.dmx_start_address
             + (
                 self.pre_amble.size
-                + (self.pixels_per_device * 3)
+                + (self.pixels_per_device * self.channels_per_pixel)
                 + self.post_amble.size
             )
             * self.num_devices
@@ -148,14 +167,17 @@ class ArtNetDevice(NetworkedDevice):
             if not self._artnet:
                 self.activate()
 
-            data = data.flatten()[: self.data_max * 3]
+            if self.channels_per_pixel == 4:
+                data = rgb_to_rgbw(data, self.white_channel_computation) 
+
+            data = data.flatten()[: self.data_max * self.channels_per_pixel]
 
             # pre allocate the space
             devices_data = np.empty(self.channel_count, dtype=np.uint8)
 
-            # Reshape the data into (self.num_devices, self.pixels_per_device * 3)
+            # Reshape the data into (self.num_devices, self.pixels_per_device * self.channels_per_pixel)
             reshaped_data = data.reshape(
-                (self.num_devices, self.pixels_per_device * 3)
+                (self.num_devices, self.pixels_per_device * self.channels_per_pixel)
             )
 
             # Create the pre_amble and post_amble arrays to match the device count
