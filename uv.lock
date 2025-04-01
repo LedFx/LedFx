@@ -754,16 +754,16 @@ wheels = [
 
 [[package]]
 name = "flake8"
-version = "7.1.2"
+version = "7.2.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "mccabe" },
     { name = "pycodestyle" },
     { name = "pyflakes" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/58/16/3f2a0bb700ad65ac9663262905a025917c020a3f92f014d2ba8964b4602c/flake8-7.1.2.tar.gz", hash = "sha256:c586ffd0b41540951ae41af572e6790dbd49fc12b3aa2541685d253d9bd504bd", size = 48119 }
+sdist = { url = "https://files.pythonhosted.org/packages/e7/c4/5842fc9fc94584c455543540af62fd9900faade32511fab650e9891ec225/flake8-7.2.0.tar.gz", hash = "sha256:fa558ae3f6f7dbf2b4f22663e5343b6b6023620461f8d4ff2019ef4b5ee70426", size = 48177 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/35/f8/08d37b2cd89da306e3520bd27f8a85692122b42b56c0c2c3784ff09c022f/flake8-7.1.2-py2.py3-none-any.whl", hash = "sha256:1cbc62e65536f65e6d754dfe6f1bada7f5cf392d6f5db3c2b85892466c3e7c1a", size = 57745 },
+    { url = "https://files.pythonhosted.org/packages/83/5c/0627be4c9976d56b1217cb5187b7504e7fd7d3503f8bfd312a04077bd4f7/flake8-7.2.0-py2.py3-none-any.whl", hash = "sha256:93b92ba5bdb60754a6da14fa3b93a9361fd00a59632ada61fd7b130436c40343", size = 57786 },
 ]
 
 [[package]]
@@ -985,14 +985,14 @@ dependencies = [
     { name = "python-osc", version = "1.9.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
     { name = "python-rtmidi" },
     { name = "requests" },
-    { name = "rpi-ws281x" },
+    { name = "rpi-ws281x", marker = "sys_platform == 'linux'" },
     { name = "sacn" },
     { name = "samplerate" },
     { name = "sentry-sdk" },
     { name = "setuptools" },
     { name = "sounddevice" },
     { name = "stupidartnet" },
-    { name = "uvloop" },
+    { name = "uvloop", marker = "sys_platform != 'win32'" },
     { name = "vnoise" },
     { name = "voluptuous" },
     { name = "wheel" },
@@ -1034,41 +1034,41 @@ docs = [
 
 [package.metadata]
 requires-dist = [
-    { name = "aiohttp", specifier = "==3.11.14" },
-    { name = "aiohttp-cors", specifier = "==0.8.0" },
-    { name = "aubio", specifier = "==0.4.9" },
-    { name = "certifi", specifier = "==2025.1.31" },
-    { name = "cffi", specifier = "==1.17.1" },
-    { name = "cython", specifier = "==3.0.12" },
-    { name = "flux-led", specifier = "==1.1.4" },
-    { name = "icmplib", specifier = "==3.0.4" },
-    { name = "mss", specifier = "==10.0.0" },
-    { name = "multidict", specifier = "==6.2.0" },
-    { name = "numpy", specifier = "==1.26.4" },
-    { name = "openrgb-python", specifier = "==0.3.3" },
-    { name = "paho-mqtt", specifier = "==2.1.0" },
-    { name = "pillow", specifier = "==11.1.0" },
-    { name = "psutil", specifier = "==7.0.0" },
-    { name = "pybase64", specifier = "==1.4.1" },
-    { name = "pyserial", specifier = "==3.5" },
-    { name = "pystray", specifier = "==0.19.5" },
-    { name = "python-dotenv", specifier = "==1.0.1" },
+    { name = "aiohttp", specifier = ">=3.9.1,<4.0.0" },
+    { name = "aiohttp-cors", specifier = ">=0.7.0" },
+    { name = "aubio", specifier = ">=0.4.9" },
+    { name = "certifi", specifier = ">=2023.11.17" },
+    { name = "cffi", specifier = ">=0.16.0" },
+    { name = "cython", specifier = ">=3.0.7" },
+    { name = "flux-led", specifier = ">=1.0.4" },
+    { name = "icmplib", specifier = ">=3.0.4" },
+    { name = "mss", specifier = "~=10.0.0" },
+    { name = "multidict", specifier = ">=6.0.4" },
+    { name = "numpy", specifier = ">=1.26.2,<2.0.0" },
+    { name = "openrgb-python", specifier = ">=0.2.15" },
+    { name = "paho-mqtt", specifier = ">=1.6.1" },
+    { name = "pillow", specifier = ">=10.1.0" },
+    { name = "psutil", specifier = ">=5.9.7" },
+    { name = "pybase64", specifier = "~=1.4.0" },
+    { name = "pyserial", specifier = ">=3.5" },
+    { name = "pystray", specifier = ">=0.19.5" },
+    { name = "python-dotenv", specifier = ">=1.0.0,<2.0.0" },
     { name = "python-mbedtls", marker = "(platform_machine != 'aarch64' and platform_machine != 'armv7l' and sys_platform == 'linux' and extra == 'hue') or (sys_platform == 'darwin' and extra == 'hue') or (sys_platform == 'win32' and extra == 'hue')", specifier = "==2.9.2" },
     { name = "python-osc", specifier = ">=1.8.3" },
-    { name = "python-rtmidi", specifier = "==1.5.8" },
-    { name = "requests", specifier = "==2.32.3" },
-    { name = "rpi-ws281x", specifier = "==5.0.0" },
-    { name = "sacn", specifier = "==1.11.0" },
-    { name = "samplerate", specifier = "==0.2.1" },
-    { name = "sentry-sdk", specifier = "==2.23.1" },
-    { name = "setuptools", specifier = "==77.0.3" },
-    { name = "sounddevice", specifier = "==0.5.1" },
-    { name = "stupidartnet", specifier = "==1.6.0" },
-    { name = "uvloop", specifier = "==0.21.0" },
-    { name = "vnoise", specifier = "==0.1.0" },
-    { name = "voluptuous", specifier = "==0.15.2" },
-    { name = "wheel", specifier = "==0.45.1" },
-    { name = "zeroconf", specifier = "==0.146.1" },
+    { name = "python-rtmidi", specifier = ">=1.5.8" },
+    { name = "requests", specifier = ">=2.31.0" },
+    { name = "rpi-ws281x", marker = "sys_platform == 'linux'", specifier = ">=4.3.0" },
+    { name = "sacn", specifier = ">=1.9.0" },
+    { name = "samplerate", specifier = ">=0.2.1" },
+    { name = "sentry-sdk", specifier = ">=1.40.4" },
+    { name = "setuptools", specifier = "~=77.0.3" },
+    { name = "sounddevice", specifier = ">=0.4.6" },
+    { name = "stupidartnet", specifier = ">=1.6.0,<2.0.0" },
+    { name = "uvloop", marker = "sys_platform != 'win32'", specifier = ">=0.16.0" },
+    { name = "vnoise", specifier = ">=0.1.0,<1.0.0" },
+    { name = "voluptuous", specifier = ">=0.14.1" },
+    { name = "wheel", specifier = ">=0.36.2" },
+    { name = "zeroconf", specifier = ">=0.131.0" },
 ]
 provides-extras = ["hue"]
 
@@ -1076,7 +1076,7 @@ provides-extras = ["hue"]
 dev = [
     { name = "black", specifier = ">=25.1.0,<25.1.1" },
     { name = "bokeh", specifier = ">=3.3.3,<4.0.0" },
-    { name = "flake8", specifier = ">=7.1.1,<7.2.0" },
+    { name = "flake8", specifier = ">=7.2.0,<7.2.1" },
     { name = "isort", specifier = ">=6.0.1,<6.0.2" },
     { name = "pre-commit", specifier = ">=4.1.0,<4.1.1" },
     { name = "pyinstaller", specifier = ">=6.3.0,<7.0.0" },
@@ -1839,11 +1839,11 @@ wheels = [
 
 [[package]]
 name = "pycodestyle"
-version = "2.12.1"
+version = "2.13.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/43/aa/210b2c9aedd8c1cbeea31a50e42050ad56187754b34eb214c46709445801/pycodestyle-2.12.1.tar.gz", hash = "sha256:6838eae08bbce4f6accd5d5572075c63626a15ee3e6f842df996bf62f6d73521", size = 39232 }
+sdist = { url = "https://files.pythonhosted.org/packages/04/6e/1f4a62078e4d95d82367f24e685aef3a672abfd27d1a868068fed4ed2254/pycodestyle-2.13.0.tar.gz", hash = "sha256:c8415bf09abe81d9c7f872502a6eee881fbe85d8763dd5b9924bb0a01d67efae", size = 39312 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/3a/d8/a211b3f85e99a0daa2ddec96c949cac6824bd305b040571b82a03dd62636/pycodestyle-2.12.1-py2.py3-none-any.whl", hash = "sha256:46f0fb92069a7c28ab7bb558f05bfc0110dac69a0cd23c61ea0040283a9d78b3", size = 31284 },
+    { url = "https://files.pythonhosted.org/packages/07/be/b00116df1bfb3e0bb5b45e29d604799f7b91dd861637e4d448b4e09e6a3e/pycodestyle-2.13.0-py2.py3-none-any.whl", hash = "sha256:35863c5974a271c7a726ed228a14a4f6daf49df369d8c50cd9a6f58a5e143ba9", size = 31424 },
 ]
 
 [[package]]
@@ -1954,11 +1954,11 @@ wheels = [
 
 [[package]]
 name = "pyflakes"
-version = "3.2.0"
+version = "3.3.2"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/57/f9/669d8c9c86613c9d568757c7f5824bd3197d7b1c6c27553bc5618a27cce2/pyflakes-3.2.0.tar.gz", hash = "sha256:1c61603ff154621fb2a9172037d84dca3500def8c8b630657d1701f026f8af3f", size = 63788 }
+sdist = { url = "https://files.pythonhosted.org/packages/af/cc/1df338bd7ed1fa7c317081dcf29bf2f01266603b301e6858856d346a12b3/pyflakes-3.3.2.tar.gz", hash = "sha256:6dfd61d87b97fba5dcfaaf781171ac16be16453be6d816147989e7f6e6a9576b", size = 64175 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/d4/d7/f1b7db88d8e4417c5d47adad627a93547f44bdc9028372dbd2313f34a855/pyflakes-3.2.0-py2.py3-none-any.whl", hash = "sha256:84b5be138a2dfbb40689ca07e2152deb896a65c3a3e24c251c5c62489568074a", size = 62725 },
+    { url = "https://files.pythonhosted.org/packages/15/40/b293a4fa769f3b02ab9e387c707c4cbdc34f073f945de0386107d4e669e6/pyflakes-3.3.2-py2.py3-none-any.whl", hash = "sha256:5039c8339cbb1944045f4ee5466908906180f13cc99cc9949348d10f82a5c32a", size = 63164 },
 ]
 
 [[package]]

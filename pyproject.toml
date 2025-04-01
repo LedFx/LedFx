@@ -47,7 +47,7 @@ readme = "README.rst"
 
 [dependency-groups]
 dev = [
-    "flake8<7.2.0,>=7.1.1",
+    "flake8<7.2.1,>=7.2.0",
     "black<25.1.1,>=25.1.0",
     "isort<6.0.2,>=6.0.1",
     "pre-commit<4.1.1,>=4.1.0",
