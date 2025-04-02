@@ -731,7 +731,7 @@ Fill all active virtuals with a single color in a defined envelope of timing
 
 Intended to allow integration of instantaneous game effects over all active virtual
 
-Repeated oneshot will overwrite the previous oneshot if has not finished
+Repeated oneshot to a virtual will add an extra oneshot if the previous ones have not finished
 
 - color: The color to which we wish to fill the virtual, any format supported, default is white
 - ramp: The time in ms over which to ramp the color from zero to full weight over the active  effect
