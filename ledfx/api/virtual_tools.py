@@ -96,22 +96,18 @@ class VirtualToolsEndpoint(RestEndpoint):
                     virtual.force_frame(parse_color(validate_color(color)))
 
         if tool == "oneshot":
-            color = parse_color(validate_color(data.get("color", "white")))
-            ramp = data.get("ramp", 0)
-            hold = data.get("hold", 0)
-            fade = data.get("fade", 0)
-            brightness = min(1, max(0, data.get("brightness", 1)))
-
-            # if all values are zero, we will now just ensure any current
-            # oneshot are cancelled
-
-            # iterate through all virtuals and apply oneshot
+            # Disable all oneshot Flash if put request is sent.
+            result = False
             for virtual_id in self._ledfx.virtuals:
                 virtual = self._ledfx.virtuals.get(virtual_id)
                 if virtual is not None:
-                    virtual.add_oneshot(
-                        Flash(color, ramp, hold, fade, brightness)
-                    )
+                    for oneshot in virtual.oneshots:
+                        if type(oneshot) == Flash:
+                            oneshot.active = False
+                            result = True # return True if there was at least one oneshot Flash to disable
+
+            if result is False:
+                return await self.invalid_request("oneshot was not found")
 
         effect_response = {}
         effect_response["tool"] = tool
