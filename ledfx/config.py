@@ -592,9 +592,7 @@ def migrate_config(old_config):
             device["type"].lower() == "artnet"
             and "device_repeat" in device["config"]
         ):
-            device["config"]["pixels_per_device"] = device["config"][
-                "device_repeat"
-            ]
+            device["config"]["pixels_per_device"] = device["config"].pop("device_repeat")
         device.pop("effect", None)
         new_config["devices"].append(device)
 
