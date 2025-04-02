@@ -40,6 +40,8 @@ jobs:
         run: uv python install ${{ matrix.python-version }}
 
       - name: Install LedFx
+        env:
+          CMAKE_POLICY_VERSION_MINIMUM: "3.5"
         run: |
           uv sync --all-extras --dev
       - name: Setup CI sound system

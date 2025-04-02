@@ -45,16 +45,16 @@ space-separated values from the `uint8` range (0-255).
 
             [255, 0, 0, 0, R, G, B]
 
-## Device Repeat
+## Multiple Devices
 
 It is common to have multiple Artnet devices on one universe with the
 same channel format. Each device requires its own pre- and post-amble.
-The `device_repeat` field can be set to the number of pixels assigned to
+The `pixels_per_device` field can be set to the number of pixels assigned to
 each device. LedFx will then consume that number of pixels serially,
 wrapping each set with pre- and post-amble sequences until all pixels
 are used. Any leftover pixels are ignored.
 
-If `device_repeat` is set to `0`, all pixels are sent to the first
+If `pixels_per_device` is set to `0`, all pixels are sent to the first
 device, wrapped with the pre- and post-amble sequences.
 
 ## Examples
@@ -63,23 +63,23 @@ device, wrapped with the pre- and post-amble sequences.
 -   **Pre-amble:** `255`
 -   **Post-amble:** `0, 0`
 
-With `device_repeat` set to `0`:
+With `pixels_per_device` set to `0`:
 
     [255, RGB1, RGB2, RGB3, RGB4, RGB5, RGB6, 0, 0]
 
-With `device_repeat` set to `1` (6 endpoints with 1 pixel each):
+With `pixels_per_device` set to `1` (6 endpoints with 1 pixel each):
 
     [255, RGB1, 0, 0, 255, RGB2, 0, 0, 255, RGB3, 0, 0, 255, RGB4, 0, 0, 255, RGB5, 0, 0, 255, RGB6, 0, 0]
 
-With `device_repeat` set to `2` (3 endpoints with 2 pixels each):
+With `pixels_per_device` set to `2` (3 endpoints with 2 pixels each):
 
     [255, RGB1, RGB2, 0, 0, 255, RGB3, RGB4, 0, 0, 255, RGB5, RGB6, 0, 0]
 
-With `device_repeat` set to `3` (2 endpoints with 3 pixels each):
+With `pixels_per_device` set to `3` (2 endpoints with 3 pixels each):
 
     [255, RGB1, RGB2, RGB3, 0, 0, 255, RGB4, RGB5, RGB6, 0, 0]
 
-With `device_repeat` set to `4` (1 endpoint with 4 pixels, last 2 pixels
+With `pixels_per_device` set to `4` (1 endpoint with 4 pixels, last 2 pixels
 dropped):
 
     [255, RGB1, RGB2, RGB3, RGB4, 0, 0]
