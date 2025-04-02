@@ -381,6 +381,8 @@ jobs:
         run: |
           uv venv
       - name: Install the wheel
+        env:
+          CMAKE_POLICY_VERSION_MINIMUM: "3.5"
         run: |
           uv pip install ledfx-*.whl
       - name: Run LedFx
@@ -413,6 +415,8 @@ jobs:
         run: |
           uv venv
       - name: Install the sdist
+        env:
+          CMAKE_POLICY_VERSION_MINIMUM: "3.5"
         run: |
           uv pip install ledfx-*.tar.gz
       - name: Run LedFx
