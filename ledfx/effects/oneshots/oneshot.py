@@ -32,6 +32,10 @@ class Oneshot(ABC):
     def active(self):
         return self._active
 
+    @active.setter
+    def active(self, active):
+        self._active = active
+
     @property
     def pixel_count(self):
         return self._pixel_count
