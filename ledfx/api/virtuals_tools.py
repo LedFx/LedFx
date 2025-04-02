@@ -76,7 +76,6 @@ class VirtualsToolsEndpoint(RestEndpoint):
             if result is False:
                 return await self.invalid_request("oneshot failed")
 
-
         response = {"status": "success", "tool": tool}
         return await self.bare_request_success(response)
 

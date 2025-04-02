@@ -104,7 +104,7 @@ class VirtualToolsEndpoint(RestEndpoint):
                     for oneshot in virtual.oneshots:
                         if type(oneshot) == Flash:
                             oneshot.active = False
-                            result = True # return True if there was at least one oneshot Flash to disable
+                            result = True  # return True if there was at least one oneshot Flash to disable
 
             if result is False:
                 return await self.invalid_request("oneshot was not found")
