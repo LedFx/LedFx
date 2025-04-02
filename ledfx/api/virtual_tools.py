@@ -102,7 +102,7 @@ class VirtualToolsEndpoint(RestEndpoint):
                 virtual = self._ledfx.virtuals.get(virtual_id)
                 if virtual is not None:
                     for oneshot in virtual.oneshots:
-                        if type(oneshot) == Flash:
+                        if isinstance(oneshot, Flash):
                             oneshot.active = False
                             result = True  # return True if there was at least one oneshot Flash to disable
 
