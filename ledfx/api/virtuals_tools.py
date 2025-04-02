@@ -152,21 +152,14 @@ class VirtualsToolsEndpoint(RestEndpoint):
                 )
 
         if tool == "oneshot":
-            color = parse_color(validate_color(data.get("color", "white")))
-            ramp = data.get("ramp", 0)
-            hold = data.get("hold", 0)
-            fade = data.get("fade", 0)
-            brightness = min(1, max(0, data.get("brightness", 1)))
-
-            # if all values are zero, we will now just ensure any current
-            # oneshot are cancelled
-
-            result = virtual.add_oneshot(
-                Flash(color, ramp, hold, fade, brightness)
-            )
+            result = False
+            for oneshot in virtual.oneshots:
+                if type(oneshot) == Flash:
+                    oneshot.active = False
+                    result = True  # return True if there was at least one oneshot Flash to disable
 
             if result is False:
-                return await self.invalid_request("oneshot failed")
+                return await self.invalid_request("oneshot was not found")
 
         if tool == "copy":
             # copy the config of the specified virtual instance to all virtuals listed in the target payload
