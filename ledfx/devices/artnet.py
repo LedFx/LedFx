@@ -1,4 +1,5 @@
 import logging
+import math
 
 import numpy as np
 import voluptuous as vol
@@ -46,6 +47,11 @@ class ArtNetDevice(NetworkedDevice):
                 default=0,
             ): vol.All(int, vol.Range(min=0)),
             vol.Optional(
+                "dmx_start_address",
+                description="The start address within the universe",
+                default=1,
+            ): vol.All(int, vol.Range(min=1, max=512)),
+            vol.Optional(
                 "even_packet_size",
                 description="Whether to use even packet size",
                 default=True,
@@ -74,6 +80,8 @@ class ArtNetDevice(NetworkedDevice):
             extract_uint8_seq(config.get("post_amble", "")), dtype=np.uint8
         )
         self.pixels_per_device = config.get("pixels_per_device", 0)
+        # first byte in dmx is 1, but we are zero based
+        self.dmx_start_address = config.get("dmx_start_address", 1) - 1
 
         # This assumes RGB - for RGBW devices this isn't gonna work.
         # TODO: Fix this when/if we ever want to move to RGBW outputs for devices
@@ -93,15 +101,19 @@ class ArtNetDevice(NetworkedDevice):
         self.data_max = self.num_devices * self.pixels_per_device
 
         self.channel_count = (
-            self.pre_amble.size
-            + (self.pixels_per_device * 3)
-            + self.post_amble.size
-        ) * self.num_devices
+            self.dmx_start_address
+            + (
+                self.pre_amble.size
+                + (self.pixels_per_device * 3)
+                + self.post_amble.size
+            )
+            * self.num_devices
+        )
 
         self.packet_size = self._config["packet_size"]
-        self.universe_count = (
-            self.channel_count + self.packet_size - 1
-        ) // self.packet_size
+        self.universe_count = math.ceil(
+            (self.channel_count) / self.packet_size
+        )
 
     def activate(self):
         if self._artnet:
@@ -160,7 +172,8 @@ class ArtNetDevice(NetworkedDevice):
                 axis=1,
             )
 
-            devices_data[:] = full_device_data.ravel()
+            devices_data[0 : self.dmx_start_address] = 0
+            devices_data[self.dmx_start_address :] = full_device_data.ravel()
 
             # TODO: Handle the data transformation outside of the loop and just use loop to set universe and send packets
 
