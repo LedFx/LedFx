@@ -100,20 +100,17 @@ class ArtNetDevice(NetworkedDevice):
         self.num_devices = self.pixel_count // self.pixels_per_device
         self.data_max = self.num_devices * self.pixels_per_device
 
+        total_pixels_per_device = (
+            self.pre_amble.size
+            + (self.pixels_per_device * 3)
+            + self.post_amble.size
+        )
         self.channel_count = (
-            self.dmx_start_address
-            + (
-                self.pre_amble.size
-                + (self.pixels_per_device * 3)
-                + self.post_amble.size
-            )
-            * self.num_devices
+            self.dmx_start_address + total_pixels_per_device * self.num_devices
         )
 
         self.packet_size = self._config["packet_size"]
-        self.universe_count = math.ceil(
-            (self.channel_count) / self.packet_size
-        )
+        self.universe_count = math.ceil(self.channel_count / self.packet_size)
 
     def activate(self):
         if self._artnet:
