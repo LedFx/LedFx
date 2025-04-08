@@ -438,7 +438,7 @@ class LedFxCore:
                 _LOGGER.warning(
                     f"startup_scene_id: {self.config['startup_scene_id']} not found."
                 )
-                
+
         if pause_all:
             # pause at the virtuals level
             self.virtuals.pause_all()
