@@ -82,10 +82,9 @@ def send_oneshot(color, ramp, hold, fade, brightness):
     except Exception as e:
         print(f"Post Request failed: {e}")
 
+
 def clear_oneshot():
-    payload = {
-        "tool": "oneshot"
-    }
+    payload = {"tool": "oneshot"}
 
     try:
         response = requests.put(
