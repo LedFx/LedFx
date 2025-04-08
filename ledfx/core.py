@@ -429,6 +429,16 @@ class LedFxCore:
         if not self.offline_mode:
             self.check_and_notify_updates()
 
+        if self.config["startup_scene_id"] != "":
+            if self.scenes.activate(self.config["startup_scene_id"]):
+                _LOGGER.info(
+                    f"startup_scene_id; {self.config['startup_scene_id']} activated."
+                )
+            else:
+                _LOGGER.warning(
+                    f"startup_scene_id: {self.config['startup_scene_id']} not found."
+                )
+                
         if pause_all:
             # pause at the virtuals level
             self.virtuals.pause_all()
