@@ -44,7 +44,7 @@ def on_v_press():
 def on_v_release():
     global v_pressed
     print("v bar released")
-    send_oneshot("red", 0, 0, 0, 1)
+    clear_oneshot()
     v_pressed = False
 
 
@@ -74,13 +74,26 @@ def send_oneshot(color, ramp, hold, fade, brightness):
     }
 
     try:
+        response = requests.post(
+            "http://127.0.0.1:8888/api/virtuals_tools",
+            json=payload,
+        )
+        print(f"Response: {response.status_code} - {response.text}")
+    except Exception as e:
+        print(f"Post Request failed: {e}")
+
+
+def clear_oneshot():
+    payload = {"tool": "oneshot"}
+
+    try:
         response = requests.put(
             "http://127.0.0.1:8888/api/virtuals_tools",
             json=payload,
         )
         print(f"Response: {response.status_code} - {response.text}")
     except Exception as e:
-        print(f"Request failed: {e}")
+        print(f"Put Request failed: {e}")
 
 
 def press_x():
