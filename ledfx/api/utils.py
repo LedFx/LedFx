@@ -54,6 +54,7 @@ PERMITTED_KEYS = {
         "melbank_collection",
         "flush_on_deactivate",
         "ui_brightness_boost",
+        "startup_scene_id",
     ),
 }
 
