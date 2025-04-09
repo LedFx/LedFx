@@ -94,7 +94,7 @@ class Scenes:
         scene = self.get(scene_id)
         if not scene:
             _LOGGER.error(f"No scene found with id: {scene_id}")
-            return
+            return False
 
         for virtual_id in scene["virtuals"]:
             virtual = self._ledfx.virtuals.get(virtual_id)
@@ -115,12 +115,13 @@ class Scenes:
             else:
                 virtual.clear_effect()
         self._ledfx.events.fire_event(SceneActivatedEvent(scene_id))
+        return True
 
     def destroy(self, scene_id):
         """Deletes a scene"""
 
         if not self._scenes.pop(scene_id, None):
-            _LOGGER.error("Cannot delete non-existent scene id: {scene_id}")
+            _LOGGER.error(f"Cannot delete non-existent scene id: {scene_id}")
         self._ledfx.events.fire_event(SceneDeletedEvent(scene_id))
         self.save_to_config()
 
