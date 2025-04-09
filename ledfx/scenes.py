@@ -121,7 +121,7 @@ class Scenes:
         """Deletes a scene"""
 
         if not self._scenes.pop(scene_id, None):
-            _LOGGER.error("Cannot delete non-existent scene id: {scene_id}")
+            _LOGGER.error(f"Cannot delete non-existent scene id: {scene_id}")
         self._ledfx.events.fire_event(SceneDeletedEvent(scene_id))
         self.save_to_config()
 
