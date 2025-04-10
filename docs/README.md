@@ -19,10 +19,18 @@ This is most simply built via VScode tasks as per [Docs in VScode](#docs-in-vsco
 ::::
 
 The docs dependancies are managed in the `pyproject.toml`
-file. To install the docs dependancies, run the following command:
+file. Run the following command in the LedFx source directory where pyproject.toml resides.
+
+To install the docs dependancies on top of the dev dependancies:
 
 ``` console
 uv sync --group docs
+```
+
+If you only want the docs dependancies then instead use:
+
+``` console
+uv sync --only-group docs
 ```
 
 To build the documentation, run the following commands
