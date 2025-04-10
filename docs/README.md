@@ -7,7 +7,7 @@ documentation follow the steps outlined below:
 We have now migrated document dependancy management and build to uv
 based.
 
-Building should be the same for all platforms. These instructions assume you already have a uv environment setup, as per normal development.
+Building should be the same for all platforms.
 
 :::: note
 ::: title
@@ -18,8 +18,11 @@ This is most simply built via VScode tasks as per [Docs in VScode](#docs-in-vsco
 
 ::::
 
-The docs dependancies are managed in the `pyproject.toml`
-file. Run the following command in the LedFx source directory where pyproject.toml resides.
+The docs dependancies are defined in the `pyproject.toml` file, and managed by the uv framework.
+
+See [uv installation guide](https://docs.astral.sh/uv/getting-started/installation/)
+
+Run the following command in the LedFx source directory where pyproject.toml resides.
 
 To install the docs dependancies on top of the dev dependancies:
 
