@@ -1,0 +1,30 @@
+services: 
+  ledfx:
+    image: ledfx
+    container_name: ledfx
+    restart: on-failure:3
+    network_mode: host
+    command: ["--offline", "--clear-effects"]
+    volumes:
+      - /path/to/ledfx-config:/home/ledfx/ledfx-config
+      - /path/to/ledfx/pulse:/home/ledfx/.config/pulse:rw # /path/to/ledfx/pulse should be with read write access for UID:GID=1000:1000
+  
+  
+  shairportforledfx:
+    image: mikebrady/shairport-sync:latest
+    container_name: shairportforledfx
+    restart: on-failure:3
+    depends_on:
+      ledfx:
+       condition: service_healthy
+    environment:
+      - PULSE_SERVER="unix:/tmp/pulseaudio.socket" # Path for PulseAudio socket
+      - PULSE_COOKIE="/tmp/cookie" # Path for PulseAudio cookie
+    volumes:
+      - /path/to/shairportforledfx/shairport-sync.conf:/etc/shairport-sync.conf # Customised Shairport Sync configuration file.
+      - /path/to/ledfx/pulse:/tmp # PulseAudio socket when using that backend
+    logging:
+      options:
+        max-size: "200k"
+        max-file: "10"
+    network_mode: host
