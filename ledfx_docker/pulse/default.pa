@@ -1,6 +1,6 @@
 # Replace the *entire* content of this file with these few lines and
 # read the comments
-#  
+#
 .fail
     # Set tsched=0 here if you experience glitchy playback. This will
     # revert back to interrupt-based scheduling and should fix it. Add tsched=1 to the end of below line
