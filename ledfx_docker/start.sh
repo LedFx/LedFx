@@ -1,5 +1,5 @@
 #!/bin/bash
-set -eux
+set -eu
 echo "Cleaning up old PulseAudio files..."
 rm -rf "$HOME/.config/pulse/"* || echo "Failed to clean Pulseaudio files. Check permissions on mounted folder."
 echo "Starting pulseaudio"

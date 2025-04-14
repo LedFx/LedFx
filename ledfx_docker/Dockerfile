@@ -24,7 +24,7 @@ ENV PATH="/app/.venv/bin:$PATH"
 ENV PYTHONUNBUFFERED=1
 ENV PULSE_SERVER="unix:$HOME/.config/pulse/pulseaudio.socket"
 ENV PULSE_COOKIE="$HOME/.config/pulse/cookie"
-COPY --from=build --chown=1000:1000 /app/.venv/ /app/.venv/
+COPY --from=build --chown=1000:1000 /app/.venv /app/.venv
 COPY ./ledfx_docker/pulse /etc/pulse
 COPY --chmod=755 --chown=1000:1000 ./ledfx_docker/start.sh $HOME/start.sh
 
@@ -38,6 +38,6 @@ HEALTHCHECK --interval=60s --timeout=3s --start-period=3s --retries=3 \
   CMD pactl info > /dev/null 2>&1 || exit 1
 EXPOSE 8888/tcp
 ENTRYPOINT ["/home/ledfx/start.sh"]
-LABEL LABEL maintainer="www.github.com/ledfx/ledfx"
+LABEL maintainer="www.github.com/ledfx/ledfx"
 #build with "docker build -t ledfx ."
 #Sourced from https://hub.docker.com/r/ssankur/ledfx for ledfx docker part and https://github.com/jessfraz for pulseaudio part and some ChatGPT assistance.
