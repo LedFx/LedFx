@@ -21,11 +21,11 @@ RUN apt update && apt install -y libportaudio2 pulseaudio --no-install-recommend
 
 FROM runner
 ENV HOME="/home/ledfx"
-ENV PATH="/ledfx/venv/bin:$PATH"
+ENV PATH="/app/.venv/bin:$PATH"
 ENV PYTHONUNBUFFERED=1
 ENV PULSE_SERVER="unix:$HOME/.config/pulse/pulseaudio.socket"
 ENV PULSE_COOKIE="$HOME/.config/pulse/cookie"
-COPY --from=build --chown=1000:1000 /app/.venv /ledfx/venv
+COPY --from=build --chown=1000:1000 /app/.venv /app/.venv
 COPY ./ledfx_docker/pulse /etc/pulse
 COPY --chmod=755 --chown=1000:1000 ./ledfx_docker/start.sh $HOME/start.sh
 
