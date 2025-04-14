@@ -10,7 +10,7 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Set up QEMU (emulation)
       uses: docker/setup-qemu-action@v3
@@ -28,7 +28,7 @@ jobs:
     - name: Build and push for amd64 + arm64
       uses: docker/build-push-action@v5
       with:
-        context: ./ledfx_docker
+        context: ./
         file: ./ledfx_docker/Dockerfile
         platforms: linux/amd64,linux/arm64
         push: true
