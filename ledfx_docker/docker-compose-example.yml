@@ -1,13 +1,17 @@
 services:
   ledfx:
-    image: ledfx
+    image: ghcr.io/ledfx/ledfx:latest
     container_name: ledfx
     restart: on-failure:3
     network_mode: host
-    command: ["--offline", "--clear-effects"]
+    command: ["--offline", "--clear-effects"] #optional command line arguments passed to LedFx
+    #environment:
+    #  - PULSECLIENTMODE=1 # Set to anything to use the PulseAudio client mode Ensure correct default source is set in host pulseaudio Eg using pactl set-default-source
     volumes:
-      - /path/to/ledfx-config:/home/ledfx/ledfx-config
-      - /path/to/ledfx/pulse:/home/ledfx/.config/pulse:rw # /path/to/ledfx/pulse should be with read write access for UID:GID=1000:1000
+      - /path/to/ledfx-config:/home/ledfx/ledfx-config:rw # Path to LedFx configuration files
+      - /path/to/ledfx/pulse:/home/ledfx/.config/pulse:rw # Necessary when running in pulseaudio server mode. /path/to/ledfx/pulse should be with read write access for UID:GID=1000:1000
+      #- /run/user/1000/pulse/native:/home/ledfx/.config/pulse/pulseaudio.socket # Necessary when running in pulseaudio client mode, to access host's PulseAudio socket
+      #- $HOME/.config/pulse/cookie:/home/ledfx/.config/pulse/cookie:ro # Necessary when running in pulseaudio client mode, to access host's PulseAudio cookie
 
 
   shairportforledfx:
@@ -16,7 +20,7 @@ services:
     restart: on-failure:3
     depends_on:
       ledfx:
-       condition: service_healthy
+       condition: service_healthy #so that the pulseaudio socket is available before being mounted here
     environment:
       - PULSE_SERVER="unix:/tmp/pulseaudio.socket" # Path for PulseAudio socket
       - PULSE_COOKIE="/tmp/cookie" # Path for PulseAudio cookie

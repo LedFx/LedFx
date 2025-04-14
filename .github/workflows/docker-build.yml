@@ -10,8 +10,14 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v3
-
+      uses: actions/checkout@v4
+    - name: Pass Is_Release variable to Dockerfile Args
+      run: |
+        if [[ "${{ startsWith(github.ref, 'refs/tags/') }}" == "true" ]]; then
+          echo "IS_RELEASE=true" >> "$GITHUB_ENV"
+        else
+          echo "IS_RELEASE=false" >> "$GITHUB_ENV"
+        fi
     - name: Set up QEMU (emulation)
       uses: docker/setup-qemu-action@v3
 
@@ -28,8 +34,13 @@ jobs:
     - name: Build and push for amd64 + arm64
       uses: docker/build-push-action@v5
       with:
-        context: ./ledfx_docker
+        context: ./
         file: ./ledfx_docker/Dockerfile
         platforms: linux/amd64,linux/arm64
         push: true
         tags: ghcr.io/${{ github.repository_owner }}/ledfx:latest
+        cache-from: type=registry,ref=ghcr.io/${{ github.repository_owner }}/ledfx:cache
+        cache-to: type=registry,ref=ghcr.io/${{ github.repository_owner }}/ledfx:cache,mode=max
+        build-args: |
+          GITHUB_SHA=${{ github.sha }}
+          IS_RELEASE=${{ env.IS_RELEASE }}
