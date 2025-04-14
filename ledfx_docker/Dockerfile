@@ -6,10 +6,10 @@ RUN apt update && apt install -y cmake gcc portaudio19-dev && rm -rf /var/lib/ap
 RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=uv.lock,target=uv.lock \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
-    uv sync --venv /ledfx/venv --frozen --no-install-project --no-dev
+    uv sync --frozen --no-install-project --no-dev
 COPY . /app
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --venv /ledfx/venv --frozen --no-dev \
+    uv sync --frozen --no-dev \
 	uv pip install /app/ledfx
 #RUN python -m venv /ledfx/venv && python -m pip install --no-cache-dir -U pip wheel setuptools
 #ENV PATH="/ledfx/venv/bin:$PATH"
@@ -25,7 +25,7 @@ ENV PATH="/ledfx/venv/bin:$PATH"
 ENV PYTHONUNBUFFERED=1
 ENV PULSE_SERVER="unix:$HOME/.config/pulse/pulseaudio.socket"
 ENV PULSE_COOKIE="$HOME/.config/pulse/cookie"
-COPY --from=build --chown=1000:1000 /ledfx/venv /ledfx/venv
+COPY --from=build --chown=1000:1000 /app/.venv /ledfx/venv
 COPY ./ledfx_docker/pulse /etc/pulse
 COPY --chmod=755 --chown=1000:1000 ./ledfx_docker/start.sh $HOME/start.sh
 
