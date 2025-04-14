@@ -1,10 +1,10 @@
 services:
   ledfx:
-    image: ledfx
+    image: ghcr.io/ledfx/ledfx:latest
     container_name: ledfx
     restart: on-failure:3
     network_mode: host
-    command: ["--offline", "--clear-effects"]
+    command: ["--offline", "--clear-effects"] #optional command line arguments passed to LedFx
     volumes:
       - /path/to/ledfx-config:/home/ledfx/ledfx-config
       - /path/to/ledfx/pulse:/home/ledfx/.config/pulse:rw # /path/to/ledfx/pulse should be with read write access for UID:GID=1000:1000
@@ -16,7 +16,7 @@ services:
     restart: on-failure:3
     depends_on:
       ledfx:
-       condition: service_healthy
+       condition: service_healthy #so that the pulseaudio socket is available before being mounted
     environment:
       - PULSE_SERVER="unix:/tmp/pulseaudio.socket" # Path for PulseAudio socket
       - PULSE_COOKIE="/tmp/cookie" # Path for PulseAudio cookie

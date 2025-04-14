@@ -11,10 +11,6 @@ COPY . /app
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev
 RUN uv pip install .
-#RUN python -m venv /ledfx/venv && python -m pip install --no-cache-dir -U pip wheel setuptools
-#ENV PATH="/ledfx/venv/bin:$PATH"
-#RUN python -m pip install --no-cache-dir ledfx
-
 
 FROM python:3.12-slim AS runner
 RUN apt update && apt install -y libportaudio2 pulseaudio --no-install-recommends && rm -rf /var/lib/apt/lists/*
@@ -28,13 +24,11 @@ ENV PULSE_COOKIE="$HOME/.config/pulse/cookie"
 COPY --from=build --chown=1000:1000 /app/.venv /app/.venv
 COPY ./ledfx_docker/pulse /etc/pulse
 COPY --chmod=755 --chown=1000:1000 ./ledfx_docker/start.sh $HOME/start.sh
-
 RUN useradd --create-home --home-dir "$HOME" --uid 1000 ledfx \
 	&& usermod -aG audio,pulse,pulse-access ledfx \
 	&& chown -R ledfx:ledfx "$HOME"
 WORKDIR "$HOME"
 USER ledfx
-
 HEALTHCHECK --interval=60s --timeout=3s --start-period=3s --retries=3 \
   CMD pactl info > /dev/null 2>&1 || exit 1
 EXPOSE 8888/tcp
