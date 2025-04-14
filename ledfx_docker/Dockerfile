@@ -35,4 +35,3 @@ EXPOSE 8888/tcp
 ENTRYPOINT ["/home/ledfx/start.sh"]
 LABEL maintainer="www.github.com/ledfx/ledfx"
 #build with "docker build -t ledfx ."
-#Sourced from https://hub.docker.com/r/ssankur/ledfx for ledfx docker part and https://github.com/jessfraz for pulseaudio part and some ChatGPT assistance.
