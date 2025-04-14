@@ -35,4 +35,3 @@ jobs:
         tags: ghcr.io/${{ github.repository_owner }}/ledfx:latest
         cache-from: type=registry,ref=ghcr.io/${{ github.repository_owner }}/ledfx:latest
         cache-to: type=registry,ref=ghcr.io/${{ github.repository_owner }}/ledfx:latest,mode=max
-        
