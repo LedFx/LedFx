@@ -18,6 +18,11 @@ jobs:
         else
           echo "IS_RELEASE=false" >> $GITHUB_ENV
         fi
+    - name: Install uv
+      uses: astral-sh/setup-uv@v5
+      with:
+        enable-cache: true
+        cache-dependency-glob: "uv.lock"
     - name: Get LedFx Version and Upload to Artifacts for later use
       id: ledfx-version
       run: |
