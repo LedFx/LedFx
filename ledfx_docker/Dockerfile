@@ -16,6 +16,10 @@ FROM python:3.12-slim AS runner
 RUN apt update && apt install -y libportaudio2 pulseaudio --no-install-recommends && rm -rf /var/lib/apt/lists/*
 
 FROM runner
+ARG GITHUB_SHA
+ARG IS_RELEASE
+ENV GITHUB_SHA=$GITHUB_SHA
+ENV IS_RELEASE=$IS_RELEASE
 ENV HOME="/home/ledfx"
 ENV PATH="/app/.venv/bin:$PATH"
 ENV PYTHONUNBUFFERED=1
