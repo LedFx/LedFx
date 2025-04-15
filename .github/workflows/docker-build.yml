@@ -18,7 +18,10 @@ jobs:
         else
           echo "IS_RELEASE=false" >> $GITHUB_ENV
         fi
-
+    - name: Get LedFx Version and Upload to Artifacts for later use
+      id: ledfx-version
+      run: |
+          echo ledfx-version=$(uv run python -c "import ledfx; print(ledfx.__version__, end='')") >> $GITHUB_ENV
     - name: Set up QEMU (emulation)
       uses: docker/setup-qemu-action@v3
 
@@ -39,7 +42,7 @@ jobs:
         file: ./ledfx_docker/Dockerfile
         platforms: linux/amd64,linux/arm64
         push: true
-        tags: ghcr.io/${{ github.repository_owner }}/ledfx:latest
+        tags: ghcr.io/${{ github.repository_owner }}/ledfx:latest,ghcr.io/${{ github.repository_owner }}/ledfx:${{ env.ledfx-version }}
         cache-from: type=registry,ref=ghcr.io/${{ github.repository_owner }}/ledfx:latest
         cache-to: type=registry,ref=ghcr.io/${{ github.repository_owner }}/ledfx:latest,mode=max
         build-args: |
