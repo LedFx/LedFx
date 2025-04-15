@@ -1,7 +1,8 @@
 #!/bin/bash
+${PULSEAUDIOCLIENT:-"0"}
 set -eu
 
-if [ -n "$PULSEAUDIOCLIENT" ]; then
+if [ "$PULSEAUDIOCLIENT"!="0" ]; then
   echo "Running in Pulseaudio client mode. Please ensure default source is set correctly."
 else
   echo "Running in pulseaudio server mode. Cleaning up old PulseAudio files..."
