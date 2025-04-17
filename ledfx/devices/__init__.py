@@ -669,7 +669,10 @@ class Devices(RegistryLoader):
                     existing_device.config["ip_address"] == device_ip
                     or existing_device.config["ip_address"] == resolved_dest
                 ):
-                    if device_type in ["e131", "artnet"] and existing_device.type in ["e131", "artnet"]:
+                    if device_type in [
+                        "e131",
+                        "artnet",
+                    ] and existing_device.type in ["e131", "artnet"]:
                         # check the universes for e131 and artnet, it might still be okay at a shared ip_address
                         # eg. for multi output controllers
                         if (
@@ -679,7 +682,10 @@ class Devices(RegistryLoader):
                             msg = f"Ignoring {device_ip}: Shares IP and starting universe with existing device {existing_device.name}"
                             _LOGGER.info(msg)
                             raise ValueError(msg)
-                    elif device_type == "openrgb" and existing_device.type == "openrgb":
+                    elif (
+                        device_type == "openrgb"
+                        and existing_device.type == "openrgb"
+                    ):
                         # check the OpenRGB ID for OpenRGB device, it might still be okay at a shared ip_address
                         # eg. for multi OpenRGB devices
                         if (
@@ -689,7 +695,9 @@ class Devices(RegistryLoader):
                             msg = f"Ignoring {device_ip}: Shares IP and OpenRGB ID with existing device {existing_device.name}"
                             _LOGGER.info(msg)
                             raise ValueError(msg)
-                    elif device_type == "osc" and existing_device.type == "osc":
+                    elif (
+                        device_type == "osc" and existing_device.type == "osc"
+                    ):
                         # Allow multiple OSC Server devices, but not on the same path + starting_addr combination
                         if (
                             device_config["path"]
