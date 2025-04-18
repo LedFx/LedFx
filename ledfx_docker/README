@@ -1,0 +1,5 @@
+The dockerimage uses uv as the package manager to install dependencies and uses uv pip install to install LedFx itself.
+The dockerimage also has pulseaudio server running as the ledfx user with UID:GID=1000:1000
+The pulseaudio socket is exposed without authentication and located at /home/ledfx/.config/pulse/pulseaudio.socket
+Please bear with the rudimentary effort as this is not my area of expertise, but I wished for a LedFx docker image released from LedFx developers during their package release. Quite a few docker images are available on dockerhub and they have been the source of knowhow for this image.
+Many thanks to https://hub.docker.com/r/ssankur/ledfx for ledfx docker part and https://github.com/jessfraz for pulseaudio part and some ChatGPT assistance.
