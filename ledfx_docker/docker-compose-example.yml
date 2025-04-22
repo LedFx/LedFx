@@ -21,7 +21,7 @@ services:
     command: -o pa #Use this only if you do not provide a custom shairport-sync.conf file with pulseaudio backend.
     depends_on:
       ledfx:
-       condition: service_healthy #so that the pulseaudio socket is available before being mounted here
+        condition: service_healthy #so that the pulseaudio socket is available before being mounted here
     environment:
       - PULSE_SERVER="unix:/tmp/pulseaudio.socket" # Path for PulseAudio socket
       - PULSE_COOKIE="/tmp/cookie" # Path for PulseAudio cookie

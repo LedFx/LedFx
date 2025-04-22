@@ -175,39 +175,34 @@ jobs:
     name: Build LedFx multiarch Docker image as edge build
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-    - name: Pass Is_Release variable to Dockerfile Args
-      run: |
-        if [[ "${{ startsWith(github.ref, 'refs/tags/') }}" == "true" ]]; then
-          echo "IS_RELEASE=true" >> "$GITHUB_ENV"
-        else
-          echo "IS_RELEASE=false" >> "$GITHUB_ENV"
-        fi
-    - name: Set up QEMU (emulation)
-      uses: docker/setup-qemu-action@v3
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
-    - name: Login to GitHub Container Registry
-      uses: docker/login-action@v3
-      with:
-        registry: ghcr.io
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-    - name: Build and push for amd64 + arm64
-      uses: docker/build-push-action@v5
-      with:
-        context: ./
-        file: ./ledfx_docker/Dockerfile
-        platforms: linux/amd64,linux/arm64
-        push: true
-        tags: |
-          ghcr.io/${{ github.repository_owner }}/ledfx:edge
-        cache-from: type=registry,ref=ghcr.io/${{ github.repository_owner }}/ledfx:cacheedge
-        cache-to: type=registry,ref=ghcr.io/${{ github.repository_owner }}/ledfx:cacheedge,mode=max
-        build-args: |
-          GITHUB_SHA=${{ github.sha }}
-          IS_RELEASE=${{ env.IS_RELEASE }}
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Pass Is_Release variable to Dockerfile Args
+        run: echo "IS_RELEASE=${{ startsWith(github.ref, 'refs/tags/') }}" >> $GITHUB_ENV
+      - name: Set up QEMU (emulation)
+        uses: docker/setup-qemu-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push for amd64 + arm64
+        uses: docker/build-push-action@v5
+        with:
+          context: ./
+          file: ./ledfx_docker/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/ledfx:edge
+          cache-from: type=registry,ref=ghcr.io/${{ github.repository_owner }}/ledfx:cacheedge
+          cache-to: type=registry,ref=ghcr.io/${{ github.repository_owner }}/ledfx:cacheedge,mode=max
+          build-args: |
+            GITHUB_SHA=${{ github.sha }}
+            IS_RELEASE=${{ env.IS_RELEASE }}
   docker-run:
     name: Test LedFx docker image
     runs-on: ubuntu-latest
@@ -509,17 +504,17 @@ jobs:
     needs: [docker-build, docker-run]
     if: startsWith(github.ref, 'refs/tags/')
     steps:
-    - name: Get LedFx Version
-      id: ledfx-version
-      run: |
-        echo "ledfx-version=$(docker run --rm ghcr.io/${{ github.repository_owner }}/ledfx:edge --version | sed 's/LedFx //')" >> $GITHUB_OUTPUT
-    
-    - name: Retag multi-arch image from 'edge' to 'latest'
-      run: |
-        docker buildx imagetools create \
-          -t ghcr.io/${{ github.repository_owner }}/ledfx:latest \
-          -t ghcr.io/${{ github.repository_owner }}/ledfx:${{ steps.ledfx-version.outputs.ledfx-version }} \
-          ghcr.io/${{ github.repository_owner }}/ledfx:edge
+      - name: Get LedFx Version
+        id: ledfx-version
+        run: |
+          echo "ledfx-version=$(docker run --rm ghcr.io/${{ github.repository_owner }}/ledfx:edge --version | sed 's/LedFx //')" >> $GITHUB_OUTPUT
+      
+      - name: Retag multi-arch image from 'edge' to 'latest'
+        run: |
+          docker buildx imagetools create \
+            -t ghcr.io/${{ github.repository_owner }}/ledfx:latest \
+            -t ghcr.io/${{ github.repository_owner }}/ledfx:${{ steps.ledfx-version.outputs.ledfx-version }} \
+            ghcr.io/${{ github.repository_owner }}/ledfx:edge
 
   notify-sentry:
     name: Notify Sentry of Release
