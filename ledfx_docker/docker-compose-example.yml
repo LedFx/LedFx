@@ -18,6 +18,7 @@ services:
     image: mikebrady/shairport-sync:latest
     container_name: shairportforledfx
     restart: on-failure:3
+    command: -o pa #Use this only if you do not provide a custom shairport-sync.conf file with pulseaudio backend.
     depends_on:
       ledfx:
        condition: service_healthy #so that the pulseaudio socket is available before being mounted here
@@ -25,10 +26,11 @@ services:
       - PULSE_SERVER="unix:/tmp/pulseaudio.socket" # Path for PulseAudio socket
       - PULSE_COOKIE="/tmp/cookie" # Path for PulseAudio cookie
     volumes:
-      - /path/to/shairportforledfx/shairport-sync.conf:/etc/shairport-sync.conf # Customised Shairport Sync configuration file.
+      #- /path/to/shairportforledfx/shairport-sync.conf:/etc/shairport-sync.conf # Customised Shairport Sync configuration file. Ensure pulseaudio backend is selected.
       - /path/to/ledfx/pulse:/tmp # PulseAudio socket when using that backend
     logging:
       options:
         max-size: "200k"
         max-file: "10"
     network_mode: host
+    #Check shairport-sync documentation for more options and how you could run multiple shairports on the same host if you want one shairport to output synchronized audio to a physical output.
