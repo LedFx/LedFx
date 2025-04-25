@@ -517,7 +517,7 @@ jobs:
       - name: Get LedFx Version
         id: ledfx-version
         run: |
-          echo "ledfx-version=$(docker run --rm ghcr.io/${{ github.repository_owner }}/ledfx:edge --version | sed 's/LedFx //')" >> $GITHUB_OUTPUT
+          echo "ledfx-version=$(docker run --rm --entrypoint ledfx ghcr.io/${{ github.repository_owner }}/ledfx:edge --version | sed 's/LedFx //')" >> $GITHUB_OUTPUT
       - name: Retag multi-arch image from 'edge' to 'latest'
         run: |
           docker buildx imagetools create \
