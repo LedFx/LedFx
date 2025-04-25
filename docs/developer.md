@@ -64,7 +64,13 @@ Note
 This assumes an apt based system such as ubuntu. If your system uses another package manager you should be able use it to get the required packages.
 ::::
 
-1. Install system dependencies via `apt install`:
+1. Within the shell in which you intend to install / build establish the follow build flag to ensure that GCC 14 does not throw errors on pre-exisitng weaknesses in the aubio library during build time.
+
+    ```console
+    $ export CFLAGS="-Wno-incompatible-function-pointer-types"
+    ```
+
+2. Install system dependencies via `apt install`:
 
     ```console
     $ sudo apt install libatlas3-base \
