@@ -16,22 +16,23 @@ FROM python:3.12-slim AS runner
 RUN apt update && apt install -y libportaudio2 pulseaudio --no-install-recommends && rm -rf /var/lib/apt/lists/*
 
 FROM runner
-ARG GITHUB_SHA
-ARG IS_RELEASE
-ENV GITHUB_SHA=$GITHUB_SHA
-ENV IS_RELEASE=$IS_RELEASE
 ENV HOME="/home/ledfx"
 ENV PATH="/app/.venv/bin:$PATH"
 ENV PYTHONUNBUFFERED=1
 ENV PULSE_SERVER="unix:$HOME/.config/pulse/pulseaudio.socket"
 ENV PULSE_COOKIE="$HOME/.config/pulse/cookie"
-COPY --from=build --chown=1000:1000 /app/.venv /app/.venv
+RUN groupadd --gid 1000 ledfx \
+  && useradd --uid 1000 --gid 1000 --create-home --home-dir "$HOME" ledfx \
+  && usermod -aG audio,pulse,pulse-access ledfx \
+  && chown -R ledfx:ledfx "$HOME"
+WORKDIR "$HOME"
 COPY ./ledfx_docker/pulse /etc/pulse
 COPY --chmod=755 --chown=1000:1000 ./ledfx_docker/start.sh $HOME/start.sh
-RUN useradd --create-home --home-dir "$HOME" --uid 1000 ledfx \
-	&& usermod -aG audio,pulse,pulse-access ledfx \
-	&& chown -R ledfx:ledfx "$HOME"
-WORKDIR "$HOME"
+COPY --from=build --chown=1000:1000 /app/.venv /app/.venv
+ARG GITHUB_SHA
+ARG IS_RELEASE
+ENV GITHUB_SHA=$GITHUB_SHA
+ENV IS_RELEASE=$IS_RELEASE
 USER ledfx
 HEALTHCHECK --interval=60s --timeout=3s --start-period=3s --retries=3 \
   CMD pactl info > /dev/null 2>&1 || exit 1
