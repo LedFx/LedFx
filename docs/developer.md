@@ -69,7 +69,7 @@ This assumes an apt based system such as ubuntu. If your system uses another pac
     ```console
     $ export CFLAGS="-Wno-incompatible-function-pointer-types"
     ```
-    
+
 2. Install system dependencies via `apt install`:
 
     ```console
