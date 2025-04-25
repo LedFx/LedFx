@@ -861,7 +861,7 @@ class Devices(RegistryLoader):
             return True
         return False
 
-    def is_osc_port_path_seperated(new_device, pre_device):
+    def is_osc_port_path_seperated(self, new_device, pre_device):
         """
         Check if the new device is osc port and path separated from the pre-existing device
         """
