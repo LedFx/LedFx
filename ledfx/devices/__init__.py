@@ -810,7 +810,6 @@ class Devices(RegistryLoader):
         Run tests to check if the devices are compatible with each other on a common IP
         This function will reach the end and return if no tests hard succeeded or hard failed
         Individual tests with will
-
             return False for a soft fail = coexistance was not covered by the test for success or hard fail
             return True for success = coexistance is viable and device should be created
             raise ValueError with suitable message for hard fail = coexistance is not viable and device should not be created
@@ -821,17 +820,17 @@ class Devices(RegistryLoader):
         # 2) common device types that have secondary checks that must be performed
         #    for example e131 / artnet universe or openrgb openrgb_id
         #    port number could also be considered here
-        if self.is_universe_seperated(new_device, pre_device):
+        if self.is_universe_separated(new_device, pre_device):
             return
-        if self.is_openrgb_id_seperated(new_device, pre_device):
+        if self.is_openrgb_id_separated(new_device, pre_device):
             return
-        if self.is_osc_port_path_seperated(new_device, pre_device):
+        if self.is_osc_port_path_separated(new_device, pre_device):
             return
-        if self.is_general_port_seperated(new_device, pre_device):
+        if self.is_general_port_separated(new_device, pre_device):
             return
         # no reason found to reject, return
 
-    def is_universe_seperated(self, new_device, pre_device):
+    def is_universe_separated(self, new_device, pre_device):
         """
         Check if the new device is universe separated from the pre-existing device
         """
@@ -840,13 +839,13 @@ class Devices(RegistryLoader):
             "artnet",
         ]:
             if new_device.config["universe"] == pre_device.config["universe"]:
-                msg = f"Ignoring {new_device.config['ip_address']}: Shares IP and starting universe with existing device {pre_device.name}"
+                msg = f"Ignoring {new_device.config['ip_address']}: Shares IP and port {new_device["port"]} and starting universe with existing device {pre_device.name}"
                 _LOGGER.info(msg)
                 raise ValueError(msg)
             return True
         return False
 
-    def is_openrgb_id_seperated(self, new_device, pre_device):
+    def is_openrgb_id_separated(self, new_device, pre_device):
         """
         Check if the new device is openrgb_id separated from the pre-existing device
         """
@@ -861,7 +860,7 @@ class Devices(RegistryLoader):
             return True
         return False
 
-    def is_osc_port_path_seperated(self, new_device, pre_device):
+    def is_osc_port_path_separated(self, new_device, pre_device):
         """
         Check if the new device is osc port and path separated from the pre-existing device
         """
@@ -878,7 +877,7 @@ class Devices(RegistryLoader):
             return True
         return False
 
-    def is_general_port_seperated(self, new_device, pre_device):
+    def is_general_port_separated(self, new_device, pre_device):
         """
         Check if the new device is port separated from the pre-existing device
         """
