@@ -217,6 +217,7 @@ jobs:
       - name: Copy log file from container to workspace
         run: |
           docker cp ledfx-run:/home/ledfx/debug_config/ledfx.log ${{ github.workspace }}/ledfx.log
+          docker rm ledfx-run || echo "Container ledfx-run already removed"
       - name: Attach LedFx test log
         uses: actions/upload-artifact@v4
         if: always()
