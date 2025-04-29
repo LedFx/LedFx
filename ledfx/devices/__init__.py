@@ -839,7 +839,7 @@ class Devices(RegistryLoader):
             "artnet",
         ]:
             if new_config["universe"] == pre_device.config["universe"]:
-                msg = f"Ignoring {new_config["ip_address"]}: Shares IP and port {new_config["port"]} and starting universe with existing device {pre_device.name}"
+                msg = f'Ignoring {new_config["ip_address"]}: Shares IP and port {new_config["port"]} and starting universe with existing device {pre_device.name}'
                 _LOGGER.info(msg)
                 raise ValueError(msg)
             return True
