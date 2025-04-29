@@ -669,7 +669,7 @@ class Devices(RegistryLoader):
                     existing_device.config["ip_address"] == device_ip
                     or existing_device.config["ip_address"] == resolved_dest
                 ):
-                    self.run_device_ip_tests(device_config, existing_device)
+                    self.run_device_ip_tests(device_type, device_config, existing_device)
 
         # If WLED device, get all the necessary config from the device itself
         if device_type == "wled":
@@ -805,7 +805,7 @@ class Devices(RegistryLoader):
                 await device.wled.flush_sync_settings()
                 device.update_config({"sync_mode": mode})
 
-    def run_device_ip_tests(self, new_device, pre_device):
+    def run_device_ip_tests(self, new_type, new_config, pre_device):
         """
         Run tests to check if the devices are compatible with each other on a common IP
         This function will reach the end and return if no tests hard succeeded or hard failed
@@ -820,70 +820,70 @@ class Devices(RegistryLoader):
         # 2) common device types that have secondary checks that must be performed
         #    for example e131 / artnet universe or openrgb openrgb_id
         #    port number could also be considered here
-        if self.is_universe_separated(new_device, pre_device):
+        if self.is_universe_separated(new_type, new_config, pre_device):
             return
-        if self.is_openrgb_id_separated(new_device, pre_device):
+        if self.is_openrgb_id_separated(new_type, new_config, pre_device):
             return
-        if self.is_osc_port_path_separated(new_device, pre_device):
+        if self.is_osc_port_path_separated(new_type, new_config, pre_device):
             return
-        if self.is_general_port_separated(new_device, pre_device):
+        if self.is_general_port_separated(new_type, new_config, pre_device):
             return
         # no reason found to reject, return
 
-    def is_universe_separated(self, new_device, pre_device):
+    def is_universe_separated(self,  new_type, new_config, pre_device):
         """
         Check if the new device is universe separated from the pre-existing device
         """
-        if new_device.type in ["e131", "artnet"] and pre_device.type in [
+        if new_type in ["e131", "artnet"] and pre_device.type in [
             "e131",
             "artnet",
         ]:
-            if new_device.config["universe"] == pre_device.config["universe"]:
-                msg = f"Ignoring {new_device.config['ip_address']}: Shares IP and port {new_device["port"]} and starting universe with existing device {pre_device.name}"
+            if new_config["universe"] == pre_device.config["universe"]:
+                msg = f"Ignoring {new_config["ip_address"]}: Shares IP and port {new_config["port"]} and starting universe with existing device {pre_device.name}"
                 _LOGGER.info(msg)
                 raise ValueError(msg)
             return True
         return False
 
-    def is_openrgb_id_separated(self, new_device, pre_device):
+    def is_openrgb_id_separated(self, new_type, new_config, pre_device):
         """
         Check if the new device is openrgb_id separated from the pre-existing device
         """
-        if new_device.type == "openrgb" and pre_device.type == "openrgb":
+        if new_type == "openrgb" and pre_device.type == "openrgb":
             if (
-                new_device.config["openrgb_id"]
+                new_config["openrgb_id"]
                 == pre_device.config["openrgb_id"]
             ):
-                msg = f"Ignoring {new_device.config['ip_address']}: Shares IP and OpenRGB ID with existing device {pre_device.name}"
+                msg = f"Ignoring {new_config['ip_address']}: Shares IP and OpenRGB ID with existing device {pre_device.name}"
                 _LOGGER.info(msg)
                 raise ValueError(msg)
             return True
         return False
 
-    def is_osc_port_path_separated(self, new_device, pre_device):
+    def is_osc_port_path_separated(self, new_type, new_config, pre_device):
         """
         Check if the new device is osc port and path separated from the pre-existing device
         """
-        if new_device.type == "osc" and pre_device.type == "osc":
-            if new_device.config["port"] == pre_device.config["port"]:
-                if new_device.config["path"] == pre_device.config["path"]:
+        if new_type == "osc" and pre_device.type == "osc":
+            if new_config["port"] == pre_device.config["port"]:
+                if new_config["path"] == pre_device.config["path"]:
                     if (
-                        new_device.config["starting_addr"]
+                        new_config["starting_addr"]
                         == pre_device.config["starting_addr"]
                     ):
-                        msg = f"Ignoring {new_device.config['ip_address']}: Shares IP, Port, Path and starting address with existing device {pre_device.name}"
+                        msg = f"Ignoring {new_config['ip_address']}: Shares IP, Port, Path and starting address with existing device {pre_device.name}"
                         _LOGGER.info(msg)
                         raise ValueError(msg)
             return True
         return False
 
-    def is_general_port_separated(self, new_device, pre_device):
+    def is_general_port_separated(self, new_type, new_config, pre_device):
         """
         Check if the new device is port separated from the pre-existing device
         """
-        if "port" in new_device.config and "port" in pre_device.config:
-            if new_device.config["port"] == pre_device.config["port"]:
-                msg = f"Ignoring {new_device.config['ip_address']}: Shares IP and port with existing device {pre_device.name}"
+        if "port" in new_config and "port" in pre_device.config:
+            if new_config["port"] == pre_device.config["port"]:
+                msg = f"Ignoring {new_config['ip_address']}: Shares IP and port with existing device {pre_device.name}"
                 _LOGGER.info(msg)
                 raise ValueError(msg)
             return True
