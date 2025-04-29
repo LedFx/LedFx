@@ -669,7 +669,9 @@ class Devices(RegistryLoader):
                     existing_device.config["ip_address"] == device_ip
                     or existing_device.config["ip_address"] == resolved_dest
                 ):
-                    self.run_device_ip_tests(device_type, device_config, existing_device)
+                    self.run_device_ip_tests(
+                        device_type, device_config, existing_device
+                    )
 
         # If WLED device, get all the necessary config from the device itself
         if device_type == "wled":
@@ -830,7 +832,7 @@ class Devices(RegistryLoader):
             return
         # no reason found to reject, return
 
-    def is_universe_separated(self,  new_type, new_config, pre_device):
+    def is_universe_separated(self, new_type, new_config, pre_device):
         """
         Check if the new device is universe separated from the pre-existing device
         """
@@ -850,10 +852,7 @@ class Devices(RegistryLoader):
         Check if the new device is openrgb_id separated from the pre-existing device
         """
         if new_type == "openrgb" and pre_device.type == "openrgb":
-            if (
-                new_config["openrgb_id"]
-                == pre_device.config["openrgb_id"]
-            ):
+            if new_config["openrgb_id"] == pre_device.config["openrgb_id"]:
                 msg = f"Ignoring {new_config['ip_address']}: Shares IP and OpenRGB ID with existing device {pre_device.name}"
                 _LOGGER.info(msg)
                 raise ValueError(msg)
