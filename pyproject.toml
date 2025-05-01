@@ -57,7 +57,7 @@ dev = [
     "pyinstaller<7.0.0,>=6.3.0",
 ]
 docs = [
-    "sphinx<8.1.4; python_version >= \"3.10\"",
+    "sphinx<8.2.4; python_version >= \"3.10\"",
     "sphinxcontrib-websupport==2.0.0; python_version >= \"3.10\"",
     "sphinxcontrib-httpdomain==1.8.1; python_version >= \"3.10\"",
     "sphinx-autodoc-typehints==2.5.0; python_version >= \"3.10\"",
