@@ -64,7 +64,7 @@ docs = [
     "sphinx-autodoc-annotation==1.0-1; python_version >= \"3.10\"",
     "sphinx-autobuild; python_version >= \"3.10\"",
     "sphinx-rtd-theme==3.0.2; python_version >= \"3.10\"",
-    "sphinx-toolbox==3.8.1; python_version >= \"3.10\"",
+    "sphinx-toolbox==3.9.0; python_version >= \"3.10\"",
     "rstcheck==6.2.4; python_version >= \"3.10\"",
     "sphinx-copybutton==0.5.2; python_version >= \"3.10\"",
     "myst-parser>=3.0.1",
