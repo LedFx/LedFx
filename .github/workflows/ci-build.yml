@@ -174,7 +174,7 @@ jobs:
         with:
           name: ledfx-log-${{ runner.os }}-${{ runner.arch }}-py${{ matrix.python-version }}.log
           path: ${{ github.workspace }}/debug_config/ledfx.log
-  
+
   docker-build:
     runs-on: ubuntu-latest
     env:
