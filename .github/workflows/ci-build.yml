@@ -1,5 +1,7 @@
 name: CI Build LedFx
-
+permissions:
+  contents: read
+  packages: write
 on:
   pull_request:
     branches:
