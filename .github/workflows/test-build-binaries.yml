@@ -1,7 +1,5 @@
 name: Build Frozen Binaries for Distribution
-permissions:
-  contents: read
-  packages: write
+
 on:
   push:
     paths-ignore:
