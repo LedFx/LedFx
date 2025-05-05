@@ -1,4 +1,5 @@
 import logging
+
 import numpy as np
 import voluptuous as vol
 from PIL import Image, ImageDraw
@@ -164,12 +165,8 @@ class Waterfall(Twod, GradientEffect):
         if (self.half_odd and h < 3) or (not self.half_odd and h < 4):
             return
 
-        region = self.history.crop(
-            (0, self.half_height, w, h - 1)
-        )
-        self.history.paste(
-            region, (0, self.half_height + 1)
-        )
+        region = self.history.crop((0, self.half_height, w, h - 1))
+        self.history.paste(region, (0, self.half_height + 1))
 
         # top half depend on odd/even height
         if self.half_odd:
