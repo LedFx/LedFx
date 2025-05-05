@@ -24,9 +24,9 @@ ledfx_presets = {
                 "max_vs_mean": False,
                 "mirror": False,
                 "rotate": 2,
-                "test": False
+                "test": False,
             },
-            "name": "acid"
+            "name": "acid",
         },
         "dark-sky": {
             "config": {
@@ -48,9 +48,9 @@ ledfx_presets = {
                 "max_vs_mean": False,
                 "mirror": False,
                 "rotate": 0,
-                "test": False
+                "test": False,
             },
-            "name": "Dark Sky"
+            "name": "Dark Sky",
         },
         "ocean-view": {
             "config": {
@@ -72,9 +72,9 @@ ledfx_presets = {
                 "max_vs_mean": False,
                 "mirror": False,
                 "rotate": 0,
-                "test": False
+                "test": False,
             },
-            "name": "Ocean View"
+            "name": "Ocean View",
         },
         "rgb": {
             "config": {
@@ -97,9 +97,9 @@ ledfx_presets = {
                 "max_vs_mean": False,
                 "mirror": False,
                 "rotate": 0,
-                "test": False
+                "test": False,
             },
-            "name": "RGB"
+            "name": "RGB",
         },
     },
     "digitalrain2d": {
