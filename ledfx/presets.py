@@ -3,6 +3,105 @@ import os
 from ledfx.consts import LEDFX_ASSETS_PATH
 
 ledfx_presets = {
+    "waterfall2d": {
+        "acid": {
+            "config": {
+                "advanced": False,
+                "background_brightness": 1.0,
+                "background_color": "#000000",
+                "bands": 64,
+                "blur": 0.0,
+                "brightness": 1.0,
+                "center": False,
+                "diag": False,
+                "drop_secs": 1,
+                "dump": False,
+                "flip": False,
+                "flip_horizontal": True,
+                "flip_vertical": False,
+                "gradient": "linear-gradient(90deg, #ff0000 0.00%,#ff7800 14.00%,#ffc800 28.00%,#00ff00 42.00%,#00c78c 56.00%,#0000ff 70.00%,#800080 84.00%,#ff00b2 98.00%)",
+                "gradient_roll": 2.4,
+                "max_vs_mean": False,
+                "mirror": False,
+                "rotate": 2,
+                "test": False
+            },
+            "name": "acid"
+        },
+        "dark-sky": {
+            "config": {
+                "advanced": False,
+                "background_brightness": 1.0,
+                "background_color": "#000000",
+                "bands": 64,
+                "blur": 0.0,
+                "brightness": 1.0,
+                "center": True,
+                "diag": False,
+                "drop_secs": 1.6,
+                "dump": False,
+                "flip": False,
+                "flip_horizontal": True,
+                "flip_vertical": False,
+                "gradient": "linear-gradient(90deg, #0c0c49 0.00%,#bcbcbc 100.00%)",
+                "gradient_roll": 0.0,
+                "max_vs_mean": False,
+                "mirror": False,
+                "rotate": 0,
+                "test": False
+            },
+            "name": "Dark Sky"
+        },
+        "ocean-view": {
+            "config": {
+                "advanced": False,
+                "background_brightness": 1.0,
+                "background_color": "#000000",
+                "bands": 64,
+                "blur": 0.0,
+                "brightness": 1.0,
+                "center": True,
+                "diag": False,
+                "drop_secs": 1.6,
+                "dump": False,
+                "flip": False,
+                "flip_horizontal": True,
+                "flip_vertical": False,
+                "gradient": "linear-gradient(90deg, rgb(0, 255, 255) 0%, rgb(0, 0, 255) 100%)",
+                "gradient_roll": 0.0,
+                "max_vs_mean": False,
+                "mirror": False,
+                "rotate": 0,
+                "test": False
+            },
+            "name": "Ocean View"
+        },
+        "rgb": {
+            "config": {
+                "advanced": False,
+                "background_brightness": 1.0,
+                "background_color": "#000000",
+                "bands": 64,
+                "blur": 0.0,
+                "brightness": 1.0,
+                "center": False,
+                "diag": False,
+                "drop_secs": 1,
+                "dump": False,
+                "flip": False,
+                "flip_horizontal": True,
+                "flip_vertical": False,
+                "frequency_range": "Lows (beat+bass)",
+                "gradient": "linear-gradient(90deg, #000000 0.00%,#f60000 35.00%,#00f61e 71.00%,#000df6 100.00%)",
+                "gradient_roll": 0.0,
+                "max_vs_mean": False,
+                "mirror": False,
+                "rotate": 0,
+                "test": False
+            },
+            "name": "RGB"
+        },
+    },
     "digitalrain2d": {
         "matrix-fat": {
             "config": {
