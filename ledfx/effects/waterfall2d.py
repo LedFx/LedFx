@@ -77,7 +77,11 @@ class Waterfall(Twod, GradientEffect):
         self.half_odd = bool(self.r_height % 2)
 
         # don't recreate the history image unless device size has changed
-        if self.history is None or self.o_height != self.r_height or self.o_width != self.r_width:
+        if (
+            self.history is None
+            or self.o_height != self.r_height
+            or self.o_width != self.r_width
+        ):
             self.history = Image.new("RGB", (self.r_width, self.r_height))
             self.h_draw = ImageDraw.Draw(self.history)
 
@@ -103,35 +107,41 @@ class Waterfall(Twod, GradientEffect):
         else:
             self.volumes = np.array([split.mean() for split in r_split])
 
-        self.new_row_colors = self.get_gradient_color_vectorized1d(self.volumes).astype(int)
+        self.new_row_colors = self.get_gradient_color_vectorized1d(
+            self.volumes
+        ).astype(int)
 
     def scroll_history_one_row(self):
-        w, h = self.history.size  
+        w, h = self.history.size
 
         # if there is no space to scroll just return
         if h < 2:
             return
 
         region = self.history.crop((0, 0, w, h - 1))  # All but bottom row
-        self.history.paste(region, (0, 1))           # Paste 1 row lower
+        self.history.paste(region, (0, 1))  # Paste 1 row lower
 
     def scroll_center_history_one_row(self):
         w, h = self.history.size
-        
+
         # if there is no space to scroll just return
-        if ( self.half_odd and h < 3 ) or ( not self.half_odd and h < 4 ):
+        if (self.half_odd and h < 3) or (not self.half_odd and h < 4):
             return
 
-        region = self.history.crop((0, self.half_height, w, h - 1))  # bottom half
-        self.history.paste(region, (0, self.half_height + 1)) # Paste 1 row lower
-        
+        region = self.history.crop(
+            (0, self.half_height, w, h - 1)
+        )  # bottom half
+        self.history.paste(
+            region, (0, self.half_height + 1)
+        )  # Paste 1 row lower
+
         # top half depend on odd/even height
         if self.half_odd:
             region = self.history.crop((0, 1, w, self.half_height + 1))
         else:
             region = self.history.crop((0, 1, w, self.half_height))
         self.history.paste(region, (0, 0))  # paste 1 row higher
-        
+
     def process_history(self):
         total_time = self.passed + self.drop_remainder
         ticks, self.drop_remainder = divmod(total_time, self.drop_tick)
@@ -146,9 +156,9 @@ class Waterfall(Twod, GradientEffect):
     def draw_normal(self):
         for i in range(self.bands):
             band_start, band_end = self.bandsx[i]
-            
+
             color = tuple(self.new_row_colors[i])
-            
+
             if self.center:
                 self.h_draw.line(
                     (band_start, self.half_height, band_end, self.half_height),
@@ -157,7 +167,12 @@ class Waterfall(Twod, GradientEffect):
 
                 if not self.half_odd:
                     self.h_draw.line(
-                        (band_start, self.half_height - 1, band_end, self.half_height - 1),
+                        (
+                            band_start,
+                            self.half_height - 1,
+                            band_end,
+                            self.half_height - 1,
+                        ),
                         fill=color,
                     )
 
@@ -169,7 +184,7 @@ class Waterfall(Twod, GradientEffect):
                 self.matrix.paste(self.history)
 
         self.matrix.paste(self.history)
-            
+
     def draw(self):
         if self.test:
             self.draw_test(self.m_draw)
