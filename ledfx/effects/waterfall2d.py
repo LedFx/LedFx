@@ -1,5 +1,4 @@
 import logging
-
 import numpy as np
 import voluptuous as vol
 from PIL import Image, ImageDraw
@@ -11,6 +10,12 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class Waterfall(Twod, GradientEffect):
+    """
+    A 2D waterfall effect for LED matrices. This effect creates a scrolling
+    waterfall-like visualization based on audio data, with configurable
+    frequency bands, scrolling speed, and gradient colors.
+    """
+
     NAME = "Waterfall"
     CATEGORY = "Matrix"
     HIDDEN_KEYS = Twod.HIDDEN_KEYS + []
@@ -32,27 +37,46 @@ class Waterfall(Twod, GradientEffect):
             ): bool,
             vol.Optional(
                 "bands",
-                description="Number of freq bands",
+                description="Number of frequency bands",
                 default=16,
             ): vol.All(vol.Coerce(int), vol.Range(min=1, max=64)),
             vol.Optional(
                 "drop_secs",
-                description="Seconds for the waterfall to drop from the top to bottom of matrix",
+                description="Seconds for the waterfall to drop from the top to bottom of the matrix",
                 default=3.0,
             ): vol.All(vol.Coerce(float), vol.Range(min=0.1, max=10.0)),
         }
     )
 
     def __init__(self, ledfx, config):
+        """
+        Initialize the Waterfall effect.
+
+        Args:
+            ledfx: The LedFx instance.
+            config: Configuration dictionary for the effect.
+        """
         super().__init__(ledfx, config)
 
     def on_activate(self, pixel_count):
+        """
+        Called when the effect is activated. Initializes variables.
+
+        Args:
+            pixel_count: The number of pixels in the matrix.
+        """
         self.r = np.zeros(pixel_count)
         self.o_width = 0
         self.o_height = 0
         self.history = None
 
     def config_updated(self, config):
+        """
+        Called when the effect configuration is updated.
+
+        Args:
+            config: The updated configuration dictionary.
+        """
         super().config_updated(config)
         self.bands = self._config["bands"]
         self.center = self._config["center"]
@@ -61,8 +85,10 @@ class Waterfall(Twod, GradientEffect):
         self.drop_secs = self._config["drop_secs"]
 
     def do_once(self):
+        """
+        Perform one-time setup tasks that depend on the pixel count.
+        """
         super().do_once()
-        # defer things that can't be done when pixel_count is not known
         self.bands = min(self.bands, self.pixel_count)
         self.bandsx = []
         for i in range(self.bands):
@@ -72,10 +98,8 @@ class Waterfall(Twod, GradientEffect):
             )
             self.bandsx.append([start, end])
         self.half_height = int(self.r_height // 2)
-        # half_odd should be false if even and true if odd
         self.half_odd = bool(self.r_height % 2)
 
-        # don't recreate the history image unless device size has changed
         if (
             self.history is None
             or self.o_height != self.r_height
@@ -90,16 +114,23 @@ class Waterfall(Twod, GradientEffect):
         self.drop_tick = self.drop_secs / self.r_height
 
         if self.center:
-            # scrolling from center will be half speed
             self.drop_tick = self.drop_tick * 2
         self.drop_remainder = 0.0
 
     def audio_data_updated(self, data):
-        # Grab the filtered melbank
+        """
+        Update the audio data for the effect.
+
+        Args:
+            data: The audio data to process.
+        """
         self.r = self.melbank(filtered=True, size=self.pixel_count)
         np.clip(self.r, 0, 1, out=self.r)
 
     def prep_frame_vars(self):
+        """
+        Prepare variables for rendering the current frame.
+        """
         r_split = np.array_split(self.r, self.bands)
         if self.max:
             self.volumes = np.array([split.max() for split in r_split])
@@ -111,16 +142,22 @@ class Waterfall(Twod, GradientEffect):
         ).astype(int)
 
     def scroll_history_one_row(self):
+        """
+        Scroll the history image down by one row.
+        """
         w, h = self.history.size
 
         # if there is no space to scroll just return
         if h < 2:
             return
 
-        region = self.history.crop((0, 0, w, h - 1))  # All but bottom row
-        self.history.paste(region, (0, 1))  # Paste 1 row lower
+        region = self.history.crop((0, 0, w, h - 1))
+        self.history.paste(region, (0, 1))
 
     def scroll_center_history_one_row(self):
+        """
+        Scroll the history image from the center by one row.
+        """
         w, h = self.history.size
 
         # if there is no space to scroll just return
@@ -129,19 +166,22 @@ class Waterfall(Twod, GradientEffect):
 
         region = self.history.crop(
             (0, self.half_height, w, h - 1)
-        )  # bottom half
+        )
         self.history.paste(
             region, (0, self.half_height + 1)
-        )  # Paste 1 row lower
+        )
 
         # top half depend on odd/even height
         if self.half_odd:
             region = self.history.crop((0, 1, w, self.half_height + 1))
         else:
             region = self.history.crop((0, 1, w, self.half_height))
-        self.history.paste(region, (0, 0))  # paste 1 row higher
+        self.history.paste(region, (0, 0))
 
     def process_history(self):
+        """
+        Process the history image by scrolling it based on elapsed time.
+        """
         total_time = self.passed + self.drop_remainder
         ticks, self.drop_remainder = divmod(total_time, self.drop_tick)
 
@@ -153,6 +193,9 @@ class Waterfall(Twod, GradientEffect):
                 self.scroll_history_one_row()
 
     def draw_normal(self):
+        """
+        Draw the current frame onto the history image.
+        """
         for i in range(self.bands):
             band_start, band_end = self.bandsx[i]
 
@@ -184,6 +227,9 @@ class Waterfall(Twod, GradientEffect):
         self.matrix.paste(self.history)
 
     def draw(self):
+        """
+        Render the current frame of the effect.
+        """
         if self.test:
             self.draw_test(self.m_draw)
 
