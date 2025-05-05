@@ -4,7 +4,6 @@ import numpy as np
 import voluptuous as vol
 from PIL import Image, ImageDraw
 
-from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.gradient import GradientEffect
 from ledfx.effects.twod import Twod
 
@@ -181,7 +180,6 @@ class Waterfall(Twod, GradientEffect):
                     (band_start, 0, band_end, 0),
                     fill=color,
                 )
-                self.matrix.paste(self.history)
 
         self.matrix.paste(self.history)
 
