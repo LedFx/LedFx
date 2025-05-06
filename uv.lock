@@ -769,15 +769,15 @@ wheels = [
 
 [[package]]
 name = "flux-led"
-version = "1.1.4"
+version = "1.2.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "async-timeout" },
     { name = "webcolors" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/e6/7d/1b3ac422cfed672712fdbff1e3117da0f61b81a7d9dffda921d33f2e7bc5/flux_led-1.1.4.tar.gz", hash = "sha256:e543a59f1f829e8632e7860a366990fbb4a075ea1f4ee4e01abc1a923463c80c", size = 94428, upload-time = "2025-03-11T20:57:09.173Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/99/ef/7149fb51c43e6787975c5423d98cbe2eab4fc582d54465ba95274efe322d/flux_led-1.2.0.tar.gz", hash = "sha256:3cfb68df243bdc9bdde6a91e9d05960949de70b8a76fdb799b70021c54380c3d", size = 96664, upload-time = "2025-04-05T20:04:30.511Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/53/56/39b34571e22fd6896b88cdb143c351ec8f1176317178ee83b8372e0f20e0/flux_led-1.1.4-py3-none-any.whl", hash = "sha256:0710d895a2425035052ee8d4097c9801733fbfc27d0ea99d5ec3fb63d421dceb", size = 73249, upload-time = "2025-03-11T20:57:07.629Z" },
+    { url = "https://files.pythonhosted.org/packages/f5/56/103dd2c23512873b371509977ecfd4a8a4ba6e3e464e1731cd859b8fdd0a/flux_led-1.2.0-py3-none-any.whl", hash = "sha256:3a55d9f6dfdab922900157e45844483c97ad04c8ef03d220d225f7a473ac66f3", size = 74314, upload-time = "2025-04-05T20:04:28.533Z" },
 ]
 
 [[package]]
