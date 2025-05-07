@@ -352,14 +352,22 @@ def generate_specific_api_response_types(
     device_type_literal_union: str,
 ) -> str:
     """Generates TS definitions for API responses."""
-    segment_item_type = "[string, number, number, boolean]"
+    segment_type_alias = """
+// Represents a segment mapping [deviceId, startPixel, endPixel, isReversed]
+export type Segment = [
+  device: string,
+  start: number,
+  end: number,
+  reverse: boolean
+];"""
     active_effect_type_str = f"\nexport interface ActiveEffectInVirtual {{\n  config: {specific_effect_config_union_name};\n  name: string;\n  type: {effect_type_literal_union};\n}}"
-    virtual_api_item_type_str = f"\n// Represents a single Virtual object\nexport interface VirtualApiResponseItem {{\n  config: {virtual_config_type_name};\n  id: string;\n  is_device: string | boolean; \n  auto_generated: boolean;\n  segments: {segment_item_type}[];\n  pixel_count: number;\n  active: boolean;\n  streaming: boolean;\n  last_effect?: {effect_type_literal_union} | null;\n  effect: Partial<ActiveEffectInVirtual>; \n}}"
+    virtual_api_item_type_str = f"\n// Represents a single Virtual object\nexport interface VirtualApiResponseItem {{\n  config: {virtual_config_type_name};\n  id: string;\n  is_device: string | boolean; \n  auto_generated: boolean;\n  segments: Segment[];\n  pixel_count: number;\n  active: boolean;\n  streaming: boolean;\n  last_effect?: {effect_type_literal_union} | null;\n  effect: Partial<ActiveEffectInVirtual>; \n}}"  # Changed segments type
     get_virtuals_response_type_str = '\n// Response for GET /api/virtuals\nexport interface GetVirtualsApiResponse {\n  status: "success" | "error";\n  virtuals: Record<string, VirtualApiResponseItem>;\n  paused: boolean;\n  message?: string;\n}'
     get_single_virtual_response_type_str = '\n// Raw response for GET /api/virtuals/{{virtual_id}}\nexport interface GetSingleVirtualApiResponse {\n  status: "success" | "error";\n  [virtualId: string]: VirtualApiResponseItem | string | undefined; \n  message?: string;\n}\n\n// Transformed type for GET /api/virtuals/{virtual_id}\nexport type FetchedVirtualResult = \n  | { status: "success"; data: VirtualApiResponseItem }\n  | { status: "error"; message: string };\n'
-    device_api_item_type_str = f"\n// Represents a single Device object\nexport interface Device {{\n  config: {specific_device_config_union_name};\n  id: string;\n  type: {device_type_literal_union};\n  online: boolean;\n  virtuals: string[]; \n  active_virtuals: string[]; \n}}"  # <-- Use DeviceType Union
+    device_api_item_type_str = f"\n// Represents a single Device object\nexport interface Device {{\n  config: {specific_device_config_union_name};\n  id: string;\n  type: {device_type_literal_union};\n  online: boolean;\n  virtuals: string[]; \n  active_virtuals: string[]; \n}}"
     get_devices_response_type_str = '\n// Response for GET /api/devices\nexport interface GetDevicesApiResponse {\n  status: "success" | "error";\n  devices: Record<string, Device>;\n  message?: string;\n}'
     return (
+        f"{segment_type_alias}\n\n"
         f"{active_effect_type_str}\n\n{virtual_api_item_type_str}\n\n"
         f"{get_virtuals_response_type_str}\n\n{get_single_virtual_response_type_str}\n\n"
         f"{device_api_item_type_str}\n\n{get_devices_response_type_str}\n\n"
