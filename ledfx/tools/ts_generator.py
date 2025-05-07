@@ -355,10 +355,10 @@ def generate_specific_api_response_types(
     segment_item_type = "[string, number, number, boolean]"
     active_effect_type_str = f"\nexport interface ActiveEffectInVirtual {{\n  config: {specific_effect_config_union_name};\n  name: string;\n  type: {effect_type_literal_union};\n}}"
     virtual_api_item_type_str = f"\n// Represents a single Virtual object\nexport interface VirtualApiResponseItem {{\n  config: {virtual_config_type_name};\n  id: string;\n  is_device: string | boolean; \n  auto_generated: boolean;\n  segments: {segment_item_type}[];\n  pixel_count: number;\n  active: boolean;\n  streaming: boolean;\n  last_effect?: {effect_type_literal_union} | null;\n  effect: Partial<ActiveEffectInVirtual>; \n}}"
-    get_virtuals_response_type_str = '\n// Response for GET /api/virtuals\nexport interface GetVirtualsApiResponse {{\n  status: "success" | "error";\n  virtuals: Record<string, VirtualApiResponseItem>;\n  paused: boolean;\n  message?: string;\n}}'
-    get_single_virtual_response_type_str = '\n// Raw response for GET /api/virtuals/{{virtual_id}}\nexport interface GetSingleVirtualApiResponse {{\n  status: "success" | "error";\n  [virtualId: string]: VirtualApiResponseItem | string | undefined; \n  message?: string;\n}}\n\n// Transformed type for GET /api/virtuals/{{virtual_id}}\nexport type FetchedVirtualResult = \n  | {{ status: "success"; data: VirtualApiResponseItem }}\n  | {{ status: "error"; message: string }};\n'
+    get_virtuals_response_type_str = '\n// Response for GET /api/virtuals\nexport interface GetVirtualsApiResponse {\n  status: "success" | "error";\n  virtuals: Record<string, VirtualApiResponseItem>;\n  paused: boolean;\n  message?: string;\n}'
+    get_single_virtual_response_type_str = '\n// Raw response for GET /api/virtuals/{{virtual_id}}\nexport interface GetSingleVirtualApiResponse {\n  status: "success" | "error";\n  [virtualId: string]: VirtualApiResponseItem | string | undefined; \n  message?: string;\n}\n\n// Transformed type for GET /api/virtuals/{virtual_id}\nexport type FetchedVirtualResult = \n  | { status: "success"; data: VirtualApiResponseItem }\n  | { status: "error"; message: string };\n'
     device_api_item_type_str = f"\n// Represents a single Device object\nexport interface Device {{\n  config: {specific_device_config_union_name};\n  id: string;\n  type: {device_type_literal_union};\n  online: boolean;\n  virtuals: string[]; \n  active_virtuals: string[]; \n}}"  # <-- Use DeviceType Union
-    get_devices_response_type_str = '\n// Response for GET /api/devices\nexport interface GetDevicesApiResponse {{\n  status: "success" | "error";\n  devices: Record<string, Device>;\n  message?: string;\n}}'
+    get_devices_response_type_str = '\n// Response for GET /api/devices\nexport interface GetDevicesApiResponse {\n  status: "success" | "error";\n  devices: Record<string, Device>;\n  message?: string;\n}'
     return (
         f"{active_effect_type_str}\n\n{virtual_api_item_type_str}\n\n"
         f"{get_virtuals_response_type_str}\n\n{get_single_virtual_response_type_str}\n\n"
@@ -659,7 +659,7 @@ def generate_all_types_string_dual_effect() -> str:
     for prop_name in sorted(all_effect_properties.keys()):
         ts_type = all_effect_properties[prop_name]
         output_ts_string += f"  {prop_name}?: {ts_type};\n"
-    output_ts_string += "}}\n\n"
+    output_ts_string += "}\n\n"
 
     # --- 6. Generate API Response specific types ---
     virtual_config_name_to_use = (
@@ -680,16 +680,16 @@ def generate_all_types_string_dual_effect() -> str:
         specific_effect_config_union_name,
         device_union_name_to_use,
         effect_type_literal_union,
-        device_type_literal_union,  # Pass the device type union
+        device_type_literal_union,
     )
 
     # --- 7. Generate Convenience Type Aliases ---
     output_ts_string += (
         "// Convenience Type Aliases using the Universal Effect Config\n"
     )
-    output_ts_string += f"export type Effect = Omit<Omit<ActiveEffectInVirtual, 'config'> & {{ config: {universal_effect_config_name} }}, 'type'> & {{ type?: {effect_type_literal_union} | null }};\n"
-    output_ts_string += f"export type Virtual = Omit<VirtualApiResponseItem, 'effect' | 'last_effect'> & {{ effect: Partial<Effect>; last_effect?: {effect_type_literal_union} | null }};\n"
-    output_ts_string += "export type Virtuals = Omit<GetVirtualsApiResponse, 'virtuals'> & {{ virtuals: Record<string, Virtual> }};\n"
+    output_ts_string += f"export type Effect = Omit<Omit<ActiveEffectInVirtual, 'config'> & {{ config: {universal_effect_config_name} }}, 'type'> & {{ type?: {effect_type_literal_union} }};\n"
+    output_ts_string += f"export type Virtual = Omit<VirtualApiResponseItem, 'effect' | 'last_effect'> & {{ effect: Partial<Effect>; last_effect?: {effect_type_literal_union} }};\n"
+    output_ts_string += "export type Virtuals = Omit<GetVirtualsApiResponse, 'virtuals'> & { virtuals: Record<string, Virtual> };\n"
     output_ts_string += "\n"
 
     script_logger.info("TypeScript generation finished.")
