@@ -364,11 +364,11 @@ export type Segment = [
     virtual_api_item_type_str = f"\n// Represents a single Virtual object\nexport interface VirtualApiResponseItem {{\n  config: {virtual_config_type_name};\n  id: string;\n  is_device: string | boolean; \n  auto_generated: boolean;\n  segments: Segment[];\n  pixel_count: number;\n  active: boolean;\n  streaming: boolean;\n  last_effect?: {effect_type_literal_union} | null;\n  effect: Partial<ActiveEffectInVirtual>; \n}}"  # Changed segments type
     get_virtuals_response_type_str = '\n// Response for GET /api/virtuals\nexport interface GetVirtualsApiResponse {\n  status: "success" | "error";\n  virtuals: Record<string, VirtualApiResponseItem>;\n  paused: boolean;\n  message?: string;\n}'
     get_single_virtual_response_type_str = '\n// Raw response for GET /api/virtuals/{{virtual_id}}\nexport interface GetSingleVirtualApiResponse {\n  status: "success" | "error";\n  [virtualId: string]: VirtualApiResponseItem | string | undefined; \n  message?: string;\n}\n\n// Transformed type for GET /api/virtuals/{virtual_id}\nexport type FetchedVirtualResult = \n  | { status: "success"; data: VirtualApiResponseItem }\n  | { status: "error"; message: string };\n'
-    device_api_item_type_str = f"\n// Represents a single Device object\nexport interface Device {{\n  config: {specific_device_config_union_name};\n  id: string;\n  type: {device_type_literal_union};\n  online: boolean;\n  virtuals: string[]; \n  active_virtuals: string[]; \n}}"
-    get_devices_response_type_str = '\n// Response for GET /api/devices\nexport interface GetDevicesApiResponse {\n  status: "success" | "error";\n  devices: Record<string, Device>;\n  message?: string;\n}'
+    device_api_item_type_str = f"\n// Represents a single Device object using specific config types\nexport interface DeviceInfo {{\n  config: {specific_device_config_union_name};\n  id: string;\n  type: {device_type_literal_union};\n  online: boolean;\n  virtuals: string[]; \n  active_virtuals: string[]; \n}}"
+    get_devices_response_type_str = '\n// Response for GET /api/devices using specific config types\nexport interface GetDevicesApiResponse {\n  status: "success" | "error";\n  devices: Record<string, DeviceInfo>;\n  message?: string;\n}'
+
     return (
-        f"{segment_type_alias}\n\n"
-        f"{active_effect_type_str}\n\n{virtual_api_item_type_str}\n\n"
+        f"{segment_type_alias}\n\n{active_effect_type_str}\n\n{virtual_api_item_type_str}\n\n"
         f"{get_virtuals_response_type_str}\n\n{get_single_virtual_response_type_str}\n\n"
         f"{device_api_item_type_str}\n\n{get_devices_response_type_str}\n\n"
     )
@@ -570,6 +570,94 @@ def generate_all_types_string_dual_effect() -> str:
         )
         output_ts_string += f"export type {device_config_union_name} = {base_device_config_interface_name};\n\n"
 
+    # --- 2.5 Collect ALL Device Properties for Universal Interface ---
+    all_device_properties = {}  # prop_name -> basic_ts_type
+    script_logger.info(
+        f"Collecting properties from {len(device_registry)} device types for universal interface..."
+    )
+
+    # Include base schema properties first
+    if base_device_schema_object and isinstance(
+        base_device_schema_object.schema, dict
+    ):
+        for key_marker, validator in base_device_schema_object.schema.items():
+            key_schema_obj = (
+                key_marker.schema
+                if isinstance(key_marker, (vol.Required, vol.Optional))
+                else key_marker
+            )
+            key_name_str = str(key_schema_obj)
+            ts_property_name = key_name_str
+            basic_ts_type = voluptuous_validator_to_ts_type(
+                validator, for_universal=True
+            )
+            all_device_properties[ts_property_name] = basic_ts_type
+
+    # Add/overwrite with specific properties
+    for device_type_str, device_class in device_registry.items():
+        device_schema_to_use = getattr(device_class, "CONFIG_SCHEMA", None)
+        if callable(device_schema_to_use) and not isinstance(
+            device_schema_to_use, vol.Schema
+        ):
+            try:
+                device_schema_to_use = device_schema_to_use()
+            except Exception as e:
+                device_schema_to_use = None
+
+        if isinstance(device_schema_to_use, vol.Schema) and isinstance(
+            device_schema_to_use.schema, dict
+        ):
+            for key_marker, validator in device_schema_to_use.schema.items():
+                key_schema_obj = (
+                    key_marker.schema
+                    if isinstance(key_marker, (vol.Required, vol.Optional))
+                    else key_marker
+                )
+                key_name_str = str(key_schema_obj)
+                ts_property_name = key_name_str
+                # Skip base keys already processed? Optional, overwriting is okay too.
+                # if ts_property_name in base_schema_keys: continue
+
+                basic_ts_type = voluptuous_validator_to_ts_type(
+                    validator, for_universal=True
+                )
+                if ts_property_name in all_device_properties:
+                    # Fix: Check against all_DEVICE_properties, not all_EFFECT_properties
+                    if (
+                        all_device_properties[ts_property_name]
+                        != basic_ts_type
+                        and all_device_properties[ts_property_name] != "any"
+                        and basic_ts_type != "any"
+                    ):
+                        script_logger.debug(
+                            f"Widening universal device type for '{ts_property_name}'."
+                        )
+                        all_device_properties[ts_property_name] = (
+                            "any"  # Widen to any on conflict
+                        )
+                else:
+                    all_device_properties[ts_property_name] = basic_ts_type
+
+    # --- Generate Universal Device Config Interface ---
+    universal_device_config_name = "DeviceConfig"  # Use simple name
+    output_ts_string += "// Universal interface merging all possible *optional* device properties (using snake_case)\n"
+    output_ts_string += f"export interface {universal_device_config_name} {{\n"
+    # Add 'type' property using the DeviceType union we generated
+    output_ts_string += (
+        "  type?: DeviceType; // Optional device type identifier\n"
+    )
+
+    for prop_name in sorted(all_device_properties.keys()):
+        # Avoid adding 'type' again if it was somehow in a schema
+        if prop_name == "type":
+            continue
+        ts_type = all_device_properties[prop_name]
+        output_ts_string += "  /** Property from the universal set. */\n"
+        output_ts_string += (
+            f"  {prop_name}?: {ts_type};\n"  # snake_case, optional
+        )
+
+    output_ts_string += "}\n\n"
     # --- 3. Generate SPECIFIC Effect Config Schemas & EffectType Union ---
     all_effect_config_interface_names = []
     all_effect_type_strings = sorted(effect_registry.keys())
@@ -692,12 +780,20 @@ def generate_all_types_string_dual_effect() -> str:
     )
 
     # --- 7. Generate Convenience Type Aliases ---
-    output_ts_string += (
-        "// Convenience Type Aliases using the Universal Effect Config\n"
-    )
-    output_ts_string += f"export type Effect = Omit<Omit<ActiveEffectInVirtual, 'config'> & {{ config: {universal_effect_config_name} }}, 'type'> & {{ type?: {effect_type_literal_union} }};\n"
-    output_ts_string += f"export type Virtual = Omit<VirtualApiResponseItem, 'effect' | 'last_effect'> & {{ effect: Partial<Effect>; last_effect?: {effect_type_literal_union} }};\n"
+
+    output_ts_string += "// Convenience Type Aliases using Universal Configs\n"
+    # Effect alias (uses universal EffectConfig)
+    output_ts_string += "export type Effect = Omit<Omit<ActiveEffectInVirtual, 'config'> & { config: EffectConfig }, 'type'> & { type?: EffectType | null };\n"
+    # Virtual alias (uses universal Effect alias)
+    output_ts_string += "export type Virtual = Omit<VirtualApiResponseItem, 'effect' | 'last_effect'> & { effect: Partial<Effect>; last_effect?: EffectType | null };\n"
+    # Virtuals alias (uses universal Virtual alias)
     output_ts_string += "export type Virtuals = Omit<GetVirtualsApiResponse, 'virtuals'> & { virtuals: Record<string, Virtual> };\n"
+    # Device alias (uses universal DeviceConfig) - RENAME DeviceApiResponseItem to DeviceInfo first
+    # Let's rename DeviceApiResponseItem to DeviceInfo in generate_specific_api_response_types
+    # Then create the convenient Device alias here:
+    output_ts_string += f"export type Device = Omit<DeviceInfo, 'config'> & {{ config: {universal_device_config_name} }};\n"  # Uses universal DeviceConfig
+    # Devices alias (uses universal Device alias)
+    output_ts_string += "export type Devices = Omit<GetDevicesApiResponse, 'devices'> & { devices: Record<string, Device> };\n"
     output_ts_string += "\n"
 
     script_logger.info("TypeScript generation finished.")
