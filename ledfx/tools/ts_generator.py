@@ -652,7 +652,6 @@ def generate_all_types_string_dual_effect() -> str:
         if prop_name == "type":
             continue
         ts_type = all_device_properties[prop_name]
-        output_ts_string += "  /** Property from the universal set. */\n"
         output_ts_string += (
             f"  {prop_name}?: {ts_type};\n"  # snake_case, optional
         )
