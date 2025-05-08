@@ -36,10 +36,8 @@ class GenerateTypesEndpoint(RestEndpoint):
             _LOGGER.exception(
                 "CRITICAL Error occurred during TypeScript generation via API."
             )
-            error_body = f"// Generation Error!\n// {type(e).__name__}: {e}\n// Traceback:\n"
-            error_body += "\n".join(
-                [f"// {line}" for line in traceback.format_exc().splitlines()]
-            )
             return web.Response(
-                text=error_body, content_type="text/plain", status=500
+                text="An internal error occurred while generating TypeScript types. Please contact the administrator.",
+                content_type="text/plain",
+                status=500,
             )

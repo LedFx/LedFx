@@ -460,8 +460,8 @@ def generate_typescript_types() -> str:
         else:
             script_logger.error("Could not find/call Effect.registry().")
     except Exception as e:
-        script_logger.error(f"Failed imports/registry access: {e}")
-        return f"// Error accessing registries: {e}"
+        script_logger.exception("Failed imports/registry access.")
+        return "// Error accessing registries. Please check the server logs for more details."
     if not device_registry:
         script_logger.warning("Device registry empty!")
     if not effect_registry:
