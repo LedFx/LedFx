@@ -15,6 +15,7 @@ logging.basicConfig(
 
 # --- Helper Functions ---
 
+
 def get_class_name_for_ts(name_parts):
     """Helper to create a PascalCase TS interface name from snake_case or other parts."""
     if isinstance(name_parts, str):
