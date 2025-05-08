@@ -15,7 +15,6 @@ logging.basicConfig(
 
 # --- Helper Functions ---
 
-
 def get_class_name_for_ts(name_parts):
     """Helper to create a PascalCase TS interface name from snake_case or other parts."""
     if isinstance(name_parts, str):
@@ -300,20 +299,16 @@ def generate_ts_interface_from_voluptuous(
                 is_computed = False
                 if callable(default_value_attr):
                     try:
-                        # Try calling it - maybe it's a factory like next()
                         potential_value = default_value_attr()
-                        # If calling returns something different and not a function, use it
                         if (
                             not callable(potential_value)
                             and potential_value is not default_value_attr
                         ):
                             actual_default = potential_value
                         else:
-                            # Calling didn't help or returned a function, mark as computed
                             is_computed = True
                     except Exception:
-                        # Calling failed, assume the original was the intended (maybe complex) default representation
-                        is_computed = True  # Mark as computed if call fails
+                        is_computed = True
 
                 if is_computed:
                     js_doc_parts.append("* @default (computed)")
@@ -335,7 +330,6 @@ def generate_ts_interface_from_voluptuous(
             if isinstance(validator, vol.All)
             else [validator]
         )
-        # ... (constraint extraction logic - unchanged) ...
         for sub_validator in constraint_validators:
             if isinstance(sub_validator, vol.Range):
                 if sub_validator.min is not None:
@@ -435,7 +429,7 @@ export interface Effect {{
 
 
 # --- Main Generation Function ---
-def generate_all_types_string_dual_effect() -> str:
+def generate_typescript_types() -> str:
     # --- Access Registries ---
     device_registry = {}
     effect_registry = {}
@@ -851,18 +845,9 @@ def generate_all_types_string_dual_effect() -> str:
     # --- 7. Generate Convenience Type Aliases ---
 
     output_ts_string += "// Convenience Type Aliases using Universal Configs\n"
-    # Effect alias
-    # output_ts_string += "/**\n * Convenience type for effect details using the universal EffectConfig.\n * @category General\n */\n"
-    # output_ts_string += "export type Effect = Omit<Omit<EffectSpecific, 'config'> & { config: EffectConfig | null }, 'type'> & { type?: EffectType | null };\n"
-    # Virtual alias
-    # output_ts_string += "/**\n * Convenience type for a Virtual object using the universal Effect type.\n * @category General\n */\n"
-    # output_ts_string += "export type Virtual = Omit<VirtualSpecific, 'effect' | 'last_effect'> & { effect: Partial<Effect>; last_effect?: EffectType | null };\n"
     # Virtuals alias
     output_ts_string += "/**\n * Convenience type for the API response containing multiple Virtual objects.\n * @category General\n */\n"
     output_ts_string += "export type Virtuals = Omit<GetVirtualsApiResponse, 'virtuals'> & { virtuals: Record<string, Virtual> };\n"
-    # Device alias
-    # output_ts_string += "/**\n * Convenience type for a Device object using the universal DeviceConfig.\n * @category General\n */\n"
-    # output_ts_string += f"export type Device = Omit<DeviceSpecific, 'config'> & {{ config: {universal_device_config_name} }};\n"  # Uses universal DeviceConfig
     # Devices alias (uses universal Device alias)
     output_ts_string += "/**\n * Convenience type for the API response containing multiple Device objects.\n * @category General\n */\n"
     output_ts_string += "export type Devices = Omit<GetDevicesApiResponse, 'devices'> & { devices: Record<string, Device> };\n"

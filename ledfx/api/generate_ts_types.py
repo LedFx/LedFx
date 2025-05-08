@@ -4,7 +4,7 @@ import traceback
 from aiohttp import web
 
 from ledfx.api import RestEndpoint
-from ledfx.tools.ts_generator import generate_all_types_string_dual_effect
+from ledfx.tools.ts_generator import generate_typescript_types
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -17,7 +17,7 @@ class GenerateTypesEndpoint(RestEndpoint):
         _LOGGER.info("Received request to generate TypeScript types.")
 
         try:
-            ts_code = generate_all_types_string_dual_effect()
+            ts_code = generate_typescript_types()
 
             headers = {
                 "Content-Disposition": 'attachment; filename="ledfx.types.ts"'
