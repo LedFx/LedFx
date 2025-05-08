@@ -377,24 +377,60 @@ def generate_specific_api_response_types(
 ) -> str:
     """Generates TS definitions for API responses."""
     segment_type_alias = """
-// Represents a segment mapping [deviceId, startPixel, endPixel, isReversed]
+/**
+* Literal union of all known effect type strings
+* @category Types
+*/
 export type Segment = [
   device: string,
   start: number,
   end: number,
   reverse: boolean
 ];"""
-    active_effect_type_str = f"\nexport interface ActiveEffectInVirtual {{\n  config: {specific_effect_config_union_name};\n  name: string;\n  type: {effect_type_literal_union};\n}}"
-    virtual_api_item_type_str = f"\n// Represents a single Virtual object\nexport interface VirtualApiResponseItem {{\n  config: {virtual_config_type_name};\n  id: string;\n  is_device: string | boolean; \n  auto_generated: boolean;\n  segments: Segment[];\n  pixel_count: number;\n  active: boolean;\n  streaming: boolean;\n  last_effect?: {effect_type_literal_union} | null;\n  effect: Partial<ActiveEffectInVirtual>; \n}}"  # Changed segments type
-    get_virtuals_response_type_str = '\n// Response for GET /api/virtuals\nexport interface GetVirtualsApiResponse {\n  status: "success" | "error";\n  virtuals: Record<string, VirtualApiResponseItem>;\n  paused: boolean;\n  message?: string;\n}'
-    get_single_virtual_response_type_str = '\n// Raw response for GET /api/virtuals/{{virtual_id}}\nexport interface GetSingleVirtualApiResponse {\n  status: "success" | "error";\n  [virtualId: string]: VirtualApiResponseItem | string | undefined; \n  message?: string;\n}\n\n// Transformed type for GET /api/virtuals/{virtual_id}\nexport type FetchedVirtualResult = \n  | { status: "success"; data: VirtualApiResponseItem }\n  | { status: "error"; message: string };\n'
-    device_api_item_type_str = f"\n// Represents a single Device object using specific config types\nexport interface DeviceInfo {{\n  config: {specific_device_config_union_name};\n  id: string;\n  type: {device_type_literal_union};\n  online: boolean;\n  virtuals: string[]; \n  active_virtuals: string[]; \n}}"
-    get_devices_response_type_str = '\n// Response for GET /api/devices using specific config types\nexport interface GetDevicesApiResponse {\n  status: "success" | "error";\n  devices: Record<string, DeviceInfo>;\n  message?: string;\n}'
+    active_effect_type_str = f"""
+/**
+ * Represents the active effect details within a virtual's API response.
+ * Uses the specific effect config discriminated union.
+ * @category Specific
+ */
+export interface EffectSpecific {{
+  config: {specific_effect_config_union_name};
+  name: string;
+  type: {effect_type_literal_union};
+}}"""
+    active_effect_type_str += f"""
+/**
+ * Convenience type for effect details using the universal EffectConfig.
+ * @category General
+ */
+export interface Effect {{
+  config: EffectConfig | null;
+  name: string;
+  type: {effect_type_literal_union} | null;
+}}"""
+    virtual_api_item_type_str = "/**\n * Convenience type for the API response containing multiple Virtual objects.\n * @category Specific\n */\n"
+    virtual_api_item_type_str += f"\n export interface VirtualSpecific {{\n  config: {virtual_config_type_name};\n  id: string;\n  is_device: string | boolean; \n  auto_generated: boolean;\n  segments: Segment[];\n  pixel_count: number;\n  active: boolean;\n  streaming: boolean;\n  last_effect?: {effect_type_literal_union} | null;\n  effect: Partial<EffectSpecific>; \n}}\n"
+    virtual_api_item_type_str += "/**\n * Convenience type for a Virtual object using the universal Effect type.\n * @category General\n */\n"
+    virtual_api_item_type_str += f"\n export interface Virtual {{\n  config: {virtual_config_type_name};\n  id: string;\n  is_device: string | boolean; \n  auto_generated: boolean;\n  segments: Segment[];\n  pixel_count: number;\n  active: boolean;\n  streaming: boolean;\n  last_effect?: EffectType | null;\n  effect: Effect; \n}}"  # Changed segments type
+    get_virtuals_response_type_str = (
+        "/**\n * Response for GET /api/virtuals.\n * @category REST\n */\n"
+    )
+    get_virtuals_response_type_str += '\n export interface GetVirtualsApiResponse {\n  status: "success" | "error";\n  virtuals: Record<string, VirtualSpecific>;\n  paused: boolean;\n  message?: string;\n}'
+    get_single_virtual_response_type_str = "/**\n * Raw response for GET /api/virtuals/{{virtual_id}}.\n * @category REST\n */\n"
+    get_single_virtual_response_type_str += '\n export interface GetSingleVirtualApiResponse {\n  status: "success" | "error";\n  [virtualId: string]: VirtualSpecific | string | undefined; \n  message?: string;\n}\n\n'
+    get_single_virtual_response_type_str += "/**\n * Transformed type for GET /api/virtuals/{virtual_id}.\n * @category REST\n */\n"
+    get_single_virtual_response_type_str += '\n export type FetchedVirtualResult = \n  | { status: "success"; data: VirtualSpecific }\n  | { status: "error"; message: string };\n'
+    device_api_item_type_str = "/**\n * Represents a single Device object using specific config types.\n * @category Specific\n */\n"
+    device_api_item_type_str += f"export interface DeviceSpecific {{\n  config: {specific_device_config_union_name};\n  id: string;\n  type: {device_type_literal_union};\n  online: boolean;\n  virtuals: string[]; \n  active_virtuals: string[]; \n}}"
+    device_universal_type_str = "/**\n * Convenience type for a Device object using the universal DeviceConfig.\n * @category General\n */\n"
+    device_universal_type_str += f"export interface Device {{\n  config: DeviceConfig;\n  id: string;\n  type: {device_type_literal_union};\n  online: boolean;\n  virtuals: string[]; \n  active_virtuals: string[]; \n}}"
+    get_devices_response_type_str = "/**\n * Response for GET /api/devices using specific config types.\n * @category REST\n */\n"
+    get_devices_response_type_str += '\n export interface GetDevicesApiResponse {\n  status: "success" | "error";\n  devices: Record<string, DeviceSpecific>;\n  message?: string;\n}'
 
     return (
         f"{segment_type_alias}\n\n{active_effect_type_str}\n\n{virtual_api_item_type_str}\n\n"
         f"{get_virtuals_response_type_str}\n\n{get_single_virtual_response_type_str}\n\n"
-        f"{device_api_item_type_str}\n\n{get_devices_response_type_str}\n\n"
+        f"{device_api_item_type_str}\n\n{get_devices_response_type_str}\n\n{device_universal_type_str}\n\n"
     )
 
 
@@ -488,7 +524,7 @@ def generate_all_types_string_dual_effect() -> str:
                 )
                 base_schema_keys.add(key_name)
             script_logger.info(f"Base schema keys: {base_schema_keys}")
-            output_ts_string += "// Base configuration shared by all devices\n"
+            output_ts_string += "/**\n * Base configuration shared by all devices\n * @category DeviceSpecificConfigs\n */\n"
             output_ts_string += generate_ts_interface_from_voluptuous(
                 base_device_config_interface_name, base_device_schema_object
             )
@@ -525,6 +561,7 @@ def generate_all_types_string_dual_effect() -> str:
         if hasattr(Virtual, "CONFIG_SCHEMA") and isinstance(
             Virtual.CONFIG_SCHEMA, vol.Schema
         ):
+            output_ts_string += "/**\n * Configuration for Virtual Strips/Segments\n * @category Configs\n */\n"
             output_ts_string += generate_ts_interface_from_voluptuous(
                 virtual_config_interface_name, Virtual.CONFIG_SCHEMA
             )
@@ -558,9 +595,7 @@ def generate_all_types_string_dual_effect() -> str:
             )
             all_device_config_interface_names.append(device_config_ts_name)
             try:
-                output_ts_string += (
-                    f"// Config for device type: {device_type_str}\n"
-                )
+                output_ts_string += f"/**\n * Configuration for device type: {device_type_str}\n * @category DeviceSpecificConfigs\n */\n"
                 output_ts_string += generate_ts_interface_from_voluptuous(
                     schema_name=device_config_ts_name,
                     voluptuous_schema=device_schema_to_use,
@@ -583,9 +618,14 @@ def generate_all_types_string_dual_effect() -> str:
         device_type_literal_union = " | ".join(
             [f'"{dtype}"' for dtype in all_device_type_strings]
         )
-    output_ts_string += f"// Literal union of all known device type strings\nexport type DeviceType = {device_type_literal_union};\n\n"
-
-    device_config_union_name = "DeviceConfigUnion"
+    output_ts_string += "/**\n * Literal union of all known device type strings\n * @category Types\n */\n"
+    output_ts_string += (
+        f"export type DeviceType = {device_type_literal_union};\n\n"
+    )
+    output_ts_string += (
+        "/**\n * Device specific configurations\n * @category Specific\n */\n"
+    )
+    device_config_union_name = "DeviceSpecificConfig"
     if all_device_config_interface_names:
         output_ts_string += f"export type {device_config_union_name} = {' | '.join(all_device_config_interface_names)};\n\n"
     else:
@@ -664,7 +704,7 @@ def generate_all_types_string_dual_effect() -> str:
 
     # --- Generate Universal Device Config Interface ---
     universal_device_config_name = "DeviceConfig"  # Use simple name
-    output_ts_string += "// Universal interface merging all possible *optional* device properties (using snake_case)\n"
+    output_ts_string += "/**\n * Universal interface merging all possible *optional* device properties (using snake_case)\n * @category Configs\n */\n"
     output_ts_string += f"export interface {universal_device_config_name} {{\n"
     # Add 'type' property using the DeviceType union we generated
     output_ts_string += (
@@ -706,6 +746,7 @@ def generate_all_types_string_dual_effect() -> str:
                 lines = interface_str.splitlines()
                 if len(lines) > 1:
                     lines.insert(1, type_literal_line)
+                output_ts_string += f"/**\n * Specific configuration for the '{effect_type_str}' effect.\n * @category EffectSpecificConfiga\n */\n"
                 output_ts_string += "\n".join(lines) + "\n\n"
             except Exception as e:
                 script_logger.error(
@@ -722,9 +763,14 @@ def generate_all_types_string_dual_effect() -> str:
         effect_type_literal_union = " | ".join(
             [f'"{etype}"' for etype in all_effect_type_strings]
         )
-    output_ts_string += f"// Literal union of all known effect type strings\nexport type EffectType = {effect_type_literal_union};\n\n"
-
-    specific_effect_config_union_name = "SpecificEffectConfig"
+    output_ts_string += "/**\n * Literal union of all known effect type strings\n * @category Types\n */\n"
+    output_ts_string += (
+        f"export type EffectType = {effect_type_literal_union};\n\n"
+    )
+    output_ts_string += (
+        "/**\n * Effect specific configurations\n * @category Specific\n */\n"
+    )
+    specific_effect_config_union_name = "EffectSpecificConfig"
     if all_effect_config_interface_names:
         output_ts_string += f"export type {specific_effect_config_union_name} = {' | '.join(all_effect_config_interface_names)};\n\n"
     else:
@@ -770,7 +816,7 @@ def generate_all_types_string_dual_effect() -> str:
 
     # --- 5. Generate Universal Effect Config Interface ---
     universal_effect_config_name = "EffectConfig"
-    output_ts_string += "// Universal interface merging all possible *optional* effect properties (using snake_case)\n"
+    output_ts_string += "/**\n * Universal interface merging all possible *optional* effect properties.\n * Use this for convenience when strict type checking per effect is not required.\n * @category Configs\n */\n"
     output_ts_string += f"export interface {universal_effect_config_name} {{\n"
     output_ts_string += (
         "  type?: EffectType; // Use the literal union for the optional type\n"
@@ -805,17 +851,20 @@ def generate_all_types_string_dual_effect() -> str:
     # --- 7. Generate Convenience Type Aliases ---
 
     output_ts_string += "// Convenience Type Aliases using Universal Configs\n"
-    # Effect alias (uses universal EffectConfig)
-    output_ts_string += "export type Effect = Omit<Omit<ActiveEffectInVirtual, 'config'> & { config: EffectConfig }, 'type'> & { type?: EffectType | null };\n"
-    # Virtual alias (uses universal Effect alias)
-    output_ts_string += "export type Virtual = Omit<VirtualApiResponseItem, 'effect' | 'last_effect'> & { effect: Partial<Effect>; last_effect?: EffectType | null };\n"
-    # Virtuals alias (uses universal Virtual alias)
+    # Effect alias
+    # output_ts_string += "/**\n * Convenience type for effect details using the universal EffectConfig.\n * @category General\n */\n"
+    # output_ts_string += "export type Effect = Omit<Omit<EffectSpecific, 'config'> & { config: EffectConfig | null }, 'type'> & { type?: EffectType | null };\n"
+    # Virtual alias
+    # output_ts_string += "/**\n * Convenience type for a Virtual object using the universal Effect type.\n * @category General\n */\n"
+    # output_ts_string += "export type Virtual = Omit<VirtualSpecific, 'effect' | 'last_effect'> & { effect: Partial<Effect>; last_effect?: EffectType | null };\n"
+    # Virtuals alias
+    output_ts_string += "/**\n * Convenience type for the API response containing multiple Virtual objects.\n * @category General\n */\n"
     output_ts_string += "export type Virtuals = Omit<GetVirtualsApiResponse, 'virtuals'> & { virtuals: Record<string, Virtual> };\n"
-    # Device alias (uses universal DeviceConfig) - RENAME DeviceApiResponseItem to DeviceInfo first
-    # Let's rename DeviceApiResponseItem to DeviceInfo in generate_specific_api_response_types
-    # Then create the convenient Device alias here:
-    output_ts_string += f"export type Device = Omit<DeviceInfo, 'config'> & {{ config: {universal_device_config_name} }};\n"  # Uses universal DeviceConfig
+    # Device alias
+    # output_ts_string += "/**\n * Convenience type for a Device object using the universal DeviceConfig.\n * @category General\n */\n"
+    # output_ts_string += f"export type Device = Omit<DeviceSpecific, 'config'> & {{ config: {universal_device_config_name} }};\n"  # Uses universal DeviceConfig
     # Devices alias (uses universal Device alias)
+    output_ts_string += "/**\n * Convenience type for the API response containing multiple Device objects.\n * @category General\n */\n"
     output_ts_string += "export type Devices = Omit<GetDevicesApiResponse, 'devices'> & { devices: Record<string, Device> };\n"
     output_ts_string += "\n"
 
