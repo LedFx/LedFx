@@ -267,20 +267,17 @@ def generate_ts_interface_from_voluptuous(
         return "\n".join(interface_parts)
     processed_keys = set()
     for key_marker, validator in voluptuous_schema.schema.items():
-        default_value = None
-        key_schema_obj = key_marker
-        original_key_marker = key_marker
-        if isinstance(key_marker, (vol.Required, vol.Optional)):
-            key_schema_obj = key_marker.schema
-            if (
-                isinstance(key_marker, vol.Optional)
-                and key_marker.default is not vol.UNDEFINED
-            ):
-                default_value = key_marker.default
+        is_optional = isinstance(key_marker, vol.Optional)
+        key_schema_obj = (
+            key_marker.schema
+            if isinstance(key_marker, (vol.Required, vol.Optional))
+            else key_marker
+        )
         key_name_str = str(key_schema_obj)
+
         if key_name_str in processed_keys:
             continue
-            processed_keys.add(key_name_str)
+        processed_keys.add(key_name_str)
         if base_schema_keys and key_name_str in base_schema_keys:
             continue
 
@@ -288,30 +285,57 @@ def generate_ts_interface_from_voluptuous(
             validator, for_universal=False
         )
         js_doc_parts = []
-        if (
-            hasattr(original_key_marker, "description")
-            and original_key_marker.description
-        ):
-            desc_lines = (
-                str(original_key_marker.description).strip().split("\n")
-            )
+
+        # --- Description ---
+        if hasattr(key_marker, "description") and key_marker.description:
+            desc_lines = str(key_marker.description).strip().split("\n")
             js_doc_parts.extend([f"* {line.strip()}" for line in desc_lines])
-        if default_value is not None:
-            default_str = (
-                f"'{default_value}'"
-                if isinstance(default_value, str)
-                else str(default_value)
-            )
-            if "<function default_factory" not in default_str:
-                js_doc_parts.append(f"* @default {default_str}")
-            else:
-                js_doc_parts.append("* @default (computed)")
+
+        # --- Default Value Handling (Revised Logic) ---
+        if is_optional and hasattr(key_marker, "default"):
+            default_value_attr = key_marker.default
+            if default_value_attr is not vol.UNDEFINED:
+                # Assume it's the value or a factory we might need to call
+                actual_default = default_value_attr
+                is_computed = False
+                if callable(default_value_attr):
+                    try:
+                        # Try calling it - maybe it's a factory like next()
+                        potential_value = default_value_attr()
+                        # If calling returns something different and not a function, use it
+                        if (
+                            not callable(potential_value)
+                            and potential_value is not default_value_attr
+                        ):
+                            actual_default = potential_value
+                        else:
+                            # Calling didn't help or returned a function, mark as computed
+                            is_computed = True
+                    except Exception:
+                        # Calling failed, assume the original was the intended (maybe complex) default representation
+                        is_computed = True  # Mark as computed if call fails
+
+                if is_computed:
+                    js_doc_parts.append("* @default (computed)")
+                else:
+                    # Format the literal default value
+                    default_str_val = (
+                        f"'{actual_default}'"
+                        if isinstance(actual_default, str)
+                        else str(actual_default)
+                    )
+                    js_doc_parts.append(f"* @default {default_str_val}")
+            # else: No default specified (it was vol.UNDEFINED)
+        # --- End Default Handling ---
+
+        # --- Constraints ---
         constraints_doc = []
         constraint_validators = (
             validator.validators
             if isinstance(validator, vol.All)
             else [validator]
         )
+        # ... (constraint extraction logic - unchanged) ...
         for sub_validator in constraint_validators:
             if isinstance(sub_validator, vol.Range):
                 if sub_validator.min is not None:
@@ -326,10 +350,9 @@ def generate_ts_interface_from_voluptuous(
         if constraints_doc:
             js_doc_parts.extend([f"* {doc}" for doc in constraints_doc])
 
-        ts_property_name = key_name_str  # Use snake_case
-        is_optional_char = (
-            "?" if isinstance(original_key_marker, vol.Optional) else ""
-        )
+        # --- Assemble ---
+        ts_property_name = key_name_str
+        is_optional_char = "?" if is_optional else ""
         js_doc_string = ""
         if js_doc_parts:
             js_doc_string = (
@@ -340,6 +363,7 @@ def generate_ts_interface_from_voluptuous(
         interface_parts.append(
             f"{js_doc_string}  {ts_property_name}{is_optional_char}: {ts_type_str};"
         )
+
     interface_parts.append("}")
     return "\n".join(interface_parts)
 
