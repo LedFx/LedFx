@@ -60,8 +60,7 @@ def generate_inline_interface_body(
         key_name_str = str(key_schema_obj)
         if key_name_str in processed_keys:
             continue
-            processed_keys.add(key_name_str)
-
+        processed_keys.add(key_name_str)
         # Generate type recursively, use for_universal=False for inline specifics
         ts_type_str = type_converter(validator, for_universal=False)
 
