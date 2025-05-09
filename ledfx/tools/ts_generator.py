@@ -8,10 +8,7 @@ from typing import Any, Callable
 
 import voluptuous as vol
 
-script_logger = logging.getLogger("ledfx.tools.ts_generator")
-logging.basicConfig(
-    level=logging.INFO, format="%(name)s:%(levelname)s: %(message)s"
-)
+_LOGGER = logging.getLogger(__name__)
 
 # --- Helper Functions ---
 
@@ -41,7 +38,7 @@ def generate_inline_interface_body(
     processed_keys = set()
 
     if not isinstance(schema_dict, dict):
-        script_logger.warning(
+        _LOGGER.warning(
             f"generate_inline_interface_body expected dict, got {type(schema_dict)}"
         )
         return f"{indent}// Error: Expected dict for inline schema\n{indent}[key: string]: any;"
@@ -201,7 +198,7 @@ def voluptuous_validator_to_ts_type(validator, for_universal=False) -> str:
                     )
                     break
         if primary_ts_type == "any" and validator.validators:
-            script_logger.debug(
+            _LOGGER.debug(
                 f"Could not determine primary type in vol.All: {validator}."
             )
         return primary_ts_type
@@ -225,7 +222,7 @@ def voluptuous_validator_to_ts_type(validator, for_universal=False) -> str:
                 return f"{item_type}[]"
             return "any[]"
         else:
-            script_logger.warning(
+            _LOGGER.warning(
                 f"Unhandled vol.Schema type: {type(validator.schema)}. Defaulting 'any'."
             )
             return "any"
@@ -233,12 +230,12 @@ def voluptuous_validator_to_ts_type(validator, for_universal=False) -> str:
     elif isinstance(validator, (vol.Range, vol.Length)):
         return "any"
     elif callable(validator):
-        script_logger.warning(
+        _LOGGER.warning(
             f"Unsupported function validator: {getattr(validator, '__name__', 'func')}. Defaulting 'any'."
         )
         return "any"
     else:
-        script_logger.warning(
+        _LOGGER.warning(
             f"Unsupported voluptuous validator type: {type(validator)}. Defaulting 'any'."
         )
         return "any"
@@ -259,7 +256,7 @@ def generate_ts_interface_from_voluptuous(
     )
     interface_parts = [f"export interface {schema_name}{extends_clause} {{"]
     if not isinstance(voluptuous_schema.schema, dict):
-        script_logger.error(f"Schema not dict for {schema_name}")
+        _LOGGER.error(f"Schema not dict for {schema_name}")
         interface_parts.extend(
             ["  [key: string]: any; // Error: Schema not dict", "}"]
         )
@@ -434,37 +431,35 @@ def generate_typescript_types() -> str:
     device_registry = {}
     effect_registry = {}
     try:
-        script_logger.info(
-            "Attempting to access registries via class methods..."
-        )
+        _LOGGER.info("Attempting to access registries via class methods...")
         from ledfx.devices import Device
         from ledfx.effects import Effect
         from ledfx.virtuals import Virtual
 
-        script_logger.info(
+        _LOGGER.info(
             "Imported managers to potentially trigger registry loading."
         )
         if hasattr(Device, "registry") and callable(Device.registry):
             device_registry = Device.registry()
-            script_logger.info(
+            _LOGGER.info(
                 f"Accessed device registry: {len(device_registry)} types."
             )
         else:
-            script_logger.error("Could not find/call Device.registry().")
+            _LOGGER.error("Could not find/call Device.registry().")
         if hasattr(Effect, "registry") and callable(Effect.registry):
             effect_registry = Effect.registry()
-            script_logger.info(
+            _LOGGER.info(
                 f"Accessed effect registry: {len(effect_registry)} types."
             )
         else:
-            script_logger.error("Could not find/call Effect.registry().")
+            _LOGGER.error("Could not find/call Effect.registry().")
     except Exception as e:
-        script_logger.exception("Failed imports/registry access.")
+        _LOGGER.exception("Failed imports/registry access.")
         return "// Error accessing registries. Please check the server logs for more details."
     if not device_registry:
-        script_logger.warning("Device registry empty!")
+        _LOGGER.warning("Device registry empty!")
     if not effect_registry:
-        script_logger.warning("Effect registry empty!")
+        _LOGGER.warning("Effect registry empty!")
 
     output_ts_string = "/**\n * Type: AUTO-GENERATED FILE\n * Tool: LedFx TypeScript Generator\n * Author: YeonV\n */\n\n/* eslint-disable */\n\n"
 
@@ -474,9 +469,7 @@ def generate_typescript_types() -> str:
     base_schema_keys = set()
     output_ts_string += "// --- Base Device Schema Generation --- \n"
     try:
-        script_logger.info(
-            "Manually defining Base Device Schema based on source..."
-        )
+        _LOGGER.info("Manually defining Base Device Schema based on source...")
 
         # Replicate the schema definition from ledfx/devices/__init__.py
         # Need to import fps_validator or handle it
@@ -509,7 +502,7 @@ def generate_typescript_types() -> str:
         # Now process this manually created schema object
         if isinstance(base_device_schema_object.schema, dict):
             base_schema_dict = base_device_schema_object.schema
-            script_logger.info("Base schema dict created. Extracting keys...")
+            _LOGGER.info("Base schema dict created. Extracting keys...")
             for k in base_schema_dict.keys():
                 key_name = str(
                     k.schema
@@ -517,17 +510,17 @@ def generate_typescript_types() -> str:
                     else k
                 )
                 base_schema_keys.add(key_name)
-            script_logger.info(f"Base schema keys: {base_schema_keys}")
+            _LOGGER.info(f"Base schema keys: {base_schema_keys}")
             output_ts_string += "/**\n * Base configuration shared by all devices\n * @category DeviceSpecificConfigs\n */\n"
             output_ts_string += generate_ts_interface_from_voluptuous(
                 base_device_config_interface_name, base_device_schema_object
             )
             output_ts_string += "\n\n"
-            script_logger.info(
+            _LOGGER.info(
                 f"Successfully generated {base_device_config_interface_name}"
             )
         else:
-            script_logger.error(
+            _LOGGER.error(
                 "Manually created base schema's '.schema' attribute is not dict?"
             )
             base_device_schema_object = None
@@ -535,9 +528,7 @@ def generate_typescript_types() -> str:
             output_ts_string += f"// Manual base schema dict failed\nexport type {base_device_config_interface_name} = Record<string, any>;\n\n"
 
     except Exception as e:
-        script_logger.error(
-            f"Error manually processing base Device schema: {e}"
-        )
+        _LOGGER.error(f"Error manually processing base Device schema: {e}")
         traceback.print_exc()
         base_device_config_interface_name = "Record<string, any>"
         output_ts_string += f"// Error manual base device schema\nexport type {base_device_config_interface_name} = Record<string, any>;\n\n"
@@ -561,18 +552,16 @@ def generate_typescript_types() -> str:
             )
             output_ts_string += "\n\n"
         else:
-            script_logger.error("Virtual.CONFIG_SCHEMA not found/invalid.")
+            _LOGGER.error("Virtual.CONFIG_SCHEMA not found/invalid.")
             output_ts_string += f"// Virtual config schema not found\nexport interface {virtual_config_interface_name} {{ [key: string]: any; }}\n\n"
     except Exception as e:
-        script_logger.error(f"Failed VirtualConfig: {e}")
+        _LOGGER.error(f"Failed VirtualConfig: {e}")
         output_ts_string += f"// Failed VirtualConfig\nexport interface {virtual_config_interface_name} {{ [key: string]: any; }}\n\n"
 
     # --- 2. Generate Specific Device Configs & DeviceType Union ---
     all_device_config_interface_names = []
     all_device_type_strings = sorted(device_registry.keys())
-    script_logger.info(
-        f"Generating TS for {len(device_registry)} device types..."
-    )
+    _LOGGER.info(f"Generating TS for {len(device_registry)} device types...")
     for device_type_str in all_device_type_strings:
         device_class = device_registry[device_type_str]
         device_schema_to_use = getattr(device_class, "CONFIG_SCHEMA", None)
@@ -598,12 +587,10 @@ def generate_typescript_types() -> str:
                 )
                 output_ts_string += "\n\n"
             except Exception as e:
-                script_logger.error(
-                    f"Failed gen TS Device '{device_type_str}': {e}"
-                )
+                _LOGGER.error(f"Failed gen TS Device '{device_type_str}': {e}")
                 output_ts_string += f"// Failed gen for {device_config_ts_name}\nexport interface {device_config_ts_name} {{ [key: string]: any; }}\n\n"
         else:
-            script_logger.warning(
+            _LOGGER.warning(
                 f"Device class {getattr(device_class, '__name__', 'UnknownClass')} type '{device_type_str}' has no valid CONFIG_SCHEMA. Skipping..."
             )
 
@@ -623,14 +610,12 @@ def generate_typescript_types() -> str:
     if all_device_config_interface_names:
         output_ts_string += f"export type {device_config_union_name} = {' | '.join(all_device_config_interface_names)};\n\n"
     else:
-        script_logger.warning(
-            "No specific device config interfaces for union."
-        )
+        _LOGGER.warning("No specific device config interfaces for union.")
         output_ts_string += f"export type {device_config_union_name} = {base_device_config_interface_name};\n\n"
 
     # --- 2.5 Collect ALL Device Properties for Universal Interface ---
     all_device_properties = {}  # prop_name -> basic_ts_type
-    script_logger.info(
+    _LOGGER.info(
         f"Collecting properties from {len(device_registry)} device types for universal interface..."
     )
 
@@ -687,7 +672,7 @@ def generate_typescript_types() -> str:
                         and all_device_properties[ts_property_name] != "any"
                         and basic_ts_type != "any"
                     ):
-                        script_logger.debug(
+                        _LOGGER.debug(
                             f"Widening universal device type for '{ts_property_name}'."
                         )
                         all_device_properties[ts_property_name] = (
@@ -718,7 +703,7 @@ def generate_typescript_types() -> str:
     # --- 3. Generate SPECIFIC Effect Config Schemas & EffectType Union ---
     all_effect_config_interface_names = []
     all_effect_type_strings = sorted(effect_registry.keys())
-    script_logger.info(
+    _LOGGER.info(
         f"Generating SPECIFIC TS for {len(effect_registry)} effect types..."
     )
     output_ts_string += (
@@ -743,12 +728,12 @@ def generate_typescript_types() -> str:
                 output_ts_string += f"/**\n * Specific configuration for the '{effect_type_str}' effect.\n * @category EffectSpecificConfigs\n */\n"
                 output_ts_string += "\n".join(lines) + "\n\n"
             except Exception as e:
-                script_logger.error(
+                _LOGGER.error(
                     f"Failed gen SPECIFIC TS Effect '{effect_type_str}': {e}"
                 )
                 output_ts_string += f'// Failed gen for {effect_config_ts_name}\nexport interface {effect_config_ts_name} {{ type: "{effect_type_str}"; [key: string]: any; }}\n\n'
         else:
-            script_logger.warning(
+            _LOGGER.warning(
                 f"Effect class {getattr(effect_class, '__name__', 'UnknownClass')} type '{effect_type_str}' has no valid CONFIG_SCHEMA."
             )
 
@@ -771,13 +756,13 @@ def generate_typescript_types() -> str:
         fallback_effect_config_name = "BaseEffectConfig"
         output_ts_string += f"// Fallback Base Effect Config\nexport interface {fallback_effect_config_name} {{ type?: EffectType; [key: string]: any; }}\n\n"
         specific_effect_config_union_name = fallback_effect_config_name
-        script_logger.warning(
+        _LOGGER.warning(
             "No specific effect config interfaces for discriminated union."
         )
 
     # --- 4. Collect ALL Effect Properties for Universal Interface ---
     all_effect_properties = {}
-    script_logger.info("Collecting properties for universal interface...")
+    _LOGGER.info("Collecting properties for universal interface...")
     for effect_type_str, effect_class in effect_registry.items():
         effect_schema_to_use = getattr(effect_class, "CONFIG_SCHEMA", None)
         if isinstance(effect_schema_to_use, vol.Schema) and isinstance(
@@ -801,7 +786,7 @@ def generate_typescript_types() -> str:
                         and all_effect_properties[ts_property_name] != "any"
                         and basic_ts_type != "any"
                     ):
-                        script_logger.debug(
+                        _LOGGER.debug(
                             f"Widening universal type for '{ts_property_name}'."
                         )
                         all_effect_properties[ts_property_name] = "any"
@@ -853,5 +838,5 @@ def generate_typescript_types() -> str:
     output_ts_string += "export type Devices = Omit<GetDevicesApiResponse, 'devices'> & { devices: Record<string, Device> };\n"
     output_ts_string += "\n"
 
-    script_logger.info("TypeScript generation finished.")
+    _LOGGER.info("TypeScript generation finished.")
     return output_ts_string
