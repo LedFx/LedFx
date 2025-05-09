@@ -170,7 +170,7 @@ def voluptuous_validator_to_ts_type(validator, for_universal=False) -> str:
         else:
             opts_str = [
                 (
-                    f'"{opt.replace("\"", "\\\"")}"'
+                    '"{}"'.format(opt.replace('"', '\\"'))
                     if isinstance(opt, str)
                     else (
                         str(opt).lower() if isinstance(opt, bool) else str(opt)
