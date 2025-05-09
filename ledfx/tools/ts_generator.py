@@ -746,7 +746,7 @@ def generate_all_types_string_dual_effect() -> str:
                 lines = interface_str.splitlines()
                 if len(lines) > 1:
                     lines.insert(1, type_literal_line)
-                output_ts_string += f"/**\n * Specific configuration for the '{effect_type_str}' effect.\n * @category EffectSpecificConfiga\n */\n"
+                output_ts_string += f"/**\n * Specific configuration for the '{effect_type_str}' effect.\n * @category EffectSpecificConfigs\n */\n"
                 output_ts_string += "\n".join(lines) + "\n\n"
             except Exception as e:
                 script_logger.error(
