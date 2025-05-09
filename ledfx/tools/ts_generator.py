@@ -135,25 +135,24 @@ def voluptuous_validator_to_ts_type(validator, for_universal=False) -> str:
             return "number /* FPS */"
 
     # Standard Types
-    if validator == str:
+    if validator is str:
         return "string"
-    elif validator == int:
+    elif validator is int:
         return "number"
-    elif validator == float:
+    elif validator is float:
         return "number"
-    elif validator == bool:
+    elif validator is bool:
         return "boolean"
     elif isinstance(validator, vol.Coerce):
-        if validator.type == int:
+        if validator.type is int:
             return "number"
-        if validator.type == float:
+        if validator.type is float:
             return "number"
-        if validator.type == str:
+        if validator.type is str:
             return "string"
         return "any"
     elif isinstance(validator, vol.In):
         if for_universal:
-            types = {type(opt) for opt in validator.container}
             possible_types = []
             if any(isinstance(opt, str) for opt in validator.container):
                 possible_types.append("string")
