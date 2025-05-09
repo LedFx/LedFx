@@ -1,10 +1,9 @@
 import logging
-import traceback
 
 from aiohttp import web
 
 from ledfx.api import RestEndpoint
-from ledfx.tools.ts_generator import generate_all_types_string_dual_effect
+from ledfx.tools.ts_generator import generate_typescript_types
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -17,7 +16,7 @@ class GenerateTypesEndpoint(RestEndpoint):
         _LOGGER.info("Received request to generate TypeScript types.")
 
         try:
-            ts_code = generate_all_types_string_dual_effect()
+            ts_code = generate_typescript_types()
 
             headers = {
                 "Content-Disposition": 'attachment; filename="ledfx.types.ts"'
@@ -36,10 +35,8 @@ class GenerateTypesEndpoint(RestEndpoint):
             _LOGGER.exception(
                 "CRITICAL Error occurred during TypeScript generation via API."
             )
-            error_body = f"// Generation Error!\n// {type(e).__name__}: {e}\n// Traceback:\n"
-            error_body += "\n".join(
-                [f"// {line}" for line in traceback.format_exc().splitlines()]
-            )
             return web.Response(
-                text=error_body, content_type="text/plain", status=500
+                text="An internal error occurred while generating TypeScript types. Please contact the administrator.",
+                content_type="text/plain",
+                status=500,
             )
