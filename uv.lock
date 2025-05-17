@@ -1095,7 +1095,7 @@ docs = [
     { name = "sphinx-autodoc-typehints", marker = "python_full_version >= '3.10'", specifier = "==2.5.0" },
     { name = "sphinx-copybutton", marker = "python_full_version >= '3.10'", specifier = "==0.5.2" },
     { name = "sphinx-rtd-theme", marker = "python_full_version >= '3.10'", specifier = "==3.0.2" },
-    { name = "sphinx-toolbox", marker = "python_full_version >= '3.10'", specifier = "==3.9.0" },
+    { name = "sphinx-toolbox", marker = "python_full_version >= '3.10'", specifier = "==4.0.0" },
     { name = "sphinxcontrib-httpdomain", marker = "python_full_version >= '3.10'", specifier = "==1.8.1" },
     { name = "sphinxcontrib-websupport", marker = "python_full_version >= '3.10'", specifier = "==2.0.0" },
 ]
@@ -2755,7 +2755,7 @@ wheels = [
 
 [[package]]
 name = "sphinx-toolbox"
-version = "3.9.0"
+version = "4.0.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "apeye", marker = "python_full_version >= '3.10'" },
@@ -2777,9 +2777,9 @@ dependencies = [
     { name = "tabulate", marker = "python_full_version >= '3.10'" },
     { name = "typing-extensions", marker = "python_full_version >= '3.10'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/df/32/e10c272614a1f4d84b680007bd45f9b77db3262ee6c3c61a0e27932a55b7/sphinx_toolbox-3.9.0.tar.gz", hash = "sha256:9ee0603b090762d6eed4d0ec9fa91445e3ef95d40a584af125308541c1bf7b8d", size = 114497, upload-time = "2025-02-26T13:32:07.253Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/60/d2/fd68940102a02cbff392b91317618e0f87458e98a9684c0f74b1c58d4e49/sphinx_toolbox-4.0.0.tar.gz", hash = "sha256:48c31451db2e2d8c71c03939e72a19ef7bc92ca7850a62db63fc7bb8395b6785", size = 113819, upload-time = "2025-05-12T17:11:39.104Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/5d/7e/9811c8cf0df10c2b6c9c72667837d731dd4f0dc0d0e68980938c8eb6f7f8/sphinx_toolbox-3.9.0-py3-none-any.whl", hash = "sha256:49024961c7791ad6e9dd39c611f89b5162550afa26ccad087be38388c3dd3c1e", size = 195429, upload-time = "2025-02-26T13:32:04.4Z" },
+    { url = "https://files.pythonhosted.org/packages/77/fd/5f03a1ad6623b3533a4b7ce8156f0b6a185f4a276d12567e434b855040d1/sphinx_toolbox-4.0.0-py3-none-any.whl", hash = "sha256:c700937baee505e440d44d46bc47ccd036ec282ae61b04e40342944128721117", size = 195781, upload-time = "2025-05-12T17:11:37.45Z" },
 ]
 
 [[package]]
