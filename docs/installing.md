@@ -236,7 +236,7 @@ The following guideline has been tailored to linux docker-compose or portainer s
         networks:
         spsnet:
           ipv4_address: 192.168.1.234
-        
+
     networks:
       spsnet:
         name: spsnet
