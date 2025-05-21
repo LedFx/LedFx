@@ -253,7 +253,7 @@ The following guideline has been tailored to linux docker-compose or portainer s
             #use ip range 232 to 239 when using /29 as CIDR
     ```
 
-5. A complete [docker-compose.yml](https://github.com/saujanyashah/LedFx/blob/main/ledfx_docker/docker-compose-example.yml) is available for a quick start.
+5. A complete [docker-compose.yml](https://github.com/LedFx/LedFx/blob/main/ledfx_docker/docker-compose-example.yml) is available for a quick start.
 
 ### LedFx container in pulseaudio client mode
 
