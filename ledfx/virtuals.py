@@ -1100,6 +1100,7 @@ class Virtual:
         if hasattr(self, "_config"):
             if _config["mapping"] != self._config["mapping"]:
                 self.invalidate_cached_props()
+                reactivate_effect = True
             if (
                 _config["transition_mode"] != self._config["transition_mode"]
                 or _config["transition_time"]
@@ -1171,7 +1172,7 @@ class Virtual:
                         # The effect needs to be reactivated later after the config has been applied
                         reactivate_effect = True
                         self.invalidate_cached_props()
-
+                    
         setattr(self, "_config", _config)
 
         self.frequency_range = FrequencyRange(
