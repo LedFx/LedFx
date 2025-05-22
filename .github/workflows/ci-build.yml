@@ -174,3 +174,85 @@ jobs:
         with:
           name: ledfx-log-${{ runner.os }}-${{ runner.arch }}-py${{ matrix.python-version }}.log
           path: ${{ github.workspace }}/debug_config/ledfx.log
+
+  docker-build-amd64:
+    runs-on: ubuntu-latest
+    env:
+      IMAGE_NAME: ledfx
+      ARCH: amd64
+    name: Build LedFx Docker Image for amd64
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up QEMU (emulation)
+        uses: docker/setup-qemu-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build and run for ${{ env.ARCH }}
+        uses: docker/build-push-action@v5
+        with:
+          context: ./
+          file: ./ledfx_docker/Dockerfile
+          platforms: linux/${{ env.ARCH }}
+          load: true
+          push: false
+          tags: "${{ env.IMAGE_NAME }}:${{ env.ARCH }}"
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            GITHUB_SHA=${{ github.sha }}
+            IS_RELEASE=${{ startsWith(github.ref, 'refs/tags/') }}
+      - name: Run ci-smoke-test
+        run: |
+          docker run --name ledfx-run ${{ env.IMAGE_NAME }}:${{ env.ARCH }} --ci-smoke-test -vv -c debug_config --offline
+      - name: Copy log file from container to workspace
+        run: |
+          docker cp ledfx-run:/home/ledfx/debug_config/ledfx.log ${{ github.workspace }}/ledfx.log
+          docker rm ledfx-run || echo "Container ledfx-run already removed"
+      - name: Attach LedFx test log
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ledfx-log-${{ runner.os }}-${{ env.IMAGE_NAME }}-${{ env.ARCH }}-docker.log
+          path: ${{ github.workspace }}/ledfx.log
+
+  docker-build-arm64:
+    runs-on: ubuntu-latest
+    env:
+      IMAGE_NAME: ledfx
+      ARCH: arm64
+    name: Build LedFx Docker Image for arm64
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up QEMU (emulation)
+        uses: docker/setup-qemu-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build and run for ${{ env.ARCH }}
+        uses: docker/build-push-action@v5
+        with:
+          context: ./
+          file: ./ledfx_docker/Dockerfile
+          platforms: linux/${{ env.ARCH }}
+          load: true
+          push: false
+          tags: "${{ env.IMAGE_NAME }}:${{ env.ARCH }}"
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            GITHUB_SHA=${{ github.sha }}
+            IS_RELEASE=${{ startsWith(github.ref, 'refs/tags/') }}
+      - name: Run ci-smoke-test
+        run: |
+          docker run --name ledfx-run ${{ env.IMAGE_NAME }}:${{ env.ARCH }} --ci-smoke-test -vv -c debug_config --offline
+      - name: Copy log file from container to workspace
+        run: |
+          docker cp ledfx-run:/home/ledfx/debug_config/ledfx.log ${{ github.workspace }}/ledfx.log
+          docker rm ledfx-run || echo "Container ledfx-run already removed"
+      - name: Attach LedFx test log
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ledfx-log-${{ runner.os }}-${{ env.IMAGE_NAME }}-${{ env.ARCH }}-docker.log
+          path: ${{ github.workspace }}/ledfx.log
