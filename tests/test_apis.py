@@ -4,11 +4,11 @@ import pytest
 
 # Remember to import the test groups here if you add a new one
 from tests.conftest import all_effects, audio_configs
+from tests.test_definitions.coexistance import coexistance_tests
 from tests.test_definitions.devices import device_tests
 from tests.test_definitions.effects import effect_tests
 from tests.test_definitions.proof_of_life import proof_of_life_tests
 from tests.test_definitions.virtual_config import virtual_config_tests
-from tests.test_definitions.coexistance import coexistance_tests
 from tests.test_utilities.consts import SERVER_PATH
 from tests.test_utilities.test_utils import HTTPSession
 
@@ -27,12 +27,12 @@ def setup_and_teardown(request):
 # Define a list of all test groups
 # Remember to add any new test groups here
 test_groups = [
-#    ("proof_of_life_tests", proof_of_life_tests),
-#    ("device_tests", device_tests),
-#    ("effect_tests", effect_tests),
-#    ("all_effects", all_effects),
-#    ("audio_configs", audio_configs),
-#    ("virtual_config_tests", virtual_config_tests),
+    #    ("proof_of_life_tests", proof_of_life_tests),
+    #    ("device_tests", device_tests),
+    #    ("effect_tests", effect_tests),
+    #    ("all_effects", all_effects),
+    #    ("audio_configs", audio_configs),
+    #    ("virtual_config_tests", virtual_config_tests),
     ("coexistance_tests", coexistance_tests),
 ]
 
@@ -77,26 +77,30 @@ def test_api(group_name, test_name, case, http_session):
                     response_dict[key], dict
                 ):
                     try:
-                        assert (
-                            value.items() <= response_dict[key].items()
-                        )
+                        assert value.items() <= response_dict[key].items()
                     except AssertionError:
-                        error_detail = find_first_error(value, response_dict[key])
+                        error_detail = find_first_error(
+                            value, response_dict[key]
+                        )
                         raise AssertionError(
                             f"Expected {key} to contain {value}, but got {response_dict.get(key)}. \n\nDetail: {error_detail}"
                         )
                 else:
                     try:
                         assert (
-                            key in response_dict and response_dict[key] == value
+                            key in response_dict
+                            and response_dict[key] == value
                         )
                     except AssertionError:
-                        error_detail = find_first_error(value, response_dict.get(key))
+                        error_detail = find_first_error(
+                            value, response_dict.get(key)
+                        )
                         raise AssertionError(
                             f"Expected {key} to be {value}, but got {response_dict.get(key)}. \n\nDetail: {error_detail}"
                         )
     if case.sleep_after_test:
         time.sleep(case.sleep_after_test)
+
 
 def find_first_error(expect, got, path=""):
     """
@@ -114,6 +118,7 @@ def find_first_error(expect, got, path=""):
     elif expect != got:
         return f"At '{path}': expected '{expect}', but got '{got}'"
     return None
+
 
 if __name__ == "__main__":
     pytest.main()
