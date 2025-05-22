@@ -1172,7 +1172,7 @@ class Virtual:
                         # The effect needs to be reactivated later after the config has been applied
                         reactivate_effect = True
                         self.invalidate_cached_props()
-                    
+
         setattr(self, "_config", _config)
 
         self.frequency_range = FrequencyRange(
