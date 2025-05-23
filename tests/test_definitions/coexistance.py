@@ -218,9 +218,9 @@ coexistance_tests = {
                 "starting_addr": 0,
                 "path": "/0/dmx/light1",
                 "ip_address": "1.2.3.4",
-                "name": "test_osc_1"
-            }
-        },        
+                "name": "test_osc_1",
+            },
+        },
         expected_response_keys=["status", "payload", "device"],
         expected_response_values=[
             {"status": "success"},
@@ -246,9 +246,9 @@ coexistance_tests = {
                 "starting_addr": 0,
                 "path": "/0/dmx/light2",
                 "ip_address": "1.2.3.4",
-                "name": "test_osc_2"
-            }
-        },        
+                "name": "test_osc_2",
+            },
+        },
         expected_response_keys=["status", "payload", "device"],
         expected_response_values=[
             {"status": "success"},
@@ -274,9 +274,9 @@ coexistance_tests = {
                 "starting_addr": 0,
                 "path": "/0/dmx/light1",
                 "name": "test_osc3",
-                "ip_address": "1.2.3.4"
-            }
-        },  
+                "ip_address": "1.2.3.4",
+            },
+        },
         expected_response_keys=["status", "payload"],
         expected_response_values=[
             {"status": "failed"},
