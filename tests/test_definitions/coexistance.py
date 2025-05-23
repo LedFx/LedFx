@@ -1,4 +1,4 @@
-from tests.test_utilities.test_utils import APITestCase, SystemInfo
+from tests.test_utilities.test_utils import APITestCase
 
 test_count = 1
 

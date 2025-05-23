@@ -27,12 +27,12 @@ def setup_and_teardown(request):
 # Define a list of all test groups
 # Remember to add any new test groups here
 test_groups = [
-    #    ("proof_of_life_tests", proof_of_life_tests),
-    #    ("device_tests", device_tests),
-    #    ("effect_tests", effect_tests),
-    #    ("all_effects", all_effects),
-    #    ("audio_configs", audio_configs),
-    #    ("virtual_config_tests", virtual_config_tests),
+    ("proof_of_life_tests", proof_of_life_tests),
+    ("device_tests", device_tests),
+    ("effect_tests", effect_tests),
+    ("all_effects", all_effects),
+    ("audio_configs", audio_configs),
+    ("virtual_config_tests", virtual_config_tests),
     ("coexistance_tests", coexistance_tests),
 ]
 
