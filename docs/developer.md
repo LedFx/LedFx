@@ -37,7 +37,9 @@ Note
 Do not install python from the Windows Store - it will not work with these instructions.
 ::::
 
-Note
+:::: note
+::: title
+Warning
 :::
 
 aubio lib which is a critical part of the audio processing for LedFX is in need of a new release
@@ -45,7 +47,7 @@ and can fail to build in many ways.
 
 One common problem for example is if you windows language is not english and uses non standard characters
 
-In that case, reach out in the LedFX discord dev_chat channel and ask for a aubio wheel for the version of python you are developing on. 3.12 is preferred!
+In that case, reach out in the LedFX discord dev_chat channel and ask for an aubio wheel for the version of python you are developing on. 3.12 is preferred!
 ::::
 
 1. Install [Build Tools for Visual Studio 2022](https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2022)
