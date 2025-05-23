@@ -205,15 +205,6 @@ coexistance_tests = {
         expected_response_values=[],
         payload_to_send={},
     ),
-    "cleanup_openrgb_3": APITestCase(
-        execution_order=(test_count := test_count + 1),
-        method="DELETE",
-        api_endpoint="/api/devices/test-openrgb-3",
-        expected_return_code=200,
-        expected_response_keys=[],
-        expected_response_values=[],
-        payload_to_send={},
-    ),
     "create_osc_device_1": APITestCase(
         execution_order=(test_count := test_count + 1),
         method="POST",
@@ -296,7 +287,24 @@ coexistance_tests = {
             },
         ],
     ),
-    
+    "cleanup_osc_1": APITestCase(
+        execution_order=(test_count := test_count + 1),
+        method="DELETE",
+        api_endpoint="/api/devices/test-osc-1",
+        expected_return_code=200,
+        expected_response_keys=[],
+        expected_response_values=[],
+        payload_to_send={},
+    ),
+    "cleanup_osc_2": APITestCase(
+        execution_order=(test_count := test_count + 1),
+        method="DELETE",
+        api_endpoint="/api/devices/test-osc-2",
+        expected_return_code=200,
+        expected_response_keys=[],
+        expected_response_values=[],
+        payload_to_send={},
+    ),
     #TODO: add test cases for general port seperated
     #TODO: add test cases for general port seperated
     #TODO: add test cases for general port seperated
