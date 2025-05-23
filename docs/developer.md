@@ -94,23 +94,17 @@ These are run as part of the CI actions when raising a PR and must run clean gre
 
 To run these local and / or develop more tests
 
-1) Ensure you have installed the developer tool dependancies with
-
-    ``` console
-    $ poetry install --with dev
-    ```
-
-2) Ensure you have local loopback installed, or you may hit failures once audio effects are under test
+1) Ensure you have local loopback installed, or you may hit failures once audio effects are under test
 
     ``` console
     $  ledfx-loopback-install
     ```
 
-3) launch the suite of tests with
+2) launch the suite of tests with uv which will ensure dependancies are installed
 
 
     ``` console
-    $ poetry run pytest -vv
+    $ uv run pytest -vv
     ```
 
 ## Frontend Development
