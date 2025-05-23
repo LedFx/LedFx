@@ -1,7 +1,7 @@
 import logging
+import timeit
 
 import numpy as np
-import timeit
 import voluptuous as vol
 
 from ledfx.color import parse_color, validate_color
@@ -70,12 +70,13 @@ class Filter(AudioReactiveEffect, GradientEffect):
 
     def render(self):
 
-
         if self.use_gradient:
-            
+
             if self.roll_speed > 0:
                 # some mod magic to get a value between 0 and 1 according to time passed
-                gradient_index = ( timeit.default_timer() % self.roll_time ) / self.roll_time
+                gradient_index = (
+                    timeit.default_timer() % self.roll_time
+                ) / self.roll_time
             else:
                 gradient_index = 0
 
