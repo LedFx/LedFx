@@ -1,0 +1,71 @@
+volumes:
+  ledfx-config:
+services:
+  ledfx:
+    image: ghcr.io/ledfx/ledfx:latest
+    container_name: ledfx
+    restart: on-failure:3
+    network_mode: host
+    command: ["--offline", "--clear-effects"] #optional command line arguments passed to LedFx
+    #environment:
+    #  - PULSECLIENTMODE=1 # Set to anything to use the PulseAudio client mode Ensure correct default source is set in host pulseaudio Eg using pactl set-default-source
+    volumes:
+      - ledfx-config:/home/ledfx/ledfx-config:rw # Path to LedFx configuration files
+      - /path/to/ledfx/pulse:/home/ledfx/.config/pulse:rw # Necessary when running in pulseaudio server mode. /path/to/ledfx/pulse should be with read write access for UID:GID=1000:1000
+      #- /run/user/1000/pulse/native:/home/ledfx/.config/pulse/pulseaudio.socket # Necessary when running in pulseaudio client mode, to access host's PulseAudio socket
+      #- $HOME/.config/pulse/cookie:/home/ledfx/.config/pulse/cookie:ro # Necessary when running in pulseaudio client mode, to access host's PulseAudio cookie
+
+#This shairport will play audio to the ledfx container using the pulseaudio backend.
+  shairportforledfx:
+    image: mikebrady/shairport-sync:latest
+    container_name: shairportforledfx
+    restart: on-failure:3
+    command: -o pa #Use this only if you do not provide a custom shairport-sync.conf file with pulseaudio backend.
+    depends_on:
+      ledfx:
+        condition: service_healthy #so that the pulseaudio socket is available before being mounted here
+    environment:
+      - PULSE_SERVER="unix:/tmp/pulseaudio.socket" # Path for PulseAudio socket
+      - PULSE_COOKIE="/tmp/cookie" # Path for PulseAudio cookie
+    volumes:
+      #- /path/to/shairportforledfx/shairport-sync.conf:/etc/shairport-sync.conf # Customised Shairport Sync configuration file. Ensure pulseaudio backend is selected. Suggested to set the ignore_volume_control to "yes" in general settings in shairport-sync.conf
+      - /path/to/ledfx/pulse:/tmp # PulseAudio socket when using that backend
+    logging:
+      options:
+        max-size: "200k"
+        max-file: "10"
+    network_mode: host
+    #Check shairport-sync documentation for more options and how you could run multiple shairports on the same host if you want one shairport to output synchronized audio to a physical output.
+
+#This shairport will play audio to the host system using the alsa backend.
+  shairportaudio:
+    image: mikebrady/shairport-sync:latest
+    container_name: shairportaudio
+    restart: unless-stopped
+    devices:
+      - "/dev/snd"
+    volumes:
+      - /path/to/shairport-sync.conf:/etc/shairport-sync.conf # Customised Shairport Sync configuration file.
+    logging:
+      options:
+        max-size: "200k"
+        max-file: "10"
+    networks:
+      spsnet:
+        ipv4_address: 192.168.1.234
+
+#Macvlan is necessary to run multiple shairports on the same host.
+networks:
+  spsnet:
+    name: spsnet
+    driver: macvlan
+    driver_opts:
+      # this is the hardware network interface of the docker host (ifconfig)
+      parent: eth0
+    ipam:
+      config:
+          # this is the subnet on which the docker host resides
+          # set in a range outside of the primary DHCP server
+        - subnet: 192.168.1.0/24
+          gateway: 192.168.1.2 # this is the IP address of the docker host
+          #use ip range 232 to 239 when using /29 as CIDR

@@ -1,0 +1,78 @@
+.github
+.vscode
+
+
+# Temporary and binary files
+*~
+*.py[cod]
+*.so
+*.cfg
+!setup.cfg
+*.orig
+*.log
+*.pot
+.cache/*
+.*.swp
+*/.ipynb_checkpoints/*
+*.DS_Store
+
+# Python env
+env
+.venv
+
+# NPM
+node_modules/
+npm-debug.log
+package-lock.json
+
+# Project files
+.ropeproject
+.project
+.pydevproject
+.settings
+.idea
+.vscode/settings.json
+*.code-workspace
+
+# Package files
+*.egg
+*.eggs/
+.installed.cfg
+*.egg-info
+
+# Unittest and coverage
+htmlcov/*
+.coverage
+.tox
+junit.xml
+coverage.xml
+
+# Build and docs folder/files
+build/*
+dist/*
+sdist/*
+docs/api/*
+docs/_build/*
+docs/build/*
+cover/*
+MANIFEST
+
+
+# LedFx helper functions leave these files behind
+performance_analysis.csv
+performance_insights.txt
+
+# Debugging task may leave this folder behind if it crashes
+debug_config
+# spec file build may leave the ledfx.env behind
+ledfx.env
+# Misc
+.devcontainer/ledfx-config.yml
+frontend/*.eslintcache
+*.eslintcache
+
+
+#Pycache from numba
+ledfx/effects/__pycache__/*
+ledfx/__pycache__/*
+__pycache__/*

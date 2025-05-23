@@ -1,0 +1,10 @@
+# Replace the *entire* content of this file with these few lines and
+# read the comments
+#
+.fail
+    # Set tsched=0 here if you experience glitchy playback. This will
+    # revert back to interrupt-based scheduling and should fix it. Add tsched=1 to the end of below line
+    #load-module module-native-protocol-unix auth-anonymous=1 auth-cookie-enabled=0 socket=/home/ledfx/pulse/pulseaudio.socket
+    #load-module module-native-protocol-unix auth-group=audio socket=/home/ledfx/pulse/pulseaudio.socket
+.nofail
+#load-module module-always-sink
