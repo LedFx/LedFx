@@ -1,6 +1,7 @@
 import logging
 
 import numpy as np
+import timeit
 import voluptuous as vol
 
 from ledfx.color import parse_color, validate_color
@@ -19,6 +20,8 @@ class Filter(AudioReactiveEffect, GradientEffect):
         "blur",
         "mirror",
         "flip",
+        # we can't use gradient_roll as it is not time invariant
+        "gradient_roll",
     ]
     ADVANCED_KEYS = []
 
@@ -39,11 +42,17 @@ class Filter(AudioReactiveEffect, GradientEffect):
                 description="Use gradient instead of color",
                 default=False,
             ): bool,
+            vol.Optional(
+                "roll_speed",
+                description="0= no gradient roll, range 60 secs to 1 sec",
+                default=0.0,
+            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
         }
     )
 
     def on_activate(self, pixel_count):
         self.filtered_power = 0
+        self.current_time = timeit.default_timer()
 
     def config_updated(self, config):
         self.power_func = self.POWER_FUNCS_MAPPING[
@@ -51,15 +60,26 @@ class Filter(AudioReactiveEffect, GradientEffect):
         ]
         self.color = np.array(parse_color(self._config["color"]))
         self.use_gradient = self._config["use_gradient"]
+        self.roll_speed = self._config["roll_speed"]
+        if self.roll_speed > 0:
+            # ranging time from 20 to 1 seconds
+            self.roll_time = (1 - self.roll_speed) * 59 + 1
 
     def audio_data_updated(self, data):
         self.filtered_power = getattr(data, self.power_func)()
 
     def render(self):
 
+
         if self.use_gradient:
-            color = self.get_gradient_color(0)
-            self.roll_gradient()
+            
+            if self.roll_speed > 0:
+                # some mod magic to get a value between 0 and 1 according to time passed
+                gradient_index = ( timeit.default_timer() % self.roll_time ) / self.roll_time
+            else:
+                gradient_index = 0
+
+            color = self.get_gradient_color(gradient_index)
         else:
             color = self.color
 
