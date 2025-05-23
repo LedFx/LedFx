@@ -1100,6 +1100,7 @@ class Virtual:
         if hasattr(self, "_config"):
             if _config["mapping"] != self._config["mapping"]:
                 self.invalidate_cached_props()
+                reactivate_effect = True
             if (
                 _config["transition_mode"] != self._config["transition_mode"]
                 or _config["transition_time"]
