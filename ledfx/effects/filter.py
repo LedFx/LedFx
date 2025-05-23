@@ -46,7 +46,6 @@ class Filter(AudioReactiveEffect, GradientEffect):
         self.filtered_power = 0
 
     def config_updated(self, config):
-        self.float_range = self._config["float_range"]
         self.power_func = self.POWER_FUNCS_MAPPING[
             self._config["frequency_range"]
         ]
