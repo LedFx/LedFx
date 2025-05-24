@@ -47,6 +47,11 @@ class Filter(AudioReactiveEffect, GradientEffect):
                 description="0= no gradient roll, range 60 secs to 1 sec",
                 default=0.0,
             ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
+            vol.Optional(
+                "boost",
+                description="Boost the brightness of the effect on a parabolic curve",
+                default=0.0,
+            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0))
         }
     )
 
@@ -64,9 +69,19 @@ class Filter(AudioReactiveEffect, GradientEffect):
         if self.roll_speed > 0:
             # ranging time from 20 to 1 seconds
             self.roll_time = (1 - self.roll_speed) * 59 + 1
+        self.boost = self._config["boost"]
 
     def audio_data_updated(self, data):
         self.filtered_power = getattr(data, self.power_func)()
+
+    def aggressive_top_end_bias(self, x, boost):
+        """
+        Final aggressive top-end bias:
+        - Linear at boost = 0
+        - Strong upward curve at boost = 1
+        """
+        aggressive_curve = 1 - (1 - x) ** 4  # Adjust power for curve steepness
+        return (1 - boost) * x + boost * aggressive_curve
 
     def render(self):
 
@@ -84,6 +99,11 @@ class Filter(AudioReactiveEffect, GradientEffect):
         else:
             color = self.color
 
+        from ledfx.utils import Teleplot
+        Teleplot.send(f"power_{self._config["frequency_range"]}:{self.filtered_power:.3f}")
+        boosted = self.aggressive_top_end_bias(self.filtered_power, self.boost)
+        Teleplot.send(f"boost_{self._config["frequency_range"]}:{boosted:.3f}")
+
         # just fill the pixels to the selected color multiplied by the brightness
         # we don't care if it is a single pixel or a massive matrix!
-        self.pixels[:] = color * self.filtered_power
+        self.pixels[:] = color * boosted
