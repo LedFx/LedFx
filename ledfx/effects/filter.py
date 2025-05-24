@@ -51,7 +51,7 @@ class Filter(AudioReactiveEffect, GradientEffect):
                 "boost",
                 description="Boost the brightness of the effect on a parabolic curve",
                 default=0.0,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0))
+            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
         }
     )
 
@@ -100,7 +100,10 @@ class Filter(AudioReactiveEffect, GradientEffect):
             color = self.color
 
         from ledfx.utils import Teleplot
-        Teleplot.send(f"power_{self._config["frequency_range"]}:{self.filtered_power:.3f}")
+
+        Teleplot.send(
+            f"power_{self._config["frequency_range"]}:{self.filtered_power:.3f}"
+        )
         boosted = self.aggressive_top_end_bias(self.filtered_power, self.boost)
         Teleplot.send(f"boost_{self._config["frequency_range"]}:{boosted:.3f}")
 
