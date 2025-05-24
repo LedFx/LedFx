@@ -100,9 +100,9 @@ class Filter(AudioReactiveEffect, GradientEffect):
             color = self.color
 
         from ledfx.utils import Teleplot
-        Teleplot.send(f"power_{self._config["frequency_range"]}:{self.filtered_power:.3f}")
+        Teleplot.send(f"power_{self._config['frequency_range']}:{self.filtered_power:.3f}")
         boosted = self.aggressive_top_end_bias(self.filtered_power, self.boost)
-        Teleplot.send(f"boost_{self._config["frequency_range"]}:{boosted:.3f}")
+        Teleplot.send(f"boost_{self._config['frequency_range']}:{boosted:.3f}")
 
         # just fill the pixels to the selected color multiplied by the brightness
         # we don't care if it is a single pixel or a massive matrix!
