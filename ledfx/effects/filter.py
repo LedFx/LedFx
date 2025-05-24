@@ -51,7 +51,7 @@ class Filter(AudioReactiveEffect, GradientEffect):
                 "boost",
                 description="Boost the brightness of the effect on a parabolic curve",
                 default=0.0,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0))
+            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
         }
     )
 
