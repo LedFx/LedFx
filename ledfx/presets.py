@@ -3,7 +3,7 @@ import os
 from ledfx.consts import LEDFX_ASSETS_PATH
 
 ledfx_presets = {
-        "filter": {
+    "filter": {
         "beat-thunder": {
             "config": {
                 "background_brightness": 1.0,
@@ -18,9 +18,9 @@ ledfx_presets = {
                 "gradient_roll": 0.0,
                 "mirror": False,
                 "roll_speed": 0.0,
-                "use_gradient": False
+                "use_gradient": False,
             },
-            "name": "beat thunder"
+            "name": "beat thunder",
         },
         "bright-high": {
             "config": {
@@ -36,9 +36,9 @@ ledfx_presets = {
                 "gradient_roll": 0.0,
                 "mirror": False,
                 "roll_speed": 0.0,
-                "use_gradient": False
+                "use_gradient": False,
             },
-            "name": "Bright High"
+            "name": "Bright High",
         },
         "green-mid": {
             "config": {
@@ -54,9 +54,9 @@ ledfx_presets = {
                 "gradient_roll": 0.01,
                 "mirror": False,
                 "roll_speed": 0.0,
-                "use_gradient": False
+                "use_gradient": False,
             },
-            "name": "Green Mid"
+            "name": "Green Mid",
         },
         "red-low": {
             "config": {
@@ -72,9 +72,9 @@ ledfx_presets = {
                 "gradient_roll": 0.0,
                 "mirror": False,
                 "roll_speed": 0.0,
-                "use_gradient": False
+                "use_gradient": False,
             },
-            "name": "Red Low"
+            "name": "Red Low",
         },
         "rainbow-roll": {
             "config": {
@@ -90,9 +90,9 @@ ledfx_presets = {
                 "gradient_roll": 0.0,
                 "mirror": False,
                 "roll_speed": 0.3,
-                "use_gradient": True
+                "use_gradient": True,
             },
-            "name": "rainbow roll"
+            "name": "rainbow roll",
         },
     },
     "waterfall2d": {

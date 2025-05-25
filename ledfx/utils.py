@@ -2002,7 +2002,7 @@ def aggressive_top_end_bias(x, boost):
 
     This function blends between a linear curve and a non-linear curve that
     pulls higher values closer to 1.0 as boost increases.
-    
+
     - At boost = 0: the output is equal to the input (linear).
     - At boost = 1: higher input values are strongly biased toward 1.0.
 
@@ -2015,6 +2015,6 @@ def aggressive_top_end_bias(x, boost):
     Returns:
         float or np.ndarray: Transformed value(s), same shape and type as `x`.
     """
-    
+
     aggressive_curve = 1 - (1 - x) ** 4  # Adjust power for curve steepness
     return (1 - boost) * x + boost * aggressive_curve
