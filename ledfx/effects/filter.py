@@ -7,6 +7,7 @@ import voluptuous as vol
 from ledfx.color import parse_color, validate_color
 from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.gradient import GradientEffect
+from ledfx.utils import aggressive_top_end_bias
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -74,19 +75,9 @@ class Filter(AudioReactiveEffect, GradientEffect):
     def audio_data_updated(self, data):
         self.filtered_power = getattr(data, self.power_func)()
 
-    def aggressive_top_end_bias(self, x, boost):
-        """
-        Final aggressive top-end bias:
-        - Linear at boost = 0
-        - Strong upward curve at boost = 1
-        """
-        aggressive_curve = 1 - (1 - x) ** 4  # Adjust power for curve steepness
-        return (1 - boost) * x + boost * aggressive_curve
-
     def render(self):
 
         if self.use_gradient:
-
             if self.roll_speed > 0:
                 # some mod magic to get a value between 0 and 1 according to time passed
                 gradient_index = (
@@ -94,15 +85,11 @@ class Filter(AudioReactiveEffect, GradientEffect):
                 ) / self.roll_time
             else:
                 gradient_index = 0
-
             color = self.get_gradient_color(gradient_index)
         else:
             color = self.color
 
-        from ledfx.utils import Teleplot
-        Teleplot.send(f"power_{self._config['frequency_range']}:{self.filtered_power:.3f}")
-        boosted = self.aggressive_top_end_bias(self.filtered_power, self.boost)
-        Teleplot.send(f"boost_{self._config['frequency_range']}:{boosted:.3f}")
+        boosted = aggressive_top_end_bias(self.filtered_power, self.boost)
 
         # just fill the pixels to the selected color multiplied by the brightness
         # we don't care if it is a single pixel or a massive matrix!
