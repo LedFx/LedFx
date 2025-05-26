@@ -23,8 +23,7 @@ class Filter(AudioReactiveEffect, GradientEffect):
         "gradient_roll",
         "gradient",
         "frequency_range",
-        "brightness"
-
+        "brightness",
     ]
     ADVANCED_KEYS = []
 
@@ -88,8 +87,10 @@ class Filter(AudioReactiveEffect, GradientEffect):
             self.color = self.color_low
             self.last_low = timeit.default_timer()
 
-
-        elif timeit.default_timer() - self.last_low > self._config["switch_time"]:
+        elif (
+            timeit.default_timer() - self.last_low
+            > self._config["switch_time"]
+        ):
             # use Mids
             self.power_func = self.POWER_FUNCS_MAPPING["Mids"]
             self.filtered_power = getattr(data, self.power_func)()
@@ -97,15 +98,17 @@ class Filter(AudioReactiveEffect, GradientEffect):
                 self.color = self.color_mids
                 self.last_mid = timeit.default_timer()
             # use High
-            elif timeit.default_timer() - self.last_mid > self._config["switch_time"]:
+            elif (
+                timeit.default_timer() - self.last_mid
+                > self._config["switch_time"]
+            ):
                 self.power_func = self.POWER_FUNCS_MAPPING["High"]
                 self.filtered_power = getattr(data, self.power_func)()
                 self.color = self.color_high
 
-        
-
     def render(self):
         # just fill the pixels to the selected color multiplied by the brightness
         # we don't care if it is a single pixel or a massive matrix!
-        self.pixels[:] = self.color * self.filtered_power * self._config["brightness_boost"]
-        
+        self.pixels[:] = (
+            self.color * self.filtered_power * self._config["brightness_boost"]
+        )
