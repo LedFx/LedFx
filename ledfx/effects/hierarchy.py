@@ -98,8 +98,6 @@ class Hierarchy(AudioReactiveEffect):
                 self.filtered_power = getattr(data, self.power_func)()
                 self.color = self.color_high
 
-        
-
     def render(self):
         # just fill the pixels to the selected color multiplied by the brightness
         # we don't care if it is a single pixel or a massive matrix!
