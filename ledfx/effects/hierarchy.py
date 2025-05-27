@@ -98,5 +98,6 @@ class Hierarchy(AudioReactiveEffect):
 
     def render(self):
         # Apply the color to all pixels by multiplying the color with the calculated brightness
-        self.pixels[:] = self.color * aggressive_top_end_bias(self.filtered_power , self.brightness_boost)
-        
+        self.pixels[:] = self.color * aggressive_top_end_bias(
+            self.filtered_power, self.brightness_boost
+        )
