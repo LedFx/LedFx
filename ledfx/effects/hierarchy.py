@@ -44,7 +44,7 @@ class Hierarchy(AudioReactiveEffect):
             vol.Optional(
                 "brightness_boost",
                 description="Boost the brightness of the effect on a parabolic curve",
-                default=1.0,
+                default=0.0,
             ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
             vol.Optional(
                 "switch_threshold_lows",
