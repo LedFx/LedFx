@@ -78,12 +78,12 @@ class Hierarchy(AudioReactiveEffect):
         self.color_high = np.array(parse_color(self._config["color_high"]))
 
     def audio_data_updated(self, data):
-        current_time  = timeit.default_timer()
+        current_time = timeit.default_timer()
         # use Lows (beat+bass)
         self.filtered_power = self.audio.lows_power()
         if self.filtered_power > self.switch_threshold_lows:
             self.color = self.color_low
-            self.last_low = current_time 
+            self.last_low = current_time
         # use Mids
         elif current_time - self.last_low > self.switch_time:
             self.filtered_power = self.audio.mids_power()
@@ -97,5 +97,6 @@ class Hierarchy(AudioReactiveEffect):
 
     def render(self):
         # Apply the color to all pixels by multiplying the color with the calculated brightness
-        self.pixels[:] = self.color * aggressive_top_end_bias(self.filtered_power , self._config["brightness_boost"])
-        
+        self.pixels[:] = self.color * aggressive_top_end_bias(
+            self.filtered_power, self._config["brightness_boost"]
+        )
