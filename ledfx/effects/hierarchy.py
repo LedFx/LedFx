@@ -46,12 +46,12 @@ class Hierarchy(AudioReactiveEffect):
                 default=0.0,
             ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
             vol.Optional(
-                "switch_threshold_lows",
+                "threshold_lows",
                 description="If Lows are below this value, Mids are used.",
                 default=0.05,
             ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
             vol.Optional(
-                "switch_threshold_mids",
+                "threshold_mids",
                 description="If Mids are below this value, Highs are used",
                 default=0.05,
             ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
@@ -70,35 +70,32 @@ class Hierarchy(AudioReactiveEffect):
         self.color = np.array(parse_color("#000000"))
 
     def config_updated(self, config):
+        self.switch_time = self._config["switch_time"]
+        self.switch_threshold_lows = self._config["switch_threshold_lows"]
+        self.switch_threshold_mids = self._config["switch_threshold_mids"]
         self.color_low = np.array(parse_color(self._config["color_lows"]))
         self.color_mids = np.array(parse_color(self._config["color_mids"]))
         self.color_high = np.array(parse_color(self._config["color_high"]))
 
     def audio_data_updated(self, data):
+        current_time  = timeit.default_timer()
         # use Lows (beat+bass)
-        current_time = timeit.default_timer()
-        self.power_func = self.POWER_FUNCS_MAPPING["Lows (beat+bass)"]
-        self.filtered_power = getattr(data, self.power_func)()
-        if self.filtered_power > self._config["switch_threshold_lows"]:
+        self.filtered_power = self.audio.lows_power()
+        if self.filtered_power > self.switch_threshold_lows:
             self.color = self.color_low
-            self.last_low = current_time
-
-        elif current_time - self.last_low > self._config["switch_time"]:
-            # use Mids
-            self.power_func = self.POWER_FUNCS_MAPPING["Mids"]
-            self.filtered_power = getattr(data, self.power_func)()
-            if self.filtered_power > self._config["switch_threshold_mids"]:
+            self.last_low = current_time 
+        # use Mids
+        elif current_time - self.last_low > self.switch_time:
+            self.filtered_power = self.audio.mids_power()
+            if self.filtered_power > self.switch_threshold_mids:
                 self.color = self.color_mids
                 self.last_mid = current_time
             # use High
-            elif current_time - self.last_mid > self._config["switch_time"]:
-                self.power_func = self.POWER_FUNCS_MAPPING["High"]
-                self.filtered_power = getattr(data, self.power_func)()
+            elif current_time - self.last_mid > self.switch_time:
+                self.filtered_power = self.audio.high_power()
                 self.color = self.color_high
 
     def render(self):
-        # just fill the pixels to the selected color multiplied by the brightness
-        # we don't care if it is a single pixel or a massive matrix!
-        self.pixels[:] = self.color * aggressive_top_end_bias(
-            self.filtered_power, self._config["brightness_boost"]
-        )
+        # Apply the color to all pixels by multiplying the color with the calculated brightness
+        self.pixels[:] = self.color * aggressive_top_end_bias(self.filtered_power , self._config["brightness_boost"])
+        
