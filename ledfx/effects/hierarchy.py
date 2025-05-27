@@ -19,8 +19,7 @@ class Hierarchy(AudioReactiveEffect):
         "background_brightness",
         "blur",
         "mirror",
-        "flip"
-
+        "flip",
     ]
     ADVANCED_KEYS = []
 
@@ -77,13 +76,12 @@ class Hierarchy(AudioReactiveEffect):
 
     def audio_data_updated(self, data):
         # use Lows (beat+bass)
-        current_time  = timeit.default_timer()
+        current_time = timeit.default_timer()
         self.power_func = self.POWER_FUNCS_MAPPING["Lows (beat+bass)"]
         self.filtered_power = getattr(data, self.power_func)()
         if self.filtered_power > self._config["switch_threshold_lows"]:
             self.color = self.color_low
-            self.last_low = current_time 
-
+            self.last_low = current_time
 
         elif current_time - self.last_low > self._config["switch_time"]:
             # use Mids
@@ -91,7 +89,7 @@ class Hierarchy(AudioReactiveEffect):
             self.filtered_power = getattr(data, self.power_func)()
             if self.filtered_power > self._config["switch_threshold_mids"]:
                 self.color = self.color_mids
-                self.last_mid = current_time 
+                self.last_mid = current_time
             # use High
             elif current_time - self.last_mid > self._config["switch_time"]:
                 self.power_func = self.POWER_FUNCS_MAPPING["High"]
@@ -101,5 +99,6 @@ class Hierarchy(AudioReactiveEffect):
     def render(self):
         # just fill the pixels to the selected color multiplied by the brightness
         # we don't care if it is a single pixel or a massive matrix!
-        self.pixels[:] = self.color * aggressive_top_end_bias(self.filtered_power , self._config["brightness_boost"])
-        
+        self.pixels[:] = self.color * aggressive_top_end_bias(
+            self.filtered_power, self._config["brightness_boost"]
+        )
