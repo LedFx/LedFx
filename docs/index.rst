@@ -25,6 +25,12 @@
    /devices/govee
 
 .. toctree::
+   :maxdepth: 2
+   :caption: Effects
+
+   /effects/simple/filter
+
+.. toctree::
    :maxdepth: 1
    :caption: How To
 
