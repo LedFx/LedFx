@@ -71,8 +71,8 @@ class Hierarchy(AudioReactiveEffect):
 
     def config_updated(self, config):
         self.switch_time = self._config["switch_time"]
-        self.switch_threshold_lows = self._config["switch_threshold_lows"]
-        self.switch_threshold_mids = self._config["switch_threshold_mids"]
+        self.switch_threshold_lows = self._config["threshold_lows"]
+        self.switch_threshold_mids = self._config["threshold_mids"]
         self.brightness_boost = self._config["brightness_boost"]
         self.color_low = np.array(parse_color(self._config["color_lows"]))
         self.color_mids = np.array(parse_color(self._config["color_mids"]))
