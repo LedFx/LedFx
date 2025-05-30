@@ -26,7 +26,7 @@ class Equalizer2d(Twod, GradientEffect):
         "frequency_range",
         "spin_multiplier",
         "spin_decay",
-        "peak_color"
+        "peak_color",
     ]
 
     CONFIG_SCHEMA = vol.Schema(
@@ -120,7 +120,6 @@ class Equalizer2d(Twod, GradientEffect):
             alpha_decay=self._config["spin_decay"], alpha_rise=0.99
         )
         self.peak_color = parse_color(self._config["peak_color"])
-
 
     def calc_ring_segments(self, rotation):
         # we want coordinates for self.bands around an oval defined by self.r_width and self.r_height
