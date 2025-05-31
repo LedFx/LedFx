@@ -12,17 +12,10 @@
  */
 
 /*!
- * Chart.js v4.4.7
+ * Chart.js v4.4.8
  * https://www.chartjs.org
- * (c) 2024 Chart.js Contributors
+ * (c) 2025 Chart.js Contributors
  * Released under the MIT License
- */
-
-/*!
- * cookie
- * Copyright(c) 2012-2014 Roman Shtylman
- * Copyright(c) 2015 Douglas Christopher Wilson
- * MIT Licensed
  */
 
 /*! *****************************************************************************
@@ -316,7 +309,7 @@ PERFORMANCE OF THIS SOFTWARE.
  */
 
 /**
- * @mui/styled-engine v6.4.8
+ * @mui/styled-engine v6.4.11
  *
  * @license MIT
  * This source code is licensed under the MIT license found in the
