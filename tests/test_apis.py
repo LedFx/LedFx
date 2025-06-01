@@ -78,26 +78,32 @@ def test_api(group_name, test_name, case, http_session):
                 ):
                     try:
                         assert value.items() <= response_dict[key].items()
-                    except AssertionError:
+                    except AssertionError as exc:
                         error_detail = find_first_error(
                             value, response_dict[key]
                         )
-                        raise AssertionError(
-                            f"Expected {key} to contain {value}, but got {response_dict.get(key)}. \n\nDetail: {error_detail}"
+                        msg = (
+                            f"Expected {key} to contain \n{value}, "
+                            f"\n but got \n{response_dict.get(key)}. "
+                            f"\n\nDetail: {error_detail}"
                         )
+                        raise AssertionError(msg) from exc
                 else:
                     try:
                         assert (
                             key in response_dict
                             and response_dict[key] == value
                         )
-                    except AssertionError:
+                    except AssertionError as exc:
                         error_detail = find_first_error(
                             value, response_dict.get(key)
                         )
-                        raise AssertionError(
-                            f"Expected {key} to be {value}, but got {response_dict.get(key)}. \n\nDetail: {error_detail}"
+                        msg = (
+                            f"Expected {key} to be \n{value}, "
+                            f"\n but got \n{response_dict.get(key)}. "
+                            f"\n\nDetail: {error_detail}"
                         )
+                        raise AssertionError(msg) from exc
     if case.sleep_after_test:
         time.sleep(case.sleep_after_test)
 
