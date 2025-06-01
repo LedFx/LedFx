@@ -305,12 +305,72 @@ coexistance_tests = {
         expected_response_values=[],
         payload_to_send={},
     ),
-    # TODO: add test cases for general port seperated
-    # TODO: add test cases for general port seperated
-    # TODO: add test cases for general port seperated
-    # TODO: add test cases for general port seperated
-    # TODO: add test cases for general port seperated
-    # TODO: add test cases for general port seperated
+    "create_ddp_device_1": APITestCase(
+        execution_order=(test_count := test_count + 1),
+        method="POST",
+        api_endpoint="/api/devices",
+        expected_return_code=200,
+        payload_to_send={
+            "type": "ddp",
+            "config": {
+                "pixel_count": 10,
+                "port": 4048,
+                "name": "test_ddp_1",
+                "ip_address": "1.2.3.4"
+            }
+        },
+        expected_response_keys=["status", "payload", "device"],
+        expected_response_values=[
+            {"status": "success"},
+            {
+                "payload": {
+                    "type": "success",
+                    "reason": "Created device test_ddp_1",
+                },
+            },
+            # we are just happy it was created, we don't care about the device details
+        ],
+    ),
+    # TODO: Try to create DDP device on e131 port, should fail
+    "create_ddp_device_2_on_e131_port_bad": APITestCase(
+        execution_order=(test_count := test_count + 1),
+        method="POST",
+        api_endpoint="/api/devices",
+        expected_return_code=200,
+        payload_to_send={
+            "type": "ddp",
+            "config": {
+                "pixel_count": 10,
+                "port": 5568,
+                "name": "test_ddp_2",
+                "ip_address": "1.2.3.4"
+            }
+        },
+        expected_response_keys=["status", "payload"],
+        expected_response_values=[
+            {"status": "failed"},
+            {
+                "payload": {
+                    "type": "error",
+                },
+            },
+        ],
+    ),
+    # TODO: Try to create DDP device on default port, should fail
+    # TODO: Try to create DDP devuce on some other port, should succeed
+    # TODO: Create UDP device on default, should allow due to seperate port definition
+    # TODO: Create UDP device on same port as DDP, should fail due to port conflict
+
+    "cleanup_ddp_1": APITestCase(
+        execution_order=(test_count := test_count + 1),
+        method="DELETE",
+        api_endpoint="/api/devices/test-ddp-1",
+        expected_return_code=200,
+        expected_response_keys=[],
+        expected_response_values=[],
+        payload_to_send={},
+    ),
+
     "cleanup_e131": APITestCase(
         execution_order=(test_count := test_count + 1),
         method="DELETE",
