@@ -808,7 +808,7 @@ class Devices(RegistryLoader):
                 await device.wled.flush_sync_settings()
                 device.update_config({"sync_mode": mode})
 
-    def run_device_ip_tests(self, new_type, new_config, pre_device):
+    def run_device_ip_tests_old(self, new_type, new_config, pre_device):
         """
         Run tests to check if the devices are compatible with each other on a common IP
         This function will reach the end and return if no tests hard succeeded or hard failed
@@ -818,11 +818,7 @@ class Devices(RegistryLoader):
             raise ValueError with suitable message for hard fail = coexistance is not viable and device should not be created
         """
 
-        # there are various scenarios where devices can coexist on the same IP address
-        # 1) device types with different port numbers or other access methods
-        # 2) common device types that have secondary checks that must be performed
-        #    for example e131 / artnet universe or openrgb openrgb_id
-        #    port number could also be considered here
+
         if self.is_universe_separated(new_type, new_config, pre_device):
             return
         if self.is_openrgb_id_separated(new_type, new_config, pre_device):
@@ -832,6 +828,52 @@ class Devices(RegistryLoader):
         if self.is_general_port_separated(new_type, new_config, pre_device):
             return
         # no reason found to reject, return
+
+    def generate_device_ip_tests(self, new_type, new_config, pre_device):
+        """
+        Generate tests to check if the devices are compatible with each other on a common IP
+
+        There are various scenarios where devices can coexist on the same IP address
+        1) device types with different port numbers or other access methods
+        2) common device types that have secondary checks that must be performed
+           for example e131 / artnet universe or openrgb openrgb_id
+           port number could also be considered here
+
+        Args:
+            new_type (_type_): new_config does not carry device type so must be explicit
+            new_config (_type_): config from creation of new device
+            pre_device (_type_): config from pre-existing device
+
+        Yields:
+            bool: True if the devices can explicity coexist, False if there is no rejection
+            ValueError: if the devices cannot coexist due to a hard failure
+        """
+        for test in  [
+                self.is_universe_separated,
+                self.is_openrgb_id_separated,
+                self.is_osc_port_path_separated,
+                self.is_general_port_separated,
+            ]:
+            yield test(new_type, new_config, pre_device)
+    
+    def run_device_ip_tests(self, new_type, new_config, pre_device):
+        """
+        Run tests to check if the devices are compatible with each other on a common IP
+        This function will reach the end and return if no tests hard succeeded or hard failed
+        Individual tests with will
+            return False for a soft fail = coexistance was not covered by the test for success or hard fail
+            return True for success = coexistance is viable and device should be created
+            raise ValueError with suitable message for hard fail = coexistance is not viable and device should not be created
+        
+        Args:
+            new_type (_type_): new_config does not carry device type so must be explicit
+            new_config (_type_): config from creation of new device
+            pre_device (_type_): config from pre-existing device
+        """
+
+        for result in self.generate_device_ip_tests(new_type, new_config, pre_device):
+            if result:
+                return
 
     def is_universe_separated(self, new_type, new_config, pre_device):
         """
