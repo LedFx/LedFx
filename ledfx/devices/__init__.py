@@ -10,7 +10,6 @@ import numpy as np
 import serial
 import serial.tools.list_ports
 import voluptuous as vol
-from sacn.sending.sender_socket_base import DEFAULT_PORT, SenderSocketBase
 
 from ledfx.config import save_config
 from ledfx.events import (
