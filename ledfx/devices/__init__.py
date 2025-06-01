@@ -4,7 +4,7 @@ import socket
 import threading
 from abc import abstractmethod
 from functools import cached_property, partial
-from sacn.sending.sender_socket_base import SenderSocketBase, DEFAULT_PORT
+from sacn.sending.sender_socket_base import DEFAULT_PORT
 
 import numpy as np
 import serial
