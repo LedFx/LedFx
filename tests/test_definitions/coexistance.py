@@ -447,8 +447,8 @@ coexistance_tests = {
                 "pixel_count": 1,
                 "port": 21324,
                 "name": "test_udp_1",
-                "ip_address": "1.2.3.4"
-            }
+                "ip_address": "1.2.3.4",
+            },
         },
         expected_response_keys=["status", "payload", "device"],
         expected_response_values=[
@@ -463,7 +463,7 @@ coexistance_tests = {
         ],
     ),
     # Create UDP device on same port as DDP, should fail due to port conflict
-        "create_udp_device_2_on_ddp_port_bad": APITestCase(
+    "create_udp_device_2_on_ddp_port_bad": APITestCase(
         execution_order=(test_count := test_count + 1),
         method="POST",
         api_endpoint="/api/devices",
@@ -474,8 +474,8 @@ coexistance_tests = {
                 "pixel_count": 1,
                 "port": 4048,
                 "name": "test_udp_2",
-                "ip_address": "1.2.3.4"
-            }
+                "ip_address": "1.2.3.4",
+            },
         },
         expected_response_keys=["status", "payload"],
         expected_response_values=[
@@ -514,7 +514,7 @@ coexistance_tests = {
         expected_response_values=[],
         payload_to_send={},
     ),
-        "cleanup_udp_1": APITestCase(
+    "cleanup_udp_1": APITestCase(
         execution_order=(test_count := test_count + 1),
         method="DELETE",
         api_endpoint="/api/devices/test-udp-1",
