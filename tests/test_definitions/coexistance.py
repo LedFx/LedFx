@@ -331,7 +331,7 @@ coexistance_tests = {
             # we are just happy it was created, we don't care about the device details
         ],
     ),
-    # TODO: Try to create DDP device on e131 port, should fail
+    # Try to create DDP device on e131 port, should fail
     "create_ddp_device_2_on_e131_port_bad": APITestCase(
         execution_order=(test_count := test_count + 1),
         method="POST",
@@ -356,14 +356,168 @@ coexistance_tests = {
             },
         ],
     ),
-    # TODO: Try to create DDP device on default port, should fail
-    # TODO: Try to create DDP devuce on some other port, should succeed
-    # TODO: Create UDP device on default, should allow due to seperate port definition
-    # TODO: Create UDP device on same port as DDP, should fail due to port conflict
+    # Try to create DDP device on default port, should fail
+    "create_ddp_device_3_on_default_bad": APITestCase(
+        execution_order=(test_count := test_count + 1),
+        method="POST",
+        api_endpoint="/api/devices",
+        expected_return_code=200,
+        payload_to_send={
+            "type": "ddp",
+            "config": {
+                "pixel_count": 10,
+                "port": 4048,
+                "name": "test_ddp_3",
+                "ip_address": "1.2.3.4",
+            },
+        },
+        expected_response_keys=["status", "payload"],
+        expected_response_values=[
+            {"status": "failed"},
+            {
+                "payload": {
+                    "type": "error",
+                },
+            },
+        ],
+    ),
+    # Try to create DDP device on default port, but differe IP should pass
+    "create_ddp_device_4_on_default_new_ip_good": APITestCase(
+        execution_order=(test_count := test_count + 1),
+        method="POST",
+        api_endpoint="/api/devices",
+        expected_return_code=200,
+        payload_to_send={
+            "type": "ddp",
+            "config": {
+                "pixel_count": 10,
+                "port": 4048,
+                "name": "test_ddp_4",
+                "ip_address": "1.2.3.5",
+            },
+        },
+        expected_response_keys=["status", "payload", "device"],
+        expected_response_values=[
+            {"status": "success"},
+            {
+                "payload": {
+                    "type": "success",
+                    "reason": "Created device test_ddp_4",
+                },
+            },
+            # we are just happy it was created, we don't care about the device details
+        ],
+    ),
+    # Try to create DDP devuce on some other port, should succeed
+    "create_ddp_device_5_on_default_good": APITestCase(
+        execution_order=(test_count := test_count + 1),
+        method="POST",
+        api_endpoint="/api/devices",
+        expected_return_code=200,
+        payload_to_send={
+            "type": "ddp",
+            "config": {
+                "pixel_count": 10,
+                "port": 4049,
+                "name": "test_ddp_5",
+                "ip_address": "1.2.3.4",
+            },
+        },
+        expected_response_keys=["status", "payload", "device"],
+        expected_response_values=[
+            {"status": "success"},
+            {
+                "payload": {
+                    "type": "success",
+                    "reason": "Created device test_ddp_5",
+                },
+            },
+            # we are just happy it was created, we don't care about the device details
+        ],
+    ),
+    # Create UDP device on default, should allow due to seperate port definition
+    "create_udp_device_1_default_good": APITestCase(
+        execution_order=(test_count := test_count + 1),
+        method="POST",
+        api_endpoint="/api/devices",
+        expected_return_code=200,
+        payload_to_send={
+            "type": "udp",
+            "config": {
+                "pixel_count": 1,
+                "port": 21324,
+                "name": "test_udp_1",
+                "ip_address": "1.2.3.4"
+            }
+        },
+        expected_response_keys=["status", "payload", "device"],
+        expected_response_values=[
+            {"status": "success"},
+            {
+                "payload": {
+                    "type": "success",
+                    "reason": "Created device test_udp_1",
+                },
+            },
+            # we are just happy it was created, we don't care about the device details
+        ],
+    ),
+    # Create UDP device on same port as DDP, should fail due to port conflict
+        "create_udp_device_2_on_ddp_port_bad": APITestCase(
+        execution_order=(test_count := test_count + 1),
+        method="POST",
+        api_endpoint="/api/devices",
+        expected_return_code=200,
+        payload_to_send={
+            "type": "udp",
+            "config": {
+                "pixel_count": 1,
+                "port": 4048,
+                "name": "test_udp_2",
+                "ip_address": "1.2.3.4"
+            }
+        },
+        expected_response_keys=["status", "payload"],
+        expected_response_values=[
+            {"status": "failed"},
+            {
+                "payload": {
+                    "type": "error",
+                },
+            },
+        ],
+    ),
     "cleanup_ddp_1": APITestCase(
         execution_order=(test_count := test_count + 1),
         method="DELETE",
         api_endpoint="/api/devices/test-ddp-1",
+        expected_return_code=200,
+        expected_response_keys=[],
+        expected_response_values=[],
+        payload_to_send={},
+    ),
+    "cleanup_ddp_4": APITestCase(
+        execution_order=(test_count := test_count + 1),
+        method="DELETE",
+        api_endpoint="/api/devices/test-ddp-4",
+        expected_return_code=200,
+        expected_response_keys=[],
+        expected_response_values=[],
+        payload_to_send={},
+    ),
+    "cleanup_ddp_5": APITestCase(
+        execution_order=(test_count := test_count + 1),
+        method="DELETE",
+        api_endpoint="/api/devices/test-ddp-5",
+        expected_return_code=200,
+        expected_response_keys=[],
+        expected_response_values=[],
+        payload_to_send={},
+    ),
+        "cleanup_udp_1": APITestCase(
+        execution_order=(test_count := test_count + 1),
+        method="DELETE",
+        api_endpoint="/api/devices/test-udp-1",
         expected_return_code=200,
         expected_response_keys=[],
         expected_response_values=[],

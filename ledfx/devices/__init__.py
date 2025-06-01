@@ -4,6 +4,7 @@ import socket
 import threading
 from abc import abstractmethod
 from functools import cached_property, partial
+from sacn.sending.sender_socket_base import SenderSocketBase, DEFAULT_PORT
 
 import numpy as np
 import serial
@@ -880,10 +881,22 @@ class Devices(RegistryLoader):
         """
         Check if the new device is port separated from the pre-existing device
         """
-        if "port" in new_config and "port" in pre_device.config:
-            if new_config["port"] == pre_device.config["port"]:
+        # e131 is a special case as its port number is not in the config, but in the library
+        new_port = None
+        pre_port = None
+        if new_type == "e131":
+            new_port = DEFAULT_PORT
+        if pre_device.type == "e131":
+            pre_port = DEFAULT_PORT
+        if "port" in new_config:
+            new_port = new_config["port"]   
+        if "port" in pre_device.config:
+            pre_port = pre_device.config["port"]
+
+        if new_port is not None and pre_port is not None:
+            if new_port == pre_port:
                 msg = f"Ignoring {new_config['ip_address']}: Shares IP and port with existing device {pre_device.name}"
                 _LOGGER.info(msg)
                 raise ValueError(msg)
-            return True
+            return True   
         return False
