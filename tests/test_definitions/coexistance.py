@@ -56,15 +56,6 @@ coexistance_tests = {
             }
         ],
     ),
-    "cleanup_artnet_1": APITestCase(
-        execution_order=(test_count := test_count + 1),
-        method="DELETE",
-        api_endpoint="/api/devices/test-artnet-1",
-        expected_return_code=200,
-        expected_response_keys=[],
-        expected_response_values=[],
-        payload_to_send={},
-    ),
     "create_artnet_device_2_with_same_universe_bad": APITestCase(
         execution_order=(test_count := test_count + 1),
         method="POST",
@@ -94,15 +85,6 @@ coexistance_tests = {
         execution_order=(test_count := test_count + 1),
         method="DELETE",
         api_endpoint="/api/devices/test-artnet-1",
-        expected_return_code=200,
-        expected_response_keys=[],
-        expected_response_values=[],
-        payload_to_send={},
-    ),
-    "cleanup_artnet_2": APITestCase(
-        execution_order=(test_count := test_count + 1),
-        method="DELETE",
-        api_endpoint="/api/devices/test-artnet-2",
         expected_return_code=200,
         expected_response_keys=[],
         expected_response_values=[],
