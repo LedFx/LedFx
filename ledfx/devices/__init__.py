@@ -19,6 +19,7 @@ from ledfx.events import (
     DeviceUpdateEvent,
     Event,
 )
+
 from ledfx.utils import (
     AVAILABLE_FPS,
     WLED,
