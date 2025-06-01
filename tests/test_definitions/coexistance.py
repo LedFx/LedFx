@@ -316,8 +316,8 @@ coexistance_tests = {
                 "pixel_count": 10,
                 "port": 4048,
                 "name": "test_ddp_1",
-                "ip_address": "1.2.3.4"
-            }
+                "ip_address": "1.2.3.4",
+            },
         },
         expected_response_keys=["status", "payload", "device"],
         expected_response_values=[
@@ -343,8 +343,8 @@ coexistance_tests = {
                 "pixel_count": 10,
                 "port": 5568,
                 "name": "test_ddp_2",
-                "ip_address": "1.2.3.4"
-            }
+                "ip_address": "1.2.3.4",
+            },
         },
         expected_response_keys=["status", "payload"],
         expected_response_values=[
@@ -360,7 +360,6 @@ coexistance_tests = {
     # TODO: Try to create DDP devuce on some other port, should succeed
     # TODO: Create UDP device on default, should allow due to seperate port definition
     # TODO: Create UDP device on same port as DDP, should fail due to port conflict
-
     "cleanup_ddp_1": APITestCase(
         execution_order=(test_count := test_count + 1),
         method="DELETE",
@@ -370,7 +369,6 @@ coexistance_tests = {
         expected_response_values=[],
         payload_to_send={},
     ),
-
     "cleanup_e131": APITestCase(
         execution_order=(test_count := test_count + 1),
         method="DELETE",
