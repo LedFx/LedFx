@@ -4,6 +4,7 @@ import socket
 import threading
 from abc import abstractmethod
 from functools import cached_property, partial
+from sacn.sending.sender_socket_base import DEFAULT_PORT
 
 import numpy as np
 import serial
@@ -17,6 +18,7 @@ from ledfx.events import (
     DeviceUpdateEvent,
     Event,
 )
+
 from ledfx.utils import (
     AVAILABLE_FPS,
     WLED,
