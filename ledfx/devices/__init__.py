@@ -4,12 +4,12 @@ import socket
 import threading
 from abc import abstractmethod
 from functools import cached_property, partial
-from sacn.sending.sender_socket_base import SenderSocketBase, DEFAULT_PORT
 
 import numpy as np
 import serial
 import serial.tools.list_ports
 import voluptuous as vol
+from sacn.sending.sender_socket_base import DEFAULT_PORT, SenderSocketBase
 
 from ledfx.config import save_config
 from ledfx.events import (
@@ -889,7 +889,7 @@ class Devices(RegistryLoader):
         if pre_device.type == "e131":
             pre_port = DEFAULT_PORT
         if "port" in new_config:
-            new_port = new_config["port"]   
+            new_port = new_config["port"]
         if "port" in pre_device.config:
             pre_port = pre_device.config["port"]
 
@@ -898,5 +898,5 @@ class Devices(RegistryLoader):
                 msg = f"Ignoring {new_config['ip_address']}: Shares IP and port with existing device {pre_device.name}"
                 _LOGGER.info(msg)
                 raise ValueError(msg)
-            return True   
+            return True
         return False
