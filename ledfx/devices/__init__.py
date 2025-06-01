@@ -820,7 +820,7 @@ class Devices(RegistryLoader):
 
         Explicit device approval tests should be added prior to the final is_general_port_separated test
         which is a catch-all for any device type that does not have a specific test
-        
+
         Args:
             new_type (_type_): new_config does not carry device type so must be explicit
             new_config (_type_): config from creation of new device
