@@ -818,7 +818,6 @@ class Devices(RegistryLoader):
             raise ValueError with suitable message for hard fail = coexistance is not viable and device should not be created
         """
 
-
         if self.is_universe_separated(new_type, new_config, pre_device):
             return
         if self.is_openrgb_id_separated(new_type, new_config, pre_device):
@@ -848,14 +847,14 @@ class Devices(RegistryLoader):
             bool: True if the devices can explicity coexist, False if there is no rejection
             ValueError: if the devices cannot coexist due to a hard failure
         """
-        for test in  [
-                self.is_universe_separated,
-                self.is_openrgb_id_separated,
-                self.is_osc_port_path_separated,
-                self.is_general_port_separated,
-            ]:
+        for test in [
+            self.is_universe_separated,
+            self.is_openrgb_id_separated,
+            self.is_osc_port_path_separated,
+            self.is_general_port_separated,
+        ]:
             yield test(new_type, new_config, pre_device)
-    
+
     def run_device_ip_tests(self, new_type, new_config, pre_device):
         """
         Run tests to check if the devices are compatible with each other on a common IP
@@ -864,14 +863,16 @@ class Devices(RegistryLoader):
             return False for a soft fail = coexistance was not covered by the test for success or hard fail
             return True for success = coexistance is viable and device should be created
             raise ValueError with suitable message for hard fail = coexistance is not viable and device should not be created
-        
+
         Args:
             new_type (_type_): new_config does not carry device type so must be explicit
             new_config (_type_): config from creation of new device
             pre_device (_type_): config from pre-existing device
         """
 
-        for result in self.generate_device_ip_tests(new_type, new_config, pre_device):
+        for result in self.generate_device_ip_tests(
+            new_type, new_config, pre_device
+        ):
             if result:
                 return
 
