@@ -2072,7 +2072,9 @@ def get_sorted_physical_ips() -> list[str]:
                         continue
                     counter = counters.get(iface_name)
                     usage = (
-                        (counter.bytes_sent + counter.bytes_recv) if counter else 0
+                        (counter.bytes_sent + counter.bytes_recv)
+                        if counter
+                        else 0
                     )
                     _LOGGER.info(
                         f"Discovered IP {addr.address} on {iface_name} with usage {usage}"
