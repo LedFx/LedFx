@@ -10,14 +10,12 @@ import logging
 import math
 import os
 import pkgutil
-import psutil
 import re
 import socket
 import sys
 import time
 import timeit
 import urllib.request
-
 from abc import ABC
 from collections import deque
 from collections.abc import MutableMapping
@@ -40,6 +38,7 @@ from typing import Callable, List
 import numpy as np
 import PIL.Image as Image
 import PIL.ImageFont as ImageFont
+import psutil
 import requests
 import voluptuous as vol
 from dotenv import load_dotenv
@@ -2023,7 +2022,7 @@ def aggressive_top_end_bias(x, boost):
     return (1 - boost) * x + boost * aggressive_curve
 
 
-def get_sorted_physical_ips() -> List[str]:
+def get_sorted_physical_ips() -> list[str]:
     """
     Returns a sorted list of local non-loopback IPv4 addresses from physical interfaces.
     Sorts by:
@@ -2034,7 +2033,7 @@ def get_sorted_physical_ips() -> List[str]:
     ip_usage_list = []
 
     # Heuristics for physical interfaces
-    physical_keywords = ['eth', 'en', 'wlan', 'wl', 'Wi-Fi', 'Ethernet']
+    physical_keywords = ["eth", "en", "wlan", "wl", "Wi-Fi", "Ethernet"]
 
     _LOGGER.info("Starting local IP discovery")
 
@@ -2053,11 +2052,17 @@ def get_sorted_physical_ips() -> List[str]:
         for addr in iface_addrs:
             if addr.family == socket.AF_INET:
                 if addr.address.startswith("127."):
-                    _LOGGER.info(f"Skipping loopback address on {iface_name}: {addr.address}")
+                    _LOGGER.info(
+                        f"Skipping loopback address on {iface_name}: {addr.address}"
+                    )
                     continue
                 counter = counters.get(iface_name)
-                usage = (counter.bytes_sent + counter.bytes_recv) if counter else 0
-                _LOGGER.info(f"Discovered IP {addr.address} on {iface_name} with usage {usage}")
+                usage = (
+                    (counter.bytes_sent + counter.bytes_recv) if counter else 0
+                )
+                _LOGGER.info(
+                    f"Discovered IP {addr.address} on {iface_name} with usage {usage}"
+                )
                 ip_usage_list.append((usage, addr.address))
 
     ip_usage_list.sort(reverse=True)
@@ -2066,7 +2071,7 @@ def get_sorted_physical_ips() -> List[str]:
     # Try to determine the primary IP based on routing
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        s.connect(('8.8.8.8', 80))
+        s.connect(("8.8.8.8", 80))
         primary_ip = s.getsockname()[0]
         s.close()
         _LOGGER.info(f"Primary outbound IP detected: {primary_ip}")
