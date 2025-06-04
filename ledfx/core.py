@@ -9,7 +9,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
 import pybase64
-from utils import get_sorted_physical_ips
+from ledfx.utils import get_sorted_physical_ips
 
 from ledfx.color import (
     LEDFX_COLORS,
