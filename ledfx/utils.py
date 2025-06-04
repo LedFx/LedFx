@@ -5,7 +5,6 @@ import datetime
 import importlib
 import inspect
 import ipaddress
-import json
 import logging
 import math
 import os
@@ -33,7 +32,7 @@ from platform import (
 
 # from asyncio import coroutines, ensure_future
 from subprocess import PIPE, Popen
-from typing import Callable, List
+from typing import Callable
 
 import numpy as np
 import PIL.Image as Image
