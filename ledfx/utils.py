@@ -5,16 +5,19 @@ import datetime
 import importlib
 import inspect
 import ipaddress
+import json
 import logging
 import math
 import os
 import pkgutil
+import psutil
 import re
 import socket
 import sys
 import time
 import timeit
 import urllib.request
+
 from abc import ABC
 from collections import deque
 from collections.abc import MutableMapping
@@ -32,7 +35,7 @@ from platform import (
 
 # from asyncio import coroutines, ensure_future
 from subprocess import PIPE, Popen
-from typing import Callable
+from typing import Callable, List
 
 import numpy as np
 import PIL.Image as Image
@@ -2020,53 +2023,58 @@ def aggressive_top_end_bias(x, boost):
     return (1 - boost) * x + boost * aggressive_curve
 
 
-def get_local_ip_addresses() -> list[str]:
+def get_sorted_physical_ips() -> List[str]:
     """
-    Attempts to discover all local non-loopback IPv4 addresses.
-    Returns a list of IP address strings.
+    Returns a sorted list of local non-loopback IPv4 addresses from physical interfaces.
+    Sorts by:
+        1. Primary outbound IP (used for external connections)
+        2. Interface activity (bytes sent + received)
+    Logs interface decisions and IPs for triage.
     """
-    local_ips = set()  # Use a set to avoid duplicates
+    ip_usage_list = []
+
+    # Heuristics for physical interfaces
+    physical_keywords = ['eth', 'en', 'wlan', 'wl', 'Wi-Fi', 'Ethernet']
+
+    _LOGGER.info("Starting local IP discovery")
+
+    stats = psutil.net_if_stats()
+    counters = psutil.net_io_counters(pernic=True)
+
+    for iface_name, iface_addrs in psutil.net_if_addrs().items():
+        if not any(keyword in iface_name for keyword in physical_keywords):
+            _LOGGER.info(f"Skipping non-physical interface: {iface_name}")
+            continue
+        if iface_name not in stats or not stats[iface_name].isup:
+            _LOGGER.info(f"Skipping inactive interface: {iface_name}")
+            continue
+
+        _LOGGER.info(f"Inspecting interface: {iface_name}")
+        for addr in iface_addrs:
+            if addr.family == socket.AF_INET:
+                if addr.address.startswith("127."):
+                    _LOGGER.info(f"Skipping loopback address on {iface_name}: {addr.address}")
+                    continue
+                counter = counters.get(iface_name)
+                usage = (counter.bytes_sent + counter.bytes_recv) if counter else 0
+                _LOGGER.info(f"Discovered IP {addr.address} on {iface_name} with usage {usage}")
+                ip_usage_list.append((usage, addr.address))
+
+    ip_usage_list.sort(reverse=True)
+    sorted_ips = [ip for _, ip in ip_usage_list]
+
+    # Try to determine the primary IP based on routing
     try:
-        # This method gets all IPs associated with the hostname
-        hostname = socket.gethostname()
-        # The third element of the tuple returned by gethostbyname_ex is a list of IP addresses
-        # for all interfaces (including loopback, aliases, etc.)
-        _, _, ipaddrlist = socket.gethostbyname_ex(hostname)
-
-        for ip in ipaddrlist:
-            if ip and not ip.startswith("127."):  # Filter out loopback
-                local_ips.add(ip)
-
-        # Fallback or additional method for more robust discovery on some systems
-        # This attempts to find the primary IP by connecting to a dummy address
-        try:
-            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            s.settimeout(0)  # Non-blocking
-            s.connect(
-                ("10.254.254.254", 1)
-            )  # Doesn't actually need to connect
-            primary_ip = s.getsockname()[0]
-            if primary_ip and not primary_ip.startswith("127."):
-                local_ips.add(primary_ip)
-            s.close()
-        except Exception:
-            _LOGGER.debug(
-                "Could not determine primary IP via dummy connection method."
-            )
-
-    except socket.gaierror:
-        _LOGGER.warning("Could not determine local IP addresses via hostname.")
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(('8.8.8.8', 80))
+        primary_ip = s.getsockname()[0]
+        s.close()
+        _LOGGER.info(f"Primary outbound IP detected: {primary_ip}")
+        if primary_ip in sorted_ips:
+            sorted_ips.remove(primary_ip)
+        sorted_ips.insert(0, primary_ip)
     except Exception as e:
-        _LOGGER.error(
-            f"An unexpected error occurred while fetching local IP addresses: {e}"
-        )
+        _LOGGER.info(f"Primary IP detection via socket failed: {e}")
 
-    if not local_ips:
-        _LOGGER.info(
-            "No non-loopback local IP addresses found. Falling back to localhost."
-        )
-        # As a last resort, if no other IPs are found, you might still want to suggest localhost,
-        # but the frontend already defaults to this. So returning an empty list is also fine.
-        # return ["127.0.0.1"]
-
-    return sorted(list(local_ips))
+    _LOGGER.info(f"Final sorted IP list: {sorted_ips}")
+    return sorted_ips

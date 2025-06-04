@@ -9,7 +9,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
 import pybase64
-from utils import get_local_ip_addresses
+from utils import get_sorted_physical_ips
 
 from ledfx.color import (
     LEDFX_COLORS,
@@ -93,7 +93,7 @@ class LedFxCore:
             create_backup(config_dir, "DELETE")
 
         self.config = load_config(config_dir)
-        self.config["hosts"] = get_local_ip_addresses()
+        self.config["hosts"] = get_sorted_physical_ips()
 
         if clear_effects:
             _LOGGER.warning("Clearing active effects.")
