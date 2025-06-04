@@ -2034,9 +2034,18 @@ def get_sorted_physical_ips() -> list[str]:
 
         # Heuristics for physical interfaces
         physical_keywords = [
-            "eth", "en", "ens", "eno", "enp", "wlan", "wl",     # Linux
-            "Wi-Fi", "Ethernet", "Local Area",                  # Windows
-            "en", "bridge",                                     # macOS
+            "eth",
+            "en",
+            "ens",
+            "eno",
+            "enp",
+            "wlan",
+            "wl",  # Linux
+            "Wi-Fi",
+            "Ethernet",
+            "Local Area",  # Windows
+            "en",
+            "bridge",  # macOS
         ]
 
         _LOGGER.info("Starting local IP discovery")
