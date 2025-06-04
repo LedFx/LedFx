@@ -107,6 +107,7 @@ WLED_CONFIG_SCHEMA = vol.Schema(
 CORE_CONFIG_SCHEMA = vol.Schema(
     {
         vol.Optional("host", default="0.0.0.0"): str,
+        vol.Optional("hosts", default=[]): list,
         vol.Optional("port", default=8888): int,
         vol.Optional("port_s", default=8443): int,
         vol.Optional("dev_mode", default=False): bool,

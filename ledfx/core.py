@@ -48,6 +48,7 @@ from ledfx.utils import (
     UserDefaultCollection,
     async_fire_and_forget,
     currently_frozen,
+    get_sorted_physical_ips,
     pixels_boost,
     resize_pixels,
     shape_to_fit_len,
@@ -92,6 +93,7 @@ class LedFxCore:
             create_backup(config_dir, "DELETE")
 
         self.config = load_config(config_dir)
+        self.config["hosts"] = get_sorted_physical_ips()
 
         if clear_effects:
             _LOGGER.warning("Clearing active effects.")

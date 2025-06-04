@@ -2018,3 +2018,109 @@ def aggressive_top_end_bias(x, boost):
 
     aggressive_curve = 1 - (1 - x) ** 4  # Adjust power for curve steepness
     return (1 - boost) * x + boost * aggressive_curve
+
+
+def get_sorted_physical_ips() -> list[str]:
+    """
+    Returns a sorted list of local non-loopback IPv4 addresses from physical interfaces.
+    Sorts by:
+        1. Primary outbound IP (used for external connections)
+        2. Interface activity (bytes sent + received)
+    Logs interface decisions and IPs for triage.
+    """
+    try:
+        import psutil
+
+        ip_usage_list = []
+
+        # Heuristics for physical interfaces
+        physical_keywords = [
+            "eth",
+            "en",
+            "ens",
+            "eno",
+            "enp",
+            "wlan",
+            "wl",  # Linux
+            "Wi-Fi",
+            "Ethernet",
+            "Local Area",  # Windows
+            "en",
+            "bridge",  # macOS
+        ]
+
+        _LOGGER.info("Starting local IP discovery")
+
+        stats = psutil.net_if_stats()
+        counters = psutil.net_io_counters(pernic=True)
+
+        for iface_name, iface_addrs in psutil.net_if_addrs().items():
+            if not any(keyword in iface_name for keyword in physical_keywords):
+                _LOGGER.info(f"Skipping non-physical interface: {iface_name}")
+                continue
+            if iface_name not in stats or not stats[iface_name].isup:
+                _LOGGER.info(f"Skipping inactive interface: {iface_name}")
+                continue
+
+            _LOGGER.info(f"Inspecting interface: {iface_name}")
+            for addr in iface_addrs:
+                if addr.family == socket.AF_INET:
+                    if addr.address.startswith("127."):
+                        _LOGGER.info(
+                            f"Skipping loopback address on {iface_name}: {addr.address}"
+                        )
+                        continue
+                    counter = counters.get(iface_name)
+                    usage = (
+                        (counter.bytes_sent + counter.bytes_recv)
+                        if counter
+                        else 0
+                    )
+                    _LOGGER.info(
+                        f"Discovered IP {addr.address} on {iface_name} with usage {usage}"
+                    )
+                    ip_usage_list.append((usage, addr.address))
+    except Exception as e:
+        _LOGGER.warning(f"Failed to get network interface info: {e}")
+        primary_ip = get_primary_ip()
+        if primary_ip:
+            return [primary_ip]
+        else:
+            _LOGGER.warning(
+                "No network interfaces found and primary IP detection failed."
+            )
+            return []
+
+    ip_usage_list.sort(reverse=True)
+    sorted_ips = [ip for _, ip in ip_usage_list]
+
+    # Try to determine the primary IP based on routing
+    primary_ip = get_primary_ip()
+
+    if primary_ip is not None:
+        if primary_ip in sorted_ips:
+            sorted_ips.remove(primary_ip)
+        sorted_ips.insert(0, primary_ip)
+
+    _LOGGER.info(f"Final sorted IP list: {sorted_ips}")
+    return sorted_ips
+
+
+def get_primary_ip() -> str:
+    """
+    Returns the primary local IPv4 address used for outbound traffic.
+    This works across Windows, macOS, Linux, and Android (Termux, etc.).
+    """
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.settimeout(1.0)
+        s.connect(
+            ("8.8.8.8", 80)
+        )  # Doesn't send packets; just gets routing info
+        ip = s.getsockname()[0]
+        s.close()
+        _LOGGER.info(f"Primary outbound IP detected: {ip}")
+        return ip
+    except Exception as e:
+        _LOGGER.warning(f"Primary IP detection via socket failed: {e}")
+        return None  # no fallback
