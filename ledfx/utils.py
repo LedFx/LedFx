@@ -37,7 +37,6 @@ from typing import Callable
 import numpy as np
 import PIL.Image as Image
 import PIL.ImageFont as ImageFont
-import psutil
 import requests
 import voluptuous as vol
 from dotenv import load_dotenv
@@ -2030,6 +2029,8 @@ def get_sorted_physical_ips() -> list[str]:
     Logs interface decisions and IPs for triage.
     """
     try:
+        import psutil
+
         ip_usage_list = []
 
         # Heuristics for physical interfaces
@@ -2045,7 +2046,12 @@ def get_sorted_physical_ips() -> list[str]:
         counters = psutil.net_io_counters(pernic=True)
     except Exception as e:
         _LOGGER.warning(f"Failed to get network interface info: {e}")
-        return []
+        primary_ip = get_primary_ip()
+        if primary_ip:
+            return [primary_ip]
+        else:
+            _LOGGER.warning("No network interfaces found and primary IP detection failed.")
+            return []
 
     for iface_name, iface_addrs in psutil.net_if_addrs().items():
         if not any(keyword in iface_name for keyword in physical_keywords):
@@ -2076,18 +2082,30 @@ def get_sorted_physical_ips() -> list[str]:
     sorted_ips = [ip for _, ip in ip_usage_list]
 
     # Try to determine the primary IP based on routing
-    try:
-        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        s.settimeout(1.0)
-        s.connect(("8.8.8.8", 80))
-        primary_ip = s.getsockname()[0]
-        s.close()
-        _LOGGER.info(f"Primary outbound IP detected: {primary_ip}")
+    primary_ip = get_primary_ip()
+
+    if primary_ip is not None:
         if primary_ip in sorted_ips:
             sorted_ips.remove(primary_ip)
         sorted_ips.insert(0, primary_ip)
-    except Exception as e:
-        _LOGGER.info(f"Primary IP detection via socket failed: {e}")
 
     _LOGGER.info(f"Final sorted IP list: {sorted_ips}")
     return sorted_ips
+
+
+def get_primary_ip() -> str:
+    """
+    Returns the primary local IPv4 address used for outbound traffic.
+    This works across Windows, macOS, Linux, and Android (Termux, etc.).
+    """
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.settimeout(1.0)
+        s.connect(('8.8.8.8', 80))  # Doesn't send packets; just gets routing info
+        ip = s.getsockname()[0]
+        s.close()
+        _LOGGER.info(f"Primary outbound IP detected: {ip}")
+        return ip
+    except Exception as e:
+        _LOGGER.warning(f"Primary IP detection via socket failed: {e}")
+        return None  # no fallback
