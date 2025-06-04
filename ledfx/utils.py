@@ -2059,7 +2059,9 @@ def get_sorted_physical_ips() -> list[str]:
         if primary_ip:
             return [primary_ip]
         else:
-            _LOGGER.warning("No network interfaces found and primary IP detection failed.")
+            _LOGGER.warning(
+                "No network interfaces found and primary IP detection failed."
+            )
             return []
 
     for iface_name, iface_addrs in psutil.net_if_addrs().items():
@@ -2110,7 +2112,9 @@ def get_primary_ip() -> str:
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.settimeout(1.0)
-        s.connect(('8.8.8.8', 80))  # Doesn't send packets; just gets routing info
+        s.connect(
+            ("8.8.8.8", 80)
+        )  # Doesn't send packets; just gets routing info
         ip = s.getsockname()[0]
         s.close()
         _LOGGER.info(f"Primary outbound IP detected: {ip}")
