@@ -2029,15 +2029,19 @@ def get_sorted_physical_ips() -> list[str]:
         2. Interface activity (bytes sent + received)
     Logs interface decisions and IPs for triage.
     """
-    ip_usage_list = []
+    try:
+        ip_usage_list = []
 
-    # Heuristics for physical interfaces
-    physical_keywords = ["eth", "en", "wlan", "wl", "Wi-Fi", "Ethernet"]
+        # Heuristics for physical interfaces
+        physical_keywords = ["eth", "en", "wlan", "wl", "Wi-Fi", "Ethernet"]
 
-    _LOGGER.info("Starting local IP discovery")
+        _LOGGER.info("Starting local IP discovery")
 
-    stats = psutil.net_if_stats()
-    counters = psutil.net_io_counters(pernic=True)
+        stats = psutil.net_if_stats()
+        counters = psutil.net_io_counters(pernic=True)
+    except Exception as e:
+        _LOGGER.warning(f"Failed to get network interface info: {e}")
+        return []
 
     for iface_name, iface_addrs in psutil.net_if_addrs().items():
         if not any(keyword in iface_name for keyword in physical_keywords):
@@ -2070,6 +2074,7 @@ def get_sorted_physical_ips() -> list[str]:
     # Try to determine the primary IP based on routing
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.settimeout(1.0)
         s.connect(("8.8.8.8", 80))
         primary_ip = s.getsockname()[0]
         s.close()
