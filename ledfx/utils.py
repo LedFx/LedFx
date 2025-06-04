@@ -2053,6 +2053,31 @@ def get_sorted_physical_ips() -> list[str]:
 
         stats = psutil.net_if_stats()
         counters = psutil.net_io_counters(pernic=True)
+
+        for iface_name, iface_addrs in psutil.net_if_addrs().items():
+            if not any(keyword in iface_name for keyword in physical_keywords):
+                _LOGGER.info(f"Skipping non-physical interface: {iface_name}")
+                continue
+            if iface_name not in stats or not stats[iface_name].isup:
+                _LOGGER.info(f"Skipping inactive interface: {iface_name}")
+                continue
+
+            _LOGGER.info(f"Inspecting interface: {iface_name}")
+            for addr in iface_addrs:
+                if addr.family == socket.AF_INET:
+                    if addr.address.startswith("127."):
+                        _LOGGER.info(
+                            f"Skipping loopback address on {iface_name}: {addr.address}"
+                        )
+                        continue
+                    counter = counters.get(iface_name)
+                    usage = (
+                        (counter.bytes_sent + counter.bytes_recv) if counter else 0
+                    )
+                    _LOGGER.info(
+                        f"Discovered IP {addr.address} on {iface_name} with usage {usage}"
+                    )
+                    ip_usage_list.append((usage, addr.address))
     except Exception as e:
         _LOGGER.warning(f"Failed to get network interface info: {e}")
         primary_ip = get_primary_ip()
@@ -2063,31 +2088,6 @@ def get_sorted_physical_ips() -> list[str]:
                 "No network interfaces found and primary IP detection failed."
             )
             return []
-
-    for iface_name, iface_addrs in psutil.net_if_addrs().items():
-        if not any(keyword in iface_name for keyword in physical_keywords):
-            _LOGGER.info(f"Skipping non-physical interface: {iface_name}")
-            continue
-        if iface_name not in stats or not stats[iface_name].isup:
-            _LOGGER.info(f"Skipping inactive interface: {iface_name}")
-            continue
-
-        _LOGGER.info(f"Inspecting interface: {iface_name}")
-        for addr in iface_addrs:
-            if addr.family == socket.AF_INET:
-                if addr.address.startswith("127."):
-                    _LOGGER.info(
-                        f"Skipping loopback address on {iface_name}: {addr.address}"
-                    )
-                    continue
-                counter = counters.get(iface_name)
-                usage = (
-                    (counter.bytes_sent + counter.bytes_recv) if counter else 0
-                )
-                _LOGGER.info(
-                    f"Discovered IP {addr.address} on {iface_name} with usage {usage}"
-                )
-                ip_usage_list.append((usage, addr.address))
 
     ip_usage_list.sort(reverse=True)
     sorted_ips = [ip for _, ip in ip_usage_list]
