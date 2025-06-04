@@ -5,7 +5,9 @@ import sys
 import time
 import warnings
 import webbrowser
+
 from concurrent.futures import ThreadPoolExecutor
+from utils import get_local_ip_addresses
 
 import numpy as np
 import pybase64
@@ -92,6 +94,7 @@ class LedFxCore:
             create_backup(config_dir, "DELETE")
 
         self.config = load_config(config_dir)
+        self.config["hosts"] = get_local_ip_addresses()
 
         if clear_effects:
             _LOGGER.warning("Clearing active effects.")
