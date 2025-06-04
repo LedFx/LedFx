@@ -3,6 +3,7 @@ import logging
 import numpy as np
 import voluptuous as vol
 
+from ledfx.color import parse_color, validate_color
 from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.gradient import GradientEffect
 from ledfx.effects.twod import Twod
@@ -25,6 +26,7 @@ class Equalizer2d(Twod, GradientEffect):
         "frequency_range",
         "spin_multiplier",
         "spin_decay",
+        "peak_color",
     ]
 
     CONFIG_SCHEMA = vol.Schema(
@@ -44,6 +46,11 @@ class Equalizer2d(Twod, GradientEffect):
                 description="Turn on white peak markers that follow a freq value filtered with decay",
                 default=False,
             ): bool,
+            vol.Optional(
+                "peak_color",
+                description="Peak mark color",
+                default="#FFFFFF",
+            ): validate_color,
             vol.Optional(
                 "center",
                 description="Center the equalizer bar",
@@ -112,6 +119,7 @@ class Equalizer2d(Twod, GradientEffect):
         self.impulse_filter = self.create_filter(
             alpha_decay=self._config["spin_decay"], alpha_rise=0.99
         )
+        self.peak_color = parse_color(self._config["peak_color"])
 
     def calc_ring_segments(self, rotation):
         # we want coordinates for self.bands around an oval defined by self.r_width and self.r_height
@@ -218,7 +226,7 @@ class Equalizer2d(Twod, GradientEffect):
                                 self.peaks[i + 1],
                             ),
                         ],
-                        fill=(255, 255, 255),
+                        fill=self.peak_color,
                         width=self.peak_size,
                     )
             else:
@@ -249,7 +257,7 @@ class Equalizer2d(Twod, GradientEffect):
                                 self.peaks[i + 1],
                             ),
                         ],
-                        fill=(255, 255, 255),
+                        fill=self.peak_color,
                         width=self.peak_size,
                     )
 
@@ -283,7 +291,7 @@ class Equalizer2d(Twod, GradientEffect):
                             band_end,
                             self.half_height + peak_end,
                         ),
-                        fill=(255, 255, 255),
+                        fill=self.peak_color,
                     )
                     self.m_draw.rectangle(
                         (
@@ -292,7 +300,7 @@ class Equalizer2d(Twod, GradientEffect):
                             band_end,
                             self.half_height - peak_scaled,
                         ),
-                        fill=(255, 255, 255),
+                        fill=self.peak_color,
                     )
                 else:
                     peak_scaled = int(self.r_height * self.peaks[i])
@@ -300,7 +308,7 @@ class Equalizer2d(Twod, GradientEffect):
 
                     self.m_draw.rectangle(
                         (band_start, peak_scaled, band_end, peak_end),
-                        fill=(255, 255, 255),
+                        fill=self.peak_color,
                     )
 
     def draw(self):

@@ -9,6 +9,7 @@ import numpy as np
 import serial
 import serial.tools.list_ports
 import voluptuous as vol
+from sacn.sending.sender_socket_base import DEFAULT_PORT
 
 from ledfx.config import save_config
 from ledfx.events import (
@@ -669,47 +670,9 @@ class Devices(RegistryLoader):
                     existing_device.config["ip_address"] == device_ip
                     or existing_device.config["ip_address"] == resolved_dest
                 ):
-                    if device_type in [
-                        "e131",
-                        "artnet",
-                    ] and existing_device.type in ["e131", "artnet"]:
-                        # check the universes for e131 and artnet, it might still be okay at a shared ip_address
-                        # eg. for multi output controllers
-                        if (
-                            device_config["universe"]
-                            == existing_device.config["universe"]
-                        ):
-                            msg = f"Ignoring {device_ip}: Shares IP and starting universe with existing device {existing_device.name}"
-                            _LOGGER.info(msg)
-                            raise ValueError(msg)
-                    elif (
-                        device_type == "openrgb"
-                        and existing_device.type == "openrgb"
-                    ):
-                        # check the OpenRGB ID for OpenRGB device, it might still be okay at a shared ip_address
-                        # eg. for multi OpenRGB devices
-                        if (
-                            device_config["openrgb_id"]
-                            == existing_device.config["openrgb_id"]
-                        ):
-                            msg = f"Ignoring {device_ip}: Shares IP and OpenRGB ID with existing device {existing_device.name}"
-                            _LOGGER.info(msg)
-                            raise ValueError(msg)
-                    elif (
-                        device_type == "osc" and existing_device.type == "osc"
-                    ):
-                        # Allow multiple OSC Server devices, but not on the same path + starting_addr combination
-                        if (
-                            device_config["path"]
-                            == existing_device.config["path"]
-                            and device_config["starting_addr"]
-                            == existing_device.config["starting_addr"]
-                        ):
-                            msg = f"Ignoring {device_ip}:{device_config['port']}:{device_config['path']}/{device_config['starting_addr']}: Shares IP, Port, Universe AND starting address with existing device {existing_device.name}"
-                    else:
-                        msg = f"Ignoring {device_ip}: Shares destination with existing device {existing_device.name}"
-                        _LOGGER.info(msg)
-                        raise ValueError(msg)
+                    self.run_device_ip_tests(
+                        device_type, device_config, existing_device
+                    )
 
         # If WLED device, get all the necessary config from the device itself
         if device_type == "wled":
@@ -844,3 +807,122 @@ class Devices(RegistryLoader):
                 device.wled.set_sync_mode(mode)
                 await device.wled.flush_sync_settings()
                 device.update_config({"sync_mode": mode})
+
+    def generate_device_ip_tests(self, new_type, new_config, pre_device):
+        """
+        Generate tests to check if the devices are compatible with each other on a common IP
+
+        There are various scenarios where devices can coexist on the same IP address
+        1) device types with different port numbers or other access methods
+        2) common device types that have secondary checks that must be performed
+           for example e131 / artnet universe or openrgb openrgb_id
+           port number could also be considered here
+
+        Explicit device approval tests should be added prior to the final is_general_port_separated test
+        which is a catch-all for any device type that does not have a specific test
+
+        Args:
+            new_type (_type_): new_config does not carry device type so must be explicit
+            new_config (_type_): config from creation of new device
+            pre_device (_type_): config from pre-existing device
+
+        Yields:
+            bool: True if the devices can explicity coexist, False if there is no rejection
+            ValueError: if the devices cannot coexist due to a hard failure
+        """
+        for test in [
+            self.is_universe_separated,
+            self.is_openrgb_id_separated,
+            self.is_osc_port_path_separated,
+            self.is_general_port_separated,
+        ]:
+            yield test(new_type, new_config, pre_device)
+
+    def run_device_ip_tests(self, new_type, new_config, pre_device):
+        """
+        Run tests to check if the devices are compatible with each other on a common IP
+        This function will reach the end and return if no tests hard succeeded or hard failed
+        Individual tests with will
+            return False for a soft fail = coexistance was not covered by the test for success or hard fail
+            return True for success = coexistance is viable and device should be created
+            raise ValueError with suitable message for hard fail = coexistance is not viable and device should not be created
+
+        Args:
+            new_type (_type_): new_config does not carry device type so must be explicit
+            new_config (_type_): config from creation of new device
+            pre_device (_type_): config from pre-existing device
+        """
+
+        for result in self.generate_device_ip_tests(
+            new_type, new_config, pre_device
+        ):
+            if result:
+                return
+
+    def is_universe_separated(self, new_type, new_config, pre_device):
+        """
+        Check if the new device is universe separated from the pre-existing device
+        """
+        if new_type in ["e131", "artnet"] and pre_device.type in [
+            "e131",
+            "artnet",
+        ]:
+            if new_config["universe"] == pre_device.config["universe"]:
+                msg = f'Ignoring {new_config["ip_address"]}: Shares IP and port {new_config["port"]} and starting universe with existing device {pre_device.name}'
+                _LOGGER.info(msg)
+                raise ValueError(msg)
+            return True
+        return False
+
+    def is_openrgb_id_separated(self, new_type, new_config, pre_device):
+        """
+        Check if the new device is openrgb_id separated from the pre-existing device
+        """
+        if new_type == "openrgb" and pre_device.type == "openrgb":
+            if new_config["openrgb_id"] == pre_device.config["openrgb_id"]:
+                msg = f"Ignoring {new_config['ip_address']}: Shares IP and OpenRGB ID with existing device {pre_device.name}"
+                _LOGGER.info(msg)
+                raise ValueError(msg)
+            return True
+        return False
+
+    def is_osc_port_path_separated(self, new_type, new_config, pre_device):
+        """
+        Check if the new device is osc port and path separated from the pre-existing device
+        """
+        if new_type == "osc" and pre_device.type == "osc":
+            if new_config["port"] == pre_device.config["port"]:
+                if new_config["path"] == pre_device.config["path"]:
+                    if (
+                        new_config["starting_addr"]
+                        == pre_device.config["starting_addr"]
+                    ):
+                        msg = f"Ignoring {new_config['ip_address']}: Shares IP, Port, Path and starting address with existing device {pre_device.name}"
+                        _LOGGER.info(msg)
+                        raise ValueError(msg)
+            return True
+        return False
+
+    def is_general_port_separated(self, new_type, new_config, pre_device):
+        """
+        Check if the new device is port separated from the pre-existing device
+        """
+        # e131 is a special case as its port number is not in the config, but in the library
+        new_port = None
+        pre_port = None
+        if new_type == "e131":
+            new_port = DEFAULT_PORT
+        if pre_device.type == "e131":
+            pre_port = DEFAULT_PORT
+        if "port" in new_config:
+            new_port = new_config["port"]
+        if "port" in pre_device.config:
+            pre_port = pre_device.config["port"]
+
+        if new_port is not None and pre_port is not None:
+            if new_port == pre_port:
+                msg = f"Ignoring {new_config['ip_address']}: Shares IP and port with existing device {pre_device.name}"
+                _LOGGER.info(msg)
+                raise ValueError(msg)
+            return True
+        return False
