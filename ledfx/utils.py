@@ -2019,45 +2019,54 @@ def aggressive_top_end_bias(x, boost):
     aggressive_curve = 1 - (1 - x) ** 4  # Adjust power for curve steepness
     return (1 - boost) * x + boost * aggressive_curve
 
+
 def get_local_ip_addresses() -> list[str]:
     """
     Attempts to discover all local non-loopback IPv4 addresses.
     Returns a list of IP address strings.
     """
-    local_ips = set() # Use a set to avoid duplicates
+    local_ips = set()  # Use a set to avoid duplicates
     try:
         # This method gets all IPs associated with the hostname
         hostname = socket.gethostname()
         # The third element of the tuple returned by gethostbyname_ex is a list of IP addresses
         # for all interfaces (including loopback, aliases, etc.)
         _, _, ipaddrlist = socket.gethostbyname_ex(hostname)
-        
+
         for ip in ipaddrlist:
-            if ip and not ip.startswith("127."): # Filter out loopback
+            if ip and not ip.startswith("127."):  # Filter out loopback
                 local_ips.add(ip)
-        
+
         # Fallback or additional method for more robust discovery on some systems
         # This attempts to find the primary IP by connecting to a dummy address
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            s.settimeout(0) # Non-blocking
-            s.connect(('10.254.254.254', 1)) # Doesn't actually need to connect
+            s.settimeout(0)  # Non-blocking
+            s.connect(
+                ("10.254.254.254", 1)
+            )  # Doesn't actually need to connect
             primary_ip = s.getsockname()[0]
             if primary_ip and not primary_ip.startswith("127."):
                 local_ips.add(primary_ip)
             s.close()
         except Exception:
-            _LOGGER.debug("Could not determine primary IP via dummy connection method.")
+            _LOGGER.debug(
+                "Could not determine primary IP via dummy connection method."
+            )
 
     except socket.gaierror:
         _LOGGER.warning("Could not determine local IP addresses via hostname.")
     except Exception as e:
-        _LOGGER.error(f"An unexpected error occurred while fetching local IP addresses: {e}")
+        _LOGGER.error(
+            f"An unexpected error occurred while fetching local IP addresses: {e}"
+        )
 
     if not local_ips:
-        _LOGGER.info("No non-loopback local IP addresses found. Falling back to localhost.")
+        _LOGGER.info(
+            "No non-loopback local IP addresses found. Falling back to localhost."
+        )
         # As a last resort, if no other IPs are found, you might still want to suggest localhost,
         # but the frontend already defaults to this. So returning an empty list is also fine.
-        # return ["127.0.0.1"] 
-    
+        # return ["127.0.0.1"]
+
     return sorted(list(local_ips))

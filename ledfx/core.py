@@ -5,12 +5,11 @@ import sys
 import time
 import warnings
 import webbrowser
-
 from concurrent.futures import ThreadPoolExecutor
-from utils import get_local_ip_addresses
 
 import numpy as np
 import pybase64
+from utils import get_local_ip_addresses
 
 from ledfx.color import (
     LEDFX_COLORS,
