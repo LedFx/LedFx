@@ -1,9 +1,6 @@
 import logging
 import os
 
-import sentry_sdk
-from sentry_sdk.integrations.aiohttp import AioHttpIntegration
-
 from ledfx.consts import PROJECT_VERSION
 from ledfx.utils import currently_frozen
 
@@ -17,6 +14,11 @@ def setup_sentry():
     If running in production mode, a production Sentry DSN is used along with a sample rate of 0.
     The release version is determined based on the project version and the git commit hash.
     """
+
+    # import is done here to avoid attempting to import sentry_sdk when in offline mode
+    import sentry_sdk
+    from sentry_sdk.integrations.aiohttp import AioHttpIntegration
+
     is_release = os.getenv("IS_RELEASE", "false").lower()
 
     if is_release == "false":
