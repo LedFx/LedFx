@@ -1052,7 +1052,10 @@ class RegistryLoader:
         found = self.discover_modules(package)
         _LOGGER.debug(f"Importing {found} from {package}")
         for name in found:
-            importlib.import_module(name)
+            try:
+                importlib.import_module(name)
+            except ModuleNotFoundError as e:
+                _LOGGER.warning(f"Failed to import {name} from {package}: {e}")
 
     def discover_modules(self, package):
         """Discovers all modules in the package"""
