@@ -8,7 +8,7 @@ RUN uv sync --frozen --no-install-project --no-dev
 COPY . /app
 RUN uv pip install .[hue]
 
-FROM python:3.12-slim AS runner
+FROM python:3.13-slim AS runner
 RUN apt update && apt install -y libportaudio2 pulseaudio --no-install-recommends && rm -rf /var/lib/apt/lists/*
 
 FROM runner
