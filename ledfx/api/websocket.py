@@ -97,9 +97,14 @@ class WebsocketConnection:
         """
         Returns a list of unique IP addresses for all connected websocket clients.
         """
-        return list({conn.client_ip for conn in cls.active_connections if conn.client_ip})
+        return list(
+            {
+                conn.client_ip
+                for conn in cls.active_connections
+                if conn.client_ip
+            }
+        )
 
-    
     def send(self, message):
         """Sends a message to the websocket connection
 
