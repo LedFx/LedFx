@@ -63,6 +63,8 @@ class WebsocketEndpoint(RestEndpoint):
 
 
 class WebsocketConnection:
+    active_connections = set()  # Class-level set
+
     def __init__(self, ledfx):
         self._ledfx = ledfx
         self._socket = None
@@ -70,6 +72,7 @@ class WebsocketConnection:
         self._receiver_task = None
         self._sender_task = None
         self._sender_queue = VisDeduplicateQ(maxsize=MAX_PENDING_MESSAGES)
+        self.client_ip = None
 
     def close(self):
         """
@@ -89,6 +92,14 @@ class WebsocketConnection:
         for func in self._listeners.values():
             func()
 
+    @classmethod
+    def get_all_client_ips(cls):
+        """
+        Returns a list of unique IP addresses for all connected websocket clients.
+        """
+        return list({conn.client_ip for conn in cls.active_connections if conn.client_ip})
+
+    
     def send(self, message):
         """Sends a message to the websocket connection
 
@@ -168,6 +179,8 @@ class WebsocketConnection:
     async def handle(self, request):
         """Handle the websocket connection"""
 
+        self.client_ip = request.remote
+        WebsocketConnection.active_connections.add(self)
         socket = self._socket = web.WebSocketResponse(
             protocols=("http", "https", "ws", "wss")
         )
@@ -251,6 +264,7 @@ class WebsocketConnection:
             _LOGGER.exception("Unexpected Exception: %s", err)
 
         finally:
+            WebsocketConnection.active_connections.discard(self)
             remove_listeners()
             self.clear_subscriptions()
 
