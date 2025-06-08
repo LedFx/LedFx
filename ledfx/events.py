@@ -44,6 +44,7 @@ class ClientConnectedEvent(Event):
         self.client_id = client_id
         self.client_ip = client_ip
 
+
 class ClientDisconnectedEvent(Event):
     """Event emitted when a client disconnects"""
 
@@ -51,7 +52,7 @@ class ClientDisconnectedEvent(Event):
         super().__init__(Event.CLIENT_DISCONNECTED)
         self.client_id = client_id
         self.client_ip = client_ip
-        
+
 
 class DeviceUpdateEvent(Event):
     """Event emitted when a device's pixels are updated"""
