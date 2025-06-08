@@ -181,7 +181,6 @@ class WebsocketConnection:
         """Handle the websocket connection"""
 
         self.client_ip = request.remote
-        # if no class instance with this ip exists, then create a new uid, else use the existing uid from the pre existing instance
 
         async with WebsocketConnection.map_lock:
             self.uid = str(uuid.uuid4())
