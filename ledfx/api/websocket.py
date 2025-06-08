@@ -13,8 +13,7 @@ from aiohttp import web
 
 from ledfx.api import RestEndpoint
 from ledfx.dedupequeue import VisDeduplicateQ
-from ledfx.events import Event, ClientConnectedEvent, ClientDisconnectedEvent
-
+from ledfx.events import ClientConnectedEvent, ClientDisconnectedEvent, Event
 from ledfx.utils import empty_queue
 
 _LOGGER = logging.getLogger(__name__)
@@ -230,8 +229,8 @@ class WebsocketConnection:
         self._receiver_task = asyncio.current_task(loop=self._ledfx.loop)
         self._sender_task = self._ledfx.loop.create_task(self._sender())
 
-        self._ledfx.events.fire_event( 
-            ClientConnectedEvent( self.uid, self.client_ip )
+        self._ledfx.events.fire_event(
+            ClientConnectedEvent(self.uid, self.client_ip)
         )
 
         def shutdown_handler(e):
@@ -290,8 +289,8 @@ class WebsocketConnection:
             await socket.close()
             _LOGGER.info("Closed connection")
 
-            self._ledfx.events.fire_event( 
-                ClientDisconnectedEvent( self.uid, self.client_ip )
+            self._ledfx.events.fire_event(
+                ClientDisconnectedEvent(self.uid, self.client_ip)
             )
 
         return socket
