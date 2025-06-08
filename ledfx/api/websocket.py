@@ -3,7 +3,6 @@ import binascii
 import json
 import logging
 import struct
-import threading
 import uuid
 from concurrent import futures
 
