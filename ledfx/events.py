@@ -28,6 +28,7 @@ class Event:
     AUDIO_INPUT_DEVICE_CHANGED = "audio_input_device_changed"
     CLIENT_CONNECTED = "client_connected"
     CLIENT_DISCONNECTED = "client_disconnected"
+    CLIENT_SYNC = "client_sync"
 
     def __init__(self, type: str):
         self.event_type = type
@@ -53,6 +54,14 @@ class ClientDisconnectedEvent(Event):
         self.client_id = client_id
         self.client_ip = client_ip
 
+
+class ClientSyncEvent(Event):
+    """Event emitted when a client advises sync with the server"""
+
+    def __init__(self, client_id: str):
+        super().__init__(Event.CLIENT_SYNC)
+        self.client_id = client_id
+        
 
 class DeviceUpdateEvent(Event):
     """Event emitted when a device's pixels are updated"""
