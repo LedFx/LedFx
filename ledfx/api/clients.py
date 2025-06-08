@@ -30,7 +30,11 @@ class ClientEndpoint(RestEndpoint):
 
     async def post(self, request: web.Request) -> web.Response:
         """
-        Broadcast a message to all clients to inform them of action
+        Perform action for client
+
+        "action":
+            "sync": Trigger sync_event broadcast to all subscribed clients
+            Caller should provide a "client_id" attribute to identify the source client
         
         Returns:
             web.Response: The response indicating success or failure
