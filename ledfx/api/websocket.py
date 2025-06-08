@@ -3,10 +3,12 @@ import binascii
 import json
 import logging
 import struct
+import uuid
 from concurrent import futures
 
 import numpy as np
 import pybase64
+import threading
 import voluptuous as vol
 from aiohttp import web
 
@@ -63,7 +65,8 @@ class WebsocketEndpoint(RestEndpoint):
 
 
 class WebsocketConnection:
-    active_connections = set()  # Class-level set
+    ip_uid_map = {}
+    map_lock = asyncio.Lock()
 
     def __init__(self, ledfx):
         self._ledfx = ledfx
@@ -73,6 +76,7 @@ class WebsocketConnection:
         self._sender_task = None
         self._sender_queue = VisDeduplicateQ(maxsize=MAX_PENDING_MESSAGES)
         self.client_ip = None
+        self.uid = None
 
     def close(self):
         """
@@ -93,13 +97,10 @@ class WebsocketConnection:
             func()
 
     @classmethod
-    def get_all_client_ips(cls):
-        """
-        Returns a list of unique IP addresses for all connected websocket clients.
-        """
-        return list({conn.client_ip for conn in cls.active_connections if conn.client_ip})
+    async def get_all_clients(cls):
+        async with cls.map_lock:
+            return cls.ip_uid_map.copy()
 
-    
     def send(self, message):
         """Sends a message to the websocket connection
 
@@ -180,7 +181,12 @@ class WebsocketConnection:
         """Handle the websocket connection"""
 
         self.client_ip = request.remote
-        WebsocketConnection.active_connections.add(self)
+        # if no class instance with this ip exists, then create a new uid, else use the existing uid from the pre existing instance
+
+        async with WebsocketConnection.map_lock:
+            self.uid = str(uuid.uuid4())
+            WebsocketConnection.ip_uid_map[self.uid] = self.client_ip
+
         socket = self._socket = web.WebSocketResponse(
             protocols=("http", "https", "ws", "wss")
         )
@@ -264,7 +270,9 @@ class WebsocketConnection:
             _LOGGER.exception("Unexpected Exception: %s", err)
 
         finally:
-            WebsocketConnection.active_connections.discard(self)
+            async with WebsocketConnection.map_lock:
+                if self.uid in WebsocketConnection.ip_uid_map:
+                    del WebsocketConnection.ip_uid_map[self.uid]
             remove_listeners()
             self.clear_subscriptions()
 

@@ -19,7 +19,7 @@ class ClientEndpoint(RestEndpoint):
             web.Response: The response containing the list of client IPs
         """
 
-        clients = WebsocketConnection.get_all_client_ips()
+        clients = await WebsocketConnection.get_all_clients()
 
         return await self.bare_request_success(clients)
     
