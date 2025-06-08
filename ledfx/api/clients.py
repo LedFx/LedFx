@@ -34,7 +34,7 @@ class ClientEndpoint(RestEndpoint):
         "action":
             "sync": Trigger sync_event broadcast to all subscribed clients
             Caller should provide a "client_id" attribute to identify the source client
-        
+
         Returns:
             web.Response: The response indicating success or failure
         """
