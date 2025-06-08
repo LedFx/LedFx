@@ -3,12 +3,12 @@ import binascii
 import json
 import logging
 import struct
+import threading
 import uuid
 from concurrent import futures
 
 import numpy as np
 import pybase64
-import threading
 import voluptuous as vol
 from aiohttp import web
 
