@@ -26,6 +26,8 @@ class Event:
     GLOBAL_PAUSE = "global_pause"
     VIRTUAL_PAUSE = "virtual_pause"
     AUDIO_INPUT_DEVICE_CHANGED = "audio_input_device_changed"
+    CLIENT_CONNECTED = "client_connected"
+    CLIENT_DISCONNECTED = "client_disconnected"
 
     def __init__(self, type: str):
         self.event_type = type
@@ -33,6 +35,23 @@ class Event:
     def to_dict(self):
         return self.__dict__
 
+
+class ClientConnectedEvent(Event):
+    """Event emitted when a client connects"""
+
+    def __init__(self, client_id: str, client_ip: str):
+        super().__init__(Event.CLIENT_CONNECTED)
+        self.client_id = client_id
+        self.client_ip = client_ip
+
+class ClientDisconnectedEvent(Event):
+    """Event emitted when a client disconnects"""
+
+    def __init__(self, client_id: str, client_ip: str):
+        super().__init__(Event.CLIENT_DISCONNECTED)
+        self.client_id = client_id
+        self.client_ip = client_ip
+        
 
 class DeviceUpdateEvent(Event):
     """Event emitted when a device's pixels are updated"""
