@@ -1,8 +1,7 @@
 import logging
-
-from aiohttp import web
 from json import JSONDecodeError
 
+from aiohttp import web
 
 from ledfx.api import RestEndpoint
 from ledfx.api.websocket import WebsocketConnection
@@ -53,13 +52,13 @@ class ClientEndpoint(RestEndpoint):
             )
 
         if action not in ACTIONS:
-            return await self.invalid_request(f"Action {action} is not in {ACTIONS}")
-       
+            return await self.invalid_request(
+                f"Action {action} is not in {ACTIONS}"
+            )
+
         if action == "sync":
             client_id = data.get("client_id", "unknown")
-            self._ledfx.events.fire_event(
-                ClientSyncEvent(client_id)
-            )
+            self._ledfx.events.fire_event(ClientSyncEvent(client_id))
 
         response = {"status": "success", "action": action}
         return await self.bare_request_success(response)

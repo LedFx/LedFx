@@ -61,7 +61,7 @@ class ClientSyncEvent(Event):
     def __init__(self, client_id: str):
         super().__init__(Event.CLIENT_SYNC)
         self.client_id = client_id
-        
+
 
 class DeviceUpdateEvent(Event):
     """Event emitted when a device's pixels are updated"""
