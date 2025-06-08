@@ -22,4 +22,3 @@ class ClientEndpoint(RestEndpoint):
         clients = await WebsocketConnection.get_all_clients()
 
         return await self.bare_request_success(clients)
-    
