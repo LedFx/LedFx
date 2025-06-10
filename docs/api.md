@@ -1347,8 +1347,9 @@ structure will be event registration based.
 
 ## Websocket client UIDs
 
-::: mermaid
+This functionality is intended to support notification between clients of connect / disconnect and sync actions
 
+```{mermaid}
   sequenceDiagram
       participant Client
       participant ClientEndpoint as ClientEndpoint (/api/clients)
@@ -1360,7 +1361,7 @@ structure will be event registration based.
       WebSocketMgr->>WebSocketMgr: Extract client IP from request.remote
       WebSocketMgr->>WebSocketMgr: Generate UUID for client
       WebSocketMgr->>WebSocketMgr: Store UUID→IP mapping (thread-safe with map_lock)
-      WebSocketMgr-->>Client: Send JSON {"event_type": "client_id", "client_id": UUID}
+      WebSocketMgr-->>Client: Send JSON {"event_type": "client_id", "id": UUID}
       WebSocketMgr->>EventSystem: Fire ClientConnectedEvent(UUID, IP)
 
       Note over Client,EventSystem: Client List Retrieval
@@ -1371,17 +1372,16 @@ structure will be event registration based.
       ClientEndpoint-->>Client: HTTP 200 with {"result": client_list}
 
       Note over Client,EventSystem: Client Sync Action
-      Client->>ClientEndpoint: POST /api/clients {"action": "sync", "client_id": UUID}
+      Client->>ClientEndpoint: POST /api/clients {"action": "sync", "id": UUID}
       ClientEndpoint->>ClientEndpoint: Validate JSON and action field
-      ClientEndpoint->>EventSystem: Fire ClientSyncEvent(client_id or "unknown")
+      ClientEndpoint->>EventSystem: Fire ClientSyncEvent(id or "unknown")
       ClientEndpoint-->>Client: HTTP 200 {"result": "success", "action": "sync"}
 
       Note over Client,EventSystem: WebSocket Disconnection Flow
       Client->>WebSocketMgr: Close WebSocket connection
       WebSocketMgr->>WebSocketMgr: Remove UUID from ip_uid_map (thread-safe with map_lock)
       WebSocketMgr->>EventSystem: Fire ClientDisconnectedEvent(UUID, IP)
-
-:::
+```
 
 On opening a websocket connection the client will be assigned a UID stored along with the client IP address. noting that mulitple client can exist on one IP address. Multiple browser tabs for example.
 

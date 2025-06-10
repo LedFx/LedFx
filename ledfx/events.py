@@ -42,8 +42,8 @@ class ClientConnectedEvent(Event):
 
     def __init__(self, client_id: str, client_ip: str):
         super().__init__(Event.CLIENT_CONNECTED)
-        self.client_id = client_id
-        self.client_ip = client_ip
+        self.id = client_id
+        self.ip = client_ip
 
 
 class ClientDisconnectedEvent(Event):
@@ -51,8 +51,8 @@ class ClientDisconnectedEvent(Event):
 
     def __init__(self, client_id: str, client_ip: str):
         super().__init__(Event.CLIENT_DISCONNECTED)
-        self.client_id = client_id
-        self.client_ip = client_ip
+        self.id = client_id
+        self.ip = client_ip
 
 
 class ClientSyncEvent(Event):
@@ -60,7 +60,7 @@ class ClientSyncEvent(Event):
 
     def __init__(self, client_id: str):
         super().__init__(Event.CLIENT_SYNC)
-        self.client_id = client_id
+        self.id = client_id
 
 
 class DeviceUpdateEvent(Event):
