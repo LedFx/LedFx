@@ -1433,7 +1433,7 @@ This is intended to allow a client to inform other clients they should sync thei
 ``` json
 {
   "event_type": "client_sync",
-  "id": "e59d112e-3652-41e5-acb1-94538b4cb27c",
+  "id": "e59d112e-3652-41e5-acb1-94538b4cb27c"
 }
 ```
 
