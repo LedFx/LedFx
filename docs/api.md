@@ -1353,7 +1353,7 @@ The assigned UID will be returned to the client via an event on the websocket of
 
 ``` json
 {
-  "event_type": "client_id", 
+  "event_type": "client_id",
   "id": "e59d112e-3652-41e5-acb1-94538b4cb27c"
 }
 ```
@@ -1370,7 +1370,7 @@ Generated when a new client is connected to the backend by its own websocket
 
 ``` json
 {
-  "event_type": "client_connected", 
+  "event_type": "client_connected",
   "id": "e59d112e-3652-41e5-acb1-94538b4cb27c",
   "ip": "1.2.3.4"
 }
@@ -1382,7 +1382,7 @@ Generated when an existing client disconnects its websocket to the backend.
 
 ``` json
 {
-  "event_type": "client_disconnected", 
+  "event_type": "client_disconnected",
   "id": "e59d112e-3652-41e5-acb1-94538b4cb27c",
   "ip": "1.2.3.4"
 }
@@ -1396,7 +1396,7 @@ This is intended to allow a client to inform other clients they should sync thei
 
 ``` json
 {
-  "event_type": "client_sync", 
+  "event_type": "client_sync",
   "id": "e59d112e-3652-41e5-acb1-94538b4cb27c",
 }
 ```
@@ -1440,7 +1440,7 @@ Will generate a client_sync event sent to all active websockets that are subscri
 
 ``` json
 {
-  "event_type": "client_sync", 
+  "event_type": "client_sync",
   "id": "e59d112e-3652-41e5-acb1-94538b4cb27c"
 }
 ```
