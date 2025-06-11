@@ -546,4 +546,4 @@ jobs:
           SENTRY_PROJECT: ledfx-v2-rel
         with:
           environment: production
-          version: ledfx@${{ steps.ledfx-version.outputs.ledfx-version }}
+          release: ledfx@${{ steps.ledfx-version.outputs.ledfx-version }}
