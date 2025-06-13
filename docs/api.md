@@ -1361,7 +1361,7 @@ This functionality is intended to support notification between clients of connec
       WebSocketMgr->>WebSocketMgr: Extract client IP from request.remote
       WebSocketMgr->>WebSocketMgr: Generate UUID for client
       WebSocketMgr->>WebSocketMgr: Store UUID→IP mapping (thread-safe with map_lock)
-      WebSocketMgr-->>Client: Send JSON {"event_type": "client_id", "id": UUID}
+      WebSocketMgr-->>Client: Send JSON {"event_type": "client_id", "client_id": UUID}
       WebSocketMgr->>EventSystem: Fire ClientConnectedEvent(UUID, IP)
 
       Note over Client,EventSystem: Client List Retrieval
@@ -1372,9 +1372,9 @@ This functionality is intended to support notification between clients of connec
       ClientEndpoint-->>Client: HTTP 200 with {"result": client_list}
 
       Note over Client,EventSystem: Client Sync Action
-      Client->>ClientEndpoint: POST /api/clients {"action": "sync", "id": UUID}
+      Client->>ClientEndpoint: POST /api/clients {"action": "sync", "client_id": UUID}
       ClientEndpoint->>ClientEndpoint: Validate JSON and action field
-      ClientEndpoint->>EventSystem: Fire ClientSyncEvent(id or "unknown")
+      ClientEndpoint->>EventSystem: Fire ClientSyncEvent(client_id or "unknown")
       ClientEndpoint-->>Client: HTTP 200 {"result": "success", "action": "sync"}
 
       Note over Client,EventSystem: WebSocket Disconnection Flow
@@ -1390,7 +1390,7 @@ The assigned UID will be returned to the client via an event on the websocket of
 ``` json
 {
   "event_type": "client_id",
-  "id": "e59d112e-3652-41e5-acb1-94538b4cb27c"
+  "client_id": "e59d112e-3652-41e5-acb1-94538b4cb27c"
 }
 ```
 
@@ -1407,8 +1407,8 @@ Generated when a new client is connected to the backend by its own websocket
 ``` json
 {
   "event_type": "client_connected",
-  "id": "e59d112e-3652-41e5-acb1-94538b4cb27c",
-  "ip": "1.2.3.4"
+  "client_id": "e59d112e-3652-41e5-acb1-94538b4cb27c",
+  "client_ip": "1.2.3.4"
 }
 ```
 
@@ -1419,8 +1419,8 @@ Generated when an existing client disconnects its websocket to the backend.
 ``` json
 {
   "event_type": "client_disconnected",
-  "id": "e59d112e-3652-41e5-acb1-94538b4cb27c",
-  "ip": "1.2.3.4"
+  "client_id": "e59d112e-3652-41e5-acb1-94538b4cb27c",
+  "client_ip": "1.2.3.4"
 }
 ```
 
@@ -1433,7 +1433,7 @@ This is intended to allow a client to inform other clients they should sync thei
 ``` json
 {
   "event_type": "client_sync",
-  "id": "e59d112e-3652-41e5-acb1-94538b4cb27c"
+  "client_id": "e59d112e-3652-41e5-acb1-94538b4cb27c"
 }
 ```
 
@@ -1468,7 +1468,7 @@ Calling client should provide its own websocket id
 ``` json
 {
    "action": "sync",
-   "id": "e59d112e-3652-41e5-acb1-94538b4cb27c"
+   "client_id": "e59d112e-3652-41e5-acb1-94538b4cb27c"
 }
 ```
 
@@ -1477,6 +1477,6 @@ Will generate a client_sync event sent to all active websockets that are subscri
 ``` json
 {
   "event_type": "client_sync",
-  "id": "e59d112e-3652-41e5-acb1-94538b4cb27c"
+  "client_id": "e59d112e-3652-41e5-acb1-94538b4cb27c"
 }
 ```

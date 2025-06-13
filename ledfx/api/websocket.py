@@ -225,7 +225,7 @@ class WebsocketConnection:
 
         # Send UID to the client
         await self._socket.send_json(
-            {"event_type": "client_id", "id": self.uid}
+            {"event_type": "client_id", "client_id": self.uid}
         )
 
         self._receiver_task = asyncio.current_task(loop=self._ledfx.loop)
