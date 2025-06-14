@@ -66,9 +66,9 @@ class LogSec(Effect):
     def try_log(self):
         """
         Logs frame rate and timing diagnostics if a new second boundary has been reached.
-        
+
         Calculates and logs frames per second, average render time, cycle time, and sleep time when diagnostics are enabled and a new second has elapsed. Fires a `VirtualDiagEvent` with the collected metrics. Returns whether a new second boundary was crossed.
-         
+
         Returns:
             True if a new second boundary was crossed and diagnostics were logged; otherwise, False.
         """

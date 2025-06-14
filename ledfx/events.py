@@ -31,7 +31,7 @@ class Event:
     def __init__(self, type: str):
         """
         Initializes an event with the specified event type.
-        
+
         Args:
             type: The string identifier representing the event type.
         """
@@ -57,7 +57,7 @@ class VirtualDiagEvent(Event):
     ):
         """
         Initializes a VirtualDiagEvent representing updated diagnostics for a virtual entity.
-        
+
         Args:
             virtual_id: Identifier of the virtual entity.
             fps: Frames per second reported by the virtual.
