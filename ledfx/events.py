@@ -38,11 +38,13 @@ class Event:
 class VirtualDiagEvent(Event):
     """Event emitted when a virtual's diagnostics are updated"""
 
-    def __init__(self, virtual_id: str, fps: int, r_avg: float, cycle: float, sleep: float):
+    def __init__(self, virtual_id: str, fps: int, r_avg: float, r_min: float, r_max: float, cycle: float, sleep: float):
         super().__init__(Event.VIRTUAL_DIAG)
         self.virtual_id = virtual_id
         self.fps = fps
         self.r_avg = r_avg
+        self.r_min = r_min
+        self.r_max = r_max
         self.cycle = cycle
         self.sleep = sleep
 

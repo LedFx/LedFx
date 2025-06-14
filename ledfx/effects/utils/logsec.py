@@ -31,13 +31,15 @@ class LogSec(Effect):
 
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
-        self.lasttime = 0
         self.frame = 0
         self.fps = 0
         self.last = 0
         self.r_total = 0.0
+        self.r_min = 1.0
+        self.r_max = 0.0
         self.passed = 0
         self.current_time = timeit.default_timer()
+        self.lasttime = int(self.current_time)
 
     def on_activate(self, pixel_count):
         self.current_time = timeit.default_timer()
@@ -67,6 +69,10 @@ class LogSec(Effect):
         end = timeit.default_timer()
         r_time = end - self.current_time
         self.r_total += r_time
+        if r_time < self.r_min:
+            self.r_min = r_time
+        if r_time > self.r_max:
+            self.r_max = r_time
         if self.log is True:
             if self.fps > 0:
                 r_avg = self.r_total / self.fps
@@ -75,9 +81,11 @@ class LogSec(Effect):
             cycle = end - self.last
             sleep = self.current_time - self.last
             _LOGGER.warning(
-                f"{self.name}: FPS {self.fps} Render:{r_avg:0.6f} Cycle: {cycle:0.6f} Sleep: {sleep:0.6f}"
+                f"{self.name}: FPS {self.fps} Render avg:{r_avg:0.6f} min:{self.r_min:0.06f} max:{self.r_max:0.06f} Cycle: {cycle:0.6f} Sleep: {sleep:0.6f}"
             )
-            self._ledfx.events.fire_event(VirtualDiagEvent(self.id, self.fps, r_avg, cycle, sleep ))
+            self._ledfx.events.fire_event(VirtualDiagEvent(self.id, self.fps, r_avg, self.r_min, self.r_max, cycle, sleep ))
+            self.r_min = 1.0
+            self.r_max = 0.0
             self.r_total = 0.0
         self.last = end
         return self.log
