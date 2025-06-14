@@ -4,6 +4,7 @@ import timeit
 import voluptuous as vol
 
 from ledfx.effects import Effect
+from ledfx.events import VirtualDiagEvent
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -71,9 +72,12 @@ class LogSec(Effect):
                 r_avg = self.r_total / self.fps
             else:
                 r_avg = 0.0
+            cycle = end - self.last
+            sleep = self.current_time - self.last
             _LOGGER.warning(
-                f"{self.name}: FPS {self.fps} Render:{r_avg:0.6f} Cycle: {(end - self.last):0.6f} Sleep: {(self.current_time - self.last):0.6f}"
+                f"{self.name}: FPS {self.fps} Render:{r_avg:0.6f} Cycle: {cycle:0.6f} Sleep: {sleep:0.6f}"
             )
+            self._ledfx.events.fire_event(VirtualDiagEvent(self.id, self.name, self.fps, r_avg, cycle, sleep ))
             self.r_total = 0.0
         self.last = end
         return self.log
