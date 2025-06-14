@@ -26,12 +26,51 @@ class Event:
     GLOBAL_PAUSE = "global_pause"
     VIRTUAL_PAUSE = "virtual_pause"
     AUDIO_INPUT_DEVICE_CHANGED = "audio_input_device_changed"
+    VIRTUAL_DIAG = "virtual_diag"
 
     def __init__(self, type: str):
+        """
+        Initializes an event with the specified event type.
+        
+        Args:
+            type: The string identifier representing the event type.
+        """
         self.event_type = type
 
     def to_dict(self):
+        """
+        Returns a dictionary representation of the event's attributes.
+        """
         return self.__dict__
+
+
+class VirtualDiagEvent(Event):
+    """Event emitted when a virtual's diagnostics are updated"""
+
+    def __init__(
+        self,
+        virtual_id: str,
+        fps: int,
+        r_avg: float,
+        cycle: float,
+        sleep: float,
+    ):
+        """
+        Initializes a VirtualDiagEvent representing updated diagnostics for a virtual entity.
+        
+        Args:
+            virtual_id: Identifier of the virtual entity.
+            fps: Frames per second reported by the virtual.
+            r_avg: Average runtime per frame.
+            cycle: Cycle time for the virtual's processing loop.
+            sleep: Sleep time between cycles.
+        """
+        super().__init__(Event.VIRTUAL_DIAG)
+        self.virtual_id = virtual_id
+        self.fps = fps
+        self.r_avg = r_avg
+        self.cycle = cycle
+        self.sleep = sleep
 
 
 class DeviceUpdateEvent(Event):

@@ -4,6 +4,7 @@ import timeit
 import voluptuous as vol
 
 from ledfx.effects import Effect
+from ledfx.events import VirtualDiagEvent
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -63,6 +64,14 @@ class LogSec(Effect):
         self.log = result
 
     def try_log(self):
+        """
+        Logs frame rate and timing diagnostics if a new second boundary has been reached.
+        
+        Calculates and logs frames per second, average render time, cycle time, and sleep time when diagnostics are enabled and a new second has elapsed. Fires a `VirtualDiagEvent` with the collected metrics. Returns whether a new second boundary was crossed.
+         
+        Returns:
+            True if a new second boundary was crossed and diagnostics were logged; otherwise, False.
+        """
         end = timeit.default_timer()
         r_time = end - self.current_time
         self.r_total += r_time
@@ -71,8 +80,13 @@ class LogSec(Effect):
                 r_avg = self.r_total / self.fps
             else:
                 r_avg = 0.0
+            cycle = end - self.last
+            sleep = self.current_time - self.last
             _LOGGER.warning(
-                f"{self.name}: FPS {self.fps} Render:{r_avg:0.6f} Cycle: {(end - self.last):0.6f} Sleep: {(self.current_time - self.last):0.6f}"
+                f"{self.name}: FPS {self.fps} Render:{r_avg:0.6f} Cycle: {cycle:0.6f} Sleep: {sleep:0.6f}"
+            )
+            self._ledfx.events.fire_event(
+                VirtualDiagEvent(self.id, self.fps, r_avg, cycle, sleep)
             )
             self.r_total = 0.0
         self.last = end
