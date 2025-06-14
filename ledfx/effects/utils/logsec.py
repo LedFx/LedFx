@@ -77,7 +77,9 @@ class LogSec(Effect):
             _LOGGER.warning(
                 f"{self.name}: FPS {self.fps} Render:{r_avg:0.6f} Cycle: {cycle:0.6f} Sleep: {sleep:0.6f}"
             )
-            self._ledfx.events.fire_event(VirtualDiagEvent(self.id, self.fps, r_avg, cycle, sleep ))
+            self._ledfx.events.fire_event(
+                VirtualDiagEvent(self.id, self.fps, r_avg, cycle, sleep)
+            )
             self.r_total = 0.0
         self.last = end
         return self.log
