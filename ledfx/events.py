@@ -26,12 +26,74 @@ class Event:
     GLOBAL_PAUSE = "global_pause"
     VIRTUAL_PAUSE = "virtual_pause"
     AUDIO_INPUT_DEVICE_CHANGED = "audio_input_device_changed"
+    VIRTUAL_DIAG = "virtual_diag"
+    GENERAL_DIAG = "general_diag"
 
     def __init__(self, type: str):
+        """
+        Initializes an event with the specified event type.
+        
+        Args:
+            type: The string identifier representing the event type.
+        """
         self.event_type = type
 
     def to_dict(self):
+        """
+        Returns a dictionary representation of the event's attributes.
+        """
         return self.__dict__
+
+
+class GeneralDiagEvent(Event):
+    """Event emitted with arbitrary test diagnostics"""
+
+    def __init__(self, debug: str, scroll: bool = False):
+        """
+        Initializes a GeneralDiagEvent with diagnostic text and an optional scroll flag.
+        
+        Args:
+            debug: The diagnostic message to emit.
+            scroll: If True, indicates the message should be scrolled.
+        """
+        super().__init__(Event.GENERAL_DIAG)
+        self.debug = debug
+        self.scroll = scroll
+
+
+class VirtualDiagEvent(Event):
+    """Event emitted when a virtual's diagnostics are updated"""
+
+    def __init__(
+        self,
+        virtual_id: str,
+        fps: int,
+        r_avg: float,
+        r_min: float,
+        r_max: float,
+        cycle: float,
+        sleep: float,
+    ):
+        """
+        Initializes a VirtualDiagEvent with diagnostic metrics for a virtual entity.
+        
+        Args:
+            virtual_id: Identifier of the virtual entity.
+            fps: Frames per second.
+            r_avg: Average response time.
+            r_min: Minimum response time.
+            r_max: Maximum response time.
+            cycle: Cycle time.
+            sleep: Sleep time.
+        """
+        super().__init__(Event.VIRTUAL_DIAG)
+        self.virtual_id = virtual_id
+        self.fps = fps
+        self.r_avg = r_avg
+        self.r_min = r_min
+        self.r_max = r_max
+        self.cycle = cycle
+        self.sleep = sleep
 
 
 class DeviceUpdateEvent(Event):

@@ -8,6 +8,7 @@ from PIL import Image
 
 from ledfx.effects.gradient import GradientEffect
 from ledfx.effects.twod import Twod
+from ledfx.events import GeneralDiagEvent
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -119,8 +120,18 @@ class Noise2d(Twod, GradientEffect):
 
     def draw(self):
 
+        """
+        Generates and renders a frame of the 2D noise effect, updating the LED matrix display.
+        
+        If in test mode, draws a diagnostic test pattern and emits a diagnostic event with the current matrix resolution and impulse value. Advances the noise coordinates based on elapsed time and speed, modulates noise scaling with audio input, generates a 2D noise field, normalizes and stretches the noise values, maps them to a color gradient, and updates the display matrix as an RGB image.
+        """
         if self.test:
             self.draw_test(self.m_draw)
+            self._ledfx.events.fire_event(
+                GeneralDiagEvent(
+                    f"Noise2d: {self.r_width}x{self.r_height}\nlows_impulse: {self.lows_impulse:.2f}"
+                )
+            )
 
         # time invariant movement throuh the noise space
         self.mov = 0.5 * self.speed * self.passed
