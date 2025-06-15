@@ -119,10 +119,9 @@ class Noise2d(Twod, GradientEffect):
         )
 
     def draw(self):
-
         """
         Generates and renders a frame of the 2D noise effect, updating the LED matrix display.
-        
+
         If in test mode, draws a diagnostic test pattern and emits a diagnostic event with the current matrix resolution and impulse value. Advances the noise coordinates based on elapsed time and speed, modulates noise scaling with audio input, generates a 2D noise field, normalizes and stretches the noise values, maps them to a color gradient, and updates the display matrix as an RGB image.
         """
         if self.test:

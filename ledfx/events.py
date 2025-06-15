@@ -32,7 +32,7 @@ class Event:
     def __init__(self, type: str):
         """
         Initializes an event with the specified event type.
-        
+
         Args:
             type: The string identifier representing the event type.
         """
@@ -51,7 +51,7 @@ class GeneralDiagEvent(Event):
     def __init__(self, debug: str, scroll: bool = False):
         """
         Initializes a GeneralDiagEvent with diagnostic text and an optional scroll flag.
-        
+
         Args:
             debug: The diagnostic message to emit.
             scroll: If True, indicates the message should be scrolled.
@@ -76,7 +76,7 @@ class VirtualDiagEvent(Event):
     ):
         """
         Initializes a VirtualDiagEvent with diagnostic metrics for a virtual entity.
-        
+
         Args:
             virtual_id: Identifier of the virtual entity.
             fps: Frames per second.

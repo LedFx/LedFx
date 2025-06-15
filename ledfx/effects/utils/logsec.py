@@ -32,7 +32,7 @@ class LogSec(Effect):
     def __init__(self, ledfx, config):
         """
         Initializes the LogSec effect, setting up frame counting, timing, and render statistics.
-        
+
         Initializes internal state for FPS measurement, render time tracking (including min, max, and total times), and timing markers based on the current timer.
         """
         super().__init__(ledfx, config)
@@ -49,7 +49,7 @@ class LogSec(Effect):
     def on_activate(self, pixel_count):
         """
         Resets the internal timer when the effect is activated.
-        
+
         Args:
             pixel_count: The number of pixels for the effect (unused).
         """
@@ -79,9 +79,9 @@ class LogSec(Effect):
     def try_log(self):
         """
         Logs and reports frame rendering diagnostics if logging is enabled.
-        
+
         Measures render time for the current frame, updates minimum, maximum, and total render times, and, if logging is flagged, computes and logs FPS and timing statistics. Fires a diagnostic event with the collected metrics and resets render time statistics for the next interval.
-        
+
         Returns:
             True if diagnostics were logged and reported during this call; otherwise, False.
         """
