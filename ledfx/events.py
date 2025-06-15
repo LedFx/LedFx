@@ -27,6 +27,7 @@ class Event:
     VIRTUAL_PAUSE = "virtual_pause"
     AUDIO_INPUT_DEVICE_CHANGED = "audio_input_device_changed"
     VIRTUAL_DIAG = "virtual_diag"
+    GENERAL_DIAG = "general_diag"
 
     def __init__(self, type: str):
         self.event_type = type
@@ -35,6 +36,15 @@ class Event:
         return self.__dict__
 
 
+class GeneralDiagEvent(Event):
+    """Event emitted with arbitrary test diagnostics"""
+
+    def __init__(self, debug: str, scroll: bool = False):
+        super().__init__(Event.GENERAL_DIAG)
+        self.debug = debug
+        self.scroll = scroll
+
+        
 class VirtualDiagEvent(Event):
     """Event emitted when a virtual's diagnostics are updated"""
 
