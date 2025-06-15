@@ -26,12 +26,46 @@ class Event:
     GLOBAL_PAUSE = "global_pause"
     VIRTUAL_PAUSE = "virtual_pause"
     AUDIO_INPUT_DEVICE_CHANGED = "audio_input_device_changed"
+    VIRTUAL_DIAG = "virtual_diag"
+    GENERAL_DIAG = "general_diag"
 
     def __init__(self, type: str):
         self.event_type = type
 
     def to_dict(self):
         return self.__dict__
+
+
+class GeneralDiagEvent(Event):
+    """Event emitted with arbitrary test diagnostics"""
+
+    def __init__(self, debug: str, scroll: bool = False):
+        super().__init__(Event.GENERAL_DIAG)
+        self.debug = debug
+        self.scroll = scroll
+
+
+class VirtualDiagEvent(Event):
+    """Event emitted when a virtual's diagnostics are updated"""
+
+    def __init__(
+        self,
+        virtual_id: str,
+        fps: int,
+        r_avg: float,
+        r_min: float,
+        r_max: float,
+        cycle: float,
+        sleep: float,
+    ):
+        super().__init__(Event.VIRTUAL_DIAG)
+        self.virtual_id = virtual_id
+        self.fps = fps
+        self.r_avg = r_avg
+        self.r_min = r_min
+        self.r_max = r_max
+        self.cycle = cycle
+        self.sleep = sleep
 
 
 class DeviceUpdateEvent(Event):

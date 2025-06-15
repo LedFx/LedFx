@@ -8,6 +8,7 @@ from PIL import Image
 
 from ledfx.effects.gradient import GradientEffect
 from ledfx.effects.twod import Twod
+from ledfx.events import GeneralDiagEvent
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -121,6 +122,11 @@ class Noise2d(Twod, GradientEffect):
 
         if self.test:
             self.draw_test(self.m_draw)
+            self._ledfx.events.fire_event(
+                GeneralDiagEvent(
+                    f"Noise2d: {self.r_width}x{self.r_height}\nlows_impulse: {self.lows_impulse:.2f}"
+                )
+            )
 
         # time invariant movement throuh the noise space
         self.mov = 0.5 * self.speed * self.passed
