@@ -44,7 +44,7 @@ class GeneralDiagEvent(Event):
         self.debug = debug
         self.scroll = scroll
 
-        
+
 class VirtualDiagEvent(Event):
     """Event emitted when a virtual's diagnostics are updated"""
 
