@@ -183,7 +183,7 @@ The `virtual_diag` WebSocket event is emitted when a virtual's diagnostics are u
 - `cycle`: Cycle time for the virtual's update loop.
 - `sleep`: Sleep time between cycles.
 
-**Usage:**  
+**Usage:**
 Subscribe to this event to monitor the performance and timing of virtual devices for diagnostics and optimization.
 
 ---
@@ -206,6 +206,6 @@ The `general_diag` WebSocket event is emitted to provide arbitrary diagnostic me
 - `debug`: The diagnostic message string.
 - `scroll`: Boolean indicating if the message should be scrolled in the UI oe replaced in each cycle.
 
-**Usage:**  
+**Usage:**
 Listen for this event to receive general diagnostic messages from the system, which may be useful for debugging or displaying system status in the frontend.
 If a monospaced font is used then back end can attempt table live updates with scroll set to false which is default if not explicitly set.
