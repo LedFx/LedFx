@@ -70,7 +70,7 @@ class VirtualDiagEvent(Event):
         self.cycle = cycle
         self.sleep = sleep
 
-        
+
 class ClientConnectedEvent(Event):
     """Event emitted when a client connects"""
 
