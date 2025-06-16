@@ -45,6 +45,7 @@
    :caption: LedFx API
 
    /api
+   /websocket
 
 .. toctree::
    :maxdepth: 2
