@@ -62,6 +62,7 @@ extensions = [
     "sphinx_toolbox.collapse",
     "sphinx_copybutton",
     "myst_parser",
+    "sphinxcontrib.mermaid",
 ]
 
 # The suffix(es) of source filenames.
@@ -241,6 +242,7 @@ myst_enable_extensions = [
     "linkify",
     "substitution",
     "tasklist",
+    "colon_fence",
 ]
 
 myst_heading_anchors = 3
