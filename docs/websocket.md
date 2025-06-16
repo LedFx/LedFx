@@ -172,17 +172,17 @@ The example given in the following sequence diagram for general_diag is a trivia
     participant FE as Frontend Client
 
     Note over V,FE: Virtual Diag Event Flow
-    
+
     V->>+E: Execute effect in thread
     E->>+LS: log_sec() - Start frame timing
     LS->>LS: Track FPS, render times
-    
+
     loop Every Frame
         E->>LS: Render frame
         LS->>LS: Measure render time
         LS->>LS: Update min/max/total times
     end
-    
+
     LS->>LS: Check if second boundary crossed
     alt Second boundary crossed & diag enabled
         LS->>ES: fire_event(VirtualDiagEvent)
@@ -191,9 +191,9 @@ The example given in the following sequence diagram for general_diag is a trivia
         WS->>FE: send_event(virtual_diag)
         Note right of FE: Real-time performance metrics
     end
-    
+
     Note over V,FE: General Diag Event Flow
-    
+
     V->>+E2: Execute noise2d effect
     alt Test mode enabled
         E2->>E2: draw_test() - Draw diagnostic pattern
@@ -203,17 +203,17 @@ The example given in the following sequence diagram for general_diag is a trivia
         WS->>FE: send_event(general_diag)
         Note right of FE: Diagnostic message for debugging
     end
-    
+
     Note over V,FE: WebSocket Subscription Setup
-    
+
     FE->>WS: subscribe_event("virtual_diag")
     WS->>ES: add_listener(notify_websocket, "virtual_diag")
-    
-    FE->>WS: subscribe_event("general_diag") 
+
+    FE->>WS: subscribe_event("general_diag")
     WS->>ES: add_listener(notify_websocket, "general_diag")
-    
+
     Note over V,FE: Event Distribution System
-    
+
     rect rgb(240, 248, 255)
         Note over ES: Events.fire_event() calls all<br/>registered listeners via<br/>loop.call_soon_threadsafe()
     end
