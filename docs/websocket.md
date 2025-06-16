@@ -7,14 +7,10 @@ visualizations in the frontend.
 Will document this further once it is more well defined. The general
 structure will be event registration based.
 
-:::: note
-::: title
-Warning
-:::
-
+::: warning
 The documentation on websockets need a LOT of legacy implementation.
 New sections are added as new events are commited, but all the pre-existing behaviour is currently not documented
-::::
+:::
 
 
 ## Websocket client UIDs
