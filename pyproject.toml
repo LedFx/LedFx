@@ -69,6 +69,7 @@ docs = [
     "sphinx-copybutton==0.5.2; python_version >= \"3.10\"",
     "myst-parser>=3.0.1",
     "linkify-it-py>=2.0.3",
+    "sphinxcontrib-mermaid; python_version >= \"3.10\"",
 ]
 
 [tool.pdm.build]
