@@ -3,6 +3,7 @@ import binascii
 import json
 import logging
 import struct
+import uuid
 from concurrent import futures
 
 import numpy as np
@@ -12,7 +13,7 @@ from aiohttp import web
 
 from ledfx.api import RestEndpoint
 from ledfx.dedupequeue import VisDeduplicateQ
-from ledfx.events import Event
+from ledfx.events import ClientConnectedEvent, ClientDisconnectedEvent, Event
 from ledfx.utils import empty_queue
 
 _LOGGER = logging.getLogger(__name__)
@@ -63,6 +64,9 @@ class WebsocketEndpoint(RestEndpoint):
 
 
 class WebsocketConnection:
+    ip_uid_map = {}
+    map_lock = asyncio.Lock()
+
     def __init__(self, ledfx):
         self._ledfx = ledfx
         self._socket = None
@@ -70,6 +74,8 @@ class WebsocketConnection:
         self._receiver_task = None
         self._sender_task = None
         self._sender_queue = VisDeduplicateQ(maxsize=MAX_PENDING_MESSAGES)
+        self.client_ip = None
+        self.uid = None
 
     def close(self):
         """
@@ -88,6 +94,11 @@ class WebsocketConnection:
         """
         for func in self._listeners.values():
             func()
+
+    @classmethod
+    async def get_all_clients(cls):
+        async with cls.map_lock:
+            return cls.ip_uid_map.copy()
 
     def send(self, message):
         """Sends a message to the websocket connection
@@ -168,6 +179,12 @@ class WebsocketConnection:
     async def handle(self, request):
         """Handle the websocket connection"""
 
+        self.client_ip = request.remote
+
+        async with WebsocketConnection.map_lock:
+            self.uid = str(uuid.uuid4())
+            WebsocketConnection.ip_uid_map[self.uid] = self.client_ip
+
         socket = self._socket = web.WebSocketResponse(
             protocols=("http", "https", "ws", "wss")
         )
@@ -206,8 +223,17 @@ class WebsocketConnection:
 
         _LOGGER.info("Websocket connected.")
 
+        # Send UID to the client
+        await self._socket.send_json(
+            {"event_type": "client_id", "client_id": self.uid}
+        )
+
         self._receiver_task = asyncio.current_task(loop=self._ledfx.loop)
         self._sender_task = self._ledfx.loop.create_task(self._sender())
+
+        self._ledfx.events.fire_event(
+            ClientConnectedEvent(self.uid, self.client_ip)
+        )
 
         def shutdown_handler(e):
             self.close()
@@ -251,6 +277,9 @@ class WebsocketConnection:
             _LOGGER.exception("Unexpected Exception: %s", err)
 
         finally:
+            async with WebsocketConnection.map_lock:
+                if self.uid in WebsocketConnection.ip_uid_map:
+                    del WebsocketConnection.ip_uid_map[self.uid]
             remove_listeners()
             self.clear_subscriptions()
 
@@ -261,6 +290,10 @@ class WebsocketConnection:
             # Close the connection
             await socket.close()
             _LOGGER.info("Closed connection")
+
+            self._ledfx.events.fire_event(
+                ClientDisconnectedEvent(self.uid, self.client_ip)
+            )
 
         return socket
 
