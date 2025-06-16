@@ -32,7 +32,6 @@ class Event:
     CLIENT_DISCONNECTED = "client_disconnected"
     CLIENT_SYNC = "client_sync"
 
-    
     def __init__(self, type: str):
         """
         Initializes an event with the specified event type.
