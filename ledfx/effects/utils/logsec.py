@@ -104,7 +104,7 @@ class LogSec(Effect):
             )
             self._ledfx.events.fire_event(
                 VirtualDiagEvent(
-                    self.id,
+                    self._virtual.id,
                     self.fps,
                     r_avg,
                     self.r_min,
