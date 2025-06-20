@@ -1,12 +1,44 @@
 import logging
 import timeit
+import asyncio
+import aiohttp
 
 import voluptuous as vol
 
 from ledfx.effects import Effect
 from ledfx.events import VirtualDiagEvent
+from ledfx.utils import WLED
 
 _LOGGER = logging.getLogger(__name__)
+
+
+async def fetch_info(session, ip_address, callback):
+    """Fetches WLED device information asynchronously."""
+    url = f"http://{ip_address}/json/info"
+    try:
+        timeout = aiohttp.ClientTimeout(total=0.8)
+        async with session.get(url, timeout=timeout) as response:
+            data = await response.json()
+            callback(data)
+    except Exception as e:
+        _LOGGER.warning(f"Error fetching info from {ip_address}: {e}")
+
+# A wrapper that launches the request asynchronously
+def get_info_async(loop, ip_address, callback):
+    """Launches an asynchronous request to fetch WLED device information."""
+    try:
+        loop.create_task(_start_request(ip_address, callback))
+    except RuntimeError as e:
+        _LOGGER.warning(
+            f"Error creating task in the provided loop: {e}"
+        )
+
+
+# Internal coroutine to be launched as a task
+async def _start_request(ip_address, callback):
+    """Internal coroutine to fetch WLED device information."""
+    async with aiohttp.ClientSession() as session:
+        await fetch_info(session, ip_address, callback)
 
 
 @Effect.no_registration
@@ -42,6 +74,7 @@ class LogSec(Effect):
         self.r_total = 0.0
         self.r_min = 1.0
         self.r_max = 0.0
+        self.r_phy = -1
         self.passed = 0
         self.current_time = timeit.default_timer()
         self.lasttime = int(self.current_time)
@@ -58,6 +91,10 @@ class LogSec(Effect):
     def config_updated(self, config):
         self.diag = self._config["diag"]
 
+    def handle_info_response(self, data):
+        self.r_phy = data.get("leds", {}).get("fps", -1)
+        _LOGGER.info(f"{self._virtual.name}:{self.name} fps from wled info: {self.r_phy}")
+
     def log_sec(self):
         was = self.current_time
         self.current_time = timeit.default_timer()
@@ -70,6 +107,16 @@ class LogSec(Effect):
             if nowint != self.lasttime:
                 self.fps = self.frame
                 self.frame = 0
+                # can we trigger a wled json info call
+                if self._virtual.is_device:
+                    device_id = self._virtual.is_device
+                    device = self._ledfx.devices.get(device_id)
+                    if device.type == "wled":
+                        get_info_async(
+                            self._ledfx.loop,
+                            device._destination,
+                            self.handle_info_response
+                        )
                 result = True
             else:
                 self.frame += 1
