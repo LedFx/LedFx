@@ -92,7 +92,9 @@ class LogSec(Effect):
 
     def handle_info_response(self, data):
         self.f_phy = data.get("leds", {}).get("fps", -1)
-        _LOGGER.info(f"{self._virtual.name}:{self.name} fps from wled info: {self.f_phy}")
+        _LOGGER.info(
+            f"{self._virtual.name}:{self.name} fps from wled info: {self.f_phy}"
+        )
 
     def log_sec(self):
         was = self.current_time
