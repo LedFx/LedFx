@@ -1,8 +1,8 @@
+import asyncio
 import logging
 import timeit
-import asyncio
-import aiohttp
 
+import aiohttp
 import voluptuous as vol
 
 from ledfx.effects import Effect
@@ -23,15 +23,14 @@ async def fetch_info(session, ip_address, callback):
     except Exception as e:
         _LOGGER.warning(f"Error fetching info from {ip_address}: {e}")
 
+
 # A wrapper that launches the request asynchronously
 def get_info_async(loop, ip_address, callback):
     """Launches an asynchronous request to fetch WLED device information."""
     try:
         loop.create_task(_start_request(ip_address, callback))
     except RuntimeError as e:
-        _LOGGER.warning(
-            f"Error creating task in the provided loop: {e}"
-        )
+        _LOGGER.warning(f"Error creating task in the provided loop: {e}")
 
 
 # Internal coroutine to be launched as a task
@@ -93,7 +92,9 @@ class LogSec(Effect):
 
     def handle_info_response(self, data):
         self.r_phy = data.get("leds", {}).get("fps", -1)
-        _LOGGER.info(f"{self._virtual.name}:{self.name} fps from wled info: {self.r_phy}")
+        _LOGGER.info(
+            f"{self._virtual.name}:{self.name} fps from wled info: {self.r_phy}"
+        )
 
     def log_sec(self):
         was = self.current_time
@@ -115,7 +116,7 @@ class LogSec(Effect):
                         get_info_async(
                             self._ledfx.loop,
                             device._destination,
-                            self.handle_info_response
+                            self.handle_info_response,
                         )
                 result = True
             else:
