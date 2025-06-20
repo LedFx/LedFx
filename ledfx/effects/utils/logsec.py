@@ -1,4 +1,3 @@
-import asyncio
 import logging
 import timeit
 
@@ -7,7 +6,6 @@ import voluptuous as vol
 
 from ledfx.effects import Effect
 from ledfx.events import VirtualDiagEvent
-from ledfx.utils import WLED
 
 _LOGGER = logging.getLogger(__name__)
 
