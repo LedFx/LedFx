@@ -182,7 +182,7 @@ The example given in the following sequence diagram for general_diag is a trivia
     LS->>LS: Check if second boundary crossed
     alt Second boundary crossed & diag enabled
         LS->>ES: fire_event(VirtualDiagEvent)
-        Note right of LS: Contains: virtual_id, fps, r_avg,<br/>r_min, r_max, cycle, sleep
+        Note right of LS: Contains: virtual_id, fps, r_avg, <br/>f_phy, r_min, r_max, cycle, sleep
         ES->>WS: notify_websocket(event)
         WS->>FE: send_event(virtual_diag)
         Note right of FE: Real-time performance metrics
@@ -228,6 +228,7 @@ The `virtual_diag` WebSocket event is emitted when a virtual's diagnostics are u
   "r_avg": 0.017432,
   "r_min": 0.008123,
   "r_max": 0.022345,
+  "f_phy": 47,
   "cycle": 16.67,
   "sleep": 0.014232
 }
@@ -240,11 +241,14 @@ The `virtual_diag` WebSocket event is emitted when a virtual's diagnostics are u
 - `r_avg`: Average render time.
 - `r_min`: Minimum render time.
 - `r_max`: Maximum render time.
+- `f_phy`: FPS physical if available, currently WLED only.
 - `cycle`: Cycle time for the virtual's update loop.
 - `sleep`: Sleep time between cycles.
 
 **Usage:**
 Subscribe to this event to monitor the performance and timing of virtual devices for diagnostics and optimization.
+
+If a virtual is mapped directly to a device and that device is WLED, then an attempt to read the FPS will be made once per second asynchronously via the /json/info api call and returned on f_phy, else the value will be -1
 
 ---
 
