@@ -74,7 +74,7 @@ class LogSec(Effect):
         self.r_total = 0.0
         self.r_min = 1.0
         self.r_max = 0.0
-        self.r_phy = -1
+        self.f_phy = -1
         self.passed = 0
         self.current_time = timeit.default_timer()
         self.lasttime = int(self.current_time)
@@ -92,8 +92,8 @@ class LogSec(Effect):
         self.diag = self._config["diag"]
 
     def handle_info_response(self, data):
-        self.r_phy = data.get("leds", {}).get("fps", -1)
-        _LOGGER.info(f"{self._virtual.name}:{self.name} fps from wled info: {self.r_phy}")
+        self.f_phy = data.get("leds", {}).get("fps", -1)
+        _LOGGER.info(f"{self._virtual.name}:{self.name} fps from wled info: {self.f_phy}")
 
     def log_sec(self):
         was = self.current_time
@@ -156,6 +156,7 @@ class LogSec(Effect):
                     r_avg,
                     self.r_min,
                     self.r_max,
+                    self.f_phy,
                     cycle,
                     sleep,
                 )
