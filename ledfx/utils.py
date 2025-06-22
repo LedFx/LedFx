@@ -1631,8 +1631,19 @@ def is_package_installed(package_name):
     paths_used = sys.path
     
     _LOGGER.error(f"[DEBUG] sys.path used for metadata discovery: {paths_used}")
+    _LOGGER.error("----------------------------------------------------")
+    # itereate and debug all distributions
+    for dist in metadata.distributions():
+        _LOGGER.error(f"{dist.metadata['name']} : {dist.version}")
+        _LOGGER.error(f"  Location: {dist.locate_file('')}")        
+        _LOGGER.error(f"  Version: {dist.version}")    
+    _LOGGER.error("----------------------------------------------------")
     try:
-        metadata.distribution(package_name)
+        data = metadata.distribution(package_name)
+        _LOGGER.debug(f"Package '{package_name}' is installed.")
+        _LOGGER.debug(f"Version: {data.version}")
+        _LOGGER.debug(f"Location: {data.locate_file('')}")
+
         return True
     except ModuleNotFoundError as e:
         _LOGGER.error(f"ModuleNotFoundError: {e}")
