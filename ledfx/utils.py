@@ -1629,14 +1629,16 @@ def is_package_installed(package_name):
         bool: True if the package is installed, False otherwise.
     """
     paths_used = sys.path
-    
-    _LOGGER.error(f"[DEBUG] sys.path used for metadata discovery: {paths_used}")
+
+    _LOGGER.error(
+        f"[DEBUG] sys.path used for metadata discovery: {paths_used}"
+    )
     _LOGGER.error("----------------------------------------------------")
     # itereate and debug all distributions
     for dist in metadata.distributions():
         _LOGGER.error(f"{dist.metadata['name']} : {dist.version}")
-        _LOGGER.error(f"  Location: {dist.locate_file('')}")        
-        _LOGGER.error(f"  Version: {dist.version}")    
+        _LOGGER.error(f"  Location: {dist.locate_file('')}")
+        _LOGGER.error(f"  Version: {dist.version}")
     _LOGGER.error("----------------------------------------------------")
     try:
         data = metadata.distribution(package_name)
