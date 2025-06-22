@@ -1629,8 +1629,10 @@ def is_package_installed(package_name):
         bool: True if the package is installed, False otherwise.
     """
     paths_used = sys.path
-    
-    _LOGGER.error(f"[DEBUG] sys.path used for metadata discovery: {paths_used}")
+
+    _LOGGER.error(
+        f"[DEBUG] sys.path used for metadata discovery: {paths_used}"
+    )
     try:
         metadata.distribution(package_name)
         return True
