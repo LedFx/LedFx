@@ -1634,7 +1634,9 @@ def is_package_installed(package_name: str, import_name: str = None) -> bool:
     # Try to get import spec
     spec = importlib.util.find_spec(import_name)
     if spec is None:
-        _LOGGER.info(f"Optional dependency '{package_name}' not found (import name: '{import_name}').")
+        _LOGGER.info(
+            f"Optional dependency '{package_name}' not found (import name: '{import_name}')."
+        )
         return False
 
     # Try to get version info
@@ -1656,10 +1658,10 @@ def check_optional_dependencies():
     Check for optional dependencies and log their availability, versions, and paths.
     """
     OPTIONAL_DEPENDENCIES = {
-    "psutil": "psutil",
-    "python-mbedtls": "mbedtls",
-    # Add more if needed
-}
+        "psutil": "psutil",
+        "python-mbedtls": "mbedtls",
+        # Add more if needed
+    }
     for package_name, import_name in OPTIONAL_DEPENDENCIES.items():
         is_package_installed(package_name, import_name)
 
