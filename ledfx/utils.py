@@ -1628,10 +1628,14 @@ def is_package_installed(package_name):
     Returns:
         bool: True if the package is installed, False otherwise.
     """
+    paths_used = sys.path
+    
+    _LOGGER.error(f"[DEBUG] sys.path used for metadata discovery: {paths_used}")
     try:
         metadata.distribution(package_name)
         return True
-    except ModuleNotFoundError:
+    except ModuleNotFoundError as e:
+        _LOGGER.error(f"ModuleNotFoundError: {e}")
         return False
 
 
