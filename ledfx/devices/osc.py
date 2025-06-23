@@ -92,7 +92,7 @@ class OSCServerDevice(NetworkedDevice):
         starting_addr = self._config["starting_addr"]
 
         # Convert data to rgb tuple
-        colors = [(int(r), int(g), int(b)) for r, g, b in data]
+        colors = data.astype(int).clip(0, 255)
 
         # Create array for messages
         messages = []
@@ -100,7 +100,7 @@ class OSCServerDevice(NetworkedDevice):
         # Go though all the pixels
         for i in range(self._config["pixel_count"]):
             # Get the rgb values from the colors array
-            r, g, b = colors[i % len(colors)]
+            r, g, b = colors[i % len(colors)].tolist()
             if self._config["send_type"] == "One_Argument":
                 send_data = OscMessageBuilder(
                     self.__generate_path(address=starting_addr + i)
