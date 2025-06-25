@@ -74,6 +74,7 @@ class VirtualDiagEvent(Event):
         r_avg: float,
         r_min: float,
         r_max: float,
+        f_phy: int,
         cycle: float,
         sleep: float,
     ):
@@ -86,6 +87,7 @@ class VirtualDiagEvent(Event):
             r_avg: Average response time.
             r_min: Minimum response time.
             r_max: Maximum response time.
+            f_phy: wled physical frames per second, -1 if not applicable.
             cycle: Cycle time.
             sleep: Sleep time.
         """
@@ -95,6 +97,7 @@ class VirtualDiagEvent(Event):
         self.r_avg = r_avg
         self.r_min = r_min
         self.r_max = r_max
+        self.f_phy = f_phy
         self.cycle = cycle
         self.sleep = sleep
 
