@@ -1,4 +1,5 @@
 import time
+
 import numpy as np
 import voluptuous as vol
 
@@ -12,10 +13,18 @@ class Fire(AudioReactiveEffect, HSVEffect):
 
     CONFIG_SCHEMA = vol.Schema(
         {
-            vol.Optional("speed", default=0.04): vol.All(vol.Coerce(float), vol.Range(min=0.00001, max=0.5)),
-            vol.Optional("color_shift", default=0.15): vol.All(vol.Coerce(float), vol.Range(min=0, max=1)),
-            vol.Optional("intensity", default=8): vol.All(vol.Coerce(int), vol.Range(min=1, max=30)),
-            vol.Optional("fade_chance", default=0.5): vol.All(vol.Coerce(float), vol.Range(min=0.05, max=1.0)),
+            vol.Optional("speed", default=0.04): vol.All(
+                vol.Coerce(float), vol.Range(min=0.00001, max=0.5)
+            ),
+            vol.Optional("color_shift", default=0.15): vol.All(
+                vol.Coerce(float), vol.Range(min=0, max=1)
+            ),
+            vol.Optional("intensity", default=8): vol.All(
+                vol.Coerce(int), vol.Range(min=1, max=30)
+            ),
+            vol.Optional("fade_chance", default=0.5): vol.All(
+                vol.Coerce(float), vol.Range(min=0.05, max=1.0)
+            ),
         }
     )
 
@@ -31,15 +40,21 @@ class Fire(AudioReactiveEffect, HSVEffect):
         self.cooling = 0.95
         self.accel = 0.03
         self.fade_chance = self._config["fade_chance"] / 10
-        self._lows_filter = self.create_filter(alpha_decay=0.05, alpha_rise=0.99)
+        self._lows_filter = self.create_filter(
+            alpha_decay=0.05, alpha_rise=0.99
+        )
 
         self.spark_count = self._config["intensity"]
         self.color_shift = self._config["color_shift"]
         self.sparks = np.zeros(self.spark_count, dtype=np.float32)
-        self.sparkX = np.random.uniform(0, 5, size=self.spark_count).astype(np.float32)
+        self.sparkX = np.random.uniform(0, 5, size=self.spark_count).astype(
+            np.float32
+        )
 
     def audio_data_updated(self, data):
-        _lows_power = self._lows_filter.update(np.mean(data.lows_power(filtered=False)))
+        _lows_power = self._lows_filter.update(
+            np.mean(data.lows_power(filtered=False))
+        )
         self.cooling = 0.75 + _lows_power * 0.25
         self.accel = 0.02 + _lows_power * 0.1
         self.speed = self._config["speed"] + _lows_power * 0.01
@@ -56,10 +71,10 @@ class Fire(AudioReactiveEffect, HSVEffect):
         # Vectorized heat diffusion
         if self.pixel_count > 5:
             pixels[5:] = (
-                pixels[4:-1] +
-                pixels[3:-2] +
-                pixels[2:-3] * 2 +
-                pixels[1:-4] * 3
+                pixels[4:-1]
+                + pixels[3:-2]
+                + pixels[2:-3] * 2
+                + pixels[1:-4] * 3
             ) / 7
 
         sparks = self.sparks
@@ -68,8 +83,12 @@ class Fire(AudioReactiveEffect, HSVEffect):
 
         # Reset dead sparks
         dead_sparks = sparks <= 0
-        sparks[dead_sparks] = np.random.uniform(0.5, 1.0, size=np.count_nonzero(dead_sparks))
-        sparkX[dead_sparks] = np.random.uniform(0, 5, size=np.count_nonzero(dead_sparks))
+        sparks[dead_sparks] = np.random.uniform(
+            0.5, 1.0, size=np.count_nonzero(dead_sparks)
+        )
+        sparkX[dead_sparks] = np.random.uniform(
+            0, 5, size=np.count_nonzero(dead_sparks)
+        )
 
         # Advance sparks
         step = sparks**2 * delta_scaled * (pixel_limit / 100)
@@ -86,7 +105,9 @@ class Fire(AudioReactiveEffect, HSVEffect):
             j_start = int(sparkX[i] - step[i])
             j_end = int(sparkX[i])
             if j_end > j_start:
-                j_range = np.clip(np.arange(j_start, j_end), 0, pixel_limit - 1)
+                j_range = np.clip(
+                    np.arange(j_start, j_end), 0, pixel_limit - 1
+                )
                 pixels[j_range] += np.clip(1 - sparks[i] * 0.4, 0, 1) * 0.5
 
         # Map to HSV
