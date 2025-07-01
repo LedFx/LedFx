@@ -2,7 +2,7 @@
 
 Alpha mode is where all the *VERY* early and experimental implementations are hidden in the UI front end.
 
-Any feature or functionality under alpha mode should be considered transient, it may or may not work, and it may be gone tomorrow. 
+Any feature or functionality under alpha mode should be considered transient, it may or may not work, and it may be gone tomorrow.
 
 You have been warned!
 
@@ -18,7 +18,7 @@ The first step is to enable Developer mode. In the SmartBar search box, type the
 
 HackedByBlade!
 
-A modal dialog should appear confirming entry into Developed mode, similar to 
+A modal dialog should appear confirming entry into Developed mode, similar to
 
 ![this is how it starts...](/_static/howto/alpha/alpha2.png)
 
