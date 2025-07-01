@@ -136,12 +136,7 @@ This feature is still in alpha.
 
 **Enabling**
 
--   Go to settings and enter \"AlphaMode!\" and a window saying \"dev
-    mode activated\" should appear.
--   Then in the same bar enter \"BladeAlpha\" and then click on the UI
-    setting.
--   In the UI settings first enable expert mode and then you should see
-    alpha mode, which you need to toggle on.
+-   First you must have Alpha Mode enabled, see [How To: Enable Alpha Mode](/howto/alpha.md)
 -   Open the alpha settings under client features and enable webaudio
     setting.
 
