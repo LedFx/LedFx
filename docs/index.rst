@@ -39,6 +39,7 @@
    /howto/keybeat
    /howto/virtuals
    /howto/reorder
+   /howto/alpha
 
 .. toctree::
    :maxdepth: 2
