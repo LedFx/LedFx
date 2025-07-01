@@ -7,8 +7,8 @@ from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.hsv_effect import HSVEffect
 
 
-class Fire(AudioReactiveEffect, HSVEffect):
-    NAME = "Fire"
+class Fire2(AudioReactiveEffect, HSVEffect):
+    NAME = "Fire2"
     CATEGORY = "Atmospheric"
 
     CONFIG_SCHEMA = vol.Schema(
