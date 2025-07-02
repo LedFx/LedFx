@@ -29,10 +29,10 @@ class Fire(AudioReactiveEffect, HSVEffect):
     )
 
     def on_activate(self, pixel_count):
-        self.spark_pixels = np.zeros(self.pixel_count, dtype=np.float32)
-        self.h = np.zeros(self.pixel_count, dtype=np.float32)
-        self.s = np.zeros(self.pixel_count, dtype=np.float32)
-        self.v = np.zeros(self.pixel_count, dtype=np.float32)
+        self.spark_pixels = np.zeros(pixel_count, dtype=np.float32)
+        self.h = np.zeros(pixel_count, dtype=np.float32)
+        self.s = np.zeros(pixel_count, dtype=np.float32)
+        self.v = np.zeros(pixel_count, dtype=np.float32)
         self.delta_last = time.time()
 
     def config_updated(self, config):
