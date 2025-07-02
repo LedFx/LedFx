@@ -127,7 +127,7 @@ CORE_CONFIG_SCHEMA = vol.Schema(
             int, vol.Range(1, 60)
         ),
         vol.Optional("visualisation_maxlen", default=81): vol.All(
-            int, vol.Range(5, 4096)
+            int, vol.Range(5, 65536)
         ),
         vol.Optional(
             "global_transitions",
