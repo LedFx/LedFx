@@ -167,7 +167,9 @@ class EffectsEndpoint(RestEndpoint):
                 # a transition by creating a new effect.
                 # add color_blend and set to False in your effect to prevent effect recreation on color change
                 # leave as a switch or add to HIDDEN_KEYS
-                if virtual.active_effect.config.get("color_blend", True) and next(
+                if virtual.active_effect.config.get(
+                    "color_blend", True
+                ) and next(
                     (key for key in effect_config.keys() if "color" in key),
                     None,
                 ):
