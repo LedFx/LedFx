@@ -54,6 +54,11 @@ class PixelsEffect(TemporalEffect):
                 description="Single or building pixels",
                 default=False,
             ): bool,
+            vol.Optional(
+                "color_blend",
+                description="Restart effect on color change, for transitions",
+                default=False,
+            ): bool,
         }
     )
 
