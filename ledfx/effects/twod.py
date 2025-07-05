@@ -7,17 +7,16 @@ from PIL import Image, ImageDraw, ImageEnhance
 
 from ledfx.effects import Effect
 from ledfx.effects.audio import AudioReactiveEffect
-from ledfx.effects.utils.logsec import LogSec
 
 _LOGGER = logging.getLogger(__name__)
 
 
 @Effect.no_registration
-class Twod(AudioReactiveEffect, LogSec):
+class Twod(AudioReactiveEffect):
     EFFECT_START_TIME = timeit.default_timer()
     # hiding dump by default, a dev can turn it on explicitily via removal
     HIDDEN_KEYS = ["background_brightness", "mirror", "flip", "blur", "dump"]
-    ADVANCED_KEYS = LogSec.ADVANCED_KEYS + [
+    ADVANCED_KEYS = AudioReactiveEffect.ADVANCED_KEYS + [
         "dump",
         "test",
         "flip_horizontal",
@@ -89,10 +88,6 @@ class Twod(AudioReactiveEffect, LogSec):
             self.flip2d, self.mirror2d = self.mirror2d, self.flip2d
 
         self.init = True
-
-        # the walker will not call config_updated for multiple inherited classes
-        # so if you a making a sub class you have to call this yourself
-        LogSec.config_updated(self, config)
 
     def set_init(self):
         """

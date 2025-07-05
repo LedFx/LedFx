@@ -5,11 +5,13 @@ import threading
 from functools import lru_cache
 
 import numpy as np
+import timeit
 import voluptuous as vol
 from numpy.typing import NDArray
 
 from ledfx.color import LEDFX_COLORS, hsv_to_rgb, parse_color, validate_color
 from ledfx.utils import BaseRegistry, RegistryLoader
+from ledfx.effects.utils.logsec_helper import LogSecHelper
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -275,7 +277,7 @@ class Effect(BaseRegistry):
     HIDDEN_KEYS = None
     # over ride in effect children AND add an "advanced" bool to schema
     # to show or hide in UI
-    ADVANCED_KEYS = None
+    ADVANCED_KEYS = ["diag"]
     # over ride in effect children to allow edit and show others
     PERMITTED_KEYS = None
     _config = None
@@ -313,6 +315,10 @@ class Effect(BaseRegistry):
                 description="Brightness of the background color",
                 default=1.0,
             ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
+            vol.Optional("diag", 
+                description="Enable diagnostic logging", 
+                default=False
+            ): bool,
         }
     )
 
@@ -320,6 +326,9 @@ class Effect(BaseRegistry):
         self._ledfx = ledfx
         self._config = {}
         self.lock = threading.Lock()
+        self.logsec = LogSecHelper(self)
+        self.passed = 0.0
+        self._last_frame_time = timeit.default_timer()
         self.update_config(config)
 
     def __del__(self):
@@ -398,6 +407,7 @@ class Effect(BaseRegistry):
             self.flip = self._config["flip"]
             self.mirror = self._config["mirror"]
             self.brightness = self._config["brightness"]
+            self.logsec.diag = self._config.get("diag", False)
 
             def inherited(cls, method):
                 if hasattr(cls, method) and hasattr(super(cls, cls), method):
@@ -519,6 +529,20 @@ class Effect(BaseRegistry):
     @property
     def name(self):
         return self.NAME
+    
+    def log_sec(self):
+        now = timeit.default_timer()
+        self.passed = now - self._last_frame_time
+        self._last_frame_time = now
+
+        # Optional diagnostics layer
+        if self._config.get("diag", False):
+            self.logsec.log_sec(now)
+
+    def try_log(self):
+        if self._config.get("diag", False):
+            return self.logsec.try_log()
+        return False
 
 
 class Effects(RegistryLoader):
