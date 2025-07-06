@@ -1,5 +1,4 @@
 import random
-import timeit
 
 import numpy as np
 import voluptuous as vol
@@ -46,7 +45,7 @@ class RandomFlashEffect(TemporalEffect):
         # overriding speed (from TemporalEffect) to achieve smooth fade
         config["speed"] = 5.0
         super().__init__(ledfx, config)
-        self.last_time = timeit.default_timer()
+        self.last_time = self.now
         self.last_hit_pixels = None
 
     def config_updated(self, config):
@@ -60,7 +59,7 @@ class RandomFlashEffect(TemporalEffect):
         )
 
     def on_activate(self, pixel_count):
-        self.last_time = timeit.default_timer()
+        self.last_time = self.now
 
     def effect_loop(self):
         hit_absolute_size = int(
@@ -68,8 +67,7 @@ class RandomFlashEffect(TemporalEffect):
         )
 
         # handle time variant
-        now = timeit.default_timer()
-        time_passed = now - self.last_time
+        time_passed = self.now - self.last_time
 
         hit_is_still_active = time_passed < self.hit_duration
         if hit_is_still_active and self.last_hit_pixels is not None:
@@ -93,7 +91,7 @@ class RandomFlashEffect(TemporalEffect):
                 )
 
                 self.last_hit_pixels = self.pixels
-                self.last_time = timeit.default_timer()
+                self.last_time = self.now
 
     def __balance_hit_probability_based_on_speed(self) -> float:
         # this is the probability per effect run

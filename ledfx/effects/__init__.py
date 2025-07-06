@@ -332,7 +332,6 @@ class Effect(BaseRegistry):
         self.passed = 0.0
         self._last_frame_time = timeit.default_timer()
         self.now = self._last_frame_time
-        self.current_time = self.now
         self.update_config(config)
 
     def __del__(self):
@@ -541,7 +540,6 @@ class Effect(BaseRegistry):
         self.passed = self.now - self._last_frame_time
         self._last_frame_time = self.now
         self.logsec.log_sec(self.now)
-        self.current_time = self.now
 
     def try_log(self):
         return self.logsec.try_log()

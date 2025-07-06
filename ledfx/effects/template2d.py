@@ -62,6 +62,7 @@ class Template2d(Twod):
     def draw(self):
         # this is where you pixel mash, it will be a black image object each call
         # a draw object is already attached
+        # Measure time passed per frame from the self.now and self.passed vars
         # self.matrix is the Image object
         # self.m_draw is the attached draw object
 

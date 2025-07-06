@@ -1,5 +1,4 @@
 import logging
-import timeit
 
 import numpy as np
 import voluptuous as vol
@@ -16,12 +15,12 @@ def is_alive(thing):
 
 
 class Sparkle:
-    def __init__(self, pos, width, speed, die_off):
+    def __init__(self, now, pos, width, speed, die_off):
         self.pos = int(pos)
         self.width = int(width)
         self.speed = speed
         self.die_off = die_off
-        self.born = timeit.default_timer()
+        self.born = now
         self.alive = True
         self.health = 1.0
         self.white = np.array(parse_color("white"), dtype=float)
@@ -117,7 +116,6 @@ class ScanAndFlareAudioEffect(AudioReactiveEffect, GradientEffect):
     def on_activate(self, pixel_count):
         self.scan_pos = 0.0
         self.returning = False
-        self.last_time = timeit.default_timer()
         self.bar = 0
         self.power = 0
         self.sparkles = []
@@ -150,12 +148,8 @@ class ScanAndFlareAudioEffect(AudioReactiveEffect, GradientEffect):
         if self._config["color_intensity"]:
             self.color_scan = self.color_scan * min(1.0, self.power)
 
-        now = timeit.default_timer()
-        time_passed = now - self.last_time
-        self.last_time = now
-
         step_per_sec = self.pixel_count / 100.0 * self._config["speed"]
-        step_size = time_passed * step_per_sec
+        step_size = self.passed * step_per_sec
 
         step_size = step_size * self.bar
 
@@ -180,7 +174,7 @@ class ScanAndFlareAudioEffect(AudioReactiveEffect, GradientEffect):
 
         # move and age any sparkles
         for sparkle in self.sparkles:
-            sparkle.age(now, time_passed, self.pixel_count)
+            sparkle.age(self.now, self.passed, self.pixel_count)
 
         self.sparkles = list(filter(is_alive, self.sparkles))
 
@@ -204,13 +198,14 @@ class ScanAndFlareAudioEffect(AudioReactiveEffect, GradientEffect):
                     ) % self.pixel_count
 
                 sparkle = Sparkle(
+                    self.now,
                     sparkle_pos,
                     sparkle_width,
                     (0 - step_per_sec) if self.returning else step_per_sec,
                     self._config["sparkles_time"],
                 )
                 self.sparkles.append(sparkle)
-                self.last_sparkle = now
+                self.last_sparkle = self.now
 
         # this is the real render pass
         self.pixels[0 : self.pixel_count] = (

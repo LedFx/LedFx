@@ -64,8 +64,8 @@ class Hierarchy(AudioReactiveEffect):
 
     def on_activate(self, pixel_count):
         self.filtered_power = 0
-        self.last_low = timeit.default_timer()
-        self.last_mid = timeit.default_timer()
+        self.last_low = self.now
+        self.last_mid = self.now
         self.color = np.array(parse_color("#000000"))
 
     def config_updated(self, config):
@@ -78,6 +78,7 @@ class Hierarchy(AudioReactiveEffect):
         self.color_high = np.array(parse_color(self._config["color_high"]))
 
     def audio_data_updated(self, data):
+        # as this is in the audio_data_updated() not safe to use self.now
         current_time = timeit.default_timer()
         # use Lows (beat+bass)
         self.filtered_power = self.audio.lows_power()

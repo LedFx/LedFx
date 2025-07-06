@@ -1,4 +1,3 @@
-import timeit
 from enum import IntEnum
 
 import numpy as np
@@ -140,7 +139,7 @@ class ScanMultiAudioEffect(AudioReactiveEffect, GradientEffect):
         super().__init__(ledfx, config)
 
     def on_activate(self, pixel_count):
-        self.last_time = timeit.default_timer()
+        self.last_time = self.now
 
     def config_updated(self, config):
         self.background_color = np.array(
@@ -194,12 +193,8 @@ class ScanMultiAudioEffect(AudioReactiveEffect, GradientEffect):
                 scan.color_scan = scan.color_scan * min(1.0, scan.power)
 
     def render(self):
-        now = timeit.default_timer()
-        time_passed = now - self.last_time
-        self.last_time = now
-
         step_per_sec = self.pixel_count / 100.0 * self._config["speed"]
-        step_size = time_passed * step_per_sec
+        step_size = self.passed * step_per_sec
 
         scan_width_pixels = int(
             max(1, int(self.pixel_count / 100.0 * self._config["scan_width"]))

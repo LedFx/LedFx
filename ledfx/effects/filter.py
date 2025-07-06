@@ -1,5 +1,4 @@
 import logging
-import timeit
 
 import numpy as np
 import voluptuous as vol
@@ -57,7 +56,6 @@ class Filter(AudioReactiveEffect, GradientEffect):
 
     def on_activate(self, pixel_count):
         self.filtered_power = 0
-        self.current_time = timeit.default_timer()
 
     def config_updated(self, config):
         self.power_func = self.POWER_FUNCS_MAPPING[
@@ -80,7 +78,7 @@ class Filter(AudioReactiveEffect, GradientEffect):
             if self.roll_speed > 0:
                 # some mod magic to get a value between 0 and 1 according to time passed
                 gradient_index = (
-                    timeit.default_timer() % self.roll_time
+                    self.now % self.roll_time
                 ) / self.roll_time
             else:
                 gradient_index = 0

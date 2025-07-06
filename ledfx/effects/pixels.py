@@ -1,5 +1,4 @@
 import logging
-import timeit
 
 import numpy as np
 import voluptuous as vol
@@ -19,8 +18,6 @@ class PixelsEffect(TemporalEffect):
     NAME = "Pixels"
     CATEGORY = "Diagnostic"
     HIDDEN_KEYS = ["speed", "background_brightness", "blur", "mirror"]
-
-    start_time = timeit.default_timer()
 
     CONFIG_SCHEMA = vol.Schema(
         {
@@ -61,6 +58,7 @@ class PixelsEffect(TemporalEffect):
         super().__init__(ledfx, config)
         self.last_cycle_time = 20
         self.current_pixel = 0
+        self.start_time = self.now
 
     def on_activate(self, pixel_count):
         self.current_pixel = 0
@@ -75,7 +73,7 @@ class PixelsEffect(TemporalEffect):
         )
 
     def effect_loop(self):
-        pass_time = timeit.default_timer() - self.start_time
+        pass_time = self.now - self.start_time
         cycle_time = pass_time % self._config["step_period"]
 
         if cycle_time < self.last_cycle_time:

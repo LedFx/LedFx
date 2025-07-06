@@ -113,8 +113,8 @@ class GameOfLifeVisualiser(Twod):
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
         self.onset = None
-        self.last_health_check = self.EFFECT_START_TIME
-        self.last_game_step = self.EFFECT_START_TIME
+        self.last_health_check = self.now
+        self.last_game_step = self.now
 
     def config_updated(self, config):
         super().config_updated(config)
@@ -164,8 +164,8 @@ class GameOfLifeVisualiser(Twod):
         if self.test:
             self.draw_test(self.m_draw)
 
-        self.check_board_health(self.logsec.current_time)
-        self.step_board_if_time_elapsed(self.logsec.current_time)
+        self.check_board_health(self.now)
+        self.step_board_if_time_elapsed(self.now)
         self.update_image_with_board()
 
     def check_board_health(self, current_time):

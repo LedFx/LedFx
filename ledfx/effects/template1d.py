@@ -36,7 +36,7 @@ class Template1d(AudioReactiveEffect):
     # various examples are shown below to allow you to add new settings to your effect which will be on top of anything in the base class
     # try not to make it complicated. Hide advanced settings with the ADVANCED_KEYS
     # Try to make any setting and effect behavior independent of FPS or pixel count
-    # Measure time passed with timeit and use ratios for pixel implications
+    # Measure time passed per frame from the self.now and self.passed vars
     # THOU SHALT use snake case for field names
     CONFIG_SCHEMA = vol.Schema(
         {

@@ -118,7 +118,7 @@ class Plasmawled(Twod, GradientEffect):
             self.time_modifier += self.speedb
             time_val = int(self.time_modifier * 1000)
         else:
-            time_val = int(self.current_time * 1000)
+            time_val = int(self.now * 1000)
 
         a = time_val / (self.configured_speed + 1)
 
