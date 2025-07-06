@@ -716,7 +716,7 @@ virtual_config_tests = {
             # we want to be sure we got the right fallback effect
             # so we need to check the details and these will need
             # servicing if base effect configurations change such
-            # as the addition of diag key    
+            # as the addition of diag key
             {
                 "effect": {
                     "config": {
