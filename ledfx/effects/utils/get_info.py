@@ -1,4 +1,5 @@
 import logging
+
 import aiohttp
 
 _LOGGER = logging.getLogger(__name__)
@@ -30,5 +31,3 @@ async def _start_request(ip_address, callback):
     """Internal coroutine to fetch WLED device information."""
     async with aiohttp.ClientSession() as session:
         await fetch_info(session, ip_address, callback)
-
-
