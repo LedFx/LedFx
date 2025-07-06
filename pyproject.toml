@@ -47,7 +47,7 @@ readme = "README.rst"
 
 [dependency-groups]
 dev = [
-    "flake8<7.2.1,>=7.2.0",
+    "flake8<7.3.1,>=7.3.0",
     "black<25.1.1,>=25.1.0",
     "isort<6.0.2,>=6.0.1",
     "pre-commit<4.2.1,>=4.2.0",
@@ -65,7 +65,7 @@ docs = [
     "sphinx-autobuild; python_version >= \"3.10\"",
     "sphinx-rtd-theme==3.0.2; python_version >= \"3.10\"",
     "sphinx-toolbox==4.0.0; python_version >= \"3.10\"",
-    "rstcheck==6.2.4; python_version >= \"3.10\"",
+    "rstcheck==6.2.5; python_version >= \"3.10\"",
     "sphinx-copybutton==0.5.2; python_version >= \"3.10\"",
     "myst-parser>=3.0.1",
     "linkify-it-py>=2.0.3",

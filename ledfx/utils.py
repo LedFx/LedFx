@@ -1618,33 +1618,52 @@ def log_packages():
         _LOGGER.debug(f"{dist.metadata['name']} : {dist.version}")
 
 
-def is_package_installed(package_name):
+def is_package_installed(package_name: str, import_name: str = None) -> bool:
     """
-    Check if a Python package is installed.
+    Check if a package is available in the environment.
 
     Args:
-        package_name (str): The name of the package to check.
+        package_name (str): The name used for pip installation (e.g., 'python-mbedtls').
+        import_name (str): The actual importable module name (e.g., 'mbedtls').
 
     Returns:
-        bool: True if the package is installed, False otherwise.
+        bool: True if the package is importable, False otherwise.
     """
-    try:
-        metadata.distribution(package_name)
-        return True
-    except ModuleNotFoundError:
+    import_name = import_name or package_name
+
+    # Try to get import spec
+    spec = importlib.util.find_spec(import_name)
+    if spec is None:
+        _LOGGER.info(
+            f"Optional dependency '{package_name}' not found (import name: '{import_name}')."
+        )
         return False
+
+    # Try to get version info
+    try:
+        version = metadata.version(package_name)
+    except metadata.PackageNotFoundError:
+        version = "unknown"
+
+    path = spec.origin or "unknown"
+
+    _LOGGER.info(f"Optional dependency '{package_name}' is installed:")
+    _LOGGER.info(f"  ├── Version: {version}")
+    _LOGGER.info(f"  └── Path:    {path}")
+    return True
 
 
 def check_optional_dependencies():
     """
-    Check for optional dependencies and log if they are not installed.
+    Check for optional dependencies and log their availability, versions, and paths.
     """
-    dependencies = ["psutil", "python-mbedtls"]
-    for dependency in dependencies:
-        if is_package_installed(dependency):
-            _LOGGER.info(f"Optional dependency '{dependency}' installed.")
-        else:
-            _LOGGER.info(f"Optional dependency '{dependency}' not installed.")
+    OPTIONAL_DEPENDENCIES = {
+        "psutil": "psutil",
+        "python-mbedtls": "mbedtls",
+        # Add more if needed
+    }
+    for package_name, import_name in OPTIONAL_DEPENDENCIES.items():
+        is_package_installed(package_name, import_name)
 
 
 class PerformanceAnalysis:

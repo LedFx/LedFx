@@ -12,7 +12,7 @@ This parameter limits the number of pixels being sent to the front end for visua
 
 The default value is 81, which comes from LedFx original intent to be driving 1d LED strips. If you run matrix then bump it up! LedFx will send the number of pixels present in the device up to this maximum value and will then downscale content to fit.
 
-![frontend pixels slider](../_static/howto/tips/frontend_pixles.png)
+![frontend pixels slider](../_static/howto/tips/frontend_pixels.png)
 
 If you are running large matrix then setting to 4096 is advised as a limit. This will directly support 64 x 64 pixel matrix at full resolution.
 
