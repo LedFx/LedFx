@@ -1,9 +1,11 @@
-import timeit
 import logging
-from ledfx.events import VirtualDiagEvent
+import timeit
+
 from ledfx.effects.utils.get_info import get_info_async
+from ledfx.events import VirtualDiagEvent
 
 _LOGGER = logging.getLogger(__name__)
+
 
 class LogSecHelper:
     def __init__(self, effect):
@@ -25,7 +27,9 @@ class LogSecHelper:
 
     def handle_info_response(self, data):
         self.f_phy = data.get("leds", {}).get("fps", -1)
-        _LOGGER.info(f"{self.effect._virtual.name}:{self.effect.name} fps from wled info: {self.f_phy}")
+        _LOGGER.info(
+            f"{self.effect._virtual.name}:{self.effect.name} fps from wled info: {self.f_phy}"
+        )
 
     def log_sec(self, current_time):
         self.current_time = current_time
@@ -52,7 +56,7 @@ class LogSecHelper:
         self.log = result
 
     def try_log(self):
-        
+
         if self.diag:
             end = timeit.default_timer()
             r_time = end - self.current_time
@@ -60,7 +64,7 @@ class LogSecHelper:
             self.r_min = min(self.r_min, r_time)
             self.r_max = max(self.r_max, r_time)
             self.last = end
-        
+
         if self.log:
             r_avg = self.r_total / self.fps if self.fps > 0 else 0.0
             cycle = end - self.last

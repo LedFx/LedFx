@@ -1,17 +1,17 @@
 import logging
 import threading
+import timeit
 
 # from ledfx.effects.audio import FREQUENCY_RANGES
 from functools import lru_cache
 
 import numpy as np
-import timeit
 import voluptuous as vol
 from numpy.typing import NDArray
 
 from ledfx.color import LEDFX_COLORS, hsv_to_rgb, parse_color, validate_color
-from ledfx.utils import BaseRegistry, RegistryLoader
 from ledfx.effects.utils.logsec_helper import LogSecHelper
+from ledfx.utils import BaseRegistry, RegistryLoader
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -275,7 +275,7 @@ class Effect(BaseRegistry):
     NAME = ""
     # over ride in effect children to hide existing keys from UI
     HIDDEN_KEYS = None
-    # extend in effect children 
+    # extend in effect children
     ADVANCED_KEYS = ["diag"]
     # over ride in effect children to allow edit and show others
     PERMITTED_KEYS = None
@@ -314,9 +314,8 @@ class Effect(BaseRegistry):
                 description="Brightness of the background color",
                 default=1.0,
             ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
-            vol.Optional("diag", 
-                description="Enable diagnostic logging", 
-                default=False
+            vol.Optional(
+                "diag", description="Enable diagnostic logging", default=False
             ): bool,
             vol.Optional(
                 "advanced",
@@ -536,7 +535,7 @@ class Effect(BaseRegistry):
     @property
     def name(self):
         return self.NAME
-    
+
     def log_sec(self):
         self.now = timeit.default_timer()
         self.passed = self.now - self._last_frame_time

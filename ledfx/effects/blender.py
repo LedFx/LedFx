@@ -206,4 +206,3 @@ class Blender(AudioReactiveEffect):
 
         copy_length = min(self.pixels.shape[0], rgb_array.shape[0])
         self.pixels[:copy_length, :] = rgb_array[:copy_length, :]
-
