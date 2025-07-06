@@ -24,7 +24,6 @@ class Filter(AudioReactiveEffect, GradientEffect):
         # we can't use gradient_roll as it is not time invariant
         "gradient_roll",
     ]
-    ADVANCED_KEYS = []
 
     CONFIG_SCHEMA = vol.Schema(
         {

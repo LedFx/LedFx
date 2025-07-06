@@ -42,7 +42,7 @@ class ScanMultiAudioEffect(AudioReactiveEffect, GradientEffect):
     NAME = "Scan Multi"
     CATEGORY = "Classic"
     HIDDEN_KEYS = ["gradient_roll"]
-    ADVANCED_KEYS = ["input_source", "attack", "decay", "filter"]
+    ADVANCED_KEYS = AudioReactiveEffect.ADVANCED_KEYS + ["input_source", "attack", "decay", "filter"]
 
     _sources = {
         "Power": "power",
@@ -101,11 +101,6 @@ class ScanMultiAudioEffect(AudioReactiveEffect, GradientEffect):
                 "use_grad",
                 description="Use colors from gradient selector",
                 default=False,
-            ): bool,
-            vol.Optional(
-                "advanced",
-                description="enable advanced options",
-                default=True,
             ): bool,
             vol.Optional(
                 "input_source",

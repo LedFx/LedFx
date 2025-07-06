@@ -12,7 +12,7 @@ from ledfx.effects.modulate import ModulateEffect
 class ScanAudioEffect(AudioReactiveEffect, GradientEffect, ModulateEffect):
     NAME = "Scan"
     CATEGORY = "Classic"
-    ADVANCED_KEYS = [
+    ADVANCED_KEYS = AudioReactiveEffect.ADVANCED_KEYS + [
         "count",
         "gradient_roll",
         "modulation_speed",
@@ -74,11 +74,6 @@ class ScanAudioEffect(AudioReactiveEffect, GradientEffect, ModulateEffect):
             vol.Optional(
                 "full_grad",
                 description="spread the gradient colors across the scan",
-                default=False,
-            ): bool,
-            vol.Optional(
-                "advanced",
-                description="enable advanced options",
                 default=False,
             ): bool,
             vol.Optional(

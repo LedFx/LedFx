@@ -275,8 +275,7 @@ class Effect(BaseRegistry):
     NAME = ""
     # over ride in effect children to hide existing keys from UI
     HIDDEN_KEYS = None
-    # over ride in effect children AND add an "advanced" bool to schema
-    # to show or hide in UI
+    # extend in effect children 
     ADVANCED_KEYS = ["diag"]
     # over ride in effect children to allow edit and show others
     PERMITTED_KEYS = None
@@ -319,6 +318,10 @@ class Effect(BaseRegistry):
                 description="Enable diagnostic logging", 
                 default=False
             ): bool,
+            vol.Optional(
+                "advanced",
+                description=False,
+            ): bool,
         }
     )
 
@@ -329,6 +332,8 @@ class Effect(BaseRegistry):
         self.logsec = LogSecHelper(self)
         self.passed = 0.0
         self._last_frame_time = timeit.default_timer()
+        self.now = self._last_frame_time
+        self.current_time = self.now
         self.update_config(config)
 
     def __del__(self):
@@ -439,7 +444,9 @@ class Effect(BaseRegistry):
         with self.lock:
             # its possible we were waiting on the effect being deactivated
             if self._active:
+                self.log_sec()
                 self.render()
+                self.try_log()
 
     def render(self):
         """
@@ -531,18 +538,14 @@ class Effect(BaseRegistry):
         return self.NAME
     
     def log_sec(self):
-        now = timeit.default_timer()
-        self.passed = now - self._last_frame_time
-        self._last_frame_time = now
-
-        # Optional diagnostics layer
-        if self._config.get("diag", False):
-            self.logsec.log_sec(now)
+        self.now = timeit.default_timer()
+        self.passed = self.now - self._last_frame_time
+        self._last_frame_time = self.now
+        self.logsec.log_sec(self.now)
+        self.current_time = self.now
 
     def try_log(self):
-        if self._config.get("diag", False):
-            return self.logsec.try_log()
-        return False
+        return self.logsec.try_log()
 
 
 class Effects(RegistryLoader):

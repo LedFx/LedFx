@@ -19,6 +19,7 @@ class LogSecHelper:
         self.r_max = 0.0
         self.f_phy = -1
         self.log = False
+        self.diag = False
         self.current_time = timeit.default_timer()
         self.lasttime = int(self.current_time)
 
@@ -27,12 +28,10 @@ class LogSecHelper:
         _LOGGER.info(f"{self.effect._virtual.name}:{self.effect.name} fps from wled info: {self.f_phy}")
 
     def log_sec(self, current_time):
-        was = self.current_time
         self.current_time = current_time
-        passed = current_time - was
 
         result = False
-        if self.effect._config.get("diag", False):
+        if self.diag:
             nowint = int(self.current_time)
             if nowint != self.lasttime:
                 self.fps = self.frame
@@ -53,12 +52,15 @@ class LogSecHelper:
         self.log = result
 
     def try_log(self):
-        end = timeit.default_timer()
-        r_time = end - self.current_time
-        self.r_total += r_time
-        self.r_min = min(self.r_min, r_time)
-        self.r_max = max(self.r_max, r_time)
-
+        
+        if self.diag:
+            end = timeit.default_timer()
+            r_time = end - self.current_time
+            self.r_total += r_time
+            self.r_min = min(self.r_min, r_time)
+            self.r_max = max(self.r_max, r_time)
+            self.last = end
+        
         if self.log:
             r_avg = self.r_total / self.fps if self.fps > 0 else 0.0
             cycle = end - self.last
@@ -82,6 +84,4 @@ class LogSecHelper:
             self.r_min = 1.0
             self.r_max = 0.0
             self.r_total = 0.0
-
-        self.last = end
         return self.log

@@ -194,13 +194,10 @@ class Twod(AudioReactiveEffect):
         if self.init:
             self.do_once()
 
-        self.log_sec()
-
         self.matrix = Image.new("RGB", (self.r_width, self.r_height))
         self.m_draw = ImageDraw.Draw(self.matrix)
 
         self.draw()
         self.image_to_pixels()
 
-        self.try_log()
         self.try_dump()

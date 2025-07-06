@@ -21,7 +21,6 @@ class Hierarchy(AudioReactiveEffect):
         "mirror",
         "flip",
     ]
-    ADVANCED_KEYS = []
 
     CONFIG_SCHEMA = vol.Schema(
         {

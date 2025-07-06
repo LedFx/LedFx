@@ -2727,7 +2727,7 @@ ledfx_presets = {
     "scan": {
         "painbow": {
             "config": {
-                "advanced": True,
+                "advanced": False,
                 "background_brightness": 0.0,
                 "background_color": "#000000",
                 "blur": 0.0,

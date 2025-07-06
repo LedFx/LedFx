@@ -5,7 +5,6 @@ import voluptuous as vol
 from PIL import Image, ImageOps
 
 from ledfx.effects.audio import AudioReactiveEffect
-from ledfx.effects.utils.logsec import LogSec
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -92,11 +91,10 @@ STRETCH_FUNCS_MAPPING = {
 }
 
 
-class Blender(AudioReactiveEffect, LogSec):
+class Blender(AudioReactiveEffect):
     NAME = "Blender"
     CATEGORY = "Matrix"
     HIDDEN_KEYS = ["background_color", "background_brightness", "blur"]
-    ADVANCED_KEYS = LogSec.ADVANCED_KEYS + []
 
     CONFIG_SCHEMA = vol.Schema(
         {
@@ -173,8 +171,6 @@ class Blender(AudioReactiveEffect, LogSec):
 
     def render(self):
 
-        self.log_sec()
-
         blend_mask = BlendVirtual(
             self.mask,
             self._ledfx.virtuals._virtuals,
@@ -211,4 +207,3 @@ class Blender(AudioReactiveEffect, LogSec):
         copy_length = min(self.pixels.shape[0], rgb_array.shape[0])
         self.pixels[:copy_length, :] = rgb_array[:copy_length, :]
 
-        self.try_log()

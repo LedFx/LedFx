@@ -175,7 +175,7 @@ class Keybeat2d(Twod, GifBase):
             len(self.orig_frames),
         )
 
-        if self.diag:
+        if self.logsec.diag:
             _LOGGER.info(
                 f"framecount {self.framecount} beat frames {self.beat_frames}"
             )
@@ -197,7 +197,7 @@ class Keybeat2d(Twod, GifBase):
             for frame in self.post_frames
         ]
 
-        if self.diag:
+        if self.logsec.diag:
             _LOGGER.info(
                 "************************* start beat frame debug *************************"
             )
@@ -205,31 +205,31 @@ class Keybeat2d(Twod, GifBase):
         sl = len(self.skip_frames)
         for s, skip_index in enumerate(reversed(self.skip_frames)):
             si = sl - 1 - s
-            if self.diag:
+            if self.logsec.diag:
                 _LOGGER.info(
                     f"si: {si} skip_index: {skip_index} resolves {self.skip_frames[si]} from {self.skip_frames}"
                 )
             bl = len(self.beat_frames)
             for b, beat_index in enumerate(reversed(self.beat_frames)):
                 bi = bl - 1 - b
-                if self.diag:
+                if self.logsec.diag:
                     _LOGGER.info(
                         f"bi: {bi} beat_index: {beat_index} resolves {self.beat_frames[bi]} from {self.beat_frames}"
                     )
                 if beat_index > skip_index:
                     self.beat_frames[bi] -= 1
-                    if self.diag:
+                    if self.logsec.diag:
                         _LOGGER.info(f"reduce by 1 {self.beat_frames[bi]}")
                 if beat_index == skip_index:
                     del self.beat_frames[bi]
-                    if self.diag:
+                    if self.logsec.diag:
                         _LOGGER.info(
                             f"delete {beat_index} from {self.beat_frames}"
                         )
 
         self.framecount = len(self.post_frames)
 
-        if self.diag:
+        if self.logsec.diag:
             _LOGGER.info(
                 f"framecount {self.framecount} beat frames {self.beat_frames}"
             )
@@ -258,7 +258,7 @@ class Keybeat2d(Twod, GifBase):
             self.beat_frames.extend(beat_frames_ext)
             self.framecount = len(self.post_frames)
 
-            if self.diag:
+            if self.logsec.diag:
                 _LOGGER.info(
                     "************************* Ping Pong impacts *************************"
                 )
@@ -290,7 +290,7 @@ class Keybeat2d(Twod, GifBase):
                         1.0 / (self.beat_frames[b + 1] - beat_index)
                     )
 
-        if self.diag:
+        if self.logsec.diag:
             _LOGGER.info(
                 "************************* end beat frame debug *************************"
             )
