@@ -34,6 +34,7 @@
    :maxdepth: 1
    :caption: How To
 
+   /howto/tips
    /howto/dummy_matrix
    /howto/dummy_vumeter
    /howto/keybeat
