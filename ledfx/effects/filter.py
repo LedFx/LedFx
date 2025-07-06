@@ -77,9 +77,7 @@ class Filter(AudioReactiveEffect, GradientEffect):
         if self.use_gradient:
             if self.roll_speed > 0:
                 # some mod magic to get a value between 0 and 1 according to time passed
-                gradient_index = (
-                    self.now % self.roll_time
-                ) / self.roll_time
+                gradient_index = (self.now % self.roll_time) / self.roll_time
             else:
                 gradient_index = 0
             color = self.get_gradient_color(gradient_index)

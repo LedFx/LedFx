@@ -391,9 +391,7 @@ class Keybeat2d(Twod, GifBase):
         else:
             color = (255, 0, 255)
 
-        self.beat_f_times.append(
-            (self.now, self.beat, self.frame_c, color)
-        )
+        self.beat_f_times.append((self.now, self.beat, self.frame_c, color))
         # cull any beats older than 60 seconds
         self.beat_times = [
             beat for beat in self.beat_times if self.now - beat < 60.0
