@@ -1,5 +1,3 @@
-import time
-
 import numpy as np
 import voluptuous as vol
 
@@ -33,7 +31,6 @@ class Fire(AudioReactiveEffect, HSVEffect):
         self.h = np.zeros(pixel_count, dtype=np.float32)
         self.s = np.zeros(pixel_count, dtype=np.float32)
         self.v = np.zeros(pixel_count, dtype=np.float32)
-        self.delta_last = time.time()
 
     def config_updated(self, config):
         self.speed = self._config["speed"]
@@ -60,9 +57,7 @@ class Fire(AudioReactiveEffect, HSVEffect):
         self.speed = self._config["speed"] + _lows_power * 0.01
 
     def render_hsv(self):
-        current_time = time.time()
-        delta_ms = (current_time - self.delta_last) * 1000
-        self.delta_last = current_time
+        delta_ms = self.passed * 1000
         delta_scaled = delta_ms * self.speed
 
         pixels = self.spark_pixels
