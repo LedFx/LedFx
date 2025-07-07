@@ -61,3 +61,20 @@ As a rule of thumb for every 100 pixels added you lose a frame of FPS.
 ![I'm giving her all she's got, Captain!](../_static/howto/tips/cpu_crunch.png)
 
 Note its important to start winding down the DDP rate ( the ledfx target FPS ) at high LED counts to avoid overwhelming the endpoint with more frames than it can render, and losing even more frames again! Hence the blue line, which capture it was important to start reducing LedFx target FPS at 1400 LEDs.
+
+### LedFx Performance Stats
+
+If in doubt then choose your desired device virtual in LedFx and flick Advanced / Diag to on.
+
+In the virtual configution screen you will now get the following dialog appear
+
+![I'll believe it when I see it, Captain](../_static/howto/tips/perf_diag.png)
+
+The large FPS number is the rate that Ledfx has maintained in effect generation over the last second.
+The small FPS that may appear below it is the reported FPS from the endpoint if supported. Currently only by WLED.
+
+Render Avg is the average time to render a frame over the last second. Below that are min and max times in case any glitching is going on.
+
+The little power symbol shows how many milliseconds are available in a frame followed by a percentage of that time that is on average being consumed for this effect.
+
+It should be noted that the effect Noise is by a 10x magnitude the greediest of any existing effect in LedFx due to the heavy math implied, so if you want to stress your system, its the place to go!
