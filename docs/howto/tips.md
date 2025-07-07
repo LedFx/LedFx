@@ -62,7 +62,7 @@ As a rule of thumb for every 100 pixels added you lose a frame of FPS.
 
 Note its important to start winding down the DDP rate ( the ledfx target FPS ) at high LED counts to avoid overwhelming the endpoint with more frames than it can render, and losing even more frames again! Hence the blue line, which capture it was important to start reducing LedFx target FPS at 1400 LEDs.
 
-### LedFx Performance Stats
+## LedFx Performance Stats
 
 If in doubt then choose your desired device virtual in LedFx and flick Advanced / Diag to on.
 
