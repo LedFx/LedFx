@@ -5,7 +5,7 @@ Not all LED matrix come in regimented rows and columns, what if you want to arbi
 This is possible in LedFx
 
 ::: warning
-**Warning:**  
+**Warning:**
 This feature is in heavy early development, it's too useful to hide, but it will be quirky until it's not!
 
 Functionality and compatability may mutate!
@@ -47,7 +47,7 @@ To map your first pixel right click your mouse on a pixel and select a device to
 
 ![It's getting stuffy down here](/_static/howto/mapping/mapping_matrix_4.png)
 
-Select the precise pixel individually 
+Select the precise pixel individually
 
 ![And it's geting dark](/_static/howto/mapping/mapping_matrix_5.png)
 
@@ -63,7 +63,7 @@ From here it's a matter of building up your full arbitrary mapping from the sour
 
 
 ::: warning
-**Warning:**  
+**Warning:**
 Put stuff and saving and loading here...
 :::
 
