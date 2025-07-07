@@ -63,29 +63,29 @@ class LogSecHelper:
             self.r_total += r_time
             self.r_min = min(self.r_min, r_time)
             self.r_max = max(self.r_max, r_time)
-            self.last = end
 
-        if self.log:
-            r_avg = self.r_total / self.fps if self.fps > 0 else 0.0
-            cycle = end - self.last
-            sleep = self.current_time - self.last
+            if self.log:
+                r_avg = self.r_total / self.fps if self.fps > 0 else 0.0
+                cycle = end - self.last
+                sleep = self.current_time - self.last
 
-            _LOGGER.warning(
-                f"{self.effect.name}: FPS {self.fps} Render avg:{r_avg:0.6f} min:{self.r_min:0.6f} max:{self.r_max:0.6f} Cycle: {cycle:0.6f} Sleep: {sleep:0.6f}"
-            )
-            self.effect._ledfx.events.fire_event(
-                VirtualDiagEvent(
-                    self.effect._virtual.id,
-                    self.fps,
-                    r_avg,
-                    self.r_min,
-                    self.r_max,
-                    self.f_phy,
-                    cycle,
-                    sleep,
+                _LOGGER.warning(
+                    f"{self.effect.name}: FPS {self.fps} Render avg:{r_avg:0.6f} min:{self.r_min:0.6f} max:{self.r_max:0.6f} Cycle: {cycle:0.6f} Sleep: {sleep:0.6f}"
                 )
-            )
-            self.r_min = 1.0
-            self.r_max = 0.0
-            self.r_total = 0.0
+                self.effect._ledfx.events.fire_event(
+                    VirtualDiagEvent(
+                        self.effect._virtual.id,
+                        self.fps,
+                        r_avg,
+                        self.r_min,
+                        self.r_max,
+                        self.f_phy,
+                        cycle,
+                        sleep,
+                    )
+                )
+                self.r_min = 1.0
+                self.r_max = 0.0
+                self.r_total = 0.0
+            self.last = end
         return self.log
