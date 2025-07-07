@@ -25,3 +25,39 @@ Don't do this unless you REALLY need that higher resolution in the browser, such
 ![No Really, don't do this!](../_static/howto/tips/big_noise.png)
 
 Why can't I go to full 1080p? Well that's ~2 million pixels. To shovel that around takes a GPU and is not really suitable for the original intent of LedFx, which is pushing pixels in python. There are full PC visualisers out there, go find one!
+
+## WLED and pixel counts
+
+There are two main things to be aware of with FPS performance in WLED
+
+Note that this is in a strong and stable network environment. If you are seeing poor FPS performance, question your networking choices first!
+
+### One-Wire LED Protocol
+
+WLED in most cases uses a 800,000 Hz ( 800 KHz ) bit bash serial protocol on a single wire to set pixel colors.
+
+The implication is that the max FPS on a single pin is constrained by this limit where
+
+FPS = 800 KHz / 24 or 32 bits per LED / Number of pixels
+
+24 or 32 bits per LED depends on common RGB or RGBW type stips, but can be even more with modern RGBWW implementations
+
+Lets cap the max FPS at 62 for the purposes of this discussion, this is the default configuration for Ledfx 
+
+The graph of max physical FPS vs LED count is therefore
+
+![Ye cannae change the laws of physics!](../_static/howto/tips/one_wire_crunch.png)
+
+### ESP32 CPU constraint
+
+OK, so just put 400 pixels on each pin! Well that works well, but only goes so far.
+
+Testing such a configuration on a Quinled digocta gives the following curve on a 24 bit strip taken in this case from a large format seed pixel curtain built in 400 pixel sections out to 1600 pixels.
+
+Each section was on its own pin. This graph has been validated by various other observations.
+
+As a rule of thumb for every 100 pixels added you lose a frame of FPS.
+
+![I'm giving her all she's got, Captain!](../_static/howto/tips/cpu_crunch.png)
+
+Note its important to start winding down the DDP rate ( the ledfx target FPS ) at high LED counts to avoid overwhelming the endpoint with more frames than it can render, and losing even more frames again! Hence the blue line, which capture it was important to start reducing LedFx target FPS at 1400 LEDs.
