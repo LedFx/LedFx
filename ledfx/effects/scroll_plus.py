@@ -1,5 +1,3 @@
-import timeit
-
 import numpy as np
 import voluptuous as vol
 
@@ -58,7 +56,6 @@ class ScrollAudioEffect(AudioReactiveEffect):
 
     def on_activate(self, pixel_count):
         self.intensities = np.zeros(3)
-        self.last_frame_time = timeit.default_timer()
         self.pixels_incremental = 0
 
     def config_updated(self, config):
@@ -93,13 +90,9 @@ class ScrollAudioEffect(AudioReactiveEffect):
             self.intensities[2] = 0
 
     def render(self):
-        # How much time has passed since the last frame
-        now = timeit.default_timer()
-        time_passed = now - self.last_frame_time
-        self.last_frame_time = now
         # as an amount of the speed setting for seconds for 1 full shift
-        speed_factor = time_passed * self.speed
-        decay_factor = time_passed * self.decay * 3
+        speed_factor = self.passed * self.speed
+        decay_factor = self.passed * self.decay * 3
 
         # increment and split out whole pixels to act on
         self.pixels_incremental += speed_factor * self.pixel_count

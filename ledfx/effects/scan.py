@@ -1,5 +1,3 @@
-import timeit
-
 import numpy as np
 import voluptuous as vol
 
@@ -12,7 +10,7 @@ from ledfx.effects.modulate import ModulateEffect
 class ScanAudioEffect(AudioReactiveEffect, GradientEffect, ModulateEffect):
     NAME = "Scan"
     CATEGORY = "Classic"
-    ADVANCED_KEYS = [
+    ADVANCED_KEYS = AudioReactiveEffect.ADVANCED_KEYS + [
         "count",
         "gradient_roll",
         "modulation_speed",
@@ -77,11 +75,6 @@ class ScanAudioEffect(AudioReactiveEffect, GradientEffect, ModulateEffect):
                 default=False,
             ): bool,
             vol.Optional(
-                "advanced",
-                description="enable advanced options",
-                default=False,
-            ): bool,
-            vol.Optional(
                 "count", description="Number of scan to render", default=1
             ): vol.All(vol.Coerce(int), vol.Range(min=1, max=10)),
         }
@@ -90,7 +83,6 @@ class ScanAudioEffect(AudioReactiveEffect, GradientEffect, ModulateEffect):
     def on_activate(self, pixel_count):
         self.scan_pos = 0.0
         self.returning = False
-        self.last_time = timeit.default_timer()
         self.bar = 0
         self.set_values()
 
@@ -146,13 +138,8 @@ class ScanAudioEffect(AudioReactiveEffect, GradientEffect, ModulateEffect):
             self.color_scan = self.color_scan * min(1.0, self.power)
 
     def render(self):
-        # handle time variant
-        now = timeit.default_timer()
-        time_passed = now - self.last_time
-        self.last_time = now
-
         # handle step offset for frame
-        step_size = time_passed * self.step_per_sec * self.bar
+        step_size = self.passed * self.step_per_sec * self.bar
         if self.returning:
             self.scan_pos -= step_size
         else:

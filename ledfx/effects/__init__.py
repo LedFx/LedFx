@@ -1,5 +1,6 @@
 import logging
 import threading
+import timeit
 
 # from ledfx.effects.audio import FREQUENCY_RANGES
 from functools import lru_cache
@@ -9,6 +10,7 @@ import voluptuous as vol
 from numpy.typing import NDArray
 
 from ledfx.color import LEDFX_COLORS, hsv_to_rgb, parse_color, validate_color
+from ledfx.effects.utils.logsec_helper import LogSecHelper
 from ledfx.utils import BaseRegistry, RegistryLoader
 
 _LOGGER = logging.getLogger(__name__)
@@ -273,9 +275,8 @@ class Effect(BaseRegistry):
     NAME = ""
     # over ride in effect children to hide existing keys from UI
     HIDDEN_KEYS = None
-    # over ride in effect children AND add an "advanced" bool to schema
-    # to show or hide in UI
-    ADVANCED_KEYS = None
+    # extend in effect children
+    ADVANCED_KEYS = ["diag"]
     # over ride in effect children to allow edit and show others
     PERMITTED_KEYS = None
     _config = None
@@ -313,6 +314,13 @@ class Effect(BaseRegistry):
                 description="Brightness of the background color",
                 default=1.0,
             ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
+            vol.Optional(
+                "diag", description="Enable diagnostic logging", default=False
+            ): bool,
+            vol.Optional(
+                "advanced",
+                description=False,
+            ): bool,
         }
     )
 
@@ -320,6 +328,10 @@ class Effect(BaseRegistry):
         self._ledfx = ledfx
         self._config = {}
         self.lock = threading.Lock()
+        self.logsec = LogSecHelper(self)
+        self.passed = 0.0
+        self._last_frame_time = timeit.default_timer()
+        self.now = self._last_frame_time
         self.update_config(config)
 
     def __del__(self):
@@ -398,6 +410,7 @@ class Effect(BaseRegistry):
             self.flip = self._config["flip"]
             self.mirror = self._config["mirror"]
             self.brightness = self._config["brightness"]
+            self.logsec.diag = self._config.get("diag", False)
 
             def inherited(cls, method):
                 if hasattr(cls, method) and hasattr(super(cls, cls), method):
@@ -429,7 +442,9 @@ class Effect(BaseRegistry):
         with self.lock:
             # its possible we were waiting on the effect being deactivated
             if self._active:
+                self.log_sec()
                 self.render()
+                self.try_log()
 
     def render(self):
         """
@@ -519,6 +534,15 @@ class Effect(BaseRegistry):
     @property
     def name(self):
         return self.NAME
+
+    def log_sec(self):
+        self.now = timeit.default_timer()
+        self.passed = self.now - self._last_frame_time
+        self._last_frame_time = self.now
+        self.logsec.log_sec(self.now)
+
+    def try_log(self):
+        return self.logsec.try_log()
 
 
 class Effects(RegistryLoader):

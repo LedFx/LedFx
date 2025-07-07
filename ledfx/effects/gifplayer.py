@@ -72,7 +72,7 @@ class GifPlayer(Twod, GifBase):
         # Seed the frame data with the first frame
         self.frame_data = self.frames[0]
         self.gif_frame_duration = 1 / self.gif_fps
-        self.last_frame_time = self.current_time
+        self.last_frame_time = self.now
 
     def draw(self):
         self.step_gif_if_time_elapsed()
@@ -85,7 +85,7 @@ class GifPlayer(Twod, GifBase):
         Returns:
             None
         """
-        if self.current_time - self.last_frame_time >= self.gif_frame_duration:
+        if self.now - self.last_frame_time >= self.gif_frame_duration:
             if self.bounce:
                 if self.current_frame == (len(self.frames) - 1):
                     self.increment = -1
@@ -98,7 +98,7 @@ class GifPlayer(Twod, GifBase):
                 else:
                     self.current_frame += 1
             self.frame_data = self.frames[self.current_frame]
-            self.last_frame_time = self.current_time
+            self.last_frame_time = self.now
 
     def process_gif(self):
         """

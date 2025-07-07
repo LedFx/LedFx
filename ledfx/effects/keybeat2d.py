@@ -175,7 +175,7 @@ class Keybeat2d(Twod, GifBase):
             len(self.orig_frames),
         )
 
-        if self.diag:
+        if self.logsec.diag:
             _LOGGER.info(
                 f"framecount {self.framecount} beat frames {self.beat_frames}"
             )
@@ -197,7 +197,7 @@ class Keybeat2d(Twod, GifBase):
             for frame in self.post_frames
         ]
 
-        if self.diag:
+        if self.logsec.diag:
             _LOGGER.info(
                 "************************* start beat frame debug *************************"
             )
@@ -205,31 +205,31 @@ class Keybeat2d(Twod, GifBase):
         sl = len(self.skip_frames)
         for s, skip_index in enumerate(reversed(self.skip_frames)):
             si = sl - 1 - s
-            if self.diag:
+            if self.logsec.diag:
                 _LOGGER.info(
                     f"si: {si} skip_index: {skip_index} resolves {self.skip_frames[si]} from {self.skip_frames}"
                 )
             bl = len(self.beat_frames)
             for b, beat_index in enumerate(reversed(self.beat_frames)):
                 bi = bl - 1 - b
-                if self.diag:
+                if self.logsec.diag:
                     _LOGGER.info(
                         f"bi: {bi} beat_index: {beat_index} resolves {self.beat_frames[bi]} from {self.beat_frames}"
                     )
                 if beat_index > skip_index:
                     self.beat_frames[bi] -= 1
-                    if self.diag:
+                    if self.logsec.diag:
                         _LOGGER.info(f"reduce by 1 {self.beat_frames[bi]}")
                 if beat_index == skip_index:
                     del self.beat_frames[bi]
-                    if self.diag:
+                    if self.logsec.diag:
                         _LOGGER.info(
                             f"delete {beat_index} from {self.beat_frames}"
                         )
 
         self.framecount = len(self.post_frames)
 
-        if self.diag:
+        if self.logsec.diag:
             _LOGGER.info(
                 f"framecount {self.framecount} beat frames {self.beat_frames}"
             )
@@ -258,7 +258,7 @@ class Keybeat2d(Twod, GifBase):
             self.beat_frames.extend(beat_frames_ext)
             self.framecount = len(self.post_frames)
 
-            if self.diag:
+            if self.logsec.diag:
                 _LOGGER.info(
                     "************************* Ping Pong impacts *************************"
                 )
@@ -290,7 +290,7 @@ class Keybeat2d(Twod, GifBase):
                         1.0 / (self.beat_frames[b + 1] - beat_index)
                     )
 
-        if self.diag:
+        if self.logsec.diag:
             _LOGGER.info(
                 "************************* end beat frame debug *************************"
             )
@@ -359,9 +359,9 @@ class Keybeat2d(Twod, GifBase):
 
             self.beat_times = []  # rolling window of beat timestamps
             self.beat_f_times = []  # rolling windows of frame info
-            self.begin_time = self.current_time
+            self.begin_time = self.now
 
-        self.last_beat_t = self.current_time
+        self.last_beat_t = self.now
         self.min_vol = self.audio._config["min_volume"]
 
     def audio_data_updated(self, data):
@@ -384,24 +384,22 @@ class Keybeat2d(Twod, GifBase):
         # add beat timestamps to the rolling window beat_list
         # use len of beat_list as bpm
         if beat_kick:
-            self.beat_times.append(self.current_time)
+            self.beat_times.append(self.now)
             color = (255, 255, 255)
         elif skip_beat:
             color = (255, 0, 0)
         else:
             color = (255, 0, 255)
 
-        self.beat_f_times.append(
-            (self.current_time, self.beat, self.frame_c, color)
-        )
+        self.beat_f_times.append((self.now, self.beat, self.frame_c, color))
         # cull any beats older than 60 seconds
         self.beat_times = [
-            beat for beat in self.beat_times if self.current_time - beat < 60.0
+            beat for beat in self.beat_times if self.now - beat < 60.0
         ]
         self.beat_f_times = [
             f_beat
             for f_beat in self.beat_f_times
-            if self.current_time - f_beat[0] < 60.0
+            if self.now - f_beat[0] < 60.0
         ]
 
         # lets graph directly into the draw space
@@ -423,7 +421,7 @@ class Keybeat2d(Twod, GifBase):
                 break
 
         # if we have not reached a 60 second window yet, then gestimate bpm
-        passed = self.current_time - self.begin_time
+        passed = self.now - self.begin_time
         self.bpm = len(self.beat_times)
 
         if passed > 0 and passed < 60.0:
@@ -455,11 +453,11 @@ class Keybeat2d(Twod, GifBase):
         # if we see beat go from a larger number to a smaller one, we hit a beat
         if self.beat < self.last_beat:
             # protect against false beats with less than 100ms ~= 600 bpm!
-            if self.current_time - self.last_beat_t < 0.1:
+            if self.now - self.last_beat_t < 0.1:
                 skip_beat = True
                 if self.deep_diag:
                     _LOGGER.info(
-                        f"skip beat threshold triggered: {self.current_time - self.last_beat_t:0.6f}"
+                        f"skip beat threshold triggered: {self.now - self.last_beat_t:0.6f}"
                     )
             else:
                 beat_kick = True
@@ -480,7 +478,7 @@ class Keybeat2d(Twod, GifBase):
                         ) % self.num_beat_frames
                 self.min_vol_found_in_last_beat = False
 
-            self.last_beat_t = self.current_time
+            self.last_beat_t = self.now
 
         self.last_beat = self.beat
 

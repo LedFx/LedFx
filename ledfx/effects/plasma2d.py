@@ -1,5 +1,4 @@
 import logging
-import timeit
 
 import numpy as np
 import PIL.Image as Image
@@ -57,7 +56,6 @@ class Plasma2d(Twod, GradientEffect):
         super().__init__(ledfx, config)
 
     def config_updated(self, config):
-        self.time = timeit.default_timer()
         self.density = self._config["density"]
         self.lower = self._config["lower"]
         self.power_func = self.POWER_FUNCS_MAPPING[
@@ -103,7 +101,7 @@ class Plasma2d(Twod, GradientEffect):
             self.draw_test(self.m_draw)
 
         plasma_array = self.generate_plasma(
-            self.r_width, self.r_height, self.current_time, self.bar
+            self.r_width, self.r_height, self.now, self.bar
         )
 
         color_mapped_plasma = self.get_gradient_color_vectorized2d(

@@ -70,6 +70,8 @@ class Bleeper:
         self.shape = shape
         self.norm_shape = (self.shape[0] - 1, self.shape[1] - 1)
         self.scroll_time = scroll_time
+        # this is not an effect class inheritance, so we need to
+        # use timeit to get the current time
         self.last_time = timeit.default_timer()
         self.progress = 0.0
         self.step_time = self.scroll_time / self.points
@@ -83,6 +85,8 @@ class Bleeper:
         with latest power value
 
         """
+        # this is not an effect class inheritance, so we need to
+        # use timeit to get the current time
         now = timeit.default_timer()
         delta_t = now - self.last_time
         self.progress = self.progress + delta_t
