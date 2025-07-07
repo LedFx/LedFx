@@ -42,7 +42,7 @@ FPS = 800 KHz / 24 or 32 bits per LED / Number of pixels
 
 24 or 32 bits per LED depends on common RGB or RGBW type stips, but can be even more with modern RGBWW implementations
 
-Lets cap the max FPS at 62 for the purposes of this discussion, this is the default configuration for Ledfx 
+Lets cap the max FPS at 62 for the purposes of this discussion, this is the default configuration for Ledfx
 
 The graph of max physical FPS vs LED count is therefore
 
