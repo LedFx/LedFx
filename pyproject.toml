@@ -60,7 +60,7 @@ docs = [
     "sphinx<8.2.4; python_version >= \"3.10\"",
     "sphinxcontrib-websupport==2.0.0; python_version >= \"3.10\"",
     "sphinxcontrib-httpdomain==1.8.1; python_version >= \"3.10\"",
-    "sphinx-autodoc-typehints==2.5.0; python_version >= \"3.10\"",
+    "sphinx-autodoc-typehints==3.2.0; python_version >= \"3.10\"",
     "sphinx-autodoc-annotation==1.0-1; python_version >= \"3.10\"",
     "sphinx-autobuild; python_version >= \"3.10\"",
     "sphinx-rtd-theme==3.0.2; python_version >= \"3.10\"",
