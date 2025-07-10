@@ -97,7 +97,6 @@ class Equalizer2d(Twod, GradientEffect):
                 description="flip the image vertically",
                 default=True,
             ): bool,
-
         }
     )
 
