@@ -91,6 +91,12 @@ class Equalizer2d(Twod, GradientEffect):
                 description="Decay filter applied to the spin impulse",
                 default=0.1,
             ): vol.All(vol.Coerce(float), vol.Range(min=0.01, max=0.3)),
+            # override the Twod flip options for default
+            vol.Optional(
+                "flip_vertical",
+                description="flip the image vertically",
+                default=True,
+            ): bool,
         }
     )
 
