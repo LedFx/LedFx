@@ -111,10 +111,10 @@ class VirtualDiagEvent(Event):
         self.cycle = cycle
         self.sleep = sleep
         self.ver_phy = ver_phy
-        self.n_phy = n_phy 
+        self.n_phy = n_phy
         self.name_phy = name_phy
         self.rssi_phy = rssi_phy
-        self.qual_phy = qual_phy   
+        self.qual_phy = qual_phy
 
 
 class ClientConnectedEvent(Event):
