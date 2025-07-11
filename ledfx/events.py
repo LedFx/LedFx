@@ -77,6 +77,11 @@ class VirtualDiagEvent(Event):
         f_phy: int,
         cycle: float,
         sleep: float,
+        ver_phy: str = None,
+        n_phy: int = -1,
+        name_phy: str = None,
+        rssi_phy: int = -1,
+        qual_phy: int = -1,
     ):
         """
         Initializes a VirtualDiagEvent with diagnostic metrics for a virtual entity.
@@ -90,6 +95,11 @@ class VirtualDiagEvent(Event):
             f_phy: wled physical frames per second, -1 if not applicable.
             cycle: Cycle time.
             sleep: Sleep time.
+            ver_phy: Version of the physical device, if applicable.
+            n_phy: Number of physical LEDs, -1 if not applicable.
+            name_phy: Name of the physical device, if applicable.
+            rssi_phy: RSSI of the physical device, -1 if not applicable.
+            qual_phy: Signal quality of the physical device, -1 if not applicable.
         """
         super().__init__(Event.VIRTUAL_DIAG)
         self.virtual_id = virtual_id
@@ -100,6 +110,11 @@ class VirtualDiagEvent(Event):
         self.f_phy = f_phy
         self.cycle = cycle
         self.sleep = sleep
+        self.ver_phy = ver_phy
+        self.n_phy = n_phy 
+        self.name_phy = name_phy
+        self.rssi_phy = rssi_phy
+        self.qual_phy = qual_phy   
 
 
 class ClientConnectedEvent(Event):

@@ -20,6 +20,11 @@ class LogSecHelper:
         self.r_min = 1.0
         self.r_max = 0.0
         self.f_phy = -1
+        self.ver_phy = None
+        self.n_phy = -1
+        self.name_phy = None
+        self.rssi_phy = -1
+        self.qual_phy = -1
         self.log = False
         self.diag = False
         self.current_time = timeit.default_timer()
@@ -27,8 +32,14 @@ class LogSecHelper:
 
     def handle_info_response(self, data):
         self.f_phy = data.get("leds", {}).get("fps", -1)
+        self.ver_phy = data.get("ver", None)
+        self.n_phy = data.get("leds", {}).get("count", -1)
+        self.name_phy = data.get("name", None)
+        self.rssi_phy = data.get("wifi", {}).get("rssi", -1)
+        self.qual_phy = data.get("wifi", {}).get("signal", -1)
+
         _LOGGER.info(
-            f"{self.effect._virtual.name}:{self.effect.name} fps from wled info: {self.f_phy}"
+            f"{self.effect._virtual.name}:{self.effect.name} wled info: {data}"
         )
 
     def log_sec(self, current_time):
@@ -82,6 +93,11 @@ class LogSecHelper:
                         self.f_phy,
                         cycle,
                         sleep,
+                        self.ver_phy,
+                        self.n_phy,
+                        self.name_phy,
+                        self.rssi_phy,
+                        self.qual_phy,
                     )
                 )
                 self.r_min = 1.0
