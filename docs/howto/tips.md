@@ -18,13 +18,19 @@ If you are running large matrix then setting to 4096 is advised as a limit. This
 
 For any matrix larger that 4096 pixels ( or any value that Frontend pixels is set to ) LedFx will downscale the visualisation data to control bandwidth and processing overheads for the frontend.
 
-HOWEVER: Ledfx supports 16384, and even upto the max of 65536 setting for extreme browser visualisation needs.
+HOWEVER: Ledfx supports 16384 ( 16K ), and even upto the max of 65536 ( 65K ) setting for extreme browser visualisation needs. See Orange options in drop down.
 
 Don't do this unless you REALLY need that higher resolution in the browser, such as setting locally hosted monitors to the fullscreen visualisation ( via double click ) of a dummy device matrix. For example, a dummy device set to 339 x 191 pixels.
 
 ![No Really, don't do this!](../_static/howto/tips/big_noise.png)
 
 Why can't I go to full 1080p? Well that's ~2 million pixels. To shovel that around takes a GPU and is not really suitable for the original intent of LedFx, which is pushing pixels in python. There are full PC visualisers out there, go find one!
+
+These large front end visualisation payloads imply a heavy loading on the network infrastructure. This can directly impact the physical performance of the LED endpoints themselves, effectively challanging that critical communication for bandwidth on the network.
+
+Only use these extreme visualisation pixel counts on local browser instances running on the same host as LedFx, even then, use caution!
+
+Also note the value edit field has been removed from this in favour of the drop down, unless you have enabled Expert Mode.
 
 ## WLED and pixel counts
 
