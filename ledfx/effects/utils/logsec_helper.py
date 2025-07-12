@@ -8,7 +8,9 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class Phy:
-    def __init__(self, fps=None, ver=None, n=None, name=None, rssi=None, qual=None):
+    def __init__(
+        self, fps=None, ver=None, n=None, name=None, rssi=None, qual=None
+    ):
         """
         fps: fps of physical device
         ver: Version of the physical device
