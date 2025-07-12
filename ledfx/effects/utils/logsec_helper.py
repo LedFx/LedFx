@@ -6,7 +6,25 @@ from ledfx.events import VirtualDiagEvent
 
 _LOGGER = logging.getLogger(__name__)
 
+class Phy:
+    def __init__(self, f=-1, ver=None, n=-1, name=None, rssi=-1, qual=-1):
+        """ 
+        ver: Version of the physical device, if applicable.
+        n: Number of physical LEDs, -1 if not applicable.
+        name: Name of the physical device, if applicable.
+        rssi: RSSI of the physical device, -1 if not applicable.
+        qual: Signal quality of the physical device, -1 if not applicable."""
 
+        self.f = f
+        self.ver = ver
+        self.n = n
+        self.name = name
+        self.rssi = rssi
+        self.qual = qual
+
+    def __repr__(self):
+        return repr(self.__dict__)
+    
 class LogSecHelper:
     def __init__(self, effect):
         self.effect = effect
@@ -19,27 +37,22 @@ class LogSecHelper:
         self.r_total = 0.0
         self.r_min = 1.0
         self.r_max = 0.0
-        self.f_phy = -1
-        self.ver_phy = None
-        self.n_phy = -1
-        self.name_phy = None
-        self.rssi_phy = -1
-        self.qual_phy = -1
+        self.phy = Phy()
         self.log = False
         self.diag = False
         self.current_time = timeit.default_timer()
         self.lasttime = int(self.current_time)
 
     def handle_info_response(self, data):
-        self.f_phy = data.get("leds", {}).get("fps", -1)
-        self.ver_phy = data.get("ver", None)
-        self.n_phy = data.get("leds", {}).get("count", -1)
-        self.name_phy = data.get("name", None)
-        self.rssi_phy = data.get("wifi", {}).get("rssi", -1)
-        self.qual_phy = data.get("wifi", {}).get("signal", -1)
+        self.phy.f = data.get("leds", {}).get("fps", -1)
+        self.phy.ver = data.get("ver", None)
+        self.phy.n = data.get("leds", {}).get("count", -1)
+        self.phy.name = data.get("name", None)
+        self.phy.rssi = data.get("wifi", {}).get("rssi", -1)
+        self.phy.qual = data.get("wifi", {}).get("signal", -1)
 
         _LOGGER.info(
-            f"{self.effect._virtual.name}:{self.effect.name} wled info: {data}"
+            f"{self.effect._virtual.name}:{self.effect.name} wled info: {self.phy}"
         )
 
     def log_sec(self, current_time):
@@ -90,14 +103,9 @@ class LogSecHelper:
                         r_avg,
                         self.r_min,
                         self.r_max,
-                        self.f_phy,
                         cycle,
                         sleep,
-                        self.ver_phy,
-                        self.n_phy,
-                        self.name_phy,
-                        self.rssi_phy,
-                        self.qual_phy,
+                        self.phy.__dict__,
                     )
                 )
                 self.r_min = 1.0
