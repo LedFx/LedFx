@@ -76,7 +76,7 @@ class VirtualDiagEvent(Event):
         r_max: float,
         cycle: float,
         sleep: float,
-        phy: dict
+        phy: dict,
     ):
         """
         Initializes a VirtualDiagEvent with diagnostic metrics for a virtual entity.

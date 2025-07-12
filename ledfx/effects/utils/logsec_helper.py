@@ -6,9 +6,10 @@ from ledfx.events import VirtualDiagEvent
 
 _LOGGER = logging.getLogger(__name__)
 
+
 class Phy:
     def __init__(self, f=-1, ver=None, n=-1, name=None, rssi=-1, qual=-1):
-        """ 
+        """
         ver: Version of the physical device, if applicable.
         n: Number of physical LEDs, -1 if not applicable.
         name: Name of the physical device, if applicable.
@@ -24,7 +25,8 @@ class Phy:
 
     def __repr__(self):
         return repr(self.__dict__)
-    
+
+
 class LogSecHelper:
     def __init__(self, effect):
         self.effect = effect
