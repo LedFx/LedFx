@@ -7,6 +7,29 @@ from ledfx.events import VirtualDiagEvent
 _LOGGER = logging.getLogger(__name__)
 
 
+class Phy:
+    def __init__(
+        self, fps=None, ver=None, n=None, name=None, rssi=None, qual=None
+    ):
+        """
+        fps: fps of physical device
+        ver: Version of the physical device
+        n: Number of physical LEDs
+        name: Name of the physical device
+        rssi: RSSI of the physical device
+        qual: Signal quality of the physical device
+        """
+        self.fps = fps
+        self.ver = ver
+        self.n = n
+        self.name = name
+        self.rssi = rssi
+        self.qual = qual
+
+    def __repr__(self):
+        return repr(self.__dict__)
+
+
 class LogSecHelper:
     def __init__(self, effect):
         self.effect = effect
@@ -19,16 +42,22 @@ class LogSecHelper:
         self.r_total = 0.0
         self.r_min = 1.0
         self.r_max = 0.0
-        self.f_phy = -1
+        self.phy = Phy()
         self.log = False
         self.diag = False
         self.current_time = timeit.default_timer()
         self.lasttime = int(self.current_time)
 
     def handle_info_response(self, data):
-        self.f_phy = data.get("leds", {}).get("fps", -1)
+        self.phy.fps = data.get("leds", {}).get("fps")
+        self.phy.ver = data.get("ver")
+        self.phy.n = data.get("leds", {}).get("count")
+        self.phy.name = data.get("name")
+        self.phy.rssi = data.get("wifi", {}).get("rssi")
+        self.phy.qual = data.get("wifi", {}).get("signal")
+
         _LOGGER.info(
-            f"{self.effect._virtual.name}:{self.effect.name} fps from wled info: {self.f_phy}"
+            f"{self.effect._virtual.name}:{self.effect.name} wled info: {self.phy}"
         )
 
     def log_sec(self, current_time):
@@ -79,9 +108,9 @@ class LogSecHelper:
                         r_avg,
                         self.r_min,
                         self.r_max,
-                        self.f_phy,
                         cycle,
                         sleep,
+                        self.phy.__dict__,
                     )
                 )
                 self.r_min = 1.0
