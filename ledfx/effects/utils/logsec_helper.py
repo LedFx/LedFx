@@ -8,15 +8,16 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class Phy:
-    def __init__(self, f=-1, ver=None, n=-1, name=None, rssi=-1, qual=-1):
+    def __init__(self, fps=None, ver=None, n=None, name=None, rssi=None, qual=None):
         """
-        ver: Version of the physical device, if applicable.
-        n: Number of physical LEDs, -1 if not applicable.
-        name: Name of the physical device, if applicable.
-        rssi: RSSI of the physical device, -1 if not applicable.
-        qual: Signal quality of the physical device, -1 if not applicable."""
-
-        self.f = f
+        fps: fps of physical device
+        ver: Version of the physical device
+        n: Number of physical LEDs
+        name: Name of the physical device
+        rssi: RSSI of the physical device
+        qual: Signal quality of the physical device
+        """
+        self.fps = fps
         self.ver = ver
         self.n = n
         self.name = name
@@ -46,12 +47,12 @@ class LogSecHelper:
         self.lasttime = int(self.current_time)
 
     def handle_info_response(self, data):
-        self.phy.f = data.get("leds", {}).get("fps", -1)
-        self.phy.ver = data.get("ver", None)
-        self.phy.n = data.get("leds", {}).get("count", -1)
-        self.phy.name = data.get("name", None)
-        self.phy.rssi = data.get("wifi", {}).get("rssi", -1)
-        self.phy.qual = data.get("wifi", {}).get("signal", -1)
+        self.phy.fps = data.get("leds", {}).get("fps")
+        self.phy.ver = data.get("ver")
+        self.phy.n = data.get("leds", {}).get("count")
+        self.phy.name = data.get("name")
+        self.phy.rssi = data.get("wifi", {}).get("rssi")
+        self.phy.qual = data.get("wifi", {}).get("signal")
 
         _LOGGER.info(
             f"{self.effect._virtual.name}:{self.effect.name} wled info: {self.phy}"

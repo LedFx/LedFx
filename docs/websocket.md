@@ -232,7 +232,7 @@ The `virtual_diag` WebSocket event is emitted when a virtual's diagnostics are u
   "sleep": 0.014232,
   "phy":
   {
-    "f": 55,
+    "fps": 55,
     "ver": "0.14.4",
     "n": 1024,
     "name": "32x32",
@@ -252,7 +252,7 @@ The `virtual_diag` WebSocket event is emitted when a virtual's diagnostics are u
 - `cycle`: Cycle time for the virtual's update loop.
 - `sleep`: Sleep time between cycles.
 - `phy`: A dictionary containing physical device information:
-  - `f`: Frames per second reported by the physical device.
+  - `fps`: Frames per second reported by the physical device.
   - `ver`: Firmware version of the device.
   - `n`: Number of LEDs or pixels in the device.
   - `name`: Name or identifier of the device.
@@ -263,7 +263,7 @@ The `virtual_diag` WebSocket event is emitted when a virtual's diagnostics are u
 **Usage:**
 Subscribe to this event to monitor the performance and timing of virtual devices for diagnostics and optimization.
 
-If a virtual is mapped directly to a device and that device is WLED, then an attempt to read the WLED info and extra key details will be made once per second asynchronously via the /json/info api call and returned on phy, unavailable values will be None or -1.
+If a virtual is mapped directly to a device and that device is WLED, then an attempt to read the WLED info and extra key details will be made once per second asynchronously via the /json/info api call and returned on phy, unavailable values will be None.
 
 ---
 
