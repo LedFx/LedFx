@@ -230,13 +230,13 @@ The `virtual_diag` WebSocket event is emitted when a virtual's diagnostics are u
   "r_max": 0.022345,
   "cycle": 16.67,
   "sleep": 0.014232,
-  "phy": 
+  "phy":
   {
-    "f": 55, 
-    "ver": "0.14.4", 
-    "n": 1024, 
-    "name": "32x32", 
-    "rssi": -45, 
+    "f": 55,
+    "ver": "0.14.4",
+    "n": 1024,
+    "name": "32x32",
+    "rssi": -45,
     "qual": 100
   }
 }
