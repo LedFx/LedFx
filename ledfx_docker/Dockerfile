@@ -2,14 +2,20 @@ FROM ghcr.io/astral-sh/uv:python3.12-bookworm AS build
 ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy
 ENV UV_PYTHON_DOWNLOADS=0
 WORKDIR /app
-RUN apt update && apt install -y cmake gcc portaudio19-dev && rm -rf /var/lib/apt/lists/*
+RUN --mount=type=cache,target=/var/cache/apt \
+    --mount=type=cache,target=/var/lib/apt \
+    apt update && apt install -y cmake gcc portaudio19-dev && rm -rf /var/lib/apt/lists/*
 COPY uv.lock pyproject.toml /app/
-RUN uv sync --frozen --no-install-project --no-dev
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --no-install-project --no-dev --no-editable 
 COPY . /app
-RUN uv sync --install-project --extras hue --frozen
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --install-project --extras hue --frozen  --no-editable
 
 FROM python:3.12-slim AS runner
-RUN apt update && apt install -y libportaudio2 pulseaudio --no-install-recommends && rm -rf /var/lib/apt/lists/*
+RUN --mount=type=cache,target=/var/cache/apt \
+    --mount=type=cache,target=/var/lib/apt \
+    apt update && apt install -y libportaudio2 pulseaudio --no-install-recommends && rm -rf /var/lib/apt/lists/*
 
 FROM runner
 ENV HOME="/home/ledfx"
