@@ -4,18 +4,18 @@ ENV UV_PYTHON_DOWNLOADS=0
 ARG TARGETARCH
 WORKDIR /app
 RUN --mount=type=cache,id=apt-cache-${TARGETARCH},target=/var/cache/apt \
-    --mount=type=cache,id=apt-cache-${TARGETARCH},target=/var/lib/apt \
+    --mount=type=cache,id=apt-lib-${TARGETARCH},target=/var/lib/apt \
     apt update && apt install -y cmake gcc portaudio19-dev && rm -rf /var/lib/apt/lists/*
 COPY uv.lock pyproject.toml /app/
-RUN --mount=type=cache,id=apt-cache-${TARGETARCH},target=/root/.cache/uv \
+RUN --mount=type=cache,id=uv-cache-${TARGETARCH},target=/root/.cache/uv \
     uv sync --frozen --no-install-project --no-dev --no-editable 
 COPY . /app
-RUN --mount=type=cache,id=apt-cache-${TARGETARCH},target=/root/.cache/uv \
+RUN --mount=type=cache,id=uv-cache-${TARGETARCH},target=/root/.cache/uv \
     uv sync --install-project --extras hue --frozen  --no-editable
 
 FROM python:3.12-slim AS runner
 RUN --mount=type=cache,id=apt-cache-${TARGETARCH},target=/var/cache/apt \
-    --mount=type=cache,id=apt-cache-${TARGETARCH},target=/var/lib/apt \
+    --mount=type=cache,id=apt-lib-${TARGETARCH},target=/var/lib/apt \
     apt update && apt install -y libportaudio2 pulseaudio --no-install-recommends && rm -rf /var/lib/apt/lists/*
 
 FROM runner
