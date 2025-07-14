@@ -14,6 +14,7 @@ RUN --mount=type=cache,id=uv-cache-${TARGETARCH},target=/root/.cache/uv \
     uv sync --install-project --extras hue --frozen  --no-editable
 
 FROM python:3.12-slim AS runner
+ARG TARGETARCH
 RUN --mount=type=cache,id=apt-cache-${TARGETARCH},target=/var/cache/apt \
     --mount=type=cache,id=apt-lib-${TARGETARCH},target=/var/lib/apt \
     apt update && apt install -y libportaudio2 pulseaudio --no-install-recommends && rm -rf /var/lib/apt/lists/*
