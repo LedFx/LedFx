@@ -225,6 +225,14 @@ def get_local_ip():
 
 
 def check_if_ip_is_broadcast(thisip):
+    """
+    Check if provided IP is the broadcast address of
+    one of the network interfaces
+
+    Returns:
+        True if IP is a broadcast address, False otherwise.
+
+    """
     # iterate over all interfaces
     for iface in netifaces.interfaces():
         iface = netifaces.ifaddresses(iface)
