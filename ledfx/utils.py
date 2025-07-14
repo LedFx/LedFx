@@ -233,18 +233,23 @@ def check_if_ip_is_broadcast(thisip):
         True if IP is a broadcast address, False otherwise.
 
     """
-    # iterate over all interfaces
-    for iface in netifaces.interfaces():
-        iface = netifaces.ifaddresses(iface)
-        # iterate over all ipv4 address (if available) for this interface
-        if netifaces.AF_INET in iface:
-            for ip in iface[netifaces.AF_INET]:
-                # check if a broadcast address is set and compare
-                if "broadcast" in ip and ip["broadcast"] == thisip:
-                    return True
+    try:
+        # iterate over all interfaces
+        for iface in netifaces.interfaces():
+            iface = netifaces.ifaddresses(iface)
+            # iterate over all ipv4 address (if available) for this interface
+            if netifaces.AF_INET in iface:
+                for ip in iface[netifaces.AF_INET]:
+                    # check if a broadcast address is set and compare
+                    if "broadcast" in ip and ip["broadcast"] == thisip:
+                        return True
 
-    # no matching broadcast address found
-    return False
+        # no matching broadcast address found
+        return False
+
+    except OSError as e:
+        _LOGGER.warning(f"Unable to check if ip is a broadcast address: {e}")
+        return False
 
 
 def async_fire_and_return(coro, callback, timeout=10):
