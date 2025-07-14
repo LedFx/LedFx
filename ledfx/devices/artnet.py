@@ -7,7 +7,7 @@ from stupidArtnet import StupidArtnet
 
 from ledfx.devices import NetworkedDevice
 from ledfx.devices.utils.rgbw_conversion import OutputMode, rgb_to_output_mode
-from ledfx.utils import extract_uint8_seq, check_if_ip_is_broadcast
+from ledfx.utils import check_if_ip_is_broadcast, extract_uint8_seq
 
 _LOGGER = logging.getLogger(__name__)
 

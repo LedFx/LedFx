@@ -5,7 +5,6 @@ import datetime
 import importlib
 import inspect
 import ipaddress
-import netifaces
 import logging
 import math
 import os
@@ -35,6 +34,7 @@ from platform import (
 from subprocess import PIPE, Popen
 from typing import Callable
 
+import netifaces
 import numpy as np
 import PIL.Image as Image
 import PIL.ImageFont as ImageFont
@@ -223,6 +223,7 @@ def get_local_ip():
     finally:
         sock.close()
 
+
 def check_if_ip_is_broadcast(thisip):
     # iterate over all interfaces
     for iface in netifaces.interfaces():
@@ -236,6 +237,7 @@ def check_if_ip_is_broadcast(thisip):
 
     # no matching broadcast address found
     return False
+
 
 def async_fire_and_return(coro, callback, timeout=10):
     """
