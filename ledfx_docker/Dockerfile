@@ -6,7 +6,7 @@ RUN apt update && apt install -y cmake gcc portaudio19-dev && rm -rf /var/lib/ap
 COPY uv.lock pyproject.toml /app/
 RUN uv sync --frozen --no-install-project --no-dev
 COPY . /app
-RUN uv pip install .[hue]
+RUN uv sync --install-project --extras hue --frozen
 
 FROM python:3.12-slim AS runner
 RUN apt update && apt install -y libportaudio2 pulseaudio --no-install-recommends && rm -rf /var/lib/apt/lists/*
