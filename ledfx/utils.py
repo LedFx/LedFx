@@ -5,6 +5,7 @@ import datetime
 import importlib
 import inspect
 import ipaddress
+import netifaces
 import logging
 import math
 import os
@@ -222,6 +223,19 @@ def get_local_ip():
     finally:
         sock.close()
 
+def check_if_ip_is_broadcast(thisip):
+    # iterate over all interfaces
+    for iface in netifaces.interfaces():
+        iface = netifaces.ifaddresses(iface)
+        # iterate over all ipv4 address (if available) for this interface
+        if netifaces.AF_INET in iface:
+            for ip in iface[netifaces.AF_INET]:
+                # check if a broadcast address is set and compare
+                if "broadcast" in ip and ip["broadcast"] == thisip:
+                    return True
+
+    # no matching broadcast address found
+    return False
 
 def async_fire_and_return(coro, callback, timeout=10):
     """

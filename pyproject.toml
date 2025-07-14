@@ -39,6 +39,7 @@ dependencies = [
     "stupidartnet>=1.6.0,<2.0.0",
     "python-dotenv>=1.0.0,<2.0.0",
     "vnoise>=0.1.0,<1.0.0",
+    "netifaces>=0.11.0",
 ]
 name = "LedFx"
 version = "2.0.109"
