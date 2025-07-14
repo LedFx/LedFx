@@ -11,7 +11,7 @@ RUN --mount=type=cache,id=uv-cache-${TARGETARCH},target=/root/.cache/uv \
     uv sync --frozen --no-install-project --no-dev --no-editable 
 COPY . /app
 RUN --mount=type=cache,id=uv-cache-${TARGETARCH},target=/root/.cache/uv \
-    uv sync --install-project --extras hue --frozen  --no-editable
+    uv sync --extra hue --frozen --no-editable
 
 FROM python:3.12-slim AS runner
 ARG TARGETARCH
