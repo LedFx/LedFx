@@ -43,4 +43,4 @@ HEALTHCHECK --interval=60s --timeout=3s --start-period=3s --retries=3 \
 EXPOSE 8888/tcp
 ENTRYPOINT ["/home/ledfx/start.sh"]
 LABEL maintainer="www.github.com/ledfx/ledfx"
-#build with command "docker build -f ledfx_docker/Dockerfile -t ledfx ."
+#build with "docker build -f ledfx_docker/Dockerfile -t ledfx ."
