@@ -7,7 +7,7 @@ from stupidArtnet import StupidArtnet
 
 from ledfx.devices import NetworkedDevice
 from ledfx.devices.utils.rgbw_conversion import OutputMode, rgb_to_output_mode
-from ledfx.utils import extract_uint8_seq
+from ledfx.utils import check_if_ip_is_broadcast, extract_uint8_seq
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -134,13 +134,17 @@ class ArtNetDevice(NetworkedDevice):
             _LOGGER.warning(
                 f"Art-Net sender already started for device {self.config['name']}"
             )
+
+        # check if provided address is a broadcast address
+        broadcast = check_if_ip_is_broadcast(self._config["ip_address"])
+
         self._artnet = StupidArtnet(
             target_ip=self._config["ip_address"],
             universe=self._config["universe"],
             packet_size=self.packet_size,
             fps=self._config["refresh_rate"],
             even_packet_size=self._config["even_packet_size"],
-            broadcast=False,
+            broadcast=broadcast,
             port=self._config["port"],
         )
         # Don't use start for stupidArtnet - we handle fps locally, and it spawns hundreds of threads
