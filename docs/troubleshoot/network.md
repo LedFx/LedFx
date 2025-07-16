@@ -2,9 +2,9 @@
 
 The host system and networking in which LedFx and the client devices live, is a big space and there are MANY things that can wrong impacting your experience.
 
-These normally start with "why does LedFx lag". We strive to ensure that LedFx runs smoothly where possible. 
+These normally start with "why does LedFx lag". We strive to ensure that LedFx runs smoothly where possible.
 
-We are currently not aware of lag scenarios induced by LedFx itself ( yes, the more we say that, the more likely it is we have a deep dark dirty secret somewhere ). 
+We are currently not aware of lag scenarios induced by LedFx itself ( yes, the more we say that, the more likely it is we have a deep dark dirty secret somewhere ).
 
 Major efforts have removed sources of glitching, and we generally run heavy weight system regressions that will identify issues during development and release.
 
