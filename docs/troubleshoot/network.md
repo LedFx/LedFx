@@ -50,9 +50,37 @@ If you have to use a remote browser instance to look at the visualisation, this 
 
 #### Pixels Effect
 
-Talk about the effect diag
+Pixel runs by default a single pixel from index 0 to the end of the strip or matrix in 1 second increments.
 
-Talk about wled2graph
+For a simple 16 pixel strip at default it looks like the following
+
+![watching the pot](/_static/howto/trouble/pixel_strip1.gif)
+
+This diagnostic effect can be used for various needs
+
+- Ensure that the pixel mapping is smooth and consistant to expectation.
+- Enusre that the periodic step is smooth and without jitter
+  - For visualtion front end
+  - For physical device
+- General comparisson between front end visualisation and physical device
+
+To investigate periodic step smoothness, looking for lag and jitter, it is better to turn the step period down to 0.1 seconds. This may also be needed for longer strips and matrix looking at ordering issues.
+
+If the visualisation on the browser is smooth, but the device is lagging / jittery then the issue is in the network or device.
+
+If the visualisation on the browser is NOT smooth then the host is glitching / underpowered or are you sure you are on a local browser?
+
+![wheeee](/_static/howto/trouble/pixel_strip2.gif)
+
+Using the BUILD UP switch will cumulatively fill the strip
+
+![ahhhh](/_static/howto/trouble/pixel_strip3.gif)
+
+For extreme cases turn up the pixels count to step in blocks.
+
+![no one got time for that](/_static/howto/trouble/pixel_matrix1.gif)
+
+### Talk about wled2graph
 
 ## Networking Improvements
 
