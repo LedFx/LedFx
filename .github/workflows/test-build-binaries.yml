@@ -206,7 +206,7 @@ jobs:
           tags: |
             ${{ env.GHCR_IMAGE }}:edge-${{ env.ARCH }}
           cache-from: type=registry,ref=${{ env.GHCR_IMAGE }}:cache-${{ env.ARCH }}
-          cache-to: type=type=registry,ref=${{ env.GHCR_IMAGE }}:cache-${{ env.ARCH }},mode=max
+          cache-to: type=registry,ref=${{ env.GHCR_IMAGE }}:cache-${{ env.ARCH }},mode=max
           build-args: |
             GITHUB_SHA=${{ github.sha }}
             IS_RELEASE=${{ startsWith(github.ref, 'refs/tags/') }}
@@ -246,13 +246,14 @@ jobs:
           tags: |
             ${{ env.GHCR_IMAGE }}:edge-${{ env.ARCH }}
           cache-from: type=registry,ref=${{ env.GHCR_IMAGE }}:cache-${{ env.ARCH }}
-          cache-to: type=type=registry,ref=${{ env.GHCR_IMAGE }}:cache-${{ env.ARCH }},mode=max
+          cache-to: type=registry,ref=${{ env.GHCR_IMAGE }}:cache-${{ env.ARCH }},mode=max
           build-args: |
             GITHUB_SHA=${{ github.sha }}
             IS_RELEASE=${{ startsWith(github.ref, 'refs/tags/') }}
 
   docker-test-publish-manifests:
     name: Test amd64 and Publish image
+    needs: [docker-build-amd64, docker-build-arm64]
     runs-on: ubuntu-latest
     env:
       IMAGE_NAME: ledfx
