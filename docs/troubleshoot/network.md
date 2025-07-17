@@ -1,36 +1,38 @@
 # Network & Performance Troubleshooting
 
-The host system and networking in which LedFx and the client devices live, is a big space and there are MANY things that can wrong impacting your experience.
+The host system and networking infrastructure in which LedFx and the client devices live, is a big space and there are MANY things that can wrong, impacting your experience.
 
-These normally start with "why does LedFx lag". We strive to ensure that LedFx runs smoothly where possible.
+These normally start with wailing, nashing of teeth and crys of "why does LedFx lag...".
+
+We strive to ensure that LedFx runs smoothly where possible.
 
 We are currently not aware of lag scenarios induced by LedFx itself ( yes, the more we say that, the more likely it is we have a deep dark dirty secret somewhere ).
 
-Major efforts have removed sources of glitching, and we generally run heavy weight system regressions that will identify issues during development and release.
+Major efforts over time have removed sources of glitching, and we generally run heavy weight system regressions that will identify emergent issues during development and release.
 
 ## Common sources of lag
 
-LedFx can't tell you how to fix your system, but there are places your problem is likely to be from general experience.
+LedFx can't tell you how to fix your system, but there are places your problem is likely to be hiding, and we can comment from general experience.
 
 ### Underpowered host
 
 Yes you can run LedFx on that dusty old Pi3 you had in a drawer, but LedFx cannot help with the underlying performance of the OS on the hardware. Yes, LedFx core is mostly written in python, but that is part of its charm for us developers, and anywhere we do heavy lifting of data and math, we strive to implement in numpy or other optimised libaries.
 
-If you are running a reasonable system, and not trying to push around 100K pixels, noting we regularly test with 20K+, then your host should generally be able to cope. Look at processor loading, ensure there is headroom in there. If you are running multiple services on a constrained system, then LedFx can only use the time it is given. Do you have services spinning up aggressively at inopportune times, such a deep virus check across all your storage etc.
+If you are running a reasonable system, and not trying to push around 100K pixels, noting we regularly test with 20K+, then your host should be able to cope. Look at processor loading, ensure there is headroom in there. If you are running multiple services on a constrained system, then LedFx can only use the time it is given. Do you have services spinning up aggressively at inopportune times, such as deep virus check across all your storage, for example.
 
 ## Tools to investigate
 
 ### Diagnostic Effects
 
-Some simple deterministic effects are built into LedFx to allow investigation of pixel progression and device syncronous time aligned behaviours without audio impacts.
+Some simple, deterministic effects are built into LedFx, to allow investigation of pixel progression and syncronous time aligned behaviours, without audio impacts.
 
-Note that improvements in front end rendering via GPU acceleration have greatly improved the visualisation of the effects to meet realtime against the core. LedFx had always been written to service the physical devices as the priority, but this GPU advancement has removed many sources of delay to the browser front end, and if run on a local browser instance should be very tight to actuals.
+Note that improvements in front end rendering via GPU acceleration have greatly improved the visualisation of the effects, to meet realtime against the core. LedFx had always been written to service the physical devices as the priority, but this GPU advancement has removed many sources of delay to the browser front end, and if run on a local browser instance should be very tight to actuals.
 
 #### Metro Effect
 
-Metro runs a sequence that by default will display half black and half white for 300 ms every 1 second.
+Metro runs a sequence that by default will display half black and half white for 300 milli seconds every 1 second.
 
-The pattern progresses further dividing by 2 the black and white division.
+The pattern progresses further dividing by 2, the black and white division.
 
 The default 4 step behaviour on a 1d strip is
 
@@ -40,7 +42,7 @@ The behaviour with steps, the number of such divisions to make before looping, s
 
 ![ah, my eyes!](/_static/howto/trouble/metro_array.gif)
 
-By watching the browser visualisation, on a browser hosted on the same machine as LedFx to avoid any network implications, and comparing that to the behaviour on the physical device LEDs, it should be easy to identify if there is distinct Lag or pattern mismatch.
+By watching the browser visualisation, hosted on the same machine as LedFx, to avoid any network implications, and comparing that to the behaviour on the physical device LEDs, it should be easy to identify if there is distinct Lag or pattern mismatch. Do they both switch at exactly the same time, or are they different, are they consistantly different, or does it vary. Which is seemingly early compared to the other.
 
 If there is a mismatch, then it implies that there is artifacting between the LedFx / browser visualisation running on the host and the endpoint itself. That artifacting could be due to network impacts, or even crashes and lags on the endpoint device.
 
@@ -50,7 +52,7 @@ If you have to use a remote browser instance to look at the visualisation, this 
 
 #### Pixels Effect
 
-Pixel runs by default a single pixel from index 0 to the end of the strip or matrix in 1 second increments.
+Pixel runs by default, a single pixel from index 0 to the end of the strip or matrix in 1 second increments.
 
 For a simple 16 pixel strip at default it looks like the following
 
@@ -58,17 +60,17 @@ For a simple 16 pixel strip at default it looks like the following
 
 This diagnostic effect can be used for various needs
 
-- Ensure that the pixel mapping is smooth and consistant to expectation.
-- Enusre that the periodic step is smooth and without jitter
+- Ensure that the pixel mapping is well ordered to expectation.
+- Enusre that the periodic step progression is smooth and without jitter
   - For visualtion front end
   - For physical device
 - General comparisson between front end visualisation and physical device
 
-To investigate periodic step smoothness, looking for lag and jitter, it is better to turn the step period down to 0.1 seconds. This may also be needed for longer strips and matrix looking at ordering issues.
+To investigate periodic step smoothness, looking for lag and jitter, it is better to turn the step period down to 0.1 seconds. This may also be needed for longer strips and matrix when looking at ordering issues.
 
 If the visualisation on the browser is smooth, but the device is lagging / jittery then the issue is in the network or device.
 
-If the visualisation on the browser is NOT smooth then the host is glitching / underpowered or are you sure you are on a local browser?
+If the visualisation on the browser is NOT smooth then the host is glitching / underpowered or are you sure you are on a local browser!?!
 
 ![wheeee](/_static/howto/trouble/pixel_strip2.gif)
 
@@ -76,11 +78,36 @@ Using the BUILD UP switch will cumulatively fill the strip
 
 ![ahhhh](/_static/howto/trouble/pixel_strip3.gif)
 
-For extreme cases turn up the pixels count to step in blocks.
+For extreme cases such as large pixel matrix, turn up the *pixels count* to step in blocks.
 
 ![no one got time for that](/_static/howto/trouble/pixel_matrix1.gif)
 
-### Talk about wled2graph
+### LedFx Effect and Device Performance Stats
+
+Basic performance statistics of the LedFX effects and in some cases such as WLED from the physical device itself can be monitored from within the LedFx effect configuration dialogs. Choose your desired device or virtual in LedFx and set the *Advanced* switch to on. You should now have an extra switch ( along with others ) for *Diag*, switch that to on as well.
+
+In the virtual configution screen you will now get the following dialog appear ( subject to change as we improve the implementation )
+
+![I'll believe it when I see it, Captain](../_static/howto/trouble/perf_diag.png)
+
+The large FPS number is the rate that Ledfx has maintained in effect generation over the last second.
+The small FPS that may appear below it is the reported FPS from the endpoint if supported. Currently only by WLED.
+
+Render Avg is the average time to render a frame over the last second. Below that are min and max times in case any glitching is going on.
+
+The little power symbol shows how many milliseconds are available in a frame followed by a percentage of that time that is on average being consumed for this effect.
+
+It should be noted that the effect Noise is by a 10x magnitude the greediest of any existing effect in LedFx due to the heavy math implied, so if you want to stress your system, its the place to go!
+
+### wled2graph
+
+This is an external tool for monitoring the FPS, wifi and ping performance of multiple WLED devices over time. It allows graphs to be built up over a period of time to look for intermittent or chronic performance issues.
+
+[pypi wled2graph](https://pypi.org/project/wled2graph/)
+
+[github wled2graph](https://github.com/bigredfrog/wled2graph)
+
+![Looks pretty](../_static/howto/trouble/wled2graph.png)
 
 ## Networking Improvements
 
