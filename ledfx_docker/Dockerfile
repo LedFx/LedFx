@@ -5,7 +5,7 @@ ARG TARGETARCH
 WORKDIR /app
 RUN --mount=type=cache,id=apt-cache-${TARGETARCH},target=/var/cache/apt,sharing=locked \
     --mount=type=cache,id=apt-lib-${TARGETARCH},target=/var/lib/apt,sharing=locked \
-    apt update && apt install -y cmake gcc portaudio19-dev && rm -rf /var/lib/apt/lists/*
+    apt-get update && apt-get install -y cmake gcc portaudio19-dev && rm -rf /var/lib/apt/lists/*
 COPY uv.lock pyproject.toml /app/
 RUN --mount=type=cache,id=uv-cache-${TARGETARCH},target=/root/.cache/uv \
     uv sync --frozen --no-install-project --no-dev --no-editable 
@@ -17,7 +17,7 @@ FROM python:3.12-slim AS runner
 ARG TARGETARCH
 RUN --mount=type=cache,id=apt-cache-${TARGETARCH},target=/var/cache/apt,sharing=locked \
     --mount=type=cache,id=apt-lib-${TARGETARCH},target=/var/lib/apt,sharing=locked \
-    apt update && apt install -y libportaudio2 pulseaudio --no-install-recommends && rm -rf /var/lib/apt/lists/*
+    apt-get update && apt-get install -y libportaudio2 pulseaudio --no-install-recommends && rm -rf /var/lib/apt/lists/*
 #FROM runner
 ENV HOME="/home/ledfx"
 ENV PATH="/app/.venv/bin:$PATH"
