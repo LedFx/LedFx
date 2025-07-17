@@ -8,10 +8,10 @@ RUN --mount=type=cache,id=apt-cache-${TARGETARCH},target=/var/cache/apt,sharing=
     # && rm -rf /var/lib/apt/lists/*
 COPY uv.lock pyproject.toml /app/
 RUN --mount=type=cache,id=uv-cache-${TARGETARCH},target=/root/.cache/uv \
-    uv sync --frozen --no-install-project --no-dev --no-editable 
+    uv sync --no-install-project --no-editable 
 COPY . /app
 RUN --mount=type=cache,id=uv-cache-${TARGETARCH},target=/root/.cache/uv \
-    uv sync --extra hue --frozen --no-editable
+    uv sync --no-editable --extra hue --dev
 
 FROM python:3.12-slim AS runner
 ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy UV_PYTHON_DOWNLOADS=0
