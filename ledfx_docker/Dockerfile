@@ -11,7 +11,7 @@ RUN --mount=type=cache,id=uv-cache-${TARGETARCH},target=/root/.cache/uv \
     uv sync --no-install-project --no-editable 
 COPY . /app
 RUN --mount=type=cache,id=uv-cache-${TARGETARCH},target=/root/.cache/uv \
-    uv sync --no-editable --extra hue --dev
+    uv sync --no-editable --extra hue
 
 FROM python:3.12-slim AS runner
 ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy UV_PYTHON_DOWNLOADS=0

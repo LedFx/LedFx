@@ -241,7 +241,7 @@ jobs:
           file: ./ledfx_docker/Dockerfile
           platforms: linux/${{ env.ARCH }}
           provenance: false #https://github.com/orgs/community/discussions/45969#discussioncomment-4852744
-          sbom: false          
+          sbom: false
           push: true
           tags: |
             ${{ env.GHCR_IMAGE }}:edge-${{ env.ARCH }}
@@ -270,7 +270,7 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}          
+          password: ${{ secrets.GITHUB_TOKEN }}
       # - name: Create multiarch image manifest for edge
       #   run: |
       #     docker buildx imagetools create \
