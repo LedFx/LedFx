@@ -4,9 +4,9 @@ A random collection of tips and tricks on various interesting or ill-advised thi
 
 Know something not captured here, that could help your fellow LedFx users lost in the wildeness of complexity? Then please raise a PR, building the docs is easy in vscode! See [Document Development](../README.md)
 
-Read [Misc Troubleshooting](../troubleshoot/trouble.md)
-
-Read [Network and Performance Troubleshooting](../troubleshoot/network.md)
+Further reading
+- [Misc Troubleshooting](../troubleshoot/trouble.md)
+- [Network and Performance Troubleshooting](../troubleshoot/network.md)
 
 ![You think your lost!](../_static/howto/tips/desert.jpg)
 
@@ -22,7 +22,7 @@ If you are running large matrix then setting to 4096 is advised as a limit. This
 
 For any matrix larger that 4096 pixels ( or any value that Frontend pixels is set to ) LedFx will downscale the visualisation data to control bandwidth and processing overheads for the frontend.
 
-HOWEVER: Ledfx supports 16384, and even upto the max of 65536 setting for extreme browser visualisation needs.
+HOWEVER: Ledfx supports 16384, and even up to the max of 65536 setting for extreme browser visualisation needs.
 
 Don't do this unless you REALLY need that higher resolution in the browser, such as setting locally hosted monitors to the fullscreen visualisation ( via double click ) of a dummy device matrix. For example, a dummy device set to 339 x 191 pixels.
 
@@ -44,9 +44,9 @@ The implication is that the max FPS on a single pin is constrained by this limit
 
 FPS = 800 KHz / 24 or 32 bits per LED / Number of pixels
 
-24 or 32 bits per LED depends on common RGB or RGBW type stips, but can be even more with modern RGBWW implementations
+24 or 32 bits per LED depends on common RGB or RGBW type strips, but can be even more with modern RGBWW implementations
 
-Lets cap the max FPS at 62 for the purposes of this discussion, this is the default configuration for Ledfx
+Lets cap the max FPS at 62 for the purposes of this discussion, this is the default configuration for LedFx
 
 The graph of max physical FPS vs LED count is therefore
 
@@ -64,4 +64,4 @@ As a rule of thumb for every 100 pixels added you lose a frame of FPS.
 
 ![I'm giving her all she's got, Captain!](../_static/howto/tips/cpu_crunch.png)
 
-Note its important to start winding down the DDP rate ( the ledfx target FPS ) at high LED counts to avoid overwhelming the endpoint with more frames than it can render, and losing even more frames again! Hence the blue line, which capture it was important to start reducing LedFx target FPS at 1400 LEDs.
+Note its important to start winding down the DDP rate ( the LedFx target FPS ) at high LED counts to avoid overwhelming the endpoint with more frames than it can render, and losing even more frames again! Hence the blue line, which capture it was important to start reducing LedFx target FPS at 1400 LEDs.
