@@ -61,25 +61,25 @@ Launch ledfx and clear all active effects from config.json
 > ledfx --clear-effects
 > ```
 
-If the issue is a poisoned configration of a specific effect, using this
+If the issue is a poisoned configuration of a specific effect, using this
 launch option all active effects are cleared leaving all virtuals and
 other configurations untouched.
 
 The effect configuration will still be present in your config, and if
 the specific effect is re-enabled, the crash will likely express again.
 
-However with this method, you can recover and continue using ledfx with
+However with this method, you can recover and continue using LedFx with
 the other effects, and all your existing configuration.
 
 You can also isolate which effect is poisoned by re-enabling them one by
 one, until the crash expresses.
 
-Then pass your config.json to the ledfx team for further investigation
+Then pass your config.json to the LedFx team for further investigation
 via #help_and_support on Discord.
 
 ### Backup and create clean config
 
-Launch ledfx, backup and then create a clean config.json
+Launch LedFx, backup and then create a clean config.json
 
 > ``` console
 > ledfx --clear-config
