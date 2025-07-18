@@ -24,7 +24,13 @@ Here is a list of tested ESP8266 firmware that works with LedFx:
 To get started on Windows the easiest option is to [download the latest
 release](https://download.ledfx.app).
 
-There is no installation required, the application is portable.
+There is no installation required, the application is portable. From within the unzipped folder, navigate up into the folder containing LedFx.exe
+
+Launch LedFx with the `--open-ui` option to launch the back end and automatically open the front end in the browser:
+
+``` console
+$ .\LedFx.exe --open-ui
+```
 
 ## Linux Installation
 
@@ -64,7 +70,7 @@ To install on macOS first ensure you have at least Python 3.9 installed.
     $ python -m pip install ledfx
     ```
 
-3.  Launch LedFx with the `open-ui` option to launch the browser:
+3.  Launch LedFx with the `--open-ui` option to launch the back end and automatically open the front end in the browser:
 
     ``` console
     $ ledfx --open-ui
@@ -108,7 +114,7 @@ Python 3.9 installed.
     $ pip install aubio==0.4.9 --no-cache-dir
     ```
 
-3.  Launch LedFx with the `open-ui` option to launch the browser:
+3.  Launch LedFx with the `--open-ui` option to launch the back end and automatically open the front end in the browser:
 
     ``` console
     $ source ~/ledfx-venv/bin/activate

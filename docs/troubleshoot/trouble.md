@@ -1,4 +1,4 @@
-# Troubleshooting
+# Misc Troubleshooting
 
 ## Firmware Issues
 
@@ -61,25 +61,25 @@ Launch ledfx and clear all active effects from config.json
 > ledfx --clear-effects
 > ```
 
-If the issue is a poisoned configration of a specific effect, using this
+If the issue is a poisoned configuration of a specific effect, using this
 launch option all active effects are cleared leaving all virtuals and
 other configurations untouched.
 
 The effect configuration will still be present in your config, and if
 the specific effect is re-enabled, the crash will likely express again.
 
-However with this method, you can recover and continue using ledfx with
+However with this method, you can recover and continue using LedFx with
 the other effects, and all your existing configuration.
 
 You can also isolate which effect is poisoned by re-enabling them one by
 one, until the crash expresses.
 
-Then pass your config.json to the ledfx team for further investigation
+Then pass your config.json to the LedFx team for further investigation
 via #help_and_support on Discord.
 
 ### Backup and create clean config
 
-Launch ledfx, backup and then create a clean config.json
+Launch LedFx, backup and then create a clean config.json
 
 > ``` console
 > ledfx --clear-config
@@ -157,60 +157,19 @@ does support up to 4 outgoing devices streams.
 Alternatively:
 <https://www.audioanimals.co.uk/news/reviews/v-player-2-review-free-standalone-vst-host>
 
-## Networking Improvements
+## Audio Levels
 
-**DPC Latency**
+Use Vumeter to check raw audio input levels
 
-LedFx is *extremely* latency sensitive and will expose inherit
-weaknesses in WiFi. To minimize this, we reccomend:
+See the [Dummy Vumeter How-To](../howto/dummy_vumeter.md) for more details.
 
-1.  Disabling WiFi Sleep Mode on WLED.
-2.  Minimize WiFi activity on your network - using ethernet where
-    possible.
-3.  Ensure router appropriate for number of devices and amount of
-    traffic.
-4.  Attempting to ensure your WiFi access point is located in an
-    appropriate area, and is using an appropriate WiFi channel.
+## Frequency Response
 
-**Access via LAN**
+Use a equalizer2d effect on a dummy matrix to investigate frequency response
 
-All current builds should be able to be accessed from LAN - please
-ensure that you allow traffic from port 8888 from the host machine.
+See the [Dummy Matrix How-To](../howto/dummy_matrix.md) for more details.
 
-## I only get something less than 480 LEDs in WLED
-
-With a long led strip, of greater than 480 pixels, ledfx only seems to drive 480 or less.
-
-### Maybe it's the network interface MTU
-
-If the MTU of the networking interface on your host PC is not set to the common default 1500 bytes, fragmentation of the UDP packets that DDP is transported on, may cause issue with WLED at consumption of the DDP protocol
-
-By default, LedFx splits up seperate DDP packets at 480 pixel boundaries. So for example in a 1024 pixels device, it will take 3 DDP over UDP packets to transmit a single frame of data. Each packet will have a max UDP size of 1492 bytes made up of headers plus 3 x 480 bytes for RGB data
-
-If the MTU of the network interface is less that 1500, the UDP packets will get fragmented, and its possible that WLED will only service the first fragment and ignore the remaining fragement and all folllowing DDP packets until the next frame cycle.
-
-If any interface has less that 1500 it is recommended to fix it to 1500. Use Chatgpt or other sources to resolve exact steps for your system.
-
-### Checking your MTU
-#### On Windows
-
-Open Powershell and run
-
-``` console
-Get-NetIPInterface | Select-Object InterfaceAlias, AddressFamily, NlMtu
-```
-
-#### On Linux
-
-```console
-ip link show
-```
-
-#### On macOS
-
-```console
-ifconfig | grep mtu
-```
+Search on youtube or similar for a frequency sweep audio test.
 
 ## Need more help?
 

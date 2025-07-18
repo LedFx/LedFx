@@ -53,7 +53,8 @@
    :maxdepth: 2
    :caption: Help
 
-   /trouble
+   /troubleshoot/trouble
+   /troubleshoot/network
    /howto/report
 
 License
