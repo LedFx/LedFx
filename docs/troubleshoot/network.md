@@ -123,24 +123,24 @@ To minimize the risk of performance issues, we recommend:
 
 1.  **Disable WiFi Sleep Mode on WLED**
   - If you are not battery powered, there is little reason to use this.
-2.  **Minimize WiFi activity on your network** 
+2.  **Minimize WiFi activity on your network**
   - From all sources
-  - Use ethernet where reasonable. 
-3.  **Use Ethernet** 
+  - Use ethernet where reasonable.
+3.  **Use Ethernet**
   - If you are a commercial operation and performance REALLY matters. Your environment is likely full of legacy WiFi networks and customer phones.
-4.  **Ensure your Access Point (AP) is appropriate** 
-  - For the number of devices and amount of traffic. 
+4.  **Ensure your Access Point (AP) is appropriate**
+  - For the number of devices and amount of traffic.
   - Enterprise class APs are intended to support MANY more client devices that your average consumer grade.
-5.  **Position your WiFi AP** 
-  - High up and clear of obstruction. 
+5.  **Position your WiFi AP**
+  - High up and clear of obstruction.
 6.  **Use an appropriate WiFi channel**
-  - [only consider 1, 6, 11](https://www.metageek.com/training/resources/why-channels-1-6-11/) clear of interference from other networks. 
+  - [only consider 1, 6, 11](https://www.metageek.com/training/resources/why-channels-1-6-11/) clear of interference from other networks.
   - Read [Metageek Understanding WiFI Signal Strength](https://www.metageek.com/training/resources/wifi-signal-strength-basics/)
-7.  **Stick to 20 MHz channels** 
+7.  **Stick to 20 MHz channels**
   - While WLED devices continue to only support 2.4GHz Wifi
   - DO NOT configure 40 MHz channels, keep everything at 20 MHz wide.
 8.  **Check the RSSI level** received by the WLED device
-  - Read [Metageek Understanding RSSI](https://www.metageek.com/training/resources/understanding-rssi/). 
+  - Read [Metageek Understanding RSSI](https://www.metageek.com/training/resources/understanding-rssi/).
   - If you are -70 or worse, you are going to have a bad time.
 9. **Use a site survey tool** to really understand what is happening in your 2.4 GHz environment, such as
   - Metageek InSSIDer free tier
@@ -169,7 +169,7 @@ Try turning off mDNS support in WLED as recommended in the Quinled article.
 
 All current builds should be by default accessible from LAN - please ensure that you allow traffic from port 8888 from the host machine according to the firewall configuration of your OS or router.
 
-Your LedFx front end should be available on 
+Your LedFx front end should be available on
 
 ```
 http://your_host_machine_ip_or_name:8888
