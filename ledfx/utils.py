@@ -2175,3 +2175,19 @@ def get_primary_ip() -> str:
     except Exception as e:
         _LOGGER.warning(f"Primary IP detection via socket failed: {e}")
         return None  # no fallback
+
+def nonlinear_log(x, power=3):
+    """
+    Apply a nonlinear logarithmic transformation to the input value(s).
+    This function applies a transformation that is similar to a logarithm but
+    allows for a customizable power to control the steepness of the curve.
+    - At power = 1: the output is equal to the input (linear).
+    - At power > 1: higher input values are pulled closer to 1.0.
+    The transformation is applied element-wise if `x` is a NumPy array.
+    Parameters:
+        x (float or np.ndarray): Input value(s) between 0 and 1.
+        power (float): Power factor to control the steepness of the curve.
+    Returns:
+        float or np.ndarray: Transformed value(s), same shape and type as `x`.
+    """
+    return np.sign(x) * (abs(x) ** power)
