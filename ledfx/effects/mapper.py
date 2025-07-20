@@ -43,7 +43,7 @@ class Mapper2d(Twod):
                 "twist",
                 description="twist that thing",
                 default=0,
-            ): vol.All(vol.Coerce(float), vol.Range(min=-2, max=2)),
+            ): vol.All(vol.Coerce(float), vol.Range(min=-4, max=4)),
             vol.Optional(
                 "polygon",
                 description="Use polygonal or radial lobes",
