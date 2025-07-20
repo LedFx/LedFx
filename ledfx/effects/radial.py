@@ -4,14 +4,15 @@ import numpy as np
 import voluptuous as vol
 from PIL import Image
 
-from ledfx.effects.twod import Twod
 from ledfx.effects.audio import AudioReactiveEffect
+from ledfx.effects.twod import Twod
 from ledfx.utils import nonlinear_log
 
 _LOGGER = logging.getLogger(__name__)
 
 # div zero protection
 epsilon = 1e-6
+
 
 class Radial2d(Twod):
     NAME = "Radial"
@@ -61,7 +62,7 @@ class Radial2d(Twod):
                 "spin",
                 description="Spin the radial effect to the audio impulse",
                 default=0.0,
-                ): vol.All(vol.Coerce(float), vol.Range(min=-1.0, max=1.0)),
+            ): vol.All(vol.Coerce(float), vol.Range(min=-1.0, max=1.0)),
             vol.Optional(
                 "frequency_range",
                 description="Frequency range for the spin impulse",
@@ -95,7 +96,7 @@ class Radial2d(Twod):
         super().do_once()
 
     def audio_data_updated(self, data):
-        self.impulse = (getattr(data, self.power_func)())
+        self.impulse = getattr(data, self.power_func)()
         self.spin_total += self.impulse * self.spin
         self.spin_total %= 1.0  # keep it in [0, 1)
 
@@ -153,7 +154,9 @@ class Radial2d(Twod):
                     angle_mod = (angle + half_a) % a - half_a
 
                     # maximum radius at this angle for a regular polygon
-                    polygon_radius = np.cos(np.pi / self.edges) / np.clip(np.cos(angle_mod), epsilon, None)
+                    polygon_radius = np.cos(np.pi / self.edges) / np.clip(
+                        np.cos(angle_mod), epsilon, None
+                    )
                     # apply polygon shaping
                     radius /= polygon_radius
 

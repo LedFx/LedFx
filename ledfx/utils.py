@@ -2176,6 +2176,7 @@ def get_primary_ip() -> str:
         _LOGGER.warning(f"Primary IP detection via socket failed: {e}")
         return None  # no fallback
 
+
 def nonlinear_log(x, power=3):
     """
     Apply a nonlinear logarithmic transformation to the input value(s).
