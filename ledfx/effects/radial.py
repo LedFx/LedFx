@@ -75,6 +75,7 @@ class Radial2d(Twod):
         self.bar = 0
         self.virtual = None
         self.spin_total = 0.0
+        self.max_radius = None
         super().__init__(ledfx, config)
 
     def config_updated(self, config):
@@ -92,86 +93,85 @@ class Radial2d(Twod):
             self._config["frequency_range"]
         ]
 
-    def do_once(self):
-        super().do_once()
-
     def audio_data_updated(self, data):
         self.impulse = getattr(data, self.power_func)()
         self.spin_total += self.impulse * self.spin
         self.spin_total %= 1.0  # keep it in [0, 1)
 
-    def draw(self):
+    def do_once(self):
+        super().do_once()
 
+        # Compute center based on normalized offsets
+        self.cx = self.r_width * self.x_offset
+        self.cy = self.r_height * self.y_offset
+
+        # Create fixed coordinate grid
+        y, x = np.indices((self.r_height, self.r_width))
+        self.dx = x - self.cx
+        self.dy = y - self.cy
+
+        # Precompute base radius from center
+        self.radius_base = np.sqrt(self.dx**2 + self.dy**2)
+
+        # Compute maximum radius (used for normalization)
+        self.max_radius = np.max(self.radius_base)
+
+    def draw(self):
+        
         if not self.source_virtual:
-            # keep trying to grab the source virtual incase this is a startup race
+            # Try to fetch source_virtual (e.g. on startup race)
             self.source_virtual = self._ledfx.virtuals._virtuals.get(
                 self._config["source_virtual"]
             )
 
-        if self.source_virtual and hasattr(
-            self.source_virtual, "assembled_frame"
-        ):
+        if self.source_virtual and hasattr(self.source_virtual, "assembled_frame"):
             pixels_in = self.source_virtual.assembled_frame
 
-            width, height = self.matrix.size
-            cx = width * self.x_offset
-            cy = height * self.y_offset
+            # Use precomputed geometry
+            dx = self.dx
+            dy = self.dy
+            radius = self.radius_base.copy()
 
-            # Coordinate grid
-            y, x = np.indices((height, width))
-            dx = x - cx
-            dy = y - cy
+            # Compute rotation + spin as one angle in radians
+            rotate_and_spin = (self.spin_total + self.rotation) % 1.0
+            theta = rotate_and_spin * 2 * np.pi
 
-            # Base polar coordinates
-            radius = np.sqrt(dx**2 + dy**2)
-
+            # Angle and rotation
             angle = np.arctan2(dy, dx)
-            rotate_and_spin = self.spin_total + self.rotation
-            # Apply rotation (0–1 maps to 0–2π clockwise)
-            angle -= rotate_and_spin * 2 * np.pi
+            angle -= theta
             angle_norm = (angle + np.pi) / (2 * np.pi)  # [0, 1)
 
             # Radius modulation based on edges
             if self.edges == 1:
-                theta = rotate_and_spin * 2 * np.pi
                 ux = np.cos(theta)
                 uy = np.sin(theta)
                 radius = np.abs(dx * ux + dy * uy)
             elif self.edges == 2:
-                modulation = np.sqrt(
-                    np.cos(angle) ** 2 + 0.25 * np.sin(angle) ** 2
-                )
+                cos_angle = np.cos(angle)
+                sin_angle = np.sin(angle)
+                modulation = np.sqrt(cos_angle**2 + 0.25 * sin_angle**2)
                 radius *= modulation
             elif self.edges >= 3:
                 if not self.polygon:
                     modulation = np.cos((self.edges * angle) / 2)
                     radius *= np.abs(modulation)
                 else:
-                    # Polygonal mask based on angle
-                    # Reference: https://iquilezles.org/articles/distfunctions2d/
                     a = np.pi * 2 / self.edges
                     half_a = a / 2
                     angle_mod = (angle + half_a) % a - half_a
-
-                    # maximum radius at this angle for a regular polygon
                     polygon_radius = np.cos(np.pi / self.edges) / np.clip(
                         np.cos(angle_mod), epsilon, None
                     )
-                    # apply polygon shaping
                     radius /= polygon_radius
 
-            # Normalize radius
-            max_radius = np.max(radius)
-            norm_radius = radius / max_radius
-
-            # Combine radius and twist
+            # Normalize and apply twist
+            norm_radius = radius / self.max_radius
             twist_index = (norm_radius + self.twist * angle_norm) % 1.0
 
             # Map to strip
             strip = pixels_in.clip(0, 255).astype(np.uint8)
             N = len(strip)
-            indices = (twist_index * N).astype(np.int32)
-            indices = np.clip(indices, 0, N - 1)
+            indices = np.clip((twist_index * N).astype(np.int32), 0, N - 1)
 
             # Fill image
             rgb_array = strip[indices]
