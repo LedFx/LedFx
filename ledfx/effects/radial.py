@@ -68,6 +68,11 @@ class Radial2d(Twod):
                 description="Frequency range for the spin impulse",
                 default="Lows (beat+bass)",
             ): vol.In(list(AudioReactiveEffect.POWER_FUNCS_MAPPING.keys())),
+            vol.Optional(
+                "star",
+                description="pull polygon points to star shape",
+                default=0.0,
+            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
         }
     )
 
@@ -92,6 +97,7 @@ class Radial2d(Twod):
         self.power_func = AudioReactiveEffect.POWER_FUNCS_MAPPING[
             self._config["frequency_range"]
         ]
+        self.star = self._config.get("star")
 
     def audio_data_updated(self, data):
         self.impulse = getattr(data, self.power_func)()
@@ -164,6 +170,11 @@ class Radial2d(Twod):
                     polygon_radius = np.cos(np.pi / self.edges) / np.clip(
                         np.cos(angle_mod), epsilon, None
                     )
+
+                    # Optional starburst shaping
+                    if self.star > 0:
+                        ripple = 1 + self.star * np.cos(self.edges * angle)
+                        polygon_radius *= ripple
                     radius /= polygon_radius
 
             # Normalize and apply twist
