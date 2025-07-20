@@ -1,11 +1,11 @@
 import logging
 
-import voluptuous as vol
 import numpy as np
+import voluptuous as vol
+from PIL import Image
 
 from ledfx.effects import Effect
 from ledfx.effects.twod import Twod
-from PIL import Image
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -48,12 +48,12 @@ class Mapper2d(Twod):
                 "polygon",
                 description="Use polygonal or radial lobes",
                 default=True,
-            ): bool,  
+            ): bool,
             vol.Optional(
                 "rotation",
                 description="static rotation",
                 default=0,
-            ): vol.All(vol.Coerce(float), vol.Range(min=-0.5, max=0.5)),  
+            ): vol.All(vol.Coerce(float), vol.Range(min=-0.5, max=0.5)),
         }
     )
 
@@ -61,7 +61,6 @@ class Mapper2d(Twod):
         self.bar = 0
         self.virtual = None
         super().__init__(ledfx, config)
-
 
     def config_updated(self, config):
         super().config_updated(config)
@@ -89,12 +88,16 @@ class Mapper2d(Twod):
         self.bar = data.bar_oscillator()
 
     def draw(self):
-        
+
         if not self.source_virtual:
             # keep trying to grab the source virtual incase this is a startup race
-            self.source_virtual = self._ledfx.virtuals._virtuals.get(self._config["source_virtual"])
+            self.source_virtual = self._ledfx.virtuals._virtuals.get(
+                self._config["source_virtual"]
+            )
 
-        if self.source_virtual and hasattr(self.source_virtual, 'assembled_frame'):
+        if self.source_virtual and hasattr(
+            self.source_virtual, "assembled_frame"
+        ):
             pixels_in = self.source_virtual.assembled_frame
 
             width, height = self.matrix.size
@@ -123,7 +126,9 @@ class Mapper2d(Twod):
                 uy = np.sin(theta)
                 radius = np.abs(dx * ux + dy * uy)
             elif self.edges == 2:
-                modulation = np.sqrt(np.cos(angle)**2 + 0.25 * np.sin(angle)**2)
+                modulation = np.sqrt(
+                    np.cos(angle) ** 2 + 0.25 * np.sin(angle) ** 2
+                )
                 radius *= modulation
             elif self.edges >= 3:
                 if not self.polygon:
@@ -137,7 +142,9 @@ class Mapper2d(Twod):
                     angle_mod = (angle + half_a) % a - half_a
 
                     # maximum radius at this angle for a regular polygon
-                    polygon_radius = np.cos(np.pi / self.edges) / np.cos(angle_mod)
+                    polygon_radius = np.cos(np.pi / self.edges) / np.cos(
+                        angle_mod
+                    )
 
                     # apply polygon shaping
                     radius /= polygon_radius
@@ -157,5 +164,5 @@ class Mapper2d(Twod):
 
             # Fill image
             rgb_array = strip[indices]
-            image = Image.fromarray(rgb_array, mode='RGB')
+            image = Image.fromarray(rgb_array, mode="RGB")
             self.matrix.paste(image)
