@@ -117,14 +117,16 @@ class Radial2d(Twod):
         self.max_radius = np.max(self.radius_base)
 
     def draw(self):
-        
+
         if not self.source_virtual:
             # Try to fetch source_virtual (e.g. on startup race)
             self.source_virtual = self._ledfx.virtuals._virtuals.get(
                 self._config["source_virtual"]
             )
 
-        if self.source_virtual and hasattr(self.source_virtual, "assembled_frame"):
+        if self.source_virtual and hasattr(
+            self.source_virtual, "assembled_frame"
+        ):
             pixels_in = self.source_virtual.assembled_frame
 
             # Use precomputed geometry
