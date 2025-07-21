@@ -7,6 +7,7 @@ from PIL import Image
 from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.twod import Twod
 from ledfx.utils import nonlinear_log
+from ledfx.virtuals import virtual_id_validator
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -27,7 +28,7 @@ class Radial2d(Twod):
                 "source_virtual",
                 description="The virtual from which to source the 1d pixels",
                 default="strip1",
-            ): str,
+            ): virtual_id_validator,
             vol.Optional(
                 "edges",
                 description="Edges count of mapping",

@@ -6,6 +6,7 @@ import voluptuous as vol
 
 from ledfx.config import _default_wled_settings
 from ledfx.effects.audio import AudioInputSource
+from ledfx.virtuals import Virtuals
 from ledfx.utils import AVAILABLE_FPS, generate_title
 
 TYPES_MAP = {
@@ -144,6 +145,12 @@ def convertToJsonSchema(schema):
         and getattr(schema, "__name__", None) == "validate_gradient"
     ):
         return {"type": "color", "gradient": True}
+
+    elif (
+        callable(schema)
+        and getattr(schema, "__name__", None) == "virtual_id_validator"
+    ):
+        return {"type": "string", "enum": Virtuals.get_virtual_ids()}
 
     elif isinstance(schema, vol.All):
         val = {}
