@@ -63,7 +63,9 @@ class SchemaEndpoint(RestEndpoint):
                     device,
                 ) in self._ledfx.devices.classes().items():
                     response["devices"][device_type] = {
-                        "schema": convertToJsonSchema(device.schema(), self._ledfx),
+                        "schema": convertToJsonSchema(
+                            device.schema(), self._ledfx
+                        ),
                         "id": device_type,
                     }
 
@@ -75,7 +77,9 @@ class SchemaEndpoint(RestEndpoint):
                     effect,
                 ) in self._ledfx.effects.classes().items():
                     response["effects"][effect_type] = {
-                        "schema": convertToJsonSchema(effect.schema(), self._ledfx),
+                        "schema": convertToJsonSchema(
+                            effect.schema(), self._ledfx
+                        ),
                         "id": effect_type,
                         "name": effect.NAME,
                         "category": effect.CATEGORY,
@@ -102,7 +106,9 @@ class SchemaEndpoint(RestEndpoint):
                     integration,
                 ) in self._ledfx.integrations.classes().items():
                     response["integrations"][integration_type] = {
-                        "schema": convertToJsonSchema(integration.schema(), self._ledfx),
+                        "schema": convertToJsonSchema(
+                            integration.schema(), self._ledfx
+                        ),
                         "id": integration_type,
                         "name": integration.NAME,
                         "description": integration.DESCRIPTION,
@@ -121,12 +127,10 @@ class SchemaEndpoint(RestEndpoint):
             elif schema == "audio":
                 # Get audio schema
                 audio_input_schema = convertToJsonSchema(
-                    AudioInputSource.AUDIO_CONFIG_SCHEMA.fget(),
-                    self._ledfx
+                    AudioInputSource.AUDIO_CONFIG_SCHEMA.fget(), self._ledfx
                 )
                 audio_analysis_schema = convertToJsonSchema(
-                    AudioAnalysisSource.CONFIG_SCHEMA,
-                    self._ledfx
+                    AudioAnalysisSource.CONFIG_SCHEMA, self._ledfx
                 )
                 # drop the tempo method from the audio input schema
                 # TODO: figure out a better way to handle this in the frontend
@@ -167,8 +171,7 @@ class SchemaEndpoint(RestEndpoint):
                 response["melbank_collection"] = {
                     "schema": {
                         **convertToJsonSchema(
-                            Melbank.CONFIG_SCHEMA,
-                            self._ledfx
+                            Melbank.CONFIG_SCHEMA, self._ledfx
                         ),
                         **{
                             "permitted_keys": PERMITTED_KEYS[
@@ -181,10 +184,7 @@ class SchemaEndpoint(RestEndpoint):
                 # Get wled schema
                 response["wled_preferences"] = {
                     "schema": {
-                        **convertToJsonSchema(
-                            WLED_CONFIG_SCHEMA,
-                            self._ledfx
-                        ),
+                        **convertToJsonSchema(WLED_CONFIG_SCHEMA, self._ledfx),
                         **{
                             "permitted_keys": PERMITTED_KEYS[
                                 "wled_preferences"
