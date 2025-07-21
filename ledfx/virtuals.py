@@ -1386,7 +1386,6 @@ class Virtuals:
     def get_virtual_ids(self):
         """
         Returns a list of all virtual IDs in the registry.
-        Supports bare calls with no knowledge of ledfx or self
         """
         return list(self._virtuals.keys())
 
