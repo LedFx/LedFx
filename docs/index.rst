@@ -29,6 +29,7 @@
    :caption: Effects
 
    /effects/simple/filter
+   /effects/matrix/radial
 
 .. toctree::
    :maxdepth: 1

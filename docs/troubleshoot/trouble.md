@@ -161,13 +161,13 @@ Alternatively:
 
 Use Vumeter to check raw audio input levels
 
-See the [Dummy Vumeter How-To](../howto/dummy_vumeter.md) for more details.
+See the [Dummy Vumeter How-To](/howto/dummy_vumeter.md) for more details.
 
 ## Frequency Response
 
 Use a equalizer2d effect on a dummy matrix to investigate frequency response
 
-See the [Dummy Matrix How-To](../howto/dummy_matrix.md) for more details.
+See the [Dummy Matrix How-To](/howto/dummy_matrix.md) for more details.
 
 Search on youtube or similar for a frequency sweep audio test.
 
