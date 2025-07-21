@@ -20,7 +20,7 @@ The source virtuals pixel data is rendered into the target virtual with a sweep 
 
 This can lead to exotic and sometime quite unexpected and impactful matrix effects.
 
-The following demonstrations are based on using a dummy 1d strip of 128 pixels as the source and a 64 x 64 dummy matrix as the target. 
+The following demonstrations are based on using a dummy 1d strip of 128 pixels as the source and a 64 x 64 dummy matrix as the target.
 
 For help in setting up dummy devices
 
