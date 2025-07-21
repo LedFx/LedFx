@@ -73,7 +73,7 @@ class Radial2d(Twod):
                 "star",
                 description="pull polygon points to star shape",
                 default=0.0,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
+            ): vol.All(vol.Coerce(float), vol.Range(min=-1.0, max=1.0)),
         }
     )
 
@@ -173,7 +173,7 @@ class Radial2d(Twod):
                     )
 
                     # Optional starburst shaping
-                    if self.star > 0:
+                    if self.star != 0:
                         ripple = 1 + self.star * np.cos(self.edges * angle)
                         polygon_radius *= ripple
                     radius /= polygon_radius
