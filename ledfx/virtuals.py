@@ -1386,7 +1386,7 @@ class Virtuals:
 
     def get(self, *args):
         return self._virtuals.get(*args)
-    
+
     @classmethod
     def get_virtual_ids(cls):
         """
@@ -1449,9 +1449,9 @@ class Virtuals:
 
 
 def virtual_id_validator(virtual_id: str) -> str:
-    """ 
+    """
     Support an empty validator function for static voluptuous validation.
-    Allows any string value in the schema, as substantiated before virtuals 
+    Allows any string value in the schema, as substantiated before virtuals
     are created
 
     Args:
