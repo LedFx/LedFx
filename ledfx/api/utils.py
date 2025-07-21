@@ -83,7 +83,7 @@ def createRegistrySchema(registry):
     }
 
 
-def convertToJsonSchema(schema):
+def convertToJsonSchema(schema, ledfx):
     """
     Converts a voluptuous schema to a JSON schema compatible
     with the schema REST API. This should be kept in line with
@@ -104,7 +104,7 @@ def convertToJsonSchema(schema):
             else:
                 pkey = key
 
-            pval = convertToJsonSchema(value)
+            pval = convertToJsonSchema(value, ledfx)
             pval["title"] = generate_title(pkey)
             if description is not None:
                 pval["description"] = description
@@ -150,12 +150,12 @@ def convertToJsonSchema(schema):
         callable(schema)
         and getattr(schema, "__name__", None) == "virtual_id_validator"
     ):
-        return {"type": "string", "enum": Virtuals.get_virtual_ids()}
+        return {"type": "string", "enum": ledfx.virtuals.get_virtual_ids()}
 
     elif isinstance(schema, vol.All):
         val = {}
         for validator in schema.validators:
-            val.update(convertToJsonSchema(validator))
+            val.update(convertToJsonSchema(validator, ledfx))
         return val
 
     elif isinstance(schema, vol.Length):
@@ -197,7 +197,7 @@ def convertToJsonSchema(schema):
         val = {
             "type": "list",
             "validators": list(
-                convertToJsonSchema(validator) for validator in schema
+                convertToJsonSchema(validator, ledfx) for validator in schema
             ),
         }
         return val

@@ -1252,8 +1252,6 @@ class Virtuals:
 
     PACKAGE_NAME = "ledfx.virtuals"
     _paused = False
-    # there can be only one!
-    _instance = None
 
     def __init__(self, ledfx):
         # super().__init__(ledfx, Virtual, self.PACKAGE_NAME)
@@ -1265,8 +1263,6 @@ class Virtuals:
         self._ledfx = ledfx
         self._ledfx.events.add_listener(cleanup_effects, Event.LEDFX_SHUTDOWN)
         self._virtuals = {}
-        # allow class level calls to recover details of the virtuals
-        Virtuals._instance = self
 
     def create_from_config(self, config, pause_all=False):
         for virtual_cfg in config:
@@ -1387,13 +1383,12 @@ class Virtuals:
     def get(self, *args):
         return self._virtuals.get(*args)
 
-    @classmethod
-    def get_virtual_ids(cls):
+    def get_virtual_ids(self):
         """
         Returns a list of all virtual IDs in the registry.
         Supports bare calls with no knowledge of ledfx or self
         """
-        return list(cls._instance._virtuals.keys())
+        return list(self._virtuals.keys())
 
     def check_and_deactivate_devices(self):
         """
