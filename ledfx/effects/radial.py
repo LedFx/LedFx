@@ -19,7 +19,7 @@ class Radial2d(Twod):
     NAME = "Radial"
     CATEGORY = "Matrix"
     # add keys you want hidden or in advanced here
-    HIDDEN_KEYS = Twod.HIDDEN_KEYS + ["test"]
+    HIDDEN_KEYS = Twod.HIDDEN_KEYS + ["test", "background_color"]
     ADVANCED_KEYS = Twod.ADVANCED_KEYS + []
 
     CONFIG_SCHEMA = vol.Schema(

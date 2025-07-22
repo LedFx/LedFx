@@ -32,7 +32,45 @@ All sources are stetched to fit, so beyond performance, there is no need to matc
 
 As matrix1 consists of 64x64 = 4096 pixels, all visualisation examples are with settings / Pixel Graphs / Frontend Pixels set to 4096.
 
-
 ## Settings
 
-TODO
+There are several controls for the Radial effect, but once understood, their application is straightforward.
+
+![Radial settings](/_static/effects/matrix/radial/radial2.png)
+
+It is important to understand the basic principle of the Radial Effect.
+
+Via the setting of *Source Virtual* the current 1d pixel frame from that source virtual is rendered into the matrix space and then rotated around the center in a sweep to fill the matrix.
+
+In the default configuration this should produce a well formed circular effect.
+
+Source Virtual example
+
+![source virtual](/_static/effects/matrix/radial/radial3.png)
+
+left maps to the matrix center, and right to the outside edge. Then the strip is swept throgh a full 360 degrees.
+
+![Render details](/_static/effects/matrix/radial/radial4.png)
+
+This gives a clean circular pattern that will update live as the Source Virtual renders its own effect.
+
+![Radial circle](/_static/effects/matrix/radial/radial5.png)
+
+*Rotate* and *Brightness* are standard matrix controls for 90 degree step rotation and overall effect brightness.
+
+*edges* at the default 0 implies a circular mapping. 
+
+Moving edges to 1 will trigger a linear mapping from the center out, leading to a mirrored pattern.
+
+![Radial Linear](/_static/effects/matrix/radial/radial6.png)
+
+Edges set to 2 will trigger an oval.
+
+![Radial Oval](/_static/effects/matrix/radial/radial7.png)
+
+Things become more predictable as edge arrives at 3 and all the way up to 8
+
+
+
+
+
