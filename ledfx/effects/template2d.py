@@ -33,11 +33,11 @@ class Template2d(Twod):
     )
 
     def __init__(self, ledfx, config):
-        # set any default values first, as config_updated will be called 
+        # set any default values first, as config_updated will be called
         # from the super().__init__() which may depend on them
         self.bar = 0
         super().__init__(ledfx, config)
-        
+
     def config_updated(self, config):
         super().config_updated(config)
         # copy over your configs here into variables

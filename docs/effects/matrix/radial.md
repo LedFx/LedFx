@@ -58,7 +58,7 @@ This gives a clean circular pattern that will update live as the Source Virtual 
 
 *Rotate* and *Brightness* are standard matrix controls for 90 degree step rotation and overall effect brightness.
 
-*edges* at the default 0 implies a circular mapping. 
+*edges* at the default 0 implies a circular mapping.
 
 Moving edges to 1 will trigger a linear mapping from the center out, leading to a mirrored pattern.
 
