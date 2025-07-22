@@ -63,9 +63,7 @@ class SchemaEndpoint(RestEndpoint):
                     device,
                 ) in self._ledfx.devices.classes().items():
                     response["devices"][device_type] = {
-                        "schema": convertToJsonSchema(
-                            device.schema(), self._ledfx
-                        ),
+                        "schema": convertToJsonSchema(device.schema()),
                         "id": device_type,
                     }
 
@@ -77,9 +75,7 @@ class SchemaEndpoint(RestEndpoint):
                     effect,
                 ) in self._ledfx.effects.classes().items():
                     response["effects"][effect_type] = {
-                        "schema": convertToJsonSchema(
-                            effect.schema(), self._ledfx
-                        ),
+                        "schema": convertToJsonSchema(effect.schema()),
                         "id": effect_type,
                         "name": effect.NAME,
                         "category": effect.CATEGORY,
@@ -106,9 +102,7 @@ class SchemaEndpoint(RestEndpoint):
                     integration,
                 ) in self._ledfx.integrations.classes().items():
                     response["integrations"][integration_type] = {
-                        "schema": convertToJsonSchema(
-                            integration.schema(), self._ledfx
-                        ),
+                        "schema": convertToJsonSchema(integration.schema()),
                         "id": integration_type,
                         "name": integration.NAME,
                         "description": integration.DESCRIPTION,
@@ -118,20 +112,13 @@ class SchemaEndpoint(RestEndpoint):
             elif schema == "virtuals":
                 # Get virtuals schema
                 response["virtuals"] = {
-                    "schema": convertToJsonSchema(
-                        self._ledfx.virtuals.schema(),
-                        self._ledfx,
-                    ),
+                    "schema": convertToJsonSchema(self._ledfx.virtuals.schema()),
                 }
 
             elif schema == "audio":
                 # Get audio schema
-                audio_input_schema = convertToJsonSchema(
-                    AudioInputSource.AUDIO_CONFIG_SCHEMA.fget(), self._ledfx
-                )
-                audio_analysis_schema = convertToJsonSchema(
-                    AudioAnalysisSource.CONFIG_SCHEMA, self._ledfx
-                )
+                audio_input_schema = convertToJsonSchema(AudioInputSource.AUDIO_CONFIG_SCHEMA.fget())
+                audio_analysis_schema = convertToJsonSchema(AudioAnalysisSource.CONFIG_SCHEMA)
                 # drop the tempo method from the audio input schema
                 # TODO: figure out a better way to handle this in the frontend
                 # permitted_keys isn't working
@@ -161,7 +148,6 @@ class SchemaEndpoint(RestEndpoint):
                     "schema": {
                         **convertToJsonSchema(
                             Melbanks.CONFIG_SCHEMA,
-                            self._ledfx,
                         ),
                         **{"permitted_keys": PERMITTED_KEYS["melbanks"]},
                     },
@@ -170,9 +156,7 @@ class SchemaEndpoint(RestEndpoint):
                 # Get melbank collection schema
                 response["melbank_collection"] = {
                     "schema": {
-                        **convertToJsonSchema(
-                            Melbank.CONFIG_SCHEMA, self._ledfx
-                        ),
+                        **convertToJsonSchema(Melbank.CONFIG_SCHEMA),
                         **{
                             "permitted_keys": PERMITTED_KEYS[
                                 "melbank_collection"
@@ -184,7 +168,7 @@ class SchemaEndpoint(RestEndpoint):
                 # Get wled schema
                 response["wled_preferences"] = {
                     "schema": {
-                        **convertToJsonSchema(WLED_CONFIG_SCHEMA, self._ledfx),
+                        **convertToJsonSchema(WLED_CONFIG_SCHEMA),
                         **{
                             "permitted_keys": PERMITTED_KEYS[
                                 "wled_preferences"
@@ -197,7 +181,7 @@ class SchemaEndpoint(RestEndpoint):
                 # Get core config schema
                 response["core"] = {
                     "schema": {
-                        **convertToJsonSchema(CORE_CONFIG_SCHEMA, self._ledfx),
+                        **convertToJsonSchema(CORE_CONFIG_SCHEMA),
                         **{"permitted_keys": PERMITTED_KEYS["core"]},
                     },
                 }

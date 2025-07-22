@@ -7,6 +7,7 @@ import voluptuous as vol
 from ledfx.config import _default_wled_settings
 from ledfx.effects.audio import AudioInputSource
 from ledfx.utils import AVAILABLE_FPS, generate_title
+from ledfx.virtuals import Virtuals
 
 TYPES_MAP = {
     int: "integer",
@@ -82,7 +83,7 @@ def createRegistrySchema(registry):
     }
 
 
-def convertToJsonSchema(schema, ledfx):
+def convertToJsonSchema(schema):
     """
     Converts a voluptuous schema to a JSON schema compatible
     with the schema REST API. This should be kept in line with
@@ -103,7 +104,7 @@ def convertToJsonSchema(schema, ledfx):
             else:
                 pkey = key
 
-            pval = convertToJsonSchema(value, ledfx)
+            pval = convertToJsonSchema(value)
             pval["title"] = generate_title(pkey)
             if description is not None:
                 pval["description"] = description
@@ -149,12 +150,12 @@ def convertToJsonSchema(schema, ledfx):
         callable(schema)
         and getattr(schema, "__name__", None) == "virtual_id_validator"
     ):
-        return {"type": "string", "enum": ledfx.virtuals.get_virtual_ids()}
+        return {"type": "string", "enum": Virtuals.get_virtual_ids()}
 
     elif isinstance(schema, vol.All):
         val = {}
         for validator in schema.validators:
-            val.update(convertToJsonSchema(validator, ledfx))
+            val.update(convertToJsonSchema(validator))
         return val
 
     elif isinstance(schema, vol.Length):
@@ -196,7 +197,7 @@ def convertToJsonSchema(schema, ledfx):
         val = {
             "type": "list",
             "validators": list(
-                convertToJsonSchema(validator, ledfx) for validator in schema
+                convertToJsonSchema(validator) for validator in schema
             ),
         }
         return val
