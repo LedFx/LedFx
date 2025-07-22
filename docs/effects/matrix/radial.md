@@ -1,7 +1,5 @@
 # Radial
 
-TODO: Add better youtube video or similar
-
 This is a simple example using strobe and power effects as inputs to the Radial effect.
 
 <video width="426" height="720" controls loop>
@@ -22,11 +20,11 @@ This can lead to exotic and sometime quite unexpected and impactful matrix effec
 
 The following demonstrations are based on using a dummy 1d strip of 128 pixels as the source and a 64 x 64 dummy matrix as the target.
 
-For help in setting up dummy devices
-
+```{Note}
 See [Dummy Vumeter How-To](/howto/dummy_vumeter.md) for a 1d strip as the source. We will name our example strip1.
 
 See [Dummy Matrix How-To](/howto/dummy_matrix.md) for a 2d matrix as the target. We will name our example matrix1.
+```
 
 All sources are stetched to fit, so beyond performance, there is no need to match source virtual to the target.
 
@@ -44,11 +42,17 @@ Via the setting of *Source Virtual* the current 1d pixel frame from that source 
 
 In the default configuration this should produce a well formed circular effect.
 
-Source Virtual example
+### Source Virtual example
+
+A static effect, in this case gradient is being used to keep images consistant in the following examples.
+
+Of course an audio reactive effect for the **SOURCE VIRTUAL** is where things really come alive!
 
 ![source virtual](/_static/effects/matrix/radial/radial3.png)
 
-left maps to the matrix center, and right to the outside edge. Then the strip is swept throgh a full 360 degrees.
+### Mapping into the Radial Effect
+
+Left maps to the matrix center, and right to the outside edge. Then the strip is swept throgh a full 360 degrees.
 
 ![Render details](/_static/effects/matrix/radial/radial4.png)
 
@@ -58,19 +62,96 @@ This gives a clean circular pattern that will update live as the Source Virtual 
 
 *Rotate* and *Brightness* are standard matrix controls for 90 degree step rotation and overall effect brightness.
 
-*edges* at the default 0 implies a circular mapping.
+### Edges
 
-Moving edges to 1 will trigger a linear mapping from the center out, leading to a mirrored pattern.
+**EDGES** at the default 0 implies a circular mapping.
+
+Moving **EDGES** to 1 will trigger a linear mapping from the center out, leading to a mirrored pattern.
 
 ![Radial Linear](/_static/effects/matrix/radial/radial6.png)
 
-Edges set to 2 will trigger an oval.
+**EDGES** set to 2 will trigger an oval.
 
 ![Radial Oval](/_static/effects/matrix/radial/radial7.png)
 
-Things become more predictable as edge arrives at 3 and all the way up to 8
+**EDGES** set to 3 gives us the first true polygon effect
 
+![Radial Triangle](/_static/effects/matrix/radial/radial8.png)
 
+Things become more predictable as **EDGES** moves from 3 all the way up to 8
 
+![Radial Octogon](/_static/effects/matrix/radial/radial9.png)
 
+### Polygon Switch
 
+The **POLYGON** switch control allows the inversion of the edge mapping for values 3 and above. It has no effect for values of 0 to 2.
+
+Using the example of a 3 edge triange, turning the **POLYGON** switch to False we get
+
+![Radial Inverted Triangle](/_static/effects/matrix/radial/radial10.png)
+
+and here is 5 edge, to set us up for the next setting
+
+![Radial Inverted Pentagon](/_static/effects/matrix/radial/radial11.png)
+
+### Star Slider
+
+The **STAR** slider allows the polygon edges to be pushed or pulled around the center point. Note it has no effect if the **POLYGON** switch is not set to True.
+
+First lets turn **POLYGON** back to True so we get a well formed pentagon.
+
+![Radial Pentagon](/_static/effects/matrix/radial/radial12.png)
+
+Move the **STAR** slider to -0.11, as negative values give a sharper point, and we achieve a well formed pentangle.
+
+![Radial pentangle](/_static/effects/matrix/radial/radial13.png)
+
+Moving the slider further we can deform the polygon to the extreme, in this case -0.69
+
+![Radial Pentaleaf](/_static/effects/matrix/radial/radial14.png)
+
+Positive **STAR** values give a more organic effect, in this example at 0.28
+
+![Radial Pentaganic](/_static/effects/matrix/radial/radial15.png)
+
+### Rotation
+
+The **ROTATION** slider allows the effect to smoothly rotated to any position if the **SPIN** slider is set to zero. So triangles for example can be precisely pointed down.
+
+![Radial Triangle Down](/_static/effects/matrix/radial/radial16.png)
+
+### Twist
+
+**TWIST** is used to impose a spiral transform onto the effect.
+
+Partial values such as 0.5 will start applying the spiral, but start and end will not match generating an artifact. In these examples we will twist with **EDGES** set to 0 for a circlular effect.
+
+![Radial Circle Twist a little](/_static/effects/matrix/radial/radial17.png)
+
+Whole numbers will give a well formed spiral effect with the number of spokes matching the value, so in this example **TWIST** is set to 3
+
+![Radial Circle Twist a little](/_static/effects/matrix/radial/radial18.png)
+
+### Spin
+
+The **SPIN** slider can be used to spin the effect in a clockwise or anticlockwise direction, using the selected **Frequency Range** as the audio impulse and the **SPIN** magnitude to influence the level of impulse injected into the spin filter.
+
+<picture>
+   <source srcset="../../_static/effects/matrix/radial/radial19.gif" type="image/webp">
+   <img src="../../_static/effects/matrix/radial/radial19.gif" alt="spiny thing">
+</picture>
+<br><br>
+
+### X and Y offset
+
+Finally the **X OFFSET** and **Y OFFSET** sliders can be used to place the center of the effect anywhere in the matrix. In this case, we will push the center right into the top left corner and have the 3 pointed inverted polygon sweeping past.
+
+<picture>
+   <source srcset="../../_static/effects/matrix/radial/radial20.gif" type="image/webp">
+   <img src="../../_static/effects/matrix/radial/radial20.gif" alt="spiny thing in a corner">
+</picture>
+<br><br>
+
+Now go back to the video at the top of this page and combined with audio reactive effects such as strobe you can understand how these effects are achieved.
+
+There are **MANY** more suprising things that can be achieved, take some time and explore!
