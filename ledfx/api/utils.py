@@ -150,7 +150,11 @@ def convertToJsonSchema(schema):
         callable(schema)
         and getattr(schema, "__name__", None) == "virtual_id_validator"
     ):
-        return {"type": "string", "enum": Virtuals.get_virtual_ids(), "names": Virtuals.get_virtual_names()}
+        return {
+            "type": "string",
+            "enum": Virtuals.get_virtual_ids(),
+            "names": Virtuals.get_virtual_names(),
+        }
 
     elif isinstance(schema, vol.All):
         val = {}
