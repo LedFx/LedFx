@@ -1259,9 +1259,9 @@ class Virtuals:
     def __new__(cls, *args, **kwargs):
         """Override the __new__ method to enforce a singleton pattern"""
         if cls._instance is None:
-            cls._instance = super(Virtuals, cls).__new__(cls)
+            cls._instance = super().__new__(cls)
         return cls._instance
-    
+
     def __init__(self, ledfx):
         if not hasattr(self, "_initialized"):  # Ensure __init__ runs only once
             self._initialized = True
@@ -1273,7 +1273,9 @@ class Virtuals:
                 self.fire_all_fallbacks()
                 self.clear_all_effects()
 
-            self._ledfx.events.add_listener(cleanup_effects, Event.LEDFX_SHUTDOWN)
+            self._ledfx.events.add_listener(
+                cleanup_effects, Event.LEDFX_SHUTDOWN
+            )
 
     def create_from_config(self, config, pause_all=False):
         for virtual_cfg in config:

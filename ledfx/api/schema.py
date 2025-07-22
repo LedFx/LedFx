@@ -112,13 +112,19 @@ class SchemaEndpoint(RestEndpoint):
             elif schema == "virtuals":
                 # Get virtuals schema
                 response["virtuals"] = {
-                    "schema": convertToJsonSchema(self._ledfx.virtuals.schema()),
+                    "schema": convertToJsonSchema(
+                        self._ledfx.virtuals.schema()
+                    ),
                 }
 
             elif schema == "audio":
                 # Get audio schema
-                audio_input_schema = convertToJsonSchema(AudioInputSource.AUDIO_CONFIG_SCHEMA.fget())
-                audio_analysis_schema = convertToJsonSchema(AudioAnalysisSource.CONFIG_SCHEMA)
+                audio_input_schema = convertToJsonSchema(
+                    AudioInputSource.AUDIO_CONFIG_SCHEMA.fget()
+                )
+                audio_analysis_schema = convertToJsonSchema(
+                    AudioAnalysisSource.CONFIG_SCHEMA
+                )
                 # drop the tempo method from the audio input schema
                 # TODO: figure out a better way to handle this in the frontend
                 # permitted_keys isn't working
