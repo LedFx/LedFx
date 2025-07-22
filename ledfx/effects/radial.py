@@ -27,7 +27,7 @@ class Radial2d(Twod):
             vol.Optional(
                 "source_virtual",
                 description="The virtual from which to source the 1d pixels",
-                default="strip1",
+                default="unknown",
             ): virtual_id_validator,
             vol.Optional(
                 "edges",

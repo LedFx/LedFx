@@ -1400,6 +1400,13 @@ class Virtuals:
         Returns a list of all virtual IDs in the registry.
         """
         return list(cls._instance._virtuals.keys())
+    
+    @classmethod
+    def get_virtual_names(cls):
+        """
+        Returns a list of all virtual names in the registry.
+        """
+        return [virtual.name for virtual in cls._instance._virtuals.values()]   
 
     def check_and_deactivate_devices(self):
         """
