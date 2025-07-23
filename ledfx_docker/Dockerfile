@@ -8,7 +8,7 @@ RUN --mount=type=cache,id=apt-cache-${TARGETARCH},target=/var/cache/apt,sharing=
     # && rm -rf /var/lib/apt/lists/*
 COPY uv.lock pyproject.toml /app/
 RUN --mount=type=cache,id=uv-cache-${TARGETARCH},target=/root/.cache/uv \
-    uv sync --no-install-project --no-editable 
+    uv sync --no-install-project --no-editable
 COPY . /app
 RUN --mount=type=cache,id=uv-cache-${TARGETARCH},target=/root/.cache/uv \
     uv sync --no-editable --extra hue
