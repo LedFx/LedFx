@@ -6,7 +6,8 @@
 
    /installing
    /launch
-   /developer
+   /developer/developer
+   /developer/architecture
    /README
 
 .. toctree::

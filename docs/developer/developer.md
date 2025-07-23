@@ -266,7 +266,7 @@ $ pnpm build
 
 ## Document Development
 
-See the [Documents Development](README.md) for more information.
+See the [Documents Development](/README.md) for more information.
 
 ## How it works
 
