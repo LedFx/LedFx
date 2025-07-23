@@ -191,7 +191,7 @@ jobs:
       - name: Lowercase repository owner
         id: repo
         run: |
-          echo "GHCR_IMAGE=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/${{ env.IMAGE_NAME }}" >> $GITHUB_ENV        
+          echo "GHCR_IMAGE=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/${{ env.IMAGE_NAME }}" >> $GITHUB_ENV
       - name: Build and run for ${{ env.ARCH }}
         uses: docker/build-push-action@v6
         with:
@@ -235,7 +235,7 @@ jobs:
       - name: Lowercase repository owner
         id: repo
         run: |
-          echo "GHCR_IMAGE=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/${{ env.IMAGE_NAME }}" >> $GITHUB_ENV        
+          echo "GHCR_IMAGE=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/${{ env.IMAGE_NAME }}" >> $GITHUB_ENV
       - name: Build and run for ${{ env.ARCH }}
         uses: docker/build-push-action@v6
         with:
