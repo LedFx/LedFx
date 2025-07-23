@@ -1,6 +1,6 @@
 # Radial
 
-This is a simple example using strobe and power effects as inputs to the Radial effect.
+This is a simple example of the Radial effect using strobe and later, power effects as inputs.
 
 <video width="426" height="720" controls loop>
    <source src="../../_static/effects/matrix/radial/radial1.mp4" type="video/mp4">
@@ -38,15 +38,15 @@ There are several controls for the Radial effect, but once understood, their app
 
 It is important to understand the basic principle of the Radial Effect.
 
-Via the setting of *Source Virtual* the current 1d pixel frame from that source virtual is rendered into the matrix space and then rotated around the center in a sweep to fill the matrix.
+Via the setting of **SOURCE VIRTUAL** the current 1d pixel frame from that source virtual is rendered into the matrix space and then rotated about the center in a sweep to fill the matrix.
 
 In the default configuration this should produce a well formed circular effect.
 
 ### Source Virtual example
 
-A static effect, in this case gradient, is being used to keep images consistent in the following examples.
+A 1d strip static effect, in this case **gradient**, is being used to keep images consistent in the following examples.
 
-Of course an audio reactive effect for the **SOURCE VIRTUAL** is where things really come alive!
+An audio reactive effect for the **SOURCE VIRTUAL** is where things really come alive!
 
 ![source virtual](/_static/effects/matrix/radial/radial3.png)
 
@@ -60,13 +60,13 @@ This gives a clean circular pattern that will update live as the Source Virtual 
 
 ![Radial circle](/_static/effects/matrix/radial/radial5.png)
 
-*Rotate* and *Brightness* are standard matrix controls for 90 degree step rotation and overall effect brightness.
+**ROTATE** and **BRIGHTNESS** are standard matrix controls for 90 degree step rotation and overall effect brightness, and not specific to Radial.
 
 ### Edges
 
 **EDGES** at the default 0 implies a circular mapping.
 
-Moving **EDGES** to 1 will trigger a linear mapping from the center out, leading to a mirrored pattern.
+Moving **EDGES** to 1 will trigger a linear mapping from the center out, leading to a mirrored vertical pattern.
 
 ![Radial Linear](/_static/effects/matrix/radial/radial6.png)
 
@@ -84,25 +84,25 @@ Things become more predictable as **EDGES** moves from 3 all the way up to 8
 
 ### Polygon Switch
 
-The **POLYGON** switch control allows the inversion of the edge mapping for values 3 and above. It has no effect for values of 0 to 2.
+The **POLYGON** switch allows the inversion of the edge mapping for values 3 and above. It has no effect for values of 0 to 2.
 
 Using the example of a 3 edge triangle, turning the **POLYGON** switch to False we get
 
 ![Radial Inverted Triangle](/_static/effects/matrix/radial/radial10.png)
 
-and here is 5 edge, to set us up for the next setting
+Here is 5 edge, to set us up for the **STAR** slider example
 
 ![Radial Inverted Pentagon](/_static/effects/matrix/radial/radial11.png)
 
 ### Star Slider
 
-The **STAR** slider allows the polygon edges to be pushed or pulled around the center point. Note it has no effect if the **POLYGON** switch is not set to True.
+The **STAR** slider allows the polygon edges to be pushed or pulled around the center point. Note it has no effect if the **POLYGON** switch is False.
 
 First lets turn **POLYGON** back to True so we get a well formed pentagon.
 
 ![Radial Pentagon](/_static/effects/matrix/radial/radial12.png)
 
-Move the **STAR** slider to -0.11, as negative values give a sharper point, and we achieve a well formed pentangle.
+Move the **STAR** slider to -0.11, as negative values give sharper points, and we achieve a well formed pentangle.
 
 ![Radial pentangle](/_static/effects/matrix/radial/radial13.png)
 
@@ -116,7 +116,7 @@ Positive **STAR** values give a more organic effect, in this example at 0.28
 
 ### Rotation
 
-The **ROTATION** slider allows the effect to smoothly rotated to any position if the **SPIN** slider is set to zero. So triangles for example can be precisely pointed down.
+The **ROTATION** slider allows the effect to be smoothly rotated to any position if the **SPIN** slider is set to zero, so it is otherwise static. So triangles for example can be precisely pointed down.
 
 ![Radial Triangle Down](/_static/effects/matrix/radial/radial16.png)
 
@@ -124,7 +124,9 @@ The **ROTATION** slider allows the effect to smoothly rotated to any position if
 
 **TWIST** is used to impose a spiral transform onto the effect.
 
-Partial values such as 0.5 will start applying the spiral, but start and end will not match generating an artifact. In these examples we will twist with **EDGES** set to 0 for a circular effect.
+Partial values such as 0.5 will apply the spiral, but start and end will not match, generating an artifact.
+
+In these examples we will twist with **EDGES** set to 0 for a circular effect.
 
 ![Radial Circle Twist a little](/_static/effects/matrix/radial/radial17.png)
 
@@ -134,7 +136,7 @@ Whole numbers will give a well formed spiral effect with the number of spokes ma
 
 ### Spin
 
-The **SPIN** slider can be used to spin the effect in a clockwise or anticlockwise direction, using the selected **Frequency Range** as the audio impulse and the **SPIN** magnitude to influence the level of impulse injected into the spin filter.
+The **SPIN** slider can be used to spin the effect in a clockwise or anti-clockwise direction, using the selected **FREQUENCY RANGE** as the audio impulse and the **SPIN** slider magnitude to influence the level of impulse injected into the spin filter.
 
 <picture>
    <source srcset="../../_static/effects/matrix/radial/radial19.gif" type="image/webp">
@@ -144,7 +146,7 @@ The **SPIN** slider can be used to spin the effect in a clockwise or anticlockwi
 
 ### X and Y offset
 
-Finally the **X OFFSET** and **Y OFFSET** sliders can be used to place the center of the effect anywhere in the matrix. In this case, we will push the center right into the top left corner and have the 3 pointed inverted polygon sweeping past.
+Finally the **X OFFSET** and **Y OFFSET** sliders can be used to place the center of the effect anywhere in the matrix. In this case, we will push the center into the top left corner and have the 3 pointed inverted polygon sweeping past.
 
 <picture>
    <source srcset="../../_static/effects/matrix/radial/radial20.gif" type="image/webp">
@@ -152,6 +154,6 @@ Finally the **X OFFSET** and **Y OFFSET** sliders can be used to place the cente
 </picture>
 <br><br>
 
-Now go back to the video at the top of this page and combined with audio reactive effects such as strobe you can understand how these effects are achieved.
+Now go back to the video at the top of this page and combined with audio reactive effects you can understand how these are achieved.
 
 There are **MANY** more surprising things that can be achieved, take some time and explore!
