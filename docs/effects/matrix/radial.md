@@ -124,7 +124,7 @@ The **ROTATION** slider allows the effect to be smoothly rotated to any position
 
 **TWIST** is used to impose a spiral transform onto the effect.
 
-Partial values such as 0.5 will apply the spiral, but start and end will not match, generating an artifact. 
+Partial values such as 0.5 will apply the spiral, but start and end will not match, generating an artifact.
 
 In these examples we will twist with **EDGES** set to 0 for a circlular effect.
 
