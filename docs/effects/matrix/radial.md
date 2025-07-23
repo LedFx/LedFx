@@ -1,6 +1,6 @@
 # Radial
 
-This is a simple example of the Radial effect using strobe and later, power effects as inputs.
+This is a simple example of the Radial effect using strobe and later, power effects as inputs. 
 
 <video width="426" height="720" controls loop>
    <source src="../../_static/effects/matrix/radial/radial1.mp4" type="video/mp4">
