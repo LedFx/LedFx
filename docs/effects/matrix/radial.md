@@ -14,9 +14,9 @@ Radial is an effect that allows you to map the rendered output of an existing so
 
 It is intended that the target virtual for the Radial effect is a matrix.
 
-The source virtuals pixel data is rendered into the target virtual with a sweep like mapping.
+The source virtual's pixel data is rendered into the target virtual with a sweep-like mapping.
 
-This can lead to exotic and sometime quite unexpected and impactful matrix effects.
+This can lead to exotic and sometimes quite unexpected and impactful matrix effects.
 
 The following demonstrations are based on using a dummy 1d strip of 128 pixels as the source and a 64 x 64 dummy matrix as the target.
 
@@ -26,7 +26,7 @@ See [Dummy Vumeter How-To](/howto/dummy_vumeter.md) for a 1d strip as the source
 See [Dummy Matrix How-To](/howto/dummy_matrix.md) for a 2d matrix as the target. We will name our example matrix1.
 ```
 
-All sources are stetched to fit, so beyond performance, there is no need to match source virtual to the target.
+All sources are stretched to fit, so beyond performance, there is no need to match source virtual to the target.
 
 As matrix1 consists of 64x64 = 4096 pixels, all visualisation examples are with settings / Pixel Graphs / Frontend Pixels set to 4096.
 
@@ -44,7 +44,7 @@ In the default configuration this should produce a well formed circular effect.
 
 ### Source Virtual example
 
-A static effect, in this case gradient is being used to keep images consistant in the following examples.
+A static effect, in this case gradient, is being used to keep images consistent in the following examples.
 
 Of course an audio reactive effect for the **SOURCE VIRTUAL** is where things really come alive!
 
@@ -52,7 +52,7 @@ Of course an audio reactive effect for the **SOURCE VIRTUAL** is where things re
 
 ### Mapping into the Radial Effect
 
-Left maps to the matrix center, and right to the outside edge. Then the strip is swept throgh a full 360 degrees.
+Left maps to the matrix center, and right to the outside edge. Then the strip is swept through a full 360 degrees.
 
 ![Render details](/_static/effects/matrix/radial/radial4.png)
 
@@ -80,13 +80,13 @@ Moving **EDGES** to 1 will trigger a linear mapping from the center out, leading
 
 Things become more predictable as **EDGES** moves from 3 all the way up to 8
 
-![Radial Octogon](/_static/effects/matrix/radial/radial9.png)
+![Radial Octagon](/_static/effects/matrix/radial/radial9.png)
 
 ### Polygon Switch
 
 The **POLYGON** switch control allows the inversion of the edge mapping for values 3 and above. It has no effect for values of 0 to 2.
 
-Using the example of a 3 edge triange, turning the **POLYGON** switch to False we get
+Using the example of a 3 edge triangle, turning the **POLYGON** switch to False we get
 
 ![Radial Inverted Triangle](/_static/effects/matrix/radial/radial10.png)
 
@@ -112,7 +112,7 @@ Moving the slider further we can deform the polygon to the extreme, in this case
 
 Positive **STAR** values give a more organic effect, in this example at 0.28
 
-![Radial Pentaganic](/_static/effects/matrix/radial/radial15.png)
+![Radial Pentagonic](/_static/effects/matrix/radial/radial15.png)
 
 ### Rotation
 
@@ -124,7 +124,7 @@ The **ROTATION** slider allows the effect to smoothly rotated to any position if
 
 **TWIST** is used to impose a spiral transform onto the effect.
 
-Partial values such as 0.5 will start applying the spiral, but start and end will not match generating an artifact. In these examples we will twist with **EDGES** set to 0 for a circlular effect.
+Partial values such as 0.5 will start applying the spiral, but start and end will not match generating an artifact. In these examples we will twist with **EDGES** set to 0 for a circular effect.
 
 ![Radial Circle Twist a little](/_static/effects/matrix/radial/radial17.png)
 
@@ -154,4 +154,4 @@ Finally the **X OFFSET** and **Y OFFSET** sliders can be used to place the cente
 
 Now go back to the video at the top of this page and combined with audio reactive effects such as strobe you can understand how these effects are achieved.
 
-There are **MANY** more suprising things that can be achieved, take some time and explore!
+There are **MANY** more surprising things that can be achieved, take some time and explore!
