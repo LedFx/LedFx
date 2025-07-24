@@ -6,7 +6,8 @@
 
    /installing
    /launch
-   /developer
+   /developer/developer
+   /developer/architecture
    /README
 
 .. toctree::
@@ -29,6 +30,7 @@
    :caption: Effects
 
    /effects/simple/filter
+   /effects/matrix/radial
 
 .. toctree::
    :maxdepth: 1
