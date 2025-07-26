@@ -171,65 +171,128 @@ jobs:
           name: LedFx-${{ steps.ledfx-version.outputs.ledfx-version }}-osx-arm64
           path: ${{ github.workspace }}/dist/*
 
-  docker:
-    name: Build, Test, and Publish LedFx Docker image
+  docker-build-amd64:
+    name: Build amd64 edge and cache images
     runs-on: ubuntu-latest
     env:
       IMAGE_NAME: ledfx
+      ARCH: amd64
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
       - name: Set up QEMU (for arm64 emulation)
         uses: docker/setup-qemu-action@v3
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-
       - name: Lowercase repository owner
         id: repo
         run: |
           echo "GHCR_IMAGE=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/${{ env.IMAGE_NAME }}" >> $GITHUB_ENV
-
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and push multiarch image as edge
+      - name: Build and push image ${{ env.GHCR_IMAGE }}:edge-${{ env.ARCH }} and ${{ env.GHCR_IMAGE }}:cache-${{ env.ARCH }}
         uses: docker/build-push-action@v6
         with:
           context: ./
           file: ./ledfx_docker/Dockerfile
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/${{ env.ARCH }}
+          provenance: false #https://github.com/orgs/community/discussions/45969#discussioncomment-4852744
+          sbom: false
           push: true
           tags: |
-            ${{ env.GHCR_IMAGE }}:edge
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+            ${{ env.GHCR_IMAGE }}:edge-${{ env.ARCH }}
+          cache-from: type=registry,ref=${{ env.GHCR_IMAGE }}:cache-${{ env.ARCH }}
+          cache-to: type=registry,ref=${{ env.GHCR_IMAGE }}:cache-${{ env.ARCH }},mode=max
           build-args: |
             GITHUB_SHA=${{ github.sha }}
             IS_RELEASE=${{ startsWith(github.ref, 'refs/tags/') }}
 
-      - name: Smoke test edge image from registry
+  docker-build-arm64:
+    name: Build arm64 edge and cache images
+    runs-on: ubuntu-latest
+    env:
+      IMAGE_NAME: ledfx
+      ARCH: arm64
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up QEMU (for arm64 emulation)
+        uses: docker/setup-qemu-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Lowercase repository owner
+        id: repo
         run: |
-          docker run --rm ${{ env.GHCR_IMAGE }}:edge --ci-smoke-test -vv --offline
+          echo "GHCR_IMAGE=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/${{ env.IMAGE_NAME }}" >> $GITHUB_ENV
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push image ${{ env.GHCR_IMAGE }}:edge-${{ env.ARCH }} and ${{ env.GHCR_IMAGE }}:cache-${{ env.ARCH }}
+        uses: docker/build-push-action@v6
+        with:
+          context: ./
+          file: ./ledfx_docker/Dockerfile
+          platforms: linux/${{ env.ARCH }}
+          provenance: false #https://github.com/orgs/community/discussions/45969#discussioncomment-4852744
+          sbom: false
+          push: true
+          tags: |
+            ${{ env.GHCR_IMAGE }}:edge-${{ env.ARCH }}
+          cache-from: type=registry,ref=${{ env.GHCR_IMAGE }}:cache-${{ env.ARCH }}
+          cache-to: type=registry,ref=${{ env.GHCR_IMAGE }}:cache-${{ env.ARCH }},mode=max
+          build-args: |
+            GITHUB_SHA=${{ github.sha }}
+            IS_RELEASE=${{ startsWith(github.ref, 'refs/tags/') }}
 
+  docker-test-publish-manifests:
+    name: Test amd64 and Publish image
+    needs: [docker-build-amd64, docker-build-arm64]
+    runs-on: ubuntu-latest
+    env:
+      IMAGE_NAME: ledfx
+      ARCH: amd64
+    steps:
+      # - name: Set up Docker Buildx
+      #   uses: docker/setup-buildx-action@v3
+      - name: Lowercase repository owner
+        id: repo
+        run: |
+          echo "GHCR_IMAGE=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/${{ env.IMAGE_NAME }}" >> $GITHUB_ENV
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      # - name: Create multiarch image manifest for edge
+      #   run: |
+      #     docker buildx imagetools create \
+      #       --tag ${{ env.GHCR_IMAGE }}:edge \
+      #       ${{ env.GHCR_IMAGE }}:edge-amd64 \
+      #       ${{ env.GHCR_IMAGE }}:edge-arm64
+      - name: Smoke test edge-amd64 image from registry
+        run: |
+          docker run --rm ${{ env.GHCR_IMAGE }}:edge-amd64 --ci-smoke-test -vv --offline
       - name: Get LedFx version
         id: ledfx-version
         if: startsWith(github.ref, 'refs/tags/')
         run: |
-          echo "ledfx-version=$(docker run --rm --entrypoint ledfx ${{ env.GHCR_IMAGE }}:edge --version | sed 's/LedFx //')" >> $GITHUB_OUTPUT
-
-      - name: Retag and push latest and versioned images
-        if: startsWith(github.ref, 'refs/tags/')
+          echo "ledfx-version=$(docker run --rm --entrypoint ledfx ${{ env.GHCR_IMAGE }}:edge-amd64 --version | sed 's/LedFx //')" >> $GITHUB_OUTPUT
+      - name: Retag and push latest and versioned images if tag is same as ledfx-version
+        if: github.ref == format('refs/tags/v{0}', steps.ledfx-version.outputs.ledfx-version)
         run: |
           docker buildx imagetools create \
             -t ${{ env.GHCR_IMAGE }}:latest \
             -t ${{ env.GHCR_IMAGE }}:${{ steps.ledfx-version.outputs.ledfx-version }} \
-            ${{ env.GHCR_IMAGE }}:edge
+            ${{ env.GHCR_IMAGE }}:edge-amd64 \
+            ${{ env.GHCR_IMAGE }}:edge-arm64
 
   run-ledfx-windows:
     name: Test LedFx (Windows)
