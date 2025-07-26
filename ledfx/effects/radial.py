@@ -121,7 +121,9 @@ class Radial2d(Twod):
         self.radius_base = np.sqrt(self.dx**2 + self.dy**2)
 
         # Compute maximum radius (used for normalization)
-        self.max_radius = np.max(self.radius_base)
+        # Add a small epsilon to avoid division by zero or crossing zero artifacts
+        radius_stretch = 1.0 + epsilon
+        self.max_radius = np.max(self.radius_base) * radius_stretch
 
     def draw(self):
 
