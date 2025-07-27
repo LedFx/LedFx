@@ -61,7 +61,9 @@ class ArtNetDevice(NetworkedDevice):
                 "output_mode",
                 description="Output mode for RGB or RGBW data",
                 default=OutputMode.RGB,
-            ): vol.All(str,vol.In(OutputMode.values(reordering_enabled=True))),
+            ): vol.All(
+                str, vol.In(OutputMode.values(reordering_enabled=True))
+            ),
             vol.Optional("port", description="port", default=6454): int,
         }
     )
@@ -89,10 +91,12 @@ class ArtNetDevice(NetworkedDevice):
         # first byte in dmx is 1, but we are zero based
         self.dmx_start_address = config.get("dmx_start_address", 1) - 1
 
-        self.output_mode = OutputMode.from_value(config.get("output_mode", OutputMode.RGB.value))
+        self.output_mode = OutputMode.from_value(
+            config.get("output_mode", OutputMode.RGB.value)
+        )
 
         self.channels_per_pixel = self.output_mode.channels_per_pixel
-        
+
         # treat a default value of zero in pixels_per_device as all pixels in one device
         # also protect against greater than pixel_count
         if (

@@ -1,9 +1,11 @@
 from enum import Enum
+
 import numpy as np
 
 # -------------------------------------------------------------------------------------
 # RGBW Conversion Functions
 # -------------------------------------------------------------------------------------
+
 
 def passthrough(rgb_array: np.ndarray) -> np.ndarray:
     """
@@ -64,12 +66,15 @@ def add_white_accurate(rgb_array: np.ndarray) -> np.ndarray:
     rgb = rgb_array - w
     return np.concatenate([rgb, w], axis=1)
 
+
 # -------------------------------------------------------------------------------------
 # OutputMode Enum
 # -------------------------------------------------------------------------------------
 
 # Static channel index mapping
 _CHANNEL_MAP = {"R": 0, "G": 1, "B": 2, "W": 3}
+
+
 class OutputMode(str, Enum):
     """
     Enum representing LED color output modes.
@@ -150,10 +155,14 @@ class OutputMode(str, Enum):
         Returns:
             list[str]: A list of mode values (strings).
         """
-        return [m.value for m in cls if reordering_enabled or not m.is_reorder_only]
+        return [
+            m.value for m in cls if reordering_enabled or not m.is_reorder_only
+        ]
 
     @classmethod
-    def valid_modes(cls, reordering_enabled: bool = True) -> list["OutputMode"]:
+    def valid_modes(
+        cls, reordering_enabled: bool = True
+    ) -> list["OutputMode"]:
         """
         Get a list of enum members, optionally filtering out reorder-only modes.
 
