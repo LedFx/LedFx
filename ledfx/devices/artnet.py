@@ -6,7 +6,7 @@ import voluptuous as vol
 from stupidArtnet import StupidArtnet
 
 from ledfx.devices import NetworkedDevice
-from ledfx.devices.utils.rgbw_conversion import OutputMode, rgb_to_output_mode
+from ledfx.devices.utils.rgbw_conversion import OutputMode
 from ledfx.utils import check_if_ip_is_broadcast, extract_uint8_seq
 
 _LOGGER = logging.getLogger(__name__)
@@ -61,17 +61,7 @@ class ArtNetDevice(NetworkedDevice):
                 "output_mode",
                 description="Output mode for RGB or RGBW data",
                 default=OutputMode.RGB,
-            ): vol.All(
-                str,
-                vol.In(
-                    [
-                        OutputMode.RGB,
-                        OutputMode.RGBW_NONE,
-                        OutputMode.RGBW_ACCURATE,
-                        OutputMode.RGBW_BRIGHTER,
-                    ]
-                ),
-            ),
+            ): vol.All(str,vol.In(OutputMode.values(reordering_enabled=True))),
             vol.Optional("port", description="port", default=6454): int,
         }
     )
@@ -99,11 +89,10 @@ class ArtNetDevice(NetworkedDevice):
         # first byte in dmx is 1, but we are zero based
         self.dmx_start_address = config.get("dmx_start_address", 1) - 1
 
-        self.output_mode = config.get("output_mode", OutputMode.RGB)
-        self.channels_per_pixel = (
-            3 if self.output_mode == OutputMode.RGB else 4
-        )
+        self.output_mode = OutputMode.from_value(config.get("output_mode", OutputMode.RGB.value))
 
+        self.channels_per_pixel = self.output_mode.channels_per_pixel
+        
         # treat a default value of zero in pixels_per_device as all pixels in one device
         # also protect against greater than pixel_count
         if (
@@ -168,8 +157,7 @@ class ArtNetDevice(NetworkedDevice):
             if not self._artnet:
                 self.activate()
 
-            data = rgb_to_output_mode(data, self.output_mode)
-
+            data = self.output_mode.apply(data)
             data = data.flatten()[: self.data_max * self.channels_per_pixel]
 
             # pre allocate the space
