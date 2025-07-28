@@ -37,15 +37,10 @@ class OutputMode:
 
         self.white_func = getattr(self, WHITE_FUNCS_MAPPING[self.white_mode]["func"])
 
-        _LOGGER.info(f"OutputMode initialized with RGB order: {self.rgb_order}, White mode: {self.white_mode}")
-
     def apply(self, rgb_array: np.ndarray) -> np.ndarray:
         """Applies white channel addition and channel reordering."""
         reordered = self.rgb_reorder(rgb_array)
-        _LOGGER.info(f"input : {reordered}")
         rgbw = self.white_func(reordered)
-        _LOGGER.info(f"output: {rgbw}")
-        _LOGGER.info(f"{rgb_array[0]} -> {rgbw[0]} {self.rgb_order} + {self.white_mode} {self.channels_per_pixel} channels")
         return rgbw
 
     def rgb_reorder(self, rgb: np.ndarray) -> np.ndarray:
