@@ -1,5 +1,6 @@
-from enum import Enum
 import logging
+from enum import Enum
+
 import numpy as np
 
 _LOGGER = logging.getLogger(__name__)
@@ -7,25 +8,19 @@ _LOGGER = logging.getLogger(__name__)
 
 _CHANNEL_MAP = {"R": 0, "G": 1, "B": 2, "W": 3}
 
-RGB_MAPPING = {
-    "RGB",
-    "RBG",
-    "GRB",
-    "GBR",
-    "BRG",
-    "BGR"
-}
+RGB_MAPPING = {"RGB", "RBG", "GRB", "GBR", "BRG", "BGR"}
 
 WHITE_FUNCS_MAPPING = {
-    "None": {"func":"add_white_none", "channels":3},
-    "Zero": {"func":"add_white_zero", "channels":4},
-    "Brighter": {"func":"add_white_brighter", "channels":4},
-    "Accurate": {"func":"add_white_accurate", "channels":4},
+    "None": {"func": "add_white_none", "channels": 3},
+    "Zero": {"func": "add_white_zero", "channels": 4},
+    "Brighter": {"func": "add_white_brighter", "channels": 4},
+    "Accurate": {"func": "add_white_accurate", "channels": 4},
 }
 
 # -------------------------------------------------------------------------------------
 # Combined Output Mode Class
 # -------------------------------------------------------------------------------------
+
 
 class OutputMode:
     def __init__(self, rgb_order, white_mode):
@@ -33,11 +28,17 @@ class OutputMode:
         self.indices = [_CHANNEL_MAP[c] for c in self.rgb_order]
         self.white_mode = white_mode
 
-        self.channels_per_pixel = WHITE_FUNCS_MAPPING[self.white_mode]["channels"]
+        self.channels_per_pixel = WHITE_FUNCS_MAPPING[self.white_mode][
+            "channels"
+        ]
 
-        self.white_func = getattr(self, WHITE_FUNCS_MAPPING[self.white_mode]["func"])
+        self.white_func = getattr(
+            self, WHITE_FUNCS_MAPPING[self.white_mode]["func"]
+        )
 
-        _LOGGER.info(f"OutputMode initialized with RGB order: {self.rgb_order}, White mode: {self.white_mode}")
+        _LOGGER.info(
+            f"OutputMode initialized with RGB order: {self.rgb_order}, White mode: {self.white_mode}"
+        )
 
     def apply(self, rgb_array: np.ndarray) -> np.ndarray:
         """Applies white channel addition and channel reordering."""
@@ -45,12 +46,14 @@ class OutputMode:
         _LOGGER.info(f"input : {reordered}")
         rgbw = self.white_func(reordered)
         _LOGGER.info(f"output: {rgbw}")
-        _LOGGER.info(f"{rgb_array[0]} -> {rgbw[0]} {self.rgb_order} + {self.white_mode} {self.channels_per_pixel} channels")
+        _LOGGER.info(
+            f"{rgb_array[0]} -> {rgbw[0]} {self.rgb_order} + {self.white_mode} {self.channels_per_pixel} channels"
+        )
         return rgbw
 
     def rgb_reorder(self, rgb: np.ndarray) -> np.ndarray:
         return rgb[:, self.indices]
-    
+
     # -------------------------------------------------------------------------------------
     # RGBW White Channel Conversion Functions
     # -------------------------------------------------------------------------------------
