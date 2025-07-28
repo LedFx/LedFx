@@ -8,7 +8,7 @@ _LOGGER = logging.getLogger(__name__)
 
 _CHANNEL_MAP = {"R": 0, "G": 1, "B": 2, "W": 3}
 
-RGB_MAPPING = {"RGB", "RBG", "GRB", "GBR", "BRG", "BGR"}
+RGB_MAPPING = ["RGB", "RBG", "GRB", "GBR", "BRG", "BGR"]
 
 WHITE_FUNCS_MAPPING = {
     "None": {"func": "add_white_none", "channels": 3},
