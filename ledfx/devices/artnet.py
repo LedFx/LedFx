@@ -6,7 +6,7 @@ import voluptuous as vol
 from stupidArtnet import StupidArtnet
 
 from ledfx.devices import NetworkedDevice
-from ledfx.devices.utils.rgbw_conversion import OutputMode
+from ledfx.devices.utils.rgbw_conversion import RGB_MAPPING, WHITE_FUNCS_MAPPING, OutputMode
 from ledfx.utils import check_if_ip_is_broadcast, extract_uint8_seq
 
 _LOGGER = logging.getLogger(__name__)
@@ -58,11 +58,18 @@ class ArtNetDevice(NetworkedDevice):
                 default=True,
             ): bool,
             vol.Optional(
-                "output_mode",
-                description="Output mode for RGB or RGBW data",
-                default=OutputMode.RGB,
+                "rgb_order",
+                description="RGB data order mode",
+                default="RGB"
             ): vol.All(
-                str, vol.In(OutputMode.values(reordering_enabled=True))
+                str, vol.In(RGB_MAPPING)
+            ),
+            vol.Optional(
+                "white_mode",
+                description="White channel handling mode",
+                default="None"
+            ): vol.All(
+                str, vol.In(WHITE_FUNCS_MAPPING.keys())
             ),
             vol.Optional("port", description="port", default=6454): int,
         }
@@ -90,13 +97,6 @@ class ArtNetDevice(NetworkedDevice):
         self.pixels_per_device = config.get("pixels_per_device", 0)
         # first byte in dmx is 1, but we are zero based
         self.dmx_start_address = config.get("dmx_start_address", 1) - 1
-
-        self.output_mode = OutputMode.from_value(
-            config.get("output_mode", OutputMode.RGB.value)
-        )
-
-        self.channels_per_pixel = self.output_mode.channels_per_pixel
-
         # treat a default value of zero in pixels_per_device as all pixels in one device
         # also protect against greater than pixel_count
         if (
@@ -105,6 +105,10 @@ class ArtNetDevice(NetworkedDevice):
         ):
             self.pixels_per_device = self.pixel_count
 
+        self.rgb_mode = config.get("rgb_order")
+        self.white_mode = config.get("white_mode")
+        self.output_mode = OutputMode(self.rgb_mode, self.white_mode)
+        
         # if the user has not set enough pixels to fully fill the last device
         # it is modded away, we will not support partial devices, saves runtime
         self.num_devices = self.pixel_count // self.pixels_per_device
@@ -112,7 +116,7 @@ class ArtNetDevice(NetworkedDevice):
 
         total_pixels_per_device = (
             self.pre_amble.size
-            + (self.pixels_per_device * self.channels_per_pixel)
+            + (self.pixels_per_device * self.output_mode.channels_per_pixel)
             + self.post_amble.size
         )
         self.channel_count = (
@@ -121,6 +125,7 @@ class ArtNetDevice(NetworkedDevice):
 
         self.packet_size = self._config["packet_size"]
         self.universe_count = math.ceil(self.channel_count / self.packet_size)
+        
 
     def activate(self):
         if self._artnet:
@@ -162,16 +167,14 @@ class ArtNetDevice(NetworkedDevice):
                 self.activate()
 
             data = self.output_mode.apply(data)
-            data = data.flatten()[: self.data_max * self.channels_per_pixel]
+            data = data.flatten()[: self.data_max * self.output_mode.channels_per_pixel]
 
             # pre allocate the space
             devices_data = np.empty(self.channel_count, dtype=np.uint8)
-
-            # Reshape the data into (self.num_devices, self.pixels_per_device * self.channels_per_pixel)
             reshaped_data = data.reshape(
                 (
                     self.num_devices,
-                    self.pixels_per_device * self.channels_per_pixel,
+                    self.pixels_per_device * self.output_mode.channels_per_pixel,
                 )
             )
 
