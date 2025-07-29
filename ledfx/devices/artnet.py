@@ -136,9 +136,9 @@ class ArtNetDevice(NetworkedDevice):
         _LOGGER.info(f"Art-Net sender for {self.config['name']} stopped.")
 
     def do_once(self):
-        
+
         self.output_mode = OutputMode(self.rgb_mode, self.white_mode)
-        
+
         # treat a default value of zero in pixels_per_device as all pixels in one device
         # also protect against greater than pixel_count
         if (
@@ -156,7 +156,10 @@ class ArtNetDevice(NetworkedDevice):
 
         total_pixels_per_device = (
             self.pre_amble.size
-            + (self.use_pixels_per_device * self.output_mode.channels_per_pixel)
+            + (
+                self.use_pixels_per_device
+                * self.output_mode.channels_per_pixel
+            )
             + self.post_amble.size
         )
         self.channel_count = (
@@ -164,7 +167,7 @@ class ArtNetDevice(NetworkedDevice):
         )
         self.universe_count = math.ceil(self.channel_count / self.packet_size)
         self.init = False
-    
+
     def flush(self, data):
 
         with self.lock:
