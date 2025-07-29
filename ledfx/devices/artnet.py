@@ -78,10 +78,12 @@ class ArtNetDevice(NetworkedDevice):
         self._artnet = None
         self._device_type = "ArtNet"
         self.config_use(config)
+        self.init = True
 
     def config_updated(self, config):
         self.config_use(config)
         self.deactivate()
+        self.init = True
         self.activate()
 
     def config_use(self, config):
@@ -95,34 +97,9 @@ class ArtNetDevice(NetworkedDevice):
         self.pixels_per_device = config.get("pixels_per_device", 0)
         # first byte in dmx is 1, but we are zero based
         self.dmx_start_address = config.get("dmx_start_address", 1) - 1
-        # treat a default value of zero in pixels_per_device as all pixels in one device
-        # also protect against greater than pixel_count
-        if (
-            self.pixels_per_device == 0
-            or self.pixels_per_device > self.pixel_count
-        ):
-            self.pixels_per_device = self.pixel_count
-
         self.rgb_mode = config.get("rgb_order")
         self.white_mode = config.get("white_mode")
-        self.output_mode = OutputMode(self.rgb_mode, self.white_mode)
-
-        # if the user has not set enough pixels to fully fill the last device
-        # it is modded away, we will not support partial devices, saves runtime
-        self.num_devices = self.pixel_count // self.pixels_per_device
-        self.data_max = self.num_devices * self.pixels_per_device
-
-        total_pixels_per_device = (
-            self.pre_amble.size
-            + (self.pixels_per_device * self.output_mode.channels_per_pixel)
-            + self.post_amble.size
-        )
-        self.channel_count = (
-            self.dmx_start_address + total_pixels_per_device * self.num_devices
-        )
-
         self.packet_size = self._config["packet_size"]
-        self.universe_count = math.ceil(self.channel_count / self.packet_size)
 
     def activate(self):
         if self._artnet:
@@ -146,6 +123,7 @@ class ArtNetDevice(NetworkedDevice):
 
         _LOGGER.info(f"Art-Net sender for {self.config['name']} started.")
         super().activate()
+        self.init = True
 
     def deactivate(self):
         super().deactivate()
@@ -157,8 +135,41 @@ class ArtNetDevice(NetworkedDevice):
         self._artnet = None
         _LOGGER.info(f"Art-Net sender for {self.config['name']} stopped.")
 
+    def do_once(self):
+        
+        self.output_mode = OutputMode(self.rgb_mode, self.white_mode)
+        
+        # treat a default value of zero in pixels_per_device as all pixels in one device
+        # also protect against greater than pixel_count
+        if (
+            self.pixels_per_device == 0
+            or self.pixels_per_device > self.pixel_count
+        ):
+            self.use_pixels_per_device = self.pixel_count
+        else:
+            self.use_pixels_per_device = self.pixels_per_device
+
+        # if the user has not set enough pixels to fully fill the last device
+        # it is modded away, we will not support partial devices, saves runtime
+        self.num_devices = self.pixel_count // self.use_pixels_per_device
+        self.data_max = self.num_devices * self.use_pixels_per_device
+
+        total_pixels_per_device = (
+            self.pre_amble.size
+            + (self.use_pixels_per_device * self.output_mode.channels_per_pixel)
+            + self.post_amble.size
+        )
+        self.channel_count = (
+            self.dmx_start_address + total_pixels_per_device * self.num_devices
+        )
+        self.universe_count = math.ceil(self.channel_count / self.packet_size)
+        self.init = False
+    
     def flush(self, data):
+
         with self.lock:
+            if self.init:
+                self.do_once()
             """Flush the data to all the Art-Net channels"""
             if not self._artnet:
                 self.activate()
@@ -173,7 +184,7 @@ class ArtNetDevice(NetworkedDevice):
             reshaped_data = data.reshape(
                 (
                     self.num_devices,
-                    self.pixels_per_device
+                    self.use_pixels_per_device
                     * self.output_mode.channels_per_pixel,
                 )
             )

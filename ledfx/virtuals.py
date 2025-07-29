@@ -168,6 +168,7 @@ class Virtual:
         self.fallback_timer = None
         self.fallback_suppress_transition = False
         self._streaming = False
+        self.grabbing = False #DELETE ME
 
         self.frequency_range = FrequencyRange(
             self._config["frequency_min"], self._config["frequency_max"]
@@ -269,6 +270,18 @@ class Virtual:
             if self.pixel_count > 0:
                 self._active_effect.activate(self)
 
+    def lock_check(self, lock_number, name): #DELETE ME
+        if "artfunckle" in name:
+            _LOGGER.error(f"Grabbing Lock #{lock_number} {self.lock} for {name}")
+            if self.grabbing == True:
+                _LOGGER.error(
+                    f"Lock #{lock_number} already grabbed for {name}, this is a bug!"
+                )
+
+    def unlock_check(self, lock_number, name): #DELETE ME
+        if "artfunckle" in name:
+            _LOGGER.error(f"Released Lock #{lock_number} {self.lock} for {name}")
+
     def update_segments(self, segments_config):
         """
         Update the segments of the virtual with the given configuration.
@@ -282,7 +295,10 @@ class Virtual:
         Returns:
             None
         """
+
+        self.lock_check(1, self.name)
         with self.lock:
+            _LOGGER.error(f"Got lock {self.lock}")
             segments_config = [list(item) for item in segments_config]
             _segments = self.SEGMENTS_SCHEMA(segments_config)
 
@@ -404,6 +420,7 @@ class Virtual:
 
     def fallback_fire_set_with_lock(self):
         """Use this function to trigger a fallback from an external source such as api calls"""
+        self.lock_check(2, self.name) #DELETE ME
         with self.lock:
             self.fallback_fire_set()
 
@@ -431,6 +448,7 @@ class Virtual:
             RuntimeError: If an error occurs while setting the active effect.
 
         """
+        self.lock_check(3, self.name) #DELETE ME
         with self.lock:
             if not self._devices:
                 error = f"Virtual {self.id}: Cannot activate, no configured device segments"
@@ -505,6 +523,7 @@ class Virtual:
         self._active_effect = None
 
     def clear_effect(self):
+        self.lock_check(4, self.name) #DELETE ME 
         with self.lock:
             self._ledfx.events.fire_event(EffectClearedEvent())
             self.clear_transition_effect()
@@ -571,6 +590,7 @@ class Virtual:
         # All of this requires thread lock management that's a bit unwieldy
 
         assembled_frame = None
+        self.lock_check(5, self.name) #DELETE ME
         with self.lock:
             self.clear_active_effect()
             self.clear_transition_effect()
@@ -649,6 +669,8 @@ class Virtual:
 
             # we need to lock before we test, or we could deactivate
             # between test and execution
+            self.lock_check(6, self.name) #DELETE ME
+            self.grabbing = True
             with self.lock:
                 if (
                     self._active_effect
@@ -668,6 +690,9 @@ class Virtual:
                             self.flush()
 
                         self._fire_update_event()
+            
+            self.unlock_check(6, self.name) #DELETE ME
+            self.grabbing = False
 
             # adjust for the frame assemble time, min allowed sleep 1 ms
             # this will be more frame accurate on high res sleep systems
