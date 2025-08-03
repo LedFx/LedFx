@@ -1,5 +1,4 @@
 import logging
-from enum import Enum
 
 import numpy as np
 
