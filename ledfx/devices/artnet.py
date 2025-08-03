@@ -166,7 +166,6 @@ class ArtNetDevice(NetworkedDevice):
         self.init = False
 
     def flush(self, data):
-
         """Flush the data to all the Art-Net channels"""
         if self.init:
             self.do_once()
@@ -192,7 +191,9 @@ class ArtNetDevice(NetworkedDevice):
                 )
 
                 # Create the pre_amble and post_amble arrays to match the device count
-                pre_amble_repeated = np.tile(self.pre_amble, (self.num_devices, 1))
+                pre_amble_repeated = np.tile(
+                    self.pre_amble, (self.num_devices, 1)
+                )
                 post_amble_repeated = np.tile(
                     self.post_amble, (self.num_devices, 1)
                 )
@@ -204,7 +205,9 @@ class ArtNetDevice(NetworkedDevice):
                 )
 
                 devices_data[0 : self.dmx_start_address] = 0
-                devices_data[self.dmx_start_address :] = full_device_data.ravel()
+                devices_data[self.dmx_start_address :] = (
+                    full_device_data.ravel()
+                )
 
                 # TODO: Handle the data transformation outside of the loop and just use loop to set universe and send packets
 
@@ -213,9 +216,9 @@ class ArtNetDevice(NetworkedDevice):
                         start = i * self.packet_size
                         end = start + self.packet_size
                         packet = np.zeros(self.packet_size, dtype=np.uint8)
-                        packet[: min(self.packet_size, self.channel_count - start)] = (
-                            devices_data[start:end]
-                        )
+                        packet[
+                            : min(self.packet_size, self.channel_count - start)
+                        ] = devices_data[start:end]
                         self._artnet.set_universe(i + self._config["universe"])
                         self._artnet.set(packet)
                         self._artnet.show()
