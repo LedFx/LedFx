@@ -109,7 +109,6 @@ class ArtNetDevice(NetworkedDevice):
 
         # check if provided address is a broadcast address
         broadcast = check_if_ip_is_broadcast(self._config["ip_address"])
-
         self._artnet = StupidArtnet(
             target_ip=self._config["ip_address"],
             universe=self._config["universe"],
@@ -121,7 +120,6 @@ class ArtNetDevice(NetworkedDevice):
         )
         # Don't use start for stupidArtnet - we handle fps locally, and it spawns hundreds of threads
 
-        _LOGGER.info(f"Art-Net sender for {self.config['name']} started.")
         super().activate()
         self.init = True
 
@@ -133,7 +131,6 @@ class ArtNetDevice(NetworkedDevice):
         self._artnet.blackout()
         self._artnet.close()
         self._artnet = None
-        _LOGGER.info(f"Art-Net sender for {self.config['name']} stopped.")
 
     def do_once(self):
 
@@ -170,52 +167,59 @@ class ArtNetDevice(NetworkedDevice):
 
     def flush(self, data):
 
-        with self.lock:
-            if self.init:
-                self.do_once()
-            """Flush the data to all the Art-Net channels"""
-            if not self._artnet:
-                self.activate()
+        """Flush the data to all the Art-Net channels"""
+        if self.init:
+            self.do_once()
 
-            data = self.output_mode.apply(data)
-            data = data.flatten()[
-                : self.data_max * self.output_mode.channels_per_pixel
-            ]
+        # protect against things being modified during flush
+        # just skip a frame if the lock is owned, we have a mutext deadlock between
+        # devices and virtuals protections
+        if self.lock.acquire(blocking=False):
+            try:
+                data = self.output_mode.apply(data)
+                data = data.flatten()[
+                    : self.data_max * self.output_mode.channels_per_pixel
+                ]
 
-            # pre allocate the space
-            devices_data = np.empty(self.channel_count, dtype=np.uint8)
-            reshaped_data = data.reshape(
-                (
-                    self.num_devices,
-                    self.use_pixels_per_device
-                    * self.output_mode.channels_per_pixel,
+                # pre allocate the space
+                devices_data = np.empty(self.channel_count, dtype=np.uint8)
+                reshaped_data = data.reshape(
+                    (
+                        self.num_devices,
+                        self.use_pixels_per_device
+                        * self.output_mode.channels_per_pixel,
+                    )
                 )
-            )
 
-            # Create the pre_amble and post_amble arrays to match the device count
-            pre_amble_repeated = np.tile(self.pre_amble, (self.num_devices, 1))
-            post_amble_repeated = np.tile(
-                self.post_amble, (self.num_devices, 1)
-            )
-
-            # Concatenate the pre_amble, reshaped data, and post_amble along the second axis
-            full_device_data = np.concatenate(
-                (pre_amble_repeated, reshaped_data, post_amble_repeated),
-                axis=1,
-            )
-
-            devices_data[0 : self.dmx_start_address] = 0
-            devices_data[self.dmx_start_address :] = full_device_data.ravel()
-
-            # TODO: Handle the data transformation outside of the loop and just use loop to set universe and send packets
-
-            for i in range(self.universe_count):
-                start = i * self.packet_size
-                end = start + self.packet_size
-                packet = np.zeros(self.packet_size, dtype=np.uint8)
-                packet[: min(self.packet_size, self.channel_count - start)] = (
-                    devices_data[start:end]
+                # Create the pre_amble and post_amble arrays to match the device count
+                pre_amble_repeated = np.tile(self.pre_amble, (self.num_devices, 1))
+                post_amble_repeated = np.tile(
+                    self.post_amble, (self.num_devices, 1)
                 )
-                self._artnet.set_universe(i + self._config["universe"])
-                self._artnet.set(packet)
-                self._artnet.show()
+
+                # Concatenate the pre_amble, reshaped data, and post_amble along the second axis
+                full_device_data = np.concatenate(
+                    (pre_amble_repeated, reshaped_data, post_amble_repeated),
+                    axis=1,
+                )
+
+                devices_data[0 : self.dmx_start_address] = 0
+                devices_data[self.dmx_start_address :] = full_device_data.ravel()
+
+                # TODO: Handle the data transformation outside of the loop and just use loop to set universe and send packets
+
+                if self._artnet is not None:
+                    for i in range(self.universe_count):
+                        start = i * self.packet_size
+                        end = start + self.packet_size
+                        packet = np.zeros(self.packet_size, dtype=np.uint8)
+                        packet[: min(self.packet_size, self.channel_count - start)] = (
+                            devices_data[start:end]
+                        )
+                        self._artnet.set_universe(i + self._config["universe"])
+                        self._artnet.set(packet)
+                        self._artnet.show()
+            finally:
+                self.lock.release()
+        else:
+            _LOGGER.error(f"Panic could not get lock {self.config['name']}")

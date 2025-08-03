@@ -24,7 +24,6 @@ WHITE_FUNCS_MAPPING = {
 
 class OutputMode:
     def __init__(self, rgb_order, white_mode):
-        _LOGGER.warning(f"Outputmode {rgb_order}  {white_mode}")  # DELETE ME
         self.rgb_order = rgb_order
         self.indices = [_CHANNEL_MAP[c] for c in self.rgb_order]
         self.white_mode = white_mode
@@ -36,7 +35,6 @@ class OutputMode:
         self.white_func = getattr(
             self, WHITE_FUNCS_MAPPING[self.white_mode]["func"]
         )
-        _LOGGER.warning(f"Outputmode exit")  # DELETE ME
 
     def apply(self, rgb_array: np.ndarray) -> np.ndarray:
         """Applies white channel addition and channel reordering."""
