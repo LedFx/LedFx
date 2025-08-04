@@ -43,6 +43,7 @@
    /howto/virtuals
    /howto/reorder
    /howto/alpha
+   /howto/mapping
 
 .. toctree::
    :maxdepth: 2
