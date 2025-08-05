@@ -344,6 +344,7 @@ jobs:
           docker buildx imagetools create \
             -t ${{ env.GHCR_IMAGE }}:latest \
             -t ${{ env.GHCR_IMAGE }}:${{ steps.ledfx-version.outputs.ledfx-version }} \
+            -t ${{ env.GHCR_IMAGE }}:${{ github.sha }} \
             ${{ env.GHCR_IMAGE }}:edge-amd64-${{ github.sha }} \
             ${{ env.GHCR_IMAGE }}:edge-arm64-${{ github.sha }}
 
