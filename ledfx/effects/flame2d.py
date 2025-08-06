@@ -19,7 +19,7 @@ MAX_VELOCITY_OFFSET = 1.2
 MIN_LIFESPAN = 2.0
 MAX_LIFESPAN = 4.0
 WOBBLE_RATIO = 0.05
-
+SPAWN_MODIFIER = 4.0  # magic number, hand-tuned for visual effect
 
 class Flame2d(Twod):
     NAME = "Flame"
@@ -106,6 +106,13 @@ class Flame2d(Twod):
                 }
         self.wobble_amplitude = max(1.0, WOBBLE_RATIO * self.r_width)
 
+        # Prepare color to HSV conversions
+        self.color_hsv_values = [
+            rgb_to_hsv_vect(self.low_color),
+            rgb_to_hsv_vect(self.mid_color),
+            rgb_to_hsv_vect(self.high_color),
+        ]
+
     def audio_data_updated(self, data):
         self.audio_pow = np.array(
             [
@@ -120,13 +127,9 @@ class Flame2d(Twod):
         self.r_pixels.fill(0)
         delta = self.passed
 
-        for index, (group_name, color, power) in enumerate(
-            zip(
-                ("low", "mid", "high"),
-                (self.low_color, self.mid_color, self.high_color),
-                self.audio_pow,
-            )
-        ):
+        for index, (group_name, power, (h_base, s_base, v_base)) in enumerate(
+            zip(("low", "mid", "high"), self.audio_pow, self.color_hsv_values)):
+
             p = self.particles[group_name]
 
             if p["x"].size > 0:
@@ -136,10 +139,8 @@ class Flame2d(Twod):
                 for key in p:
                     p[key] = p[key][alive]
 
-            # magic number 4 is hand tuned from observations
-            # this should otherwise be time invariant and deal with different sizes, though not well
             self.spawn_accumulator[index] += (
-                self.r_width * self.spawn_rate * delta * 4
+                self.r_width * self.spawn_rate * delta * SPAWN_MODIFIER
             )
             n_spawn = int(self.spawn_accumulator[index])
             self.spawn_accumulator[index] -= n_spawn
@@ -179,7 +180,6 @@ class Flame2d(Twod):
                 size = p["size"]
                 phase = p["wobble_phase"]
 
-                h_base, s_base, v_base = rgb_to_hsv_vect(color)
                 t = age / lifespan
                 hues = (h_base - h_base * t) % 1.0
                 sats = s_base * (1.0 - 0.5 * t)
