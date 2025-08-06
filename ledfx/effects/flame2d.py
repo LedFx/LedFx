@@ -10,7 +10,6 @@ from ledfx.color import (
     rgb_to_hsv_vect,
     validate_color,
 )
-from ledfx.effects import Effect
 from ledfx.effects.twod import Twod
 
 _LOGGER = logging.getLogger(__name__)
