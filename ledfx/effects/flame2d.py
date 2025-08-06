@@ -21,6 +21,7 @@ MAX_LIFESPAN = 4.0
 WOBBLE_RATIO = 0.05
 SPAWN_MODIFIER = 4.0  # magic number, hand-tuned for visual effect
 
+
 class Flame2d(Twod):
     NAME = "Flame"
     CATEGORY = "Matrix"
@@ -128,7 +129,8 @@ class Flame2d(Twod):
         delta = self.passed
 
         for index, (group_name, power, (h_base, s_base, v_base)) in enumerate(
-            zip(("low", "mid", "high"), self.audio_pow, self.color_hsv_values)):
+            zip(("low", "mid", "high"), self.audio_pow, self.color_hsv_values)
+        ):
 
             p = self.particles[group_name]
 
