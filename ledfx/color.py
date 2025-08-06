@@ -117,6 +117,73 @@ def hsv_to_rgb(hue: NDArray, saturation: float, value: float) -> NDArray:
     # Scale the RGB values to the 0-255 range
     return rgb * 255
 
+def rgb_to_hsv_vect(rgb):
+    """
+    Vectorized RGB to HSV conversion.
+    Input: rgb – array of shape (N, 3) or (3,), values in 0–255
+    Output: hsv – array of shape (N, 3) or (3,), values in 0–1
+    """
+    rgb = np.asarray(rgb, dtype=np.float32)
+    shape = rgb.shape
+
+    if rgb.ndim == 1:
+        rgb = rgb[np.newaxis, :]
+
+    rgb /= 255.0
+    r, g, b = rgb[:, 0], rgb[:, 1], rgb[:, 2]
+    maxc = np.maximum(np.maximum(r, g), b)
+    minc = np.minimum(np.minimum(r, g), b)
+    delta = maxc - minc
+
+    v = maxc
+    s = np.where(maxc == 0, 0, delta / maxc)
+
+    h = np.zeros_like(delta)
+    mask = delta > 0
+
+    r_eq = (maxc == r) & mask
+    g_eq = (maxc == g) & mask
+    b_eq = (maxc == b) & mask
+
+    h[r_eq] = ((g[r_eq] - b[r_eq]) / delta[r_eq]) % 6
+    h[g_eq] = ((b[g_eq] - r[g_eq]) / delta[g_eq]) + 2
+    h[b_eq] = ((r[b_eq] - g[b_eq]) / delta[b_eq]) + 4
+
+    h /= 6.0
+    h = h % 1.0
+
+    hsv = np.stack([h, s, v], axis=-1)
+    return hsv[0] if shape == (3,) else hsv
+
+def hsv_to_rgb_vect(h, s, v):
+    """
+    Vectorized HSV to RGB conversion.
+    h, s, v: arrays of shape (N,) in range 0.0 to 1.0
+    Returns: array of shape (N, 3) in range 0 to 255 (float)
+    """
+
+    h_i = (h * 6.0) % 6
+    i = np.floor(h_i).astype(int)
+    f = h_i - i
+
+    p = v * (1 - s)
+    q = v * (1 - s * f)
+    t = v * (1 - s * (1 - f))
+
+    r = np.select(
+        [i == 0, i == 1, i == 2, i == 3, i == 4, i == 5],
+        [v, q, p, p, t, v]
+    )
+    g = np.select(
+        [i == 0, i == 1, i == 2, i == 3, i == 4, i == 5],
+        [t, v, v, q, p, p]
+    )
+    b = np.select(
+        [i == 0, i == 1, i == 2, i == 3, i == 4, i == 5],
+        [p, p, t, v, v, q]
+    )
+
+    return np.stack([r, g, b], axis=-1) * 255
 
 def parse_color(color: (str, list, tuple)) -> RGB:
     """

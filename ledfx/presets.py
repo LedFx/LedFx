@@ -3,6 +3,157 @@ import os
 from ledfx.consts import LEDFX_ASSETS_PATH
 
 ledfx_presets = {
+    "flame2d": {
+        "bass-red": {
+            "config": {
+                "advanced": False,
+                "background_brightness": 1.0,
+                "background_color": "#000000",
+                "blur": 0.0,
+                "blur_amount": 2,
+                "brightness": 0.96,
+                "diag": False,
+                "dump": False,
+                "flip": False,
+                "flip_horizontal": False,
+                "flip_vertical": False,
+                "high_band": "#000000",
+                "intensity": 0.5,
+                "low_band": "#ff0000",
+                "mid_band": "#000000",
+                "mirror": False,
+                "rotate": 0,
+                "spawn_rate": 0.5,
+                "test": False,
+                "velocity": 0.45
+            },
+            "name": "bass red"
+        },
+        "fire": {
+            "config": {
+                "advanced": False,
+                "background_brightness": 1.0,
+                "background_color": "#000000",
+                "blur": 0.0,
+                "blur_amount": 2,
+                "brightness": 0.96,
+                "diag":  False,
+                "dump": False,
+                "flip": False,
+                "flip_horizontal": False,
+                "flip_vertical": False,
+                "high_band": "#ffd700",
+                "intensity": 0.5,
+                "low_band": "#ff0000",
+                "mid_band": "#ff7800",
+                "mirror": False,
+                "rotate": 0,
+                "spawn_rate": 0.44,
+                "test": False,
+                "velocity": 0.45
+            },
+            "name": "fire"
+        },
+        "high-blue": {
+            "config": {
+                "advanced": False,
+                "background_brightness": 1.0,
+                "background_color": "#000000",
+                "blur": 0.0,
+                "blur_amount": 2,
+                "brightness": 0.96,
+                "diag":  False,
+                "dump": False,
+                "flip": False,
+                "flip_horizontal": False,
+                "flip_vertical": False,
+                "high_band": "#0000ff",
+                "intensity": 0.5,
+                "low_band": "#000000",
+                "mid_band": "#000000",
+                "mirror": False,
+                "rotate": 0,
+                "spawn_rate": 0.5,
+                "test": False,
+                "velocity": 0.45
+            },
+            "name": "high blue"
+        },
+        "mid-green": {
+            "config": {
+                "advanced": False,
+                "background_brightness": 1.0,
+                "background_color": "#000000",
+                "blur": 0.0,
+                "blur_amount": 2,
+                "brightness": 0.96,
+                "diag":  False,
+                "dump": False,
+                "flip": False,
+                "flip_horizontal": False,
+                "flip_vertical": False,
+                "high_band": "#000000",
+                "intensity": 0.5,
+                "low_band": "#000000",
+                "mid_band": "#00ff00",
+                "mirror": False,
+                "rotate": 0,
+                "spawn_rate": 0.5,
+                "test": False,
+                "velocity": 0.45
+            },
+            "name": "mid green"
+        },
+        "plague": {
+            "config": {
+                "advanced": False,
+                "background_brightness": 1.0,
+                "background_color": "#000000",
+                "blur": 0.0,
+                "blur_amount": 2,
+                "brightness": 0.96,
+                "diag":  False,
+                "dump": False,
+                "flip": False,
+                "flip_horizontal": False,
+                "flip_vertical": False,
+                "high_band": "#00ff00",
+                "intensity": 0.5,
+                "low_band": "#ffffff",
+                "mid_band": "#a0ff00",
+                "mirror": False,
+                "rotate": 0,
+                "spawn_rate": 0.31,
+                "test": False,
+                "velocity": 0.45
+            },
+            "name": "plague"
+        },
+        "rgb": {
+            "config": {
+                "background_brightness": 1.0,
+                "background_color": "#000000",
+                "blur": 0.0,
+                "blur_amount": 2,
+                "brightness": 1.0,
+                "diag": False,
+                "dump": False,
+                "flip": False,
+                "flip_horizontal": False,
+                "flip_vertical": False,
+                "high_band": "#0000ff",
+                "intensity": 0.5,
+                "low_band": "#ff0000",
+                "mid_band": "#00ff00",
+                "mirror": False,
+                "rotate": 0,
+                "spawn_rate": 0.3,
+                "test": False,
+                "velocity": 0.3
+            },
+            "name": "RGB"
+        },
+    },
     "filter": {
         "beat-thunder": {
             "config": {
