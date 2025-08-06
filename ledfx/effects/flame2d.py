@@ -17,7 +17,7 @@ WOBBLE_RATIO = 0.05
 class Flame2d(Twod):
     NAME = "Flame"
     CATEGORY = "Matrix"
-    HIDDEN_KEYS = Twod.HIDDEN_KEYS + ["test"]
+    HIDDEN_KEYS = Twod.HIDDEN_KEYS + ["test", "background_color"]
     ADVANCED_KEYS = Twod.ADVANCED_KEYS + []
 
     CONFIG_SCHEMA = vol.Schema(
