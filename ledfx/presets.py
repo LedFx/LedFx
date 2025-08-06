@@ -131,6 +131,7 @@ ledfx_presets = {
         },
         "rgb": {
             "config": {
+                "advanced": False,
                 "background_brightness": 1.0,
                 "background_color": "#000000",
                 "blur": 0.0,
