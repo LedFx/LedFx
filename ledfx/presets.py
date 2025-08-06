@@ -25,9 +25,9 @@ ledfx_presets = {
                 "rotate": 0,
                 "spawn_rate": 0.5,
                 "test": False,
-                "velocity": 0.45
+                "velocity": 0.45,
             },
-            "name": "bass red"
+            "name": "bass red",
         },
         "fire": {
             "config": {
@@ -37,7 +37,7 @@ ledfx_presets = {
                 "blur": 0.0,
                 "blur_amount": 2,
                 "brightness": 0.96,
-                "diag":  False,
+                "diag": False,
                 "dump": False,
                 "flip": False,
                 "flip_horizontal": False,
@@ -50,9 +50,9 @@ ledfx_presets = {
                 "rotate": 0,
                 "spawn_rate": 0.44,
                 "test": False,
-                "velocity": 0.45
+                "velocity": 0.45,
             },
-            "name": "fire"
+            "name": "fire",
         },
         "high-blue": {
             "config": {
@@ -62,7 +62,7 @@ ledfx_presets = {
                 "blur": 0.0,
                 "blur_amount": 2,
                 "brightness": 0.96,
-                "diag":  False,
+                "diag": False,
                 "dump": False,
                 "flip": False,
                 "flip_horizontal": False,
@@ -75,9 +75,9 @@ ledfx_presets = {
                 "rotate": 0,
                 "spawn_rate": 0.5,
                 "test": False,
-                "velocity": 0.45
+                "velocity": 0.45,
             },
-            "name": "high blue"
+            "name": "high blue",
         },
         "mid-green": {
             "config": {
@@ -87,7 +87,7 @@ ledfx_presets = {
                 "blur": 0.0,
                 "blur_amount": 2,
                 "brightness": 0.96,
-                "diag":  False,
+                "diag": False,
                 "dump": False,
                 "flip": False,
                 "flip_horizontal": False,
@@ -100,9 +100,9 @@ ledfx_presets = {
                 "rotate": 0,
                 "spawn_rate": 0.5,
                 "test": False,
-                "velocity": 0.45
+                "velocity": 0.45,
             },
-            "name": "mid green"
+            "name": "mid green",
         },
         "plague": {
             "config": {
@@ -112,7 +112,7 @@ ledfx_presets = {
                 "blur": 0.0,
                 "blur_amount": 2,
                 "brightness": 0.96,
-                "diag":  False,
+                "diag": False,
                 "dump": False,
                 "flip": False,
                 "flip_horizontal": False,
@@ -125,9 +125,9 @@ ledfx_presets = {
                 "rotate": 0,
                 "spawn_rate": 0.31,
                 "test": False,
-                "velocity": 0.45
+                "velocity": 0.45,
             },
-            "name": "plague"
+            "name": "plague",
         },
         "rgb": {
             "config": {
@@ -149,9 +149,9 @@ ledfx_presets = {
                 "rotate": 0,
                 "spawn_rate": 0.3,
                 "test": False,
-                "velocity": 0.3
+                "velocity": 0.3,
             },
-            "name": "RGB"
+            "name": "RGB",
         },
     },
     "filter": {

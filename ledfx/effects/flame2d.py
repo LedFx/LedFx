@@ -1,10 +1,18 @@
 import logging
-import voluptuous as vol
+
 import numpy as np
+import voluptuous as vol
 from PIL import Image
+
+from ledfx.color import (
+    hsv_to_rgb_vect,
+    parse_color,
+    rgb_to_hsv_vect,
+    validate_color,
+)
 from ledfx.effects import Effect
 from ledfx.effects.twod import Twod
-from ledfx.color import parse_color, validate_color, hsv_to_rgb_vect, rgb_to_hsv_vect
+
 _LOGGER = logging.getLogger(__name__)
 
 MIN_VELOCITY_OFFSET = 0.5
@@ -22,18 +30,20 @@ class Flame2d(Twod):
 
     CONFIG_SCHEMA = vol.Schema(
         {
-            vol.Optional("spawn_rate", description="Particles spawn rate", default=0.5):
-                vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
-
-            vol.Optional("velocity", description="Trips to top per second", default=0.3):
-                vol.All(vol.Coerce(float), vol.Range(min=0.1, max=1.0)),
-            
-            vol.Optional("intensity", description="Application of the audio power input", default=0.5):
-                vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
-
-            vol.Optional("blur_amount", description="Blur radius in pixels", default=2):
-                vol.All(vol.Coerce(int), vol.Range(min=0, max=5)),
-
+            vol.Optional(
+                "spawn_rate", description="Particles spawn rate", default=0.5
+            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
+            vol.Optional(
+                "velocity", description="Trips to top per second", default=0.3
+            ): vol.All(vol.Coerce(float), vol.Range(min=0.1, max=1.0)),
+            vol.Optional(
+                "intensity",
+                description="Application of the audio power input",
+                default=0.5,
+            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
+            vol.Optional(
+                "blur_amount", description="Blur radius in pixels", default=2
+            ): vol.All(vol.Coerce(int), vol.Range(min=0, max=5)),
             vol.Optional(
                 "low_band",
                 description="low band flame",
@@ -48,7 +58,7 @@ class Flame2d(Twod):
                 "high_band",
                 description="high band flame",
                 default="#0000FF",
-            ): validate_color,    
+            ): validate_color,
         }
     )
 
@@ -71,7 +81,7 @@ class Flame2d(Twod):
         )
         self.mid_color = np.array(
             parse_color(self._config["mid_band"]), dtype=float
-        )        
+        )
         self.high_color = np.array(
             parse_color(self._config["high_band"]), dtype=float
         )
@@ -81,7 +91,9 @@ class Flame2d(Twod):
         super().do_once()
 
         if self.particles is None:
-            self.r_pixels = np.zeros((self.r_height, self.r_width, 3), dtype=np.float32)
+            self.r_pixels = np.zeros(
+                (self.r_height, self.r_width, 3), dtype=np.float32
+            )
             self.particles = {}
             for group in ("low", "mid", "high"):
                 self.particles[group] = {
@@ -95,23 +107,27 @@ class Flame2d(Twod):
                 }
         self.wobble_amplitude = max(1.0, WOBBLE_RATIO * self.r_width)
 
-
     def audio_data_updated(self, data):
-        self.audio_pow = np.array([
-            self.audio.lows_power(),
-            self.audio.mids_power(),
-            self.audio.high_power()
-        ], dtype=np.float32)
+        self.audio_pow = np.array(
+            [
+                self.audio.lows_power(),
+                self.audio.mids_power(),
+                self.audio.high_power(),
+            ],
+            dtype=np.float32,
+        )
 
     def draw(self):
         self.r_pixels.fill(0)
         delta = self.passed
 
-        for index, (group_name, color, power) in enumerate(zip(
-            ("low", "mid", "high"),
-            (self.low_color, self.mid_color, self.high_color),
-            self.audio_pow
-        )):
+        for index, (group_name, color, power) in enumerate(
+            zip(
+                ("low", "mid", "high"),
+                (self.low_color, self.mid_color, self.high_color),
+                self.audio_pow,
+            )
+        ):
             p = self.particles[group_name]
 
             if p["x"].size > 0:
@@ -120,22 +136,38 @@ class Flame2d(Twod):
                 alive = (p["age"] < p["lifespan"]) & (p["y"] >= 0)
                 for key in p:
                     p[key] = p[key][alive]
-            
+
             # magic number 4 is hand tuned from observations
             # this should otherwise be time invariant and deal with different sizes, though not well
-            self.spawn_accumulator[index] += self.r_width * self.spawn_rate * delta * 4
+            self.spawn_accumulator[index] += (
+                self.r_width * self.spawn_rate * delta * 4
+            )
             n_spawn = int(self.spawn_accumulator[index])
             self.spawn_accumulator[index] -= n_spawn
 
             if n_spawn > 0:
                 new_particles = {
-                    "x": np.random.randint(0, self.r_width, size=n_spawn).astype(np.float32),
+                    "x": np.random.randint(
+                        0, self.r_width, size=n_spawn
+                    ).astype(np.float32),
                     "y": np.full(n_spawn, self.r_height - 1, dtype=np.float32),
                     "age": np.zeros(n_spawn, dtype=np.float32),
-                    "lifespan": np.random.uniform(MIN_LIFESPAN, MAX_LIFESPAN, size=n_spawn).astype(np.float32),
-                    "velocity_y": 1.0 / (self.velocity * np.random.uniform(MIN_VELOCITY_OFFSET, MAX_VELOCITY_OFFSET, size=n_spawn)),
+                    "lifespan": np.random.uniform(
+                        MIN_LIFESPAN, MAX_LIFESPAN, size=n_spawn
+                    ).astype(np.float32),
+                    "velocity_y": 1.0
+                    / (
+                        self.velocity
+                        * np.random.uniform(
+                            MIN_VELOCITY_OFFSET,
+                            MAX_VELOCITY_OFFSET,
+                            size=n_spawn,
+                        )
+                    ),
                     "size": np.random.randint(1, 4, size=n_spawn),
-                    "wobble_phase": np.random.uniform(0, 2 * np.pi, size=n_spawn)
+                    "wobble_phase": np.random.uniform(
+                        0, 2 * np.pi, size=n_spawn
+                    ),
                 }
                 for key in p:
                     p[key] = np.concatenate([p[key], new_particles[key]])
@@ -158,8 +190,10 @@ class Flame2d(Twod):
 
                 scaled_power = (power - 0.3) * self.intensity * 2
                 # Audio-modulated wobble
-                amplified_wobble = self.wobble_amplitude * (1.0 + scaled_power * 2)
-    
+                amplified_wobble = self.wobble_amplitude * (
+                    1.0 + scaled_power * 2
+                )
+
                 x_disp = x + amplified_wobble * np.sin(t * 10 + phase)
 
                 scale = 1.0 + scaled_power
@@ -171,7 +205,12 @@ class Flame2d(Twod):
                 xi = np.round(x_disp).astype(int)
                 yi = np.round(y_render).astype(int)
 
-                in_bounds = (xi >= 0) & (xi < self.r_width) & (yi >= 0) & (yi < self.r_height)
+                in_bounds = (
+                    (xi >= 0)
+                    & (xi < self.r_width)
+                    & (yi >= 0)
+                    & (yi < self.r_height)
+                )
                 xi = xi[in_bounds]
                 yi = yi[in_bounds]
                 rgb_in = rgb[in_bounds]
@@ -182,18 +221,30 @@ class Flame2d(Twod):
                     if np.any(mask):
                         dx = xi[mask] + offset
                         valid = (dx >= 0) & (dx < self.r_width)
-                        np.add.at(self.r_pixels, (yi[mask][valid], dx[valid]), rgb_in[mask][valid])
+                        np.add.at(
+                            self.r_pixels,
+                            (yi[mask][valid], dx[valid]),
+                            rgb_in[mask][valid],
+                        )
 
         if self.blur_amount > 0:
             r = self.blur_amount
             for c in range(3):
-                padded = np.pad(self.r_pixels[:, :, c], ((0, 0), (r, r)), mode='edge')
+                padded = np.pad(
+                    self.r_pixels[:, :, c], ((0, 0), (r, r)), mode="edge"
+                )
                 cumsum = np.cumsum(padded, axis=1)
-                self.r_pixels[:, :, c] = (cumsum[:, 2*r:] - cumsum[:, :-2*r]) / (2 * r)
+                self.r_pixels[:, :, c] = (
+                    cumsum[:, 2 * r :] - cumsum[:, : -2 * r]
+                ) / (2 * r)
 
-                padded = np.pad(self.r_pixels[:, :, c], ((r, r), (0, 0)), mode='edge')
+                padded = np.pad(
+                    self.r_pixels[:, :, c], ((r, r), (0, 0)), mode="edge"
+                )
                 cumsum = np.cumsum(padded, axis=0)
-                self.r_pixels[:, :, c] = (cumsum[2*r:, :] - cumsum[:-2*r, :]) / (2 * r)
+                self.r_pixels[:, :, c] = (
+                    cumsum[2 * r :, :] - cumsum[: -2 * r, :]
+                ) / (2 * r)
 
         clamped = np.clip(self.r_pixels, 0, 255).astype(np.uint8)
         self.matrix = Image.fromarray(clamped, mode="RGB")

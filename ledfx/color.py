@@ -117,6 +117,7 @@ def hsv_to_rgb(hue: NDArray, saturation: float, value: float) -> NDArray:
     # Scale the RGB values to the 0-255 range
     return rgb * 255
 
+
 def rgb_to_hsv_vect(rgb):
     """
     Vectorized RGB to HSV conversion.
@@ -155,6 +156,7 @@ def rgb_to_hsv_vect(rgb):
     hsv = np.stack([h, s, v], axis=-1)
     return hsv[0] if shape == (3,) else hsv
 
+
 def hsv_to_rgb_vect(h, s, v):
     """
     Vectorized HSV to RGB conversion.
@@ -171,19 +173,17 @@ def hsv_to_rgb_vect(h, s, v):
     t = v * (1 - s * (1 - f))
 
     r = np.select(
-        [i == 0, i == 1, i == 2, i == 3, i == 4, i == 5],
-        [v, q, p, p, t, v]
+        [i == 0, i == 1, i == 2, i == 3, i == 4, i == 5], [v, q, p, p, t, v]
     )
     g = np.select(
-        [i == 0, i == 1, i == 2, i == 3, i == 4, i == 5],
-        [t, v, v, q, p, p]
+        [i == 0, i == 1, i == 2, i == 3, i == 4, i == 5], [t, v, v, q, p, p]
     )
     b = np.select(
-        [i == 0, i == 1, i == 2, i == 3, i == 4, i == 5],
-        [p, p, t, v, v, q]
+        [i == 0, i == 1, i == 2, i == 3, i == 4, i == 5], [p, p, t, v, v, q]
     )
 
     return np.stack([r, g, b], axis=-1) * 255
+
 
 def parse_color(color: (str, list, tuple)) -> RGB:
     """
