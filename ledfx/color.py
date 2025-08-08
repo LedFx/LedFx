@@ -118,72 +118,79 @@ def hsv_to_rgb(hue: NDArray, saturation: float, value: float) -> NDArray:
     return rgb * 255
 
 
-def rgb_to_hsv_vect(rgb):
+def hsv_to_rgb_vect(h, s, v, out=None):
     """
-    Vectorized RGB to HSV conversion.
-    Input: rgb – array of shape (N, 3) or (3,), values in 0–255
-    Output: hsv – array of shape (N, 3) or (3,), values in 0–1
+    h, s, v: float32 arrays (N,) in [0,1]
+    Returns float32 RGB in [0,255]. If `out` (N,3) float32 is provided, writes in-place.
     """
-    rgb = np.asarray(rgb, dtype=np.float32)
-    shape = rgb.shape
+    h = np.asarray(h, dtype=np.float32)
+    s = np.asarray(s, dtype=np.float32)
+    v = np.asarray(v, dtype=np.float32)
 
-    if rgb.ndim == 1:
-        rgb = rgb[np.newaxis, :]
+    N = h.shape[0]
+    if out is None:
+        out = np.empty((N, 3), dtype=np.float32)
 
-    rgb /= 255.0
-    r, g, b = rgb[:, 0], rgb[:, 1], rgb[:, 2]
+    r = out[:, 0]; g = out[:, 1]; b = out[:, 2]
+
+    h6 = (h * 6.0).astype(np.float32)
+    i = np.floor(h6).astype(np.int32)         # sector 0..5
+    f = h6 - i
+
+    p = v * (1.0 - s)
+    q = v * (1.0 - s * f)
+    t = v * (1.0 - s * (1.0 - f))
+
+    m0 = (i == 0); r[m0] = v[m0]; g[m0] = t[m0]; b[m0] = p[m0]
+    m1 = (i == 1); r[m1] = q[m1]; g[m1] = v[m1]; b[m1] = p[m1]
+    m2 = (i == 2); r[m2] = p[m2]; g[m2] = v[m2]; b[m2] = t[m2]
+    m3 = (i == 3); r[m3] = p[m3]; g[m3] = q[m3]; b[m3] = v[m3]
+    m4 = (i == 4); r[m4] = t[m4]; g[m4] = p[m4]; b[m4] = v[m4]
+    m5 = (i >= 5); r[m5] = v[m5]; g[m5] = p[m5]; b[m5] = q[m5]
+
+    out *= 255.0
+    return out
+
+
+def rgb_to_hsv_vect(rgb, out=None):
+    """
+    rgb: (N,3) or (3,) uint8/float; returns float32 HSV in [0,1].
+    If `out` (N,3) float32 is provided, writes in-place.
+    """
+    arr = np.asarray(rgb, dtype=np.float32)
+    scalar = (arr.ndim == 1)
+    if scalar:
+        arr = arr[np.newaxis, :]
+
+    arr = arr / 255.0
+    r, g, b = arr[:, 0], arr[:, 1], arr[:, 2]
+
     maxc = np.maximum(np.maximum(r, g), b)
     minc = np.minimum(np.minimum(r, g), b)
     delta = maxc - minc
 
-    v = maxc
-    s = np.where(maxc == 0, 0, delta / maxc)
+    if out is None:
+        out = np.empty((arr.shape[0], 3), dtype=np.float32)
+    h = out[:, 0]; s = out[:, 1]; v = out[:, 2]
 
-    h = np.zeros_like(delta)
-    mask = delta > 0
+    v[:] = maxc
 
+    s[:] = 0.0
+    nz = maxc != 0.0
+    s[nz] = delta[nz] / maxc[nz]
+
+    h[:] = 0.0
+    mask = delta > 0.0
     r_eq = (maxc == r) & mask
     g_eq = (maxc == g) & mask
     b_eq = (maxc == b) & mask
 
-    h[r_eq] = ((g[r_eq] - b[r_eq]) / delta[r_eq]) % 6
-    h[g_eq] = ((b[g_eq] - r[g_eq]) / delta[g_eq]) + 2
-    h[b_eq] = ((r[b_eq] - g[b_eq]) / delta[b_eq]) + 4
+    h[r_eq] = ((g[r_eq] - b[r_eq]) / delta[r_eq]) % 6.0
+    h[g_eq] = ((b[g_eq] - r[g_eq]) / delta[g_eq]) + 2.0
+    h[b_eq] = ((r[b_eq] - g[b_eq]) / delta[b_eq]) + 4.0
 
-    h /= 6.0
-    h = h % 1.0
-
-    hsv = np.stack([h, s, v], axis=-1)
-    return hsv[0] if shape == (3,) else hsv
-
-
-def hsv_to_rgb_vect(h, s, v):
-    """
-    Vectorized HSV to RGB conversion.
-    h, s, v: arrays of shape (N,) in range 0.0 to 1.0
-    Returns: array of shape (N, 3) in range 0 to 255 (float)
-    """
-
-    h_i = (h * 6.0) % 6
-    i = np.floor(h_i).astype(int)
-    f = h_i - i
-
-    p = v * (1 - s)
-    q = v * (1 - s * f)
-    t = v * (1 - s * (1 - f))
-
-    r = np.select(
-        [i == 0, i == 1, i == 2, i == 3, i == 4, i == 5], [v, q, p, p, t, v]
-    )
-    g = np.select(
-        [i == 0, i == 1, i == 2, i == 3, i == 4, i == 5], [t, v, v, q, p, p]
-    )
-    b = np.select(
-        [i == 0, i == 1, i == 2, i == 3, i == 4, i == 5], [p, p, t, v, v, q]
-    )
-
-    return np.stack([r, g, b], axis=-1) * 255
-
+    h[:] = (h / 6.0) % 1.0
+    return out[0] if scalar else out
 
 def parse_color(color: (str, list, tuple)) -> RGB:
     """
