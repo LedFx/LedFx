@@ -28,6 +28,10 @@ RGB_SCRATCH_FACTOR = 16
 #   DENSITY_EXPONENT = 0.0 -> no scaling (original behavior)
 #   DENSITY_EXPONENT = 1.0 -> linear with height (per-pixel-ish density)
 DENSITY_EXPONENT = 0.5
+# Top-edge randomisation: particles get a personal cutoff up to this fraction of height.
+# This breaks the perfectly flat top edge without extra allocations.
+TOP_TRIM_FRAC = 0.40
+INV_TWOPI = 1.0 / (2.0 * np.pi)
 
 # Particle dynamics / visuals
 MIN_VELOCITY_OFFSET = 0.5
@@ -57,6 +61,8 @@ class Flame2d(Twod):
     - If a group's base color is black (V==0 in HSV), we skip both spawning
       and rendering for that group (fast path). Particles for that group are
       effectively paused in memory for that frame.
+    - Top-edge randomisation via TOP_TRIM_FRAC gives each particle a personal
+      cutoff height, breaking a uniform top line without extra arrays.
 
     Visual notes:
     - Hue/value evolve over particle lifetime to create a flame gradient.
@@ -293,6 +299,7 @@ class Flame2d(Twod):
         - Convert HSV->RGB in chunks and composite with vectorized scatter.
         - Optional separable blur.
         - Skip both spawn and render for any group whose base color is black.
+        - Apply per-particle top-edge randomisation for a natural flame top.
         """
         self.r_pixels.fill(0)
         delta = self.passed
@@ -332,7 +339,13 @@ class Flame2d(Twod):
 
                 new_age = age + delta
                 new_y = y - (H / vy) * delta
-                alive = (new_age < life) & (new_y >= 0.0)
+
+                # Per-particle cutoff height derived from wobble_phase:
+                # wobble_phase ∈ [0, 2π) -> uniform [0,1) via *INV_TWOPI,
+                # scaled by (H * TOP_TRIM_FRAC) -> cutoff in pixels.
+                cutoff = p.wobble_phase[:n] * INV_TWOPI * (H * TOP_TRIM_FRAC)
+
+                alive = (new_age < life) & (new_y >= cutoff)
 
                 n = self._compact_alive(p, n, alive, new_age, new_y)
                 self._counts[group_name] = n
@@ -430,7 +443,7 @@ class Flame2d(Twod):
 
                 # Vectorized scatter across [-3..3] offsets
                 dx = xi[:, None] + offsets[None, :]  # (M,7)
-                size_ok = size_in[:, None] >= abs_offsets[None, :]
+                size_ok = (size_in[:, None] >= abs_offsets[None, :])
                 valid = (dx >= 0) & (dx < W) & size_ok
                 if np.any(valid):
                     dxv = dx[valid]
