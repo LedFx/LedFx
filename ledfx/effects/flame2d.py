@@ -116,7 +116,9 @@ class Flame2d(Twod):
         # Perf helpers
         self._rng = np.random.default_rng()
         self._rgb_scratch = None  # preallocated (N,3) float32 buffer
-        self._offsets = np.arange(-3, 4, dtype=np.int32)  # scatter kernel [-3..3]
+        self._offsets = np.arange(
+            -3, 4, dtype=np.int32
+        )  # scatter kernel [-3..3]
         self._abs_offsets = np.abs(self._offsets)
 
         # Blur scratch buffers (allocated on-demand)
@@ -133,9 +135,15 @@ class Flame2d(Twod):
         self.max_lifespan = MAX_LIFESPAN
         self.velocity = self._config["velocity"]
         self.blur_amount = self._config["blur_amount"]
-        self.low_color = np.array(parse_color(self._config["low_band"]), dtype=float)
-        self.mid_color = np.array(parse_color(self._config["mid_band"]), dtype=float)
-        self.high_color = np.array(parse_color(self._config["high_band"]), dtype=float)
+        self.low_color = np.array(
+            parse_color(self._config["low_band"]), dtype=float
+        )
+        self.mid_color = np.array(
+            parse_color(self._config["mid_band"]), dtype=float
+        )
+        self.high_color = np.array(
+            parse_color(self._config["high_band"]), dtype=float
+        )
         self.intensity = self._config["intensity"]
 
     def _empty_cap(self, n: int) -> ParticleGroup:
@@ -194,7 +202,9 @@ class Flame2d(Twod):
         super().do_once()
 
         # Render target (float32 until final clip/cast)
-        self.r_pixels = np.zeros((self.r_height, self.r_width, 3), dtype=np.float32)
+        self.r_pixels = np.zeros(
+            (self.r_height, self.r_width, 3), dtype=np.float32
+        )
 
         # Particle capacity
         self._ensure_group_caps(INIT_CAP)
@@ -211,7 +221,9 @@ class Flame2d(Twod):
 
         # Preallocate HSV->RGB scratch buffer; chunking uses this cap
         max_particles_guess = max(1024, self.r_width * RGB_SCRATCH_FACTOR)
-        self._rgb_scratch = np.empty((max_particles_guess, 3), dtype=np.float32)
+        self._rgb_scratch = np.empty(
+            (max_particles_guess, 3), dtype=np.float32
+        )
 
         # Prepare blur scratch if needed
         self._ensure_blur_buffers()
@@ -226,7 +238,10 @@ class Flame2d(Twod):
         H, W = self.r_height, self.r_width
         wantH = max(H, H + 2 * r)
         wantW = max(W + 2 * r, W)
-        if self._blur_padded is None or self._blur_padded.shape != (wantH, wantW):
+        if self._blur_padded is None or self._blur_padded.shape != (
+            wantH,
+            wantW,
+        ):
             self._blur_padded = np.empty((wantH, wantW), dtype=np.float32)
             self._blur_cumsum = np.empty_like(self._blur_padded)
 
@@ -235,7 +250,11 @@ class Flame2d(Twod):
         Pull latest band powers into a compact float32 vector (low, mid, high).
         """
         self.audio_pow = np.array(
-            [self.audio.lows_power(), self.audio.mids_power(), self.audio.high_power()],
+            [
+                self.audio.lows_power(),
+                self.audio.mids_power(),
+                self.audio.high_power(),
+            ],
             dtype=np.float32,
         )
 
@@ -283,7 +302,11 @@ class Flame2d(Twod):
         W = self.r_width
         offsets = self._offsets
         abs_offsets = self._abs_offsets
-        cap = self._rgb_scratch.shape[0] if self._rgb_scratch is not None else 1_000_000
+        cap = (
+            self._rgb_scratch.shape[0]
+            if self._rgb_scratch is not None
+            else 1_000_000
+        )
 
         # Resolution-aware spawn scaling (64x64 baseline)
         height_scale = (H / 64.0) ** DENSITY_EXPONENT
@@ -332,20 +355,28 @@ class Flame2d(Twod):
 
                 if n_spawn > 0:
                     s = slice(n, n + n_spawn)
-                    p.x[s] = self._rng.integers(0, W, size=n_spawn, dtype=np.int32).astype(
-                        np.float32
-                    )
+                    p.x[s] = self._rng.integers(
+                        0, W, size=n_spawn, dtype=np.int32
+                    ).astype(np.float32)
                     p.y[s] = H - 1
                     p.age[s] = 0.0
-                    p.lifespan[s] = self._rng.uniform(MIN_LIFESPAN, MAX_LIFESPAN, size=n_spawn)
+                    p.lifespan[s] = self._rng.uniform(
+                        MIN_LIFESPAN, MAX_LIFESPAN, size=n_spawn
+                    )
                     p.velocity_y[s] = 1.0 / (
                         self.velocity
                         * self._rng.uniform(
-                            MIN_VELOCITY_OFFSET, MAX_VELOCITY_OFFSET, size=n_spawn
+                            MIN_VELOCITY_OFFSET,
+                            MAX_VELOCITY_OFFSET,
+                            size=n_spawn,
                         )
                     )
-                    p.size[s] = self._rng.integers(1, 4, size=n_spawn).astype(np.float32)
-                    p.wobble_phase[s] = self._rng.uniform(0.0, 2 * np.pi, size=n_spawn)
+                    p.size[s] = self._rng.integers(1, 4, size=n_spawn).astype(
+                        np.float32
+                    )
+                    p.wobble_phase[s] = self._rng.uniform(
+                        0.0, 2 * np.pi, size=n_spawn
+                    )
                     n += n_spawn
                     self._counts[group_name] = n
 
@@ -376,7 +407,9 @@ class Flame2d(Twod):
                 vals = v_base * (1.0 - t * t)
 
                 # HSV -> RGB into preallocated scratch
-                rgb = hsv_to_rgb_vect(hues, sats, vals, out=self._rgb_scratch[: end - start])
+                rgb = hsv_to_rgb_vect(
+                    hues, sats, vals, out=self._rgb_scratch[: end - start]
+                )
 
                 # Wobble + vertical lift
                 x_disp = xs + wobble * np.sin(t * 10.0 + phase)
@@ -397,12 +430,14 @@ class Flame2d(Twod):
 
                 # Vectorized scatter across [-3..3] offsets
                 dx = xi[:, None] + offsets[None, :]  # (M,7)
-                size_ok = (size_in[:, None] >= abs_offsets[None, :])
+                size_ok = size_in[:, None] >= abs_offsets[None, :]
                 valid = (dx >= 0) & (dx < W) & size_ok
                 if np.any(valid):
                     dxv = dx[valid]
                     yv = np.repeat(yi, offsets.size)[valid.ravel()]
-                    rgbv = np.repeat(rgb_in, offsets.size, axis=0)[valid.ravel()]
+                    rgbv = np.repeat(rgb_in, offsets.size, axis=0)[
+                        valid.ravel()
+                    ]
                     np.add.at(self.r_pixels, (yv, dxv), rgbv)
 
         # --- Blur (separable; scratch reuse) ---------------------------------
@@ -418,7 +453,9 @@ class Flame2d(Twod):
 
                 cs = self._blur_cumsum[:H, : W + 2 * r]
                 np.cumsum(pad, axis=1, out=cs)
-                self.r_pixels[:, :, c] = (cs[:, 2 * r :] - cs[:, : -2 * r]) / (2 * r)
+                self.r_pixels[:, :, c] = (cs[:, 2 * r :] - cs[:, : -2 * r]) / (
+                    2 * r
+                )
 
                 # Vertical pass
                 pad = self._blur_padded[: H + 2 * r, :W]
@@ -428,7 +465,9 @@ class Flame2d(Twod):
 
                 cs = self._blur_cumsum[: H + 2 * r, :W]
                 np.cumsum(pad, axis=0, out=cs)
-                self.r_pixels[:, :, c] = (cs[2 * r :, :] - cs[: -2 * r, :]) / (2 * r)
+                self.r_pixels[:, :, c] = (cs[2 * r :, :] - cs[: -2 * r, :]) / (
+                    2 * r
+                )
 
         # Finalize (clip to [0,255] and cast to uint8)
         clamped = np.clip(self.r_pixels, 0, 255).astype(np.uint8)
