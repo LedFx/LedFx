@@ -30,6 +30,7 @@
    :caption: Effects
 
    /effects/simple/filter
+   /effects/matrix/flame
    /effects/matrix/radial
 
 .. toctree::
