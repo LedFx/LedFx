@@ -16,10 +16,12 @@ from ledfx.effects.twod import Twod
 _LOGGER = logging.getLogger(__name__)
 
 # ---- Tunables ----
-AUTO_GROW = False          # False = fixed cap per group (drop overflow); True = auto-grow geometrically
-INIT_CAP = 4096            # initial particles capacity per group (only used when AUTO_GROW or as hard cap)
-RGB_SCRATCH_FACTOR = 16    # prealloc rgb_scratch rows = r_width * this factor
-DENSITY_EXPONENT = 0.5     # 0.0 = no spawn scaling; 1.0 = linear with height (64 is baseline)
+AUTO_GROW = False  # False = fixed cap per group (drop overflow); True = auto-grow geometrically
+INIT_CAP = 4096  # initial particles capacity per group (only used when AUTO_GROW or as hard cap)
+RGB_SCRATCH_FACTOR = 16  # prealloc rgb_scratch rows = r_width * this factor
+DENSITY_EXPONENT = (
+    0.5  # 0.0 = no spawn scaling; 1.0 = linear with height (64 is baseline)
+)
 
 MIN_VELOCITY_OFFSET = 0.5
 MAX_VELOCITY_OFFSET = 1.2
@@ -70,7 +72,9 @@ class Flame2d(Twod):
 
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
-        self.particles = None          # dict[str, ParticleGroup] with capacity-backed arrays
+        self.particles = (
+            None  # dict[str, ParticleGroup] with capacity-backed arrays
+        )
         self._counts = {"low": 0, "mid": 0, "high": 0}
         self._caps = {"low": 0, "mid": 0, "high": 0}
 
@@ -147,7 +151,9 @@ class Flame2d(Twod):
     def do_once(self):
         super().do_once()
 
-        self.r_pixels = np.zeros((self.r_height, self.r_width, 3), dtype=np.float32)
+        self.r_pixels = np.zeros(
+            (self.r_height, self.r_width, 3), dtype=np.float32
+        )
         self._ensure_group_caps(INIT_CAP)
 
         self.wobble_amplitude = max(1.0, WOBBLE_RATIO * self.r_width)
@@ -159,7 +165,9 @@ class Flame2d(Twod):
 
         # Preallocate RGB scratch for hsv_to_rgb_vect (fixed cap by preference)
         max_particles_guess = max(1024, self.r_width * RGB_SCRATCH_FACTOR)
-        self._rgb_scratch = np.empty((max_particles_guess, 3), dtype=np.float32)
+        self._rgb_scratch = np.empty(
+            (max_particles_guess, 3), dtype=np.float32
+        )
 
         # Allocate / resize blur scratch (if needed)
         self._ensure_blur_buffers()
@@ -172,7 +180,10 @@ class Flame2d(Twod):
         H, W = self.r_height, self.r_width
         wantH = max(H, H + 2 * r)
         wantW = max(W + 2 * r, W)
-        if self._blur_padded is None or self._blur_padded.shape != (wantH, wantW):
+        if self._blur_padded is None or self._blur_padded.shape != (
+            wantH,
+            wantW,
+        ):
             self._blur_padded = np.empty((wantH, wantW), dtype=np.float32)
             self._blur_cumsum = np.empty_like(self._blur_padded)
 
@@ -186,7 +197,9 @@ class Flame2d(Twod):
             dtype=np.float32,
         )
 
-    def _compact_alive(self, p: ParticleGroup, n: int, alive: np.ndarray, new_age, new_y):
+    def _compact_alive(
+        self, p: ParticleGroup, n: int, alive: np.ndarray, new_age, new_y
+    ):
         """Compact alive particles to front; write updated age/y; return new count."""
         if not np.any(alive):
             return 0
@@ -208,7 +221,11 @@ class Flame2d(Twod):
         W = self.r_width
         offsets = self._offsets
         abs_offsets = self._abs_offsets
-        cap = self._rgb_scratch.shape[0] if self._rgb_scratch is not None else 1_000_000
+        cap = (
+            self._rgb_scratch.shape[0]
+            if self._rgb_scratch is not None
+            else 1_000_000
+        )
 
         # resolution-aware spawn scaling (64x64 baseline)
         height_scale = (H / 64.0) ** DENSITY_EXPONENT
@@ -251,13 +268,28 @@ class Flame2d(Twod):
                             n_spawn = free
                 if n_spawn > 0:
                     s = slice(n, n + n_spawn)
-                    p.x[s] = self._rng.integers(0, W, size=n_spawn, dtype=np.int32).astype(np.float32)
+                    p.x[s] = self._rng.integers(
+                        0, W, size=n_spawn, dtype=np.int32
+                    ).astype(np.float32)
                     p.y[s] = H - 1
                     p.age[s] = 0.0
-                    p.lifespan[s] = self._rng.uniform(MIN_LIFESPAN, MAX_LIFESPAN, size=n_spawn)
-                    p.velocity_y[s] = 1.0 / (self.velocity * self._rng.uniform(MIN_VELOCITY_OFFSET, MAX_VELOCITY_OFFSET, size=n_spawn))
-                    p.size[s] = self._rng.integers(1, 4, size=n_spawn).astype(np.float32)
-                    p.wobble_phase[s] = self._rng.uniform(0.0, 2*np.pi, size=n_spawn)
+                    p.lifespan[s] = self._rng.uniform(
+                        MIN_LIFESPAN, MAX_LIFESPAN, size=n_spawn
+                    )
+                    p.velocity_y[s] = 1.0 / (
+                        self.velocity
+                        * self._rng.uniform(
+                            MIN_VELOCITY_OFFSET,
+                            MAX_VELOCITY_OFFSET,
+                            size=n_spawn,
+                        )
+                    )
+                    p.size[s] = self._rng.integers(1, 4, size=n_spawn).astype(
+                        np.float32
+                    )
+                    p.wobble_phase[s] = self._rng.uniform(
+                        0.0, 2 * np.pi, size=n_spawn
+                    )
                     n += n_spawn
                     self._counts[group_name] = n
 
@@ -287,7 +319,9 @@ class Flame2d(Twod):
                 vals = v_base * (1.0 - t * t)
 
                 # HSV -> RGB into preallocated scratch
-                rgb = hsv_to_rgb_vect(hues, sats, vals, out=self._rgb_scratch[: end - start])
+                rgb = hsv_to_rgb_vect(
+                    hues, sats, vals, out=self._rgb_scratch[: end - start]
+                )
 
                 # wobble & vertical scaling
                 x_disp = xs + wobble * np.sin(t * 10.0 + phase)
@@ -297,10 +331,7 @@ class Flame2d(Twod):
                 xi = np.round(x_disp).astype(np.int32)
                 yi = np.round(y_render).astype(np.int32)
 
-                in_bounds = (
-                    (xi >= 0) & (xi < W) &
-                    (yi >= 0) & (yi < H)
-                )
+                in_bounds = (xi >= 0) & (xi < W) & (yi >= 0) & (yi < H)
                 if not np.any(in_bounds):
                     continue
 
@@ -310,13 +341,15 @@ class Flame2d(Twod):
                 size_in = size[in_bounds]
 
                 # vectorized scatter across 7 offsets
-                dx = xi[:, None] + offsets[None, :]          # (M,7)
-                size_ok = (size_in[:, None] >= abs_offsets[None, :])
+                dx = xi[:, None] + offsets[None, :]  # (M,7)
+                size_ok = size_in[:, None] >= abs_offsets[None, :]
                 valid = (dx >= 0) & (dx < W) & size_ok
                 if np.any(valid):
                     dxv = dx[valid]
                     yv = np.repeat(yi, offsets.size)[valid.ravel()]
-                    rgbv = np.repeat(rgb_in, offsets.size, axis=0)[valid.ravel()]
+                    rgbv = np.repeat(rgb_in, offsets.size, axis=0)[
+                        valid.ravel()
+                    ]
                     np.add.at(self.r_pixels, (yv, dxv), rgbv)
 
         # --- blur (scratch reuse, same math) ---
@@ -332,7 +365,9 @@ class Flame2d(Twod):
 
                 cs = self._blur_cumsum[:H, : W + 2 * r]
                 np.cumsum(pad, axis=1, out=cs)
-                self.r_pixels[:, :, c] = (cs[:, 2 * r :] - cs[:, : -2 * r]) / (2 * r)
+                self.r_pixels[:, :, c] = (cs[:, 2 * r :] - cs[:, : -2 * r]) / (
+                    2 * r
+                )
 
                 # vertical
                 pad = self._blur_padded[: H + 2 * r, :W]
@@ -342,7 +377,9 @@ class Flame2d(Twod):
 
                 cs = self._blur_cumsum[: H + 2 * r, :W]
                 np.cumsum(pad, axis=0, out=cs)
-                self.r_pixels[:, :, c] = (cs[2 * r :, :] - cs[: -2 * r, :]) / (2 * r)
+                self.r_pixels[:, :, c] = (cs[2 * r :, :] - cs[: -2 * r, :]) / (
+                    2 * r
+                )
 
         # finalize
         clamped = np.clip(self.r_pixels, 0, 255).astype(np.uint8)

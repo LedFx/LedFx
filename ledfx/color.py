@@ -131,22 +131,42 @@ def hsv_to_rgb_vect(h, s, v, out=None):
     if out is None:
         out = np.empty((N, 3), dtype=np.float32)
 
-    r = out[:, 0]; g = out[:, 1]; b = out[:, 2]
+    r = out[:, 0]
+    g = out[:, 1]
+    b = out[:, 2]
 
     h6 = (h * 6.0).astype(np.float32)
-    i = np.floor(h6).astype(np.int32)         # sector 0..5
+    i = np.floor(h6).astype(np.int32)  # sector 0..5
     f = h6 - i
 
     p = v * (1.0 - s)
     q = v * (1.0 - s * f)
     t = v * (1.0 - s * (1.0 - f))
 
-    m0 = (i == 0); r[m0] = v[m0]; g[m0] = t[m0]; b[m0] = p[m0]
-    m1 = (i == 1); r[m1] = q[m1]; g[m1] = v[m1]; b[m1] = p[m1]
-    m2 = (i == 2); r[m2] = p[m2]; g[m2] = v[m2]; b[m2] = t[m2]
-    m3 = (i == 3); r[m3] = p[m3]; g[m3] = q[m3]; b[m3] = v[m3]
-    m4 = (i == 4); r[m4] = t[m4]; g[m4] = p[m4]; b[m4] = v[m4]
-    m5 = (i >= 5); r[m5] = v[m5]; g[m5] = p[m5]; b[m5] = q[m5]
+    m0 = i == 0
+    r[m0] = v[m0]
+    g[m0] = t[m0]
+    b[m0] = p[m0]
+    m1 = i == 1
+    r[m1] = q[m1]
+    g[m1] = v[m1]
+    b[m1] = p[m1]
+    m2 = i == 2
+    r[m2] = p[m2]
+    g[m2] = v[m2]
+    b[m2] = t[m2]
+    m3 = i == 3
+    r[m3] = p[m3]
+    g[m3] = q[m3]
+    b[m3] = v[m3]
+    m4 = i == 4
+    r[m4] = t[m4]
+    g[m4] = p[m4]
+    b[m4] = v[m4]
+    m5 = i >= 5
+    r[m5] = v[m5]
+    g[m5] = p[m5]
+    b[m5] = q[m5]
 
     out *= 255.0
     return out
@@ -158,7 +178,7 @@ def rgb_to_hsv_vect(rgb, out=None):
     If `out` (N,3) float32 is provided, writes in-place.
     """
     arr = np.asarray(rgb, dtype=np.float32)
-    scalar = (arr.ndim == 1)
+    scalar = arr.ndim == 1
     if scalar:
         arr = arr[np.newaxis, :]
 
@@ -171,7 +191,9 @@ def rgb_to_hsv_vect(rgb, out=None):
 
     if out is None:
         out = np.empty((arr.shape[0], 3), dtype=np.float32)
-    h = out[:, 0]; s = out[:, 1]; v = out[:, 2]
+    h = out[:, 0]
+    s = out[:, 1]
+    v = out[:, 2]
 
     v[:] = maxc
 
@@ -191,6 +213,7 @@ def rgb_to_hsv_vect(rgb, out=None):
 
     h[:] = (h / 6.0) % 1.0
     return out[0] if scalar else out
+
 
 def parse_color(color: (str, list, tuple)) -> RGB:
     """
