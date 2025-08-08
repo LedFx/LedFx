@@ -443,7 +443,7 @@ class Flame2d(Twod):
 
                 # Vectorized scatter across [-3..3] offsets
                 dx = xi[:, None] + offsets[None, :]  # (M,7)
-                size_ok = (size_in[:, None] >= abs_offsets[None, :])
+                size_ok = size_in[:, None] >= abs_offsets[None, :]
                 valid = (dx >= 0) & (dx < W) & size_ok
                 if np.any(valid):
                     dxv = dx[valid]
