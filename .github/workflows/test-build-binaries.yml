@@ -312,17 +312,15 @@ jobs:
         run: docker load -i image-${{ matrix.ARCH }}.tar
       - name: Run test container
         run: |
-          docker run --name ledfx-run ${{ env.GHCR_IMAGE }}:edge-${{ matrix.ARCH }}-${{ github.sha }} --ci-smoke-test -vv -c debug_config --offline
-      - name: Copy log file from container to workspace
+          docker run --rm ${{ env.GHCR_IMAGE }}:edge-${{ matrix.ARCH }}-${{ github.sha }} --ci-smoke-test -vv --offline
+      - name: Get LedFx Version
         run: |
-          docker cp ledfx-run:/home/ledfx/debug_config/ledfx.log ${{ github.workspace }}/ledfx.log
-          docker rm ledfx-run || echo "Container ledfx-run already removed"
-      - name: Attach LedFx test log
+          docker run --rm --entrypoint ledfx ${{ env.GHCR_IMAGE }}:edge-${{ matrix.ARCH }}-${{ github.sha }} --version | sed 's/LedFx //' > ledfx_version_docker.txt
+      - name: Upload image artifact
         uses: actions/upload-artifact@v4
-        if: always()
         with:
-          name: ledfx-log-${{ runner.os }}-${{ env.IMAGE_NAME }}-${{ matrix.ARCH }}-docker.log
-          path: ${{ github.workspace }}/ledfx.log
+          name: ledfx_version_docker-${{ matrix.ARCH }}
+          path: ledfx_version_docker.txt
 
   docker-publish:
     name: Publish docker multiarch image
@@ -330,10 +328,10 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        ARCH: ["amd64", "arm64"]
+        ARCH: ["amd64"]
       fail-fast: false
     env:
-      IMAGE_NAME: ledfx4
+      IMAGE_NAME: ledfx
     steps:
       # - name: Set up Docker Buildx
       #   uses: docker/setup-buildx-action@v3
@@ -350,7 +348,7 @@ jobs:
       - name: Download ledfx version docker txt
         uses: actions/download-artifact@v4
         with:
-          name: ledfx_version_docker
+          name: ledfx_version_docker-${{ matrix.ARCH }}
       - name: Get LedFx Version
         id: ledfx-version
         run: |
