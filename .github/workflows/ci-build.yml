@@ -210,11 +210,11 @@ jobs:
             IS_RELEASE=${{ startsWith(github.ref, 'refs/tags/') }}
       - name: Run ci-smoke-test
         run: |
-          docker run --name ledfx-run ${{ env.IMAGE_NAME }}:${{ matrix.ARCH }} --ci-smoke-test -vv -c debug_config --offline
+          docker run --name ledfx-run-${{ matrix.ARCH }} ${{ env.IMAGE_NAME }}:${{ matrix.ARCH }} --ci-smoke-test -vv -c debug_config --offline
       - name: Copy log file from container to workspace
         run: |
-          docker cp ledfx-run:/home/ledfx/debug_config/ledfx.log ${{ github.workspace }}/ledfx.log
-          docker rm ledfx-run || echo "Container ledfx-run already removed"
+          docker cp ledfx-run-${{ matrix.ARCH }}:/home/ledfx/debug_config/ledfx.log ${{ github.workspace }}/ledfx.log
+          docker rm ledfx-run-${{ matrix.ARCH }} || echo "Container ledfx-run already removed"
       - name: Attach LedFx test log
         uses: actions/upload-artifact@v4
         if: always()
