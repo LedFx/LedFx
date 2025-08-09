@@ -1,17 +1,24 @@
 FROM ghcr.io/astral-sh/uv:python3.12-bookworm AS build
-ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy
-ENV UV_PYTHON_DOWNLOADS=0
+ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy UV_PYTHON_DOWNLOADS=0
+ARG TARGETARCH
 WORKDIR /app
-RUN apt update && apt install -y cmake gcc portaudio19-dev && rm -rf /var/lib/apt/lists/*
+RUN --mount=type=cache,id=apt-cache-${TARGETARCH},target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,id=apt-lib-${TARGETARCH},target=/var/lib/apt,sharing=locked \
+    apt-get update && apt-get install -y cmake gcc portaudio19-dev --no-install-recommends
+    # && rm -rf /var/lib/apt/lists/*
 COPY uv.lock pyproject.toml /app/
-RUN uv sync --frozen --no-install-project --no-dev
+RUN --mount=type=cache,id=uv-cache-${TARGETARCH},target=/root/.cache/uv \
+    uv sync --no-install-project --no-editable
 COPY . /app
-RUN uv pip install .[hue]
+RUN --mount=type=cache,id=uv-cache-${TARGETARCH},target=/root/.cache/uv \
+    uv sync --no-editable --extra hue
 
 FROM python:3.12-slim AS runner
-RUN apt update && apt install -y libportaudio2 pulseaudio --no-install-recommends && rm -rf /var/lib/apt/lists/*
-
-FROM runner
+ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy UV_PYTHON_DOWNLOADS=0
+ARG TARGETARCH
+RUN --mount=type=cache,id=apt-cache-${TARGETARCH},target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,id=apt-lib-${TARGETARCH},target=/var/lib/apt,sharing=locked \
+    apt-get update && apt-get install -y libportaudio2 pulseaudio --no-install-recommends && rm -rf /var/lib/apt/lists/*
 ENV HOME="/home/ledfx"
 ENV PATH="/app/.venv/bin:$PATH"
 ENV PYTHONUNBUFFERED=1
@@ -34,5 +41,6 @@ HEALTHCHECK --interval=60s --timeout=3s --start-period=3s --retries=3 \
   CMD pactl info > /dev/null 2>&1 || exit 1
 EXPOSE 8888/tcp
 ENTRYPOINT ["/home/ledfx/start.sh"]
-LABEL maintainer="www.github.com/ledfx/ledfx"
+LABEL org.opencontainers.image.source="https://github.com/LedFx/LedFx"
+LABEL org.opencontainers.image.description="LedFx makes your LEDs dance to audio"
 #build with "docker build -f ledfx_docker/Dockerfile -t ledfx ."

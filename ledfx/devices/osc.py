@@ -92,7 +92,7 @@ class OSCServerDevice(NetworkedDevice):
         starting_addr = self._config["starting_addr"]
 
         # Convert data to rgb tuple
-        colors = [(int(r), int(g), int(b)) for r, g, b in data]
+        colors = data.astype(int)
 
         # Create array for messages
         messages = []

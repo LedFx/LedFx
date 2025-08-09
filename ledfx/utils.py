@@ -34,6 +34,7 @@ from platform import (
 from subprocess import PIPE, Popen
 from typing import Callable
 
+import netifaces
 import numpy as np
 import PIL.Image as Image
 import PIL.ImageFont as ImageFont
@@ -221,6 +222,34 @@ def get_local_ip():
             return "127.0.0.1"
     finally:
         sock.close()
+
+
+def check_if_ip_is_broadcast(thisip):
+    """
+    Check if provided IP is the broadcast address of
+    one of the network interfaces
+
+    Returns:
+        True if IP is a broadcast address, False otherwise.
+
+    """
+    try:
+        # iterate over all interfaces
+        for iface in netifaces.interfaces():
+            iface = netifaces.ifaddresses(iface)
+            # iterate over all ipv4 address (if available) for this interface
+            if netifaces.AF_INET in iface:
+                for ip in iface[netifaces.AF_INET]:
+                    # check if a broadcast address is set and compare
+                    if "broadcast" in ip and ip["broadcast"] == thisip:
+                        return True
+
+        # no matching broadcast address found
+        return False
+
+    except OSError as e:
+        _LOGGER.warning(f"Unable to check if ip is a broadcast address: {e}")
+        return False
 
 
 def async_fire_and_return(coro, callback, timeout=10):
@@ -2146,3 +2175,20 @@ def get_primary_ip() -> str:
     except Exception as e:
         _LOGGER.warning(f"Primary IP detection via socket failed: {e}")
         return None  # no fallback
+
+
+def nonlinear_log(x, power=3):
+    """
+    Apply a nonlinear logarithmic transformation to the input value(s).
+    This function applies a transformation that is similar to a logarithm but
+    allows for a customizable power to control the steepness of the curve.
+    - At power = 1: the output is equal to the input (linear).
+    - At power > 1: higher input values are pulled closer to 1.0.
+    The transformation is applied element-wise if `x` is a NumPy array.
+    Parameters:
+        x (float or np.ndarray): Input value(s) between 0 and 1.
+        power (float): Power factor to control the steepness of the curve.
+    Returns:
+        float or np.ndarray: Transformed value(s), same shape and type as `x`.
+    """
+    return np.sign(x) * (abs(x) ** power)

@@ -162,9 +162,7 @@ class SchemaEndpoint(RestEndpoint):
                 # Get melbank collection schema
                 response["melbank_collection"] = {
                     "schema": {
-                        **convertToJsonSchema(
-                            Melbank.CONFIG_SCHEMA,
-                        ),
+                        **convertToJsonSchema(Melbank.CONFIG_SCHEMA),
                         **{
                             "permitted_keys": PERMITTED_KEYS[
                                 "melbank_collection"
@@ -176,9 +174,7 @@ class SchemaEndpoint(RestEndpoint):
                 # Get wled schema
                 response["wled_preferences"] = {
                     "schema": {
-                        **convertToJsonSchema(
-                            WLED_CONFIG_SCHEMA,
-                        ),
+                        **convertToJsonSchema(WLED_CONFIG_SCHEMA),
                         **{
                             "permitted_keys": PERMITTED_KEYS[
                                 "wled_preferences"

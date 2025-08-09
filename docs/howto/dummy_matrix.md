@@ -73,10 +73,9 @@ Now hit the display matrix button at (1)
 You then have a fully animating 64x64 display of the 2d eqailser, but
 lets tweak a few more things before you finish.
 
-1)  slide Rotate to 2 to gets things bottom up
-2)  slide bands to 64 to take full advantage of the resolution available
-
 ![Tweak the settings](/_static/howto/matrix/matrix10.png)
+
+1)  slide bands to 64 to take full advantage of the resolution available
 
 ![Post tweaks, everything oriented correctly](/_static/howto/matrix/matrix11.png)
 

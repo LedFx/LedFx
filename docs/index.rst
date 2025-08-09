@@ -6,7 +6,8 @@
 
    /installing
    /launch
-   /developer
+   /developer/developer
+   /developer/architecture
    /README
 
 .. toctree::
@@ -29,6 +30,8 @@
    :caption: Effects
 
    /effects/simple/filter
+   /effects/matrix/flame
+   /effects/matrix/radial
 
 .. toctree::
    :maxdepth: 1
@@ -53,7 +56,8 @@
    :maxdepth: 2
    :caption: Help
 
-   /trouble
+   /troubleshoot/trouble
+   /troubleshoot/network
    /howto/report
 
 License
