@@ -270,12 +270,9 @@ jobs:
     name: Publish docker multiarch image
     needs: [build-ledfx-docker, docker-test]
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        ARCH: ["amd64"]
-      fail-fast: false
     env:
       IMAGE_NAME: ledfx
+      ARCH: amd64
     steps:
       - name: Lowercase repository owner
         id: repo
@@ -290,7 +287,7 @@ jobs:
       - name: Download ledfx version docker txt
         uses: actions/download-artifact@v4
         with:
-          name: ledfx_version_docker-${{ matrix.ARCH }}
+          name: ledfx_version_docker-${{ env.ARCH }}
       - name: Get LedFx Version
         id: ledfx-version
         run: |
