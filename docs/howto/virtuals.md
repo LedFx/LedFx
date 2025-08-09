@@ -271,4 +271,4 @@ devices of 16x64, not 4 of 32x32.
 
 As we can only stack in one dimension, putting the 4 devices of 16x64
 together via virtuals will allow you to achieve a 64x64 matrix
-controlled by a single virutal in ledfx.
+controlled by a single virtual in ledfx.
