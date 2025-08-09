@@ -193,7 +193,7 @@ jobs:
           GHCR_IMAGE="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/${IMAGE_NAME}"
           echo "GHCR_IMAGE=${GHCR_IMAGE}" >> $GITHUB_ENV
           if [[ "${GITHUB_REF}" == "refs/heads/main" || "${GITHUB_REF}" == refs/tags/v* ]] && [[ "${GITHUB_EVENT_NAME}" != "pull_request" ]]; then
-            echo "DOCKER_CACHE_TO=type=registry,ref=${GHCR_IMAGE}:cache-${ARCH},mode=max" >> $GITHUB_ENV
+            echo "DOCKER_CACHE_TO=type=registry,ref=${GHCR_IMAGE}:cache-${{ matrix.ARCH }},mode=max" >> $GITHUB_ENV
           else
             echo "DOCKER_CACHE_TO=" >> $GITHUB_ENV
           fi
