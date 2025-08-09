@@ -286,7 +286,7 @@ jobs:
   #         name: image-${{ matrix.ARCH }}
   #         path: image-${{ matrix.ARCH }}.tar
   docker-test:
-    name: Test amd64 image
+    name: Test docker images image
     needs: [build-ledfx-docker]
     runs-on: ubuntu-latest
     strategy:
@@ -300,6 +300,10 @@ jobs:
         id: repo
         run: |
           echo "GHCR_IMAGE=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/${{ env.IMAGE_NAME }}" >> $GITHUB_ENV
+          
+      - name: Set up QEMU (for arm64 emulation)
+        uses: docker/setup-qemu-action@v3
+
       - name: Download image artifact
         uses: actions/download-artifact@v4
         with:
