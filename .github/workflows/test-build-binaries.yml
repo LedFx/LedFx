@@ -312,7 +312,7 @@ jobs:
         run: docker load -i image-${{ matrix.ARCH }}.tar
       - name: Run test container
         run: |
-          docker run --name ledfx-run ${{ env.IMAGE_NAME }}:${{ matrix.ARCH }} --ci-smoke-test -vv -c debug_config --offline
+          docker run --name ledfx-run ${{ env.GHCR_IMAGE }}:edge-${{ matrix.ARCH }}-${{ github.sha }} --ci-smoke-test -vv -c debug_config --offline
       - name: Copy log file from container to workspace
         run: |
           docker cp ledfx-run:/home/ledfx/debug_config/ledfx.log ${{ github.workspace }}/ledfx.log
