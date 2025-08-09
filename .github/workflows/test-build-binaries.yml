@@ -321,12 +321,13 @@ jobs:
   docker-publish:
     name: Publish docker multiarch image
     needs: [build-ledfx-docker, docker-test]
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         ARCH: ["amd64", "arm64"]
       fail-fast: false
     env:
-      IMAGE_NAME: ledfx
+      IMAGE_NAME: ledfx4
     steps:
       # - name: Set up Docker Buildx
       #   uses: docker/setup-buildx-action@v3
