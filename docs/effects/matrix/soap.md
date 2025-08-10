@@ -6,7 +6,7 @@ Soap is a **matrix noise effect** using the vnoise lib to generate and then smea
 
 It is inspired strongly by the original WLED Soap effect in [WLED github](https://github.com/wled/WLED/blob/3f90366aa86151e73424dd7c756f95ecbfaf143d/wled00/FX.cpp#L7563)
 
-Which itself drew on inspiration from this [Soap Bubble Youtube](https://www.youtube.com/watch?v=DiHBgITrZck&ab_channel=StefanPetrick) by video by Stefan Petrick 
+Which itself drew on inspiration from this [Soap Bubble Youtube](https://www.youtube.com/watch?v=DiHBgITrZck&ab_channel=StefanPetrick) by video by Stefan Petrick
 
 In this example, three devices with 1,024, 4,096, and 16,384 pixels
 (32×32, 64×64, and 128×128 matrices) are in the default configuration except that the frequency range on each is set to mid.
@@ -44,7 +44,7 @@ The Soap effect includes a few unique controls:
 :width: 200px
 ```
 
-- **SPEED** — Controls how fast the smear is applied through time. Increasing this value makes the smear more energetic.  
-- **INTENSITY** — Is used as a multiplier on the audio input. Larger values will make the audio impulse more dynamic. Setting this value to 0 will allow the effect to free run irrespective of the audio source.  
+- **SPEED** — Controls how fast the smear is applied through time. Increasing this value makes the smear more energetic.
+- **INTENSITY** — Is used as a multiplier on the audio input. Larger values will make the audio impulse more dynamic. Setting this value to 0 will allow the effect to free run irrespective of the audio source.
 - **FREQUENCY RANGE** — Controls the frequency of the band pass filter used to generate the audio impulse.
 

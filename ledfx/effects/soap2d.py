@@ -5,8 +5,8 @@ import vnoise
 import voluptuous as vol
 from PIL import Image
 
-from ledfx.effects.gradient import GradientEffect
 from ledfx.effects.audio import AudioReactiveEffect
+from ledfx.effects.gradient import GradientEffect
 from ledfx.effects.twod import Twod
 
 _LOGGER = logging.getLogger(__name__)
@@ -73,13 +73,14 @@ class Soap2D(Twod, GradientEffect):
 
     def config_updated(self, config):
         super().config_updated(config)
-        self.smooth = 0.5 # removed slider, not worth it
+        self.smooth = 0.5  # removed slider, not worth it
         self.density = self._config["density"]
         self.speed = self._config["speed"]
         self.intensity = self._config["intensity"]
         self.power_func = self.POWER_FUNCS_MAPPING[
             self._config["frequency_range"]
         ]
+
     # ---------- lifecycle ----------
 
     def audio_data_updated(self, data):
