@@ -49,8 +49,8 @@ class Soap2D(Twod, GradientEffect):
         # vnoise
         self._vn = None
         # noise state
-        self._phase = None              # x,y drift (2D)
-        self._noise = None              # (H,W) float32 [0..1]
+        self._phase = None  # x,y drift (2D)
+        self._noise = None  # (H,W) float32 [0..1]
         # persistent pixels
         self._pixels_prev = None  # (H,W,3) float32 0..255
         # dims
@@ -58,17 +58,17 @@ class Soap2D(Twod, GradientEffect):
         self._w = 0
         # tuning
         self._freq = 3.0
-        self._octaves = 1               # faster, close to noise2d.py behavior
+        self._octaves = 1  # faster, close to noise2d.py behavior
 
         self._need_seed = True
         self.lows_impulse = 0.0
 
         # cached ramps (per resolution)
-        self._x_ramp = None             # (W,) float32 0..W-1
-        self._y_ramp = None             # (H,) float32 0..H-1
+        self._x_ramp = None  # (W,) float32 0..W-1
+        self._y_ramp = None  # (H,) float32 0..H-1
         # cached indices for smear (per resolution)
-        self._j_w  = None               # (1,W) int32
-        self._j_h  = None               # (1,H) int32
+        self._j_w = None  # (1,W) int32
+        self._j_h = None  # (1,H) int32
 
     def config_updated(self, config):
         super().config_updated(config)
@@ -76,7 +76,6 @@ class Soap2D(Twod, GradientEffect):
         self.density = self._config["density"]
         self.speed = self._config["speed"]
         self.intensity = self._config["intensity"]
-
 
     # ---------- lifecycle ----------
 
@@ -91,7 +90,9 @@ class Soap2D(Twod, GradientEffect):
             self._vn = vnoise.Noise()
         if self._phase is None:
             r = np.random.RandomState()
-            self._phase = np.array([r.rand()*256, r.rand()*256], dtype=np.float32)
+            self._phase = np.array(
+                [r.rand() * 256, r.rand() * 256], dtype=np.float32
+            )
 
     def _ensure_buffers(self, force: bool = False):
         H, W = int(self.r_height), int(self.r_width)
@@ -107,8 +108,8 @@ class Soap2D(Twod, GradientEffect):
         # cache ramps & index bases once per resolution
         self._x_ramp = np.arange(W, dtype=np.float32)
         self._y_ramp = np.arange(H, dtype=np.float32)
-        self._j_w    = np.arange(W, dtype=np.int32)[None, :]  # (1,W)
-        self._j_h    = np.arange(H, dtype=np.int32)[None, :]  # (1,H)
+        self._j_w = np.arange(W, dtype=np.int32)[None, :]  # (1,W)
+        self._j_h = np.arange(H, dtype=np.int32)[None, :]  # (1,H)
 
         self._need_seed = True
 
@@ -132,16 +133,20 @@ class Soap2D(Twod, GradientEffect):
         x = x0 + step_x * self._x_ramp
         y = y0 + step_y * self._y_ramp
 
-        n2 = self._vn.noise2(y, x, grid_mode=True, octaves=octaves).astype(np.float32)
+        n2 = self._vn.noise2(y, x, grid_mode=True, octaves=octaves).astype(
+            np.float32
+        )
         return (n2 + 1.0) * 0.5
 
     # ---------- smear (WLED-style: pixels for in-bounds, palette for OOB) ----------
 
-    def _smear_axis_signed_oob(self,
-                               pixels_prev: np.ndarray,
-                               palette_rgb: np.ndarray,
-                               amount: np.ndarray,
-                               axis: int) -> np.ndarray:
+    def _smear_axis_signed_oob(
+        self,
+        pixels_prev: np.ndarray,
+        palette_rgb: np.ndarray,
+        amount: np.ndarray,
+        axis: int,
+    ) -> np.ndarray:
         """
         Smear along one axis with signed shifts, vectorized with take_along_axis.
         In-bounds taps come from `pixels_prev`; OOB taps come from `palette_rgb`.
@@ -152,29 +157,29 @@ class Soap2D(Twod, GradientEffect):
 
         if axis == 1:
             N = W
-            j = self._j_w                      # (1,W)
+            j = self._j_w  # (1,W)
             L = H
         else:
             N = H
-            j = self._j_h                      # (1,H)
+            j = self._j_h  # (1,H)
             L = W
 
         # per-line signed shifts
-        sgn  = np.sign(amount).astype(np.int32)[:, None]        # (L,1)
-        mag  = np.abs(amount)[:, None]                           # (L,1)
-        d_i  = np.floor(mag).astype(np.int32)                    # (L,1)
-        frac = (mag - d_i).astype(np.float32)                    # (L,1)
-        eased = frac * frac * (3.0 - 2.0 * frac)                 # (L,1) smoothstep
-        wB = eased[:, :, None]                                   # (L,N,1) for broadcast in blend
+        sgn = np.sign(amount).astype(np.int32)[:, None]  # (L,1)
+        mag = np.abs(amount)[:, None]  # (L,1)
+        d_i = np.floor(mag).astype(np.int32)  # (L,1)
+        frac = (mag - d_i).astype(np.float32)  # (L,1)
+        eased = frac * frac * (3.0 - 2.0 * frac)  # (L,1) smoothstep
+        wB = eased[:, :, None]  # (L,N,1) for broadcast in blend
 
-        zD = j + sgn * d_i                                       # (L,N)
-        zF = zD + sgn                                            # (L,N)
+        zD = j + sgn * d_i  # (L,N)
+        zF = zD + sgn  # (L,N)
 
         inA = (zD >= 0) & (zD < N)
         inB = (zF >= 0) & (zF < N)
 
-        a_idx = np.clip(zD, 0, N - 1).astype(np.int32)          # (L,N)
-        b_idx = np.clip(zF, 0, N - 1).astype(np.int32)          # (L,N)
+        a_idx = np.clip(zD, 0, N - 1).astype(np.int32)  # (L,N)
+        b_idx = np.clip(zF, 0, N - 1).astype(np.int32)  # (L,N)
 
         if axis == 1:
             # Gather along columns (axis=1), shapes -> (H,W,3)
@@ -198,8 +203,8 @@ class Soap2D(Twod, GradientEffect):
             inA3, inB3 = inA[:, :, None], inB[:, :, None]
             A = np.where(inA3, A_src, A_pal)
             B = np.where(inB3, B_src, B_pal)
-            outT = A * (1.0 - wB) + B * wB                      # (W,H,3)
-            out = outT.transpose(1, 0, 2)                       # back to (H,W,3)
+            outT = A * (1.0 - wB) + B * wB  # (W,H,3)
+            out = outT.transpose(1, 0, 2)  # back to (H,W,3)
 
         return out
 
@@ -212,7 +217,11 @@ class Soap2D(Twod, GradientEffect):
             return
 
         # audio-modulated speed (free-run if intensity==0)
-        audio_speed = self.speed if self.intensity == 0 else (self.speed * self.lows_impulse * self.intensity)
+        audio_speed = (
+            self.speed
+            if self.intensity == 0
+            else (self.speed * self.lows_impulse * self.intensity)
+        )
 
         # time-invariant drift using self.passed; gentle curve at low end
         move = (audio_speed**2) * 0.5 * float(self.passed or 0.0)
