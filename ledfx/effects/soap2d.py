@@ -1,11 +1,12 @@
 import logging
+
 import numpy as np
-import voluptuous as vol
 import vnoise
+import voluptuous as vol
 from PIL import Image
 
-from ledfx.effects.twod import Twod
 from ledfx.effects.gradient import GradientEffect
+from ledfx.effects.twod import Twod
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -22,14 +23,24 @@ class Soap2D(Twod, GradientEffect):
 
     CONFIG_SCHEMA = vol.Schema(
         {
-            vol.Optional("smoothness", description="EMA of noise field [0..1]", default=0.8):
-                vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
-            vol.Optional("density", description="Smear amplitude [0..1]", default=0.5):
-                vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
-            vol.Optional("speed", description="Motion speed (time-invariant) [0..1]", default=0.5):
-                vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
-            vol.Optional("intensity", description="Audio injection to speed [0..2] 0 = free run", default=1.0):
-                vol.All(vol.Coerce(float), vol.Range(min=0.0, max=2.0)),
+            vol.Optional(
+                "smoothness",
+                description="EMA of noise field [0..1]",
+                default=0.8,
+            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
+            vol.Optional(
+                "density", description="Smear amplitude [0..1]", default=0.5
+            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
+            vol.Optional(
+                "speed",
+                description="Motion speed (time-invariant) [0..1]",
+                default=0.5,
+            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
+            vol.Optional(
+                "intensity",
+                description="Audio injection to speed [0..2] 0 = free run",
+                default=1.0,
+            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=2.0)),
         }
     )
 
@@ -41,7 +52,7 @@ class Soap2D(Twod, GradientEffect):
         self._phase = None              # x,y drift (2D)
         self._noise = None              # (H,W) float32 [0..1]
         # persistent pixels
-        self._pixels_prev = None        # (H,W,3) float32 0..255
+        self._pixels_prev = None  # (H,W,3) float32 0..255
         # dims
         self._h = 0
         self._w = 0
@@ -63,8 +74,9 @@ class Soap2D(Twod, GradientEffect):
         super().config_updated(config)
         self.smooth = self._config["smoothness"]
         self.density = self._config["density"]
-        self.speed   = self._config["speed"]
+        self.speed = self._config["speed"]
         self.intensity = self._config["intensity"]
+
 
     # ---------- lifecycle ----------
 
@@ -203,16 +215,20 @@ class Soap2D(Twod, GradientEffect):
         audio_speed = self.speed if self.intensity == 0 else (self.speed * self.lows_impulse * self.intensity)
 
         # time-invariant drift using self.passed; gentle curve at low end
-        move = (audio_speed ** 2) * 0.5 * float(self.passed or 0.0)
+        move = (audio_speed**2) * 0.5 * float(self.passed or 0.0)
         self._phase += move
 
         # noise + EMA smoothing
         new_field = self._gen_noise_field01(self._freq, self._octaves)
-        self._noise = self._noise * self.smooth + new_field * (1.0 - self.smooth)
+        self._noise = self._noise * self.smooth + new_field * (
+            1.0 - self.smooth
+        )
 
         # palette wrap like WLED (~3x) to use more of the gradient
         pal_idx = np.mod((1.0 - self._noise) * 3.0, 1.0)
-        palette_rgb = self.get_gradient_color_vectorized2d(pal_idx).astype(np.float32)
+        palette_rgb = self.get_gradient_color_vectorized2d(pal_idx).astype(
+            np.float32
+        )
 
         # seed persistent pixels once from palette so motion has history
         if self._need_seed:
@@ -225,16 +241,22 @@ class Soap2D(Twod, GradientEffect):
         base_amp_y = max(1.0, (H - 8) / 8.0) * amp_factor
 
         # per-line signed shifts from first sample of each line (WLED style)
-        amt_rows = (self._noise[:, 0] - 0.5) * base_amp_x          # (H,)
-        amt_cols = (self._noise[0, :] - 0.5) * base_amp_y          # (W,)
+        amt_rows = (self._noise[:, 0] - 0.5) * base_amp_x  # (H,)
+        amt_cols = (self._noise[0, :] - 0.5) * base_amp_y  # (W,)
 
         # smear rows then columns, using previous pixels as in-bounds taps,
         # and current palette as OOB taps (matches WLED soapPixels)
-        after_rows = self._smear_axis_signed_oob(self._pixels_prev, palette_rgb, amt_rows, axis=1)
-        out_frame  = self._smear_axis_signed_oob(after_rows,       palette_rgb, amt_cols, axis=0)
+        after_rows = self._smear_axis_signed_oob(
+            self._pixels_prev, palette_rgb, amt_rows, axis=1
+        )
+        out_frame = self._smear_axis_signed_oob(
+            after_rows, palette_rgb, amt_cols, axis=0
+        )
 
         # store for next frame (persistence)
         self._pixels_prev[...] = out_frame
 
         # hand back an image
-        self.matrix = Image.fromarray(np.clip(out_frame, 0, 255).astype(np.uint8), "RGB")
+        self.matrix = Image.fromarray(
+            np.clip(out_frame, 0, 255).astype(np.uint8), "RGB"
+        )
