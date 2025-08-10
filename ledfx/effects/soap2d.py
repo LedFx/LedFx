@@ -6,6 +6,7 @@ import voluptuous as vol
 from PIL import Image
 
 from ledfx.effects.gradient import GradientEffect
+from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.twod import Twod
 
 _LOGGER = logging.getLogger(__name__)
@@ -24,11 +25,6 @@ class Soap2D(Twod, GradientEffect):
     CONFIG_SCHEMA = vol.Schema(
         {
             vol.Optional(
-                "smoothness",
-                description="EMA of noise field [0..1]",
-                default=0.8,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
-            vol.Optional(
                 "density", description="Smear amplitude [0..1]", default=0.5
             ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
             vol.Optional(
@@ -41,6 +37,11 @@ class Soap2D(Twod, GradientEffect):
                 description="Audio injection to speed [0..2] 0 = free run",
                 default=1.0,
             ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=2.0)),
+            vol.Optional(
+                "frequency_range",
+                description="Frequency range for the audio impulse",
+                default="Lows (beat+bass)",
+            ): vol.In(list(AudioReactiveEffect.POWER_FUNCS_MAPPING.keys())),
         }
     )
 
@@ -61,7 +62,7 @@ class Soap2D(Twod, GradientEffect):
         self._octaves = 1  # faster, close to noise2d.py behavior
 
         self._need_seed = True
-        self.lows_impulse = 0.0
+        self.impulse = 0.0
 
         # cached ramps (per resolution)
         self._x_ramp = None  # (W,) float32 0..W-1
@@ -72,16 +73,18 @@ class Soap2D(Twod, GradientEffect):
 
     def config_updated(self, config):
         super().config_updated(config)
-        self.smooth = self._config["smoothness"]
+        self.smooth = 0.5 # removed slider, not worth it
         self.density = self._config["density"]
         self.speed = self._config["speed"]
         self.intensity = self._config["intensity"]
-
+        self.power_func = self.POWER_FUNCS_MAPPING[
+            self._config["frequency_range"]
+        ]
     # ---------- lifecycle ----------
 
     def audio_data_updated(self, data):
         # simple bass injection
-        self.lows_impulse = self.audio.lows_power() * 3.0
+        self.impulse = getattr(data, self.power_func)() * 6.0
 
     def do_once(self):
         super().do_once()
@@ -220,7 +223,7 @@ class Soap2D(Twod, GradientEffect):
         audio_speed = (
             self.speed
             if self.intensity == 0
-            else (self.speed * self.lows_impulse * self.intensity)
+            else (self.speed * self.impulse * self.intensity)
         )
 
         # time-invariant drift using self.passed; gentle curve at low end

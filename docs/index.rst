@@ -32,6 +32,7 @@
    /effects/simple/filter
    /effects/matrix/flame
    /effects/matrix/radial
+   /effects/matrix/soap
 
 .. toctree::
    :maxdepth: 1
