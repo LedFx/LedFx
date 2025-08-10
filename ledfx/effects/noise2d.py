@@ -23,8 +23,7 @@ class Noise2d(Twod, GradientEffect):
     HIDDEN_KEYS = Twod.HIDDEN_KEYS + [
         "background_color",
         "gradient_roll",
-        "intensity",
-        "soap",
+        "test",
     ]
     ADVANCED_KEYS = Twod.ADVANCED_KEYS + []
 
@@ -60,11 +59,6 @@ class Noise2d(Twod, GradientEffect):
                 description="audio injection multiplier, 0 is none",
                 default=2.0,
             ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=4.0)),
-            vol.Optional(
-                "soap",
-                description="Add soap smear to noise",
-                default=False,
-            ): bool,
         }
     )
 
@@ -81,7 +75,6 @@ class Noise2d(Twod, GradientEffect):
         self.stretch = self._config["stretch"]
         self.zoom = self._config["zoom"]
         self.multiplier = self._config["multiplier"]
-        self.soap = self._config["soap"]
 
         self.lows_impulse_filter = self.create_filter(
             alpha_decay=self._config["impulse_decay"], alpha_rise=0.99
