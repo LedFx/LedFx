@@ -21,18 +21,13 @@
    :maxdepth: 1
    :caption: Devices
 
-   /devices/artnet
-   /devices/osc
-   /devices/govee
+   /devices/index_devices
 
 .. toctree::
    :maxdepth: 2
    :caption: Effects
 
-   /effects/simple/filter
-   /effects/matrix/flame
-   /effects/matrix/radial
-   /effects/matrix/soap
+   /effects/index_effects
 
 .. toctree::
    :maxdepth: 1
