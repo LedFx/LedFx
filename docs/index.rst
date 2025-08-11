@@ -15,6 +15,7 @@
    :caption: Configuration
 
    /configuring
+   /settings/index_settings
    /directing_audio
 
 .. toctree::
