@@ -356,6 +356,7 @@ jobs:
           VERSION="${{ steps.ledfx-version.outputs.ledfx-version }}"
           docker buildx imagetools create \
             -t "${DOCKERHUB_IMAGE}:v${VERSION}" \
+            -t "${DOCKERHUB_IMAGE}:${VERSION}" \
             "${DOCKERHUB_IMAGE}:edge-amd64-${SHA}" \
             "${DOCKERHUB_IMAGE}:edge-arm64-${SHA}"
 
