@@ -302,6 +302,74 @@ jobs:
             ${{ env.GHCR_IMAGE }}:edge-amd64-${{ github.sha }} \
             ${{ env.GHCR_IMAGE }}:edge-arm64-${{ github.sha }}
 
+      # --- Docker Hub mirror (no build logic changes) ---
+      - name: Set Docker Hub image name
+        if: github.ref == format('refs/tags/v{0}', steps.ledfx-version.outputs.ledfx-version)
+        run: echo "DOCKERHUB_IMAGE=ledfxorg/ledfx" >> $GITHUB_ENV
+
+      - name: Login to Docker Hub
+        if: github.ref == format('refs/tags/v{0}', steps.ledfx-version.outputs.ledfx-version)
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # Pull GHCR per-arch images (built earlier), retag to Docker Hub, and push
+      - name: Mirror per-arch images to Docker Hub
+        if: github.ref == format('refs/tags/v{0}', steps.ledfx-version.outputs.ledfx-version)
+        run: |
+          set -euo pipefail
+          GHCR_IMAGE="${{ env.GHCR_IMAGE }}"
+          DOCKERHUB_IMAGE="${{ env.DOCKERHUB_IMAGE }}"
+          SHA="${{ github.sha }}"
+          VERSION="${{ steps.ledfx-version.outputs.ledfx-version }}"
+
+          for ARCH in amd64 arm64; do
+            SRC_TAG="${GHCR_IMAGE}:edge-${ARCH}-${SHA}"
+            DST_TAG_EDGE="${DOCKERHUB_IMAGE}:edge-${ARCH}-${SHA}"
+            echo "Pulling ${SRC_TAG}"
+            docker pull "${SRC_TAG}"
+            echo "Tagging -> ${DST_TAG_EDGE}"
+            docker tag "${SRC_TAG}" "${DST_TAG_EDGE}"
+            echo "Pushing  ${DST_TAG_EDGE}"
+            docker push "${DST_TAG_EDGE}"
+
+            # Also provide versioned per-arch tags on Docker Hub (optional but useful)
+            DST_TAG_VER="${DOCKERHUB_IMAGE}:${VERSION}-${ARCH}"
+            echo "Tagging -> ${DST_TAG_VER}"
+            docker tag "${SRC_TAG}" "${DST_TAG_VER}"
+            echo "Pushing  ${DST_TAG_VER}"
+            docker push "${DST_TAG_VER}"
+          done
+
+      # Create Docker Hub multi-arch manifests to match GHCR
+      - name: Create Docker Hub multi-arch manifest (vX.Y.Z)
+        if: github.ref == format('refs/tags/v{0}', steps.ledfx-version.outputs.ledfx-version)
+        uses: docker/setup-buildx-action@v3
+
+      - name: Publish Docker Hub multi-arch manifest (vX.Y.Z)
+        if: github.ref == format('refs/tags/v{0}', steps.ledfx-version.outputs.ledfx-version)
+        run: |
+          set -euo pipefail
+          DOCKERHUB_IMAGE="${{ env.DOCKERHUB_IMAGE }}"
+          SHA="${{ github.sha }}"
+          VERSION="${{ steps.ledfx-version.outputs.ledfx-version }}"
+          docker buildx imagetools create \
+            -t "${DOCKERHUB_IMAGE}:v${VERSION}" \
+            "${DOCKERHUB_IMAGE}:edge-amd64-${SHA}" \
+            "${DOCKERHUB_IMAGE}:edge-arm64-${SHA}"
+
+      - name: Publish Docker Hub multi-arch manifest (latest)
+        if: github.ref == format('refs/tags/v{0}', steps.ledfx-version.outputs.ledfx-version)
+        run: |
+          set -euo pipefail
+          DOCKERHUB_IMAGE="${{ env.DOCKERHUB_IMAGE }}"
+          SHA="${{ github.sha }}"
+          docker buildx imagetools create \
+            -t "${DOCKERHUB_IMAGE}:latest" \
+            "${DOCKERHUB_IMAGE}:edge-amd64-${SHA}" \
+            "${DOCKERHUB_IMAGE}:edge-arm64-${SHA}"
+
   run-ledfx-windows:
     name: Test LedFx (Windows)
     runs-on: windows-latest
