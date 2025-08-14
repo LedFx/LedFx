@@ -218,7 +218,7 @@ jobs:
           platforms: linux/${{ matrix.ARCH }}
           provenance: false #https://github.com/orgs/community/discussions/45969#discussioncomment-4852744
           sbom: false
-          push: ${{ (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')) && github.event_name != 'pull_request' }}
+          push: true #${{ (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')) && github.event_name != 'pull_request' }}
           load: true
           tags: |
             ${{ env.GHCR_IMAGE }}:edge-${{ matrix.ARCH }}
