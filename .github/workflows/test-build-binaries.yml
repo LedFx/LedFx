@@ -180,6 +180,7 @@ jobs:
       fail-fast: false
     env:
       IMAGE_NAME: ledfx
+      DOCKERHUB_IMAGE: spirospirocekano/ledfx
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -203,6 +204,12 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Login to DockerHub Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Build and push image ${{ env.GHCR_IMAGE }}:edge-${{ matrix.ARCH }} and ${{ env.GHCR_IMAGE }}:cache-${{ matrix.ARCH }}
         uses: docker/build-push-action@v6
         with:
@@ -216,6 +223,8 @@ jobs:
           tags: |
             ${{ env.GHCR_IMAGE }}:edge-${{ matrix.ARCH }}
             ${{ env.GHCR_IMAGE }}:edge-${{ matrix.ARCH }}-${{ github.sha }}
+            ${{ env.DOCKERHUB_IMAGE }}:edge-${{ matrix.ARCH }}
+            ${{ env.DOCKERHUB_IMAGE }}:edge-${{ matrix.ARCH }}-${{ github.sha }}
           cache-from: type=registry,ref=${{ env.GHCR_IMAGE }}:cache-${{ matrix.ARCH }}
           cache-to: ${{ env.DOCKER_CACHE_TO }}
           build-args: |
@@ -271,6 +280,7 @@ jobs:
     needs: [build-ledfx-docker, docker-test]
     runs-on: ubuntu-latest
     env:
+      DOCKERHUB_IMAGE: spirospirocekano/ledfx
       IMAGE_NAME: ledfx
       ARCH: amd64
     steps:
@@ -284,6 +294,12 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Login to DockerHub Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Download ledfx version docker txt
         uses: actions/download-artifact@v4
         with:
@@ -299,6 +315,9 @@ jobs:
             -t ${{ env.GHCR_IMAGE }}:latest \
             -t ${{ env.GHCR_IMAGE }}:${{ steps.ledfx-version.outputs.ledfx-version }} \
             -t ${{ env.GHCR_IMAGE }}:${{ github.sha }} \
+            -t ${{ env.DOCKERHUB_IMAGE }}:latest \
+            -t ${{ env.DOCKERHUB_IMAGE }}:${{ steps.ledfx-version.outputs.ledfx-version }} \
+            -t ${{ env.DOCKERHUB_IMAGE }}:${{ github.sha }} \
             ${{ env.GHCR_IMAGE }}:edge-amd64-${{ github.sha }} \
             ${{ env.GHCR_IMAGE }}:edge-arm64-${{ github.sha }}
 
