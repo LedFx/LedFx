@@ -218,7 +218,7 @@ jobs:
           platforms: linux/${{ matrix.ARCH }}
           provenance: false #https://github.com/orgs/community/discussions/45969#discussioncomment-4852744
           sbom: false
-          push: true #${{ (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')) && github.event_name != 'pull_request' }}
+          push: ${{ (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')) && github.event_name != 'pull_request' }}
           load: true
           tags: |
             ${{ env.GHCR_IMAGE }}:edge-${{ matrix.ARCH }}
@@ -317,6 +317,16 @@ jobs:
             -t ${{ env.GHCR_IMAGE }}:${{ github.sha }} \
             -t ${{ env.DOCKERHUB_IMAGE }}:latest \
             -t ${{ env.DOCKERHUB_IMAGE }}:${{ steps.ledfx-version.outputs.ledfx-version }} \
+            -t ${{ env.DOCKERHUB_IMAGE }}:${{ github.sha }} \
+            ${{ env.GHCR_IMAGE }}:edge-amd64-${{ github.sha }} \
+            ${{ env.GHCR_IMAGE }}:edge-arm64-${{ github.sha }}
+      - name: Retag and push edge image
+        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') && github.event_name != 'pull_request'
+        run: |
+          docker buildx imagetools create \
+            -t ${{ env.GHCR_IMAGE }}:edge \
+            -t ${{ env.GHCR_IMAGE }}:${{ github.sha }} \
+            -t ${{ env.DOCKERHUB_IMAGE }}:edge \
             -t ${{ env.DOCKERHUB_IMAGE }}:${{ github.sha }} \
             ${{ env.GHCR_IMAGE }}:edge-amd64-${{ github.sha }} \
             ${{ env.GHCR_IMAGE }}:edge-arm64-${{ github.sha }}
