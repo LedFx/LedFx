@@ -321,7 +321,7 @@ jobs:
             ${{ env.GHCR_IMAGE }}:edge-amd64-${{ github.sha }} \
             ${{ env.GHCR_IMAGE }}:edge-arm64-${{ github.sha }}
       - name: Retag and push edge image
-        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') && github.event_name != 'pull_request'
+        if: (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')) && github.event_name != 'pull_request'
         run: |
           docker buildx imagetools create \
             -t ${{ env.GHCR_IMAGE }}:edge \
