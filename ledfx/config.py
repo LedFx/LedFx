@@ -598,6 +598,26 @@ def migrate_config(old_config):
             device["config"]["pixels_per_device"] = device["config"].pop(
                 "device_repeat"
             )
+
+        # Migrate ArtNet output_mode → rgb_order + white_mode
+        if device["type"].lower() == "artnet":
+            cfg = device.get("config", {})
+            if "output_mode" in cfg:
+                old_mode = cfg.pop("output_mode")
+                mapping = {
+                    "RGB": ("RGB", "None"),
+                    "RGBW No White": ("RGB", "None"),
+                    "RGBW Accurate": ("RGB", "Accurate"),
+                    "RGBW Brighter": ("RGB", "Brighter"),
+                }
+                rgb_order, white_mode = mapping.get(old_mode, ("RGB", "None"))
+                cfg["rgb_order"] = rgb_order
+                cfg["white_mode"] = white_mode
+                _LOGGER.warning(
+                    f"Migrated ArtNet device '{device.get('name', '')}' from output_mode={old_mode} "
+                    f"to rgb_order={rgb_order}, white_mode={white_mode}"
+                )
+
         device.pop("effect", None)
         new_config["devices"].append(device)
 
