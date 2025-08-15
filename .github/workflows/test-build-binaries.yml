@@ -316,7 +316,7 @@ jobs:
             -t ${{ env.GHCR_IMAGE }}:${{ github.sha }} \
             ${{ env.GHCR_IMAGE }}:edge-amd64-${{ github.sha }} \
             ${{ env.GHCR_IMAGE }}:edge-arm64-${{ github.sha }}
-          # Docker Hub elatest manifest from Docker Hub per-arch images
+          # Docker Hub latest manifest from Docker Hub per-arch images
           docker buildx imagetools create \
             -t ${{ env.DOCKERHUB_IMAGE }}:latest \
             -t ${{ env.DOCKERHUB_IMAGE }}:${{ steps.ledfx-version.outputs.ledfx-version }} \
