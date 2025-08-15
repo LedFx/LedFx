@@ -280,7 +280,7 @@ jobs:
     needs: [build-ledfx-docker, docker-test]
     runs-on: ubuntu-latest
     env:
-      DOCKERHUB_IMAGE: spirocekano/ledfx
+      DOCKERHUB_IMAGE: ledfxorg/ledfx
       IMAGE_NAME: ledfx
       ARCH: amd64
     steps:
