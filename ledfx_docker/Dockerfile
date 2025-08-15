@@ -1,4 +1,6 @@
-FROM ghcr.io/astral-sh/uv:python3.12-bookworm AS build
+FROM ghcr.io/astral-sh/uv:python3.12-bookworm@sha256:fe0830f593bf8f7d74f491e5bde77012dec5221023a13059378c96bb2ead101b AS build
+# Pin to a specific version of uv
+
 ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy UV_PYTHON_DOWNLOADS=0
 ARG TARGETARCH
 WORKDIR /app
