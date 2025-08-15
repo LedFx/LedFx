@@ -172,11 +172,11 @@ $ curl -sSL https://install.ledfx.app/ | bash
 
 LedFx can be run in a Docker container with some limitations – graphical entity-based features such as **Clone** will not work.
 
-Prebuilt multi-architecture images are published to:  
-- **GitHub Container Registry (GHCR)**: [ghcr.io/ledfx/ledfx](https://ghcr.io/ledfx/ledfx)  
-- **Docker Hub**: [hub.docker.com/r/ledfxorg/ledfx](https://hub.docker.com/r/ledfxorg/ledfx)  
+Prebuilt multi-architecture images are published to:
+- **GitHub Container Registry (GHCR)**: [ghcr.io/ledfx/ledfx](https://ghcr.io/ledfx/ledfx)
+- **Docker Hub**: [hub.docker.com/r/ledfxorg/ledfx](https://hub.docker.com/r/ledfxorg/ledfx)
 
-Example pull commands:  
+Example pull commands:
 
 ```bash
 # From GHCR
@@ -186,18 +186,18 @@ docker pull ghcr.io/ledfx/ledfx:latest
 docker pull ledfxorg/ledfx:latest
 ```
 
-Tags:  
-- `latest` – most recent stable release  
+Tags:
+- `latest` – most recent stable release
 - `edge` – development build from the `main` branch
 
 
 ### Pulseaudio
 
-There are two modes of running LedFx container with different behaviours of pulseaudio.  
+There are two modes of running LedFx container with different behaviours of pulseaudio.
 
-In pulseaudio server mode, pulseaudio is run as ledfx user and exposes pulseaudio socket at $HOME/.config/pulse/pulseaudio.socket.  
+In pulseaudio server mode, pulseaudio is run as ledfx user and exposes pulseaudio socket at $HOME/.config/pulse/pulseaudio.socket.
 
-This socket can be shared to other applications which support pulseaudio, such as [shairport-sync](https://github.com/mikebrady/shairport-sync), or such players.  
+This socket can be shared to other applications which support pulseaudio, such as [shairport-sync](https://github.com/mikebrady/shairport-sync), or such players.
 
 The following guideline has been tailored to linux docker-compose or portainer stack.
 
