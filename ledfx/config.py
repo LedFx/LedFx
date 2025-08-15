@@ -606,7 +606,7 @@ def migrate_config(old_config):
                 old_mode = cfg.pop("output_mode")
                 mapping = {
                     "RGB": ("RGB", "None"),
-                    "RGBW No White": ("RGB", "None"),
+                    "RGBW No White": ("RGB", "Zero"),
                     "RGBW Accurate": ("RGB", "Accurate"),
                     "RGBW Brighter": ("RGB", "Brighter"),
                 }
