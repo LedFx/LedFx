@@ -14,6 +14,8 @@ concurrency:
   cancel-in-progress: true
 env:
   DEFAULT_PYTHON: 3.12
+  DOCKERHUB_IMAGE: ledfxorg/ledfx
+  IMAGE_NAME: ledfx
 
 jobs:
   build-ledfx-windows:
@@ -178,9 +180,6 @@ jobs:
       matrix:
         ARCH: ["amd64", "arm64"]
       fail-fast: false
-    env:
-      IMAGE_NAME: ledfx
-      DOCKERHUB_IMAGE: ledfxorg/ledfx
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -246,8 +245,6 @@ jobs:
       matrix:
         ARCH: ["amd64", "arm64"]
       fail-fast: false
-    env:
-      IMAGE_NAME: ledfx
     steps:
       - name: Lowercase repository owner
         id: repo
@@ -280,8 +277,6 @@ jobs:
     needs: [build-ledfx-docker, docker-test]
     runs-on: ubuntu-latest
     env:
-      DOCKERHUB_IMAGE: ledfxorg/ledfx
-      IMAGE_NAME: ledfx
       ARCH: amd64
     steps:
       - name: Lowercase repository owner
