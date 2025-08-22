@@ -62,11 +62,11 @@ class ArtNetDevice(NetworkedDevice):
                 default=True,
             ): bool,
             vol.Optional(
-                "rgb_order", description="RGB data order mode", default="RGB"
+                "rgb_order", description="RGB data order mode, supported for physical hardware that just doesn't play by the rules", default="RGB"
             ): vol.All(str, vol.In(RGB_MAPPING)),
             vol.Optional(
                 "white_mode",
-                description="White channel handling mode",
+                description="White channel handling mode, if RGB leave as None. Commonly written as RGBW or RGBA",
                 default="None",
             ): vol.All(str, vol.In(WHITE_FUNCS_MAPPING.keys())),
             vol.Optional("port", description="port", default=6454): int,
