@@ -1,60 +1,65 @@
-from enum import Enum
+import logging
 
 import numpy as np
 
-
-class OutputMode(str, Enum):
-    RGB = "RGB"  # RGB data
-    RGBW_NONE = "RGBW No White"  # No white channel, just set to 0
-    RGBW_ACCURATE = "RGBW Accurate"  # Color accuracy approach (minimum RGB)
-    RGBW_BRIGHTER = (
-        "RGBW Brighter"  # Compute white, but don't subtract from RGB
-    )
+_LOGGER = logging.getLogger(__name__)
 
 
-def rgb_to_output_mode(rgb_array, output_mode):
-    """
-    Convert RGB array to RGBW array using the specified white channel computation method.
+_CHANNEL_MAP = {"R": 0, "G": 1, "B": 2, "W": 3}
 
-    Parameters:
-    - rgb_array: NumPy array of shape (n, 3) representing RGB data
-    - white_channel_computation: Method to use for computing the white channel
+RGB_MAPPING = ["RGB", "RBG", "GRB", "GBR", "BRG", "BGR"]
 
-    Returns:
-    - rgbw_array: NumPy array of shape (n, 4) representing RGBW data
-    """
-    # Ensure the input is properly shaped
-    assert rgb_array.shape[1] == 3, "Input array must have shape (n, 3)"
+WHITE_FUNCS_MAPPING = {
+    "None": {"func": "add_white_none", "channels": 3},
+    "Zero": {"func": "add_white_zero", "channels": 4},
+    "Brighter": {"func": "add_white_brighter", "channels": 4},
+    "Accurate": {"func": "add_white_accurate", "channels": 4},
+}
 
-    if output_mode == OutputMode.RGB:
-        # No conversion needed, just return the original RGB array
-        return rgb_array
+# -------------------------------------------------------------------------------------
+# Combined Output Mode Class
+# -------------------------------------------------------------------------------------
 
-    # Number of RGB values
-    n = rgb_array.shape[0]
 
-    # Create the white channel based on the selected method
-    if output_mode == OutputMode.RGBW_NONE:
-        # No white channel, just zeros
-        w = np.zeros((n, 1), dtype=rgb_array.dtype)
-        rgb_adjusted = rgb_array.copy()
+class OutputMode:
+    def __init__(self, rgb_order, white_mode):
+        self.rgb_order = rgb_order
+        self.indices = [_CHANNEL_MAP[c] for c in self.rgb_order]
+        self.white_mode = white_mode
 
-    elif output_mode == OutputMode.RGBW_BRIGHTER:
-        # Brighter method: use min value for white, don't subtract from RGB
-        w = np.min(rgb_array, axis=1, keepdims=True)
-        rgb_adjusted = rgb_array
+        self.channels_per_pixel = WHITE_FUNCS_MAPPING[self.white_mode][
+            "channels"
+        ]
 
-    elif output_mode == OutputMode.RGBW_ACCURATE:
-        # Accurate method: use min value for white, subtract from RGB
-        w = np.min(rgb_array, axis=1, keepdims=True)
-        rgb_adjusted = rgb_array - w
-
-    else:
-        raise ValueError(
-            f"Unknown white channel computation method: {output_mode}"
+        self.white_func = getattr(
+            self, WHITE_FUNCS_MAPPING[self.white_mode]["func"]
         )
 
-    # Concatenate RGB and W channels
-    rgbw_array = np.concatenate((rgb_adjusted, w), axis=1)
+    def apply(self, rgb_array: np.ndarray) -> np.ndarray:
+        """Applies white channel addition and channel reordering."""
+        reordered = self.rgb_reorder(rgb_array)
+        rgbw = self.white_func(reordered)
+        return rgbw
 
-    return rgbw_array
+    def rgb_reorder(self, rgb: np.ndarray) -> np.ndarray:
+        return rgb[:, self.indices]
+
+    # -------------------------------------------------------------------------------------
+    # RGBW White Channel Conversion Functions
+    # -------------------------------------------------------------------------------------
+
+    def add_white_none(self, rgb: np.ndarray) -> np.ndarray:
+        """Returns the RGB data unchanged, no white channel is added."""
+        return rgb
+
+    def add_white_zero(self, rgb: np.ndarray) -> np.ndarray:
+        w = np.zeros((rgb.shape[0], 1), dtype=rgb.dtype)
+        return np.concatenate([rgb, w], axis=1)
+
+    def add_white_brighter(self, rgb: np.ndarray) -> np.ndarray:
+        w = np.min(rgb, axis=1, keepdims=True)
+        return np.concatenate([rgb, w], axis=1)
+
+    def add_white_accurate(self, rgb: np.ndarray) -> np.ndarray:
+        w = np.min(rgb, axis=1, keepdims=True)
+        return np.concatenate([rgb - w, w], axis=1)
