@@ -7,7 +7,7 @@ devices.
 For more information, see [Art-Net on
 Wikipedia](https://en.wikipedia.org/wiki/Art-Net).
 
-The ways of Artnet are varied and unstructured. LedFx users, with real world needs have led to some unique capability in LedFx to support Artnet for 
+The ways of Artnet are varied and unstructured. LedFx users, with real world needs have led to some unique capability in LedFx to support Artnet for
 
 - **RGB Reordering**
 - **RGBA / RGBW White channel support**
@@ -26,7 +26,7 @@ Many of the configuration parameters for artnet are common to any network connec
 These include:
 
 - **Pixel Count** — Number of addressable pixels in device
-- **IP Address** — IP4 address of device 
+- **IP Address** — IP4 address of device
 - **icon name** - This is the icon that will be displayed in the UI, select something that makes sense to you. It is a string entry field, from MDI ( Material Design Icons ) or MUI ( Material UI Icons )
 
     If using MDI the string should be preceeded by mdi:
@@ -54,7 +54,7 @@ As some artnet devices have uncommon RGB ordering and it is not possible to cofi
 
 Note this is a specific feature for Artnet, in general endpoint devices should follow their defined protocols, and abstract RGB ordering away.
 
-The default order is `RGB`, but all 6 possible combinations can be chosen from.  
+The default order is `RGB`, but all 6 possible combinations can be chosen from.
 
 `RGB, RBG, GRB, GBR, BRG, BGR`
 
