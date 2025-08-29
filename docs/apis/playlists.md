@@ -2,7 +2,7 @@
 
 > **Scope:** This document defines the *Playlists* REST API only. It assumes Scenes already exist and are addressable by `scene_id`.  
 > **Base URL:** `http://<host>:<port>/api`  
-> **Version:** 0.1-draft
+> **Version:** 0.2-draft
 
 ---
 
@@ -39,6 +39,13 @@ A **Playlist** is an ordered collection of **scene references** (by `scene_id`) 
     "order": "sequence",   // "sequence" | "shuffle"
     "loop": true
   },
+  "timing": {
+    "jitter": {
+      "enabled": true,
+      "factor_min": 0.5,
+      "factor_max": 2.0
+    }
+  },
   "tags": ["ambient", "night"],
   "image": null
 }
@@ -53,6 +60,8 @@ A **Playlist** is an ordered collection of **scene references** (by `scene_id`) 
 - `default_duration_ms` *(int, optional)*: Used when an item omits `duration_ms`. If both are absent, use server default (e.g., 30000ms).
 - `mode.order` *(string)*: `"sequence"` (in order) or `"shuffle"` (randomized once per cycle).
 - `mode.loop` *(bool)*: Whether to continue after the end (and reshuffle if in shuffle mode).
+- `timing.jitter.enabled` *(bool, optional)*: Toggle per-transition duration randomization.
+- `timing.jitter.factor_min` / `factor_max` *(float, optional)*: Multiplicative range applied to the base duration (e.g., `0.5 … 2.0`).
 - `tags`, `image` *(optional)*: UI/use-case metadata.
 
 ### Runtime State (Ephemeral)
@@ -64,7 +73,9 @@ A **Playlist** is an ordered collection of **scene references** (by `scene_id`) 
   "order": [0, 2, 1],
   "scene_id": "calm-amber",
   "paused": false,
-  "remaining_ms": 12000
+  "remaining_ms": 12000,
+  "effective_duration_ms": 45000,
+  "timing": { "jitter": { "enabled": true, "factor_min": 0.5, "factor_max": 2.0 } }
 }
 ```
 
@@ -110,6 +121,7 @@ Creates a new playlist or replaces an existing one with the same `id`.
   ],
   "default_duration_ms": 30000,
   "mode": { "order": "sequence", "loop": true },
+  "timing": { "jitter": { "enabled": true, "factor_min": 0.5, "factor_max": 2.0 } },
   "tags": ["ambient", "night"],
   "image": null
 }
@@ -342,6 +354,26 @@ Atomically replace the entire `items` list.
 { "status":"success", "message":"Items replaced (2 total)." }
 ```
 
+#### 12) `set_timing`
+Update the timing configuration, including jitter.
+
+```json
+{
+  "id":"evening-cycle",
+  "action":"set_timing",
+  "timing": { "jitter": { "enabled": true, "factor_min": 0.5, "factor_max": 2.0 } }
+}
+```
+
+**200 OK**
+```json
+{
+  "status":"success",
+  "message":"Timing updated (jitter enabled, range 0.5–2.0×).",
+  "timing": { "jitter": { "enabled": true, "factor_min": 0.5, "factor_max": 2.0 } }
+}
+```
+
 ---
 
 ## DELETE `/api/playlists` — Delete
@@ -464,6 +496,16 @@ curl -X PUT http://localhost:8888/api/playlists \
 ## Validation (Voluptuous Sketch)
 
 ```python
+TimingJitter = vol.Schema({
+    vol.Required("enabled"): bool,
+    vol.Optional("factor_min", default=1.0): vol.All(float, vol.Range(min=0.0)),
+    vol.Optional("factor_max", default=1.0): vol.All(float, vol.Range(min=0.0)),
+})
+
+PlaylistTiming = vol.Schema({
+    vol.Optional("jitter"): TimingJitter
+})
+
 PlaylistItem = vol.Schema({
     vol.Required("scene_id"): str,
     vol.Optional("duration_ms"): vol.All(int, vol.Range(min=500)),
@@ -480,6 +522,7 @@ PlaylistSchema = vol.Schema({
     vol.Required("items"): [PlaylistItem],
     vol.Optional("default_duration_ms"): vol.All(int, vol.Range(min=500)),
     vol.Optional("mode", default={"order":"sequence","loop":True}): PlaylistMode,
+    vol.Optional("timing"): PlaylistTiming,
     vol.Optional("tags", default=list): [str],
     vol.Optional("image"): vol.Any(str, None),
 })
@@ -502,8 +545,12 @@ PlaylistSchema = vol.Schema({
   - `PlaylistPausedEvent(playlist_id)` / `PlaylistResumedEvent(playlist_id)`
   - `PlaylistStoppedEvent(playlist_id)`
   - `PlaylistDeletedEvent(playlist_id)`
+- **Timing jitter (if enabled):**
+  - On each new item start (start/next/prev/seek/auto-advance), sample a factor uniformly in `[factor_min, factor_max]` and apply it to the base duration; clamp to a sane minimum (e.g., 500ms).  
+  - Resuming from pause uses stored `remaining_ms` and does not re-sample.
 
 ---
 
 ## Changelog
+- **0.2-draft**: Added optional `timing.jitter` and `set_timing` action; runtime state may include `effective_duration_ms` and `timing`.
 - **0.1-draft**: Initial proposal covering create/replace/delete, start/stop/pause/resume, next/prev/seek, shuffle/loop, GET endpoints, validation & implementation guidance.
