@@ -1,7 +1,7 @@
 # LedFx REST API — **Playlists** (Draft for Dev Review)
 
-> **Scope:** This document defines the *Playlists* REST API only. It assumes Scenes already exist and are addressable by `scene_id`.  
-> **Base URL:** `http://<host>:<port>/api`  
+> **Scope:** This document defines the *Playlists* REST API only. It assumes Scenes already exist and are addressable by `scene_id`.
+> **Base URL:** `http://<host>:<port>/api`
 > **Version:** 0.1-draft
 
 ---
@@ -494,7 +494,7 @@ PlaylistSchema = vol.Schema({
 - **Shuffle behavior:** compute a permutation once per cycle; on loop wrap and shuffle mode, recompute a new permutation.
 - **Error handling:**
   - Empty `items` → reject `start` with `422`.
-  - Missing `scene_id` in scenes → either skip with warning and advance, or return `404` (team decision; doc recommends “skip and notify”).  
+  - Missing `scene_id` in scenes → either skip with warning and advance, or return `404` (team decision; doc recommends “skip and notify”).
   - Scene activation exceptions → log; advance to next to avoid deadlocks if configured to be resilient.
 - **Events (recommended):**
   - `PlaylistStartedEvent(playlist_id)`
