@@ -1,7 +1,7 @@
 # LedFx REST API — **Playlists** (Draft for Dev Review)
 
-> **Scope:** This document defines the *Playlists* REST API only. It assumes Scenes already exist and are addressable by `scene_id`.  
-> **Base URL:** `http://<host>:<port>/api`  
+> **Scope:** This document defines the *Playlists* REST API only. It assumes Scenes already exist and are addressable by `scene_id`.
+> **Base URL:** `http://<host>:<port>/api`
 > **Version:** 0.2-draft
 
 ---
@@ -546,7 +546,7 @@ PlaylistSchema = vol.Schema({
   - `PlaylistStoppedEvent(playlist_id)`
   - `PlaylistDeletedEvent(playlist_id)`
 - **Timing jitter (if enabled):**
-  - On each new item start (start/next/prev/seek/auto-advance), sample a factor uniformly in `[factor_min, factor_max]` and apply it to the base duration; clamp to a sane minimum (e.g., 500ms).  
+  - On each new item start (start/next/prev/seek/auto-advance), sample a factor uniformly in `[factor_min, factor_max]` and apply it to the base duration; clamp to a sane minimum (e.g., 500ms).
   - Resuming from pause uses stored `remaining_ms` and does not re-sample.
 
 ---
