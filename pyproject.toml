@@ -42,7 +42,7 @@ dependencies = [
     "netifaces2>=0.0.22",
 ]
 name = "LedFx"
-version = "2.0.109"
+version = "2.0.110"
 description = "A network based light effect controller"
 readme = "README.rst"
 
