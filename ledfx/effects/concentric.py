@@ -82,14 +82,16 @@ class Concentric(Twod, GradientEffect):
     def audio_data_updated(self, data):
         self.power = getattr(data, self.power_func)() * 2
         self.speedb = self.power * self.speed_multiplier
-    
+
     # Pre-calculate distance Grid
     def do_once(self):
         super().do_once()
         self.center_x = (self.r_width - 1) / 2
         self.center_y = (self.r_height - 1) / 2
-        self.y_coords, self.x_coords = np.ogrid[0:self.r_height, 0:self.r_width]
-        # Create a coordinate grid        
+        self.y_coords, self.x_coords = np.ogrid[
+            0 : self.r_height, 0 : self.r_width
+        ]
+        # Create a coordinate grid
         # Calculate distance from the center, applying stretching
         # Dividing by stretch values makes the gradient expand further along that axis
 
@@ -110,13 +112,17 @@ class Concentric(Twod, GradientEffect):
                 dist = np.asarray(dist_img, dtype=np.float32) * (
                     dist_max / 255.0
                 )
-        
-        max_radius = np.hypot(self.center_x / self.stretch_w, self.center_y / self.stretch_h)
+
+        max_radius = np.hypot(
+            self.center_x / self.stretch_w, self.center_y / self.stretch_h
+        )
         if max_radius > 0:
             dist /= max_radius
         dist = np.clip(dist, 0.0, 1.0)
 
-        self.dist = np.power(dist, 0.9)  # mild smoothing, lower values = softer
+        self.dist = np.power(
+            dist, 0.9
+        )  # mild smoothing, lower values = softer
 
     def draw(self):
         # Wave expansion
@@ -126,7 +132,7 @@ class Concentric(Twod, GradientEffect):
         dt_scale = 1
         self.offset += (
             self.speedb / 23
-        ) * dt_scale # Arbitrary value that looks good when speed_multiplier = 1
+        ) * dt_scale  # Arbitrary value that looks good when speed_multiplier = 1
         color_points = (
             self.dist + (self.offset if self.invert else -self.offset)
         ) % 1.0
