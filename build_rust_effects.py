@@ -14,14 +14,25 @@ from pathlib import Path
 def run_command(cmd, cwd=None, check=True):
     """Run a command and return the result"""
     print(f"Running: {' '.join(cmd)}")
-    result = subprocess.run(
-        cmd, cwd=cwd, capture_output=True, text=True, check=check
-    )
-    if result.stdout:
-        print(result.stdout)
-    if result.stderr:
-        print(result.stderr, file=sys.stderr)
-    return result
+    try:
+        result = subprocess.run(
+            cmd, cwd=cwd, capture_output=True, text=True, encoding='utf-8', check=check
+        )
+        if result.stdout:
+            print(result.stdout)
+        if result.stderr:
+            print(result.stderr, file=sys.stderr)
+        return result
+    except UnicodeDecodeError:
+        # Fallback to bytes mode if UTF-8 fails
+        result = subprocess.run(
+            cmd, cwd=cwd, capture_output=True, check=check
+        )
+        if result.stdout:
+            print(result.stdout.decode('utf-8', errors='replace'))
+        if result.stderr:
+            print(result.stderr.decode('utf-8', errors='replace'), file=sys.stderr)
+        return result
 
 
 def build_rust_effects(release=False):
@@ -50,6 +61,8 @@ def test_rust_effects():
     try:
         result = run_command(
             [
+                "uv",
+                "run",
                 "python",
                 "-c",
                 "import ledfx_rust_effects; print('Rust effects import successful!')",
