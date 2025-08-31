@@ -7,6 +7,7 @@ from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.gradient import GradientEffect
 from ledfx.effects.twod import Twod
 
+
 class Concentric(Twod, GradientEffect):
     """
     A 2D effect that renders concentric circles expanding from the center
@@ -15,8 +16,15 @@ class Concentric(Twod, GradientEffect):
 
     NAME = "Concentric"
     CATEGORY = "2D"
-    
-    HIDDEN_KEYS = ["background_brightness", "mirror", "flip", "dump", "gradient_roll", "rotate"]
+
+    HIDDEN_KEYS = [
+        "background_brightness",
+        "mirror",
+        "flip",
+        "dump",
+        "gradient_roll",
+        "rotate",
+    ]
 
     CONFIG_SCHEMA = vol.Schema(
         {
@@ -25,7 +33,6 @@ class Concentric(Twod, GradientEffect):
                 description="Frequency range for beat detection",
                 default="Lows (beat+bass)",
             ): vol.In(list(AudioReactiveEffect.POWER_FUNCS_MAPPING.keys())),
-            
             vol.Optional(
                 "blur",
                 description="Amount of blur to apply to the final image",
@@ -76,9 +83,9 @@ class Concentric(Twod, GradientEffect):
 
     def on_activate(self, pixel_count):
         super().on_activate(pixel_count)
-    
+
     def config_updated(self, config):
-        
+
         self.power_func = self.POWER_FUNCS_MAPPING[
             self._config["frequency_range"]
         ]
@@ -100,7 +107,6 @@ class Concentric(Twod, GradientEffect):
         stretch_h = self._config["stretch_height"]
         smoothing = self._config["center_smoothing"]
 
-
         # Create a coordinate grid
         y_coords, x_coords = np.ogrid[0:height, 0:width]
 
@@ -110,22 +116,26 @@ class Concentric(Twod, GradientEffect):
             ((x_coords - center_x) / stretch_w) ** 2
             + ((y_coords - center_y) / stretch_h) ** 2
         )
-        
+
         # Apply Gaussian blur to the distance map to smooth the center point
         if smoothing > 0:
             dist = blur_pixels(dist, sigma=smoothing)
-        
+
         max_radius = np.sqrt(center_x**2 + center_y**2)
-        
+
         if max_radius > 0:
             dist /= max_radius
-        
+
         dist = np.power(dist, 0.9)  # mild smoothing, lower values = softer
 
         # Wave expansion
         self.speedb += 0.2 * self._config["idle_speed"]
-        self.offset += self.speedb / 23 # Arbritary value that looks good when speed_multiplication = 1
-        color_points = (dist + (self.offset if self._config["invert"] else -self.offset)) % 1.0
+        self.offset += (
+            self.speedb / 23
+        )  # Arbritary value that looks good when speed_multiplication = 1
+        color_points = (
+            dist + (self.offset if self._config["invert"] else -self.offset)
+        ) % 1.0
 
         # Get colors from the gradient and reshape to the matrix dimensions
         pixels = self.get_gradient_color(color_points.flatten())
