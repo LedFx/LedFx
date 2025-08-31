@@ -20,6 +20,7 @@ def run_command(cmd, cwd=None, check=True):
         print(result.stderr, file=sys.stderr)
     return result
 
+
 def build_rust_effects(release=False):
     """Build the Rust effects module"""
     rust_dir = Path(__file__).parent / "rust_effects"
@@ -40,6 +41,7 @@ def build_rust_effects(release=False):
         print(f"❌ Failed to build Rust effects: {e}")
         return False
 
+
 def test_rust_effects():
     """Test the Rust effects module"""
     try:
@@ -49,6 +51,7 @@ def test_rust_effects():
     except subprocess.CalledProcessError as e:
         print(f"❌ Failed to import Rust effects: {e}")
         return False
+
 
 def clean_build():
     """Clean Rust build artifacts"""
@@ -61,6 +64,7 @@ def clean_build():
         print("🧹 Cleaned Rust build artifacts")
     else:
         print("🧹 No build artifacts to clean")
+
 
 def setup_development():
     """Set up development environment"""
@@ -106,6 +110,7 @@ def setup_development():
     
     return True
 
+
 def main():
     parser = argparse.ArgumentParser(description="LedFx Rust Effects Build Script")
     parser.add_argument("--setup", action="store_true", help="Set up development environment")
@@ -127,6 +132,7 @@ def main():
         build_rust_effects(release=args.release)
     
     return 0
+
 
 if __name__ == "__main__":
     sys.exit(main())
