@@ -7,7 +7,6 @@ This script helps developers build and test Rust effects easily.
 
 import sys
 import subprocess
-import os
 import argparse
 from pathlib import Path
 
