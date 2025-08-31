@@ -16,10 +16,10 @@ class Concentric(Twod, GradientEffect):
     NAME = "Concentric"
     CATEGORY = "2D"
     HIDDEN_KEYS = (
-         *Twod.HIDDEN_KEYS,  # preserves 'blur', 'mirror', etc.
-         "gradient_roll",
-         "rotate",
-     )
+        *Twod.HIDDEN_KEYS,  # preserves 'blur', 'mirror', etc.
+        "gradient_roll",
+        "rotate",
+    )
 
     CONFIG_SCHEMA = vol.Schema(
         {
@@ -54,7 +54,7 @@ class Concentric(Twod, GradientEffect):
                 default=0.5,
             ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=5.0)),
             vol.Optional(
-                "idle_speed", # To avoid static during breaks etc...
+                "idle_speed",  # To avoid static during breaks etc...
                 description="Idle motion speed",
                 default=1,
             ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=3.0)),
@@ -77,7 +77,7 @@ class Concentric(Twod, GradientEffect):
     def audio_data_updated(self, data):
         self.power = getattr(data, self.power_func)() * 2
         self.speedb = self.power * self.speed_multiplier
-        
+
     def draw(self):
         # Get effect properties
         width = self.r_width
@@ -116,7 +116,7 @@ class Concentric(Twod, GradientEffect):
 
         if max_radius > 0:
             dist /= max_radius
-            
+
         dist = np.clip(dist, 0.0, 1.0)
 
         dist = np.power(dist, 0.9)  # mild smoothing, lower values = softer
@@ -131,5 +131,7 @@ class Concentric(Twod, GradientEffect):
         ) % 1.0
 
         # Get colors from the gradient and reshape to the matrix dimensions
-        pixels = self.get_gradient_color_vectorized2d(color_points).astype(np.uint8)
+        pixels = self.get_gradient_color_vectorized2d(color_points).astype(
+            np.uint8
+        )
         self.matrix = Image.fromarray(pixels)
