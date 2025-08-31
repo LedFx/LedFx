@@ -33,7 +33,7 @@ git clone https://github.com/LedFx/LedFx.git
 cd LedFx
 
 # Install development dependencies (includes maturin)
-uv sync --dev
+uv sync --group dev
 
 # Verify Rust installation
 rustc --version
@@ -289,7 +289,7 @@ jobs:
       - name: Install LedFx
         run: |
           export CFLAGS="-Wno-incompatible-function-pointer-types"
-          uv sync --all-extras --dev
+          uv sync --all-extras --group dev
 
       # Add Rust effects build
       - name: Build Rust Effects
@@ -320,7 +320,7 @@ Add Rust build steps to all platform builds:
 
       - name: Install LedFx
         run: |
-          uv sync --python ${{ env.DEFAULT_PYTHON }} --extra hue --dev
+          uv sync --python ${{ env.DEFAULT_PYTHON }} --extra hue --group dev
 
       # Add Rust effects build
       - name: Build Rust Effects
