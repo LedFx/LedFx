@@ -160,17 +160,19 @@ def main():
 
     args = parser.parse_args()
 
+    ok = True
     if args.setup:
-        setup_development()
+        ok = setup_development()
     elif args.clean:
         clean_build()
+        ok = True  # Clean operation always succeeds
     elif args.test:
-        test_rust_effects()
+        ok = test_rust_effects()
     elif args.build or not any(vars(args).values()):
         # Default action is build
-        build_rust_effects(release=args.release)
+        ok = build_rust_effects(release=args.release)
 
-    return 0
+    return 0 if ok else 1
 
 
 if __name__ == "__main__":
