@@ -1,90 +1,20 @@
 use pyo3::prelude::*;
 use numpy::{PyArray3, PyReadonlyArray3, PyReadonlyArray1};
+use ndarray::s;
 use std::collections::HashMap;
 
-// Simple linear congruential generator for better randomness
-#[derive(Debug)]
-struct SimpleRng {
-    state: u64,
-}
-
-impl SimpleRng {
-    fn new(seed: u64) -> Self {
-        Self { 
-            state: seed.wrapping_mul(1103515245).wrapping_add(12345) 
-        }
-    }
-    
-    fn next(&mut self) -> u64 {
-        self.state = self.state.wrapping_mul(1103515245).wrapping_add(12345);
-        self.state
-    }
-    
-    fn next_f32(&mut self) -> f32 {
-        (self.next() >> 32) as f32 / (u32::MAX as f32)
-    }
-    
-    fn next_range(&mut self, min: f32, max: f32) -> f32 {
-        min + self.next_f32() * (max - min)
-    }
-    
-    fn next_int(&mut self, max: u32) -> u32 {
-        ((self.next() >> 32) % max as u64) as u32
-    }
-    
-    // Generate velocity with realistic distribution (most particles at medium speed)
-    // Uses a simple triangular distribution centered around the middle
-    fn next_velocity_offset(&mut self, min: f32, max: f32) -> f32 {
-        let _mid = (min + max) / 2.0;
-        let range = max - min;
-        
-        // Generate two random numbers and average them for triangular distribution
-        let r1 = self.next_f32();
-        let r2 = self.next_f32();
-        let avg = (r1 + r2) / 2.0;
-        
-        // Map to our range with bias toward the middle
-        min + avg * range
-    }
-}
-
-// Helper function to convert RGB to HSV
-fn rgb_to_hsv(r: u8, g: u8, b: u8) -> (f32, f32, f32) {
-    let r = r as f32 / 255.0;
-    let g = g as f32 / 255.0;
-    let b = b as f32 / 255.0;
-    
-    let max = r.max(g).max(b);
-    let min = r.min(g).min(b);
-    let delta = max - min;
-    
-    let h = if delta == 0.0 {
-        0.0
-    } else if max == r {
-        60.0 * (((g - b) / delta) % 6.0)
-    } else if max == g {
-        60.0 * ((b - r) / delta + 2.0)
-    } else {
-        60.0 * ((r - g) / delta + 4.0)
-    };
-    
-    let h = if h < 0.0 { h + 360.0 } else { h } / 360.0; // Normalize to 0-1
-    let s = if max == 0.0 { 0.0 } else { delta / max };
-    let v = max;
-    
-    (h, s, v)
-}
-
 // Constants for flame effect
-const MIN_LIFESPAN: f32 = 2.0;
+const SPAWN_RATE_BASE: f32 = 0.5;
+const VELOCITY_BASE: f32 = 1.0;
+const MIN_LIFESPAN: f32 = 1.0;
 const MAX_LIFESPAN: f32 = 4.0;
-const MIN_VELOCITY_OFFSET: f32 = 0.3;  // Increased range: slower particles
-const MAX_VELOCITY_OFFSET: f32 = 1.8;  // Increased range: faster particles
-const MAX_PARTICLES_PER_BAND: usize = 4096;  // Match Python INIT_CAP
-const SPAWN_MODIFIER: f32 = 4.0;  // Match Python: was 15.0
-const WOBBLE_RATIO: f32 = 0.05;  // Match Python: was 0.1
-const TOP_TRIM_FRAC: f32 = 0.4;  // Match Python: was 0.3
-const DENSITY_EXPONENT: f32 = 0.5;  // Match Python: was 1.2
+const MIN_VELOCITY_OFFSET: f32 = 0.5;
+const MAX_VELOCITY_OFFSET: f32 = 2.0;
+const MAX_PARTICLES_PER_BAND: usize = 2000;
+const SPAWN_MODIFIER: f32 = 15.0;
+const WOBBLE_RATIO: f32 = 0.1;
+const TOP_TRIM_FRAC: f32 = 0.3;
+const DENSITY_EXPONENT: f32 = 1.2;
 const MIN_DELTA_TIME: f32 = 0.01;
 
 // Flame effect particle structure
@@ -105,36 +35,26 @@ struct FlameState {
     spawn_accum: [f32; 3],
     width: usize,
     height: usize,
-    rng: SimpleRng,
 }
 
 impl FlameState {
-    fn new(width: usize, height: usize, instance_id: u64) -> Self {
+    fn new(width: usize, height: usize) -> Self {
         let mut particles = HashMap::new();
         particles.insert(0, Vec::new());
         particles.insert(1, Vec::new());
         particles.insert(2, Vec::new());
-        
-        // Create unique seed for this instance using current time + instance_id
-        use std::time::{SystemTime, UNIX_EPOCH};
-        let time_seed = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap_or_default()
-            .as_nanos() as u64;
-        let seed = time_seed.wrapping_add(instance_id.wrapping_mul(123456789));
         
         Self {
             particles,
             spawn_accum: [0.0; 3],
             width,
             height,
-            rng: SimpleRng::new(seed),
         }
     }
 }
 
 // Global state for flame instances
-static mut FLAME_STATES: Option<HashMap<u64, FlameState>> = None;
+static mut FLAME_STATES: Option<HashMap<String, FlameState>> = None;
 
 fn hsv_to_rgb(h: f32, s: f32, v: f32) -> [u8; 3] {
     let c = v * s;
@@ -186,7 +106,7 @@ fn simple_blur(output: &mut ndarray::Array3<u8>, blur_amount: usize) {
 }
 
 #[pyfunction]
-fn get_flame_particle_counts(instance_id: u64) -> PyResult<Vec<usize>> {
+fn get_flame_particle_counts(instance_id: String) -> PyResult<Vec<usize>> {
     unsafe {
         if let Some(states) = &FLAME_STATES {
             if let Some(state) = states.get(&instance_id) {
@@ -215,10 +135,7 @@ fn rusty_flame_process(
     spawn_rate: f64,
     velocity: f64,
     blur_amount: usize,
-    instance_id: u64,
-    low_color: (u8, u8, u8),
-    mid_color: (u8, u8, u8),
-    high_color: (u8, u8, u8),
+    instance_id: String,
 ) -> PyResult<Py<PyArray3<u8>>> {
     Python::with_gil(|py| {
         let array = image_array.as_array();
@@ -240,11 +157,11 @@ fn rusty_flame_process(
         let (height, width, _) = output.dim();
         output.fill(0);
 
-        // Convert RGB colors to HSV for each frequency band
+        // Base colors for each frequency band (HSV)
         let base_colors = [
-            rgb_to_hsv(low_color.0, low_color.1, low_color.2),   // Low frequencies
-            rgb_to_hsv(mid_color.0, mid_color.1, mid_color.2),   // Mid frequencies
-            rgb_to_hsv(high_color.0, high_color.1, high_color.2), // High frequencies
+            (0.0, 1.0, 1.0),    // Red for low frequencies
+            (0.33, 1.0, 1.0),   // Green for mid frequencies
+            (0.67, 1.0, 1.0),   // Blue for high frequencies
         ];
 
         // Process particles for this instance
@@ -260,7 +177,7 @@ fn rusty_flame_process(
             };
             
             if needs_new_state {
-                states.insert(instance_id, FlameState::new(width, height, instance_id));
+                states.insert(instance_id.clone(), FlameState::new(width, height));
             }
             
             let state = states.get_mut(&instance_id).unwrap();
@@ -310,15 +227,27 @@ fn rusty_flame_process(
                 if n_spawn > 0 && particles.len() < MAX_PARTICLES_PER_BAND {
                     let actual_spawn = n_spawn.min(MAX_PARTICLES_PER_BAND - particles.len());
 
-                    for _i in 0..actual_spawn {
+                    for _ in 0..actual_spawn {
+                        use std::collections::hash_map::DefaultHasher;
+                        use std::hash::{Hash, Hasher};
+
+                        // Simple pseudo-random using hash
+                        let mut hasher = DefaultHasher::new();
+                        (particles.len() + band * 1000).hash(&mut hasher);
+                        let rand_val = hasher.finish();
+
                         particles.push(Particle {
-                            x: state.rng.next_range(0.0, width as f32),
+                            x: (rand_val % width as u64) as f32,
                             y: height as f32 - 1.0,
                             age: 0.0,
-                            lifespan: state.rng.next_range(MIN_LIFESPAN, MAX_LIFESPAN),
-                            velocity_y: 1.0 / (velocity * state.rng.next_velocity_offset(MIN_VELOCITY_OFFSET, MAX_VELOCITY_OFFSET)),
-                            size: 1.0 + state.rng.next_int(3) as f32,
-                            wobble_phase: state.rng.next_range(0.0, 2.0 * std::f32::consts::PI),
+                            lifespan: MIN_LIFESPAN +
+                                     ((rand_val % 1000) as f32 / 1000.0) *
+                                     (MAX_LIFESPAN - MIN_LIFESPAN),
+                            velocity_y: 1.0 / (velocity * (MIN_VELOCITY_OFFSET +
+                                       ((rand_val % 700) as f32 / 1000.0) *
+                                       (MAX_VELOCITY_OFFSET - MIN_VELOCITY_OFFSET))),
+                            size: 1.0 + (rand_val % 3) as f32,
+                            wobble_phase: ((rand_val % 6283) as f32) / 1000.0,
                         });
                     }
                 }
@@ -344,35 +273,23 @@ fn rusty_flame_process(
                     let xi = x_disp.round() as i32;
                     let yi = y_render.round() as i32;
 
-                    // Draw particle with circular pattern for more particle-like appearance
+                    // Draw particle with size
                     let size = particle.size as i32;
-                    let size_f = particle.size;
-                    
-                    // Draw a circular particle using distance-based falloff
                     for dy in -size..=size {
                         for dx in -size..=size {
                             let px = xi + dx;
                             let py = yi + dy;
 
-                            if px >= 0 && px < width as i32 && py >= 0 && py < height as i32 {
+                            if px >= 0 && px < width as i32 &&
+                               py >= 0 && py < height as i32 {
                                 let px = px as usize;
                                 let py = py as usize;
-                                
-                                // Calculate distance from center of particle
-                                let dist = ((dx * dx + dy * dy) as f32).sqrt();
-                                
-                                // Only draw if within particle radius
-                                if dist <= size_f {
-                                    // Create circular falloff for smoother particles
-                                    let intensity = (1.0 - (dist / size_f)).max(0.0);
-                                    
-                                    // Additive blending with intensity falloff
-                                    for c in 0..3 {
-                                        let current = output[[py, px, c]] as u16;
-                                        let contribution = (rgb[c] as f32 * intensity) as u16;
-                                        let new_val = current + contribution;
-                                        output[[py, px, c]] = new_val.min(255) as u8;
-                                    }
+
+                                // Additive blending
+                                for c in 0..3 {
+                                    let current = output[[py, px, c]] as u16;
+                                    let new_val = current + rgb[c] as u16;
+                                    output[[py, px, c]] = new_val.min(255) as u8;
                                 }
                             }
                         }
@@ -390,8 +307,76 @@ fn rusty_flame_process(
     })
 }
 
+// Keep the original function for backward compatibility
+#[pyfunction]
+fn rusty_effect_process(
+    image_array: PyReadonlyArray3<u8>,
+    _audio_bar: f64,
+    audio_pow: PyReadonlyArray1<f32>,
+    intensity: f64,
+    _time_passed: f64,
+) -> PyResult<Py<PyArray3<u8>>> {
+    Python::with_gil(|py| {
+        let array = image_array.as_array();
+        let mut output = array.to_owned();
+        let freq_powers = audio_pow.as_array();
+
+        // Extract frequency powers: [lows, mids, highs]
+        let lows_power = (freq_powers[0] as f64 * intensity).min(1.0);
+        let mids_power = (freq_powers[1] as f64 * intensity).min(1.0);
+        let highs_power = (freq_powers[2] as f64 * intensity).min(1.0);
+
+        // Get dimensions
+        let (height, width, _channels) = output.dim();
+
+        // Clear the entire image using fill - O(n) instead of O(n²)
+        output.fill(0);
+
+        // Divide width into three equal sections
+        let section_width = width / 3;
+
+        // Calculate bar heights based on audio power (from bottom up)
+        let low_height = (lows_power * height as f64) as usize;
+        let mid_height = (mids_power * height as f64) as usize;
+        let high_height = (highs_power * height as f64) as usize;
+
+        // Use ndarray slice operations for bulk assignment - much more efficient
+
+        // Draw LOW frequency bar (RED) in left section
+        if low_height > 0 && section_width > 0 {
+            let start_y = height.saturating_sub(low_height);
+            let mut red_region = output.slice_mut(s![start_y..height, 0..section_width, 0]);
+            red_region.fill(255);
+        }
+
+        // Draw MID frequency bar (GREEN) in middle section
+        if mid_height > 0 && section_width > 0 {
+            let start_y = height.saturating_sub(mid_height);
+            let mid_start = section_width;
+            let mid_end = (section_width * 2).min(width);
+            if mid_end > mid_start {
+                let mut green_region = output.slice_mut(s![start_y..height, mid_start..mid_end, 1]);
+                green_region.fill(255);
+            }
+        }
+
+        // Draw HIGH frequency bar (BLUE) in right section
+        if high_height > 0 {
+            let start_y = height.saturating_sub(high_height);
+            let high_start = section_width * 2;
+            if width > high_start {
+                let mut blue_region = output.slice_mut(s![start_y..height, high_start..width, 2]);
+                blue_region.fill(255);
+            }
+        }
+
+        Ok(PyArray3::from_owned_array(py, output).to_owned())
+    })
+}
+
 #[pymodule]
 fn ledfx_rust_effects(_py: Python, m: &PyModule) -> PyResult<()> {
+    m.add_function(wrap_pyfunction!(rusty_effect_process, m)?)?;
     m.add_function(wrap_pyfunction!(rusty_flame_process, m)?)?;
     m.add_function(wrap_pyfunction!(get_flame_particle_counts, m)?)?;
     Ok(())
