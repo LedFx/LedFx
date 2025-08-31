@@ -17,8 +17,7 @@ class Concentric(Twod, GradientEffect):
     CATEGORY = "2D"
     HIDDEN_KEYS = (
         *Twod.HIDDEN_KEYS,  # preserves 'blur', 'mirror', etc.
-        "gradient_roll",
-        "rotate",
+        "gradient_roll", "background_color"
     )
 
     CONFIG_SCHEMA = vol.Schema(
@@ -39,13 +38,13 @@ class Concentric(Twod, GradientEffect):
                 default=1,
             ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=4.0)),
             vol.Optional(
-                "stretch_width",
-                description="Stretch effect horizontally",
+                "gradient_scale",
+                description="Scales the gradient",
                 default=1.5,
             ): vol.All(vol.Coerce(float), vol.Range(min=0.1, max=10.0)),
             vol.Optional(
                 "stretch_height",
-                description="Stretch effect vertically",
+                description="Stretches the gradient vertically",
                 default=1.5,
             ): vol.All(vol.Coerce(float), vol.Range(min=0.1, max=10.0)),
             vol.Optional(
@@ -70,8 +69,8 @@ class Concentric(Twod, GradientEffect):
             self._config["frequency_range"]
         ]
         self.speed_multiplier = self._config["speed_multiplier"]
-        self.stretch_w = self._config["stretch_width"]
-        self.stretch_h = self._config["stretch_height"]
+        self.gscale = self._config["gradient_scale"]
+        self.h_stretch = self._config["stretch_height"]
         self.smoothing = self._config["center_smoothing"]
         self.idle_speed = self._config["idle_speed"]
         self.invert = self._config["invert"]
@@ -94,8 +93,8 @@ class Concentric(Twod, GradientEffect):
         # Dividing by stretch values makes the gradient expand further along that axis
 
         dist = np.sqrt(
-            ((self.x_coords - self.center_x) / self.stretch_w) ** 2
-            + ((self.y_coords - self.center_y) / self.stretch_h) ** 2
+            ((self.x_coords - self.center_x) / self.gscale) ** 2
+            + ((self.y_coords - self.center_y) / self.gscale / self.h_stretch) ** 2
         )
         # Soften the center using a scalar-image Gaussian blur
         if self.smoothing > 0:
