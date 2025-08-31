@@ -34,20 +34,20 @@ impl SimpleRng {
     fn next_int(&mut self, max: u32) -> u32 {
         ((self.next() >> 32) % max as u64) as u32
     }
-    
+
     // Generate velocity with realistic distribution - optimized version
     fn next_velocity_offset(&mut self, min: f32, max: f32) -> f32 {
         // Simplified triangular distribution using single random number
         let r = self.next_f32();
         let range = max - min;
-        
+
         // Use a simple curve to bias toward middle values
         let biased_r = if r < 0.5 {
             2.0 * r * r // Quadratic curve for first half
         } else {
             1.0 - 2.0 * (1.0 - r) * (1.0 - r) // Inverse quadratic for second half
         };
-        
+
         min + biased_r * range
     }
 }
@@ -83,14 +83,14 @@ fn rgb_to_hsv(r: u8, g: u8, b: u8) -> (f32, f32, f32) {
 fn calculate_particle_size_range(width: usize, height: usize) -> (f32, f32) {
     // Use the smaller dimension as the basis for scaling
     let base_dimension = width.min(height) as f32;
-    
+
     // Reference size: For a 64x64 matrix, particles should be 1-4 pixels
     let scale_factor = base_dimension / 64.0;
-    
+
     // Base size ranges from 1.0 to 4.0 at reference scale
     let min_size = (1.0 * scale_factor).max(1.0);
     let max_size = (4.0 * scale_factor).max(1.0);
-    
+
     // For very small matrices, cap the maximum size
     if base_dimension < 32.0 {
         (min_size, max_size.min(2.0))
@@ -191,10 +191,10 @@ fn simple_blur(output: &mut ndarray::Array3<u8>, blur_amount: usize) {
 
     let (height, width, _) = output.dim();
     let mut temp = output.clone();
-    
+
     // Optimized blur with fewer iterations for performance
     let actual_iterations = blur_amount.min(2); // Cap blur iterations
-    
+
     for _ in 0..actual_iterations {
         // Use slice operations for better performance
         for y in 1..height-1 {
@@ -205,7 +205,7 @@ fn simple_blur(output: &mut ndarray::Array3<u8>, blur_amount: usize) {
                 let down = [output[[y+1, x, 0]], output[[y+1, x, 1]], output[[y+1, x, 2]]];
                 let left = [output[[y, x-1, 0]], output[[y, x-1, 1]], output[[y, x-1, 2]]];
                 let right = [output[[y, x+1, 0]], output[[y, x+1, 1]], output[[y, x+1, 2]]];
-                
+
                 for c in 0..3 {
                     let sum = up[c] as u16 + down[c] as u16 + left[c] as u16 + right[c] as u16 + (center[c] as u16 * 4);
                     temp[[y, x, c]] = (sum / 8) as u8;
@@ -296,10 +296,10 @@ fn rusty_flame_process(
 
             let state = states.get_mut(&instance_id).unwrap();
             let wobble_amplitude = (WOBBLE_RATIO * width as f32).max(1.0);
-            
+
             // Pre-calculate particle size range for performance
             let (min_particle_size, max_particle_size) = calculate_particle_size_range(width, height);
-            
+
             // Height-based spawn scaling to match Python implementation
             let height_scale = (height as f32 / 64.0).powf(DENSITY_EXPONENT);
 
@@ -386,39 +386,39 @@ fn rusty_flame_process(
                     let size = particle.size as i32;
                     let size_f = particle.size;
                     let size_squared = size_f * size_f;
-                    
+
                     // Calculate safe bounds in i32 space first
                     let y_start_i32 = (yi - size).max(0);
                     let y_end_i32 = (yi + size + 1).min(height as i32);
-                    let x_start_i32 = (xi - size).max(0);  
+                    let x_start_i32 = (xi - size).max(0);
                     let x_end_i32 = (xi + size + 1).min(width as i32);
-                    
+
                     // Only proceed if we have valid bounds
                     if y_start_i32 < y_end_i32 && x_start_i32 < x_end_i32 &&
                        y_start_i32 >= 0 && y_end_i32 <= height as i32 &&
                        x_start_i32 >= 0 && x_end_i32 <= width as i32 {
-                        
+
                         // Now convert to usize safely
                         let y_start = y_start_i32 as usize;
                         let y_end = y_end_i32 as usize;
                         let x_start = x_start_i32 as usize;
                         let x_end = x_end_i32 as usize;
-                    
+
                         // Draw circular particle using squared distance for smooth edges
                         for py in y_start..y_end {
                             let dy = (py as i32) - yi;
                             let dy_sq = (dy * dy) as f32;
-                            
+
                             for px in x_start..x_end {
                                 let dx = (px as i32) - xi;
                                 let dx_sq = (dx * dx) as f32;
                                 let dist_squared = dx_sq + dy_sq;
-                                
+
                                 // Only draw if within circular particle radius
                                 if dist_squared <= size_squared {
                                     // Smooth circular falloff for nice particle edges
                                     let intensity = (1.0 - (dist_squared / size_squared)).max(0.0);
-                                    
+
                                     // Apply intensity to color and blend additively
                                     for c in 0..3 {
                                         let current = output[[py, px, c]] as u16;
