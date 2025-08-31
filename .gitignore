@@ -62,6 +62,23 @@ performance_insights.txt
 debug_config
 # spec file build may leave the ledfx.env behind
 ledfx.env
+# Rust build artifacts
+rust_effects/target/
+rust_effects/Cargo.lock
+*.pdb
+
+# Rust development files (keep only source)
+rust_effects/.cargo/
+rust_effects/**/*.so
+rust_effects/**/*.dll
+rust_effects/**/*.dylib
+rust_effects/**/*.pyd
+
+# Maturin build artifacts
+*.whl
+build/
+wheelhouse/
+
 # Misc
 .devcontainer/ledfx-config.yml
 frontend/*.eslintcache
