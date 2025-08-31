@@ -70,6 +70,11 @@ class Concentric(Twod, GradientEffect):
             self._config["frequency_range"]
         ]
         self.speed_multiplier = self._config["speed_multiplier"]
+        self.stretch_w = self._config["stretch_width"]
+        self.stretch_h = self._config["stretch_height"]
+        self.smoothing = self._config["center_smoothing"]
+        self.idle_speed = self._config["idle_speed"]
+        self.invert = self._config["invert"]
         self.speedb = 0
         self.offset = 0
         self.power = 0.0
@@ -77,57 +82,53 @@ class Concentric(Twod, GradientEffect):
     def audio_data_updated(self, data):
         self.power = getattr(data, self.power_func)() * 2
         self.speedb = self.power * self.speed_multiplier
-
-    def draw(self):
-        # Get effect properties
-        width = self.r_width
-        height = self.r_height
-        center_x = (width - 1) / 2
-        center_y = (height - 1) / 2
-        stretch_w = self._config["stretch_width"]
-        stretch_h = self._config["stretch_height"]
-        smoothing = self._config["center_smoothing"]
-
-        # Create a coordinate grid
-        y_coords, x_coords = np.ogrid[0:height, 0:width]
-
+    
+    # Pre-calculate distance Grid
+    def do_once(self):
+        super().do_once()
+        self.center_x = (self.r_width - 1) / 2
+        self.center_y = (self.r_height - 1) / 2
+        self.y_coords, self.x_coords = np.ogrid[0:self.r_height, 0:self.r_width]
+        # Create a coordinate grid        
         # Calculate distance from the center, applying stretching
         # Dividing by stretch values makes the gradient expand further along that axis
-        dist = np.sqrt(
-            ((x_coords - center_x) / stretch_w) ** 2
-            + ((y_coords - center_y) / stretch_h) ** 2
-        )
 
+        dist = np.sqrt(
+            ((self.x_coords - self.center_x) / self.stretch_w) ** 2
+            + ((self.y_coords - self.center_y) / self.stretch_h) ** 2
+        )
         # Soften the center using a scalar-image Gaussian blur
-        if smoothing > 0:
+        if self.smoothing > 0:
             # Normalize dist to 0-255 for 8-bit image processing
             dist_max = np.max(dist)
             if dist_max > 0:
                 dist_normalized = (dist / dist_max * 255).astype(np.uint8)
                 dist_img = Image.fromarray(dist_normalized, mode="L").filter(
-                    ImageFilter.GaussianBlur(radius=smoothing)
+                    ImageFilter.GaussianBlur(radius=self.smoothing)
                 )
                 # Convert back to float and scale back to original range
                 dist = np.asarray(dist_img, dtype=np.float32) * (
                     dist_max / 255.0
                 )
-
-        max_radius = np.hypot(center_x / stretch_w, center_y / stretch_h)
-
+        
+        max_radius = np.hypot(self.center_x / self.stretch_w, self.center_y / self.stretch_h)
         if max_radius > 0:
             dist /= max_radius
-
         dist = np.clip(dist, 0.0, 1.0)
 
-        dist = np.power(dist, 0.9)  # mild smoothing, lower values = softer
+        self.dist = np.power(dist, 0.9)  # mild smoothing, lower values = softer
 
+    def draw(self):
         # Wave expansion
-        self.speedb += 0.2 * self._config["idle_speed"]
+        self.speedb += 0.2 * self.idle_speed
+        # last_cycle_time cannot be used as this is not a PixelsEffect child effect
+        # dt_scale = getattr(self, "last_cycle_time", 16.0) / 16.0  # ~16ms @60 FPS
+        dt_scale = 1
         self.offset += (
             self.speedb / 23
-        )  # Arbritary value that looks good when speed_multiplier = 1
+        ) * dt_scale # Arbitrary value that looks good when speed_multiplier = 1
         color_points = (
-            dist + (self.offset if self._config["invert"] else -self.offset)
+            self.dist + (self.offset if self.invert else -self.offset)
         ) % 1.0
 
         # Get colors from the gradient and reshape to the matrix dimensions
