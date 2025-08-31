@@ -21,12 +21,14 @@ from ledfx.effects.twod import Twod
 
 _LOGGER = logging.getLogger(__name__)
 
+
 def hex_to_rgb(hex_color):
     """Convert hex color string to RGB tuple"""
     # Remove the # if present
-    hex_color = hex_color.lstrip('#')
+    hex_color = hex_color.lstrip("#")
     # Convert to RGB tuple
-    return tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
+    return tuple(int(hex_color[i : i + 2], 16) for i in (0, 2, 4))
+
 
 # copy this file and rename it into the effects folder
 # Anywhere you see template, replace it with your own class reference / name
@@ -79,9 +81,12 @@ class Rusty2d(Twod):
         self.audio_pow = np.array([0.0, 0.0, 0.0], dtype=np.float32)
 
         # Generate unique instance ID for this effect instance
-        import time
         import random
-        self._instance_id = int(time.time() * 1000000) + random.randint(0, 999999)
+        import time
+
+        self._instance_id = int(time.time() * 1000000) + random.randint(
+            0, 999999
+        )
 
         # Set error state based on Rust module availability
         self.error_state = not RUST_AVAILABLE
@@ -91,8 +96,8 @@ class Rusty2d(Twod):
         self._debug_report_interval = 1.0  # Report every 1 second
 
         # Initialize default RGB color tuples (will be updated in config_updated)
-        self.low_rgb = (255, 0, 0)   # Red
-        self.mid_rgb = (0, 255, 0)   # Green  
+        self.low_rgb = (255, 0, 0)  # Red
+        self.mid_rgb = (0, 255, 0)  # Green
         self.high_rgb = (0, 0, 255)  # Blue
 
         super().__init__(ledfx, config)
@@ -116,7 +121,7 @@ class Rusty2d(Twod):
         self.low_band = self._config["low_band"]
         self.mid_band = self._config["mid_band"]
         self.high_band = self._config["high_band"]
-        
+
         # Pre-convert hex colors to RGB tuples for efficiency
         self.low_rgb = hex_to_rgb(self.low_band)
         self.mid_rgb = hex_to_rgb(self.mid_band)
@@ -191,10 +196,10 @@ class Rusty2d(Twod):
         img_array = np.array(self.matrix)
 
         # Debug log parameters every 60 frames (~1 second at 60fps)
-        if not hasattr(self, '_debug_frame_count'):
+        if not hasattr(self, "_debug_frame_count"):
             self._debug_frame_count = 0
         self._debug_frame_count += 1
-        
+
         if self._debug_frame_count % 60 == 0:
             _LOGGER.debug(
                 f"RustyFlame[{self._instance_id}] params - Matrix: {img_array.shape}, "
@@ -218,12 +223,17 @@ class Rusty2d(Twod):
             self.mid_rgb,
             self.high_rgb,
         )
-        
+
         # Debug particle count reporting for flame effect
         current_time = time.time()
-        if current_time - self._debug_last_report >= self._debug_report_interval:
+        if (
+            current_time - self._debug_last_report
+            >= self._debug_report_interval
+        ):
             try:
-                particle_counts = ledfx_rust_effects.get_flame_particle_counts(self._instance_id)
+                particle_counts = ledfx_rust_effects.get_flame_particle_counts(
+                    self._instance_id
+                )
                 total_particles = sum(particle_counts)
                 _LOGGER.debug(
                     f"RustyFlame particles - Low: {particle_counts[0]}, "

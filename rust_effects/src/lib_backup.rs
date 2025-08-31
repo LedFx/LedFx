@@ -43,7 +43,7 @@ impl FlameState {
         particles.insert(0, Vec::new());
         particles.insert(1, Vec::new());
         particles.insert(2, Vec::new());
-        
+
         Self {
             particles,
             spawn_accum: [0.0; 3],
@@ -60,7 +60,7 @@ fn hsv_to_rgb(h: f32, s: f32, v: f32) -> [u8; 3] {
     let c = v * s;
     let x = c * (1.0 - ((h * 6.0) % 2.0 - 1.0).abs());
     let m = v - c;
-    
+
     let (r_prime, g_prime, b_prime) = if h < 1.0/6.0 {
         (c, x, 0.0)
     } else if h < 2.0/6.0 {
@@ -74,28 +74,28 @@ fn hsv_to_rgb(h: f32, s: f32, v: f32) -> [u8; 3] {
     } else {
         (c, 0.0, x)
     };
-    
+
     let r = ((r_prime + m) * 255.0).round().max(0.0).min(255.0) as u8;
     let g = ((g_prime + m) * 255.0).round().max(0.0).min(255.0) as u8;
     let b = ((b_prime + m) * 255.0).round().max(0.0).min(255.0) as u8;
-    
+
     [r, g, b]
 }
 
 fn simple_blur(output: &mut ndarray::Array3<u8>, blur_amount: usize) {
     if blur_amount == 0 { return; }
-    
+
     let (height, width, _) = output.dim();
     let mut temp = output.clone();
-    
+
     for _ in 0..blur_amount {
         for y in 1..height-1 {
             for x in 1..width-1 {
                 for c in 0..3 {
-                    let sum = output[[y-1, x, c]] as u16 + 
-                              output[[y+1, x, c]] as u16 + 
-                              output[[y, x-1, c]] as u16 + 
-                              output[[y, x+1, c]] as u16 + 
+                    let sum = output[[y-1, x, c]] as u16 +
+                              output[[y+1, x, c]] as u16 +
+                              output[[y, x-1, c]] as u16 +
+                              output[[y, x+1, c]] as u16 +
                               (output[[y, x, c]] as u16 * 4);
                     temp[[y, x, c]] = (sum / 8) as u8;
                 }
@@ -168,24 +168,24 @@ fn rusty_flame_process(
         unsafe {
             // Get or create state for this instance
             let states = FLAME_STATES.as_mut().unwrap();
-            
+
             // Create new state if this instance doesn't exist or dimensions changed
             let needs_new_state = if let Some(existing_state) = states.get(&instance_id) {
                 existing_state.width != width || existing_state.height != height
             } else {
                 true
             };
-            
+
             if needs_new_state {
                 states.insert(instance_id.clone(), FlameState::new(width, height));
             }
-            
+
             let state = states.get_mut(&instance_id).unwrap();
             let wobble_amplitude = (WOBBLE_RATIO * width as f32).max(1.0);
-            
+
             // Height-based spawn scaling to match Python implementation
             let height_scale = (height as f32 / 64.0).powf(DENSITY_EXPONENT);
-            
+
             // Use minimum delta time to ensure reasonable spawning even with very small time steps
             let effective_delta = delta.max(MIN_DELTA_TIME);
 
@@ -212,10 +212,10 @@ fn rusty_flame_process(
 
                     let age_ok = p.age < p.lifespan;
                     let pos_ok = p.y >= cutoff;
-                    
+
                     age_ok && pos_ok
                 });
-                
+
                 let survivors = particles.len();
                 let _died = initial_count - survivors;
 

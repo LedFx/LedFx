@@ -10,27 +10,27 @@ struct SimpleRng {
 
 impl SimpleRng {
     fn new(seed: u64) -> Self {
-        Self { 
-            state: seed.wrapping_mul(1103515245).wrapping_add(12345) 
+        Self {
+            state: seed.wrapping_mul(1103515245).wrapping_add(12345)
         }
     }
-    
+
     fn next(&mut self) -> u64 {
         self.state = self.state.wrapping_mul(1103515245).wrapping_add(12345);
         self.state
     }
-    
+
     fn next_f32(&mut self) -> f32 {
         // Optimized: avoid division by pre-computing the multiplier
         (self.next() >> 32) as f32 * (1.0 / u32::MAX as f32)
     }
-    
+
     fn next_range(&mut self, min: f32, max: f32) -> f32 {
         // Optimized: compute range once
         let range = max - min;
         min + self.next_f32() * range
     }
-    
+
     fn next_int(&mut self, max: u32) -> u32 {
         ((self.next() >> 32) % max as u64) as u32
     }
@@ -57,11 +57,11 @@ fn rgb_to_hsv(r: u8, g: u8, b: u8) -> (f32, f32, f32) {
     let r = r as f32 / 255.0;
     let g = g as f32 / 255.0;
     let b = b as f32 / 255.0;
-    
+
     let max = r.max(g).max(b);
     let min = r.min(g).min(b);
     let delta = max - min;
-    
+
     let h = if delta == 0.0 {
         0.0
     } else if max == r {
@@ -71,11 +71,11 @@ fn rgb_to_hsv(r: u8, g: u8, b: u8) -> (f32, f32, f32) {
     } else {
         60.0 * ((r - g) / delta + 4.0)
     };
-    
+
     let h = if h < 0.0 { h + 360.0 } else { h } / 360.0; // Normalize to 0-1
     let s = if max == 0.0 { 0.0 } else { delta / max };
     let v = max;
-    
+
     (h, s, v)
 }
 
@@ -138,7 +138,7 @@ impl FlameState {
         particles.insert(0, Vec::new());
         particles.insert(1, Vec::new());
         particles.insert(2, Vec::new());
-        
+
         // Create unique seed for this instance using current time + instance_id
         use std::time::{SystemTime, UNIX_EPOCH};
         let time_seed = SystemTime::now()
@@ -146,7 +146,7 @@ impl FlameState {
             .unwrap_or_default()
             .as_nanos() as u64;
         let seed = time_seed.wrapping_add(instance_id.wrapping_mul(123456789));
-        
+
         Self {
             particles,
             spawn_accum: [0.0; 3],
@@ -164,7 +164,7 @@ fn hsv_to_rgb(h: f32, s: f32, v: f32) -> [u8; 3] {
     let c = v * s;
     let x = c * (1.0 - ((h * 6.0) % 2.0 - 1.0).abs());
     let m = v - c;
-    
+
     let (r_prime, g_prime, b_prime) = if h < 1.0/6.0 {
         (c, x, 0.0)
     } else if h < 2.0/6.0 {
@@ -178,17 +178,17 @@ fn hsv_to_rgb(h: f32, s: f32, v: f32) -> [u8; 3] {
     } else {
         (c, 0.0, x)
     };
-    
+
     let r = ((r_prime + m) * 255.0).round().max(0.0).min(255.0) as u8;
     let g = ((g_prime + m) * 255.0).round().max(0.0).min(255.0) as u8;
     let b = ((b_prime + m) * 255.0).round().max(0.0).min(255.0) as u8;
-    
+
     [r, g, b]
 }
 
 fn simple_blur(output: &mut ndarray::Array3<u8>, blur_amount: usize) {
     if blur_amount == 0 { return; }
-    
+
     let (height, width, _) = output.dim();
     let mut temp = output.clone();
     
@@ -282,18 +282,18 @@ fn rusty_flame_process(
         unsafe {
             // Get or create state for this instance
             let states = FLAME_STATES.as_mut().unwrap();
-            
+
             // Create new state if this instance doesn't exist or dimensions changed
             let needs_new_state = if let Some(existing_state) = states.get(&instance_id) {
                 existing_state.width != width || existing_state.height != height
             } else {
                 true
             };
-            
+
             if needs_new_state {
                 states.insert(instance_id, FlameState::new(width, height, instance_id));
             }
-            
+
             let state = states.get_mut(&instance_id).unwrap();
             let wobble_amplitude = (WOBBLE_RATIO * width as f32).max(1.0);
             
@@ -302,7 +302,7 @@ fn rusty_flame_process(
             
             // Height-based spawn scaling to match Python implementation
             let height_scale = (height as f32 / 64.0).powf(DENSITY_EXPONENT);
-            
+
             // Use minimum delta time to ensure reasonable spawning even with very small time steps
             let effective_delta = delta.max(MIN_DELTA_TIME);
 
@@ -332,10 +332,10 @@ fn rusty_flame_process(
 
                     let age_ok = p.age < p.lifespan;
                     let pos_ok = p.y >= cutoff;
-                    
+
                     age_ok && pos_ok
                 });
-                
+
                 let survivors = particles.len();
                 let _died = initial_count - survivors;
 
@@ -430,7 +430,6 @@ fn rusty_flame_process(
                             }
                         }
                     }
-                }
             }
         }
 
