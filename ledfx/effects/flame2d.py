@@ -489,7 +489,10 @@ class Flame2d(Twod):
 
         # --- Debug particle count reporting (every 1 second) ----------------
         current_time = time.time()
-        if current_time - self._debug_last_report >= self._debug_report_interval:
+        if (
+            current_time - self._debug_last_report
+            >= self._debug_report_interval
+        ):
             total_particles = sum(self._counts.values())
             _LOGGER.debug(
                 f"Flame2D particles - Low: {self._counts['low']}, "
