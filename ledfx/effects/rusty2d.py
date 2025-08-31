@@ -12,7 +12,6 @@ except ImportError:
     RUST_AVAILABLE = False
     logging.error("Rust effects module not available - effect will show red error")
 
-from ledfx.effects import Effect
 from ledfx.effects.twod import Twod
 
 _LOGGER = logging.getLogger(__name__)
