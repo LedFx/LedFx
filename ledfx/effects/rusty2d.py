@@ -1,4 +1,5 @@
 import logging
+import time
 
 import numpy as np
 import voluptuous as vol
@@ -15,9 +16,17 @@ except ImportError:
         "Rust effects module not available - effect will show red error"
     )
 
+from ledfx.color import validate_color
 from ledfx.effects.twod import Twod
 
 _LOGGER = logging.getLogger(__name__)
+
+def hex_to_rgb(hex_color):
+    """Convert hex color string to RGB tuple"""
+    # Remove the # if present
+    hex_color = hex_color.lstrip('#')
+    # Convert to RGB tuple
+    return tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
 
 # copy this file and rename it into the effects folder
 # Anywhere you see template, replace it with your own class reference / name
@@ -27,24 +36,37 @@ _LOGGER = logging.getLogger(__name__)
 # This is a decorator that prevents the effect from being registered
 # If you don't remove it, you will not be able to test your effect!
 class Rusty2d(Twod):
-    NAME = "The Rusty One"
+    NAME = "Rust Effects"
     CATEGORY = "Matrix"
     # add keys you want hidden or in advanced here
-    HIDDEN_KEYS = Twod.HIDDEN_KEYS + []
+    HIDDEN_KEYS = Twod.HIDDEN_KEYS + ["test", "background_color"]
     ADVANCED_KEYS = Twod.ADVANCED_KEYS + []
 
     CONFIG_SCHEMA = vol.Schema(
         {
             vol.Optional(
-                "a_switch",
-                description="Does a boolean thing",
-                default=False,
-            ): bool,
+                "spawn_rate", description="Particles spawn rate", default=0.5
+            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
             vol.Optional(
-                "rust_intensity",
-                description="Intensity multiplier for Rust effect",
-                default=1.0,
-            ): vol.Range(min=0.0, max=2.0),
+                "velocity", description="Trips to top per second", default=0.3
+            ): vol.All(vol.Coerce(float), vol.Range(min=0.1, max=1.0)),
+            vol.Optional(
+                "intensity",
+                description="Application of the audio power input",
+                default=0.5,
+            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
+            vol.Optional(
+                "blur_amount", description="Blur radius in pixels", default=2
+            ): vol.All(vol.Coerce(int), vol.Range(min=0, max=5)),
+            vol.Optional(
+                "low_band", description="low band flame", default="#FF0000"
+            ): validate_color,
+            vol.Optional(
+                "mid_band", description="mid band flame", default="#00FF00"
+            ): validate_color,
+            vol.Optional(
+                "high_band", description="high band flame", default="#0000FF"
+            ): validate_color,
         }
     )
 
@@ -56,8 +78,22 @@ class Rusty2d(Twod):
         self.audio_bass = 0.0
         self.audio_pow = np.array([0.0, 0.0, 0.0], dtype=np.float32)
 
+        # Generate unique instance ID for this effect instance
+        import time
+        import random
+        self._instance_id = int(time.time() * 1000000) + random.randint(0, 999999)
+
         # Set error state based on Rust module availability
         self.error_state = not RUST_AVAILABLE
+
+        # Debug tracking for particle counts
+        self._debug_last_report = 0.0
+        self._debug_report_interval = 1.0  # Report every 1 second
+
+        # Initialize default RGB color tuples (will be updated in config_updated)
+        self.low_rgb = (255, 0, 0)   # Red
+        self.mid_rgb = (0, 255, 0)   # Green  
+        self.high_rgb = (0, 0, 255)  # Blue
 
         super().__init__(ledfx, config)
 
@@ -73,8 +109,18 @@ class Rusty2d(Twod):
     def config_updated(self, config):
         super().config_updated(config)
         # copy over your configs here into variables
-        self.a_switch = self._config["a_switch"]
-        self.rust_intensity = self._config["rust_intensity"]
+        self.intensity = self._config["intensity"]
+        self.spawn_rate = self._config["spawn_rate"]
+        self.velocity = self._config["velocity"]
+        self.blur_amount = self._config["blur_amount"]
+        self.low_band = self._config["low_band"]
+        self.mid_band = self._config["mid_band"]
+        self.high_band = self._config["high_band"]
+        
+        # Pre-convert hex colors to RGB tuples for efficiency
+        self.low_rgb = hex_to_rgb(self.low_band)
+        self.mid_rgb = hex_to_rgb(self.mid_band)
+        self.high_rgb = hex_to_rgb(self.high_band)
 
     def do_once(self):
         super().do_once()
@@ -144,14 +190,49 @@ class Rusty2d(Twod):
         # Convert PIL image to numpy array
         img_array = np.array(self.matrix)
 
-        # Call into Rust
-        processed_array = ledfx_rust_effects.rusty_effect_process(
+        # Debug log parameters every 60 frames (~1 second at 60fps)
+        if not hasattr(self, '_debug_frame_count'):
+            self._debug_frame_count = 0
+        self._debug_frame_count += 1
+        
+        if self._debug_frame_count % 60 == 0:
+            _LOGGER.debug(
+                f"RustyFlame[{self._instance_id}] params - Matrix: {img_array.shape}, "
+                f"spawn_rate={self.spawn_rate:.3f}, velocity={self.velocity:.3f}, "
+                f"intensity={self.intensity:.3f}, passed={self.passed:.6f}, "
+                f"audio_pow={[f'{x:.2f}' for x in self.audio_pow]}"
+            )
+
+        # Call the Rust flame effect function
+        processed_array = ledfx_rust_effects.rusty_flame_process(
             img_array,
-            self.audio_bar,  # Raw time progression through beat/bar
-            self.audio_pow,  # Pass the full frequency power array
-            self.rust_intensity,  # Let Rust apply intensity where needed
+            self.audio_bar,
+            self.audio_pow,
+            self.intensity,
             self.passed,
+            self.spawn_rate,
+            self.velocity,
+            self.blur_amount,
+            self._instance_id,
+            self.low_rgb,
+            self.mid_rgb,
+            self.high_rgb,
         )
+        
+        # Debug particle count reporting for flame effect
+        current_time = time.time()
+        if current_time - self._debug_last_report >= self._debug_report_interval:
+            try:
+                particle_counts = ledfx_rust_effects.get_flame_particle_counts(self._instance_id)
+                total_particles = sum(particle_counts)
+                _LOGGER.debug(
+                    f"RustyFlame particles - Low: {particle_counts[0]}, "
+                    f"Mid: {particle_counts[1]}, High: {particle_counts[2]}, "
+                    f"Total: {total_particles}"
+                )
+                self._debug_last_report = current_time
+            except Exception as e:
+                _LOGGER.warning(f"Failed to get particle counts: {e}")
 
         # Convert back to PIL Image
         self.matrix = Image.fromarray(processed_array, mode="RGB")
