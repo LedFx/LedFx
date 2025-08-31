@@ -16,7 +16,12 @@ def run_command(cmd, cwd=None, check=True):
     print(f"Running: {' '.join(cmd)}")
     try:
         result = subprocess.run(
-            cmd, cwd=cwd, capture_output=True, text=True, encoding='utf-8', check=check
+            cmd,
+            cwd=cwd,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            check=check,
         )
         if result.stdout:
             print(result.stdout)
@@ -25,13 +30,14 @@ def run_command(cmd, cwd=None, check=True):
         return result
     except UnicodeDecodeError:
         # Fallback to bytes mode if UTF-8 fails
-        result = subprocess.run(
-            cmd, cwd=cwd, capture_output=True, check=check
-        )
+        result = subprocess.run(cmd, cwd=cwd, capture_output=True, check=check)
         if result.stdout:
-            print(result.stdout.decode('utf-8', errors='replace'))
+            print(result.stdout.decode("utf-8", errors="replace"))
         if result.stderr:
-            print(result.stderr.decode('utf-8', errors='replace'), file=sys.stderr)
+            print(
+                result.stderr.decode("utf-8", errors="replace"),
+                file=sys.stderr,
+            )
         return result
 
 
