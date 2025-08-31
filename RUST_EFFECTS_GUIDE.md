@@ -67,7 +67,7 @@ use numpy::{PyArray3, PyReadonlyArray3, PyReadonlyArray1};
 use ndarray::s;
 
 /// Your new Rust effect function
-/// 
+///
 /// Parameters:
 /// - image_array: 3D array [height, width, 3] representing RGB image
 /// - audio_bar: Audio beat/tempo information (0.0-1.0)
@@ -86,23 +86,23 @@ fn my_awesome_effect(
         let array = image_array.as_array();
         let mut output = array.to_owned();
         let freq_powers = audio_pow.as_array();
-        
+
         // Extract frequency bands
         let lows_power = (freq_powers[0] as f64 * intensity).min(1.0);
         let mids_power = (freq_powers[1] as f64 * intensity).min(1.0);
         let highs_power = (freq_powers[2] as f64 * intensity).min(1.0);
-        
+
         let (height, width, _channels) = output.dim();
-        
+
         // Your effect logic here
         // Use efficient ndarray operations for best performance
-        
+
         // Example: Create a pulsing effect
         let pulse = (lows_power * 255.0) as u8;
         output.slice_mut(s![.., .., 0]).fill(pulse);           // Red
         output.slice_mut(s![.., .., 1]).fill((mids_power * 255.0) as u8);  // Green
         output.slice_mut(s![.., .., 2]).fill((highs_power * 255.0) as u8); // Blue
-        
+
         Ok(PyArray3::from_owned_array(py, output).to_owned())
     })
 }
@@ -169,7 +169,7 @@ class MyAwesome(Twod2Effect):
     HIDDEN = not RUST_AVAILABLE
 
     CONFIG_SCHEMA = vol.Schema({
-        vol.Optional("intensity", description="Effect intensity", default=1.0): 
+        vol.Optional("intensity", description="Effect intensity", default=1.0):
             vol.All(vol.Coerce(float), vol.Range(min=0.0, max=2.0)),
         vol.Optional("rust_param", description="Custom parameter", default=0.5):
             vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
@@ -180,40 +180,40 @@ class MyAwesome(Twod2Effect):
         super().__init__(ledfx, config)
         if not RUST_AVAILABLE:
             raise RuntimeError("Rust effects module not available")
-        
+
         # Initialize your effect-specific attributes
         self.rust_param = self._config.get("rust_param", 0.5)
-        
+
         _LOGGER.info("My Awesome Rust Effect initialized successfully")
 
     def audio_data_updated(self, data):
         """Called when new audio data is available"""
         super().audio_data_updated(data)
-        
+
         # Update your audio-related attributes here
         # These will be passed to the Rust function
-        
+
     def draw(self):
         """Main drawing function called every frame"""
         if not RUST_AVAILABLE:
             return self._fill_red_error()
-            
+
         try:
             # Prepare image array (height, width, 3) for RGB
             img_array = np.zeros((self.matrix_height, self.matrix_width, 3), dtype=np.uint8)
-            
+
             # Call your Rust function
             result = ledfx_rust_effects.my_awesome_effect(
                 img_array,
                 self.audio_bar,          # Beat/tempo info
-                self.audio_pow,          # [lows, mids, highs] frequency powers  
+                self.audio_pow,          # [lows, mids, highs] frequency powers
                 self._config.get("intensity", 1.0),
                 self.passed             # Time passed
             )
-            
+
             # Convert result to PIL Image and return
             return Image.fromarray(result, mode='RGB')
-            
+
         except Exception as e:
             _LOGGER.error(f"Error in My Awesome Effect: {e}")
             return self._fill_red_error()
@@ -290,7 +290,7 @@ jobs:
         run: |
           export CFLAGS="-Wno-incompatible-function-pointer-types"
           uv sync --all-extras --dev
-          
+
       # Add Rust effects build
       - name: Build Rust Effects
         run: |
@@ -310,7 +310,7 @@ Add Rust build steps to all platform builds:
     runs-on: windows-latest
     steps:
       # ... existing steps
-      
+
       # Add Rust installation
       - name: Install Rust
         uses: actions-rs/toolchain@v1
@@ -359,7 +359,7 @@ Update `.vscode/tasks.json`:
         {
             "label": "Build Rust Effects (Debug)",
             "detail": "Build Rust effects module in debug mode",
-            "type": "shell", 
+            "type": "shell",
             "command": "uv",
             "args": ["run", "maturin", "develop"],
             "group": "build",
@@ -413,16 +413,16 @@ def test_my_awesome_effect():
     height, width = 32, 64
     img_array = np.zeros((height, width, 3), dtype=np.uint8)
     audio_pow = np.array([0.5, 0.3, 0.7], dtype=np.float32)
-    
+
     # Call the function
     result = ledfx_rust_effects.my_awesome_effect(
         img_array, 0.5, audio_pow, 1.0, 0.0
     )
-    
+
     # Verify the result
     assert result.shape == (height, width, 3)
     assert result.dtype == np.uint8
-    
+
     # Add specific assertions for your effect
     assert np.any(result > 0)  # Effect should produce some output
 ```
@@ -470,7 +470,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
     runs-on: ${{ matrix.os }}
-    
+
     steps:
       - uses: actions/checkout@v4
       - uses: actions-rs/toolchain@v1
@@ -563,7 +563,7 @@ let start_y = height - low_height; // Could underflow
    ```bash
    # Update Rust
    rustup update
-   
+
    # Check Cargo.toml dependencies
    # Ensure PyO3 and numpy versions are compatible
    ```

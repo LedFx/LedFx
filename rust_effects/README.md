@@ -17,7 +17,7 @@ maturin develop --release
 ### `rusty_effect_process`
 A three-bar frequency visualizer that displays:
 - **Red bar** (left): Low frequencies
-- **Green bar** (middle): Mid frequencies  
+- **Green bar** (middle): Mid frequencies
 - **Blue bar** (right): High frequencies
 
 Each bar's height corresponds to the audio power in that frequency range.
@@ -40,7 +40,7 @@ cargo check
 # Run tests
 cargo test
 
-# Format code  
+# Format code
 cargo fmt
 
 # Lint code

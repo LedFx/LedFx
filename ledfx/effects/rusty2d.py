@@ -1,16 +1,19 @@
 import logging
-import numpy as np
-from PIL import Image
 
+import numpy as np
 import voluptuous as vol
+from PIL import Image
 
 # Import your compiled Rust module
 try:
     import ledfx_rust_effects
+
     RUST_AVAILABLE = True
 except ImportError:
     RUST_AVAILABLE = False
-    logging.error("Rust effects module not available - effect will show red error")
+    logging.error(
+        "Rust effects module not available - effect will show red error"
+    )
 
 from ledfx.effects.twod import Twod
 
@@ -38,9 +41,9 @@ class Rusty2d(Twod):
                 default=False,
             ): bool,
             vol.Optional(
-                "rust_intensity", 
+                "rust_intensity",
                 description="Intensity multiplier for Rust effect",
-                default=1.0
+                default=1.0,
             ): vol.Range(min=0.0, max=2.0),
         }
     )
@@ -52,16 +55,20 @@ class Rusty2d(Twod):
         self.audio_bar = 0.0
         self.audio_bass = 0.0
         self.audio_pow = np.array([0.0, 0.0, 0.0], dtype=np.float32)
-        
+
         # Set error state based on Rust module availability
         self.error_state = not RUST_AVAILABLE
-        
+
         super().__init__(ledfx, config)
-        
+
         if not RUST_AVAILABLE:
-            _LOGGER.error("Rust effects module not available - effect will show red")
+            _LOGGER.error(
+                "Rust effects module not available - effect will show red"
+            )
         else:
-            _LOGGER.info("Rust effects module available and loaded successfully")
+            _LOGGER.info(
+                "Rust effects module available and loaded successfully"
+            )
 
     def config_updated(self, config):
         super().config_updated(config)
@@ -86,7 +93,7 @@ class Rusty2d(Twod):
     def audio_data_updated(self, data):
         # Grab your audio input here, such as bar oscillator
         self.bar = data.bar_oscillator()
-        
+
         # Always update audio data, even in error state (for recovery)
         self.audio_bar = data.bar_oscillator()
         self.audio_pow = np.array(
@@ -118,7 +125,7 @@ class Rusty2d(Twod):
         if self.error_state:
             self._fill_red_error()
             return
-            
+
         try:
             self._draw_rust()
         except Exception as e:
@@ -136,32 +143,34 @@ class Rusty2d(Twod):
     def _draw_rust(self):
         # Convert PIL image to numpy array
         img_array = np.array(self.matrix)
-        
+
         # Call into Rust
         processed_array = ledfx_rust_effects.rusty_effect_process(
             img_array,
             self.audio_bar,  # Raw time progression through beat/bar
             self.audio_pow,  # Pass the full frequency power array
             self.rust_intensity,  # Let Rust apply intensity where needed
-            self.passed
+            self.passed,
         )
-        
+
         # Convert back to PIL Image
-        self.matrix = Image.fromarray(processed_array, mode='RGB')
+        self.matrix = Image.fromarray(processed_array, mode="RGB")
 
     def _fill_red_error(self):
         """Fill the entire matrix with red to indicate failure"""
         # Create a solid red image
-        red_array = np.full((self.matrix.height, self.matrix.width, 3), 255, dtype=np.uint8)
+        red_array = np.full(
+            (self.matrix.height, self.matrix.width, 3), 255, dtype=np.uint8
+        )
         red_array[:, :, 1] = 0  # Green = 0
         red_array[:, :, 2] = 0  # Blue = 0
-        
-        self.matrix = Image.fromarray(red_array, mode='RGB')
-        
+
+        self.matrix = Image.fromarray(red_array, mode="RGB")
+
         # Log error periodically using actual time, not frame count
-        if not hasattr(self, '_last_error_log_time'):
+        if not hasattr(self, "_last_error_log_time"):
             self._last_error_log_time = 0.0
-        
+
         self._last_error_log_time += self.passed
         if self._last_error_log_time >= 2.0:  # Log every 2 seconds
             _LOGGER.error("Rust effect still in error state - showing red")
