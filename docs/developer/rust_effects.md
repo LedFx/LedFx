@@ -1,4 +1,4 @@
-# LedFx Rust Effects Developer Guide
+# Rust Effects Developer Guide
 
 This guide explains how to add high-performance Rust effects to LedFx and integrate them into the build process.
 
