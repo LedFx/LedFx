@@ -1,5 +1,14 @@
 # Development Setup
 
+## Prerequisites
+
+LedFx requires several tools for development:
+
+- **Python 3.9 or above** (3.12 is preferred)
+- **Git** for version control
+- **uv** for Python package management
+- **Rust** for high-performance effects (optional but recommended)
+
 ## Backend Development
 
 ### Common Steps
@@ -11,14 +20,21 @@
 3. Install [uv](https://docs.astral.sh/uv/getting-started/installation/)
     - We suggest using the standalone installer to make updates easier while uv is rapidly changing
 
+4. Install [Rust](https://rustup.rs/) (recommended for Rust effects development):
+    ```console
+    $ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+    $ source $HOME/.cargo/env
+    ```
+    
+    Or on Windows, download and run the installer from [rustup.rs](https://rustup.rs/).
 
-4. Clone the main branch from the LedFx Github repository:
+5. Clone the main branch from the LedFx Github repository:
 
     ```console
     $ git clone https://github.com/LedFx/LedFx.git
     ```
 
-5. Using uv, create a virtual environment, install all dependencies, and launch ledfx:
+6. Using uv, create a virtual environment, install all dependencies, and launch ledfx:
 
     ```console
     $ cd LedFx
@@ -26,6 +42,15 @@
     ```
 
     uv can be used to launch ledfx at any time against the established venv.
+
+7. **Optional but recommended:** Build Rust effects for optimal performance:
+
+    ```console
+    $ python build_rust_effects.py --build --release
+    $ python build_rust_effects.py --test
+    ```
+
+    If you skip this step, some advanced effects may not be available, but LedFx will still function normally.
 
 ### Windows Specific Steps
 

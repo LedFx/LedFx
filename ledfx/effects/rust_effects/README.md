@@ -26,10 +26,10 @@ Each bar's height corresponds to the audio power in that frequency range.
 
 1. Add your function to `src/lib.rs`
 2. Register it in the `ledfx_rust_effects` module
-3. Create a Python wrapper in `../ledfx/effects/`
+3. Create a Python wrapper in `../`
 4. Rebuild with `maturin develop`
 
-See the [main Rust Effects Guide](../RUST_EFFECTS_GUIDE.md) for detailed instructions.
+See the [main Rust Effects Guide](../../../docs/developer/rust_effects.md) for detailed instructions.
 
 ## Development
 
