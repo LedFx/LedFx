@@ -1,6 +1,6 @@
 import numpy as np
 import voluptuous as vol
-from PIL import Image, ImageDraw, ImageFilter
+from PIL import Image
 
 from ledfx.effects import blur_pixels
 from ledfx.effects.audio import AudioReactiveEffect
