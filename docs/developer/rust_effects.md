@@ -459,8 +459,18 @@ def test_my_awesome_effect():
 
 Docker builds automatically include Rust effects. The `ledfx_docker/Dockerfile` has been updated to:
 - Install Rust during the build phase
+- Install development dependencies (including maturin)
 - Build Rust effects before creating the final image
 - Include all necessary dependencies
+
+The build process installs dev dependencies first to ensure `maturin` is available:
+```dockerfile
+# Install dev dependencies (includes maturin)
+RUN uv sync --no-install-project --no-editable --group dev
+
+# Build Rust effects (maturin now available)
+RUN cd ledfx/effects/rust_effects && uv run maturin develop --release
+```
 
 This ensures that Docker containers have full Rust effects support without additional configuration.
 

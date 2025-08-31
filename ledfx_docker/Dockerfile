@@ -15,10 +15,10 @@ ENV PATH="/root/.cargo/bin:${PATH}"
 
 COPY uv.lock pyproject.toml /app/
 RUN --mount=type=cache,id=uv-cache-${TARGETARCH},target=/root/.cache/uv \
-    uv sync --no-install-project --no-editable
+    uv sync --no-install-project --no-editable --group dev
 COPY . /app
 
-# Build Rust effects
+# Build Rust effects (maturin is now available from dev dependencies)
 RUN cd ledfx/effects/rust_effects && uv run maturin develop --release
 
 RUN --mount=type=cache,id=uv-cache-${TARGETARCH},target=/root/.cache/uv \
