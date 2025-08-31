@@ -17,7 +17,8 @@ class Concentric(Twod, GradientEffect):
     CATEGORY = "2D"
     HIDDEN_KEYS = (
         *Twod.HIDDEN_KEYS,  # preserves 'blur', 'mirror', etc.
-        "gradient_roll", "background_color"
+        "gradient_roll",
+        "background_color",
     )
 
     CONFIG_SCHEMA = vol.Schema(
@@ -96,7 +97,8 @@ class Concentric(Twod, GradientEffect):
 
         dist = np.sqrt(
             ((self.x_coords - self.center_x) / self.gscale) ** 2
-            + ((self.y_coords - self.center_y) / self.gscale / self.h_stretch) ** 2
+            + ((self.y_coords - self.center_y) / self.gscale / self.h_stretch)
+            ** 2
         )
         # Soften the center using a scalar-image Gaussian blur
         if self.smoothing > 0:
@@ -112,9 +114,7 @@ class Concentric(Twod, GradientEffect):
                     dist_max / 255.0
                 )
 
-        max_radius = np.hypot(
-            self.center_x, self.center_y / self.h_stretch
-        )
+        max_radius = np.hypot(self.center_x, self.center_y / self.h_stretch)
         if max_radius > 0:
             dist /= max_radius
         dist = np.clip(dist, 0.0, 1.0)
@@ -129,7 +129,7 @@ class Concentric(Twod, GradientEffect):
         self.speedb += self.idle_speed * delta_ns
         self.offset += (
             self.speedb
-        ) * delta_ns # Arbitrary value that looks good when speed_multiplier = 1
+        ) * delta_ns  # Arbitrary value that looks good when speed_multiplier = 1
         color_points = (
             self.dist + (self.offset if self.invert else -self.offset)
         ) % 1.0
