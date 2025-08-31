@@ -12,12 +12,12 @@ This guide explains how to add high-performance Rust effects to LedFx and integr
 7. [Testing Your Effect](#testing-your-effect)
 8. [Distribution and CI/CD](#distribution-and-cicd)
 9. [Perfor### 1. ImportError: No module named 'ledfx_rust_effects'
-   
+
    Solution:
    ```bash
    # Use the build script
    python build_rust_effects.py --build --release
-   
+
    # Or manually
    cd ledfx/effects/rust_effects
    uv run maturin develop --release

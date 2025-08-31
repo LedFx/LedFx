@@ -136,7 +136,9 @@ def setup_development():
     print("\nNext steps:")
     print("1. Run LedFx: uv run python -m ledfx --open-ui")
     print("2. Look for 'The Rusty One' effect in the matrix effects")
-    print("3. Edit ledfx/effects/rust_effects/src/lib.rs to add your own effects")
+    print(
+        "3. Edit ledfx/effects/rust_effects/src/lib.rs to add your own effects"
+    )
     print("4. Run this script again to rebuild after changes")
 
     return True
