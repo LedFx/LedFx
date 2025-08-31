@@ -43,7 +43,7 @@ def run_command(cmd, cwd=None, check=True):
 
 def build_rust_effects(release=False):
     """Build the Rust effects module"""
-    rust_dir = Path(__file__).parent / "rust_effects"
+    rust_dir = Path(__file__).parent / "ledfx" / "effects" / "rust_effects"
 
     if not rust_dir.exists():
         print("Error: rust_effects directory not found!")
@@ -83,7 +83,7 @@ def test_rust_effects():
 
 def clean_build():
     """Clean Rust build artifacts"""
-    rust_dir = Path(__file__).parent / "rust_effects"
+    rust_dir = Path(__file__).parent / "ledfx" / "effects" / "rust_effects"
     target_dir = rust_dir / "target"
 
     if target_dir.exists():
@@ -136,7 +136,7 @@ def setup_development():
     print("\nNext steps:")
     print("1. Run LedFx: uv run python -m ledfx --open-ui")
     print("2. Look for 'The Rusty One' effect in the matrix effects")
-    print("3. Edit rust_effects/src/lib.rs to add your own effects")
+    print("3. Edit ledfx/effects/rust_effects/src/lib.rs to add your own effects")
     print("4. Run this script again to rebuild after changes")
 
     return True

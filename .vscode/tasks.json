@@ -91,7 +91,7 @@
             "command": "uv",
             "args": ["run", "maturin", "develop", "--release"],
             "options": {
-                "cwd": "${workspaceFolder}/rust_effects"
+                "cwd": "${workspaceFolder}/ledfx/effects/rust_effects"
             },
             "group": {
                 "kind": "build",

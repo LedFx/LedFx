@@ -1,6 +1,7 @@
 use pyo3::prelude::*;
 use numpy::{PyArray3, PyReadonlyArray3, PyReadonlyArray1};
 use std::collections::HashMap;
+use std::sync::{Mutex, OnceLock};
 
 // Simple linear congruential generator for better randomness
 #[derive(Debug)]
@@ -29,10 +30,6 @@ impl SimpleRng {
         // Optimized: compute range once
         let range = max - min;
         min + self.next_f32() * range
-    }
-
-    fn next_int(&mut self, max: u32) -> u32 {
-        ((self.next() >> 32) % max as u64) as u32
     }
 
     // Generate velocity with realistic distribution - optimized version
@@ -157,8 +154,8 @@ impl FlameState {
     }
 }
 
-// Global state for flame instances
-static mut FLAME_STATES: Option<HashMap<u64, FlameState>> = None;
+// Global state for flame instances - using thread-safe approach
+static FLAME_STATES: OnceLock<Mutex<HashMap<u64, FlameState>>> = OnceLock::new();
 
 fn hsv_to_rgb(h: f32, s: f32, v: f32) -> [u8; 3] {
     let c = v * s;
@@ -241,13 +238,6 @@ fn rusty_flame_process(
         let velocity = velocity as f32;
         let delta = time_passed as f32;
 
-        // Initialize global states if needed
-        unsafe {
-            if FLAME_STATES.is_none() {
-                FLAME_STATES = Some(HashMap::new());
-            }
-        }
-
         let (height, width, _) = output.dim();
         output.fill(0);
 
@@ -258,10 +248,11 @@ fn rusty_flame_process(
             rgb_to_hsv(high_color.0, high_color.1, high_color.2), // High frequencies
         ];
 
-        // Process particles for this instance
-        unsafe {
-            // Get or create state for this instance
-            let states = FLAME_STATES.as_mut().unwrap();
+        // Process particles for this instance - using thread-safe approach
+        {
+            // Get or initialize the global states map
+            let states_mutex = FLAME_STATES.get_or_init(|| Mutex::new(HashMap::new()));
+            let mut states = states_mutex.lock().unwrap();
 
             // Create new state if this instance doesn't exist or dimensions changed
             let needs_new_state = if let Some(existing_state) = states.get(&instance_id) {
@@ -413,7 +404,7 @@ fn rusty_flame_process(
                         }
                     }
             }
-        }
+        } // End of particle processing block
 
         // Apply blur
         if blur_amount > 0 {

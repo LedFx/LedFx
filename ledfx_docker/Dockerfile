@@ -6,12 +6,21 @@ ARG TARGETARCH
 WORKDIR /app
 RUN --mount=type=cache,id=apt-cache-${TARGETARCH},target=/var/cache/apt,sharing=locked \
     --mount=type=cache,id=apt-lib-${TARGETARCH},target=/var/lib/apt,sharing=locked \
-    apt-get update && apt-get install -y cmake gcc portaudio19-dev --no-install-recommends
+    apt-get update && apt-get install -y cmake gcc portaudio19-dev curl build-essential --no-install-recommends
     # && rm -rf /var/lib/apt/lists/*
+
+# Install Rust
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+ENV PATH="/root/.cargo/bin:${PATH}"
+
 COPY uv.lock pyproject.toml /app/
 RUN --mount=type=cache,id=uv-cache-${TARGETARCH},target=/root/.cache/uv \
     uv sync --no-install-project --no-editable
 COPY . /app
+
+# Build Rust effects
+RUN cd ledfx/effects/rust_effects && uv run maturin develop --release
+
 RUN --mount=type=cache,id=uv-cache-${TARGETARCH},target=/root/.cache/uv \
     uv sync --no-editable --extra hue
 

@@ -58,7 +58,7 @@ jobs:
 
       - name: Build Rust Effects
         run: |
-          cd rust_effects
+          cd ledfx/effects/rust_effects
           uv run maturin develop --release
 
       - name: Get LedFx Version and Upload to Artifacts for later use
@@ -133,7 +133,7 @@ jobs:
 
       - name: Build Rust Effects
         run: |
-          cd rust_effects
+          cd ledfx/effects/rust_effects
           uv run maturin develop --release
       - name: Get LedFx Version
         id: ledfx-version
@@ -198,7 +198,7 @@ jobs:
 
       - name: Build Rust Effects
         run: |
-          cd rust_effects
+          cd ledfx/effects/rust_effects
           uv run maturin develop --release
       - name: Get LedFx Version
         id: ledfx-version
