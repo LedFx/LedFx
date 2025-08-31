@@ -25,7 +25,7 @@ LedFx requires several tools for development:
     $ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
     $ source $HOME/.cargo/env
     ```
-    
+
     Or on Windows, download and run the installer from [rustup.rs](https://rustup.rs/).
 
 5. Clone the main branch from the LedFx Github repository:
