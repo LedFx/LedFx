@@ -15,15 +15,11 @@ class Concentric(Twod, GradientEffect):
 
     NAME = "Concentric"
     CATEGORY = "2D"
-
-    HIDDEN_KEYS = [
-        "background_brightness",
-        "mirror",
-        "flip",
-        "dump",
-        "gradient_roll",
-        "rotate",
-    ]
+    HIDDEN_KEYS = (
+         *Twod.HIDDEN_KEYS,  # preserves 'blur', 'mirror', etc.
+         "gradient_roll",
+         "rotate",
+     )
 
     CONFIG_SCHEMA = vol.Schema(
         {
@@ -34,12 +30,12 @@ class Concentric(Twod, GradientEffect):
             ): vol.In(list(AudioReactiveEffect.POWER_FUNCS_MAPPING.keys())),
             vol.Optional(
                 "invert",
-                description="Inverts the direction of the explosion",
+                description="Invert propagation direction",
                 default=False,
             ): bool,
             vol.Optional(
                 "speed_multiplier",
-                description="Sound to speed multiplier",
+                description="Audio to speed multiplier",
                 default=1,
             ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=4.0)),
             vol.Optional(
@@ -54,12 +50,12 @@ class Concentric(Twod, GradientEffect):
             ): vol.All(vol.Coerce(float), vol.Range(min=0.1, max=10.0)),
             vol.Optional(
                 "center_smoothing",
-                description="Soften the center point for smoother colors",
+                description="Soften the center point",
                 default=0.5,
             ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=5.0)),
             vol.Optional(
-                "idle_speed",
-                description="Speed of the effect when nothing happens.",
+                "idle_speed", # To avoid static during breaks etc...
+                description="Idle motion speed",
                 default=1,
             ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=3.0)),
         }
@@ -73,14 +69,15 @@ class Concentric(Twod, GradientEffect):
         self.power_func = self.POWER_FUNCS_MAPPING[
             self._config["frequency_range"]
         ]
-        self.speed_multiplication = self._config["speed_multiplier"]
+        self.speed_multiplier = self._config["speed_multiplier"]
         self.speedb = 0
         self.offset = 0
+        self.power = 0.0
 
     def audio_data_updated(self, data):
         self.power = getattr(data, self.power_func)() * 2
-        self.speedb = self.power * self.speed_multiplication
-
+        self.speedb = self.power * self.speed_multiplier
+        
     def draw(self):
         # Get effect properties
         width = self.r_width
@@ -117,6 +114,8 @@ class Concentric(Twod, GradientEffect):
 
         if max_radius > 0:
             dist /= max_radius
+            
+        dist = np.clip(dist, 0.0, 1.0)
 
         dist = np.power(dist, 0.9)  # mild smoothing, lower values = softer
 
@@ -124,13 +123,11 @@ class Concentric(Twod, GradientEffect):
         self.speedb += 0.2 * self._config["idle_speed"]
         self.offset += (
             self.speedb / 23
-        )  # Arbritary value that looks good when speed_multiplication = 1
+        )  # Arbritary value that looks good when speed_multiplier = 1
         color_points = (
             dist + (self.offset if self._config["invert"] else -self.offset)
         ) % 1.0
 
         # Get colors from the gradient and reshape to the matrix dimensions
-        pixels = self.get_gradient_color(color_points.flatten())
-        self.matrix = Image.fromarray(
-            pixels.T.reshape((height, width, 3)).astype(np.uint8)
-        )
+        pixels = self.get_gradient_color_vectorized2d(color_points).astype(np.uint8)
+        self.matrix = Image.fromarray(pixels)
