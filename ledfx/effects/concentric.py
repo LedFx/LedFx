@@ -1,8 +1,7 @@
 import numpy as np
 import voluptuous as vol
-from PIL import Image
+from PIL import Image, ImageFilter
 
-from ledfx.effects import blur_pixels
 from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.gradient import GradientEffect
 from ledfx.effects.twod import Twod
@@ -34,27 +33,12 @@ class Concentric(Twod, GradientEffect):
                 default="Lows (beat+bass)",
             ): vol.In(list(AudioReactiveEffect.POWER_FUNCS_MAPPING.keys())),
             vol.Optional(
-                "blur",
-                description="Amount of blur to apply to the final image",
-                default=0.4,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=10.0)),
-            vol.Optional(
-                "mirror",
-                description="Mirror the effect",
-                default=False,
-            ): bool,
-            vol.Optional(
                 "invert",
                 description="Inverts the direction of the explosion",
                 default=False,
             ): bool,
             vol.Optional(
-                "flip",
-                description="Flip the effect",
-                default=False,
-            ): bool,
-            vol.Optional(
-                "speed_multiplication",
+                "speed_multiplier",
                 description="Sound to speed multiplier",
                 default=1,
             ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=4.0)),
@@ -85,11 +69,11 @@ class Concentric(Twod, GradientEffect):
         super().on_activate(pixel_count)
 
     def config_updated(self, config):
-
+        super().config_updated(config)
         self.power_func = self.POWER_FUNCS_MAPPING[
             self._config["frequency_range"]
         ]
-        self.speed_multiplication = self._config["speed_multiplication"]
+        self.speed_multiplication = self._config["speed_multiplier"]
         self.speedb = 0
         self.offset = 0
 
@@ -117,11 +101,14 @@ class Concentric(Twod, GradientEffect):
             + ((y_coords - center_y) / stretch_h) ** 2
         )
 
-        # Apply Gaussian blur to the distance map to smooth the center point
+         # Soften the center using a scalar-image Gaussian blur
         if smoothing > 0:
-            dist = blur_pixels(dist, sigma=smoothing)
+            dist_img = Image.fromarray(dist.astype(np.float32), mode="F").filter(
+                ImageFilter.GaussianBlur(radius=smoothing)
+            )
+            dist = np.asarray(dist_img, dtype=np.float32)
 
-        max_radius = np.sqrt(center_x**2 + center_y**2)
+        max_radius = np.hypot(center_x / stretch_w, center_y / stretch_h)
 
         if max_radius > 0:
             dist /= max_radius
