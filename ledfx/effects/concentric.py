@@ -1,8 +1,8 @@
 import numpy as np
 import voluptuous as vol
 from PIL import Image, ImageDraw, ImageFilter
-from scipy.ndimage import gaussian_filter
 
+from ledfx.effects import blur_pixels
 from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.gradient import GradientEffect
 from ledfx.effects.twod import Twod
@@ -113,7 +113,7 @@ class Concentric(Twod, GradientEffect):
         
         # Apply Gaussian blur to the distance map to smooth the center point
         if smoothing > 0:
-            dist = gaussian_filter(dist, sigma=smoothing)
+            dist = blur_pixels(dist, sigma=smoothing)
         
         max_radius = np.sqrt(center_x**2 + center_y**2)
         
@@ -124,7 +124,7 @@ class Concentric(Twod, GradientEffect):
 
         # Wave expansion
         self.speedb += 0.2 * self._config["idle_speed"]
-        self.offset += self.speedb / 23
+        self.offset += self.speedb / 23 # Arbritary value that looks good when speed_multiplication = 1
         color_points = (dist + (self.offset if self._config["invert"] else -self.offset)) % 1.0
 
         # Get colors from the gradient and reshape to the matrix dimensions
