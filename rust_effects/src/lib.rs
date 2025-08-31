@@ -14,35 +14,35 @@ fn rusty_effect_process(
         let array = image_array.as_array();
         let mut output = array.to_owned();
         let freq_powers = audio_pow.as_array();
-        
+
         // Extract frequency powers: [lows, mids, highs]
         let lows_power = (freq_powers[0] as f64 * intensity).min(1.0);
         let mids_power = (freq_powers[1] as f64 * intensity).min(1.0);
         let highs_power = (freq_powers[2] as f64 * intensity).min(1.0);
-        
+
         // Get dimensions
         let (height, width, _channels) = output.dim();
-        
+
         // Clear the entire image using fill - O(n) instead of O(n²)
         output.fill(0);
-        
+
         // Divide matrix into three equal sections
         let section_width = width / 3;
-        
+
         // Calculate bar heights based on audio power (from bottom up)
         let low_height = (lows_power * height as f64) as usize;
         let mid_height = (mids_power * height as f64) as usize;
         let high_height = (highs_power * height as f64) as usize;
-        
+
         // Use ndarray slice operations for bulk assignment - much more efficient
-        
+
         // Draw LOW frequency bar (RED) in left section
         if low_height > 0 && section_width > 0 {
             let start_y = height.saturating_sub(low_height);
             let mut red_region = output.slice_mut(s![start_y..height, 0..section_width, 0]);
             red_region.fill(255);
         }
-        
+
         // Draw MID frequency bar (GREEN) in middle section
         if mid_height > 0 && section_width > 0 {
             let start_y = height.saturating_sub(mid_height);
@@ -53,7 +53,7 @@ fn rusty_effect_process(
                 green_region.fill(255);
             }
         }
-        
+
         // Draw HIGH frequency bar (BLUE) in right section
         if high_height > 0 {
             let start_y = height.saturating_sub(high_height);
@@ -63,7 +63,7 @@ fn rusty_effect_process(
                 blue_region.fill(255);
             }
         }
-        
+
         Ok(PyArray3::from_owned_array(py, output).to_owned())
     })
 }
