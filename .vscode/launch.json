@@ -50,6 +50,27 @@
             }
         },
         {
+            "name": "LedFx (Rust Effects Development)",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/ledfx/__main__.py",
+            "args": ["-vv", "--offline", "--open-ui"],
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "windows": {
+                "program": "${workspaceFolder}\\ledfx\\__main__.py"
+            },
+            "preLaunchTask": "Build Rust Effects",
+            "presentation": {
+                "group": "Rust Development",
+                "order": 1
+            },
+            "env": {
+                "RUST_LOG": "debug",
+                "RUST_BACKTRACE": "1"
+            }
+        },
+        {
             "name": "LedFx (No Sentry)",
             "type": "debugpy",
             "request": "launch",

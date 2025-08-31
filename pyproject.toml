@@ -56,6 +56,7 @@ dev = [
     "pytest<9.0.0,>=8.0.0",
     "pytest-order<2.0.0,>=1.2.0",
     "pyinstaller<7.0.0,>=6.3.0",
+    "maturin>=1.9.4",
 ]
 docs = [
     "sphinx<8.2.4; python_version >= \"3.10\"",

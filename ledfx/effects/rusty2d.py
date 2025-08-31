@@ -47,17 +47,22 @@ class Rusty2d(Twod):
     )
 
     def __init__(self, ledfx, config):
-        # set any default values first, as config_updated will be called
-        # from the super().__init__() which may depend on them
+        # Initialize all audio-related attributes with safe defaults
+        # These must be set before audio_data_updated() is called
         self.bar = 0
         self.audio_bar = 0.0
         self.audio_bass = 0.0
-        self.error_state = False
+        self.audio_pow = np.array([0.0, 0.0, 0.0], dtype=np.float32)
+        
+        # Set error state based on Rust module availability
+        self.error_state = not RUST_AVAILABLE
+        
         super().__init__(ledfx, config)
         
         if not RUST_AVAILABLE:
-            _LOGGER.error("Rust effects module not available")
-            self.error_state = True
+            _LOGGER.error("Rust effects module not available - effect will show red")
+        else:
+            _LOGGER.info("Rust effects module available and loaded successfully")
 
     def config_updated(self, config):
         super().config_updated(config)
@@ -83,11 +88,16 @@ class Rusty2d(Twod):
         # Grab your audio input here, such as bar oscillator
         self.bar = data.bar_oscillator()
         
-        if self.error_state:
-            return
-            
+        # Always update audio data, even in error state (for recovery)
         self.audio_bar = data.bar_oscillator()
-        self.audio_bass = np.mean(data.lows_power(filtered=False))
+        self.audio_pow = np.array(
+            [
+                data.lows_power(),
+                data.mids_power(),
+                data.high_power(),
+            ],
+            dtype=np.float32,
+        )
 
     def draw(self):
         # this is where you pixel mash, it will be a black image object each call
@@ -131,8 +141,9 @@ class Rusty2d(Twod):
         # Call into Rust
         processed_array = ledfx_rust_effects.rusty_effect_process(
             img_array,
-            self.audio_bar * self.rust_intensity,
-            self.audio_bass,
+            self.audio_bar,  # Raw time progression through beat/bar
+            self.audio_pow,  # Pass the full frequency power array
+            self.rust_intensity,  # Let Rust apply intensity where needed
             self.passed
         )
         
@@ -148,10 +159,11 @@ class Rusty2d(Twod):
         
         self.matrix = Image.fromarray(red_array, mode='RGB')
         
-        # Optional: Log error periodically but not every frame
-        if hasattr(self, '_error_log_counter'):
-            self._error_log_counter += 1
-            if self._error_log_counter % 60 == 0:  # Log every ~1 second at 60fps
-                _LOGGER.error("Rust effect still in error state - showing red")
-        else:
-            self._error_log_counter = 1
+        # Log error periodically using actual time, not frame count
+        if not hasattr(self, '_last_error_log_time'):
+            self._last_error_log_time = 0.0
+        
+        self._last_error_log_time += self.passed
+        if self._last_error_log_time >= 2.0:  # Log every 2 seconds
+            _LOGGER.error("Rust effect still in error state - showing red")
+            self._last_error_log_time = 0.0
