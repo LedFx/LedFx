@@ -1,5 +1,4 @@
 import logging
-import time
 from collections import namedtuple
 
 import numpy as np
@@ -119,10 +118,6 @@ class Flame2d(Twod):
 
         # Per-group fractional spawn accumulators
         self.spawn_accumulator = np.zeros(3, dtype=np.float32)
-
-        # Debug tracking for particle counts
-        self._debug_last_report = 0.0
-        self._debug_report_interval = 1.0  # Report every 1 second
 
         # Perf helpers
         self._rng = np.random.default_rng()
@@ -486,20 +481,6 @@ class Flame2d(Twod):
                 self.r_pixels[:, :, c] = (cs[2 * r :, :] - cs[: -2 * r, :]) / (
                     2 * r
                 )
-
-        # --- Debug particle count reporting (every 1 second) ----------------
-        current_time = time.time()
-        if (
-            current_time - self._debug_last_report
-            >= self._debug_report_interval
-        ):
-            total_particles = sum(self._counts.values())
-            _LOGGER.debug(
-                f"Flame2D particles - Low: {self._counts['low']}, "
-                f"Mid: {self._counts['mid']}, High: {self._counts['high']}, "
-                f"Total: {total_particles}"
-            )
-            self._debug_last_report = current_time
 
         # Finalize (clip to [0,255] and cast to uint8)
         clamped = np.clip(self.r_pixels, 0, 255).astype(np.uint8)
