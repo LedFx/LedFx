@@ -30,13 +30,6 @@ def hex_to_rgb(hex_color):
     return tuple(int(hex_color[i : i + 2], 16) for i in (0, 2, 4))
 
 
-# copy this file and rename it into the effects folder
-# Anywhere you see template, replace it with your own class reference / name
-
-
-# Remove the @Effect.no_registration line when you use this template
-# This is a decorator that prevents the effect from being registered
-# If you don't remove it, you will not be able to test your effect!
 class Rusty2d(Twod):
     NAME = "Rust Effects"
     CATEGORY = "Matrix"
@@ -90,10 +83,6 @@ class Rusty2d(Twod):
 
         # Set error state based on Rust module availability
         self.error_state = not RUST_AVAILABLE
-
-        # Debug tracking for particle counts
-        self._debug_last_report = 0.0
-        self._debug_report_interval = 1.0  # Report every 1 second
 
         # Initialize default RGB color tuples (will be updated in config_updated)
         self.low_rgb = (255, 0, 0)  # Red
@@ -195,19 +184,6 @@ class Rusty2d(Twod):
         # Convert PIL image to numpy array
         img_array = np.array(self.matrix)
 
-        # Debug log parameters every 60 frames (~1 second at 60fps)
-        if not hasattr(self, "_debug_frame_count"):
-            self._debug_frame_count = 0
-        self._debug_frame_count += 1
-
-        if self._debug_frame_count % 60 == 0:
-            _LOGGER.debug(
-                f"RustyFlame[{self._instance_id}] params - Matrix: {img_array.shape}, "
-                f"spawn_rate={self.spawn_rate:.3f}, velocity={self.velocity:.3f}, "
-                f"intensity={self.intensity:.3f}, passed={self.passed:.6f}, "
-                f"audio_pow={[f'{x:.2f}' for x in self.audio_pow]}"
-            )
-
         # Call the Rust flame effect function
         processed_array = ledfx_rust_effects.rusty_flame_process(
             img_array,
@@ -223,26 +199,6 @@ class Rusty2d(Twod):
             self.mid_rgb,
             self.high_rgb,
         )
-
-        # Debug particle count reporting for flame effect
-        current_time = time.time()
-        if (
-            current_time - self._debug_last_report
-            >= self._debug_report_interval
-        ):
-            try:
-                particle_counts = ledfx_rust_effects.get_flame_particle_counts(
-                    self._instance_id
-                )
-                total_particles = sum(particle_counts)
-                _LOGGER.debug(
-                    f"RustyFlame particles - Low: {particle_counts[0]}, "
-                    f"Mid: {particle_counts[1]}, High: {particle_counts[2]}, "
-                    f"Total: {total_particles}"
-                )
-                self._debug_last_report = current_time
-            except Exception as e:
-                _LOGGER.warning(f"Failed to get particle counts: {e}")
 
         # Convert back to PIL Image
         self.matrix = Image.fromarray(processed_array, mode="RGB")

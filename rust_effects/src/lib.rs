@@ -217,26 +217,6 @@ fn simple_blur(output: &mut ndarray::Array3<u8>, blur_amount: usize) {
 }
 
 #[pyfunction]
-fn get_flame_particle_counts(instance_id: u64) -> PyResult<Vec<usize>> {
-    unsafe {
-        if let Some(states) = &FLAME_STATES {
-            if let Some(state) = states.get(&instance_id) {
-                let counts = vec![
-                    state.particles.get(&0).map_or(0, |v| v.len()),
-                    state.particles.get(&1).map_or(0, |v| v.len()),
-                    state.particles.get(&2).map_or(0, |v| v.len()),
-                ];
-                Ok(counts)
-            } else {
-                Ok(vec![0, 0, 0])
-            }
-        } else {
-            Ok(vec![0, 0, 0])
-        }
-    }
-}
-
-#[pyfunction]
 fn rusty_flame_process(
     image_array: PyReadonlyArray3<u8>,
     _audio_bar: f64,
@@ -366,8 +346,9 @@ fn rusty_flame_process(
 
                     let t = particle.age / particle.lifespan;
 
-                    // Simplified color calculation - use pre-computed base color with fading
-                    let fade = 1.0 - t;
+                    // More aggressive fading - particles get darker sooner
+                    // Use exponential curve to fade to near-black before disappearing
+                    let fade = (1.0 - t).powf(1.5); // Exponential fade - gets darker faster
                     let rgb = [
                         (base_rgb[0] as f32 * fade) as u8,
                         (base_rgb[1] as f32 * fade) as u8,
@@ -382,9 +363,10 @@ fn rusty_flame_process(
                     let xi = x_disp.round() as i32;
                     let yi = y_render.round() as i32;
 
-                    // Circular particle with safe bounds checking
-                    let size = particle.size as i32;
-                    let size_f = particle.size;
+                    // Shrink particle size as it fades (embers get smaller as they die)
+                    let shrunk_size = particle.size * fade.sqrt(); // Square root gives gentler size reduction
+                    let size = shrunk_size as i32;
+                    let size_f = shrunk_size;
                     let size_squared = size_f * size_f;
 
                     // Calculate safe bounds in i32 space first
@@ -445,6 +427,5 @@ fn rusty_flame_process(
 #[pymodule]
 fn ledfx_rust_effects(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(rusty_flame_process, m)?)?;
-    m.add_function(wrap_pyfunction!(get_flame_particle_counts, m)?)?;
     Ok(())
 }
