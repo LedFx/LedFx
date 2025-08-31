@@ -103,10 +103,15 @@ class Concentric(Twod, GradientEffect):
 
          # Soften the center using a scalar-image Gaussian blur
         if smoothing > 0:
-            dist_img = Image.fromarray(dist.astype(np.float32), mode="F").filter(
-                ImageFilter.GaussianBlur(radius=smoothing)
-            )
-            dist = np.asarray(dist_img, dtype=np.float32)
+            # Normalize dist to 0-255 for 8-bit image processing
+            dist_max = np.max(dist)
+            if dist_max > 0:
+                dist_normalized = (dist / dist_max * 255).astype(np.uint8)
+                dist_img = Image.fromarray(dist_normalized, mode="L").filter(
+                    ImageFilter.GaussianBlur(radius=smoothing)
+                )
+                # Convert back to float and scale back to original range
+                dist = np.asarray(dist_img, dtype=np.float32) * (dist_max / 255.0)
 
         max_radius = np.hypot(center_x / stretch_w, center_y / stretch_h)
 
