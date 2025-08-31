@@ -3063,4 +3063,32 @@ ledfx_presets = {
             "name": "Chicken",
         },
     },
+    "concentric": {
+        "fast-rainbow": {
+            "config": {
+                "background_brightness": 1.0,
+                "background_color": "#000000",
+                "blur": 0.0,
+                "brightness": 1.0,
+                "center_smoothing": 0.8,
+                "diag": False,
+                "dump": False,
+                "flip": False,
+                "flip_horizontal": False,
+                "flip_vertical": False,
+                "frequency_range": "Lows (beat+bass)",
+                "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
+                "gradient_roll": 0.0,
+                "gradient_scale": 1.5,
+                "idle_speed": 10,
+                "invert": False,
+                "mirror": False,
+                "rotate": 0,
+                "speed_multiplier": 10.5,
+                "stretch_height": 1.0,
+                "test": False
+            },
+            "name": "Fast rainbow"
+        }
+    }
 }
