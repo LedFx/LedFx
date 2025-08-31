@@ -108,7 +108,9 @@ class Concentric(Twod, GradientEffect):
                     ImageFilter.GaussianBlur(radius=smoothing)
                 )
                 # Convert back to float and scale back to original range
-                dist = np.asarray(dist_img, dtype=np.float32) * (dist_max / 255.0)
+                dist = np.asarray(dist_img, dtype=np.float32) * (
+                    dist_max / 255.0
+                )
 
         max_radius = np.hypot(center_x / stretch_w, center_y / stretch_h)
 
