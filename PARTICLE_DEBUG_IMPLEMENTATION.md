@@ -17,7 +17,7 @@ Successfully added debug logging to both flame effects to report particle counts
   - Only reports every 1 second to avoid spam
 
 ### 2. rust_effects/src/lib.rs (Rust Implementation)
-- **Added function**: `get_flame_particle_counts()` 
+- **Added function**: `get_flame_particle_counts()`
   - Returns `Vec<usize>` with counts for [Low, Mid, High] bands
   - Safely accesses the global FLAME_STATE
   - Returns [0, 0, 0] if no state exists

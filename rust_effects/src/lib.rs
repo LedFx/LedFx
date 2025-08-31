@@ -10,39 +10,39 @@ struct SimpleRng {
 
 impl SimpleRng {
     fn new(seed: u64) -> Self {
-        Self { 
-            state: seed.wrapping_mul(1103515245).wrapping_add(12345) 
+        Self {
+            state: seed.wrapping_mul(1103515245).wrapping_add(12345)
         }
     }
-    
+
     fn next(&mut self) -> u64 {
         self.state = self.state.wrapping_mul(1103515245).wrapping_add(12345);
         self.state
     }
-    
+
     fn next_f32(&mut self) -> f32 {
         (self.next() >> 32) as f32 / (u32::MAX as f32)
     }
-    
+
     fn next_range(&mut self, min: f32, max: f32) -> f32 {
         min + self.next_f32() * (max - min)
     }
-    
+
     fn next_int(&mut self, max: u32) -> u32 {
         ((self.next() >> 32) % max as u64) as u32
     }
-    
+
     // Generate velocity with realistic distribution (most particles at medium speed)
     // Uses a simple triangular distribution centered around the middle
     fn next_velocity_offset(&mut self, min: f32, max: f32) -> f32 {
         let _mid = (min + max) / 2.0;
         let range = max - min;
-        
+
         // Generate two random numbers and average them for triangular distribution
         let r1 = self.next_f32();
         let r2 = self.next_f32();
         let avg = (r1 + r2) / 2.0;
-        
+
         // Map to our range with bias toward the middle
         min + avg * range
     }
@@ -53,11 +53,11 @@ fn rgb_to_hsv(r: u8, g: u8, b: u8) -> (f32, f32, f32) {
     let r = r as f32 / 255.0;
     let g = g as f32 / 255.0;
     let b = b as f32 / 255.0;
-    
+
     let max = r.max(g).max(b);
     let min = r.min(g).min(b);
     let delta = max - min;
-    
+
     let h = if delta == 0.0 {
         0.0
     } else if max == r {
@@ -67,11 +67,11 @@ fn rgb_to_hsv(r: u8, g: u8, b: u8) -> (f32, f32, f32) {
     } else {
         60.0 * ((r - g) / delta + 4.0)
     };
-    
+
     let h = if h < 0.0 { h + 360.0 } else { h } / 360.0; // Normalize to 0-1
     let s = if max == 0.0 { 0.0 } else { delta / max };
     let v = max;
-    
+
     (h, s, v)
 }
 
@@ -114,7 +114,7 @@ impl FlameState {
         particles.insert(0, Vec::new());
         particles.insert(1, Vec::new());
         particles.insert(2, Vec::new());
-        
+
         // Create unique seed for this instance using current time + instance_id
         use std::time::{SystemTime, UNIX_EPOCH};
         let time_seed = SystemTime::now()
@@ -122,7 +122,7 @@ impl FlameState {
             .unwrap_or_default()
             .as_nanos() as u64;
         let seed = time_seed.wrapping_add(instance_id.wrapping_mul(123456789));
-        
+
         Self {
             particles,
             spawn_accum: [0.0; 3],
@@ -140,7 +140,7 @@ fn hsv_to_rgb(h: f32, s: f32, v: f32) -> [u8; 3] {
     let c = v * s;
     let x = c * (1.0 - ((h * 6.0) % 2.0 - 1.0).abs());
     let m = v - c;
-    
+
     let (r_prime, g_prime, b_prime) = if h < 1.0/6.0 {
         (c, x, 0.0)
     } else if h < 2.0/6.0 {
@@ -154,28 +154,28 @@ fn hsv_to_rgb(h: f32, s: f32, v: f32) -> [u8; 3] {
     } else {
         (c, 0.0, x)
     };
-    
+
     let r = ((r_prime + m) * 255.0).round().max(0.0).min(255.0) as u8;
     let g = ((g_prime + m) * 255.0).round().max(0.0).min(255.0) as u8;
     let b = ((b_prime + m) * 255.0).round().max(0.0).min(255.0) as u8;
-    
+
     [r, g, b]
 }
 
 fn simple_blur(output: &mut ndarray::Array3<u8>, blur_amount: usize) {
     if blur_amount == 0 { return; }
-    
+
     let (height, width, _) = output.dim();
     let mut temp = output.clone();
-    
+
     for _ in 0..blur_amount {
         for y in 1..height-1 {
             for x in 1..width-1 {
                 for c in 0..3 {
-                    let sum = output[[y-1, x, c]] as u16 + 
-                              output[[y+1, x, c]] as u16 + 
-                              output[[y, x-1, c]] as u16 + 
-                              output[[y, x+1, c]] as u16 + 
+                    let sum = output[[y-1, x, c]] as u16 +
+                              output[[y+1, x, c]] as u16 +
+                              output[[y, x-1, c]] as u16 +
+                              output[[y, x+1, c]] as u16 +
                               (output[[y, x, c]] as u16 * 4);
                     temp[[y, x, c]] = (sum / 8) as u8;
                 }
@@ -251,24 +251,24 @@ fn rusty_flame_process(
         unsafe {
             // Get or create state for this instance
             let states = FLAME_STATES.as_mut().unwrap();
-            
+
             // Create new state if this instance doesn't exist or dimensions changed
             let needs_new_state = if let Some(existing_state) = states.get(&instance_id) {
                 existing_state.width != width || existing_state.height != height
             } else {
                 true
             };
-            
+
             if needs_new_state {
                 states.insert(instance_id, FlameState::new(width, height, instance_id));
             }
-            
+
             let state = states.get_mut(&instance_id).unwrap();
             let wobble_amplitude = (WOBBLE_RATIO * width as f32).max(1.0);
-            
+
             // Height-based spawn scaling to match Python implementation
             let height_scale = (height as f32 / 64.0).powf(DENSITY_EXPONENT);
-            
+
             // Use minimum delta time to ensure reasonable spawning even with very small time steps
             let effective_delta = delta.max(MIN_DELTA_TIME);
 
@@ -295,10 +295,10 @@ fn rusty_flame_process(
 
                     let age_ok = p.age < p.lifespan;
                     let pos_ok = p.y >= cutoff;
-                    
+
                     age_ok && pos_ok
                 });
-                
+
                 let survivors = particles.len();
                 let _died = initial_count - survivors;
 
@@ -347,7 +347,7 @@ fn rusty_flame_process(
                     // Draw particle with circular pattern for more particle-like appearance
                     let size = particle.size as i32;
                     let size_f = particle.size;
-                    
+
                     // Draw a circular particle using distance-based falloff
                     for dy in -size..=size {
                         for dx in -size..=size {
@@ -357,15 +357,15 @@ fn rusty_flame_process(
                             if px >= 0 && px < width as i32 && py >= 0 && py < height as i32 {
                                 let px = px as usize;
                                 let py = py as usize;
-                                
+
                                 // Calculate distance from center of particle
                                 let dist = ((dx * dx + dy * dy) as f32).sqrt();
-                                
+
                                 // Only draw if within particle radius
                                 if dist <= size_f {
                                     // Create circular falloff for smoother particles
                                     let intensity = (1.0 - (dist / size_f)).max(0.0);
-                                    
+
                                     // Additive blending with intensity falloff
                                     for c in 0..3 {
                                         let current = output[[py, px, c]] as u16;
