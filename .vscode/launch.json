@@ -1,7 +1,6 @@
 {
     "version": "0.2.0",
     "configurations": [
-
         {
             "name": "LedFx",
             "type": "debugpy",
@@ -13,7 +12,7 @@
                 "program": "${workspaceFolder}\\ledfx\\__main__.py"
             },
             "presentation": {
-                "group": "Sentry Enabled",
+                "group": "3 Sentry Enabled",
                 "order": 1
             }
         },
@@ -29,7 +28,7 @@
                 "program": "${workspaceFolder}\\ledfx\\__main__.py"
             },
             "presentation": {
-                "group": "Sentry Enabled",
+                "group": "3 Sentry Enabled",
                 "order": 2
             }
         },
@@ -45,29 +44,8 @@
                 "program": "${workspaceFolder}\\ledfx\\__main__.py"
             },
             "presentation": {
-                "group": "Sentry Disabled",
+                "group": "1 Sentry Disabled",
                 "order": 2
-            }
-        },
-        {
-            "name": "LedFx (Rust Effects Development)",
-            "type": "debugpy",
-            "request": "launch",
-            "program": "${workspaceFolder}/ledfx/__main__.py",
-            "args": ["-vv", "--offline", "--open-ui"],
-            "console": "integratedTerminal",
-            "justMyCode": false,
-            "windows": {
-                "program": "${workspaceFolder}\\ledfx\\__main__.py"
-            },
-            "preLaunchTask": "Build Rust Effects",
-            "presentation": {
-                "group": "Rust Development",
-                "order": 1
-            },
-            "env": {
-                "RUST_LOG": "debug",
-                "RUST_BACKTRACE": "1"
             }
         },
         {
@@ -82,7 +60,7 @@
                 "program": "${workspaceFolder}\\ledfx\\__main__.py"
             },
             "presentation": {
-                "group": "Sentry Disabled",
+                "group": "1 Sentry Disabled",
                 "order": 1
             }
         },
@@ -98,7 +76,7 @@
                 "program": "${workspaceFolder}\\ledfx\\__main__.py"
             },
             "presentation": {
-                "group": "Sentry Disabled",
+                "group": "1 Sentry Disabled",
                 "order": 2
             }
         },
@@ -114,8 +92,29 @@
                 "program": "${workspaceFolder}\\ledfx\\__main__.py"
             },
             "presentation": {
-                "group": "Sentry Disabled",
+                "group": "1 Sentry Disabled",
                 "order": 1
+            }
+        },
+        {
+            "name": "LedFx (Rust Build, No Sentry, Open UI)",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/ledfx/__main__.py",
+            "args": ["-vv", "--offline", "--open-ui"],
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "windows": {
+                "program": "${workspaceFolder}\\ledfx\\__main__.py"
+            },
+            "preLaunchTask": "Build Rust Effects",
+            "presentation": {
+                "group": "2 Rust Dev",
+                "order": 0
+            },
+            "env": {
+                "RUST_LOG": "debug",
+                "RUST_BACKTRACE": "1"
             }
         },
         {
@@ -130,7 +129,7 @@
                 "program": "${workspaceFolder}\\ledfx\\__main__.py"
             },
             "presentation": {
-                "group": "Sentry Enabled",
+                "group": "3 Sentry Enabled",
                 "order": 2
             }
         },
@@ -146,7 +145,7 @@
                 "program": "${workspaceFolder}\\ledfx\\__main__.py"
             },
             "presentation": {
-                "group": "Sentry Enabled",
+                "group": "3 Sentry Enabled",
                 "order": 2
             }
         },
@@ -162,7 +161,7 @@
                 "program": "${workspaceFolder}\\ledfx\\__main__.py"
             },
             "presentation": {
-                "group": "Temp Config",
+                "group": "4 Temp Config",
                 "order": 1
             },
             "postDebugTask": "Cleanup Debug Config Folder",
@@ -179,7 +178,7 @@
                 "program": "${workspaceFolder}\\ledfx\\__main__.py"
             },
             "presentation": {
-                "group": "Temp Config",
+                "group": "4 Temp Config",
                 "order": 2
             },
             "postDebugTask": "Cleanup Debug Config Folder"
@@ -196,7 +195,7 @@
                 "program": "${workspaceFolder}\\ledfx\\__main__.py"
             },
             "presentation": {
-                "group": "Temp Config",
+                "group": "4 Temp Config",
                 "order": 2
             },
             "postDebugTask": "Cleanup Debug Config Folder"
@@ -213,7 +212,7 @@
                 "program": "${workspaceFolder}\\ledfx\\__main__.py"
             },
             "presentation": {
-                "group": "Temp Config",
+                "group": "4 Temp Config",
                 "order": 1
             },
             "postDebugTask": "Cleanup Debug Config Folder"

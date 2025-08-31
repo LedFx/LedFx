@@ -85,5 +85,29 @@
             },
             "problemMatcher": []
         },
+        {
+            "label": "Build Rust Effects",
+            "type": "shell",
+            "command": "uv",
+            "args": ["run", "maturin", "develop", "--release"],
+            "options": {
+                "cwd": "${workspaceFolder}/rust_effects"
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": [],
+            "windows": {
+                "command": "uv",
+                "args": ["run", "maturin", "develop", "--release"]
+            }
+        }
     ]
 }
