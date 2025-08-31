@@ -101,7 +101,7 @@ class Concentric(Twod, GradientEffect):
             + ((y_coords - center_y) / stretch_h) ** 2
         )
 
-         # Soften the center using a scalar-image Gaussian blur
+        # Soften the center using a scalar-image Gaussian blur
         if smoothing > 0:
             # Normalize dist to 0-255 for 8-bit image processing
             dist_max = np.max(dist)
