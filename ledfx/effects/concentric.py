@@ -35,18 +35,18 @@ class Concentric(Twod, GradientEffect):
             vol.Optional(
                 "speed_multiplier",
                 description="Audio to speed multiplier",
-                default=1,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=4.0)),
+                default=6.0,
+            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=15.0)),
             vol.Optional(
                 "gradient_scale",
                 description="Scales the gradient",
-                default=1.5,
+                default=1,
             ): vol.All(vol.Coerce(float), vol.Range(min=0.1, max=10.0)),
             vol.Optional(
                 "stretch_height",
                 description="Stretches the gradient vertically",
-                default=1.5,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.1, max=10.0)),
+                default=1,
+            ): vol.All(vol.Coerce(float), vol.Range(min=0.1, max=5.0)),
             vol.Optional(
                 "center_smoothing",
                 description="Soften the center point",
@@ -55,8 +55,8 @@ class Concentric(Twod, GradientEffect):
             vol.Optional(
                 "idle_speed",  # To avoid static during breaks etc...
                 description="Idle motion speed",
-                default=1,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=3.0)),
+                default=5.0,
+            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=20.0)),
         }
     )
 
@@ -110,7 +110,7 @@ class Concentric(Twod, GradientEffect):
                     dist_max / 255.0
                 )
         
-        max_radius = np.hypot(self.center_x / self.stretch_w, self.center_y / self.stretch_h)
+        max_radius = np.hypot(self.center_x / self.gscale / self.h_stretch, self.center_y / self.gscale / self.h_stretch)
         if max_radius > 0:
             dist /= max_radius
         dist = np.clip(dist, 0.0, 1.0)
@@ -118,14 +118,12 @@ class Concentric(Twod, GradientEffect):
         self.dist = np.power(dist, 0.9)  # mild smoothing, lower values = softer
 
     def draw(self):
+        delta_ns = self.passed
         # Wave expansion
-        self.speedb += 0.2 * self.idle_speed
-        # last_cycle_time cannot be used as this is not a PixelsEffect child effect
-        # dt_scale = getattr(self, "last_cycle_time", 16.0) / 16.0  # ~16ms @60 FPS
-        dt_scale = 1
+        self.speedb += self.idle_speed * delta_ns
         self.offset += (
-            self.speedb / 23
-        ) * dt_scale # Arbitrary value that looks good when speed_multiplier = 1
+            self.speedb
+        ) * delta_ns # Arbitrary value that looks good when speed_multiplier = 1
         color_points = (
             self.dist + (self.offset if self.invert else -self.offset)
         ) % 1.0
