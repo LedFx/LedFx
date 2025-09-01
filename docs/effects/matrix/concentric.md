@@ -16,11 +16,10 @@ Here's an example with a 64x64 matrix & an 256x256 matrix:
 
 ## Presets
 
-**RESET** — Rings expand at a moderate speed. Rainbow gradient.
-**OCEAN IMPLOSION** — Blue-green gradient, rings contracts.
-**FIRE EXPLOSION** — Red-orange gradient, rings expand rapidly.
-**RAINBOW EXPLOSION** — Fast rainbow gradient, rings expand rapidly.
-
+- **RESET** — Rainbow gradient; rings expand at a moderate speed.
+- **OCEAN IMPLOSION** — Blue-green gradient; rings contract.
+- **FIRE EXPLOSION** — Red-orange gradient; rings expand rapidly.
+- **RAINBOW EXPLOSION** — Fast rainbow gradient; rings expand rapidly.
 ## Settings
 
 The Concentric effect includes a few controls:
