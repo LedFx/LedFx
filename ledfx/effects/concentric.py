@@ -35,8 +35,8 @@ class Concentric(Twod, GradientEffect):
                 default=False,
             ): bool,
             vol.Optional(
-                "speed_multiplier",
-                description="Audio to speed multiplier",
+                "power_multiplier",
+                description="Frequency range's power multiplier",
                 default=0.5,
             ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
             vol.Optional(
@@ -70,7 +70,7 @@ class Concentric(Twod, GradientEffect):
         self.power_func = self.POWER_FUNCS_MAPPING[
             self._config["frequency_range"]
         ]
-        self.speed_multiplier = self._config["speed_multiplier"]
+        self.power_multiplier = self._config["power_multiplier"]
         self.gscale = self._config["gradient_scale"]
         self.h_stretch = self._config["stretch_height"]
         self.smoothing = self._config["center_smoothing"]
@@ -81,7 +81,7 @@ class Concentric(Twod, GradientEffect):
 
     def audio_data_updated(self, data):
         self.power = getattr(data, self.power_func)()
-        self.power *= self.speed_multiplier * 2
+        self.power *= self.power_multiplier * 12 # Fined tune
 
     # Pre-calculate distance Grid
     def do_once(self):
