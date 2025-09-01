@@ -44,7 +44,7 @@ impl SimpleRng {
     }
 }
 
-// Simple blur function
+// Simple blur function with proper edge handling
 pub fn simple_blur(output: &mut ndarray::Array3<u8>, blur_amount: usize) {
     if blur_amount == 0 {
         return;
@@ -53,19 +53,43 @@ pub fn simple_blur(output: &mut ndarray::Array3<u8>, blur_amount: usize) {
     let (height, width, _) = output.dim();
     let mut temp = output.clone();
 
+    // Helper function to get pixel with mirror padding for edges
+    let get_pixel_mirrored = |arr: &ndarray::Array3<u8>, y: i32, x: i32, c: usize| -> u8 {
+        let safe_y = if y < 0 {
+            (-y) as usize
+        } else if y >= height as i32 {
+            height - 1 - ((y - height as i32) as usize)
+        } else {
+            y as usize
+        }.min(height - 1);
+        
+        let safe_x = if x < 0 {
+            (-x) as usize
+        } else if x >= width as i32 {
+            width - 1 - ((x - width as i32) as usize)
+        } else {
+            x as usize
+        }.min(width - 1);
+        
+        arr[(safe_y, safe_x, c)]
+    };
+
     for _ in 0..blur_amount {
-        for y in 1..height - 1 {
-            for x in 1..width - 1 {
+        for y in 0..height {
+            for x in 0..width {
                 for c in 0..3 {
-                    let sum = temp[(y - 1, x - 1, c)] as u16
-                        + temp[(y - 1, x, c)] as u16
-                        + temp[(y - 1, x + 1, c)] as u16
-                        + temp[(y, x - 1, c)] as u16
-                        + temp[(y, x, c)] as u16
-                        + temp[(y, x + 1, c)] as u16
-                        + temp[(y + 1, x - 1, c)] as u16
-                        + temp[(y + 1, x, c)] as u16
-                        + temp[(y + 1, x + 1, c)] as u16;
+                    let y_i = y as i32;
+                    let x_i = x as i32;
+                    
+                    let sum = get_pixel_mirrored(&temp, y_i - 1, x_i - 1, c) as u16
+                        + get_pixel_mirrored(&temp, y_i - 1, x_i, c) as u16
+                        + get_pixel_mirrored(&temp, y_i - 1, x_i + 1, c) as u16
+                        + get_pixel_mirrored(&temp, y_i, x_i - 1, c) as u16
+                        + get_pixel_mirrored(&temp, y_i, x_i, c) as u16
+                        + get_pixel_mirrored(&temp, y_i, x_i + 1, c) as u16
+                        + get_pixel_mirrored(&temp, y_i + 1, x_i - 1, c) as u16
+                        + get_pixel_mirrored(&temp, y_i + 1, x_i, c) as u16
+                        + get_pixel_mirrored(&temp, y_i + 1, x_i + 1, c) as u16;
                     output[(y, x, c)] = (sum / 9) as u8;
                 }
             }
