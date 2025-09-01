@@ -14,7 +14,7 @@ class Concentric(Twod, GradientEffect):
     """
 
     NAME = "Concentric"
-    CATEGORY = "2D"
+    CATEGORY = "Matrix"
     HIDDEN_KEYS = (
         *Twod.HIDDEN_KEYS,  # preserves 'blur', 'mirror', etc.
         "gradient_roll",
@@ -57,8 +57,8 @@ class Concentric(Twod, GradientEffect):
             vol.Optional(
                 "idle_speed",  # To avoid static during breaks etc...
                 description="Idle motion speed",
-                default=0.3,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.2)),
+                default=1,
+            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1)),
         }
     )
 
@@ -130,8 +130,8 @@ class Concentric(Twod, GradientEffect):
             self.power
         )  # No self.passed because it is sound dependent
         self.velocity += (
-            self.idle_speed / 10 * self.passed
-        )  # /10 For better precision in slider
+            self.idle_speed * self.passed
+        )  # For better precision in slider
         self.offset += self.velocity
         self.offset %= 1.0
         color_points = (
