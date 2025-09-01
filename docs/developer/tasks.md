@@ -1,4 +1,4 @@
-# VS Code Tasks for LedFx Development
+# VS Code Tasks
 
 This document describes the available VS Code tasks for building and developing LedFx.
 
