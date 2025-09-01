@@ -17,7 +17,7 @@ class Concentric(Twod, GradientEffect):
     CATEGORY = "2D"
     HIDDEN_KEYS = (
         *Twod.HIDDEN_KEYS,  # preserves 'blur', 'mirror', etc.
-        "gradient_roll", "background_color"
+        "gradient_roll", "background_color", "test"
     )
 
     CONFIG_SCHEMA = vol.Schema(
@@ -80,7 +80,7 @@ class Concentric(Twod, GradientEffect):
 
     def audio_data_updated(self, data):
         self.power = getattr(data, self.power_func)() * 2
-        self.speedb = self.power * self.speed_multiplier
+        self.power *= self.speed_multiplier / 135  # Scale to something reasonable
 
     # Pre-calculate distance Grid
     def do_once(self):
@@ -124,12 +124,11 @@ class Concentric(Twod, GradientEffect):
         )  # mild smoothing, lower values = softer
 
     def draw(self):
-        delta_ns = self.passed
         # Wave expansion
-        self.speedb += self.idle_speed * delta_ns
-        self.offset += (
-            self.speedb
-        ) * delta_ns # Arbitrary value that looks good when speed_multiplier = 1
+        self.velocity = self.power # No self.passed because it is sound dependent
+        self.velocity += self.idle_speed / 10 * self.passed # /10 For better precision in slider
+        self.offset += self.velocity
+        self.offset %= 1.0
         color_points = (
             self.dist + (self.offset if self.invert else -self.offset)
         ) % 1.0
