@@ -87,11 +87,11 @@
         },
         {
             "label": "Build Rust Effects",
+            "detail": "Build Rust effects with automatic Rust installation and testing",
             "type": "shell",
-            "command": "uv",
-            "args": ["run", "maturin", "develop", "--release"],
+            "command": "${workspaceFolder}/.vscode/build-rust-auto.cmd",
             "options": {
-                "cwd": "${workspaceFolder}/ledfx/effects/rust_effects"
+                "cwd": "${workspaceFolder}"
             },
             "group": {
                 "kind": "build",
@@ -103,10 +103,34 @@
                 "focus": false,
                 "panel": "shared"
             },
-            "problemMatcher": [],
+            "problemMatcher": [
+                {
+                    "pattern": [
+                        {
+                            "regexp": "^error\\[(.*)\\]:\\s+(.*)$",
+                            "severity": 1,
+                            "message": 2,
+                            "code": 1
+                        }
+                    ]
+                }
+            ],
             "windows": {
-                "command": "uv",
-                "args": ["run", "maturin", "develop", "--release"]
+                "command": "${workspaceFolder}\\.vscode\\build-rust-auto.cmd"
+            },
+            "linux": {
+                "command": "bash",
+                "args": [
+                    "-c",
+                    "if ! command -v rustc &> /dev/null; then echo 'Installing Rust...'; curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y; source ~/.cargo/env; fi; cd '${workspaceFolder}/ledfx/effects/rust_effects' && uv run maturin develop --release"
+                ]
+            },
+            "osx": {
+                "command": "bash",
+                "args": [
+                    "-c", 
+                    "if ! command -v rustc &> /dev/null; then echo 'Installing Rust...'; curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y; source ~/.cargo/env; fi; cd '${workspaceFolder}/ledfx/effects/rust_effects' && uv run maturin develop --release"
+                ]
             }
         }
     ]
