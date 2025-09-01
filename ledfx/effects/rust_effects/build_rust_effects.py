@@ -46,7 +46,9 @@ def build_rust_effects(release=False):
     rust_dir = Path(__file__).parent  # We're already in rust_effects directory
 
     if not (rust_dir / "Cargo.toml").exists():
-        print("Error: Cargo.toml not found! Make sure you're in the rust_effects directory.")
+        print(
+            "Error: Cargo.toml not found! Make sure you're in the rust_effects directory."
+        )
         return False
 
     cmd = ["uv", "run", "--with", "maturin", "maturin", "develop"]
