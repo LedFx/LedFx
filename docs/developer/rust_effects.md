@@ -42,8 +42,8 @@ python build_rust_effects.py --test
 
 **Alternative Build Methods**:
 - **VS Code Tasks**: Use "Build Rust Effects (with Auto-Install)" from Command Palette for automatic setup
-- **Helper Scripts**: 
-  - Windows: `./build_rust_effects.bat` 
+- **Helper Scripts**:
+  - Windows: `./build_rust_effects.bat`
   - Unix/Linux/macOS: `./build_rust_effects.sh`
 - **Manual**: Run `uv run maturin develop --release`
 

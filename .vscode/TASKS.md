@@ -8,7 +8,7 @@ This document describes the available VS Code tasks for building and developing 
 
 #### 1. **Build Rust Effects (with Auto-Install)** ⭐ *Recommended*
 - **Purpose**: Build Rust-based effects with automatic Rust installation if needed
-- **What it does**: 
+- **What it does**:
   - Automatically detects if Rust is installed
   - If not found, downloads and installs Rust toolchain
   - Builds the Rust effects using `maturin develop --release`
