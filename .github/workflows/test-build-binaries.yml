@@ -39,6 +39,9 @@ jobs:
           enable-cache: true
           cache-dependency-glob: "uv.lock"
 
+      - name: Set up Python ${{ env.DEFAULT_PYTHON }}
+        run: uv python install ${{ env.DEFAULT_PYTHON }}
+
       - name: Update Path for Windows
         run: echo "$APPDATA\Python\Scripts" >> $GITHUB_PATH
 
@@ -99,6 +102,9 @@ jobs:
           enable-cache: true
           cache-dependency-glob: "uv.lock"
 
+      - name: Set up Python ${{ env.DEFAULT_PYTHON }}
+        run: uv python install ${{ env.DEFAULT_PYTHON }}
+
       - name: Update PATH
         run: echo "$HOME/.local/bin" >> $GITHUB_PATH
 
@@ -155,6 +161,9 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: "uv.lock"
+
+      - name: Set up Python ${{ env.DEFAULT_PYTHON }}
+        run: uv python install ${{ env.DEFAULT_PYTHON }}
 
       - name: Update PATH
         run: echo "$HOME/.local/bin" >> $GITHUB_PATH
