@@ -155,7 +155,7 @@ ledfx_presets = {
             "name": "RGB",
         },
     },
-    "rusty2d": {
+    "flame2_2d": {
         "bass-red": {
             "config": {
                 "advanced": False,

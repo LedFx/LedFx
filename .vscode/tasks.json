@@ -86,8 +86,8 @@
             "problemMatcher": []
         },
         {
-            "label": "Build Rust Effects",
-            "detail": "Build Rust effects with automatic Rust installation and testing",
+            "label": "Build Rust",
+            "detail": "Build Rust subsystem with automatic Rust installation and testing",
             "type": "shell",
             "command": "${workspaceFolder}/.vscode/build-rust-auto.cmd",
             "options": {
@@ -129,14 +129,14 @@
                 "command": "bash",
                 "args": [
                     "-c",
-                    "if ! command -v rustc &> /dev/null; then echo 'Installing Rust...'; curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y; source ~/.cargo/env; fi; uv run maturin develop --release --manifest-path '${workspaceFolder}/ledfx/effects/rust_effects/Cargo.toml'"
+                    "if ! command -v rustc &> /dev/null; then echo 'Installing Rust...'; curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y; source ~/.cargo/env; fi; uv run maturin develop --release --manifest-path '${workspaceFolder}/ledfx/rust/Cargo.toml'"
                 ]
             },
             "osx": {
                 "command": "bash",
                 "args": [
                     "-c",
-                    "if ! command -v rustc &> /dev/null; then echo 'Installing Rust...'; curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y; source ~/.cargo/env; fi; uv run maturin develop --release --manifest-path '${workspaceFolder}/ledfx/effects/rust_effects/Cargo.toml'"
+                    "if ! command -v rustc &> /dev/null; then echo 'Installing Rust...'; curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y; source ~/.cargo/env; fi; uv run maturin develop --release --manifest-path '${workspaceFolder}/ledfx/rust/Cargo.toml'"
                 ]
             }
         }

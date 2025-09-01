@@ -46,9 +46,9 @@ LedFx requires several tools for development:
 7. **Optional but recommended:** Build Rust effects for optimal performance:
 
     ```console
-    $ cd ledfx/effects/rust_effects
-    $ python build_rust_effects.py --build --release
-    $ python build_rust_effects.py --test
+    $ cd ledfx/rust
+    $ python build_rust.py --build --release
+    $ python build_rust.py --test
     ```
 
     If you skip this step, some advanced effects may not be available, but LedFx will still function normally.

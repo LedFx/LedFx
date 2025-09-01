@@ -38,11 +38,11 @@ set PATH=%PATH%;%USERPROFILE%\.cargo\bin
 :build
 echo 🔨 Building Rust effects...
 
-REM Change to rust effects directory
-cd /d "%~dp0..\ledfx\effects\rust_effects"
+REM Change to rust directory
+cd /d "%~dp0..\ledfx\rust"
 
 if not exist Cargo.toml (
-    echo ❌ Cargo.toml not found in rust_effects directory
+    echo ❌ Cargo.toml not found in rust directory
     exit /b 1
 )
 
@@ -53,10 +53,13 @@ echo 🔧 Updated PATH for this session: %USERPROFILE%\.cargo\bin
 REM Change back to main project directory to use the correct .venv
 cd /d "%~dp0.."
 
-echo 🔨 Running: uv run maturin develop --release --manifest-path .\ledfx\effects\rust_effects\Cargo.toml
+echo 🔧 Installing dev dependencies including maturin...
+uv sync --group dev
+
+echo 🔨 Running: uv run maturin develop --release --manifest-path .\ledfx\rust\Cargo.toml
 
 REM Try building with the project's virtual environment
-uv run maturin develop --release --manifest-path .\ledfx\effects\rust_effects\Cargo.toml
+uv run maturin develop --release --manifest-path .\ledfx\rust\Cargo.toml
 
 if %errorlevel% equ 0 (
     echo ✅ Rust effects built successfully!
