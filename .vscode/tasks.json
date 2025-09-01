@@ -105,12 +105,19 @@
             },
             "problemMatcher": [
                 {
+                    "owner": "rust",
+                    "fileLocation": ["relative", "${workspaceFolder}"],
                     "pattern": [
                         {
-                            "regexp": "^error\\[(.*)\\]:\\s+(.*)$",
-                            "severity": 1,
+                            "regexp": "^error(?:\\[(.*)\\])?:\\s+(.*)$",
                             "message": 2,
                             "code": 1
+                        },
+                        {
+                            "regexp": "^\\s+-->\\s+(.*):(\\d+):(\\d+)$",
+                            "file": 1,
+                            "line": 2,
+                            "column": 3
                         }
                     ]
                 }
