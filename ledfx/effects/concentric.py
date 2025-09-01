@@ -35,8 +35,8 @@ class Concentric(Twod, GradientEffect):
             vol.Optional(
                 "speed_multiplier",
                 description="Audio to speed multiplier",
-                default=6.0,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=15.0)),
+                default=0.5,
+            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
             vol.Optional(
                 "gradient_scale",
                 description="Scales the gradient",
@@ -55,8 +55,8 @@ class Concentric(Twod, GradientEffect):
             vol.Optional(
                 "idle_speed",  # To avoid static during breaks etc...
                 description="Idle motion speed",
-                default=5.0,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=20.0)),
+                default=0.3,
+            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.2)),
         }
     )
 
@@ -79,8 +79,8 @@ class Concentric(Twod, GradientEffect):
         self.power = 0.0
 
     def audio_data_updated(self, data):
-        self.power = getattr(data, self.power_func)() * 2
-        self.power *= self.speed_multiplier / 135  # Scale to something reasonable
+        self.power = getattr(data, self.power_func)()
+        self.power *= self.speed_multiplier / 5 # Scale to something reasonable
 
     # Pre-calculate distance Grid
     def do_once(self):
@@ -125,7 +125,7 @@ class Concentric(Twod, GradientEffect):
     def draw(self):
         # Wave expansion
         self.velocity = self.power # No self.passed because it is sound dependent
-        self.velocity += self.idle_speed / 10 * self.passed # /10 For better precision in slider
+        self.velocity += self.idle_speed * self.passed
         self.offset += self.velocity
         self.offset %= 1.0
         color_points = (
