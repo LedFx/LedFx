@@ -3086,9 +3086,9 @@ ledfx_presets = {
                 "rotate": 0,
                 "speed_multiplier": 1,
                 "stretch_height": 1.0,
-                "test": False
+                "test": False,
             },
-            "name": "fire explosion"
+            "name": "fire explosion",
         },
         "ocean-implosion": {
             "config": {
@@ -3112,9 +3112,9 @@ ledfx_presets = {
                 "rotate": 0,
                 "speed_multiplier": 0.7,
                 "stretch_height": 1.0,
-                "test": False
+                "test": False,
             },
-            "name": "ocean implosion"
+            "name": "ocean implosion",
         },
         "rainbow-explosion": {
             "config": {
@@ -3138,9 +3138,9 @@ ledfx_presets = {
                 "rotate": 0,
                 "speed_multiplier": 0.7,
                 "stretch_height": 1.0,
-                "test": False
+                "test": False,
             },
-            "name": "rainbow explosion"
-        }
+            "name": "rainbow explosion",
+        },
     },
 }
