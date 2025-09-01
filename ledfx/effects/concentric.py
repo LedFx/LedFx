@@ -76,7 +76,6 @@ class Concentric(Twod, GradientEffect):
         self.smoothing = self._config["center_smoothing"]
         self.idle_speed = self._config["idle_speed"]
         self.invert = self._config["invert"]
-        self.speedb = 0
         self.offset = 0
         self.power = 0.0
 
@@ -128,13 +127,7 @@ class Concentric(Twod, GradientEffect):
 
     def draw(self):
         # Wave expansion
-        self.velocity = (
-            self.power
-        )  # No self.passed because it is sound dependent
-        self.velocity += (
-            self.idle_speed * self.passed
-        )  # For better precision in slider
-        self.offset += self.velocity
+        self.offset += self.power + self.idle_speed * self.passed
         self.offset %= 1.0
         color_points = (
             self.dist + (self.offset if self.invert else -self.offset)
