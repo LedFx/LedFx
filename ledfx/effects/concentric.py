@@ -17,7 +17,9 @@ class Concentric(Twod, GradientEffect):
     CATEGORY = "2D"
     HIDDEN_KEYS = (
         *Twod.HIDDEN_KEYS,  # preserves 'blur', 'mirror', etc.
-        "gradient_roll", "background_color", "test"
+        "gradient_roll",
+        "background_color",
+        "test",
     )
 
     CONFIG_SCHEMA = vol.Schema(
@@ -124,8 +126,12 @@ class Concentric(Twod, GradientEffect):
 
     def draw(self):
         # Wave expansion
-        self.velocity = self.power # No self.passed because it is sound dependent
-        self.velocity += self.idle_speed * self.passed
+        self.velocity = (
+            self.power
+        )  # No self.passed because it is sound dependent
+        self.velocity += (
+            self.idle_speed / 10 * self.passed
+        )  # /10 For better precision in slider
         self.offset += self.velocity
         self.offset %= 1.0
         color_points = (
