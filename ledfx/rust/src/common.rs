@@ -49,10 +49,10 @@ pub fn simple_blur(output: &mut ndarray::Array3<u8>, blur_amount: usize) {
     if blur_amount == 0 {
         return;
     }
-    
+
     let (height, width, _) = output.dim();
     let mut temp = output.clone();
-    
+
     for _ in 0..blur_amount {
         for y in 1..height - 1 {
             for x in 1..width - 1 {
