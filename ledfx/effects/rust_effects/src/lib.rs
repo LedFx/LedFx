@@ -411,12 +411,12 @@ fn rusty_flame_process(
             simple_blur(&mut output, blur_amount);
         }
 
-        Ok(PyArray3::from_owned_array(py, output).to_owned())
+        Ok(PyArray3::from_owned_array_bound(py, output).into())
     })
 }
 
 #[pymodule]
-fn ledfx_rust_effects(_py: Python, m: &PyModule) -> PyResult<()> {
+fn ledfx_rust_effects(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(rusty_flame_process, m)?)?;
     Ok(())
 }
