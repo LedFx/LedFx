@@ -125,7 +125,7 @@ class Concentric(Twod, GradientEffect):
 
     def draw(self):
         # Wave expansion
-        self.offset += ( self.power + self.idle_speed ) * self.passed
+        self.offset += (self.power + self.idle_speed) * self.passed
         self.offset %= 1.0
         color_points = (
             self.dist + (self.offset if self.invert else -self.offset)
