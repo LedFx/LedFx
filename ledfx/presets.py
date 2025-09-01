@@ -3086,9 +3086,9 @@ ledfx_presets = {
                 "rotate": 0,
                 "speed_multiplier": 10.5,
                 "stretch_height": 1.0,
-                "test": False
+                "test": False,
             },
-            "name": "Fast rainbow"
+            "name": "Fast rainbow",
         }
-    }
+    },
 }

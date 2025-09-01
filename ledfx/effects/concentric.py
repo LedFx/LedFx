@@ -96,7 +96,8 @@ class Concentric(Twod, GradientEffect):
 
         dist = np.sqrt(
             ((self.x_coords - self.center_x) / self.gscale) ** 2
-            + ((self.y_coords - self.center_y) / self.gscale / self.h_stretch) ** 2
+            + ((self.y_coords - self.center_y) / self.gscale / self.h_stretch)
+            ** 2
         )
         # Soften the center using a scalar-image Gaussian blur
         if self.smoothing > 0:
@@ -112,9 +113,7 @@ class Concentric(Twod, GradientEffect):
                     dist_max / 255.0
                 )
 
-        max_radius = np.hypot(
-            self.center_x, self.center_y / self.h_stretch
-        )
+        max_radius = np.hypot(self.center_x, self.center_y / self.h_stretch)
         if max_radius > 0:
             dist /= max_radius
         dist = np.clip(dist, 0.0, 1.0)
