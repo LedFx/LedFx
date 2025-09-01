@@ -324,15 +324,18 @@ not limited to
 
 ### Tasks
 
-A simple extension to run tasks from the vscode taskbar at the bottom of
-the window.
+LedFx includes comprehensive VS Code tasks for building, testing, and development workflows.
 
-[Tasks by
-actboy168](https://marketplace.visualstudio.com/items?itemName=actboy168.tasks)
+For detailed information about all available tasks, including:
+- Rust building and development
+- Documentation building
+- Debug configuration management
+- Cross-platform build instructions
+- Troubleshooting tips
 
-Currently only the Build and Open Docs task is exposed. This task will
-install dependancies, build the docs and open in your browser, all with
-a single click!
+See the comprehensive **[Tasks Documentation](tasks.md)** for VS Code development workflows.
+
+You can also install the [Tasks extension by actboy168](https://marketplace.visualstudio.com/items?itemName=actboy168.tasks) to run tasks from the VS Code taskbar at the bottom of the window.
 
 ![Build and Open Docs, do it!](/_static/howto/taskbar.png)
 

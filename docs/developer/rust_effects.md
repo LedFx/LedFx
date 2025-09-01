@@ -42,6 +42,7 @@ python build_rust.py --test
 
 **Alternative Build Methods**:
 - **VS Code Tasks**: Use "Build Rust Effects (with Auto-Install)" from Command Palette for automatic setup
+  - See **[Tasks Documentation](tasks.md)** for comprehensive task information
 - **Helper Scripts**:
   - Windows: `./build_rust.bat`
   - Unix/Linux/macOS: `./build_rust.sh`
