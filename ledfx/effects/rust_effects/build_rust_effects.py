@@ -21,12 +21,20 @@ def run_command(cmd, cwd=None, check=True):
             capture_output=True,
             text=True,
             encoding="utf-8",
+            errors="replace",  # Replace invalid characters instead of failing
             check=check,
         )
         if result.stdout:
-            print(result.stdout)
+            # Handle encoding issues on Windows CI
+            try:
+                print(result.stdout)
+            except UnicodeEncodeError:
+                print(result.stdout.encode('ascii', errors='replace').decode('ascii'))
         if result.stderr:
-            print(result.stderr, file=sys.stderr)
+            try:
+                print(result.stderr, file=sys.stderr)
+            except UnicodeEncodeError:
+                print(result.stderr.encode('ascii', errors='replace').decode('ascii'), file=sys.stderr)
         return result
     except UnicodeDecodeError:
         # Fallback to bytes mode if UTF-8 fails
@@ -57,10 +65,10 @@ def build_rust_effects(release=False):
 
     try:
         result = run_command(cmd, cwd=rust_dir)
-        print("✅ Rust effects built successfully!")
+        print("[SUCCESS] Rust effects built successfully!")
         return True
     except subprocess.CalledProcessError as e:
-        print(f"❌ Failed to build Rust effects: {e}")
+        print(f"[ERROR] Failed to build Rust effects: {e}")
         return False
 
 
@@ -76,10 +84,10 @@ def test_rust_effects():
                 "import ledfx_rust_effects; print('Rust effects import successful!')",
             ]
         )
-        print("✅ Rust effects module is working!")
+        print("[SUCCESS] Rust effects module is working!")
         return True
     except subprocess.CalledProcessError as e:
-        print(f"❌ Failed to import Rust effects: {e}")
+        print(f"[ERROR] Failed to import Rust effects: {e}")
         return False
 
 
@@ -92,9 +100,9 @@ def clean_build():
         import shutil
 
         shutil.rmtree(target_dir)
-        print("🧹 Cleaned Rust build artifacts")
+        print("[CLEAN] Cleaned Rust build artifacts")
     else:
-        print("🧹 No build artifacts to clean")
+        print("[CLEAN] No build artifacts to clean")
 
 
 def setup_development():
@@ -106,7 +114,7 @@ def setup_development():
         run_command(["uv", "--version"])
     except (subprocess.CalledProcessError, FileNotFoundError):
         print(
-            "❌ uv not found. Please install uv first: https://docs.astral.sh/uv/"
+            "[ERROR] uv not found. Please install uv first: https://docs.astral.sh/uv/"
         )
         return False
 
@@ -115,15 +123,15 @@ def setup_development():
         run_command(["rustc", "--version"])
         run_command(["cargo", "--version"])
     except (subprocess.CalledProcessError, FileNotFoundError):
-        print("❌ Rust not found. Please install Rust: https://rustup.rs/")
+        print("[ERROR] Rust not found. Please install Rust: https://rustup.rs/")
         return False
 
     # Install Python dependencies
     try:
         run_command(["uv", "sync", "--dev"])
-        print("✅ Python dependencies installed")
+        print("[SUCCESS] Python dependencies installed")
     except subprocess.CalledProcessError:
-        print("❌ Failed to install Python dependencies")
+        print("[ERROR] Failed to install Python dependencies")
         return False
 
     # Build Rust effects
@@ -134,7 +142,7 @@ def setup_development():
     if not test_rust_effects():
         return False
 
-    print("🎉 Development environment set up successfully!")
+    print("[SUCCESS] Development environment set up successfully!")
     print("\nNext steps:")
     print("1. Run LedFx: uv run python -m ledfx --open-ui")
     print("2. Look for 'The Rusty One' effect in the matrix effects")
