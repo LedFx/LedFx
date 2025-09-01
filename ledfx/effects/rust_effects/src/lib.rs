@@ -224,9 +224,9 @@ fn rusty_flame_process(
     velocity: f64,
     blur_amount: usize,
     instance_id: u64,
-    low_color: (u8, u8, u8),
-    mid_color: (u8, u8, u8),
-    high_color: (u8, u8, u8),
+    low_color: PyReadonlyArray1<f64>,
+    mid_color: PyReadonlyArray1<f64>,
+    high_color: PyReadonlyArray1<f64>,
 ) -> PyResult<Py<PyArray3<u8>>> {
     Python::with_gil(|py| {
         let array = image_array.as_array();
@@ -241,11 +241,16 @@ fn rusty_flame_process(
         let (height, width, _) = output.dim();
         output.fill(0);
 
+        // Extract RGB values from float arrays (already 0.0-255.0 range) and convert to u8
+        let low_array = low_color.as_array();
+        let mid_array = mid_color.as_array();
+        let high_array = high_color.as_array();
+
         // Convert RGB colors to HSV for each frequency band
         let base_colors = [
-            rgb_to_hsv(low_color.0, low_color.1, low_color.2),   // Low frequencies
-            rgb_to_hsv(mid_color.0, mid_color.1, mid_color.2),   // Mid frequencies
-            rgb_to_hsv(high_color.0, high_color.1, high_color.2), // High frequencies
+            rgb_to_hsv(low_array[0] as u8, low_array[1] as u8, low_array[2] as u8),   // Low frequencies
+            rgb_to_hsv(mid_array[0] as u8, mid_array[1] as u8, mid_array[2] as u8),   // Mid frequencies
+            rgb_to_hsv(high_array[0] as u8, high_array[1] as u8, high_array[2] as u8), // High frequencies
         ];
 
         // Process particles for this instance - using thread-safe approach

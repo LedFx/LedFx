@@ -49,10 +49,14 @@ if not exist Cargo.toml (
 REM Build with maturin
 set PATH=%PATH%;%USERPROFILE%\.cargo\bin
 echo 🔧 Updated PATH for this session: %USERPROFILE%\.cargo\bin
-echo 🔨 Running: uv run --with maturin maturin develop --release
 
-REM Try building with updated PATH and auto-install maturin
-uv run --with maturin maturin develop --release
+REM Change back to main project directory to use the correct .venv
+cd /d "%~dp0.."
+
+echo 🔨 Running: uv run maturin develop --release --manifest-path .\ledfx\effects\rust_effects\Cargo.toml
+
+REM Try building with the project's virtual environment
+uv run maturin develop --release --manifest-path .\ledfx\effects\rust_effects\Cargo.toml
 
 if %errorlevel% equ 0 (
     echo ✅ Rust effects built successfully!
