@@ -143,6 +143,8 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: "uv.lock"
+      - name: Set up Python ${{ matrix.python-version }}
+        run: uv python install ${{ matrix.python-version }}
       - name: Install LedFx
         run: |
             export PATH="/opt/homebrew/opt/mbedtls@2/bin:$PATH"
@@ -192,6 +194,8 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: "uv.lock"
+      - name: Set up Python ${{ matrix.python-version }}
+        run: uv python install ${{ matrix.python-version }}
       - name: Install LedFx
         run: |
             export PATH="/opt/homebrew/opt/mbedtls@2/bin:$PATH"
