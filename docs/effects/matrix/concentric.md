@@ -27,13 +27,16 @@ The Concentric effect includes a few controls:
 
 ![Concentric settings](/_static/effects/matrix/concentric/settings.png)
 
+- **Rotate** — Rotates the effect by 90° for every unit.
+- **Brightness** — Self-explanatory.
+
+Concentric effect specific settings:
+
 - **Gradient** — Gradient used for rings.
 - **Frequency Range** — Selects which audio band-pass filter controls the speed of the rings' motion.
-- **Rotate** — Rotates the gradient.
-- **Invert** — If on, makes rings contract instead of expand.
-- **Brightness** — Self-explanatory.
-- **Speed Multiplier** — Factor by which the power of the frequency band is multiplied. (Higher, faster.)
+- **Invert** — If enabled, makes rings contract instead of expand.
+- **Speed Multiplier** — Factor by which the power of the frequency band is multiplied. (Higher = faster.)
 - **Gradient Scale** — Scales the gradient across the matrix. (Higher, less repetitions.)
 - **Stretch Height** — Stretches the rings vertically. Useful for non-square matrices or not circular renders. (Can also be width with a rotation.)
-- **Center Smoothing** — Blures the center of the rings to reduce harsh color change. (Higher, blurrier.)
-- **Idle speed** — Minimum speed at any time. Useful to have a not-static effect during music change or no movement in the specified frequency range. (Higher, faster.)
+- **Center Smoothing** — Blurs the center of the rings to reduce harsh color changes. (Higher = blurrier.)
+- **Idle speed** — Minimum speed at any time. Useful to have a not-static effect during music changes or when no movement occurs in the specified frequency range. (Higher = faster.)
