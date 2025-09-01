@@ -62,7 +62,7 @@ pub fn simple_blur(output: &mut ndarray::Array3<u8>, blur_amount: usize) {
         } else {
             y as usize
         }.min(height - 1);
-        
+
         let safe_x = if x < 0 {
             (-x) as usize
         } else if x >= width as i32 {
@@ -70,7 +70,7 @@ pub fn simple_blur(output: &mut ndarray::Array3<u8>, blur_amount: usize) {
         } else {
             x as usize
         }.min(width - 1);
-        
+
         arr[(safe_y, safe_x, c)]
     };
 
@@ -80,7 +80,7 @@ pub fn simple_blur(output: &mut ndarray::Array3<u8>, blur_amount: usize) {
                 for c in 0..3 {
                     let y_i = y as i32;
                     let x_i = x as i32;
-                    
+
                     let sum = get_pixel_mirrored(&temp, y_i - 1, x_i - 1, c) as u16
                         + get_pixel_mirrored(&temp, y_i - 1, x_i, c) as u16
                         + get_pixel_mirrored(&temp, y_i - 1, x_i + 1, c) as u16
