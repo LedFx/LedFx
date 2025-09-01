@@ -29,12 +29,21 @@ def run_command(cmd, cwd=None, check=True):
             try:
                 print(result.stdout)
             except UnicodeEncodeError:
-                print(result.stdout.encode('ascii', errors='replace').decode('ascii'))
+                print(
+                    result.stdout.encode("ascii", errors="replace").decode(
+                        "ascii"
+                    )
+                )
         if result.stderr:
             try:
                 print(result.stderr, file=sys.stderr)
             except UnicodeEncodeError:
-                print(result.stderr.encode('ascii', errors='replace').decode('ascii'), file=sys.stderr)
+                print(
+                    result.stderr.encode("ascii", errors="replace").decode(
+                        "ascii"
+                    ),
+                    file=sys.stderr,
+                )
         return result
     except UnicodeDecodeError:
         # Fallback to bytes mode if UTF-8 fails
@@ -123,7 +132,9 @@ def setup_development():
         run_command(["rustc", "--version"])
         run_command(["cargo", "--version"])
     except (subprocess.CalledProcessError, FileNotFoundError):
-        print("[ERROR] Rust not found. Please install Rust: https://rustup.rs/")
+        print(
+            "[ERROR] Rust not found. Please install Rust: https://rustup.rs/"
+        )
         return False
 
     # Install Python dependencies
