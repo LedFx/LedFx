@@ -68,7 +68,14 @@ def build_rust_effects(release=False):
         )
         return False
 
-    cmd = ["uv", "run", "maturin", "develop", "--manifest-path", str(rust_dir / "Cargo.toml")]
+    cmd = [
+        "uv",
+        "run",
+        "maturin",
+        "develop",
+        "--manifest-path",
+        str(rust_dir / "Cargo.toml"),
+    ]
     if release:
         cmd.append("--release")
 
