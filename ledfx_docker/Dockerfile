@@ -19,7 +19,7 @@ RUN --mount=type=cache,id=uv-cache-${TARGETARCH},target=/root/.cache/uv \
 COPY . /app
 
 # Build Rust effects (maturin is now available from dev dependencies)
-RUN cd ledfx/effects/rust_effects && uv run maturin develop --release
+RUN cd ledfx/effects/rust_effects && uv run --with maturin maturin develop --release
 
 RUN --mount=type=cache,id=uv-cache-${TARGETARCH},target=/root/.cache/uv \
     uv sync --no-editable --extra hue
