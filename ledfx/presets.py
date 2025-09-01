@@ -3084,7 +3084,7 @@ ledfx_presets = {
                 "invert": False,
                 "mirror": False,
                 "rotate": 0,
-                "power_multiplier": .7,
+                "power_multiplier": 0.7,
                 "stretch_height": 1.0,
                 "test": False,
             },

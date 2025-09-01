@@ -81,7 +81,7 @@ class Concentric(Twod, GradientEffect):
 
     def audio_data_updated(self, data):
         self.power = getattr(data, self.power_func)()
-        self.power *= self.power_multiplier * 12 # Fined tune
+        self.power *= self.power_multiplier * 12  # Fined tune
 
     # Pre-calculate distance Grid
     def do_once(self):
