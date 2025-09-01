@@ -51,8 +51,7 @@ jobs:
 
       - name: Build Rust Effects
         run: |
-          cd ledfx/effects/rust_effects
-          uv run --with maturin maturin develop --release
+          python ledfx/effects/rust_effects/build_rust_effects.py --build --release
 
       - name: Setup CI sound system
         uses: LABSN/sound-ci-helpers@v1
@@ -107,8 +106,7 @@ jobs:
 
       - name: Build Rust Effects
         run: |
-          cd ledfx/effects/rust_effects
-          uv run --with maturin maturin develop --release
+          python ledfx/effects/rust_effects/build_rust_effects.py --build --release
 
       - name: Run Tests
         run: |
@@ -155,8 +153,7 @@ jobs:
 
       - name: Build Rust Effects
         run: |
-          cd ledfx/effects/rust_effects
-          uv run --with maturin maturin develop --release
+          python ledfx/effects/rust_effects/build_rust_effects.py --build --release
       - name: Check LedFx launches
         run: |
           uv run ledfx --ci-smoke-test -vv -c debug_config --offline
@@ -205,8 +202,7 @@ jobs:
             uv sync --python ${{ matrix.python-version }} --extra hue --dev
       - name: Build Rust Effects
         run: |
-          cd ledfx/effects/rust_effects
-          uv run --with maturin maturin develop --release
+          python ledfx/effects/rust_effects/build_rust_effects.py --build --release
       - name: Check LedFx launches
         run: |
           uv run ledfx --ci-smoke-test -vv -c debug_config --offline
