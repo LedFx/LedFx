@@ -61,8 +61,7 @@ jobs:
 
       - name: Build Rust Effects
         run: |
-          cd ledfx/effects/rust_effects
-          uv run --with maturin maturin develop --release
+          uv run maturin develop --release --manifest-path ./ledfx/effects/rust_effects/Cargo.toml
 
       - name: Get LedFx Version and Upload to Artifacts for later use
         id: ledfx-version
@@ -139,8 +138,7 @@ jobs:
 
       - name: Build Rust Effects
         run: |
-          cd ledfx/effects/rust_effects
-          uv run --with maturin maturin develop --release
+          uv run maturin develop --release --manifest-path ./ledfx/effects/rust_effects/Cargo.toml
       - name: Get LedFx Version
         id: ledfx-version
         run: |
@@ -207,8 +205,7 @@ jobs:
 
       - name: Build Rust Effects
         run: |
-          cd ledfx/effects/rust_effects
-          uv run --with maturin maturin develop --release
+          uv run maturin develop --release --manifest-path ./ledfx/effects/rust_effects/Cargo.toml
       - name: Get LedFx Version
         id: ledfx-version
         run: |

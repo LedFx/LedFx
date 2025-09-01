@@ -51,7 +51,7 @@ jobs:
 
       - name: Build Rust Effects
         run: |
-          python ledfx/effects/rust_effects/build_rust_effects.py --build --release
+          uv run maturin develop --release --manifest-path ./ledfx/effects/rust_effects/Cargo.toml
 
       - name: Setup CI sound system
         uses: LABSN/sound-ci-helpers@v1

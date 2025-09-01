@@ -484,7 +484,7 @@ The build process installs dev dependencies first to ensure `maturin` is availab
 RUN uv sync --no-install-project --no-editable --group dev
 
 # Build Rust effects (maturin now available)
-RUN cd ledfx/effects/rust_effects && uv run maturin develop --release
+RUN uv run maturin develop --release --manifest-path ./ledfx/effects/rust_effects/Cargo.toml
 ```
 
 This ensures that Docker containers have full Rust effects support without additional configuration.

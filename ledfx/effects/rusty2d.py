@@ -15,18 +15,10 @@ except ImportError:
         "Rust effects module not available - effect will show red error"
     )
 
-from ledfx.color import validate_color
+from ledfx.color import parse_color, validate_color
 from ledfx.effects.twod import Twod
 
 _LOGGER = logging.getLogger(__name__)
-
-
-def hex_to_rgb(hex_color):
-    """Convert hex color string to RGB tuple"""
-    # Remove the # if present
-    hex_color = hex_color.lstrip("#")
-    # Convert to RGB tuple
-    return tuple(int(hex_color[i : i + 2], 16) for i in (0, 2, 4))
 
 
 class Rusty2d(Twod):
@@ -83,11 +75,6 @@ class Rusty2d(Twod):
         # Set error state based on Rust module availability
         self.error_state = not RUST_AVAILABLE
 
-        # Initialize default RGB color tuples (will be updated in config_updated)
-        self.low_rgb = (255, 0, 0)  # Red
-        self.mid_rgb = (0, 255, 0)  # Green
-        self.high_rgb = (0, 0, 255)  # Blue
-
         super().__init__(ledfx, config)
 
         if not RUST_AVAILABLE:
@@ -101,7 +88,6 @@ class Rusty2d(Twod):
 
     def config_updated(self, config):
         super().config_updated(config)
-        # copy over your configs here into variables
         self.intensity = self._config["intensity"]
         self.spawn_rate = self._config["spawn_rate"]
         self.velocity = self._config["velocity"]
@@ -110,30 +96,15 @@ class Rusty2d(Twod):
         self.mid_band = self._config["mid_band"]
         self.high_band = self._config["high_band"]
 
-        # Pre-convert hex colors to RGB tuples for efficiency
-        self.low_rgb = hex_to_rgb(self.low_band)
-        self.mid_rgb = hex_to_rgb(self.mid_band)
-        self.high_rgb = hex_to_rgb(self.high_band)
+        self.low_rgb = np.array(parse_color(self.low_band), dtype=float)
+        self.mid_rgb = np.array(parse_color(self.mid_band), dtype=float)
+        self.high_rgb = np.array(parse_color(self.high_band), dtype=float)
 
     def do_once(self):
         super().do_once()
-        # defer things that can't be done when pixel_count is not known
-        # this is probably important for most 2d matrix where you want
-        # things to be initialized to led length and implied dimensions
-        #
-        # self.r_width and self.r_height should be used for the (r)ender space
-        # as the self.matrix will not exist yet
-        #
-        # note that self.t_width and self.t_height are the physical dimensions
-        #
-        # this function will be called once on the first entry to render call
-        # in base class twod AND every time there is a config_updated thereafter
 
     def audio_data_updated(self, data):
-        # Grab your audio input here, such as bar oscillator
         self.bar = data.bar_oscillator()
-
-        # Always update audio data, even in error state (for recovery)
         self.audio_bar = data.bar_oscillator()
         self.audio_pow = np.array(
             [
@@ -145,24 +116,11 @@ class Rusty2d(Twod):
         )
 
     def draw(self):
-        # this is where you pixel mash, it will be a black image object each call
-        # a draw object is already attached
-        # Measure time passed per frame from the self.now and self.passed vars
-        # self.matrix is the Image object
-        # self.m_draw is the attached draw object
-
-        # all rotation abstraction is done for you
-        # you can use image dimensions now
-        # self.matrix.height
-        # self.matrix.width
-
-        # look in this function for basic lines etc, use pillow primitives
-        # for regular shapes
         if self.test:
             self.draw_test(self.m_draw)
 
         if self.error_state:
-            self._fill_red_error()
+            self.red_error()
             return
 
         try:
@@ -170,17 +128,11 @@ class Rusty2d(Twod):
         except Exception as e:
             _LOGGER.error(f"Rust effect processing failed: {e}")
             self.error_state = True
-            self._fill_red_error()
-
-        # stuff pixels with
-        # self.matrix.putpixel((x, y), (r, g, b))
-        # or
-        # pixels = self.matrix.load()
-        # pixels[x, y] = (r, g, b)
-        #   iterate
+            self.red_error()
 
     def _draw_rust(self):
-        # Convert PIL image to numpy array
+        # Convert PIL image to numpy array in case we want to build on top of history
+        # this can be deleted if we also create from scratch each frame
         img_array = np.array(self.matrix)
 
         # Call the Rust flame effect function
@@ -201,23 +153,3 @@ class Rusty2d(Twod):
 
         # Convert back to PIL Image
         self.matrix = Image.fromarray(processed_array, mode="RGB")
-
-    def _fill_red_error(self):
-        """Fill the entire matrix with red to indicate failure"""
-        # Create a solid red image
-        red_array = np.full(
-            (self.matrix.height, self.matrix.width, 3), 255, dtype=np.uint8
-        )
-        red_array[:, :, 1] = 0  # Green = 0
-        red_array[:, :, 2] = 0  # Blue = 0
-
-        self.matrix = Image.fromarray(red_array, mode="RGB")
-
-        # Log error periodically using actual time, not frame count
-        if not hasattr(self, "_last_error_log_time"):
-            self._last_error_log_time = 0.0
-
-        self._last_error_log_time += self.passed
-        if self._last_error_log_time >= 2.0:  # Log every 2 seconds
-            _LOGGER.error("Rust effect still in error state - showing red")
-            self._last_error_log_time = 0.0
