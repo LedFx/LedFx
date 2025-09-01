@@ -8,7 +8,7 @@ It is **audio reactive**, using a selectable audio band-pass filter to control t
 
 Here's an example with a 64x64 matrix & an 256x256 matrix:
 
-<video width="853" height="530" controls loop>
+<video width="700" height="435" controls loop>
    <source src="../../_static/effects/matrix/concentric/example.mp4" type="video/mp4">
    Your browser does not support the video tag.
 </video>
@@ -20,6 +20,7 @@ Here's an example with a 64x64 matrix & an 256x256 matrix:
 - **OCEAN IMPLOSION** — Blue-green gradient; rings contract.
 - **FIRE EXPLOSION** — Red-orange gradient; rings expand rapidly.
 - **RAINBOW EXPLOSION** — Fast rainbow gradient; rings expand rapidly.
+
 ## Settings
 
 The Concentric effect includes a few controls:
