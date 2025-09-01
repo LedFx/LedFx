@@ -206,24 +206,26 @@ class Twod(AudioReactiveEffect):
         # Initialize cumulative time tracker for animation
         if not hasattr(self, "_error_animation_time"):
             self._error_animation_time = 0.0
-            
+
         # Accumulate time since last frame
         self._error_animation_time += self.passed
-        
+
         # Create a fading red error indication over 1 second period
         # Phase goes from 0 to 1 over 1 second, then repeats
-        phase = (self._error_animation_time % 1.0)
-        
+        phase = self._error_animation_time % 1.0
+
         # Create a sine wave that goes: 0 -> 1 -> 0 over 1 second
         # Using sin to create smooth fade in/out
         fade_factor = math.sin(phase * math.pi)
-        
+
         # Calculate red intensity (0 to 255)
         red_intensity = int(fade_factor * 255)
-        
+
         # Create the error indication array
         error_array = np.full(
-            (self.matrix.height, self.matrix.width, 3), red_intensity, dtype=np.uint8
+            (self.matrix.height, self.matrix.width, 3),
+            red_intensity,
+            dtype=np.uint8,
         )
         error_array[:, :, 1] = 0  # Green = 0
         error_array[:, :, 2] = 0  # Blue = 0
@@ -236,5 +238,7 @@ class Twod(AudioReactiveEffect):
 
         self._last_error_log_time += self.passed
         if self._last_error_log_time >= 2.0:  # Log every 2 seconds
-            _LOGGER.error(f"Rust effect {self.name} still in error state - showing fading red")
+            _LOGGER.error(
+                f"Rust effect {self.name} still in error state - showing fading red"
+            )
             self._last_error_log_time = 0.0
