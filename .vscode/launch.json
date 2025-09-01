@@ -107,7 +107,7 @@
             "windows": {
                 "program": "${workspaceFolder}\\ledfx\\__main__.py"
             },
-            "preLaunchTask": "Build Rust Effects",
+            "preLaunchTask": "Build Rust",
             "presentation": {
                 "group": "2 Rust Dev",
                 "order": 0

@@ -11,15 +11,15 @@ This guide explains how to add high-performance Rust effects to LedFx and integr
 6. [Build Process Integration](#build-process-integration)
 7. [Testing Your Effect](#testing-your-effect)
 8. [Distribution and CI/CD](#distribution-and-cicd)
-9. [Perfor### 1. ImportError: No module named 'ledfx_rust_effects'
+9. [Perfor### 1. ImportError: No module named 'ledfx_rust'
 
    Solution:
    ```bash
    # Use the build script
-   python build_rust_effects.py --build --release
+   python build_rust.py --build --release
 
    # Or manually
-   cd ledfx/effects/rust_effects
+   cd ledfx/rust
    uv run maturin develop --release
    ``` Guidelines](#performance-guidelines)
 10. [Troubleshooting](#troubleshooting)
@@ -28,23 +28,23 @@ This guide explains how to add high-performance Rust effects to LedFx and integr
 
 LedFx uses Rust effects to provide high-performance audio-reactive visualizations. Rust effects are compiled into Python modules using [maturin](https://github.com/PyO3/maturin) and [PyO3](https://github.com/PyO3/pyo3), offering significant performance benefits over pure Python implementations.
 
-**Quick Start**: Use the convenience build script from the rust_effects directory:
+**Quick Start**: Use the convenience build script from the rust directory:
 ```bash
-# Navigate to rust_effects directory
-cd ledfx/effects/rust_effects
+# Navigate to rust directory
+cd ledfx/rust
 
 # Build Rust effects (release mode)
-python build_rust_effects.py --build --release
+python build_rust.py --build --release
 
 # Test the build
-python build_rust_effects.py --test
+python build_rust.py --test
 ```
 
 **Alternative Build Methods**:
 - **VS Code Tasks**: Use "Build Rust Effects (with Auto-Install)" from Command Palette for automatic setup
 - **Helper Scripts**:
-  - Windows: `./build_rust_effects.bat`
-  - Unix/Linux/macOS: `./build_rust_effects.sh`
+  - Windows: `./build_rust.bat`
+  - Unix/Linux/macOS: `./build_rust.sh`
 - **Manual**: Run `uv run maturin develop --release`
 
 All methods handle Rust installation automatically if missing.
@@ -71,10 +71,10 @@ rustc --version
 cargo --version
 
 # Build Rust effects (required for effects to work)
-python build_rust_effects.py --build --release
+python build_rust.py --build --release
 
 # Test that everything works
-python build_rust_effects.py --test
+python build_rust.py --test
 ```
 
 ## Project Structure
@@ -83,7 +83,7 @@ python build_rust_effects.py --test
 LedFx/
 ├── ledfx/
 │   ├── effects/
-│   │   ├── rust_effects/            # Rust effects module
+│   │   ├── rust/                    # Rust subsystem
 │   │   │   ├── Cargo.toml           # Rust package configuration
 │   │   │   ├── src/
 │   │   │   │   └── lib.rs           # Main Rust effects library
@@ -96,7 +96,7 @@ LedFx/
 
 ## Creating a New Rust Effect
 
-### 1. Add Function to `ledfx/effects/rust_effects/src/lib.rs`
+### 1. Add Function to `ledfx/rust/src/lib.rs`
 
 ```rust
 use pyo3::prelude::*;
@@ -146,7 +146,7 @@ fn my_awesome_effect(
 
 // Register your function in the module
 #[pymodule]
-fn ledfx_rust_effects(_py: Python, m: &PyModule) -> PyResult<()> {
+fn ledfx_rust(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(rusty_effect_process, m)?)?;
     m.add_function(wrap_pyfunction!(my_awesome_effect, m)?)?;  // Add this line
     Ok(())
@@ -162,7 +162,7 @@ version = "0.1.0"
 edition = "2021"
 
 [lib]
-name = "ledfx_rust_effects"
+name = "ledfx_rust"
 crate-type = ["cdylib"]
 
 [dependencies]
@@ -189,7 +189,7 @@ from PIL import Image
 from ledfx.effects.twod import Twod2Effect
 
 try:
-    import ledfx_rust_effects
+    import ledfx_rust
     RUST_AVAILABLE = True
 except ImportError:
     RUST_AVAILABLE = False
@@ -240,7 +240,7 @@ class MyAwesome(Twod2Effect):
             img_array = np.zeros((self.matrix_height, self.matrix_width, 3), dtype=np.uint8)
 
             # Call your Rust function
-            result = ledfx_rust_effects.my_awesome_effect(
+            result = ledfx_rust.my_awesome_effect(
                 img_array,
                 self.audio_bar,          # Beat/tempo info
                 self.audio_pow,          # [lows, mids, highs] frequency powers
@@ -265,8 +265,8 @@ Add your effect to `ledfx/effects/__init__.py` if it's not auto-discovered.
 ### Development Build
 
 ```bash
-# Navigate to rust_effects directory
-cd ledfx/effects/rust_effects
+# Navigate to rust directory
+cd ledfx/rust
 
 # Build and install the Rust module for development
 uv run maturin develop
@@ -281,16 +281,16 @@ LedFx includes a convenient build script in the root directory:
 
 ```bash
 # Build Rust effects in debug mode
-python build_rust_effects.py --build
+python build_rust.py --build
 
 # Build Rust effects in release mode (recommended for production)
-python build_rust_effects.py --build --release
+python build_rust.py --build --release
 
 # Test that the build works
-python build_rust_effects.py --test
+python build_rust.py --test
 
 # Clean build artifacts
-python build_rust_effects.py --clean
+python build_rust.py --clean
 ```
 
 ### Production Build
@@ -347,7 +347,7 @@ jobs:
       # Rust effects build (already included)
       - name: Build Rust Effects
         run: |
-          cd ledfx/effects/rust_effects
+          cd ledfx/rust
           uv run maturin develop --release
 
       # ... rest of existing steps
@@ -376,7 +376,7 @@ Add Rust build steps to all platform builds. The current configuration already i
       # Rust effects build (already included)
       - name: Build Rust Effects
         run: |
-          cd ledfx/effects/rust_effects
+          cd ledfx/rust
           uv run maturin develop --release
 
       # ... rest of existing steps
@@ -399,7 +399,7 @@ Update `.vscode/tasks.json`. The "Build Rust Effects" task already exists:
             "args": ["run", "maturin", "develop", "--release"],
             "group": "build",
             "options": {
-                "cwd": "${workspaceFolder}/ledfx/effects/rust_effects"
+                "cwd": "${workspaceFolder}/ledfx/rust"
             },
             "presentation": {
                 "reveal": "always",
@@ -417,14 +417,14 @@ Update `.vscode/tasks.json`. The "Build Rust Effects" task already exists:
 
 ```bash
 # Build the Rust module using the build script
-python build_rust_effects.py --build --release
+python build_rust.py --build --release
 
 # Or manually
-cd ledfx/effects/rust_effects
+cd ledfx/rust
 uv run maturin develop --release
 
 # Test that the build works
-python build_rust_effects.py --test
+python build_rust.py --test
 
 # Run LedFx with Rust effects
 cd ../../..
@@ -435,14 +435,14 @@ uv run python -m ledfx --open-ui
 
 ### 2. Testing Framework
 
-Create tests in `tests/test_rust_effects.py`:
+Create tests in `tests/test_rust.py`:
 
 ```python
 import pytest
 import numpy as np
 
 try:
-    import ledfx_rust_effects
+    import ledfx_rust
     RUST_AVAILABLE = True
 except ImportError:
     RUST_AVAILABLE = False
@@ -456,7 +456,7 @@ def test_my_awesome_effect():
     audio_pow = np.array([0.5, 0.3, 0.7], dtype=np.float32)
 
     # Call the function
-    result = ledfx_rust_effects.my_awesome_effect(
+    result = ledfx_rust.my_awesome_effect(
         img_array, 0.5, audio_pow, 1.0, 0.0
     )
 
@@ -484,7 +484,7 @@ The build process installs dev dependencies first to ensure `maturin` is availab
 RUN uv sync --no-install-project --no-editable --group dev
 
 # Build Rust effects (maturin now available)
-RUN uv run maturin develop --release --manifest-path ./ledfx/effects/rust_effects/Cargo.toml
+RUN uv run maturin develop --release --manifest-path ./ledfx/rust/Cargo.toml
 ```
 
 This ensures that Docker containers have full Rust effects support without additional configuration.
@@ -500,16 +500,18 @@ Modify the existing binary build process to include Rust effects:
 1. **Update PyInstaller specs** (`windows-binary.spec`, `osx-binary.spec`):
    ```python
    # Add to hidden imports
-   hiddenimports=['ledfx_rust_effects']
+   hiddenimports=['ledfx_rust']
    ```
 
    2. **Pre-build Rust wheels** in CI before PyInstaller:
       ```yaml
       - name: Build Rust Wheels
         run: |
-          cd ledfx/effects/rust_effects
+          cd ledfx/rust
           uv run maturin build --release --interpreter python
-      ```#### Option 2: Separate Rust Wheels (Advanced)
+      ```
+
+#### Option 2: Separate Rust Wheels (Advanced)
 
 Create separate wheel distributions for the Rust module:
 
@@ -536,13 +538,13 @@ jobs:
           toolchain: stable
       - uses: PyO3/maturin-action@v1
         with:
-          working-directory: ledfx/effects/rust_effects
+          working-directory: ledfx/rust
           target: ${{ matrix.target }}
           args: --release --out dist --interpreter 3.9 3.10 3.11 3.12
       - uses: actions/upload-artifact@v4
         with:
           name: rust-wheels-${{ matrix.os }}
-          path: ledfx/effects/rust_effects/dist
+          path: ledfx/rust/dist
 ```
 
 ## Performance Guidelines
@@ -630,9 +632,9 @@ static mut UNSAFE_STATE: HashMap<u64, MyState> = HashMap::new(); // Don't use th
 
 ### Common Issues
 
-1. **ImportError: No module named 'ledfx_rust_effects'**
+1. **ImportError: No module named 'ledfx_rust'**
    ```bash
-   cd ledfx/effects/rust_effects
+   cd ledfx/rust
    maturin develop
    ```
 
@@ -656,7 +658,7 @@ static mut UNSAFE_STATE: HashMap<u64, MyState> = HashMap::new(); // Don't use th
    - Profile with `cargo bench` (if benchmarks are added)
    - Use `--release` builds for production
    - Avoid unnecessary allocations
-   - Use the build script: `python build_rust_effects.py --build --release`
+   - Use the build script: `python build_rust.py --build --release`
 
 ### Debugging
 
@@ -690,20 +692,20 @@ static mut UNSAFE_STATE: HashMap<u64, MyState> = HashMap::new(); // Don't use th
 
 ```bash
 # Navigate to rust effects directory
-cd ledfx/effects/rust_effects
+cd ledfx/rust
 
 # Build Rust effects (release mode) - Python script
-python build_rust_effects.py --build --release
+python build_rust.py --build --release
 
 # Build Rust effects (release mode) - Shell scripts
-./build_rust_effects.bat      # Windows
-./build_rust_effects.sh       # Unix/Linux/macOS
+./build_rust.bat      # Windows
+./build_rust.sh       # Unix/Linux/macOS
 
 # Test import
-python build_rust_effects.py --test
+python build_rust.py --test
 
 # Clean build artifacts
-python build_rust_effects.py --clean
+python build_rust.py --clean
 
 # Manual build (maturin directly)
 uv run maturin develop --release
@@ -719,12 +721,12 @@ uv run python -m ledfx --open-ui
 LedFx/
 ├── ledfx/
 │   ├── effects/
-│   │   ├── rust_effects/           # Rust effects module
+│   │   ├── rust/           # Rust effects module
 │   │   │   ├── Cargo.toml          # Rust package configuration
 │   │   │   ├── README.md           # Rust effects documentation
-│   │   │   ├── build_rust_effects.py    # Build script
-│   │   │   ├── build_rust_effects.bat   # Windows helper script
-│   │   │   ├── build_rust_effects.sh    # Unix/Linux helper script
+│   │   │   ├── build_rust.py    # Build script
+│   │   │   ├── build_rust.bat   # Windows helper script
+│   │   │   ├── build_rust.sh    # Unix/Linux helper script
 │   │   │   ├── src/
 │   │   │   │   └── lib.rs          # Main Rust effects library
 │   │   │   └── target/             # Rust build artifacts
@@ -735,14 +737,14 @@ LedFx/
 
 ### Troubleshooting Quick Fixes
 
-- **Module import error**: Run `python build_rust_effects.py --build --release`
+- **Module import error**: Run `python build_rust.py --build --release`
 - **Build errors**: Ensure Rust is installed (`rustc --version`)
 - **Permission errors on Windows**: Stop any running LedFx instances
 - **Missing dependencies**: Run `uv sync --group dev`
 
 ## Example: Complete Effect Implementation
 
-See the existing `rusty2d.py` and `ledfx/effects/rust_effects/src/lib.rs` for a complete working example of a three-bar frequency visualizer.
+See the existing `rusty2d.py` and `ledfx/rust/src/lib.rs` for a complete working example of a three-bar frequency visualizer.
 
 ## Contributing
 

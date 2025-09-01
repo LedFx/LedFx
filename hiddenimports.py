@@ -38,5 +38,5 @@ hiddenimports = [
     "sentry_sdk.integrations.logging",
     "sentry_sdk.integrations.threading",
     "vnoise",
-    "ledfx_rust_effects",
+    "ledfx_rust",
 ]

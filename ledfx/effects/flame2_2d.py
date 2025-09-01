@@ -6,7 +6,7 @@ from PIL import Image
 
 # Import your compiled Rust module
 try:
-    import ledfx_rust_effects
+    import ledfx_rust
 
     RUST_AVAILABLE = True
 except ImportError:
@@ -21,8 +21,8 @@ from ledfx.effects.twod import Twod
 _LOGGER = logging.getLogger(__name__)
 
 
-class Rusty2d(Twod):
-    NAME = "Rust Effects"
+class Flame2_2d(Twod):
+    NAME = "Flame2"
     CATEGORY = "Matrix"
     # add keys you want hidden or in advanced here
     HIDDEN_KEYS = Twod.HIDDEN_KEYS + ["test", "background_color"]
@@ -136,7 +136,7 @@ class Rusty2d(Twod):
         img_array = np.array(self.matrix)
 
         # Call the Rust flame effect function
-        processed_array = ledfx_rust_effects.rusty_flame_process(
+        processed_array = ledfx_rust.flame2_process(
             img_array,
             self.audio_bar,
             self.audio_pow,

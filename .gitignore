@@ -63,16 +63,16 @@ debug_config
 # spec file build may leave the ledfx.env behind
 ledfx.env
 # Rust build artifacts
-rust_effects/target/
-rust_effects/Cargo.lock
+ledfx/rust/target/
+ledfx/rust/Cargo.lock
 *.pdb
 
 # Rust development files (keep only source)
-rust_effects/.cargo/
-rust_effects/**/*.so
-rust_effects/**/*.dll
-rust_effects/**/*.dylib
-rust_effects/**/*.pyd
+ledfx/rust/.cargo/
+ledfx/rust/**/*.so
+ledfx/rust/**/*.dll
+ledfx/rust/**/*.dylib
+ledfx/rust/**/*.pyd
 
 # Maturin build artifacts
 *.whl

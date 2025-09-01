@@ -58,13 +58,13 @@ def run_command(cmd, cwd=None, check=True):
         return result
 
 
-def build_rust_effects(release=False):
+def build_rust(release=False):
     """Build the Rust effects module"""
-    rust_dir = Path(__file__).parent  # We're already in rust_effects directory
+    rust_dir = Path(__file__).parent  # We're already in rust directory
 
     if not (rust_dir / "Cargo.toml").exists():
         print(
-            "Error: Cargo.toml not found! Make sure you're in the rust_effects directory."
+            "Error: Cargo.toml not found! Make sure you're in the rust directory."
         )
         return False
 
@@ -88,7 +88,7 @@ def build_rust_effects(release=False):
         return False
 
 
-def test_rust_effects():
+def test_rust():
     """Test the Rust effects module"""
     try:
         result = run_command(
@@ -97,7 +97,7 @@ def test_rust_effects():
                 "run",
                 "python",
                 "-c",
-                "import ledfx_rust_effects; print('Rust effects import successful!')",
+                "import ledfx_rust; print('Rust effects import successful!')",
             ]
         )
         print("[SUCCESS] Rust effects module is working!")
@@ -109,7 +109,7 @@ def test_rust_effects():
 
 def clean_build():
     """Clean Rust build artifacts"""
-    rust_dir = Path(__file__).parent  # We're already in rust_effects directory
+    rust_dir = Path(__file__).parent  # We're already in rust directory
     target_dir = rust_dir / "target"
 
     if target_dir.exists():
@@ -153,11 +153,11 @@ def setup_development():
         return False
 
     # Build Rust effects
-    if not build_rust_effects():
+    if not build_rust():
         return False
 
     # Test the build
-    if not test_rust_effects():
+    if not test_rust():
         return False
 
     print("[SUCCESS] Development environment set up successfully!")
@@ -165,7 +165,7 @@ def setup_development():
     print("1. Run LedFx: uv run python -m ledfx --open-ui")
     print("2. Look for 'The Rusty One' effect in the matrix effects")
     print(
-        "3. Edit ledfx/effects/rust_effects/src/lib.rs to add your own effects"
+        "3. Edit ledfx/effects/rust/src/lib.rs to add your own effects"
     )
     print("4. Run this script again to rebuild after changes")
 
@@ -203,10 +203,10 @@ def main():
         clean_build()
         ok = True  # Clean operation always succeeds
     elif args.test:
-        ok = test_rust_effects()
+        ok = test_rust()
     elif args.build or not any(vars(args).values()):
         # Default action is build
-        ok = build_rust_effects(release=args.release)
+        ok = build_rust(release=args.release)
 
     return 0 if ok else 1
 

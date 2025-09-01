@@ -2,99 +2,7 @@ use pyo3::prelude::*;
 use numpy::{PyArray3, PyReadonlyArray3, PyReadonlyArray1};
 use std::collections::HashMap;
 use std::sync::{Mutex, OnceLock};
-
-// Simple linear congruential generator for better randomness
-#[derive(Debug)]
-struct SimpleRng {
-    state: u64,
-}
-
-impl SimpleRng {
-    fn new(seed: u64) -> Self {
-        Self {
-            state: seed.wrapping_mul(1103515245).wrapping_add(12345)
-        }
-    }
-
-    fn next(&mut self) -> u64 {
-        self.state = self.state.wrapping_mul(1103515245).wrapping_add(12345);
-        self.state
-    }
-
-    fn next_f32(&mut self) -> f32 {
-        // Optimized: avoid division by pre-computing the multiplier
-        (self.next() >> 32) as f32 * (1.0 / u32::MAX as f32)
-    }
-
-    fn next_range(&mut self, min: f32, max: f32) -> f32 {
-        // Optimized: compute range once
-        let range = max - min;
-        min + self.next_f32() * range
-    }
-
-    // Generate velocity with realistic distribution - optimized version
-    fn next_velocity_offset(&mut self, min: f32, max: f32) -> f32 {
-        // Simplified triangular distribution using single random number
-        let r = self.next_f32();
-        let range = max - min;
-
-        // Use a simple curve to bias toward middle values
-        let biased_r = if r < 0.5 {
-            2.0 * r * r // Quadratic curve for first half
-        } else {
-            1.0 - 2.0 * (1.0 - r) * (1.0 - r) // Inverse quadratic for second half
-        };
-
-        min + biased_r * range
-    }
-}
-
-// Helper function to convert RGB to HSV
-fn rgb_to_hsv(r: u8, g: u8, b: u8) -> (f32, f32, f32) {
-    let r = r as f32 / 255.0;
-    let g = g as f32 / 255.0;
-    let b = b as f32 / 255.0;
-
-    let max = r.max(g).max(b);
-    let min = r.min(g).min(b);
-    let delta = max - min;
-
-    let h = if delta == 0.0 {
-        0.0
-    } else if max == r {
-        60.0 * (((g - b) / delta) % 6.0)
-    } else if max == g {
-        60.0 * ((b - r) / delta + 2.0)
-    } else {
-        60.0 * ((r - g) / delta + 4.0)
-    };
-
-    let h = if h < 0.0 { h + 360.0 } else { h } / 360.0; // Normalize to 0-1
-    let s = if max == 0.0 { 0.0 } else { delta / max };
-    let v = max;
-
-    (h, s, v)
-}
-
-// Calculate appropriate particle size range based on matrix dimensions
-fn calculate_particle_size_range(width: usize, height: usize) -> (f32, f32) {
-    // Use the smaller dimension as the basis for scaling
-    let base_dimension = width.min(height) as f32;
-
-    // Reference size: For a 64x64 matrix, particles should be 1-4 pixels
-    let scale_factor = base_dimension / 64.0;
-
-    // Base size ranges from 1.0 to 4.0 at reference scale
-    let min_size = (1.0 * scale_factor).max(1.0);
-    let max_size = (4.0 * scale_factor).max(1.0);
-
-    // For very small matrices, cap the maximum size
-    if base_dimension < 32.0 {
-        (min_size, max_size.min(2.0))
-    } else {
-        (min_size, max_size.min(base_dimension * 0.1))
-    }
-}
+use crate::common::{SimpleRng, simple_blur};
 
 // Constants for flame effect
 const MIN_LIFESPAN: f32 = 2.0;
@@ -157,6 +65,33 @@ impl FlameState {
 // Global state for flame instances - using thread-safe approach
 static FLAME_STATES: OnceLock<Mutex<HashMap<u64, FlameState>>> = OnceLock::new();
 
+// Helper function to convert RGB to HSV
+fn rgb_to_hsv(r: u8, g: u8, b: u8) -> (f32, f32, f32) {
+    let r = r as f32 / 255.0;
+    let g = g as f32 / 255.0;
+    let b = b as f32 / 255.0;
+
+    let max = r.max(g).max(b);
+    let min = r.min(g).min(b);
+    let delta = max - min;
+
+    let h = if delta == 0.0 {
+        0.0
+    } else if max == r {
+        60.0 * (((g - b) / delta) % 6.0)
+    } else if max == g {
+        60.0 * ((b - r) / delta + 2.0)
+    } else {
+        60.0 * ((r - g) / delta + 4.0)
+    };
+
+    let h = if h < 0.0 { h + 360.0 } else { h } / 360.0; // Normalize to 0-1
+    let s = if max == 0.0 { 0.0 } else { delta / max };
+    let v = max;
+
+    (h, s, v)
+}
+
 fn hsv_to_rgb(h: f32, s: f32, v: f32) -> [u8; 3] {
     let c = v * s;
     let x = c * (1.0 - ((h * 6.0) % 2.0 - 1.0).abs());
@@ -183,38 +118,28 @@ fn hsv_to_rgb(h: f32, s: f32, v: f32) -> [u8; 3] {
     [r, g, b]
 }
 
-fn simple_blur(output: &mut ndarray::Array3<u8>, blur_amount: usize) {
-    if blur_amount == 0 { return; }
+// Calculate appropriate particle size range based on matrix dimensions
+fn calculate_particle_size_range(width: usize, height: usize) -> (f32, f32) {
+    // Use the smaller dimension as the basis for scaling
+    let base_dimension = width.min(height) as f32;
 
-    let (height, width, _) = output.dim();
-    let mut temp = output.clone();
+    // Reference size: For a 64x64 matrix, particles should be 1-4 pixels
+    let scale_factor = base_dimension / 64.0;
 
-    // Optimized blur with fewer iterations for performance
-    let actual_iterations = blur_amount.min(2); // Cap blur iterations
+    // Base size ranges from 1.0 to 4.0 at reference scale
+    let min_size = (1.0 * scale_factor).max(1.0);
+    let max_size = (4.0 * scale_factor).max(1.0);
 
-    for _ in 0..actual_iterations {
-        // Use slice operations for better performance
-        for y in 1..height-1 {
-            for x in 1..width-1 {
-                // Process all 3 color channels at once
-                let center = [output[[y, x, 0]], output[[y, x, 1]], output[[y, x, 2]]];
-                let up = [output[[y-1, x, 0]], output[[y-1, x, 1]], output[[y-1, x, 2]]];
-                let down = [output[[y+1, x, 0]], output[[y+1, x, 1]], output[[y+1, x, 2]]];
-                let left = [output[[y, x-1, 0]], output[[y, x-1, 1]], output[[y, x-1, 2]]];
-                let right = [output[[y, x+1, 0]], output[[y, x+1, 1]], output[[y, x+1, 2]]];
-
-                for c in 0..3 {
-                    let sum = up[c] as u16 + down[c] as u16 + left[c] as u16 + right[c] as u16 + (center[c] as u16 * 4);
-                    temp[[y, x, c]] = (sum / 8) as u8;
-                }
-            }
-        }
-        std::mem::swap(output, &mut temp); // Avoid clone
+    // For very small matrices, cap the maximum size
+    if base_dimension < 32.0 {
+        (min_size, max_size.min(2.0))
+    } else {
+        (min_size, max_size.min(base_dimension * 0.1))
     }
 }
 
 #[pyfunction]
-fn rusty_flame_process(
+pub fn flame2_process(
     image_array: PyReadonlyArray3<u8>,
     _audio_bar: f64,
     audio_pow: PyReadonlyArray1<f32>,
@@ -418,10 +343,4 @@ fn rusty_flame_process(
 
         Ok(PyArray3::from_owned_array_bound(py, output).into())
     })
-}
-
-#[pymodule]
-fn ledfx_rust_effects(m: &Bound<'_, PyModule>) -> PyResult<()> {
-    m.add_function(wrap_pyfunction!(rusty_flame_process, m)?)?;
-    Ok(())
 }

@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [lib]
-name = "ledfx_rust_effects"
+name = "ledfx_rust"
 crate-type = ["cdylib"]
 
 [dependencies]
