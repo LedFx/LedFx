@@ -106,7 +106,7 @@ jobs:
 
       - name: Build Rust Effects
         run: |
-          python ledfx/effects/rust_effects/build_rust_effects.py --build --release
+          uv run maturin develop --release --manifest-path ./ledfx/effects/rust_effects/Cargo.toml
 
       - name: Run Tests
         run: |
@@ -153,7 +153,7 @@ jobs:
 
       - name: Build Rust Effects
         run: |
-          python ledfx/effects/rust_effects/build_rust_effects.py --build --release
+          uv run maturin develop --release --manifest-path ./ledfx/effects/rust_effects/Cargo.toml
       - name: Check LedFx launches
         run: |
           uv run ledfx --ci-smoke-test -vv -c debug_config --offline
@@ -202,7 +202,7 @@ jobs:
             uv sync --python ${{ matrix.python-version }} --extra hue --dev
       - name: Build Rust Effects
         run: |
-          python ledfx/effects/rust_effects/build_rust_effects.py --build --release
+          uv run maturin develop --release --manifest-path ./ledfx/effects/rust_effects/Cargo.toml
       - name: Check LedFx launches
         run: |
           uv run ledfx --ci-smoke-test -vv -c debug_config --offline
