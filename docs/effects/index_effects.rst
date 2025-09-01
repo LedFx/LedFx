@@ -10,6 +10,7 @@ Effects
 .. toctree::
    :maxdepth: 2
 
+   matrix/concentric
    matrix/flame
    matrix/radial
    matrix/soap
