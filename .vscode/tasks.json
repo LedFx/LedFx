@@ -129,7 +129,7 @@
                 "command": "bash",
                 "args": [
                     "-c",
-                    "if ! command -v rustc &> /dev/null; then echo 'Installing Rust...'; curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y; source ~/.cargo/env; fi; cd '${workspaceFolder}/ledfx/effects/rust_effects' && uv run maturin develop --release"
+                    "if ! command -v rustc &> /dev/null; then echo 'Installing Rust...'; curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y; source ~/.cargo/env; fi; cd '${workspaceFolder}/ledfx/effects/rust_effects' && uv run --with maturin maturin develop --release"
                 ]
             }
         }
