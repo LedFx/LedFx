@@ -28,11 +28,26 @@ This guide explains how to add high-performance Rust effects to LedFx and integr
 
 LedFx uses Rust effects to provide high-performance audio-reactive visualizations. Rust effects are compiled into Python modules using [maturin](https://github.com/PyO3/maturin) and [PyO3](https://github.com/PyO3/pyo3), offering significant performance benefits over pure Python implementations.
 
-**Quick Start**: Use the convenience build script in the root directory:
+**Quick Start**: Use the convenience build script from the rust_effects directory:
 ```bash
-python build_rust_effects.py --build --release  # Build Rust effects
-python build_rust_effects.py --test            # Test the build
+# Navigate to rust_effects directory
+cd ledfx/effects/rust_effects
+
+# Build Rust effects (release mode)
+python build_rust_effects.py --build --release
+
+# Test the build
+python build_rust_effects.py --test
 ```
+
+**Alternative Build Methods**:
+- **VS Code Tasks**: Use "Build Rust Effects (with Auto-Install)" from Command Palette for automatic setup
+- **Helper Scripts**: 
+  - Windows: `./build_rust_effects.bat` 
+  - Unix/Linux/macOS: `./build_rust_effects.sh`
+- **Manual**: Run `uv run maturin develop --release`
+
+All methods handle Rust installation automatically if missing.
 
 ## Prerequisites
 
@@ -674,8 +689,15 @@ static mut UNSAFE_STATE: HashMap<u64, MyState> = HashMap::new(); // Don't use th
 ### Common Commands
 
 ```bash
-# Build Rust effects (release mode)
+# Navigate to rust effects directory
+cd ledfx/effects/rust_effects
+
+# Build Rust effects (release mode) - Python script
 python build_rust_effects.py --build --release
+
+# Build Rust effects (release mode) - Shell scripts
+./build_rust_effects.bat      # Windows
+./build_rust_effects.sh       # Unix/Linux/macOS
 
 # Test import
 python build_rust_effects.py --test
@@ -683,11 +705,11 @@ python build_rust_effects.py --test
 # Clean build artifacts
 python build_rust_effects.py --clean
 
-# Manual build (from rust_effects directory)
-cd ledfx/effects/rust_effects
+# Manual build (maturin directly)
 uv run maturin develop --release
 
-# Run LedFx with Rust effects
+# Run LedFx with Rust effects (from project root)
+cd ../../..
 uv run python -m ledfx --open-ui
 ```
 
@@ -695,11 +717,14 @@ uv run python -m ledfx --open-ui
 
 ```
 LedFx/
-├── build_rust_effects.py          # Convenient build script
 ├── ledfx/
 │   ├── effects/
 │   │   ├── rust_effects/           # Rust effects module
 │   │   │   ├── Cargo.toml          # Rust package configuration
+│   │   │   ├── README.md           # Rust effects documentation
+│   │   │   ├── build_rust_effects.py    # Build script
+│   │   │   ├── build_rust_effects.bat   # Windows helper script
+│   │   │   ├── build_rust_effects.sh    # Unix/Linux helper script
 │   │   │   ├── src/
 │   │   │   │   └── lib.rs          # Main Rust effects library
 │   │   │   └── target/             # Rust build artifacts

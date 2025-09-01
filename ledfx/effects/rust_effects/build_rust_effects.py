@@ -43,13 +43,13 @@ def run_command(cmd, cwd=None, check=True):
 
 def build_rust_effects(release=False):
     """Build the Rust effects module"""
-    rust_dir = Path(__file__).parent / "ledfx" / "effects" / "rust_effects"
+    rust_dir = Path(__file__).parent  # We're already in rust_effects directory
 
-    if not rust_dir.exists():
-        print("Error: rust_effects directory not found!")
+    if not (rust_dir / "Cargo.toml").exists():
+        print("Error: Cargo.toml not found! Make sure you're in the rust_effects directory.")
         return False
 
-    cmd = ["uv", "run", "maturin", "develop"]
+    cmd = ["uv", "run", "--with", "maturin", "maturin", "develop"]
     if release:
         cmd.append("--release")
 
@@ -83,7 +83,7 @@ def test_rust_effects():
 
 def clean_build():
     """Clean Rust build artifacts"""
-    rust_dir = Path(__file__).parent / "ledfx" / "effects" / "rust_effects"
+    rust_dir = Path(__file__).parent  # We're already in rust_effects directory
     target_dir = rust_dir / "target"
 
     if target_dir.exists():
