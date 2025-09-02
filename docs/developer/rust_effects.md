@@ -9,20 +9,8 @@ This guide explains how to add high-performance Rust effects to LedFx and integr
 4. [Creating a New Rust Effect](#creating-a-new-rust-effect)
 5. [Python Integration](#python-integration)
 6. [Build Process Integration](#build-process-integration)
-7. [Testing Your Effect](#testing-your-effect)
-8. [Distribution and CI/CD](#distribution-and-cicd)
-9. [Perfor### 1. ImportError: No module named 'ledfx_rust'
-
-   Solution:
-   ```bash
-   # Use the build script
-   python build_rust.py --build --release
-
-   # Or manually
-   cd ledfx/rust
-   uv run maturin develop --release
-   ``` Guidelines](#performance-guidelines)
-10. [Troubleshooting](#troubleshooting)
+7. [Performance Guidelines](#performance-guidelines)
+8. [Troubleshooting](#troubleshooting)
 
 ## Overview
 
@@ -43,10 +31,7 @@ python build_rust.py --test
 **Alternative Build Methods**:
 - **VS Code Tasks**: Use "Build Rust Effects (with Auto-Install)" from Command Palette for automatic setup
   - See **[Tasks Documentation](tasks.md)** for comprehensive task information
-- **Helper Scripts**:
-  - Windows: `./build_rust.bat`
-  - Unix/Linux/macOS: `./build_rust.sh`
-- **Manual**: Run `uv run maturin develop --release`
+- **Manual**: Run `uv run maturin develop --release` from the `ledfx/rust` directory
 
 All methods handle Rust installation automatically if missing.
 
@@ -84,20 +69,31 @@ python build_rust.py --test
 LedFx/
 ├── ledfx/
 │   ├── effects/
-│   │   ├── rust/                    # Rust subsystem
-│   │   │   ├── Cargo.toml           # Rust package configuration
-│   │   │   ├── src/
-│   │   │   │   └── lib.rs           # Main Rust effects library
-│   │   │   └── target/              # Rust build artifacts
-│   │   └── rusty2d.py              # Python wrapper for Rust effects
+│   │   ├── flame2_2d.py             # Python wrapper for flame2 effect
+│   │   ├── twod.py                  # Base class for 2D effects
+│   │   └── ...                      # Other effects
+│   ├── rust/                        # Rust subsystem
+│   │   ├── Cargo.toml               # Rust package configuration
+│   │   ├── pyproject.toml           # Python build configuration for maturin
+│   │   ├── build_rust.py            # Build script
+│   │   ├── src/
+│   │   │   ├── lib.rs               # PyO3 module entry point and function exports
+│   │   │   ├── common.rs            # Shared utilities (RNG, blur functions)
+│   │   │   └── effects/
+│   │   │       ├── mod.rs           # Effects module declarations
+│   │   │       └── flame2.rs        # Flame2 effect implementation
+│   │   ├── target/                  # Rust build artifacts (gitignored)
+│   │   └── uv.lock                  # Dependency lock file
+│   ├── presets.py                   # Includes flame2_2d presets
 │   └── ...
 ├── pyproject.toml                   # Python package configuration
+├── .vscode/                         # VS Code tasks and launch configs
 └── .github/workflows/               # CI/CD pipelines
 ```
 
 ## Creating a New Rust Effect
 
-### 1. Add Function to `ledfx/rust/src/lib.rs`
+### 1. Create New Effect File `ledfx/rust/src/effects/my_awesome.rs`
 
 ```rust
 use pyo3::prelude::*;
@@ -113,7 +109,7 @@ use ndarray::s;
 /// - intensity: Effect intensity multiplier (0.0-1.0)
 /// - time_passed: Elapsed time in seconds
 #[pyfunction]
-fn my_awesome_effect(
+pub fn my_awesome_effect(
     image_array: PyReadonlyArray3<u8>,
     _audio_bar: f64,
     audio_pow: PyReadonlyArray1<f32>,
@@ -141,39 +137,55 @@ fn my_awesome_effect(
         output.slice_mut(s![.., .., 1]).fill((mids_power * 255.0) as u8);  // Green
         output.slice_mut(s![.., .., 2]).fill((highs_power * 255.0) as u8); // Blue
 
-        Ok(PyArray3::from_owned_array(py, output).to_owned())
+        Ok(PyArray3::from_owned_array_bound(py, output).into())
     })
 }
+```
 
-// Register your function in the module
+### 2. Update `ledfx/rust/src/effects/mod.rs`
+
+Add your new effect module:
+
+```rust
+pub mod flame2;
+pub mod my_awesome;  // Add this line
+```
+
+### 3. Update `ledfx/rust/src/lib.rs`
+
+Import and register your new effect function:
+
+```rust
+use pyo3::prelude::*;
+
+mod common;
+mod effects;
+
+use effects::flame2::flame2_process;
+use effects::my_awesome::my_awesome_effect;  // Add this import
+
 #[pymodule]
-fn ledfx_rust(_py: Python, m: &PyModule) -> PyResult<()> {
-    m.add_function(wrap_pyfunction!(rusty_effect_process, m)?)?;
+fn ledfx_rust(m: &Bound<'_, PyModule>) -> PyResult<()> {
+    m.add_function(wrap_pyfunction!(flame2_process, m)?)?;
     m.add_function(wrap_pyfunction!(my_awesome_effect, m)?)?;  // Add this line
     Ok(())
 }
 ```
 
-### 2. Update `Cargo.toml` (if needed)
+### 4. Update `Cargo.toml` (only if you need additional dependencies)
+
+If your effect requires additional crates beyond the existing ones:
 
 ```toml
-[package]
-name = "ledfx-rust-effects"
-version = "0.1.0"
-edition = "2021"
-
-[lib]
-name = "ledfx_rust"
-crate-type = ["cdylib"]
-
 [dependencies]
 pyo3 = { version = "0.22", features = ["extension-module"] }
 numpy = "0.22"
 ndarray = "0.16"
 
-# Add additional dependencies here if needed
+# Add additional dependencies here if needed for your specific effect
 # rayon = "1.10"  # For parallel processing
 # image = "0.25"  # For image processing utilities
+# rand = "0.8"    # For additional randomization
 ```
 
 ## Python Integration
@@ -185,9 +197,10 @@ Create or modify `ledfx/effects/my_effect.py`:
 ```python
 import logging
 import numpy as np
+import voluptuous as vol
 from PIL import Image
 
-from ledfx.effects.twod import Twod2Effect
+from ledfx.effects.twod import Twod
 
 try:
     import ledfx_rust
@@ -198,13 +211,14 @@ except ImportError:
 
 _LOGGER = logging.getLogger(__name__)
 
-@Effect.no_registration
-class MyAwesome(Twod2Effect):
+class MyAwesome(Twod):
     """My Awesome Rust Effect"""
 
     NAME = "My Awesome Effect"
     CATEGORY = "Matrix"
-    HIDDEN = not RUST_AVAILABLE
+    # add keys you want hidden or in advanced here
+    HIDDEN_KEYS = Twod.HIDDEN_KEYS + []
+    ADVANCED_KEYS = Twod.ADVANCED_KEYS + []
 
     CONFIG_SCHEMA = vol.Schema({
         vol.Optional("intensity", description="Effect intensity", default=1.0):
@@ -215,14 +229,19 @@ class MyAwesome(Twod2Effect):
     })
 
     def __init__(self, ledfx, config):
-        super().__init__(ledfx, config)
+        # Set any default values first, as config_updated will be called
+        # from the super().__init__() which may depend on them
         if not RUST_AVAILABLE:
             raise RuntimeError("Rust effects module not available")
-
-        # Initialize your effect-specific attributes
-        self.rust_param = self._config.get("rust_param", 0.5)
-
+            
+        super().__init__(ledfx, config)
+        
         _LOGGER.info("My Awesome Rust Effect initialized successfully")
+
+    def config_updated(self, config):
+        super().config_updated(config)
+        # Copy over your configs here into variables
+        self.rust_param = self._config["rust_param"]
 
     def audio_data_updated(self, data):
         """Called when new audio data is available"""
@@ -230,6 +249,15 @@ class MyAwesome(Twod2Effect):
 
         # Update your audio-related attributes here
         # These will be passed to the Rust function
+        self.audio_bar = data.bar_oscillator()
+        self.audio_pow = np.array(
+            [
+                data.lows_power(),
+                data.mids_power(),
+                data.high_power(),
+            ],
+            dtype=np.float32,
+        )
 
     def draw(self):
         """Main drawing function called every frame"""
@@ -245,7 +273,7 @@ class MyAwesome(Twod2Effect):
                 img_array,
                 self.audio_bar,          # Beat/tempo info
                 self.audio_pow,          # [lows, mids, highs] frequency powers
-                self._config.get("intensity", 1.0),
+                self.rust_param,         # Use instance variable from config_updated
                 self.passed             # Time passed
             )
 
@@ -257,13 +285,95 @@ class MyAwesome(Twod2Effect):
             return self._fill_red_error()
 ```
 
-### 2. Register Your Effect
+### 2. Effect Registration
 
-Add your effect to `ledfx/effects/__init__.py` if it's not auto-discovered.
+Effects in LedFx are automatically discovered and registered when they:
+
+1. **Inherit from the appropriate base class** (e.g., `Twod` for 2D effects)
+2. **Set the `NAME` class variable** - This is the display name in the UI
+3. **Set the `CATEGORY` class variable** - Groups effects in the UI (e.g., "Matrix", "Classic")
+4. **Are placed in the `ledfx/effects/` directory**
+
+**No additional registration is required** - LedFx automatically discovers effects that follow this pattern. The effect will appear in the UI once LedFx is restarted.
 
 ## Build Process Integration
 
-### Development Build
+### VS Code Integration (Recommended)
+
+The project includes comprehensive VS Code tasks and launch configurations for Rust development - this is the easiest way to get started:
+
+#### VS Code Task: "Build Rust"
+
+```json
+{
+    "label": "Build Rust",
+    "detail": "Build Rust subsystem with automatic Rust installation and testing",
+    "type": "shell",
+    "command": "${workspaceFolder}/.vscode/build-rust-auto.cmd",
+    "options": {
+        "cwd": "${workspaceFolder}"
+    },
+    "group": {
+        "kind": "build",
+        "isDefault": false
+    },
+    "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+    },
+    "problemMatcher": ["$rustc"]
+}
+```
+
+This task:
+- Automatically installs Rust if missing
+- Builds the Rust effects in release mode
+- Integrates with VS Code's problem matcher for error reporting
+- Can be run via Command Palette: "Tasks: Run Task" → "Build Rust"
+
+#### VS Code Launch Configuration
+
+```json
+{
+    "name": "LedFx (Rust Build, No Sentry, Open UI)",
+    "type": "debugpy",
+    "request": "launch",
+    "program": "${workspaceFolder}/ledfx/__main__.py",
+    "args": ["-vv", "--offline", "--open-ui"],
+    "console": "integratedTerminal",
+    "justMyCode": false,
+    "preLaunchTask": "Build Rust",
+    "presentation": {
+        "group": "2 Rust Dev",
+        "order": 0
+    },
+    "env": {
+        "RUST_LOG": "debug",
+        "RUST_BACKTRACE": "1"
+    }
+}
+```
+
+This launch configuration:
+- Automatically builds Rust effects before launching LedFx
+- Opens the UI automatically
+- Enables Rust debug logging and backtraces
+- Runs offline (no Sentry reporting)
+- Available in the "2 Rust Dev" group in the debug panel
+
+#### Windows Build Automation Script
+
+The `.vscode/build-rust-auto.cmd` script handles:
+- Automatic Rust installation via rustup
+- Environment setup and verification
+- Cross-platform build execution
+- Error reporting and cleanup
+
+### Manual Development Build
+
+If you prefer command-line development:
 
 ```bash
 # Navigate to rust directory
@@ -278,9 +388,12 @@ uv run maturin develop --release
 
 ### Using the build script
 
-LedFx includes a convenient build script in the root directory:
+LedFx includes a convenient build script in the `ledfx/rust` directory:
 
 ```bash
+# Navigate to rust directory
+cd ledfx/rust
+
 # Build Rust effects in debug mode
 python build_rust.py --build
 
@@ -292,260 +405,6 @@ python build_rust.py --test
 
 # Clean build artifacts
 python build_rust.py --clean
-```
-
-### Production Build
-
-The production build process needs to be integrated into the existing CI/CD pipeline.
-
-#### Update `pyproject.toml`
-
-Ensure maturin is in the dev dependencies:
-
-```toml
-[dependency-groups]
-dev = [
-    # ... existing dependencies
-    "maturin>=1.9.4",
-    # ... other dependencies
-]
-```
-
-#### Update GitHub Actions Workflows
-
-##### 1. Update `.github/workflows/ci-build.yml`
-
-Add Rust installation and build steps. The current configuration already includes:
-
-```yaml
-jobs:
-  build-ledfx-linux:
-    name: Build LedFx (Ubuntu)
-    runs-on: ubuntu-latest
-    # ... existing configuration
-    steps:
-      - name: Check out code from GitHub
-        uses: actions/checkout@v4
-
-      # Rust installation (already included)
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          components: rustfmt, clippy
-
-      - name: Install build dependencies
-        run: |
-          sudo apt-get update && sudo apt-get install -y \
-          gcc libatlas3-base portaudio19-dev
-
-      # ... existing steps
-
-      - name: Install LedFx
-        run: |
-          export CFLAGS="-Wno-incompatible-function-pointer-types"
-          uv sync --all-extras --dev
-
-      # Rust effects build (already included)
-      - name: Build Rust Effects
-        run: |
-          cd ledfx/rust
-          uv run maturin develop --release
-
-      # ... rest of existing steps
-```
-```
-
-##### 2. Update `.github/workflows/test-build-binaries.yml`
-
-Add Rust build steps to all platform builds. The current configuration already includes:
-
-```yaml
-  build-ledfx-windows:
-    name: Build LedFx (Windows)
-    runs-on: windows-latest
-    steps:
-      # ... existing steps
-
-      # Rust installation (already included)
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Install LedFx
-        run: |
-          uv sync --python ${{ env.DEFAULT_PYTHON }} --extra hue --dev
-
-      # Rust effects build (already included)
-      - name: Build Rust Effects
-        run: |
-          cd ledfx/rust
-          uv run maturin develop --release
-
-      # ... rest of existing steps
-```
-
-#### Add New VSCode Task
-
-Update `.vscode/tasks.json`. The "Build Rust Effects" task already exists:
-
-```json
-{
-    "version": "2.0.0",
-    "tasks": [
-        // ... existing tasks
-        {
-            "label": "Build Rust Effects",
-            "detail": "Build Rust effects module in release mode",
-            "type": "shell",
-            "command": "uv",
-            "args": ["run", "maturin", "develop", "--release"],
-            "group": "build",
-            "options": {
-                "cwd": "${workspaceFolder}/ledfx/rust"
-            },
-            "presentation": {
-                "reveal": "always",
-                "focus": false
-            },
-            "problemMatcher": ["$rustc"]
-        }
-    ]
-}
-```
-
-## Testing Your Effect
-
-### 1. Build and Test Locally
-
-```bash
-# Build the Rust module using the build script
-python build_rust.py --build --release
-
-# Or manually
-cd ledfx/rust
-uv run maturin develop --release
-
-# Test that the build works
-python build_rust.py --test
-
-# Run LedFx with Rust effects
-cd ../../..
-uv run python -m ledfx --open-ui
-
-# Your effect should appear in the effects list
-```
-
-### 2. Testing Framework
-
-Create tests in `tests/test_rust.py`:
-
-```python
-import pytest
-import numpy as np
-
-try:
-    import ledfx_rust
-    RUST_AVAILABLE = True
-except ImportError:
-    RUST_AVAILABLE = False
-
-@pytest.mark.skipif(not RUST_AVAILABLE, reason="Rust effects not available")
-def test_my_awesome_effect():
-    """Test the Rust effect function directly"""
-    # Create test data
-    height, width = 32, 64
-    img_array = np.zeros((height, width, 3), dtype=np.uint8)
-    audio_pow = np.array([0.5, 0.3, 0.7], dtype=np.float32)
-
-    # Call the function
-    result = ledfx_rust.my_awesome_effect(
-        img_array, 0.5, audio_pow, 1.0, 0.0
-    )
-
-    # Verify the result
-    assert result.shape == (height, width, 3)
-    assert result.dtype == np.uint8
-
-    # Add specific assertions for your effect
-    assert np.any(result > 0)  # Effect should produce some output
-```
-
-## Distribution and CI/CD
-
-### Docker Build Support
-
-Docker builds automatically include Rust effects. The `ledfx_docker/Dockerfile` has been updated to:
-- Install Rust during the build phase
-- Install development dependencies (including maturin)
-- Build Rust effects before creating the final image
-- Include all necessary dependencies
-
-The build process installs dev dependencies first to ensure `maturin` is available:
-```dockerfile
-# Install dev dependencies (includes maturin)
-RUN uv sync --no-install-project --no-editable --group dev
-
-# Build Rust effects (maturin now available)
-RUN uv run maturin develop --release --manifest-path ./ledfx/rust/Cargo.toml
-```
-
-This ensures that Docker containers have full Rust effects support without additional configuration.
-
-### Binary Distribution
-
-For distribution, Rust effects need to be pre-compiled for each platform:
-
-#### Option 1: Include in Main Build (Recommended)
-
-Modify the existing binary build process to include Rust effects:
-
-1. **Update PyInstaller specs** (`windows-binary.spec`, `osx-binary.spec`):
-   ```python
-   # Add to hidden imports
-   hiddenimports=['ledfx_rust']
-   ```
-
-   2. **Pre-build Rust wheels** in CI before PyInstaller:
-      ```yaml
-      - name: Build Rust Wheels
-        run: |
-          cd ledfx/rust
-          uv run maturin build --release --interpreter python
-      ```
-
-#### Option 2: Separate Rust Wheels (Advanced)
-
-Create separate wheel distributions for the Rust module:
-
-```yaml
-# New workflow: .github/workflows/build-rust-wheels.yml
-name: Build Rust Wheels
-
-on:
-  push:
-    tags: ['v*']
-  workflow_dispatch:
-
-jobs:
-  build-wheels:
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-    runs-on: ${{ matrix.os }}
-
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-      - uses: PyO3/maturin-action@v1
-        with:
-          working-directory: ledfx/rust
-          target: ${{ matrix.target }}
-          args: --release --out dist --interpreter 3.9 3.10 3.11 3.12
-      - uses: actions/upload-artifact@v4
-        with:
-          name: rust-wheels-${{ matrix.os }}
-          path: ledfx/rust/dist
 ```
 
 ## Performance Guidelines
@@ -698,10 +557,6 @@ cd ledfx/rust
 # Build Rust effects (release mode) - Python script
 python build_rust.py --build --release
 
-# Build Rust effects (release mode) - Shell scripts
-./build_rust.bat      # Windows
-./build_rust.sh       # Unix/Linux/macOS
-
 # Test import
 python build_rust.py --test
 
@@ -722,18 +577,24 @@ uv run python -m ledfx --open-ui
 LedFx/
 ├── ledfx/
 │   ├── effects/
-│   │   ├── rust/           # Rust effects module
-│   │   │   ├── Cargo.toml          # Rust package configuration
-│   │   │   ├── README.md           # Rust effects documentation
-│   │   │   ├── build_rust.py    # Build script
-│   │   │   ├── build_rust.bat   # Windows helper script
-│   │   │   ├── build_rust.sh    # Unix/Linux helper script
-│   │   │   ├── src/
-│   │   │   │   └── lib.rs          # Main Rust effects library
-│   │   │   └── target/             # Rust build artifacts
-│   │   └── rusty2d.py             # Python wrapper for Rust effects
-│   └── presets.py                 # Includes rusty2d presets
-└── .github/workflows/             # CI/CD with Rust build steps
+│   │   ├── flame2_2d.py             # Python wrapper for flame2 effect
+│   │   ├── twod.py                  # Base class for 2D effects
+│   │   └── ...                      # Other effects
+│   ├── rust/                        # Rust effects module
+│   │   ├── Cargo.toml               # Rust package configuration
+│   │   ├── pyproject.toml           # Python build configuration for maturin
+│   │   ├── build_rust.py            # Build script
+│   │   ├── src/
+│   │   │   ├── lib.rs               # Main Rust effects library
+│   │   │   ├── common.rs            # Shared utilities (RNG, blur functions)
+│   │   │   └── effects/
+│   │   │       ├── mod.rs           # Effects module declarations
+│   │   │       └── flame2.rs        # Flame2 effect implementation
+│   │   ├── target/                  # Rust build artifacts (gitignored)
+│   │   └── uv.lock                  # Dependency lock file
+│   ├── presets.py                   # Includes flame2_2d presets
+│   └── ...
+└── .github/workflows/               # CI/CD with Rust build steps
 ```
 
 ### Troubleshooting Quick Fixes
@@ -745,7 +606,7 @@ LedFx/
 
 ## Example: Complete Effect Implementation
 
-See the existing `rusty2d.py` and `ledfx/rust/src/lib.rs` for a complete working example of a three-bar frequency visualizer.
+See the existing `flame2_2d.py` and `ledfx/rust/src/effects/flame2.rs` for a complete working example of a realistic flame effect with particle physics.
 
 ## Contributing
 
