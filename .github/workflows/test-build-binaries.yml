@@ -3,11 +3,11 @@ name: Build Frozen Binaries for Distribution
 on:
   push:
     paths-ignore:
-      - 'frontend/**'
-      - 'docs/**'
-      - 'tests/**'
-      - '.github/ISSUE_TEMPLATE/**'
-      - '.vscode/**'
+      - "frontend/**"
+      - "docs/**"
+      - "tests/**"
+      - ".github/ISSUE_TEMPLATE/**"
+      - ".vscode/**"
   workflow_dispatch:
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -36,6 +36,11 @@ jobs:
           enable-cache: true
           cache-dependency-glob: "uv.lock"
 
+      - name: Install NSIS (installer)
+        uses: repolevedavaj/install-nsis@v1.0.1
+        with:
+          nsis-version: "3.11"
+
       - name: Update Path for Windows
         run: echo "$APPDATA\Python\Scripts" >> $GITHUB_PATH
 
@@ -51,26 +56,42 @@ jobs:
         run: |
           echo ledfx-version=$(uv run python -c "import ledfx; print(ledfx.__version__, end='')") >> $GITHUB_OUTPUT
           uv run python -c "import ledfx; print(ledfx.__version__, end='')" | tr -d '\n' > ledfx_version.txt
+
       - name: Upload LedFx Version
         uses: actions/upload-artifact@v4
         with:
           name: ledfx_version.txt
           path: ${{ github.workspace }}/ledfx_version.txt
+
       - name: Build Binary
         run: |
           uv run pyinstaller windows-binary.spec
+
+      - name: Create installer
+        run: |
+          cd installer && makensis ledfx.nsi
+
       - name: Remove packaged portaudio binary
         run: |
           rm dist/LedFx/_internal/_sounddevice_data/portaudio-binaries/libportaudio64bit.dll
+
       - name: Move WASAPI loopback portaudio
         run: |
           mv loopback/libportaudio64bit.dll dist/LedFx/_internal/_sounddevice_data/portaudio-binaries/libportaudio64bit.dll
+
       - name: Upload LedFx Binary
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: LedFx-${{ steps.ledfx-version.outputs.ledfx-version }}-windows-x64
           path: ${{ github.workspace }}/dist/*
+
+      - name: Upload LedFx Setup
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: LedFx-${{ steps.ledfx-version.outputs.ledfx-version }}-windows-x64-setup
+          path: ${{ github.workspace }}/installer/ledfx-setup.exe
 
   build-ledfx-osx-x64:
     name: Build LedFx (OS X [x64])
@@ -359,7 +380,7 @@ jobs:
       - name: Download LedFx Binary
         uses: actions/download-artifact@v4
         with:
-         name: LedFx-${{ steps.ledfx-version.outputs.ledfx-version }}-windows-x64
+          name: LedFx-${{ steps.ledfx-version.outputs.ledfx-version }}-windows-x64
       - name: Run LedFx
         run: |
           LedFx/LedFx.exe -vv --ci-smoke-test --offline

@@ -52,13 +52,13 @@ Section "LedFX" SEC01
   SectionIn RO
   SetOutPath "$INSTDIR"
   SetOverwrite ifnewer
-  File "D:\Documents\LedFX\dist\LedFx\LedFx.exe"
+  File ".\..\dist\LedFx\LedFx.exe"
   CreateDirectory "$SMPROGRAMS\LedFX"
   CreateShortCut "$SMPROGRAMS\LedFX\LedFX.lnk" "$INSTDIR\LedFx.exe"
   CreateShortCut "$DESKTOP\LedFX.lnk" "$INSTDIR\LedFx.exe"
   CreateDirectory "$INSTDIR\_internal"
   SetOutPath "$INSTDIR\_internal"
-  File /nonfatal /a /r "D:\Documents\LedFX\dist\LedFx\_internal\"
+  File /nonfatal /a /r ".\..\dist\LedFx\_internal\"
 SectionEnd
 
 
