@@ -98,13 +98,9 @@ class Flame2_2d(Twod):
         self.velocity = self._config["velocity"]
         self.animation_speed = self._config["animation_speed"]
         self.blur_amount = self._config["blur_amount"]
-        self.low_band = self._config["low_band"]
-        self.mid_band = self._config["mid_band"]
-        self.high_band = self._config["high_band"]
-
-        self.low_rgb = np.array(parse_color(self.low_band), dtype=float)
-        self.mid_rgb = np.array(parse_color(self.mid_band), dtype=float)
-        self.high_rgb = np.array(parse_color(self.high_band), dtype=float)
+        self.low_rgb = np.array(parse_color(self._config["low_band"]), dtype=float)
+        self.mid_rgb = np.array(parse_color(self._config["mid_band"]), dtype=float)
+        self.high_rgb = np.array(parse_color(self._config["high_band"]), dtype=float)
 
     def do_once(self):
         super().do_once()
