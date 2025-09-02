@@ -18,7 +18,8 @@ impl SimpleRng {
 
     pub fn next_f32(&mut self) -> f32 {
         // Optimized: avoid division by pre-computing the multiplier
-        (self.next() >> 32) as f32 * (1.0 / u32::MAX as f32)
+        // Use (u32::MAX + 1) to ensure range is [0, 1) instead of [0, 1]
+        (self.next() >> 32) as f32 * (1.0 / (u32::MAX as f32 + 1.0))
     }
 
     pub fn next_range(&mut self, min: f32, max: f32) -> f32 {
