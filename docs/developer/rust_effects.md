@@ -233,9 +233,9 @@ class MyAwesome(Twod):
         # from the super().__init__() which may depend on them
         if not RUST_AVAILABLE:
             raise RuntimeError("Rust effects module not available")
-            
+
         super().__init__(ledfx, config)
-        
+
         _LOGGER.info("My Awesome Rust Effect initialized successfully")
 
     def config_updated(self, config):
