@@ -20,7 +20,7 @@
 ; MUI Settings
 !define MUI_ABORTWARNING
 !define MUI_ICON ".\icons\install_icon.ico"
-!define MUI_UNICON ".\ìcons\uninstall_icon.ico"
+!define MUI_UNICON ".\icons\uninstall_icon.ico"
 
 ; Welcome page
 !insertmacro MUI_PAGE_WELCOME
