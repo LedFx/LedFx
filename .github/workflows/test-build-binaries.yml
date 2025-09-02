@@ -90,8 +90,7 @@ jobs:
         if: always()
         with:
           name: LedFx-${{ steps.ledfx-version.outputs.ledfx-version }}-windows-x64-setup
-          path: ${{ github.workspace }}/installer/ledfx-setup.exe
-
+          path: ${{ github.workspace }}/installer/ledfx-setup-win-${{ steps.ledfx-version.outputs.ledfx-version }}.exe
   build-ledfx-osx-x64:
     name: Build LedFx (OS X [x64])
     runs-on: macos-13
