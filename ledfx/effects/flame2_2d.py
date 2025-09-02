@@ -37,6 +37,9 @@ class Flame2_2d(Twod):
                 "velocity", description="Trips to top per second", default=0.3
             ): vol.All(vol.Coerce(float), vol.Range(min=0.1, max=1.0)),
             vol.Optional(
+                "animation_speed", description="Overall animation speed", default=0.7
+            ): vol.All(vol.Coerce(float), vol.Range(min=0.1, max=1.0)),
+            vol.Optional(
                 "intensity",
                 description="Application of the audio power input",
                 default=0.5,
@@ -91,6 +94,7 @@ class Flame2_2d(Twod):
         self.intensity = self._config["intensity"]
         self.spawn_rate = self._config["spawn_rate"]
         self.velocity = self._config["velocity"]
+        self.animation_speed = self._config["animation_speed"]
         self.blur_amount = self._config["blur_amount"]
         self.low_band = self._config["low_band"]
         self.mid_band = self._config["mid_band"]
@@ -149,6 +153,7 @@ class Flame2_2d(Twod):
             self.low_rgb,
             self.mid_rgb,
             self.high_rgb,
+            self.animation_speed,
         )
 
         # Convert back to PIL Image
