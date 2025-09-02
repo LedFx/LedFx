@@ -81,19 +81,19 @@ pub fn simple_blur(output: &mut ndarray::Array3<u8>, blur_amount: usize) {
                     let y_i = y as i32;
                     let x_i = x as i32;
 
-                    let sum = get_pixel_mirrored(&temp, y_i - 1, x_i - 1, c) as u16
-                        + get_pixel_mirrored(&temp, y_i - 1, x_i, c) as u16
-                        + get_pixel_mirrored(&temp, y_i - 1, x_i + 1, c) as u16
-                        + get_pixel_mirrored(&temp, y_i, x_i - 1, c) as u16
-                        + get_pixel_mirrored(&temp, y_i, x_i, c) as u16
-                        + get_pixel_mirrored(&temp, y_i, x_i + 1, c) as u16
-                        + get_pixel_mirrored(&temp, y_i + 1, x_i - 1, c) as u16
-                        + get_pixel_mirrored(&temp, y_i + 1, x_i, c) as u16
-                        + get_pixel_mirrored(&temp, y_i + 1, x_i + 1, c) as u16;
-                    output[(y, x, c)] = (sum / 9) as u8;
+                    let sum = get_pixel_mirrored(output, y_i - 1, x_i - 1, c) as u16
+                        + get_pixel_mirrored(output, y_i - 1, x_i, c) as u16
+                        + get_pixel_mirrored(output, y_i - 1, x_i + 1, c) as u16
+                        + get_pixel_mirrored(output, y_i, x_i - 1, c) as u16
+                        + get_pixel_mirrored(output, y_i, x_i, c) as u16
+                        + get_pixel_mirrored(output, y_i, x_i + 1, c) as u16
+                        + get_pixel_mirrored(output, y_i + 1, x_i - 1, c) as u16
+                        + get_pixel_mirrored(output, y_i + 1, x_i, c) as u16
+                        + get_pixel_mirrored(output, y_i + 1, x_i + 1, c) as u16;
+                    temp[(y, x, c)] = (sum / 9) as u8;
                 }
             }
         }
-        std::mem::swap(output, &mut temp); // Avoid clone
+        std::mem::swap(output, &mut temp);
     }
 }

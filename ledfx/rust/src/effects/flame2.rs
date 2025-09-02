@@ -73,6 +73,19 @@ impl FlameState {
 // Global state for flame instances - using thread-safe approach
 static FLAME_STATES: OnceLock<Mutex<HashMap<u64, FlameState>>> = OnceLock::new();
 
+// Memory cleanup function (currently unused due to PyO3 export issues)
+// The HashMap will grow over time, but effect instances are typically long-lived
+// and the memory impact is minimal (each state is small)
+#[allow(dead_code)]
+fn flame2_release(instance_id: u64) -> PyResult<()> {
+    if let Some(m) = FLAME_STATES.get() {
+        if let Ok(mut states) = m.lock() {
+            states.remove(&instance_id);
+        }
+    }
+    Ok(())
+}
+
 // Helper function to convert RGB to HSV
 fn rgb_to_hsv(r: u8, g: u8, b: u8) -> (f32, f32, f32) {
     let r = r as f32 / 255.0;
@@ -189,9 +202,12 @@ pub fn flame2_process(
     animation_speed: f64,
 ) -> PyResult<Py<PyArray3<u8>>> {
     Python::with_gil(|py| {
-        let array = image_array.as_array();
-        let mut output = array.to_owned();
-        let freq_powers = audio_pow.as_array();
+        // STEP 1: Clone/copy Python data while holding GIL
+        let mut output = image_array.as_array().to_owned();
+        let freq_powers_owned: Vec<f32> = audio_pow.as_array().to_vec();
+        let low_rgb = low_color.as_array().to_vec();
+        let mid_rgb = mid_color.as_array().to_vec();
+        let high_rgb = high_color.as_array().to_vec();
 
         // Use parameters directly with animation speed scaling
         let spawn_rate = spawn_rate as f32;
@@ -210,19 +226,17 @@ pub fn flame2_process(
         let (height, width, _) = output.dim();
         output.fill(0);
 
-        // Extract RGB values from float arrays (already 0.0-255.0 range) and convert to u8
-        let low_array = low_color.as_array();
-        let mid_array = mid_color.as_array();
-        let high_array = high_color.as_array();
-
-        // Convert RGB colors to HSV for each frequency band
+        // Precompute base HSV colors while holding GIL
         let base_colors = [
-            rgb_to_hsv(low_array[0] as u8, low_array[1] as u8, low_array[2] as u8),   // Low frequencies
-            rgb_to_hsv(mid_array[0] as u8, mid_array[1] as u8, mid_array[2] as u8),   // Mid frequencies
-            rgb_to_hsv(high_array[0] as u8, high_array[1] as u8, high_array[2] as u8), // High frequencies
+            rgb_to_hsv(low_rgb[0] as u8, low_rgb[1] as u8, low_rgb[2] as u8),
+            rgb_to_hsv(mid_rgb[0] as u8, mid_rgb[1] as u8, mid_rgb[2] as u8),
+            rgb_to_hsv(high_rgb[0] as u8, high_rgb[1] as u8, high_rgb[2] as u8),
         ];
 
-        // Process particles for this instance - using thread-safe approach
+        // STEP 2: Release GIL for heavy computation
+        py.allow_threads(|| {
+            // All particle processing happens here WITHOUT the GIL
+            // This allows other Python threads to run while we compute
         {
             // Get or initialize the global states map
             let states_mutex = FLAME_STATES.get_or_init(|| Mutex::new(HashMap::new()));
@@ -252,7 +266,7 @@ pub fn flame2_process(
             let effective_delta = delta.max(MIN_DELTA_TIME);
 
             for (band, (&power, &(h_base, s_base, v_base))) in
-                freq_powers.iter().zip(base_colors.iter()).enumerate()
+                freq_powers_owned.iter().zip(base_colors.iter()).enumerate()
             {
                 if band >= 3 { break; }
 
@@ -420,11 +434,13 @@ pub fn flame2_process(
             }
         } // End of particle processing block
 
-        // Apply blur
+        // Apply blur (still without GIL)
         if blur_amount > 0 {
             simple_blur(&mut output, blur_amount);
         }
+        }); // End of allow_threads block - GIL is reacquired here
 
+        // STEP 3: Convert result back to Python object (requires GIL)
         Ok(PyArray3::from_owned_array_bound(py, output).into())
     })
 }

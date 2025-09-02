@@ -110,8 +110,9 @@ class Flame2_2d(Twod):
         super().do_once()
 
     def audio_data_updated(self, data):
-        self.bar = data.bar_oscillator()
-        self.audio_bar = data.bar_oscillator()
+        osc = data.bar_oscillator()
+        self.bar = osc
+        self.audio_bar = osc
         self.audio_pow = np.array(
             [
                 data.lows_power(),
