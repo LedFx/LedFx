@@ -4,6 +4,7 @@
 
 ; HM NIS Edit Wizard helper defines
 !define PRODUCT_NAME "LedFX"
+; /DPRODUCT_VERSION=X.X.X parameter
 !ifndef PRODUCT_VERSION
 !define PRODUCT_VERSION "x.x.x"
 !endif
@@ -18,8 +19,8 @@
 
 ; MUI Settings
 !define MUI_ABORTWARNING
-!define MUI_ICON "${NSISDIR}\Contrib\Graphics\Icons\modern-install.ico"
-!define MUI_UNICON "${NSISDIR}\Contrib\Graphics\Icons\modern-uninstall.ico"
+!define MUI_ICON ".\icons\install_icon.ico"
+!define MUI_UNICON ".\ìcons\uninstall_icon.ico"
 
 ; Welcome page
 !insertmacro MUI_PAGE_WELCOME
@@ -34,7 +35,7 @@
 !insertmacro MUI_PAGE_INSTFILES
 ; Finish page
 !define MUI_FINISHPAGE_RUN "$INSTDIR\LedFx.exe"
-; !define MUI_FINISHPAGE_SHOWREADME "readme"
+!define MUI_FINISHPAGE_SHOWREADME "https://docs.ledfx.app/en/stable/configuring.html"
 !insertmacro MUI_PAGE_FINISH
 
 ; Uninstaller pages
