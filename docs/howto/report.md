@@ -90,7 +90,7 @@ Additional context:
 
   Add any other context about the problem here.
 
-  Please add a config.yaml and a ledfx.log as described in the documentation
+  Please add a config.json and a ledfx.log as described in the documentation
 ```
 
 ## How to launch with the -vv option
@@ -116,7 +116,7 @@ get straight to the user interface.
 
 ![Desktop shortcut](/_static/howto/report/shortcut.png)
 
-## How to find the config.yaml and ledfx.log
+## How to find the config.json and ledfx.log
 
 Now you have your logging verbose, and have relauched and reproduced
 your issue in ledfx, we need to find the assets and place copies of them
@@ -150,7 +150,7 @@ MacOS:
 > ~/.ledfx
 > ```
 
-The config.yaml and ledfx.log files are the most important files to
+The config.json and ledfx.log files are the most important files to
 include in your issue report.
 
 If you have read this far, the humble code droids thank you, and look
