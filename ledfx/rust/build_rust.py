@@ -144,9 +144,11 @@ def setup_development():
         )
         return False
 
-    # Install Python dependencies
+    # Install Python dependencies (at repo root)
     try:
-        run_command(["uv", "sync", "--dev"])
+        rust_dir = Path(__file__).parent
+        repo_root = rust_dir.parent.parent.resolve()
+        run_command(["uv", "sync", "--dev"], cwd=repo_root)
         print("[SUCCESS] Python dependencies installed")
     except subprocess.CalledProcessError:
         print("[ERROR] Failed to install Python dependencies")
@@ -163,8 +165,8 @@ def setup_development():
     print("[SUCCESS] Development environment set up successfully!")
     print("\nNext steps:")
     print("1. Run LedFx: uv run python -m ledfx --open-ui")
-    print("2. Look for 'The Rusty One' effect in the matrix effects")
-    print("3. Edit ledfx/effects/rust/src/lib.rs to add your own effects")
+    print("2. Look for the new Rust-backed effects in the Matrix effects")
+    print("3. Edit ledfx/rust/src/lib.rs to add your own effects")
     print("4. Run this script again to rebuild after changes")
 
     return True
