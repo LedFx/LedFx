@@ -80,10 +80,10 @@ def build_rust(release=False):
         cmd.append("--release")
 
     try:
-        result = run_command(cmd, cwd=rust_dir)
+        run_command(cmd, cwd=rust_dir)
         print("[SUCCESS] Rust effects built successfully!")
         return True
-    except subprocess.CalledProcessError as e:
+    except (subprocess.CalledProcessError, FileNotFoundError) as e:
         print(f"[ERROR] Failed to build Rust effects: {e}")
         return False
 
@@ -91,7 +91,7 @@ def build_rust(release=False):
 def test_rust():
     """Test the Rust effects module"""
     try:
-        result = run_command(
+        run_command(
             [
                 "uv",
                 "run",
@@ -102,7 +102,7 @@ def test_rust():
         )
         print("[SUCCESS] Rust effects module is working!")
         return True
-    except subprocess.CalledProcessError as e:
+    except (subprocess.CalledProcessError, FileNotFoundError) as e:
         print(f"[ERROR] Failed to import Rust effects: {e}")
         return False
 

@@ -10,22 +10,23 @@ $currentPid = $PID
 
 # Only target Python processes running LedFx specifically
 try {
-    $pythonProcesses = Get-Process -Name "python" -ErrorAction SilentlyContinue | Where-Object { $_.Id -ne $currentPid }
-    foreach ($proc in $pythonProcesses) {
+    # Enumerate all Python processes once via CIM, excluding the current PID
+    $procs = Get-CimInstance Win32_Process `
+        -Filter "Name = 'python.exe' OR Name = 'pythonw.exe' OR Name = 'py.exe'" `
+        -ErrorAction SilentlyContinue
+
+    foreach ($p in $procs | Where-Object { $_.ProcessId -ne $currentPid }) {
         try {
-            $commandLine = (Get-WmiObject Win32_Process -Filter "ProcessId = $($proc.Id)").CommandLine
-            # Only match actual LedFx Python execution patterns
-            if ($commandLine -and (
-                $commandLine -like "*ledfx*__main__.py*" -or
-                $commandLine -like "*LedFx*__main__.py*" -or
-                ($commandLine -like "*ledfx\__main__.py*") -or
-                ($commandLine -like "*LedFx\__main__.py*") -or
-                ($commandLine -like "*python*" -and $commandLine -like "*ledfx*" -and $commandLine -like "*--open-ui*")
-            )) {
-                Write-Host "Found Python LedFx process: PID $($proc.Id)" -ForegroundColor Red
+            $commandLine = $p.CommandLine
+            # Match:
+            #  - python -m ledfx
+            #  - any __main__.py under a ledfx path
+            #  - a --open-ui flag
+            if ($commandLine -and ($commandLine -match '(?i)(^|\s)-m\s+ledfx(\s|$)|ledfx[\\\/]+__main__\.py|--open-ui')) {
+                Write-Host "Found Python LedFx process: PID $($p.ProcessId)" -ForegroundColor Red
                 Write-Host "Command: $commandLine" -ForegroundColor Gray
-                Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
-                Write-Host "Stopped process $($proc.Id)" -ForegroundColor Green
+                Stop-Process -Id $p.ProcessId -Force -ErrorAction SilentlyContinue
+                Write-Host "Stopped process $($p.ProcessId)" -ForegroundColor Green
                 $stopped = $true
             }
         } catch {
