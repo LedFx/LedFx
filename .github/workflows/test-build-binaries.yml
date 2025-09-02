@@ -67,10 +67,6 @@ jobs:
         run: |
           uv run pyinstaller windows-binary.spec
 
-      - name: Create installer
-        run: |
-          cd installer && makensis /DPRODUCT_VERSION=${{ steps.ledfx-version.outputs.ledfx-version }} ledfx.nsi
-
       - name: Remove packaged portaudio binary
         run: |
           rm dist/LedFx/_internal/_sounddevice_data/portaudio-binaries/libportaudio64bit.dll
@@ -79,6 +75,9 @@ jobs:
         run: |
           mv loopback/libportaudio64bit.dll dist/LedFx/_internal/_sounddevice_data/portaudio-binaries/libportaudio64bit.dll
 
+      - name: Create installer
+        run: |
+          cd installer && makensis /DPRODUCT_VERSION=${{ steps.ledfx-version.outputs.ledfx-version }} ledfx.nsi
       - name: Upload LedFx Binary
         uses: actions/upload-artifact@v4
         if: always()
