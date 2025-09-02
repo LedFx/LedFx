@@ -1,7 +1,7 @@
 use pyo3::prelude::*;
 use numpy::{PyArray3, PyReadonlyArray3, PyReadonlyArray1};
 use std::collections::HashMap;
-use std::sync::{Mutex, OnceLock};
+use std::sync::{Arc, Mutex, RwLock, OnceLock};
 use crate::common::{SimpleRng, simple_blur};
 
 // Constants for flame effect
@@ -70,17 +70,17 @@ impl FlameState {
     }
 }
 
-// Global state for flame instances - using thread-safe approach
-static FLAME_STATES: OnceLock<Mutex<HashMap<u64, FlameState>>> = OnceLock::new();
+// Global state for flame instances - optimized with RwLock + per-instance Mutex
+// RwLock allows multiple readers (for getting instance references) but exclusive writers (for adding new instances)
+// Each instance has its own Mutex, allowing concurrent processing of different instances
+static FLAME_STATES: OnceLock<RwLock<HashMap<u64, Arc<Mutex<FlameState>>>>> = OnceLock::new();
 
-// Memory cleanup function (currently unused due to PyO3 export issues)
-// The HashMap will grow over time, but effect instances are typically long-lived
-// and the memory impact is minimal (each state is small)
+// Memory cleanup function - now works with the new Arc<Mutex<FlameState>> structure
 #[allow(dead_code)]
 fn flame2_release(instance_id: u64) -> PyResult<()> {
-    if let Some(m) = FLAME_STATES.get() {
-        if let Ok(mut states) = m.lock() {
-            states.remove(&instance_id);
+    if let Some(states_rwlock) = FLAME_STATES.get() {
+        if let Ok(mut states_write) = states_rwlock.write() {
+            states_write.remove(&instance_id);
         }
     }
     Ok(())
@@ -235,25 +235,55 @@ pub fn flame2_process(
 
         // STEP 2: Release GIL for heavy computation
         py.allow_threads(|| {
-            // All particle processing happens here WITHOUT the GIL
-            // This allows other Python threads to run while we compute
-        {
-            // Get or initialize the global states map
-            let states_mutex = FLAME_STATES.get_or_init(|| Mutex::new(HashMap::new()));
-            let mut states = states_mutex.lock().unwrap();
-
-            // Create new state if this instance doesn't exist or dimensions changed
-            let needs_new_state = if let Some(existing_state) = states.get(&instance_id) {
-                existing_state.width != width || existing_state.height != height
-            } else {
-                true
+            // Optimized locking pattern: RwLock for global map + per-instance Mutex
+            
+            // STEP 2A: Get or create the instance state reference (minimal global contention)
+            let instance_state_arc = {
+                // First, try to get existing instance with read lock (allows concurrent access)
+                let states_rwlock = FLAME_STATES.get_or_init(|| RwLock::new(HashMap::new()));
+                let states_read = states_rwlock.read().unwrap();
+                
+                if let Some(existing_arc) = states_read.get(&instance_id) {
+                    // Check if dimensions changed - if so, we'll need to recreate
+                    let existing_state = existing_arc.lock().unwrap();
+                    let dimensions_valid = existing_state.width == width && existing_state.height == height;
+                    drop(existing_state); // Release instance lock
+                    
+                    if dimensions_valid {
+                        // Existing state is valid, use it
+                        let result = existing_arc.clone();
+                        drop(states_read); // Release read lock
+                        Some(result)
+                    } else {
+                        // Dimensions changed, need to recreate
+                        drop(states_read); // Release read lock
+                        None
+                    }
+                } else {
+                    // No existing state
+                    drop(states_read); // Release read lock
+                    None
+                }
             };
 
-            if needs_new_state {
-                states.insert(instance_id, FlameState::new(width, height, instance_id));
-            }
+            let instance_state_arc = if let Some(arc) = instance_state_arc {
+                arc
+            } else {
+                // Need to create new state - acquire write lock briefly
+                let states_rwlock = FLAME_STATES.get().unwrap();
+                let mut states_write = states_rwlock.write().unwrap();
+                
+                // Double-check pattern: another thread might have created it
+                let new_state = Arc::new(Mutex::new(FlameState::new(width, height, instance_id)));
+                states_write.insert(instance_id, new_state.clone());
+                drop(states_write); // Release write lock immediately
+                new_state
+            };
 
-            let state = states.get_mut(&instance_id).unwrap();
+            // STEP 2B: Now lock only THIS instance's mutex for all processing
+            // Other instances can process concurrently
+            let mut state = instance_state_arc.lock().unwrap();
+            
             let wobble_amplitude = (WOBBLE_RATIO * width as f32).max(1.0);
 
             // Pre-calculate particle size range for performance
@@ -274,83 +304,108 @@ pub fn flame2_process(
                 let wobble = wobble_amplitude * (1.0 + scaled_power as f32 * 2.0);
                 let scale = 1.0 + scaled_power as f32;
 
-                let particles = state.particles.get_mut(&band).unwrap();
-
                 // Pre-compute base RGB color once per band for maximum performance
                 let _base_rgb = hsv_to_rgb(h_base, s_base, v_base);
 
-                // Update existing particles with fire-like physics
-                let initial_count = particles.len();
-                particles.retain_mut(|p| {
-                    p.age += effective_delta;
+                // Process particles - need to split borrowing to avoid multiple mutable borrows
+                {
+                    let particles = state.particles.get_mut(&band).unwrap();
+                    
+                    // Update existing particles with fire-like physics
+                    let initial_count = particles.len();
+                    particles.retain_mut(|p| {
+                        p.age += effective_delta;
 
-                    // Fire particles accelerate as they rise (buoyancy effect)
-                    let acceleration = 1.0 + p.age * ACCELERATION_FACTOR;
+                        // Fire particles accelerate as they rise (buoyancy effect)
+                        let acceleration = 1.0 + p.age * ACCELERATION_FACTOR;
 
-                    // Movement speed: particles should traverse screen in about 1 second at full speed
-                    // This allows proper flame height while still aging naturally
-                    let base_movement_speed = height as f32 * 1.2; // 1.2x screen height per second
-                    p.y -= (base_movement_speed * velocity / p.velocity_y) * effective_delta * acceleration;
+                        // Movement speed: particles should traverse screen in about 1 second at full speed
+                        // This allows proper flame height while still aging naturally
+                        let base_movement_speed = height as f32 * 1.2; // 1.2x screen height per second
+                        p.y -= (base_movement_speed * velocity / p.velocity_y) * effective_delta * acceleration;
 
-                    // Add turbulence for chaotic flame motion
-                    p.turbulence_phase += effective_delta * 8.0; // Faster phase change
-                    let turbulence_x = TURBULENCE_STRENGTH * p.turbulence_phase.sin() * height as f32 * effective_delta;
-                    let turbulence_y = TURBULENCE_STRENGTH * (p.turbulence_phase * 1.3).cos() * height as f32 * effective_delta * 0.5;
+                        // Add turbulence for chaotic flame motion
+                        p.turbulence_phase += effective_delta * 8.0; // Faster phase change
+                        let turbulence_x = TURBULENCE_STRENGTH * p.turbulence_phase.sin() * height as f32 * effective_delta;
+                        let turbulence_y = TURBULENCE_STRENGTH * (p.turbulence_phase * 1.3).cos() * height as f32 * effective_delta * 0.5;
 
-                    p.x += p.velocity_x * effective_delta * width as f32 + turbulence_x;
-                    p.y += turbulence_y; // Small vertical turbulence
+                        p.x += p.velocity_x * effective_delta * width as f32 + turbulence_x;
+                        p.y += turbulence_y; // Small vertical turbulence
 
-                    // Wrap horizontal position
-                    if p.x < 0.0 { p.x += width as f32; }
-                    if p.x >= width as f32 { p.x -= width as f32; }
+                        // Wrap horizontal position
+                        if p.x < 0.0 { p.x += width as f32; }
+                        if p.x >= width as f32 { p.x -= width as f32; }
 
-                    // Per-particle cutoff height
-                    let cutoff = (p.wobble_phase / (2.0 * std::f32::consts::PI)) *
-                               (height as f32 * TOP_TRIM_FRAC);
+                        // Per-particle cutoff height
+                        let cutoff = (p.wobble_phase / (2.0 * std::f32::consts::PI)) *
+                                   (height as f32 * TOP_TRIM_FRAC);
 
-                    let age_ok = p.age < p.lifespan;
-                    let pos_ok = p.y >= cutoff;
+                        let age_ok = p.age < p.lifespan;
+                        let pos_ok = p.y >= cutoff;
 
-                    age_ok && pos_ok
-                });
+                        age_ok && pos_ok
+                    });
 
-                let survivors = particles.len();
-                let _died = initial_count - survivors;
+                    let survivors = particles.len();
+                    let _died = initial_count - survivors;
+                } // particles borrow ends here
 
                 // Spawn new particles (with height scaling like Python version)
+                // Now we can access spawn_accum without conflict
                 state.spawn_accum[band] += width as f32 * spawn_rate * effective_delta * SPAWN_MODIFIER * height_scale;
                 let n_spawn = state.spawn_accum[band] as usize;
                 state.spawn_accum[band] -= n_spawn as f32;
 
-                if n_spawn > 0 && particles.len() < MAX_PARTICLES_PER_BAND {
-                    let actual_spawn = n_spawn.min(MAX_PARTICLES_PER_BAND - particles.len());
+                // Pre-generate all random values to avoid borrowing conflicts
+                let mut random_values = Vec::new();
+                {
+                    let particles = state.particles.get(&band).unwrap();
+                    if n_spawn > 0 && particles.len() < MAX_PARTICLES_PER_BAND {
+                        let actual_spawn = n_spawn.min(MAX_PARTICLES_PER_BAND - particles.len());
 
-                    for _i in 0..actual_spawn {
-                        // Adjust lifespan inversely to animation speed so particles can reach the same height
-                        // At full speed (1.0): normal lifespan
-                        // At half speed (0.5): double lifespan
-                        // At minimum speed (0.1): 10x lifespan
-                        // Note: animation_speed is clamped to minimum 0.1 in Python schema
-                        let base_lifespan = state.rng.next_range(MIN_LIFESPAN, MAX_LIFESPAN);
-                        let adjusted_lifespan = base_lifespan / animation_speed;
+                        for _i in 0..actual_spawn {
+                            let base_lifespan = state.rng.next_range(MIN_LIFESPAN, MAX_LIFESPAN);
+                            let adjusted_lifespan = base_lifespan / animation_speed;
+                            
+                            random_values.push((
+                                state.rng.next_range(0.0, width as f32), // x
+                                adjusted_lifespan,                       // lifespan
+                                1.0 / (velocity * state.rng.next_velocity_offset(MIN_VELOCITY_OFFSET, MAX_VELOCITY_OFFSET)), // velocity_y
+                                state.rng.next_range(-0.5, 0.5),        // velocity_x
+                                state.rng.next_range(min_particle_size, max_particle_size), // size
+                                state.rng.next_range(0.0, 2.0 * std::f32::consts::PI), // wobble_phase
+                                state.rng.next_range(0.0, 2.0 * std::f32::consts::PI), // turbulence_phase
+                                state.rng.next_range(0.8, 1.2),         // initial_brightness
+                            ));
+                        }
+                    }
+                } // immutable particles borrow ends here
 
+                // Now access particles again for spawning with pre-generated values
+                if !random_values.is_empty() {
+                    let particles = state.particles.get_mut(&band).unwrap();
+                    
+                    // Create particles using pre-generated values
+                    for (x, lifespan, velocity_y, velocity_x, size, wobble_phase, turbulence_phase, initial_brightness) in random_values {
                         particles.push(Particle {
-                            x: state.rng.next_range(0.0, width as f32),
+                            x,
                             y: height as f32 - 1.0,
                             age: 0.0,
-                            lifespan: adjusted_lifespan,
-                            velocity_y: 1.0 / (velocity * state.rng.next_velocity_offset(MIN_VELOCITY_OFFSET, MAX_VELOCITY_OFFSET)),
-                            velocity_x: state.rng.next_range(-0.5, 0.5), // Small horizontal drift
-                            size: state.rng.next_range(min_particle_size, max_particle_size),
-                            wobble_phase: state.rng.next_range(0.0, 2.0 * std::f32::consts::PI),
-                            turbulence_phase: state.rng.next_range(0.0, 2.0 * std::f32::consts::PI),
-                            initial_brightness: state.rng.next_range(0.8, 1.2), // Brightness variation
+                            lifespan,
+                            velocity_y,
+                            velocity_x,
+                            size,
+                            wobble_phase,
+                            turbulence_phase,
+                            initial_brightness,
                         });
                     }
-                }
+                } // particles borrow ends here
 
                 // Render particles with fire-like color progression
-                for particle in particles.iter() {
+                {
+                    let particles = state.particles.get(&band).unwrap();
+                    for particle in particles.iter() {
                     if particle.age >= particle.lifespan { continue; }
 
                     let t = particle.age / particle.lifespan;
@@ -431,10 +486,14 @@ pub fn flame2_process(
                             }
                         }
                     }
+                } // particle rendering ends here
+                } // particles borrow ends here
             }
-        } // End of particle processing block
-
-        // Apply blur (still without GIL)
+            
+            // Release instance lock before blur processing
+            drop(state);
+        
+        // Apply blur (still without GIL, no locks needed)
         if blur_amount > 0 {
             simple_blur(&mut output, blur_amount);
         }
