@@ -75,7 +75,7 @@ impl FlameState {
 // Each instance has its own Mutex, allowing concurrent processing of different instances
 static FLAME_STATES: OnceLock<RwLock<HashMap<u64, Arc<Mutex<FlameState>>>>> = OnceLock::new();
 
-// Memory cleanup function - currently unused due to PyO3 export issues  
+// Memory cleanup function - currently unused due to PyO3 export issues
 // The HashMap will grow over time, but effect instances are typically long-lived
 // and the memory impact is minimal (each state is small)
 #[allow(dead_code)]

@@ -167,8 +167,10 @@ class Flame2_2d(Twod):
         # Note: flame2_release is not available due to PyO3 export issues
         # The Rust HashMap will grow over time, but effect instances are typically long-lived
         # and the memory impact is minimal (each state is small)
-        if RUST_AVAILABLE and hasattr(self, '_instance_id'):
-            _LOGGER.debug(f"Would release Rust flame state for instance {self._instance_id} (function unavailable)")
+        if RUST_AVAILABLE and hasattr(self, "_instance_id"):
+            _LOGGER.debug(
+                f"Would release Rust flame state for instance {self._instance_id} (function unavailable)"
+            )
         super().deactivate()
 
     def __del__(self):
