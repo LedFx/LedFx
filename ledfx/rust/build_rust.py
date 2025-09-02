@@ -204,8 +204,8 @@ def main():
         ok = True  # Clean operation always succeeds
     elif args.test:
         ok = test_rust()
-    elif args.build or not any(vars(args).values()):
-        # Default action is build
+    elif args.build or args.release or not any(vars(args).values()):
+        # Default action is build, also treat --release as a build trigger
         ok = build_rust(release=args.release)
 
     return 0 if ok else 1
