@@ -37,7 +37,9 @@ class Flame2_2d(Twod):
                 "velocity", description="Trips to top per second", default=0.3
             ): vol.All(vol.Coerce(float), vol.Range(min=0.1, max=1.0)),
             vol.Optional(
-                "animation_speed", description="Overall animation speed", default=0.7
+                "animation_speed",
+                description="Overall animation speed",
+                default=0.7,
             ): vol.All(vol.Coerce(float), vol.Range(min=0.1, max=1.0)),
             vol.Optional(
                 "intensity",
