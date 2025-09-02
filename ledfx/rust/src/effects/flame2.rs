@@ -15,6 +15,7 @@ const WOBBLE_RATIO: f32 = 0.08;  // More wobble for flame-like motion
 const TOP_TRIM_FRAC: f32 = 0.35;  // Keep more flame height
 const DENSITY_EXPONENT: f32 = 0.6;  // Better density scaling
 const MIN_DELTA_TIME: f32 = 0.01;
+const MIN_VELOCITY_EPSILON: f32 = 1e-6;  // Minimum velocity to prevent division by zero
 
 // New constants for fire-like behavior
 const ACCELERATION_FACTOR: f32 = 0.3;  // Particles accelerate as they rise
@@ -213,7 +214,7 @@ pub fn flame2_process(
 
         // Use parameters directly with animation speed scaling
         let spawn_rate = spawn_rate as f32;
-        let velocity = velocity as f32;
+        let velocity = (velocity as f32).max(MIN_VELOCITY_EPSILON); // Clamp to prevent division by zero
         let animation_speed = animation_speed as f32;
 
         // Enhanced scaling with exponential curve for much better low-end control:
@@ -324,7 +325,7 @@ pub fn flame2_process(
                         // Movement speed: particles should traverse screen in about 1 second at full speed
                         // This allows proper flame height while still aging naturally
                         let base_movement_speed = height as f32 * 1.2; // 1.2x screen height per second
-                        p.y -= (base_movement_speed * velocity / p.velocity_y) * effective_delta * acceleration;
+                        p.y -= (base_movement_speed * velocity / p.velocity_y) * effective_delta * acceleration; // velocity is clamped to prevent division issues
 
                         // Add turbulence for chaotic flame motion
                         p.turbulence_phase += effective_delta * 8.0; // Faster phase change
@@ -372,7 +373,7 @@ pub fn flame2_process(
                             random_values.push((
                                 state.rng.next_range(0.0, width as f32), // x
                                 adjusted_lifespan,                       // lifespan
-                                1.0 / (velocity * state.rng.next_velocity_offset(MIN_VELOCITY_OFFSET, MAX_VELOCITY_OFFSET)), // velocity_y
+                                1.0 / (velocity * state.rng.next_velocity_offset(MIN_VELOCITY_OFFSET, MAX_VELOCITY_OFFSET)), // velocity_y (velocity is clamped to MIN_VELOCITY_EPSILON to prevent division by zero)
                                 state.rng.next_range(-0.5, 0.5),        // velocity_x
                                 state.rng.next_range(min_particle_size, max_particle_size), // size
                                 state.rng.next_range(0.0, 2.0 * std::f32::consts::PI), // wobble_phase
