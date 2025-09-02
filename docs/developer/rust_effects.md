@@ -223,7 +223,7 @@ class MyAwesome(Twod):
     CONFIG_SCHEMA = vol.Schema({
         vol.Optional("intensity", description="Effect intensity", default=1.0):
             vol.All(vol.Coerce(float), vol.Range(min=0.0, max=2.0)),
-        vol.Optional("rust_param", description="Custom parameter", default=0.5):
+        vol.Optional("custom_param", description="Custom parameter", default=0.5):
             vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
         # Add your custom parameters here
     })
@@ -241,7 +241,8 @@ class MyAwesome(Twod):
     def config_updated(self, config):
         super().config_updated(config)
         # Copy over your configs here into variables
-        self.rust_param = self._config["rust_param"]
+        self.intensity = self._config["intensity"]
+        self.custom_param = self._config["custom_param"]
 
     def audio_data_updated(self, data):
         """Called when new audio data is available"""
@@ -273,7 +274,7 @@ class MyAwesome(Twod):
                 img_array,
                 self.audio_bar,          # Beat/tempo info
                 self.audio_pow,          # [lows, mids, highs] frequency powers
-                self.rust_param,         # Use instance variable from config_updated
+                self.intensity,          # Effect intensity from config
                 self.passed             # Time passed
             )
 
