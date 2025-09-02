@@ -69,7 +69,7 @@ jobs:
 
       - name: Create installer
         run: |
-          cd installer && makensis ledfx.nsi
+          cd installer && makensis /DPRODUCT_VERSION=${{ steps.ledfx-version.outputs.ledfx-version }} ledfx.nsi
 
       - name: Remove packaged portaudio binary
         run: |
