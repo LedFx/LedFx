@@ -194,7 +194,7 @@ ledfx_presets = {
                 "flip": False,
                 "flip_horizontal": False,
                 "flip_vertical": False,
-                "high_band": "#ffd700",
+                "high_band": "#ffed8f",
                 "intensity": 0.5,
                 "low_band": "#ff0000",
                 "mid_band": "#ff7800",
@@ -359,6 +359,7 @@ ledfx_presets = {
         "fairy": {
             "config": {
                 "advanced": False,
+                "animation_speed": 0.1,
                 "background_brightness": 1.0,
                 "background_color": "#000000",
                 "blur": 0.0,
@@ -375,7 +376,7 @@ ledfx_presets = {
                 "mid_band": "#00ff00",
                 "mirror": False,
                 "rotate": 0,
-                "spawn_rate": 0.02,
+                "spawn_rate": 0.01,
                 "test": False,
                 "velocity": 0.3,
             },

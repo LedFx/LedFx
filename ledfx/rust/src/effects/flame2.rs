@@ -5,16 +5,21 @@ use std::sync::{Mutex, OnceLock};
 use crate::common::{SimpleRng, simple_blur};
 
 // Constants for flame effect
-const MIN_LIFESPAN: f32 = 2.0;
-const MAX_LIFESPAN: f32 = 4.0;
-const MIN_VELOCITY_OFFSET: f32 = 0.3;  // Increased range: slower particles
-const MAX_VELOCITY_OFFSET: f32 = 1.8;  // Increased range: faster particles
-const MAX_PARTICLES_PER_BAND: usize = 4096;  // Match Python INIT_CAP
-const SPAWN_MODIFIER: f32 = 4.0;  // Match Python: was 15.0
-const WOBBLE_RATIO: f32 = 0.05;  // Match Python: was 0.1
-const TOP_TRIM_FRAC: f32 = 0.4;  // Match Python: was 0.3
-const DENSITY_EXPONENT: f32 = 0.5;  // Match Python: was 1.2
+const MIN_LIFESPAN: f32 = 1.5;  // Shorter lifespan for more dynamic flames
+const MAX_LIFESPAN: f32 = 3.5;
+const MIN_VELOCITY_OFFSET: f32 = 0.2;  // More velocity variation
+const MAX_VELOCITY_OFFSET: f32 = 2.5;
+const MAX_PARTICLES_PER_BAND: usize = 4096;
+const SPAWN_MODIFIER: f32 = 5.0;  // Slightly more particles
+const WOBBLE_RATIO: f32 = 0.08;  // More wobble for flame-like motion
+const TOP_TRIM_FRAC: f32 = 0.35;  // Keep more flame height
+const DENSITY_EXPONENT: f32 = 0.6;  // Better density scaling
 const MIN_DELTA_TIME: f32 = 0.01;
+
+// New constants for fire-like behavior
+const ACCELERATION_FACTOR: f32 = 0.3;  // Particles accelerate as they rise
+const TURBULENCE_STRENGTH: f32 = 0.15;  // Random motion strength
+const FLICKER_INTENSITY: f32 = 0.2;  // Random brightness variation
 
 // Flame effect particle structure
 #[derive(Debug, Clone)]
@@ -24,8 +29,11 @@ struct Particle {
     age: f32,
     lifespan: f32,
     velocity_y: f32,
+    velocity_x: f32,  // Horizontal velocity for turbulence
     size: f32,
     wobble_phase: f32,
+    turbulence_phase: f32,  // For random motion
+    initial_brightness: f32,  // Starting brightness for flickering
 }
 
 #[derive(Debug)]
@@ -118,6 +126,32 @@ fn hsv_to_rgb(h: f32, s: f32, v: f32) -> [u8; 3] {
     [r, g, b]
 }
 
+// Calculate fire-like color temperature progression
+fn get_fire_color(base_hsv: (f32, f32, f32), age_factor: f32, height_factor: f32) -> (f32, f32, f32) {
+    let (h_base, s_base, v_base) = base_hsv;
+    
+    // Fire typically goes from yellow/orange (hot) at bottom to red (cool) at top
+    // and dims as particles age
+    let temperature_shift = (age_factor + height_factor * 0.6).min(1.0);
+    
+    // Shift hue towards red as flame rises and ages
+    let h = if h_base < 0.1 || h_base > 0.9 { // If base is red-ish
+        h_base + temperature_shift * 0.05  // Shift slightly more red
+    } else if h_base < 0.2 { // If base is orange-ish  
+        h_base + temperature_shift * 0.15  // Shift more towards red
+    } else { // Other colors
+        h_base + temperature_shift * 0.1
+    };
+    
+    // Increase saturation slightly for more vibrant flames
+    let s = (s_base + temperature_shift * 0.1).min(1.0);
+    
+    // Reduce value (brightness) as particle ages, but keep some minimum
+    let v = v_base * (1.0 - temperature_shift * 0.4).max(0.2);
+    
+    (h % 1.0, s, v)
+}
+
 // Calculate appropriate particle size range based on matrix dimensions
 fn calculate_particle_size_range(width: usize, height: usize) -> (f32, f32) {
     // Use the smaller dimension as the basis for scaling
@@ -152,16 +186,26 @@ pub fn flame2_process(
     low_color: PyReadonlyArray1<f64>,
     mid_color: PyReadonlyArray1<f64>,
     high_color: PyReadonlyArray1<f64>,
+    animation_speed: f64,
 ) -> PyResult<Py<PyArray3<u8>>> {
     Python::with_gil(|py| {
         let array = image_array.as_array();
         let mut output = array.to_owned();
         let freq_powers = audio_pow.as_array();
 
-        // Use parameters directly
+        // Use parameters directly with animation speed scaling
         let spawn_rate = spawn_rate as f32;
         let velocity = velocity as f32;
-        let delta = time_passed as f32;
+        let animation_speed = animation_speed as f32;
+        
+        // Enhanced scaling with exponential curve for much better low-end control:
+        // - At 0.1: 0.001x speed (extremely slow)
+        // - At 0.3: 0.027x speed (very slow)  
+        // - At 0.5: 0.125x speed (eighth speed)
+        // - At 1.0: full speed
+        // Note: animation_speed is clamped to minimum 0.1 in Python schema
+        let speed_multiplier = animation_speed * animation_speed * animation_speed;
+        let delta = (time_passed as f32) * speed_multiplier;
 
         let (height, width, _) = output.dim();
         output.fill(0);
@@ -219,13 +263,32 @@ pub fn flame2_process(
                 let particles = state.particles.get_mut(&band).unwrap();
 
                 // Pre-compute base RGB color once per band for maximum performance
-                let base_rgb = hsv_to_rgb(h_base, s_base, v_base);
+                let _base_rgb = hsv_to_rgb(h_base, s_base, v_base);
 
-                // Update existing particles
+                // Update existing particles with fire-like physics
                 let initial_count = particles.len();
                 particles.retain_mut(|p| {
                     p.age += effective_delta;
-                    p.y -= (height as f32 / p.velocity_y) * effective_delta;
+                    
+                    // Fire particles accelerate as they rise (buoyancy effect)
+                    let acceleration = 1.0 + p.age * ACCELERATION_FACTOR;
+                    
+                    // Movement speed: particles should traverse screen in about 1 second at full speed
+                    // This allows proper flame height while still aging naturally
+                    let base_movement_speed = height as f32 * 1.2; // 1.2x screen height per second
+                    p.y -= (base_movement_speed * velocity / p.velocity_y) * effective_delta * acceleration;
+                    
+                    // Add turbulence for chaotic flame motion
+                    p.turbulence_phase += effective_delta * 8.0; // Faster phase change
+                    let turbulence_x = TURBULENCE_STRENGTH * p.turbulence_phase.sin() * height as f32 * effective_delta;
+                    let turbulence_y = TURBULENCE_STRENGTH * (p.turbulence_phase * 1.3).cos() * height as f32 * effective_delta * 0.5;
+                    
+                    p.x += p.velocity_x * effective_delta * width as f32 + turbulence_x;
+                    p.y += turbulence_y; // Small vertical turbulence
+                    
+                    // Wrap horizontal position
+                    if p.x < 0.0 { p.x += width as f32; }
+                    if p.x >= width as f32 { p.x -= width as f32; }
 
                     // Per-particle cutoff height
                     let cutoff = (p.wobble_phase / (2.0 * std::f32::consts::PI)) *
@@ -249,45 +312,66 @@ pub fn flame2_process(
                     let actual_spawn = n_spawn.min(MAX_PARTICLES_PER_BAND - particles.len());
 
                     for _i in 0..actual_spawn {
+                        // Adjust lifespan inversely to animation speed so particles can reach the same height
+                        // At full speed (1.0): normal lifespan
+                        // At half speed (0.5): double lifespan  
+                        // At minimum speed (0.1): 10x lifespan
+                        // Note: animation_speed is clamped to minimum 0.1 in Python schema
+                        let base_lifespan = state.rng.next_range(MIN_LIFESPAN, MAX_LIFESPAN);
+                        let adjusted_lifespan = base_lifespan / animation_speed;
+                        
                         particles.push(Particle {
                             x: state.rng.next_range(0.0, width as f32),
                             y: height as f32 - 1.0,
                             age: 0.0,
-                            lifespan: state.rng.next_range(MIN_LIFESPAN, MAX_LIFESPAN),
+                            lifespan: adjusted_lifespan,
                             velocity_y: 1.0 / (velocity * state.rng.next_velocity_offset(MIN_VELOCITY_OFFSET, MAX_VELOCITY_OFFSET)),
+                            velocity_x: state.rng.next_range(-0.5, 0.5), // Small horizontal drift
                             size: state.rng.next_range(min_particle_size, max_particle_size),
                             wobble_phase: state.rng.next_range(0.0, 2.0 * std::f32::consts::PI),
+                            turbulence_phase: state.rng.next_range(0.0, 2.0 * std::f32::consts::PI),
+                            initial_brightness: state.rng.next_range(0.8, 1.2), // Brightness variation
                         });
                     }
                 }
 
-                // Render particles with simpler approach for better performance
+                // Render particles with fire-like color progression
                 for particle in particles.iter() {
                     if particle.age >= particle.lifespan { continue; }
 
                     let t = particle.age / particle.lifespan;
+                    let height_factor = 1.0 - (particle.y / height as f32); // 0 at bottom, 1 at top
 
-                    // More aggressive fading - particles get darker sooner
-                    // Use exponential curve to fade to near-black before disappearing
-                    let fade = (1.0 - t).powf(1.5); // Exponential fade - gets darker faster
+                    // Get fire-like color progression
+                    let (h, s, v) = get_fire_color((h_base, s_base, v_base), t, height_factor);
+                    let fire_rgb = hsv_to_rgb(h, s, v);
+
+                    // Apply flickering brightness variation
+                    let flicker = 1.0 + FLICKER_INTENSITY * (particle.turbulence_phase * 3.7).sin() * particle.initial_brightness;
+                    let brightness_mult = flicker * (1.0 - t).powf(1.2); // Exponential fade with flicker
+
                     let rgb = [
-                        (base_rgb[0] as f32 * fade) as u8,
-                        (base_rgb[1] as f32 * fade) as u8,
-                        (base_rgb[2] as f32 * fade) as u8,
+                        ((fire_rgb[0] as f32 * brightness_mult).min(255.0).max(0.0)) as u8,
+                        ((fire_rgb[1] as f32 * brightness_mult).min(255.0).max(0.0)) as u8,
+                        ((fire_rgb[2] as f32 * brightness_mult).min(255.0).max(0.0)) as u8,
                     ];
 
-                    // Apply wobble and scaling
-                    let x_disp = particle.x + wobble * (t * 10.0 + particle.wobble_phase).sin();
+                    // Enhanced wobble with more chaotic motion
+                    let wobble_intensity = wobble * (1.0 + t * 0.5); // More wobble as particle ages
+                    let x_disp = particle.x + wobble_intensity * (t * 12.0 + particle.wobble_phase).sin()
+                                            + wobble_intensity * 0.3 * (t * 8.5 + particle.wobble_phase * 1.7).cos();
+                    
                     let y_scaled = (height as f32 - particle.y) * scale;
                     let y_render = height as f32 - y_scaled;
 
                     let xi = x_disp.round() as i32;
                     let yi = y_render.round() as i32;
 
-                    // Shrink particle size as it fades (embers get smaller as they die)
-                    let shrunk_size = particle.size * fade.sqrt(); // Square root gives gentler size reduction
-                    let size = shrunk_size as i32;
-                    let size_f = shrunk_size;
+                    // Size varies more dramatically - bigger at base, smaller at tips
+                    let size_factor = (1.0 - t * 0.7) * (1.0 - height_factor * 0.3);
+                    let final_size = particle.size * size_factor;
+                    let size = final_size as i32;
+                    let size_f = final_size;
                     let size_squared = size_f * size_f;
 
                     // Calculate safe bounds in i32 space first
