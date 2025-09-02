@@ -236,19 +236,19 @@ pub fn flame2_process(
         // STEP 2: Release GIL for heavy computation
         py.allow_threads(|| {
             // Optimized locking pattern: RwLock for global map + per-instance Mutex
-            
+
             // STEP 2A: Get or create the instance state reference (minimal global contention)
             let instance_state_arc = {
                 // First, try to get existing instance with read lock (allows concurrent access)
                 let states_rwlock = FLAME_STATES.get_or_init(|| RwLock::new(HashMap::new()));
                 let states_read = states_rwlock.read().unwrap();
-                
+
                 if let Some(existing_arc) = states_read.get(&instance_id) {
                     // Check if dimensions changed - if so, we'll need to recreate
                     let existing_state = existing_arc.lock().unwrap();
                     let dimensions_valid = existing_state.width == width && existing_state.height == height;
                     drop(existing_state); // Release instance lock
-                    
+
                     if dimensions_valid {
                         // Existing state is valid, use it
                         let result = existing_arc.clone();
@@ -272,7 +272,7 @@ pub fn flame2_process(
                 // Need to create new state - acquire write lock briefly
                 let states_rwlock = FLAME_STATES.get().unwrap();
                 let mut states_write = states_rwlock.write().unwrap();
-                
+
                 // Double-check pattern: another thread might have created it
                 let new_state = Arc::new(Mutex::new(FlameState::new(width, height, instance_id)));
                 states_write.insert(instance_id, new_state.clone());
@@ -283,7 +283,7 @@ pub fn flame2_process(
             // STEP 2B: Now lock only THIS instance's mutex for all processing
             // Other instances can process concurrently
             let mut state = instance_state_arc.lock().unwrap();
-            
+
             let wobble_amplitude = (WOBBLE_RATIO * width as f32).max(1.0);
 
             // Pre-calculate particle size range for performance
@@ -310,7 +310,7 @@ pub fn flame2_process(
                 // Process particles - need to split borrowing to avoid multiple mutable borrows
                 {
                     let particles = state.particles.get_mut(&band).unwrap();
-                    
+
                     // Update existing particles with fire-like physics
                     let initial_count = particles.len();
                     particles.retain_mut(|p| {
@@ -366,7 +366,7 @@ pub fn flame2_process(
                         for _i in 0..actual_spawn {
                             let base_lifespan = state.rng.next_range(MIN_LIFESPAN, MAX_LIFESPAN);
                             let adjusted_lifespan = base_lifespan / animation_speed;
-                            
+
                             random_values.push((
                                 state.rng.next_range(0.0, width as f32), // x
                                 adjusted_lifespan,                       // lifespan
@@ -384,7 +384,7 @@ pub fn flame2_process(
                 // Now access particles again for spawning with pre-generated values
                 if !random_values.is_empty() {
                     let particles = state.particles.get_mut(&band).unwrap();
-                    
+
                     // Create particles using pre-generated values
                     for (x, lifespan, velocity_y, velocity_x, size, wobble_phase, turbulence_phase, initial_brightness) in random_values {
                         particles.push(Particle {
@@ -489,10 +489,10 @@ pub fn flame2_process(
                 } // particle rendering ends here
                 } // particles borrow ends here
             }
-            
+
             // Release instance lock before blur processing
             drop(state);
-        
+
         // Apply blur (still without GIL, no locks needed)
         if blur_amount > 0 {
             simple_blur(&mut output, blur_amount);
