@@ -47,7 +47,7 @@
 ; MUI end ------
 
 Function .onInit
-  Exec $INSTDIR\uninst.exe 
+  Exec $INSTDIR\uninst.exe
 FunctionEnd
 
 Name "${PRODUCT_NAME} ${PRODUCT_VERSION}"
