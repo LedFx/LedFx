@@ -101,7 +101,7 @@ def test_rust():
                 "-c",
                 "from ledfx.rust import RUST_AVAILABLE; print('Rust effects import successful!' if RUST_AVAILABLE else 'Rust effects not available')",
             ],
-            cwd=project_root
+            cwd=project_root,
         )
         print("[SUCCESS] Rust effects module is working!")
         return True

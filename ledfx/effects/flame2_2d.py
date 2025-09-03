@@ -6,7 +6,7 @@ from PIL import Image
 
 # Import your compiled Rust module
 try:
-    from ledfx.rust import flame2_process, RUST_AVAILABLE
+    from ledfx.rust import RUST_AVAILABLE, flame2_process
 except ImportError:
     flame2_process = None
     RUST_AVAILABLE = False

@@ -338,9 +338,9 @@ except ImportError:
 
 # Configuration schema with validation
 CONFIG_SCHEMA = vol.Schema({
-    vol.Optional("intensity", description="Flame intensity", default=1.0): 
+    vol.Optional("intensity", description="Flame intensity", default=1.0):
         vol.All(vol.Coerce(float), vol.Range(min=0.1, max=3.0)),
-    vol.Optional("particle_count", description="Maximum particles", default=150): 
+    vol.Optional("particle_count", description="Maximum particles", default=150):
         vol.All(vol.Coerce(int), vol.Range(min=10, max=500)),
     # ... more config options
 })
@@ -349,13 +349,13 @@ CONFIG_SCHEMA = vol.Schema({
 def draw(self):
     if not RUST_AVAILABLE or flame2_process is None:
         return self._fill_red_error()
-    
+
     try:
         img_array = np.zeros((self.matrix_height, self.matrix_width, 3), dtype=np.uint8)
         result = flame2_process(
             img_array,
             self.audio_bar,
-            self.audio_pow, 
+            self.audio_pow,
             self.matrix_height,
             self.matrix_width,
             # ... other parameters
@@ -571,7 +571,9 @@ static mut UNSAFE_STATE: HashMap<u64, MyState> = HashMap::new(); // Don't use th
 
 ### Common Issues
 
-1. **ImportError: No module named 'ledfx_rust'**
+1. **ImportError: No module named 'ledfx.rust' or import from ledfx.rust fails**
+
+   This indicates the Rust effects module isn't built.
 
    If Rust is already installed:
    ```bash
@@ -584,7 +586,7 @@ static mut UNSAFE_STATE: HashMap<u64, MyState> = HashMap::new(); // Don't use th
    cd ledfx/rust
    python build_rust.py --build
    ```
-   
+
    Or use the VS Code task "Build Rust" for automatic installation.
 
 2. **Compilation errors**
