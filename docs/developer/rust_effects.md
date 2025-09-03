@@ -571,16 +571,14 @@ static mut UNSAFE_STATE: HashMap<u64, MyState> = HashMap::new(); // Don't use th
 
 ### Common Issues
 
-1. **ImportError: No module named 'ledfx.rust' or import from ledfx.rust fails**
-   
-   This indicates the Rust effects module isn't built. 
-   
+1. **ImportError: No module named 'ledfx_rust'**
+
    If Rust is already installed:
    ```bash
    cd ledfx/rust
    maturin develop
    ```
-   
+
    If Rust is not installed, use the build script:
    ```bash
    cd ledfx/rust
