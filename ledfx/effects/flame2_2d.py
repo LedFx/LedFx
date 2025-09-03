@@ -82,9 +82,7 @@ class Flame2_2d(Twod):
         super().__init__(ledfx, config)
 
         if RUST_AVAILABLE:
-            _LOGGER.info(
-                f"{self.name} Rust effect module loaded successfully"
-            )
+            _LOGGER.info(f"{self.name} Rust effect module loaded successfully")
 
     def config_updated(self, config):
         super().config_updated(config)
