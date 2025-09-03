@@ -231,14 +231,3 @@ class Twod(AudioReactiveEffect):
         error_array[:, :, 2] = 0  # Blue = 0
 
         self.matrix = Image.fromarray(error_array, mode="RGB")
-
-        # Log error periodically using actual time, not frame count
-        if not hasattr(self, "_last_error_log_time"):
-            self._last_error_log_time = 0.0
-
-        self._last_error_log_time += self.passed
-        if self._last_error_log_time >= 2.0:  # Log every 2 seconds
-            _LOGGER.error(
-                f"Rust effect {self.name} still in error state - showing fading red"
-            )
-            self._last_error_log_time = 0.0

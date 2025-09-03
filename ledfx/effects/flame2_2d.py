@@ -81,13 +81,9 @@ class Flame2_2d(Twod):
 
         super().__init__(ledfx, config)
 
-        if not RUST_AVAILABLE:
-            _LOGGER.error(
-                "Rust effects module not available - effect will show red"
-            )
-        else:
+        if RUST_AVAILABLE:
             _LOGGER.info(
-                "Rust effects module available and loaded successfully"
+                f"{self.name} Rust effect module loaded successfully"
             )
 
     def config_updated(self, config):
@@ -134,7 +130,6 @@ class Flame2_2d(Twod):
         try:
             self._draw_rust()
         except Exception as e:
-            _LOGGER.error(f"Rust effect processing failed: {e}")
             self.error_state = True
             self.red_error()
 
