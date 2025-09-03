@@ -93,20 +93,23 @@ def test_rust():
     # Run from project root to find ledfx module
     project_root = Path(__file__).parent.parent.parent
     try:
-        run_command(
+        result = run_command(
             [
                 "uv",
                 "run",
                 "python",
                 "-c",
-                "from ledfx.rust import RUST_AVAILABLE; print('Rust effects import successful!' if RUST_AVAILABLE else 'Rust effects not available')",
+                "from ledfx.rust import RUST_AVAILABLE; import sys; sys.exit(0 if RUST_AVAILABLE else 1)",
             ],
             cwd=project_root,
         )
         print("[SUCCESS] Rust effects module is working!")
         return True
-    except (subprocess.CalledProcessError, FileNotFoundError) as e:
-        print(f"[ERROR] Failed to import Rust effects: {e}")
+    except subprocess.CalledProcessError:
+        print("[ERROR] Rust effects are not available - module failed to load")
+        return False
+    except FileNotFoundError as e:
+        print(f"[ERROR] Failed to run test command: {e}")
         return False
 
 
