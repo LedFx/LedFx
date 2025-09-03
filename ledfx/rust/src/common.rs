@@ -22,7 +22,7 @@ impl SimpleRng {
         if min >= max {
             return min;
         }
-        
+
         RNG.with(|rng| {
             let dist = Uniform::from(min..max);
             dist.sample(&mut *rng.borrow_mut())
@@ -35,7 +35,7 @@ impl SimpleRng {
         if min >= max {
             return min;
         }
-        
+
         let r = Self::next_f32();
         let range = max - min;
 
