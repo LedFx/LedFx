@@ -1,37 +1,42 @@
-// Simple linear congruential generator for better randomness
-#[derive(Debug)]
-pub struct SimpleRng {
-    state: u64,
+use rand::{Rng, SeedableRng};
+use rand::rngs::SmallRng;
+use rand::distributions::{Distribution, Uniform};
+
+// Thread-local RNG for better performance and quality
+thread_local! {
+    static RNG: std::cell::RefCell<SmallRng> = std::cell::RefCell::new(SmallRng::from_entropy());
 }
 
+// High-quality random number generation utilities
+pub struct SimpleRng;
+
 impl SimpleRng {
-    pub fn new(seed: u64) -> Self {
-        Self {
-            state: seed.wrapping_mul(1103515245).wrapping_add(12345)
+    // Generate a random f32 in [0, 1)
+    pub fn next_f32() -> f32 {
+        RNG.with(|rng| rng.borrow_mut().gen())
+    }
+
+    // Generate a random f32 in [min, max)
+    pub fn next_range(min: f32, max: f32) -> f32 {
+        // Handle edge case where min >= max
+        if min >= max {
+            return min;
         }
+        
+        RNG.with(|rng| {
+            let dist = Uniform::from(min..max);
+            dist.sample(&mut *rng.borrow_mut())
+        })
     }
 
-    pub fn next(&mut self) -> u64 {
-        self.state = self.state.wrapping_mul(1103515245).wrapping_add(12345);
-        self.state
-    }
-
-    pub fn next_f32(&mut self) -> f32 {
-        // Optimized: avoid division by pre-computing the multiplier
-        // Use (u32::MAX + 1) to ensure range is [0, 1) instead of [0, 1]
-        (self.next() >> 32) as f32 * (1.0 / (u32::MAX as f32 + 1.0))
-    }
-
-    pub fn next_range(&mut self, min: f32, max: f32) -> f32 {
-        // Optimized: compute range once
-        let range = max - min;
-        min + self.next_f32() * range
-    }
-
-    // Generate velocity with realistic distribution - optimized version
-    pub fn next_velocity_offset(&mut self, min: f32, max: f32) -> f32 {
-        // Simplified triangular distribution using single random number
-        let r = self.next_f32();
+    // Generate velocity with realistic triangular distribution
+    pub fn next_velocity_offset(min: f32, max: f32) -> f32 {
+        // Handle edge case where min >= max
+        if min >= max {
+            return min;
+        }
+        
+        let r = Self::next_f32();
         let range = max - min;
 
         // Use a simple curve to bias toward middle values
