@@ -43,30 +43,20 @@ struct FlameState {
     spawn_accum: [f32; 3],
     width: usize,
     height: usize,
-    rng: SimpleRng,
 }
 
 impl FlameState {
-    fn new(width: usize, height: usize, instance_id: u64) -> Self {
+    fn new(width: usize, height: usize, _instance_id: u64) -> Self {
         let mut particles = HashMap::new();
         particles.insert(0, Vec::new());
         particles.insert(1, Vec::new());
         particles.insert(2, Vec::new());
-
-        // Create unique seed for this instance using current time + instance_id
-        use std::time::{SystemTime, UNIX_EPOCH};
-        let time_seed = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap_or_default()
-            .as_nanos() as u64;
-        let seed = time_seed.wrapping_add(instance_id.wrapping_mul(123456789));
 
         Self {
             particles,
             spawn_accum: [0.0; 3],
             width,
             height,
-            rng: SimpleRng::new(seed),
         }
     }
 }
@@ -367,18 +357,18 @@ pub fn flame2_process(
                         let actual_spawn = n_spawn.min(MAX_PARTICLES_PER_BAND - particles.len());
 
                         for _i in 0..actual_spawn {
-                            let base_lifespan = state.rng.next_range(MIN_LIFESPAN, MAX_LIFESPAN);
+                            let base_lifespan = SimpleRng::next_range(MIN_LIFESPAN, MAX_LIFESPAN);
                             let adjusted_lifespan = base_lifespan / animation_speed;
 
                             random_values.push((
-                                state.rng.next_range(0.0, width as f32), // x
+                                SimpleRng::next_range(0.0, width as f32), // x
                                 adjusted_lifespan,                       // lifespan
-                                1.0 / (velocity * state.rng.next_velocity_offset(MIN_VELOCITY_OFFSET, MAX_VELOCITY_OFFSET)), // velocity_y (velocity is clamped to MIN_VELOCITY_EPSILON to prevent division by zero)
-                                state.rng.next_range(-0.5, 0.5),        // velocity_x
-                                state.rng.next_range(min_particle_size, max_particle_size), // size
-                                state.rng.next_range(0.0, 2.0 * std::f32::consts::PI), // wobble_phase
-                                state.rng.next_range(0.0, 2.0 * std::f32::consts::PI), // turbulence_phase
-                                state.rng.next_range(0.8, 1.2),         // initial_brightness
+                                1.0 / (velocity * SimpleRng::next_velocity_offset(MIN_VELOCITY_OFFSET, MAX_VELOCITY_OFFSET)), // velocity_y (velocity is clamped to MIN_VELOCITY_EPSILON to prevent division by zero)
+                                SimpleRng::next_range(-0.5, 0.5),        // velocity_x
+                                SimpleRng::next_range(min_particle_size, max_particle_size), // size
+                                SimpleRng::next_range(0.0, 2.0 * std::f32::consts::PI), // wobble_phase
+                                SimpleRng::next_range(0.0, 2.0 * std::f32::consts::PI), // turbulence_phase
+                                SimpleRng::next_range(0.8, 1.2),         // initial_brightness
                             ));
                         }
                     }
