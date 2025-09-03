@@ -6,10 +6,9 @@ from PIL import Image
 
 # Import your compiled Rust module
 try:
-    import ledfx_rust
-
-    RUST_AVAILABLE = True
+    from ledfx.rust import flame2_process, RUST_AVAILABLE
 except ImportError:
+    flame2_process = None
     RUST_AVAILABLE = False
     logging.error(
         "Rust effects module not available - effect will show red error"
@@ -145,7 +144,7 @@ class Flame2_2d(Twod):
         img_array = np.array(self.matrix)
 
         # Call the Rust flame effect function
-        processed_array = ledfx_rust.flame2_process(
+        processed_array = flame2_process(
             img_array,
             self.audio_bar,
             self.audio_pow,

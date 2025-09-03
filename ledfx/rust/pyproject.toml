@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "ledfx-rust-effects"
-version = "0.1.0"
+dynamic = ["version"]
 description = "High-performance Rust effects for LedFx"
 authors = [
     {name = "LedFx Team"}
