@@ -580,7 +580,7 @@ static mut UNSAFE_STATE: HashMap<u64, MyState> = HashMap::new(); // Don't use th
    cd ledfx/rust
    maturin develop
    ```
-   
+
    If Rust is not installed, use the build script:
    ```bash
    cd ledfx/rust
