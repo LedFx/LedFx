@@ -190,6 +190,32 @@ ndarray = "0.16"
 
 ## Python Integration
 
+### Import Patterns
+
+LedFx uses a consistent import pattern for Rust effects:
+
+```python
+# ✅ Recommended pattern - use this in your effects
+try:
+    from ledfx.rust import RUST_AVAILABLE, flame2_process, my_awesome_effect
+except ImportError:
+    RUST_AVAILABLE = False
+    flame2_process = None
+    my_awesome_effect = None
+```
+
+**Key Points:**
+- Always import from `ledfx.rust` (not `ledfx_rust` directly)
+- Import specific functions you need alongside `RUST_AVAILABLE`
+- Use try/except to handle cases where Rust effects aren't available
+- Set function variables to `None` on import failure for safe checking
+
+**Why this pattern?**
+- Consistent with LedFx's import conventions
+- Provides clean abstraction over the compiled Rust module
+- Allows graceful degradation when Rust effects aren't built
+- Makes it easy to add new Rust functions without changing import style
+
 ### 1. Create Python Effect Wrapper
 
 Create or modify `ledfx/effects/my_effect.py`:
@@ -203,10 +229,10 @@ from PIL import Image
 from ledfx.effects.twod import Twod
 
 try:
-    import ledfx_rust
-    RUST_AVAILABLE = True
+    from ledfx.rust import RUST_AVAILABLE, my_awesome_effect
 except ImportError:
     RUST_AVAILABLE = False
+    my_awesome_effect = None
     logging.warning("Rust effects module not available")
 
 _LOGGER = logging.getLogger(__name__)
@@ -270,7 +296,7 @@ class MyAwesome(Twod):
             img_array = np.zeros((self.matrix_height, self.matrix_width, 3), dtype=np.uint8)
 
             # Call your Rust function
-            result = ledfx_rust.my_awesome_effect(
+            result = my_awesome_effect(
                 img_array,
                 self.audio_bar,          # Beat/tempo info
                 self.audio_pow,          # [lows, mids, highs] frequency powers
@@ -296,6 +322,56 @@ Effects in LedFx are automatically discovered and registered when they:
 4. **Are placed in the `ledfx/effects/` directory**
 
 **No additional registration is required** - LedFx automatically discovers effects that follow this pattern. The effect will appear in the UI once LedFx is restarted.
+
+### 3. Real-World Example: Flame2 Effect
+
+For a complete working example, see `ledfx/effects/flame2_2d.py` which demonstrates:
+
+```python
+# Import pattern
+try:
+    from ledfx.rust import flame2_process, RUST_AVAILABLE
+except ImportError:
+    flame2_process = None
+    RUST_AVAILABLE = False
+    logging.error("Rust effects module not available - effect will show red error")
+
+# Configuration schema with validation
+CONFIG_SCHEMA = vol.Schema({
+    vol.Optional("intensity", description="Flame intensity", default=1.0): 
+        vol.All(vol.Coerce(float), vol.Range(min=0.1, max=3.0)),
+    vol.Optional("particle_count", description="Maximum particles", default=150): 
+        vol.All(vol.Coerce(int), vol.Range(min=10, max=500)),
+    # ... more config options
+})
+
+# Rust function call with error handling
+def draw(self):
+    if not RUST_AVAILABLE or flame2_process is None:
+        return self._fill_red_error()
+    
+    try:
+        img_array = np.zeros((self.matrix_height, self.matrix_width, 3), dtype=np.uint8)
+        result = flame2_process(
+            img_array,
+            self.audio_bar,
+            self.audio_pow, 
+            self.matrix_height,
+            self.matrix_width,
+            # ... other parameters
+        )
+        return Image.fromarray(result, mode='RGB')
+    except Exception as e:
+        _LOGGER.error(f"Error in Flame2 Effect: {e}")
+        return self._fill_red_error()
+```
+
+This example shows:
+- Proper import handling with fallbacks
+- Configuration schema with validation
+- Error handling and graceful degradation
+- Correct data types for Rust function calls
+- PIL Image conversion for LedFx compatibility
 
 ## Build Process Integration
 
@@ -495,7 +571,9 @@ static mut UNSAFE_STATE: HashMap<u64, MyState> = HashMap::new(); // Don't use th
 
 ### Common Issues
 
-1. **ImportError: No module named 'ledfx_rust'**
+1. **ImportError: No module named 'ledfx.rust' or import from ledfx.rust fails**
+   
+   This indicates the Rust effects module isn't built. 
    
    If Rust is already installed:
    ```bash
@@ -508,6 +586,8 @@ static mut UNSAFE_STATE: HashMap<u64, MyState> = HashMap::new(); // Don't use th
    cd ledfx/rust
    python build_rust.py --build
    ```
+   
+   Or use the VS Code task "Build Rust" for automatic installation.
 
 2. **Compilation errors**
    ```bash

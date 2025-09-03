@@ -90,6 +90,8 @@ def build_rust(release=False):
 
 def test_rust():
     """Test the Rust effects module"""
+    # Run from project root to find ledfx module
+    project_root = Path(__file__).parent.parent.parent
     try:
         run_command(
             [
@@ -97,8 +99,9 @@ def test_rust():
                 "run",
                 "python",
                 "-c",
-                "import ledfx_rust; print('Rust effects import successful!')",
-            ]
+                "from ledfx.rust import RUST_AVAILABLE; print('Rust effects import successful!' if RUST_AVAILABLE else 'Rust effects not available')",
+            ],
+            cwd=project_root
         )
         print("[SUCCESS] Rust effects module is working!")
         return True
