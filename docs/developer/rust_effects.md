@@ -33,7 +33,7 @@ python build_rust.py --test
   - See **[Tasks Documentation](tasks.md)** for comprehensive task information
 - **Manual**: Run `uv run maturin develop --release` from the `ledfx/rust` directory
 
-All methods handle Rust installation automatically if missing.
+**Rust Installation**: Only the VS Code task and build script (`python build_rust.py`) automatically install Rust if missing. Manual commands (`maturin develop`, `uv run maturin develop`) require Rust to be preinstalled and will fail if Rust is not available.
 
 ## Prerequisites
 
@@ -374,7 +374,7 @@ The `.vscode/build-rust-auto.cmd` script handles:
 
 ### Manual Development Build
 
-If you prefer command-line development:
+If you prefer command-line development (**requires Rust to be preinstalled**):
 
 ```bash
 # Navigate to rust directory
@@ -386,6 +386,8 @@ uv run maturin develop
 # Or build in release mode for better performance
 uv run maturin develop --release
 ```
+
+**Note**: These manual commands will fail if Rust is not installed. Use `python build_rust.py --build` instead for automatic Rust installation.
 
 ### Using the build script
 
@@ -494,9 +496,17 @@ static mut UNSAFE_STATE: HashMap<u64, MyState> = HashMap::new(); // Don't use th
 ### Common Issues
 
 1. **ImportError: No module named 'ledfx_rust'**
+   
+   If Rust is already installed:
    ```bash
    cd ledfx/rust
    maturin develop
+   ```
+   
+   If Rust is not installed, use the build script:
+   ```bash
+   cd ledfx/rust
+   python build_rust.py --build
    ```
 
 2. **Compilation errors**
@@ -564,7 +574,7 @@ python build_rust.py --test
 # Clean build artifacts
 python build_rust.py --clean
 
-# Manual build (maturin directly)
+# Manual build (maturin directly - requires Rust preinstalled)
 uv run maturin develop --release
 
 # Run LedFx with Rust effects (from project root)
@@ -601,7 +611,7 @@ LedFx/
 ### Troubleshooting Quick Fixes
 
 - **Module import error**: Run `python build_rust.py --build --release`
-- **Build errors**: Ensure Rust is installed (`rustc --version`)
+- **Build errors**: Check if Rust is installed (`rustc --version`), or use `python build_rust.py --build` for auto-install
 - **Permission errors on Windows**: Stop any running LedFx instances
 - **Missing dependencies**: Run `uv sync --group dev`
 
