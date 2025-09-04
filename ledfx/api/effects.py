@@ -4,6 +4,9 @@ from json import JSONDecodeError
 from aiohttp import web
 
 from ledfx.api import RestEndpoint
+from ledfx.color import validate_gradient
+from ledfx.config import save_config
+from ledfx.effects import DummyEffect
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -53,10 +56,6 @@ class EffectsEndpoint(RestEndpoint):
 
         # Apply a single gradient to all active effects that support 'gradient'
         if action == "apply_global_gradient":
-            from ledfx.color import validate_gradient
-            from ledfx.effects import DummyEffect
-            from ledfx.config import save_config
-
             gradient = data.get("gradient")
             if not isinstance(gradient, str) or not gradient.strip():
                 return await self.invalid_request('Required attribute "gradient" was not provided')
