@@ -85,5 +85,60 @@
             },
             "problemMatcher": []
         },
+        {
+            "label": "Build Rust",
+            "detail": "Build Rust subsystem with automatic Rust installation and testing",
+            "type": "shell",
+            "command": "${workspaceFolder}/.vscode/build-rust-auto.cmd",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": [
+                {
+                    "owner": "rust",
+                    "fileLocation": ["relative", "${workspaceFolder}"],
+                    "pattern": [
+                        {
+                            "regexp": "^error(?:\\[(.*)\\])?:\\s+(.*)$",
+                            "message": 2,
+                            "code": 1
+                        },
+                        {
+                            "regexp": "^\\s+-->\\s+(.*):(\\d+):(\\d+)$",
+                            "file": 1,
+                            "line": 2,
+                            "column": 3
+                        }
+                    ]
+                }
+            ],
+            "windows": {
+                "command": "${workspaceFolder}\\.vscode\\build-rust-auto.cmd"
+            },
+            "linux": {
+                "command": "bash",
+                "args": [
+                    "-c",
+                    "echo '🛑 Stopping any running LedFx processes...'; pkill -fi ledfx || true; sleep 2; if ! command -v rustc &> /dev/null; then echo 'Installing Rust...'; curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y; source ~/.cargo/env; fi; uv run maturin develop --release --manifest-path '${workspaceFolder}/ledfx/rust/Cargo.toml'"
+                ]
+            },
+            "osx": {
+                "command": "bash",
+                "args": [
+                    "-c",
+                    "echo '🛑 Stopping any running LedFx processes...'; pkill -fi ledfx || true; sleep 2; if ! command -v rustc &> /dev/null; then echo 'Installing Rust...'; curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y; source ~/.cargo/env; fi; uv run maturin develop --release --manifest-path '${workspaceFolder}/ledfx/rust/Cargo.toml'"
+                ]
+            }
+        }
     ]
 }

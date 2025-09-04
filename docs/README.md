@@ -49,6 +49,8 @@ The built docs can be checked in the docs/build directory by opening the index.h
 
 Tasks have been added to the .vscode file to make building docs smoother and removing any excuse not to improve them ( hint hint ).
 
+For comprehensive information about all available VS Code tasks (including Rust building, debugging, and more), see the **[Tasks Documentation](developer/tasks.md)**.
+
 Although there are seperate tasks defined in .vscode/tasks.json for
 dependancy install, build and open in browser, they are configured such
 that it should be just a case of launching the task **Build and Open
