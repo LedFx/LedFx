@@ -17,7 +17,7 @@ This operation is exposed as a bulk action on the existing **effects collection*
 
 ## Endpoint
 
-**POST** `/api/effects`  
+**PUT** `/api/effects`  
 
 ---
 
@@ -38,7 +38,7 @@ This operation is exposed as a bulk action on the existing **effects collection*
 
 ### Apply a predefined gradient to all active gradient-capable effects
 ```bash
-curl -X POST http://localhost:8888/api/effects   -H "Content-Type: application/json"   -d '{
+curl -X PUT http://localhost:8888/api/effects   -H "Content-Type: application/json"   -d '{
     "action": "apply_global_gradient",
     "gradient": "Viridis"
   }'
@@ -46,7 +46,7 @@ curl -X POST http://localhost:8888/api/effects   -H "Content-Type: application/j
 
 ### Apply a custom linear gradient string
 ```bash
-curl -X POST http://localhost:8888/api/effects   -H "Content-Type: application/json"   -d '{
+curl -X PUT http://localhost:8888/api/effects   -H "Content-Type: application/json"   -d '{
     "action": "apply_global_gradient",
     "gradient": "linear-gradient(90deg, rgb(255,0,0) 0%, rgb(0,0,255) 100%)"
   }'

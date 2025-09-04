@@ -48,8 +48,52 @@ class EffectsEndpoint(RestEndpoint):
                 'Required attribute "action" was not provided'
             )
 
-        if action not in ["clear_all_effects"]:
+        if action not in ["clear_all_effects", "apply_global_gradient"]:
             return await self.invalid_request(f'Invalid action "{action}"')
+
+        # Apply a single gradient to all active effects that support 'gradient'
+        if action == "apply_global_gradient":
+            from ledfx.color import validate_gradient
+            from ledfx.effects import DummyEffect
+            from ledfx.config import save_config
+
+            gradient = data.get("gradient")
+            if not isinstance(gradient, str) or not gradient.strip():
+                return await self.invalid_request('Required attribute "gradient" was not provided')
+
+            try:
+                # Validates keys and full gradient strings alike
+                validate_gradient(gradient)
+            except Exception as e:
+                return await self.invalid_request(f"Invalid gradient: {e}")
+
+            updated = 0
+            for virtual in self._ledfx.virtuals:
+                eff = getattr(virtual, "active_effect", None)
+                if eff is None or isinstance(eff, DummyEffect):
+                    continue
+                try:
+                    schema = type(eff).schema().schema
+                except Exception:
+                    schema = {}
+
+                if "gradient" not in schema:
+                    continue
+
+                try:
+                    eff.update_config({"gradient": gradient})
+                    virtual.update_effect_config(eff)
+                    updated += 1
+                except Exception as e:
+                    _LOGGER.warning(f"Failed to update gradient on virtual {getattr(virtual, 'id', '?')}: {e}")
+
+            # Persist once
+            try:
+                save_config(config=self._ledfx.config, config_dir=self._ledfx.config_dir)
+            except Exception as e:
+                _LOGGER.warning(f"Failed to save config after apply_global_gradient: {e}")
+
+            return await self.request_success("success", f"Applied gradient to {updated} active effects with gradient support")
 
         # Clear all effects on all devices
         if action == "clear_all_effects":
