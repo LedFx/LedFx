@@ -2352,7 +2352,7 @@ ledfx_presets = {
                 "speed": 5,
                 "threshold": 0.7,
             },
-            "name": "#ff00b2",
+            "name": "Pink",
         },
         "red": {
             "config": {
