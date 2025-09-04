@@ -58,7 +58,9 @@ class EffectsEndpoint(RestEndpoint):
         if action == "apply_global_gradient":
             gradient = data.get("gradient")
             if not isinstance(gradient, str) or not gradient.strip():
-                return await self.invalid_request('Required attribute "gradient" was not provided')
+                return await self.invalid_request(
+                    'Required attribute "gradient" was not provided'
+                )
 
             try:
                 # Validates keys and full gradient strings alike
@@ -84,15 +86,25 @@ class EffectsEndpoint(RestEndpoint):
                     virtual.update_effect_config(eff)
                     updated += 1
                 except Exception as e:
-                    _LOGGER.warning(f"Failed to update gradient on virtual {getattr(virtual, 'id', '?')}: {e}")
+                    _LOGGER.warning(
+                        f"Failed to update gradient on virtual {getattr(virtual, 'id', '?')}: {e}"
+                    )
 
             # Persist once
             try:
-                save_config(config=self._ledfx.config, config_dir=self._ledfx.config_dir)
+                save_config(
+                    config=self._ledfx.config,
+                    config_dir=self._ledfx.config_dir,
+                )
             except Exception as e:
-                _LOGGER.warning(f"Failed to save config after apply_global_gradient: {e}")
+                _LOGGER.warning(
+                    f"Failed to save config after apply_global_gradient: {e}"
+                )
 
-            return await self.request_success("success", f"Applied gradient to {updated} active effects with gradient support")
+            return await self.request_success(
+                "success",
+                f"Applied gradient to {updated} active effects with gradient support",
+            )
 
         # Clear all effects on all devices
         if action == "clear_all_effects":
