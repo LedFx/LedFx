@@ -70,7 +70,13 @@ curl -X PUT http://localhost:8888/api/effects   -H "Content-Type: application/js
 ```json
 {
   "status": "success",
-  "message": "Applied gradient to <N> active effects with gradient support"
+  "payload": {
+    "type": "success",
+    "reason": "Applied gradient to 3 active effects with gradient support"
+  },
+  "data": {
+    "updated": 3
+  }
 }
 ```
 
