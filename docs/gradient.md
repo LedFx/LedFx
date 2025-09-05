@@ -96,10 +96,15 @@ curl -X PUT http://localhost:8888/api/effects   -H "Content-Type: application/js
 ### Failure (bad input)
 ```json
 {
-  "status": "error",
-  "message": "Required attribute \"gradient\" was not provided"
+  "status": "failed",
+  "payload": {
+    "type": "error",
+    "reason": "Required attribute \"gradient\" was not provided"
+  }
 }
 ```
+
+*Note: Returns HTTP 200 status code by default for frontend snackbar compatibility.*
 
 ---
 
