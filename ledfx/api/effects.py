@@ -69,7 +69,7 @@ class EffectsEndpoint(RestEndpoint):
                 return await self.invalid_request(f"Invalid gradient: {e}")
 
             updated = 0
-            for virtual in self._ledfx.virtuals:
+            for virtual in self._ledfx.virtuals.values():
                 eff = getattr(virtual, "active_effect", None)
                 if eff is None or isinstance(eff, DummyEffect):
                     continue
