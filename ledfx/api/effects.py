@@ -93,7 +93,7 @@ class EffectsEndpoint(RestEndpoint):
                 # Normalize schema keys to handle voluptuous wrapper objects
                 normalized_keys = set()
                 for key in schema.keys():
-                    if hasattr(key, 'schema'):
+                    if hasattr(key, "schema"):
                         # Extract the underlying key from vol.Optional/Required wrappers
                         normalized_keys.add(key.schema)
                     else:
