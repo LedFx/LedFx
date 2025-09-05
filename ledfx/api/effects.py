@@ -116,7 +116,7 @@ class EffectsEndpoint(RestEndpoint):
             return await self.request_success(
                 "success",
                 f"Applied gradient to {updated} active effects with gradient support",
-                data={"updated": updated}
+                data={"updated": updated},
             )
 
         # Clear all effects on all devices
