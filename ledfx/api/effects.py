@@ -90,7 +90,17 @@ class EffectsEndpoint(RestEndpoint):
                 except Exception:
                     schema = {}
 
-                if "gradient" not in schema:
+                # Normalize schema keys to handle voluptuous wrapper objects
+                normalized_keys = set()
+                for key in schema.keys():
+                    if hasattr(key, 'schema'):
+                        # Extract the underlying key from vol.Optional/Required wrappers
+                        normalized_keys.add(key.schema)
+                    else:
+                        # Handle string keys directly
+                        normalized_keys.add(str(key))
+
+                if "gradient" not in normalized_keys:
                     continue
 
                 try:
