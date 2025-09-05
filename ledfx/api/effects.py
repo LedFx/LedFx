@@ -63,8 +63,18 @@ class EffectsEndpoint(RestEndpoint):
                 )
 
             try:
-                # Validates keys and full gradient strings alike
-                validate_gradient(gradient)
+                # Resolve gradient name to full definition for storage
+                defaults, user_vals = self._ledfx.gradients.get_all()
+                raw_gradient = defaults.get(gradient) or user_vals.get(gradient)
+                
+                if raw_gradient:
+                    # Found as preset/user gradient, use the raw definition
+                    gradient_to_store = raw_gradient
+                else:
+                    # If not found as preset, validate it as a full gradient definition
+                    validate_gradient(gradient)
+                    gradient_to_store = gradient
+                    
             except Exception as e:
                 return await self.invalid_request(f"Invalid gradient: {e}")
 
@@ -82,7 +92,7 @@ class EffectsEndpoint(RestEndpoint):
                     continue
 
                 try:
-                    eff.update_config({"gradient": gradient})
+                    eff.update_config({"gradient": gradient_to_store})
                     virtual.update_effect_config(eff)
                     updated += 1
                 except Exception as e:
