@@ -83,10 +83,15 @@ curl -X PUT http://localhost:8888/api/effects   -H "Content-Type: application/js
 ### Failure (invalid or unknown gradient)
 ```json
 {
-  "status": "error",
-  "message": "Invalid gradient: <details>"
+  "status": "failed",
+  "payload": {
+    "type": "error",
+    "reason": "Invalid gradient: linear-gradient(90deg, badcolor 0%)"
+  }
 }
 ```
+
+*Note: Returns HTTP 200 status code by default for frontend snackbar compatibility.*
 
 ### Failure (bad input)
 ```json
