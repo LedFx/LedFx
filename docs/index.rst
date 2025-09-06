@@ -47,7 +47,7 @@
    :caption: LedFx API
 
    /api
-   /gradient
+   /global
    /websocket
 
 .. toctree::
