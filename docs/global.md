@@ -33,7 +33,8 @@ This operation is exposed as a bulk action on the existing **effects collection*
 | `action`                 | string            | yes      | Must be `"apply_global"`. |
 | `gradient`               | string            | no       | A gradient key (e.g., `"Viridis"`, `"MyCustomGradient"`) **or** a full gradient definition (e.g., `"linear-gradient(90deg, rgb(255,0,0) 0%, rgb(0,0,255) 100%)"`). |
 | `background_color`       | string            | no       | A color value (e.g., `"red"`, `"#ff0000"`, `"rgb(255,0,0)"`). |
-| `background_brightness`  | number            | no       | Brightness value between 0.0 and 1.0. |
+| `background_brightness`  | number            | no       | Background brightness value between 0.0 and 1.0. |
+| `brightness`             | number            | no       | Main brightness value between 0.0 and 1.0. |
 | `flip`                   | boolean or string | no       | `true`, `false`, or `"toggle"` to flip the current state. |
 | `mirror`                 | boolean or string | no       | `true`, `false`, or `"toggle"` to flip the current state. |
 
@@ -69,6 +70,7 @@ curl -X PUT http://localhost:8888/api/effects \
     "gradient": "linear-gradient(90deg, rgb(255,0,0) 0%, rgb(0,0,255) 100%)",
     "background_color": "black",
     "background_brightness": 0.3,
+    "brightness": 0.7,
     "flip": true
   }'
 ```

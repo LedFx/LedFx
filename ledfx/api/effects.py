@@ -67,6 +67,10 @@ class EffectsEndpoint(RestEndpoint):
                     "validator": lambda x: max(0.0, min(1.0, float(x))),
                     "type": "number",
                 },
+                "brightness": {
+                    "validator": lambda x: max(0.0, min(1.0, float(x))),
+                    "type": "number",
+                },
                 "flip": {"validator": None, "type": "boolean"},
                 "mirror": {"validator": None, "type": "boolean"},
             }
