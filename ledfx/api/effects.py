@@ -59,14 +59,22 @@ class EffectsEndpoint(RestEndpoint):
             # Define supported configuration keys and their validation
             SUPPORTED_KEYS = {
                 "gradient": {"validator": validate_gradient, "type": "string"},
-                "background_color": {"validator": validate_color, "type": "string"},
-                "background_brightness": {"validator": lambda x: max(0.0, min(1.0, float(x))), "type": "number"},
+                "background_color": {
+                    "validator": validate_color,
+                    "type": "string",
+                },
+                "background_brightness": {
+                    "validator": lambda x: max(0.0, min(1.0, float(x))),
+                    "type": "number",
+                },
                 "flip": {"validator": None, "type": "boolean"},
                 "mirror": {"validator": None, "type": "boolean"},
             }
 
             # Check if at least one supported key is provided
-            provided_keys = [key for key in SUPPORTED_KEYS.keys() if key in data]
+            provided_keys = [
+                key for key in SUPPORTED_KEYS.keys() if key in data
+            ]
             if not provided_keys:
                 return await self.invalid_request(
                     f'At least one of the following attributes must be provided: {", ".join(SUPPORTED_KEYS.keys())}'
@@ -82,8 +90,10 @@ class EffectsEndpoint(RestEndpoint):
                     if key == "gradient":
                         # Special handling for gradient (resolve preset names)
                         defaults, user_vals = self._ledfx.gradients.get_all()
-                        raw_gradient = defaults.get(value) or user_vals.get(value)
-                        
+                        raw_gradient = defaults.get(value) or user_vals.get(
+                            value
+                        )
+
                         if raw_gradient:
                             # Found as preset/user gradient, use the raw definition
                             config_updates[key] = raw_gradient
@@ -91,12 +101,15 @@ class EffectsEndpoint(RestEndpoint):
                             # If not found as preset, validate it as a full gradient definition
                             validate_gradient(value)
                             config_updates[key] = value
-                            
+
                     elif key_info["type"] == "boolean":
                         # Special handling for boolean keys (True, False, "toggle")
                         if isinstance(value, bool):
                             config_updates[key] = value
-                        elif isinstance(value, str) and value.lower() == "toggle":
+                        elif (
+                            isinstance(value, str)
+                            and value.lower() == "toggle"
+                        ):
                             # Mark for toggling - will be resolved per effect
                             config_updates[key] = "toggle"
                         else:
@@ -110,23 +123,25 @@ class EffectsEndpoint(RestEndpoint):
                             config_updates[key] = validated_value
                         else:
                             config_updates[key] = value
-                            
+
                 except Exception as e:
-                    return await self.invalid_request(f'Invalid value for "{key}": {e}')
+                    return await self.invalid_request(
+                        f'Invalid value for "{key}": {e}'
+                    )
 
             # Apply updates to all compatible effects
             updated = 0
             skipped = 0
-            
+
             for virtual in self._ledfx.virtuals.values():
                 eff = getattr(virtual, "active_effect", None)
                 if eff is None or isinstance(eff, DummyEffect):
                     continue
-                    
+
                 # Get effect schema and hidden keys
                 try:
                     schema = type(eff).schema().schema
-                    hidden_keys = getattr(eff, 'HIDDEN_KEYS', []) or []
+                    hidden_keys = getattr(eff, "HIDDEN_KEYS", []) or []
                 except Exception:
                     schema = {}
                     hidden_keys = []
@@ -143,19 +158,21 @@ class EffectsEndpoint(RestEndpoint):
 
                 # Build config update for this specific effect
                 effect_config_update = {}
-                
+
                 for key, value in config_updates.items():
                     # Skip if key is not in effect schema
                     if key not in normalized_keys:
                         continue
-                        
+
                     # Skip if key is in HIDDEN_KEYS for this effect
                     if key in hidden_keys:
                         continue
-                    
+
                     # Handle toggle for boolean keys
                     if value == "toggle" and key in ["flip", "mirror"]:
-                        current_value = getattr(eff, '_config', {}).get(key, False)
+                        current_value = getattr(eff, "_config", {}).get(
+                            key, False
+                        )
                         effect_config_update[key] = not current_value
                     else:
                         effect_config_update[key] = value
@@ -188,7 +205,7 @@ class EffectsEndpoint(RestEndpoint):
 
             return await self.request_success(
                 "success",
-                f"Applied global configuration to {updated} effects (skipped {skipped})"
+                f"Applied global configuration to {updated} effects (skipped {skipped})",
             )
 
         # Clear all effects on all devices

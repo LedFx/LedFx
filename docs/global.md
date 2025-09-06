@@ -2,7 +2,7 @@
 
 ## Overview
 
-This API lets a client set global configuration values across every **active** effect that natively supports the specified configuration keys.  
+This API lets a client set global configuration values across every **active** effect that natively supports the specified configuration keys.
 Effects **without** a specified configuration field or where the field is in the effect's `HIDDEN_KEYS` list are **ignored**.
 
 This operation is exposed as a bulk action on the existing **effects collection** endpoint.
