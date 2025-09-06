@@ -47,6 +47,7 @@
    :caption: LedFx API
 
    /api
+   /global
    /websocket
 
 .. toctree::
