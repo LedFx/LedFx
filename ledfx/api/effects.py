@@ -92,8 +92,10 @@ class EffectsEndpoint(RestEndpoint):
                         # Trim whitespace and prioritize user gradients over built-ins
                         trimmed_value = value.strip()
                         defaults, user_vals = self._ledfx.gradients.get_all()
-                        raw_gradient = user_vals.get(trimmed_value) or defaults.get(trimmed_value)
-                        
+                        raw_gradient = user_vals.get(
+                            trimmed_value
+                        ) or defaults.get(trimmed_value)
+
                         if raw_gradient:
                             # Found as preset/user gradient, use the raw definition
                             config_updates[key] = raw_gradient
