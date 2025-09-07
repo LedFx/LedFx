@@ -6,7 +6,6 @@ import importlib
 import inspect
 import ipaddress
 import logging
-from logging.handlers import QueueHandler
 import math
 import os
 import pkgutil
@@ -22,6 +21,7 @@ from collections.abc import MutableMapping
 from functools import lru_cache
 from importlib import metadata
 from itertools import chain
+from logging.handlers import QueueHandler
 from platform import (
     processor,
     python_build,

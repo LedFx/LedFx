@@ -5,11 +5,11 @@ from aiohttp import web
 
 from ledfx.api import RestEndpoint
 from ledfx.color import (
-    validate_color,
-    validate_gradient,
+    get_color_at_position,
     parse_gradient,
     resolve_gradient,
-    get_color_at_position,
+    validate_color,
+    validate_gradient,
 )
 from ledfx.config import save_config
 from ledfx.effects import DummyEffect
@@ -21,39 +21,52 @@ _LOGGER = logging.getLogger(__name__)
 # value is the normalized position on the gradient (0.0 - 1.0) or None if not applicable
 
 color_groups = [
-    {"value": 0.0, "keys": [
-        "lows_color",
-        "color_lows",
-        "color_low",
-        "low_band",
-        "color_beat",
-        "color_min",
-        "color",
-    ]},
-    {"value": 0.5, "keys": [
-        "color_mid",
-        "color_mids",
-        "mid_band",
-        "mids_color",
-        "hit_color",
-        "color_scan",
-        "color_bar",
-        "text_color",
-    ]},
-    {"value": 1.0, "keys": [
-        "color_high",
-        "high_band",
-        "high_color",
-        "sparks_color",
-        "strobe_color",
-        "color_max",
-    ]},
-    {"value": None, "keys": [
-        "flash_color",
-        "pixel_color",
-        "color_peak",
-    ]},
+    {
+        "value": 0.0,
+        "keys": [
+            "lows_color",
+            "color_lows",
+            "color_low",
+            "low_band",
+            "color_beat",
+            "color_min",
+            "color",
+        ],
+    },
+    {
+        "value": 0.5,
+        "keys": [
+            "color_mid",
+            "color_mids",
+            "mid_band",
+            "mids_color",
+            "hit_color",
+            "color_scan",
+            "color_bar",
+            "text_color",
+        ],
+    },
+    {
+        "value": 1.0,
+        "keys": [
+            "color_high",
+            "high_band",
+            "high_color",
+            "sparks_color",
+            "strobe_color",
+            "color_max",
+        ],
+    },
+    {
+        "value": None,
+        "keys": [
+            "flash_color",
+            "pixel_color",
+            "color_peak",
+        ],
+    },
 ]
+
 
 class EffectsEndpoint(RestEndpoint):
     ENDPOINT_PATH = "/api/effects"
@@ -130,7 +143,7 @@ class EffectsEndpoint(RestEndpoint):
 
             # Validate and process each provided key
             config_updates = {}
-          
+
             for key in provided_keys:
                 value = data[key]
                 key_info = SUPPORTED_KEYS[key]
@@ -140,7 +153,9 @@ class EffectsEndpoint(RestEndpoint):
                         # Resolve the gradient into a config-storable string and
                         # a parsed Gradient object for sampling.
                         try:
-                            config_val, parsed_gradient = resolve_gradient(value, self._ledfx.gradients)
+                            config_val, parsed_gradient = resolve_gradient(
+                                value, self._ledfx.gradients
+                            )
                             config_updates[key] = config_val
                         except Exception as e:
                             return await self.invalid_request(
@@ -172,7 +187,10 @@ class EffectsEndpoint(RestEndpoint):
                         # Special handling for boolean keys (True, False, "toggle")
                         if isinstance(value, bool):
                             config_updates[key] = value
-                        elif isinstance(value, str) and value.lower() == "toggle":
+                        elif (
+                            isinstance(value, str)
+                            and value.lower() == "toggle"
+                        ):
                             # Mark for toggling - will be resolved per effect
                             config_updates[key] = "toggle"
                         else:

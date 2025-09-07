@@ -1,10 +1,10 @@
 import logging
 from collections import namedtuple
+from typing import Optional, Tuple, Union
 
 import numpy as np
 from numpy.typing import NDArray
 from PIL import ImageColor
-from typing import Optional, Tuple, Union
 
 _LOGGER = logging.getLogger(__name__)
 RGBA = namedtuple("RGBA", ("red", "green", "blue", "alpha"), defaults=(255,))
@@ -87,9 +87,17 @@ class Gradient:
         first_color, first_pos = stops[0]
         last_color, last_pos = stops[-1]
         if pos <= first_pos:
-            return "#%02x%02x%02x" % (first_color.red, first_color.green, first_color.blue)
+            return "#{:02x}{:02x}{:02x}".format(
+                first_color.red,
+                first_color.green,
+                first_color.blue,
+            )
         if pos >= last_pos:
-            return "#%02x%02x%02x" % (last_color.red, last_color.green, last_color.blue)
+            return "#{:02x}{:02x}{:02x}".format(
+                last_color.red,
+                last_color.green,
+                last_color.blue,
+            )
 
         # Find containing segment and linearly interpolate
         for (c1, p1), (c2, p2) in zip(stops, stops[1:]):
@@ -98,7 +106,7 @@ class Gradient:
                 r = int(round(c1.red + (c2.red - c1.red) * t))
                 g = int(round(c1.green + (c2.green - c1.green) * t))
                 b = int(round(c1.blue + (c2.blue - c1.blue) * t))
-                return "#%02x%02x%02x" % (r, g, b)
+                return "#{:02x}{:02x}{:02x}".format(r, g, b)
 
         # Fallback
         return "#000000"
@@ -368,7 +376,9 @@ def validate_gradient(gradient: str) -> str:
     return gradient
 
 
-def resolve_gradient(value: str, gradients_collection) -> Tuple[str, Optional[Gradient]]:
+def resolve_gradient(
+    value: str, gradients_collection
+) -> tuple[str, Optional[Gradient]]:
     """Resolve a gradient input into a config string and an optional parsed Gradient.
 
     Args:
