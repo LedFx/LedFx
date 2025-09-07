@@ -6,6 +6,7 @@ import importlib
 import inspect
 import ipaddress
 import logging
+from logging.handlers import QueueHandler
 import math
 import os
 import pkgutil
@@ -892,7 +893,7 @@ class UserDefaultCollection(MutableMapping):
         return len(self._default_vals) + len(self._user_vals)
 
 
-class RollingQueueHandler(logging.handlers.QueueHandler):
+class RollingQueueHandler(QueueHandler):
     """
     A custom logging handler that extends the QueueHandler class.
     This handler enqueues log records into a queue, and if the queue is full,
