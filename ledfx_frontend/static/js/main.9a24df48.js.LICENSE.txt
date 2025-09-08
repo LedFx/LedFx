@@ -1,0 +1,650 @@
+/*!
+  Copyright (c) 2018 Jed Watson.
+  Licensed under the MIT License (MIT), see
+  http://jedwatson.github.io/classnames
+*/
+
+/*!
+ * @kurkle/color v0.3.4
+ * https://github.com/kurkle/color#readme
+ * (c) 2024 Jukka Kurkela
+ * Released under the MIT License
+ */
+
+/*!
+ * Chart.js v4.4.9
+ * https://www.chartjs.org
+ * (c) 2025 Chart.js Contributors
+ * Released under the MIT License
+ */
+
+/*! *****************************************************************************
+Copyright (c) Microsoft Corporation.
+
+Permission to use, copy, modify, and/or distribute this software for any
+purpose with or without fee is hereby granted.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
+REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
+AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
+LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
+OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+PERFORMANCE OF THIS SOFTWARE.
+***************************************************************************** */
+
+/*! exports provided: default */
+
+/*! no static exports found */
+
+/*! react */
+
+/*! regenerator-runtime -- Copyright (c) 2014-present, Facebook, Inc. -- license (MIT): https://github.com/facebook/regenerator/blob/main/LICENSE */
+
+/*!******************************!*\
+      !*** ./src/react-webcam.tsx ***!
+      \******************************/
+
+/*!**************************************************************************************!*\
+      !*** external {"root":"React","commonjs2":"react","commonjs":"react","amd":"react"} ***!
+      \**************************************************************************************/
+
+/**
+   * Returns a MIDI note number matching the identifier passed in the form of a string. The
+   * identifier must include the octave number. The identifier also optionally include a sharp (#),
+   * a double sharp (##), a flat (b) or a double flat (bb) symbol. For example, these are all valid
+   * identifiers: C5, G4, D#-1, F0, Gb7, Eb-1, Abb4, B##6, etc.
+   *
+   * When converting note identifiers to numbers, C4 is considered to be middle C (MIDI note number
+   * 60) as per the scientific pitch notation standard.
+   *
+   * The resulting note number can be offset by using the `octaveOffset` parameter.
+   *
+   * @param identifier {string} The identifier in the form of a letter, followed by an optional "#",
+   * "##", "b" or "bb" followed by the octave number. For exemple: C5, G4, D#-1, F0, Gb7, Eb-1,
+   * Abb4, B##6, etc.
+   *
+   * @param {number} [octaveOffset=0] A integer to offset the octave by.
+   *
+   * @returns {number} The MIDI note number (an integer between 0 and 127).
+   *
+   * @throws RangeError Invalid 'octaveOffset' value
+   *
+   * @throws TypeError Invalid note identifier
+   *
+   * @license Apache-2.0
+   * @since 3.0.0
+   * @static
+   */
+
+/**
+   * Sends a MIDI **control change** message to the channel at the scheduled time. The control
+   * change message to send can be specified numerically (`0` to `127`) or by using one of the
+   * following common names:
+   *
+   * | Number | Name                          |
+   * |--------|-------------------------------|
+   * | 0      |`bankselectcoarse`             |
+   * | 1      |`modulationwheelcoarse`        |
+   * | 2      |`breathcontrollercoarse`       |
+   * | 4      |`footcontrollercoarse`         |
+   * | 5      |`portamentotimecoarse`         |
+   * | 6      |`dataentrycoarse`              |
+   * | 7      |`volumecoarse`                 |
+   * | 8      |`balancecoarse`                |
+   * | 10     |`pancoarse`                    |
+   * | 11     |`expressioncoarse`             |
+   * | 12     |`effectcontrol1coarse`         |
+   * | 13     |`effectcontrol2coarse`         |
+   * | 18     |`generalpurposeslider3`        |
+   * | 19     |`generalpurposeslider4`        |
+   * | 32     |`bankselectfine`               |
+   * | 33     |`modulationwheelfine`          |
+   * | 34     |`breathcontrollerfine`         |
+   * | 36     |`footcontrollerfine`           |
+   * | 37     |`portamentotimefine`           |
+   * | 38     |`dataentryfine`                |
+   * | 39     |`volumefine`                   |
+   * | 40     |`balancefine`                  |
+   * | 42     |`panfine`                      |
+   * | 43     |`expressionfine`               |
+   * | 44     |`effectcontrol1fine`           |
+   * | 45     |`effectcontrol2fine`           |
+   * | 64     |`holdpedal`                    |
+   * | 65     |`portamento`                   |
+   * | 66     |`sustenutopedal`               |
+   * | 67     |`softpedal`                    |
+   * | 68     |`legatopedal`                  |
+   * | 69     |`hold2pedal`                   |
+   * | 70     |`soundvariation`               |
+   * | 71     |`resonance`                    |
+   * | 72     |`soundreleasetime`             |
+   * | 73     |`soundattacktime`              |
+   * | 74     |`brightness`                   |
+   * | 75     |`soundcontrol6`                |
+   * | 76     |`soundcontrol7`                |
+   * | 77     |`soundcontrol8`                |
+   * | 78     |`soundcontrol9`                |
+   * | 79     |`soundcontrol10`               |
+   * | 80     |`generalpurposebutton1`        |
+   * | 81     |`generalpurposebutton2`        |
+   * | 82     |`generalpurposebutton3`        |
+   * | 83     |`generalpurposebutton4`        |
+   * | 91     |`reverblevel`                  |
+   * | 92     |`tremololevel`                 |
+   * | 93     |`choruslevel`                  |
+   * | 94     |`celestelevel`                 |
+   * | 95     |`phaserlevel`                  |
+   * | 96     |`dataincrement`                |
+   * | 97     |`datadecrement`                |
+   * | 98     |`nonregisteredparametercoarse` |
+   * | 99     |`nonregisteredparameterfine`   |
+   * | 100    |`registeredparametercoarse`    |
+   * | 101    |`registeredparameterfine`      |
+   * | 120    |`allsoundoff`                  |
+   * | 121    |`resetallcontrollers`          |
+   * | 122    |`localcontrol`                 |
+   * | 123    |`allnotesoff`                  |
+   * | 124    |`omnimodeoff`                  |
+   * | 125    |`omnimodeon`                   |
+   * | 126    |`monomodeon`                   |
+   * | 127    |`polymodeon`                   |
+   *
+   * As you can see above, not all control change message have a matching name. This does not mean
+   * you cannot use the others. It simply means you will need to use their number
+   * (`0` to `127`) instead of their name. While you can still use them, numbers `120` to `127` are
+   * usually reserved for *channel mode* messages. See
+   * [`sendChannelMode()`]{@link OutputChannel#sendChannelMode} method for more info.
+   *
+   * To view a detailed list of all available **control change** messages, please consult "Table 3 -
+   * Control Change Messages" from the [MIDI Messages](
+   * https://www.midi.org/specifications/item/table-3-control-change-messages-data-bytes-2)
+   * specification.
+   *
+   * **Note**: messages #0-31 (MSB) are paired with messages #32-63 (LSB). For example, message #1
+   * (`modulationwheelcoarse`) can be accompanied by a second control change message for
+   * `modulationwheelfine` to achieve a greater level of precision. if you want to specify both MSB
+   * and LSB for messages between `0` and `31`, you can do so by passing a 2-value array as the
+   * second parameter.
+   *
+   * @param {number|string} controller The MIDI controller name or number (`0` - `127`).
+   *
+   * @param {number|number[]} value The value to send (0-127). You can also use a two-position array
+   * for controllers 0 to 31. In this scenario, the first value will be sent as usual and the second
+   * value will be sent to the matching LSB controller (which is obtained by adding 32 to the first
+   * controller)
+   *
+   * @param {object} [options={}]
+   *
+   * @param {number|string} [options.time=(now)] If `time` is a string prefixed with `"+"` and
+   * followed by a number, the message will be delayed by that many milliseconds. If the value is a
+   * positive number
+   * ([`DOMHighResTimeStamp`]{@link https://developer.mozilla.org/docs/Web/API/DOMHighResTimeStamp}),
+   * the operation will be scheduled for that time. The current time can be retrieved with
+   * [`WebMidi.time`]{@link WebMidi#time}. If `options.time` is omitted, or in the past, the
+   * operation will be carried out as soon as possible.
+   *
+   * @throws {RangeError} Controller numbers must be between 0 and 127.
+   * @throws {RangeError} Invalid controller name.
+   * @throws {TypeError} The value array must have a length of 2.
+   *
+   * @returns {OutputChannel} Returns the `OutputChannel` object so methods can be chained.
+   *
+   * @license Apache-2.0
+   * @since 3.0.0
+   */
+
+/**
+   * Sends a MIDI message on the MIDI output port. If no time is specified, the message will be
+   * sent immediately. The message should be an array of 8 bit unsigned integers (0-225), a
+   * [`Uint8Array`]{@link https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array}
+   * object or a [`Message`](Message) object.
+   *
+   * It is usually not necessary to use this method directly as you can use one of the simpler
+   * helper methods such as [`playNote()`](#playNote), [`stopNote()`](#stopNote),
+   * [`sendControlChange()`](#sendControlChange), etc.
+   *
+   * Details on the format of MIDI messages are available in the summary of
+   * [MIDI messages]{@link https://www.midi.org/specifications-old/item/table-1-summary-of-midi-message}
+   * from the MIDI Manufacturers Association.
+   *
+   * @param message {number[]|Uint8Array|Message} An array of 8bit unsigned integers, a `Uint8Array`
+   * object (not available in Node.js) containing the message bytes or a `Message` object.
+   *
+   * @param {object} [options={}]
+   *
+   * @param {number|string} [options.time=(now)] If `time` is a string prefixed with `"+"` and
+   * followed by a number, the message will be delayed by that many milliseconds. If the value is a
+   * positive number
+   * ([`DOMHighResTimeStamp`]{@link https://developer.mozilla.org/docs/Web/API/DOMHighResTimeStamp}),
+   * the operation will be scheduled for that time. The current time can be retrieved with
+   * [`WebMidi.time`]{@link WebMidi#time}. If `options.time` is omitted, or in the past, the
+   * operation will be carried out as soon as possible.
+   *
+   * @throws {RangeError} The first byte (status) must be an integer between 128 and 255.
+   *
+   * @returns {Output} Returns the `Output` object so methods can be chained.
+   *
+   * @license Apache-2.0
+   */
+
+/**
+ * @license React
+ * react-dom-client.production.js
+ *
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+/**
+ * @license React
+ * react-dom.production.js
+ *
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+/**
+ * @license React
+ * react-is.production.js
+ *
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+/**
+ * @license React
+ * react-jsx-runtime.development.js
+ *
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+/**
+ * @license React
+ * react-jsx-runtime.production.js
+ *
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+/**
+ * @license React
+ * react.production.js
+ *
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+/**
+ * @license React
+ * scheduler.production.js
+ *
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+/**
+ * @license React
+ * use-sync-external-store-shim.production.js
+ *
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+/**
+ * @license React
+ * use-sync-external-store-shim/with-selector.production.js
+ *
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+/**
+ * @license React
+ * use-sync-external-store-with-selector.production.js
+ *
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+/**
+ * A better abstraction over CSS.
+ *
+ * @copyright Oleg Isonen (Slobodskoi) / Isonen 2014-present
+ * @website https://github.com/cssinjs/jss
+ * @license MIT
+ */
+
+/**
+ * Checks if an event is supported in the current execution environment.
+ *
+ * NOTE: This will not work correctly for non-generic events such as `change`,
+ * `reset`, `load`, `error`, and `select`.
+ *
+ * Borrows from Modernizr.
+ *
+ * @param {string} eventNameSuffix Event name, e.g. "click".
+ * @param {?boolean} capture Check if the capture phase is supported.
+ * @return {boolean} True if the event is supported.
+ * @internal
+ * @license Modernizr 3.0.0pre (Custom Build) | MIT
+ */
+
+/**
+ * The `Enumerations` class contains enumerations and arrays of elements used throughout the
+ * library. All its properties are static and should be referenced using the class name. For
+ * example: `Enumerations.CHANNEL_MESSAGES`.
+ *
+ * @license Apache-2.0
+ * @since 3.0.0
+ */
+
+/**
+ * The `Forwarder` class allows the forwarding of MIDI messages to predetermined outputs. When you
+ * call its [`forward()`](#forward) method, it will send the specified [`Message`](Message) object
+ * to all the outputs listed in its [`destinations`](#destinations) property.
+ *
+ * If specific channels or message types have been defined in the [`channels`](#channels) or
+ * [`types`](#types) properties, only messages matching the channels/types will be forwarded.
+ *
+ * While it can be manually instantiated, you are more likely to come across a `Forwarder` object as
+ * the return value of the [`Input.addForwarder()`](Input#addForwarder) method.
+ *
+ * @license Apache-2.0
+ * @since 3.0.0
+ */
+
+/**
+ * The `InputChannel` class represents a single MIDI input channel (1-16) from a single input
+ * device. This object is derived from the host's MIDI subsystem and should not be instantiated
+ * directly.
+ *
+ * All 16 `InputChannel` objects can be found inside the input's [`channels`](Input#channels)
+ * property.
+ *
+ * @fires InputChannel#midimessage
+ * @fires InputChannel#unknownmessage
+ *
+ * @fires InputChannel#noteoff
+ * @fires InputChannel#noteon
+ * @fires InputChannel#keyaftertouch
+ * @fires InputChannel#programchange
+ * @fires InputChannel#channelaftertouch
+ * @fires InputChannel#pitchbend
+ *
+ * @fires InputChannel#allnotesoff
+ * @fires InputChannel#allsoundoff
+ * @fires InputChannel#localcontrol
+ * @fires InputChannel#monomode
+ * @fires InputChannel#omnimode
+ * @fires InputChannel#resetallcontrollers
+ *
+ * @fires InputChannel#event:nrpn
+ * @fires InputChannel#event:nrpn-dataentrycoarse
+ * @fires InputChannel#event:nrpn-dataentryfine
+ * @fires InputChannel#event:nrpn-dataincrement
+ * @fires InputChannel#event:nrpn-datadecrement
+ * @fires InputChannel#event:rpn
+ * @fires InputChannel#event:rpn-dataentrycoarse
+ * @fires InputChannel#event:rpn-dataentryfine
+ * @fires InputChannel#event:rpn-dataincrement
+ * @fires InputChannel#event:rpn-datadecrement
+ *
+ * @fires InputChannel#controlchange
+ * @fires InputChannel#event:controlchange-controllerxxx
+ * @fires InputChannel#event:controlchange-bankselectcoarse
+ * @fires InputChannel#event:controlchange-modulationwheelcoarse
+ * @fires InputChannel#event:controlchange-breathcontrollercoarse
+ * @fires InputChannel#event:controlchange-footcontrollercoarse
+ * @fires InputChannel#event:controlchange-portamentotimecoarse
+ * @fires InputChannel#event:controlchange-dataentrycoarse
+ * @fires InputChannel#event:controlchange-volumecoarse
+ * @fires InputChannel#event:controlchange-balancecoarse
+ * @fires InputChannel#event:controlchange-pancoarse
+ * @fires InputChannel#event:controlchange-expressioncoarse
+ * @fires InputChannel#event:controlchange-effectcontrol1coarse
+ * @fires InputChannel#event:controlchange-effectcontrol2coarse
+ * @fires InputChannel#event:controlchange-generalpurposecontroller1
+ * @fires InputChannel#event:controlchange-generalpurposecontroller2
+ * @fires InputChannel#event:controlchange-generalpurposecontroller3
+ * @fires InputChannel#event:controlchange-generalpurposecontroller4
+ * @fires InputChannel#event:controlchange-bankselectfine
+ * @fires InputChannel#event:controlchange-modulationwheelfine
+ * @fires InputChannel#event:controlchange-breathcontrollerfine
+ * @fires InputChannel#event:controlchange-footcontrollerfine
+ * @fires InputChannel#event:controlchange-portamentotimefine
+ * @fires InputChannel#event:controlchange-dataentryfine
+ * @fires InputChannel#event:controlchange-channelvolumefine
+ * @fires InputChannel#event:controlchange-balancefine
+ * @fires InputChannel#event:controlchange-panfine
+ * @fires InputChannel#event:controlchange-expressionfine
+ * @fires InputChannel#event:controlchange-effectcontrol1fine
+ * @fires InputChannel#event:controlchange-effectcontrol2fine
+ * @fires InputChannel#event:controlchange-damperpedal
+ * @fires InputChannel#event:controlchange-portamento
+ * @fires InputChannel#event:controlchange-sostenuto
+ * @fires InputChannel#event:controlchange-softpedal
+ * @fires InputChannel#event:controlchange-legatopedal
+ * @fires InputChannel#event:controlchange-hold2
+ * @fires InputChannel#event:controlchange-soundvariation
+ * @fires InputChannel#event:controlchange-resonance
+ * @fires InputChannel#event:controlchange-releasetime
+ * @fires InputChannel#event:controlchange-attacktime
+ * @fires InputChannel#event:controlchange-brightness
+ * @fires InputChannel#event:controlchange-decaytime
+ * @fires InputChannel#event:controlchange-vibratorate
+ * @fires InputChannel#event:controlchange-vibratodepth
+ * @fires InputChannel#event:controlchange-vibratodelay
+ * @fires InputChannel#event:controlchange-generalpurposecontroller5
+ * @fires InputChannel#event:controlchange-generalpurposecontroller6
+ * @fires InputChannel#event:controlchange-generalpurposecontroller7
+ * @fires InputChannel#event:controlchange-generalpurposecontroller8
+ * @fires InputChannel#event:controlchange-portamentocontrol
+ * @fires InputChannel#event:controlchange-highresolutionvelocityprefix
+ * @fires InputChannel#event:controlchange-effect1depth
+ * @fires InputChannel#event:controlchange-effect2depth
+ * @fires InputChannel#event:controlchange-effect3depth
+ * @fires InputChannel#event:controlchange-effect4depth
+ * @fires InputChannel#event:controlchange-effect5depth
+ * @fires InputChannel#event:controlchange-dataincrement
+ * @fires InputChannel#event:controlchange-datadecrement
+ * @fires InputChannel#event:controlchange-nonregisteredparameterfine
+ * @fires InputChannel#event:controlchange-nonregisteredparametercoarse
+ * @fires InputChannel#event:controlchange-registeredparameterfine
+ * @fires InputChannel#event:controlchange-registeredparametercoarse
+ * @fires InputChannel#event:controlchange-allsoundoff
+ * @fires InputChannel#event:controlchange-resetallcontrollers
+ * @fires InputChannel#event:controlchange-localcontrol
+ * @fires InputChannel#event:controlchange-allnotesoff
+ * @fires InputChannel#event:controlchange-omnimodeoff
+ * @fires InputChannel#event:controlchange-omnimodeon
+ * @fires InputChannel#event:controlchange-monomodeon
+ * @fires InputChannel#event:controlchange-polymodeon
+ * @fires InputChannel#event:
+ *
+ * @extends EventEmitter
+ * @license Apache-2.0
+ * @since 3.0.0
+ */
+
+/**
+ * The `Input` class represents a single MIDI input port. This object is automatically instantiated
+ * by the library according to the host's MIDI subsystem and does not need to be directly
+ * instantiated. Instead, you can access all `Input` objects by referring to the
+ * [`WebMidi.inputs`](WebMidi#inputs) array. You can also retrieve inputs by using methods such as
+ * [`WebMidi.getInputByName()`](WebMidi#getInputByName) and
+ * [`WebMidi.getInputById()`](WebMidi#getInputById).
+ *
+ * Note that a single MIDI device may expose several inputs and/or outputs.
+ *
+ * **Important**: the `Input` class does not directly fire channel-specific MIDI messages
+ * (such as [`noteon`](InputChannel#event:noteon) or
+ * [`controlchange`](InputChannel#event:controlchange), etc.). The [`InputChannel`](InputChannel)
+ * object does that. However, you can still use the
+ * [`Input.addListener()`](#addListener) method to listen to channel-specific events on multiple
+ * [`InputChannel`](InputChannel) objects at once.
+ *
+ * @fires Input#opened
+ * @fires Input#disconnected
+ * @fires Input#closed
+ * @fires Input#midimessage
+ *
+ * @fires Input#sysex
+ * @fires Input#timecode
+ * @fires Input#songposition
+ * @fires Input#songselect
+ * @fires Input#tunerequest
+ * @fires Input#clock
+ * @fires Input#start
+ * @fires Input#continue
+ * @fires Input#stop
+ * @fires Input#activesensing
+ * @fires Input#reset
+ *
+ * @fires Input#unknownmidimessage
+ *
+ * @extends EventEmitter
+ * @license Apache-2.0
+ */
+
+/**
+ * The `Message` class represents a single MIDI message. It has several properties that make it
+ * easy to make sense of the binary data it contains.
+ *
+ * @license Apache-2.0
+ * @since 3.0.0
+ */
+
+/**
+ * The `Note` class represents a single musical note such as `"D3"`, `"G#4"`, `"F-1"`, `"Gb7"`, etc.
+ *
+ * `Note` objects can be played back on a single channel by calling
+ * [`OutputChannel.playNote()`]{@link OutputChannel#playNote} or, on multiple channels of the same
+ * output, by calling [`Output.playNote()`]{@link Output#playNote}.
+ *
+ * The note has [`attack`](#attack) and [`release`](#release) velocities set at `0.5` by default.
+ * These can be changed by passing in the appropriate option. It is also possible to set a
+ * system-wide default for attack and release velocities by using the
+ * [`WebMidi.defaults`](WebMidi#defaults) property.
+ *
+ * If you prefer to work with raw MIDI values (`0` to `127`), you can use [`rawAttack`](#rawAttack) and
+ * [`rawRelease`](#rawRelease) to both get and set the values.
+ *
+ * The note may have a [`duration`](#duration). If it does, playback will be automatically stopped
+ * when the duration has elapsed by sending a `"noteoff"` event. By default, the duration is set to
+ * `Infinity`. In this case, it will never stop playing unless explicitly stopped by calling a
+ * method such as [`OutputChannel.stopNote()`]{@link OutputChannel#stopNote},
+ * [`Output.stopNote()`]{@link Output#stopNote} or similar.
+ *
+ * @license Apache-2.0
+ * @since 3.0.0
+ */
+
+/**
+ * The `OutputChannel` class represents a single output MIDI channel. `OutputChannel` objects are
+ * provided by an [`Output`](Output) port which, itself, is made available by a device. The
+ * `OutputChannel` object is derived from the host's MIDI subsystem and should not be instantiated
+ * directly.
+ *
+ * All 16 `OutputChannel` objects can be found inside the parent output's
+ * [`channels`]{@link Output#channels} property.
+ *
+ * @param {Output} output The [`Output`](Output) this channel belongs to.
+ * @param {number} number The MIDI channel number (`1` - `16`).
+ *
+ * @extends EventEmitter
+ * @license Apache-2.0
+ * @since 3.0.0
+ */
+
+/**
+ * The `Output` class represents a single MIDI output port (not to be confused with a MIDI channel).
+ * A port is made available by a MIDI device. A MIDI device can advertise several input and output
+ * ports. Each port has 16 MIDI channels which can be accessed via the [`channels`](#channels)
+ * property.
+ *
+ * The `Output` object is automatically instantiated by the library according to the host's MIDI
+ * subsystem and should not be directly instantiated.
+ *
+ * You can access all available `Output` objects by referring to the
+ * [`WebMidi.outputs`](WebMidi#outputs) array or by using methods such as
+ * [`WebMidi.getOutputByName()`](WebMidi#getOutputByName) or
+ * [`WebMidi.getOutputById()`](WebMidi#getOutputById).
+ *
+ * @fires Output#opened
+ * @fires Output#disconnected
+ * @fires Output#closed
+ *
+ * @extends EventEmitter
+ * @license Apache-2.0
+ */
+
+/**
+ * The `Utilities` class contains general-purpose utility methods. All methods are static and
+ * should be called using the class name. For example: `Utilities.getNoteDetails("C4")`.
+ *
+ * @license Apache-2.0
+ * @since 3.0.0
+ */
+
+/**
+ * The `WebMidi` object makes it easier to work with the low-level Web MIDI API. Basically, it
+ * simplifies sending outgoing MIDI messages and reacting to incoming MIDI messages.
+ *
+ * When using the WebMidi.js library, you should know that the `WebMidi` class has already been
+ * instantiated. You cannot instantiate it yourself. If you use the **IIFE** version, you should
+ * simply use the global object called `WebMidi`. If you use the **CJS** (CommonJS) or **ESM** (ES6
+ * module) version, you get an already-instantiated object when you import the module.
+ *
+ * @fires WebMidi#connected
+ * @fires WebMidi#disabled
+ * @fires WebMidi#disconnected
+ * @fires WebMidi#enabled
+ * @fires WebMidi#error
+ * @fires WebMidi#midiaccessgranted
+ * @fires WebMidi#portschanged
+ *
+ * @extends EventEmitter
+ * @license Apache-2.0
+ */
+
+/**
+ * react-router v7.8.2
+ *
+ * Copyright (c) Remix Software Inc.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE.md file in the root directory of this source tree.
+ *
+ * @license MIT
+ */
+
+/** @license React v16.13.1
+ * react-is.production.min.js
+ *
+ * Copyright (c) Facebook, Inc. and its affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
