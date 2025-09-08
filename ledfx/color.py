@@ -1,5 +1,6 @@
 import logging
 from collections import namedtuple
+from typing import Optional
 
 import numpy as np
 from numpy.typing import NDArray
@@ -69,6 +70,46 @@ class Gradient:
         self.colors = colors
         self.mode = mode
         self.angle = angle
+
+    def sample(self, position: float) -> str:
+        """
+        Return a hex color string sampled from this Gradient at a normalized
+        position in [0.0, 1.0].
+        """
+        pos = max(0.0, min(1.0, float(position)))
+
+        # Expecting self.colors as iterable of (RGB, pos) pairs
+        stops = list(self.colors)
+        # Ensure sorted by position
+        stops.sort(key=lambda c: c[1])
+
+        # Fast bounds
+        first_color, first_pos = stops[0]
+        last_color, last_pos = stops[-1]
+        if pos <= first_pos:
+            return "#{:02x}{:02x}{:02x}".format(
+                first_color.red,
+                first_color.green,
+                first_color.blue,
+            )
+        if pos >= last_pos:
+            return "#{:02x}{:02x}{:02x}".format(
+                last_color.red,
+                last_color.green,
+                last_color.blue,
+            )
+
+        # Find containing segment and linearly interpolate
+        for (c1, p1), (c2, p2) in zip(stops, stops[1:]):
+            if p1 <= pos <= p2:
+                t = 0.0 if p2 == p1 else (pos - p1) / (p2 - p1)
+                r = int(round(c1.red + (c2.red - c1.red) * t))
+                g = int(round(c1.green + (c2.green - c1.green) * t))
+                b = int(round(c1.blue + (c2.blue - c1.blue) * t))
+                return f"#{r:02x}{g:02x}{b:02x}"
+
+        # Fallback
+        return "#000000"
 
 
 def hsv_to_rgb(hue: NDArray, saturation: float, value: float) -> NDArray:
@@ -298,6 +339,29 @@ def validate_color(color: str) -> str:
     return "#%02x%02x%02x" % parse_color(color)
 
 
+def get_color_at_position(gradient_like, position: float) -> str:
+    """
+    Accepts a Gradient instance, an inline gradient string, or a simple color
+    string and returns a hex color sampled at `position` (0.0..1.0).
+    """
+    # If caller passed a Gradient instance, use it directly
+    if isinstance(gradient_like, Gradient):
+        return gradient_like.sample(position)
+
+    # If it is a simple RGB value returned by parse_gradient, handle
+    try:
+        parsed = parse_gradient(gradient_like)
+    except Exception:
+        # If parse fails, assume it's a color string and validate
+        return validate_color(gradient_like)
+
+    if isinstance(parsed, RGB):
+        return "#%02x%02x%02x" % parsed
+
+    # Otherwise parsed is a Gradient
+    return parsed.sample(position)
+
+
 def validate_gradient(gradient: str) -> str:
     """
     Validates the given gradient string.
@@ -310,6 +374,48 @@ def validate_gradient(gradient: str) -> str:
     """
     parse_gradient(gradient)
     return gradient
+
+
+def resolve_gradient(
+    value: str, gradients_collection
+) -> tuple[str, Optional[Gradient]]:
+    """Resolve a gradient input into a config string and an optional parsed Gradient.
+
+    Args:
+        value: user input (preset name or inline gradient string)
+        gradients_collection: collection object exposing get_all() and __getitem__()
+
+    Returns:
+        (config_string, parsed_gradient_or_None)
+
+    Raises:
+        ValueError: if the inline gradient is invalid.
+    """
+    trimmed = value.strip()
+
+    # prefer user gradients over builtins for the stored config string
+    defaults, user_vals = gradients_collection.get_all()
+    raw_gradient = user_vals.get(trimmed) or defaults.get(trimmed)
+
+    if raw_gradient:
+        config_string = raw_gradient
+    else:
+        # validate inline gradient string, will raise if invalid
+        validate_gradient(trimmed)
+        config_string = trimmed
+
+    # Resolve parsed gradient for sampling: prefer collection lookup
+    parsed = None
+    try:
+        parsed = gradients_collection[trimmed]
+    except Exception:
+        try:
+            parsed = parse_gradient(trimmed)
+        except Exception as e:
+            _LOGGER.warning(f"Failed to parse gradient {trimmed}: {e}")
+            parsed = None
+
+    return config_string, parsed
 
 
 LEDFX_COLORS = {
