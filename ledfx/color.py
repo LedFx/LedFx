@@ -106,7 +106,7 @@ class Gradient:
                 r = int(round(c1.red + (c2.red - c1.red) * t))
                 g = int(round(c1.green + (c2.green - c1.green) * t))
                 b = int(round(c1.blue + (c2.blue - c1.blue) * t))
-                return "#{:02x}{:02x}{:02x}".format(r, g, b)
+                return f"#{r:02x}{g:02x}{b:02x}"
 
         # Fallback
         return "#000000"
