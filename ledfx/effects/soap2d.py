@@ -89,22 +89,33 @@ class Soap2D(Twod, GradientEffect):
 
     def do_once(self):
         super().do_once()
-        self._ensure_buffers(force=True)
-        if self._vn is None:
+        # Ensure buffers exist / are sized; do not force a reset here
+        resized = self._ensure_buffers()
+
+        # Track whether we initialized these now so we only reseed when needed
+        vn_was_none = self._vn is None
+        phase_was_none = self._phase is None
+
+        if vn_was_none:
             self._vn = vnoise.Noise()
-        if self._phase is None:
+        if phase_was_none:
             r = np.random.RandomState()
             self._phase = np.array(
                 [r.rand() * 256, r.rand() * 256], dtype=np.float32
             )
 
-    def _ensure_buffers(self, force: bool = False):
+        # Only request seeding if buffers were created/resized or we just initialized vn/phase
+        if resized or vn_was_none or phase_was_none:
+            self._need_seed = True
+
+    def _ensure_buffers(self, force: bool = False) -> bool:
         H, W = int(self.r_height), int(self.r_width)
         if H <= 0 or W <= 0:
-            return
+            return False
         if not force and H == self._h and W == self._w:
-            return
+            return False
 
+        resized = (H != self._h) or (W != self._w)
         self._h, self._w = H, W
         self._noise = np.zeros((H, W), dtype=np.float32)
         self._pixels_prev = np.zeros((H, W, 3), dtype=np.float32)
@@ -116,6 +127,7 @@ class Soap2D(Twod, GradientEffect):
         self._j_h = np.arange(H, dtype=np.int32)[None, :]  # (1,H)
 
         self._need_seed = True
+        return resized
 
     # ---------- noise ----------
 
