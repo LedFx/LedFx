@@ -1,4 +1,4 @@
-# **Global Configuration API**
+# Global Configuration API
 
 ## Overview
 
@@ -16,6 +16,7 @@ This operation is exposed as a bulk action on the existing **effects collection*
 - **Validation:** Each configuration value is validated using the same logic as per-effect configuration updates.
 - **Toggle Support:** Boolean fields support `"toggle"` to flip the current state of each individual effect.
 - **Persistence:** Each updated effect is merged via `effect.update_config({keys})` and saved through `virtual.update_effect_config(effect)`.
+- **Color handling:** Individual effect colors except background_color which must be explicitly configured, will be extracted from the gradient and mapped accordingly. Rough mapping into gradient of Low = 0.0, Mid = 0.5, High = 1.0. 
 - **Idempotent:** Reapplying the same configuration results in no effective change (except for toggle operations which always flip state).
 
 ---
@@ -51,7 +52,7 @@ This operation is exposed as a bulk action on the existing **effects collection*
 
 ## Examples
 
-### Apply a predefined gradient to all active gradient-capable effects
+### Apply a predefined gradient to all active gradient and color capable effects
 ```bash
 curl -X PUT http://localhost:8888/api/effects \
   -H "Content-Type: application/json" \
@@ -120,15 +121,10 @@ curl -X PUT http://localhost:8888/api/effects \
   "status": "failed",
   "payload": {
     "type": "error",
-    "reason": "At least one of the following attributes must be provided: gradient, background_color, background_brightness, flip, mirror"
+    "reason": "At least one of the following attributes must be provided: gradient, background_color, background_brightness, brightness, flip, mirror"
   }
 }
 ```
 
 *Note: Returns HTTP 200 status code by default for frontend snackbar compatibility.*
 
----
-
-## Future Extensions (not implemented yet)
-
-- Support for non-gradient effects (mapping gradient → `colors`, `foreground/background`, or `color`).
