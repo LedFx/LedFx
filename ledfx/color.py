@@ -1,6 +1,6 @@
 import logging
 from collections import namedtuple
-from typing import Optional, Tuple, Union
+from typing import Optional
 
 import numpy as np
 from numpy.typing import NDArray

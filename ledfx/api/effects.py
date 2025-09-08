@@ -6,7 +6,6 @@ from aiohttp import web
 from ledfx.api import RestEndpoint
 from ledfx.color import (
     get_color_at_position,
-    parse_gradient,
     resolve_gradient,
     validate_color,
     validate_gradient,
