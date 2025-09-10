@@ -219,14 +219,17 @@ class EffectsEndpoint(RestEndpoint):
                     return await self.invalid_request(
                         'Invalid value for "virtuals": must be a list of virtual ids'
                     )
-                virtuals_filter = set(str(v) for v in vlist)
+                virtuals_filter = {str(v) for v in vlist}
 
             updated = 0
             skipped = 0
 
             for virtual in self._ledfx.virtuals.values():
                 # If a virtuals filter was provided, skip non-matching virtuals
-                if virtuals_filter is not None and virtual.id not in virtuals_filter:
+                if (
+                    virtuals_filter is not None
+                    and virtual.id not in virtuals_filter
+                ):
                     continue
                 eff = getattr(virtual, "active_effect", None)
                 if eff is None or isinstance(eff, DummyEffect):
