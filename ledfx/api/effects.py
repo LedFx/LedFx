@@ -211,10 +211,26 @@ class EffectsEndpoint(RestEndpoint):
                     )
 
             # Apply updates to all compatible effects
+            # Optional filter: a list of virtual ids to restrict the update to
+            virtuals_filter = None
+            if "virtuals" in data:
+                vlist = data["virtuals"]
+                if not isinstance(vlist, list):
+                    return await self.invalid_request(
+                        'Invalid value for "virtuals": must be a list of virtual ids'
+                    )
+                virtuals_filter = {str(v) for v in vlist}
+
             updated = 0
             skipped = 0
 
             for virtual in self._ledfx.virtuals.values():
+                # If a virtuals filter was provided, skip non-matching virtuals
+                if (
+                    virtuals_filter is not None
+                    and virtual.id not in virtuals_filter
+                ):
+                    continue
                 eff = getattr(virtual, "active_effect", None)
                 if eff is None or isinstance(eff, DummyEffect):
                     continue
