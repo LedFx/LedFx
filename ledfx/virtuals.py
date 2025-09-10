@@ -218,8 +218,7 @@ class Virtual:
         if device is None:
             msg = f"Invalid device id: {device_id}"
             valid = False
-
-        if (
+        elif (
             start_pixel < 0
             or end_pixel < 0
             or start_pixel > end_pixel
@@ -1263,9 +1262,15 @@ class Virtuals:
         return cls._instance
 
     def __init__(self, ledfx):
-        if not hasattr(self, "_initialized"):  # Ensure __init__ runs only once
+        # Always update the reference to the current LedFx core instance.
+        # Virtuals is implemented as a singleton and may be instantiated
+        # multiple times across different LedFxCore lifecycles; binding
+        # _ledfx unconditionally ensures we reference the correct
+        # Devices/Events registries when restoring from config.
+        self._ledfx = ledfx
+
+        if not hasattr(self, "_initialized"):  # Ensure one-time init
             self._initialized = True
-            self._ledfx = ledfx
             self._virtuals = {}
             self._paused = False
 
@@ -1292,6 +1297,7 @@ class Virtuals:
             # used for effect, effects, last_effect etc
             new_virtual.virtual_cfg = virtual_cfg
 
+            
             if "segments" in virtual_cfg:
                 try:
                     new_virtual.update_segments(virtual_cfg["segments"])
