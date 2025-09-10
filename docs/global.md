@@ -18,6 +18,7 @@ This operation is exposed as a bulk action on the existing **effects collection*
 - **Persistence:** Each updated effect is merged via `effect.update_config({keys})` and saved through `virtual.update_effect_config(effect)`.
 - **Color handling:** Individual effect colors except background_color which must be explicitly configured, will be extracted from the gradient and mapped accordingly. Rough mapping into gradient of Low = 0.0, Mid = 0.5, High = 1.0.
 - **Idempotent:** Reapplying the same configuration results in no effective change (except for toggle operations which always flip state).
+- **Virtual filter:** You may provide a `virtuals` field (list of virtual ids). When present the operation is restricted to only those virtuals; if omitted the operation works across all active effects.
 
 ---
 
@@ -38,6 +39,7 @@ This operation is exposed as a bulk action on the existing **effects collection*
 | `brightness`             | number            | no       | Main brightness value between 0.0 and 1.0. |
 | `flip`                   | boolean or string | no       | `true`, `false`, or `"toggle"` to flip the current state. |
 | `mirror`                 | boolean or string | no       | `true`, `false`, or `"toggle"` to flip the current state. |
+| `virtuals`               | array of strings  | no       | Optional list of virtual ids to restrict the operation to. When present only virtuals with matching `virtual.id` values will be updated. |
 
 **Notes**
 
@@ -59,6 +61,17 @@ curl -X PUT http://localhost:8888/api/effects \
   -d '{
     "action": "apply_global",
     "gradient": "Viridis"
+  }'
+```
+
+### Apply a gradient only to a specific list of virtuals
+```bash
+curl -X PUT http://localhost:8888/api/effects \
+  -H "Content-Type: application/json" \
+  -d '{
+    "action": "apply_global",
+    "gradient": "Viridis",
+    "virtuals": ["virtual-1-id", "virtual-2-id"]
   }'
 ```
 
