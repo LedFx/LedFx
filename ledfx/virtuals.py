@@ -1297,7 +1297,6 @@ class Virtuals:
             # used for effect, effects, last_effect etc
             new_virtual.virtual_cfg = virtual_cfg
 
-            
             if "segments" in virtual_cfg:
                 try:
                     new_virtual.update_segments(virtual_cfg["segments"])
