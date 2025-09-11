@@ -374,7 +374,6 @@ class LedFxCore:
     async def async_start(self, open_ui=False, pause_all=False):
         _LOGGER.info(f"Starting LedFx, listening on {self.host}:{self.port}")
 
-        await self.http.start(get_ssl_certs(config_dir=self.config_dir))
         if (
             self.icon is not None
             and self.icon.notify is not None
@@ -386,6 +385,9 @@ class LedFxCore:
         self.devices = Devices(self)
         self.effects = Effects(self)
         self.virtuals = Virtuals(self)
+        # Ensure we start with a fresh virtual registry when reusing the
+        # Virtuals singleton across LedFxCore lifecycles.
+        self.virtuals.reset_for_core(self)
         self.integrations = Integrations(self)
         self.scenes = Scenes(self)
         self.colors = UserDefaultCollection(
@@ -415,6 +417,14 @@ class LedFxCore:
         )
         self.integrations.create_from_config(self.config["integrations"])
 
+        # Start the HTTP server once internal registries are initialized so
+        # websockets and REST endpoints are fully ready before the UI opens.
+        await self.http.start(get_ssl_certs(config_dir=self.config_dir))
+
+        # Only open the UI once devices and virtuals have been initialized
+        if open_ui:
+            self.open_ui()
+
         if self.config["scan_on_startup"]:
             async_fire_and_forget(
                 self.zeroconf.discover_wled_devices(), self.loop
@@ -423,9 +433,6 @@ class LedFxCore:
         async_fire_and_forget(
             self.integrations.activate_integrations(), self.loop
         )
-
-        if open_ui:
-            self.open_ui()
 
         if self.ci_testing:
             await asyncio.sleep(5)
