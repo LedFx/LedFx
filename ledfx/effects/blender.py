@@ -15,32 +15,26 @@ class BlendVirtual:
     def __init__(self, virtual_id, _virtuals, fallback_shape):
         self.target_rows = fallback_shape[0]
         self.target_columns = fallback_shape[1]
-        # all virtual grabs are try as they might not exist yet, but may on the next frame
-        try:
-            virtual = _virtuals.get(virtual_id)
-            self.rows = virtual.config["rows"]
-            self.columns = int(virtual.pixel_count / self.rows)
-            self.matching = (
-                self.rows == fallback_shape[0]
-                and self.columns == fallback_shape[1]
+        # Try protection against virtual not being found is left to the caller
+
+        virtual = _virtuals.get(virtual_id)
+        self.rows = virtual.config["rows"]
+        self.columns = int(virtual.pixel_count / self.rows)
+        self.matching = (
+            self.rows == fallback_shape[0]
+            and self.columns == fallback_shape[1]
+        )
+        if hasattr(virtual.active_effect, "matrix"):
+            self.matrix = virtual.active_effect.get_matrix()
+        else:
+            # Reshape the 1D pixel array into (height, width, 3) for RGB
+            reshaped_pixels = virtual.assembled_frame.reshape(
+                (self.rows, self.columns, 3)
             )
-            if hasattr(virtual.active_effect, "matrix"):
-                self.matrix = virtual.active_effect.get_matrix()
-            else:
-                # Reshape the 1D pixel array into (height, width, 3) for RGB
-                reshaped_pixels = virtual.assembled_frame.reshape(
-                    (self.rows, self.columns, 3)
-                )
-                # Convert the numpy array back into a Pillow image
-                self.matrix = Image.fromarray(
-                    reshaped_pixels.astype(np.uint8), "RGB"
-                )
-        except Exception as e:
-            _LOGGER.info(f"Virtual {virtual_id} {e}")
-            self.matrix = Image.new("RGB", fallback_shape, (0, 0, 0))
-            self.rows = fallback_shape[0]
-            self.columns = fallback_shape[1]
-            self.matching = True
+            # Convert the numpy array back into a Pillow image
+            self.matrix = Image.fromarray(
+                reshaped_pixels.astype(np.uint8), "RGB"
+            )
 
 
 def stretch_2d_full(blend_virtual):
@@ -170,22 +164,27 @@ class Blender(AudioReactiveEffect):
         pass
 
     def render(self):
-
-        blend_mask = BlendVirtual(
-            self.mask,
-            self._ledfx.virtuals._virtuals,
-            (self.rows, self.columns),
-        )
-        blend_fore = BlendVirtual(
-            self.foreground,
-            self._ledfx.virtuals._virtuals,
-            (self.rows, self.columns),
-        )
-        blend_back = BlendVirtual(
-            self.background,
-            self._ledfx.virtuals._virtuals,
-            (self.rows, self.columns),
-        )
+        try:
+            # if we are in race condition start up scenarios, all sorts of odd things can happen
+            # don't try to fake it, just skip this render frame until things settle down
+            blend_mask = BlendVirtual(
+                self.mask,
+                self._ledfx.virtuals._virtuals,
+                (self.rows, self.columns),
+            )
+            blend_fore = BlendVirtual(
+                self.foreground,
+                self._ledfx.virtuals._virtuals,
+                (self.rows, self.columns),
+            )
+            blend_back = BlendVirtual(
+                self.background,
+                self._ledfx.virtuals._virtuals,
+                (self.rows, self.columns),
+            )
+        except Exception as e:
+            _LOGGER.warning(f"Virtual {self._virtual.name} Blender virtuals not ready {e}")
+            return
 
         mask_image = self.mask_stretch_func(blend_mask).convert("L")
         fore_image = self.foreground_stretch_func(blend_fore)
