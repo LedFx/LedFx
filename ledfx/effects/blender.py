@@ -183,7 +183,9 @@ class Blender(AudioReactiveEffect):
                 (self.rows, self.columns),
             )
         except Exception as e:
-            _LOGGER.warning(f"Virtual {self._virtual.name} Blender virtuals not ready {e}")
+            _LOGGER.warning(
+                f"Virtual {self._virtual.name} Blender virtuals not ready {e}"
+            )
             return
 
         mask_image = self.mask_stretch_func(blend_mask).convert("L")
