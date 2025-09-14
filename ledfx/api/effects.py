@@ -4,6 +4,7 @@ from json import JSONDecodeError
 from aiohttp import web
 
 from ledfx.api import RestEndpoint
+from ledfx.api.virtual_effects import process_fallback
 from ledfx.color import (
     get_color_at_position,
     resolve_gradient,
@@ -12,7 +13,6 @@ from ledfx.color import (
 )
 from ledfx.config import save_config
 from ledfx.effects import DummyEffect
-from ledfx.api.virtual_effects import process_fallback
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -108,7 +108,11 @@ class EffectsEndpoint(RestEndpoint):
                 'Required attribute "action" was not provided'
             )
 
-        if action not in ["clear_all_effects", "apply_global", "apply_global_effect"]:
+        if action not in [
+            "clear_all_effects",
+            "apply_global",
+            "apply_global_effect",
+        ]:
             return await self.invalid_request(f'Invalid action "{action}"')
 
         if action == "apply_global":
@@ -134,7 +138,10 @@ class EffectsEndpoint(RestEndpoint):
         # Define supported configuration keys and their validation
         SUPPORTED_KEYS = {
             "gradient": {"validator": validate_gradient, "type": "string"},
-            "background_color": {"validator": validate_color, "type": "string"},
+            "background_color": {
+                "validator": validate_color,
+                "type": "string",
+            },
             "background_brightness": {
                 "validator": lambda x: max(0.0, min(1.0, float(x))),
                 "type": "number",
@@ -237,7 +244,10 @@ class EffectsEndpoint(RestEndpoint):
 
         for virtual in self._ledfx.virtuals.values():
             # If a virtuals filter was provided, skip non-matching virtuals
-            if virtuals_filter is not None and virtual.id not in virtuals_filter:
+            if (
+                virtuals_filter is not None
+                and virtual.id not in virtuals_filter
+            ):
                 continue
             eff = getattr(virtual, "active_effect", None)
             if eff is None or isinstance(eff, DummyEffect):
@@ -297,12 +307,18 @@ class EffectsEndpoint(RestEndpoint):
         # Persist configuration changes
         if updated > 0:
             try:
-                save_config(config=self._ledfx.config, config_dir=self._ledfx.config_dir)
+                save_config(
+                    config=self._ledfx.config,
+                    config_dir=self._ledfx.config_dir,
+                )
             except Exception as e:
-                _LOGGER.warning(f"Failed to save config after apply_global: {e}")
+                _LOGGER.warning(
+                    f"Failed to save config after apply_global: {e}"
+                )
 
         return await self.request_success(
-            "success", f"Applied global configuration to {updated} effects (skipped {skipped})"
+            "success",
+            f"Applied global configuration to {updated} effects (skipped {skipped})",
         )
 
     async def _apply_global_effect(self, data: dict) -> web.Response:
@@ -324,12 +340,16 @@ class EffectsEndpoint(RestEndpoint):
 
         effect_type = data.get("type")
         if not effect_type:
-            return await self.invalid_request('Required attribute "type" was not provided')
+            return await self.invalid_request(
+                'Required attribute "type" was not provided'
+            )
 
         # Effect config may be omitted (treated as reset) or provided as a dict
         effect_config = data.get("config")
         if effect_config == "RANDOMIZE":
-            return await self.invalid_request('RANDOMIZE is not supported for apply_global_effect')
+            return await self.invalid_request(
+                "RANDOMIZE is not supported for apply_global_effect"
+            )
         if effect_config is None:
             # Reset behavior
             effect_config = {}
@@ -369,15 +389,22 @@ class EffectsEndpoint(RestEndpoint):
                 virtual.update_effect_config(effect)
                 applied += 1
             except (ValueError, RuntimeError) as msg:
-                _LOGGER.warning(f"Unable to set effect on virtual {vid}: {msg}")
+                _LOGGER.warning(
+                    f"Unable to set effect on virtual {vid}: {msg}"
+                )
                 failed += 1
 
         # Persist configuration changes if anything applied
         if applied > 0:
             try:
-                save_config(config=self._ledfx.config, config_dir=self._ledfx.config_dir)
+                save_config(
+                    config=self._ledfx.config,
+                    config_dir=self._ledfx.config_dir,
+                )
             except Exception as e:
-                _LOGGER.warning(f"Failed to save config after apply_global_effect: {e}")
+                _LOGGER.warning(
+                    f"Failed to save config after apply_global_effect: {e}"
+                )
 
         return await self.request_success(
             "success",
