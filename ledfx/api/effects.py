@@ -12,6 +12,7 @@ from ledfx.color import (
 )
 from ledfx.config import save_config
 from ledfx.effects import DummyEffect
+from ledfx.api.virtual_effects import process_fallback
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -107,11 +108,14 @@ class EffectsEndpoint(RestEndpoint):
                 'Required attribute "action" was not provided'
             )
 
-        if action not in ["clear_all_effects", "apply_global"]:
+        if action not in ["clear_all_effects", "apply_global", "apply_global_effect"]:
             return await self.invalid_request(f'Invalid action "{action}"')
 
         if action == "apply_global":
             return await self._apply_global(data)
+
+        if action == "apply_global_effect":
+            return await self._apply_global_effect(data)
 
         # Clear all effects on all devices
         if action == "clear_all_effects":
@@ -299,4 +303,83 @@ class EffectsEndpoint(RestEndpoint):
 
         return await self.request_success(
             "success", f"Applied global configuration to {updated} effects (skipped {skipped})"
+        )
+
+    async def _apply_global_effect(self, data: dict) -> web.Response:
+        """
+        Apply a specific effect (type + config) to a list of virtual ids.
+
+        Expected payload:
+        {
+            "virtuals": ["id1", "id2", ...],
+            "type": "effect_type",
+            "config": { ... }    # optional, empty dict resets
+        }
+        """
+        vlist = data.get("virtuals")
+        if not isinstance(vlist, list) or not vlist:
+            return await self.invalid_request(
+                'Invalid value for "virtuals": must be a non-empty list of virtual ids'
+            )
+
+        effect_type = data.get("type")
+        if not effect_type:
+            return await self.invalid_request('Required attribute "type" was not provided')
+
+        # Effect config may be omitted (treated as reset) or provided as a dict
+        effect_config = data.get("config")
+        if effect_config == "RANDOMIZE":
+            return await self.invalid_request('RANDOMIZE is not supported for apply_global_effect')
+        if effect_config is None:
+            # Reset behavior
+            effect_config = {}
+
+        # Fallback behaviour (same semantics as virtual endpoint)
+        fallback = process_fallback(data.get("fallback", None))
+
+        applied = 0
+        skipped = 0
+        blocked = 0
+        failed = 0
+
+        for vid in vlist:
+            virtual = self._ledfx.virtuals.get(str(vid))
+            if virtual is None:
+                skipped += 1
+                continue
+
+            if fallback is not None and virtual.streaming:
+                # Don't interrupt the whole operation; record that this virtual is
+                # blocked due to an active stream and skip it.
+                blocked += 1
+                _LOGGER.debug(
+                    "Skipping virtual %s: streaming active and fallback provided",
+                    vid,
+                )
+                continue
+
+            # Create the effect and set it on the virtual. If config is empty, this
+            # effectively resets to defaults (effects.create will handle defaulting).
+            try:
+                effect = self._ledfx.effects.create(
+                    ledfx=self._ledfx, type=effect_type, config=effect_config
+                )
+                # apply effect with provided fallback (may be None)
+                virtual.set_effect(effect, fallback=fallback)
+                virtual.update_effect_config(effect)
+                applied += 1
+            except (ValueError, RuntimeError) as msg:
+                _LOGGER.warning(f"Unable to set effect on virtual {vid}: {msg}")
+                failed += 1
+
+        # Persist configuration changes if anything applied
+        if applied > 0:
+            try:
+                save_config(config=self._ledfx.config, config_dir=self._ledfx.config_dir)
+            except Exception as e:
+                _LOGGER.warning(f"Failed to save config after apply_global_effect: {e}")
+
+        return await self.request_success(
+            "success",
+            f"Applied effect '{effect_type}' to {applied} virtuals (skipped {skipped}, blocked {blocked}, failed {failed})",
         )

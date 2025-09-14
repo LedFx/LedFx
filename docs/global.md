@@ -1,13 +1,13 @@
 # Global Configuration API
 
-## Overview
+## apply_global
 
 This API lets a client set global configuration values across every **active** effect that natively supports the specified configuration keys.
 Effects **without** a specified configuration field or where the field is in the effect's `HIDDEN_KEYS` list are **ignored**.
 
 This operation is exposed as a bulk action on the existing **effects collection** endpoint.
 
-## Behavior
+### Behavior
 
 - **Targets:** Only **active** effects that include the requested configuration keys in their schema.
 - **Key Filtering:** Each configuration key is checked independently - effects are only updated for keys they support.
@@ -22,13 +22,11 @@ This operation is exposed as a bulk action on the existing **effects collection*
 
 ---
 
-## Endpoint
+### Endpoint
 
-**PUT** `/api/effects`
+**PUT** `/api/effects` with `action: "apply_global"`
 
----
-
-## Request Body
+### Request body:
 
 | Field                    | Type              | Required | Description |
 |--------------------------|-------------------|----------|-------------|
@@ -41,7 +39,7 @@ This operation is exposed as a bulk action on the existing **effects collection*
 | `mirror`                 | boolean or string | no       | `true`, `false`, or `"toggle"` to flip the current state. |
 | `virtuals`               | array of strings  | no       | Optional list of virtual ids to restrict the operation to. When present only virtuals with matching `virtual.id` values will be updated. |
 
-**Notes**
+**Notes:**
 
 - At least one configuration field must be provided.
 - `gradient` supports built-in gradients, user-defined gradients, and full gradient definitions. Preset names are resolved to full definitions for storage.
@@ -50,11 +48,10 @@ This operation is exposed as a bulk action on the existing **effects collection*
 - Boolean fields (`flip`, `mirror`) support `"toggle"` to flip the current state of each effect.
 - Fields in an effect's `HIDDEN_KEYS` list are ignored for that specific effect.
 
----
+### Examples
 
-## Examples
+#### Apply a predefined gradient to all active gradient and color capable effects:
 
-### Apply a predefined gradient to all active gradient and color capable effects
 ```bash
 curl -X PUT http://localhost:8888/api/effects \
   -H "Content-Type: application/json" \
@@ -64,7 +61,8 @@ curl -X PUT http://localhost:8888/api/effects \
   }'
 ```
 
-### Apply a gradient only to a specific list of virtuals
+#### Apply a gradient only to a specific list of virtuals:
+
 ```bash
 curl -X PUT http://localhost:8888/api/effects \
   -H "Content-Type: application/json" \
@@ -75,7 +73,8 @@ curl -X PUT http://localhost:8888/api/effects \
   }'
 ```
 
-### Apply multiple configuration values
+#### Apply multiple configuration values:
+
 ```bash
 curl -X PUT http://localhost:8888/api/effects \
   -H "Content-Type: application/json" \
@@ -89,7 +88,8 @@ curl -X PUT http://localhost:8888/api/effects \
   }'
 ```
 
-### Toggle boolean values
+#### Toggle boolean values:
+
 ```bash
 curl -X PUT http://localhost:8888/api/effects \
   -H "Content-Type: application/json" \
@@ -100,11 +100,10 @@ curl -X PUT http://localhost:8888/api/effects \
   }'
 ```
 
----
+### Responses
 
-## Responses
+#### Success (snackbar-friendly):
 
-### Success
 ```json
 {
   "status": "success",
@@ -115,7 +114,8 @@ curl -X PUT http://localhost:8888/api/effects \
 }
 ```
 
-### Failure (invalid or unknown value)
+#### Failure (invalid or unknown value):
+
 ```json
 {
   "status": "failed",
@@ -128,7 +128,55 @@ curl -X PUT http://localhost:8888/api/effects \
 
 *Note: Returns HTTP 200 status code by default for frontend snackbar compatibility.*
 
-### Failure (bad input)
+---
+
+## apply_global_effect
+
+A bulk action that lets a client apply a single effect (type + config) to a specific list of virtuals.
+
+### Behavior notes:
+
+- The call attempts to set the requested effect on each listed virtual id in order. Non-existent ids are skipped.
+- If `config` is omitted or empty the effect is created using default configuration (this is treated as a reset).
+- `RANDOMIZE` is intentionally not supported for this bulk action.
+- `fallback` uses the same `process_fallback` semantics as the per-virtual endpoint. If a fallback is provided and a virtual is currently streaming, that virtual is blocked and skipped (the operation continues for other virtuals).
+- Any failure to create or set an effect on a particular virtual is recorded as a failure and does not abort the overall operation.
+
+### Endpoint:
+
+**PUT** `/api/effects` with `action: "apply_global_effect"`
+
+### Request body:
+
+| Field      | Type             | Required | Description |
+|------------|------------------|----------|-------------|
+| `action`   | string           | yes      | Must be `"apply_global_effect"`. |
+| `virtuals` | array[string]    | yes      | Non-empty list of virtual ids to target. |
+| `type`     | string           | yes      | Effect type to apply (same strings used by per-virtual endpoints). |
+| `config`   | object           | no       | Effect configuration. If omitted or empty, the effect will be created with its defaults (reset behavior). `"RANDOMIZE"` is not supported for this action. |
+| `fallback` | bool|number|null   | no       | Same semantics as the per-virtual endpoints; controls fallback timeout behavior. When a fallback value is provided and a virtual is currently streaming, that virtual will be blocked (skipped) rather than cause the whole operation to fail. |
+
+### Response:
+
+#### Success
+On success the endpoint returns a summary with counts to help the client understand what happened across the batch. Example:
+
+```json
+{
+  "status": "success",
+  "payload": {
+    "type": "success",
+    "reason": "Applied effect 'sparkle' to 10 virtuals (skipped 2, blocked 1, failed 1)"
+  }
+}
+```
+
+- `applied` – number of virtuals successfully updated
+- `skipped` – number of virtual ids that did not exist in the system
+- `blocked` – number of virtuals skipped because they were actively streaming and a `fallback` was provided
+- `failed` – number of virtuals where creating or setting the effect raised an error
+
+#### Failure (bad input)
 ```json
 {
   "status": "failed",
