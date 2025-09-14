@@ -134,7 +134,7 @@ curl -X PUT http://localhost:8888/api/effects \
 
 A bulk action that lets a client apply a single effect (type + config) to a specific list of virtuals.
 
-### Behavior notes:
+### Behavior:
 
 - The call attempts to set the requested effect on each listed virtual id in order. Non-existent ids are skipped.
 - If `config` is omitted or empty the effect is created using default configuration (this is treated as a reset).
@@ -151,7 +151,7 @@ A bulk action that lets a client apply a single effect (type + config) to a spec
 | Field      | Type             | Required | Description |
 |------------|------------------|----------|-------------|
 | `action`   | string           | yes      | Must be `"apply_global_effect"`. |
-| `virtuals` | array[string]    | yes      | Non-empty list of virtual ids to target. |
+| `virtuals` | array[string]    | no       | Optional list of virtual ids to target. When omitted the operation targets all known virtuals. If provided, must be a non-empty list. |
 | `type`     | string           | yes      | Effect type to apply (same strings used by per-virtual endpoints). |
 | `config`   | object           | no       | Effect configuration. If omitted or empty, the effect will be created with its defaults (reset behavior). `"RANDOMIZE"` is not supported for this action. |
 | `fallback` | bool|number|null   | no       | Same semantics as the per-virtual endpoints; controls fallback timeout behavior. When a fallback value is provided and a virtual is currently streaming, that virtual will be blocked (skipped) rather than cause the whole operation to fail. |
@@ -185,6 +185,36 @@ On success the endpoint returns a summary with counts to help the client underst
     "reason": "At least one of the following attributes must be provided: gradient, background_color, background_brightness, brightness, flip, mirror"
   }
 }
+```
+
+### Examples
+
+#### Apply an effect to all virtuals (omit `virtuals`)
+
+```bash
+curl -X PUT http://localhost:8888/api/effects \
+  -H "Content-Type: application/json" \
+  -d '{
+    "action": "apply_global_effect",
+    "type": "sparkle",
+    "config": { "density": 0.5 }
+  }'
+```
+
+#### Apply an effect with fallback — blocked virtuals are skipped
+
+If some virtuals are actively streaming and you provide a `fallback` value, those virtuals will be skipped and counted as `blocked` in the response.
+
+```bash
+curl -X PUT http://localhost:8888/api/effects \
+  -H "Content-Type: application/json" \
+  -d '{
+    "action": "apply_global_effect",
+    "virtuals": ["v1","v2","v3"],
+    "type": "sparkle",
+    "config": { "density": 0.5 },
+    "fallback": true
+  }'
 ```
 
 *Note: Returns HTTP 200 status code by default for frontend snackbar compatibility.*

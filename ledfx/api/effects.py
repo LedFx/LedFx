@@ -13,6 +13,7 @@ from ledfx.color import (
 from ledfx.config import save_config
 from ledfx.effects import DummyEffect
 from ledfx.api.virtual_effects import process_fallback
+from ledfx.virtuals import Virtuals
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -316,8 +317,11 @@ class EffectsEndpoint(RestEndpoint):
             "config": { ... }    # optional, empty dict resets
         }
         """
-        vlist = data.get("virtuals")
-        if not isinstance(vlist, list) or not vlist:
+
+        vlist = data.get("virtuals", None)
+        if vlist is None:
+            vlist = Virtuals.get_virtual_ids()
+        elif not isinstance(vlist, list) or not vlist:
             return await self.invalid_request(
                 'Invalid value for "virtuals": must be a non-empty list of virtual ids'
             )
