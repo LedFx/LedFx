@@ -82,7 +82,7 @@ jobs:
       - name: Install build dependencies
         run: |
           brew install portaudio
-      
+
       # Fix samplerate build on Python 3.9/3.10 with CMake 4.x
       - name: Set CMake policy minimum
         run: echo "CMAKE_POLICY_VERSION_MINIMUM=3.5" >> "$GITHUB_ENV"
