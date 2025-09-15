@@ -243,13 +243,15 @@ class LedFxCore:
             virtual = self.virtuals.get(vis_id)
             # protect against deleted virtuals
             if virtual:
-                rows = virtual.rows
+                # protect against rows = 0
+                rows = max(1, virtual.rows)
             else:
                 rows = 1
 
             pixels = event.pixels
             pixels_len = len(pixels)
             shape = (rows, int(pixels_len / rows))
+
             if pixels_len > max_len:
                 new_shape, pixels_len = shape_to_fit_len(
                     max_len, shape, pixels_len
