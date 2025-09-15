@@ -32,6 +32,6 @@ An Alpha Mode switch should now appear in the UI Mode section
 
 ![are you sure?!?](/_static/howto/alpha/alpha3.png)
 
-When this switch is activated a new set of options for selecting alpha features will be available, an example of such feature are as per the following image, but could change at any time!
+When this switch is activated a new set of options for selecting alpha features will be available, an example of such features are as per the following image, but could change at any time!
 
 ![here today, gone tomorrow](/_static/howto/alpha/alpha4.png)

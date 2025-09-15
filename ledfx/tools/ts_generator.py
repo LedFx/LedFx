@@ -762,6 +762,37 @@ def generate_typescript_types() -> str:
     # --- 4. Collect ALL Effect Properties for Universal Interface ---
     all_effect_properties = {}
     _LOGGER.info("Collecting properties for universal interface...")
+
+    # First, collect properties from the base Effect class
+    try:
+        from ledfx.effects import Effect
+
+        base_effect_schema = getattr(Effect, "CONFIG_SCHEMA", None)
+        if isinstance(base_effect_schema, vol.Schema) and isinstance(
+            base_effect_schema.schema, dict
+        ):
+            _LOGGER.info(
+                "Adding base Effect class properties to universal interface..."
+            )
+            for key_marker, validator in base_effect_schema.schema.items():
+                key_schema_obj = (
+                    key_marker.schema
+                    if isinstance(key_marker, (vol.Required, vol.Optional))
+                    else key_marker
+                )
+                key_name_str = str(key_schema_obj)
+                ts_property_name = key_name_str
+                basic_ts_type = voluptuous_validator_to_ts_type(
+                    validator, for_universal=True
+                )
+                all_effect_properties[ts_property_name] = basic_ts_type
+                _LOGGER.debug(
+                    f"Added base Effect property: {ts_property_name} -> {basic_ts_type}"
+                )
+    except Exception as e:
+        _LOGGER.warning(f"Could not process base Effect schema: {e}")
+
+    # Then collect properties from specific effect classes
     for effect_type_str, effect_class in effect_registry.items():
         effect_schema_to_use = getattr(effect_class, "CONFIG_SCHEMA", None)
         if isinstance(effect_schema_to_use, vol.Schema) and isinstance(
@@ -826,6 +857,80 @@ def generate_typescript_types() -> str:
         device_type_literal_union,
     )
 
+    # --- 6.5. Generate Scene Config and API Response Types ---
+    scene_config_interface_name = "SceneConfig"
+    try:
+        _LOGGER.info("Generating Scene config interface...")
+        from ledfx.scenes import Scenes
+
+        # Create a dummy Scenes instance to access the schema
+        # We need to pass a minimal ledfx object with the required structure
+        class DummyLedFx:
+            def __init__(self):
+                self.config = {"scenes": {}}
+                self.virtuals = type(
+                    "obj", (object,), {"get": lambda x: None}
+                )()
+
+        dummy_ledfx = DummyLedFx()
+        scenes_instance = Scenes(dummy_ledfx)
+        scene_schema = scenes_instance.SCENE_SCHEMA
+
+        if isinstance(scene_schema, vol.Schema):
+            output_ts_string += "// Scene Configuration\n"
+            scene_interface = generate_ts_interface_from_voluptuous(
+                scene_config_interface_name,
+                scene_schema,
+            )
+            output_ts_string += f"{scene_interface}\n\n"
+        else:
+            _LOGGER.warning("Scene schema is not a voluptuous Schema")
+            output_ts_string += f"// Fallback Scene Config\nexport interface {scene_config_interface_name} {{ name: string; [key: string]: any; }}\n\n"
+    except Exception as e:
+        _LOGGER.error(f"Failed to generate Scene config: {e}")
+        output_ts_string += f"// Failed Scene Config\nexport interface {scene_config_interface_name} {{ name: string; [key: string]: any; }}\n\n"
+
+    # Generate Scene API Response Types
+    output_ts_string += "// Scene API Response Types\n"
+    output_ts_string += "/**\n * Represents the effect configuration stored in a scene for a virtual.\n * @category Scenes\n */\n"
+    output_ts_string += "export interface SceneVirtualEffect {\n"
+    output_ts_string += "  type?: EffectType;\n"
+    output_ts_string += "  config?: EffectConfig;\n"
+    output_ts_string += "}\n\n"
+
+    output_ts_string += "/**\n * Represents a stored scene configuration with actual effect data.\n * This is the structure used in the API responses and storage.\n * @category Scenes\n */\n"
+    output_ts_string += "export interface StoredSceneConfig {\n"
+    output_ts_string += "  name: string;\n"
+    output_ts_string += "  scene_image?: string;\n"
+    output_ts_string += "  scene_tags?: string;\n"
+    output_ts_string += "  scene_puturl?: string;\n"
+    output_ts_string += "  scene_payload?: string;\n"
+    output_ts_string += "  scene_midiactivate?: string;\n"
+    output_ts_string += "  virtuals?: Record<string, SceneVirtualEffect>; // virtual_id -> effect config\n"
+    output_ts_string += "}\n\n"
+
+    output_ts_string += "/**\n * Represents a single Scene with its effect configurations.\n * @category Scenes\n */\n"
+    output_ts_string += "export interface Scene {\n"
+    output_ts_string += "  id: string;\n"
+    output_ts_string += "  config: StoredSceneConfig;\n"
+    output_ts_string += "}\n\n"
+
+    output_ts_string += (
+        "/**\n * Response for GET /api/scenes.\n * @category REST\n */\n"
+    )
+    output_ts_string += "export interface GetScenesApiResponse {\n"
+    output_ts_string += '  status: "success" | "error";\n'
+    output_ts_string += "  scenes: Record<string, StoredSceneConfig>;\n"
+    output_ts_string += "  message?: string;\n"
+    output_ts_string += "}\n\n"
+
+    output_ts_string += "/**\n * Response for POST /api/scenes (scene creation).\n * @category REST\n */\n"
+    output_ts_string += "export interface CreateSceneApiResponse {\n"
+    output_ts_string += '  status: "success" | "error";\n'
+    output_ts_string += "  scene?: Scene;\n"
+    output_ts_string += "  message?: string;\n"
+    output_ts_string += "}\n\n"
+
     # --- 7. Generate Convenience Type Aliases ---
 
     output_ts_string += "// Convenience Type Aliases using Universal Configs\n"
@@ -835,6 +940,9 @@ def generate_typescript_types() -> str:
     # Devices alias (uses universal Device alias)
     output_ts_string += "/**\n * Convenience type for the API response containing multiple Device objects.\n * @category General\n */\n"
     output_ts_string += "export type Devices = Omit<GetDevicesApiResponse, 'devices'> & { devices: Record<string, Device> };\n"
+    # Scenes alias
+    output_ts_string += "/**\n * Convenience type for the API response containing multiple Scene objects.\n * @category General\n */\n"
+    output_ts_string += "export type Scenes = GetScenesApiResponse;\n"
     output_ts_string += "\n"
 
     _LOGGER.info("TypeScript generation finished.")

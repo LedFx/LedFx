@@ -218,8 +218,7 @@ class Virtual:
         if device is None:
             msg = f"Invalid device id: {device_id}"
             valid = False
-
-        if (
+        elif (
             start_pixel < 0
             or end_pixel < 0
             or start_pixel > end_pixel
@@ -1263,9 +1262,15 @@ class Virtuals:
         return cls._instance
 
     def __init__(self, ledfx):
-        if not hasattr(self, "_initialized"):  # Ensure __init__ runs only once
+        # Always update the reference to the current LedFx core instance.
+        # Virtuals is implemented as a singleton and may be instantiated
+        # multiple times across different LedFxCore lifecycles; binding
+        # _ledfx unconditionally ensures we reference the correct
+        # Devices/Events registries when restoring from config.
+        self._ledfx = ledfx
+
+        if not hasattr(self, "_initialized"):  # Ensure one-time init
             self._initialized = True
-            self._ledfx = ledfx
             self._virtuals = {}
             self._paused = False
 
@@ -1401,14 +1406,57 @@ class Virtuals:
         """
         Returns a list of all virtual IDs in the registry.
         """
-        return list(cls._instance._virtuals.keys())
+        instance = cls._instance
+        if instance is None or not hasattr(instance, "_virtuals"):
+            return []
+        return list(instance._virtuals.keys())
 
     @classmethod
     def get_virtual_names(cls):
         """
         Returns a list of all virtual names in the registry.
         """
-        return [virtual.name for virtual in cls._instance._virtuals.values()]
+        instance = cls._instance
+        if instance is None or not hasattr(instance, "_virtuals"):
+            return []
+        return [virtual.name for virtual in instance._virtuals.values()]
+
+    def reset_for_core(self, ledfx):
+        """Reset internal singleton state for a new LedFxCore instance.
+
+        This encapsulates the previous ad-hoc clearing of private
+        attributes so callers don't mutate internals directly.
+        """
+        # Rebind to the new core instance
+        self._ledfx = ledfx
+
+        # Ensure registry exists and is empty
+        if not hasattr(self, "_virtuals"):
+            self._virtuals = {}
+        else:
+            try:
+                self._virtuals.clear()
+            except Exception:
+                self._virtuals = {}
+
+        # Reset pause state and any cached flags
+        self._paused = False
+
+        # Register cleanup listener on the new core's event bus.
+        # The previous listener was registered on the old core; it's
+        # acceptable to leave it attached to the old core's Events
+        # instance (it will be triggered when that core shuts down).
+        def cleanup_effects(e):
+            self.fire_all_fallbacks()
+            self.clear_all_effects()
+
+        try:
+            self._ledfx.events.add_listener(
+                cleanup_effects, Event.LEDFX_SHUTDOWN
+            )
+        except Exception:
+            # Be defensive: don't crash if events shape differs
+            pass
 
     def check_and_deactivate_devices(self):
         """
