@@ -37,7 +37,7 @@ jobs:
           cache-dependency-glob: "uv.lock"
 
       - name: Install NSIS (installer)
-        uses: repolevedavaj/install-nsis@v1.0.1
+        uses: repolevedavaj/install-nsis@265e893c16602d8ccfb0a9ca44173b084078917c
         with:
           nsis-version: "3.11"
 
