@@ -906,7 +906,7 @@ def generate_typescript_types() -> str:
     output_ts_string += "  scene_puturl?: string;\n"
     output_ts_string += "  scene_payload?: string;\n"
     output_ts_string += "  scene_midiactivate?: string;\n"
-    output_ts_string += "  virtuals: Record<string, SceneVirtualEffect>; // virtual_id -> effect config\n"
+    output_ts_string += "  virtuals?: Record<string, SceneVirtualEffect>; // virtual_id -> effect config\n"
     output_ts_string += "}\n\n"
 
     output_ts_string += "/**\n * Represents a single Scene with its effect configurations.\n * @category Scenes\n */\n"
