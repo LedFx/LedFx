@@ -762,6 +762,32 @@ def generate_typescript_types() -> str:
     # --- 4. Collect ALL Effect Properties for Universal Interface ---
     all_effect_properties = {}
     _LOGGER.info("Collecting properties for universal interface...")
+    
+    # First, collect properties from the base Effect class
+    try:
+        from ledfx.effects import Effect
+        base_effect_schema = getattr(Effect, "CONFIG_SCHEMA", None)
+        if isinstance(base_effect_schema, vol.Schema) and isinstance(
+            base_effect_schema.schema, dict
+        ):
+            _LOGGER.info("Adding base Effect class properties to universal interface...")
+            for key_marker, validator in base_effect_schema.schema.items():
+                key_schema_obj = (
+                    key_marker.schema
+                    if isinstance(key_marker, (vol.Required, vol.Optional))
+                    else key_marker
+                )
+                key_name_str = str(key_schema_obj)
+                ts_property_name = key_name_str
+                basic_ts_type = voluptuous_validator_to_ts_type(
+                    validator, for_universal=True
+                )
+                all_effect_properties[ts_property_name] = basic_ts_type
+                _LOGGER.debug(f"Added base Effect property: {ts_property_name} -> {basic_ts_type}")
+    except Exception as e:
+        _LOGGER.warning(f"Could not process base Effect schema: {e}")
+    
+    # Then collect properties from specific effect classes
     for effect_type_str, effect_class in effect_registry.items():
         effect_schema_to_use = getattr(effect_class, "CONFIG_SCHEMA", None)
         if isinstance(effect_schema_to_use, vol.Schema) and isinstance(
