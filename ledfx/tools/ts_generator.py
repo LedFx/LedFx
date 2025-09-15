@@ -852,6 +852,59 @@ def generate_typescript_types() -> str:
         device_type_literal_union,
     )
 
+    # --- 6.5. Generate Scene Config and API Response Types ---
+    scene_config_interface_name = "SceneConfig"
+    try:
+        _LOGGER.info("Generating Scene config interface...")
+        from ledfx.scenes import Scenes
+        
+        # Create a dummy Scenes instance to access the schema
+        # We need to pass a minimal ledfx object with the required structure
+        class DummyLedFx:
+            def __init__(self):
+                self.config = {"scenes": {}}
+                self.virtuals = type('obj', (object,), {'get': lambda x: None})()
+        
+        dummy_ledfx = DummyLedFx()
+        scenes_instance = Scenes(dummy_ledfx)
+        scene_schema = scenes_instance.SCENE_SCHEMA
+        
+        if isinstance(scene_schema, vol.Schema):
+            output_ts_string += f"// Scene Configuration\n"
+            scene_interface = generate_ts_interface_from_voluptuous(
+                scene_config_interface_name,
+                scene_schema,
+            )
+            output_ts_string += f"{scene_interface}\n\n"
+        else:
+            _LOGGER.warning("Scene schema is not a voluptuous Schema")
+            output_ts_string += f"// Fallback Scene Config\nexport interface {scene_config_interface_name} {{ name: string; [key: string]: any; }}\n\n"
+    except Exception as e:
+        _LOGGER.error(f"Failed to generate Scene config: {e}")
+        output_ts_string += f"// Failed Scene Config\nexport interface {scene_config_interface_name} {{ name: string; [key: string]: any; }}\n\n"
+
+    # Generate Scene API Response Types
+    output_ts_string += "// Scene API Response Types\n"
+    output_ts_string += "/**\n * Represents a single Scene with its effect configurations.\n * @category Scenes\n */\n"
+    output_ts_string += f"export interface Scene {{\n"
+    output_ts_string += f"  id: string;\n"
+    output_ts_string += f"  config: {scene_config_interface_name};\n"
+    output_ts_string += f"}}\n\n"
+    
+    output_ts_string += "/**\n * Response for GET /api/scenes.\n * @category REST\n */\n"
+    output_ts_string += f"export interface GetScenesApiResponse {{\n"
+    output_ts_string += f"  status: \"success\" | \"error\";\n"
+    output_ts_string += f"  scenes: Record<string, {scene_config_interface_name}>;\n"
+    output_ts_string += f"  message?: string;\n"
+    output_ts_string += f"}}\n\n"
+    
+    output_ts_string += "/**\n * Response for POST /api/scenes (scene creation).\n * @category REST\n */\n"
+    output_ts_string += f"export interface CreateSceneApiResponse {{\n"
+    output_ts_string += f"  status: \"success\" | \"error\";\n"
+    output_ts_string += f"  scene?: Scene;\n"
+    output_ts_string += f"  message?: string;\n"
+    output_ts_string += f"}}\n\n"
+
     # --- 7. Generate Convenience Type Aliases ---
 
     output_ts_string += "// Convenience Type Aliases using Universal Configs\n"
@@ -861,6 +914,9 @@ def generate_typescript_types() -> str:
     # Devices alias (uses universal Device alias)
     output_ts_string += "/**\n * Convenience type for the API response containing multiple Device objects.\n * @category General\n */\n"
     output_ts_string += "export type Devices = Omit<GetDevicesApiResponse, 'devices'> & { devices: Record<string, Device> };\n"
+    # Scenes alias
+    output_ts_string += "/**\n * Convenience type for the API response containing multiple Scene objects.\n * @category General\n */\n"
+    output_ts_string += "export type Scenes = GetScenesApiResponse;\n"
     output_ts_string += "\n"
 
     _LOGGER.info("TypeScript generation finished.")
