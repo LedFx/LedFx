@@ -877,7 +877,7 @@ def generate_typescript_types() -> str:
         scene_schema = scenes_instance.SCENE_SCHEMA
 
         if isinstance(scene_schema, vol.Schema):
-            output_ts_string += f"// Scene Configuration\n"
+            output_ts_string += "// Scene Configuration\n"
             scene_interface = generate_ts_interface_from_voluptuous(
                 scene_config_interface_name,
                 scene_schema,
@@ -893,43 +893,43 @@ def generate_typescript_types() -> str:
     # Generate Scene API Response Types
     output_ts_string += "// Scene API Response Types\n"
     output_ts_string += "/**\n * Represents the effect configuration stored in a scene for a virtual.\n * @category Scenes\n */\n"
-    output_ts_string += f"export interface SceneVirtualEffect {{\n"
-    output_ts_string += f"  type?: EffectType;\n"
-    output_ts_string += f"  config?: EffectConfig;\n"
-    output_ts_string += f"}}\n\n"
+    output_ts_string += "export interface SceneVirtualEffect {\n"
+    output_ts_string += "  type?: EffectType;\n"
+    output_ts_string += "  config?: EffectConfig;\n"
+    output_ts_string += "}\n\n"
 
     output_ts_string += "/**\n * Represents a stored scene configuration with actual effect data.\n * This is the structure used in the API responses and storage.\n * @category Scenes\n */\n"
-    output_ts_string += f"export interface StoredSceneConfig {{\n"
-    output_ts_string += f"  name: string;\n"
-    output_ts_string += f"  scene_image?: string;\n"
-    output_ts_string += f"  scene_tags?: string;\n"
-    output_ts_string += f"  scene_puturl?: string;\n"
-    output_ts_string += f"  scene_payload?: string;\n"
-    output_ts_string += f"  scene_midiactivate?: string;\n"
-    output_ts_string += f"  virtuals: Record<string, SceneVirtualEffect>; // virtual_id -> effect config\n"
-    output_ts_string += f"}}\n\n"
+    output_ts_string += "export interface StoredSceneConfig {\n"
+    output_ts_string += "  name: string;\n"
+    output_ts_string += "  scene_image?: string;\n"
+    output_ts_string += "  scene_tags?: string;\n"
+    output_ts_string += "  scene_puturl?: string;\n"
+    output_ts_string += "  scene_payload?: string;\n"
+    output_ts_string += "  scene_midiactivate?: string;\n"
+    output_ts_string += "  virtuals: Record<string, SceneVirtualEffect>; // virtual_id -> effect config\n"
+    output_ts_string += "}\n\n"
 
     output_ts_string += "/**\n * Represents a single Scene with its effect configurations.\n * @category Scenes\n */\n"
-    output_ts_string += f"export interface Scene {{\n"
-    output_ts_string += f"  id: string;\n"
-    output_ts_string += f"  config: StoredSceneConfig;\n"
-    output_ts_string += f"}}\n\n"
+    output_ts_string += "export interface Scene {\n"
+    output_ts_string += "  id: string;\n"
+    output_ts_string += "  config: StoredSceneConfig;\n"
+    output_ts_string += "}\n\n"
 
     output_ts_string += (
         "/**\n * Response for GET /api/scenes.\n * @category REST\n */\n"
     )
-    output_ts_string += f"export interface GetScenesApiResponse {{\n"
-    output_ts_string += f'  status: "success" | "error";\n'
-    output_ts_string += f"  scenes: Record<string, StoredSceneConfig>;\n"
-    output_ts_string += f"  message?: string;\n"
-    output_ts_string += f"}}\n\n"
+    output_ts_string += "export interface GetScenesApiResponse {\n"
+    output_ts_string += '  status: "success" | "error";\n'
+    output_ts_string += "  scenes: Record<string, StoredSceneConfig>;\n"
+    output_ts_string += "  message?: string;\n"
+    output_ts_string += "}\n\n"
 
     output_ts_string += "/**\n * Response for POST /api/scenes (scene creation).\n * @category REST\n */\n"
-    output_ts_string += f"export interface CreateSceneApiResponse {{\n"
-    output_ts_string += f'  status: "success" | "error";\n'
-    output_ts_string += f"  scene?: Scene;\n"
-    output_ts_string += f"  message?: string;\n"
-    output_ts_string += f"}}\n\n"
+    output_ts_string += "export interface CreateSceneApiResponse {\n"
+    output_ts_string += '  status: "success" | "error";\n'
+    output_ts_string += "  scene?: Scene;\n"
+    output_ts_string += "  message?: string;\n"
+    output_ts_string += "}\n\n"
 
     # --- 7. Generate Convenience Type Aliases ---
 
