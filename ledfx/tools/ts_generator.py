@@ -890,16 +890,33 @@ def generate_typescript_types() -> str:
 
     # Generate Scene API Response Types
     output_ts_string += "// Scene API Response Types\n"
+    output_ts_string += "/**\n * Represents the effect configuration stored in a scene for a virtual.\n * @category Scenes\n */\n"
+    output_ts_string += f"export interface SceneVirtualEffect {{\n"
+    output_ts_string += f"  type?: EffectType;\n"
+    output_ts_string += f"  config?: EffectConfig;\n"
+    output_ts_string += f"}}\n\n"
+    
+    output_ts_string += "/**\n * Represents a stored scene configuration with actual effect data.\n * This is the structure used in the API responses and storage.\n * @category Scenes\n */\n"
+    output_ts_string += f"export interface StoredSceneConfig {{\n"
+    output_ts_string += f"  name: string;\n"
+    output_ts_string += f"  scene_image?: string;\n"
+    output_ts_string += f"  scene_tags?: string;\n"
+    output_ts_string += f"  scene_puturl?: string;\n"
+    output_ts_string += f"  scene_payload?: string;\n"
+    output_ts_string += f"  scene_midiactivate?: string;\n"
+    output_ts_string += f"  virtuals: Record<string, SceneVirtualEffect>; // virtual_id -> effect config\n"
+    output_ts_string += f"}}\n\n"
+    
     output_ts_string += "/**\n * Represents a single Scene with its effect configurations.\n * @category Scenes\n */\n"
     output_ts_string += f"export interface Scene {{\n"
     output_ts_string += f"  id: string;\n"
-    output_ts_string += f"  config: {scene_config_interface_name};\n"
+    output_ts_string += f"  config: StoredSceneConfig;\n"
     output_ts_string += f"}}\n\n"
     
     output_ts_string += "/**\n * Response for GET /api/scenes.\n * @category REST\n */\n"
     output_ts_string += f"export interface GetScenesApiResponse {{\n"
     output_ts_string += f"  status: \"success\" | \"error\";\n"
-    output_ts_string += f"  scenes: Record<string, {scene_config_interface_name}>;\n"
+    output_ts_string += f"  scenes: Record<string, StoredSceneConfig>;\n"
     output_ts_string += f"  message?: string;\n"
     output_ts_string += f"}}\n\n"
     
