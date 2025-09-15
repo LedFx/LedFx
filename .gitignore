@@ -72,3 +72,8 @@ frontend/*.eslintcache
 ledfx/effects/__pycache__/*
 ledfx/__pycache__/*
 __pycache__/*
+
+# Setups
+installer/*
+!installer/ledfx.nsi
+!installer/icons
