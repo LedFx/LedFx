@@ -862,18 +862,20 @@ def generate_typescript_types() -> str:
     try:
         _LOGGER.info("Generating Scene config interface...")
         from ledfx.scenes import Scenes
-        
+
         # Create a dummy Scenes instance to access the schema
         # We need to pass a minimal ledfx object with the required structure
         class DummyLedFx:
             def __init__(self):
                 self.config = {"scenes": {}}
-                self.virtuals = type('obj', (object,), {'get': lambda x: None})()
-        
+                self.virtuals = type(
+                    "obj", (object,), {"get": lambda x: None}
+                )()
+
         dummy_ledfx = DummyLedFx()
         scenes_instance = Scenes(dummy_ledfx)
         scene_schema = scenes_instance.SCENE_SCHEMA
-        
+
         if isinstance(scene_schema, vol.Schema):
             output_ts_string += f"// Scene Configuration\n"
             scene_interface = generate_ts_interface_from_voluptuous(
@@ -895,7 +897,7 @@ def generate_typescript_types() -> str:
     output_ts_string += f"  type?: EffectType;\n"
     output_ts_string += f"  config?: EffectConfig;\n"
     output_ts_string += f"}}\n\n"
-    
+
     output_ts_string += "/**\n * Represents a stored scene configuration with actual effect data.\n * This is the structure used in the API responses and storage.\n * @category Scenes\n */\n"
     output_ts_string += f"export interface StoredSceneConfig {{\n"
     output_ts_string += f"  name: string;\n"
@@ -906,23 +908,25 @@ def generate_typescript_types() -> str:
     output_ts_string += f"  scene_midiactivate?: string;\n"
     output_ts_string += f"  virtuals: Record<string, SceneVirtualEffect>; // virtual_id -> effect config\n"
     output_ts_string += f"}}\n\n"
-    
+
     output_ts_string += "/**\n * Represents a single Scene with its effect configurations.\n * @category Scenes\n */\n"
     output_ts_string += f"export interface Scene {{\n"
     output_ts_string += f"  id: string;\n"
     output_ts_string += f"  config: StoredSceneConfig;\n"
     output_ts_string += f"}}\n\n"
-    
-    output_ts_string += "/**\n * Response for GET /api/scenes.\n * @category REST\n */\n"
+
+    output_ts_string += (
+        "/**\n * Response for GET /api/scenes.\n * @category REST\n */\n"
+    )
     output_ts_string += f"export interface GetScenesApiResponse {{\n"
-    output_ts_string += f"  status: \"success\" | \"error\";\n"
+    output_ts_string += f'  status: "success" | "error";\n'
     output_ts_string += f"  scenes: Record<string, StoredSceneConfig>;\n"
     output_ts_string += f"  message?: string;\n"
     output_ts_string += f"}}\n\n"
-    
+
     output_ts_string += "/**\n * Response for POST /api/scenes (scene creation).\n * @category REST\n */\n"
     output_ts_string += f"export interface CreateSceneApiResponse {{\n"
-    output_ts_string += f"  status: \"success\" | \"error\";\n"
+    output_ts_string += f'  status: "success" | "error";\n'
     output_ts_string += f"  scene?: Scene;\n"
     output_ts_string += f"  message?: string;\n"
     output_ts_string += f"}}\n\n"
