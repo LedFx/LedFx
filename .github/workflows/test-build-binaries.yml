@@ -37,9 +37,27 @@ jobs:
           cache-dependency-glob: "uv.lock"
 
       - name: Install NSIS (installer)
-        uses: repolevedavaj/install-nsis@265e893c16602d8ccfb0a9ca44173b084078917c
-        with:
-          nsis-version: "3.11"
+        env:
+          NSIS_VERSION: "3.11"
+        shell: pwsh
+        run: |
+          Invoke-WebRequest https://deac-riga.dl.sourceforge.net/project/nsis/NSIS%203/$env:NSIS_VERSION/nsis-$env:NSIS_VERSION-setup.exe?viasf=1 -OutFile C:\WINDOWS\Temp\nsis-$env:NSIS_VERSION-setup.exe
+          $process = Start-Process "C:\WINDOWS\Temp\nsis-$env:NSIS_VERSION-setup.exe" -ArgumentList "/S" -Wait -PassThru
+          $exitCode = $process.ExitCode
+            if ($exitCode -eq 0) {
+                Write-Host "Installer ran successfully."
+            } else {
+                Write-Host "Installer failed with exit code $exitCode."
+                exit $exitCode
+            }
+          echo "C:\Program Files (x86)\NSIS\Bin" | Out-File -FilePath "$env:GITHUB_PATH" -Append
+          echo "C:\Program Files (x86)\NSIS" | Out-File -FilePath "$env:GITHUB_PATH" -Append
+
+      - name: Install NSIS EnvVar plugin
+        shell: pwsh
+        run: |
+          Invoke-WebRequest https://nsis.sourceforge.io/mediawiki/images/7/7f/EnVar_plugin.zip -OutFile C:\WINDOWS\Temp\EnVar_plugin.zip
+          Expand-Archive "C:\WINDOWS\Temp\EnVar_plugin.zip" -DestinationPath "C:\Program Files (x86)\NSIS" -Force
 
       - name: Update Path for Windows
         run: echo "$APPDATA\Python\Scripts" >> $GITHUB_PATH
