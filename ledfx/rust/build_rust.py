@@ -93,7 +93,7 @@ def test_rust():
     # Run from project root to find ledfx module
     project_root = Path(__file__).parent.parent.parent
     try:
-        result = run_command(
+        run_command(
             [
                 "uv",
                 "run",
