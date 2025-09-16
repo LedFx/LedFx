@@ -36,10 +36,12 @@ jobs:
           enable-cache: true
           cache-dependency-glob: "uv.lock"
 
-      - name: Install NSIS (installer)
+      - name: Install NSIS (Choco)
         shell: cmd
         run: |
           choco install nsis
+          echo "C:\Program Files (x86)\NSIS\Bin" | Out-File -FilePath "$env:GITHUB_PATH" -Append
+          echo "C:\Program Files (x86)\NSIS" | Out-File -FilePath "$env:GITHUB_PATH" -Append
 
       - name: Update Path for Windows
         run: echo "$APPDATA\Python\Scripts" >> $GITHUB_PATH
