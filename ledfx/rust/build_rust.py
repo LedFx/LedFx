@@ -173,7 +173,9 @@ def setup_development():
     print("\nNext steps:")
     print("1. Run LedFx: uv run python -m ledfx --open-ui")
     print("2. Look for the new Rust-backed effects in the Matrix effects")
-    print(f"3. Edit {Path('ledfx').joinpath('rust', 'src', 'lib.rs')} to add your own effects")
+    print(
+        f"3. Edit {Path('ledfx').joinpath('rust', 'src', 'lib.rs')} to add your own effects"
+    )
     print("4. Run this script again to rebuild after changes")
 
     return True
