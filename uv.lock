@@ -7,6 +7,12 @@ resolution-markers = [
     "python_full_version < '3.10'",
 ]
 
+[manifest]
+members = [
+    "ledfx",
+    "ledfx-rust-effects",
+]
+
 [[package]]
 name = "aiohappyeyeballs"
 version = "2.6.1"
@@ -970,6 +976,7 @@ dependencies = [
     { name = "cython" },
     { name = "flux-led" },
     { name = "icmplib" },
+    { name = "ledfx-rust-effects" },
     { name = "mss" },
     { name = "multidict" },
     { name = "netifaces2" },
@@ -1046,6 +1053,7 @@ requires-dist = [
     { name = "cython", specifier = ">=3.0.7" },
     { name = "flux-led", specifier = ">=1.0.4" },
     { name = "icmplib", specifier = ">=3.0.4" },
+    { name = "ledfx-rust-effects", editable = "ledfx/rust" },
     { name = "mss", specifier = "~=10.0.0" },
     { name = "multidict", specifier = ">=6.0.4" },
     { name = "netifaces2", specifier = ">=0.0.22" },
@@ -1102,6 +1110,25 @@ docs = [
     { name = "sphinxcontrib-httpdomain", marker = "python_full_version >= '3.10'", specifier = "==1.8.1" },
     { name = "sphinxcontrib-mermaid", marker = "python_full_version >= '3.10'" },
     { name = "sphinxcontrib-websupport", marker = "python_full_version >= '3.10'", specifier = "==2.0.0" },
+]
+
+[[package]]
+name = "ledfx-rust-effects"
+version = "0.1.0"
+source = { editable = "ledfx/rust" }
+dependencies = [
+    { name = "numpy" },
+]
+
+[package.optional-dependencies]
+dev = [
+    { name = "maturin" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "maturin", marker = "extra == 'dev'", specifier = ">=1.0,<2.0" },
+    { name = "numpy", specifier = ">=1.24.0,<2.1.0" },
 ]
 
 [[package]]

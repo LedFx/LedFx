@@ -16,24 +16,25 @@ This guide explains how to add high-performance Rust effects to LedFx and integr
 
 LedFx uses Rust effects to provide high-performance audio-reactive visualizations. Rust effects are compiled into Python modules using [maturin](https://github.com/PyO3/maturin) and [PyO3](https://github.com/PyO3/pyo3), offering significant performance benefits over pure Python implementations.
 
-**Quick Start**: Use the convenience build script from the rust directory:
+LedFx uses **uv workspaces** for streamlined Rust effects development. The Rust effects are built automatically when you sync the project.
+
+## Quick Start
+
 ```bash
-# Navigate to rust directory
-cd ledfx/rust
-
-# Build Rust effects (release mode)
-python build_rust.py --build --release
-
-# Test the build
-python build_rust.py --test
+# From the LedFx root directory - builds everything including Rust effects
+uv sync
 ```
 
-**Alternative Build Methods**:
-- **VS Code Tasks**: Use "Build Rust Effects (with Auto-Install)" from Command Palette for automatic setup
-  - See **[Tasks Documentation](tasks.md)** for comprehensive task information
-- **Manual**: Run `uv run maturin develop --release` from the `ledfx/rust` directory
+**Testing Rust Effects**:
+```bash
+# Test that Rust effects are available
+uv run python -c "from ledfx.rust import RUST_AVAILABLE; print('Rust effects available:', RUST_AVAILABLE)"
+```
 
-**Rust Installation**: Only the VS Code task and build script (`python build_rust.py`) automatically install Rust if missing. Manual commands (`maturin develop`, `uv run maturin develop`) require Rust to be preinstalled and will fail if Rust is not available.
+**VS Code Tasks**: Use "Build Rust Effects (with Auto-Install)" from Command Palette for automatic setup
+- See **[Tasks Documentation](tasks.md)** for comprehensive task information
+
+**Rust Installation**: The VS Code task and workspace sync (`uv sync`) automatically install Rust if missing.
 
 ## Prerequisites
 
@@ -49,19 +50,31 @@ python build_rust.py --test
 git clone https://github.com/LedFx/LedFx.git
 cd LedFx
 
-# Install development dependencies (includes maturin)
-uv sync --group dev
+# Install and build everything (includes Rust effects)
+uv sync
 
-# Verify Rust installation
+# Verify Rust installation (optional)
 rustc --version
 cargo --version
 
-# Build Rust effects (required for effects to work)
-python build_rust.py --build --release
-
-# Test that everything works
-python build_rust.py --test
+# Test that Rust effects work
+uv run python -c "from ledfx.rust import RUST_AVAILABLE; print(f'Rust available: {RUST_AVAILABLE}')"
 ```
+
+## Workspace Architecture
+
+LedFx uses **uv workspaces** to manage the Rust effects as an integrated part of the main project:
+
+- **Main Project**: `LedFx` (at repository root)
+- **Workspace Member**: `ledfx-rust-effects` (in `ledfx/rust/`)
+- **Shared Lockfile**: `uv.lock` (ensures consistent dependencies across workspace)
+- **Workspace Dependency**: LedFx depends on `ledfx-rust-effects` via `{ workspace = true }`
+
+Benefits:
+- ✅ Single `uv sync` builds everything  
+- ✅ Consistent dependency versions across projects
+- ✅ Automatic editable installs during development
+- ✅ Simplified CI/CD and deployment
 
 ## Project Structure
 
@@ -75,7 +88,6 @@ LedFx/
 │   ├── rust/                        # Rust subsystem
 │   │   ├── Cargo.toml               # Rust package configuration
 │   │   ├── pyproject.toml           # Python build configuration for maturin
-│   │   ├── build_rust.py            # Build script
 │   │   ├── src/
 │   │   │   ├── lib.rs               # PyO3 module entry point and function exports
 │   │   │   ├── common.rs            # Shared utilities (RNG, blur functions)
@@ -325,53 +337,25 @@ Effects in LedFx are automatically discovered and registered when they:
 
 ### 3. Real-World Example: Flame2 Effect
 
-For a complete working example, see `ledfx/effects/flame2_2d.py` which demonstrates:
+For a complete working example, see the Flame2 effect implementation:
 
-```python
-# Import pattern
-try:
-    from ledfx.rust import flame2_process, RUST_AVAILABLE
-except ImportError:
-    flame2_process = None
-    RUST_AVAILABLE = False
-    logging.error("Rust effects module not available - effect will show red error")
+**Python side**: `ledfx/effects/flame2_2d.py`
+- Shows proper Rust import pattern with fallbacks
+- Demonstrates configuration schema with validation
+- Includes error handling and graceful degradation
+- Example of correct data types for Rust function calls
 
-# Configuration schema with validation
-CONFIG_SCHEMA = vol.Schema({
-    vol.Optional("intensity", description="Flame intensity", default=1.0):
-        vol.All(vol.Coerce(float), vol.Range(min=0.1, max=3.0)),
-    vol.Optional("particle_count", description="Maximum particles", default=150):
-        vol.All(vol.Coerce(int), vol.Range(min=10, max=500)),
-    # ... more config options
-})
+**Rust side**: `ledfx/rust/src/effects/flame2.rs`
+- Complete particle simulation system
+- Audio-reactive parameters
+- Efficient ndarray operations
+- Performance optimizations
 
-# Rust function call with error handling
-def draw(self):
-    if not RUST_AVAILABLE or flame2_process is None:
-        return self._fill_red_error()
-
-    try:
-        img_array = np.zeros((self.matrix_height, self.matrix_width, 3), dtype=np.uint8)
-        result = flame2_process(
-            img_array,
-            self.audio_bar,
-            self.audio_pow,
-            self.matrix_height,
-            self.matrix_width,
-            # ... other parameters
-        )
-        return Image.fromarray(result, mode='RGB')
-    except Exception as e:
-        _LOGGER.error(f"Error in Flame2 Effect: {e}")
-        return self._fill_red_error()
-```
-
-This example shows:
-- Proper import handling with fallbacks
-- Configuration schema with validation
-- Error handling and graceful degradation
-- Correct data types for Rust function calls
-- PIL Image conversion for LedFx compatibility
+**Key patterns demonstrated:**
+- Import handling: `try/except ImportError` for Rust availability
+- Error boundaries: `_fill_red_error()` fallback for failures
+- Data flow: Audio data → Rust processing → PIL Image output
+- Configuration: Schema validation with proper types and ranges
 
 ## Build Process Integration
 
@@ -384,7 +368,7 @@ The project includes comprehensive VS Code tasks and launch configurations for R
 ```json
 {
     "label": "Build Rust",
-    "detail": "Build Rust subsystem with automatic Rust installation and testing",
+    "detail": "Build Rust subsystem with automatic Rust installation",
     "type": "shell",
     "command": "${workspaceFolder}/.vscode/build-rust-auto.cmd",
     "options": {
@@ -406,8 +390,8 @@ The project includes comprehensive VS Code tasks and launch configurations for R
 
 This task:
 - Automatically installs Rust if missing
-- Builds the Rust effects in release mode
-- Integrates with VS Code's problem matcher for error reporting
+- Stops running LedFx processes before building
+- Builds using `uv sync` (modern workspace approach)
 - Can be run via Command Palette: "Tasks: Run Task" → "Build Rust"
 
 #### VS Code Launch Configuration
@@ -444,46 +428,19 @@ This launch configuration:
 
 The `.vscode/build-rust-auto.cmd` script handles:
 - Automatic Rust installation via rustup
-- Environment setup and verification
-- Cross-platform build execution
-- Error reporting and cleanup
+- Stopping running LedFx processes before building
+- Building via `uv sync` (the modern workspace approach)
 
-### Manual Development Build
+### Standard Build Commands
 
-If you prefer command-line development (**requires Rust to be preinstalled**):
-
-```bash
-# Navigate to rust directory
-cd ledfx/rust
-
-# Build and install the Rust module for development
-uv run maturin develop
-
-# Or build in release mode for better performance
-uv run maturin develop --release
-```
-
-**Note**: These manual commands will fail if Rust is not installed. Use `python build_rust.py --build` instead for automatic Rust installation.
-
-### Using the build script
-
-LedFx includes a convenient build script in the `ledfx/rust` directory:
+The standard approach uses uv workspace commands:
 
 ```bash
-# Navigate to rust directory
-cd ledfx/rust
-
-# Build Rust effects in debug mode
-python build_rust.py --build
-
-# Build Rust effects in release mode (recommended for production)
-python build_rust.py --build --release
+# Build entire workspace including Rust effects (from project root)
+uv sync
 
 # Test that the build works
-python build_rust.py --test
-
-# Clean build artifacts
-python build_rust.py --clean
+uv run python -c "from ledfx.rust import RUST_AVAILABLE; print('Rust effects available:', RUST_AVAILABLE)"
 ```
 
 ## Performance Guidelines
@@ -575,16 +532,11 @@ static mut UNSAFE_STATE: HashMap<u64, MyState> = HashMap::new(); // Don't use th
 
    This indicates the Rust effects module isn't built.
 
-   If Rust is already installed:
+   Solution - use workspace build:
    ```bash
-   cd ledfx/rust
-   maturin develop
-   ```
-
-   If Rust is not installed, use the build script:
-   ```bash
-   cd ledfx/rust
-   python build_rust.py --build
+   # Use VS Code task "Build Rust Effects (with Auto-Install)" 
+   # OR run from command line:
+   uv sync
    ```
 
    Or use the VS Code task "Build Rust" for automatic installation.
@@ -607,9 +559,9 @@ static mut UNSAFE_STATE: HashMap<u64, MyState> = HashMap::new(); // Don't use th
 
 4. **Performance issues**
    - Profile with `cargo bench` (if benchmarks are added)
-   - Use `--release` builds for production
+   - Use `--release` builds for production  
    - Avoid unnecessary allocations
-   - Use the build script: `python build_rust.py --build --release`
+   - Build in release mode: Use VS Code task or `uv sync`
 
 ### Debugging
 
@@ -642,23 +594,19 @@ static mut UNSAFE_STATE: HashMap<u64, MyState> = HashMap::new(); // Don't use th
 ### Common Commands
 
 ```bash
-# Navigate to rust effects directory
-cd ledfx/rust
+# Build entire workspace including Rust effects (from project root)
+uv sync
 
-# Build Rust effects (release mode) - Python script
-python build_rust.py --build --release
+# Rebuild only Rust effects after changes (from project root)
+uv run maturin develop --release --manifest-path ledfx/rust/Cargo.toml
 
 # Test import
-python build_rust.py --test
+uv run python -c "from ledfx.rust import RUST_AVAILABLE; print('Rust effects available:', RUST_AVAILABLE)"
 
 # Clean build artifacts
-python build_rust.py --clean
-
-# Manual build (maturin directly - requires Rust preinstalled)
-uv run maturin develop --release
+cd ledfx/rust && cargo clean
 
 # Run LedFx with Rust effects (from project root)
-cd ../../..
 uv run python -m ledfx --open-ui
 ```
 
@@ -674,7 +622,6 @@ LedFx/
 │   ├── rust/                        # Rust effects module
 │   │   ├── Cargo.toml               # Rust package configuration
 │   │   ├── pyproject.toml           # Python build configuration for maturin
-│   │   ├── build_rust.py            # Build script
 │   │   ├── src/
 │   │   │   ├── lib.rs               # Main Rust effects library
 │   │   │   ├── common.rs            # Shared utilities (RNG, blur functions)
@@ -690,10 +637,10 @@ LedFx/
 
 ### Troubleshooting Quick Fixes
 
-- **Module import error**: Run `python build_rust.py --build --release`
-- **Build errors**: Check if Rust is installed (`rustc --version`), or use `python build_rust.py --build` for auto-install
+- **Module import error**: Run `uv sync` for fresh setup
+- **Build errors**: Check if Rust is installed (`rustc --version`), or use `uv sync` for auto-install
 - **Permission errors on Windows**: Stop any running LedFx instances
-- **Missing dependencies**: Run `uv sync --group dev`
+- **Missing dependencies**: Run `uv sync` (includes everything) or `uv sync --group dev`
 
 ## Example: Complete Effect Implementation
 

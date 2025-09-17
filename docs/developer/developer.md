@@ -46,9 +46,17 @@ LedFx requires several tools for development:
 7. **Optional but recommended:** Build Rust effects for optimal performance:
 
     ```console
-    $ cd ledfx/rust
-    $ python build_rust.py --build --release
-    $ python build_rust.py --test
+    $ uv sync  # Builds both LedFx and Rust effects
+    ```
+
+    To rebuild Rust effects after making changes:
+    ```console
+    $ uv run maturin develop --release --manifest-path ledfx/rust/Cargo.toml
+    ```
+
+    To test Rust effects are working:
+    ```console
+    $ uv run python -c "from ledfx.rust import RUST_AVAILABLE; print('Rust effects available:', RUST_AVAILABLE)"
     ```
 
     If you skip this step, some advanced effects may not be available, but LedFx will still function normally.

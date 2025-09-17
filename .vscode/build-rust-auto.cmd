@@ -41,11 +41,8 @@ powershell -ExecutionPolicy Bypass -File "%~dp0stop-ledfx.ps1"
 echo Building Rust effects...
 cd /d "%~dp0.."
 
-echo Installing dev dependencies including maturin...
-uv sync --group dev
-
-echo Running: uv run maturin develop --release --manifest-path .\ledfx\rust\Cargo.toml
-uv run maturin develop --release --manifest-path .\ledfx\rust\Cargo.toml
+echo Building workspace with uv sync...
+uv sync
 
 if %errorlevel% equ 0 (
     echo Rust effects built successfully!

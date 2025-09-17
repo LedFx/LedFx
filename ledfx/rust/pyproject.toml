@@ -10,13 +10,18 @@ authors = [
     {name = "LedFx Team"}
 ]
 license = {text = "MIT"}
-requires-python = ">=3.9"
+requires-python = ">=3.9,<3.13"
 classifiers = [
     "Programming Language :: Rust",
     "Programming Language :: Python :: Implementation :: CPython",
 ]
 dependencies = [
     "numpy>=1.24.0,<2.1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "maturin>=1.0,<2.0",
 ]
 
 [tool.maturin]

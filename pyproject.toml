@@ -40,6 +40,7 @@ dependencies = [
     "python-dotenv>=1.0.0,<2.0.0",
     "vnoise>=0.1.0,<1.0.0",
     "netifaces2>=0.0.22",
+    "ledfx-rust-effects",
 ]
 name = "LedFx"
 version = "2.0.111"
@@ -114,6 +115,12 @@ filterwarnings = "ignore::DeprecationWarning"
 # A bit slower, but it works for our use case
 link-mode = "copy"
 default-groups = []
+
+[tool.uv.workspace]
+members = ["ledfx/rust"]
+
+[tool.uv.sources]
+ledfx-rust-effects = { workspace = true }
 
 
 [tool.black]

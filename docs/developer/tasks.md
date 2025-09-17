@@ -11,17 +11,20 @@ This document describes the available VS Code tasks for building and developing 
 - **What it does**:
   - Automatically detects if Rust is installed
   - If not found, downloads and installs Rust toolchain
-  - Builds the Rust effects using `maturin develop --release`
+  - Stops running LedFx processes before building
+  - Builds using `uv sync` (modern workspace approach)
 - **Cross-platform**: Works on Windows, Linux, and macOS
 - **Use when**: You want a "just works" solution for any environment
 
-#### 2. **Build Rust Effects**
-- **Purpose**: Build Rust-based effects (requires Rust to be pre-installed)
-- **What it does**: Compiles Rust effects using `maturin develop --release`
-- **Dependency**: Requires "Check Rust Installation" task to pass first
-- **Use when**: Rust is already installed and you want faster builds
+#### 2. **Build Workspace (Recommended)**
+- **Purpose**: Build entire workspace including Rust effects using uv workspace
+- **What it does**: Runs `uv sync` to build everything
+- **Use when**: You want the standard, comprehensive build
 
-#### 3. **Install Rust Toolchain** (Windows only)
+#### 3. **Build Rust Effects**
+- **Purpose**: Build only Rust effects (requires Rust to be pre-installed)
+- **What it does**: Targeted Rust build using `uv run maturin develop --release`
+- **Use when**: Rust is already installed and you only want to rebuild Rust components
 - **Purpose**: Install Rust toolchain if not present
 - **What it does**: Downloads and installs Rust using rustup
 - **Platform**: Windows only (uses PowerShell)
@@ -56,8 +59,9 @@ This document describes the available VS Code tasks for building and developing 
 ## Quick Start
 
 1. **For new developers**: Use "Build Rust Effects (with Auto-Install)" - it handles everything automatically
-2. **For regular development**: Use "Build Rust Effects" after initial setup
-3. **For documentation**: Use "Build and Open Docs"
+2. **For regular development**: Use "Build Workspace (Recommended)" for complete builds 
+3. **For targeted rebuilds**: Use "Build Rust Effects" for Rust-only changes
+4. **For documentation**: Use "Build and Open Docs"
 
 ## Troubleshooting
 

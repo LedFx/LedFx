@@ -164,7 +164,7 @@
                 "group": "4 Temp Config",
                 "order": 1
             },
-            "postDebugTask": "Cleanup Debug Config Folder",
+            "postDebugTask": "Cleanup Debug Config Folder"
         },
         {
             "name": "LedFx (Verbose Logging, Temp Config)",
@@ -216,6 +216,6 @@
                 "order": 1
             },
             "postDebugTask": "Cleanup Debug Config Folder"
-        },
+        }
     ]
 }
