@@ -264,11 +264,24 @@ pub fn flame2_process(
                 let states_rwlock = FLAME_STATES.get().unwrap();
                 let mut states_write = states_rwlock.write().unwrap();
 
-                // Double-check pattern: another thread might have created it
-                let new_state = Arc::new(Mutex::new(FlameState::new(width, height, instance_id)));
-                states_write.insert(instance_id, new_state.clone());
-                drop(states_write); // Release write lock immediately
-                new_state
+                // Re-check while holding the write lock. If another thread created
+                // the entry between our read and this write lock acquisition, use
+                // that entry instead of clobbering it.
+                use std::collections::hash_map::Entry;
+                match states_write.entry(instance_id) {
+                    Entry::Occupied(o) => {
+                        // Another thread inserted it already; use that one
+                        let existing = o.get().clone();
+                        drop(states_write);
+                        existing
+                    }
+                    Entry::Vacant(v) => {
+                        let new_state = Arc::new(Mutex::new(FlameState::new(width, height, instance_id)));
+                        v.insert(new_state.clone());
+                        drop(states_write);
+                        new_state
+                    }
+                }
             };
 
             // STEP 2B: Now lock only THIS instance's mutex for all processing
