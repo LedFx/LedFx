@@ -7,9 +7,10 @@ from PIL import Image
 
 # Import your compiled Rust module
 try:
-    from ledfx.rust import RUST_AVAILABLE, flame2_process
+    from ledfx.rust import RUST_AVAILABLE, flame2_process, flame2_release
 except ImportError:
     flame2_process = None
+    flame2_release = None
     RUST_AVAILABLE = False
     logging.error(
         "Rust effects module not available - effect will show red error"
@@ -154,18 +155,23 @@ class Flame2_2d(Twod):
 
     def deactivate(self):
         """Clean up Rust resources when effect is deactivated"""
-        # Note: flame2_release is not available due to PyO3 export issues
-        # The Rust HashMap will grow over time, but effect instances are typically long-lived
-        # and the memory impact is minimal (each state is small)
-        if RUST_AVAILABLE and hasattr(self, "_instance_id"):
-            _LOGGER.debug(
-                f"Would release Rust flame state for instance {self._instance_id} (function unavailable)"
-            )
+        if RUST_AVAILABLE and hasattr(self, "_instance_id") and flame2_release:
+            try:
+                flame2_release(self._instance_id)
+                _LOGGER.debug(
+                    f"Released Rust flame state for instance {self._instance_id}"
+                )
+            except Exception as e:
+                _LOGGER.warning(
+                    f"Failed to release Rust flame state for instance {self._instance_id}: {e}"
+                )
         super().deactivate()
 
     def __del__(self):
         """Fallback cleanup when object is garbage collected"""
-        # Note: flame2_release is not available due to PyO3 export issues
-        # The Rust HashMap will grow over time, but effect instances are typically long-lived
-        # and the memory impact is minimal (each state is small)
-        pass
+        if RUST_AVAILABLE and hasattr(self, "_instance_id") and flame2_release:
+            try:
+                flame2_release(self._instance_id)
+            except Exception:
+                # Silently fail during garbage collection
+                pass
