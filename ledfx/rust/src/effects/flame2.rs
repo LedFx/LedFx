@@ -2,7 +2,7 @@ use pyo3::prelude::*;
 use numpy::{PyArray3, PyReadonlyArray3, PyReadonlyArray1};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, RwLock, OnceLock};
-use crate::common::{SimpleRng, simple_blur};
+use crate::common::{SimpleRng, Particle as BlobParticle, render_particle_blobs_singlethread};
 
 // Constants for flame effect
 const MIN_LIFESPAN: f32 = 1.5;  // Shorter lifespan for more dynamic flames
@@ -185,7 +185,7 @@ pub fn flame2_process(
     time_passed: f64,
     spawn_rate: f64,
     velocity: f64,
-    blur_amount: usize,
+    _blur_amount: usize,
     instance_id: u64,
     low_color: PyReadonlyArray1<f64>,
     mid_color: PyReadonlyArray1<f64>,
@@ -274,6 +274,9 @@ pub fn flame2_process(
             // STEP 2B: Now lock only THIS instance's mutex for all processing
             // Other instances can process concurrently
             let mut state = instance_state_arc.lock().unwrap();
+
+                // Collect blob particles for this frame (all bands)
+                let mut blob_particles: Vec<BlobParticle> = Vec::new();
 
             let wobble_amplitude = (WOBBLE_RATIO * width as f32).max(1.0);
 
@@ -374,120 +377,71 @@ pub fn flame2_process(
 
                 // Now access particles again for spawning with pre-generated values
                 if !random_values.is_empty() {
-                    let particles = state.particles.get_mut(&band).unwrap();
+                    // Render particles with fire-like color progression - collect blob particles
+                    {
+                        let particles = state.particles.get(&band).unwrap();
+                        for particle in particles.iter() {
+                            if particle.age >= particle.lifespan { continue; }
 
-                    // Create particles using pre-generated values
-                    for (x, lifespan, velocity_y, velocity_x, size, wobble_phase, turbulence_phase, initial_brightness) in random_values {
-                        particles.push(Particle {
-                            x,
-                            y: height as f32 - 1.0,
-                            age: 0.0,
-                            lifespan,
-                            velocity_y,
-                            velocity_x,
-                            size,
-                            wobble_phase,
-                            turbulence_phase,
-                            initial_brightness,
-                        });
-                    }
-                } // particles borrow ends here
+                            let t = particle.age / particle.lifespan;
+                            let height_factor = 1.0 - (particle.y / height as f32); // 0 at bottom, 1 at top
 
-                // Render particles with fire-like color progression
-                {
-                    let particles = state.particles.get(&band).unwrap();
-                    for particle in particles.iter() {
-                    if particle.age >= particle.lifespan { continue; }
+                            // Get fire-like color progression
+                            let (h, s, v) = get_fire_color((h_base, s_base, v_base), t, height_factor);
+                            let fire_rgb = hsv_to_rgb(h, s, v);
 
-                    let t = particle.age / particle.lifespan;
-                    let height_factor = 1.0 - (particle.y / height as f32); // 0 at bottom, 1 at top
+                            // Apply flickering brightness variation
+                            let flicker = 1.0 + FLICKER_INTENSITY * (particle.turbulence_phase * 3.7).sin() * particle.initial_brightness;
+                            let brightness_mult = (flicker * (1.0 - t).powf(1.2)).clamp(0.0, 1.0); // clamp to [0,1]
 
-                    // Get fire-like color progression
-                    let (h, s, v) = get_fire_color((h_base, s_base, v_base), t, height_factor);
-                    let fire_rgb = hsv_to_rgb(h, s, v);
+                            let rgb = [
+                                ((fire_rgb[0] as f32 * brightness_mult).min(255.0).max(0.0)) as u8,
+                                ((fire_rgb[1] as f32 * brightness_mult).min(255.0).max(0.0)) as u8,
+                                ((fire_rgb[2] as f32 * brightness_mult).min(255.0).max(0.0)) as u8,
+                            ];
 
-                    // Apply flickering brightness variation
-                    let flicker = 1.0 + FLICKER_INTENSITY * (particle.turbulence_phase * 3.7).sin() * particle.initial_brightness;
-                    let brightness_mult = flicker * (1.0 - t).powf(1.2); // Exponential fade with flicker
+                            // Enhanced wobble with more chaotic motion
+                            let wobble_intensity = wobble * (1.0 + t * 0.5); // More wobble as particle ages
+                            let x_disp = particle.x + wobble_intensity * (t * 12.0 + particle.wobble_phase).sin()
+                                                    + wobble_intensity * 0.3 * (t * 8.5 + particle.wobble_phase * 1.7).cos();
 
-                    let rgb = [
-                        ((fire_rgb[0] as f32 * brightness_mult).min(255.0).max(0.0)) as u8,
-                        ((fire_rgb[1] as f32 * brightness_mult).min(255.0).max(0.0)) as u8,
-                        ((fire_rgb[2] as f32 * brightness_mult).min(255.0).max(0.0)) as u8,
-                    ];
+                            let y_scaled = (height as f32 - particle.y) * scale;
+                            let y_render = height as f32 - y_scaled;
 
-                    // Enhanced wobble with more chaotic motion
-                    let wobble_intensity = wobble * (1.0 + t * 0.5); // More wobble as particle ages
-                    let x_disp = particle.x + wobble_intensity * (t * 12.0 + particle.wobble_phase).sin()
-                                            + wobble_intensity * 0.3 * (t * 8.5 + particle.wobble_phase * 1.7).cos();
+                            // Size varies more dramatically - bigger at base, smaller at tips
+                            let size_factor = (1.0 - t * 0.7) * (1.0 - height_factor * 0.3);
+                            let final_size = particle.size * size_factor;
 
-                    let y_scaled = (height as f32 - particle.y) * scale;
-                    let y_render = height as f32 - y_scaled;
+                            // Scale particle radius by blur_amount so users can control softness.
+                            // We interpret blur_amount as a coarse softness multiplier: each unit
+                            // increases radius by ~50%.
+                            let blur_factor = 1.0 + (_blur_amount as f32 * 0.5);
+                            let scaled_radius_f = (final_size * blur_factor).round().max(1.0);
+                            // Cap radius to avoid extremely large kernels on tiny matrices
+                            let max_radius = (width.min(height) / 2).max(1);
+                            let radius = scaled_radius_f as usize;
+                            let radius = radius.min(max_radius);
 
-                    let xi = x_disp.round() as i32;
-                    let yi = y_render.round() as i32;
-
-                    // Size varies more dramatically - bigger at base, smaller at tips
-                    let size_factor = (1.0 - t * 0.7) * (1.0 - height_factor * 0.3);
-                    let final_size = particle.size * size_factor;
-                    let size = final_size as i32;
-                    let size_f = final_size;
-                    let size_squared = size_f * size_f;
-
-                    // Calculate safe bounds in i32 space first
-                    let y_start_i32 = (yi - size).max(0);
-                    let y_end_i32 = (yi + size + 1).min(height as i32);
-                    let x_start_i32 = (xi - size).max(0);
-                    let x_end_i32 = (xi + size + 1).min(width as i32);
-
-                    // Only proceed if we have valid bounds
-                    if y_start_i32 < y_end_i32 && x_start_i32 < x_end_i32 &&
-                       y_start_i32 >= 0 && y_end_i32 <= height as i32 &&
-                       x_start_i32 >= 0 && x_end_i32 <= width as i32 {
-
-                        // Now convert to usize safely
-                        let y_start = y_start_i32 as usize;
-                        let y_end = y_end_i32 as usize;
-                        let x_start = x_start_i32 as usize;
-                        let x_end = x_end_i32 as usize;
-
-                        // Draw circular particle using squared distance for smooth edges
-                        for py in y_start..y_end {
-                            let dy = (py as i32) - yi;
-                            let dy_sq = (dy * dy) as f32;
-
-                            for px in x_start..x_end {
-                                let dx = (px as i32) - xi;
-                                let dx_sq = (dx * dx) as f32;
-                                let dist_squared = dx_sq + dy_sq;
-
-                                // Only draw if within circular particle radius
-                                if dist_squared <= size_squared {
-                                    // Smooth circular falloff for nice particle edges
-                                    let intensity = (1.0 - (dist_squared / size_squared)).max(0.0);
-
-                                    // Apply intensity to color and blend additively
-                                    for c in 0..3 {
-                                        let current = output[[py, px, c]] as u16;
-                                        let contribution = (rgb[c] as f32 * intensity) as u16;
-                                        let new_val = current + contribution;
-                                        output[[py, px, c]] = new_val.min(255) as u8;
-                                    }
-                                }
-                            }
+                            // push to blob particle list (use additive blending)
+                            blob_particles.push(BlobParticle {
+                                x: x_disp,
+                                y: y_render,
+                                color: rgb,
+                                radius,
+                                alpha: brightness_mult as f32,
+                            });
                         }
                     }
                 } // particle rendering ends here
-                } // particles borrow ends here
-            }
+            } // band loop ends here
 
             // Release instance lock before blur processing
             drop(state);
 
-        // Apply blur (still without GIL, no locks needed)
-        if blur_amount > 0 {
-            simple_blur(&mut output, blur_amount);
-        }
+            // Render collected blob particles (single-threaded additive)
+            if !blob_particles.is_empty() {
+                render_particle_blobs_singlethread(&mut output, &blob_particles, true);
+            }
         }); // End of allow_threads block - GIL is reacquired here
 
         // STEP 3: Convert result back to Python object (requires GIL)

@@ -1101,14 +1101,14 @@ docs = [
     { name = "myst-parser", specifier = ">=3.0.1" },
     { name = "rstcheck", marker = "python_full_version >= '3.10'", specifier = "==6.2.5" },
     { name = "sphinx", marker = "python_full_version >= '3.10'", specifier = "<8.2.4" },
-    { name = "sphinx-autobuild", marker = "python_full_version >= '3.10'" },
+    { name = "sphinx-autobuild", marker = "python_full_version >= '3.10'", specifier = ">=0.9.0" },
     { name = "sphinx-autodoc-annotation", marker = "python_full_version >= '3.10'", specifier = "==1.0.post1" },
     { name = "sphinx-autodoc-typehints", marker = "python_full_version >= '3.10'", specifier = "==2.5.0" },
     { name = "sphinx-copybutton", marker = "python_full_version >= '3.10'", specifier = "==0.5.2" },
     { name = "sphinx-rtd-theme", marker = "python_full_version >= '3.10'", specifier = "==3.0.2" },
     { name = "sphinx-toolbox", marker = "python_full_version >= '3.10'", specifier = "==4.0.0" },
     { name = "sphinxcontrib-httpdomain", marker = "python_full_version >= '3.10'", specifier = "==1.8.1" },
-    { name = "sphinxcontrib-mermaid", marker = "python_full_version >= '3.10'" },
+    { name = "sphinxcontrib-mermaid", marker = "python_full_version >= '3.10'", specifier = ">=0.10.0" },
     { name = "sphinxcontrib-websupport", marker = "python_full_version >= '3.10'", specifier = "==2.0.0" },
 ]
 
