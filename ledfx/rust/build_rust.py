@@ -61,8 +61,9 @@ def run_command(cmd, cwd=None, check=True):
 def build_rust(release=False):
     """Build the Rust effects module"""
     rust_dir = Path(__file__).parent  # We're already in rust directory
+    cargo_toml = rust_dir.joinpath("Cargo.toml")
 
-    if not (rust_dir / "Cargo.toml").exists():
+    if not cargo_toml.exists():
         print(
             "Error: Cargo.toml not found! Make sure you're in the rust directory."
         )
@@ -74,7 +75,7 @@ def build_rust(release=False):
         "maturin",
         "develop",
         "--manifest-path",
-        str(rust_dir / "Cargo.toml"),
+        cargo_toml,
     ]
     if release:
         cmd.append("--release")
@@ -91,7 +92,7 @@ def build_rust(release=False):
 def test_rust():
     """Test the Rust effects module"""
     # Run from project root to find ledfx module
-    project_root = Path(__file__).parent.parent.parent
+    project_root = Path(__file__).parents[2]
     try:
         run_command(
             [
@@ -116,7 +117,7 @@ def test_rust():
 def clean_build():
     """Clean Rust build artifacts"""
     rust_dir = Path(__file__).parent  # We're already in rust directory
-    target_dir = rust_dir / "target"
+    target_dir = rust_dir.joinpath("target")
 
     if target_dir.exists():
         import shutil
@@ -133,7 +134,7 @@ def setup_development():
 
     # Check if uv is available
     try:
-        run_command(["uv", "--version"])
+        run_command(["uv", "self", "version"])
     except (subprocess.CalledProcessError, FileNotFoundError):
         print(
             "[ERROR] uv not found. Please install uv first: https://docs.astral.sh/uv/"
@@ -146,14 +147,14 @@ def setup_development():
         run_command(["cargo", "--version"])
     except (subprocess.CalledProcessError, FileNotFoundError):
         print(
-            "[ERROR] Rust not found. Please install Rust: https://rustup.rs/"
+            "[ERROR] Rust not found. Please use the 'Build Rust' VS Code task which will automatically install Rust, or install manually: https://rustup.rs/"
         )
         return False
 
     # Install Python dependencies (at repo root)
     try:
         rust_dir = Path(__file__).parent
-        repo_root = rust_dir.parent.parent.resolve()
+        repo_root = rust_dir.parents[1].resolve()
         run_command(["uv", "sync", "--dev"], cwd=repo_root)
         print("[SUCCESS] Python dependencies installed")
     except subprocess.CalledProcessError:
@@ -172,7 +173,7 @@ def setup_development():
     print("\nNext steps:")
     print("1. Run LedFx: uv run python -m ledfx --open-ui")
     print("2. Look for the new Rust-backed effects in the Matrix effects")
-    print("3. Edit ledfx/rust/src/lib.rs to add your own effects")
+    print(f"3. Edit {Path('ledfx').joinpath('rust', 'src', 'lib.rs')} to add your own effects")
     print("4. Run this script again to rebuild after changes")
 
     return True

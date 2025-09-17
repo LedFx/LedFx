@@ -89,13 +89,12 @@
             "label": "Build Rust",
             "detail": "Build Rust subsystem with automatic Rust installation and testing",
             "type": "shell",
-            "command": "${workspaceFolder}/.vscode/build-rust-auto.cmd",
-            "options": {
-                "cwd": "${workspaceFolder}"
-            },
             "group": {
                 "kind": "build",
                 "isDefault": false
+            },
+            "options": {
+                "cwd": "${workspaceFolder}"
             },
             "presentation": {
                 "echo": true,

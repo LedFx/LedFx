@@ -1,4 +1,5 @@
 import logging
+import uuid
 
 import numpy as np
 import voluptuous as vol
@@ -69,12 +70,7 @@ class Flame2_2d(Twod):
         self.audio_pow = np.array([0.0, 0.0, 0.0], dtype=np.float32)
 
         # Generate unique instance ID for this effect instance
-        import random
-        import time
-
-        self._instance_id = int(time.time() * 1000000) + random.randint(
-            0, 999999
-        )
+        self._instance_id = abs(hash(uuid.uuid4()))
 
         # Set error state based on Rust module availability
         self.error_state = not RUST_AVAILABLE
