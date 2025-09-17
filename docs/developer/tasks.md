@@ -59,7 +59,7 @@ This document describes the available VS Code tasks for building and developing 
 ## Quick Start
 
 1. **For new developers**: Use "Build Rust Effects (with Auto-Install)" - it handles everything automatically
-2. **For regular development**: Use "Build Workspace (Recommended)" for complete builds 
+2. **For regular development**: Use "Build Workspace (Recommended)" for complete builds
 3. **For targeted rebuilds**: Use "Build Rust Effects" for Rust-only changes
 4. **For documentation**: Use "Build and Open Docs"
 

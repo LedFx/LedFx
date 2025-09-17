@@ -71,7 +71,7 @@ LedFx uses **uv workspaces** to manage the Rust effects as an integrated part of
 - **Workspace Dependency**: LedFx depends on `ledfx-rust-effects` via `{ workspace = true }`
 
 Benefits:
-- ✅ Single `uv sync` builds everything  
+- ✅ Single `uv sync` builds everything
 - ✅ Consistent dependency versions across projects
 - ✅ Automatic editable installs during development
 - ✅ Simplified CI/CD and deployment
@@ -534,7 +534,7 @@ static mut UNSAFE_STATE: HashMap<u64, MyState> = HashMap::new(); // Don't use th
 
    Solution - use workspace build:
    ```bash
-   # Use VS Code task "Build Rust Effects (with Auto-Install)" 
+   # Use VS Code task "Build Rust Effects (with Auto-Install)"
    # OR run from command line:
    uv sync
    ```
@@ -559,7 +559,7 @@ static mut UNSAFE_STATE: HashMap<u64, MyState> = HashMap::new(); // Don't use th
 
 4. **Performance issues**
    - Profile with `cargo bench` (if benchmarks are added)
-   - Use `--release` builds for production  
+   - Use `--release` builds for production
    - Avoid unnecessary allocations
    - Build in release mode: Use VS Code task or `uv sync`
 
