@@ -22,13 +22,154 @@
             }
         },
         {
+            "label": "Build Workspace (Recommended)",
+            "detail": "Build entire workspace including Rust effects using uv workspace",
+            "type": "shell",
+            "command": "uv",
+            "args": ["sync"],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "statusbar": {
+                    "hide": true
+                }
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": [
+                {
+                    "owner": "rust",
+                    "fileLocation": ["relative", "${workspaceFolder}"],
+                    "pattern": [
+                        {
+                            "regexp": "^error(?:\\[(.*)\\])?:\\s+(.*)$",
+                            "message": 2,
+                            "code": 1
+                        },
+                        {
+                            "regexp": "^\\s+-->\\s+(.*):(\\d+):(\\d+)$",
+                            "file": 1,
+                            "line": 2,
+                            "column": 3
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "label": "Build Rust (Workspace)",
+            "detail": "Build only Rust effects using workspace commands",
+            "type": "shell",
+            "command": "uv",
+            "args": ["run", "maturin", "develop", "--release", "--manifest-path", "ledfx/rust/Cargo.toml"],
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "statusbar": {
+                    "hide": true
+                }
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": [
+                {
+                    "owner": "rust",
+                    "fileLocation": ["relative", "${workspaceFolder}"],
+                    "pattern": [
+                        {
+                            "regexp": "^error(?:\\[(.*)\\])?:\\s+(.*)$",
+                            "message": 2,
+                            "code": 1
+                        },
+                        {
+                            "regexp": "^\\s+-->\\s+(.*):(\\d+):(\\d+)$",
+                            "file": 1,
+                            "line": 2,
+                            "column": 3
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "label": "Build Rust",
+            "detail": "Build Rust subsystem with automatic Rust installation (Legacy)",
+            "type": "shell",
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "statusbar": {
+                    "hide": true
+                }
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "problemMatcher": [
+                {
+                    "owner": "rust",
+                    "fileLocation": ["relative", "${workspaceFolder}"],
+                    "pattern": [
+                        {
+                            "regexp": "^error(?:\\[(.*)\\])?:\\s+(.*)$",
+                            "message": 2,
+                            "code": 1
+                        },
+                        {
+                            "regexp": "^\\s+-->\\s+(.*):(\\d+):(\\d+)$",
+                            "file": 1,
+                            "line": 2,
+                            "column": 3
+                        }
+                    ]
+                }
+            ],
+            "windows": {
+                "command": "${workspaceFolder}\\.vscode\\build-rust-auto.cmd"
+            },
+            "linux": {
+                "command": "bash",
+                "args": [
+                    "-c",
+                    "echo '🛑 Stopping any running LedFx processes...'; pkill -fi ledfx || true; sleep 2; if ! command -v rustc &> /dev/null; then echo 'Installing Rust...'; curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y; source ~/.cargo/env; fi; uv run maturin develop --release --manifest-path '${workspaceFolder}/ledfx/rust/Cargo.toml'"
+                ]
+            },
+            "osx": {
+                "command": "bash",
+                "args": [
+                    "-c",
+                    "echo '🛑 Stopping any running LedFx processes...'; pkill -fi ledfx || true; sleep 2; if ! command -v rustc &> /dev/null; then echo 'Installing Rust...'; curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y; source ~/.cargo/env; fi; uv run maturin develop --release --manifest-path '${workspaceFolder}/ledfx/rust/Cargo.toml'"
+                ]
+            }
+        },
+        {
             "label": "Build Docs",
             "type": "shell",
             "command": "uv",
             "args": ["run", "sphinx-build","-a", "-b", "html", ".", "build"],
             "group": {
                 "kind": "build",
-                "isDefault": true
+                "isDefault": false
             },
             "options": {
                 "cwd": "${workspaceFolder}/docs",
@@ -70,7 +211,12 @@
                 "args": ["${workspaceFolder}/docs/build/index.html"]
             },
             "problemMatcher": [],
-            "dependsOn": "Build Docs"
+            "dependsOn": "Build Docs",
+            "options": {
+                "statusbar": {
+                    "hide": false
+                }
+            }
         },
         {
             "label": "Init Frontend submodule",
@@ -84,6 +230,6 @@
                 }
             },
             "problemMatcher": []
-        },
+        }
     ]
 }

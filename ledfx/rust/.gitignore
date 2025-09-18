@@ -1,0 +1,12 @@
+# Rust build artifacts
+/target/
+Cargo.lock
+
+# Rust development files
+/.cargo/
+
+# Compiled Python modules (from maturin build)
+*.so
+*.dll
+*.dylib
+*.pyd

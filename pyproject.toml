@@ -40,6 +40,7 @@ dependencies = [
     "python-dotenv>=1.0.0,<2.0.0",
     "vnoise>=0.1.0,<1.0.0",
     "netifaces2>=0.0.22",
+    "ledfx-rust-effects",
 ]
 name = "LedFx"
 version = "2.0.111"
@@ -56,6 +57,7 @@ dev = [
     "pytest<9.0.0,>=8.0.0",
     "pytest-order<2.0.0,>=1.2.0",
     "pyinstaller<7.0.0,>=6.3.0",
+    "maturin>=1.9.4",
 ]
 docs = [
     "sphinx<8.2.4; python_version >= \"3.10\"",
@@ -63,14 +65,14 @@ docs = [
     "sphinxcontrib-httpdomain==1.8.1; python_version >= \"3.10\"",
     "sphinx-autodoc-typehints==2.5.0; python_version >= \"3.10\"",
     "sphinx-autodoc-annotation==1.0-1; python_version >= \"3.10\"",
-    "sphinx-autobuild; python_version >= \"3.10\"",
+    "sphinx-autobuild>=0.9.0; python_version >= \"3.10\"",
     "sphinx-rtd-theme==3.0.2; python_version >= \"3.10\"",
     "sphinx-toolbox==4.0.0; python_version >= \"3.10\"",
     "rstcheck==6.2.5; python_version >= \"3.10\"",
     "sphinx-copybutton==0.5.2; python_version >= \"3.10\"",
     "myst-parser>=3.0.1",
     "linkify-it-py>=2.0.3",
-    "sphinxcontrib-mermaid; python_version >= \"3.10\"",
+    "sphinxcontrib-mermaid>=0.10.0; python_version >= \"3.10\"",
 ]
 
 [tool.pdm.build]
@@ -113,6 +115,12 @@ filterwarnings = "ignore::DeprecationWarning"
 # A bit slower, but it works for our use case
 link-mode = "copy"
 default-groups = []
+
+[tool.uv.workspace]
+members = ["ledfx/rust"]
+
+[tool.uv.sources]
+ledfx-rust-effects = { workspace = true }
 
 
 [tool.black]

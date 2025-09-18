@@ -6,12 +6,33 @@ ARG TARGETARCH
 WORKDIR /app
 RUN --mount=type=cache,id=apt-cache-${TARGETARCH},target=/var/cache/apt,sharing=locked \
     --mount=type=cache,id=apt-lib-${TARGETARCH},target=/var/lib/apt,sharing=locked \
-    apt-get update && apt-get install -y cmake gcc portaudio19-dev --no-install-recommends
+    apt-get update && apt-get install -y cmake gcc portaudio19-dev curl build-essential --no-install-recommends
     # && rm -rf /var/lib/apt/lists/*
-COPY uv.lock pyproject.toml /app/
+
+# Install Rust
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+ENV PATH="/root/.cargo/bin:${PATH}"
+
+# Copy workspace configuration first
+COPY uv.lock pyproject.toml README.rst /app/
+
+# Copy the workspace member (rust effects) - required for workspace sync
+COPY ledfx/rust /app/ledfx/rust/
+
+# Copy the main ledfx package
+COPY ledfx /app/ledfx/
+
+# Copy other necessary files for the build
+COPY ledfx_assets /app/ledfx_assets/
+COPY ledfx_frontend /app/ledfx_frontend/
+
+# Now sync with all workspace members available
 RUN --mount=type=cache,id=uv-cache-${TARGETARCH},target=/root/.cache/uv \
-    uv sync --no-install-project --no-editable
-COPY . /app
+    uv sync --no-install-project --no-editable --group dev
+
+# Build Rust effects (maturin is now available from dev dependencies)
+RUN uv run maturin develop --release --manifest-path ./ledfx/rust/Cargo.toml
+
 RUN --mount=type=cache,id=uv-cache-${TARGETARCH},target=/root/.cache/uv \
     uv sync --no-editable --extra hue
 
