@@ -14,7 +14,7 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 ENV PATH="/root/.cargo/bin:${PATH}"
 
 # Copy workspace configuration first
-COPY uv.lock pyproject.toml /app/
+COPY uv.lock pyproject.toml README.rst /app/
 
 # Copy the workspace member (rust effects) - required for workspace sync
 COPY ledfx/rust /app/ledfx/rust/
