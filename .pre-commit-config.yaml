@@ -6,7 +6,7 @@ default_language_version:
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
     - id: check-yaml
     - id: check-ast
@@ -18,15 +18,15 @@ repos:
       - id: isort
         args: ["--profile=black"]
   - repo: https://github.com/PyCQA/flake8
-    rev: 7.1.2
+    rev: 7.3.0
     hooks:
       - id: flake8
   - repo: https://github.com/psf/black
-    rev: 25.1.0 # Replace by any tag/version: https://github.com/psf/black/tags
+    rev: 25.9.0 # Replace by any tag/version: https://github.com/psf/black/tags
     hooks:
       - id: black
   - repo: https://github.com/asottile/pyupgrade
-    rev: v3.19.1
+    rev: v3.20.0
     hooks:
       - id: pyupgrade
         args: [--py39-plus]
