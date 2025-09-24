@@ -60,7 +60,7 @@ class MyEffect(Effect):
         vol.Optional("speed", default=1.0): vol.All(vol.Coerce(float), vol.Range(min=0.1, max=10.0)),
         vol.Optional("color", default="#ff0000"): validate_color,
     })
-    
+
     def render(self):
         # Effect computation here
         # Modify self.pixels array
