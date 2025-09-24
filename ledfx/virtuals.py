@@ -114,6 +114,12 @@ class Virtual:
                 description="Amount of rows. > 1 if this virtual is a matrix",
                 default=1,
             ): int,
+            # we will hide this slider in the front end if rows is <= 1
+            vol.Optional(
+                "rotate",
+                description="90 Degree rotations",
+                default=0,
+            ): vol.All(vol.Coerce(int), vol.Range(min=0, max=3)),
         }
     )
 
@@ -1163,7 +1169,8 @@ class Virtual:
                     ):
                         self._active_effect.clear_melbank_freq_props()
 
-                    if _config["rows"] != self.rows:
+                    # if a virtual level config change impacts a 2d effect layout, then trigger an init
+                    if _config["rows"] != self._config["rows"] or _config["rotate"] != self._config["rotate"]:
                         if hasattr(self._active_effect, "set_init"):
                             self._active_effect.set_init()
 
