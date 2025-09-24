@@ -660,7 +660,7 @@ ledfx_presets = {
                 "dump": False,
                 "flip": False,
                 "flip_horizontal": False,
-                "flip_vertical": True,
+                "flip_vertical": False,
                 "frequency_range": "Lows (beat+bass)",
                 "gradient": "linear-gradient(90deg, #ffffff 0.00%,#8dd2d2 14.00%,#edebe6 27.00%,#edca70 39.00%,#3b2d0a 60.00%,#1eea2e 72.00%,#49b752 87.00%,#0000ff 100.00%)",
                 "gradient_roll": 0.0,
