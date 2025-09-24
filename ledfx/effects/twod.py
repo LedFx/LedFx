@@ -76,7 +76,7 @@ class Twod(AudioReactiveEffect):
         setting this flag keeps things atomic and ensures that the effect is not
         reconfigured while it is being rendered or otherwise in use
         """
-        
+
         self.init = True
 
     def do_once(self):
@@ -91,12 +91,14 @@ class Twod(AudioReactiveEffect):
         # we need to accout for swapping vertical and horizotal for 90 / 270
 
         # composite the virtual rotate with the effect level rotate
-        self.rotate = (self._config["rotate"] + self._virtual._config["rotate"]) % 4
+        self.rotate = (
+            self._config["rotate"] + self._virtual._config["rotate"]
+        ) % 4
 
         self.rotate_t = 0
         self.flip2d = self._config["flip_vertical"]
         self.mirror2d = self._config["flip_horizontal"]
-            
+
         if self.rotate == 1:
             self.rotate_t = Image.Transpose.ROTATE_90
             self.flip2d, self.mirror2d = self.mirror2d, self.flip2d

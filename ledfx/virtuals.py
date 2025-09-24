@@ -1170,7 +1170,10 @@ class Virtual:
                         self._active_effect.clear_melbank_freq_props()
 
                     # if a virtual level config change impacts a 2d effect layout, then trigger an init
-                    if _config["rows"] != self._config["rows"] or _config["rotate"] != self._config["rotate"]:
+                    if (
+                        _config["rows"] != self._config["rows"]
+                        or _config["rotate"] != self._config["rotate"]
+                    ):
                         if hasattr(self._active_effect, "set_init"):
                             self._active_effect.set_init()
 
