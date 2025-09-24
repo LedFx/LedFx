@@ -314,7 +314,7 @@ class Keybeat2d(Twod, GifBase):
         if self.rotate == 1 or self.rotate == 3:
             self.stretch_v, self.stretch_h = self.stretch_h, self.stretch_v
             self.center_v, self.center_h = self.center_h, self.center_v
-            
+
         for frame in self.post_frames:
             if not self.force_fit:
                 stretch_height = int(self.stretch_v * frame.height)
