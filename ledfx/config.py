@@ -776,6 +776,8 @@ def migrate_config(old_config):
 
         def invert_equalizer2d_flip_vertical(effect_config):
             """Helper function to invert flip_vertical for equalizer2d effects"""
+            if not isinstance(effect_config, dict):
+                return effect_config
             if (
                 effect_config.get("ring", True) is False
                 and effect_config.get("center", True) is False
