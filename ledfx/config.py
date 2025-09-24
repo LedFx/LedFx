@@ -777,8 +777,8 @@ def migrate_config(old_config):
         def invert_equalizer2d_flip_vertical(effect_config):
             """Helper function to invert flip_vertical for equalizer2d effects"""
             if (
-                effect_config.get("ring", True) == False
-                and effect_config.get("center", True) == False
+                effect_config.get("ring", True) is False
+                and effect_config.get("center", True) is False
             ):
                 # Invert flip_vertical (default is False, so invert accordingly)
                 current_flip = effect_config.get("flip_vertical", False)
