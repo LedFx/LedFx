@@ -765,6 +765,46 @@ def migrate_config(old_config):
     if new_config.get("audio", {}).get("min_volume", 0) > 1:
         new_config["audio"]["min_volume"] = 0.2
 
+    # Handle equalizer2d flip_vertical inversion for versions prior to 2.3.6
+    # In 2.3.6, we fixed the upside-down rendering when ring=False and center=False
+    # So we need to invert flip_vertical to maintain the same visual appearance
+    old_version = old_config.get("configuration_version", "0.0.0")
+    if parse_version(old_version) < parse_version("2.3.6"):
+        _LOGGER.warning("Migrating equalizer2d flip_vertical settings for config version < 2.3.6")
+        
+        def invert_equalizer2d_flip_vertical(effect_config):
+            """Helper function to invert flip_vertical for equalizer2d effects"""
+            if (effect_config.get("ring", True) == False and 
+                effect_config.get("center", True) == False):
+                # Invert flip_vertical (default is False, so invert accordingly)
+                current_flip = effect_config.get("flip_vertical", False)
+                effect_config["flip_vertical"] = not current_flip
+                _LOGGER.info(f"Inverted equalizer2d flip_vertical from {current_flip} to {not current_flip}")
+            return effect_config
+        
+        # Update virtuals with equalizer2d effects
+        for virtual in new_config.get("virtuals", []):
+            # Handle currently active effect
+            effect = virtual.get("effect", {})
+            if effect.get("type") == "equalizer2d":
+                effect["config"] = invert_equalizer2d_flip_vertical(effect.get("config", {}))
+            
+            # Handle stored effects in the effects dictionary
+            effects_dict = virtual.get("effects", {})
+            if "equalizer2d" in effects_dict:
+                effects_dict["equalizer2d"]["config"] = invert_equalizer2d_flip_vertical(effects_dict["equalizer2d"].get("config", {}))
+        
+        # Update user presets for equalizer2d
+        equalizer2d_presets = new_config.get("user_presets", {}).get("equalizer2d", {})
+        for preset_name, preset_data in equalizer2d_presets.items():
+            preset_data["config"] = invert_equalizer2d_flip_vertical(preset_data.get("config", {}))
+        
+        # Update scenes with equalizer2d effects
+        for scene_id, scene_data in new_config.get("scenes", {}).items():
+            for virtual_id, virtual_effect in scene_data.get("virtuals", {}).items():
+                if virtual_effect.get("type") == "equalizer2d":
+                    virtual_effect["config"] = invert_equalizer2d_flip_vertical(virtual_effect.get("config", {}))
+
     _LOGGER.warning("Finished migrating config.")
     return new_config
 
