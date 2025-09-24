@@ -1169,18 +1169,19 @@ class Virtual:
                     ):
                         self._active_effect.clear_melbank_freq_props()
 
-                    # if a virtual level config change impacts a 2d effect layout, then trigger an init
-                    if (
-                        _config["rows"] != self._config["rows"]
-                        or _config["rotate"] != self._config["rotate"]
-                    ):
-                        if hasattr(self._active_effect, "set_init"):
-                            self._active_effect.set_init()
+            if self._active_effect is not None:
+                # if a virtual level config change impacts a 2d effect layout, then trigger an init
+                if (
+                    _config["rows"] != self._config["rows"]
+                    or _config["rotate"] != self._config["rotate"]
+                ):
+                    if hasattr(self._active_effect, "set_init"):
+                        self._active_effect.set_init()
 
-                    if _config["grouping"] != self._config["grouping"]:
-                        # The effect needs to be reactivated later after the config has been applied
-                        reactivate_effect = True
-                        self.invalidate_cached_props()
+                if _config["grouping"] != self._config["grouping"]:
+                    # The effect needs to be reactivated later after the config has been applied
+                    reactivate_effect = True
+                    self.invalidate_cached_props()
 
         setattr(self, "_config", _config)
 
