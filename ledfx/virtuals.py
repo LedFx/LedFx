@@ -1183,6 +1183,10 @@ class Virtual:
                     reactivate_effect = True
                     self.invalidate_cached_props()
 
+        # force rotate to 0 if this is a 1d virtual
+        if _config["rows"] <= 1:
+            _config["rotate"] = 0
+
         setattr(self, "_config", _config)
 
         self.frequency_range = FrequencyRange(
