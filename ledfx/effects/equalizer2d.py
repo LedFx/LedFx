@@ -91,12 +91,6 @@ class Equalizer2d(Twod, GradientEffect):
                 description="Decay filter applied to the spin impulse",
                 default=0.1,
             ): vol.All(vol.Coerce(float), vol.Range(min=0.01, max=0.3)),
-            # override the Twod flip options for default
-            vol.Optional(
-                "flip_vertical",
-                description="flip the image vertically",
-                default=True,
-            ): bool,
         }
     )
 
@@ -277,8 +271,8 @@ class Equalizer2d(Twod, GradientEffect):
                 top = self.half_height + volume_scaled // 2
             else:
                 # Dimensions for the bottom to top rectangle
-                bottom = 0
-                top = volume_scaled
+                bottom = (self.r_height - 1) - volume_scaled
+                top = self.r_height - 1
 
             self.m_draw.rectangle(
                 (band_start, bottom, band_end, top),
@@ -309,11 +303,14 @@ class Equalizer2d(Twod, GradientEffect):
                         fill=self.peak_color,
                     )
                 else:
-                    peak_scaled = int(self.r_height * self.peaks[i])
-                    peak_end = peak_scaled + self.peak_size
+                    peak_scaled = int((self.r_height - 1) * self.peaks[i])
+                    peak_start = (
+                        (self.r_height - 1) - peak_scaled - self.peak_size
+                    )
+                    peak_end = (self.r_height - 1) - peak_scaled
 
                     self.m_draw.rectangle(
-                        (band_start, peak_scaled, band_end, peak_end),
+                        (band_start, peak_start, band_end, peak_end),
                         fill=self.peak_color,
                     )
 

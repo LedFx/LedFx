@@ -303,10 +303,6 @@ class Keybeat2d(Twod, GifBase):
         self.num_beat_frames = len(self.beat_frames)
         self.last_beat = 0.0
 
-        if self.rotate == 1 or self.rotate == 3:
-            self.stretch_v, self.stretch_h = self.stretch_h, self.stretch_v
-            self.center_v, self.center_h = self.center_h, self.center_v
-
         self.suppress_beat = False
         self.min_vol_found_in_last_beat = False
         self.above_min_vol = False
@@ -314,6 +310,10 @@ class Keybeat2d(Twod, GifBase):
     def do_once(self):
         super().do_once()
         # defer things that can't be done when pixel_count is not known
+
+        if self.rotate == 1 or self.rotate == 3:
+            self.stretch_v, self.stretch_h = self.stretch_h, self.stretch_v
+            self.center_v, self.center_h = self.center_h, self.center_v
 
         for frame in self.post_frames:
             if not self.force_fit:

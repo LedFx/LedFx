@@ -66,25 +66,7 @@ class Twod(AudioReactiveEffect):
     def config_updated(self, config):
         self.test = self._config["test"]
 
-        # We will render in to native image size of the matrix on rotation
-        # This saves us from having to do ugly resizing and aliasing effects
-        # as well as a small performance boost
-        # we need to accout for swapping vertical and horizotal for 90 / 270
-
-        self.flip2d = self._config["flip_vertical"]
-        self.mirror2d = self._config["flip_horizontal"]
-
-        self.rotate = self._config["rotate"]
-        self.rotate_t = 0
-        if self.rotate == 1:
-            self.rotate_t = Image.Transpose.ROTATE_90
-            self.flip2d, self.mirror2d = self.mirror2d, self.flip2d
-        if self.rotate == 2:
-            self.rotate_t = Image.Transpose.ROTATE_180
-        if self.rotate == 3:
-            self.rotate_t = Image.Transpose.ROTATE_270
-            self.flip2d, self.mirror2d = self.mirror2d, self.flip2d
-
+        # rotation and mirror has to be dealt with in the do_once so that the virtual is known
         self.init = True
 
     def set_init(self):
@@ -94,15 +76,39 @@ class Twod(AudioReactiveEffect):
         setting this flag keeps things atomic and ensures that the effect is not
         reconfigured while it is being rendered or otherwise in use
         """
+
         self.init = True
 
     def do_once(self):
         # defer things that can't be done when pixel_count is not known
         # so therefore cannot be addressed in config_updated
         # also triggered by config change in parent virtual
-        # presently only on row change
+        # row or rotate change
 
-        self.t_height = max(1, self._virtual.config["rows"])
+        # We will render in to native image size of the matrix on rotation
+        # This saves us from having to do ugly resizing and aliasing effects
+        # as well as a small performance boost
+        # we need to accout for swapping vertical and horizotal for 90 / 270
+
+        # composite the virtual rotate with the effect level rotate
+        self.rotate = (
+            self._config["rotate"] + self._virtual._config["rotate"]
+        ) % 4
+
+        self.rotate_t = 0
+        self.flip2d = self._config["flip_vertical"]
+        self.mirror2d = self._config["flip_horizontal"]
+
+        if self.rotate == 1:
+            self.rotate_t = Image.Transpose.ROTATE_90
+            self.flip2d, self.mirror2d = self.mirror2d, self.flip2d
+        if self.rotate == 2:
+            self.rotate_t = Image.Transpose.ROTATE_180
+        if self.rotate == 3:
+            self.rotate_t = Image.Transpose.ROTATE_270
+            self.flip2d, self.mirror2d = self.mirror2d, self.flip2d
+
+        self.t_height = max(1, self._virtual._config["rows"])
         self.t_width = self.pixel_count // self.t_height
 
         if self.rotate == 1 or self.rotate == 3:
