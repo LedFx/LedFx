@@ -1,7 +1,7 @@
 # Playlists API
 
-> **Scope:** This document defines the *Playlists* REST API only. It assumes Scenes already exist and are addressable by `scene_id`.  
-> **Base URL:** `http://<host>:<port>/api/playlists`  
+> **Scope:** This document defines the *Playlists* REST API only. It assumes Scenes already exist and are addressable by `scene_id`.
+> **Base URL:** `http://<host>:<port>/api/playlists`
 
 ---
 
