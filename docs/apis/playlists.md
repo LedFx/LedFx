@@ -1,8 +1,7 @@
-# **Playlists** API
+# Playlists API
 
 > **Scope:** This document defines the *Playlists* REST API only. It assumes Scenes already exist and are addressable by `scene_id`.  
-> **Base URL:** `http://<host>:<port>/api`  
-> **Version:** 0.2-draft  
+> **Base URL:** `http://<host>:<port>/api/playlists`  
 
 ---
 
@@ -13,7 +12,7 @@ A **Playlist** is an ordered collection of **scene references** (by `scene_id`) 
 **Core capabilities:**
 - Create, replace, delete any number of playlists
 - Start/stop/pause/resume playback
-- Looping and shuffle (random) order
+- Shuffle (random) order and sequential playback
 - Per-item durations and a default duration
 - Immediate **bump** (`next`) to the next scene (bypassing timeout)
 - Randomized order per cycle while ensuring each item plays once per cycle
@@ -95,10 +94,10 @@ A **Playlist** is an ordered collection of **scene references** (by `scene_id`) 
 
 **Conventions**
 - `Content-Type: application/json` for request bodies.
-- Responses are snackbar-friendly and include structured objects when relevant:
-  - Success: `{"status":"success", "message":"...", ...}`
-  - Error: `{"status":"error", "message":"...", "code":"..."}`
-- Status codes: `200 OK` for success (including action-style `PUT`), `400 Bad Request`, `404 Not Found`, `409 Conflict`, `422 Unprocessable Entity` (validation), `500 Internal Server Error`.
+- Responses are snackbar-friendly and follow LedFx standard format:
+  - Success: `{"status":"success", ...}` or with snackbar: `{"status":"success", "payload":{"type":"success", "reason":"message"}}`
+  - Error: `{"status":"failed", "payload":{"type":"error", "reason":"message"}}`
+- Status codes: `200 OK` for all responses (to ensure snackbar functionality works).
 
 ---
 
@@ -140,12 +139,14 @@ Creates a new playlist or replaces an existing one with the same `id`.
 }
 ```
 
-**422 Unprocessable Entity**
+**200 OK (Error)**
 ```json
 {
-  "status": "error",
-  "message": "Validation failed: items must be non-empty; item[2].scene_id is required",
-  "code": "VALIDATION_ERROR"
+  "status": "failed",
+  "payload": {
+    "type": "error",
+    "reason": "Validation failed: items must be non-empty; item[2].scene_id is required"
+  }
 }
 ```
 
@@ -389,9 +390,15 @@ Stops the playlist if active, then deletes it.
 { "status": "success", "message": "Playlist 'evening-cycle' deleted." }
 ```
 
-**404 Not Found**
+**200 OK (Error)**
 ```json
-{ "status": "error", "message": "Playlist not found", "code": "NOT_FOUND" }
+{
+  "status": "failed",
+  "payload": {
+    "type": "error",
+    "reason": "Playlist not found"
+  }
+}
 ```
 
 ---
@@ -412,9 +419,15 @@ Stops the playlist if active, then deletes it.
 { "playlist": { /* playlist object */ } }
 ```
 
-**404 Not Found**
+**200 OK (Error)**
 ```json
-{ "status":"error", "message":"Playlist not found", "code":"NOT_FOUND" }
+{
+  "status": "failed",
+  "payload": {
+    "type": "error",
+    "reason": "Playlist not found"
+  }
+}
 ```
 
 ---
@@ -461,7 +474,7 @@ curl -X POST http://localhost:8888/api/playlists \
   }'
 ```
 
-**Start playback**
+**Start playbook**
 ```bash
 curl -X PUT http://localhost:8888/api/playlists \
   -H "Content-Type: application/json" \
@@ -533,8 +546,8 @@ PlaylistSchema = vol.Schema({
 - **Timer scheduling:** use event loop (e.g., `loop.call_later`); compute `duration = item.duration_ms ?? playlist.default_duration_ms ?? 30000`.
 - **Shuffle behavior:** compute a permutation once per cycle; on loop wrap and shuffle mode, recompute a new permutation.
 - **Error handling:**
-  - Empty `items` → reject `start` with `422`.
-  - Missing `scene_id` in scenes → either skip with warning and advance, or return `404` (team decision; doc recommends “skip and notify”).
+  - Empty `items` → reject `start` with error response.
+  - Missing `scene_id` in scenes → either skip with warning and advance, or return error response (team decision; doc recommends "skip and notify").
   - Scene activation exceptions → log; advance to next to avoid deadlocks if configured to be resilient.
 - **Events (recommended):**
   - `PlaylistStartedEvent(playlist_id)`
@@ -547,7 +560,3 @@ PlaylistSchema = vol.Schema({
   - Resuming from pause uses stored `remaining_ms` and does not re-sample.
 
 ---
-
-## Changelog
-- **0.2-draft**: Added optional `timing.jitter` and `set_timing` action; runtime state may include `effective_duration_ms` and `timing`.
-- **0.1-draft**: Initial proposal covering create/replace/delete, start/stop/pause/resume, next/prev/seek, shuffle/loop, GET endpoints, validation & implementation guidance.
