@@ -49,7 +49,7 @@
    /apis/api
    /apis/websocket
    /apis/playlists
-   /global
+   /apis/global
 
 .. toctree::
    :maxdepth: 2

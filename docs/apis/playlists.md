@@ -1,8 +1,8 @@
-# LedFx REST API — **Playlists** (Draft for Dev Review)
+# **Playlists** API
 
-> **Scope:** This document defines the *Playlists* REST API only. It assumes Scenes already exist and are addressable by `scene_id`.
-> **Base URL:** `http://<host>:<port>/api`
-> **Version:** 0.2-draft
+> **Scope:** This document defines the *Playlists* REST API only. It assumes Scenes already exist and are addressable by `scene_id`.  
+> **Base URL:** `http://<host>:<port>/api`  
+> **Version:** 0.2-draft  
 
 ---
 
@@ -36,8 +36,7 @@ A **Playlist** is an ordered collection of **scene references** (by `scene_id`) 
   ],
   "default_duration_ms": 30000,
   "mode": {
-    "order": "sequence",   // "sequence" | "shuffle"
-    "loop": true
+    "order": "sequence"   // "sequence" | "shuffle"
   },
   "timing": {
     "jitter": {
@@ -59,7 +58,6 @@ A **Playlist** is an ordered collection of **scene references** (by `scene_id`) 
   - `duration_ms` *(int, optional)*: Overrides default duration for this item.
 - `default_duration_ms` *(int, optional)*: Used when an item omits `duration_ms`. If both are absent, use server default (e.g., 30000ms).
 - `mode.order` *(string)*: `"sequence"` (in order) or `"shuffle"` (randomized once per cycle).
-- `mode.loop` *(bool)*: Whether to continue after the end (and reshuffle if in shuffle mode).
 - `timing.jitter.enabled` *(bool, optional)*: Toggle per-transition duration randomization.
 - `timing.jitter.factor_min` / `factor_max` *(float, optional)*: Multiplicative range applied to the base duration (e.g., `0.5 … 2.0`).
 - `tags`, `image` *(optional)*: UI/use-case metadata.
@@ -120,7 +118,7 @@ Creates a new playlist or replaces an existing one with the same `id`.
     { "scene_id": "calm-amber" }
   ],
   "default_duration_ms": 30000,
-  "mode": { "order": "sequence", "loop": true },
+  "mode": { "order": "sequence" },
   "timing": { "jitter": { "enabled": true, "factor_min": 0.5, "factor_max": 2.0 } },
   "tags": ["ambient", "night"],
   "image": null
@@ -295,13 +293,13 @@ Update playback mode in-place.
 {
   "id":"evening-cycle",
   "action":"set_mode",
-  "mode": { "order":"shuffle", "loop": true }
+  "mode": { "order":"shuffle" }
 }
 ```
 
 **200 OK**
 ```json
-{ "status":"success", "message":"Mode updated to shuffle (loop=true)." }
+{ "status":"success", "message":"Mode updated to shuffle." }
 ```
 
 #### 9) `shuffle_on` / `shuffle_off`
@@ -459,7 +457,7 @@ curl -X POST http://localhost:8888/api/playlists \
       { "scene_id":"calm-amber" }
     ],
     "default_duration_ms":30000,
-    "mode":{ "order":"sequence", "loop":true }
+    "mode":{ "order":"sequence" }
   }'
 ```
 
@@ -481,7 +479,7 @@ curl -X PUT http://localhost:8888/api/playlists \
 ```bash
 curl -X PUT http://localhost:8888/api/playlists \
   -H "Content-Type: application/json" \
-  -d '{ "id":"evening-cycle", "action":"set_mode", "mode": { "order":"shuffle", "loop":true } }'
+  -d '{ "id":"evening-cycle", "action":"set_mode", "mode": { "order":"shuffle" } }'
 ```
 
 **Stop**
@@ -513,7 +511,6 @@ PlaylistItem = vol.Schema({
 
 PlaylistMode = vol.Schema({
     vol.Required("order"): vol.In(["sequence", "shuffle"]),
-    vol.Required("loop"): bool,
 })
 
 PlaylistSchema = vol.Schema({
@@ -521,7 +518,7 @@ PlaylistSchema = vol.Schema({
     vol.Required("name"): str,
     vol.Required("items"): [PlaylistItem],
     vol.Optional("default_duration_ms"): vol.All(int, vol.Range(min=500)),
-    vol.Optional("mode", default={"order":"sequence","loop":True}): PlaylistMode,
+    vol.Optional("mode", default={"order":"sequence"}): PlaylistMode,
     vol.Optional("timing"): PlaylistTiming,
     vol.Optional("tags", default=list): [str],
     vol.Optional("image"): vol.Any(str, None),
