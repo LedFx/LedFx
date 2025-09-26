@@ -30,6 +30,9 @@ jobs:
       - name: Check out code from GitHub
         uses: actions/checkout@v4
 
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
       - name: Install uv
         uses: astral-sh/setup-uv@v6
         with:
@@ -43,6 +46,9 @@ jobs:
           echo "C:\Program Files (x86)\NSIS\Bin" | Out-File -FilePath "$env:GITHUB_PATH" -Append
           echo "C:\Program Files (x86)\NSIS" | Out-File -FilePath "$env:GITHUB_PATH" -Append
 
+      - name: Set up Python ${{ env.DEFAULT_PYTHON }}
+        run: uv python install ${{ env.DEFAULT_PYTHON }}
+
       - name: Update Path for Windows
         run: echo "$APPDATA\Python\Scripts" >> $GITHUB_PATH
 
@@ -52,6 +58,10 @@ jobs:
       - name: Install LedFx
         run: |
           uv sync --python ${{ env.DEFAULT_PYTHON }} --extra hue --dev
+
+      - name: Build Rust Effects
+        run: |
+          uv run maturin develop --release --manifest-path ./ledfx/rust/Cargo.toml
 
       - name: Get LedFx Version and Upload to Artifacts for later use
         id: ledfx-version
@@ -100,6 +110,9 @@ jobs:
       - name: Check out code from GitHub
         uses: actions/checkout@v4
 
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
       - name: Install build dependencies
         run: |
           brew install portaudio
@@ -113,12 +126,19 @@ jobs:
           enable-cache: true
           cache-dependency-glob: "uv.lock"
 
+      - name: Set up Python ${{ env.DEFAULT_PYTHON }}
+        run: uv python install ${{ env.DEFAULT_PYTHON }}
+
       - name: Update PATH
         run: echo "$HOME/.local/bin" >> $GITHUB_PATH
 
       - name: Install LedFx
         run: |
           uv sync --python ${{ env.DEFAULT_PYTHON }} --extra hue --dev
+
+      - name: Build Rust Effects
+        run: |
+          uv run maturin develop --release --manifest-path ./ledfx/rust/Cargo.toml
       - name: Get LedFx Version
         id: ledfx-version
         run: |
@@ -152,6 +172,9 @@ jobs:
       - name: Check out code from GitHub
         uses: actions/checkout@v4
 
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
       - name: Install build dependencies
         run: |
           brew install portaudio mbedtls@2
@@ -166,6 +189,9 @@ jobs:
           enable-cache: true
           cache-dependency-glob: "uv.lock"
 
+      - name: Set up Python ${{ env.DEFAULT_PYTHON }}
+        run: uv python install ${{ env.DEFAULT_PYTHON }}
+
       - name: Update PATH
         run: echo "$HOME/.local/bin" >> $GITHUB_PATH
 
@@ -176,6 +202,10 @@ jobs:
           export CPPFLAGS="-I/opt/homebrew/opt/mbedtls@2/include"
           export CFLAGS="-Wno-incompatible-function-pointer-types"
           uv sync --python ${{ env.DEFAULT_PYTHON }} --extra hue --dev
+
+      - name: Build Rust Effects
+        run: |
+          uv run maturin develop --release --manifest-path ./ledfx/rust/Cargo.toml
       - name: Get LedFx Version
         id: ledfx-version
         run: |
