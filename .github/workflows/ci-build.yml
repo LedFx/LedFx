@@ -74,25 +74,60 @@ jobs:
     steps:
       - name: Enable long paths for git on Windows
         run: git config --system core.longpaths true
+
       - name: Setup CI sound system
         uses: LABSN/sound-ci-helpers@v1
+
       - name: Check out code from GitHub
         uses: actions/checkout@v4
+
       - name: Install uv
         uses: astral-sh/setup-uv@v6
         with:
           enable-cache: true
           cache-dependency-glob: "uv.lock"
+
       - name: Set up Python ${{ matrix.python-version }}
         run: uv python install ${{ matrix.python-version }}
 
-      - name: Install LedFx
+      # TODO: Resolve a better mechanism to deal with apparent mutation of audio devices in windows 2025 ci runners
+      - name: Force WDM-KS input via sitecustomize
+        shell: bash
         run: |
-          uv sync --all-extras --dev
+          mkdir -p .ci-py
+          cat > .ci-py/sitecustomize.py << 'PY'
+          import sys
+          try:
+              import sounddevice as sd
+              devs = sd.query_devices()
+              has  = sd.query_hostapis()
+              def host_name(d): return has[d['hostapi']]['name']
+              candidates = [i for i, d in enumerate(devs)
+                            if d.get('max_input_channels', 0) > 0
+                            and 'CABLE Output' in d.get('name','')
+                            and host_name(d) == 'Windows WDM-KS']
+              if candidates:
+                  idx = candidates[0]
+                  try:
+                      sd.default.device = (idx, None)   # input only
+                  except Exception:
+                      sd.default.device = idx           # fallback
+                  sys.stderr.write(f"[sitecustomize] WDM-KS input -> #{idx}: {devs[idx]['name']}\n")
+              else:
+                  sys.stderr.write("[sitecustomize] No WDM-KS 'CABLE Output' found.\n")
+          except Exception as e:
+              sys.stderr.write(f"[sitecustomize] skip: {e}\n")
+          PY
+          # Convert to Windows path and use semicolon separator for PYTHONPATH
+          WIN_PWD=$(cygpath -w "$PWD")
+          echo "PYTHONPATH=$WIN_PWD\\.ci-py${PYTHONPATH:+;$PYTHONPATH}" >> $GITHUB_ENV
+
+      - name: Install LedFx
+        run: uv sync --all-extras --dev
 
       - name: Run Tests
-        run: |
-          uv run pytest -v
+        run: uv run pytest -v
+
       - name: Attach LedFx test log
         uses: actions/upload-artifact@v4
         if: always()
