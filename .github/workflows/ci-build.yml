@@ -75,8 +75,8 @@ jobs:
       - name: Enable long paths for git on Windows
         run: git config --system core.longpaths true
 
-#      - name: Setup CI sound system
-#        uses: LABSN/sound-ci-helpers@v1
+      - name: Setup CI sound system
+        uses: LABSN/sound-ci-helpers@v1
 
       - name: Check out code from GitHub
         uses: actions/checkout@v4
