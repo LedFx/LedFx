@@ -1,5 +1,17 @@
 # Playlists API
 
+---
+
+> ## ⚠️ **PROPOSAL ONLY - NOT IMPLEMENTED** ⚠️
+> 
+> **This API has not yet been implemented and is a proposal only.**
+> 
+> This documentation describes the planned design for a future Playlists feature. The endpoints and functionality described here are not currently available in LedFx.
+> 
+> **Do not attempt to use these endpoints - they will not work YET**
+
+---
+
 > **Scope:** This document defines the *Playlists* REST API only. It assumes Scenes already exist and are addressable by `scene_id`.
 > **Base URL:** `http://<host>:<port>/api/playlists`
 
