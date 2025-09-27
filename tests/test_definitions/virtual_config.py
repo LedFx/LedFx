@@ -583,7 +583,7 @@ virtual_config_tests = {
                 }
             }
         ],
-        sleep_after_test=1.0,
+        sleep_after_test=3.0,
     ),
     "get_effect_from_virtual_after_fallack": APITestCase(
         execution_order=(test_count := test_count + 1),
