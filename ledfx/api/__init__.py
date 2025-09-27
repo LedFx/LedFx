@@ -59,7 +59,22 @@ class RestEndpoint(BaseRegistry):
                 }
             )
         except Exception as e:
-            # _LOGGER.exception(e)
+            # Force logging at ERROR level to ensure visibility in CI
+            _LOGGER.error(
+                f"API Exception in {request.method} {request.path}: {e}"
+            )
+            _LOGGER.exception(
+                f"Full traceback for {request.method} {request.path}"
+            )
+
+            # TEMPORARY: Force output to console for debugging CI
+            print(
+                f"CRITICAL: API Exception in {request.method} {request.path}: {e}"
+            )
+            import traceback
+
+            print(f"CRITICAL: Full traceback:\n{traceback.format_exc()}")
+
             reason = getattr(e, "args", None)
             if reason:
                 reason = str(reason[0])
