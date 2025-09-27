@@ -66,7 +66,7 @@ class LedFxCore:
     EXIT_CODES = {
         1: "LedFx encountered an error - Shutting down.",
         2: "Keyboard interrupt - Shutting down.",
-        3: "Shutdown request via API - Shutting down.",
+        3: "Shutdown request via API - Shutting down. HI THERE",
         4: "Restart request via API - Restarting.",
         5: "Shutdown request via CI testing flag - Shutting down.",
     }
