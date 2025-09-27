@@ -89,7 +89,7 @@ jobs:
 
       - name: Set up Python ${{ matrix.python-version }}
         run: uv python install ${{ matrix.python-version }}
-      
+
       # TODO: Resolve a better mechanism to deal with apparent mutation of audio devices in windows 2025 ci runners
       - name: Force WDM-KS input via sitecustomize
         shell: bash
