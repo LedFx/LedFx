@@ -1,0 +1,55 @@
+{
+    "python.testing.pytestArgs": [
+        "tests"
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestEnabled": true,
+    "files.exclude": {
+        "**/__pycache__": true,
+        "**/*.pyc": true,
+        "**/*.pyo": true,
+        "**/.pytest_cache": true,
+        "**/build": true,
+        "**/dist": true,
+        "**/.coverage": true,
+        "**/htmlcov": true,
+        "**/.mypy_cache": true,
+        "**/node_modules": true,
+        "**/.git/objects/**": true,
+        "**/.git/subtree-cache/**": true,
+        "**/docs/build": true,
+        "**/*.egg-info": true,
+        "**/frontend/build": true,
+        "**/frontend/dist": true,
+        "**/frontend/node_modules": true
+    },
+    "files.watcherExclude": {
+        "**/__pycache__/**": true,
+        "**/node_modules/**": true,
+        "**/.git/objects/**": true,
+        "**/.git/subtree-cache/**": true,
+        "**/build/**": true,
+        "**/dist/**": true,
+        "**/.pytest_cache/**": true,
+        "**/.mypy_cache/**": true,
+        "**/htmlcov/**": true,
+        "**/*.egg-info/**": true
+    },
+    "search.exclude": {
+        "**/__pycache__": true,
+        "**/node_modules": true,
+        "**/.git": true,
+        "**/build": true,
+        "**/dist": true,
+        "**/.pytest_cache": true,
+        "**/.mypy_cache": true,
+        "**/htmlcov": true,
+        "**/*.egg-info": true
+    },
+    "python.analysis.exclude": [
+        "**/__pycache__",
+        "**/node_modules",
+        "**/build",
+        "**/dist"
+    ]
+}
