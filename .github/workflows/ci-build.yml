@@ -76,10 +76,30 @@ jobs:
         run: git config --system core.longpaths true
       - name: Setup CI sound system
         uses: LABSN/sound-ci-helpers@v1
-      
-      - name: Set audio device preference for CI
-        run: echo "LEDFX_PREFER_WDMKS_AUDIO=1" >> $GITHUB_ENV
-        
+
+      # Pin ONLY the system default Recording (input) device so LedFx "default" resolves stably.
+      # Adjust the wildcard if the label differs on GitHub runners (e.g., "*CABLE Output*").
+      - name: Pin Windows default audio INPUT (Recording only)
+        shell: pwsh
+        run: |
+          try { Set-PSRepository -Name 'PSGallery' -InstallationPolicy Trusted } catch { }
+          Install-Module -Name AudioDeviceCmdlets -Force -Scope AllUsers
+          Import-Module AudioDeviceCmdlets
+
+          Write-Host "=== Available audio devices (pre-pin) ==="
+          Get-AudioDevice -List | Format-Table -AutoSize | Out-String | Write-Host
+
+          $rec = Get-AudioDevice -List | Where-Object { $_.Type -eq 'Recording' -and $_.Name -like '*CABLE Output*' } | Select-Object -First 1
+          if ($null -eq $rec) {
+            Write-Error "Could not find expected Recording device matching '*CABLE Output*'."
+            Get-AudioDevice -List | Where-Object { $_.Type -eq 'Recording' } | Format-Table -AutoSize | Out-String | Write-Host
+            exit 1
+          }
+          $rec | Set-AudioDevice | Out-Null
+
+          Write-Host "=== Defaults after pin ==="
+          Write-Host ("Recording default: " + (Get-AudioDevice -Recording).Name)
+
       - name: Check out code from GitHub
         uses: actions/checkout@v4
       - name: Install uv

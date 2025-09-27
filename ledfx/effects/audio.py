@@ -1,5 +1,4 @@
 import logging
-import os
 import queue
 import threading
 import time
@@ -103,21 +102,6 @@ class AudioInputSource:
             )
             return None
         else:
-            # Check if we should prefer WDM-KS devices (for CI environments)
-            if os.getenv("LEDFX_PREFER_WDMKS_AUDIO"):
-                _LOGGER.debug("CI environment detected, preferring WDM-KS audio devices")
-                # Look for WDM-KS devices first
-                host_apis = sd.query_hostapis()
-                for device_idx in valid_device_indexes:
-                    device = device_list[device_idx]
-                    host_api = host_apis[device["hostapi"]]
-                    if "WDM-KS" in host_api["name"]:
-                        _LOGGER.debug(
-                            f"Using preferred WDM-KS device at index {device_idx}: {device['name']}"
-                        )
-                        return device_idx
-                _LOGGER.debug("No WDM-KS devices found, falling back to default selection")
-            
             if default_input_device_idx in valid_device_indexes:
                 _LOGGER.debug(
                     f"No audio loopback device found for default output device. Using default input device at index {default_input_device_idx}: {device_list[default_input_device_idx]['name']}"
