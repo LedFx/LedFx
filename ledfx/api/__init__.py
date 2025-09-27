@@ -60,7 +60,9 @@ class RestEndpoint(BaseRegistry):
             )
         except Exception as e:
             # Force logging at ERROR level to ensure visibility in CI
-            _LOGGER.error(f"API Exception in {request.method} {request.path}: {e}")
+            _LOGGER.error(
+                f"API Exception in {request.method} {request.path}: {e}"
+            )
             _LOGGER.exception(
                 f"Full traceback for {request.method} {request.path}"
             )
