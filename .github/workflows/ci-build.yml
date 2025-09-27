@@ -78,65 +78,6 @@ jobs:
       - name: Setup CI sound system
         uses: LABSN/sound-ci-helpers@v1
 
-      # Force python-sounddevice to use the WDM-KS "CABLE Output" as the DEFAULT INPUT
-      # without touching output or using app-specific env vars.
-      - name: Force WDM-KS input via sitecustomize
-        shell: bash
-        run: |
-          mkdir -p .ci-py
-          cat > .ci-py/sitecustomize.py << 'PY'
-          import sys
-          try:
-              import sounddevice as sd
-              devs = sd.query_devices()
-              has  = sd.query_hostapis()
-              def host_name(d): return has[d['hostapi']]['name']
-              # Prefer WDM-KS + "CABLE Output" (adjust substring if runner labels differ)
-              candidates = [i for i, d in enumerate(devs)
-                            if d.get('max_input_channels', 0) > 0
-                            and 'CABLE Output' in d.get('name','')
-                            and host_name(d) == 'Windows WDM-KS']
-              if candidates:
-                  idx = candidates[0]
-                  # Set default for INPUT only; keep OUTPUT default by using a pair (in_idx, None)
-                  # If tuple with None is unsupported on your sd version, it will fall back silently below.
-                  try:
-                      sd.default.device = (idx, None)
-                  except Exception:
-                      sd.default.device = (idx, idx)  # conservative fallback; output usually unused in CI
-                  # Optional: reduce latency sensitivity
-                  # sd.default.latency = ('low', 'low')
-                  # Log to stderr to aid debugging if needed
-                  sys.stderr.write(f"[sitecustomize] Forcing input to WDM-KS device #{idx}: {devs[idx]['name']}\\n")
-              else:
-                  sys.stderr.write("[sitecustomize] No WDM-KS 'CABLE Output' input found; leaving defaults unchanged.\\n")
-          except Exception as e:
-              sys.stderr.write(f"[sitecustomize] sounddevice setup skipped due to error: {e}\\n")
-          PY
-          echo "PYTHONPATH=$PWD/.ci-py${PYTHONPATH:+:$PYTHONPATH}" >> $GITHUB_ENV
-
-      - name: Verify selected device/host API (pre-test)
-        shell: bash
-        run: |
-          uv run python - << 'PY'
-          import sounddevice as sd
-          has = sd.query_hostapis()
-          devs = sd.query_devices()
-          def hname(d): return has[d['hostapi']]['name']
-          din = sd.default.device
-          # Normalize to (in, out)
-          if din is None:
-              print("Default device: None")
-          else:
-              if not isinstance(din, (list, tuple)): din = (din, din)
-              in_idx = din[0]
-              if isinstance(in_idx, int) and 0 <= in_idx < len(devs):
-                  d = devs[in_idx]
-                  print(f"Selected INPUT -> #{in_idx}: {d['name']}  [hostapi={hname(d)}  max_in={d['max_input_channels']}]")
-              else:
-                  print(f"Selected INPUT -> {in_idx}")
-          PY
-
       - name: Check out code from GitHub
         uses: actions/checkout@v4
 
@@ -149,13 +90,40 @@ jobs:
       - name: Set up Python ${{ matrix.python-version }}
         run: uv python install ${{ matrix.python-version }}
 
-      - name: Install LedFx
+      - name: Force WDM-KS input via sitecustomize
+        shell: bash
         run: |
-          uv sync --all-extras --dev
+          mkdir -p .ci-py
+          cat > .ci-py/sitecustomize.py << 'PY'
+          import sys
+          try:
+              import sounddevice as sd
+              devs = sd.query_devices()
+              has  = sd.query_hostapis()
+              def host_name(d): return has[d['hostapi']]['name']
+              candidates = [i for i, d in enumerate(devs)
+                            if d.get('max_input_channels', 0) > 0
+                            and 'CABLE Output' in d.get('name','')
+                            and host_name(d) == 'Windows WDM-KS']
+              if candidates:
+                  idx = candidates[0]
+                  try:
+                      sd.default.device = (idx, None)   # input only
+                  except Exception:
+                      sd.default.device = idx           # fallback
+                  sys.stderr.write(f"[sitecustomize] WDM-KS input -> #{idx}: {devs[idx]['name']}\n")
+              else:
+                  sys.stderr.write("[sitecustomize] No WDM-KS 'CABLE Output' found.\n")
+          except Exception as e:
+              sys.stderr.write(f"[sitecustomize] skip: {e}\n")
+          PY
+          echo "PYTHONPATH=$PWD/.ci-py${PYTHONPATH:+:$PYTHONPATH}" >> $GITHUB_ENV
+
+      - name: Install LedFx
+        run: uv sync --all-extras --dev
 
       - name: Run Tests
-        run: |
-          uv run pytest -v
+        run: uv run pytest -v
 
       - name: Attach LedFx test log
         uses: actions/upload-artifact@v4
@@ -217,7 +185,6 @@ jobs:
         run: |
           brew install portaudio mbedtls@2
 
-      # NEW step to fix samplerate build on Python 3.9/3.10 with CMake 4.x
       - name: Set CMake policy minimum
         run: echo "CMAKE_POLICY_VERSION_MINIMUM=3.5" >> "$GITHUB_ENV"
 
