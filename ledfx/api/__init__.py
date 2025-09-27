@@ -59,7 +59,7 @@ class RestEndpoint(BaseRegistry):
                 }
             )
         except Exception as e:
-            # _LOGGER.exception(e)
+            _LOGGER.exception(f"API Exception in {request.method} {request.path}: {e}")
             reason = getattr(e, "args", None)
             if reason:
                 reason = str(reason[0])
