@@ -1,5 +1,14 @@
 # Development Setup
 
+## Prerequisites
+
+LedFx requires several tools for development:
+
+- **Python 3.9 or above** (3.12 is preferred)
+- **Git** for version control
+- **uv** for Python package management
+- **Rust** for high-performance effects (optional but recommended)
+
 ## Backend Development
 
 ### Common Steps
@@ -11,14 +20,21 @@
 3. Install [uv](https://docs.astral.sh/uv/getting-started/installation/)
     - We suggest using the standalone installer to make updates easier while uv is rapidly changing
 
+4. Install [Rust](https://rustup.rs/) (recommended for Rust effects development):
+    ```console
+    $ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+    $ source $HOME/.cargo/env
+    ```
 
-4. Clone the main branch from the LedFx Github repository:
+    Or on Windows, download and run the installer from [rustup.rs](https://rustup.rs/).
+
+5. Clone the main branch from the LedFx Github repository:
 
     ```console
     $ git clone https://github.com/LedFx/LedFx.git
     ```
 
-5. Using uv, create a virtual environment, install all dependencies, and launch ledfx:
+6. Using uv, create a virtual environment, install all dependencies, and launch ledfx:
 
     ```console
     $ cd LedFx
@@ -26,6 +42,24 @@
     ```
 
     uv can be used to launch ledfx at any time against the established venv.
+
+7. **Optional but recommended:** Build Rust effects for optimal performance:
+
+    ```console
+    $ uv sync  # Builds both LedFx and Rust effects
+    ```
+
+    To rebuild Rust effects after making changes:
+    ```console
+    $ uv run maturin develop --release --manifest-path ledfx/rust/Cargo.toml
+    ```
+
+    To test Rust effects are working:
+    ```console
+    $ uv run python -c "from ledfx.rust import RUST_AVAILABLE; print('Rust effects available:', RUST_AVAILABLE)"
+    ```
+
+    If you skip this step, some advanced effects may not be available, but LedFx will still function normally.
 
 ### Windows Specific Steps
 
@@ -298,15 +332,18 @@ not limited to
 
 ### Tasks
 
-A simple extension to run tasks from the vscode taskbar at the bottom of
-the window.
+LedFx includes comprehensive VS Code tasks for building, testing, and development workflows.
 
-[Tasks by
-actboy168](https://marketplace.visualstudio.com/items?itemName=actboy168.tasks)
+For detailed information about all available tasks, including:
+- Rust building and development
+- Documentation building
+- Debug configuration management
+- Cross-platform build instructions
+- Troubleshooting tips
 
-Currently only the Build and Open Docs task is exposed. This task will
-install dependancies, build the docs and open in your browser, all with
-a single click!
+See the comprehensive **[Tasks Documentation](tasks.md)** for VS Code development workflows.
+
+You can also install the [Tasks extension by actboy168](https://marketplace.visualstudio.com/items?itemName=actboy168.tasks) to run tasks from the VS Code taskbar at the bottom of the window.
 
 ![Build and Open Docs, do it!](/_static/howto/taskbar.png)
 

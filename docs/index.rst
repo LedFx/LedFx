@@ -9,6 +9,8 @@
    /developer/developer
    /developer/architecture
    /README
+   /developer/rust_effects
+   /developer/tasks
 
 .. toctree::
    :maxdepth: 2

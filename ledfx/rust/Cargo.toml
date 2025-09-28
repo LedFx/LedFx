@@ -1,0 +1,14 @@
+[package]
+name = "ledfx-rust-effects"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "ledfx_rust"
+crate-type = ["cdylib"]
+
+[dependencies]
+pyo3 = { version = "0.22", features = ["extension-module"] }
+numpy = "0.22"
+ndarray = "0.16"
+rand = { version = "0.8", features = ["small_rng"] }

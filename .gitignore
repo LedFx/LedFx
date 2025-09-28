@@ -61,6 +61,19 @@ performance_insights.txt
 debug_config
 # spec file build may leave the ledfx.env behind
 ledfx.env
+
+# Rust compiled modules (cross-platform)
+*.so
+*.dll
+*.dylib
+*.pyd
+*.pdb
+
+# Maturin build artifacts
+*.whl
+build/
+wheelhouse/
+
 # Misc
 .devcontainer/ledfx-config.yml
 frontend/*.eslintcache
