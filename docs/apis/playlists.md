@@ -1,14 +1,15 @@
 # Playlists API
 
 **Scope:** This document defines the *Playlists* REST API only. It assumes Scenes already exist and are addressable by `scene_id`.
+
 **Base URL:** `http://<host>:<port>/api/playlists`
 
 ---
 
 ## Overview
 
-A **Playlist** is an ordered collection of **scene references** (by `scene_id`) with per-item (or default) durations. When started, the backend activates each scene in sequence (or randomized order) and schedules the next ac
-tivation after its duration. A single playlist may be active at a time.
+A **Playlist** is an ordered collection of **scene references** (by `scene_id`) with per-item (or default) durations. When started, the backend activates each scene in sequence (or randomized order) and schedules the next activation after its duration. A single playlist may be active at a time.
+
 **Core capabilities:**
 - Create, replace, delete any number of playlists
 - Start/stop/pause/resume playback
@@ -148,38 +149,36 @@ Creates a new playlist or replaces an existing one with the same `id`.
 }
 ```
 
-### Validation Rules (implementation highlights)
-- `name`: required if `id` is omitted.
-- `items`: non-empty array, each with `scene_id` present.
-- `duration_ms` and `default_duration_ms`: integers; implementation enforces a minimum (500 ms) to avoid zero/instant transitions.
-
-### Responses
-
-**200 OK (success)** — envelope contains the saved playlist object.
-
-**200 OK (failed)** — envelope contains a `failed` status and an error payload with details.
-
 ---
 
 ## PUT `/api/playlists` — Control / Mutate
 
-Action-based controller for playlists. The table below lists available runtime control actions and proposed extensions.
+Action-based controller for playlists. Actions are divided into two categories:
 
-### Common Envelope
+### Playlist Selection Actions (require `id`)
+
+These actions need to specify which playlist to operate on:
 
 ```json
 { "id": "evening-cycle", "action": "start" }
 ```
 
-### Actions
+- `start` — Starts the specified playlist; stops any currently active playlist first.
 
-- `start` — Starts playback; starting a playlist will stop any currently active playlist.
-- `stop` — Stops playback and clears active state.
-- `pause` — Pauses playback.
-- `resume` — Resumes playback.
-- `next` — Immediately advances to next item.
-- `prev` — Goes to previous item.
-- `state` — Returns the compact runtime state object.
+### Active Playlist Controls (no `id` required)
+
+These actions operate on the currently active playlist and don't require an `id`:
+
+```json
+{ "action": "stop" }
+```
+
+- `stop` — Stops the currently active playlist and clears active state.
+- `pause` — Pauses the currently active playlist.
+- `resume` — Resumes the currently paused playlist.
+- `next` — Immediately advances to next item in the active playlist.
+- `prev` — Goes to previous item in the active playlist.
+- `state` — Returns the runtime state of the active playlist.
 
 ---
 
@@ -257,7 +256,7 @@ curl -X POST http://localhost:8888/api/playlists \
   }'
 ```
 
-**Start playbook**
+**Start playlist**
 ```bash
 curl -X PUT http://localhost:8888/api/playlists \
   -H "Content-Type: application/json" \
@@ -268,14 +267,28 @@ curl -X PUT http://localhost:8888/api/playlists \
 ```bash
 curl -X PUT http://localhost:8888/api/playlists \
   -H "Content-Type: application/json" \
-  -d '{ "id":"evening-cycle", "action":"next" }'
+  -d '{ "action":"next" }'
 ```
 
-**Stop**
+**Pause active playlist**
 ```bash
 curl -X PUT http://localhost:8888/api/playlists \
   -H "Content-Type: application/json" \
-  -d '{ "id":"evening-cycle", "action":"stop" }'
+  -d '{ "action":"pause" }'
+```
+
+**Resume active playlist**
+```bash
+curl -X PUT http://localhost:8888/api/playlists \
+  -H "Content-Type: application/json" \
+  -d '{ "action":"resume" }'
+```
+
+**Stop active playlist**
+```bash
+curl -X PUT http://localhost:8888/api/playlists \
+  -H "Content-Type: application/json" \
+  -d '{ "action":"stop" }'
 ```
 
 ---
@@ -318,10 +331,8 @@ PlaylistSchema = vol.Schema({
 
 - **Single active playlist** at a time simplifies UX and scheduling; starting a new one implicitly stops any active playlist.
 - **Timer scheduling:** the implementation uses an asyncio task to activate scenes and sleep the appropriate duration; durations are computed from `item.duration_ms` or `default_duration_ms` and subject to a minimum.
+- **Shuffle behavior:** The runtime supports sequence and simple shuffle modes.
 - **Error handling:**
-
- - **Shuffle behavior:** The runtime supports sequence and simple shuffle modes.
- - **Error handling:**
   - Empty `items` → `start` is rejected with an error response.
   - Missing `scene_id` in items → the implementation either skips invalid items or fails validation at upsert time depending on validation rules.
   - Scene activation exceptions are logged and the runner will advance to avoid deadlocks when configured to be resilient.
@@ -338,7 +349,7 @@ The backend fires simple events to notify about playlist lifecycle changes. Thes
 
 Each event includes a small JSON payload. Here are the supported events, when they are emitted, and their payload shapes:
 
-- playlist_started
+- **playlist_started**
   - When: emitted immediately after a playlist is started (via API or programmatic start).
   - Payload:
     ```json
@@ -346,14 +357,14 @@ Each event includes a small JSON payload. Here are the supported events, when th
     ```
   - Notes: `index` is the concrete position within the current play order and `scene_id` is the scene activated at that index (if available).
 
-- playlist_advanced
+- **playlist_advanced**
   - When: emitted each time the playlist advances to a new item (auto-advance or after a `next`/`prev`).
   - Payload:
     ```json
     { "playlist_id": "evening-cycle", "index": 1, "scene_id": "calm-amber", "effective_duration_ms": 45000 }
     ```
 
-- playlist_paused
+- **playlist_paused**
   - When: emitted when playback is paused.
   - Payload:
     ```json
@@ -361,14 +372,14 @@ Each event includes a small JSON payload. Here are the supported events, when th
     ```
   - Notes: the runtime will also store `remaining_ms` for the current item so callers can resume from the same point. The `playlist_paused` event includes the `remaining_ms` value.
 
-- playlist_resumed
+- **playlist_resumed**
   - When: emitted when playback is resumed after a pause.
   - Payload:
     ```json
     { "playlist_id": "evening-cycle", "index": 1, "scene_id": "calm-amber", "effective_duration_ms": 45000, "remaining_ms": 12000 }
     ```
 
-- playlist_stopped
+- **playlist_stopped**
   - When: emitted when a playlist is stopped (either explicitly or because another playlist was started).
   - Payload:
     ```json
