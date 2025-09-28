@@ -395,6 +395,10 @@ class PlaylistManager:
                 pass
             self._task = None
 
+        # Snapshot timing values before clearing them for event emission
+        effective_duration_ms = self._item_effective_duration_ms
+        remaining_ms = self._remaining_ms
+
         # clear timing state
         self._item_start_ts = None
         self._item_effective_duration_ms = None
@@ -407,8 +411,8 @@ class PlaylistManager:
                     PlaylistStoppedEvent(
                         pid,
                         scene_id,
-                        effective_duration_ms=self._item_effective_duration_ms,
-                        remaining_ms=self._remaining_ms,
+                        effective_duration_ms=effective_duration_ms,
+                        remaining_ms=remaining_ms,
                     )
                 )
         except Exception:
