@@ -54,6 +54,7 @@ dev = [
     "pre-commit<4.2.1,>=4.2.0",
     "bokeh<4.0.0,>=3.3.3",
     "pytest<9.0.0,>=8.0.0",
+    "pytest-asyncio<1.0.0,>=0.21.0",
     "pytest-order<2.0.0,>=1.2.0",
     "pyinstaller<7.0.0,>=6.3.0",
 ]
@@ -107,6 +108,7 @@ norecursedirs = [
     ".tox",
 ]
 filterwarnings = "ignore::DeprecationWarning"
+asyncio_default_fixture_loop_scope = "function"
 
 [tool.uv]
 # We want to use copy here, since symlink mode means we can't use our own portaudio dll

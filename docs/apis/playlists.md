@@ -1,26 +1,14 @@
 # Playlists API
 
----
-
-> ## ⚠️ **PROPOSAL ONLY - NOT IMPLEMENTED** ⚠️
->
-> **This API has not yet been implemented and is a proposal only.**
->
-> This documentation describes the planned design for a future Playlists feature. The endpoints and functionality described here are not currently available in LedFx.
->
-> **Do not attempt to use these endpoints - they will not work YET**
-
----
-
-> **Scope:** This document defines the *Playlists* REST API only. It assumes Scenes already exist and are addressable by `scene_id`.
-> **Base URL:** `http://<host>:<port>/api/playlists`
+**Scope:** This document defines the *Playlists* REST API only. It assumes Scenes already exist and are addressable by `scene_id`.
+**Base URL:** `http://<host>:<port>/api/playlists`
 
 ---
 
 ## Overview
 
-A **Playlist** is an ordered collection of **scene references** (by `scene_id`) with per-item (or default) durations. When started, the backend activates each scene in sequence (or randomized order) and schedules the next activation after its duration. A single playlist may be active at a time.
-
+A **Playlist** is an ordered collection of **scene references** (by `scene_id`) with per-item (or default) durations. When started, the backend activates each scene in sequence (or randomized order) and schedules the next ac
+tivation after its duration. A single playlist may be active at a time.
 **Core capabilities:**
 - Create, replace, delete any number of playlists
 - Start/stop/pause/resume playback
@@ -28,7 +16,7 @@ A **Playlist** is an ordered collection of **scene references** (by `scene_id`) 
 - Per-item durations and a default duration
 - Immediate **bump** (`next`) to the next scene (bypassing timeout)
 - Randomized order per cycle while ensuring each item plays once per cycle
-- Seek to arbitrary index and previous/next navigation
+- Previous/next navigation
 
 ---
 
@@ -46,9 +34,7 @@ A **Playlist** is an ordered collection of **scene references** (by `scene_id`) 
     { "scene_id": "calm-amber" }
   ],
   "default_duration_ms": 30000,
-  "mode": {
-    "order": "sequence"   // "sequence" | "shuffle"
-  },
+  "mode": "sequence",
   "timing": {
     "jitter": {
       "enabled": true,
@@ -67,17 +53,17 @@ A **Playlist** is an ordered collection of **scene references** (by `scene_id`) 
 - `items[*]` *(array of objects)*:
   - `scene_id` *(string, required)*: Existing scene identifier.
   - `duration_ms` *(int, optional)*: Overrides default duration for this item.
-- `default_duration_ms` *(int, optional)*: Used when an item omits `duration_ms`. If both are absent, use server default (e.g., 30000ms).
-- `mode.order` *(string)*: `"sequence"` (in order) or `"shuffle"` (randomized once per cycle).
+- `default_duration_ms` *(int, optional)*: Used when an item omits `duration_ms`. If both are absent, the server enforces a minimum/default behavior (implementation enforces a minimum of 500ms per item).
+- `mode` *(string)*: `"sequence"` (in order) or `"shuffle"` (randomized once per cycle).
 - `timing.jitter.enabled` *(bool, optional)*: Toggle per-transition duration randomization.
-- `timing.jitter.factor_min` / `factor_max` *(float, optional)*: Multiplicative range applied to the base duration (e.g., `0.5 … 2.0`).
+- `timing.jitter.factor_min` / `factor_max` *(float, optional)*: Multiplicative range applied to the base duration (e.g., `0.5 ... 2.0`).
 - `tags`, `image` *(optional)*: UI/use-case metadata.
 
 ### Runtime State (Ephemeral)
 
 ```json
 {
-  "active_id": "evening-cycle",
+  "active_playlist": "evening-cycle",
   "index": 1,
   "order": [0, 2, 1],
   "scene_id": "calm-amber",
@@ -113,7 +99,7 @@ A **Playlist** is an ordered collection of **scene references** (by `scene_id`) 
 
 ---
 
-## POST `/api/playlists` — Create/Replace (Upsert)
+## POST `/api/playlists` - Create/Replace (Upsert)
 
 Creates a new playlist or replaces an existing one with the same `id`.
 
@@ -129,7 +115,7 @@ Creates a new playlist or replaces an existing one with the same `id`.
     { "scene_id": "calm-amber" }
   ],
   "default_duration_ms": 30000,
-  "mode": { "order": "sequence" },
+  "mode": "sequence",
   "timing": { "jitter": { "enabled": true, "factor_min": 0.5, "factor_max": 2.0 } },
   "tags": ["ambient", "night"],
   "image": null
@@ -139,7 +125,7 @@ Creates a new playlist or replaces an existing one with the same `id`.
 ### Validation Rules
 - `name`: required if `id` is omitted.
 - `items`: non-empty array, each with `scene_id` present.
-- `duration_ms` and `default_duration_ms`: integers ≥ **500** ms recommended minimum.
+- `duration_ms` and `default_duration_ms`: integers - **500** ms recommended minimum.
 
 ### Responses
 
@@ -162,228 +148,38 @@ Creates a new playlist or replaces an existing one with the same `id`.
 }
 ```
 
+### Validation Rules (implementation highlights)
+- `name`: required if `id` is omitted.
+- `items`: non-empty array, each with `scene_id` present.
+- `duration_ms` and `default_duration_ms`: integers; implementation enforces a minimum (500 ms) to avoid zero/instant transitions.
+
+### Responses
+
+**200 OK (success)** — envelope contains the saved playlist object.
+
+**200 OK (failed)** — envelope contains a `failed` status and an error payload with details.
+
 ---
 
 ## PUT `/api/playlists` — Control / Mutate
 
-Action-based controller for playlists. All actions require an `id` and an `action` string.
+Action-based controller for playlists. The table below lists available runtime control actions and proposed extensions.
 
 ### Common Envelope
 
 ```json
-{ "id": "evening-cycle", "action": "<...>" }
+{ "id": "evening-cycle", "action": "start" }
 ```
 
 ### Actions
 
-#### 1) `start`
-Starts playback. If another playlist is active, it is stopped first.
-
-**Body**
-```json
-{ "id": "evening-cycle", "action": "start", "index": 0 }
-```
-- `index` *(optional, int)*: Start at this 0-based index (default 0).
-
-**Behavior**
-- Resolve `order` = sequential indices or a single-cycle shuffle.
-- Activate `items[index]` scene immediately.
-- Schedule automatic advance after resolved duration.
-
-**200 OK**
-```json
-{
-  "status": "success",
-  "message": "Playlist 'evening-cycle' started at index 0.",
-  "state": {
-    "active_id": "evening-cycle",
-    "index": 0,
-    "order": [0,1,2],
-    "scene_id": "warm-fade",
-    "paused": false,
-    "remaining_ms": 30000
-  }
-}
-```
-
-#### 2) `stop`
-Stops playback and clears active state.
-
-**Body**
-```json
-{ "id": "evening-cycle", "action": "stop" }
-```
-
-**200 OK**
-```json
-{ "status": "success", "message": "Playlist 'evening-cycle' stopped." }
-```
-
-#### 3) `pause`
-Pauses the current timer; records `remaining_ms`.
-
-```json
-{ "id": "evening-cycle", "action": "pause" }
-```
-
-**200 OK**
-```json
-{
-  "status": "success",
-  "message": "Paused playlist 'evening-cycle'.",
-  "state": { "paused": true, "remaining_ms": 12000 }
-}
-```
-
-#### 4) `resume`
-Resumes playback using `remaining_ms`.
-
-```json
-{ "id": "evening-cycle", "action": "resume" }
-```
-
-**200 OK**
-```json
-{
-  "status": "success",
-  "message": "Resumed playlist 'evening-cycle'.",
-  "state": { "paused": false, "remaining_ms": 12000 }
-}
-```
-
-#### 5) `next` (**bump**)
-Immediately advance to the next item (wraps if needed), bypassing the timeout.
-
-```json
-{ "id": "evening-cycle", "action": "next" }
-```
-
-**200 OK**
-```json
-{
-  "status": "success",
-  "message": "Advanced to 'neon-ripple' (2/3).",
-  "state": { "index": 1, "scene_id": "neon-ripple", "remaining_ms": 45000 }
-}
-```
-
-#### 6) `prev`
-Go to previous item (wraps if needed).
-
-```json
-{ "id": "evening-cycle", "action": "prev" }
-```
-
-**200 OK**
-```json
-{
-  "status": "success",
-  "message": "Moved to previous item 'calm-amber' (3/3).",
-  "state": { "index": 2, "scene_id": "calm-amber", "remaining_ms": 30000 }
-}
-```
-
-#### 7) `seek`
-Jump to a specific index (0-based).
-
-```json
-{ "id": "evening-cycle", "action": "seek", "index": 2 }
-```
-
-**200 OK**
-```json
-{
-  "status": "success",
-  "message": "Seeked to index 2 ('calm-amber').",
-  "state": { "index": 2, "scene_id": "calm-amber", "remaining_ms": 30000 }
-}
-```
-
-#### 8) `set_mode`
-Update playback mode in-place.
-
-```json
-{
-  "id":"evening-cycle",
-  "action":"set_mode",
-  "mode": { "order":"shuffle" }
-}
-```
-
-**200 OK**
-```json
-{ "status":"success", "message":"Mode updated to shuffle." }
-```
-
-#### 9) `shuffle_on` / `shuffle_off`
-Sugar for toggling `mode.order` without specifying the whole object.
-
-```json
-{ "id":"evening-cycle", "action":"shuffle_on" }
-```
-```json
-{ "id":"evening-cycle", "action":"shuffle_off" }
-```
-
-**200 OK**
-```json
-{ "status":"success", "message":"Shuffle enabled." }
-```
-```json
-{ "status":"success", "message":"Shuffle disabled (sequence order)." }
-```
-
-#### 10) `rename`
-Rename the playlist.
-
-```json
-{ "id":"evening-cycle", "action":"rename", "name":"Evening Cycle V2" }
-```
-
-**200 OK**
-```json
-{ "status":"success", "message":"Playlist renamed to 'Evening Cycle V2'." }
-```
-
-#### 11) `replace_items`
-Atomically replace the entire `items` list.
-
-```json
-{
-  "id":"evening-cycle",
-  "action":"replace_items",
-  "items":[
-    { "scene_id": "blue-waves", "duration_ms": 20000 },
-    { "scene_id": "golden-hour", "duration_ms": 40000 }
-  ],
-  "default_duration_ms": 25000
-}
-```
-
-**200 OK**
-```json
-{ "status":"success", "message":"Items replaced (2 total)." }
-```
-
-#### 12) `set_timing`
-Update the timing configuration, including jitter.
-
-```json
-{
-  "id":"evening-cycle",
-  "action":"set_timing",
-  "timing": { "jitter": { "enabled": true, "factor_min": 0.5, "factor_max": 2.0 } }
-}
-```
-
-**200 OK**
-```json
-{
-  "status":"success",
-  "message":"Timing updated (jitter enabled, range 0.5–2.0×).",
-  "timing": { "jitter": { "enabled": true, "factor_min": 0.5, "factor_max": 2.0 } }
-}
-```
+- `start` — Starts playback; starting a playlist will stop any currently active playlist.
+- `stop` — Stops playback and clears active state.
+- `pause` — Pauses playback.
+- `resume` — Resumes playback.
+- `next` — Immediately advances to next item.
+- `prev` — Goes to previous item.
+- `state` — Returns the compact runtime state object.
 
 ---
 
@@ -397,29 +193,16 @@ Stops the playlist if active, then deletes it.
 ```
 
 ### Responses
-**200 OK**
-```json
-{ "status": "success", "message": "Playlist 'evening-cycle' deleted." }
-```
-
-**200 OK (Error)**
-```json
-{
-  "status": "failed",
-  "payload": {
-    "type": "error",
-    "reason": "Playlist not found"
-  }
-}
-```
+**200 OK (success)** — playlist deleted.
+**200 OK (failed)** — playlist not found error envelope.
 
 ---
 
 ## GET `/api/playlists` — List
 
 **200 OK**
-```
-{ "playlists": [ { /* playlist */ }, ... ] }
+```json
+{ "playlists": [ { "id": "evening-cycle", "name": "Evening Cycle", "items": [] } ] }
 ```
 
 ---
@@ -427,20 +210,11 @@ Stops the playlist if active, then deletes it.
 ## GET `/api/playlists/{id}` — Details
 
 **200 OK**
-```
-{ "playlist": { /* playlist object */ } }
+```json
+{ "playlist": { "id": "evening-cycle", "name": "Evening Cycle", "items": [] } }
 ```
 
-**200 OK (Error)**
-```json
-{
-  "status": "failed",
-  "payload": {
-    "type": "error",
-    "reason": "Playlist not found"
-  }
-}
-```
+**200 OK (failed)** — playlist not found envelope.
 
 ---
 
@@ -450,12 +224,9 @@ Stops the playlist if active, then deletes it.
 ```json
 {
   "state": {
-    "active_id": "evening-cycle",
+    "active_playlist": "evening-cycle",
     "index": 1,
-    "order": [0,2,1],
-    "scene_id": "calm-amber",
-    "paused": false,
-    "remaining_ms": 12000
+    "paused": false
   }
 }
 ```
@@ -482,7 +253,7 @@ curl -X POST http://localhost:8888/api/playlists \
       { "scene_id":"calm-amber" }
     ],
     "default_duration_ms":30000,
-    "mode":{ "order":"sequence" }
+    "mode":"sequence"
   }'
 ```
 
@@ -500,13 +271,6 @@ curl -X PUT http://localhost:8888/api/playlists \
   -d '{ "id":"evening-cycle", "action":"next" }'
 ```
 
-**Enable shuffle**
-```bash
-curl -X PUT http://localhost:8888/api/playlists \
-  -H "Content-Type: application/json" \
-  -d '{ "id":"evening-cycle", "action":"set_mode", "mode": { "order":"shuffle" } }'
-```
-
 **Stop**
 ```bash
 curl -X PUT http://localhost:8888/api/playlists \
@@ -516,7 +280,7 @@ curl -X PUT http://localhost:8888/api/playlists \
 
 ---
 
-## Validation (Voluptuous Sketch)
+## Validation (Voluptuous sketch)
 
 ```python
 TimingJitter = vol.Schema({
@@ -534,19 +298,17 @@ PlaylistItem = vol.Schema({
     vol.Optional("duration_ms"): vol.All(int, vol.Range(min=500)),
 })
 
-PlaylistMode = vol.Schema({
-    vol.Required("order"): vol.In(["sequence", "shuffle"]),
-})
+PlaylistMode = vol.Schema(vol.In(["sequence", "shuffle"]))
 
 PlaylistSchema = vol.Schema({
-    vol.Required("id"): str,
-    vol.Required("name"): str,
-    vol.Required("items"): [PlaylistItem],
-    vol.Optional("default_duration_ms"): vol.All(int, vol.Range(min=500)),
-    vol.Optional("mode", default={"order":"sequence"}): PlaylistMode,
-    vol.Optional("timing"): PlaylistTiming,
-    vol.Optional("tags", default=list): [str],
-    vol.Optional("image"): vol.Any(str, None),
+  vol.Required("id"): str,
+  vol.Required("name"): str,
+  vol.Required("items"): [PlaylistItem],
+  vol.Optional("default_duration_ms"): vol.All(int, vol.Range(min=500)),
+  vol.Optional("mode", default="sequence"): PlaylistMode,
+  vol.Optional("timing"): PlaylistTiming,
+  vol.Optional("tags", default=list): [str],
+  vol.Optional("image"): vol.Any(str, None),
 })
 ```
 
@@ -555,20 +317,64 @@ PlaylistSchema = vol.Schema({
 ## Implementation Notes
 
 - **Single active playlist** at a time simplifies UX and scheduling; starting a new one implicitly stops any active playlist.
-- **Timer scheduling:** use event loop (e.g., `loop.call_later`); compute `duration = item.duration_ms ?? playlist.default_duration_ms ?? 30000`.
-- **Shuffle behavior:** compute a permutation once per cycle; on loop wrap and shuffle mode, recompute a new permutation.
+- **Timer scheduling:** the implementation uses an asyncio task to activate scenes and sleep the appropriate duration; durations are computed from `item.duration_ms` or `default_duration_ms` and subject to a minimum.
 - **Error handling:**
-  - Empty `items` → reject `start` with error response.
-  - Missing `scene_id` in scenes → either skip with warning and advance, or return error response (team decision; doc recommends "skip and notify").
-  - Scene activation exceptions → log; advance to next to avoid deadlocks if configured to be resilient.
-- **Events (recommended):**
-  - `PlaylistStartedEvent(playlist_id)`
-  - `PlaylistAdvancedEvent(playlist_id, index, scene_id)`
-  - `PlaylistPausedEvent(playlist_id)` / `PlaylistResumedEvent(playlist_id)`
-  - `PlaylistStoppedEvent(playlist_id)`
-  - `PlaylistDeletedEvent(playlist_id)`
-- **Timing jitter (if enabled):**
-  - On each new item start (start/next/prev/seek/auto-advance), sample a factor uniformly in `[factor_min, factor_max]` and apply it to the base duration; clamp to a sane minimum (e.g., 500ms).
-  - Resuming from pause uses stored `remaining_ms` and does not re-sample.
 
----
+ - **Shuffle behavior:** The runtime supports sequence and simple shuffle modes.
+ - **Error handling:**
+  - Empty `items` → `start` is rejected with an error response.
+  - Missing `scene_id` in items → the implementation either skips invalid items or fails validation at upsert time depending on validation rules.
+  - Scene activation exceptions are logged and the runner will advance to avoid deadlocks when configured to be resilient.
+- **Events (names/payloads):**
+  - `playlist_started` — payload: `{ "playlist_id": "<id>", "index": <int> }`
+  - `playlist_advanced` — payload: `{ "playlist_id": "<id>", "index": <int> }`
+  - `playlist_paused` — payload: `{ "playlist_id": "<id>", "index": <int> }`
+  - `playlist_resumed` — payload: `{ "playlist_id": "<id>", "index": <int> }`
+  - `playlist_stopped` — payload: `{ "playlist_id": "<id>" }`
+
+## Events
+
+The backend fires simple events to notify about playlist lifecycle changes. These are emitted on the server's internal event bus and are also available to any integrations or UI listeners that subscribe to runtime events.
+
+Each event includes a small JSON payload. Here are the supported events, when they are emitted, and their payload shapes:
+
+- playlist_started
+  - When: emitted immediately after a playlist is started (via API or programmatic start).
+  - Payload:
+    ```json
+    { "playlist_id": "evening-cycle", "index": 0, "scene_id": "warm-fade", "effective_duration_ms": 30000 }
+    ```
+  - Notes: `index` is the concrete position within the current play order and `scene_id` is the scene activated at that index (if available).
+
+- playlist_advanced
+  - When: emitted each time the playlist advances to a new item (auto-advance or after a `next`/`prev`).
+  - Payload:
+    ```json
+    { "playlist_id": "evening-cycle", "index": 1, "scene_id": "calm-amber", "effective_duration_ms": 45000 }
+    ```
+
+- playlist_paused
+  - When: emitted when playback is paused.
+  - Payload:
+    ```json
+    { "playlist_id": "evening-cycle", "index": 1, "scene_id": "calm-amber", "effective_duration_ms": 45000, "remaining_ms": 12000 }
+    ```
+  - Notes: the runtime will also store `remaining_ms` for the current item so callers can resume from the same point. The `playlist_paused` event includes the `remaining_ms` value.
+
+- playlist_resumed
+  - When: emitted when playback is resumed after a pause.
+  - Payload:
+    ```json
+    { "playlist_id": "evening-cycle", "index": 1, "scene_id": "calm-amber", "effective_duration_ms": 45000, "remaining_ms": 12000 }
+    ```
+
+- playlist_stopped
+  - When: emitted when a playlist is stopped (either explicitly or because another playlist was started).
+  - Payload:
+    ```json
+    { "playlist_id": "evening-cycle", "effective_duration_ms": 45000, "remaining_ms": 12000 }
+    ```
+
+- **Timing jitter (if enabled):**
+  - On each new item start (start/next/prev/auto-advance), sample a factor uniformly in `[factor_min, factor_max]` and apply it to the base duration; clamp to a sane minimum (e.g., 500ms).
+  - Resuming from pause uses stored `remaining_ms` and does not re-sample.
