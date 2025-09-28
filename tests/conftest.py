@@ -1,4 +1,7 @@
+import os
+import platform
 import subprocess
+import sys
 import time
 
 import pytest
@@ -22,6 +25,7 @@ def pytest_sessionstart(session):
         None
     """
     EnvironmentCleanup.cleanup_test_config_folder()
+    default_audio_device_setup()
     # Start LedFx as a subprocess
     global ledfx
     try:
@@ -76,3 +80,70 @@ def pytest_sessionfinish(session, exitstatus):
     # Wait for LedFx to terminate
     while ledfx.poll() is None:
         time.sleep(0.5)
+
+
+"""
+Pytest startup hook to configure default audio device for Windows CI runs.
+
+It only runs when tests are executed on GitHub
+Actions Windows runners to avoid changing developer environments.
+
+Behavior:
+- If running on GitHub Actions and platform is Windows, try to select a
+  WDM-KS device containing 'CABLE Output' and set it as the default input
+  device via sounddevice. Diagnostics are written to stderr.
+- All errors are caught and reported to stderr; failure is non-fatal.
+"""
+
+
+def _should_run_on_ci_windows() -> bool:
+    # Run only on GitHub Actions Windows runners
+    # - GITHUB_ACTIONS is 'true' on GitHub Actions
+    # - platform.system() == 'Windows' on Windows runners
+    return (
+        os.environ.get("GITHUB_ACTIONS", "") == "true"
+        and platform.system() == "Windows"
+    )
+
+
+def default_audio_device_setup():
+
+    if _should_run_on_ci_windows():
+        try:
+            import sounddevice as sd
+
+            # Query available devices and host APIs
+            devs = sd.query_devices()
+            hostapis = sd.query_hostapis()
+
+            def host_name(d):
+                return hostapis[d["hostapi"]]["name"]
+
+            # Find WDM-KS devices with 'CABLE Output' in the name
+            candidates = [
+                i
+                for i, d in enumerate(devs)
+                if d.get("max_input_channels", 0) > 0
+                and "CABLE Output" in d.get("name", "")
+                and host_name(d).startswith("Windows WDM-KS")
+            ]
+
+            if candidates:
+                idx = candidates[0]
+                try:
+                    # Set as input device only
+                    sd.default.device = (idx, None)
+                except Exception:
+                    # Fallback to setting for both input/output
+                    sd.default.device = idx
+
+                sys.stdout.write(
+                    f"[conftest] WDM-KS input -> #{idx}: {devs[idx]['name']}\n"
+                )
+            else:
+                sys.stdout.write(
+                    "[conftest] No WDM-KS 'CABLE Output' found.\n"
+                )
+
+        except Exception as e:
+            sys.stdout.write(f"[conftest] skip: {e}\n")

@@ -74,36 +74,25 @@ jobs:
     steps:
       - name: Enable long paths for git on Windows
         run: git config --system core.longpaths true
-
       - name: Setup CI sound system
         uses: LABSN/sound-ci-helpers@v1
-
       - name: Check out code from GitHub
         uses: actions/checkout@v4
-
       - name: Install uv
         uses: astral-sh/setup-uv@v6
         with:
           enable-cache: true
           cache-dependency-glob: "uv.lock"
-
       - name: Set up Python ${{ matrix.python-version }}
         run: uv python install ${{ matrix.python-version }}
 
-      # Configure WDM-KS audio device for Windows CI using dedicated Python file
-      - name: Force WDM-KS input via sitecustomize
-        shell: bash
-        run: |
-          # Add .ci directory to PYTHONPATH so sitecustomize.py is automatically imported
-          WIN_PWD=$(cygpath -w "$PWD")
-          echo "PYTHONPATH=$WIN_PWD\\.ci${PYTHONPATH:+;$PYTHONPATH}" >> $GITHUB_ENV
-
       - name: Install LedFx
-        run: uv sync --all-extras --dev
+        run: |
+          uv sync --all-extras --dev
 
       - name: Run Tests
-        run: uv run pytest -v
-
+        run: |
+          uv run pytest -v
       - name: Attach LedFx test log
         uses: actions/upload-artifact@v4
         if: always()
@@ -198,7 +187,7 @@ jobs:
       fail-fast: false
     env:
       IMAGE_NAME: ledfx
-      GHCR_IMAGE: "" # Will be set dynamically in "Lowercase repository owner" step
+      GHCR_IMAGE: "" # avoid linting issues
     name: Build LedFx Docker Image for ${{ matrix.ARCH }}
     steps:
       - name: Checkout code
