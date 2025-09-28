@@ -63,7 +63,7 @@ jobs:
 
   build-ledfx-windows:
     name: Build LedFx (Windows)
-    runs-on: windows-latest
+    runs-on: windows-2022   # this is pinned until we understand why the new 2025 latest has audio device issues
     strategy:
       matrix:
         python-version: ["3.9", "3.10", "3.11", "3.12"]
