@@ -43,7 +43,8 @@ async def test_create_generates_id_when_missing(tmp_path):
     assert p["id"] in core.config["playlists"]
 
 
-def test_validation_rejects_short_duration(tmp_path):
+@pytest.mark.asyncio
+async def test_validation_rejects_short_duration(tmp_path):
     core = DummyCore(str(tmp_path))
     manager = PlaylistManager(core)
 
@@ -53,10 +54,8 @@ def test_validation_rejects_short_duration(tmp_path):
         "items": [{"scene_id": "s1", "duration_ms": 100}],
     }
     with pytest.raises(Exception):
-        # create_or_replace is async, run it
-        asyncio.get_event_loop().run_until_complete(
-            manager.create_or_replace(bad)
-        )
+        # create_or_replace is async, await it properly
+        await manager.create_or_replace(bad)
 
 
 @pytest.mark.asyncio
