@@ -47,51 +47,86 @@ class PlaylistsEndpoint(RestEndpoint):
             return await self.json_decode_error()
 
         action = data.get("action")
-        pid = data.get("id")
+        if not action:
+            return await self.invalid_request("action required")
 
         try:
             await self._ensure_manager()
+
+            # Playlist Selection Actions (require id)
             if action == "start":
+                pid = data.get("id")
+                if not pid:
+                    return await self.invalid_request(
+                        "id required for start action"
+                    )
                 ok = await self._ledfx.playlists.start(pid)
                 if not ok:
-                    return await self.invalid_request("Playlist not found")
-                return await self.request_success()
-            if action == "stop":
+                    return await self.invalid_request(
+                        f"Playlist {pid} not found or empty"
+                    )
+                return await self.request_success(
+                    type="success", message=f"Playlist '{pid}' started"
+                )
+
+            # Active Playlist Controls (no id required, operate on active playlist)
+            elif action == "stop":
                 await self._ledfx.playlists.stop()
-                return await self.request_success()
-            if action == "pause":
+                return await self.request_success(
+                    type="success", message="Active playlist stopped"
+                )
+            elif action == "pause":
                 ok = await self._ledfx.playlists.pause()
                 return (
-                    await self.request_success()
+                    await self.request_success(
+                        type="success", message="Active playlist paused"
+                    )
                     if ok
-                    else await self.invalid_request("Pause failed")
+                    else await self.invalid_request(
+                        "No active playlist to pause"
+                    )
                 )
-            if action == "resume":
+            elif action == "resume":
                 ok = await self._ledfx.playlists.resume()
                 return (
-                    await self.request_success()
+                    await self.request_success(
+                        type="success", message="Active playlist resumed"
+                    )
                     if ok
-                    else await self.invalid_request("Resume failed")
+                    else await self.invalid_request(
+                        "No active playlist to resume"
+                    )
                 )
-            if action == "next":
+            elif action == "next":
                 ok = await self._ledfx.playlists.next()
                 return (
-                    await self.request_success()
+                    await self.request_success(
+                        type="success",
+                        message="Advanced to next scene in playlist",
+                    )
                     if ok
-                    else await self.invalid_request("Next failed")
+                    else await self.invalid_request(
+                        "No active playlist for next"
+                    )
                 )
-            if action == "prev":
+            elif action == "prev":
                 ok = await self._ledfx.playlists.prev()
                 return (
-                    await self.request_success()
+                    await self.request_success(
+                        type="success",
+                        message="Moved to previous scene in playlist",
+                    )
                     if ok
-                    else await self.invalid_request("Prev failed")
+                    else await self.invalid_request(
+                        "No active playlist for prev"
+                    )
                 )
-            if action == "state":
+            elif action == "state":
                 state = await self._ledfx.playlists.get_state()
                 return await self.request_success(data={"state": state})
+            else:
+                return await self.invalid_request(f"Unknown action: {action}")
 
-            return await self.invalid_request("Unknown action")
         except Exception as e:
             _LOGGER.exception(e)
             return await self.internal_error(str(e))
@@ -110,7 +145,7 @@ class PlaylistsEndpoint(RestEndpoint):
         ok = await self._ledfx.playlists.delete(pid)
         if ok:
             return await self.request_success(
-                message=f"Playlist '{pid}' deleted."
+                type="success", message=f"Playlist '{pid}' deleted."
             )
         return await self.invalid_request("Playlist not found")
 
