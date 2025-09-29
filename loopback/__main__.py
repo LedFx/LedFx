@@ -28,9 +28,7 @@ def copy_lib():
     # If not in site-packages, means it's a development environment, so get env path from the .venv
     if not lib_path:
         # Default to .venv, but if VIRTUAL_ENV is set (venv does this for you), use that instead
-        venv_path = ".venv"
-        if "VIRTUAL_ENV" in os.environ:
-            venv_path = os.environ["VIRTUAL_ENV"]
+        venv_path = os.path.abspath(os.environ.get("VIRTUAL_ENV", ".venv"))
 
         lib_path = os.path.join(
             venv_path,
