@@ -70,7 +70,7 @@ In that case, reach out in the LedFX discord dev_chat channel and ask for an aub
 3. Enable audio loopback which is default for a user install, but needs a manual step for dev builds, by calling once
 
     ``` console
-    $  ledfx-loopback-install
+    $ uv run ledfx-loopback-install
     ```
 
 ### Linux Specific Steps {#linux-dev}
@@ -116,7 +116,7 @@ To run these local and / or develop more tests
 1) Ensure you have local loopback installed, or you may hit failures once audio effects are under test
 
     ``` console
-    $  ledfx-loopback-install
+    $ uv run ledfx-loopback-install
     ```
 
 2) launch the suite of tests with uv which will ensure dependancies are installed
