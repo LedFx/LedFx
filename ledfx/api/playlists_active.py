@@ -1,7 +1,6 @@
 """API handlers for playlists implemented as RestEndpoint classes."""
 
 import logging
-from json import JSONDecodeError
 
 from aiohttp import web
 
