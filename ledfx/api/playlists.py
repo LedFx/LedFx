@@ -148,4 +148,3 @@ class PlaylistsEndpoint(RestEndpoint):
                 type="success", message=f"Playlist '{pid}' deleted."
             )
         return await self.invalid_request("Playlist not found")
-
