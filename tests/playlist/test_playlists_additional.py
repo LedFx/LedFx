@@ -4,7 +4,8 @@ import json
 import pytest
 from aiohttp import web
 
-from ledfx.api.playlists import ActivePlaylistEndpoint
+from ledfx.api.playlists import PlaylistsEndpoint
+from ledfx.api.playlists_active import ActivePlaylistEndpoint
 from ledfx.playlists import PlaylistManager
 
 
@@ -89,6 +90,17 @@ async def test_active_endpoint_returns_null_when_inactive(tmp_path):
     resp: web.Response = await endpoint.get()
     body = json.loads(resp.text)
     assert body.get("data") == {"state": None}
+
+
+@pytest.mark.asyncio
+async def test_get_playlists_endpoint_returns_empty_when_no_playlists(tmp_path):
+    """Ensure the collection GET endpoint returns an empty mapping when none exist."""
+    ledfx = make_minimal_ledfx_for_endpoint(tmp_path)
+    endpoint = PlaylistsEndpoint(ledfx)
+    resp: web.Response = await endpoint.get()
+    body = json.loads(resp.text)
+    # PlaylistsEndpoint.bare_request_success returns the payload directly
+    assert body == {"playlists": {}}
 
 
 @pytest.mark.asyncio
