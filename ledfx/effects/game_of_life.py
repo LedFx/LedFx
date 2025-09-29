@@ -115,6 +115,7 @@ class GameOfLifeVisualiser(Twod):
         self.onset = None
         self.last_health_check = self.now
         self.last_game_step = self.now
+        self.game = None
 
     def config_updated(self, config):
         super().config_updated(config)
@@ -150,7 +151,8 @@ class GameOfLifeVisualiser(Twod):
 
     def audio_data_updated(self, data):
         if self.inject and data.volume_beat_now():
-            self.game.add_random_entity()
+            if self.game:
+                self.game.add_random_entity()
 
         # if decay is set to minimum, then just run generations at full rate
         if self.decay == 0.01:
