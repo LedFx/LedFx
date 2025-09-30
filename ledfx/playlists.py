@@ -105,6 +105,8 @@ class PlaylistManager:
         self._remaining_for_order_pos: int | None = None
         # runtime-only mode override applied when starting a playlist (None = use configured)
         self._mode_override: str | None = None
+        # runtime-only timing override applied when starting a playlist
+        self._timing_override: dict | None = None
 
         # load playlists from config (validate)
         raw = copy.deepcopy(core.config.get("playlists", {})) or {}
@@ -206,7 +208,12 @@ class PlaylistManager:
                 )
 
                 # Determine jitter and effective duration
-                timing = playlist.get("timing", {}) or {}
+                # Use runtime timing override if provided, otherwise use configured timing
+                timing = (
+                    self._timing_override
+                    if self._timing_override is not None
+                    else (playlist.get("timing", {}) or {})
+                )
                 jitter = timing.get("jitter", {}) or {}
                 jitter_enabled = bool(jitter.get("enabled", False))
                 if jitter_enabled:
@@ -318,7 +325,9 @@ class PlaylistManager:
             if self._task and self._task.done():
                 self._task = None
 
-    async def start(self, pid: str, mode: str | None = None) -> bool:
+    async def start(
+        self, pid: str, mode: str | None = None, timing: dict | None = None
+    ) -> bool:
         """Start a playlist by id. Stops any current playlist.
 
         If `mode` is provided it overrides the playlist's configured mode
@@ -334,8 +343,10 @@ class PlaylistManager:
         # stop existing
         await self.stop()
 
-        # apply runtime mode override if provided
+        # apply runtime mode and timing overrides if provided
         self._mode_override = mode
+        # set timing override (None means use configured timing)
+        self._timing_override = timing
 
         self._active_playlist_id = pid
         self._active_index = 0
@@ -438,6 +449,7 @@ class PlaylistManager:
         self._remaining_for_order_pos = None
         # clear any runtime-only overrides
         self._mode_override = None
+        self._timing_override = None
 
         try:
             if pid:
@@ -646,8 +658,18 @@ class PlaylistManager:
                             self._active_index % len(self._order)
                         ]
                         state["scene_id"] = items[item_idx].get("scene_id")
-                        # include configured timing info
-                        state["timing"] = playlist.get("timing", {})
+                        # include effective timing info (runtime override wins)
+                        state["timing"] = (
+                            self._timing_override
+                            if self._timing_override is not None
+                            else playlist.get("timing", {})
+                        )
+                        # include effective mode (runtime override wins)
+                        state["mode"] = (
+                            self._mode_override
+                            if self._mode_override is not None
+                            else playlist.get("mode", "sequence")
+                        )
                         # include timing info when available
                         if self._item_effective_duration_ms is not None:
                             state["effective_duration_ms"] = (
@@ -690,6 +712,12 @@ class PlaylistManager:
                             state["effective_duration_ms"] = (
                                 self._item_effective_duration_ms
                             )
+                        # include effective mode (runtime override wins)
+                        state["mode"] = (
+                            self._mode_override
+                            if self._mode_override is not None
+                            else playlist.get("mode", "sequence")
+                        )
                         if self._remaining_ms is not None:
                             state["remaining_ms"] = int(self._remaining_ms)
         except Exception:
