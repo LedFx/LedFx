@@ -14,10 +14,9 @@ A **Playlist** is an ordered collection of **scene references** (by `scene_id`) 
 - Create, replace, delete any number of playlists
 - Start/stop/pause/resume playback
 - Shuffle (random) order and sequential playback
-- Per-item durations and a default duration
-- Immediate **bump** (`next`) to the next scene (bypassing timeout)
+- Per-item durations, default duration and jitter multipliers
+- Immediate **bump** `next` and `prev` scene (bypassing timeout)
 - Randomized order per cycle while ensuring each item plays once per cycle
-- Previous/next navigation
 
 ---
 
