@@ -5,7 +5,6 @@ import pytest
 from aiohttp import web
 
 from ledfx.api.playlists import PlaylistsEndpoint
-from ledfx.api.playlists_active import ActivePlaylistEndpoint
 from ledfx.playlists import PlaylistManager
 
 
@@ -86,10 +85,20 @@ def make_minimal_ledfx_for_endpoint(tmp_path):
 @pytest.mark.asyncio
 async def test_active_endpoint_returns_null_when_inactive(tmp_path):
     ledfx = make_minimal_ledfx_for_endpoint(tmp_path)
-    endpoint = ActivePlaylistEndpoint(ledfx)
-    resp: web.Response = await endpoint.get()
+    endpoint = PlaylistsEndpoint(ledfx)
+
+    class DummyRequest:
+        def __init__(self, data):
+            self._data = data
+
+        async def json(self):
+            return self._data
+
+    req = DummyRequest({"action": "state"})
+    resp: web.Response = await endpoint.put(req)
     body = json.loads(resp.text)
-    assert body.get("data") == {"state": None}
+    # The action-based state returns an object; ensure active_playlist is None
+    assert body.get("data").get("state").get("active_playlist") is None
 
 
 @pytest.mark.asyncio
