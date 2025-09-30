@@ -103,6 +103,8 @@ class PlaylistManager:
         self._remaining_ms: int | None = None
         # which order-position the remaining_ms corresponds to
         self._remaining_for_order_pos: int | None = None
+        # runtime-only mode override applied when starting a playlist (None = use configured)
+        self._mode_override: str | None = None
 
         # load playlists from config (validate)
         raw = copy.deepcopy(core.config.get("playlists", {})) or {}
@@ -178,8 +180,14 @@ class PlaylistManager:
                     break
                 items = playlist["items"]
                 if not self._order or len(self._order) != len(items):
-                    # Generate concrete order for the new cycle
-                    if playlist.get("mode", "sequence") == "shuffle":
+                    # Generate concrete order for the new cycle. Use runtime override
+                    # if present, otherwise fall back to configured playlist mode.
+                    effective_mode = (
+                        self._mode_override
+                        if self._mode_override is not None
+                        else playlist.get("mode", "sequence")
+                    )
+                    if effective_mode == "shuffle":
                         self._order = random.sample(
                             list(range(len(items))), len(items)
                         )
@@ -288,7 +296,12 @@ class PlaylistManager:
                         self._active_index = self._active_index + 1
                         # If we've completed a cycle, wrap and regenerate order if needed
                         if self._active_index >= len(self._order):
-                            if playlist.get("mode", "sequence") == "shuffle":
+                            effective_mode = (
+                                self._mode_override
+                                if self._mode_override is not None
+                                else playlist.get("mode", "sequence")
+                            )
+                            if effective_mode == "shuffle":
                                 self._order = random.sample(
                                     list(range(len(items))), len(items)
                                 )
@@ -305,8 +318,12 @@ class PlaylistManager:
             if self._task and self._task.done():
                 self._task = None
 
-    async def start(self, pid: str) -> bool:
-        """Start a playlist by id. Stops any current playlist."""
+    async def start(self, pid: str, mode: str | None = None) -> bool:
+        """Start a playlist by id. Stops any current playlist.
+
+        If `mode` is provided it overrides the playlist's configured mode
+        for this runtime session (e.g. force shuffle or sequence).
+        """
         if pid not in self._playlists:
             return False
 
@@ -317,20 +334,29 @@ class PlaylistManager:
         # stop existing
         await self.stop()
 
+        # apply runtime mode override if provided
+        self._mode_override = mode
+
         self._active_playlist_id = pid
         self._active_index = 0
-        # initialize concrete order per playlist mode
+
+        # initialize concrete order per playlist mode (respect runtime override)
         playlist = self._playlists.get(pid)
         if playlist and playlist.get("items"):
             items = playlist["items"]
-            if playlist.get("mode", "sequence") == "shuffle":
-                self._order = random.sample(
-                    list(range(len(items))), len(items)
-                )
+            effective_mode = (
+                self._mode_override
+                if self._mode_override is not None
+                else playlist.get("mode", "sequence")
+            )
+            if effective_mode == "shuffle":
+                self._order = random.sample(list(range(len(items))), len(items))
             else:
                 self._order = list(range(len(items)))
+
         self._paused = False
         self._pause_event.set()
+
         # start runner
         self._task = asyncio.create_task(self._runner(pid))
         try:
@@ -346,19 +372,22 @@ class PlaylistManager:
                     scene_id = playlist["items"][item_idx].get("scene_id")
             except Exception:
                 scene_id = None
-            self._core.events.fire_event(
-                PlaylistStartedEvent(
-                    pid,
-                    self._active_index,
-                    scene_id,
-                    effective_duration_ms=self._item_effective_duration_ms,
-                    remaining_ms=(
-                        self._remaining_ms
-                        if self._remaining_for_order_pos == self._active_index
-                        else None
-                    ),
+            try:
+                self._core.events.fire_event(
+                    PlaylistStartedEvent(
+                        pid,
+                        self._active_index,
+                        scene_id,
+                        effective_duration_ms=self._item_effective_duration_ms,
+                        remaining_ms=(
+                            self._remaining_ms
+                            if self._remaining_for_order_pos == self._active_index
+                            else None
+                        ),
+                    )
                 )
-            )
+            except Exception:
+                pass
         except Exception:
             pass
         return True
@@ -404,6 +433,8 @@ class PlaylistManager:
         self._item_effective_duration_ms = None
         self._remaining_ms = None
         self._remaining_for_order_pos = None
+        # clear any runtime-only overrides
+        self._mode_override = None
 
         try:
             if pid:
@@ -599,6 +630,13 @@ class PlaylistManager:
                     items = playlist["items"]
                     if self._order and len(self._order) == len(items):
                         state["order"] = list(self._order)
+                        # include scenes list matching the concrete order
+                        try:
+                            state["scenes"] = [
+                                items[i].get("scene_id") for i in state["order"]
+                            ]
+                        except Exception:
+                            state["scenes"] = []
                         # compute scene_id from order
                         item_idx = self._order[
                             self._active_index % len(self._order)
@@ -634,6 +672,13 @@ class PlaylistManager:
                     else:
                         # no concrete order available; expose basic info
                         state["order"] = list(range(len(items)))
+                        # include scenes mapping for the simple sequence order
+                        try:
+                            state["scenes"] = [
+                                items[i].get("scene_id") for i in state["order"]
+                            ]
+                        except Exception:
+                            state["scenes"] = []
                         item_idx = self._active_index % len(items)
                         state["scene_id"] = items[item_idx].get("scene_id")
                         if self._item_effective_duration_ms is not None:

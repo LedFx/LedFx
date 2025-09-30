@@ -60,7 +60,13 @@ class PlaylistsEndpoint(RestEndpoint):
                     return await self.invalid_request(
                         "id required for start action"
                     )
-                ok = await self._ledfx.playlists.start(pid)
+                # optional runtime override for mode: sequence|shuffle
+                mode = data.get("mode")
+                if mode is not None and mode not in ("sequence", "shuffle"):
+                    return await self.invalid_request(
+                        "mode must be 'sequence' or 'shuffle' if provided"
+                    )
+                ok = await self._ledfx.playlists.start(pid, mode=mode)
                 if not ok:
                     return await self.invalid_request(
                         f"Playlist {pid} not found or empty"
