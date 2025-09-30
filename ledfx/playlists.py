@@ -350,7 +350,9 @@ class PlaylistManager:
                 else playlist.get("mode", "sequence")
             )
             if effective_mode == "shuffle":
-                self._order = random.sample(list(range(len(items))), len(items))
+                self._order = random.sample(
+                    list(range(len(items))), len(items)
+                )
             else:
                 self._order = list(range(len(items)))
 
@@ -381,7 +383,8 @@ class PlaylistManager:
                         effective_duration_ms=self._item_effective_duration_ms,
                         remaining_ms=(
                             self._remaining_ms
-                            if self._remaining_for_order_pos == self._active_index
+                            if self._remaining_for_order_pos
+                            == self._active_index
                             else None
                         ),
                     )
@@ -633,7 +636,8 @@ class PlaylistManager:
                         # include scenes list matching the concrete order
                         try:
                             state["scenes"] = [
-                                items[i].get("scene_id") for i in state["order"]
+                                items[i].get("scene_id")
+                                for i in state["order"]
                             ]
                         except Exception:
                             state["scenes"] = []
@@ -675,7 +679,8 @@ class PlaylistManager:
                         # include scenes mapping for the simple sequence order
                         try:
                             state["scenes"] = [
-                                items[i].get("scene_id") for i in state["order"]
+                                items[i].get("scene_id")
+                                for i in state["order"]
                             ]
                         except Exception:
                             state["scenes"] = []
