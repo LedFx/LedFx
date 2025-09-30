@@ -91,7 +91,7 @@ A **Playlist** is an ordered collection of **scene references** (by `scene_id`) 
 | DELETE | `/api/playlists`              | Delete a playlist                      |
 |   GET  | `/api/playlists`              | List all playlists                     |
 |   GET  | `/api/playlists/{id}`         | Get playlist details                   |
-|   GET  | `/api/playlists/active`       | Get active playlist state              |
+
 
 **Conventions**
 - `Content-Type: application/json` for request bodies.
@@ -226,30 +226,6 @@ Stops the playlist if active, then deletes it.
 **200 OK (failed)** — playlist not found envelope.
 
 ---
-
-## GET `/api/playlists/active` — Active State
-
-**200 OK**
-```json
-{
-  "state": {
-    "active_playlist": "evening-cycle",
-    "index": 1,
-    "order": [0, 2, 1],
-    "scenes": ["warm-fade", "calm-amber", "neon-ripple"],
-    "scene_id": "calm-amber",
-    "paused": false,
-    "remaining_ms": 12000,
-    "effective_duration_ms": 45000,
-    "timing": { "jitter": { "enabled": true, "factor_min": 0.5, "factor_max": 2.0 } }
-  }
-}
-```
-
-**200 OK (no active playlist)**
-```json
-{ "state": null }
-```
 
 ---
 
