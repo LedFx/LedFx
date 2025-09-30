@@ -227,7 +227,9 @@ class PlaylistManager:
                     and self._item_effective_duration_ms is not None
                 ):
                     # Resuming: reuse previously sampled effective duration
-                    effective_duration_ms = int(self._item_effective_duration_ms)
+                    effective_duration_ms = int(
+                        self._item_effective_duration_ms
+                    )
                 else:
                     if jitter_enabled:
                         fmin = float(jitter.get("factor_min", 1.0))
@@ -236,7 +238,9 @@ class PlaylistManager:
                         factor = random.uniform(fmin, fmax)
                     else:
                         factor = 1.0
-                    effective_duration_ms = max(500, int(base_duration_ms * factor))
+                    effective_duration_ms = max(
+                        500, int(base_duration_ms * factor)
+                    )
 
                 # If we have a stored remaining for this order position (resume), use that
                 if (
