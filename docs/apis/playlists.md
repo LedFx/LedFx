@@ -69,6 +69,7 @@ A **Playlist** is an ordered collection of **scene references** (by `scene_id`) 
   "order": [0, 2, 1],
   "scenes": ["warm-fade", "calm-amber", "neon-ripple"],
   "scene_id": "calm-amber",
+  "mode": "sequence",
   "paused": false,
   "remaining_ms": 12000,
   "effective_duration_ms": 45000,
@@ -79,6 +80,7 @@ A **Playlist** is an ordered collection of **scene references** (by `scene_id`) 
 - `order`: The concrete play order for the current cycle.
 - `scenes`: An array of `scene_id` strings in the same order as `order`. This lets clients display the upcoming scenes without remapping indices.
 - `remaining_ms`: Time left for the currently active item.
+ - `mode`: Effective playback mode for the running session (`"sequence"` or `"shuffle"). If a runtime `mode` override was provided at start, that value is returned here; otherwise the stored playlist `mode` is shown.
 
 ---
 
@@ -175,6 +177,22 @@ You may optionally include a `mode` field with the `start` action to temporarily
 
 - `start` — Starts the specified playlist; stops any currently active playlist first. Optionally accepts `mode: "sequence"|"shuffle"` to override the playlist's stored mode for the runtime session.
 
+You may also pass a `timing` object with the `start` action to temporarily override timing settings for the running session. The timing object follows the same shape as the playlist `timing` field (for example, enabling jitter and setting factor_min/factor_max). The runtime timing override is applied only for the active session and is not persisted to the stored playlist.
+
+```json
+{ "id": "evening-cycle", "action": "start", "timing": { "jitter": { "enabled": true, "factor_min": 0.5, "factor_max": 1.5 } } }
+```
+
+You can also explicitly disable jitter at start (overrides stored playlist timing):
+
+Pass an empty timing object to clear/override timing (no jitter):
+
+```json
+{ "id": "evening-cycle", "action": "start", "timing": {} }
+```
+
+- `start` — Starts the specified playlist; stops any currently active playlist first. Optionally accepts `mode: "sequence"|"shuffle"` and `timing: { ... }` to override the playlist's stored mode/timing for the runtime session.
+
 ### Active Playlist Controls (no `id` required)
 
 These actions operate on the currently active playlist and don't require an `id`:
@@ -224,8 +242,6 @@ Stops the playlist if active, then deletes it.
 ```
 
 **200 OK (failed)** — playlist not found envelope.
-
----
 
 ---
 

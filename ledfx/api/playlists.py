@@ -66,7 +66,15 @@ class PlaylistsEndpoint(RestEndpoint):
                     return await self.invalid_request(
                         "mode must be 'sequence' or 'shuffle' if provided"
                     )
-                ok = await self._ledfx.playlists.start(pid, mode=mode)
+                # optional runtime override for timing: dict matching Playlist timing schema
+                timing = data.get("timing")
+                if timing is not None and not isinstance(timing, dict):
+                    return await self.invalid_request(
+                        "timing must be an object/dict if provided"
+                    )
+                ok = await self._ledfx.playlists.start(
+                    pid, mode=mode, timing=timing
+                )
                 if not ok:
                     return await self.invalid_request(
                         f"Playlist {pid} not found or empty"
