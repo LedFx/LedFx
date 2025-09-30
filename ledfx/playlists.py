@@ -216,16 +216,27 @@ class PlaylistManager:
                 )
                 jitter = timing.get("jitter", {}) or {}
                 jitter_enabled = bool(jitter.get("enabled", False))
-                if jitter_enabled:
-                    fmin = float(jitter.get("factor_min", 1.0))
-                    fmax = float(jitter.get("factor_max", 1.0))
-                    # sample factor uniformly
-                    factor = random.uniform(fmin, fmax)
+
+                # Sample a factor only when we don't have a preserved effective duration
+                # for a paused/resumed item. If this order position was paused and
+                # _item_effective_duration_ms contains the previously sampled value,
+                # reuse it to avoid resampling jitter on resume.
+                if (
+                    self._remaining_ms is not None
+                    and self._remaining_for_order_pos == order_pos
+                    and self._item_effective_duration_ms is not None
+                ):
+                    # Resuming: reuse previously sampled effective duration
+                    effective_duration_ms = int(self._item_effective_duration_ms)
                 else:
-                    factor = 1.0
-                effective_duration_ms = max(
-                    500, int(base_duration_ms * factor)
-                )
+                    if jitter_enabled:
+                        fmin = float(jitter.get("factor_min", 1.0))
+                        fmax = float(jitter.get("factor_max", 1.0))
+                        # sample factor uniformly
+                        factor = random.uniform(fmin, fmax)
+                    else:
+                        factor = 1.0
+                    effective_duration_ms = max(500, int(base_duration_ms * factor))
 
                 # If we have a stored remaining for this order position (resume), use that
                 if (
@@ -241,6 +252,8 @@ class PlaylistManager:
                     sleep_ms = effective_duration_ms
                     self._item_start_ts = time.monotonic()
 
+                # Store the effective duration — preserve it across cancellation so
+                # resume can reuse the same sampled duration instead of resampling.
                 self._item_effective_duration_ms = effective_duration_ms
                 # clear any remaining markers once we've decided to run this item
                 self._remaining_ms = None
@@ -316,9 +329,13 @@ class PlaylistManager:
                                 self._order = list(range(len(items)))
                             self._active_index = 0
                 finally:
-                    # Clear per-item runtime markers after the item finishes
+                    # Clear per-item runtime markers after the item finishes.
+                    # If we set _remaining_ms because of cancellation (pause), keep
+                    # the sampled _item_effective_duration_ms so resume can reuse it.
                     self._item_start_ts = None
-                    self._item_effective_duration_ms = None
+                    if self._remaining_ms is None:
+                        # item truly finished normally; clear sampled duration
+                        self._item_effective_duration_ms = None
 
         finally:
             # Clear task handle when runner exits
