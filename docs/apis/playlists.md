@@ -67,6 +67,7 @@ A **Playlist** is an ordered collection of **scene references** (by `scene_id`) 
   "active_playlist": "evening-cycle",
   "index": 1,
   "order": [0, 2, 1],
+  "scenes": ["warm-fade", "calm-amber", "neon-ripple"],
   "scene_id": "calm-amber",
   "paused": false,
   "remaining_ms": 12000,
@@ -76,6 +77,7 @@ A **Playlist** is an ordered collection of **scene references** (by `scene_id`) 
 ```
 
 - `order`: The concrete play order for the current cycle.
+- `scenes`: An array of `scene_id` strings in the same order as `order`. This lets clients display the upcoming scenes without remapping indices.
 - `remaining_ms`: Time left for the currently active item.
 
 ---
@@ -124,7 +126,7 @@ Creates a new playlist or replaces an existing one with the same `id`.
 ```
 
 ### Validation Rules
-- `name`: required if `id` is omitted.
+- `name`: required
 - `items`: non-empty array, each with `scene_id` present.
 - `duration_ms` and `default_duration_ms`: integers - **500** ms recommended minimum.
 
@@ -164,6 +166,14 @@ These actions need to specify which playlist to operate on:
 ```
 
 - `start` — Starts the specified playlist; stops any currently active playlist first.
+
+You may optionally include a `mode` field with the `start` action to temporarily override the playlist's configured playback mode for this run only. The allowed values are `"sequence"` or `"shuffle"`. This override does not persist to the stored playlist — it only affects order generation for the started session.
+
+```json
+{ "id": "evening-cycle", "action": "start", "mode": "shuffle" }
+```
+
+- `start` — Starts the specified playlist; stops any currently active playlist first. Optionally accepts `mode: "sequence"|"shuffle"` to override the playlist's stored mode for the runtime session.
 
 ### Active Playlist Controls (no `id` required)
 
@@ -225,7 +235,13 @@ Stops the playlist if active, then deletes it.
   "state": {
     "active_playlist": "evening-cycle",
     "index": 1,
-    "paused": false
+    "order": [0, 2, 1],
+    "scenes": ["warm-fade", "calm-amber", "neon-ripple"],
+    "scene_id": "calm-amber",
+    "paused": false,
+    "remaining_ms": 12000,
+    "effective_duration_ms": 45000,
+    "timing": { "jitter": { "enabled": true, "factor_min": 0.5, "factor_max": 2.0 } }
   }
 }
 ```
@@ -261,6 +277,13 @@ curl -X POST http://localhost:8888/api/playlists \
 curl -X PUT http://localhost:8888/api/playlists \
   -H "Content-Type: application/json" \
   -d '{ "id":"evening-cycle", "action":"start" }'
+```
+
+**Start playlist with runtime-only mode override (shuffle)**
+```bash
+curl -X PUT http://localhost:8888/api/playlists \
+  -H "Content-Type: application/json" \
+  -d '{ "id":"evening-cycle", "action":"start", "mode":"shuffle" }'
 ```
 
 **Bump to next (bypass timeout)**
