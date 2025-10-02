@@ -149,6 +149,67 @@ Will generate a client_sync event sent to all active websockets that are subscri
 }
 ```
 
+## Effect Events
+
+Effect events allow a client to be notified of changes to the active effect and it's configuration. 
+
+### effect_set
+The `effect_set` event is emitted when a new effect is set on a virtual. This event may be emitted when changing certain effect configurations when the update triggers a transition.
+
+**Payload Example:**
+```json
+{
+  "event_type": "effect_set",
+  "virtual_id": "my_virtual_id",
+  "effect_id": "energy2",
+  "effect_name": "Energy 2",
+  "effect_config": {
+    ...
+  }
+}
+```
+
+**Fields:**
+- `event_type`: Always `"effect_set"`.
+- `virtual_id`: Identifier of the virtual entity.
+- `effect_id`: Identifier of the effect.
+- `effect_name`: Friendly name of the effect.
+- `effect_config`: Configuration of the effect. Contents depend on the effect.
+
+### effect_updated
+The `effect_updated` event is emitted when a virtual's active effect's configuration changes. 
+
+**Payload Example:**
+```json
+{
+  "event_type": "effect_updated",
+  "virtual_id": "my_virtual_id",
+  "effect_config": {
+    ...
+  }
+}
+```
+
+**Fields:**
+- `event_type`: Always `"effect_updated"`.
+- `virtual_id`: Identifier of the virtual entity.
+- `effect_config`: Updated configuration of the effect. Contents depend on the effect.
+
+### effect_cleared
+The `effect_cleared` event is emitted when an effect is removed from a virtual.
+
+**Payload Example:**
+```json
+{
+  "event_type": "effect_cleared",
+  "virtual_id": "my_virtual_id",
+}
+```
+
+**Fields:**
+- `event_type`: Always `"effect_cleared"`.
+- `virtual_id`: Identifier of the virtual entity.
+
 ## Diagnostic Events
 
 Diagnostic events are intended to allow improved visibility of performance and development diagnostic via live front end rather than log analysis.
