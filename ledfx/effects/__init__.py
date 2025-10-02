@@ -11,6 +11,7 @@ from numpy.typing import NDArray
 
 from ledfx.color import LEDFX_COLORS, hsv_to_rgb, parse_color, validate_color
 from ledfx.effects.utils.logsec_helper import LogSecHelper
+from ledfx.events import EffectUpdatedEvent
 from ledfx.utils import BaseRegistry, RegistryLoader
 
 _LOGGER = logging.getLogger(__name__)
@@ -433,6 +434,9 @@ class Effect(BaseRegistry):
             _LOGGER.debug(
                 f"Effect {self.NAME} config updated to {validated_config}."
             )
+
+            if self._virtual:
+                self._ledfx.events.fire_event(EffectUpdatedEvent(self._virtual.id))
 
     def config_updated(self, config):
         """

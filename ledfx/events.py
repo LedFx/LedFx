@@ -20,6 +20,7 @@ class Event:
     VISUALISATION_UPDATE = "visualisation_update"
     GRAPH_UPDATE = "graph_update"
     EFFECT_SET = "effect_set"
+    EFFECT_UPDATED = "effect_updated"
     EFFECT_CLEARED = "effect_cleared"
     SCENE_ACTIVATED = "scene_activated"
     SCENE_DELETED = "scene_deleted"
@@ -236,6 +237,14 @@ class EffectSetEvent(Event):
         self.effect_name = effect_name
         self.effect_id = effect_id
         self.effect_config = effect_config
+        self.virtual_id = virtual_id
+
+
+class EffectUpdatedEvent(Event):
+    """Event emitted when an effect is updated"""
+
+    def __init__(self, virtual_id):
+        super().__init__(Event.EFFECT_UPDATED)
         self.virtual_id = virtual_id
 
 
