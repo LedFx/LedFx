@@ -787,7 +787,7 @@ class Virtual:
             name=f"Virtual: {self.id}", target=self.thread_function
         )
         self._thread.start()
-        self._ledfx.events.fire_event(VirtualPauseEvent(self.id))
+        self._ledfx.events.fire_event(VirtualPauseEvent(self.id, not self._active))
         # self._task = self._ledfx.loop.create_task(self.thread_function())
         # self._task.add_done_callback(lambda task: task.result())
         self._ledfx.virtuals.check_and_deactivate_devices()
@@ -798,7 +798,7 @@ class Virtual:
         if hasattr(self, "_thread"):
             self._thread.join()
         self.deactivate_segments()
-        self._ledfx.events.fire_event(VirtualPauseEvent(self.id))
+        self._ledfx.events.fire_event(VirtualPauseEvent(self.id, not self._active))
         self._ledfx.virtuals.check_and_deactivate_devices()
 
     # @lru_cache(maxsize=32)

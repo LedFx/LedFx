@@ -184,10 +184,10 @@ class GlobalPauseEvent(Event):
 class VirtualPauseEvent(Event):
     """Event emitted when virtual updated paused"""
 
-    def __init__(self, virtual_id: str):
+    def __init__(self, virtual_id: str, paused: bool):
         super().__init__(Event.VIRTUAL_PAUSE)
         self.virtual_id = virtual_id
-
+        self.paused = paused
 
 class AudioDeviceChangeEvent(Event):
     """Event emitted when the audio capture device is changed"""
