@@ -176,8 +176,9 @@ class VirtualUpdateEvent(Event):
 class GlobalPauseEvent(Event):
     """Event emitted when all virtuals are paused"""
 
-    def __init__(self):
+    def __init__(self, paused: bool):
         super().__init__(Event.GLOBAL_PAUSE)
+        self.paused = paused
 
 
 class VirtualPauseEvent(Event):

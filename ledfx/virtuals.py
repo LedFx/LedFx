@@ -1411,7 +1411,7 @@ class Virtuals:
         self._paused = not self._paused
         for virtual in self.values():
             virtual._paused = self._paused
-        self._ledfx.events.fire_event(GlobalPauseEvent())
+        self._ledfx.events.fire_event(GlobalPauseEvent(self._paused))
 
     def get(self, *args):
         return self._virtuals.get(*args)
