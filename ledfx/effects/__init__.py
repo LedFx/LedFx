@@ -437,7 +437,7 @@ class Effect(BaseRegistry):
 
             if self._virtual:
                 self._ledfx.events.fire_event(
-                    EffectUpdatedEvent(self._virtual.id)
+                    EffectUpdatedEvent(self._config, self._virtual.id)
                 )
 
     def config_updated(self, config):
