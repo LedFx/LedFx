@@ -149,6 +149,63 @@ Will generate a client_sync event sent to all active websockets that are subscri
 }
 ```
 
+## Virtuals Events
+
+Virtuals events allow a client to be notified of changes to a virtual's active state or configuration.
+
+### virtual_pause
+The `virtual_pause` event is emitted when the active state of a virtual changes.
+
+**Payload Example:**
+```json
+{
+  "event_type": "virtual_pause",
+  "virtual_id": "my_virtual_id",
+}
+```
+
+**Fields:**
+- `event_type`: Always `"virtual_pause"`.
+- `virtual_id`: Identifier of the virtual entity.
+
+### virtual_update
+The `virtual_update` event is emitted when a virtual's pixels are updated.
+
+**Payload Example:**
+```json
+{
+  "event_type": "virtual_update",
+  "virtual_id": "my_virtual_id",
+  "pixels": [
+    // Array of pixel state
+  ]
+}
+```
+
+**Fields:**
+- `event_type`: Always `"virtual_update"`.
+- `virtual_id`: Identifier of the virtual entity.
+- `pixels`: Array of current pixel state.
+
+### virtual_config_update
+The `virtual_config_update` event is emitted when a virtual's configuration is updated.
+
+**Payload Example:**
+```json
+{
+  "event_type": "virtual_config_update",
+  "virtual_id": "my_virtual_id",
+  "config" : {
+    // TBD
+  }
+}
+```
+
+**Fields:**
+- `event_type`: Always `"virtual_config_update"`.
+- `virtual_id`: Identifier of the virtual entity.
+- `config`: Configuration of the virtual entity.
+
 ## Effect Events
 
 Effect events allow a client to be notified of changes to the active effect and it's configuration. 
