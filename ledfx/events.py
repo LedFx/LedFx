@@ -242,8 +242,9 @@ class EffectSetEvent(Event):
 class EffectClearedEvent(Event):
     """Event emitted when an effect is cleared"""
 
-    def __init__(self):
+    def __init__(self, virtual_id):
         super().__init__(Event.EFFECT_CLEARED)
+        self.virtual_id = virtual_id
 
 
 class SceneActivatedEvent(Event):

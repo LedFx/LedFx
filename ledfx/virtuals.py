@@ -511,7 +511,7 @@ class Virtual:
 
     def clear_effect(self):
         with self.lock:
-            self._ledfx.events.fire_event(EffectClearedEvent())
+            self._ledfx.events.fire_event(EffectClearedEvent(self.id))
             self.clear_transition_effect()
 
             if (
