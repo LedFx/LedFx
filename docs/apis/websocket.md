@@ -161,12 +161,14 @@ The `virtual_pause` event is emitted when the active state of a virtual changes.
 {
   "event_type": "virtual_pause",
   "virtual_id": "my_virtual_id",
+  "paused": "true",
 }
 ```
 
 **Fields:**
 - `event_type`: Always `"virtual_pause"`.
 - `virtual_id`: Identifier of the virtual entity.
+- `paused`: Current paused state of virtual.
 
 ### virtual_update
 The `virtual_update` event is emitted when a virtual's pixels are updated.
@@ -208,7 +210,7 @@ The `virtual_config_update` event is emitted when a virtual's configuration is u
 
 ## Effect Events
 
-Effect events allow a client to be notified of changes to the active effect and it's configuration. 
+Effect events allow a client to be notified of changes to the active effect and it's configuration.
 
 ### effect_set
 The `effect_set` event is emitted when a new effect is set on a virtual. This event may be emitted when changing certain effect configurations when the update triggers a transition.
@@ -234,7 +236,7 @@ The `effect_set` event is emitted when a new effect is set on a virtual. This ev
 - `effect_config`: Configuration of the effect. Contents depend on the effect.
 
 ### effect_updated
-The `effect_updated` event is emitted when a virtual's active effect's configuration changes. 
+The `effect_updated` event is emitted when a virtual's active effect's configuration changes.
 
 **Payload Example:**
 ```json

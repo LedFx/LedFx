@@ -189,6 +189,7 @@ class VirtualPauseEvent(Event):
         self.virtual_id = virtual_id
         self.paused = paused
 
+
 class AudioDeviceChangeEvent(Event):
     """Event emitted when the audio capture device is changed"""
 
