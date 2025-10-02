@@ -161,12 +161,14 @@ The `virtual_pause` event is emitted when the active state of a virtual changes.
 {
   "event_type": "virtual_pause",
   "virtual_id": "my_virtual_id",
+  "paused": "true",
 }
 ```
 
 **Fields:**
 - `event_type`: Always `"virtual_pause"`.
 - `virtual_id`: Identifier of the virtual entity.
+- `paused`: Current paused state of virtual.
 
 ### virtual_update
 The `virtual_update` event is emitted when a virtual's pixels are updated.
