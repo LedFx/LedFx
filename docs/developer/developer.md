@@ -45,7 +45,7 @@ Warning
 aubio lib which is a critical part of the audio processing for LedFX is in need of a new release
 and can fail to build in many ways.
 
-One common problem for example is if you windows language is not english and uses non standard characters
+One common problem for example is if your Windows language is not English and uses non standard characters
 
 In that case, reach out in the LedFX discord dev_chat channel and ask for an aubio wheel for the version of python you are developing on. 3.12 is preferred!
 ::::
@@ -70,7 +70,7 @@ In that case, reach out in the LedFX discord dev_chat channel and ask for an aub
 3. Enable audio loopback which is default for a user install, but needs a manual step for dev builds, by calling once
 
     ``` console
-    $  ledfx-loopback-install
+    $ uv run ledfx-loopback-install
     ```
 
 ### Linux Specific Steps {#linux-dev}
@@ -116,7 +116,7 @@ To run these local and / or develop more tests
 1) Ensure you have local loopback installed, or you may hit failures once audio effects are under test
 
     ``` console
-    $  ledfx-loopback-install
+    $ uv run ledfx-loopback-install
     ```
 
 2) launch the suite of tests with uv which will ensure dependancies are installed
