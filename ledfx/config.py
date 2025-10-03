@@ -6,7 +6,7 @@ import shutil
 import sys
 
 import voluptuous as vol
-from pkg_resources import parse_version
+from packaging.version import parse as parse_version
 
 from ledfx.consts import CONFIGURATION_VERSION
 
@@ -119,6 +119,7 @@ CORE_CONFIG_SCHEMA = vol.Schema(
         vol.Optional("ledfx_presets", default={}): dict,
         vol.Optional("user_presets", default={}): dict,
         vol.Optional("scenes", default={}): dict,
+        vol.Optional("playlists", default={}): dict,
         vol.Optional("integrations", default=[]): list,
         vol.Optional("transmission_mode", default="compressed"): vol.In(
             Transmission.get_list()
@@ -869,6 +870,12 @@ def save_config(config: dict, config_dir: str) -> None:
         None
     """
     config_file = ensure_config_file(config_dir)
+    # Ensure logger is initialized (tests may call save_config without module init)
+    try:
+        _LOGGER
+    except NameError:
+        load_logger()
+
     _LOGGER.info(f"Saving configuration file to {config_dir}")
     config["configuration_version"] = CONFIGURATION_VERSION
     config_view = dict(config)
