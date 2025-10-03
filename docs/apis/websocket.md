@@ -149,6 +149,57 @@ Will generate a client_sync event sent to all active websockets that are subscri
 }
 ```
 
+## System Events
+
+System events are loosely related events emitted when changes are made that effect the system as a whole. e.g. global pause, system configuration changes, audio input device changes, etc.
+
+### global_pause
+The `global_pause` event is emitted when the global paused state is changed. This state can be changed via the Web UI, the REST API, or via a command line argument.
+
+**Payload Example:**
+```json
+{
+  "event_type": "global_pause",
+  "paused": true,
+}
+```
+
+**Fields:**
+- `event_type`: Always `"global_pause"`.
+- `paused`: Current paused state.
+
+### base_config_update
+The `base_config_update` event is emitted when the system configuration is updated.
+
+**Payload Example:**
+```json
+{
+  "event_type": "base_config_update",
+  "config": {
+    // TODO
+  }
+}
+```
+
+**Fields:**
+- `event_type`: Always `"base_config_update"`.
+- `config`: The updated system configuration.
+
+### audio_input_device_changed
+The `audio_input_device_changed` event is emitted when the an audio reactive effect is enabled and the configured audio device is changed.
+
+**Payload Example:**
+```json
+{
+  "event_type": "audio_input_device_changed",
+  "audio_input_device_name": "ALSA: default"
+}
+```
+
+**Fields:**
+- `event_type`: Always `"audio_input_device_changed"`.
+- `audio_input_device_name`: The friendly name of the selected audio device.
+
 ## Virtuals Events
 
 Virtuals events allow a client to be notified of changes to a virtual's active state or configuration.
@@ -161,14 +212,14 @@ The `virtual_pause` event is emitted when the active state of a virtual changes.
 {
   "event_type": "virtual_pause",
   "virtual_id": "my_virtual_id",
-  "paused": "true",
+  "paused": true,
 }
 ```
 
 **Fields:**
 - `event_type`: Always `"virtual_pause"`.
 - `virtual_id`: Identifier of the virtual entity.
-- `paused`: Current paused state of virtual.
+- `paused`: Current paused state of virtual entity.
 
 ### virtual_update
 The `virtual_update` event is emitted when a virtual's pixels are updated.
@@ -198,7 +249,7 @@ The `virtual_config_update` event is emitted when a virtual's configuration is u
   "event_type": "virtual_config_update",
   "virtual_id": "my_virtual_id",
   "config" : {
-    // TBD
+    // TODO
   }
 }
 ```

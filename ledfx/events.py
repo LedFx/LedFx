@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Callable, Any
+from typing import Any, Callable
 
 import numpy as np
 
@@ -234,7 +234,13 @@ class VisualisationUpdateEvent(Event):
 class EffectSetEvent(Event):
     """Event emitted when an effect is set or updated"""
 
-    def __init__(self, effect_name: str, effect_id: str, effect_config: dict[str, Any], virtual_id: str):
+    def __init__(
+        self,
+        effect_name: str,
+        effect_id: str,
+        effect_config: dict[str, Any],
+        virtual_id: str,
+    ):
         super().__init__(Event.EFFECT_SET)
         self.effect_name = effect_name
         self.effect_id = effect_id
