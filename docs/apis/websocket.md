@@ -160,7 +160,7 @@ The `global_pause` event is emitted when the global paused state is changed. Thi
 ```json
 {
   "event_type": "global_pause",
-  "paused": true,
+  "paused": true
 }
 ```
 
@@ -212,7 +212,7 @@ The `virtual_pause` event is emitted when the active state of a virtual changes.
 {
   "event_type": "virtual_pause",
   "virtual_id": "my_virtual_id",
-  "paused": true,
+  "paused": true
 }
 ```
 
@@ -312,7 +312,7 @@ The `effect_cleared` event is emitted when an effect is removed from a virtual.
 ```json
 {
   "event_type": "effect_cleared",
-  "virtual_id": "my_virtual_id",
+  "virtual_id": "my_virtual_id"
 }
 ```
 
