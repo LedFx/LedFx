@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 from typing import Callable
 
@@ -31,6 +33,11 @@ class Event:
     CLIENT_CONNECTED = "client_connected"
     CLIENT_DISCONNECTED = "client_disconnected"
     CLIENT_SYNC = "client_sync"
+    PLAYLIST_STARTED = "playlist_started"
+    PLAYLIST_ADVANCED = "playlist_advanced"
+    PLAYLIST_STOPPED = "playlist_stopped"
+    PLAYLIST_PAUSED = "playlist_paused"
+    PLAYLIST_RESUMED = "playlist_resumed"
 
     def __init__(self, type: str):
         """
@@ -253,6 +260,115 @@ class SceneDeletedEvent(Event):
     def __init__(self, scene_id):
         super().__init__(Event.SCENE_DELETED)
         self.scene_id = scene_id
+
+
+class PlaylistStartedEvent(Event):
+    """Event emitted when a playlist starts
+
+    Includes optional scene_id describing which scene was activated when the
+    playlist started.
+    """
+
+    def __init__(
+        self,
+        playlist_id: str,
+        index: int,
+        scene_id: str | None = None,
+        effective_duration_ms: int | None = None,
+        remaining_ms: int | None = None,
+    ):
+        super().__init__(Event.PLAYLIST_STARTED)
+        self.playlist_id = playlist_id
+        self.index = index
+        self.scene_id = scene_id
+        # Duration after jitter/clamping applied for the current item
+        self.effective_duration_ms = effective_duration_ms
+        # Remaining ms when paused/cancelled (if available)
+        self.remaining_ms = remaining_ms
+
+
+class PlaylistAdvancedEvent(Event):
+    """Event emitted when the playlist advances to the next item
+
+    Includes the scene_id that was activated for the advanced index.
+    """
+
+    def __init__(
+        self,
+        playlist_id: str,
+        index: int,
+        scene_id: str | None = None,
+        effective_duration_ms: int | None = None,
+    ):
+        super().__init__(Event.PLAYLIST_ADVANCED)
+        self.playlist_id = playlist_id
+        self.index = index
+        self.scene_id = scene_id
+        self.effective_duration_ms = effective_duration_ms
+
+
+class PlaylistStoppedEvent(Event):
+    """Event emitted when a playlist stops
+
+    May include the scene_id that was active when the playlist stopped.
+    """
+
+    def __init__(
+        self,
+        playlist_id: str,
+        scene_id: str | None = None,
+        effective_duration_ms: int | None = None,
+        remaining_ms: int | None = None,
+    ):
+        super().__init__(Event.PLAYLIST_STOPPED)
+        self.playlist_id = playlist_id
+        self.scene_id = scene_id
+        self.effective_duration_ms = effective_duration_ms
+        self.remaining_ms = remaining_ms
+
+
+class PlaylistPausedEvent(Event):
+    """Event emitted when a playlist is paused
+
+    Includes index and the scene_id currently active when paused.
+    """
+
+    def __init__(
+        self,
+        playlist_id: str,
+        index: int,
+        scene_id: str | None = None,
+        effective_duration_ms: int | None = None,
+        remaining_ms: int | None = None,
+    ):
+        super().__init__(Event.PLAYLIST_PAUSED)
+        self.playlist_id = playlist_id
+        self.index = index
+        self.scene_id = scene_id
+        self.effective_duration_ms = effective_duration_ms
+        self.remaining_ms = remaining_ms
+
+
+class PlaylistResumedEvent(Event):
+    """Event emitted when a playlist is resumed
+
+    Includes index and the scene_id that will be active after resuming.
+    """
+
+    def __init__(
+        self,
+        playlist_id: str,
+        index: int,
+        scene_id: str | None = None,
+        effective_duration_ms: int | None = None,
+        remaining_ms: int | None = None,
+    ):
+        super().__init__(Event.PLAYLIST_RESUMED)
+        self.playlist_id = playlist_id
+        self.index = index
+        self.scene_id = scene_id
+        self.effective_duration_ms = effective_duration_ms
+        self.remaining_ms = remaining_ms
 
 
 class VirtualConfigUpdateEvent(Event):
