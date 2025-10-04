@@ -37,10 +37,9 @@ class QLCEndpoint(RestEndpoint):
 
         response = {}
 
-        # generate dict of {effect_id: effect_name}
-        effect_names = []
+        effect_ids = []
         for effect_type, effect in self._ledfx.effects.classes().items():
-            effect_names.append(effect.NAME)
+            effect_ids.append(effect_type)
 
         scene_ids = []
         for scene in self._ledfx.config["scenes"]:
@@ -49,7 +48,7 @@ class QLCEndpoint(RestEndpoint):
         response["event_types"] = {
             Event.EFFECT_SET: {
                 "event_name": "Effect Set",
-                "event_filters": {"effect_name": effect_names},
+                "event_filters": {"effect_id": effect_ids},
             },
             Event.EFFECT_CLEARED: {
                 "event_name": "Effect Cleared",
