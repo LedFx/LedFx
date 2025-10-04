@@ -293,17 +293,15 @@ The `effect_updated` event is emitted when a virtual's active effect's configura
 ```json
 {
   "event_type": "effect_updated",
-  "virtual_id": "my_virtual_id",
-  "effect_config": {
-    ...
-  }
+  "effect_id": "effect_id",
+  "virtual_id": "my_virtual_id"
 }
 ```
 
 **Fields:**
 - `event_type`: Always `"effect_updated"`.
+- `effect_id`: Identifier of the effect.
 - `virtual_id`: Identifier of the virtual entity.
-- `effect_config`: Updated configuration of the effect. Contents depend on the effect.
 
 ### effect_cleared
 The `effect_cleared` event is emitted when an effect is removed from a virtual.

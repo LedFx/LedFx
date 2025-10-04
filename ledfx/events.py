@@ -251,9 +251,13 @@ class EffectSetEvent(Event):
 class EffectUpdatedEvent(Event):
     """Event emitted when an effect is updated"""
 
-    def __init__(self, effect_config: dict[str, Any], virtual_id: str):
+    def __init__(
+        self,
+        effect_id: str,
+        virtual_id: str,
+    ):
         super().__init__(Event.EFFECT_UPDATED)
-        self.effect_config = effect_config
+        self.effect_id = effect_id
         self.virtual_id = virtual_id
 
 
