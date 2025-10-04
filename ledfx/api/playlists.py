@@ -78,7 +78,9 @@ class PlaylistsEndpoint(RestEndpoint):
                         timing = TimingSchema(timing)
                     except Exception as e:
                         # voluptuous.Invalid / MultipleInvalid may be raised
-                        return await self.invalid_request(f"timing validation failed: {e}")
+                        return await self.invalid_request(
+                            f"timing validation failed: {e}"
+                        )
                 ok = await self._ledfx.playlists.start(
                     pid, mode=mode, timing=timing
                 )

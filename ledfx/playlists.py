@@ -37,6 +37,7 @@ PlaylistItem = vol.Schema(
     }
 )
 
+
 def _validate_jitter_bounds(j):
     try:
         fmin = float(j.get("factor_min", 1.0))
@@ -64,7 +65,9 @@ JitterSchema = vol.All(
     _validate_jitter_bounds,
 )
 
-TimingSchema = vol.Schema({vol.Optional("jitter", default={}): JitterSchema}, extra=vol.ALLOW_EXTRA)
+TimingSchema = vol.Schema(
+    {vol.Optional("jitter", default={}): JitterSchema}, extra=vol.ALLOW_EXTRA
+)
 
 
 PlaylistSchema = vol.Schema(
