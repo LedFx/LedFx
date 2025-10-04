@@ -38,7 +38,9 @@ async def test_runtime_timing_override_applies(tmp_path):
 
     # deterministic sampling
     random.seed(1)
-    timing_override = {"jitter": {"enabled": True, "factor_min": 1.2, "factor_max": 1.5}}
+    timing_override = {
+        "jitter": {"enabled": True, "factor_min": 1.2, "factor_max": 1.5}
+    }
     await manager.start("rt1", timing=timing_override)
     await asyncio.sleep(0.05)
     state = await manager.get_state()
@@ -64,7 +66,9 @@ async def test_runtime_timing_override_preserved_across_pause_resume(tmp_path):
 
     # deterministic sampling
     random.seed(7)
-    timing_override = {"jitter": {"enabled": True, "factor_min": 1.0, "factor_max": 1.7}}
+    timing_override = {
+        "jitter": {"enabled": True, "factor_min": 1.0, "factor_max": 1.7}
+    }
     await manager.start("rt2", timing=timing_override)
     await asyncio.sleep(0.05)
 
@@ -97,7 +101,9 @@ async def test_configured_timing_used_when_no_override(tmp_path):
         "id": "rt3",
         "name": "RT3",
         "items": [{"scene_id": "sY", "duration_ms": 1000}],
-        "timing": {"jitter": {"enabled": True, "factor_min": 0.8, "factor_max": 1.2}},
+        "timing": {
+            "jitter": {"enabled": True, "factor_min": 0.8, "factor_max": 1.2}
+        },
     }
 
     await manager.create_or_replace(playlist)
