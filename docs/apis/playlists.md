@@ -137,7 +137,9 @@ Creates a new playlist or replaces an existing one with the same `id`.
 ```json
 {
   "status": "success",
-  "playlist": { /* saved playlist */ }
+  "data": {
+    "playlist": { /* saved playlist */ }
+  }
 }
 ```
 
@@ -228,7 +230,7 @@ Stops the playlist if active, then deletes it.
 
 **200 OK**
 ```json
-{ "playlists": [ { "id": "evening-cycle", "name": "Evening Cycle", "items": [] } ] }
+{ "playlists": { "evening-cycle": { "id": "evening-cycle", "name": "Evening Cycle", "items": [] } } }
 ```
 
 ---
@@ -237,7 +239,7 @@ Stops the playlist if active, then deletes it.
 
 **200 OK**
 ```json
-{ "playlist": { "id": "evening-cycle", "name": "Evening Cycle", "items": [] } }
+{ "status": "success", "data": { "playlist": { "id": "evening-cycle", "name": "Evening Cycle", "items": [] } } }
 ```
 
 **200 OK (failed)** — playlist not found envelope.
