@@ -37,6 +37,36 @@ PlaylistItem = vol.Schema(
     }
 )
 
+def _validate_jitter_bounds(j):
+    try:
+        fmin = float(j.get("factor_min", 1.0))
+        fmax = float(j.get("factor_max", 1.0))
+    except Exception:
+        raise vol.Invalid("jitter.factor_min/factor_max must be numbers")
+    if fmax < fmin:
+        raise vol.Invalid("jitter.factor_max must be >= factor_min")
+    return j
+
+
+JitterSchema = vol.All(
+    vol.Schema(
+        {
+            vol.Optional("enabled", default=False): bool,
+            vol.Optional("factor_min", default=1.0): vol.All(
+                vol.Coerce(float), vol.Range(min=0.0)
+            ),
+            vol.Optional("factor_max", default=1.0): vol.All(
+                vol.Coerce(float), vol.Range(min=0.0)
+            ),
+        },
+        extra=vol.ALLOW_EXTRA,
+    ),
+    _validate_jitter_bounds,
+)
+
+TimingSchema = vol.Schema({vol.Optional("jitter", default={}): JitterSchema}, extra=vol.ALLOW_EXTRA)
+
+
 PlaylistSchema = vol.Schema(
     {
         vol.Required("id", description="Unique playlist identifier"): str,
@@ -61,7 +91,7 @@ PlaylistSchema = vol.Schema(
             "timing",
             description="Advanced timing settings",
             default={},
-        ): dict,
+        ): TimingSchema,
         vol.Optional(
             "tags",
             description="Tags for filtering or grouping playlists",

@@ -6,7 +6,7 @@ from json import JSONDecodeError
 from aiohttp import web
 
 from ledfx.api import RestEndpoint
-from ledfx.playlists import PlaylistManager
+from ledfx.playlists import PlaylistManager, TimingSchema
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -66,12 +66,19 @@ class PlaylistsEndpoint(RestEndpoint):
                     return await self.invalid_request(
                         "mode must be 'sequence' or 'shuffle' if provided"
                     )
-                # optional runtime override for timing: dict matching Playlist timing schema
+                # optional runtime override for timing: validate shape via TimingSchema
                 timing = data.get("timing")
-                if timing is not None and not isinstance(timing, dict):
-                    return await self.invalid_request(
-                        "timing must be an object/dict if provided"
-                    )
+                if timing is not None:
+                    if not isinstance(timing, dict):
+                        return await self.invalid_request(
+                            "timing must be an object/dict if provided"
+                        )
+                    try:
+                        # validate (coerce types and enforce bounds)
+                        timing = TimingSchema(timing)
+                    except Exception as e:
+                        # voluptuous.Invalid / MultipleInvalid may be raised
+                        return await self.invalid_request(f"timing validation failed: {e}")
                 ok = await self._ledfx.playlists.start(
                     pid, mode=mode, timing=timing
                 )
