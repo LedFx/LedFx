@@ -489,9 +489,7 @@ class Virtual:
             self._active_effect.activate(self)
             self._ledfx.events.fire_event(
                 EffectSetEvent(
-                    self._active_effect.name,
                     self._active_effect.id,
-                    self.active_effect.config,
                     self.id,
                 )
             )
