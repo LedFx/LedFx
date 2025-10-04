@@ -167,7 +167,12 @@ class PlaylistManager:
             return "sequence"
         return playlist.get("mode", "sequence")
 
-    def _ensure_order(self, playlist: dict | None, items: list, desired_mode: str | None = None) -> None:
+    def _ensure_order(
+        self,
+        playlist: dict | None,
+        items: list,
+        desired_mode: str | None = None,
+    ) -> None:
         """Ensure self._order is a concrete permutation matching the
         provided items. If the order is missing or its length doesn't
         match, generate a new concrete order using the effective mode.
@@ -182,17 +187,29 @@ class PlaylistManager:
 
         # Determine which mode to use: caller-provided desired_mode wins,
         # otherwise fall back to the runtime/configured effective mode.
-        effective_mode = desired_mode if desired_mode is not None else self._effective_mode(playlist)
+        effective_mode = (
+            desired_mode
+            if desired_mode is not None
+            else self._effective_mode(playlist)
+        )
 
         # Regenerate when we don't have an order, when length changed, or
         # when a caller explicitly requested a specific mode.
-        if not self._order or len(self._order) != len(items) or desired_mode is not None:
+        if (
+            not self._order
+            or len(self._order) != len(items)
+            or desired_mode is not None
+        ):
             if effective_mode == "shuffle":
-                self._order = random.sample(list(range(len(items))), len(items))
+                self._order = random.sample(
+                    list(range(len(items))), len(items)
+                )
             else:
                 self._order = list(range(len(items)))
 
-    def _get_active_playlist(self, pid: str | None = None) -> tuple[dict | None, list]:
+    def _get_active_playlist(
+        self, pid: str | None = None
+    ) -> tuple[dict | None, list]:
         """Return the playlist dict and its items list for a given pid or
         the currently active playlist when pid is None.
         """
@@ -204,7 +221,11 @@ class PlaylistManager:
             return playlist, []
         return playlist, playlist["items"]
 
-    def _current_item_info(self) -> tuple[dict | None, list, list | None, int | None, str | None, int | None]:
+    def _current_item_info(
+        self,
+    ) -> tuple[
+        dict | None, list, list | None, int | None, str | None, int | None
+    ]:
         """Return (playlist, items, order, item_idx, scene_id, base_duration_ms)
         for the current active position. Values may be None when not
         applicable.
@@ -242,7 +263,9 @@ class PlaylistManager:
             else (playlist.get("timing", {}) if playlist else {})
         )
 
-    def _sample_effective_duration(self, base_duration_ms: int, timing: dict, preserved: int | None = None) -> int:
+    def _sample_effective_duration(
+        self, base_duration_ms: int, timing: dict, preserved: int | None = None
+    ) -> int:
         """Return the effective duration (ms) for an item given base duration
         and timing. If `preserved` is provided, return that (used on resume).
         """
@@ -652,7 +675,9 @@ class PlaylistManager:
             return False
         items = self._playlists[self._active_playlist_id]["items"]
         # ensure a concrete order exists matching the playlist items
-        self._ensure_order(self._playlists.get(self._active_playlist_id), items)
+        self._ensure_order(
+            self._playlists.get(self._active_playlist_id), items
+        )
 
         self._active_index = (self._active_index - 1) % len(self._order)
         if self._task:
@@ -672,7 +697,9 @@ class PlaylistManager:
             return False
         items = self._playlists[self._active_playlist_id]["items"]
         # ensure a concrete order exists matching the playlist items
-        self._ensure_order(self._playlists.get(self._active_playlist_id), items)
+        self._ensure_order(
+            self._playlists.get(self._active_playlist_id), items
+        )
 
         self._active_index = (self._active_index + 1) % len(self._order)
         # restart runner to pick up new index immediately
@@ -721,7 +748,9 @@ class PlaylistManager:
                         ]
                         state["scene_id"] = items[item_idx].get("scene_id")
                         # include effective timing info (runtime override wins)
-                        state["timing"] = self._get_timing_for_playlist(playlist)
+                        state["timing"] = self._get_timing_for_playlist(
+                            playlist
+                        )
                         # include effective mode (runtime override wins)
                         state["mode"] = self._effective_mode(playlist)
                         # include timing info when available
