@@ -330,7 +330,10 @@ PlaylistItem = vol.Schema({
 PlaylistMode = vol.Schema(vol.In(["sequence", "shuffle"]))
 
 PlaylistSchema = vol.Schema({
-  vol.Required("id"): str,
+  # 'id' is optional when creating a playlist via the API. If omitted,
+  # the server will auto-generate (slug) an id from the provided "name".
+  # if present and the id exists, the playlist will be overwritten
+  vol.Optional("id"): str,
   vol.Required("name"): str,
   vol.Required("items"): [PlaylistItem],
   vol.Optional("default_duration_ms"): vol.All(int, vol.Range(min=500)),
