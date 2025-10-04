@@ -157,6 +157,107 @@ class PlaylistManager:
     def list_playlists(self) -> dict[str, dict]:
         return copy.deepcopy(self._playlists)
 
+    def _effective_mode(self, playlist: dict | None) -> str:
+        """Return the effective playback mode for a playlist, honoring
+        a runtime override when present.
+        """
+        if self._mode_override is not None:
+            return self._mode_override
+        if playlist is None:
+            return "sequence"
+        return playlist.get("mode", "sequence")
+
+    def _ensure_order(self, playlist: dict | None, items: list, desired_mode: str | None = None) -> None:
+        """Ensure self._order is a concrete permutation matching the
+        provided items. If the order is missing or its length doesn't
+        match, generate a new concrete order using the effective mode.
+
+        If `desired_mode` is provided it will be used instead of asking
+        for the effective mode. This lets callers (for example `start()`)
+        force-regenerate an order when a runtime-only override is used.
+        """
+        if not items:
+            self._order = []
+            return
+
+        # Determine which mode to use: caller-provided desired_mode wins,
+        # otherwise fall back to the runtime/configured effective mode.
+        effective_mode = desired_mode if desired_mode is not None else self._effective_mode(playlist)
+
+        # Regenerate when we don't have an order, when length changed, or
+        # when a caller explicitly requested a specific mode.
+        if not self._order or len(self._order) != len(items) or desired_mode is not None:
+            if effective_mode == "shuffle":
+                self._order = random.sample(list(range(len(items))), len(items))
+            else:
+                self._order = list(range(len(items)))
+
+    def _get_active_playlist(self, pid: str | None = None) -> tuple[dict | None, list]:
+        """Return the playlist dict and its items list for a given pid or
+        the currently active playlist when pid is None.
+        """
+        target = pid if pid is not None else self._active_playlist_id
+        if not target:
+            return None, []
+        playlist = self._playlists.get(target)
+        if not playlist or not playlist.get("items"):
+            return playlist, []
+        return playlist, playlist["items"]
+
+    def _current_item_info(self) -> tuple[dict | None, list, list | None, int | None, str | None, int | None]:
+        """Return (playlist, items, order, item_idx, scene_id, base_duration_ms)
+        for the current active position. Values may be None when not
+        applicable.
+        """
+        pid = self._active_playlist_id
+        if not pid:
+            return None, [], None, None, None, None
+        playlist = self._playlists.get(pid)
+        if not playlist or not playlist.get("items"):
+            return playlist, [], None, None, None, None
+        items = playlist["items"]
+        if self._order and len(self._order) == len(items):
+            order = list(self._order)
+            item_idx = order[self._active_index % len(order)]
+        else:
+            order = None
+            item_idx = self._active_index % len(items)
+        scene_id = None
+        base_duration_ms = None
+        try:
+            scene_id = items[item_idx].get("scene_id")
+            base_duration_ms = items[item_idx].get(
+                "duration_ms", playlist.get("default_duration_ms", 500)
+            )
+        except Exception:
+            scene_id = None
+            base_duration_ms = None
+        return playlist, items, order, item_idx, scene_id, base_duration_ms
+
+    def _get_timing_for_playlist(self, playlist: dict | None) -> dict:
+        """Return the effective timing dict for a playlist, honoring runtime override."""
+        return (
+            self._timing_override
+            if self._timing_override is not None
+            else (playlist.get("timing", {}) if playlist else {})
+        )
+
+    def _sample_effective_duration(self, base_duration_ms: int, timing: dict, preserved: int | None = None) -> int:
+        """Return the effective duration (ms) for an item given base duration
+        and timing. If `preserved` is provided, return that (used on resume).
+        """
+        if preserved is not None:
+            return int(preserved)
+        jitter = timing.get("jitter", {}) or {}
+        jitter_enabled = bool(jitter.get("enabled", False))
+        if jitter_enabled:
+            fmin = float(jitter.get("factor_min", 1.0))
+            fmax = float(jitter.get("factor_max", 1.0))
+            factor = random.uniform(fmin, fmax)
+        else:
+            factor = 1.0
+        return max(500, int(base_duration_ms * factor))
+
     def get_playlist(self, pid: str) -> dict | None:
         return copy.deepcopy(self._playlists.get(pid))
 
@@ -214,23 +315,10 @@ class PlaylistManager:
                 if not playlist or not playlist.get("items"):
                     break
                 items = playlist["items"]
-                if not self._order or len(self._order) != len(items):
-                    # Generate concrete order for the new cycle. Use runtime override
-                    # if present, otherwise fall back to configured playlist mode.
-                    effective_mode = (
-                        self._mode_override
-                        if self._mode_override is not None
-                        else playlist.get("mode", "sequence")
-                    )
-                    if effective_mode == "shuffle":
-                        self._order = random.sample(
-                            list(range(len(items))), len(items)
-                        )
-                    else:
-                        # sequence
-                        self._order = list(range(len(items)))
+                # Ensure we have a concrete order matching the current items
+                self._ensure_order(playlist, items)
 
-                # position within the concrete order
+                # compute order_pos and item_idx
                 order_pos = self._active_index % len(self._order)
                 item_idx = self._order[order_pos]
                 item = items[item_idx]
@@ -240,40 +328,19 @@ class PlaylistManager:
                     playlist.get("default_duration_ms", 500),
                 )
 
-                # Determine jitter and effective duration
-                # Use runtime timing override if provided, otherwise use configured timing
-                timing = (
-                    self._timing_override
-                    if self._timing_override is not None
-                    else (playlist.get("timing", {}) or {})
-                )
-                jitter = timing.get("jitter", {}) or {}
-                jitter_enabled = bool(jitter.get("enabled", False))
-
-                # Sample a factor only when we don't have a preserved effective duration
-                # for a paused/resumed item. If this order position was paused and
-                # _item_effective_duration_ms contains the previously sampled value,
-                # reuse it to avoid resampling jitter on resume.
+                # Determine jitter and effective duration, honoring runtime override
+                timing = self._get_timing_for_playlist(playlist)
+                # preserved effective duration used when resuming a paused item
+                preserved = None
                 if (
                     self._remaining_ms is not None
                     and self._remaining_for_order_pos == order_pos
                     and self._item_effective_duration_ms is not None
                 ):
-                    # Resuming: reuse previously sampled effective duration
-                    effective_duration_ms = int(
-                        self._item_effective_duration_ms
-                    )
-                else:
-                    if jitter_enabled:
-                        fmin = float(jitter.get("factor_min", 1.0))
-                        fmax = float(jitter.get("factor_max", 1.0))
-                        # sample factor uniformly
-                        factor = random.uniform(fmin, fmax)
-                    else:
-                        factor = 1.0
-                    effective_duration_ms = max(
-                        500, int(base_duration_ms * factor)
-                    )
+                    preserved = int(self._item_effective_duration_ms)
+                effective_duration_ms = self._sample_effective_duration(
+                    base_duration_ms, timing, preserved
+                )
 
                 # If we have a stored remaining for this order position (resume), use that
                 if (
@@ -353,17 +420,8 @@ class PlaylistManager:
                         self._active_index = self._active_index + 1
                         # If we've completed a cycle, wrap and regenerate order if needed
                         if self._active_index >= len(self._order):
-                            effective_mode = (
-                                self._mode_override
-                                if self._mode_override is not None
-                                else playlist.get("mode", "sequence")
-                            )
-                            if effective_mode == "shuffle":
-                                self._order = random.sample(
-                                    list(range(len(items))), len(items)
-                                )
-                            else:
-                                self._order = list(range(len(items)))
+                            # cycle completed: regenerate order for the next cycle
+                            self._ensure_order(playlist, items)
                             self._active_index = 0
                 finally:
                     # Clear per-item runtime markers after the item finishes.
@@ -409,17 +467,17 @@ class PlaylistManager:
         playlist = self._playlists.get(pid)
         if playlist and playlist.get("items"):
             items = playlist["items"]
-            effective_mode = (
+            # Determine the intended mode for this start call. If the caller
+            # provided an explicit runtime override, use that. Otherwise use
+            # the playlist's configured mode. Passing this as desired_mode
+            # guarantees we generate an order matching the intended mode and
+            # won't reuse a stale order from a previous session.
+            intended_mode = (
                 self._mode_override
                 if self._mode_override is not None
                 else playlist.get("mode", "sequence")
             )
-            if effective_mode == "shuffle":
-                self._order = random.sample(
-                    list(range(len(items))), len(items)
-                )
-            else:
-                self._order = list(range(len(items)))
+            self._ensure_order(playlist, items, desired_mode=intended_mode)
 
         self._paused = False
         self._pause_event.set()
@@ -432,11 +490,7 @@ class PlaylistManager:
             try:
                 if playlist and playlist.get("items"):
                     # derive actual item index from concrete order
-                    if self._order:
-                        item_idx = self._order[self._active_index]
-                    else:
-                        item_idx = self._active_index
-                    scene_id = playlist["items"][item_idx].get("scene_id")
+                    _, _, _, item_idx, scene_id, _ = self._current_item_info()
             except Exception:
                 scene_id = None
             try:
@@ -467,15 +521,7 @@ class PlaylistManager:
         scene_id = None
         if pid:
             try:
-                playlist = self._playlists.get(pid)
-                if playlist and playlist.get("items"):
-                    if self._order and len(self._order) > 0:
-                        item_idx = self._order[
-                            self._active_index % len(self._order)
-                        ]
-                    else:
-                        item_idx = self._active_index % len(playlist["items"])
-                    scene_id = playlist["items"][item_idx].get("scene_id")
+                _, _, _, _, scene_id, _ = self._current_item_info()
             except Exception:
                 scene_id = None
 
@@ -552,19 +598,8 @@ class PlaylistManager:
             pass
         try:
             if self._active_playlist_id:
-                scene_id = None
                 try:
-                    playlist = self._playlists.get(self._active_playlist_id)
-                    if playlist and playlist.get("items"):
-                        if self._order and len(self._order) > 0:
-                            item_idx = self._order[
-                                self._active_index % len(self._order)
-                            ]
-                        else:
-                            item_idx = self._active_index % len(
-                                playlist["items"]
-                            )
-                        scene_id = playlist["items"][item_idx].get("scene_id")
+                    _, _, _, _, scene_id, _ = self._current_item_info()
                 except Exception:
                     scene_id = None
                 self._core.events.fire_event(
@@ -594,15 +629,10 @@ class PlaylistManager:
         try:
             # include scene_id where possible
             scene_id = None
-            playlist = self._playlists.get(self._active_playlist_id)
-            if playlist and playlist.get("items"):
-                if self._order and len(self._order) > 0:
-                    item_idx = self._order[
-                        self._active_index % len(self._order)
-                    ]
-                else:
-                    item_idx = self._active_index % len(playlist["items"])
-                scene_id = playlist["items"][item_idx].get("scene_id")
+            try:
+                _, _, _, _, scene_id, _ = self._current_item_info()
+            except Exception:
+                scene_id = None
             self._core.events.fire_event(
                 PlaylistResumedEvent(
                     self._active_playlist_id,
@@ -616,28 +646,15 @@ class PlaylistManager:
             pass
         return True
 
-    async def next(self) -> bool:
-        """Skip to the next item immediately."""
+    async def prev(self) -> bool:
+        """Go to previous item immediately."""
         if not self._active_playlist_id:
             return False
-        # advance the position within the concrete order
         items = self._playlists[self._active_playlist_id]["items"]
-        if not self._order or len(self._order) != len(items):
-            # regenerate order to be safe
-            if (
-                self._playlists[self._active_playlist_id].get(
-                    "mode", "sequence"
-                )
-                == "shuffle"
-            ):
-                self._order = random.sample(
-                    list(range(len(items))), len(items)
-                )
-            else:
-                self._order = list(range(len(items)))
+        # ensure a concrete order exists matching the playlist items
+        self._ensure_order(self._playlists.get(self._active_playlist_id), items)
 
-        self._active_index = (self._active_index + 1) % len(self._order)
-        # restart runner to pick up new index immediately
+        self._active_index = (self._active_index - 1) % len(self._order)
         if self._task:
             self._task.cancel()
             try:
@@ -649,25 +666,16 @@ class PlaylistManager:
         )
         return True
 
-    async def prev(self) -> bool:
-        """Go to previous item immediately."""
+    async def next(self) -> bool:
+        """Skip to the next item immediately."""
         if not self._active_playlist_id:
             return False
         items = self._playlists[self._active_playlist_id]["items"]
-        if not self._order or len(self._order) != len(items):
-            if (
-                self._playlists[self._active_playlist_id].get(
-                    "mode", "sequence"
-                )
-                == "shuffle"
-            ):
-                self._order = random.sample(
-                    list(range(len(items))), len(items)
-                )
-            else:
-                self._order = list(range(len(items)))
+        # ensure a concrete order exists matching the playlist items
+        self._ensure_order(self._playlists.get(self._active_playlist_id), items)
 
-        self._active_index = (self._active_index - 1) % len(self._order)
+        self._active_index = (self._active_index + 1) % len(self._order)
+        # restart runner to pick up new index immediately
         if self._task:
             self._task.cancel()
             try:
@@ -713,17 +721,9 @@ class PlaylistManager:
                         ]
                         state["scene_id"] = items[item_idx].get("scene_id")
                         # include effective timing info (runtime override wins)
-                        state["timing"] = (
-                            self._timing_override
-                            if self._timing_override is not None
-                            else playlist.get("timing", {})
-                        )
+                        state["timing"] = self._get_timing_for_playlist(playlist)
                         # include effective mode (runtime override wins)
-                        state["mode"] = (
-                            self._mode_override
-                            if self._mode_override is not None
-                            else playlist.get("mode", "sequence")
-                        )
+                        state["mode"] = self._effective_mode(playlist)
                         # include timing info when available
                         if self._item_effective_duration_ms is not None:
                             state["effective_duration_ms"] = (
