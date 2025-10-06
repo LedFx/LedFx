@@ -1466,7 +1466,11 @@ def clip_at_limit(numbers, limit):
 def build_browser_request(url: str) -> urllib.request.Request:
     """Minimal: add a desktop UA and same-origin Referer."""
     parsed = urllib.parse.urlsplit(url)
-    origin = f"{parsed.scheme}://{parsed.netloc}/" if parsed.scheme and parsed.netloc else ""
+    origin = (
+        f"{parsed.scheme}://{parsed.netloc}/"
+        if parsed.scheme and parsed.netloc
+        else ""
+    )
     headers = {
         "User-Agent": (
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
