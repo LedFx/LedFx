@@ -8,7 +8,7 @@ This can be very useful for examining audio issues, without geting involved with
 
 First grab a copy of the raw config file from the latest github location, open the page with
 
-[Github scenes_playlist.json](https://github.com/bigredfrog/LedFx/blob/main/tests/configs/scenes_playlists.json)
+[GitHub scenes_playlists.json](https://github.com/bigredfrog/LedFx/blob/main/tests/configs/scenes_playlists.json)
 
 and download by hitting the button highlighted in yellow
 
@@ -18,7 +18,7 @@ Next back up your existing config if there is anything you want to save with the
 
 ![dont be a fool](/_static/howto/config/export.png)
 
-Now use the import config button and from your current download directory, find and open scenes_playlist.json
+Now use the import config button and from your current download directory, find and open scenes_playlists.json
 
 ![seek and ye shall find](/_static/howto/config/import.png)
 
