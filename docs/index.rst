@@ -37,6 +37,7 @@
    /howto/tips
    /howto/dummy_matrix
    /howto/dummy_vumeter
+   /howto/example_config
    /howto/keybeat
    /howto/virtuals
    /howto/reorder
