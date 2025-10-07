@@ -60,7 +60,7 @@ Dummy3 Equalizer2d top row, 3rd across, is the dynamic equaliser of the incoming
 
 It takes a bit of experience, but if you are using for example, a microphone input, rather than direct local audio or line in, then you can expect a poor response curve with significant loss of bass and roll off in higher frequencies.
 
-The other 3 scenes are intentionally color distinct, and are 
+The other 3 scenes are intentionally color distinct, and are
 
 ### Blue Cat
 
