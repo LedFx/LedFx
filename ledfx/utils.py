@@ -1463,6 +1463,25 @@ def clip_at_limit(numbers, limit):
     return [num for num in numbers if num < limit]
 
 
+def build_browser_request(url: str) -> urllib.request.Request:
+    """Minimal: add a desktop UA and same-origin Referer."""
+    parsed = urllib.parse.urlsplit(url)
+    origin = (
+        f"{parsed.scheme}://{parsed.netloc}/"
+        if parsed.scheme and parsed.netloc
+        else ""
+    )
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/141.0.0.0 Safari/537.36"
+        ),
+        "Referer": origin,  # helps with sites that block direct hotlinks (e.g., JSTOR)
+    }
+    return urllib.request.Request(url, headers=headers)
+
+
 def open_gif(gif_path):
     """
     Open a gif from a local file or url
@@ -1474,10 +1493,12 @@ def open_gif(gif_path):
     Returns:
         Image: PIL Image object or None if failed to open
     """
-    _LOGGER.info(f"Attempting to open GIF: {gif_path}")
     try:
-        if gif_path.startswith("http://") or gif_path.startswith("https://"):
-            with urllib.request.urlopen(gif_path) as url:
+        gif_path = gif_path.strip()
+        _LOGGER.info(f"Attempting to open GIF: {gif_path}")
+        if gif_path.startswith(("http://", "https://")):
+            req = build_browser_request(gif_path)
+            with urllib.request.urlopen(req) as url:
                 gif = Image.open(url)
                 _LOGGER.debug("Remote image source downloaded and opened.")
         else:
@@ -1505,12 +1526,13 @@ def open_image(image_path):
     Returns:
         Image: PIL Image object or None if failed to open
     """
-    _LOGGER.info(f"Attempting to open image: {image_path}")
+
     try:
-        if image_path.startswith("http://") or image_path.startswith(
-            "https://"
-        ):
-            with urllib.request.urlopen(image_path) as url:
+        image_path = image_path.strip()
+        _LOGGER.info(f"Attempting to open image: {image_path}")
+        if image_path.startswith(("http://", "https://")):
+            req = build_browser_request(image_path)
+            with urllib.request.urlopen(req) as url:
                 image = Image.open(url)
                 _LOGGER.debug("Remote image downloaded and opened.")
                 return image
