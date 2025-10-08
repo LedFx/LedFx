@@ -19,6 +19,7 @@ class Twod(AudioReactiveEffect):
         "test",
         "flip_horizontal",
         "flip_vertical",
+        "bg_fill_first"
     ]
 
     CONFIG_SCHEMA = vol.Schema(
@@ -48,6 +49,11 @@ class Twod(AudioReactiveEffect):
                 description="dump image",
                 default=False,
             ): bool,
+            vol.Optional(
+                "bg_fill_first",
+                description="fill background before drawing each frame",
+                default=False,
+            ): bool,
         }
     )
 
@@ -65,6 +71,7 @@ class Twod(AudioReactiveEffect):
 
     def config_updated(self, config):
         self.test = self._config["test"]
+        self.bg_fill_first = self._config["bg_fill_first"]
 
         # rotation and mirror has to be dealt with in the do_once so that the virtual is known
         self.init = True
@@ -198,7 +205,11 @@ class Twod(AudioReactiveEffect):
         if self.init:
             self.do_once()
 
-        self.matrix = Image.new("RGB", (self.r_width, self.r_height))
+        if self.bg_fill_first and self.bg_color_use:
+            self.matrix = Image.new("RGB", (self.r_width, self.r_height), self._bg_color_pil)
+        else:
+            self.matrix = Image.new("RGB", (self.r_width, self.r_height))
+            
         self.m_draw = ImageDraw.Draw(self.matrix)
 
         self.draw()

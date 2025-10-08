@@ -107,7 +107,7 @@ class DigitalRain2d(Twod, GradientEffect):
     NAME = "Digital Rain"
     CATEGORY = "Matrix"
     # add keys you want hidden or in advanced here
-    HIDDEN_KEYS = Twod.HIDDEN_KEYS + ["background_color", "gradient_roll"]
+    HIDDEN_KEYS = Twod.HIDDEN_KEYS + ["gradient_roll"]
     ADVANCED_KEYS = Twod.ADVANCED_KEYS + []
 
     CONFIG_SCHEMA = vol.Schema(
