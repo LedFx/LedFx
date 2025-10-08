@@ -12,7 +12,12 @@ _LOGGER = logging.getLogger(__name__)
 class Clone(Twod):
     NAME = "Clone"
     CATEGORY = "Matrix"
-    HIDDEN_KEYS = Twod.HIDDEN_KEYS + ["test", "background_color", "background_brightness", "bg_fill_first"]
+    HIDDEN_KEYS = Twod.HIDDEN_KEYS + [
+        "test",
+        "background_color",
+        "background_brightness",
+        "bg_fill_first",
+    ]
 
     CONFIG_SCHEMA = vol.Schema(
         {

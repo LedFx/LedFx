@@ -19,7 +19,7 @@ class Twod(AudioReactiveEffect):
         "test",
         "flip_horizontal",
         "flip_vertical",
-        "bg_fill_first"
+        "bg_fill_first",
     ]
 
     CONFIG_SCHEMA = vol.Schema(
@@ -206,10 +206,12 @@ class Twod(AudioReactiveEffect):
             self.do_once()
 
         if self.bg_fill_first and self.bg_color_use:
-            self.matrix = Image.new("RGB", (self.r_width, self.r_height), self._bg_color_pil)
+            self.matrix = Image.new(
+                "RGB", (self.r_width, self.r_height), self._bg_color_pil
+            )
         else:
             self.matrix = Image.new("RGB", (self.r_width, self.r_height))
-            
+
         self.m_draw = ImageDraw.Draw(self.matrix)
 
         self.draw()
