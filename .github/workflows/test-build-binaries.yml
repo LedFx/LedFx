@@ -28,7 +28,7 @@ jobs:
       - name: Setup CI sound system
         uses: LABSN/sound-ci-helpers@v1
       - name: Check out code from GitHub
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install uv
         uses: astral-sh/setup-uv@v6
@@ -98,7 +98,7 @@ jobs:
     runs-on: macos-15-intel
     steps:
       - name: Check out code from GitHub
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install build dependencies
         run: |
@@ -151,7 +151,7 @@ jobs:
     runs-on: macos-latest
     steps:
       - name: Check out code from GitHub
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install build dependencies
         run: |
@@ -212,7 +212,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Set up QEMU (for arm64 emulation)
         uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx
@@ -445,7 +445,7 @@ jobs:
     needs: [run-ledfx-windows, run-ledfx-osx-x64, run-ledfx-osx-arm64]
     steps:
       - name: Check out code from GitHub
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Download LedFx Version
         uses: actions/download-artifact@v4
         with:
@@ -526,7 +526,7 @@ jobs:
     needs: [build-ledfx-windows]
     steps:
       - name: Check out code from GitHub
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Set up Python ${{ env.DEFAULT_PYTHON }}
         uses: actions/setup-python@v5
         with:
@@ -680,7 +680,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - name: Download LedFx Version
