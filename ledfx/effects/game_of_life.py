@@ -22,8 +22,12 @@ class HealthOptions(Enum):
 class GameOfLifeVisualiser(Twod):
     NAME = "Game of Life"
     CATEGORY = "Matrix"
-    # add keys you want hidden or in advanced here
-    HIDDEN_KEYS = Twod.HIDDEN_KEYS + ["gradient", "gradient_roll"]
+    # life stages are hard coded colors, dont allow pre fill background
+    HIDDEN_KEYS = Twod.HIDDEN_KEYS + [
+        "gradient",
+        "gradient_roll",
+        "bg_fill_first",
+    ]
     ADVANCED_KEYS = Twod.ADVANCED_KEYS + [
         "health_check_interval",
         "frequency_range",

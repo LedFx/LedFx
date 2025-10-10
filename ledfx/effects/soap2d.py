@@ -18,6 +18,8 @@ class Soap2D(Twod, GradientEffect):
     ADVANCED_KEYS = Twod.ADVANCED_KEYS + []
     HIDDEN_KEYS = Twod.HIDDEN_KEYS + [
         "background_color",
+        "background_brightness",
+        "bg_fill_first",
         "gradient_roll",
         "test",
     ]

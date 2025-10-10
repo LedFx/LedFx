@@ -19,6 +19,7 @@ class Concentric(Twod, GradientEffect):
         *Twod.HIDDEN_KEYS,  # preserves 'blur', 'mirror', etc.
         "gradient_roll",
         "background_color",
+        "background_brightness",
         "test",
     )
 

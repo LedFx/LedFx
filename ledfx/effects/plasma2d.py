@@ -14,7 +14,12 @@ _LOGGER = logging.getLogger(__name__)
 class Plasma2d(Twod, GradientEffect):
     NAME = "Plasma2d"
     CATEGORY = "Matrix"
-    HIDDEN_KEYS = Twod.HIDDEN_KEYS + ["background_color", "gradient_roll"]
+    HIDDEN_KEYS = Twod.HIDDEN_KEYS + [
+        "background_color",
+        "background_brightness",
+        "bg_fill_first",
+        "gradient_roll",
+    ]
     ADVANCED_KEYS = Twod.ADVANCED_KEYS + []
 
     CONFIG_SCHEMA = vol.Schema(

@@ -19,6 +19,8 @@ class Template2d(Twod):
     NAME = "Template2d"
     CATEGORY = "Matrix"
     # add keys you want hidden or in advanced here
+    # assess if backgorund color is relevant to the effect and hide accordingly
+    # "background_color", "background_brightness", "bg_fill_first"
     HIDDEN_KEYS = Twod.HIDDEN_KEYS + []
     ADVANCED_KEYS = Twod.ADVANCED_KEYS + []
 

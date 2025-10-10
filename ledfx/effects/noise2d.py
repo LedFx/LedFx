@@ -22,6 +22,8 @@ class Noise2d(Twod, GradientEffect):
     # add keys you want hidden or in advanced here
     HIDDEN_KEYS = Twod.HIDDEN_KEYS + [
         "background_color",
+        "background_brightness",
+        "bg_fill_first",
         "gradient_roll",
         "test",
     ]

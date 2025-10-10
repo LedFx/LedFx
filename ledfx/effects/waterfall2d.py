@@ -19,7 +19,11 @@ class Waterfall(Twod, GradientEffect):
 
     NAME = "Waterfall"
     CATEGORY = "Matrix"
-    HIDDEN_KEYS = Twod.HIDDEN_KEYS + []
+    HIDDEN_KEYS = Twod.HIDDEN_KEYS + [
+        "background_color",
+        "background_brightness",
+        "bg_fill_first",
+    ]
     ADVANCED_KEYS = Twod.ADVANCED_KEYS + [
         "max_vs_mean",
     ]
