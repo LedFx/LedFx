@@ -13,7 +13,7 @@ Currently only implemented for 2d matrix effects. Some effects where background 
 The `background_mode` setting controls how an effect composes a configured background color with the effect's generated pixels.
 
 Choices
-- `additive` (default) — the background color is added to the effect pixels. This brightens	pixels by component-wise addition and is useful for tinting or subtly brightening the effect.
+- `additive` (default) — the background color is added to the effect pixels. This brightens pixels by component-wise addition and is useful for tinting or subtly brightening the effect.
 - `overwrite` — the background color is filled into the render space at the beginning of each frame and the effect overwritten on top. There is no alpha blending.
 
 ### Background Color
