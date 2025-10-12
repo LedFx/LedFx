@@ -332,7 +332,7 @@ class Effect(BaseRegistry):
         self.passed = 0.0
         self._last_frame_time = timeit.default_timer()
         self.now = self._last_frame_time
-        self.bg_fill_first = False
+        self.background_mode = "additive"
         self.update_config(config)
 
     def __del__(self):
@@ -490,8 +490,12 @@ class Effect(BaseRegistry):
                             mirrored_pixels[::2], mirrored_pixels[1::2]
                         )
 
-                    if self.bg_color_use and not self.bg_fill_first:
+                    if (
+                        self.bg_color_use
+                        and self.background_mode == "additive"
+                    ):
                         pixels += self._bg_color
+
                     if self.brightness is not None:
                         np.multiply(
                             pixels,

@@ -20,7 +20,7 @@ class Plasmawled(Twod, GradientEffect):
     HIDDEN_KEYS = Twod.HIDDEN_KEYS + [
         "background_color",
         "background_brightness",
-        "bg_fill_first",
+        "background_mode",
         "gradient_roll",
     ]
     ADVANCED_KEYS = Twod.ADVANCED_KEYS + []

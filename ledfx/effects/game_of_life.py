@@ -26,7 +26,7 @@ class GameOfLifeVisualiser(Twod):
     HIDDEN_KEYS = Twod.HIDDEN_KEYS + [
         "gradient",
         "gradient_roll",
-        "bg_fill_first",
+        "background_mode",
     ]
     ADVANCED_KEYS = Twod.ADVANCED_KEYS + [
         "health_check_interval",
