@@ -4,7 +4,7 @@
 
 ### Common Steps
 
-1. Install [python](https://www.python.org/downloads/) version 3.9 or above. 3.12 is the current preferred python release for general development.
+1. Install [python](https://www.python.org/downloads/) version 3.10 or above. 3.12 is the current preferred python release for general development.
 
 2. Install [git](https://git-scm.com/).
 

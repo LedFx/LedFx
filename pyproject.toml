@@ -3,7 +3,7 @@ authors = [
     {name = "LedFx Developers"},
 ]
 license = {text = "GPL-3.0 License"}
-requires-python = ">=3.9,<3.13"
+requires-python = ">=3.10,<3.13"
 dependencies = [
     "numpy>=1.26.2,<2.0.0",
     "cffi>=0.16.0",

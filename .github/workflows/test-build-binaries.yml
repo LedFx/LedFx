@@ -104,7 +104,7 @@ jobs:
         run: |
           brew install portaudio
 
-      # Fix samplerate build on Python 3.9/3.10 with CMake 4.x
+      # Fix samplerate build on Python 3.10 with CMake 4.x
       - name: Set CMake policy minimum
         run: echo "CMAKE_POLICY_VERSION_MINIMUM=3.5" >> "$GITHUB_ENV"
       - name: Install uv
@@ -157,7 +157,7 @@ jobs:
         run: |
           brew install portaudio mbedtls@2
 
-      # Fix samplerate build on Python 3.9/3.10 with CMake 4.x
+      # Fix samplerate build on Python 3.10 with CMake 4.x
       - name: Set CMake policy minimum
         run: echo "CMAKE_POLICY_VERSION_MINIMUM=3.5" >> "$GITHUB_ENV"
 
