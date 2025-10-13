@@ -112,9 +112,51 @@ class Scenes:
                     config=scene["virtuals"][virtual.id]["config"],
                 )
                 virtual.set_effect(effect)
+                virtual.update_effect_config(effect)
             else:
                 virtual.clear_effect()
+
         self._ledfx.events.fire_event(SceneActivatedEvent(scene_id))
+        # persist the current configuration so the effects applied by
+        # the scene are saved to disk (virtuals hold references into
+        # self._ledfx.config["virtuals"]).
+        try:
+            save_config(
+                config=self._ledfx.config,
+                config_dir=self._ledfx.config_dir,
+            )
+        except Exception:
+            _LOGGER.exception("Failed to save config after scene activation")
+
+        return True
+
+    def deactivate(self, scene_id):
+        """Deactivate the effects defined in a scene by clearing those virtuals.
+        """
+        scene = self.get(scene_id)
+        if not scene:
+            _LOGGER.error(f"No scene found with id: {scene_id}")
+            return False
+
+        for virtual_id in scene["virtuals"]:
+            virtual = self._ledfx.virtuals.get(virtual_id)
+            if not virtual:
+                # virtual has been deleted since scene was created
+                continue
+
+            # If the scene has an effect entry for this virtual, clear it
+            if scene["virtuals"][virtual.id]:
+                virtual.clear_effect()
+
+        # Persist the change so that clearing effects is saved
+        try:
+            save_config(
+                config=self._ledfx.config,
+                config_dir=self._ledfx.config_dir,
+            )
+        except Exception:
+            _LOGGER.exception("Failed to save config after scene deactivation")
+
         return True
 
     def destroy(self, scene_id):

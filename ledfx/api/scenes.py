@@ -6,7 +6,6 @@ from aiohttp import web
 from ledfx.api import RestEndpoint
 from ledfx.config import save_config
 from ledfx.effects import DummyEffect
-from ledfx.events import SceneActivatedEvent
 from ledfx.utils import generate_id
 
 _LOGGER = logging.getLogger(__name__)
@@ -110,47 +109,22 @@ class ScenesEndpoint(RestEndpoint):
             )
 
         if action == "activate":
-            for virtual in self._ledfx.virtuals.values():
-                # Check virtual is in scene, make no changes if it isn't
-                if virtual.id not in scene["virtuals"].keys():
-                    # _LOGGER.info(
-                    #     ("virtual with id {} has no data in scene {}").format(
-                    #         virtual.id, scene_id
-                    #     )
-                    # )
-                    continue
-
-                # Set effect of virtual to that saved in the scene,
-                # clear active effect of virtual if no effect in scene
-                if scene["virtuals"][virtual.id]:
-                    # Create the effect and add it to the virtual
-                    effect = self._ledfx.effects.create(
-                        ledfx=self._ledfx,
-                        type=scene["virtuals"][virtual.id]["type"],
-                        config=scene["virtuals"][virtual.id]["config"],
-                    )
-                    virtual.set_effect(effect)
-                else:
-                    virtual.clear_effect()
-
-            self._ledfx.events.fire_event(SceneActivatedEvent(scene_id))
+            # Re-use the Scenes manager so activation behavior and
+            # persistence is centralized for both programmatic and API uses.
+            activated = self._ledfx.scenes.activate(scene_id)
+            if not activated:
+                return await self.invalid_request(
+                    f"Scene {scene_id} could not be activated"
+                )
             return await self.request_success(
                 "info", f"Activated {scene['name']}"
             )
         elif action == "deactivate":
-            for virtual in self._ledfx.virtuals.values():
-                # Check virtual is in scene, make no changes if it isn't
-                if virtual.id not in scene["virtuals"].keys():
-                    _LOGGER.info(
-                        ("virtual with id {} has no data in scene {}").format(
-                            virtual.id, scene_id
-                        )
-                    )
-                    continue
-
-                # Clear the effect of virtual,
-                if scene["virtuals"][virtual.id]:
-                    virtual.clear_effect()
+            deactivated = self._ledfx.scenes.deactivate(scene_id)
+            if not deactivated:
+                return await self.invalid_request(
+                    f"Scene {scene_id} could not be deactivated"
+                )
             return await self.request_success(
                 "info", f"Deactivated {scene['name']}"
             )
