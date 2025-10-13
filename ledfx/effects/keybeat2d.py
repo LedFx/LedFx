@@ -21,8 +21,11 @@ _LOGGER = logging.getLogger(__name__)
 class Keybeat2d(Twod, GifBase):
     NAME = "Keybeat2d"
     CATEGORY = "Matrix"
+    # background colors make no sense with gifs, just hide them
     HIDDEN_KEYS = Twod.HIDDEN_KEYS + [
         "background_color",
+        "background_brightness",
+        "background_mode",
     ]
     ADVANCED_KEYS = Twod.ADVANCED_KEYS + [
         "deep_diag",

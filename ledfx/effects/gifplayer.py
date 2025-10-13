@@ -15,7 +15,13 @@ _LOGGER = logging.getLogger(__name__)
 class GifPlayer(Twod, GifBase):
     NAME = "GIF Player"
     CATEGORY = "Matrix"
-    HIDDEN_KEYS = Twod.HIDDEN_KEYS + ["gradient", "background"]
+    # background color makes no sense with gifs, just hide it
+    HIDDEN_KEYS = Twod.HIDDEN_KEYS + [
+        "gradient",
+        "background_color",
+        "background_brightness",
+        "background_mode",
+    ]
     ADVANCED_KEYS = Twod.ADVANCED_KEYS + ["blur", "resize_method"]
     DEFAULT_GIF_PATH = f"{os.path.join(LEDFX_ASSETS_PATH, 'animated.gif')}"
 

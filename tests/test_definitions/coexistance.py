@@ -417,6 +417,60 @@ coexistance_tests = {
             # we are just happy it was created, we don't care about the device details
         ],
     ),
+    # Try to create DDP device with different destination_id, should succeed
+    "create_ddp_device_6_different_dest_id_good": APITestCase(
+        execution_order=(test_count := test_count + 1),
+        method="POST",
+        api_endpoint="/api/devices",
+        expected_return_code=200,
+        payload_to_send={
+            "type": "ddp",
+            "config": {
+                "pixel_count": 10,
+                "port": 4048,
+                "destination_id": 2,
+                "name": "test_ddp_6",
+                "ip_address": "1.2.3.4",
+            },
+        },
+        expected_response_keys=["status", "payload", "device"],
+        expected_response_values=[
+            {"status": "success"},
+            {
+                "payload": {
+                    "type": "success",
+                    "reason": "Created device test_ddp_6",
+                },
+            },
+            # we are just happy it was created, we don't care about the device details
+        ],
+    ),
+    # Try to create DDP device with same destination_id as device 6, should fail
+    "create_ddp_device_7_same_dest_id_bad": APITestCase(
+        execution_order=(test_count := test_count + 1),
+        method="POST",
+        api_endpoint="/api/devices",
+        expected_return_code=200,
+        payload_to_send={
+            "type": "ddp",
+            "config": {
+                "pixel_count": 10,
+                "port": 4048,
+                "destination_id": 2,
+                "name": "test_ddp_7",
+                "ip_address": "1.2.3.4",
+            },
+        },
+        expected_response_keys=["status", "payload"],
+        expected_response_values=[
+            {"status": "failed"},
+            {
+                "payload": {
+                    "type": "error",
+                },
+            },
+        ],
+    ),
     # Create UDP device on default, should allow due to seperate port definition
     "create_udp_device_1_default_good": APITestCase(
         execution_order=(test_count := test_count + 1),
@@ -491,6 +545,15 @@ coexistance_tests = {
         execution_order=(test_count := test_count + 1),
         method="DELETE",
         api_endpoint="/api/devices/test-ddp-5",
+        expected_return_code=200,
+        expected_response_keys=[],
+        expected_response_values=[],
+        payload_to_send={},
+    ),
+    "cleanup_ddp_6": APITestCase(
+        execution_order=(test_count := test_count + 1),
+        method="DELETE",
+        api_endpoint="/api/devices/test-ddp-6",
         expected_return_code=200,
         expected_response_keys=[],
         expected_response_values=[],

@@ -10,7 +10,7 @@ dependencies = [
     "wheel>=0.36.2",
     "aiohttp>=3.9.1,<4.0.0",
     "aiohttp-cors>=0.7.0",
-    "aubio>=0.4.9",
+    "aubio @ git+https://github.com/aubio/aubio.git@5461304a598952ffdca78f90cef5b6c82475ec4a",
     "cython>=3.0.7",
     "certifi>=2023.11.17",
     "multidict>=6.0.4",
