@@ -15,7 +15,8 @@ _LOGGER = logging.getLogger(__name__)
 class Imagespin(Twod):
     NAME = "Image"
     CATEGORY = "Matrix"
-    HIDDEN_KEYS = ["speed", "background_brightness", "mirror", "flip", "blur"]
+    # image spin supports alpha so allow background color
+    HIDDEN_KEYS = ["speed", "mirror", "flip", "blur"]
     ADVANCED_KEYS = Twod.ADVANCED_KEYS + ["pattern", "bilinear"]
 
     CONFIG_SCHEMA = vol.Schema(
