@@ -48,6 +48,11 @@ class DDPDevice(UDPDevice):
                 description="Port for the UDP device",
                 default=4048,
             ): vol.All(int, vol.Range(min=1, max=65535)),
+            vol.Optional(
+                "destination_id",
+                description="DDP destination ID (1=default, 2-249=custom, 250=config, 251=status, 254=DMX, 255=all)",
+                default=1,
+            ): vol.All(int, vol.Range(min=1, max=255)),
         }
     )
 
@@ -57,6 +62,12 @@ class DDPDevice(UDPDevice):
         self.frame_count = 0
         self.connection_warning = False
         self.destination_port = self._config["port"]
+        self.destination_id = self._config["destination_id"]
+
+    def config_updated(self, config):
+        """Update cached values when config changes"""
+        self.destination_port = config["port"]
+        self.destination_id = config["destination_id"]
 
     def flush(self, data: ndarray) -> None:
         """
@@ -78,6 +89,7 @@ class DDPDevice(UDPDevice):
                 self.destination_port,
                 data,
                 self.frame_count,
+                self.destination_id,
             )
             if self.connection_warning:
                 # If we have reconnected, log it, come back online, and fire an event to the frontend
@@ -98,7 +110,12 @@ class DDPDevice(UDPDevice):
 
     @staticmethod
     def send_out(
-        sock: socket, dest: str, port: int, data: ndarray, frame_count: int
+        sock: socket,
+        dest: str,
+        port: int,
+        data: ndarray,
+        frame_count: int,
+        destination_id: int,
     ) -> None:
         """
         Sends out data packets over a socket using the DDP protocol.
@@ -109,6 +126,7 @@ class DDPDevice(UDPDevice):
             port (int): The destination port number.
             data (ndarray): The data to be sent in the packet.
             frame_count(int): The count of frames.
+            destination_id (int): The DDP destination ID (1-255).
 
         Returns:
         None
@@ -130,6 +148,7 @@ class DDPDevice(UDPDevice):
                 i,
                 byteData[data_start:data_end],
                 i == packets,
+                destination_id,
             )
 
     @staticmethod
@@ -141,6 +160,7 @@ class DDPDevice(UDPDevice):
         packet_count: int,
         data: Union[bytes, memoryview],
         last: bool,
+        destination_id: int,
     ) -> None:
         """
         Sends a DDP packet over a socket to a specified destination.
@@ -153,6 +173,7 @@ class DDPDevice(UDPDevice):
             packet_count (int): The total number of packets.
             data (bytes or memoryview): The data to be sent in the packet.
             last (bool): Indicates if this is the last packet in the sequence.
+            destination_id (int): The DDP destination ID (1-255).
 
         Returns:
             None
@@ -163,7 +184,7 @@ class DDPDevice(UDPDevice):
             DDPDevice.VER1 | (DDPDevice.PUSH if last else 0),
             sequence,
             DDPDevice.DATATYPE,
-            DDPDevice.SOURCE,
+            destination_id,
             packet_count * DDPDevice.MAX_DATALEN,
             bytes_length,
         )
