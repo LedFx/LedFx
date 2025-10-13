@@ -236,10 +236,12 @@ class EffectSetEvent(Event):
 
     def __init__(
         self,
+        effect_name: str,
         effect_id: str,
         virtual_id: str,
     ):
         super().__init__(Event.EFFECT_SET)
+        self.effect_name = effect_name
         self.effect_id = effect_id
         self.virtual_id = virtual_id
 

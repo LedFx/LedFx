@@ -193,7 +193,7 @@ class MQTT_HASS(Integration):
             self._ledfx.events.add_listener(
                 publish_single_color_updated,
                 Event.EFFECT_SET,
-                event_filter={"effect_id": "singleColor"},
+                event_filter={"effect_name": "Single Color"},
             )
         )
 
