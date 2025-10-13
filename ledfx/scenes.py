@@ -131,8 +131,7 @@ class Scenes:
         return True
 
     def deactivate(self, scene_id):
-        """Deactivate the effects defined in a scene by clearing those virtuals.
-        """
+        """Deactivate the effects defined in a scene by clearing those virtuals."""
         scene = self.get(scene_id)
         if not scene:
             _LOGGER.error(f"No scene found with id: {scene_id}")
