@@ -109,8 +109,6 @@ class ScenesEndpoint(RestEndpoint):
             )
 
         if action == "activate":
-            # Re-use the Scenes manager so activation behavior and
-            # persistence is centralized for both programmatic and API uses.
             activated = self._ledfx.scenes.activate(scene_id)
             if not activated:
                 return await self.invalid_request(
