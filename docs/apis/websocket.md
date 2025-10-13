@@ -270,6 +270,7 @@ The `effect_set` event is emitted when a new effect is set on a virtual. This ev
 ```json
 {
   "event_type": "effect_set",
+  "effect_name": "Energy 2",
   "effect_id": "energy2",
   "virtual_id": "my_virtual_id"
 }
@@ -277,6 +278,7 @@ The `effect_set` event is emitted when a new effect is set on a virtual. This ev
 
 **Fields:**
 - `event_type`: Always `"effect_set"`.
+- `effect_name`: Friendly name of the effect.
 - `effect_id`: Identifier of the effect.
 - `virtual_id`: Identifier of the virtual entity.
 
