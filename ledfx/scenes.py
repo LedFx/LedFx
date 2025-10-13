@@ -117,9 +117,7 @@ class Scenes:
                 virtual.clear_effect()
 
         self._ledfx.events.fire_event(SceneActivatedEvent(scene_id))
-        # persist the current configuration so the effects applied by
-        # the scene are saved to disk (virtuals hold references into
-        # self._ledfx.config["virtuals"]).
+
         try:
             save_config(
                 config=self._ledfx.config,
