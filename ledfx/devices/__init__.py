@@ -910,10 +910,9 @@ class Devices(RegistryLoader):
         """
         if new_type == "ddp" and pre_device.type == "ddp":
             if new_config["port"] == pre_device.config["port"]:
-                if (
-                    new_config.get("destination_id", 1)
-                    == pre_device.config.get("destination_id", 1)
-                ):
+                if new_config.get(
+                    "destination_id", 1
+                ) == pre_device.config.get("destination_id", 1):
                     msg = f"Ignoring {new_config['ip_address']}: Shares IP, port {new_config['port']} and destination_id with existing device {pre_device.name}"
                     _LOGGER.info(msg)
                     raise ValueError(msg)
