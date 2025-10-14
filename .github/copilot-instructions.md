@@ -16,7 +16,7 @@ LedFx is a real-time LED visualization system that synchronizes LED lighting wit
 
 ## Development Environment
 
-- **Python Version**: 3.9-3.13 supported
+- **Python Version**: 3.10-3.12 supported
 - **Build System**: `uv` workspace with `pyproject.toml`
 - **License**: GPL-3.0
 - **Dependencies**: Audio processing (aubio, sounddevice), LED control (openrgb-python, sacn), web framework (aiohttp)
