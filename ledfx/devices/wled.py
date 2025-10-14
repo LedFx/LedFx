@@ -70,6 +70,7 @@ class WLEDDevice(NetworkedDevice):
                 "port": 4048,
                 "ip_address": None,
                 "pixel_count": None,
+                "destination_id": 1,
             },
             "E131": {
                 "name": None,
