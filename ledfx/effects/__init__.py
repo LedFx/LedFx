@@ -332,6 +332,7 @@ class Effect(BaseRegistry):
         self.passed = 0.0
         self._last_frame_time = timeit.default_timer()
         self.now = self._last_frame_time
+        self.background_mode = "additive"
         self.update_config(config)
 
     def __del__(self):
@@ -405,6 +406,10 @@ class Effect(BaseRegistry):
             if self.bg_color_use:
                 self._bg_color = (
                     np.array(bg_color) * self._config["background_brightness"]
+                )
+                self._bg_color_pil = tuple(
+                    int(c * self._config["background_brightness"])
+                    for c in bg_color
                 )
 
             self.flip = self._config["flip"]
@@ -485,8 +490,12 @@ class Effect(BaseRegistry):
                             mirrored_pixels[::2], mirrored_pixels[1::2]
                         )
 
-                    if self.bg_color_use:
+                    if (
+                        self.bg_color_use
+                        and self.background_mode == "additive"
+                    ):
                         pixels += self._bg_color
+
                     if self.brightness is not None:
                         np.multiply(
                             pixels,

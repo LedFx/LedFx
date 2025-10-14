@@ -19,6 +19,7 @@ class Twod(AudioReactiveEffect):
         "test",
         "flip_horizontal",
         "flip_vertical",
+        "background_mode",
     ]
 
     CONFIG_SCHEMA = vol.Schema(
@@ -48,6 +49,9 @@ class Twod(AudioReactiveEffect):
                 description="dump image",
                 default=False,
             ): bool,
+            vol.Optional("background_mode", default="additive"): vol.In(
+                ["additive", "overwrite"]
+            ),
         }
     )
 
@@ -65,6 +69,7 @@ class Twod(AudioReactiveEffect):
 
     def config_updated(self, config):
         self.test = self._config["test"]
+        self.background_mode = self._config["background_mode"]
 
         # rotation and mirror has to be dealt with in the do_once so that the virtual is known
         self.init = True
@@ -198,7 +203,13 @@ class Twod(AudioReactiveEffect):
         if self.init:
             self.do_once()
 
-        self.matrix = Image.new("RGB", (self.r_width, self.r_height))
+        if self.bg_color_use and self.background_mode == "overwrite":
+            self.matrix = Image.new(
+                "RGB", (self.r_width, self.r_height), self._bg_color_pil
+            )
+        else:
+            self.matrix = Image.new("RGB", (self.r_width, self.r_height))
+
         self.m_draw = ImageDraw.Draw(self.matrix)
 
         self.draw()

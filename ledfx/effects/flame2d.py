@@ -71,7 +71,13 @@ class Flame2d(Twod):
 
     NAME = "Flame"
     CATEGORY = "Matrix"
-    HIDDEN_KEYS = Twod.HIDDEN_KEYS + ["test", "background_color"]
+    # alpha mixing of background color with flame does not work well, just hide it
+    HIDDEN_KEYS = Twod.HIDDEN_KEYS + [
+        "test",
+        "background_color",
+        "background_brightness",
+        "background_mode",
+    ]
     ADVANCED_KEYS = Twod.ADVANCED_KEYS + []
 
     CONFIG_SCHEMA = vol.Schema(

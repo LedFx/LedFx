@@ -834,6 +834,7 @@ class Devices(RegistryLoader):
             self.is_universe_separated,
             self.is_openrgb_id_separated,
             self.is_osc_port_path_separated,
+            self.is_ddp_destination_separated,
             self.is_general_port_separated,
         ]:
             yield test(new_type, new_config, pre_device)
@@ -900,6 +901,21 @@ class Devices(RegistryLoader):
                         msg = f"Ignoring {new_config['ip_address']}: Shares IP, Port, Path and starting address with existing device {pre_device.name}"
                         _LOGGER.info(msg)
                         raise ValueError(msg)
+            return True
+        return False
+
+    def is_ddp_destination_separated(self, new_type, new_config, pre_device):
+        """
+        Check if the new device is DDP destination_id separated from the pre-existing device
+        """
+        if new_type == "ddp" and pre_device.type == "ddp":
+            if new_config["port"] == pre_device.config["port"]:
+                if new_config.get(
+                    "destination_id", 1
+                ) == pre_device.config.get("destination_id", 1):
+                    msg = f"Ignoring {new_config['ip_address']}: Shares IP, port {new_config['port']} and destination_id with existing device {pre_device.name}"
+                    _LOGGER.info(msg)
+                    raise ValueError(msg)
             return True
         return False
 
