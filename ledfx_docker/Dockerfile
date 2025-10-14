@@ -15,7 +15,7 @@ COPY . /app
 RUN --mount=type=cache,id=uv-cache-${TARGETARCH},target=/root/.cache/uv \
     uv sync --no-editable --extra hue
 
-FROM python:3.12-slim AS runner
+FROM python:3.14-slim AS runner
 ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy UV_PYTHON_DOWNLOADS=0
 ARG TARGETARCH
 RUN --mount=type=cache,id=apt-cache-${TARGETARCH},target=/var/cache/apt,sharing=locked \
