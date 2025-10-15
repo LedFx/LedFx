@@ -4,9 +4,9 @@
 
 ### Common Steps
 
-1. Install [python](https://www.python.org/downloads/) version 3.10 or above. 3.12 is the current preferred python release for general development. 
+1. Install [python](https://www.python.org/downloads/) version 3.10 or above. 3.12 is the current preferred python release for general development.
 
-Python 3.13 is supported, but Hue lights integration will currently not be functional due to mbedtls dependancy. 
+Python 3.13 is supported, but Hue lights integration will currently not be functional due to mbedtls dependancy.
 
 2. Install [git](https://git-scm.com/).
 
