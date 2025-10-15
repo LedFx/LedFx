@@ -8,5 +8,6 @@ Devices
    :maxdepth: 2
 
    artnet
+   ddp
    govee
    osc
