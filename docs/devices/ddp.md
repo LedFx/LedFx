@@ -8,19 +8,7 @@ For more information, see the [DDP Protocol Specification](http://www.3waylabs.c
 
 ## Why DDP?
 
-Traditional DMX-based protocols have significant limitations when controlling large LED displays:
-
-- **Small packet sizes**: DMX universes are limited to 512 bytes, meaning only 170 RGB pixels per universe
-- **Low efficiency**: E1.31 has 126 bytes of overhead per packet (72.7% efficiency), Art-Net has 18 bytes (85.9% efficiency)
-- **Limited scalability**: Art-Net is limited to 256 universes (maximum ~43,520 RGB pixels)
-- **Synchronization challenges**: No built-in synchronization across multiple universes
-
-DDP solves these issues with:
-
-- **Large packet sizes**: Up to 1440 bytes of data per packet (480 RGB pixels)
-- **High efficiency**: Only 10 bytes of overhead per packet (94.9% efficiency)
-- **Better scalability**: No artificial universe limitations
-- **Built-in synchronization**: PUSH flag for synchronized display updates
+DDP is more efficient than DMX-based protocols (E1.31, Art-Net) for controlling LED displays. See the [DDP Protocol Specification](http://www.3waylabs.com/ddp/) for full technical details.
 
 ### Protocol Efficiency Comparison
 
@@ -41,12 +29,12 @@ Many of the configuration parameters for DDP are common to network-connected dev
 - **icon name** - The icon displayed in the UI, select something that makes sense to you. It is a string entry field, from MDI (Material Design Icons) or MUI (Material UI Icons)
 
     If using MDI the string should be preceded by mdi:
-    -   "mdi: \<icon-name-in-kebab-case\>"
-    -   [Material Design Icons](https://pictogrammers.com/library/mdi/)
+  -   "mdi: \<icon-name-in-kebab-case\>"
+  -   [Material Design Icons](https://pictogrammers.com/library/mdi/)
 
     If using MUI the string should be just the icon name without a prefix
-    -   "\<iconNameInCamelCase\>"
-    -   [Material UI Icons](https://mui.com/material-ui/material-icons/)
+  -   "\<iconNameInCamelCase\>"
+  -   [Material UI Icons](https://mui.com/material-ui/material-icons/)
 
 - **Center Offset** — Simple offset of effect mapping into the device pixel layout
 - **Refresh Rate** — Rate at which the effect will be updated and pushed to the device
@@ -58,18 +46,12 @@ Many of the configuration parameters for DDP are common to network-connected dev
 
 The **Destination ID** parameter allows you to target specific outputs or regions on a DDP device. This is useful when a single DDP device manages multiple physical displays or display regions.
 
+> **Note:** For most common devices (WLED, Falcon Player), leave `destination_id` at the default value of **1**.
+
 - **Default**: 1 (default output device)
 - **Range**: 1-255
 
-**Standard ID Values:**
-- **1** — Default output device (most common use case)
-- **2-249** — Custom IDs for multiple displays or regions
-- **250** — JSON configuration (read/write)
-- **251** — JSON status (read-only)
-- **254** — DMX transit mode
-- **255** — Broadcast to all devices
-
-**Use Cases:**
+**Advanced Use Cases:**
 - Send different effects to different LED strips connected to the same DDP controller
 - Address specific regions of a large LED display
 - Control multiple virtual displays on a single physical device
@@ -100,19 +82,7 @@ This ensures that large displays update smoothly without visible tearing or timi
 
 ### Data Type
 
-LedFx sends DDP packets with:
-- **Data Type**: 0x0B - RGB (type bits=001), 8-bit per channel (size bits=011)
-- **Protocol Version**: 1 (0x40)
-- **Sequence Numbers**: 1-15 (cycles for packet ordering and duplicate detection)
-
-The data type byte follows the DDP specification format:
-```
-bits: C R TTT SSS
-  C = 0 (standard type)
-  R = 0 (reserved)
-  TTT = 001 (RGB)
-  SSS = 011 (8-bit per element)
-```
+LedFx sends RGB data with 8-bit per channel (data type `0x0B` for RGB888). See the [DDP Protocol Specification](http://www.3waylabs.com/ddp/) for detailed protocol information.
 
 ## Device Compatibility
 
