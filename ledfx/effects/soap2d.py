@@ -176,11 +176,9 @@ class Soap2D(Twod, GradientEffect):
         if axis == 1:
             N = W
             j = self._j_w  # (1,W)
-            L = H
         else:
             N = H
             j = self._j_h  # (1,H)
-            L = W
 
         # per-line signed shifts
         sgn = np.sign(amount).astype(np.int32)[:, None]  # (L,1)

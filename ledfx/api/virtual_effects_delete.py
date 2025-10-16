@@ -31,7 +31,7 @@ class EffectsEndpoint(RestEndpoint):
 
         try:
             data = await request.json()
-        except JSONDecodeError as e:
+        except JSONDecodeError:
             return await self.json_decode_error()
         effect_type = data.get("type", None)
         if effect_type is None:
