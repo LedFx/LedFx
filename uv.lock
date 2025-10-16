@@ -1270,11 +1270,11 @@ wheels = [
 
 [[package]]
 name = "openrgb-python"
-version = "0.3.5"
+version = "0.3.6"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/53/6c/7737647e145bac128fa0522465989bbc21309b73dcfaee04aa44e4118b60/openrgb-python-0.3.5.tar.gz", hash = "sha256:d3a79f3dd5479191bdb91d56f9b41c673c6aa8461794aa66b979a2464dfa4d90", size = 15619, upload-time = "2025-08-16T18:02:36.24Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/42/f9/c6c300903da4f2da84728218e93d805c811435a88170d37d8bc6cf39fb93/openrgb-python-0.3.6.tar.gz", hash = "sha256:f3a8f2f21a0e810a1c74279aa6369114ef4f2b1fd35bd91c375e9429258d569b", size = 15611, upload-time = "2025-10-16T00:52:22.663Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/e2/9b/9455d6e11e312387aaed0f966e1fd3815fa526f936ba131b2395575eb644/openrgb_python-0.3.5-py3-none-any.whl", hash = "sha256:06ec45a034b2aff4341fce2bb73626f93d309a1ada7f5c10010b8ee04465f01f", size = 29841, upload-time = "2025-08-16T18:02:35.042Z" },
+    { url = "https://files.pythonhosted.org/packages/f6/50/ebb00b4dae970cf1c45c4ee96e48260daf2b368636bff88fb8045824e7e3/openrgb_python-0.3.6-py3-none-any.whl", hash = "sha256:3f2679a7464155f9bff244613edf8d459e3509e0577ba9b5c36c806cb2576d9c", size = 29864, upload-time = "2025-10-16T00:52:21.62Z" },
 ]
 
 [[package]]
