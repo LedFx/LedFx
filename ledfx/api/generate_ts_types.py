@@ -31,7 +31,7 @@ class GenerateTypesEndpoint(RestEndpoint):
                 headers=headers,
             )
 
-        except Exception as e:
+        except Exception:
             _LOGGER.exception(
                 "CRITICAL Error occurred during TypeScript generation via API."
             )

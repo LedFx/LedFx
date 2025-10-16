@@ -13,7 +13,6 @@ When launching LedFx from the command line, or by editing properties of a deskto
 - `--tray`: Force LedFx system tray icon.
 - `--no-tray`: Force no LedFx system tray icon.
 - `--offline`: Disable crash logger and auto update checks.
-- `--sentry-crash-test`: Crash LedFx to test the sentry crash logger.
 - `--ci-smoke-test`: Launch LedFx and then exit after 5 seconds to sanity check the install.
 - `--generate-typescript-types`: Generate TypeScript types for the API and exit.
 - `--clear-config`: Launch LedFx, backup the config, clear the config, and continue with a clean startup.

@@ -191,12 +191,6 @@ def parse_args():
         help="Disable crash logger and auto update checks",
     )
     parser.add_argument(
-        "--sentry-crash-test",
-        dest="sentry_test",
-        action="store_true",
-        help="This crashes LedFx to test the sentry crash logger",
-    )
-    parser.add_argument(
         "--ci-smoke-test",
         dest="ci_smoke_test",
         action="store_true",
@@ -271,10 +265,6 @@ def main():
 
     if args.offline_mode is False:
         setup_sentry()
-
-    if args.sentry_test:
-        _LOGGER.warning("Steering LedFx into a brick wall.")
-        div_by_zero = 1 / 0
 
     if (args.tray or currently_frozen()) and not args.no_tray:
         # If pystray is imported on a device that can't display it, it explodes. Catch it
