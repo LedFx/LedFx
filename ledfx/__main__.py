@@ -191,12 +191,6 @@ def parse_args():
         help="Disable crash logger and auto update checks",
     )
     parser.add_argument(
-        "--sentry-crash-test",
-        dest="sentry_test",
-        action="store_true",
-        help="This crashes LedFx to test the sentry crash logger",
-    )
-    parser.add_argument(
         "--ci-smoke-test",
         dest="ci_smoke_test",
         action="store_true",
