@@ -92,7 +92,7 @@ jobs:
 
       - name: Run Tests
         run: |
-          uv run pytest -v
+          uv run -vv pytest -v
       - name: Attach LedFx test log
         uses: actions/upload-artifact@v4
         if: always()
