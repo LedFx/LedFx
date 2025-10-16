@@ -118,7 +118,7 @@ class ZeroConfRunner:
 
             def handle_exception(future):
                 # Ignore exceptions, these will be raised when a device is found that already exists
-                exc = future.exception()
+                future.exception()
 
             async_fire_and_forget(
                 self._ledfx.devices.add_new_device(device_type, device_config),
