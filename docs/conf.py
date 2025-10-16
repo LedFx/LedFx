@@ -11,7 +11,6 @@ import datetime
 import os
 import sys
 
-import sphinx_rtd_theme
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -19,7 +18,6 @@ import sphinx_rtd_theme
 
 sys.path.insert(0, os.path.abspath(".."))
 
-import ledfx.consts as const
 from ledfx.consts import PROJECT_AUTHOR, PROJECT_NAME, PROJECT_VERSION
 
 # -- Project information -----------------------------------------------------

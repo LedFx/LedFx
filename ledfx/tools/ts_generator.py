@@ -452,7 +452,7 @@ def generate_typescript_types() -> str:
             )
         else:
             _LOGGER.error("Could not find/call Effect.registry().")
-    except Exception as e:
+    except Exception:
         _LOGGER.exception("Failed imports/registry access.")
         return "// Error accessing registries. Please check the server logs for more details."
     if not device_registry:
@@ -569,7 +569,7 @@ def generate_typescript_types() -> str:
         ):
             try:
                 device_schema_to_use = device_schema_to_use()
-            except Exception as e:
+            except Exception:
                 device_schema_to_use = None
         if isinstance(device_schema_to_use, vol.Schema):
             device_config_ts_name = (
@@ -643,7 +643,7 @@ def generate_typescript_types() -> str:
         ):
             try:
                 device_schema_to_use = device_schema_to_use()
-            except Exception as e:
+            except Exception:
                 device_schema_to_use = None
 
         if isinstance(device_schema_to_use, vol.Schema) and isinstance(
