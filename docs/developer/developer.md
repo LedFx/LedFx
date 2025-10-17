@@ -10,7 +10,7 @@
 Note
 :::
 
-Python 3.13 is supported, but Hue lights integration will currently not be functional due to mbedtls dependancy.
+Python 3.13 is supported, but Hue lights integration will currently not be functional due to mbedtls dependency.
 ::::
 2. Install [git](https://git-scm.com/).
 
