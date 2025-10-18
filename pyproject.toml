@@ -5,7 +5,7 @@ authors = [
 license = {text = "GPL-3.0 License"}
 requires-python = ">=3.10,<3.14"
 dependencies = [
-    "numpy>=1.26.2,<2.0.0",
+    "numpy>=2.0.0,<3.0.0",
     "cffi>=0.16.0",
     "wheel>=0.36.2",
     "aiohttp>=3.9.1,<4.0.0",
