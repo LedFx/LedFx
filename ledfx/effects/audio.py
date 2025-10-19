@@ -35,6 +35,7 @@ class AudioInputSource:
     _volume_filter = ExpFilter(-90, alpha_decay=0.99, alpha_rise=0.99)
     _subscriber_threshold = 0
     _timer = None
+    _last_active = None
 
     @staticmethod
     def device_index_validator(val):
@@ -191,24 +192,23 @@ class AudioInputSource:
 
     def update_config(self, config):
         """Deactivate the audio, update the config, the reactivate"""
-        old_input_device = False
-        if hasattr(self, "_config"):
-            old_input_device = self._config["audio_device"]
-
         if self._audio_stream_active:
             self.deactivate()
         self._config = self.AUDIO_CONFIG_SCHEMA.fget()(config)
+        
+        # cache up last active and lets see if it changes
+        last_active = self._last_active
+        
         if len(self._callbacks) != 0:
             self.activate()
-        if (
-            old_input_device
-            and self._config["audio_device"] is not old_input_device
-        ):
+       
+        if (last_active is not self._last_active):
             self._ledfx.events.fire_event(
                 AudioDeviceChangeEvent(
                     self.input_devices()[self._config["audio_device"]]
                 )
             )
+
         self._ledfx.config["audio"] = self._config
 
     def activate(self):
@@ -371,6 +371,7 @@ class AudioInputSource:
 
         try:
             open_audio_stream(device_idx)
+            self._last_active = device_idx
         except OSError as e:
             _LOGGER.critical(
                 f"Unable to open Audio Device: {e} - please retry."
