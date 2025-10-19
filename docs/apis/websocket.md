@@ -291,6 +291,13 @@ If a monospaced font is used then back end can attempt table live updates with s
 
 ---
 
+## System Events
+
+::: warning
+The documentation on on Events is very incomplete
+New sections are added as new events are commited, but all the pre-existing behaviour should be considered undocumented
+:::
+
 ### `audio_input_device_changed`
 
 The `audio_input_device_changed` WebSocket event is emitted when the audio input device is changed via the `/api/audio/devices` endpoint or through other configuration updates.
