@@ -101,6 +101,59 @@ LedFx Logging
 Opens a websocket connection through which realtime LedFx logging info
 will be sent.
 
+## /api/audio/devices
+
+Query and manage audio input devices
+
+**GET**
+
+Returns a list of all available audio input devices and the currently active device index.
+
+example response:
+
+``` json
+{
+  "status": "success",
+  "active_device_index": 1,
+  "devices": {
+    "0": "Microsoft Sound Mapper - Input",
+    "1": "Microphone (Realtek High Definition Audio)",
+    "2": "Stereo Mix (Realtek High Definition Audio)"
+  }
+}
+```
+
+**PUT**
+
+Set the audio input device to use for audio processing.
+
+Request body must contain the `audio_device` key with a valid device index.
+
+example request:
+
+``` json
+{
+  "audio_device": 2
+}
+```
+
+Returns success if the device was successfully set:
+
+``` json
+{
+  "status": "success"
+}
+```
+
+Returns an error if an invalid device index is provided:
+
+``` json
+{
+  "status": "failed",
+  "reason": "Invalid device index [99]"
+}
+```
+
 ## /api/schema/
 
 LedFx Schema Api
