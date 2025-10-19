@@ -398,7 +398,7 @@ class AudioInputSource:
                 stream_to_close = self._stream
                 self._stream = None
             self._audio_stream_active = False
-        
+
         # Stop/close outside the lock
         if stream_to_close:
             stream_to_close.stop()
