@@ -197,13 +197,16 @@ class AudioInputSource:
         self._config = self.AUDIO_CONFIG_SCHEMA.fget()(config)
 
         # cache up last active and lets see if it changes
-        # Protect concurrent access to _last_active with lock
+        # Read _last_active with lock protection
         with self.lock:
             last_active = self._last_active
 
-            if len(self._callbacks) != 0:
-                self.activate()
+        # Activate outside the lock to avoid deadlock
+        if len(self._callbacks) != 0:
+            self.activate()
 
+        # Check if device changed and fire event if needed
+        with self.lock:
             if last_active != self._last_active:
                 self._ledfx.events.fire_event(
                     AudioDeviceChangeEvent(
