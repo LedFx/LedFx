@@ -195,14 +195,14 @@ class AudioInputSource:
         if self._audio_stream_active:
             self.deactivate()
         self._config = self.AUDIO_CONFIG_SCHEMA.fget()(config)
-        
+
         # cache up last active and lets see if it changes
         last_active = self._last_active
-        
+
         if len(self._callbacks) != 0:
             self.activate()
-       
-        if (last_active is not self._last_active):
+
+        if last_active is not self._last_active:
             self._ledfx.events.fire_event(
                 AudioDeviceChangeEvent(
                     self.input_devices()[self._config["audio_device"]]
