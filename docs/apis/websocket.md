@@ -288,3 +288,31 @@ The `general_diag` WebSocket event is emitted to provide arbitrary diagnostic me
 **Usage:**
 Listen for this event to receive general diagnostic messages from the system, which may be useful for debugging or displaying system status in the frontend.
 If a monospaced font is used then back end can attempt table live updates with scroll set to false which is default if not explicitly set.
+
+---
+
+## System Events
+
+::: warning
+The documentation on on Events is very incomplete
+New sections are added as new events are commited, but all the pre-existing behaviour should be considered undocumented
+:::
+
+### `audio_input_device_changed`
+
+The `audio_input_device_changed` WebSocket event is emitted when the audio input device is changed via the `/api/audio/devices` endpoint or through other configuration updates.
+
+**Payload Example:**
+```json
+{
+  "event_type": "audio_input_device_changed",
+  "audio_input_device_name": "Stereo Mix (Realtek High Definition Audio)"
+}
+```
+
+**Fields:**
+- `event_type`: Always `"audio_input_device_changed"`.
+- `audio_input_device_name`: The name of the newly selected audio input device.
+
+**Usage:**
+Subscribe to this event to be notified when the audio input device changes, allowing frontends to update their UI to reflect the current audio source. This is particularly useful for keeping multiple clients synchronized when audio device settings are changed.

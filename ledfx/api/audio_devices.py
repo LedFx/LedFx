@@ -51,7 +51,7 @@ class AudioDevicesEndpoint(RestEndpoint):
         except JSONDecodeError:
             return await self.json_decode_error()
 
-        index = data.get("index")
+        index = data.get("audio_device")
         if index is None:
             return await self.invalid_request(
                 "Required attribute 'index' was not provided"
@@ -66,7 +66,7 @@ class AudioDevicesEndpoint(RestEndpoint):
 
         # Update and save config
         new_config = self._ledfx.config.get("audio", {})
-        new_config["device_index"] = int(index)
+        new_config["audio_device"] = int(index)
         self._ledfx.config["audio"] = new_config
 
         save_config(
@@ -77,4 +77,4 @@ class AudioDevicesEndpoint(RestEndpoint):
         if self._ledfx.audio:
             self._ledfx.audio.update_config(new_config)
 
-        await self.request_success()
+        return await self.request_success()
