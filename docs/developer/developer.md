@@ -5,7 +5,13 @@
 ### Common Steps
 
 1. Install [python](https://www.python.org/downloads/) version 3.10 or above. 3.12 is the current preferred python release for general development.
+:::: note
+::: title
+Note
+:::
 
+Python 3.13 is supported, but Hue lights integration will currently not be functional due to mbedtls dependency.
+::::
 2. Install [git](https://git-scm.com/).
 
 3. Install [uv](https://docs.astral.sh/uv/getting-started/installation/)

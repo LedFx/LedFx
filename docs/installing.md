@@ -93,10 +93,10 @@ Python 3.10 installed.
     $ virtualenv -p python3.12 ~/ledfx-venv
     $ virtualenv -p python3.12 ~/ledfx-venv
     $ source ~/ledfx-venv/bin/activate
-    $ pip install numpy~=1.23 --no-cache-dir
+    $ pip install numpy>=2.0.0 --no-cache-dir
     $ export CFLAGS="-Wno-incompatible-function-pointer-types"
     $ pip install aubio==0.4.9 --no-cache-dir
-    $ pip install numpy~=1.23 --no-cache-dir
+    $ pip install numpy>=2.0.0 --no-cache-dir
     $ export CFLAGS="-Wno-incompatible-function-pointer-types"
     $ pip install aubio==0.4.9 --no-cache-dir
     $ pip install --force-reinstall ledfx
@@ -108,9 +108,9 @@ Python 3.10 installed.
 
     ``` console
     $ pip uninstall numpy aubio
-    $ pip install numpy~=1.23 --no-cache-dir
+    $ pip install numpy>=2.0.0 --no-cache-dir
     $ pip install aubio==0.4.9 --no-cache-dir
-    $ pip install numpy~=1.23 --no-cache-dir
+    $ pip install numpy>=2.0.0 --no-cache-dir
     $ pip install aubio==0.4.9 --no-cache-dir
     ```
 
