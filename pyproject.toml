@@ -42,7 +42,7 @@ dependencies = [
     "packaging>=21.0",
 ]
 name = "LedFx"
-version = "2.0.111"
+version = "2.1.0"
 description = "A network based light effect controller"
 readme = "README.rst"
 
