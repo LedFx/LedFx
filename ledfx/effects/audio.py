@@ -389,13 +389,21 @@ class AudioInputSource:
             open_audio_stream(default_device)
 
     def deactivate(self):
+        # Stop the stream outside the lock to avoid deadlock with audio callback
+        # The audio callback thread may be waiting to complete, and if it needs
+        # any locks, holding self.lock while calling stop() creates a circular wait
+        stream_to_close = None
         with self.lock:
             if self._stream:
-                self._stream.stop()
-                self._stream.close()
+                stream_to_close = self._stream
                 self._stream = None
             self._audio_stream_active = False
-        _LOGGER.info("Audio source closed.")
+        
+        # Stop/close outside the lock
+        if stream_to_close:
+            stream_to_close.stop()
+            stream_to_close.close()
+            _LOGGER.info("Audio source closed.")
 
     def subscribe(self, callback):
         """Registers a callback with the input source"""
