@@ -51,7 +51,7 @@ jobs:
 
       - name: Install LedFx
         run: |
-          uv sync --python ${{ env.DEFAULT_PYTHON }} --extra hue --dev
+          uv sync --python ${{ env.DEFAULT_PYTHON }} --extra hue --group build
 
       - name: Get LedFx Version and Upload to Artifacts for later use
         id: ledfx-version
@@ -119,7 +119,7 @@ jobs:
       - name: Install LedFx
         run: |
           export CFLAGS="-Wno-incompatible-function-pointer-types"
-          uv sync --python ${{ env.DEFAULT_PYTHON }} --extra hue --dev
+          uv sync --python ${{ env.DEFAULT_PYTHON }} --extra hue --group build
       - name: Get LedFx Version
         id: ledfx-version
         run: |
@@ -176,7 +176,7 @@ jobs:
           export LDFLAGS="-L/opt/homebrew/opt/mbedtls@2/lib"
           export CPPFLAGS="-I/opt/homebrew/opt/mbedtls@2/include"
           export CFLAGS="-Wno-incompatible-function-pointer-types"
-          uv sync --python ${{ env.DEFAULT_PYTHON }} --extra hue --dev
+          uv sync --python ${{ env.DEFAULT_PYTHON }} --extra hue --group build
       - name: Get LedFx Version
         id: ledfx-version
         run: |
