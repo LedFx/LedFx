@@ -274,7 +274,7 @@ def main():
 
     if args.sentry_test:
         _LOGGER.warning("Steering LedFx into a brick wall.")
-        div_by_zero = 1 / 0
+        _ = 1 / 0
 
     if (args.tray or currently_frozen()) and not args.no_tray:
         # If pystray is imported on a device that can't display it, it explodes. Catch it

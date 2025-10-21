@@ -36,7 +36,7 @@ def setup_sentry():
                 process = Popen(["git", "rev-parse", "HEAD"], stdout=PIPE)
                 (commit_hash, err) = process.communicate()
                 commit_hash = commit_hash[:7].decode("utf-8")
-                exit_code = process.wait()
+                process.wait()
             # TODO: trap explicit exceptions if it becomes clear what they are
         except Exception as e:
             commit_hash = "unknown"

@@ -663,7 +663,7 @@ async def resolve_destination(
             return dest
             # dest = await loop.getaddrinfo(cleaned_dest, port)
             # return dest[0][4][0]
-        except socket.gaierror as e:
+        except socket.gaierror:
             raise ValueError(f"Failed to resolve destination {cleaned_dest}")
 
 

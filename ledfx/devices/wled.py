@@ -170,7 +170,7 @@ class WLEDDevice(NetworkedDevice):
         # https://github.com/Aircoookie/WLED/pull/1944
         if wled_support_DDP(wled_build):
             _LOGGER.info(f"WLED Build Supports Sync Setting API: {wled_build}")
-            wled_sync_settings = await self.wled.get_sync_settings()
+            await self.wled.get_sync_settings()
         # self.wled.enable_realtime_gamma()
         # self.wled.set_inactivity_timeout(self._config["timeout"])
         # self.wled.first_universe()

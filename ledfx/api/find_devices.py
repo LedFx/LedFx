@@ -11,7 +11,7 @@ _LOGGER = logging.getLogger(__name__)
 
 def handle_exception(future):
     # Ignore exceptions, these will be raised when a device is found that already exists
-    exc = future.exception()
+    future.exception()
 
 
 class FindDevicesEndpoint(RestEndpoint):
