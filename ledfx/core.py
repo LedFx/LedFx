@@ -388,8 +388,8 @@ class LedFxCore:
         self.devices = Devices(self)
         self.effects = Effects(self)
 
-        # implemnented eager substatiation of AudioAnalysisSource to avoid scenarios 
-        # where audio config could be changed, but no happy path to generate the 
+        # implemnented eager substatiation of AudioAnalysisSource to avoid scenarios
+        # where audio config could be changed, but no happy path to generate the
         # related event
         if AudioAnalysisSource.audio_input_device_exists():
             self.audio = AudioAnalysisSource(
@@ -400,7 +400,7 @@ class LedFxCore:
                 "No audio input devices found. Audio reactive effects will not be available."
             )
             self.audio = None
-        
+
         self.virtuals = Virtuals(self)
         # Ensure we start with a fresh virtual registry when reusing the
         # Virtuals singleton across LedFxCore lifecycles.
