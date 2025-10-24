@@ -30,6 +30,7 @@ from ledfx.config import (
 from ledfx.consts import PROJECT_VERSION
 from ledfx.devices import Devices
 from ledfx.effects import Effects
+from ledfx.effects.audio import AudioAnalysisSource
 from ledfx.events import (
     Event,
     Events,
@@ -386,6 +387,20 @@ class LedFxCore:
             )
         self.devices = Devices(self)
         self.effects = Effects(self)
+
+        # implemnented eager substatiation of AudioAnalysisSource to avoid scenarios 
+        # where audio config could be changed, but no happy path to generate the 
+        # related event
+        if AudioAnalysisSource.audio_input_device_exists():
+            self.audio = AudioAnalysisSource(
+                self, self.config.get("audio", {})
+            )
+        else:
+            _LOGGER.warning(
+                "No audio input devices found. Audio reactive effects will not be available."
+            )
+            self.audio = None
+        
         self.virtuals = Virtuals(self)
         # Ensure we start with a fresh virtual registry when reusing the
         # Virtuals singleton across LedFxCore lifecycles.
