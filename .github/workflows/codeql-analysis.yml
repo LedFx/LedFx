@@ -1,6 +1,11 @@
 name: CodeQL Analysis
 
 on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - '.*/**'
   pull_request:
     branches:
       - main
@@ -37,9 +42,6 @@ jobs:
         uses: github/codeql-action/init@v4
         with:
           languages: ${{ matrix.language }}
-          # Override the default behavior so that the action doesn't attempt
-          # to auto-install Python dependencies
-          setup-python-dependencies: false
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v4
