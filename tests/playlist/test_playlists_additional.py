@@ -11,7 +11,7 @@ from ledfx.playlists import PlaylistManager
 class DummyCoreWithEvents:
     def __init__(self, tmpdir):
         self.config_dir = tmpdir
-        self.config = {"playlists": {}}
+        self.config = {"playlists": {}, "scenes": {}}
         self.scenes = type(
             "S",
             (),
@@ -115,14 +115,40 @@ async def test_get_playlists_endpoint_returns_empty_when_no_playlists(
 
 
 @pytest.mark.asyncio
-async def test_start_rejects_empty_playlist(tmp_path):
+async def test_empty_playlist_resolves_to_all_scenes(tmp_path):
+    """Empty items list should resolve to all available scenes at start time."""
     core = DummyCoreWithEvents(str(tmp_path))
+    # Add some scenes to the config (matches real LedFx structure)
+    core.config["scenes"] = {"scene1": {}, "scene2": {}, "scene3": {}}
     manager = PlaylistManager(core)
 
     await manager.create_or_replace(
         {"id": "empty", "name": "Empty", "items": []}
     )
     ok = await manager.start("empty")
+    # Should succeed because empty list resolves to all scenes
+    assert ok is True
+    
+    # Verify runtime items were populated with all scene IDs
+    state = await manager.get_state()
+    assert state.get("active_playlist") == "empty"
+    
+    await manager.stop()
+
+
+@pytest.mark.asyncio
+async def test_empty_playlist_fails_when_no_scenes(tmp_path):
+    """Empty items list should fail if there are no scenes available."""
+    core = DummyCoreWithEvents(str(tmp_path))
+    # No scenes available
+    core.config["scenes"] = {}
+    manager = PlaylistManager(core)
+
+    await manager.create_or_replace(
+        {"id": "empty", "name": "Empty", "items": []}
+    )
+    ok = await manager.start("empty")
+    # Should fail because no scenes to resolve to
     assert ok is False
 
 

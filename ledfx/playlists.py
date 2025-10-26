@@ -78,7 +78,7 @@ PlaylistSchema = vol.Schema(
         ): str,
         vol.Required(
             "items",
-            description="Ordered list of items (scene_id + optional duration)",
+            description="Ordered list of items (scene_id + optional duration). Empty list = dynamic 'all scenes' resolved at start time.",
         ): [PlaylistItem],
         vol.Optional(
             "default_duration_ms",
@@ -140,6 +140,8 @@ class PlaylistManager:
         self._mode_override: str | None = None
         # runtime-only timing override applied when starting a playlist
         self._timing_override: dict | None = None
+        # runtime-resolved items list (for dynamic "all scenes" playlists with empty items)
+        self._runtime_items: list | None = None
 
         # load playlists from config (validate)
         raw = copy.deepcopy(core.config.get("playlists", {})) or {}
@@ -331,20 +333,23 @@ class PlaylistManager:
 
     # Runtime controls
     async def _runner(self, pid: str):
-        """Internal runner that activates scenes in order for the active playlist."""
+        """Internal runner that activates scenes in order for the active playlist.
+        
+        Uses self._runtime_items which is always set by start() before runner is called.
+        """
         try:
             while self._active_playlist_id == pid:
                 playlist = self._playlists.get(pid)
-                if not playlist or not playlist.get("items"):
+                if not playlist:
                     break
-                items = playlist["items"]
+                
                 # Ensure we have a concrete order matching the current items
-                self._ensure_order(playlist, items)
+                self._ensure_order(playlist, self._runtime_items)
 
                 # compute order_pos and item_idx
                 order_pos = self._active_index % len(self._order)
                 item_idx = self._order[order_pos]
-                item = items[item_idx]
+                item = self._runtime_items[item_idx]
                 scene_id = item.get("scene_id")
                 base_duration_ms = item.get(
                     "duration_ms",
@@ -443,8 +448,12 @@ class PlaylistManager:
                         self._active_index = self._active_index + 1
                         # If we've completed a cycle, wrap and regenerate order if needed
                         if self._active_index >= len(self._order):
-                            # cycle completed: regenerate order for the next cycle
-                            self._ensure_order(playlist, items)
+                            # cycle completed: regenerate order for shuffle mode
+                            self._ensure_order(
+                                playlist,
+                                self._runtime_items,
+                                desired_mode=self._effective_mode(playlist),
+                            )
                             self._active_index = 0
                 finally:
                     # Clear per-item runtime markers after the item finishes.
@@ -467,16 +476,39 @@ class PlaylistManager:
 
         If `mode` is provided it overrides the playlist's configured mode
         for this runtime session (e.g. force shuffle or sequence).
+
+        If the playlist has an empty items list, it will be dynamically
+        resolved to all available scenes at start time.
         """
         if pid not in self._playlists:
             return False
 
-        # reject starting an empty playlist
-        if not self._playlists[pid].get("items"):
-            return False
+        playlist = self._playlists[pid]
+        items = playlist.get("items", [])
+
+        # Dynamic "all scenes" resolution: if items list is empty, populate
+        # with all current scene IDs. This happens at start time so the playlist
+        # always includes the latest scenes.
+        if not items:
+            # Access scenes from config since Scenes class stores them there
+            if hasattr(self._core, "config") and "scenes" in self._core.config:
+                all_scene_ids = list(self._core.config["scenes"].keys())
+                if not all_scene_ids:
+                    # No scenes available, reject start
+                    return False
+                # Build transient items list with all scene IDs
+                # Duration will be resolved from playlist default_duration_ms
+                items = [{"scene_id": sid} for sid in all_scene_ids]
+            else:
+                # No scenes subsystem available, reject start
+                return False
 
         # stop existing
         await self.stop()
+
+        # Store runtime items for resume/prev/next operations
+        # Must be set after stop() since stop() clears it
+        self._runtime_items = items
 
         # apply runtime mode and timing overrides if provided
         self._mode_override = mode
@@ -487,20 +519,17 @@ class PlaylistManager:
         self._active_index = 0
 
         # initialize concrete order per playlist mode (respect runtime override)
-        playlist = self._playlists.get(pid)
-        if playlist and playlist.get("items"):
-            items = playlist["items"]
-            # Determine the intended mode for this start call. If the caller
-            # provided an explicit runtime override, use that. Otherwise use
-            # the playlist's configured mode. Passing this as desired_mode
-            # guarantees we generate an order matching the intended mode and
-            # won't reuse a stale order from a previous session.
-            intended_mode = (
-                self._mode_override
-                if self._mode_override is not None
-                else playlist.get("mode", "sequence")
-            )
-            self._ensure_order(playlist, items, desired_mode=intended_mode)
+        # Determine the intended mode for this start call. If the caller
+        # provided an explicit runtime override, use that. Otherwise use
+        # the playlist's configured mode. Passing this as desired_mode
+        # guarantees we generate an order matching the intended mode and
+        # won't reuse a stale order from a previous session.
+        intended_mode = (
+            self._mode_override
+            if self._mode_override is not None
+            else playlist.get("mode", "sequence")
+        )
+        self._ensure_order(playlist, items, desired_mode=intended_mode)
 
         self._paused = False
         self._pause_event.set()
@@ -511,9 +540,11 @@ class PlaylistManager:
             # fire playlist started event (include scene_id if available)
             scene_id = None
             try:
-                if playlist and playlist.get("items"):
+                if self._order:
                     # derive actual item index from concrete order
-                    _, _, _, item_idx, scene_id, _ = self._current_item_info()
+                    order_pos = self._active_index % len(self._order)
+                    item_idx = self._order[order_pos]
+                    scene_id = items[item_idx].get("scene_id")
             except Exception:
                 scene_id = None
             try:
@@ -570,9 +601,10 @@ class PlaylistManager:
         self._item_effective_duration_ms = None
         self._remaining_ms = None
         self._remaining_for_order_pos = None
-        # clear any runtime-only overrides
+        # clear any runtime-only overrides and resolved items
         self._mode_override = None
         self._timing_override = None
+        self._runtime_items = None
 
         try:
             if pid:
@@ -669,17 +701,39 @@ class PlaylistManager:
             pass
         return True
 
-    async def prev(self) -> bool:
-        """Go to previous item immediately."""
+    async def _advance_index(self, direction: int) -> bool:
+        """Common logic for advancing playlist index forward or backward.
+        
+        Args:
+            direction: +1 for next, -1 for prev
+        
+        Returns:
+            True if successful, False if no active playlist
+        """
         if not self._active_playlist_id:
             return False
-        items = self._playlists[self._active_playlist_id]["items"]
-        # ensure a concrete order exists matching the playlist items
-        self._ensure_order(
-            self._playlists.get(self._active_playlist_id), items
-        )
+        
+        playlist = self._playlists.get(self._active_playlist_id)
+        
+        # Check if we're wrapping around
+        if direction > 0:
+            will_wrap = self._active_index == len(self._order) - 1
+        else:
+            will_wrap = self._active_index == 0
+        
+        # Ensure order exists, regenerating shuffle if wrapping
+        if will_wrap:
+            self._ensure_order(
+                playlist,
+                self._runtime_items,
+                desired_mode=self._effective_mode(playlist),
+            )
+        else:
+            self._ensure_order(playlist, self._runtime_items)
 
-        self._active_index = (self._active_index - 1) % len(self._order)
+        self._active_index = (self._active_index + direction) % len(self._order)
+        
+        # Restart runner to pick up new index immediately
         if self._task:
             self._task.cancel()
             try:
@@ -690,29 +744,14 @@ class PlaylistManager:
             self._runner(self._active_playlist_id)
         )
         return True
+
+    async def prev(self) -> bool:
+        """Go to previous item immediately."""
+        return await self._advance_index(-1)
 
     async def next(self) -> bool:
         """Skip to the next item immediately."""
-        if not self._active_playlist_id:
-            return False
-        items = self._playlists[self._active_playlist_id]["items"]
-        # ensure a concrete order exists matching the playlist items
-        self._ensure_order(
-            self._playlists.get(self._active_playlist_id), items
-        )
-
-        self._active_index = (self._active_index + 1) % len(self._order)
-        # restart runner to pick up new index immediately
-        if self._task:
-            self._task.cancel()
-            try:
-                await self._task
-            except asyncio.CancelledError:
-                pass
-        self._task = asyncio.create_task(
-            self._runner(self._active_playlist_id)
-        )
-        return True
+        return await self._advance_index(+1)
 
     async def get_state(self) -> dict:
         """Return the current runtime state of playlists.
