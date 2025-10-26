@@ -121,9 +121,9 @@ async def test_shuffle_regenerates_on_natural_cycle_completion(tmp_path):
 
     # With 4 samples from 24 permutations, we should see at least 2 different orders
     unique_orders = set(orders_seen)
-    assert len(unique_orders) >= 2, (
-        f"Expected shuffle to generate different orders but got: {orders_seen}"
-    )
+    assert (
+        len(unique_orders) >= 2
+    ), f"Expected shuffle to generate different orders but got: {orders_seen}"
 
     await manager.stop()
 
@@ -178,9 +178,9 @@ async def test_next_regenerates_shuffle_on_wrap(tmp_path):
 
     # With 4! = 24 permutations and 4 samples, should see at least 2 different
     unique_orders = set(orders_seen)
-    assert len(unique_orders) >= 2, (
-        f"Expected next() to generate different shuffle orders but got: {orders_seen}"
-    )
+    assert (
+        len(unique_orders) >= 2
+    ), f"Expected next() to generate different shuffle orders but got: {orders_seen}"
 
     await manager.stop()
 

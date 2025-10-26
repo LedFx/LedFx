@@ -334,7 +334,7 @@ class PlaylistManager:
     # Runtime controls
     async def _runner(self, pid: str):
         """Internal runner that activates scenes in order for the active playlist.
-        
+
         Uses self._runtime_items which is always set by start() before runner is called.
         """
         try:
@@ -342,7 +342,7 @@ class PlaylistManager:
                 playlist = self._playlists.get(pid)
                 if not playlist:
                     break
-                
+
                 # Ensure we have a concrete order matching the current items
                 self._ensure_order(playlist, self._runtime_items)
 
@@ -703,24 +703,24 @@ class PlaylistManager:
 
     async def _advance_index(self, direction: int) -> bool:
         """Common logic for advancing playlist index forward or backward.
-        
+
         Args:
             direction: +1 for next, -1 for prev
-        
+
         Returns:
             True if successful, False if no active playlist
         """
         if not self._active_playlist_id:
             return False
-        
+
         playlist = self._playlists.get(self._active_playlist_id)
-        
+
         # Check if we're wrapping around
         if direction > 0:
             will_wrap = self._active_index == len(self._order) - 1
         else:
             will_wrap = self._active_index == 0
-        
+
         # Ensure order exists, regenerating shuffle if wrapping
         if will_wrap:
             self._ensure_order(
@@ -731,8 +731,10 @@ class PlaylistManager:
         else:
             self._ensure_order(playlist, self._runtime_items)
 
-        self._active_index = (self._active_index + direction) % len(self._order)
-        
+        self._active_index = (self._active_index + direction) % len(
+            self._order
+        )
+
         # Restart runner to pick up new index immediately
         if self._task:
             self._task.cancel()

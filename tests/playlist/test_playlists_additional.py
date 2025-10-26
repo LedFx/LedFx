@@ -128,11 +128,11 @@ async def test_empty_playlist_resolves_to_all_scenes(tmp_path):
     ok = await manager.start("empty")
     # Should succeed because empty list resolves to all scenes
     assert ok is True
-    
+
     # Verify runtime items were populated with all scene IDs
     state = await manager.get_state()
     assert state.get("active_playlist") == "empty"
-    
+
     await manager.stop()
 
 
