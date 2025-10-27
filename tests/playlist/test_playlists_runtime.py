@@ -16,7 +16,16 @@ class DummyScenes:
 class DummyCore:
     def __init__(self, tmpdir):
         self.config_dir = tmpdir
-        self.config = {"playlists": {}}
+        self.config = {"playlists": {}, "scenes": {}}
+        self.scenes = type(
+            "S",
+            (),
+            {
+                "scenes": {},
+                "activated": [],
+                "activate": lambda self, s: self.activated.append(s),
+            },
+        )()
         self.scenes = DummyScenes()
 
 
