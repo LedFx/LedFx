@@ -209,20 +209,6 @@ class PlaylistManager:
             else:
                 self._order = list(range(len(items)))
 
-    def _get_active_playlist(
-        self, pid: str | None = None
-    ) -> tuple[dict | None, list]:
-        """Return the playlist dict and its items list for a given pid or
-        the currently active playlist when pid is None.
-        """
-        target = pid if pid is not None else self._active_playlist_id
-        if not target:
-            return None, []
-        playlist = self._playlists.get(target)
-        if not playlist or not playlist.get("items"):
-            return playlist, []
-        return playlist, playlist["items"]
-
     def _current_item_info(
         self,
     ) -> tuple[
@@ -236,9 +222,9 @@ class PlaylistManager:
         if not pid:
             return None, [], None, None, None, None
         playlist = self._playlists.get(pid)
-        if not playlist or not playlist.get("items"):
+        items = self._runtime_items
+        if not items:
             return playlist, [], None, None, None, None
-        items = playlist["items"]
         if self._order and len(self._order) == len(items):
             order = list(self._order)
             item_idx = order[self._active_index % len(order)]
@@ -771,8 +757,8 @@ class PlaylistManager:
         try:
             if self._active_playlist_id:
                 playlist = self._playlists.get(self._active_playlist_id)
-                if playlist and playlist.get("items"):
-                    items = playlist["items"]
+                items = self._runtime_items
+                if items:
                     if self._order and len(self._order) == len(items):
                         state["order"] = list(self._order)
                         # include scenes list matching the concrete order
